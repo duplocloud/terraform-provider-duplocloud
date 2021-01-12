@@ -1,0 +1,17 @@
+.idea/
+*.log
+test/
+bin/
+_temp/
+.terraform
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfstate.*
+.DS_Store
+.terraform.lock.hcl
+
+k8-config-secret/
+k8-t2/
+prav/
+k8-t3/
+test/
