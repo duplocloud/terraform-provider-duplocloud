@@ -50,10 +50,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
-	if host == ""  {
+	if token == "" {
 		token  = os.Getenv("duplo_token")
 	}
-	if host == ""   {
+	if host == "" {
 		host  = os.Getenv("duplo_host")
 	}
 
