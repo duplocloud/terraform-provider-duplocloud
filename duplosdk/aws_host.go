@@ -338,7 +338,7 @@ func (c *Client) DuploAwsHostFromState(d *schema.ResourceData, m interface{}, is
 
 //this is the import-id for terraform inspired from azure imports
 func (c * Client) DuploAwsHostSetIdFromCloud(duploObject *DuploAwsHost, d *schema.ResourceData) string{
- 	d.Set("instance_id", duploObject.InstanceId )
+	d.Set("instance_id", duploObject.InstanceId )
 	d.Set("tenant_id", duploObject.TenantId )
 	c.AwsHostSetId(d)
 	log.Printf("[TRACE] DuploAwsHostSetIdFromCloud 2 ********: %s",  d.Id())
@@ -411,7 +411,7 @@ func AwsHostRefreshFunc(c *Client, url string) resource.StateRefreshFunc {
 		log.Printf("[TRACE] duplo-AwsHostRefreshFunc 5 %s ******** ",api)
 		var status string
 		status = "pending"
-		if duploObject.Status != "running"{
+		if duploObject.Status == "running"{
 			status="ready"
 		}
 		return duploObject, status, nil
@@ -422,7 +422,9 @@ func AwsHostWaitForCreation(c *Client, url string) error {
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: AwsHostRefreshFunc(c, url ),
-		Timeout: 10 * time.Minute,
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout: 30 * time.Minute,
 	}
 	log.Printf("[DEBUG] AwsHostRefreshFuncWiatForCreation (%s)", url)
 	_, err := stateConf.WaitForState()
@@ -584,7 +586,7 @@ func (c *Client) AwsHostCreateOrUpdate(d *schema.ResourceData, m interface{}, is
 			return  nil, err
 		}
 		log.Printf("[TRACE] %s 9 ******** ",api_str )
-		 c.DuploAwsHostSetIdFromCloud(&duploObject, d)
+		c.DuploAwsHostSetIdFromCloud(&duploObject, d)
 
 		////////AwsHostWaitForCreation////////
 		//todo: test AwsHostWaitForCreation(c, c.AwsHostUrl(d))

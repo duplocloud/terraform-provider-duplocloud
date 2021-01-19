@@ -30,6 +30,7 @@ func Provider() *schema.Provider {
 			"duplocloud_duplo_service_params" : resourceDuploServiceParams(),
 			"duplocloud_k8_config_map" : resourceK8ConfigMap(),
 			"duplocloud_k8_secret" : resourceK8Secret(),
+			"duplocloud_infrastructure" : resourceInfrastructure(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_tenant": dataSourceTenant(),
@@ -39,6 +40,7 @@ func Provider() *schema.Provider {
 			"duplocloud_duplo_service_params": dataSourceDuploServiceParams(),
 			"duplocloud_k8_config_map" : dataSourceK8ConfigMap(),
 			"duplocloud_k8_secret" : dataSourceK8Secret(),
+			"duplocloud_infrastructure" : dataSourceInfrastructure(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
@@ -47,7 +49,7 @@ func Provider() *schema.Provider {
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	token := d.Get("duplo_token").(string)
 	host := d.Get("duplo_host").(string)
-	
+
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 	if token == "" {

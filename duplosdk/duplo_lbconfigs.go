@@ -5,14 +5,18 @@ import (
 	"fmt"
 	"strings"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"net/http"
+	"time"
 )
 
 type DuploServiceLBConfigs struct {
 	ReplicationControllerName 		string        					`json:"ReplicationControllerName"`
 	TenantId 						string        					`json:"TenantId,omitempty"`
 	LBConfigs						*[]DuploLBConfiguration       	`json:"LBConfigs,omitempty"`
+	Arn 							string        					`json:"Arn,omitempty"`
+	Status 							string        					`json:"Status,omitempty"`
 }
 
 type DuploLBConfiguration struct {
@@ -24,6 +28,7 @@ type DuploLBConfiguration struct {
 	CertificateArn    				string        					`json:"CertificateArn,omitempty"`
 	ReplicationControllerName 		string        					`json:"ReplicationControllerName"`
 	IsNative    					bool          					`json:"IsNative"`
+	IsInternal						bool	 						`json:"IsInternal"`
 }
 
 /////------ schema ------////
@@ -39,6 +44,16 @@ func  DuploServiceLBConfigsSchema() *map[string]*schema.Schema {
 			Optional: false,
 			Required: true,
 			ForceNew: true, //switch tenant
+		},
+		"arn": {
+			Type:     schema.TypeString,
+			Computed: true,
+			Optional: true,
+		},
+		"status": {
+			Type:     schema.TypeString,
+			Computed: true,
+			Optional: true,
 		},
 		"lbconfigs": {
 			Type:     schema.TypeList,
@@ -82,6 +97,11 @@ func  DuploServiceLBConfigsSchema() *map[string]*schema.Schema {
 						Required: false,
 						Optional: true,
 					},
+					"is_internal": {
+						Type:     schema.TypeBool,
+						Required: false,
+						Optional: true,
+					},
 				},
 			},
 		},
@@ -99,6 +119,9 @@ func (c *Client) DuploServiceLBConfigsToState(duploObject *DuploServiceLBConfigs
 		///--- set
 		cObj["tenant_id"] = duploObject.TenantId
 		cObj["replication_controller_name"] = duploObject.ReplicationControllerName
+		cObj["arn"] = duploObject.Arn
+		cObj["status"] = duploObject.Status
+
 		cObj["lbconfigs"] = c.DuploLBConfigurationToState(duploObject.LBConfigs, d)
 		//log
 		jsonData2 , _ := json.Marshal(cObj)
@@ -121,6 +144,7 @@ func (c *Client) DuploLBConfigurationToState(duploObjects *[]DuploLBConfiguratio
 			cObj["certificate_arn"] = duploObject.CertificateArn
 			cObj["replication_controller_name"] = duploObject.ReplicationControllerName
 			cObj["is_native"] = duploObject.IsNative
+			cObj["is_internal"] = duploObject.IsInternal
 			ois[i] = cObj
 		}
 		jsonData , _ := json.Marshal(ois )
@@ -133,7 +157,7 @@ func (c *Client) DuploLBConfigurationToState(duploObjects *[]DuploLBConfiguratio
 }
 ////// convert from cloud to state :  cloud names (CamelCase) to tf names (SnakeCase)
 func (c *Client) DuploServiceLBConfigsFromState(d *schema.ResourceData, m interface{}, isUpdate bool)( *DuploServiceLBConfigs, error) {
- 	url := c.DuploServiceLBConfigsListUrl(d)
+	url := c.DuploServiceLBConfigsListUrl(d)
 	var api_str = fmt.Sprintf("duplo-DuploServiceLBConfigsFromState-Create %s ", url )
 	if isUpdate {
 		api_str = fmt.Sprintf("duplo-DuploServiceLBConfigsFromState-Update %s ", url )
@@ -144,6 +168,8 @@ func (c *Client) DuploServiceLBConfigsFromState(d *schema.ResourceData, m interf
 	///--- set
 	duploObject.ReplicationControllerName = d.Get("replication_controller_name").(string)
 	duploObject.TenantId = d.Get("tenant_id").(string)
+	duploObject.TenantId = d.Get("arn").(string)
+	duploObject.TenantId = d.Get("status").(string)
 	lbconfigs := d.Get("lbconfigs").([]interface{})
 	if len(lbconfigs) > 0 {
 		var lbc []DuploLBConfiguration
@@ -158,6 +184,7 @@ func (c *Client) DuploServiceLBConfigsFromState(d *schema.ResourceData, m interf
 				CertificateArn: p["certificate_arn"].(string),
 				ReplicationControllerName: p["replication_controller_name"].(string),
 				IsNative: p["is_native"].(bool),
+				IsInternal: p["is_internal"].(bool),
 			})
 		}
 		duploObject.LBConfigs = &lbc
@@ -212,6 +239,53 @@ func (c *Client) DuploServiceLBConfigsGetTenantId(d *schema.ResourceData) string
 	}
 	return tenant_id
 }
+
+//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// refresh state //////////////////////
+/////////////////////////////////////////////////////////////////////////
+func DuploServiceLBConfigsRefreshFunc(c *Client, url string) resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		api := url
+		req2, _ := http.NewRequest("GET", url, nil)
+		body, err := c.doRequest(req2)
+		if err != nil {
+			log.Printf("[TRACE] duplo-DuploServiceLBConfigsRefreshFunc 2 %s ********: %s",api, err.Error())
+			return  nil, "", fmt.Errorf("error reading 1 (%s): %s", url, err)
+		}
+		bodyString := string(body)
+		log.Printf("[TRACE] duplo-DuploServiceLBConfigsRefreshFunc 3 %s ********: bodyString %s",api, bodyString)
+
+		duploObject := DuploServiceLBConfigs{}
+		err = json.Unmarshal(body, &duploObject)
+		if err != nil {
+			log.Printf("[TRACE] duplo-DuploServiceLBConfigsRefreshFunc 4 %s ********:  error:%s",api,  err.Error())
+			return  nil, "", fmt.Errorf("error reading 1 (%s): %s", url, err)
+		}
+		log.Printf("[TRACE] duplo-DuploServiceLBConfigsRefreshFunc 5 %s ******** ",api)
+		var status string
+		status = "pending"
+		if duploObject.Status == "Ready"{
+			status="ready"
+		}
+		return duploObject, status, nil
+	}
+}
+func DuploServiceLBConfigsWaitForCreation(c *Client, url string) error {
+	stateConf := &resource.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: DuploServiceLBConfigsRefreshFunc(c, url ),
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout: 20 * time.Minute,
+	}
+	log.Printf("[DEBUG] LBConfigsRefreshFuncWiatForCreation (%s)", url)
+	_, err := stateConf.WaitForState()
+	return err
+}
+//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// refresh state //////////////////////
+/////////////////////////////////////////////////////////////////////////
 
 /////////  Utils convert //////////
 func (c *Client) DuploServiceLBConfigsListFlatten(duploObjects *[]DuploServiceLBConfigs, d *schema.ResourceData) []interface{} {
@@ -326,8 +400,8 @@ func (c *Client) DuploServiceLBConfigsCreateOrUpdate(d *schema.ResourceData, m i
 	log.Printf("[TRACE] %s 1 ********: %s", api_str,  url)
 	//
 	duploObject, _ := c.DuploServiceLBConfigsFromState(d,m, isUpdate)
-	
-	
+
+
 	rb, err := json.Marshal(duploObject)
 	if err != nil {
 		log.Printf("[TRACE] %s 3 ********: %s", api_str,err.Error())
@@ -360,6 +434,12 @@ func (c *Client) DuploServiceLBConfigsCreateOrUpdate(d *schema.ResourceData, m i
 		}
 		log.Printf("[TRACE] %s 9 ********  ", api_str )
 		c.DuploServiceLBConfigsSetIdFromCloud(&duploObject, d)
+
+		////////DuploServiceLBConfigsWaitForCreation////////
+		DuploServiceLBConfigsWaitForCreation(c, c.DuploServiceLBConfigsUrl(d))
+		////////DuploServiceLBConfigsWaitForCreation////////
+
+
 		return nil, nil
 	}
 	err_msg := fmt.Errorf("ERROR: in create %s body:%s error:%s", api_str, body, err.Error())
