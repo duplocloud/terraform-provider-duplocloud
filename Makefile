@@ -1,14 +1,14 @@
 TEST?=$$(go list ./... | grep -v 'vendor')
 #
 HOSTNAME=registry.terraform.io
-NAMESPACE=hashicorp
+NAMESPACE=duplocloud
 ##
 #HOSTNAME=duplocloud.net
 #NAMESPACE=tf
 
 NAME=duplocloud
 BINARY=terraform-provider-${NAME}
-VERSION=0.2
+VERSION=0.3
 #mac
 #OS_ARCH=darwin_amd64
 #OS_ARCH=linux_amd64
@@ -38,10 +38,14 @@ release:
 install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
+	mkdir -p ~/.terraform.d/plugin-cache/${OS_ARCH}
+	cp ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}/${BINARY} ~/.terraform.d/plugin-cache/${OS_ARCH}/terraform-provider-${NAME}_v${VERSION}_x4
 
 install_mac: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH_MAC}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH_MAC}
+	mkdir -p ~/.terraform.d/plugin-cache/${OS_ARCH_MAC}
+	cp ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH_MAC}/${BINARY} ~/.terraform.d/plugin-cache/${OS_ARCH_MAC}/terraform-provider-${NAME}_v${VERSION}_x4
 
 install_docker: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH_DOCKER}
