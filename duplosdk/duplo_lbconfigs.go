@@ -168,8 +168,8 @@ func (c *Client) DuploServiceLBConfigsFromState(d *schema.ResourceData, m interf
 	///--- set
 	duploObject.ReplicationControllerName = d.Get("replication_controller_name").(string)
 	duploObject.TenantId = d.Get("tenant_id").(string)
-	duploObject.TenantId = d.Get("arn").(string)
-	duploObject.TenantId = d.Get("status").(string)
+	duploObject.Arn = d.Get("arn").(string)
+	duploObject.Status = d.Get("status").(string)
 	lbconfigs := d.Get("lbconfigs").([]interface{})
 	if len(lbconfigs) > 0 {
 		var lbc []DuploLBConfiguration
