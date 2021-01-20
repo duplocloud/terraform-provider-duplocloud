@@ -14,7 +14,7 @@ import (
 // SCHEMA for resource crud
 func resourceK8Secret() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: resourceK8SecretRead,
+		ReadContext:   resourceK8SecretRead,
 		CreateContext: resourceK8SecretCreate,
 		UpdateContext: resourceK8SecretUpdate,
 		DeleteContext: resourceK8SecretDelete,
@@ -29,6 +29,7 @@ func resourceK8Secret() *schema.Resource {
 		Schema: *duplosdk.K8SecretSchema(),
 	}
 }
+
 // SCHEMA for resource data/search
 func dataSourceK8Secret() *schema.Resource {
 	return &schema.Resource{
@@ -50,6 +51,7 @@ func dataSourceK8Secret() *schema.Resource {
 		},
 	}
 }
+
 /// READ/SEARCH resources
 func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-dataSourceK8SecretRead ******** start")
@@ -61,7 +63,7 @@ func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.FromErr(err)
 	}
 
-	itemList := c.K8SecretsFlatten(duplo_objs,d)
+	itemList := c.K8SecretsFlatten(duplo_objs, d)
 	if err := d.Set("data", itemList); err != nil {
 		return diag.FromErr(err)
 	}
@@ -72,6 +74,7 @@ func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m inter
 
 	return diags
 }
+
 /// READ resource
 func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceK8SecretRead ******** start")
@@ -88,6 +91,7 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 	log.Printf("[TRACE] duplo-resourceK8SecretRead ******** end")
 	return diags
 }
+
 /// CREATE resource
 func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceK8SecretCreate ******** start")
@@ -105,6 +109,7 @@ func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m inter
 	log.Printf("[TRACE] duplo-resourceK8SecretCreate ******** end")
 	return diags
 }
+
 /// UPDATE resource
 func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceK8SecretUpdate ******** start")
@@ -123,6 +128,7 @@ func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m inter
 
 	return diags
 }
+
 /// DELETE resource
 func resourceK8SecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceK8SecretDelete ******** start")
@@ -139,5 +145,3 @@ func resourceK8SecretDelete(ctx context.Context, d *schema.ResourceData, m inter
 
 	return diags
 }
-
-

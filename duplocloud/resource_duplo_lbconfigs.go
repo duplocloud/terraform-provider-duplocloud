@@ -14,7 +14,7 @@ import (
 // SCHEMA for resource crud
 func resourceDuploServiceLBConfigs() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: resourceDuploServiceLBConfigsRead,
+		ReadContext:   resourceDuploServiceLBConfigsRead,
 		CreateContext: resourceDuploServiceLBConfigsCreate,
 		UpdateContext: resourceDuploServiceLBConfigsUpdate,
 		DeleteContext: resourceDuploServiceLBConfigsDelete,
@@ -29,6 +29,7 @@ func resourceDuploServiceLBConfigs() *schema.Resource {
 		Schema: *duplosdk.DuploServiceLBConfigsSchema(),
 	}
 }
+
 // SCHEMA for resource search/data
 func dataSourceDuploServiceLBConfigs() *schema.Resource {
 	return &schema.Resource{
@@ -50,6 +51,7 @@ func dataSourceDuploServiceLBConfigs() *schema.Resource {
 		},
 	}
 }
+
 /// READ/SEARCH resources
 func dataSourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-dataSourceDuploServiceLBConfigsRead ******** start")
@@ -61,7 +63,7 @@ func dataSourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	itemList := c.DuploServiceLBConfigsListFlatten(duplo_objs,d)
+	itemList := c.DuploServiceLBConfigsListFlatten(duplo_objs, d)
 	if err := d.Set("data", itemList); err != nil {
 		return diag.FromErr(err)
 	}
@@ -72,6 +74,7 @@ func dataSourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.Resource
 
 	return diags
 }
+
 /// READ resource
 func resourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsRead ******** start")
@@ -88,6 +91,7 @@ func resourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.ResourceDa
 	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsRead ******** end")
 	return diags
 }
+
 /// CREATE resource
 func resourceDuploServiceLBConfigsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsCreate ******** start")
@@ -105,6 +109,7 @@ func resourceDuploServiceLBConfigsCreate(ctx context.Context, d *schema.Resource
 	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsCreate ******** end")
 	return diags
 }
+
 /// UPDATE resource
 func resourceDuploServiceLBConfigsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsUpdate ******** start")
@@ -123,6 +128,7 @@ func resourceDuploServiceLBConfigsUpdate(ctx context.Context, d *schema.Resource
 
 	return diags
 }
+
 /// DELETE resource
 func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsDelete ******** start")
@@ -139,5 +145,3 @@ func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.Resource
 
 	return diags
 }
-
-

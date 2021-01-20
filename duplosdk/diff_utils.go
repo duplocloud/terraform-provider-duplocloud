@@ -67,25 +67,23 @@ func jsonBytesEqual(b1, b2 []byte) bool {
 	return reflect.DeepEqual(o1, o2)
 }
 
-
-
 func diffSuppressFuncIgnore(k, old, new string, d *schema.ResourceData) bool {
 	return true //ignore????
 }
 
 func diffIgnoreIfAlreadySet(k, old, new string, d *schema.ResourceData) bool {
-	if   old !="" {
+	if old != "" {
 		return true
 	}
 	return false
 }
 
 func diffIgnoreIfSameHash(k, old, new string, d *schema.ResourceData) bool {
-	if   old == "" {
+	if old == "" {
 		return false
 	}
 	new_hash := hashForData(new)
-	if   old == new_hash {
+	if old == new_hash {
 		return true
 	}
 	return false
@@ -94,7 +92,7 @@ func diffIgnoreIfSameHash(k, old, new string, d *schema.ResourceData) bool {
 func hashForData(s string) string {
 	h := fnv.New32a()
 	h.Write([]byte(s))
-	var api_str = fmt.Sprintf("%d==", h.Sum32() )
+	var api_str = fmt.Sprintf("%d==", h.Sum32())
 	return api_str
 }
 
@@ -119,6 +117,7 @@ func ptrStringValue(v *string) string {
 	}
 	return ""
 }
+
 // diffStringMaps returns the set of keys and values that must be created,
 // and the set of keys and values that must be destroyed.
 // Equivalent to 'diffTagsGeneric'.
@@ -145,11 +144,9 @@ func diffStringMaps(oldMap, newMap map[string]interface{}) (map[string]*string, 
 	return create, remove
 }
 
-
-
 ///
 
 type DuploObjectState struct {
-	_ struct{} `type:"structure"`
-	State *string `locationName:"state" type:"string" enum:"VpnState"`
+	_     struct{} `type:"structure"`
+	State *string  `locationName:"state" type:"string" enum:"VpnState"`
 }

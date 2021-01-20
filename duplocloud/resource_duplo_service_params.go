@@ -10,10 +10,11 @@ import (
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 )
+
 // SCHEMA for resource crud
 func resourceDuploServiceParams() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: resourceDuploServiceParamsRead,
+		ReadContext:   resourceDuploServiceParamsRead,
 		CreateContext: resourceDuploServiceParamsCreate,
 		UpdateContext: resourceDuploServiceParamsUpdate,
 		DeleteContext: resourceDuploServiceParamsDelete,
@@ -28,12 +29,13 @@ func resourceDuploServiceParams() *schema.Resource {
 		Schema: *duplosdk.DuploServiceParamsSchema(),
 	}
 }
+
 // SCHEMA for resource data/search
 func dataSourceDuploServiceParams() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceDuploServiceParamsRead,
 		Schema: map[string]*schema.Schema{
-			"filter": FilterSchema(),// todo: search specific to this object... may be api should support filter?
+			"filter": FilterSchema(), // todo: search specific to this object... may be api should support filter?
 			"tenant_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: false,
@@ -49,6 +51,7 @@ func dataSourceDuploServiceParams() *schema.Resource {
 		},
 	}
 }
+
 /// READ/SEARCH resources
 func dataSourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-dataSourceDuploServiceParamsRead ******** start")
@@ -60,7 +63,7 @@ func dataSourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	itemList := c.DuploServiceParamsFlatten(duplo_objs,d)
+	itemList := c.DuploServiceParamsFlatten(duplo_objs, d)
 	if err := d.Set("data", itemList); err != nil {
 		return diag.FromErr(err)
 	}
@@ -71,12 +74,13 @@ func dataSourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceDat
 
 	return diags
 }
+
 /// READ resource
 func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceDuploServiceParamsRead ******** start")
 
 	c := m.(*duplosdk.Client)
-	
+
 	var diags diag.Diagnostics
 	err := c.DuploServiceParamsGet(d, m)
 	if err != nil {
@@ -87,6 +91,7 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] duplo-resourceDuploServiceParamsRead ******** end")
 	return diags
 }
+
 /// CREATE resource
 func resourceDuploServiceParamsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceDuploServiceParamsCreate ******** start")
@@ -104,6 +109,7 @@ func resourceDuploServiceParamsCreate(ctx context.Context, d *schema.ResourceDat
 	log.Printf("[TRACE] duplo-resourceDuploServiceParamsCreate ******** end")
 	return diags
 }
+
 /// UPDATE resource
 func resourceDuploServiceParamsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceDuploServiceParamsUpdate ******** start")
@@ -122,6 +128,7 @@ func resourceDuploServiceParamsUpdate(ctx context.Context, d *schema.ResourceDat
 
 	return diags
 }
+
 /// DELETE resource
 func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceDuploServiceParamsDelete ******** start")

@@ -14,7 +14,7 @@ import (
 // SCHEMA for resource crud
 func resourceAwsHost() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: resourceAwsHostRead,
+		ReadContext:   resourceAwsHostRead,
 		CreateContext: resourceAwsHostCreate,
 		UpdateContext: resourceAwsHostUpdate,
 		DeleteContext: resourceAwsHostDelete,
@@ -29,6 +29,7 @@ func resourceAwsHost() *schema.Resource {
 		Schema: *duplosdk.AwsHostSchema(),
 	}
 }
+
 // SCHEMA for resource data/search
 func dataSourceAwsHost() *schema.Resource {
 	return &schema.Resource{
@@ -50,6 +51,7 @@ func dataSourceAwsHost() *schema.Resource {
 		},
 	}
 }
+
 /// READ/SEARCH resources
 func dataSourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-dataSourceAwsHostRead ******** start")
@@ -61,7 +63,7 @@ func dataSourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	itemList := c.AwsHostsFlatten(duplo_objs,d)
+	itemList := c.AwsHostsFlatten(duplo_objs, d)
 	if err := d.Set("data", itemList); err != nil {
 		return diag.FromErr(err)
 	}
@@ -72,6 +74,7 @@ func dataSourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	return diags
 }
+
 /// READ resource
 func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceAwsHostRead ******** start")
@@ -88,6 +91,7 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 	log.Printf("[TRACE] duplo-resourceAwsHostRead ******** end")
 	return diags
 }
+
 /// CREATE resource
 func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceAwsHostCreate ******** start")
@@ -105,6 +109,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 	log.Printf("[TRACE] duplo-resourceAwsHostCreate ******** end")
 	return diags
 }
+
 /// UPDATE resource
 func resourceAwsHostUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceAwsHostUpdate ******** start")
@@ -123,6 +128,7 @@ func resourceAwsHostUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 	return diags
 }
+
 /// DELETE resource
 func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceAwsHostDelete ******** start")
@@ -139,5 +145,3 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 
 	return diags
 }
-
-

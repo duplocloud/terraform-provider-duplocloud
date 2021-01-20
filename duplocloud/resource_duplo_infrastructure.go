@@ -14,7 +14,7 @@ import (
 // SCHEMA for resource crud
 func resourceInfrastructure() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: resourceInfrastructureRead,
+		ReadContext:   resourceInfrastructureRead,
 		CreateContext: resourceInfrastructureCreate,
 		UpdateContext: resourceInfrastructureUpdate,
 		DeleteContext: resourceInfrastructureDelete,
@@ -29,6 +29,7 @@ func resourceInfrastructure() *schema.Resource {
 		Schema: *duplosdk.InfrastructureSchema(),
 	}
 }
+
 // SCHEMA for resource data/search
 func dataSourceInfrastructure() *schema.Resource {
 	return &schema.Resource{
@@ -50,6 +51,7 @@ func dataSourceInfrastructure() *schema.Resource {
 		},
 	}
 }
+
 /// READ/SEARCH resources
 func dataSourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-dataSourceInfrastructureRead ******** start")
@@ -61,7 +63,7 @@ func dataSourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	itemList := c.InfrastructuresFlatten(duplo_objs,d)
+	itemList := c.InfrastructuresFlatten(duplo_objs, d)
 	if err := d.Set("data", itemList); err != nil {
 		return diag.FromErr(err)
 	}
@@ -72,6 +74,7 @@ func dataSourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m
 
 	return diags
 }
+
 /// READ resource
 func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceInfrastructureRead ******** start")
@@ -88,6 +91,7 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 	log.Printf("[TRACE] duplo-resourceInfrastructureRead ******** end")
 	return diags
 }
+
 /// CREATE resource
 func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceInfrastructureCreate ******** start")
@@ -105,6 +109,7 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("[TRACE] duplo-resourceInfrastructureCreate ******** end")
 	return diags
 }
+
 /// UPDATE resource
 func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceInfrastructureUpdate ******** start")
@@ -123,6 +128,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 
 	return diags
 }
+
 /// DELETE resource
 func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceInfrastructureDelete ******** start")
@@ -139,5 +145,3 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 
 	return diags
 }
-
-

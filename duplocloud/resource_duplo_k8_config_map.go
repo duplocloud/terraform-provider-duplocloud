@@ -14,7 +14,7 @@ import (
 // SCHEMA for resource crud
 func resourceK8ConfigMap() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: resourceK8ConfigMapRead,
+		ReadContext:   resourceK8ConfigMapRead,
 		CreateContext: resourceK8ConfigMapCreate,
 		UpdateContext: resourceK8ConfigMapUpdate,
 		DeleteContext: resourceK8ConfigMapDelete,
@@ -29,6 +29,7 @@ func resourceK8ConfigMap() *schema.Resource {
 		Schema: *duplosdk.K8ConfigMapSchema(),
 	}
 }
+
 // SCHEMA for resource data/search
 func dataSourceK8ConfigMap() *schema.Resource {
 	return &schema.Resource{
@@ -50,6 +51,7 @@ func dataSourceK8ConfigMap() *schema.Resource {
 		},
 	}
 }
+
 /// READ/SEARCH resources
 func dataSourceK8ConfigMapRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-dataSourceK8ConfigMapRead ******** start")
@@ -61,7 +63,7 @@ func dataSourceK8ConfigMapRead(ctx context.Context, d *schema.ResourceData, m in
 		return diag.FromErr(err)
 	}
 
-	itemList := c.K8ConfigMapsFlatten(duplo_objs,d)
+	itemList := c.K8ConfigMapsFlatten(duplo_objs, d)
 	if err := d.Set("data", itemList); err != nil {
 		return diag.FromErr(err)
 	}
@@ -72,6 +74,7 @@ func dataSourceK8ConfigMapRead(ctx context.Context, d *schema.ResourceData, m in
 
 	return diags
 }
+
 /// READ resource
 func resourceK8ConfigMapRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceK8ConfigMapRead ******** start")
@@ -88,6 +91,7 @@ func resourceK8ConfigMapRead(ctx context.Context, d *schema.ResourceData, m inte
 	log.Printf("[TRACE] duplo-resourceK8ConfigMapRead ******** end")
 	return diags
 }
+
 /// CREATE resource
 func resourceK8ConfigMapCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceK8ConfigMapCreate ******** start")
@@ -105,6 +109,7 @@ func resourceK8ConfigMapCreate(ctx context.Context, d *schema.ResourceData, m in
 	log.Printf("[TRACE] duplo-resourceK8ConfigMapCreate ******** end")
 	return diags
 }
+
 /// UPDATE resource
 func resourceK8ConfigMapUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceK8ConfigMapUpdate ******** start")
@@ -123,6 +128,7 @@ func resourceK8ConfigMapUpdate(ctx context.Context, d *schema.ResourceData, m in
 
 	return diags
 }
+
 /// DELETE resource
 func resourceK8ConfigMapDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] duplo-resourceK8ConfigMapDelete ******** start")
@@ -139,5 +145,3 @@ func resourceK8ConfigMapDelete(ctx context.Context, d *schema.ResourceData, m in
 
 	return diags
 }
-
-

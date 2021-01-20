@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 )
+
 //
 func ValidateJsonString(v interface{}, k string) (ws []string, errors []error) {
 	// IAM Policy documents need to be valid JSON, and pass legacy parsing
@@ -22,8 +23,6 @@ func ValidateJsonString(v interface{}, k string) (ws []string, errors []error) {
 	}
 	return
 }
-
-
 
 func FilterSchema() *schema.Schema {
 	return &schema.Schema{
@@ -66,10 +65,10 @@ func FiltersSchema() *schema.Schema {
 	}
 }
 
-
 func diffSuppressFuncIgnore(k, old, new string, d *schema.ResourceData) bool {
 	return true //ignore????
 }
+
 //func diffIgnoreIfAlreadySet(k, old, new string, d *schema.ResourceData) bool {
 //
 //	if new !="" || old !="" {
@@ -80,7 +79,7 @@ func diffSuppressFuncIgnore(k, old, new string, d *schema.ResourceData) bool {
 //}
 func diffIgnoreIfAlreadySet(k, old, new string, d *schema.ResourceData) bool {
 
-	if   old !="" {
+	if old != "" {
 		return true
 	}
 
