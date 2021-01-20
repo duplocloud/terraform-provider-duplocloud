@@ -3,10 +3,12 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type DuploInfrastructure struct {
