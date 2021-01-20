@@ -78,11 +78,13 @@ func AwsHostSchema() *map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
+			ForceNew: true, // relaunch instnace
 		},
 		"zone": &schema.Schema{
 			Type:     schema.TypeInt,
 			Optional: true,
 			Required: false,
+			ForceNew: true, // relaunch instance
 			Default:  0,
 		},
 		"is_minion": &schema.Schema{
@@ -95,6 +97,7 @@ func AwsHostSchema() *map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
+			ForceNew: true, // relaunch instance
 		},
 		"base64_user_data": &schema.Schema{
 			Type:             schema.TypeString,
@@ -113,24 +116,28 @@ func AwsHostSchema() *map[string]*schema.Schema {
 			Optional: true,
 			Required: false,
 			Default:  false,
+			ForceNew: true, // relaunch instance
 		},
 		"allocated_public_ip": &schema.Schema{
 			Type:     schema.TypeBool,
 			Optional: true,
 			Required: false,
 			Default:  false,
+			ForceNew: true, // relaunch instance
 		},
 		"cloud": &schema.Schema{
 			Type:     schema.TypeInt,
 			Optional: true,
 			Required: false,
 			Default:  0,
+			ForceNew: true, // relaunch instance
 		},
 		"encrypt_disk": &schema.Schema{
 			Type:     schema.TypeBool,
 			Optional: true,
 			Required: false,
 			Default:  false,
+			ForceNew: true, // relaunch instance
 		},
 		"status": &schema.Schema{
 			Type:     schema.TypeString,
@@ -187,6 +194,7 @@ func AwsHostSchema() *map[string]*schema.Schema {
 		"volumes": {
 			Type:             schema.TypeSet,
 			Optional:         true,
+			ForceNew:         true, // relaunch instance
 			DiffSuppressFunc: diffSuppressFuncIgnore,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
