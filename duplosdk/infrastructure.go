@@ -315,6 +315,11 @@ func (c *Client) InfrastructureCreateOrUpdate(d *schema.ResourceData, m interfac
 		}
 		log.Printf("[TRACE] %s 9 ******** ",api_str )
 		c.DuploInfrastructureSetIdFromCloud(&duploObject, d)
+
+        ////////DuploInfrastructureWaitForCreation////////
+        DuploInfrastructureWaitForCreation(c, c.InfrastructureByNameUrl(d))
+        ////////DuploInfrastructureWaitForCreation////////
+
 		return nil, nil
 	}
 	err_msg := fmt.Errorf("ERROR: in create %d,   body: %s", api,  body)
@@ -349,4 +354,50 @@ func (c *Client) InfrastructureDelete(d *schema.ResourceData, m interface{}, )( 
 	return nil,  nil
 }
 /////////  API Delete //////////
+
+//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// refresh state //////////////////////
+/////////////////////////////////////////////////////////////////////////
+func DuploInfrastructureRefreshFunc(c *Client, url string) resource.StateRefreshFunc {
+    return func() (interface{}, string, error) {
+        api := url
+        req2, _ := http.NewRequest("GET", url, nil)
+        body, err := c.doRequest(req2)
+        if err != nil {
+            log.Printf("[TRACE] duplo-DuploInfrastructureRefreshFunc 2 %s ********: %s",api, err.Error())
+            return  nil, "", fmt.Errorf("error reading 1 (%s): %s", url, err)
+        }
+        bodyString := string(body)
+        log.Printf("[TRACE] duplo-DuploInfrastructureRefreshFunc 3 %s ********: bodyString %s",api, bodyString)
+
+        duploObject := DuploInfrastructure{}
+
+        err = json.Unmarshal(body, &duploObject)
+        if err != nil {
+            log.Printf("[TRACE] duplo-DuploInfrastructureRefreshFunc 4 %s ********:  error:%s", api, err.Error())
+            return  nil, "", fmt.Errorf("error reading 1 (%s): %s", url, err)
+        }
+        log.Printf("[TRACE] duplo-DuploInfrastructureRefreshFunc 5 %s ******** ",api)
+        var status string
+        status = "pending"
+        if duploObject.ProvisioningStatus == "Complete" {
+            status = "ready"
+        }
+        return duploObject, status, nil
+    }
+}
+
+func DuploInfrastructureWaitForCreation(c *Client, url string) error {
+    stateConf := &resource.StateChangeConf{
+        Pending: []string{"pending"},
+        Target:  []string{"ready"},
+        Refresh: DuploInfrastructureRefreshFunc(c, url),
+        // MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+        PollInterval: 30 * time.Second,
+        Timeout: 20 * time.Minute,
+    }
+    log.Printf("[DEBUG] InfrastructureRefreshFuncWaitForCreation (%s)", url)
+    _, err := stateConf.WaitForState()
+    return err
+}
 
