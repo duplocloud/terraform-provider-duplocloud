@@ -279,7 +279,7 @@ func DuploServiceLBConfigsWaitForCreation(c *Client, url string) error {
 		PollInterval: 30 * time.Second,
 		Timeout: 20 * time.Minute,
 	}
-	log.Printf("[DEBUG] LBConfigsRefreshFuncWiatForCreation (%s)", url)
+	log.Printf("[DEBUG] LBConfigsRefreshFuncWaitForCreation (%s)", url)
 	_, err := stateConf.WaitForState()
 	return err
 }
