@@ -296,6 +296,10 @@ func (c *Client) DuploServiceGet(d *schema.ResourceData, m interface{}) error {
 	}
 	bodyString := string(body)
 	log.Printf("[TRACE] duplo-DuploServiceGet %s 3 ********: bodyString %s", api, bodyString)
+	if bodyString == "" || bodyString == "null" {
+	    d.Set("name", "")
+        return nil
+	}
 
 	duploObject := DuploService{}
 	err = json.Unmarshal(body, &duploObject)
