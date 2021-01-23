@@ -42,16 +42,19 @@ func InfrastructureSchema() *map[string]*schema.Schema {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Required: false,
+			ForceNew: true,
 			Default:  0,
 		},
 		"region": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: false,
+			ForceNew: true,
 			Required: true,
 		},
 		"azcount": &schema.Schema{
 			Type:     schema.TypeInt,
 			Optional: false,
+			ForceNew: true,
 			Required: true,
 		},
 		"enable_k8_cluster": &schema.Schema{
@@ -62,11 +65,13 @@ func InfrastructureSchema() *map[string]*schema.Schema {
 		"address_prefix": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: false,
+			ForceNew: true,
 			Required: true,
 		},
 		"subnet_cidr": &schema.Schema{
 			Type:     schema.TypeInt,
 			Optional: false,
+			ForceNew: true,
 			Required: true,
 		},
 		"status": &schema.Schema{
