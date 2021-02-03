@@ -175,7 +175,8 @@ func AwsHostSchema() *map[string]*schema.Schema {
 
 		"tags": {
 			Type:             schema.TypeList,
-			Optional:         true,
+			Computed:         true,
+			Required:         false,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
@@ -193,7 +194,7 @@ func AwsHostSchema() *map[string]*schema.Schema {
 		"minion_tags": {
 			Type:     schema.TypeList,
 			Optional: true,
-			DiffSuppressFunc: diffSuppressFuncIgnore,
+			Required:         false,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
