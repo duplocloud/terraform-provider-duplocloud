@@ -1,0 +1,71 @@
+package duplocloud
+
+import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"os"
+	"terraform-provider-duplocloud/duplosdk"
+)
+
+func Provider() *schema.Provider {
+	return &schema.Provider{
+		Schema: map[string]*schema.Schema{
+			"duplo_host": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"duplo_token": &schema.Schema{
+				Type:      schema.TypeString,
+				Optional:  true,
+				Sensitive: true,
+			},
+		},
+		ResourcesMap: map[string]*schema.Resource{
+			"duplocloud_tenant":                  resourceTenant(),
+			"duplocloud_aws_host":                resourceAwsHost(),
+			"duplocloud_duplo_service":           resourceDuploService(),
+			"duplocloud_duplo_service_lbconfigs": resourceDuploServiceLBConfigs(),
+			"duplocloud_duplo_service_params":    resourceDuploServiceParams(),
+			"duplocloud_k8_config_map":           resourceK8ConfigMap(),
+			"duplocloud_k8_secret":               resourceK8Secret(),
+			"duplocloud_infrastructure":          resourceInfrastructure(),
+		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"duplocloud_tenant":                  dataSourceTenant(),
+			"duplocloud_aws_host":                dataSourceAwsHost(),
+			"duplocloud_duplo_service":           dataSourceDuploService(),
+			"duplocloud_duplo_service_lbconfigs": dataSourceDuploServiceLBConfigs(),
+			"duplocloud_duplo_service_params":    dataSourceDuploServiceParams(),
+			"duplocloud_k8_config_map":           dataSourceK8ConfigMap(),
+			"duplocloud_k8_secret":               dataSourceK8Secret(),
+			"duplocloud_infrastructure":          dataSourceInfrastructure(),
+		},
+		ConfigureContextFunc: providerConfigure,
+	}
+}
+
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	token := d.Get("duplo_token").(string)
+	host := d.Get("duplo_host").(string)
+
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+	if token == "" {
+		token = os.Getenv("duplo_token")
+	}
+	if host == "" {
+		host = os.Getenv("duplo_host")
+	}
+
+	c, err := duplosdk.NewClient(host, token)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Duplocloud Unable to create Duplocloud client.",
+			Detail:   "Duplocloud Unable to create anonymous Duplocloud client - provide env for duplo_token, duplo_host",
+		})
+		return nil, diags
+	}
+	return c, diags
+}
