@@ -34,14 +34,14 @@ type DuploEcsTaskDef struct {
 	Family                  string                   `json:"Family"`
 	Revision                int                      `json:"Revision"`
 	Arn                     string                   `json:"TaskDefinitionArn"`
-	ContainerDefinitions    string                   `json:"ContainerDefinitions,omitempty"`
+	ContainerDefinitions    []map[string]interface{} `json:"ContainerDefinitions,omitempty"`
 	Cpu                     string                   `json:"Cpu,omitempty"`
 	TaskRoleArn             string                   `json:"TaskRoleArn"`
 	ExecutionRoleArn        string                   `json:"ExecutionRoleArn"`
 	Memory                  string                   `json:"Memory,omitempty"`
 	IpcMode                 string                   `json:"IpcMode,omitempty"`
 	PidMode                 string                   `json:"PidMode,omitempty"`
-	NetworkMode             string                   `json:"NetworkMode,omitempty"`
+	NetworkMode             *DuploValue              `json:"NetworkMode,omitempty"`
 	PlacementConstraints    *[]DuploEcsTaskDefPlacementConstraint                 `json:"PlacementConstraints,omitempty"`
     ProxyConfiguration      *DuploEcsTaskDefProxyConfig  `json:"ProxyConfiguration,omitempty"`
 	RequiresAttributes      *[]DuploName             `json:"RequiresAttributes,omitempty"`
@@ -49,7 +49,7 @@ type DuploEcsTaskDef struct {
 	Tags                    *[]DuploKeyValue         `json:"Tags,omitempty"`
 	InferenceAcclerator     *[]DuploEcsTaskDefInferenceAccelerator         `json:"InferenceAcclerator,omitempty"`
 	Status                  *DuploValue              `json:"Status,omitempty"`
-	Volumes                 string                   `json:"Volumes,omitempty"`
+	Volumes                 []map[string]interface{} `json:"Volumes,omitempty"`
 }
 
 /////------ schema ------////
@@ -234,14 +234,14 @@ func DuploEcsTaskDefinitionSchema() *map[string]*schema.Schema {
  * API CALLS to duplo
  */
 func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
-    idParts := strings.Split(id, "/")
+    idParts := strings.SplitN(id, "/", 4)
     tenantId := idParts[1]
     arn := idParts[3]
 
     // Build the request
 	url := fmt.Sprintf("%s/subscriptions/%s/FindEcsTaskDefinition", c.HostURL, tenantId)
-	log.Printf("[TRACE] duploEcsTaskDefinitionGet 1 URL : %s", url)
 	rqBody := fmt.Sprintf("{\"Arn\":\"%s\"}", arn)
+	log.Printf("[TRACE] duploEcsTaskDefinitionGet 1 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
 	if err != nil {
         log.Printf("[TRACE] duploEcsTaskDefinitionGet 2 HTTP builder : %s", err.Error())
@@ -294,8 +294,10 @@ func EcsTaskDefToState(duploObject *DuploEcsTaskDef, d *schema.ResourceData) map
     jo["memory"] = duploObject.Memory
     jo["ipc_mode"] = duploObject.IpcMode
     jo["pid_mode"] = duploObject.PidMode
-    jo["network_mode"] = duploObject.NetworkMode
     jo["requires_compatibilities"] = duploObject.RequiresCompatibilities
+    if duploObject.NetworkMode != nil {
+        jo["network_mode"] = duploObject.NetworkMode.Value
+    }
     if duploObject.Status != nil {
         jo["status"] = duploObject.Status.Value
     }
