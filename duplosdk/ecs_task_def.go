@@ -256,19 +256,20 @@ func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
 	}
     log.Printf("[TRACE] duploEcsTaskDefinitionGet 4 HTTP RESPONSE : %s", string(body))
 
-    // Parse the response into a duplo object, and return it
+    // Parse the response into a duplo object
 	duploObject := DuploEcsTaskDef{}
 	err = json.Unmarshal(body, &duploObject)
 	if err != nil {
         log.Printf("[TRACE] duploEcsTaskDefinitionGet 5 JSON PARSE : %s", string(body))
 		return nil, err
 	}
-	if duploObject.TenantId != "" {
-		return &duploObject, nil
+	if duploObject.Arn == "" {
+        return nil, fmt.Errorf("ECS task definition %s not found in tenant %s", arn, tenantId)
 	}
 
-    // Task definition was not found.
-	return nil, fmt.Errorf("ECS task definition %s not found in tenant %s", arn, tenantId)
+    // Fill in the tenant ID and return the object
+    duploObject.TenantId = tenantId
+    return &duploObject, nil
 }
 
 /*************************************************
@@ -325,6 +326,7 @@ func ecsPlacementConstraintsToState(pcs *[]DuploEcsTaskDefPlacementConstraint) [
 	if len(*pcs) == 0 {
 		return nil
 	}
+
 	results := make([]map[string]interface{}, 0)
 	for _, pc := range *pcs {
 		c := make(map[string]interface{})
@@ -356,6 +358,10 @@ func ecsProxyConfigToState(pc *DuploEcsTaskDefProxyConfig) []map[string]interfac
 }
 
 func ecsInferenceAcceleratorsToState(ias *[]DuploEcsTaskDefInferenceAccelerator) []map[string]interface{} {
+	if ias == nil {
+		return nil
+	}
+
 	result := make([]map[string]interface{}, 0, len(*ias))
 	for _, iAcc := range *ias {
 		l := map[string]interface{}{
