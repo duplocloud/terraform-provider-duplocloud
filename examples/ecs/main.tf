@@ -21,6 +21,7 @@ resource "duplocloud_ecs_task_definition" "test" {
     ignore_changes = [task_role_arn, execution_role_arn]
   }
   container_definitions = jsonencode([{
+    Name = "default"
     Image = "nginx:latest"
   }])
   tenant_id = var.tenant_id

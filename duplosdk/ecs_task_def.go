@@ -248,7 +248,7 @@ func (c *Client) EcsTaskDefinitionCreate(tenantId string, duploObject *DuploEcsT
         log.Printf("[TRACE] EcsTaskDefinitionCreate 1 JSON gen : %s", err.Error())
 		return "", err
     }
-	url := fmt.Sprintf("%s/subscriptions/%s/UpdateTaskDefinition", c.HostURL, tenantId)
+	url := fmt.Sprintf("%s/subscriptions/%s/UpdateEcsTaskDefinition", c.HostURL, tenantId)
 	log.Printf("[TRACE] EcsTaskDefinitionCreate 2 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
 	if err != nil {
@@ -266,20 +266,20 @@ func (c *Client) EcsTaskDefinitionCreate(tenantId string, duploObject *DuploEcsT
     log.Printf("[TRACE] EcsTaskDefinitionCreate 4 HTTP RESPONSE : %s", bodyString)
 
     // Handle the response
-	var arn *string = nil
+	arn := ""
 	if bodyString == "" {
         log.Printf("[TRACE] EcsTaskDefinitionCreate 5 NO RESULT : %s", bodyString)
 		return "", err
 	}
-	err = json.Unmarshal(body, arn)
+	err = json.Unmarshal(body, &arn)
 	if err != nil {
         log.Printf("[TRACE] EcsTaskDefinitionCreate 6 JSON parse : %s", err.Error())
 		return "", err
 	}
-    if arn == nil {
+    if arn == "" {
         return "", errors.New("API call returned null")
     }
-    return *arn, nil
+    return arn, nil
 }
 
 func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
@@ -333,7 +333,9 @@ func EcsTaskDefFromState(d *schema.ResourceData) (*DuploEcsTaskDef, error) {
     duploObject.Memory = d.Get("memory").(string)
     duploObject.IpcMode = d.Get("ipc_mode").(string)
     duploObject.PidMode = d.Get("pid_mode").(string)
+    duploObject.NetworkMode = &DuploValue{ Value: d.Get("network_mode").(string) }
 
+    // Next, convert sets into lists
     rcs := d.Get("requires_compatibilities").(*schema.Set)
     dorcs := make([]string, 0, rcs.Len())
     for _, rc := range rcs.List() {

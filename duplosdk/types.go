@@ -35,6 +35,7 @@ func duploKeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKe
 	kvs := d.Get(fieldName).([]interface{})
 	if len(kvs) > 0 {
         log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
+        ary = make([]DuploKeyValue, 0, len(kvs))
 		for _, raw := range kvs {
 			kv := raw.(map[string]interface{})
 			ary = append(ary, DuploKeyValue{
