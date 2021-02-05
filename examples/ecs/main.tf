@@ -20,6 +20,9 @@ resource "duplocloud_ecs_task_definition" "test" {
   lifecycle {
     ignore_changes = [task_role_arn, execution_role_arn]
   }
+  container_definitions = jsonencode([{
+    Image = "nginx:latest"
+  }])
   tenant_id = var.tenant_id
   family = "duploservices-default-joedemo"
   cpu = "256"

@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
  	"encoding/json"
+ 	"errors"
  	"fmt"
 	"log"
  	"net/http"
@@ -30,14 +31,16 @@ type DuploEcsTaskDefInferenceAccelerator struct {
 }
 
 type DuploEcsTaskDef struct {
-    TenantId                string                   `json:"TenantId",omitempty`
+    // NOTE: The TenantId field does not come from the backend - we synthesize it
+    TenantId                string                   `json:"-",omitempty`
+
 	Family                  string                   `json:"Family"`
-	Revision                int                      `json:"Revision"`
-	Arn                     string                   `json:"TaskDefinitionArn"`
+	Revision                int                      `json:"Revision,omitempty"`
+	Arn                     string                   `json:"TaskDefinitionArn,omitempty"`
 	ContainerDefinitions    []map[string]interface{} `json:"ContainerDefinitions,omitempty"`
 	Cpu                     string                   `json:"Cpu,omitempty"`
-	TaskRoleArn             string                   `json:"TaskRoleArn"`
-	ExecutionRoleArn        string                   `json:"ExecutionRoleArn"`
+	TaskRoleArn             string                   `json:"TaskRoleArn,omitempty"`
+	ExecutionRoleArn        string                   `json:"ExecutionRoleArn,omitempty"`
 	Memory                  string                   `json:"Memory,omitempty"`
 	IpcMode                 string                   `json:"IpcMode,omitempty"`
 	PidMode                 string                   `json:"PidMode,omitempty"`
@@ -47,7 +50,7 @@ type DuploEcsTaskDef struct {
 	RequiresAttributes      *[]DuploName             `json:"RequiresAttributes,omitempty"`
 	RequiresCompatibilities []string                 `json:"RequiresCompatibilities,omitempty"`
 	Tags                    *[]DuploKeyValue         `json:"Tags,omitempty"`
-	InferenceAcclerator     *[]DuploEcsTaskDefInferenceAccelerator         `json:"InferenceAcclerator,omitempty"`
+	InferenceAccelerators   *[]DuploEcsTaskDefInferenceAccelerator         `json:"InferenceAccelerators,omitempty"`
 	Status                  *DuploValue              `json:"Status,omitempty"`
 	Volumes                 []map[string]interface{} `json:"Volumes,omitempty"`
 }
@@ -55,7 +58,7 @@ type DuploEcsTaskDef struct {
 /////------ schema ------////
 func DuploEcsTaskDefinitionSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
-		"tenant_id": &schema.Schema{
+		"tenant_id": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
@@ -80,8 +83,14 @@ func DuploEcsTaskDefinitionSchema() *map[string]*schema.Schema {
         },
         "container_definitions": {
             Type:     schema.TypeString,
+            Required: true,
+            ForceNew: true,
+        },
+        "volumes": {
+            Type:     schema.TypeString,
             Optional: true,
             ForceNew: true,
+            Default: "[]",
         },
         "cpu": {
             Type:     schema.TypeString,
@@ -89,14 +98,12 @@ func DuploEcsTaskDefinitionSchema() *map[string]*schema.Schema {
             ForceNew: true,
         },
         "task_role_arn": {
-            Type:         schema.TypeString,
-            Optional:     true,
-            ForceNew:     true,
+            Type:     schema.TypeString,
+            Computed: true,
         },
         "execution_role_arn": {
-            Type:         schema.TypeString,
-            Optional:     true,
-            ForceNew:     true,
+            Type:     schema.TypeString,
+            Computed: true,
         },
         "memory": {
             Type:     schema.TypeString,
@@ -106,9 +113,9 @@ func DuploEcsTaskDefinitionSchema() *map[string]*schema.Schema {
         "network_mode": {
             Type:     schema.TypeString,
             Optional: true,
-            Computed: true,
             ForceNew: true,
             ValidateFunc: validation.StringInSlice([]string{"bridge","host","awsvpc","none"}, false),
+            Default: "awsvpc",
         },
         "placement_constraints": {
             Type:     schema.TypeSet,
@@ -233,6 +240,48 @@ func DuploEcsTaskDefinitionSchema() *map[string]*schema.Schema {
 /*************************************************
  * API CALLS to duplo
  */
+func (c *Client) EcsTaskDefinitionCreate(tenantId string, duploObject *DuploEcsTaskDef) (string, error) {
+
+    // Build the request
+    rqBody, err := json.Marshal(&duploObject)
+    if err != nil {
+        log.Printf("[TRACE] EcsTaskDefinitionCreate 1 JSON gen : %s", err.Error())
+		return "", err
+    }
+	url := fmt.Sprintf("%s/subscriptions/%s/UpdateTaskDefinition", c.HostURL, tenantId)
+	log.Printf("[TRACE] EcsTaskDefinitionCreate 2 : %s <= %s", url, rqBody)
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	if err != nil {
+        log.Printf("[TRACE] EcsTaskDefinitionCreate 3 HTTP builder : %s", err.Error())
+		return "", err
+	}
+
+    // Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+        log.Printf("[TRACE] EcsTaskDefinitionCreate 4 HTTP POST : %s", err.Error())
+		return "", err
+	}
+	bodyString := string(body)
+    log.Printf("[TRACE] EcsTaskDefinitionCreate 4 HTTP RESPONSE : %s", bodyString)
+
+    // Handle the response
+	var arn *string = nil
+	if bodyString == "" {
+        log.Printf("[TRACE] EcsTaskDefinitionCreate 5 NO RESULT : %s", bodyString)
+		return "", err
+	}
+	err = json.Unmarshal(body, arn)
+	if err != nil {
+        log.Printf("[TRACE] EcsTaskDefinitionCreate 6 JSON parse : %s", err.Error())
+		return "", err
+	}
+    if arn == nil {
+        return "", errors.New("API call returned null")
+    }
+    return *arn, nil
+}
+
 func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
     idParts := strings.SplitN(id, "/", 4)
     tenantId := idParts[1]
@@ -241,26 +290,26 @@ func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
     // Build the request
 	url := fmt.Sprintf("%s/subscriptions/%s/FindEcsTaskDefinition", c.HostURL, tenantId)
 	rqBody := fmt.Sprintf("{\"Arn\":\"%s\"}", arn)
-	log.Printf("[TRACE] duploEcsTaskDefinitionGet 1 : %s <= %s", url, rqBody)
+	log.Printf("[TRACE] EcsTaskDefinitionGet 1 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
 	if err != nil {
-        log.Printf("[TRACE] duploEcsTaskDefinitionGet 2 HTTP builder : %s", err.Error())
+        log.Printf("[TRACE] EcsTaskDefinitionGet 2 HTTP builder : %s", err.Error())
 		return nil, err
 	}
 
     // Call the API and get the response
 	body, err := c.doRequest(req)
 	if err != nil {
-        log.Printf("[TRACE] duploEcsTaskDefinitionGet 3 HTTP POST : %s", err.Error())
+        log.Printf("[TRACE] EcsTaskDefinitionGet 3 HTTP POST : %s", err.Error())
 		return nil, err
 	}
-    log.Printf("[TRACE] duploEcsTaskDefinitionGet 4 HTTP RESPONSE : %s", string(body))
+    log.Printf("[TRACE] EcsTaskDefinitionGet 4 HTTP RESPONSE : %s", string(body))
 
     // Parse the response into a duplo object
 	duploObject := DuploEcsTaskDef{}
 	err = json.Unmarshal(body, &duploObject)
 	if err != nil {
-        log.Printf("[TRACE] duploEcsTaskDefinitionGet 5 JSON PARSE : %s", string(body))
+        log.Printf("[TRACE] EcsTaskDefinitionGet 5 JSON PARSE : %s", string(body))
 		return nil, err
 	}
 	if duploObject.Arn == "" {
@@ -275,6 +324,47 @@ func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
 /*************************************************
  * DATA CONVERSIONS to/from duplo/terraform
  */
+func EcsTaskDefFromState(d *schema.ResourceData) (*DuploEcsTaskDef, error) {
+    duploObject := new(DuploEcsTaskDef)
+
+    // First, convert things into simple scalars
+    duploObject.Family = d.Get("family").(string)
+    duploObject.Cpu = d.Get("cpu").(string)
+    duploObject.Memory = d.Get("memory").(string)
+    duploObject.IpcMode = d.Get("ipc_mode").(string)
+    duploObject.PidMode = d.Get("pid_mode").(string)
+
+    rcs := d.Get("requires_compatibilities").(*schema.Set)
+    dorcs := make([]string, 0, rcs.Len())
+    for _, rc := range rcs.List() {
+        dorcs = append(dorcs, rc.(string))
+    }
+    duploObject.RequiresCompatibilities = dorcs
+
+    // Next, convert things from embedded JSON
+    condefs := d.Get("container_definitions").(string)
+    err := json.Unmarshal([]byte(condefs), &duploObject.ContainerDefinitions)
+	if err != nil {
+        log.Printf("[TRACE] EcsTaskDefFromState 1 JSON PARSE container_definitions: %s", condefs)
+		return nil, err
+	}
+    vols := d.Get("volumes").(string)
+    err2 := json.Unmarshal([]byte(vols), &duploObject.Volumes)
+	if err2 != nil {
+        log.Printf("[TRACE] EcsTaskDefFromState 2 JSON PARSE container_definitions: %s", condefs)
+		return nil, err
+	}
+
+    // Next, convert things into structured data.
+    duploObject.Tags = duploKeyValueFromState("tags", d)
+    duploObject.PlacementConstraints = ecsPlacementConstraintsFromState(d)
+    duploObject.ProxyConfiguration = ecsProxyConfigFromState(d)
+    duploObject.InferenceAccelerators = ecsInferenceAcceleratorsFromState(d)
+    duploObject.RequiresAttributes = ecsRequiresAttributesFromState(d)
+
+    return duploObject, nil
+}
+
 func EcsTaskDefToState(duploObject *DuploEcsTaskDef, d *schema.ResourceData) map[string]interface{} {
 	if duploObject == nil {
 	    return nil
@@ -305,16 +395,16 @@ func EcsTaskDefToState(duploObject *DuploEcsTaskDef, d *schema.ResourceData) map
 
     // Next, convert things into embedded JSON
     condefs, _ := json.Marshal(duploObject.ContainerDefinitions)
-    jo["container_definitions"] = condefs
-    volumes,_ := json.Marshal(duploObject.Volumes)
-    jo["volumes"] = volumes
+    jo["container_definitions"] = string(condefs)
+    volumes, _ := json.Marshal(duploObject.Volumes)
+    jo["volumes"] = string(volumes)
 
     // Next, convert things into structured data.
     jo["placement_constraints"] = ecsPlacementConstraintsToState(duploObject.PlacementConstraints)
     jo["proxy_configuration"] = ecsProxyConfigToState(duploObject.ProxyConfiguration)
-    jo["inference_accelerator"] = ecsInferenceAcceleratorsToState(duploObject.InferenceAcclerator)
-    jo["tags"] = duploKeyValueToState("tags", duploObject.Tags)
+    jo["inference_accelerator"] = ecsInferenceAcceleratorsToState(duploObject.InferenceAccelerators)
     jo["requires_attributes"] = ecsRequiresAttributesToState(duploObject.RequiresAttributes)
+    jo["tags"] = duploKeyValueToState("tags", duploObject.Tags)
 
     jsonData2, _ := json.Marshal(jo)
     log.Printf("[TRACE] duplo-EcsTaskDefToState ******** 2: OUTPUT => %s ", jsonData2)
@@ -337,6 +427,26 @@ func ecsPlacementConstraintsToState(pcs *[]DuploEcsTaskDefPlacementConstraint) [
 	return results
 }
 
+func ecsPlacementConstraintsFromState(d *schema.ResourceData) *[]DuploEcsTaskDefPlacementConstraint {
+	spcs := d.Get("placement_constraints").(*schema.Set)
+	if spcs == nil || spcs.Len() == 0 {
+	    return nil
+	}
+	pcs := spcs.List()
+
+    log.Printf("[TRACE] ecsPlacementConstraintsFromState ********: have data")
+
+    duplo := make([]DuploEcsTaskDefPlacementConstraint, 0, len(pcs))
+    for _, pc := range pcs {
+        duplo = append(duplo, DuploEcsTaskDefPlacementConstraint{
+            Type: pc.(map[string]string)["type"],
+            Expression: pc.(map[string]string)["expression"],
+        })
+    }
+
+    return &duplo
+}
+
 func ecsProxyConfigToState(pc *DuploEcsTaskDefProxyConfig) []map[string]interface{} {
 	if pc == nil {
 		return nil
@@ -357,6 +467,28 @@ func ecsProxyConfigToState(pc *DuploEcsTaskDefProxyConfig) []map[string]interfac
 	return []map[string]interface{}{ config }
 }
 
+func ecsProxyConfigFromState(d *schema.ResourceData) *DuploEcsTaskDefProxyConfig {
+	lpc := d.Get("proxy_configuration").([]interface{})
+	if lpc == nil || len(lpc) == 0 {
+	    return nil
+	}
+	pc := lpc[0].(map[string]interface{})
+
+    log.Printf("[TRACE] ecsProxyConfigFromState ********: have data")
+
+    props := pc["properties"].(map[string]interface{})
+    nvs := make([]DuploNameValue, 0, len(props))
+    for prop := range props {
+        nvs = append(nvs, DuploNameValue{ Name: prop, Value: props[prop].(string), })
+    }
+
+    return &DuploEcsTaskDefProxyConfig{
+        ContainerName: pc["container_name"].(string),
+        Properties: &nvs,
+        Type: pc["type"].(string),
+    }
+}
+
 func ecsInferenceAcceleratorsToState(ias *[]DuploEcsTaskDefInferenceAccelerator) []map[string]interface{} {
 	if ias == nil {
 		return nil
@@ -374,6 +506,27 @@ func ecsInferenceAcceleratorsToState(ias *[]DuploEcsTaskDefInferenceAccelerator)
 	return result
 }
 
+func ecsInferenceAcceleratorsFromState(d *schema.ResourceData) *[]DuploEcsTaskDefInferenceAccelerator {
+    var ary []DuploEcsTaskDefInferenceAccelerator
+
+	sias := d.Get("inference_accelerator").(*schema.Set)
+	if sias == nil || sias.Len() == 0 {
+	    return nil
+	}
+	ias := sias.List()
+	if len(ias) > 0 {
+        log.Printf("[TRACE] ecsInferenceAcceleratorsFromState ********: have data")
+		for _, ia := range ias {
+			ary = append(ary, DuploEcsTaskDefInferenceAccelerator{
+			    DeviceName: ia.(map[string]string)["device_name"],
+			    DeviceType: ia.(map[string]string)["device_type"],
+			})
+		}
+	}
+
+	return &ary
+}
+
 func ecsRequiresAttributesToState(nms *[]DuploName) []string {
 	if len(*nms) == 0 {
 		return nil
@@ -383,4 +536,22 @@ func ecsRequiresAttributesToState(nms *[]DuploName) []string {
 		results = append(results, nm.Name)
 	}
 	return results
+}
+
+func ecsRequiresAttributesFromState(d *schema.ResourceData) *[]DuploName {
+    var ary []DuploName
+
+	sras := d.Get("requires_attributes").(*schema.Set)
+	if sras == nil || sras.Len() == 0 {
+	    return nil
+	}
+	ras := sras.List()
+	if len(ras) > 0 {
+        log.Printf("[TRACE] ecsRequiresAttributesFromState ********: have data")
+		for _, ra := range ras {
+			ary = append(ary, DuploName{Name: ra.(string)})
+		}
+	}
+
+	return &ary
 }

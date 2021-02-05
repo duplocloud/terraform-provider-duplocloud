@@ -34,7 +34,7 @@ func duploKeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKe
 
 	kvs := d.Get(fieldName).([]interface{})
 	if len(kvs) > 0 {
-        log.Printf("[TRACE] DuploKeyValueFromState ********: found %s", fieldName)
+        log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
 		for _, raw := range kvs {
 			kv := raw.(map[string]interface{})
 			ary = append(ary, DuploKeyValue{
@@ -50,7 +50,7 @@ func duploKeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKe
 func duploKeyValueToState(fieldName string, duploObjects *[]DuploKeyValue) []interface{} {
 	if duploObjects != nil {
         input, _ := json.Marshal(&duploObjects)
-        log.Printf("[TRACE] DuploKeyValueFromState[%s] ******** INPUT <= %s", fieldName, input)
+        log.Printf("[TRACE] duploKeyValueToState[%s] ******** INPUT <= %s", fieldName, input)
 
 		output := make([]interface{}, len(*duploObjects), len(*duploObjects))
 		for i, duploObject := range *duploObjects {
@@ -60,10 +60,10 @@ func duploKeyValueToState(fieldName string, duploObjects *[]DuploKeyValue) []int
 			output[i] = jo
 		}
 		dump, _ := json.Marshal(output)
-		log.Printf("[TRACE] DuploKeyValueFromState[%s] ******** OUTPUT => %s", fieldName, dump)
+		log.Printf("[TRACE] duploKeyValueToState[%s] ******** OUTPUT => %s", fieldName, dump)
 		return output
 	}
 
-    log.Printf("[TRACE] DuploKeyValueFromState[%s] ******** EMPTY INPUT", fieldName)
+    log.Printf("[TRACE] duploKeyValueToState[%s] ******** EMPTY INPUT", fieldName)
 	return make([]interface{}, 0)
 }
