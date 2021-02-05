@@ -78,18 +78,9 @@ func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.Resourc
 
 /// DELETE resource
 func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-// 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** start")
-//
-// 	c := m.(*duplosdk.Client)
-//
-// 	var diags diag.Diagnostics
-// 	_, err := c.EcsTaskDefinitionDelete(d, m)
-// 	if err != nil {
-// 		return diag.FromErr(err)
-// 	}
-// 	//todo: wait for it completely deleted
-// 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** end")
-//
-// 	return diags
-    return diag.Errorf("UNIMPLEMENTED");
+    log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** start")
+
+    // FIXME: NO-OP
+
+    log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** end")
 }
