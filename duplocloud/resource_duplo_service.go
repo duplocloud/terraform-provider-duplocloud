@@ -85,13 +85,13 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 	var diags diag.Diagnostics
 	err := c.DuploServiceGet(d, m)
 	if d.Get("name").(string) == "" {
-	    return diag.Diagnostics{
-            {
-                Severity: diag.Warning,
-                Summary:  "Service does not exist",
-                Detail:   fmt.Sprintf("Service: %v does not exist. It may have been deleted outside of Terraform", d.Id()),
-            },
-	    }
+		return diag.Diagnostics{
+			{
+				Severity: diag.Warning,
+				Summary:  "Service does not exist",
+				Detail:   fmt.Sprintf("Service: %v does not exist. It may have been deleted outside of Terraform", d.Id()),
+			},
+		}
 	}
 	if err != nil {
 		return diag.FromErr(err)
