@@ -65,7 +65,9 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 		},
 		"old_task_definition_buffer_size": {
 			Type:     schema.TypeInt,
-			Computed: true,
+			Optional: true,
+			Required: false,
+			Default:  10,
 		},
 		"is_target_group_only": {
 			Type:     schema.TypeBool,
