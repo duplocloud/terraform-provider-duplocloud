@@ -8,8 +8,8 @@ terraform {
 }
 
 provider "duplocloud" {
-  //duplo_host = "https://xxx.duplocloud.net"
-  //duplo_token = "xxxx"
+  duplo_host = "https://xxx.duplocloud.net"
+  duplo_token = "xxxx"
 }
 
 variable "tenant_id" {
@@ -22,6 +22,7 @@ resource "duplocloud_ecs_task_definition" "test" {
   container_definitions = jsonencode([{
     Name = "default"
     Image = "nginx:latest"
+    Essential = true
   }])
   cpu = "256"
   memory = "1024"
@@ -32,7 +33,7 @@ resource "duplocloud_ecs_service" "test" {
   tenant_id = var.tenant_id
   name = "joedemo"
   task_definition = duplocloud_ecs_task_definition.test.arn
-  replicas = 1
+  replicas = 2
   load_balancer {
     lb_type = 1
     port = 80
