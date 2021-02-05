@@ -65,10 +65,13 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 		},
 		"old_task_definition_buffer_size": {
 			Type:     schema.TypeInt,
-			Computed: true,
+			Optional: true,
+			Required: false,
+			Default:  10,
 		},
 		"is_target_group_only": {
 			Type:     schema.TypeBool,
+			ForceNew: true,
 			Optional: true,
 			Required: false,
 			Default:  false,
@@ -81,6 +84,7 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 		"load_balancer": {
 			Type:     schema.TypeSet,
 			Optional: true,
+			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"replication_controller_name": {
