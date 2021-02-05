@@ -18,3 +18,7 @@ test/
 infra/
 tested/
 testlb/
+terraform-provider-*
+.envrc
+backend.tf
+.terraform.lock.hcl  # <== normally do NOT ignore this - but we are testing the provider
