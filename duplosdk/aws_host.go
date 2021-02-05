@@ -31,9 +31,9 @@ type DuploAwsHost struct {
 	PrivateIpAddress  string `json:"PrivateIpAddress,omitempty"`
 	//json objects
 	Volumes    *[]DuploAwsHostVolume `json:"Volumes,omitempty"`
-	MetaData   *[]DuploAwsHostKv    `json:"MetaData,omitempty"`
-	Tags       *[]DuploAwsHostKv    `json:"Tags,omitempty"`
-	MinionTags *[]DuploAwsHostKv `json:"MinionTags,omitempty"`
+	MetaData   *[]DuploAwsHostKv     `json:"MetaData,omitempty"`
+	Tags       *[]DuploAwsHostKv     `json:"Tags,omitempty"`
+	MinionTags *[]DuploAwsHostKv     `json:"MinionTags,omitempty"`
 }
 
 type DuploAwsHostVolume struct {
@@ -157,8 +157,8 @@ func AwsHostSchema() *map[string]*schema.Schema {
 		},
 
 		"metadata": {
-			Type:             schema.TypeList,
-			Optional:         true,
+			Type:     schema.TypeList,
+			Optional: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
@@ -174,9 +174,9 @@ func AwsHostSchema() *map[string]*schema.Schema {
 		},
 
 		"tags": {
-			Type:             schema.TypeList,
-			Computed:         true,
-			Required:         false,
+			Type:     schema.TypeList,
+			Computed: true,
+			Required: false,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
@@ -194,7 +194,7 @@ func AwsHostSchema() *map[string]*schema.Schema {
 		"minion_tags": {
 			Type:     schema.TypeList,
 			Optional: true,
-			Required:         false,
+			Required: false,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
@@ -282,11 +282,11 @@ func (c *Client) AwsHostToState(duploObject *DuploAwsHost, d *schema.ResourceDat
 }
 
 func (c *Client) AwsHostKvFromState(fieldName string, d *schema.ResourceData) *[]DuploAwsHostKv {
-    var ary []DuploAwsHostKv
+	var ary []DuploAwsHostKv
 
 	kvs := d.Get(fieldName).([]interface{})
 	if len(kvs) > 0 {
-        log.Printf("[TRACE] AwsHostKvFromState ********: found %s", fieldName)
+		log.Printf("[TRACE] AwsHostKvFromState ********: found %s", fieldName)
 		for _, raw := range kvs {
 			kv := raw.(map[string]interface{})
 			ary = append(ary, DuploAwsHostKv{
@@ -296,7 +296,7 @@ func (c *Client) AwsHostKvFromState(fieldName string, d *schema.ResourceData) *[
 		}
 	}
 
-    return &ary
+	return &ary
 }
 
 func (c *Client) AwsHostKvToState(fieldName string, duploObjects *[]DuploAwsHostKv, d *schema.ResourceData) []interface{} {
