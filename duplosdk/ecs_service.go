@@ -69,6 +69,7 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 		},
 		"is_target_group_only": {
 			Type:     schema.TypeBool,
+			ForceNew: true,
 			Optional: true,
 			Required: false,
 			Default:  false,
@@ -81,6 +82,7 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 		"load_balancer": {
 			Type:     schema.TypeSet,
 			Optional: true,
+			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"replication_controller_name": {
