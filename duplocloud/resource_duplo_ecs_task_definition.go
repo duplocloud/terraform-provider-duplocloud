@@ -1,13 +1,12 @@
 package duplocloud
 
 import (
-
-	"terraform-provider-duplocloud/duplosdk"
+	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"context"
 	"log"
-	"fmt"
+	"terraform-provider-duplocloud/duplosdk"
 	"time"
 )
 
@@ -34,19 +33,19 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead ******** start")
 
-    // Get the object from Duplo
+	// Get the object from Duplo
 	c := m.(*duplosdk.Client)
 	duplo, err := c.EcsTaskDefinitionGet(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-    // Convert the object into Terraform resource data
+	// Convert the object into Terraform resource data
 	jo := duplosdk.EcsTaskDefToState(duplo, d)
-    for key, _ := range jo {
-        d.Set(key, jo[key])
-    }
-    d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", duplo.TenantId, duplo.Arn))
+	for key, _ := range jo {
+		d.Set(key, jo[key])
+	}
+	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", duplo.TenantId, duplo.Arn))
 
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead ******** end")
 	return nil
@@ -54,32 +53,32 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 
 /// CREATE resource
 func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
- 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionCreate ******** start")
+	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionCreate ******** start")
 
- 	// Convert the Terraform resource data into a Duplo object
- 	duploObject, err := duplosdk.EcsTaskDefFromState(d)
+	// Convert the Terraform resource data into a Duplo object
+	duploObject, err := duplosdk.EcsTaskDefFromState(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
- 	// Post the object to Duplo
- 	c := m.(*duplosdk.Client)
- 	tenantId := d.Get("tenant_id").(string)
- 	arn, err := c.EcsTaskDefinitionCreate(tenantId, duploObject)
- 	if err != nil {
- 		return diag.FromErr(err)
- 	}
-    d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", tenantId, arn))
+	// Post the object to Duplo
+	c := m.(*duplosdk.Client)
+	tenantId := d.Get("tenant_id").(string)
+	arn, err := c.EcsTaskDefinitionCreate(tenantId, duploObject)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", tenantId, arn))
 
-    diags := resourceDuploEcsTaskDefinitionRead(ctx, d, m)
- 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionCreate ******** end")
- 	return diags
+	diags := resourceDuploEcsTaskDefinitionRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionCreate ******** end")
+	return diags
 }
 
 /// DELETE resource
 func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-    log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** start")
-    // FIXME: NO-OP
-    log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** end")
-    return nil
+	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** start")
+	// FIXME: NO-OP
+	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** end")
+	return nil
 }

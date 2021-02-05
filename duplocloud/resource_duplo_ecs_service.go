@@ -1,13 +1,12 @@
 package duplocloud
 
 import (
-
-	"terraform-provider-duplocloud/duplosdk"
+	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"context"
 	"log"
-	"fmt"
+	"terraform-provider-duplocloud/duplosdk"
 	"time"
 )
 
@@ -34,19 +33,19 @@ func resourceDuploEcsService() *schema.Resource {
 func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** start")
 
-    // Get the object from Duplo
+	// Get the object from Duplo
 	c := m.(*duplosdk.Client)
 	duplo, err := c.EcsServiceGet(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-    // Convert the object into Terraform resource data
+	// Convert the object into Terraform resource data
 	jo := duplosdk.EcsServiceToState(duplo, d)
-    for key, _ := range jo {
-        d.Set(key, jo[key])
-    }
-    d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", duplo.TenantId, duplo.Name))
+	for key, _ := range jo {
+		d.Set(key, jo[key])
+	}
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", duplo.TenantId, duplo.Name))
 
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** end")
 	return nil
@@ -54,62 +53,62 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 
 /// CREATE resource
 func resourceDuploEcsServiceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
- 	log.Printf("[TRACE] resourceDuploEcsServiceCreate ******** start")
+	log.Printf("[TRACE] resourceDuploEcsServiceCreate ******** start")
 
- 	// Convert the Terraform resource data into a Duplo object
- 	duploObject, err := duplosdk.EcsServiceFromState(d)
+	// Convert the Terraform resource data into a Duplo object
+	duploObject, err := duplosdk.EcsServiceFromState(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
- 	// Post the object to Duplo
- 	c := m.(*duplosdk.Client)
- 	tenantId := d.Get("tenant_id").(string)
- 	rpObject, err := c.EcsServiceCreate(tenantId, duploObject)
- 	if err != nil {
- 		return diag.FromErr(err)
- 	}
-    d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantId, rpObject.Name))
+	// Post the object to Duplo
+	c := m.(*duplosdk.Client)
+	tenantId := d.Get("tenant_id").(string)
+	rpObject, err := c.EcsServiceCreate(tenantId, duploObject)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantId, rpObject.Name))
 
-    diags := resourceDuploEcsServiceRead(ctx, d, m)
- 	log.Printf("[TRACE] resourceDuploEcsServiceCreate ******** end")
- 	return diags
+	diags := resourceDuploEcsServiceRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploEcsServiceCreate ******** end")
+	return diags
 }
 
 /// UPDATE resource
 func resourceDuploEcsServiceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
- 	log.Printf("[TRACE] resourceDuploEcsServiceUpdate ******** start")
+	log.Printf("[TRACE] resourceDuploEcsServiceUpdate ******** start")
 
- 	// Convert the Terraform resource data into a Duplo object
- 	duploObject, err := duplosdk.EcsServiceFromState(d)
+	// Convert the Terraform resource data into a Duplo object
+	duploObject, err := duplosdk.EcsServiceFromState(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
- 	// Put the object to Duplo
- 	c := m.(*duplosdk.Client)
- 	tenantId := d.Get("tenant_id").(string)
- 	_, err = c.EcsServiceUpdate(tenantId, duploObject)
- 	if err != nil {
- 		return diag.FromErr(err)
- 	}
+	// Put the object to Duplo
+	c := m.(*duplosdk.Client)
+	tenantId := d.Get("tenant_id").(string)
+	_, err = c.EcsServiceUpdate(tenantId, duploObject)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-    diags := resourceDuploEcsServiceRead(ctx, d, m)
- 	log.Printf("[TRACE] resourceDuploEcsServiceUpdate ******** end")
- 	return diags
+	diags := resourceDuploEcsServiceRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploEcsServiceUpdate ******** end")
+	return diags
 }
 
 /// DELETE resource
 func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-    log.Printf("[TRACE] resourceDuploEcsServiceDelete ******** start")
+	log.Printf("[TRACE] resourceDuploEcsServiceDelete ******** start")
 
-    // Delete the object from Duplo
+	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
 	_, err := c.EcsServiceDelete(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-    log.Printf("[TRACE] resourceDuploEcsServiceDelete ******** end")
-    return nil
+	log.Printf("[TRACE] resourceDuploEcsServiceDelete ******** end")
+	return nil
 }
