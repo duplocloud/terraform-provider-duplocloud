@@ -17,16 +17,26 @@ variable "tenant_id" {
 }
 
 resource "duplocloud_ecs_task_definition" "test" {
-  lifecycle {
-    ignore_changes = [task_role_arn, execution_role_arn]
-  }
+  tenant_id = var.tenant_id
+  family = "duploservices-default-joedemo"
   container_definitions = jsonencode([{
     Name = "default"
     Image = "nginx:latest"
   }])
-  tenant_id = var.tenant_id
-  family = "duploservices-default-joedemo"
   cpu = "256"
   memory = "1024"
   requires_compatibilities = [ "FARGATE" ]
+}
+
+resource "duplocloud_ecs_service" "test" {
+  tenant_id = var.tenant_id
+  name = "joedemo"
+  task_definition = duplocloud_ecs_task_definition.test.arn
+  replicas = 1
+  load_balancer {
+    lb_type = 1
+    port = 80
+    external_port = 80
+    protocol = "HTTP"
+  }
 }

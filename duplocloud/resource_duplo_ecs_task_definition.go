@@ -79,8 +79,7 @@ func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.Resourc
 /// DELETE resource
 func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
     log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** start")
-
     // FIXME: NO-OP
-
     log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** end")
+    return nil
 }
