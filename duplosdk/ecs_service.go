@@ -29,6 +29,7 @@ type DuploEcsService struct {
 	Replicas                int                      `json:"Replicas,omitempty"`
 	HealthCheckGracePeriodSeconds int                `json:"HealthCheckGracePeriodSeconds,omitempty"`
 	OldTaskDefinitionBufferSize int                  `json:"OldTaskDefinitionBufferSize,omitempty"`
+	IsTargetGroupOnly       bool                     `json:"IsTargetGroupOnly,omitempty"`
 	DnsPrfx                 string                   `json:"DnsPrfx,omitempty"`
 	LBConfigurations        *[]DuploEcsServiceLbConfig `json:"LBConfigurations,omitempty"`
 }
@@ -65,6 +66,12 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 		"old_task_definition_buffer_size": {
 			Type:     schema.TypeInt,
 			Computed: true,
+        },
+        "is_target_group_only": {
+            Type:     schema.TypeBool,
+            Optional: true,
+            Required: false,
+            Default:  false,
         },
         "dns_prfx": &schema.Schema{
             Type:     schema.TypeString,
@@ -258,6 +265,7 @@ func EcsServiceFromState(d *schema.ResourceData) (*DuploEcsService, error) {
     duploObject.Replicas = d.Get("replicas").(int)
     duploObject.HealthCheckGracePeriodSeconds = d.Get("health_check_grace_period_seconds").(int)
     duploObject.OldTaskDefinitionBufferSize = d.Get("old_task_definition_buffer_size").(int)
+    duploObject.IsTargetGroupOnly = d.Get("is_target_group_only").(bool)
     duploObject.DnsPrfx = d.Get("dns_prfx").(string)
 
     // Next, convert things into structured data.
@@ -282,6 +290,7 @@ func EcsServiceToState(duploObject *DuploEcsService, d *schema.ResourceData) map
     jo["replicas"] = duploObject.Replicas
     jo["health_check_grace_period_seconds"] = duploObject.HealthCheckGracePeriodSeconds
     jo["old_task_definition_buffer_size"] = duploObject.OldTaskDefinitionBufferSize
+    jo["is_target_group_only"] = duploObject.IsTargetGroupOnly
     jo["dns_prfx"] = duploObject.DnsPrfx
 
     // Next, convert things into structured data.
