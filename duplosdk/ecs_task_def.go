@@ -288,7 +288,7 @@ func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
 	arn := idParts[3]
 
 	// Build the request
-	url := fmt.Sprintf("%s/subscriptions/%s/FindEcsTaskDefinition", c.HostURL, tenantId)
+	url := fmt.Sprintf("%s/v2/subscriptions/%s/FindEcsTaskDefinition", c.HostURL, tenantId)
 	rqBody := fmt.Sprintf("{\"Arn\":\"%s\"}", arn)
 	log.Printf("[TRACE] EcsTaskDefinitionGet 1 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
