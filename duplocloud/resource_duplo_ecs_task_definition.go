@@ -50,7 +50,7 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 	for key := range jo {
 		d.Set(key, jo[key])
 	}
-	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", duplo.TenantId, duplo.Arn))
+	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", duplo.TenantID, duplo.Arn))
 
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead ******** end")
 	return nil

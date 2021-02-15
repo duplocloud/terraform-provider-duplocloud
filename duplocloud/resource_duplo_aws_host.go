@@ -87,7 +87,7 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 		return diag.FromErr(err)
 	}
 
-	c.AwsHostSetId(d)
+	c.AwsHostSetID(d)
 	log.Printf("[TRACE] duplo-resourceAwsHostRead ******** end")
 	return diags
 }
@@ -104,7 +104,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	c.AwsHostSetId(d)
+	c.AwsHostSetID(d)
 	resourceAwsHostRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceAwsHostCreate ******** end")
 	return diags
@@ -122,7 +122,7 @@ func resourceAwsHostUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	c.AwsHostSetId(d)
+	c.AwsHostSetID(d)
 	resourceAwsHostRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceAwsHostUpdate ******** end")
 

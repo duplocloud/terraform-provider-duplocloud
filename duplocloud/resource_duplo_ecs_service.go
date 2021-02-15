@@ -50,7 +50,7 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 	for key := range jo {
 		d.Set(key, jo[key])
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", duplo.TenantId, duplo.Name))
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", duplo.TenantID, duplo.Name))
 
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** end")
 	return nil

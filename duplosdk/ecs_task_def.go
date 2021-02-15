@@ -4,41 +4,43 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-// Placement constraint holder
+// DuploEcsTaskDefPlacementConstraint represents an ECS placement constraint in the Duplo SDK
 type DuploEcsTaskDefPlacementConstraint struct {
 	Type       string `json:"Type"`
 	Expression string `json:"Expression"`
 }
 
-// Proxy configuration holder
+// DuploEcsTaskDefProxyConfig represents an ECS proxy configuration in the Duplo SDK
 type DuploEcsTaskDefProxyConfig struct {
 	ContainerName string            `json:"ContainerName"`
 	Properties    *[]DuploNameValue `json:"Properties"`
 	Type          string            `json:"Type"`
 }
 
-// Inference accelerator holder
+// DuploEcsTaskDefInferenceAccelerator represents an inference accelerator in the Duplo SDK
 type DuploEcsTaskDefInferenceAccelerator struct {
 	DeviceName string `json:"DeviceName"`
 	DeviceType string `json:"DeviceType"`
 }
 
+// DuploEcsTaskDef represents an ECS task definition in the Duplo SDK
 type DuploEcsTaskDef struct {
-	// NOTE: The TenantId field does not come from the backend - we synthesize it
-	TenantId string `json:"-",omitempty`
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
 
 	Family                  string                                 `json:"Family"`
 	Revision                int                                    `json:"Revision,omitempty"`
 	Arn                     string                                 `json:"TaskDefinitionArn,omitempty"`
 	ContainerDefinitions    []map[string]interface{}               `json:"ContainerDefinitions,omitempty"`
-	Cpu                     string                                 `json:"Cpu,omitempty"`
+	CPU                     string                                 `json:"Cpu,omitempty"`
 	TaskRoleArn             string                                 `json:"TaskRoleArn,omitempty"`
 	ExecutionRoleArn        string                                 `json:"ExecutionRoleArn,omitempty"`
 	Memory                  string                                 `json:"Memory,omitempty"`
@@ -55,7 +57,7 @@ type DuploEcsTaskDef struct {
 	Volumes                 []map[string]interface{}               `json:"Volumes,omitempty"`
 }
 
-/////------ schema ------////
+// DuploEcsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
 func DuploEcsTaskDefinitionSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
 		"tenant_id": {
@@ -240,7 +242,9 @@ func DuploEcsTaskDefinitionSchema() *map[string]*schema.Schema {
 /*************************************************
  * API CALLS to duplo
  */
-func (c *Client) EcsTaskDefinitionCreate(tenantId string, duploObject *DuploEcsTaskDef) (string, error) {
+
+// EcsTaskDefinitionCreate creates an ECS task definition via the Duplo API.
+func (c *Client) EcsTaskDefinitionCreate(tenantID string, duploObject *DuploEcsTaskDef) (string, error) {
 
 	// Build the request
 	rqBody, err := json.Marshal(&duploObject)
@@ -248,7 +252,7 @@ func (c *Client) EcsTaskDefinitionCreate(tenantId string, duploObject *DuploEcsT
 		log.Printf("[TRACE] EcsTaskDefinitionCreate 1 JSON gen : %s", err.Error())
 		return "", err
 	}
-	url := fmt.Sprintf("%s/subscriptions/%s/UpdateEcsTaskDefinition", c.HostURL, tenantId)
+	url := fmt.Sprintf("%s/subscriptions/%s/UpdateEcsTaskDefinition", c.HostURL, tenantID)
 	log.Printf("[TRACE] EcsTaskDefinitionCreate 2 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
 	if err != nil {
@@ -282,13 +286,14 @@ func (c *Client) EcsTaskDefinitionCreate(tenantId string, duploObject *DuploEcsT
 	return arn, nil
 }
 
+// EcsTaskDefinitionGet retrieves an ECS task definition via the Duplo API.
 func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
 	idParts := strings.SplitN(id, "/", 4)
-	tenantId := idParts[1]
+	tenantID := idParts[1]
 	arn := idParts[3]
 
 	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/FindEcsTaskDefinition", c.HostURL, tenantId)
+	url := fmt.Sprintf("%s/v2/subscriptions/%s/FindEcsTaskDefinition", c.HostURL, tenantID)
 	rqBody := fmt.Sprintf("{\"Arn\":\"%s\"}", arn)
 	log.Printf("[TRACE] EcsTaskDefinitionGet 1 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
@@ -317,23 +322,25 @@ func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
 		return nil, err
 	}
 	if duploObject.Arn == "" {
-		return nil, fmt.Errorf("ECS task definition %s not found in tenant %s", arn, tenantId)
+		return nil, fmt.Errorf("ECS task definition %s not found in tenant %s", arn, tenantID)
 	}
 
 	// Fill in the tenant ID and return the object
-	duploObject.TenantId = tenantId
+	duploObject.TenantID = tenantID
 	return &duploObject, nil
 }
 
 /*************************************************
  * DATA CONVERSIONS to/from duplo/terraform
  */
+
+// EcsTaskDefFromState converts resource data respresenting an ECS Task Definition to a Duplo SDK object.
 func EcsTaskDefFromState(d *schema.ResourceData) (*DuploEcsTaskDef, error) {
 	duploObject := new(DuploEcsTaskDef)
 
 	// First, convert things into simple scalars
 	duploObject.Family = d.Get("family").(string)
-	duploObject.Cpu = d.Get("cpu").(string)
+	duploObject.CPU = d.Get("cpu").(string)
 	duploObject.Memory = d.Get("memory").(string)
 	duploObject.IpcMode = d.Get("ipc_mode").(string)
 	duploObject.PidMode = d.Get("pid_mode").(string)
@@ -371,6 +378,7 @@ func EcsTaskDefFromState(d *schema.ResourceData) (*DuploEcsTaskDef, error) {
 	return duploObject, nil
 }
 
+// EcsTaskDefToState converts a Duplo SDK object respresenting an ECS Task Definition to terraform resource data.
 func EcsTaskDefToState(duploObject *DuploEcsTaskDef, d *schema.ResourceData) map[string]interface{} {
 	if duploObject == nil {
 		return nil
@@ -381,11 +389,11 @@ func EcsTaskDefToState(duploObject *DuploEcsTaskDef, d *schema.ResourceData) map
 	jo := make(map[string]interface{})
 
 	// First, convert things into simple scalars
-	jo["tenant_id"] = duploObject.TenantId
+	jo["tenant_id"] = duploObject.TenantID
 	jo["family"] = duploObject.Family
 	jo["revision"] = duploObject.Revision
 	jo["arn"] = duploObject.Arn
-	jo["cpu"] = duploObject.Cpu
+	jo["cpu"] = duploObject.CPU
 	jo["task_role_arn"] = duploObject.TaskRoleArn
 	jo["execution_role_arn"] = duploObject.ExecutionRoleArn
 	jo["memory"] = duploObject.Memory

@@ -3,10 +3,11 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 type DuploServiceParams struct {
@@ -19,24 +20,24 @@ type DuploServiceParams struct {
 /////------ schema ------////
 func DuploServiceParamsSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
-		"webaclid": &schema.Schema{
+		"webaclid": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 		},
-		"tenant_id": &schema.Schema{
+		"tenant_id": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
 			ForceNew: true, //switch tenant
 		},
-		"replication_controller_name": &schema.Schema{
+		"replication_controller_name": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
 			ForceNew: true, //switch service
 		},
-		"dns_prfx": &schema.Schema{
+		"dns_prfx": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
@@ -68,10 +69,10 @@ func (c *Client) DuploServiceParamsToState(duploObject *DuploServiceParams, d *s
 
 ////// convert from state to cloud :  cloud names (CamelCase) to tf names (SnakeCase)
 func (c *Client) DuploServiceParamsFromState(d *schema.ResourceData, m interface{}, isUpdate bool) (*DuploServiceParams, error) {
-	url := c.AwsHostListUrl(d)
-	var api_str = fmt.Sprintf("duplo-DuploServiceParamsFromState-Create %s ", c.AwsHostListUrl(d))
+	url := c.AwsHostListURL(d)
+	var api_str = fmt.Sprintf("duplo-DuploServiceParamsFromState-Create %s ", c.AwsHostListURL(d))
 	if isUpdate {
-		api_str = fmt.Sprintf("duplo-DuploServiceParamsFromState-Create %s ", c.AwsHostListUrl(d))
+		api_str = fmt.Sprintf("duplo-DuploServiceParamsFromState-Create %s ", c.AwsHostListURL(d))
 	}
 	log.Printf("[TRACE] %s 1 ********: %s", api_str, url)
 
