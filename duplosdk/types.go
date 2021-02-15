@@ -7,23 +7,23 @@ import (
 	"log"
 )
 
-// Generic value holder
+// DuploValue is a generic value holder
 type DuploValue struct {
 	Value string `json:"Value,omitempty"`
 }
 
-// Generic name holder
+// DuploName is a generic name holder
 type DuploName struct {
 	Name string `json:"Name,omitempty"`
 }
 
-// Generic key value holder
+// DuploKeyValue is a generic key value holder
 type DuploKeyValue struct {
 	Key   string `json:"Key"`
 	Value string `json:"Value,omitempty"`
 }
 
-// Generic name value holder
+// DuploNameValue is a generic name value holder
 type DuploNameValue struct {
 	Name  string `json:"Name"`
 	Value string `json:"Value,omitempty"`
