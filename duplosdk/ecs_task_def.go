@@ -308,7 +308,7 @@ func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
 
 	// Parse the response into a duplo object, detecting a missing object
 	if bodyString == "null" {
-	    return nil, nil
+		return nil, nil
 	}
 	duploObject := DuploEcsTaskDef{}
 	err = json.Unmarshal(body, &duploObject)
