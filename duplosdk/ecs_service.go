@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// DuploEcsServiceLbConfig is a Duplo SDK object that represents load balancer configuration for an ECS service
 type DuploEcsServiceLbConfig struct {
 	ReplicationControllerName string `json:"ReplicationControllerName"`
 	Port                      string `json:"Port,omitempty"`
@@ -21,6 +22,7 @@ type DuploEcsServiceLbConfig struct {
 	LbType                    int    `json:"LbType,omitempty"`
 }
 
+// DuploEcsService is a Duplo SDK object that represents an ECS service
 type DuploEcsService struct {
 	// NOTE: The TenantId field does not come from the backend - we synthesize it
 	TenantId string `json:"-",omitempty`
@@ -35,7 +37,7 @@ type DuploEcsService struct {
 	LBConfigurations              *[]DuploEcsServiceLbConfig `json:"LBConfigurations,omitempty"`
 }
 
-/////------ schema ------////
+// DuploEcsServiceSchema returns a Terraform resource schema for an ECS Service
 func DuploEcsServiceSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
 		"tenant_id": {
@@ -44,12 +46,12 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 			Required: true,
 			ForceNew: true, //switch tenant
 		},
-		"name": &schema.Schema{
+		"name": {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
-		"task_definition": &schema.Schema{
+		"task_definition": {
 			Type:     schema.TypeString,
 			Required: true,
 		},
@@ -77,7 +79,7 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 			Required: false,
 			Default:  false,
 		},
-		"dns_prfx": &schema.Schema{
+		"dns_prfx": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
@@ -137,15 +139,19 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 /*************************************************
  * API CALLS to duplo
  */
-func (c *Client) EcsServiceCreate(tenantId string, duploObject *DuploEcsService) (*DuploEcsService, error) {
-	return c.EcsServiceCreateOrUpdate(tenantId, duploObject, false)
+
+// EcsServiceCreate creates an ECS service via the Duplo API.
+func (c *Client) EcsServiceCreate(tenantID string, duploObject *DuploEcsService) (*DuploEcsService, error) {
+	return c.EcsServiceCreateOrUpdate(tenantID, duploObject, false)
 }
 
-func (c *Client) EcsServiceUpdate(tenantId string, duploObject *DuploEcsService) (*DuploEcsService, error) {
-	return c.EcsServiceCreateOrUpdate(tenantId, duploObject, true)
+// EcsServiceUpdate updates an ECS service via the Duplo API.
+func (c *Client) EcsServiceUpdate(tenantID string, duploObject *DuploEcsService) (*DuploEcsService, error) {
+	return c.EcsServiceCreateOrUpdate(tenantID, duploObject, true)
 }
 
-func (c *Client) EcsServiceCreateOrUpdate(tenantId string, duploObject *DuploEcsService, updating bool) (*DuploEcsService, error) {
+// EcsServiceCreateOrUpdate creates or updates an ECS service via the Duplo API.
+func (c *Client) EcsServiceCreateOrUpdate(tenantID string, duploObject *DuploEcsService, updating bool) (*DuploEcsService, error) {
 
 	// Build the request
 	verb := "POST"
@@ -157,7 +163,7 @@ func (c *Client) EcsServiceCreateOrUpdate(tenantId string, duploObject *DuploEcs
 		log.Printf("[TRACE] EcsServiceCreateOrUpdate 1 JSON gen : %s", err.Error())
 		return nil, err
 	}
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2", c.HostURL, tenantId)
+	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2", c.HostURL, tenantID)
 	log.Printf("[TRACE] EcsServiceCreate 2 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
 	if err != nil {
@@ -188,13 +194,14 @@ func (c *Client) EcsServiceCreateOrUpdate(tenantId string, duploObject *DuploEcs
 	return &rpObject, nil
 }
 
+// EcsServiceDelete deletes an ECS service via the Duplo API.
 func (c *Client) EcsServiceDelete(id string) (*DuploEcsService, error) {
 	idParts := strings.SplitN(id, "/", 5)
-	tenantId := idParts[2]
+	tenantID := idParts[2]
 	name := idParts[4]
 
 	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2/%s", c.HostURL, tenantId, name)
+	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2/%s", c.HostURL, tenantID, name)
 	log.Printf("[TRACE] EcsServiceGet 1 : %s", url)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
@@ -225,17 +232,18 @@ func (c *Client) EcsServiceDelete(id string) (*DuploEcsService, error) {
 	}
 
 	// Fill in the tenant ID and return the object
-	duploObject.TenantId = tenantId
+	duploObject.TenantId = tenantID
 	return &duploObject, nil
 }
 
+// EcsServiceGet retrieves an ECS service via the Duplo API.
 func (c *Client) EcsServiceGet(id string) (*DuploEcsService, error) {
 	idParts := strings.SplitN(id, "/", 5)
-	tenantId := idParts[2]
+	tenantID := idParts[2]
 	name := idParts[4]
 
 	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2/%s", c.HostURL, tenantId, name)
+	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2/%s", c.HostURL, tenantID, name)
 	log.Printf("[TRACE] EcsServiceGet 1 : %s", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -264,13 +272,15 @@ func (c *Client) EcsServiceGet(id string) (*DuploEcsService, error) {
 	}
 
 	// Fill in the tenant ID and return the object
-	duploObject.TenantId = tenantId
+	duploObject.TenantId = tenantID
 	return &duploObject, nil
 }
 
 /*************************************************
  * DATA CONVERSIONS to/from duplo/terraform
  */
+
+// EcsServiceFromState converts resource data respresenting an ECS Service to a Duplo SDK object.
 func EcsServiceFromState(d *schema.ResourceData) (*DuploEcsService, error) {
 	duploObject := new(DuploEcsService)
 
@@ -289,6 +299,7 @@ func EcsServiceFromState(d *schema.ResourceData) (*DuploEcsService, error) {
 	return duploObject, nil
 }
 
+// EcsServiceToState converts a Duplo SDK object respresenting an ECS Service to terraform resource data.
 func EcsServiceToState(duploObject *DuploEcsService, d *schema.ResourceData) map[string]interface{} {
 	if duploObject == nil {
 		return nil
