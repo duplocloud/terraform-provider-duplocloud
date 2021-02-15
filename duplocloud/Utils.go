@@ -2,11 +2,12 @@ package duplocloud
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 )
 
-//
+// ValidateJsonString performs validation of a string that is supposed to be JSON.
 func ValidateJsonString(v interface{}, k string) (ws []string, errors []error) {
 	// IAM Policy documents need to be valid JSON, and pass legacy parsing
 	value := v.(string)
@@ -24,6 +25,7 @@ func ValidateJsonString(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
+// FilterSchema returns a Terraform schema to represent a filter
 func FilterSchema() *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeSet,
@@ -43,6 +45,7 @@ func FilterSchema() *schema.Schema {
 	}
 }
 
+// FiltersSchema returns a Terraform schema to represent a set of filters
 func FiltersSchema() *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeSet,

@@ -4,11 +4,12 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // SCHEMA for resource crud
@@ -36,12 +37,12 @@ func dataSourceK8Secret() *schema.Resource {
 		ReadContext: dataSourceK8SecretRead,
 		Schema: map[string]*schema.Schema{
 			"filter": FilterSchema(), // todo: search specific to this object... may be api should support filter?
-			"tenant_id": &schema.Schema{
+			"tenant_id": {
 				Type:     schema.TypeString,
 				Computed: false,
 				Optional: true,
 			},
-			"data": &schema.Schema{
+			"data": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
@@ -58,12 +59,12 @@ func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m inter
 
 	c := m.(*duplosdk.Client)
 	var diags diag.Diagnostics
-	duplo_objs, err := c.K8SecretGetList(d, m)
+	duploObjs, err := c.K8SecretGetList(d, m)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	itemList := c.K8SecretsFlatten(duplo_objs, d)
+	itemList := c.K8SecretsFlatten(duploObjs, d)
 	if err := d.Set("data", itemList); err != nil {
 		return diag.FromErr(err)
 	}

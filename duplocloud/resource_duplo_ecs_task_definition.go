@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // SCHEMA for resource crud
@@ -46,7 +47,7 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 
 	// Convert the object into Terraform resource data
 	jo := duplosdk.EcsTaskDefToState(duplo, d)
-	for key, _ := range jo {
+	for key := range jo {
 		d.Set(key, jo[key])
 	}
 	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", duplo.TenantId, duplo.Arn))
@@ -67,12 +68,12 @@ func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.Resourc
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	tenantId := d.Get("tenant_id").(string)
-	arn, err := c.EcsTaskDefinitionCreate(tenantId, duploObject)
+	tenantID := d.Get("tenant_id").(string)
+	arn, err := c.EcsTaskDefinitionCreate(tenantID, duploObject)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", tenantId, arn))
+	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", tenantID, arn))
 
 	diags := resourceDuploEcsTaskDefinitionRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionCreate ******** end")
