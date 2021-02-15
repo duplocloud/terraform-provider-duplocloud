@@ -23,7 +23,7 @@ func suppressEquivalentTypeStringBoolean(k, old, new string, d *schema.ResourceD
 	return false
 }
 
-func suppressEquivalentJsonDiffs(k, old, new string, d *schema.ResourceData) bool {
+func suppressEquivalentJSONDiffs(k, old, new string, d *schema.ResourceData) bool {
 	ob := bytes.NewBufferString("")
 	if err := json.Compact(ob, []byte(old)); err != nil {
 		return false
@@ -49,7 +49,7 @@ func isBase64Encoded(data []byte) bool {
 	return err == nil
 }
 
-func looksLikeJsonString(s interface{}) bool {
+func looksLikeJSONString(s interface{}) bool {
 	return regexp.MustCompile(`^\s*{`).MatchString(s.(string))
 }
 
@@ -82,8 +82,8 @@ func diffIgnoreIfSameHash(k, old, new string, d *schema.ResourceData) bool {
 	if old == "" {
 		return false
 	}
-	new_hash := hashForData(new)
-	if old == new_hash {
+	newHash := hashForData(new)
+	if old == newHash {
 		return true
 	}
 	return false
@@ -92,8 +92,8 @@ func diffIgnoreIfSameHash(k, old, new string, d *schema.ResourceData) bool {
 func hashForData(s string) string {
 	h := fnv.New32a()
 	h.Write([]byte(s))
-	var api_str = fmt.Sprintf("%d==", h.Sum32())
-	return api_str
+	var apiStr = fmt.Sprintf("%d==", h.Sum32())
+	return apiStr
 }
 
 func stringHash(s string) int {
@@ -142,11 +142,4 @@ func diffStringMaps(oldMap, newMap map[string]interface{}) (map[string]*string, 
 	}
 
 	return create, remove
-}
-
-///
-
-type DuploObjectState struct {
-	_     struct{} `type:"structure"`
-	State *string  `locationName:"state" type:"string" enum:"VpnState"`
 }
