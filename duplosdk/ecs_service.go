@@ -3,10 +3,11 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 type DuploEcsServiceLbConfig struct {
@@ -203,18 +204,24 @@ func (c *Client) EcsServiceDelete(id string) (*DuploEcsService, error) {
 
 	// Call the API and get the response
 	body, err := c.doRequest(req)
+	bodyString := string(body)
 	if err != nil {
 		log.Printf("[TRACE] EcsServiceGet 3 HTTP DELETE : %s", err.Error())
 		return nil, err
 	}
-	log.Printf("[TRACE] EcsServiceGet 4 HTTP RESPONSE : %s", string(body))
+	log.Printf("[TRACE] EcsServiceGet 4 HTTP RESPONSE : %s", bodyString)
 
 	// Parse the response into a duplo object
 	duploObject := DuploEcsService{}
-	err = json.Unmarshal(body, &duploObject)
-	if err != nil {
-		log.Printf("[TRACE] EcsServiceGet 5 JSON PARSE : %s", string(body))
-		return nil, err
+	if bodyString == "" {
+		// tolerate an empty response from DELETE
+		duploObject.Name = name
+	} else {
+		err = json.Unmarshal(body, &duploObject)
+		if err != nil {
+			log.Printf("[TRACE] EcsServiceGet 5 JSON PARSE : %s", bodyString)
+			return nil, err
+		}
 	}
 
 	// Fill in the tenant ID and return the object
@@ -242,13 +249,17 @@ func (c *Client) EcsServiceGet(id string) (*DuploEcsService, error) {
 		log.Printf("[TRACE] EcsServiceGet 3 HTTP GET : %s", err.Error())
 		return nil, err
 	}
-	log.Printf("[TRACE] EcsServiceGet 4 HTTP RESPONSE : %s", string(body))
+	bodyString := string(body)
+	log.Printf("[TRACE] EcsServiceGet 4 HTTP RESPONSE : %s", bodyString)
 
-	// Parse the response into a duplo object
+	// Parse the response into a duplo object, detecting a missing object
+	if bodyString == "null" {
+		return nil, nil
+	}
 	duploObject := DuploEcsService{}
 	err = json.Unmarshal(body, &duploObject)
 	if err != nil {
-		log.Printf("[TRACE] EcsServiceGet 5 JSON PARSE : %s", string(body))
+		log.Printf("[TRACE] EcsServiceGet 5 JSON PARSE : %s", bodyString)
 		return nil, err
 	}
 

@@ -33,9 +33,13 @@ func resourceDuploEcsService() *schema.Resource {
 func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** start")
 
-	// Get the object from Duplo
+	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	duplo, err := c.EcsServiceGet(d.Id())
+	if duplo == nil {
+		d.SetId("")
+		return nil
+	}
 	if err != nil {
 		return diag.FromErr(err)
 	}

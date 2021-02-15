@@ -303,13 +303,17 @@ func (c *Client) EcsTaskDefinitionGet(id string) (*DuploEcsTaskDef, error) {
 		log.Printf("[TRACE] EcsTaskDefinitionGet 3 HTTP POST : %s", err.Error())
 		return nil, err
 	}
-	log.Printf("[TRACE] EcsTaskDefinitionGet 4 HTTP RESPONSE : %s", string(body))
+	bodyString := string(body)
+	log.Printf("[TRACE] EcsTaskDefinitionGet 4 HTTP RESPONSE : %s", bodyString)
 
-	// Parse the response into a duplo object
+	// Parse the response into a duplo object, detecting a missing object
+	if bodyString == "null" {
+		return nil, nil
+	}
 	duploObject := DuploEcsTaskDef{}
 	err = json.Unmarshal(body, &duploObject)
 	if err != nil {
-		log.Printf("[TRACE] EcsTaskDefinitionGet 5 JSON PARSE : %s", string(body))
+		log.Printf("[TRACE] EcsTaskDefinitionGet 5 JSON PARSE : %s", bodyString)
 		return nil, err
 	}
 	if duploObject.Arn == "" {
