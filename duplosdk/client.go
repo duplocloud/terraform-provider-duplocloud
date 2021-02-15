@@ -3,12 +3,13 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 type Client struct {
@@ -20,7 +21,7 @@ type Client struct {
 }
 
 func NewClient(host, token string) (*Client, error) {
-	if (host != "") && (host != "") {
+	if (host != "") && (token != "") {
 		token_bearer := fmt.Sprintf("Bearer %s", token)
 		c := Client{
 			HTTPClient: &http.Client{Timeout: 20 * time.Second},
