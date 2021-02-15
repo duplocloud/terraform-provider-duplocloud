@@ -17,15 +17,15 @@ type DuploEcsServiceLbConfig struct {
 	Protocol                  string `json:"Protocol,omitempty"`
 	ExternalPort              int    `json:"ExternalPort,omitempty"`
 	IsInternal                bool   `json:"IsInternal,omitempty"`
-	HealthCheckUrl            string `json:"HealthCheckUrl,omitempty"`
+	HealthCheckURL            string `json:"HealthCheckUrl,omitempty"`
 	CertificateArn            string `json:"CertificateArn,omitempty"`
 	LbType                    int    `json:"LbType,omitempty"`
 }
 
 // DuploEcsService is a Duplo SDK object that represents an ECS service
 type DuploEcsService struct {
-	// NOTE: The TenantId field does not come from the backend - we synthesize it
-	TenantId string `json:"-",omitempty`
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
 
 	Name                          string                     `json:"Name"`
 	TaskDefinition                string                     `json:"TaskDefinition,omitempty"`
@@ -33,7 +33,7 @@ type DuploEcsService struct {
 	HealthCheckGracePeriodSeconds int                        `json:"HealthCheckGracePeriodSeconds,omitempty"`
 	OldTaskDefinitionBufferSize   int                        `json:"OldTaskDefinitionBufferSize,omitempty"`
 	IsTargetGroupOnly             bool                       `json:"IsTargetGroupOnly,omitempty"`
-	DnsPrfx                       string                     `json:"DnsPrfx,omitempty"`
+	DNSPrfx                       string                     `json:"DnsPrfx,omitempty"`
 	LBConfigurations              *[]DuploEcsServiceLbConfig `json:"LBConfigurations,omitempty"`
 }
 
@@ -232,7 +232,7 @@ func (c *Client) EcsServiceDelete(id string) (*DuploEcsService, error) {
 	}
 
 	// Fill in the tenant ID and return the object
-	duploObject.TenantId = tenantID
+	duploObject.TenantID = tenantID
 	return &duploObject, nil
 }
 
@@ -272,7 +272,7 @@ func (c *Client) EcsServiceGet(id string) (*DuploEcsService, error) {
 	}
 
 	// Fill in the tenant ID and return the object
-	duploObject.TenantId = tenantID
+	duploObject.TenantID = tenantID
 	return &duploObject, nil
 }
 
@@ -291,7 +291,7 @@ func EcsServiceFromState(d *schema.ResourceData) (*DuploEcsService, error) {
 	duploObject.HealthCheckGracePeriodSeconds = d.Get("health_check_grace_period_seconds").(int)
 	duploObject.OldTaskDefinitionBufferSize = d.Get("old_task_definition_buffer_size").(int)
 	duploObject.IsTargetGroupOnly = d.Get("is_target_group_only").(bool)
-	duploObject.DnsPrfx = d.Get("dns_prfx").(string)
+	duploObject.DNSPrfx = d.Get("dns_prfx").(string)
 
 	// Next, convert things into structured data.
 	duploObject.LBConfigurations = ecsLoadBalancersFromState(d)
@@ -310,14 +310,14 @@ func EcsServiceToState(duploObject *DuploEcsService, d *schema.ResourceData) map
 	jo := make(map[string]interface{})
 
 	// First, convert things into simple scalars
-	jo["tenant_id"] = duploObject.TenantId
+	jo["tenant_id"] = duploObject.TenantID
 	jo["name"] = duploObject.Name
 	jo["task_definition"] = duploObject.TaskDefinition
 	jo["replicas"] = duploObject.Replicas
 	jo["health_check_grace_period_seconds"] = duploObject.HealthCheckGracePeriodSeconds
 	jo["old_task_definition_buffer_size"] = duploObject.OldTaskDefinitionBufferSize
 	jo["is_target_group_only"] = duploObject.IsTargetGroupOnly
-	jo["dns_prfx"] = duploObject.DnsPrfx
+	jo["dns_prfx"] = duploObject.DNSPrfx
 
 	// Next, convert things into structured data.
 	jo["load_balancer"] = ecsLoadBalancersToState(duploObject.Name, duploObject.LBConfigurations)
@@ -343,7 +343,7 @@ func ecsLoadBalancersToState(name string, lbcs *[]DuploEcsServiceLbConfig) []map
 		jo["protocol"] = lbc.Protocol
 		jo["external_port"] = lbc.ExternalPort
 		jo["is_internal"] = lbc.IsInternal
-		jo["health_check_url"] = lbc.HealthCheckUrl
+		jo["health_check_url"] = lbc.HealthCheckURL
 		jo["certificate_arn"] = lbc.CertificateArn
 		ary = append(ary, jo)
 	}
@@ -370,7 +370,7 @@ func ecsLoadBalancersFromState(d *schema.ResourceData) *[]DuploEcsServiceLbConfi
 			Protocol:                  lb["protocol"].(string),
 			ExternalPort:              lb["external_port"].(int),
 			IsInternal:                lb["is_internal"].(bool),
-			HealthCheckUrl:            lb["health_check_url"].(string),
+			HealthCheckURL:            lb["health_check_url"].(string),
 			CertificateArn:            lb["certificate_arn"].(string),
 		})
 	}

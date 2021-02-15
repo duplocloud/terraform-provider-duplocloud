@@ -3,32 +3,34 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// DuploAwsHost is a Duplo SDK object that represents an AWS host
 type DuploAwsHost struct {
-	InstanceId        string `json:"InstanceId"`
+	InstanceID        string `json:"InstanceId"`
 	UserAccount       string `json:"UserAccount,omitempty"`
-	TenantId          string `json:"TenantId,omitempty"`
+	TenantID          string `json:"TenantId,omitempty"`
 	FriendlyName      string `json:"FriendlyName,omitempty"`
 	Capacity          string `json:"Capacity,omitempty"`
 	Zone              int    `json:"Zone"`
 	IsMinion          bool   `json:"IsMinion"`
-	ImageId           string `json:"ImageId,omitempty"`
+	ImageID           string `json:"ImageId,omitempty"`
 	Base64UserData    string `json:"Base64UserData,omitempty"`
 	AgentPlatform     int    `json:"AgentPlatform"`
 	IsEbsOptimized    bool   `json:"IsEbsOptimized"`
-	AllocatedPublicIp bool   `json:"AllocatedPublicIp,omitempty"`
+	AllocatedPublicIP bool   `json:"AllocatedPublicIp,omitempty"`
 	Cloud             int    `json:"Cloud"`
 	EncryptDisk       bool   `json:"EncryptDisk,omitempty"`
 	Status            string `json:"Status,omitempty"`
 	IdentityRole      string `json:"IdentityRole,omitempty"`
-	PrivateIpAddress  string `json:"PrivateIpAddress,omitempty"`
+	PrivateIPAddress  string `json:"PrivateIpAddress,omitempty"`
 	//json objects
 	Volumes    *[]DuploAwsHostVolume `json:"Volumes,omitempty"`
 	MetaData   *[]DuploAwsHostKv     `json:"MetaData,omitempty"`
@@ -36,121 +38,123 @@ type DuploAwsHost struct {
 	MinionTags *[]DuploAwsHostKv     `json:"MinionTags,omitempty"`
 }
 
+// DuploAwsHostVolume is a Duplo SDK object that represents a volume of an AWS host
 type DuploAwsHostVolume struct {
 	Iops       int    `json:"Iops,omitempty"`
 	Name       string `json:"Name,omitempty"`
 	Size       int    `Size:"Size,omitempty"`
-	VolumeId   string `json:"VolumeId,omitempty"`
+	VolumeID   string `json:"VolumeId,omitempty"`
 	VolumeType string `json:"VolumeType,omitempty"`
 }
 
+// DuploAwsHostKv is a Duplo SDK object that represents a key value pair in an AWS host
 type DuploAwsHostKv struct {
 	Key   string `json:"Key,omitempty"`
 	Value string `json:"Value,omitempty"`
 }
 
-/////------ schema ------////
+// AwsHostSchema returns a Terraform resource schema for an AWS host
 func AwsHostSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
-		"instance_id": &schema.Schema{
+		"instance_id": {
 			Type:     schema.TypeString,
 			Computed: true,
 			Required: false,
 		},
-		"user_account": &schema.Schema{
+		"user_account": {
 			Type:             schema.TypeString,
 			Optional:         true,
 			Required:         false,
 			DiffSuppressFunc: diffSuppressFuncIgnore,
 		},
-		"tenant_id": &schema.Schema{
+		"tenant_id": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
 			ForceNew: true, //switch tenant
 		},
-		"friendly_name": &schema.Schema{
+		"friendly_name": {
 			Type:             schema.TypeString,
 			Optional:         false,
 			Required:         true,
 			DiffSuppressFunc: diffIgnoreIfAlreadySet,
 		},
-		"capacity": &schema.Schema{
+		"capacity": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
 			ForceNew: true, // relaunch instnace
 		},
-		"zone": &schema.Schema{
+		"zone": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Required: false,
 			ForceNew: true, // relaunch instance
 			Default:  0,
 		},
-		"is_minion": &schema.Schema{
+		"is_minion": {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Required: false,
 			Default:  true,
 		},
-		"image_id": &schema.Schema{
+		"image_id": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
 			ForceNew: true, // relaunch instance
 		},
-		"base64_user_data": &schema.Schema{
+		"base64_user_data": {
 			Type:             schema.TypeString,
 			Optional:         true,
 			Required:         false,
 			DiffSuppressFunc: diffIgnoreIfAlreadySet,
 		},
-		"agent_platform": &schema.Schema{
+		"agent_platform": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Required: false,
 			Default:  0,
 		},
-		"is_ebs_optimized": &schema.Schema{
+		"is_ebs_optimized": {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Required: false,
 			Default:  false,
 			ForceNew: true, // relaunch instance
 		},
-		"allocated_public_ip": &schema.Schema{
+		"allocated_public_ip": {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Required: false,
 			Default:  false,
 			ForceNew: true, // relaunch instance
 		},
-		"cloud": &schema.Schema{
+		"cloud": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Required: false,
 			Default:  0,
 			ForceNew: true, // relaunch instance
 		},
-		"encrypt_disk": &schema.Schema{
+		"encrypt_disk": {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Required: false,
 			Default:  false,
 			ForceNew: true, // relaunch instance
 		},
-		"status": &schema.Schema{
+		"status": {
 			Type:     schema.TypeString,
 			Computed: true,
 			Required: false,
 		},
-		"identity_role": &schema.Schema{
+		"identity_role": {
 			Type:     schema.TypeString,
 			Computed: true,
 			Required: false,
 		},
-		"private_ip_address": &schema.Schema{
+		"private_ip_address": {
 			Type:     schema.TypeString,
 			Computed: true,
 			Required: false,
@@ -243,6 +247,8 @@ func AwsHostSchema() *map[string]*schema.Schema {
 }
 
 ////// convert from cloud to state and vice versa :  cloud names (CamelCase) to tf names (SnakeCase)
+
+// AwsHostToState converts a Duplo SDK object representing an AWS Host to Terraform resource data
 func (c *Client) AwsHostToState(duploObject *DuploAwsHost, d *schema.ResourceData) map[string]interface{} {
 	if duploObject != nil {
 		jsonData, _ := json.Marshal(duploObject)
@@ -250,23 +256,23 @@ func (c *Client) AwsHostToState(duploObject *DuploAwsHost, d *schema.ResourceDat
 
 		cObj := make(map[string]interface{})
 		///--- set
-		cObj["instance_id"] = duploObject.InstanceId
+		cObj["instance_id"] = duploObject.InstanceID
 		cObj["user_account"] = duploObject.UserAccount
-		cObj["tenant_id"] = duploObject.TenantId
+		cObj["tenant_id"] = duploObject.TenantID
 		cObj["friendly_name"] = duploObject.FriendlyName
 		cObj["capacity"] = duploObject.Capacity
 		cObj["zone"] = duploObject.Zone
 		cObj["is_minion"] = duploObject.IsMinion
-		cObj["image_id"] = duploObject.ImageId
+		cObj["image_id"] = duploObject.ImageID
 		cObj["base64_user_data"] = duploObject.Base64UserData
 		cObj["agent_platform"] = duploObject.AgentPlatform
 		cObj["is_ebs_optimized"] = duploObject.IsEbsOptimized
-		cObj["allocated_public_ip"] = duploObject.AllocatedPublicIp
+		cObj["allocated_public_ip"] = duploObject.AllocatedPublicIP
 		cObj["cloud"] = duploObject.Cloud
 		cObj["encrypt_disk"] = duploObject.EncryptDisk
 		cObj["status"] = duploObject.Status
 		cObj["identity_role"] = duploObject.IdentityRole
-		cObj["private_ip_address"] = duploObject.PrivateIpAddress
+		cObj["private_ip_address"] = duploObject.PrivateIPAddress
 		//
 		cObj["metadata"] = c.AwsHostKvToState("metadata", duploObject.MetaData, d)
 		cObj["tags"] = c.AwsHostKvToState("tags", duploObject.Tags, d)
@@ -281,6 +287,7 @@ func (c *Client) AwsHostToState(duploObject *DuploAwsHost, d *schema.ResourceDat
 	return nil
 }
 
+// AwsHostKvFromState converts partial Terraform resource data representing a key value pair to a Duplo SDK object
 func (c *Client) AwsHostKvFromState(fieldName string, d *schema.ResourceData) *[]DuploAwsHostKv {
 	var ary []DuploAwsHostKv
 
@@ -299,6 +306,7 @@ func (c *Client) AwsHostKvFromState(fieldName string, d *schema.ResourceData) *[
 	return &ary
 }
 
+// AwsHostKvToState converts a Duplo SDK object representing a key value pair to partial Terraform resource data
 func (c *Client) AwsHostKvToState(fieldName string, duploObjects *[]DuploAwsHostKv, d *schema.ResourceData) []interface{} {
 	if duploObjects != nil {
 		ois := make([]interface{}, len(*duploObjects), len(*duploObjects))
@@ -318,6 +326,7 @@ func (c *Client) AwsHostKvToState(fieldName string, duploObjects *[]DuploAwsHost
 	return make([]interface{}, 0)
 }
 
+// AwsHostVolumesToState converts a Duplo SDK object representing a volume to partial Terraform resource data
 func (c *Client) AwsHostVolumesToState(duploObjects *[]DuploAwsHostVolume, d *schema.ResourceData) []interface{} {
 	if duploObjects != nil {
 		ois := make([]interface{}, len(*duploObjects), len(*duploObjects))
@@ -327,7 +336,7 @@ func (c *Client) AwsHostVolumesToState(duploObjects *[]DuploAwsHostVolume, d *sc
 			cObj["iops"] = duploObject.Iops
 			cObj["name"] = duploObject.Name
 			cObj["size"] = duploObject.Size
-			cObj["volume_id"] = duploObject.VolumeId
+			cObj["volume_id"] = duploObject.VolumeID
 			cObj["volume_type"] = duploObject.VolumeType
 			ois[i] = cObj
 		}
@@ -339,30 +348,32 @@ func (c *Client) AwsHostVolumesToState(duploObjects *[]DuploAwsHostVolume, d *sc
 	log.Printf("[TRACE] duplo-AwsHostVolumesToState ??? empty ?? ******** 2 from-CLOUD: \n%s", jsonData)
 	return make([]interface{}, 0)
 }
+
+// DuploAwsHostFromState converts Terraform resource data representing an AWS host into partial Terraform resource data
 func (c *Client) DuploAwsHostFromState(d *schema.ResourceData, m interface{}, isUpdate bool) (*DuploAwsHost, error) {
-	url := c.AwsHostListUrl(d)
-	var api_str = fmt.Sprintf("duplo-DuploAwsHostFromState-Create %s ", url)
+	url := c.AwsHostListURL(d)
+	var apiStr = fmt.Sprintf("duplo-DuploAwsHostFromState-Create %s ", url)
 	if isUpdate {
-		api_str = fmt.Sprintf("duplo-DuploAwsHostFromState-update %s ", url)
+		apiStr = fmt.Sprintf("duplo-DuploAwsHostFromState-update %s ", url)
 	}
-	log.Printf("[TRACE] %s 1 ********: %s", api_str, url)
+	log.Printf("[TRACE] %s 1 ********: %s", apiStr, url)
 	//
 	duploObject := new(DuploAwsHost)
 	///--- set
 	//SKIP InstanceId? TenantId? Status? IdentityRole PrivateIpAddress
-	duploObject.TenantId = d.Get("tenant_id").(string)
-	duploObject.InstanceId = d.Get("instance_id").(string)
+	duploObject.TenantID = d.Get("tenant_id").(string)
+	duploObject.InstanceID = d.Get("instance_id").(string)
 	duploObject.UserAccount = d.Get("user_account").(string)
 	duploObject.FriendlyName = d.Get("friendly_name").(string)
 	duploObject.Capacity = d.Get("capacity").(string)
 	duploObject.Zone = d.Get("zone").(int)
 	duploObject.IsMinion = d.Get("is_minion").(bool)
-	duploObject.ImageId = d.Get("image_id").(string)
+	duploObject.ImageID = d.Get("image_id").(string)
 	duploObject.Base64UserData = d.Get("base64_user_data").(string)
 	duploObject.AgentPlatform = d.Get("agent_platform").(int)
 	duploObject.IsEbsOptimized = d.Get("is_ebs_optimized").(bool)
 	duploObject.AgentPlatform = d.Get("agent_platform").(int)
-	duploObject.AllocatedPublicIp = d.Get("allocated_public_ip").(bool)
+	duploObject.AllocatedPublicIP = d.Get("allocated_public_ip").(bool)
 	duploObject.Cloud = d.Get("cloud").(int)
 	duploObject.EncryptDisk = d.Get("encrypt_disk").(bool)
 
@@ -373,68 +384,74 @@ func (c *Client) DuploAwsHostFromState(d *schema.ResourceData, m interface{}, is
 	duploObject.MetaData = c.AwsHostKvFromState("metadata", d)
 
 	jsonData, _ := json.Marshal(&duploObject)
-	log.Printf("[TRACE] %s 2 ********: to-CLOUD %s", api_str, jsonData)
+	log.Printf("[TRACE] %s 2 ********: to-CLOUD %s", apiStr, jsonData)
 	return duploObject, nil
 }
 
-//this is the import-id for terraform inspired from azure imports
-func (c *Client) DuploAwsHostSetIdFromCloud(duploObject *DuploAwsHost, d *schema.ResourceData) string {
-	d.Set("instance_id", duploObject.InstanceId)
-	d.Set("tenant_id", duploObject.TenantId)
-	c.AwsHostSetId(d)
+// DuploAwsHostSetIDFromCloud populates the resource ID based on instance_id and tenant_id
+func (c *Client) DuploAwsHostSetIDFromCloud(duploObject *DuploAwsHost, d *schema.ResourceData) string {
+	d.Set("instance_id", duploObject.InstanceID)
+	d.Set("tenant_id", duploObject.TenantID)
+	c.AwsHostSetID(d)
 	log.Printf("[TRACE] DuploAwsHostSetIdFromCloud 2 ********: %s", d.Id())
 	return d.Id()
 }
-func (c *Client) AwsHostSetId(d *schema.ResourceData) string {
-	tenant_id := c.AwsHostGetTenantId(d)
-	instance_id := d.Get("instance_id").(string)
+
+// AwsHostSetID populates the resource ID based on instance_id and tenant_id
+func (c *Client) AwsHostSetID(d *schema.ResourceData) string {
+	tenantID := c.AwsHostGetTenantID(d)
+	instanceID := d.Get("instance_id").(string)
+
 	///--- set
-	id := fmt.Sprintf("v2/subscriptions/%s/NativeHostV2/%s", tenant_id, instance_id)
+	id := fmt.Sprintf("v2/subscriptions/%s/NativeHostV2/%s", tenantID, instanceID)
 	d.SetId(id)
 	return id
 }
 
-//api for crud -- get + delete
-func (c *Client) AwsHostUrl(d *schema.ResourceData) string {
+// AwsHostURL returns the base API URL for crud -- get + delete
+func (c *Client) AwsHostURL(d *schema.ResourceData) string {
 	api := d.Id()
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-AwsHostUrl %s 1 ********: %s", api, host)
 	return host
 }
 
-// app for -- get list + create + update
-func (c *Client) AwsHostListUrl(d *schema.ResourceData) string {
-	tenant_id := d.Get("tenant_id").(string)
-	api := fmt.Sprintf("v2/subscriptions/%s/NativeHostV2", tenant_id)
+// AwsHostListURL returns the base API URL for crud -- get list + create + update
+func (c *Client) AwsHostListURL(d *schema.ResourceData) string {
+	tenantID := d.Get("tenant_id").(string)
+	api := fmt.Sprintf("v2/subscriptions/%s/NativeHostV2", tenantID)
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-AwsHostListUrl %s 1 ********: %s", api, host)
 	return host
 }
 
-// tenant_id or any  parents in import url should be handled if not part of get json
-func (c *Client) AwsHostGetTenantId(d *schema.ResourceData) string {
-	tenant_id := d.Get("tenant_id").(string)
+// AwsHostGetTenantID tries to retrieve (or synthesize) a tenant_id based on resource data
+// - tenant_id or any parents in import url should be handled if not part of get json
+func (c *Client) AwsHostGetTenantID(d *schema.ResourceData) string {
+	tenantID := d.Get("tenant_id").(string)
 	//tenant_id is local only field --- should be returned from server
-	if tenant_id == "" {
+	if tenantID == "" {
 		id := d.Id()
-		id_array := strings.Split(id, "/")
-		for i, s := range id_array {
+		idArray := strings.Split(id, "/")
+		for i, s := range idArray {
 			if s == "subscriptions" {
-				next_i := i + 1
-				if id_array[next_i] != "" {
-					d.Set("tenant_id", id_array[next_i])
+				j := i + 1
+				if idArray[j] != "" {
+					d.Set("tenant_id", idArray[j])
 				}
-				return id_array[next_i]
+				return idArray[j]
 			}
 			fmt.Println(i, s)
 		}
 	}
-	return tenant_id
+	return tenantID
 }
 
 //////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// refresh state //////////////////////
 /////////////////////////////////////////////////////////////////////////
+
+// AwsHostRefreshFunc refreshes AWS host information from the Duplo API.
 func AwsHostRefreshFunc(c *Client, url string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		api := url
@@ -462,6 +479,8 @@ func AwsHostRefreshFunc(c *Client, url string) resource.StateRefreshFunc {
 		return duploObject, status, nil
 	}
 }
+
+// AwsHostWaitForCreation waits for creation of an AWS Host by the Duplo API
 func AwsHostWaitForCreation(c *Client, url string) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"pending"},
@@ -471,7 +490,7 @@ func AwsHostWaitForCreation(c *Client, url string) error {
 		PollInterval: 30 * time.Second,
 		Timeout:      30 * time.Minute,
 	}
-	log.Printf("[DEBUG] AwsHostRefreshFuncWiatForCreation (%s)", url)
+	log.Printf("[DEBUG] AwsHostRefreshFuncWaitForCreation (%s)", url)
 	_, err := stateConf.WaitForState()
 	return err
 }
@@ -480,7 +499,7 @@ func AwsHostWaitForCreation(c *Client, url string) error {
 ///////////////////////////////////// refresh state //////////////////////
 /////////////////////////////////////////////////////////////////////////
 
-//Utils convert for get-list   -- cloud names (CamelCase) to tf names (SnakeCase)
+// AwsHostsFlatten converts a list of Duplo SDK objects into Terraform resource data
 func (c *Client) AwsHostsFlatten(duploObjects *[]DuploAwsHost, d *schema.ResourceData) []interface{} {
 	if duploObjects != nil {
 		ois := make([]interface{}, len(*duploObjects), len(*duploObjects))
@@ -496,7 +515,7 @@ func (c *Client) AwsHostsFlatten(duploObjects *[]DuploAwsHost, d *schema.Resourc
 	return make([]interface{}, 0)
 }
 
-//convert  get-list item into state  -- cloud names (CamelCase) to tf names (SnakeCase)
+// AwsHostFillGet converts a Duplo SDK object into Terraform resource data
 func (c *Client) AwsHostFillGet(duploObject *DuploAwsHost, d *schema.ResourceData) error {
 	if duploObject != nil {
 		//create map
@@ -511,17 +530,17 @@ func (c *Client) AwsHostFillGet(duploObject *DuploAwsHost, d *schema.ResourceDat
 		}
 		return nil
 	}
-	err_msg := fmt.Errorf("AwsHost not found")
-	return err_msg
+	errMsg := fmt.Errorf("AwsHost not found")
+	return errMsg
 }
 
-/////////  API list //////////
+// AwsHostGetList retrieves a list of AWS hosts via the Duplo API.
 func (c *Client) AwsHostGetList(d *schema.ResourceData, m interface{}) (*[]DuploAwsHost, error) {
 	//todo: filter other than tenant
 	filters, filtersOk := d.GetOk("filter")
-	log.Printf("[TRACE] AwsHostGetList filters 1 ********* : %s  %s", filters, filtersOk)
+	log.Printf("[TRACE] AwsHostGetList filters 1 ********* : %s  %v", filters, filtersOk)
 	//
-	api := c.AwsHostListUrl(d)
+	api := c.AwsHostListURL(d)
 	url := api
 	log.Printf("[TRACE] duplo-AwsHostGetList 2 %s  ********: %s", api, url)
 	//
@@ -539,17 +558,17 @@ func (c *Client) AwsHostGetList(d *schema.ResourceData, m interface{}) (*[]Duplo
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[TRACE] duplo-AwsHostGetList 5 %s  ********: %s", api, len(duploObjects))
+	log.Printf("[TRACE] duplo-AwsHostGetList 5 %s  ********: %d", api, len(duploObjects))
 
 	return &duploObjects, nil
 }
 
 /////////   list DONE //////////
 
-/////////  API Item //////////
+// AwsHostGet retrieves an AWS host via the Duplo API.
 func (c *Client) AwsHostGet(d *schema.ResourceData, m interface{}) error {
 	var api = d.Id()
-	url := c.AwsHostUrl(d)
+	url := c.AwsHostURL(d)
 	log.Printf("[TRACE] duplo-AwsHostGet 1  %s ********: %s", api, url)
 	//
 	req2, _ := http.NewRequest("GET", url, nil)
@@ -568,72 +587,75 @@ func (c *Client) AwsHostGet(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	log.Printf("[TRACE] duplo-AwsHostGet 5 %s ******** ", api)
-	if duploObject.TenantId != "" {
+	if duploObject.TenantID != "" {
 		c.AwsHostFillGet(&duploObject, d)
-		log.Printf("[TRACE] duplo-AwsHostGet 6 FOUND *****", api)
+		log.Printf("[TRACE] duplo-AwsHostGet 6 %s FOUND *****", api)
 		return nil
 	}
-	err_msg := fmt.Errorf("AwsHost not found  : %s body:%s", api, bodyString)
-	return err_msg
+	errMsg := fmt.Errorf("AwsHost not found  : %s body:%s", api, bodyString)
+	return errMsg
 }
 
 /////////  API Item //////////
 
 /////////  API  Create/update //////////
 
+// AwsHostCreate creates an AWS host via the Duplo API.
 func (c *Client) AwsHostCreate(d *schema.ResourceData, m interface{}) (*DuploAwsHost, error) {
 	return c.AwsHostCreateOrUpdate(d, m, false)
 }
 
+// AwsHostUpdate updates an AWS host via the Duplo API.
 func (c *Client) AwsHostUpdate(d *schema.ResourceData, m interface{}) (*DuploAwsHost, error) {
 	return c.AwsHostCreateOrUpdate(d, m, true)
 }
 
+// AwsHostCreateOrUpdate creates or updates an AWS host via the Duplo API.
 func (c *Client) AwsHostCreateOrUpdate(d *schema.ResourceData, m interface{}, isUpdate bool) (*DuploAwsHost, error) {
-	url := c.AwsHostListUrl(d)
+	url := c.AwsHostListURL(d)
 	api := url
 	var action = "POST"
-	var api_str = fmt.Sprintf("duplo-AwsHostCreate %s ", api)
+	var apiStr = fmt.Sprintf("duplo-AwsHostCreate %s ", api)
 	if isUpdate {
 		action = "PUT"
-		api_str = fmt.Sprintf("duplo-AwsHostUpdate %s ", api)
+		apiStr = fmt.Sprintf("duplo-AwsHostUpdate %s ", api)
 	}
-	log.Printf("[TRACE] %s 1 ********: %s", api_str, url)
+	log.Printf("[TRACE] %s 1 ********: %s", apiStr, url)
 
 	//
 	duploObject, _ := c.DuploAwsHostFromState(d, m, isUpdate)
 	rb, err := json.Marshal(duploObject)
 	if err != nil {
-		log.Printf("[TRACE] %s 3 ********: %s", api_str, err.Error())
+		log.Printf("[TRACE] %s 3 ********: %s", apiStr, err.Error())
 		return nil, err
 	}
 
-	json_str := string(rb)
-	log.Printf("[TRACE] %s 4 ********: %s", api_str, json_str)
+	jsonStr := string(rb)
+	log.Printf("[TRACE] %s 4 ********: %s", apiStr, jsonStr)
 
 	req, err := http.NewRequest(action, url, strings.NewReader(string(rb)))
 	if err != nil {
-		log.Printf("[TRACE] %s 5 ********: %s", api_str, err.Error())
+		log.Printf("[TRACE] %s 5 ********: %s", apiStr, err.Error())
 		return nil, err
 	}
 
 	body, err := c.doRequest(req)
 	if err != nil {
-		log.Printf("[TRACE] %s 6 ********: %s", api_str, err.Error())
+		log.Printf("[TRACE] %s 6 ********: %s", apiStr, err.Error())
 		return nil, err
 	}
 	if body != nil {
 		bodyString := string(body)
-		log.Printf("[TRACE] %s 7 ********: %s", api_str, bodyString)
+		log.Printf("[TRACE] %s 7 ********: %s", apiStr, bodyString)
 
 		duploObject := DuploAwsHost{}
 		err = json.Unmarshal(body, &duploObject)
 		if err != nil {
-			log.Printf("[TRACE] %s 8 ********:  error: %s", api_str, err.Error())
+			log.Printf("[TRACE] %s 8 ********:  error: %s", apiStr, err.Error())
 			return nil, err
 		}
-		log.Printf("[TRACE] %s 9 ******** ", api_str)
-		c.DuploAwsHostSetIdFromCloud(&duploObject, d)
+		log.Printf("[TRACE] %s 9 ******** ", apiStr)
+		c.DuploAwsHostSetIDFromCloud(&duploObject, d)
 
 		////////AwsHostWaitForCreation////////
 		//todo: test AwsHostWaitForCreation(c, c.AwsHostUrl(d))
@@ -641,16 +663,14 @@ func (c *Client) AwsHostCreateOrUpdate(d *schema.ResourceData, m interface{}, is
 
 		return nil, nil
 	}
-	err_msg := fmt.Errorf("ERROR: in create %d,   body: %s", api, body)
-	return nil, err_msg
+	errMsg := fmt.Errorf("ERROR: in create %s,   body: %s", api, body)
+	return nil, errMsg
 }
 
-/////////  API Create/update //////////
-
-/////////  API Delete //////////
+// AwsHostDelete deletes an AWS host via the Duplo API.
 func (c *Client) AwsHostDelete(d *schema.ResourceData, m interface{}) (*DuploAwsHost, error) {
 	var api = d.Id()
-	url := c.AwsHostUrl(d)
+	url := c.AwsHostURL(d)
 	log.Printf("[TRACE] duplo-AwsHostDelete %s 1 ********: %s", api, url)
 
 	//
@@ -670,7 +690,7 @@ func (c *Client) AwsHostDelete(d *schema.ResourceData, m interface{}) (*DuploAws
 		//nothing ?
 	}
 
-	log.Printf("[TRACE] DONE duplo-AwsHostDelete %s 4 ********: %s", api)
+	log.Printf("[TRACE] DONE duplo-AwsHostDelete %s 4 ********", api)
 	return nil, nil
 }
 
