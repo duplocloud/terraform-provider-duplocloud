@@ -46,7 +46,7 @@ func K8SecretSchema() *map[string]*schema.Schema {
 	}
 }
 
-////// convert from cloud to state and vice versa :  cloud names (CamelCase) to tf names (SnakeCase)
+// K8SecretToState converts a Duplo SDK object respresenting a k8s secret to terraform resource data.
 func (c *Client) K8SecretToState(pduploObject *map[string]interface{}, d *schema.ResourceData) map[string]interface{} {
 	duploObject := *pduploObject
 	if duploObject != nil {
@@ -66,7 +66,7 @@ func (c *Client) K8SecretToState(pduploObject *map[string]interface{}, d *schema
 		}
 		dataNewStr, _ := json.Marshal(dataNew)
 		///--- set
-		cObj["tenant_id"] = c.K8SecretGetTenantId(d)
+		cObj["tenant_id"] = c.K8SecretGetTenantID(d)
 		cObj["secret_data"] = string(dataNewStr)
 		cObj["secret_type"] = duploObject["SecretType"].(string)
 		cObj["secret_name"] = duploObject["SecretName"].(string)
@@ -84,12 +84,13 @@ func diffIgnoreForSecretMap(k, old, new string, d *schema.ResourceData) bool {
 	_, dataNew := d.GetChange(hashFieldName)
 	hashOld := d.Get(mapFieldName).(string)
 	hashNew := hashForData(dataNew.(string))
-	log.Printf("[TRACE] duplo-diffIgnoreForSecretMap ******** 1: hash_old %s hash_new   ", hashNew, hashOld)
+	log.Printf("[TRACE] duplo-diffIgnoreForSecretMap ******** 1: hash_old %s hash_new %s", hashNew, hashOld)
 	return hashOld == hashNew
 }
 
+// DuploK8SecretFromState converts resource data respresenting a k8s secret to a Duplo SDK object.
 func (c *Client) DuploK8SecretFromState(d *schema.ResourceData, m interface{}, isUpdate bool) (string, error) {
-	url := c.K8SecretListUrl(d)
+	url := c.K8SecretListURL(d)
 	var apiStr = fmt.Sprintf("duplo-DuploK8SecretFromState-Create %s ", url)
 	if isUpdate {
 		apiStr = fmt.Sprintf("duplo-DuploK8SecretFromState-update %s ", url)
@@ -122,15 +123,17 @@ func (c *Client) DuploK8SecretFromState(d *schema.ResourceData, m interface{}, i
 	return string(jsonData), nil
 }
 
-//this is the import-id for terraform inspired from azure imports
-func (c *Client) DuploK8SecretSetIdFromCloud(duploObject *map[string]interface{}, d *schema.ResourceData) string {
-	d.Set("tenant_id", c.K8SecretGetTenantId(d))
-	c.K8SecretSetId(d)
+// DuploK8SecretSetIDFromCloud populates the resource ID based on secret_name and tenant_id
+func (c *Client) DuploK8SecretSetIDFromCloud(duploObject *map[string]interface{}, d *schema.ResourceData) string {
+	d.Set("tenant_id", c.K8SecretGetTenantID(d))
+	c.K8SecretSetID(d)
 	log.Printf("[TRACE] DuploK8SecretSetIdFromCloud 2 ********: %s", d.Id())
 	return d.Id()
 }
-func (c *Client) K8SecretSetId(d *schema.ResourceData) string {
-	tenantID := c.K8SecretGetTenantId(d)
+
+// K8SecretSetID populates the resource ID based on secret_name and tenant_id
+func (c *Client) K8SecretSetID(d *schema.ResourceData) string {
+	tenantID := c.K8SecretGetTenantID(d)
 	name := d.Get("secret_name").(string)
 	///--- set
 	id := fmt.Sprintf("v2/subscriptions/%s/K8SecretApiV2/%s", tenantID, name)
@@ -138,25 +141,26 @@ func (c *Client) K8SecretSetId(d *schema.ResourceData) string {
 	return id
 }
 
-//api for crud -- get + delete
-func (c *Client) K8SecretUrl(d *schema.ResourceData) string {
+// K8SecretURL returns the base API URL for crud -- get + delete
+func (c *Client) K8SecretURL(d *schema.ResourceData) string {
 	api := d.Id()
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-K8SecretUrl %s 1 ********: %s", api, host)
 	return host
 }
 
-// app for -- get list + create + update
-func (c *Client) K8SecretListUrl(d *schema.ResourceData) string {
-	tenantID := c.K8SecretGetTenantId(d)
+// K8SecretListURL returns the base API URL for crud -- get list + create + update
+func (c *Client) K8SecretListURL(d *schema.ResourceData) string {
+	tenantID := c.K8SecretGetTenantID(d)
 	api := fmt.Sprintf("v2/subscriptions/%s/K8SecretApiV2", tenantID)
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-K8SecretListUrl %s 1 ********: %s", api, host)
 	return host
 }
 
-// tenant_id or any  parents in import url should be handled if not part of get json
-func (c *Client) K8SecretGetTenantId(d *schema.ResourceData) string {
+// K8SecretGetTenantID tries to retrieve (or synthesize) a tenant_id based on resource data
+// - tenant_id or any parents in import url should be handled if not part of get json
+func (c *Client) K8SecretGetTenantID(d *schema.ResourceData) string {
 	tenantID := d.Get("tenant_id").(string)
 	//tenant_id is local only field --- should be returned from server
 	if tenantID == "" {
@@ -176,7 +180,7 @@ func (c *Client) K8SecretGetTenantId(d *schema.ResourceData) string {
 	return tenantID
 }
 
-//Utils convert for get-list   -- cloud names (CamelCase) to tf names (SnakeCase)
+// K8SecretsFlatten converts a list of Duplo SDK objects into Terraform resource data
 func (c *Client) K8SecretsFlatten(duploObjects *[]map[string]interface{}, d *schema.ResourceData) []interface{} {
 	if duploObjects != nil {
 		ois := make([]interface{}, len(*duploObjects), len(*duploObjects))
@@ -192,7 +196,7 @@ func (c *Client) K8SecretsFlatten(duploObjects *[]map[string]interface{}, d *sch
 	return make([]interface{}, 0)
 }
 
-//convert  get-list item into state  -- cloud names (CamelCase) to tf names (SnakeCase)
+// K8SecretFillGet converts a Duplo SDK object into Terraform resource data
 func (c *Client) K8SecretFillGet(duploObject *map[string]interface{}, d *schema.ResourceData) error {
 	if duploObject != nil {
 		//create map
@@ -211,13 +215,13 @@ func (c *Client) K8SecretFillGet(duploObject *map[string]interface{}, d *schema.
 	return errMsg
 }
 
-/////////  API list //////////
+// K8SecretGetList retrieves a list of k8s secrets via the Duplo API.
 func (c *Client) K8SecretGetList(d *schema.ResourceData, m interface{}) (*[]map[string]interface{}, error) {
 	//todo: filter other than tenant
 	filters, filtersOk := d.GetOk("filter")
 	log.Printf("[TRACE] K8SecretGetList filters 1 ********* : %s  %v", filters, filtersOk)
 	//
-	api := c.K8SecretListUrl(d)
+	api := c.K8SecretListURL(d)
 	url := api
 	log.Printf("[TRACE] duplo-K8SecretGetList 2 %s  ********: %s", api, url)
 	//
@@ -243,9 +247,11 @@ func (c *Client) K8SecretGetList(d *schema.ResourceData, m interface{}) (*[]map[
 /////////   list DONE //////////
 
 /////////  API Item //////////
+
+// K8SecretGet retrieves a k8s secret via the Duplo API.
 func (c *Client) K8SecretGet(d *schema.ResourceData, m interface{}) error {
 	var api = d.Id()
-	url := c.K8SecretUrl(d)
+	url := c.K8SecretURL(d)
 	log.Printf("[TRACE] duplo-K8SecretGet 1  %s ********: %s", api, url)
 	//
 	req2, _ := http.NewRequest("GET", url, nil)
@@ -266,7 +272,7 @@ func (c *Client) K8SecretGet(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] duplo-K8SecretGet 5 %s ******** ", api)
 	if duploObject["SecretData"] != nil {
 		c.K8SecretFillGet(&duploObject, d)
-		log.Printf("[TRACE] duplo-K8SecretGet 6 FOUND *****", api)
+		log.Printf("[TRACE] duplo-K8SecretGet 6 %s FOUND *****", api)
 		return nil
 	}
 	errMsg := fmt.Errorf("K8Secret not found  : %s body:%s", api, bodyString)
@@ -277,16 +283,19 @@ func (c *Client) K8SecretGet(d *schema.ResourceData, m interface{}) error {
 
 /////////  API  Create/update //////////
 
+// K8SecretCreate creates a k8s secret via the Duplo API.
 func (c *Client) K8SecretCreate(d *schema.ResourceData, m interface{}) (*map[string]interface{}, error) {
 	return c.K8SecretCreateOrUpdate(d, m, false)
 }
 
+// K8SecretUpdate updates a k8s secret via the Duplo API.
 func (c *Client) K8SecretUpdate(d *schema.ResourceData, m interface{}) (*map[string]interface{}, error) {
 	return c.K8SecretCreateOrUpdate(d, m, true)
 }
 
+// K8SecretCreateOrUpdate creates or updates a k8s secret via the Duplo API.
 func (c *Client) K8SecretCreateOrUpdate(d *schema.ResourceData, m interface{}, isUpdate bool) (*map[string]interface{}, error) {
-	url := c.K8SecretListUrl(d)
+	url := c.K8SecretListURL(d)
 	api := url
 	var action = "POST"
 	var apiStr = fmt.Sprintf("duplo-K8SecretCreate %s ", api)
@@ -320,7 +329,7 @@ func (c *Client) K8SecretCreateOrUpdate(d *schema.ResourceData, m interface{}, i
 			return nil, err
 		}
 		log.Printf("[TRACE] %s 9 ******** ", apiStr)
-		c.DuploK8SecretSetIdFromCloud(&duploObject, d)
+		c.DuploK8SecretSetIDFromCloud(&duploObject, d)
 		return nil, nil
 	}
 	errMsg := fmt.Errorf("ERROR: in create %s,   body: %s", api, body)
@@ -330,9 +339,11 @@ func (c *Client) K8SecretCreateOrUpdate(d *schema.ResourceData, m interface{}, i
 /////////  API Create/update //////////
 
 /////////  API Delete //////////
+
+// K8SecretDelete deletes a k8s secret via the Duplo API.
 func (c *Client) K8SecretDelete(d *schema.ResourceData, m interface{}) (*map[string]interface{}, error) {
 	var api = d.Id()
-	url := c.K8SecretUrl(d)
+	url := c.K8SecretURL(d)
 	log.Printf("[TRACE] duplo-K8SecretDelete %s 1 ********: %s", api, url)
 
 	//

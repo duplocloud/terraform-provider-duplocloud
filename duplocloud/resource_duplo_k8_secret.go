@@ -88,7 +88,7 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	c.K8SecretSetId(d)
+	c.K8SecretSetID(d)
 	log.Printf("[TRACE] duplo-resourceK8SecretRead ******** end")
 	return diags
 }
@@ -105,7 +105,7 @@ func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.FromErr(err)
 	}
 
-	c.K8SecretSetId(d)
+	c.K8SecretSetID(d)
 	resourceK8SecretRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceK8SecretCreate ******** end")
 	return diags
@@ -123,7 +123,7 @@ func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.FromErr(err)
 	}
 
-	c.K8SecretSetId(d)
+	c.K8SecretSetID(d)
 	resourceK8SecretRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceK8SecretUpdate ******** end")
 
