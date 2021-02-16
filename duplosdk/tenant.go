@@ -3,33 +3,34 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//Tenant
+// DuploTenant represents a Duplo tenant
 type DuploTenant struct {
-	TenantId    string `json:"TenantId",omitempty`
+	TenantID    string `json:"TenantId,omitempty"`
 	AccountName string `json:"AccountName"`
 	PlanID      string `json:"PlanID"`
 }
 
-/////------ schema ------////
+// TenantSchema returns a Terraform resource schema for a Duplo Tenant
 func TenantSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
-		"account_name": &schema.Schema{
+		"account_name": {
 			Type:     schema.TypeString,
 			Computed: false,
 			Required: true,
 		},
-		"plan_id": &schema.Schema{
+		"plan_id": {
 			Type:     schema.TypeString,
 			Computed: false,
 			Required: true,
 		},
-		"tenant_id": &schema.Schema{
+		"tenant_id": {
 			Type:     schema.TypeString,
 			Computed: true,
 			Required: false,
@@ -37,13 +38,13 @@ func TenantSchema() *map[string]*schema.Schema {
 	}
 }
 
-////// convert from cloud to state :  cloud names (CamelCase) to tf names (SnakeCase)
+// TenantFlatten converts a list of Duplo SDK objects into Terraform resource data
 func (c *Client) TenantFlatten(duploTenant *DuploTenant, d *schema.ResourceData) map[string]interface{} {
 	if duploTenant != nil {
 		c := make(map[string]interface{})
 		///--- set
 		c["account_name"] = duploTenant.AccountName
-		c["tenant_id"] = duploTenant.TenantId
+		c["tenant_id"] = duploTenant.TenantID
 		c["plan_id"] = duploTenant.PlanID
 
 		jsonData, _ := json.Marshal(duploTenant)
@@ -53,14 +54,14 @@ func (c *Client) TenantFlatten(duploTenant *DuploTenant, d *schema.ResourceData)
 	return nil
 }
 
-////// convert from state to cloud :  cloud names (CamelCase) to tf names (SnakeCase)
+// TenantFromState converts Terraform resource data representing an AWS host into partial Terraform resource data
 func (c *Client) TenantFromState(d *schema.ResourceData, m interface{}, isUpdate bool) (*DuploTenant, error) {
-	url := c.TenantUrl(d)
-	var api_str = fmt.Sprintf("duplo-TenantFromState-Create %s ", url)
+	url := c.TenantURL(d)
+	var apiStr = fmt.Sprintf("duplo-TenantFromState-Create %s ", url)
 	if isUpdate {
-		api_str = fmt.Sprintf("duplo-TenantFromState-update %s ", url)
+		apiStr = fmt.Sprintf("duplo-TenantFromState-update %s ", url)
 	}
-	log.Printf("[TRACE] %s 1 ********: %s", api_str, url)
+	log.Printf("[TRACE] %s 1 ********: %s", apiStr, url)
 
 	duploObject := new(DuploTenant)
 	///--- set
@@ -68,28 +69,30 @@ func (c *Client) TenantFromState(d *schema.ResourceData, m interface{}, isUpdate
 	duploObject.PlanID = d.Get("plan_id").(string)
 
 	jsonData, _ := json.Marshal(duploObject)
-	log.Printf("[TRACE] %s ********: jsonData %s ", api_str, jsonData)
+	log.Printf("[TRACE] %s ********: jsonData %s ", apiStr, jsonData)
 	return duploObject, nil
 }
 
-/////////// common place to get url + Id : follow Azure  style Ids for import//////////
-func (c *Client) TenantSetId(d *schema.ResourceData) string {
-	tenant_id := d.Get("tenant_id").(string)
+// TenantSetID populates the resource ID based on tenant_id
+func (c *Client) TenantSetID(d *schema.ResourceData) string {
+	tenantID := d.Get("tenant_id").(string)
 	///--- set
-	id := fmt.Sprintf("v2/admin/TenantV2/%s", tenant_id)
-	log.Printf("[TRACE] duplo-TenantSetId %s  ********: %s", id, tenant_id)
+	id := fmt.Sprintf("v2/admin/TenantV2/%s", tenantID)
+	log.Printf("[TRACE] duplo-TenantSetId %s  ********: %s", id, tenantID)
 	d.SetId(id)
 	return id
 }
 
-func (c *Client) TenantUrl(d *schema.ResourceData) string {
+// TenantURL returns the base API URL for crud -- get + delete
+func (c *Client) TenantURL(d *schema.ResourceData) string {
 	api := d.Id()
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-TenantUrl %s 1 ********: %s", api, host)
 	return host
 }
 
-func (c *Client) TenantUrlList(d *schema.ResourceData) string {
+// TenantURLList returns the base API URL for crud -- get list + create + update
+func (c *Client) TenantURLList(d *schema.ResourceData) string {
 	api := "v2/admin/TenantV2"
 	url := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-TenantUrlList %s 1 ********: %s", api, url)
@@ -98,7 +101,7 @@ func (c *Client) TenantUrlList(d *schema.ResourceData) string {
 
 /////////// common place to get url + Id : follow Azure  style Ids for import//////////
 
-////// convert from cloud to state :  cloud names (CamelCase) to tf names (SnakeCase)
+// TenantsFlatten converts a list of Duplo SDK objects into Terraform resource data
 func (c *Client) TenantsFlatten(duploTenants *[]DuploTenant, d *schema.ResourceData) []interface{} {
 	if duploTenants != nil {
 		ois := make([]interface{}, len(*duploTenants), len(*duploTenants))
@@ -112,7 +115,7 @@ func (c *Client) TenantsFlatten(duploTenants *[]DuploTenant, d *schema.ResourceD
 	return make([]interface{}, 0)
 }
 
-////// convert from cloud to state :  cloud names (CamelCase) to tf names (SnakeCase)
+// TenantFillGet converts a Duplo SDK object into Terraform resource data
 func (c *Client) TenantFillGet(duploTenant *DuploTenant, d *schema.ResourceData) error {
 	if duploTenant != nil {
 		ois := c.TenantFlatten(duploTenant, d)
@@ -124,14 +127,15 @@ func (c *Client) TenantFillGet(duploTenant *DuploTenant, d *schema.ResourceData)
 		}
 		return nil
 	}
-	err_msg := fmt.Errorf("Tenant not found 2")
-	return err_msg
+	return fmt.Errorf("Tenant not found 2")
 }
 
 /////////  API list //////////
+
+// TenantGetList retrieves a list of tenants via the Duplo API.
 func (c *Client) TenantGetList(d *schema.ResourceData, m interface{}) (*[]DuploTenant, error) {
 
-	url := c.TenantUrlList(d)
+	url := c.TenantURLList(d)
 
 	req2, _ := http.NewRequest("GET", url, nil)
 	body, err := c.doRequest(req2)
@@ -147,16 +151,16 @@ func (c *Client) TenantGetList(d *schema.ResourceData, m interface{}) (*[]DuploT
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[TRACE] duplo-GetListTenant %s 3 ********: %s", url, len(duploTenants))
+	log.Printf("[TRACE] duplo-GetListTenant %s 3 ********: %d", url, len(duploTenants))
 
 	return &duploTenants, nil
 }
 
-/////////  API Item //////////
+// TenantGet retrieves a tenant via the Duplo API.
 func (c *Client) TenantGet(d *schema.ResourceData, m interface{}) error {
 
 	api := d.Id()
-	url := c.TenantUrl(d)
+	url := c.TenantURL(d)
 	log.Printf("[TRACE] duplo-TenantGet %s 1 ********: %s ", api, url)
 
 	//
@@ -175,32 +179,35 @@ func (c *Client) TenantGet(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	log.Printf("[TRACE] duplo-TenantGet %s 4 ********: %s", api, duploTenant.AccountName)
-	if duploTenant.TenantId != "" {
+	if duploTenant.TenantID != "" {
 		c.TenantFillGet(&duploTenant, d)
-		log.Printf("[TRACE] duplo-TenantGet 5 FOUND ***** : '%s' '%s'", duploTenant.AccountName, duploTenant.TenantId)
+		log.Printf("[TRACE] duplo-TenantGet 5 FOUND ***** : '%s' '%s'", duploTenant.AccountName, duploTenant.TenantID)
 		return nil
 	}
 
-	account_name := d.Get("account_name").(string)
-	err_msg := fmt.Errorf("Tenant not found %s : %s. Please ", account_name, duploTenant.TenantId)
-	return err_msg
+	accountName := d.Get("account_name").(string)
+	return fmt.Errorf("Tenant not found %s : %s. Please ", accountName, duploTenant.TenantID)
 }
 
 /////////  API Create / update //////////
+
+// TenantCreate creates a tenant via the Duplo API.
 func (c *Client) TenantCreate(d *schema.ResourceData, m interface{}) (*DuploTenant, error) {
 	return c.TenantCreateOrUpdate(d, m, false)
 }
 
+// TenantUpdate updates a tenant via the Duplo API.
 func (c *Client) TenantUpdate(d *schema.ResourceData, m interface{}) (*DuploTenant, error) {
-	//do nothing
+	// No-op
 	return nil, nil
 }
 
+// TenantCreateOrUpdate creates or updates a tenant via the Duplo API.
 func (c *Client) TenantCreateOrUpdate(d *schema.ResourceData, m interface{}, isUpdate bool) (*DuploTenant, error) {
 	duploObject, _ := c.TenantFromState(d, m, isUpdate)
 	log.Printf("[TRACE] duplo-TenantCreate duploObject.AccountName %s PlanID %s ********:", duploObject.AccountName, duploObject.PlanID)
 
-	url := c.TenantUrlList(d)
+	url := c.TenantURLList(d)
 	log.Printf("[TRACE] duplo-TenantCreate %s 1 ********:", url)
 
 	//
@@ -210,8 +217,8 @@ func (c *Client) TenantCreateOrUpdate(d *schema.ResourceData, m interface{}, isU
 		return nil, err
 	}
 
-	json_str := string(rb) //strings.NewReader(string(rb))
-	log.Printf("[TRACE] duplo-AwsHostCreate %s 3 ********: %s", url, json_str)
+	jsonStr := string(rb) //strings.NewReader(string(rb))
+	log.Printf("[TRACE] duplo-AwsHostCreate %s 3 ********: %s", url, jsonStr)
 
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rb)))
 	if err != nil {
@@ -230,17 +237,18 @@ func (c *Client) TenantCreateOrUpdate(d *schema.ResourceData, m interface{}, isU
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("[TRACE] duplo-AwsHostCreate %s 5 ********: %s %s %s", url, duploTenant.AccountName, duploTenant.TenantId, duploTenant.PlanID)
+		log.Printf("[TRACE] duplo-AwsHostCreate %s 5 ********: %s %s %s", url, duploTenant.AccountName, duploTenant.TenantID, duploTenant.PlanID)
 		//todo: move this part up
-		d.Set("tenant_id", duploTenant.TenantId)
-		c.TenantSetId(d) //??
+		d.Set("tenant_id", duploTenant.TenantID)
+		c.TenantSetID(d) //??
 		return nil, nil
 	}
-	err_msg := fmt.Errorf("ERROR: in create %d, %s  body: %s", url, duploObject.AccountName, body)
-	return nil, err_msg
+	errMsg := fmt.Errorf("ERROR: in create %s, %s  body: %s", url, duploObject.AccountName, body)
+	return nil, errMsg
 }
 
+// TenantDelete deletes an AWS host via the Duplo API.
 func (c *Client) TenantDelete(d *schema.ResourceData, m interface{}) (*DuploTenant, error) {
-	//do nothing
+	// No-op
 	return nil, nil
 }

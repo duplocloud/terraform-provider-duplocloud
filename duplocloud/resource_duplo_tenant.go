@@ -84,7 +84,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 		return diag.FromErr(err)
 	}
 
-	c.TenantSetId(d)
+	c.TenantSetID(d)
 	log.Printf("[TRACE] duplo-resourceTenantRead ******** end")
 	return diags
 }
@@ -109,7 +109,7 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	c.TenantSetId(d)
+	c.TenantSetID(d)
 	resourceTenantRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceTenantCreate ******** end")
 
@@ -128,7 +128,7 @@ func resourceTenantUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	c.TenantSetId(d)
+	c.TenantSetID(d)
 	resourceTenantRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceTenantUpdate ******** end")
 
