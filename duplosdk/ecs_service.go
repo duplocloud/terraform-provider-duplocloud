@@ -14,8 +14,9 @@ import (
 type DuploEcsServiceLbConfig struct {
 	ReplicationControllerName string `json:"ReplicationControllerName"`
 	Port                      string `json:"Port,omitempty"`
-	Protocol                  string `json:"Protocol,omitempty"`
+	BackendProtocol           string `json:"BeProtocolVersion,omitempty"`
 	ExternalPort              int    `json:"ExternalPort,omitempty"`
+	Protocol                  string `json:"Protocol,omitempty"`
 	IsInternal                bool   `json:"IsInternal,omitempty"`
 	HealthCheckURL            string `json:"HealthCheckUrl,omitempty"`
 	CertificateArn            string `json:"CertificateArn,omitempty"`
@@ -113,6 +114,12 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 						Type:     schema.TypeInt,
 						Optional: false,
 						Required: true,
+					},
+					"backend_protocol": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Required: false,
+						Default:  "HTTP",
 					},
 					"is_internal": {
 						Type:     schema.TypeBool,
@@ -341,6 +348,10 @@ func ecsLoadBalancersToState(name string, lbcs *[]DuploEcsServiceLbConfig) []map
 		jo["lb_type"] = lbc.LbType
 		jo["port"] = lbc.Port
 		jo["protocol"] = lbc.Protocol
+		jo["backend_protocol"] = lbc.BackendProtocol
+		if jo["backend_protocol"] == "" {
+			jo["backend_protocol"] = "HTTP"
+		}
 		jo["external_port"] = lbc.ExternalPort
 		jo["is_internal"] = lbc.IsInternal
 		jo["health_check_url"] = lbc.HealthCheckURL
@@ -368,6 +379,7 @@ func ecsLoadBalancersFromState(d *schema.ResourceData) *[]DuploEcsServiceLbConfi
 			LbType:                    lb["lb_type"].(int),
 			Port:                      lb["port"].(string),
 			Protocol:                  lb["protocol"].(string),
+			BackendProtocol:           lb["backend_protocol"].(string),
 			ExternalPort:              lb["external_port"].(int),
 			IsInternal:                lb["is_internal"].(bool),
 			HealthCheckURL:            lb["health_check_url"].(string),
