@@ -88,15 +88,14 @@ func DuploRdsInstanceSchema() *map[string]*schema.Schema {
 		},
 		"cloud": {
 			Type:     schema.TypeInt,
-			Required: true,
-			Computed: true,
+			Optional: true,
 			ForceNew: true,
 			Default:  0,
 		},
 		"size": {
 			Type:     schema.TypeString,
 			Required: true,
-			Computed: true,
+			ForceNew: true,
 		},
 		"encrypt_storage": {
 			Type:     schema.TypeBool,

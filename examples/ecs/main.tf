@@ -36,7 +36,7 @@ resource "duplocloud_ecs_service" "test" {
   replicas = 2
   load_balancer {
     lb_type = 1
-    port = 80
+    port = 8080
     external_port = 80
     protocol = "HTTP"
   }
