@@ -34,6 +34,7 @@ func Provider() *schema.Provider {
 			"duplocloud_infrastructure":          resourceInfrastructure(),
 			"duplocloud_ecs_task_definition":     resourceDuploEcsTaskDefinition(),
 			"duplocloud_ecs_service":             resourceDuploEcsService(),
+			"duplocloud_rds_instance":            resourceDuploRdsInstance(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_tenant":                  dataSourceTenant(),
