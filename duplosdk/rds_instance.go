@@ -15,7 +15,19 @@ type DuploRdsInstance struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
 
-	Identifier string `json:"Identifier"`
+	Identifier                  string `json:"Identifier"`
+	Arn                         string `json:"Arn"`
+	MasterUsername              string `json:"MasterUsername,omitempty"`
+	MasterPassword              string `json:"MasterPassword,omitempty"`
+	Engine                      int    `json:"Engine,omitempty"`
+	EngineVersion               string `json:"EngineVersion,omitempty"`
+	SnapshotID                  string `json:"SnapshotId,omitempty"`
+	DBParameterGroupName        string `json:"DBParameterGroupName,omitempty"`
+	StoreDetailsInSecretManager bool   `json:"StoreDetailsInSecretManager,omitempty"`
+	Cloud                       int    `json:"Cloud,omitempty"`
+	SizeEx                      string `json:"SizeEx,omitempty"`
+	EncryptStorage              bool   `json:"EncryptStorage,omitempty"`
+	InstanceStatus              string `json:"InstanceStatus,omitempty"`
 }
 
 // DuploRdsInstanceSchema returns a Terraform resource schema for an ECS Service
@@ -31,6 +43,69 @@ func DuploRdsInstanceSchema() *map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
+		},
+		"arn": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"master_username": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
+			ForceNew: true,
+		},
+		"master_password": {
+			Type:      schema.TypeString,
+			Optional:  true,
+			Sensitive: true,
+		},
+		"engine": {
+			Type:     schema.TypeInt,
+			Optional: true,
+			Computed: true,
+			ForceNew: true,
+		},
+		"engine_version": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
+		},
+		"snapshot_id": {
+			Type:          schema.TypeString,
+			Optional:      true,
+			ForceNew:      true,
+			ConflictsWith: []string{"master_username"},
+		},
+		"parameter_group_name": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
+		},
+		"store_details_in_secret_manager": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			ForceNew: true,
+		},
+		"cloud": {
+			Type:     schema.TypeInt,
+			Required: true,
+			Computed: true,
+			ForceNew: true,
+			Default:  0,
+		},
+		"size": {
+			Type:     schema.TypeString,
+			Required: true,
+			Computed: true,
+		},
+		"encrypt_storage": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			ForceNew: true,
+		},
+		"instance_status": {
+			Type:     schema.TypeString,
+			Computed: true,
 		},
 	}
 }
@@ -185,6 +260,17 @@ func RdsInstanceFromState(d *schema.ResourceData) (*DuploRdsInstance, error) {
 
 	// First, convert things into simple scalars
 	duploObject.Identifier = d.Get("identifier").(string)
+	duploObject.Arn = d.Get("arn").(string)
+	duploObject.MasterUsername = d.Get("master_username").(string)
+	duploObject.MasterPassword = d.Get("master_password").(string)
+	duploObject.Engine = d.Get("engine").(int)
+	duploObject.EngineVersion = d.Get("engine_version").(string)
+	duploObject.SnapshotID = d.Get("snapshot_id").(string)
+	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
+	duploObject.Cloud = d.Get("cloud").(int)
+	duploObject.SizeEx = d.Get("size").(string)
+	duploObject.EncryptStorage = d.Get("encrypt_storage").(bool)
+	duploObject.InstanceStatus = d.Get("instance_status").(string)
 
 	return duploObject, nil
 }
@@ -202,6 +288,17 @@ func RdsInstanceToState(duploObject *DuploRdsInstance, d *schema.ResourceData) m
 	// First, convert things into simple scalars
 	jo["tenant_id"] = duploObject.TenantID
 	jo["identifier"] = duploObject.Identifier
+	jo["arn"] = duploObject.Arn
+	jo["master_username"] = duploObject.MasterUsername
+	jo["master_password"] = duploObject.MasterPassword
+	jo["engine"] = duploObject.Engine
+	jo["engine_version"] = duploObject.EngineVersion
+	jo["snapshot_id"] = duploObject.SnapshotID
+	jo["parameter_group_name"] = duploObject.DBParameterGroupName
+	jo["cloud"] = duploObject.Cloud
+	jo["size"] = duploObject.SizeEx
+	jo["encrypt_storage"] = duploObject.EncryptStorage
+	jo["instance_status"] = duploObject.InstanceStatus
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
