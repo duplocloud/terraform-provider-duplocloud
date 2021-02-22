@@ -2,13 +2,14 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"strconv"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // SCHEMA for resource crud
@@ -37,7 +38,7 @@ func dataSourceTenant() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceTenantRead,
 		Schema: map[string]*schema.Schema{
-			"data": &schema.Schema{
+			"data": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
@@ -54,12 +55,12 @@ func dataSourceTenantRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	c := m.(*duplosdk.Client)
 	var diags diag.Diagnostics
-	duplo_objs, err := c.TenantGetList(d, m)
+	duploObjs, err := c.TenantGetList(d, m)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	itemList := c.TenantsFlatten(duplo_objs, d)
+	itemList := c.TenantsFlatten(duploObjs, d)
 	if err := d.Set("data", itemList); err != nil {
 		return diag.FromErr(err)
 	}
@@ -83,7 +84,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 		return diag.FromErr(err)
 	}
 
-	c.TenantSetId(d)
+	c.TenantSetID(d)
 	log.Printf("[TRACE] duplo-resourceTenantRead ******** end")
 	return diags
 }
@@ -108,7 +109,7 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	c.TenantSetId(d)
+	c.TenantSetID(d)
 	resourceTenantRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceTenantCreate ******** end")
 
@@ -127,7 +128,7 @@ func resourceTenantUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	c.TenantSetId(d)
+	c.TenantSetID(d)
 	resourceTenantRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceTenantUpdate ******** end")
 

@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // SCHEMA for resource crud
@@ -46,10 +47,10 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 
 	// Convert the object into Terraform resource data
 	jo := duplosdk.EcsServiceToState(duplo, d)
-	for key, _ := range jo {
+	for key := range jo {
 		d.Set(key, jo[key])
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", duplo.TenantId, duplo.Name))
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", duplo.TenantID, duplo.Name))
 
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** end")
 	return nil
@@ -67,12 +68,12 @@ func resourceDuploEcsServiceCreate(ctx context.Context, d *schema.ResourceData, 
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	tenantId := d.Get("tenant_id").(string)
-	rpObject, err := c.EcsServiceCreate(tenantId, duploObject)
+	tenantID := d.Get("tenant_id").(string)
+	rpObject, err := c.EcsServiceCreate(tenantID, duploObject)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantId, rpObject.Name))
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantID, rpObject.Name))
 
 	diags := resourceDuploEcsServiceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcsServiceCreate ******** end")
@@ -91,8 +92,8 @@ func resourceDuploEcsServiceUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	// Put the object to Duplo
 	c := m.(*duplosdk.Client)
-	tenantId := d.Get("tenant_id").(string)
-	_, err = c.EcsServiceUpdate(tenantId, duploObject)
+	tenantID := d.Get("tenant_id").(string)
+	_, err = c.EcsServiceUpdate(tenantID, duploObject)
 	if err != nil {
 		return diag.FromErr(err)
 	}

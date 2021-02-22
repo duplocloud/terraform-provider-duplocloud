@@ -4,11 +4,12 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // SCHEMA for resource crud
@@ -36,12 +37,12 @@ func dataSourceDuploServiceLBConfigs() *schema.Resource {
 		ReadContext: dataSourceDuploServiceLBConfigsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": FilterSchema(), // todo: search specific to this object... may be api should support filter?
-			"tenant_id": &schema.Schema{
+			"tenant_id": {
 				Type:     schema.TypeString,
 				Computed: false,
 				Optional: true,
 			},
-			"data": &schema.Schema{
+			"data": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
@@ -58,12 +59,12 @@ func dataSourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.Resource
 
 	c := m.(*duplosdk.Client)
 	var diags diag.Diagnostics
-	duplo_objs, err := c.DuploServiceLBConfigsGetList(d, m)
+	duploObjs, err := c.DuploServiceLBConfigsGetList(d, m)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	itemList := c.DuploServiceLBConfigsListFlatten(duplo_objs, d)
+	itemList := c.DuploServiceLBConfigsListFlatten(duploObjs, d)
 	if err := d.Set("data", itemList); err != nil {
 		return diag.FromErr(err)
 	}

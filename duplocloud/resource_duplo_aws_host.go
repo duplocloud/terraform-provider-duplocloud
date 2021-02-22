@@ -2,13 +2,13 @@ package duplocloud
 
 import (
 	"context"
+	"log"
 	"strconv"
+	"terraform-provider-duplocloud/duplosdk"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"log"
-	"terraform-provider-duplocloud/duplosdk"
-	"time"
 )
 
 // SCHEMA for resource crud
@@ -36,12 +36,12 @@ func dataSourceAwsHost() *schema.Resource {
 		ReadContext: dataSourceAwsHostRead,
 		Schema: map[string]*schema.Schema{
 			"filter": FilterSchema(), // todo: search specific to this object... may be api should support filter?
-			"tenant_id": &schema.Schema{
+			"tenant_id": {
 				Type:     schema.TypeString,
 				Computed: false,
 				Optional: true,
 			},
-			"data": &schema.Schema{
+			"data": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
@@ -58,12 +58,12 @@ func dataSourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	c := m.(*duplosdk.Client)
 	var diags diag.Diagnostics
-	duplo_objs, err := c.AwsHostGetList(d, m)
+	duploObjs, err := c.AwsHostGetList(d, m)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	itemList := c.AwsHostsFlatten(duplo_objs, d)
+	itemList := c.AwsHostsFlatten(duploObjs, d)
 	if err := d.Set("data", itemList); err != nil {
 		return diag.FromErr(err)
 	}
@@ -87,7 +87,7 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 		return diag.FromErr(err)
 	}
 
-	c.AwsHostSetId(d)
+	c.AwsHostSetID(d)
 	log.Printf("[TRACE] duplo-resourceAwsHostRead ******** end")
 	return diags
 }
@@ -104,7 +104,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	c.AwsHostSetId(d)
+	c.AwsHostSetID(d)
 	resourceAwsHostRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceAwsHostCreate ******** end")
 	return diags
@@ -122,7 +122,7 @@ func resourceAwsHostUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	c.AwsHostSetId(d)
+	c.AwsHostSetID(d)
 	resourceAwsHostRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceAwsHostUpdate ******** end")
 

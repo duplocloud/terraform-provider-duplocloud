@@ -10,20 +10,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// DuploEcsServiceLbConfig is a Duplo SDK object that represents load balancer configuration for an ECS service
 type DuploEcsServiceLbConfig struct {
 	ReplicationControllerName string `json:"ReplicationControllerName"`
 	Port                      string `json:"Port,omitempty"`
-	Protocol                  string `json:"Protocol,omitempty"`
+	BackendProtocol           string `json:"BeProtocolVersion,omitempty"`
 	ExternalPort              int    `json:"ExternalPort,omitempty"`
+	Protocol                  string `json:"Protocol,omitempty"`
 	IsInternal                bool   `json:"IsInternal,omitempty"`
-	HealthCheckUrl            string `json:"HealthCheckUrl,omitempty"`
+	HealthCheckURL            string `json:"HealthCheckUrl,omitempty"`
 	CertificateArn            string `json:"CertificateArn,omitempty"`
 	LbType                    int    `json:"LbType,omitempty"`
 }
 
+// DuploEcsService is a Duplo SDK object that represents an ECS service
 type DuploEcsService struct {
-	// NOTE: The TenantId field does not come from the backend - we synthesize it
-	TenantId string `json:"-",omitempty`
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
 
 	Name                          string                     `json:"Name"`
 	TaskDefinition                string                     `json:"TaskDefinition,omitempty"`
@@ -31,11 +34,11 @@ type DuploEcsService struct {
 	HealthCheckGracePeriodSeconds int                        `json:"HealthCheckGracePeriodSeconds,omitempty"`
 	OldTaskDefinitionBufferSize   int                        `json:"OldTaskDefinitionBufferSize,omitempty"`
 	IsTargetGroupOnly             bool                       `json:"IsTargetGroupOnly,omitempty"`
-	DnsPrfx                       string                     `json:"DnsPrfx,omitempty"`
+	DNSPrfx                       string                     `json:"DnsPrfx,omitempty"`
 	LBConfigurations              *[]DuploEcsServiceLbConfig `json:"LBConfigurations,omitempty"`
 }
 
-/////------ schema ------////
+// DuploEcsServiceSchema returns a Terraform resource schema for an ECS Service
 func DuploEcsServiceSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
 		"tenant_id": {
@@ -44,12 +47,12 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 			Required: true,
 			ForceNew: true, //switch tenant
 		},
-		"name": &schema.Schema{
+		"name": {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
-		"task_definition": &schema.Schema{
+		"task_definition": {
 			Type:     schema.TypeString,
 			Required: true,
 		},
@@ -77,7 +80,7 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 			Required: false,
 			Default:  false,
 		},
-		"dns_prfx": &schema.Schema{
+		"dns_prfx": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
@@ -112,6 +115,12 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 						Optional: false,
 						Required: true,
 					},
+					"backend_protocol": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Required: false,
+						Default:  "HTTP",
+					},
 					"is_internal": {
 						Type:     schema.TypeBool,
 						Optional: true,
@@ -137,15 +146,19 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 /*************************************************
  * API CALLS to duplo
  */
-func (c *Client) EcsServiceCreate(tenantId string, duploObject *DuploEcsService) (*DuploEcsService, error) {
-	return c.EcsServiceCreateOrUpdate(tenantId, duploObject, false)
+
+// EcsServiceCreate creates an ECS service via the Duplo API.
+func (c *Client) EcsServiceCreate(tenantID string, duploObject *DuploEcsService) (*DuploEcsService, error) {
+	return c.EcsServiceCreateOrUpdate(tenantID, duploObject, false)
 }
 
-func (c *Client) EcsServiceUpdate(tenantId string, duploObject *DuploEcsService) (*DuploEcsService, error) {
-	return c.EcsServiceCreateOrUpdate(tenantId, duploObject, true)
+// EcsServiceUpdate updates an ECS service via the Duplo API.
+func (c *Client) EcsServiceUpdate(tenantID string, duploObject *DuploEcsService) (*DuploEcsService, error) {
+	return c.EcsServiceCreateOrUpdate(tenantID, duploObject, true)
 }
 
-func (c *Client) EcsServiceCreateOrUpdate(tenantId string, duploObject *DuploEcsService, updating bool) (*DuploEcsService, error) {
+// EcsServiceCreateOrUpdate creates or updates an ECS service via the Duplo API.
+func (c *Client) EcsServiceCreateOrUpdate(tenantID string, duploObject *DuploEcsService, updating bool) (*DuploEcsService, error) {
 
 	// Build the request
 	verb := "POST"
@@ -157,7 +170,7 @@ func (c *Client) EcsServiceCreateOrUpdate(tenantId string, duploObject *DuploEcs
 		log.Printf("[TRACE] EcsServiceCreateOrUpdate 1 JSON gen : %s", err.Error())
 		return nil, err
 	}
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2", c.HostURL, tenantId)
+	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2", c.HostURL, tenantID)
 	log.Printf("[TRACE] EcsServiceCreate 2 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
 	if err != nil {
@@ -188,13 +201,14 @@ func (c *Client) EcsServiceCreateOrUpdate(tenantId string, duploObject *DuploEcs
 	return &rpObject, nil
 }
 
+// EcsServiceDelete deletes an ECS service via the Duplo API.
 func (c *Client) EcsServiceDelete(id string) (*DuploEcsService, error) {
 	idParts := strings.SplitN(id, "/", 5)
-	tenantId := idParts[2]
+	tenantID := idParts[2]
 	name := idParts[4]
 
 	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2/%s", c.HostURL, tenantId, name)
+	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2/%s", c.HostURL, tenantID, name)
 	log.Printf("[TRACE] EcsServiceGet 1 : %s", url)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
@@ -225,17 +239,18 @@ func (c *Client) EcsServiceDelete(id string) (*DuploEcsService, error) {
 	}
 
 	// Fill in the tenant ID and return the object
-	duploObject.TenantId = tenantId
+	duploObject.TenantID = tenantID
 	return &duploObject, nil
 }
 
+// EcsServiceGet retrieves an ECS service via the Duplo API.
 func (c *Client) EcsServiceGet(id string) (*DuploEcsService, error) {
 	idParts := strings.SplitN(id, "/", 5)
-	tenantId := idParts[2]
+	tenantID := idParts[2]
 	name := idParts[4]
 
 	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2/%s", c.HostURL, tenantId, name)
+	url := fmt.Sprintf("%s/v2/subscriptions/%s/EcsServiceApiV2/%s", c.HostURL, tenantID, name)
 	log.Printf("[TRACE] EcsServiceGet 1 : %s", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -264,13 +279,15 @@ func (c *Client) EcsServiceGet(id string) (*DuploEcsService, error) {
 	}
 
 	// Fill in the tenant ID and return the object
-	duploObject.TenantId = tenantId
+	duploObject.TenantID = tenantID
 	return &duploObject, nil
 }
 
 /*************************************************
  * DATA CONVERSIONS to/from duplo/terraform
  */
+
+// EcsServiceFromState converts resource data respresenting an ECS Service to a Duplo SDK object.
 func EcsServiceFromState(d *schema.ResourceData) (*DuploEcsService, error) {
 	duploObject := new(DuploEcsService)
 
@@ -281,7 +298,7 @@ func EcsServiceFromState(d *schema.ResourceData) (*DuploEcsService, error) {
 	duploObject.HealthCheckGracePeriodSeconds = d.Get("health_check_grace_period_seconds").(int)
 	duploObject.OldTaskDefinitionBufferSize = d.Get("old_task_definition_buffer_size").(int)
 	duploObject.IsTargetGroupOnly = d.Get("is_target_group_only").(bool)
-	duploObject.DnsPrfx = d.Get("dns_prfx").(string)
+	duploObject.DNSPrfx = d.Get("dns_prfx").(string)
 
 	// Next, convert things into structured data.
 	duploObject.LBConfigurations = ecsLoadBalancersFromState(d)
@@ -289,6 +306,7 @@ func EcsServiceFromState(d *schema.ResourceData) (*DuploEcsService, error) {
 	return duploObject, nil
 }
 
+// EcsServiceToState converts a Duplo SDK object respresenting an ECS Service to terraform resource data.
 func EcsServiceToState(duploObject *DuploEcsService, d *schema.ResourceData) map[string]interface{} {
 	if duploObject == nil {
 		return nil
@@ -299,14 +317,14 @@ func EcsServiceToState(duploObject *DuploEcsService, d *schema.ResourceData) map
 	jo := make(map[string]interface{})
 
 	// First, convert things into simple scalars
-	jo["tenant_id"] = duploObject.TenantId
+	jo["tenant_id"] = duploObject.TenantID
 	jo["name"] = duploObject.Name
 	jo["task_definition"] = duploObject.TaskDefinition
 	jo["replicas"] = duploObject.Replicas
 	jo["health_check_grace_period_seconds"] = duploObject.HealthCheckGracePeriodSeconds
 	jo["old_task_definition_buffer_size"] = duploObject.OldTaskDefinitionBufferSize
 	jo["is_target_group_only"] = duploObject.IsTargetGroupOnly
-	jo["dns_prfx"] = duploObject.DnsPrfx
+	jo["dns_prfx"] = duploObject.DNSPrfx
 
 	// Next, convert things into structured data.
 	jo["load_balancer"] = ecsLoadBalancersToState(duploObject.Name, duploObject.LBConfigurations)
@@ -330,9 +348,13 @@ func ecsLoadBalancersToState(name string, lbcs *[]DuploEcsServiceLbConfig) []map
 		jo["lb_type"] = lbc.LbType
 		jo["port"] = lbc.Port
 		jo["protocol"] = lbc.Protocol
+		jo["backend_protocol"] = lbc.BackendProtocol
+		if jo["backend_protocol"] == "" {
+			jo["backend_protocol"] = "HTTP"
+		}
 		jo["external_port"] = lbc.ExternalPort
 		jo["is_internal"] = lbc.IsInternal
-		jo["health_check_url"] = lbc.HealthCheckUrl
+		jo["health_check_url"] = lbc.HealthCheckURL
 		jo["certificate_arn"] = lbc.CertificateArn
 		ary = append(ary, jo)
 	}
@@ -357,9 +379,10 @@ func ecsLoadBalancersFromState(d *schema.ResourceData) *[]DuploEcsServiceLbConfi
 			LbType:                    lb["lb_type"].(int),
 			Port:                      lb["port"].(string),
 			Protocol:                  lb["protocol"].(string),
+			BackendProtocol:           lb["backend_protocol"].(string),
 			ExternalPort:              lb["external_port"].(int),
 			IsInternal:                lb["is_internal"].(bool),
-			HealthCheckUrl:            lb["health_check_url"].(string),
+			HealthCheckURL:            lb["health_check_url"].(string),
 			CertificateArn:            lb["certificate_arn"].(string),
 		})
 	}

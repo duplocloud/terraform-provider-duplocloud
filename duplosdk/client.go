@@ -3,14 +3,16 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// Client is a Duplo API client
 type Client struct {
 	HTTPClient *http.Client
 	HostURL    string
@@ -19,17 +21,18 @@ type Client struct {
 	//TenantId   string
 }
 
+// NewClient creates a new Duplo API client
 func NewClient(host, token string) (*Client, error) {
-	if (host != "") && (host != "") {
-		token_bearer := fmt.Sprintf("Bearer %s", token)
+	if (host != "") && (token != "") {
+		tokenBearer := fmt.Sprintf("Bearer %s", token)
 		c := Client{
 			HTTPClient: &http.Client{Timeout: 20 * time.Second},
 			HostURL:    host,
-			Token:      token_bearer,
+			Token:      tokenBearer,
 		}
 		return &c, nil
 	}
-	return nil, fmt.Errorf("Missing provider config for 'duplo_token' 'duplo_host'. Not defined in environment var / main.tf.")
+	return nil, fmt.Errorf("missing provider config for 'duplo_token' 'duplo_host'. Not defined in environment var / main.tf")
 }
 
 func (c *Client) doRequest(req *http.Request) ([]byte, error) {
@@ -55,26 +58,26 @@ func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 
 	//special case for 400/404 .. when object is deleted in backend
 	if res.StatusCode == 400 {
-		err_msg := fmt.Errorf("status: %d, body: %s. Please verify object exists in duplocloud. %s", res.StatusCode, body, req.URL.String())
-		log.Printf("[TRACE] duplo-doRequest ********: %s", err_msg)
-		return nil, err_msg
+		errMsg := fmt.Errorf("status: %d, body: %s. Please verify object exists in duplocloud. %s", res.StatusCode, body, req.URL.String())
+		log.Printf("[TRACE] duplo-doRequest ********: %s", errMsg)
+		return nil, errMsg
 	}
 	if res.StatusCode == 404 {
-		err_msg := fmt.Errorf("status: %d, body: %s. Please verify object exists in duplocloud. %s", res.StatusCode, body, req.URL.String())
-		log.Printf("[TRACE] duplo-doRequest ********: %s", err_msg)
-		return nil, err_msg
+		errMsg := fmt.Errorf("status: %d, body: %s. Please verify object exists in duplocloud. %s", res.StatusCode, body, req.URL.String())
+		log.Printf("[TRACE] duplo-doRequest ********: %s", errMsg)
+		return nil, errMsg
 	}
 	//everything other than 200
 	if res.StatusCode != http.StatusOK {
-		err_msg := fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
-		log.Printf("[TRACE] duplo-doRequest ********: %s", err_msg)
-		return nil, err_msg
+		errMsg := fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
+		log.Printf("[TRACE] duplo-doRequest ********: %s", errMsg)
+		return nil, errMsg
 	}
 
 	return body, err
 }
 
-func (c *Client) doRequestWithStatus(req *http.Request, status_code int) ([]byte, error) {
+func (c *Client) doRequestWithStatus(req *http.Request, statusCode int) ([]byte, error) {
 	req.Header.Set("Authorization", c.Token)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
@@ -90,10 +93,10 @@ func (c *Client) doRequestWithStatus(req *http.Request, status_code int) ([]byte
 		return nil, err
 	}
 
-	if res.StatusCode != status_code {
-		err_msg := fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
-		log.Printf("[TRACE] duplo-doRequestWithStatus ********: %s", err_msg)
-		return nil, err_msg
+	if res.StatusCode != statusCode {
+		errMsg := fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
+		log.Printf("[TRACE] duplo-doRequestWithStatus ********: %s", errMsg)
+		return nil, errMsg
 	}
 
 	return body, err
@@ -115,15 +118,15 @@ func (c *Client) doPostRequest(req *http.Request, caller string) ([]byte, error)
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err_msg := fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
-		log.Printf("[TRACE] duplo-doPostRequest ********: %s %s", caller, err_msg)
-		return nil, err_msg
+		errMsg := fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
+		log.Printf("[TRACE] duplo-doPostRequest ********: %s %s", caller, errMsg)
+		return nil, errMsg
 	}
 
 	return body, err
 }
 
-// helpers
+// StructToString converts a structure to a JSON string
 func (c *Client) StructToString(structObj []map[string]interface{}) string {
 	if structObj != nil {
 		tags, err := json.Marshal(structObj)
@@ -134,20 +137,23 @@ func (c *Client) StructToString(structObj []map[string]interface{}) string {
 	return ""
 }
 
-func (c *Client) GetId(d *schema.ResourceData, id_key string) string {
+// GetID returns a terraform resource data's ID field
+func (c *Client) GetID(d *schema.ResourceData, idKey string) string {
 	var id = d.Id()
 	if id == "" {
-		id = d.Get(id_key).(string)
+		id = d.Get(idKey).(string)
 	}
 	return id
 }
-func (c *Client) GetIdForChild(d *schema.ResourceData) []string {
+
+// GetIDForChild returns a terraform resource data's ID field as an array of multiple components.
+func (c *Client) GetIDForChild(d *schema.ResourceData) []string {
 	var ids = d.Id()
 	if ids != "" {
-		has_childs := strings.Index(ids, "/")
-		if has_childs != -1 {
-			id_array := strings.Split(ids, "/")
-			return id_array
+		hasChilds := strings.Index(ids, "/")
+		if hasChilds != -1 {
+			idArray := strings.Split(ids, "/")
+			return idArray
 		}
 	}
 	return nil

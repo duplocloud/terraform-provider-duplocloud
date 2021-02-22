@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.3.10"
+      version = "0.3.11"
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
