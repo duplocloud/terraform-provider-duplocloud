@@ -16,6 +16,10 @@ variable "tenant_id" {
   type = string
 }
 
+# # AWS credentials retrieval
+# data "duplocloud_tenant_aws_credentials" "test" { tenant_id = var.tenant_id }
+# output "aws_creds_region" { value = data.duplocloud_tenant_aws_credentials.test.region }
+
 # # AWS account ID retrieval
 # data "duplocloud_aws_account" "test" {}
 # output "aws_account_id" { value = data.duplocloud_aws_account.test.account_id }
@@ -65,4 +69,3 @@ resource "duplocloud_rds_instance" "test" {
   master_password = "test12345!"
   size = "db.t2.small"
 }
-
