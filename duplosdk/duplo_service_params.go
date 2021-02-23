@@ -260,7 +260,7 @@ func (c *Client) DuploServiceParamsCreateOrUpdate(d *schema.ResourceData, m inte
 	//
 	rb, err := json.Marshal(duploObject)
 	if err != nil {
-		log.Printf("[TRACE] %s 3 ********: %s", api_str, api, err.Error())
+		log.Printf("[TRACE] %s 3 ********: %s %s", api_str, api, err.Error())
 		return nil, err
 	}
 
