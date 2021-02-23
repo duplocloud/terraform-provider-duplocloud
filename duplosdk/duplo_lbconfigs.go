@@ -3,43 +3,46 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// DuploServiceLBConfigs represents an service's load balancer in the Duplo SDK
 type DuploServiceLBConfigs struct {
 	ReplicationControllerName string                  `json:"ReplicationControllerName"`
-	TenantId                  string                  `json:"TenantId,omitempty"`
+	TenantID                  string                  `json:"TenantId,omitempty"`
 	LBConfigs                 *[]DuploLBConfiguration `json:"LBConfigs,omitempty"`
 	Arn                       string                  `json:"Arn,omitempty"`
 	Status                    string                  `json:"Status,omitempty"`
 }
 
+// DuploLBConfiguration represents an load balancer's configuration in the Duplo SDK
 type DuploLBConfiguration struct {
 	LBType                    int    `LBType:"LBType,omitempty"`
 	Protocol                  string `json:"Protocol,omitempty"`
 	Port                      string `Port:"Port,omitempty"`
 	ExternalPort              int    `ExternalPort:"ExternalPort,omitempty"`
-	HealthCheckUrl            string `json:"HealthCheckUrl,omitempty"`
+	HealthCheckURL            string `json:"HealthCheckUrl,omitempty"`
 	CertificateArn            string `json:"CertificateArn,omitempty"`
 	ReplicationControllerName string `json:"ReplicationControllerName"`
 	IsNative                  bool   `json:"IsNative"`
 	IsInternal                bool   `json:"IsInternal"`
 }
 
-/////------ schema ------////
+// DuploServiceLBConfigsSchema returns a Terraform resource schema for a service's load balancer
 func DuploServiceLBConfigsSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
-		"replication_controller_name": &schema.Schema{
+		"replication_controller_name": {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
-		"tenant_id": &schema.Schema{
+		"tenant_id": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
@@ -108,7 +111,7 @@ func DuploServiceLBConfigsSchema() *map[string]*schema.Schema {
 	}
 }
 
-////// convert from cloud to state :  cloud names (CamelCase) to tf names (SnakeCase)
+// DuploServiceLBConfigsToState converts a Duplo SDK object respresenting a service's load balancer to terraform resource data.
 func (c *Client) DuploServiceLBConfigsToState(duploObject *DuploServiceLBConfigs, d *schema.ResourceData) map[string]interface{} {
 	if duploObject != nil {
 		//log
@@ -117,7 +120,7 @@ func (c *Client) DuploServiceLBConfigsToState(duploObject *DuploServiceLBConfigs
 		//create map
 		cObj := make(map[string]interface{})
 		///--- set
-		cObj["tenant_id"] = duploObject.TenantId
+		cObj["tenant_id"] = duploObject.TenantID
 		cObj["replication_controller_name"] = duploObject.ReplicationControllerName
 		cObj["arn"] = duploObject.Arn
 		cObj["status"] = duploObject.Status
@@ -131,7 +134,7 @@ func (c *Client) DuploServiceLBConfigsToState(duploObject *DuploServiceLBConfigs
 	return nil
 }
 
-////// convert from cloud to state :  cloud names (CamelCase) to tf names (SnakeCase)
+// DuploLBConfigurationToState converts a Duplo SDK object respresenting a load balancer's configuration to terraform resource data.
 func (c *Client) DuploLBConfigurationToState(duploObjects *[]DuploLBConfiguration, d *schema.ResourceData) []interface{} {
 	if duploObjects != nil {
 		ois := make([]interface{}, len(*duploObjects), len(*duploObjects))
@@ -141,7 +144,7 @@ func (c *Client) DuploLBConfigurationToState(duploObjects *[]DuploLBConfiguratio
 			cObj["protocol"] = duploObject.Protocol
 			cObj["port"] = duploObject.Port
 			cObj["external_port"] = duploObject.ExternalPort
-			cObj["health_check_url"] = duploObject.HealthCheckUrl
+			cObj["health_check_url"] = duploObject.HealthCheckURL
 			cObj["certificate_arn"] = duploObject.CertificateArn
 			cObj["replication_controller_name"] = duploObject.ReplicationControllerName
 			cObj["is_native"] = duploObject.IsNative
@@ -157,19 +160,19 @@ func (c *Client) DuploLBConfigurationToState(duploObjects *[]DuploLBConfiguratio
 	return make([]interface{}, 0)
 }
 
-////// convert from cloud to state :  cloud names (CamelCase) to tf names (SnakeCase)
+// DuploServiceLBConfigsFromState converts resource data respresenting a service's load balancer to a Duplo SDK object.
 func (c *Client) DuploServiceLBConfigsFromState(d *schema.ResourceData, m interface{}, isUpdate bool) (*DuploServiceLBConfigs, error) {
-	url := c.DuploServiceLBConfigsListUrl(d)
-	var api_str = fmt.Sprintf("duplo-DuploServiceLBConfigsFromState-Create %s ", url)
+	url := c.DuploServiceLBConfigsListURL(d)
+	var apiStr = fmt.Sprintf("duplo-DuploServiceLBConfigsFromState-Create %s ", url)
 	if isUpdate {
-		api_str = fmt.Sprintf("duplo-DuploServiceLBConfigsFromState-Update %s ", url)
+		apiStr = fmt.Sprintf("duplo-DuploServiceLBConfigsFromState-Update %s ", url)
 	}
-	log.Printf("[TRACE] %s 1 ********: %s", api_str, url)
+	log.Printf("[TRACE] %s 1 ********: %s", apiStr, url)
 	//
 	duploObject := new(DuploServiceLBConfigs)
 	///--- set
 	duploObject.ReplicationControllerName = d.Get("replication_controller_name").(string)
-	duploObject.TenantId = d.Get("tenant_id").(string)
+	duploObject.TenantID = d.Get("tenant_id").(string)
 	duploObject.Arn = d.Get("arn").(string)
 	duploObject.Status = d.Get("status").(string)
 	lbconfigs := d.Get("lbconfigs").([]interface{})
@@ -182,7 +185,7 @@ func (c *Client) DuploServiceLBConfigsFromState(d *schema.ResourceData, m interf
 				Protocol:                  p["protocol"].(string),
 				Port:                      p["port"].(string),
 				ExternalPort:              p["external_port"].(int),
-				HealthCheckUrl:            p["health_check_url"].(string),
+				HealthCheckURL:            p["health_check_url"].(string),
 				CertificateArn:            p["certificate_arn"].(string),
 				ReplicationControllerName: p["replication_controller_name"].(string),
 				IsNative:                  p["is_native"].(bool),
@@ -192,60 +195,71 @@ func (c *Client) DuploServiceLBConfigsFromState(d *schema.ResourceData, m interf
 		duploObject.LBConfigs = &lbc
 	}
 	jsonData, _ := json.Marshal(&duploObject)
-	log.Printf("[TRACE] %s 2 ********: to-CLOUD %s", api_str, jsonData)
+	log.Printf("[TRACE] %s 2 ********: to-CLOUD %s", apiStr, jsonData)
 	return duploObject, nil
 }
 
-/////////// common place to get url + Id : follow Azure  style Ids for import//////////
-func (c *Client) DuploServiceLBConfigsSetIdFromCloud(duploObject *DuploServiceLBConfigs, d *schema.ResourceData) string {
+// DuploServiceLBConfigsSetIDFromCloud populates the resource ID based on name and tenant_id
+func (c *Client) DuploServiceLBConfigsSetIDFromCloud(duploObject *DuploServiceLBConfigs, d *schema.ResourceData) string {
 	d.Set("name", duploObject.ReplicationControllerName)
-	d.Set("tenant_id", duploObject.TenantId)
-	c.DuploServiceLBConfigsSetId(d)
+	d.Set("tenant_id", duploObject.TenantID)
+	c.DuploServiceLBConfigsSetID(d)
 	log.Printf("[TRACE] DuploServiceLBConfigsSetIdFromCloud 1 ********: %s", d.Id())
 	return d.Id()
 }
-func (c *Client) DuploServiceLBConfigsSetId(d *schema.ResourceData) string {
-	tenant_id := c.DuploServiceLBConfigsGetTenantId(d)
-	replication_controller_name := d.Get("replication_controller_name").(string)
-	id := fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2/%s", tenant_id, replication_controller_name)
+
+// DuploServiceLBConfigsSetID populates the resource ID based on name and tenant_id
+func (c *Client) DuploServiceLBConfigsSetID(d *schema.ResourceData) string {
+	tenantID := c.DuploServiceLBConfigsGetTenantID(d)
+	replicationControllerName := d.Get("replication_controller_name").(string)
+	id := fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2/%s", tenantID, replicationControllerName)
 	d.SetId(id)
 	return id
 }
-func (c *Client) DuploServiceLBConfigsUrl(d *schema.ResourceData) string {
+
+// DuploServiceLBConfigsURL returns the base API URL for crud -- get + delete
+func (c *Client) DuploServiceLBConfigsURL(d *schema.ResourceData) string {
 	api := d.Id()
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-DuploServiceLBConfigsUrl 1 %s ********: %s", api, host)
 	return host
 }
-func (c *Client) DuploServiceLBConfigsListUrl(d *schema.ResourceData) string {
-	tenant_id := c.DuploServiceLBConfigsGetTenantId(d)
-	api := fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2", tenant_id)
+
+// DuploServiceLBConfigsListURL returns the base API URL for crud -- get list + create + update
+func (c *Client) DuploServiceLBConfigsListURL(d *schema.ResourceData) string {
+	tenantID := c.DuploServiceLBConfigsGetTenantID(d)
+	api := fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2", tenantID)
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-DuploServiceLBConfigs 1 %s ********: %s", api, host)
 	return host
 }
-func (c *Client) DuploServiceLBConfigsGetTenantId(d *schema.ResourceData) string {
-	tenant_id := d.Get("tenant_id").(string)
-	if tenant_id == "" {
+
+// DuploServiceLBConfigsGetTenantID tries to retrieve (or synthesize) a tenant_id based on resource data
+// - tenant_id or any parents in import url should be handled if not part of get json
+func (c *Client) DuploServiceLBConfigsGetTenantID(d *schema.ResourceData) string {
+	tenantID := d.Get("tenant_id").(string)
+	if tenantID == "" {
 		id := d.Id()
-		id_array := strings.Split(id, "/")
-		for i, s := range id_array {
+		idArray := strings.Split(id, "/")
+		for i, s := range idArray {
 			if s == "subscriptions" {
-				next_i := i + 1
-				if id_array[next_i] != "" {
-					d.Set("tenant_id", id_array[next_i])
+				j := i + 1
+				if idArray[j] != "" {
+					d.Set("tenant_id", idArray[j])
 				}
-				return id_array[next_i]
+				return idArray[j]
 			}
 			fmt.Println(i, s)
 		}
 	}
-	return tenant_id
+	return tenantID
 }
 
 //////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// refresh state //////////////////////
 /////////////////////////////////////////////////////////////////////////
+
+// DuploServiceLBConfigsRefreshFunc refreshes service load balancer information from the Duplo API.
 func DuploServiceLBConfigsRefreshFunc(c *Client, url string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		api := url
@@ -273,6 +287,8 @@ func DuploServiceLBConfigsRefreshFunc(c *Client, url string) resource.StateRefre
 		return duploObject, status, nil
 	}
 }
+
+// DuploServiceLBConfigsWaitForCreation waits for creation of an service's load balancer by the Duplo API
 func DuploServiceLBConfigsWaitForCreation(c *Client, url string) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"pending"},
@@ -292,6 +308,8 @@ func DuploServiceLBConfigsWaitForCreation(c *Client, url string) error {
 /////////////////////////////////////////////////////////////////////////
 
 /////////  Utils convert //////////
+
+// DuploServiceLBConfigsListFlatten converts a list of Duplo SDK objects into Terraform resource data
 func (c *Client) DuploServiceLBConfigsListFlatten(duploObjects *[]DuploServiceLBConfigs, d *schema.ResourceData) []interface{} {
 	if duploObjects != nil {
 		ois := make([]interface{}, len(*duploObjects), len(*duploObjects))
@@ -306,6 +324,8 @@ func (c *Client) DuploServiceLBConfigsListFlatten(duploObjects *[]DuploServiceLB
 	log.Printf("[TRACE] duplo-DuploServiceLBConfigsListFlatten ??? empty ?? 2 ******** from-CLOUD-LIST: %s", jsonData)
 	return make([]interface{}, 0)
 }
+
+// DuploServiceLBConfigsFillGet converts a Duplo SDK object into Terraform resource data
 func (c *Client) DuploServiceLBConfigsFillGet(duploObject *DuploServiceLBConfigs, d *schema.ResourceData) error {
 	if duploObject != nil {
 		//create map
@@ -320,16 +340,17 @@ func (c *Client) DuploServiceLBConfigsFillGet(duploObject *DuploServiceLBConfigs
 		}
 		return nil
 	}
-	err_msg := fmt.Errorf("DuploServiceLBConfigs not found 2")
-	return err_msg
+	errMsg := fmt.Errorf("DuploServiceLBConfigs not found 2")
+	return errMsg
 }
 
+// DuploServiceLBConfigsGetList retrieves a list of AWS hosts via the Duplo API.
 func (c *Client) DuploServiceLBConfigsGetList(d *schema.ResourceData, m interface{}) (*[]DuploServiceLBConfigs, error) {
 	//
 	filters, filtersOk := d.GetOk("filter")
-	log.Printf("[TRACE] DuploServiceLBConfigsGetList filters 1 ********* : %s  %s", filters, filtersOk)
+	log.Printf("[TRACE] DuploServiceLBConfigsGetList filters 1 ********* : %s  %v", filters, filtersOk)
 	//
-	api := c.DuploServiceLBConfigsListUrl(d)
+	api := c.DuploServiceLBConfigsListURL(d)
 	url := api
 	log.Printf("[TRACE] duplo-DuploServiceLBConfigsGetList %s 2 ********: %s", api, url)
 	//
@@ -347,7 +368,7 @@ func (c *Client) DuploServiceLBConfigsGetList(d *schema.ResourceData, m interfac
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[TRACE] duplo-DuploServiceLBConfigsGetList %s 5 ********: %s", api, len(duploObject))
+	log.Printf("[TRACE] duplo-DuploServiceLBConfigsGetList %s 5 ********: %d", api, len(duploObject))
 
 	return &duploObject, nil
 }
@@ -355,115 +376,124 @@ func (c *Client) DuploServiceLBConfigsGetList(d *schema.ResourceData, m interfac
 /////////   list DONE //////////
 
 /////////  API Item //////////
+
+// DuploServiceLBConfigsGet retrieves a service's load balancer via the Duplo API.
 func (c *Client) DuploServiceLBConfigsGet(d *schema.ResourceData, m interface{}) error {
 	var api = d.Id()
-	url := c.DuploServiceLBConfigsUrl(d)
-	log.Printf("[TRACE] duplo-AwsHostUpdate %s 1 ********: %s", api, url)
+	url := c.DuploServiceLBConfigsURL(d)
+	log.Printf("[TRACE] DuploServiceLBConfigsGet %s 1 ********: %s", api, url)
 	//
 	req2, _ := http.NewRequest("GET", url, nil)
 	body, err := c.doRequest(req2)
 	if err != nil {
-		log.Printf("[TRACE] duplo-DuploServiceLBConfigsGet %s 2 ********: %s", api, err.Error())
+		log.Printf("[TRACE] DuploServiceLBConfigsGet %s 2 ********: %s", api, err.Error())
 		return err
 	}
 	bodyString := string(body)
-	log.Printf("[TRACE] duplo-DuploServiceLBConfigsGet %s 3 ********: bodyString %s", api, bodyString)
+	log.Printf("[TRACE] DuploServiceLBConfigsGet %s 3 ********: bodyString %s", api, bodyString)
 
 	duploObject := DuploServiceLBConfigs{}
 	err = json.Unmarshal(body, &duploObject)
 	if err != nil {
-		log.Printf("[TRACE] duplo-DuploServiceLBConfigsGet %s 4 ********: error:%s", api, err.Error())
+		log.Printf("[TRACE] DuploServiceLBConfigsGet %s 4 ********: error:%s", api, err.Error())
 		return err
 	}
 
-	if duploObject.TenantId != "" {
-		log.Printf("[TRACE] duplo-DuploServiceLBConfigsGet %s 4 ******** ", api)
+	if duploObject.TenantID != "" {
+		log.Printf("[TRACE] DuploServiceLBConfigsGet %s 4 ******** ", api)
 		c.DuploServiceLBConfigsFillGet(&duploObject, d)
 	}
-	log.Printf("[TRACE] duplo-AwsHostGet 5 FOUND ***** : body:%s", api, bodyString)
+	log.Printf("[TRACE] DuploServiceLBConfigsGet %s 5 FOUND ***** : body: %s", api, bodyString)
 	return nil
 }
 
 /////////  API Create / Update//////////
+
+// DuploServiceLBConfigsCreate creates a service's load balancer via the Duplo API.
 func (c *Client) DuploServiceLBConfigsCreate(d *schema.ResourceData, m interface{}) (*DuploServiceLBConfigs, error) {
 	return c.DuploServiceLBConfigsCreateOrUpdate(d, m, false)
 }
+
+// DuploServiceLBConfigsUpdate updates an service's load balancer via the Duplo API.
 func (c *Client) DuploServiceLBConfigsUpdate(d *schema.ResourceData, m interface{}) (*DuploServiceLBConfigs, error) {
 	return c.DuploServiceLBConfigsCreateOrUpdate(d, m, true)
 }
+
+// DuploServiceLBConfigsCreateOrUpdate updates an service's load balancer  via the Duplo API.
 func (c *Client) DuploServiceLBConfigsCreateOrUpdate(d *schema.ResourceData, m interface{}, isUpdate bool) (*DuploServiceLBConfigs, error) {
 
-	url := c.DuploServiceLBConfigsListUrl(d)
+	url := c.DuploServiceLBConfigsListURL(d)
 	api := url
 	var action = "POST"
-	var api_str = fmt.Sprintf("duplo-DuploServiceLBConfigsCreate %s ", api)
+	var apiStr = fmt.Sprintf("DuploServiceLBConfigsCreateOrUpdate %s ", api)
 	if isUpdate {
 		action = "PUT"
-		api_str = fmt.Sprintf("duplo-DuploServiceLBConfigsUpdate %s ", api)
+		apiStr = fmt.Sprintf("DuploServiceLBConfigsCreateOrUpdate %s ", api)
 	}
-	log.Printf("[TRACE] %s 1 ********: %s", api_str, url)
+	log.Printf("[TRACE] %s 1 ********: %s", apiStr, url)
 	//
 	duploObject, _ := c.DuploServiceLBConfigsFromState(d, m, isUpdate)
 
 	rb, err := json.Marshal(duploObject)
 	if err != nil {
-		log.Printf("[TRACE] %s 3 ********: %s", api_str, err.Error())
+		log.Printf("[TRACE] %s 3 ********: %s", apiStr, err.Error())
 		return nil, err
 	}
 
-	json_str := string(rb)
-	log.Printf("[TRACE] %s 4 ********: %s", api_str, json_str)
+	jsonStr := string(rb)
+	log.Printf("[TRACE] %s 4 ********: %s", apiStr, jsonStr)
 
 	req, err := http.NewRequest(action, url, strings.NewReader(string(rb)))
 	if err != nil {
-		log.Printf("[TRACE] %s 5 ********: %s", api_str, err.Error())
+		log.Printf("[TRACE] %s 5 ********: %s", apiStr, err.Error())
 		return nil, err
 	}
 
 	body, err := c.doRequest(req)
 	if err != nil {
-		log.Printf("[TRACE] %s 6 ********: %s", api_str, err.Error())
+		log.Printf("[TRACE] %s 6 ********: %s", apiStr, err.Error())
 		return nil, err
 	}
 	if body != nil {
 		bodyString := string(body)
-		log.Printf("[TRACE] %s 7 ********: %s", api_str, bodyString)
+		log.Printf("[TRACE] %s 7 ********: %s", apiStr, bodyString)
 
 		duploObject := DuploServiceLBConfigs{}
 		err = json.Unmarshal(body, &duploObject)
 		if err != nil {
-			log.Printf("[TRACE] %s 8 ********: error:%s", api_str, err.Error())
+			log.Printf("[TRACE] %s 8 ********: error:%s", apiStr, err.Error())
 			return nil, err
 		}
-		log.Printf("[TRACE] %s 9 ********  ", api_str)
-		c.DuploServiceLBConfigsSetIdFromCloud(&duploObject, d)
+		log.Printf("[TRACE] %s 9 ********  ", apiStr)
+		c.DuploServiceLBConfigsSetIDFromCloud(&duploObject, d)
 
 		////////DuploServiceLBConfigsWaitForCreation////////
-		DuploServiceLBConfigsWaitForCreation(c, c.DuploServiceLBConfigsUrl(d))
+		DuploServiceLBConfigsWaitForCreation(c, c.DuploServiceLBConfigsURL(d))
 		////////DuploServiceLBConfigsWaitForCreation////////
 
 		return nil, nil
 	}
-	err_msg := fmt.Errorf("ERROR: in create %s body:%s error:%s", api_str, body, err.Error())
-	return nil, err_msg
+	errMsg := fmt.Errorf("ERROR: in create %s body:%s error:%s", apiStr, body, err.Error())
+	return nil, errMsg
 }
 
+// DuploServiceLBConfigsDelete deletes a service's load balancer via the Duplo API.
 func (c *Client) DuploServiceLBConfigsDelete(d *schema.ResourceData, m interface{}) (*DuploServiceLBConfigs, error) {
 
 	var api = d.Id()
-	url := c.DuploServiceLBConfigsUrl(d)
-	log.Printf("[TRACE] duplo-DuploServiceLBConfigs %s 1 ********: %s", api, url)
+	url := c.DuploServiceLBConfigsURL(d)
+	log.Printf("[TRACE] DuploServiceLBConfigsDelete %s 1 ********: %s", api, url)
 
 	//
 	req, err := http.NewRequest("DELETE", url, strings.NewReader("{\"a\":\"b\"}"))
 	if err != nil {
-		log.Printf("[TRACE] duplo-DuploServiceLBConfigs %s 2 ********: %s", api, err.Error())
+		log.Printf("[TRACE] DuploServiceLBConfigsDelete %s 2 ********: %s", api, err.Error())
 		return nil, err
 	}
 
 	body, err := c.doRequestWithStatus(req, 204)
 	if err != nil {
-		log.Printf("[TRACE] duplo-DuploServiceLBConfigs %s 3 ********: %s", api, err.Error())
+		log.Printf("[TRACE] DuploServiceLBConfigsDelete %s 3 ********: %s", api, err.Error())
 		return nil, err
 	}
 
@@ -471,6 +501,6 @@ func (c *Client) DuploServiceLBConfigsDelete(d *schema.ResourceData, m interface
 		//nothing ?
 	}
 
-	log.Printf("[TRACE] DONE duplo-DuploServiceLBConfigs %s 4 ********: ", api)
+	log.Printf("[TRACE] DONE DuploServiceLBConfigsDelete %s 4 ********: ", api)
 	return nil, nil
 }

@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.4.0"
+      version = "0.4.1"
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -42,19 +42,19 @@ resource "duplocloud_ecs_service" "test" {
   }
 }
 
-resource "duplocloud_ecache_instance" "test" {
-  tenant_id = var.tenant_id
-  name = "joetest"
-  cache_type = 0
-  replicas = 1
-  size = "cache.t2.small"
-}
-
-#resource "duplocloud_rds_instance" "test" {
+#resource "duplocloud_ecache_instance" "test" {
 #  tenant_id = var.tenant_id
 #  name = "joetest"
-#  master_username = "joe"
-#  master_password = "test1234!"
-#  size = "db.t2.small"
+#  cache_type = 0
+#  replicas = 1
+#  size = "cache.t2.small"
 #}
+
+resource "duplocloud_rds_instance" "test" {
+  tenant_id = var.tenant_id
+  name = "joetest"
+  master_username = "joe"
+  master_password = "test12345!"
+  size = "db.t2.small"
+}
 

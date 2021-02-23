@@ -176,7 +176,7 @@ func (c *Client) DuploServiceParamsFillGet(duploObject *DuploServiceParams, d *s
 func (c *Client) DuploServiceParamsGetList(d *schema.ResourceData, m interface{}) (*[]DuploServiceParams, error) {
 	//
 	filters, filtersOk := d.GetOk("filter")
-	log.Printf("[TRACE] DuploServiceParamsGetList filters ********* : %s  %s", filters, filtersOk)
+	log.Printf("[TRACE] DuploServiceParamsGetList filters ********* : %s  %v", filters, filtersOk)
 	//
 	api := c.DuploServiceParamsListUrl(d)
 	url := api
@@ -197,7 +197,7 @@ func (c *Client) DuploServiceParamsGetList(d *schema.ResourceData, m interface{}
 		log.Printf("[TRACE] ERROR duplo-DuploServiceParamsGetList %s 4 ********: %s", api, err.Error())
 		return nil, err
 	}
-	log.Printf("[TRACE] duplo-DuploServiceParamsGetList %s 5 ********: %s", api, len(duploObjects))
+	log.Printf("[TRACE] duplo-DuploServiceParamsGetList %s 5 ********: %d", api, len(duploObjects))
 
 	return &duploObjects, nil
 }

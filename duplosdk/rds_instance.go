@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -31,6 +33,13 @@ type DuploRdsInstance struct {
 	SizeEx                      string `json:"SizeEx,omitempty"`
 	EncryptStorage              bool   `json:"EncryptStorage,omitempty"`
 	InstanceStatus              string `json:"InstanceStatus,omitempty"`
+}
+
+// DuploRdsInstancePasswordChange is a Duplo SDK object that represents an RDS instance password change
+type DuploRdsInstancePasswordChange struct {
+	Identifier     string `json:"Identifier"`
+	MasterPassword string `json:"MasterPassword"`
+	StorePassword  bool   `json:"StorePassword,omitempty"`
 }
 
 // DuploRdsInstanceSchema returns a Terraform resource schema for an ECS Service
@@ -76,6 +85,7 @@ func DuploRdsInstanceSchema() *map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
+			ForceNew: true,
 		},
 		"snapshot_id": {
 			Type:          schema.TypeString,
@@ -130,7 +140,7 @@ func (c *Client) RdsInstanceUpdate(tenantID string, duploObject *DuploRdsInstanc
 	return c.RdsInstanceCreateOrUpdate(tenantID, duploObject, true)
 }
 
-// RdsInstanceCreateOrUpdate creates or updates an ECS service via the Duplo API.
+// RdsInstanceCreateOrUpdate creates or updates an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRdsInstance, updating bool) (*DuploRdsInstance, error) {
 
 	// Build the request
@@ -174,7 +184,7 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 	return &rpObject, nil
 }
 
-// RdsInstanceDelete deletes an ECS service via the Duplo API.
+// RdsInstanceDelete deletes an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, error) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
@@ -255,6 +265,100 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 	duploObject.TenantID = tenantID
 	duploObject.Name = name
 	return &duploObject, nil
+}
+
+// RdsInstanceChangePassword creates or updates an RDS instance via the Duplo API.
+func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRdsInstancePasswordChange) error {
+
+	// Build the request
+	rqBody, err := json.Marshal(&duploObject)
+	if err != nil {
+		log.Printf("[TRACE] RdsInstanceChangePassword 1 JSON gen : %s", err.Error())
+		return err
+	}
+	url := fmt.Sprintf("%s/subscriptions/%s/RDSInstancePasswordChange", c.HostURL, tenantID)
+	log.Printf("[TRACE] RdsInstanceChangePassword 2 : %s <= %s", url, rqBody)
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	if err != nil {
+		log.Printf("[TRACE] RdsInstanceChangePassword 3 HTTP builder : %s", err.Error())
+		return err
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] RdsInstanceChangePassword 4 HTTP POST : %s", err.Error())
+		return err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] RdsInstanceChangePassword 4 HTTP RESPONSE : %s", bodyString)
+
+	// Handle the response
+	if bodyString != "null" {
+		log.Printf("[TRACE] RdsInstanceChangePassword 5 UNEXPECTED RESULT : %s", bodyString)
+		return fmt.Errorf("Unexpected result from backend: '%s'", bodyString)
+	}
+	return nil
+}
+
+// RdsInstanceWaitUntilAvailable waits until an RDS instance is available.
+//
+// It should be usable both post-creation and post-modification.
+func RdsInstanceWaitUntilAvailable(c *Client, id string) error {
+	stateConf := &resource.StateChangeConf{
+		Pending: []string{
+			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
+			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
+			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
+		},
+		Target:       []string{"available"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.InstanceStatus == "" {
+				resp.InstanceStatus = "processing"
+			}
+			return resp, resp.InstanceStatus, nil
+		},
+	}
+	log.Printf("[DEBUG] RdsInstanceWaitUntilAvailable (%s)", id)
+	_, err := stateConf.WaitForState()
+	return err
+}
+
+// RdsInstanceWaitUntilUnavailable waits until an RDS instance is unavailable.
+//
+// It should be usable post-modification.
+func RdsInstanceWaitUntilUnavailable(c *Client, id string) error {
+	stateConf := &resource.StateChangeConf{
+		Target: []string{
+			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
+			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
+			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
+		},
+		Pending:      []string{"available"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.InstanceStatus == "" {
+				resp.InstanceStatus = "available"
+			}
+			return resp, resp.InstanceStatus, nil
+		},
+	}
+	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
+	_, err := stateConf.WaitForState()
+	return err
 }
 
 /*************************************************

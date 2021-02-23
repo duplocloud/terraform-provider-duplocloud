@@ -50,7 +50,7 @@ func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData
 	for key := range jo {
 		d.Set(key, jo[key])
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", duplo.TenantID, duplo.Name))
 
 	log.Printf("[TRACE] resourceDuploEcacheInstanceRead ******** end")
 	return nil
@@ -69,7 +69,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	// Populate the identifier field, and determine some other fields
 	duploObject.Identifier = duploObject.Name
 	tenantID := d.Get("tenant_id").(string)
-	id := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, duploObject.Name)
+	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duploObject.Name)
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
