@@ -80,7 +80,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	d.SetId(id)
 
-	// Try to get the object for up to 60 seconds.
+	// Wait up to 60 seconds for Duplo to be able to return the instance details.
 	err = resource.Retry(time.Minute, func() *resource.RetryError {
 		resp, errget := c.EcacheInstanceGet(id)
 
@@ -96,7 +96,10 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	})
 
 	// Wait for the instance to become available.
-	// -- TODO --
+	err = duplosdk.EcacheInstanceWaitUntilAvailable(c, id)
+	if err != nil {
+		return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
+	}
 
 	diags := resourceDuploEcacheInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate ******** end")

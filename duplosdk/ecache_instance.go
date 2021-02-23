@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// DuploEcacheInstance is a Duplo SDK object that represents an RDS instance
+// DuploEcacheInstance is a Duplo SDK object that represents an ECache instance
 type DuploEcacheInstance struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
@@ -199,7 +201,7 @@ func (c *Client) EcacheInstanceDelete(id string) (*DuploEcacheInstance, error) {
 	return &duploObject, nil
 }
 
-// EcacheInstanceGet retrieves an RDS instance via the Duplo API.
+// EcacheInstanceGet retrieves an ECache instance via the Duplo API.
 func (c *Client) EcacheInstanceGet(id string) (*DuploEcacheInstance, error) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
@@ -240,11 +242,37 @@ func (c *Client) EcacheInstanceGet(id string) (*DuploEcacheInstance, error) {
 	return &duploObject, nil
 }
 
+// EcacheInstanceWaitUntilAvailable waits until an ECache instance is available.
+//
+// It should be usable both post-creation and post-modification.
+func EcacheInstanceWaitUntilAvailable(c *Client, id string) error {
+	stateConf := &resource.StateChangeConf{
+		Pending:      []string{"processing", "creating", "modifying", "rebooting cluster nodes", "snapshotting"},
+		Target:       []string{"available"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.EcacheInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.InstanceStatus == "" {
+				resp.InstanceStatus = "processing"
+			}
+			return resp, resp.InstanceStatus, nil
+		},
+	}
+	log.Printf("[DEBUG] EcacheInstanceWaitUntilAvailable (%s)", id)
+	_, err := stateConf.WaitForState()
+	return err
+}
+
 /*************************************************
  * DATA CONVERSIONS to/from duplo/terraform
  */
 
-// EcacheInstanceFromState converts resource data respresenting an RDS instance to a Duplo SDK object.
+// EcacheInstanceFromState converts resource data respresenting an ECache instance to a Duplo SDK object.
 func EcacheInstanceFromState(d *schema.ResourceData) (*DuploEcacheInstance, error) {
 	duploObject := new(DuploEcacheInstance)
 
@@ -263,7 +291,7 @@ func EcacheInstanceFromState(d *schema.ResourceData) (*DuploEcacheInstance, erro
 	return duploObject, nil
 }
 
-// EcacheInstanceToState converts a Duplo SDK object respresenting an RDS instance to terraform resource data.
+// EcacheInstanceToState converts a Duplo SDK object respresenting an ECache instance to terraform resource data.
 func EcacheInstanceToState(duploObject *DuploEcacheInstance, d *schema.ResourceData) map[string]interface{} {
 	if duploObject == nil {
 		return nil
