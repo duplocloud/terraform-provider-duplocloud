@@ -110,11 +110,27 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 	log.Printf("[TRACE] resourceDuploEcacheInstanceDelete ******** start")
 
 	// Delete the object from Duplo
+	id := d.Id()
 	c := m.(*duplosdk.Client)
-	_, err := c.EcacheInstanceDelete(d.Id())
+	_, err := c.EcacheInstanceDelete(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	// Wait up to 60 seconds for Duplo to show the object as deleted.
+	err = resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+		resp, errget := c.EcacheInstanceGet(id)
+
+		if errget != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error getting ECache instance '%s': %s", id, err))
+		}
+
+		if resp != nil && resp.InstanceStatus != "deleted" {
+			return resource.RetryableError(fmt.Errorf("Expected ECache instance '%s' to be deleted", id))
+		}
+
+		return nil
+	})
 
 	log.Printf("[TRACE] resourceDuploEcacheInstanceDelete ******** end")
 	return nil

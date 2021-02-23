@@ -44,9 +44,9 @@ resource "duplocloud_ecs_service" "test" {
 
 resource "duplocloud_ecache_instance" "test" {
   tenant_id = var.tenant_id
-  name = "joetest2"
+  name = "joetest"
   cache_type = 0
-  replicas = 2
+  replicas = 1
   size = "cache.t2.small"
 }
 
