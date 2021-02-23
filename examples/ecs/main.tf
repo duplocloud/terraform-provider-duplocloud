@@ -12,9 +12,20 @@ provider "duplocloud" {
   // duplo_token = ".."                         # please *ONLY* specify using a duplo_token env var (avoid checking secrets into git)
 }
 
+variable "plan_id" {
+  type = string
+  default = "default"
+}
+
 variable "tenant_id" {
   type = string
 }
+
+# # EKS credentials retrieval
+# data "duplocloud_eks_credentials" "test" { plan_id = var.plan_id }
+# output "eks_creds_name" { value = data.duplocloud_eks_credentials.test.name }
+# output "eks_creds_endpoint" { value = data.duplocloud_eks_credentials.test.endpoint }
+# output "eks_creds_region" { value = data.duplocloud_eks_credentials.test.region }
 
 # # AWS credentials retrieval
 # data "duplocloud_tenant_aws_credentials" "test" { tenant_id = var.tenant_id }

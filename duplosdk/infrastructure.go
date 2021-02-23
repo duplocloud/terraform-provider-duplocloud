@@ -3,14 +3,28 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// DuploEksCredentials represents just-in-time EKS credentials in Duplo
+type DuploEksCredentials struct {
+	// NOTE: The PlanID field does not come from the backend - we synthesize it
+	PlanID string `json:"-,omitempty"`
+
+	Name        string `json:"Name"`
+	APIServer   string `json:"ApiServer"`
+	Token       string `json:"Token"`
+	AwsRegion   string `json:"AwsRegion"`
+	K8sProvider int    `json:"K8Provider,omitempty"`
+}
+
+// DuploInfrastructure represents a Duplo infrastructure
 type DuploInfrastructure struct {
 	Name               string `json:"Name"`
 	AccountId          string `json:"AccountId"`
@@ -413,4 +427,32 @@ func DuploInfrastructureWaitForCreation(c *Client, url string) error {
 	log.Printf("[DEBUG] InfrastructureRefreshFuncWaitForCreation (%s)", url)
 	_, err := stateConf.WaitForState()
 	return err
+}
+
+// GetEksCredentials retrieves just-in-time EKS credentials via the Duplo API.
+func (c *Client) GetEksCredentials(planID string) (*DuploEksCredentials, error) {
+
+	// Format the URL
+	url := fmt.Sprintf("%s/adminproxy/%s/GetEksClusterByInfra", c.HostURL, planID)
+	log.Printf("[TRACE] duplo-GetEksCredentials 1 ********: %s ", url)
+
+	// Get the AWS region from Duplo
+	req2, _ := http.NewRequest("GET", url, nil)
+	body, err := c.doRequest(req2)
+	if err != nil {
+		log.Printf("[TRACE] duplo-GetEksCredentials 2 ********: %s", err.Error())
+		return nil, err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] duplo-GetEksCredentials 3 ********: %s", bodyString)
+
+	// Return it as an object.
+	creds := DuploEksCredentials{}
+	err = json.Unmarshal(body, &creds)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[TRACE] duplo-GetEksCredentials 4 ********: %s", creds.Name)
+	creds.PlanID = planID
+	return &creds, nil
 }
