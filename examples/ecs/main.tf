@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.3.11"
+      version = "0.4.0"
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -36,8 +36,25 @@ resource "duplocloud_ecs_service" "test" {
   replicas = 2
   load_balancer {
     lb_type = 1
-    port = 80
+    port = 8080
     external_port = 80
     protocol = "HTTP"
   }
 }
+
+resource "duplocloud_ecache_instance" "test" {
+  tenant_id = var.tenant_id
+  name = "joetest"
+  cache_type = 0
+  replicas = 1
+  size = "cache.t2.small"
+}
+
+#resource "duplocloud_rds_instance" "test" {
+#  tenant_id = var.tenant_id
+#  name = "joetest"
+#  master_username = "joe"
+#  master_password = "test1234!"
+#  size = "db.t2.small"
+#}
+

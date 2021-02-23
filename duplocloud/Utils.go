@@ -7,8 +7,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 )
 
-// ValidateJsonString performs validation of a string that is supposed to be JSON.
-func ValidateJsonString(v interface{}, k string) (ws []string, errors []error) {
+// ValidateJSONString performs validation of a string that is supposed to be JSON.
+func ValidateJSONString(v interface{}, k string) (ws []string, errors []error) {
 	// IAM Policy documents need to be valid JSON, and pass legacy parsing
 	value := v.(string)
 	if len(value) < 1 {
