@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// DuploServiceParams represents an service's parameters in the Duplo SDK
+// DuploServiceParams represents a service's parameters in the Duplo SDK
 type DuploServiceParams struct {
 	ReplicationControllerName string `json:"ReplicationControllerName"`
 	TenantID                  string `json:"TenantId,omitempty"`
@@ -182,7 +182,7 @@ func (c *Client) DuploServiceParamsFillGet(duploObject *DuploServiceParams, d *s
 	return errMsg
 }
 
-// DuploServiceParamsGetList retrieves a list of AWS hosts via the Duplo API.
+// DuploServiceParamsGetList retrieves a list of service load balancers via the Duplo API.
 func (c *Client) DuploServiceParamsGetList(d *schema.ResourceData, m interface{}) (*[]DuploServiceParams, error) {
 	//
 	filters, filtersOk := d.GetOk("filter")
