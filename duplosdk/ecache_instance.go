@@ -18,13 +18,14 @@ type DuploEcacheInstance struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`
 
-	Identifier             string `json:"Identifier"`
-	Arn                    string `json:"Arn"`
-	CacheType              int    `json:"CacheType,omitempty"`
-	Size                   string `json:"Size,omitempty"`
-	Replicas               int    `json:"Replicas,omitempty"`
-	EnableEncryptionAtRest bool   `json:"EnableEncryptionAtRest,omitempty"`
-	InstanceStatus         string `json:"InstanceStatus,omitempty"`
+	Identifier          string `json:"Identifier"`
+	Arn                 string `json:"Arn"`
+	CacheType           int    `json:"CacheType,omitempty"`
+	Size                string `json:"Size,omitempty"`
+	Replicas            int    `json:"Replicas,omitempty"`
+	EncryptionAtRest    bool   `json:"EnableEncryptionAtRest,omitempty"`
+	EncryptionInTransit bool   `json:"EnableEncryptionAtTransit,omitempty"`
+	InstanceStatus      string `json:"InstanceStatus,omitempty"`
 }
 
 // DuploEcacheInstanceSchema returns a Terraform resource schema for an ECS Service
@@ -69,6 +70,13 @@ func DuploEcacheInstanceSchema() *map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Optional: true,
 			ForceNew: true,
+			Default:  false,
+		},
+		"enable_encryption_in_transit": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			ForceNew: true,
+			Default:  false,
 		},
 		"instance_status": {
 			Type:     schema.TypeString,
@@ -233,7 +241,8 @@ func EcacheInstanceFromState(d *schema.ResourceData) (*DuploEcacheInstance, erro
 	duploObject.CacheType = d.Get("cache_type").(int)
 	duploObject.Size = d.Get("size").(string)
 	duploObject.Replicas = d.Get("replicas").(int)
-	duploObject.EnableEncryptionAtRest = d.Get("enable_encryption_at_rest").(bool)
+	duploObject.EncryptionAtRest = d.Get("encryption_at_rest").(bool)
+	duploObject.EncryptionInTransit = d.Get("encryption_in_transit").(bool)
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
 
 	return duploObject, nil
@@ -257,7 +266,8 @@ func EcacheInstanceToState(duploObject *DuploEcacheInstance, d *schema.ResourceD
 	jo["cache_type"] = duploObject.CacheType
 	jo["size"] = duploObject.Size
 	jo["replicas"] = duploObject.Replicas
-	jo["enable_encryption_at_rest"] = duploObject.EnableEncryptionAtRest
+	jo["encryption_at_rest"] = duploObject.EncryptionAtRest
+	jo["encryption_in_transit"] = duploObject.EncryptionInTransit
 	jo["instance_status"] = duploObject.InstanceStatus
 
 	jsonData2, _ := json.Marshal(jo)
