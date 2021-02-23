@@ -23,7 +23,7 @@ type DuploEcacheInstance struct {
 
 	Identifier          string `json:"Identifier"`
 	Arn                 string `json:"Arn"`
-	Endpoint            string `json:"Endpoint"`
+	Endpoint            string `json:"Endpoint,omitempty"`
 	CacheType           int    `json:"CacheType,omitempty"`
 	Size                string `json:"Size,omitempty"`
 	Replicas            int    `json:"Replicas,omitempty"`
@@ -315,7 +315,6 @@ func EcacheInstanceToState(duploObject *DuploEcacheInstance, d *schema.ResourceD
 			jo["port"], _ = strconv.Atoi(uriParts[1])
 		}
 	}
-
 	jo["cache_type"] = duploObject.CacheType
 	jo["size"] = duploObject.Size
 	jo["replicas"] = duploObject.Replicas

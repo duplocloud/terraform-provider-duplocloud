@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,6 +23,7 @@ type DuploRdsInstance struct {
 
 	Identifier                  string `json:"Identifier"`
 	Arn                         string `json:"Arn"`
+	Endpoint                    string `json:"Endpoint,omitempty"`
 	MasterUsername              string `json:"MasterUsername,omitempty"`
 	MasterPassword              string `json:"MasterPassword,omitempty"`
 	Engine                      int    `json:"Engine,omitempty"`
@@ -62,6 +64,18 @@ func DuploRdsInstanceSchema() *map[string]*schema.Schema {
 		},
 		"arn": {
 			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"endpoint": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"host": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"port": {
+			Type:     schema.TypeInt,
 			Computed: true,
 		},
 		"master_username": {
@@ -373,6 +387,7 @@ func RdsInstanceFromState(d *schema.ResourceData) (*DuploRdsInstance, error) {
 	duploObject.Name = d.Get("name").(string)
 	duploObject.Identifier = d.Get("identifier").(string)
 	duploObject.Arn = d.Get("arn").(string)
+	duploObject.Endpoint = d.Get("endpoint").(string)
 	duploObject.MasterUsername = d.Get("master_username").(string)
 	duploObject.MasterPassword = d.Get("master_password").(string)
 	duploObject.Engine = d.Get("engine").(int)
@@ -402,6 +417,14 @@ func RdsInstanceToState(duploObject *DuploRdsInstance, d *schema.ResourceData) m
 	jo["name"] = duploObject.Name
 	jo["identifier"] = duploObject.Identifier
 	jo["arn"] = duploObject.Arn
+	jo["endpoint"] = duploObject.Endpoint
+	if duploObject.Endpoint != "" {
+		uriParts := strings.SplitN(duploObject.Endpoint, ":", 2)
+		jo["host"] = uriParts[0]
+		if len(uriParts) == 2 {
+			jo["port"], _ = strconv.Atoi(uriParts[1])
+		}
+	}
 	jo["master_username"] = duploObject.MasterUsername
 	jo["master_password"] = duploObject.MasterPassword
 	jo["engine"] = duploObject.Engine

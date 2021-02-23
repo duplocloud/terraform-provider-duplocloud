@@ -48,7 +48,9 @@ finish)
     ;;
 next)
     release_set_version "$1"
+    git add Makefile examples/*/main.tf
     GIT_MERGE_AUTOEDIT=no git commit -m '[release] bump version to '"$1"
+    git push origin develop:develop
     ;;
 set-version)
     release_set_version "$1"
