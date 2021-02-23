@@ -12,12 +12,12 @@ import (
 )
 
 // SCHEMA for resource crud
-func resourceDuploRdsInstance() *schema.Resource {
+func resourceDuploEcacheInstance() *schema.Resource {
 	return &schema.Resource{
-		ReadContext:   resourceDuploRdsInstanceRead,
-		CreateContext: resourceDuploRdsInstanceCreate,
-		UpdateContext: resourceDuploRdsInstanceUpdate,
-		DeleteContext: resourceDuploRdsInstanceDelete,
+		ReadContext:   resourceDuploEcacheInstanceRead,
+		CreateContext: resourceDuploEcacheInstanceCreate,
+		UpdateContext: resourceDuploEcacheInstanceUpdate,
+		DeleteContext: resourceDuploEcacheInstanceDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
@@ -26,17 +26,17 @@ func resourceDuploRdsInstance() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: *duplosdk.DuploRdsInstanceSchema(),
+		Schema: *duplosdk.DuploEcacheInstanceSchema(),
 	}
 }
 
 /// READ resource
-func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploRdsInstanceRead ******** start")
+func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceDuploEcacheInstanceRead ******** start")
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.RdsInstanceGet(d.Id())
+	duplo, err := c.EcacheInstanceGet(d.Id())
 	if duplo == nil {
 		d.SetId("")
 		return nil
@@ -46,22 +46,22 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	// Convert the object into Terraform resource data
-	jo := duplosdk.RdsInstanceToState(duplo, d)
+	jo := duplosdk.EcacheInstanceToState(duplo, d)
 	for key := range jo {
 		d.Set(key, jo[key])
 	}
 	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 
-	log.Printf("[TRACE] resourceDuploRdsInstanceRead ******** end")
+	log.Printf("[TRACE] resourceDuploEcacheInstanceRead ******** end")
 	return nil
 }
 
 /// CREATE resource
-func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** start")
+func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate ******** start")
 
 	// Convert the Terraform resource data into a Duplo object
-	duploObject, err := duplosdk.RdsInstanceFromState(d)
+	duploObject, err := duplosdk.EcacheInstanceFromState(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -72,23 +72,23 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
-	rpObject, err := c.RdsInstanceCreate(tenantID, duploObject)
+	rpObject, err := c.EcacheInstanceCreate(tenantID, duploObject)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, rpObject.Name))
 
-	diags := resourceDuploRdsInstanceRead(ctx, d, m)
-	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** end")
+	diags := resourceDuploEcacheInstanceRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate ******** end")
 	return diags
 }
 
 /// UPDATE resource
-func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** start")
+func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceDuploEcacheInstanceUpdate ******** start")
 
 	// Convert the Terraform resource data into a Duplo object
-	duploObject, err := duplosdk.RdsInstanceFromState(d)
+	duploObject, err := duplosdk.EcacheInstanceFromState(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -96,27 +96,27 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	// Put the object to Duplo
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
-	_, err = c.RdsInstanceUpdate(tenantID, duploObject)
+	_, err = c.EcacheInstanceUpdate(tenantID, duploObject)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	diags := resourceDuploRdsInstanceRead(ctx, d, m)
-	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
+	diags := resourceDuploEcacheInstanceRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploEcacheInstanceUpdate ******** end")
 	return diags
 }
 
 /// DELETE resource
-func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploRdsInstanceDelete ******** start")
+func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceDuploEcacheInstanceDelete ******** start")
 
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
-	_, err := c.RdsInstanceDelete(d.Id())
+	_, err := c.EcacheInstanceDelete(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[TRACE] resourceDuploRdsInstanceDelete ******** end")
+	log.Printf("[TRACE] resourceDuploEcacheInstanceDelete ******** end")
 	return nil
 }

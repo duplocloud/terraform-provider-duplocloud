@@ -42,11 +42,18 @@ resource "duplocloud_ecs_service" "test" {
   }
 }
 
-resource "duplocloud_rds_instance" "test" {
+resource "duplocloud_ecache_instance" "test" {
   tenant_id = var.tenant_id
   name = "joetest"
-  master_username = "joe"
-  master_password = "test1234!"
-  size = "db.t2.small"
+  cache_type = 0
+  size = "cache.t2.small"
 }
+
+#resource "duplocloud_rds_instance" "test" {
+#  tenant_id = var.tenant_id
+#  name = "joetest"
+#  master_username = "joe"
+#  master_password = "test1234!"
+#  size = "db.t2.small"
+#}
 
