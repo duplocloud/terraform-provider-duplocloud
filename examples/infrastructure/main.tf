@@ -1,20 +1,18 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.3"
+      version = "0.4.2" # RELEASE VERSION
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
 }
 
 provider "duplocloud" {
-  duplo_host = "https://xxx.duplocloud.net"
-  duplo_token = "xxxx"
+  // duplo_host = "https://xxx.duplocloud.net"  # you can also set the duplo_host env var
+  // duplo_token = ".."                         # please *ONLY* specify using a duplo_token env var (avoid checking secrets into git)
 }
 
-data "duplocloud_infrastructure" "all" {
-  
-}
+data "duplocloud_infrastructure" "all" {}
 
 output "all_data" {
   value = data.duplocloud_infrastructure.all.data

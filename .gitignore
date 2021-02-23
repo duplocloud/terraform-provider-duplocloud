@@ -9,6 +9,7 @@ terraform.tfstate.backup
 terraform.tfstate.*
 .DS_Store
 .terraform.lock.hcl
+*~
 
 k8-config-secret/
 k8-t2/
