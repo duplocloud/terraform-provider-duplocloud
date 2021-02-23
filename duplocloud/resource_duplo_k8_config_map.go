@@ -88,7 +88,7 @@ func resourceK8ConfigMapRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
-	c.K8ConfigMapSetId(d)
+	c.K8ConfigMapSetID(d)
 	log.Printf("[TRACE] duplo-resourceK8ConfigMapRead ******** end")
 	return diags
 }
@@ -105,7 +105,7 @@ func resourceK8ConfigMapCreate(ctx context.Context, d *schema.ResourceData, m in
 		return diag.FromErr(err)
 	}
 
-	c.K8ConfigMapSetId(d)
+	c.K8ConfigMapSetID(d)
 	resourceK8ConfigMapRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceK8ConfigMapCreate ******** end")
 	return diags
@@ -123,7 +123,7 @@ func resourceK8ConfigMapUpdate(ctx context.Context, d *schema.ResourceData, m in
 		return diag.FromErr(err)
 	}
 
-	c.K8ConfigMapSetId(d)
+	c.K8ConfigMapSetID(d)
 	resourceK8ConfigMapRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceK8ConfigMapUpdate ******** end")
 
