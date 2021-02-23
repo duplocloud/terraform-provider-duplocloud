@@ -1,10 +1,13 @@
 #!/bin/bash -eu
-# This script starts or finishes a release using git flow
 #
+# This script starts or finishes a release using git flow
+
+# Prints the current version
 echo_version() {
     sed -ne 's/^VERSION=\([0-9\.]*\).*$/\1/p' <Makefile
 }
 
+# Starts a release using git flow
 release_start() {
     local version
     version="$(echo_version)"
@@ -12,6 +15,7 @@ release_start() {
     GIT_MERGE_AUTOEDIT=no git flow release start "$version"
 }
 
+# Finishes a release using git flow
 release_finish() {
     local version
     version="$(echo_version)"
@@ -22,6 +26,7 @@ release_finish() {
     git push origin master:master
 }
 
+# Changes the version number in all relevant files
 release_set_version() {
     local version
     version="$1"
