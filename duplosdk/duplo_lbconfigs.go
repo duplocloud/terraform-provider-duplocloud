@@ -3,12 +3,13 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 type DuploServiceLBConfigs struct {
@@ -34,12 +35,12 @@ type DuploLBConfiguration struct {
 /////------ schema ------////
 func DuploServiceLBConfigsSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
-		"replication_controller_name": &schema.Schema{
+		"replication_controller_name": {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
-		"tenant_id": &schema.Schema{
+		"tenant_id": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
@@ -327,7 +328,7 @@ func (c *Client) DuploServiceLBConfigsFillGet(duploObject *DuploServiceLBConfigs
 func (c *Client) DuploServiceLBConfigsGetList(d *schema.ResourceData, m interface{}) (*[]DuploServiceLBConfigs, error) {
 	//
 	filters, filtersOk := d.GetOk("filter")
-	log.Printf("[TRACE] DuploServiceLBConfigsGetList filters 1 ********* : %s  %s", filters, filtersOk)
+	log.Printf("[TRACE] DuploServiceLBConfigsGetList filters 1 ********* : %s  %v", filters, filtersOk)
 	//
 	api := c.DuploServiceLBConfigsListUrl(d)
 	url := api
@@ -347,7 +348,7 @@ func (c *Client) DuploServiceLBConfigsGetList(d *schema.ResourceData, m interfac
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[TRACE] duplo-DuploServiceLBConfigsGetList %s 5 ********: %s", api, len(duploObject))
+	log.Printf("[TRACE] duplo-DuploServiceLBConfigsGetList %s 5 ********: %d", api, len(duploObject))
 
 	return &duploObject, nil
 }
@@ -380,7 +381,7 @@ func (c *Client) DuploServiceLBConfigsGet(d *schema.ResourceData, m interface{})
 		log.Printf("[TRACE] duplo-DuploServiceLBConfigsGet %s 4 ******** ", api)
 		c.DuploServiceLBConfigsFillGet(&duploObject, d)
 	}
-	log.Printf("[TRACE] duplo-AwsHostGet 5 FOUND ***** : body:%s", api, bodyString)
+	log.Printf("[TRACE] duplo-AwsHostGet %s 5 FOUND ***** : body: %s", api, bodyString)
 	return nil
 }
 
