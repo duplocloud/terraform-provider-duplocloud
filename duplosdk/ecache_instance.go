@@ -80,13 +80,13 @@ func DuploEcacheInstanceSchema() *map[string]*schema.Schema {
 			Optional: true,
 			Default:  1,
 		},
-		"enable_encryption_at_rest": {
+		"encryption_at_rest": {
 			Type:     schema.TypeBool,
 			Optional: true,
 			ForceNew: true,
 			Default:  false,
 		},
-		"enable_encryption_in_transit": {
+		"encryption_in_transit": {
 			Type:     schema.TypeBool,
 			Optional: true,
 			ForceNew: true,
@@ -279,9 +279,13 @@ func EcacheInstanceToState(duploObject *DuploEcacheInstance, d *schema.ResourceD
 	jo["identifier"] = duploObject.Identifier
 	jo["arn"] = duploObject.Arn
 	jo["endpoint"] = duploObject.Endpoint
-	uriParts := strings.Split(duploObject.Endpoint, ":")
-	jo["host"] = uriParts[0]
-	jo["port"], _ = strconv.Atoi(uriParts[1])
+	if duploObject.Endpoint != "" {
+		uriParts := strings.SplitN(duploObject.Endpoint, ":", 2)
+		jo["host"] = uriParts[0]
+		if len(uriParts) == 2 {
+			jo["port"], _ = strconv.Atoi(uriParts[1])
+		}
+	}
 
 	jo["cache_type"] = duploObject.CacheType
 	jo["size"] = duploObject.Size
