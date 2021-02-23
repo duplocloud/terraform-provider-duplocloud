@@ -38,6 +38,7 @@ func Provider() *schema.Provider {
 			"duplocloud_ecache_instance":         resourceDuploEcacheInstance(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
+			"duplocloud_aws_account":             dataSourceAwsAccount(),
 			"duplocloud_tenant":                  dataSourceTenant(),
 			"duplocloud_tenant_aws_region":       dataSourceTenantAwsRegion(),
 			"duplocloud_aws_host":                dataSourceAwsHost(),

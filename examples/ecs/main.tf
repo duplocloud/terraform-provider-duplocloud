@@ -16,13 +16,13 @@ variable "tenant_id" {
   type = string
 }
 
-data "duplocloud_tenant_aws_region" "test" {
-  tenant_id = var.tenant_id
-}
+# # AWS account ID retrieval
+# data "duplocloud_aws_account" "test" {}
+# output "aws_account_id" { value = data.duplocloud_aws_account.test.account_id }
 
-output "aws_region" {
-  value = data.duplocloud_tenant_aws_region.test.aws_region
-}
+# # AWS region retrieval
+# data "duplocloud_tenant_aws_region" "test" { tenant_id = var.tenant_id }
+# output "aws_region" { value = data.duplocloud_tenant_aws_region.test.aws_region }
 
 resource "duplocloud_ecs_task_definition" "test" {
   tenant_id = var.tenant_id

@@ -274,9 +274,8 @@ func (c *Client) TenantGetAwsRegion(tenantID string) (string, error) {
 	awsRegion := ""
 	err = json.Unmarshal(body, &awsRegion)
 	if err != nil {
-		return "", err
 	}
-	log.Printf("[TRACE] duplo-TenantGet 4 ********: %s", awsRegion)
+	log.Printf("[TRACE] duplo-TenantGetAwsRegion 4 ********: %s", awsRegion)
 
 	return awsRegion, nil
 }
