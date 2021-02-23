@@ -39,6 +39,7 @@ func Provider() *schema.Provider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_tenant":                  dataSourceTenant(),
+			"duplocloud_tenant_aws_region":       dataSourceTenantAwsRegion(),
 			"duplocloud_aws_host":                dataSourceAwsHost(),
 			"duplocloud_duplo_service":           dataSourceDuploService(),
 			"duplocloud_duplo_service_lbconfigs": dataSourceDuploServiceLBConfigs(),

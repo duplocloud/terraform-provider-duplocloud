@@ -16,6 +16,14 @@ variable "tenant_id" {
   type = string
 }
 
+data "duplocloud_tenant_aws_region" "test" {
+  tenant_id = var.tenant_id
+}
+
+output "aws_region" {
+  value = data.duplocloud_tenant_aws_region.test.aws_region
+}
+
 resource "duplocloud_ecs_task_definition" "test" {
   tenant_id = var.tenant_id
   family = "duploservices-default-joedemo"
@@ -42,13 +50,13 @@ resource "duplocloud_ecs_service" "test" {
   }
 }
 
-#resource "duplocloud_ecache_instance" "test" {
-#  tenant_id = var.tenant_id
-#  name = "joetest"
-#  cache_type = 0
-#  replicas = 1
-#  size = "cache.t2.small"
-#}
+resource "duplocloud_ecache_instance" "test" {
+  tenant_id = var.tenant_id
+  name = "joetest"
+  cache_type = 0
+  replicas = 1
+  size = "cache.t2.small"
+}
 
 resource "duplocloud_rds_instance" "test" {
   tenant_id = var.tenant_id

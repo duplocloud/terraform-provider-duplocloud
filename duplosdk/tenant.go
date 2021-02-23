@@ -252,3 +252,31 @@ func (c *Client) TenantDelete(d *schema.ResourceData, m interface{}) (*DuploTena
 	// No-op
 	return nil, nil
 }
+
+// TenantGetAwsRegion retrieves a tenant's AWS region via the Duplo API.
+func (c *Client) TenantGetAwsRegion(tenantID string) (string, error) {
+
+	// Format the URL
+	url := fmt.Sprintf("%s/subscriptions/%s/GetAwsRegionId", c.HostURL, tenantID)
+	log.Printf("[TRACE] duplo-TenantGetAwsRegion 1 ********: %s ", url)
+
+	// Get the AWS region from Duplo
+	req2, _ := http.NewRequest("GET", url, nil)
+	body, err := c.doRequest(req2)
+	if err != nil {
+		log.Printf("[TRACE] duplo-TenantGetAwsRegion 2 ********: %s", err.Error())
+		return "", err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] duplo-TenantGetAwsRegion 3 ********: %s", bodyString)
+
+	// Return it as a string.
+	awsRegion := ""
+	err = json.Unmarshal(body, &awsRegion)
+	if err != nil {
+		return "", err
+	}
+	log.Printf("[TRACE] duplo-TenantGet 4 ********: %s", awsRegion)
+
+	return awsRegion, nil
+}
