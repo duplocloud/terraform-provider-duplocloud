@@ -3,10 +3,11 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 type DuploService struct {
@@ -193,7 +194,7 @@ func (c *Client) DuploServiceUrl(d *schema.ResourceData) string {
 	return host
 }
 func (c *Client) DuploServiceListUrl(d *schema.ResourceData) string {
-	tenant_id := c.DuploServiceParamsGetTenantId(d)
+	tenant_id := c.DuploServiceParamsGetTenantID(d)
 	api := fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2", tenant_id)
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-DuploServiceListUrl %s 1 ********: %s", api, host)
