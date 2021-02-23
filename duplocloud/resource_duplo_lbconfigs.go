@@ -88,7 +88,7 @@ func resourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	c.DuploServiceLBConfigsSetId(d)
+	c.DuploServiceLBConfigsSetID(d)
 	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsRead ******** end")
 	return diags
 }
@@ -105,7 +105,7 @@ func resourceDuploServiceLBConfigsCreate(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	c.DuploServiceLBConfigsSetId(d)
+	c.DuploServiceLBConfigsSetID(d)
 	resourceDuploServiceLBConfigsRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsCreate ******** end")
 	return diags
@@ -123,7 +123,7 @@ func resourceDuploServiceLBConfigsUpdate(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	c.DuploServiceLBConfigsSetId(d)
+	c.DuploServiceLBConfigsSetID(d)
 	resourceDuploServiceLBConfigsRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsUpdate ******** end")
 
