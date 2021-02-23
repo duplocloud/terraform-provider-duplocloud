@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -20,6 +21,7 @@ type DuploEcacheInstance struct {
 
 	Identifier          string `json:"Identifier"`
 	Arn                 string `json:"Arn"`
+	Endpoint            string `json:"Endpoint"`
 	CacheType           int    `json:"CacheType,omitempty"`
 	Size                string `json:"Size,omitempty"`
 	Replicas            int    `json:"Replicas,omitempty"`
@@ -48,6 +50,18 @@ func DuploEcacheInstanceSchema() *map[string]*schema.Schema {
 		},
 		"arn": {
 			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"endpoint": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"host": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"port": {
+			Type:     schema.TypeInt,
 			Computed: true,
 		},
 		"cache_type": {
@@ -238,6 +252,7 @@ func EcacheInstanceFromState(d *schema.ResourceData) (*DuploEcacheInstance, erro
 	duploObject.Name = d.Get("name").(string)
 	duploObject.Identifier = d.Get("identifier").(string)
 	duploObject.Arn = d.Get("arn").(string)
+	duploObject.Endpoint = d.Get("endpoint").(string)
 	duploObject.CacheType = d.Get("cache_type").(int)
 	duploObject.Size = d.Get("size").(string)
 	duploObject.Replicas = d.Get("replicas").(int)
@@ -263,6 +278,11 @@ func EcacheInstanceToState(duploObject *DuploEcacheInstance, d *schema.ResourceD
 	jo["name"] = duploObject.Name
 	jo["identifier"] = duploObject.Identifier
 	jo["arn"] = duploObject.Arn
+	jo["endpoint"] = duploObject.Endpoint
+	uriParts := strings.Split(duploObject.Endpoint, ":")
+	jo["host"] = uriParts[0]
+	jo["port"], _ = strconv.Atoi(uriParts[1])
+
 	jo["cache_type"] = duploObject.CacheType
 	jo["size"] = duploObject.Size
 	jo["replicas"] = duploObject.Replicas
