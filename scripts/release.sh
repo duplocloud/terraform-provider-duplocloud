@@ -43,7 +43,7 @@ finish)
     ;;
 next)
     release_set_version "$1"
-    GIT_MERGE_AUTOEDIT=no git commit -m '[release] bump version to '"$version"
+    GIT_MERGE_AUTOEDIT=no git commit -m '[release] bump version to '"$1"
     ;;
 set-version)
     release_set_version "$1"
