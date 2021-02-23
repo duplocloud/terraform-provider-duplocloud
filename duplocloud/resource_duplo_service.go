@@ -98,7 +98,7 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 		return diag.FromErr(err)
 	}
 
-	c.DuploServiceSetId(d)
+	c.DuploServiceSetID(d)
 	log.Printf("[TRACE] duplo-resourceDuploServiceRead ******** end")
 	return diags
 }
@@ -115,7 +115,7 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		return diag.FromErr(err)
 	}
 
-	c.DuploServiceSetId(d)
+	c.DuploServiceSetID(d)
 	resourceDuploServiceRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceDuploServiceCreate ******** end")
 	return diags
@@ -133,7 +133,7 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 		return diag.FromErr(err)
 	}
 
-	c.DuploServiceSetId(d)
+	c.DuploServiceSetID(d)
 	resourceDuploServiceRead(ctx, d, m)
 	log.Printf("[TRACE] duplo-resourceDuploServiceUpdate ******** end")
 

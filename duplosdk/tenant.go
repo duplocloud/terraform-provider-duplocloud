@@ -17,6 +17,18 @@ type DuploTenant struct {
 	PlanID      string `json:"PlanID"`
 }
 
+// DuploTenantAwsCredentials represents AWS credentials for a Duplo tenant
+type DuploTenantAwsCredentials struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	ConsoleURL      string `json:"ConsoleUrl,omitempty"`
+	AccessKeyID     string `json:"AccessKeyId"`
+	SecretAccessKey string `json:"SecretAccessKey"`
+	Region          string `json:"Region"`
+	SessionToken    string `json:"SessionToken,omitempty"`
+}
+
 // TenantSchema returns a Terraform resource schema for a Duplo Tenant
 func TenantSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
@@ -251,4 +263,59 @@ func (c *Client) TenantCreateOrUpdate(d *schema.ResourceData, m interface{}, isU
 func (c *Client) TenantDelete(d *schema.ResourceData, m interface{}) (*DuploTenant, error) {
 	// No-op
 	return nil, nil
+}
+
+// TenantGetAwsRegion retrieves a tenant's AWS region via the Duplo API.
+func (c *Client) TenantGetAwsRegion(tenantID string) (string, error) {
+
+	// Format the URL
+	url := fmt.Sprintf("%s/subscriptions/%s/GetAwsRegionId", c.HostURL, tenantID)
+	log.Printf("[TRACE] duplo-TenantGetAwsRegion 1 ********: %s ", url)
+
+	// Get the AWS region from Duplo
+	req2, _ := http.NewRequest("GET", url, nil)
+	body, err := c.doRequest(req2)
+	if err != nil {
+		log.Printf("[TRACE] duplo-TenantGetAwsRegion 2 ********: %s", err.Error())
+		return "", err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] duplo-TenantGetAwsRegion 3 ********: %s", bodyString)
+
+	// Return it as a string.
+	awsRegion := ""
+	err = json.Unmarshal(body, &awsRegion)
+	if err != nil {
+	}
+	log.Printf("[TRACE] duplo-TenantGetAwsRegion 4 ********: %s", awsRegion)
+
+	return awsRegion, nil
+}
+
+// TenantGetAwsCredentials retrieves just-in-time AWS credentials for a tenant via the Duplo API.
+func (c *Client) TenantGetAwsCredentials(tenantID string) (*DuploTenantAwsCredentials, error) {
+
+	// Format the URL
+	url := fmt.Sprintf("%s/subscriptions/%s/GetAwsConsoleTokenUrl", c.HostURL, tenantID)
+	log.Printf("[TRACE] duplo-TenantGetAwsCredentials 1 ********: %s ", url)
+
+	// Get the AWS region from Duplo
+	req2, _ := http.NewRequest("GET", url, nil)
+	body, err := c.doRequest(req2)
+	if err != nil {
+		log.Printf("[TRACE] duplo-TenantGetAwsCredentials 2 ********: %s", err.Error())
+		return nil, err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] duplo-TenantGetAwsCredentials 3 ********: %s", bodyString)
+
+	// Return it as an object.
+	creds := DuploTenantAwsCredentials{}
+	err = json.Unmarshal(body, &creds)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[TRACE] duplo-TenantGetAwsCredentials 4 ********: %s", creds.AccessKeyID)
+	creds.TenantID = tenantID
+	return &creds, nil
 }

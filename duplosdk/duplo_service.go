@@ -3,15 +3,17 @@ package duplosdk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// DuploService represents a service in the Duplo SDK
 type DuploService struct {
 	Name                    string                   `json:"Name"`
-	TenantId                string                   `json:"TenantId,omitempty"`
+	TenantID                string                   `json:"TenantId,omitempty"`
 	OtherDockerHostConfig   string                   `json:"OtherDockerHostConfig,omitempty"`
 	OtherDockerConfig       string                   `json:"OtherDockerConfig,omitempty"`
 	AllocationTags          string                   `json:"AllocationTags,omitempty"`
@@ -26,79 +28,79 @@ type DuploService struct {
 	Tags                    []map[string]interface{} `json:"Tags,omitempty"`
 }
 
-/////------ schema ------////
+// DuploServiceSchema returns a Terraform resource schema for a service's parameters
 func DuploServiceSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
-		"name": &schema.Schema{
+		"name": {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
-		"tenant_id": &schema.Schema{
+		"tenant_id": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
 			ForceNew: true, //switch tenant
 		},
-		"other_docker_host_config": &schema.Schema{
+		"other_docker_host_config": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 		},
-		"other_docker_config": &schema.Schema{
+		"other_docker_config": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 		},
-		"extra_config": &schema.Schema{
+		"extra_config": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 		},
-		"allocation_tags": &schema.Schema{
+		"allocation_tags": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 		},
-		"volumes": &schema.Schema{
+		"volumes": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 		},
-		"commands": &schema.Schema{
+		"commands": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 		},
-		"cloud": &schema.Schema{
+		"cloud": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Required: false,
 			Default:  0,
 		},
-		"agent_platform": &schema.Schema{
+		"agent_platform": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Required: false,
 			Default:  0,
 		},
-		"replicas": &schema.Schema{
+		"replicas": {
 			Type:     schema.TypeInt,
 			Optional: false,
 			Required: true,
 		},
-		"replicas_matching_asg_name": &schema.Schema{
+		"replicas_matching_asg_name": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 		},
-		"docker_image": &schema.Schema{
+		"docker_image": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
 		},
 		//
-		"tags": &schema.Schema{
+		"tags": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
@@ -106,7 +108,7 @@ func DuploServiceSchema() *map[string]*schema.Schema {
 	}
 }
 
-////// convert from cloud to state :  cloud names (CamelCase) to tf names (SnakeCase)
+// DuploServiceToState converts a Duplo SDK object respresenting a service to terraform resource data.
 func (c *Client) DuploServiceToState(duploObject *DuploService, d *schema.ResourceData) map[string]interface{} {
 	if duploObject != nil {
 		//log
@@ -117,7 +119,7 @@ func (c *Client) DuploServiceToState(duploObject *DuploService, d *schema.Resour
 		///--- set
 		cObj["name"] = duploObject.Name
 		cObj["other_docker_host_config"] = duploObject.OtherDockerHostConfig
-		cObj["tenant_id"] = duploObject.TenantId
+		cObj["tenant_id"] = duploObject.TenantID
 		cObj["other_docker_config"] = duploObject.OtherDockerConfig
 		cObj["allocation_tags"] = duploObject.AllocationTags
 		cObj["extra_config"] = duploObject.ExtraConfig
@@ -137,14 +139,14 @@ func (c *Client) DuploServiceToState(duploObject *DuploService, d *schema.Resour
 	return nil
 }
 
-////// convert from state to cloud :  cloud names (CamelCase) to tf names (SnakeCase)
+// DuploServiceFromState converts resource data respresenting a service to a Duplo SDK object.
 func (c *Client) DuploServiceFromState(d *schema.ResourceData, m interface{}, isUpdate bool) (*DuploService, error) {
-	url := c.DuploServiceUrl(d)
-	var api_str = fmt.Sprintf("duplo-DuploServiceFromState-Create %s ", url)
+	url := c.DuploServiceURL(d)
+	var apiStr = fmt.Sprintf("duplo-DuploServiceFromState-Create %s ", url)
 	if isUpdate {
-		api_str = fmt.Sprintf("duplo-DuploServiceFromState-Create %s ", url)
+		apiStr = fmt.Sprintf("duplo-DuploServiceFromState-Create %s ", url)
 	}
-	log.Printf("[TRACE] %s 1 ********: ", api_str)
+	log.Printf("[TRACE] %s 1 ********: ", apiStr)
 
 	//object
 	duploObject := new(DuploService)
@@ -164,64 +166,74 @@ func (c *Client) DuploServiceFromState(d *schema.ResourceData, m interface{}, is
 	duploObject.Replicas = d.Get("replicas").(int)
 	//log
 	jsonData2, _ := json.Marshal(duploObject)
-	log.Printf("[TRACE] %s 2 ********: %s to-CLOUD", api_str, jsonData2)
+	log.Printf("[TRACE] %s 2 ********: %s to-CLOUD", apiStr, jsonData2)
 
 	return duploObject, nil
 }
 
 ///////// ///////// ///////// /////////  Utils convert ////////////////////
 
-/////////// common place to get url + Id : follow Azure  style Ids for import//////////
-func (c *Client) DuploServiceSetIdFromCloud(duploObject *DuploService, d *schema.ResourceData) string {
+// DuploServiceSetIDFromCloud populates the resource ID based on name and tenant_id
+func (c *Client) DuploServiceSetIDFromCloud(duploObject *DuploService, d *schema.ResourceData) string {
 	d.Set("name", duploObject.Name)
-	d.Set("tenant_id", duploObject.TenantId)
-	c.DuploServiceSetId(d)
+	d.Set("tenant_id", duploObject.TenantID)
+	c.DuploServiceSetID(d)
 	log.Printf("[TRACE] DuploServiceSetIdFromCloud 1 ********: %s", d.Id())
 	return d.Id()
 }
-func (c *Client) DuploServiceSetId(d *schema.ResourceData) string {
-	tenant_id := c.DuploServiceGetTenantId(d)
+
+// DuploServiceSetID populates the resource ID based on name and tenant_id
+func (c *Client) DuploServiceSetID(d *schema.ResourceData) string {
+	tenantID := c.DuploServiceGetTenantID(d)
 	name := d.Get("name").(string)
-	id := fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2/%s", tenant_id, name)
+	id := fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2/%s", tenantID, name)
 	d.SetId(id)
 	return id
 }
-func (c *Client) DuploServiceUrl(d *schema.ResourceData) string {
+
+// DuploServiceURL returns the base API URL for crud -- get + delete
+func (c *Client) DuploServiceURL(d *schema.ResourceData) string {
 	api := d.Id()
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-DuploServiceUrl %s 1 ********: %s", api, host)
 	return host
 }
-func (c *Client) DuploServiceListUrl(d *schema.ResourceData) string {
-	tenant_id := c.DuploServiceParamsGetTenantId(d)
-	api := fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2", tenant_id)
+
+// DuploServiceListURL returns the base API URL for crud -- get list + create + update
+func (c *Client) DuploServiceListURL(d *schema.ResourceData) string {
+	tenantID := c.DuploServiceParamsGetTenantID(d)
+	api := fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2", tenantID)
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-DuploServiceListUrl %s 1 ********: %s", api, host)
 	return host
 }
 
-func (c *Client) DuploServiceGetTenantId(d *schema.ResourceData) string {
-	tenant_id := d.Get("tenant_id").(string)
-	if tenant_id == "" {
+// DuploServiceGetTenantID tries to retrieve (or synthesize) a tenant_id based on resource data
+// - tenant_id or any parents in import url should be handled if not part of get json
+func (c *Client) DuploServiceGetTenantID(d *schema.ResourceData) string {
+	tenantID := d.Get("tenant_id").(string)
+	if tenantID == "" {
 		id := d.Id()
-		id_array := strings.Split(id, "/")
-		for i, s := range id_array {
+		idArray := strings.Split(id, "/")
+		for i, s := range idArray {
 			if s == "subscriptions" {
-				next_i := i + 1
-				if id_array[next_i] != "" {
-					d.Set("tenant_id", id_array[next_i])
+				j := i + 1
+				if idArray[j] != "" {
+					d.Set("tenant_id", idArray[j])
 				}
-				return id_array[next_i]
+				return idArray[j]
 			}
 			fmt.Println(i, s)
 		}
 	}
-	return tenant_id
+	return tenantID
 }
 
 /////////// common place to get url + Id : follow Azure  style Ids for import//////////
 
 /////////  Utils convert //////////
+
+// DuploServicesFlatten converts a list of Duplo SDK objects into Terraform resource data
 func (c *Client) DuploServicesFlatten(duploObjects *[]DuploService, d *schema.ResourceData) []interface{} {
 	if duploObjects != nil {
 		ois := make([]interface{}, len(*duploObjects), len(*duploObjects))
@@ -235,6 +247,7 @@ func (c *Client) DuploServicesFlatten(duploObjects *[]DuploService, d *schema.Re
 	return make([]interface{}, 0)
 }
 
+// DuploServiceFillGet converts a Duplo SDK object into Terraform resource data
 func (c *Client) DuploServiceFillGet(duploObject *DuploService, d *schema.ResourceData) error {
 	if duploObject != nil {
 
@@ -250,17 +263,18 @@ func (c *Client) DuploServiceFillGet(duploObject *DuploService, d *schema.Resour
 		}
 		return nil
 	}
-	err_msg := fmt.Errorf("DuploService not found 2")
-	return err_msg
+	return fmt.Errorf("DuploService not found 2")
 }
 
 /////////  API list //////////
+
+// DuploServiceGetList retrieves a list of services via the Duplo API.
 func (c *Client) DuploServiceGetList(d *schema.ResourceData, m interface{}) (*[]DuploService, error) {
 	//
 	filters, filtersOk := d.GetOk("filter")
-	log.Printf("[TRACE] DuploServiceGetList filters ********* 1 : %s  %s", filters, filtersOk)
+	log.Printf("[TRACE] DuploServiceGetList filters ********* 1 : %s  %v", filters, filtersOk)
 	//
-	api := c.DuploServiceListUrl(d)
+	api := c.DuploServiceListURL(d)
 	url := api
 	log.Printf("[TRACE] duplo-DuploServiceGetList %s 2 ********: %s", api, url)
 	//
@@ -278,14 +292,15 @@ func (c *Client) DuploServiceGetList(d *schema.ResourceData, m interface{}) (*[]
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[TRACE] duplo-DuploServiceGetList %s 3 ********: %s", api, len(duploObjects))
+	log.Printf("[TRACE] duplo-DuploServiceGetList %s 3 ********: %d", api, len(duploObjects))
 
 	return &duploObjects, nil
 }
 
+// DuploServiceGet retrieves a service's load balancer via the Duplo API.
 func (c *Client) DuploServiceGet(d *schema.ResourceData, m interface{}) error {
 	var api = d.Id()
-	url := c.DuploServiceUrl(d)
+	url := c.DuploServiceURL(d)
 	log.Printf("[TRACE] duplo-DuploServiceUpdate %s 1 ********: %s", api, url)
 	//
 	req2, _ := http.NewRequest("GET", url, nil)
@@ -308,82 +323,87 @@ func (c *Client) DuploServiceGet(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	log.Printf("[TRACE] duplo-DuploServiceGet %s 5 ******** ", api)
-	if duploObject.TenantId != "" {
+	if duploObject.TenantID != "" {
 		c.DuploServiceFillGet(&duploObject, d)
 		log.Printf("[TRACE] duplo-DuploServiceGet 6 FOUND ***** : %s ", api)
 		return nil
 	}
-	err_msg := fmt.Errorf("DuploService not found 7 : %s bodyString %s ", api, bodyString)
-	return err_msg
+	return fmt.Errorf("DuploService not found 7 : %s bodyString %s ", api, bodyString)
 }
 
 /////////  API Create //////////
+
+// DuploServiceCreate creates a service via the Duplo API.
 func (c *Client) DuploServiceCreate(d *schema.ResourceData, m interface{}) (*DuploService, error) {
 	return c.DuploServiceCreateOrUpdate(d, m, false)
 }
+
+// DuploServiceUpdate updates a service via the Duplo API.
 func (c *Client) DuploServiceUpdate(d *schema.ResourceData, m interface{}) (*DuploService, error) {
 	return c.DuploServiceCreateOrUpdate(d, m, true)
 }
+
+// DuploServiceCreateOrUpdate creates or updates a service via the Duplo API.
 func (c *Client) DuploServiceCreateOrUpdate(d *schema.ResourceData, m interface{}, isUpdate bool) (*DuploService, error) {
-	url := c.DuploServiceListUrl(d)
+	url := c.DuploServiceListURL(d)
 	api := url
 	var action = "POST"
-	var api_str = fmt.Sprintf("duplo-DuploServiceCreate %s ", api)
+	var apiStr = fmt.Sprintf("duplo-DuploServiceCreate %s ", api)
 	if isUpdate {
 		action = "PUT"
-		api_str = fmt.Sprintf("duplo-DuploServiceUpdate %s ", api)
+		apiStr = fmt.Sprintf("duplo-DuploServiceUpdate %s ", api)
 	}
-	log.Printf("[TRACE] %s 1 ********: %s", api_str, url)
+	log.Printf("[TRACE] %s 1 ********: %s", apiStr, url)
 
 	//
 	duploObject, _ := c.DuploServiceFromState(d, m, isUpdate)
 	//
 	jsonData, _ := json.Marshal(&duploObject)
-	log.Printf("[TRACE] %s 2 ********: %s", api_str, jsonData)
+	log.Printf("[TRACE] %s 2 ********: %s", apiStr, jsonData)
 
 	//
 	rb, err := json.Marshal(duploObject)
 	if err != nil {
-		log.Printf("[TRACE] %s 3 ********: %s", api_str, api, err.Error())
+		log.Printf("[TRACE] %s 3 ********: %s: %s", apiStr, api, err.Error())
 		return nil, err
 	}
 
-	json_str := string(rb)
-	log.Printf("[TRACE] %s 4 ********: %s", api_str, json_str)
+	jsonStr := string(rb)
+	log.Printf("[TRACE] %s 4 ********: %s", apiStr, jsonStr)
 
 	req, err := http.NewRequest(action, url, strings.NewReader(string(rb)))
 	if err != nil {
-		log.Printf("[TRACE] %s 5 ********: %s", api_str, err.Error())
+		log.Printf("[TRACE] %s 5 ********: %s", apiStr, err.Error())
 		return nil, err
 	}
 
 	body, err := c.doRequest(req)
 	if err != nil {
-		log.Printf("[TRACE] %s 6 ********: %s", api_str, err.Error())
+		log.Printf("[TRACE] %s 6 ********: %s", apiStr, err.Error())
 		return nil, err
 	}
 
 	if body != nil {
 		bodyString := string(body)
-		log.Printf("[TRACE] %s 7 ********: %s", api_str, bodyString)
+		log.Printf("[TRACE] %s 7 ********: %s", apiStr, bodyString)
 
 		duploObject := DuploService{}
 		err = json.Unmarshal(body, &duploObject)
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("[TRACE] %s 8 ********: ", api_str)
-		c.DuploServiceSetIdFromCloud(&duploObject, d)
+		log.Printf("[TRACE] %s 8 ********: ", apiStr)
+		c.DuploServiceSetIDFromCloud(&duploObject, d)
 		return nil, nil
 	}
-	err_msg := fmt.Errorf("ERROR: in create %s body: %s", api_str, body)
-	return nil, err_msg
+	return nil, fmt.Errorf("ERROR: in create %s body: %s", apiStr, body)
 }
 
+// DuploServiceDelete deletes a service via the Duplo API.
 func (c *Client) DuploServiceDelete(d *schema.ResourceData, m interface{}) (*DuploService, error) {
 
 	var api = d.Id()
-	url := c.DuploServiceUrl(d)
+	url := c.DuploServiceURL(d)
 	log.Printf("[TRACE] duplo-DuploServiceDelete %s 1 ********: %s", api, url)
 
 	//
