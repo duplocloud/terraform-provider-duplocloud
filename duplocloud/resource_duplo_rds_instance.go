@@ -78,6 +78,12 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, rpObject.Name))
 
+	// Try to get the object for up to 60 seconds.
+	// -- TODO --
+
+	// Wait for the instance to become available.
+	// -- TODO --
+
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** end")
 	return diags
@@ -100,6 +106,12 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	// Wait for the instance to become "unavailable" for up to 60 seconds.
+	// -- TODO --
+
+	// Wait for the instance to become available.
+	// -- TODO --
 
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")

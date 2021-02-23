@@ -24,7 +24,7 @@ type DuploEcacheInstance struct {
 	Size                   string `json:"Size,omitempty"`
 	Replicas               int    `json:"Replicas,omitempty"`
 	EnableEncryptionAtRest bool   `json:"EnableEncryptionAtRest,omitempty"`
-	CacheClusterStatus     string `json:"CacheClusterStatus,omitempty"`
+	InstanceStatus         string `json:"InstanceStatus,omitempty"`
 }
 
 // DuploEcacheInstanceSchema returns a Terraform resource schema for an ECS Service
@@ -70,7 +70,7 @@ func DuploEcacheInstanceSchema() *map[string]*schema.Schema {
 			Optional: true,
 			ForceNew: true,
 		},
-		"cache_cluster_status": {
+		"instance_status": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
@@ -234,7 +234,7 @@ func EcacheInstanceFromState(d *schema.ResourceData) (*DuploEcacheInstance, erro
 	duploObject.Size = d.Get("size").(string)
 	duploObject.Replicas = d.Get("replicas").(int)
 	duploObject.EnableEncryptionAtRest = d.Get("enable_encryption_at_rest").(bool)
-	duploObject.CacheClusterStatus = d.Get("cache_cluster_status").(string)
+	duploObject.InstanceStatus = d.Get("instance_status").(string)
 
 	return duploObject, nil
 }
@@ -258,7 +258,7 @@ func EcacheInstanceToState(duploObject *DuploEcacheInstance, d *schema.ResourceD
 	jo["size"] = duploObject.Size
 	jo["replicas"] = duploObject.Replicas
 	jo["enable_encryption_at_rest"] = duploObject.EnableEncryptionAtRest
-	jo["cache_cluster_status"] = duploObject.CacheClusterStatus
+	jo["instance_status"] = duploObject.InstanceStatus
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-EcacheInstanceToState ******** 2: OUTPUT => %s ", jsonData2)

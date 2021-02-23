@@ -78,6 +78,12 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, rpObject.Name))
 
+	// Try to get the object for up to 60 seconds.
+	// -- TODO --
+
+	// Wait for the instance to become available.
+	// -- TODO --
+
 	diags := resourceDuploEcacheInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate ******** end")
 	return diags
@@ -100,6 +106,12 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	// Wait for the instance to become "unavailable" for up to 60 seconds.
+	// -- TODO --
+
+	// Wait for the instance to become available.
+	// -- TODO --
 
 	diags := resourceDuploEcacheInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcacheInstanceUpdate ******** end")
