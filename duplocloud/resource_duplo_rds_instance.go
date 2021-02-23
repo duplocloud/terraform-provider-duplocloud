@@ -50,7 +50,7 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	for key := range jo {
 		d.Set(key, jo[key])
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Identifier))
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceRead ******** end")
 	return nil
@@ -73,7 +73,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, rpObject.Identifier))
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, rpObject.Name))
 
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** end")

@@ -15,6 +15,9 @@ type DuploRdsInstance struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
 
+	// NOTE: The Name field does not come from the backend - we synthesize it
+	Name string `json:"Name"`
+
 	Identifier                  string `json:"Identifier"`
 	Arn                         string `json:"Arn"`
 	MasterUsername              string `json:"MasterUsername,omitempty"`
@@ -39,10 +42,14 @@ func DuploRdsInstanceSchema() *map[string]*schema.Schema {
 			Required: true,
 			ForceNew: true, //switch tenant
 		},
-		"identifier": {
+		"name": {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
+		},
+		"identifier": {
+			Type:     schema.TypeString,
+			Computed: true,
 		},
 		"arn": {
 			Type:     schema.TypeString,
@@ -171,10 +178,10 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, error) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
-	identifier := idParts[4]
+	name := idParts[4]
 
 	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/RDSDBInstance/duplo%s", c.HostURL, tenantID, identifier)
+	url := fmt.Sprintf("%s/v2/subscriptions/%s/RDSDBInstance/duplo%s", c.HostURL, tenantID, name)
 	log.Printf("[TRACE] RdsInstanceGet 1 : %s", url)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
@@ -195,7 +202,7 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, error) {
 	duploObject := DuploRdsInstance{}
 	if bodyString == "" {
 		// tolerate an empty response from DELETE
-		duploObject.Identifier = identifier
+		duploObject.Name = name
 	} else {
 		err = json.Unmarshal(body, &duploObject)
 		if err != nil {
@@ -213,10 +220,10 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, error) {
 func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
-	identifier := idParts[4]
+	name := idParts[4]
 
 	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/RDSDBInstance/duplo%s", c.HostURL, tenantID, identifier)
+	url := fmt.Sprintf("%s/v2/subscriptions/%s/RDSDBInstance/duplo%s", c.HostURL, tenantID, name)
 	log.Printf("[TRACE] RdsInstanceGet 1 : %s", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -244,8 +251,9 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 		return nil, err
 	}
 
-	// Fill in the tenant ID and return the object
+	// Fill in the tenant ID and the name and return the object
 	duploObject.TenantID = tenantID
+	duploObject.Name = name
 	return &duploObject, nil
 }
 
@@ -258,6 +266,7 @@ func RdsInstanceFromState(d *schema.ResourceData) (*DuploRdsInstance, error) {
 	duploObject := new(DuploRdsInstance)
 
 	// First, convert things into simple scalars
+	duploObject.Name = d.Get("name").(string)
 	duploObject.Identifier = d.Get("identifier").(string)
 	duploObject.Arn = d.Get("arn").(string)
 	duploObject.MasterUsername = d.Get("master_username").(string)
@@ -286,6 +295,7 @@ func RdsInstanceToState(duploObject *DuploRdsInstance, d *schema.ResourceData) m
 
 	// First, convert things into simple scalars
 	jo["tenant_id"] = duploObject.TenantID
+	jo["name"] = duploObject.Name
 	jo["identifier"] = duploObject.Identifier
 	jo["arn"] = duploObject.Arn
 	jo["master_username"] = duploObject.MasterUsername

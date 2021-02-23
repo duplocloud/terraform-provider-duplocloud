@@ -41,3 +41,12 @@ resource "duplocloud_ecs_service" "test" {
     protocol = "HTTP"
   }
 }
+
+resource "duplocloud_rds_instance" "test" {
+  tenant_id = var.tenant_id
+  name = "joetest"
+  master_username = "joe"
+  master_password = "test1234!"
+  size = "db.t2.small"
+}
+
