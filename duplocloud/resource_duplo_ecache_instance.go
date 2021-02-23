@@ -17,7 +17,6 @@ func resourceDuploEcacheInstance() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceDuploEcacheInstanceRead,
 		CreateContext: resourceDuploEcacheInstanceCreate,
-		UpdateContext: resourceDuploEcacheInstanceUpdate,
 		DeleteContext: resourceDuploEcacheInstanceDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -103,35 +102,6 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 
 	diags := resourceDuploEcacheInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate ******** end")
-	return diags
-}
-
-/// UPDATE resource
-func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploEcacheInstanceUpdate ******** start")
-
-	// Convert the Terraform resource data into a Duplo object
-	duploObject, err := duplosdk.EcacheInstanceFromState(d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Put the object to Duplo
-	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
-	_, err = c.EcacheInstanceUpdate(tenantID, duploObject)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Wait for the instance to become "unavailable" for up to 60 seconds.
-	// -- TODO --
-
-	// Wait for the instance to become available.
-	// -- TODO --
-
-	diags := resourceDuploEcacheInstanceRead(ctx, d, m)
-	log.Printf("[TRACE] resourceDuploEcacheInstanceUpdate ******** end")
 	return diags
 }
 

@@ -80,6 +80,7 @@ func DuploEcacheInstanceSchema() *map[string]*schema.Schema {
 		"replicas": {
 			Type:     schema.TypeInt,
 			Optional: true,
+			ForceNew: true,
 			Default:  1,
 		},
 		"encryption_at_rest": {
