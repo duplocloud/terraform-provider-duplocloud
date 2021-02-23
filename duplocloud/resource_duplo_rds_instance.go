@@ -110,17 +110,15 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** start")
 
-	// Convert the Terraform resource data into a Duplo object
-	duploObject, err := duplosdk.RdsInstanceFromState(d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Put the object to Duplo
+	// Request the password change in Duplo
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 	id := d.Id()
-	_, err = c.RdsInstanceUpdate(tenantID, duploObject)
+	err := c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
+		Identifier:     d.Get("identifier").(string),
+		MasterPassword: d.Get("master_password").(string),
+		StorePassword:  true,
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}

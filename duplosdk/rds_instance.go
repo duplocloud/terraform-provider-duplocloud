@@ -35,6 +35,13 @@ type DuploRdsInstance struct {
 	InstanceStatus              string `json:"InstanceStatus,omitempty"`
 }
 
+// DuploRdsInstancePasswordChange is a Duplo SDK object that represents an RDS instance password change
+type DuploRdsInstancePasswordChange struct {
+	Identifier     string `json:"Identifier"`
+	MasterPassword string `json:"MasterPassword"`
+	StorePassword  bool   `json:"StorePassword,omitempty"`
+}
+
 // DuploRdsInstanceSchema returns a Terraform resource schema for an ECS Service
 func DuploRdsInstanceSchema() *map[string]*schema.Schema {
 	return &map[string]*schema.Schema{
@@ -133,7 +140,7 @@ func (c *Client) RdsInstanceUpdate(tenantID string, duploObject *DuploRdsInstanc
 	return c.RdsInstanceCreateOrUpdate(tenantID, duploObject, true)
 }
 
-// RdsInstanceCreateOrUpdate creates or updates an ECS service via the Duplo API.
+// RdsInstanceCreateOrUpdate creates or updates an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRdsInstance, updating bool) (*DuploRdsInstance, error) {
 
 	// Build the request
@@ -177,7 +184,7 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 	return &rpObject, nil
 }
 
-// RdsInstanceDelete deletes an ECS service via the Duplo API.
+// RdsInstanceDelete deletes an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, error) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
@@ -258,6 +265,40 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 	duploObject.TenantID = tenantID
 	duploObject.Name = name
 	return &duploObject, nil
+}
+
+// RdsInstanceChangePassword creates or updates an RDS instance via the Duplo API.
+func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRdsInstancePasswordChange) error {
+
+	// Build the request
+	rqBody, err := json.Marshal(&duploObject)
+	if err != nil {
+		log.Printf("[TRACE] RdsInstanceChangePassword 1 JSON gen : %s", err.Error())
+		return err
+	}
+	url := fmt.Sprintf("%s/subscriptions/%s/RDSInstancePasswordChange", c.HostURL, tenantID)
+	log.Printf("[TRACE] RdsInstanceChangePassword 2 : %s <= %s", url, rqBody)
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	if err != nil {
+		log.Printf("[TRACE] RdsInstanceChangePassword 3 HTTP builder : %s", err.Error())
+		return err
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] RdsInstanceChangePassword 4 HTTP POST : %s", err.Error())
+		return err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] RdsInstanceChangePassword 4 HTTP RESPONSE : %s", bodyString)
+
+	// Handle the response
+	if bodyString != "null" {
+		log.Printf("[TRACE] RdsInstanceChangePassword 5 UNEXPECTED RESULT : %s", bodyString)
+		return fmt.Errorf("Unexpected result from backend: '%s'", bodyString)
+	}
+	return nil
 }
 
 // RdsInstanceWaitUntilAvailable waits until an RDS instance is available.
