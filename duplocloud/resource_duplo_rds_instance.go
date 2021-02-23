@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -63,26 +64,42 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	// Convert the Terraform resource data into a Duplo object
 	duploObject, err := duplosdk.RdsInstanceFromState(d)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Internal error: %s")
 	}
 
-	// Populate the identifier field
+	// Populate the identifier field, and determine some other fields
 	duploObject.Identifier = duploObject.Name
+	tenantID := d.Get("tenant_id").(string)
+	id := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, duploObject.Name)
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
-	rpObject, err := c.RdsInstanceCreate(tenantID, duploObject)
+	_, err = c.RdsInstanceCreate(tenantID, duploObject)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Error creating RDS DB instance '%s': %s", id, err)
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, rpObject.Name))
+	d.SetId(id)
 
-	// Try to get the object for up to 60 seconds.
-	// -- TODO --
+	// Wait up to 60 seconds for Duplo to be able to return the instance details.
+	err = resource.Retry(time.Minute, func() *resource.RetryError {
+		resp, errget := c.RdsInstanceGet(id)
+
+		if errget != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error getting RDS DB instance '%s': %s", id, err))
+		}
+
+		if resp == nil {
+			return resource.RetryableError(fmt.Errorf("Expected RDS DB instance '%s' to be retrieved, but got: nil", id))
+		}
+
+		return nil
+	})
 
 	// Wait for the instance to become available.
-	// -- TODO --
+	err = duplosdk.RdsInstanceWaitUntilAvailable(c, id)
+	if err != nil {
+		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+	}
 
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** end")
@@ -102,16 +119,23 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	// Put the object to Duplo
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
+	id := d.Id()
 	_, err = c.RdsInstanceUpdate(tenantID, duploObject)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// Wait for the instance to become "unavailable" for up to 60 seconds.
-	// -- TODO --
+	// Wait for the instance to become unavailable.
+	err = duplosdk.RdsInstanceWaitUntilUnavailable(c, id)
+	if err != nil {
+		return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+	}
 
 	// Wait for the instance to become available.
-	// -- TODO --
+	err = duplosdk.RdsInstanceWaitUntilAvailable(c, id)
+	if err != nil {
+		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+	}
 
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")

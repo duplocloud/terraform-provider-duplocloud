@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -76,6 +78,7 @@ func DuploRdsInstanceSchema() *map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
+			ForceNew: true,
 		},
 		"snapshot_id": {
 			Type:          schema.TypeString,
@@ -255,6 +258,66 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 	duploObject.TenantID = tenantID
 	duploObject.Name = name
 	return &duploObject, nil
+}
+
+// RdsInstanceWaitUntilAvailable waits until an RDS instance is available.
+//
+// It should be usable both post-creation and post-modification.
+func RdsInstanceWaitUntilAvailable(c *Client, id string) error {
+	stateConf := &resource.StateChangeConf{
+		Pending: []string{
+			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
+			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
+			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
+		},
+		Target:       []string{"available"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.InstanceStatus == "" {
+				resp.InstanceStatus = "processing"
+			}
+			return resp, resp.InstanceStatus, nil
+		},
+	}
+	log.Printf("[DEBUG] RdsInstanceWaitUntilAvailable (%s)", id)
+	_, err := stateConf.WaitForState()
+	return err
+}
+
+// RdsInstanceWaitUntilUnavailable waits until an RDS instance is unavailable.
+//
+// It should be usable post-modification.
+func RdsInstanceWaitUntilUnavailable(c *Client, id string) error {
+	stateConf := &resource.StateChangeConf{
+		Target: []string{
+			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
+			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
+			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
+		},
+		Pending:      []string{"available"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.InstanceStatus == "" {
+				resp.InstanceStatus = "available"
+			}
+			return resp, resp.InstanceStatus, nil
+		},
+	}
+	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
+	_, err := stateConf.WaitForState()
+	return err
 }
 
 /*************************************************
