@@ -44,6 +44,7 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant":                  dataSourceTenant(),
 			"duplocloud_tenant_aws_region":       dataSourceTenantAwsRegion(),
 			"duplocloud_tenant_aws_credentials":  dataSourceTenantAwsCredentials(),
+			"duplocloud_tenant_internal_subnets": dataSourceTenantInternalSubnets(),
 			"duplocloud_tenant_secret":           dataSourceTenantSecret(),
 			"duplocloud_tenant_secrets":          dataSourceTenantSecrets(),
 			"duplocloud_aws_host":                dataSourceAwsHost(),

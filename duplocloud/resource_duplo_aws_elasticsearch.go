@@ -148,6 +148,12 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Computed: true,
 			ForceNew: true,
 		},
+		"single_zone": {
+			Type:     schema.TypeInt,
+			Optional: true,
+			Computed: true,
+			ForceNew: true,
+		},
 		"cluster_config": {
 			Type:     schema.TypeList,
 			Optional: true,
