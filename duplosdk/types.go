@@ -29,6 +29,21 @@ type DuploNameValue struct {
 	Value string `json:"Value,omitempty"`
 }
 
+func duploKeyValueSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"value": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+	}
+}
+
 func duploKeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKeyValue {
 	var ary []DuploKeyValue
 
@@ -48,7 +63,8 @@ func duploKeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKe
 	return &ary
 }
 
-func duploKeyValueToState(fieldName string, duploObjects *[]DuploKeyValue) []interface{} {
+// KeyValueToState converts a DuploKeyValue array into terraform resource data.
+func KeyValueToState(fieldName string, duploObjects *[]DuploKeyValue) []interface{} {
 	if duploObjects != nil {
 		input, _ := json.Marshal(&duploObjects)
 		log.Printf("[TRACE] duploKeyValueToState[%s] ******** INPUT <= %s", fieldName, input)

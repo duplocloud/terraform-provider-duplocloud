@@ -204,18 +204,7 @@ func DuploEcsTaskDefinitionSchema() *map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Computed: true,
 			Required: false,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"key": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-					"value": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-				},
-			},
+			Elem:     duploKeyValueSchema(),
 		},
 		"inference_accelerator": {
 			Type:     schema.TypeSet,
@@ -418,7 +407,7 @@ func EcsTaskDefToState(duploObject *DuploEcsTaskDef, d *schema.ResourceData) map
 	jo["proxy_configuration"] = ecsProxyConfigToState(duploObject.ProxyConfiguration)
 	jo["inference_accelerator"] = ecsInferenceAcceleratorsToState(duploObject.InferenceAccelerators)
 	jo["requires_attributes"] = ecsRequiresAttributesToState(duploObject.RequiresAttributes)
-	jo["tags"] = duploKeyValueToState("tags", duploObject.Tags)
+	jo["tags"] = KeyValueToState("tags", duploObject.Tags)
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-EcsTaskDefToState ******** 2: OUTPUT => %s ", jsonData2)
