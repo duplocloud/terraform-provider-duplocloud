@@ -92,7 +92,7 @@ resource "duplocloud_ecache_instance" "test" {
 
 resource "duplocloud_aws_elasticsearch" "test" {
   tenant_id = var.tenant_id
-  name = "joe2"
+  name = "joe3"
   storage_size = 20
   selected_zone = 1
 }
