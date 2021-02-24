@@ -328,14 +328,6 @@ func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceDa
 	}
 	d.Set("encrypt_at_rest", []map[string]interface{}{encryptAtRest})
 
-	// Interpret the VPC options.
-	vpcOptions := map[string]interface{}{}
-	vpcOptions["vpc_id"] = duplo.VPCOptions.VpcID
-	vpcOptions["availability_zones"] = duplo.VPCOptions.AvailabilityZones
-	vpcOptions["security_group_ids"] = duplo.VPCOptions.SecurityGroupIDs
-	vpcOptions["subnet_ids"] = duplo.VPCOptions.SubnetIDs
-	d.Set("vpc_options", []map[string]interface{}{vpcOptions})
-
 	// Interpret the snapshot options.
 	snapshotOptions := map[string]interface{}{}
 	snapshotOptions["automated_snapshot_start_hour"] = duplo.SnapshotOptions.AutomatedSnapshotStartHour
@@ -346,6 +338,30 @@ func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceDa
 	endpointOptions["enforce_https"] = duplo.DomainEndpointOptions.EnforceHTTPS
 	endpointOptions["tls_security_policy"] = duplo.DomainEndpointOptions.TLSSecurityPolicy.Value
 	d.Set("domain_endpoint_options", []map[string]interface{}{endpointOptions})
+
+	// Interpret the VPC options.
+	vpcOptions := map[string]interface{}{}
+	vpcOptions["vpc_id"] = duplo.VPCOptions.VpcID
+	vpcOptions["availability_zones"] = duplo.VPCOptions.AvailabilityZones
+	vpcOptions["security_group_ids"] = duplo.VPCOptions.SecurityGroupIDs
+	vpcOptions["subnet_ids"] = duplo.VPCOptions.SubnetIDs
+	d.Set("vpc_options", []map[string]interface{}{vpcOptions})
+
+	// Interpret the selected zone.
+	if duplo.ClusterConfig.InstanceCount == 1 && len(duplo.VPCOptions.SubnetIDs) == 1 {
+		subnetIDs, err := c.TenantGetInternalSubnets(tenantID)
+		if err != nil {
+			return diag.Errorf("Internal error: failed to get internal subnets for tenant '%s': %s", tenantID, err)
+		}
+
+		// Find the selected subnet in the list, then use this as the zone.
+		for i, subnetID := range subnetIDs {
+			if subnetID == duplo.VPCOptions.SubnetIDs[0] {
+				d.Set("selected_zone", i+1)
+				break
+			}
+		}
+	}
 
 	log.Printf("[TRACE] resourceDuploAwsElasticSearchRead ******** end")
 	return nil
