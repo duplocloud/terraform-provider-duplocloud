@@ -125,6 +125,7 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 		"encrypt_at_rest": {
 			Type:     schema.TypeList,
 			Optional: true,
+			Computed: true,
 			ForceNew: true,
 			MaxItems: 1,
 			Elem: &schema.Resource{
@@ -150,6 +151,7 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 		"cluster_config": {
 			Type:     schema.TypeList,
 			Optional: true,
+			Computed: true,
 			ForceNew: true,
 			MaxItems: 1,
 			Elem: &schema.Resource{
@@ -279,8 +281,8 @@ func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceDa
 	// Interpret the cluster config options.
 	clusterConfig := map[string]interface{}{}
 	clusterConfig["dedicated_master_enabled"] = duplo.ClusterConfig.DedicatedMasterEnabled
-	clusterConfig["dedicated_master_count"] = duplo.ClusterConfig.DedicatedMasterCount
 	if duplo.ClusterConfig.DedicatedMasterEnabled {
+		clusterConfig["dedicated_master_count"] = duplo.ClusterConfig.DedicatedMasterCount
 		clusterConfig["dedicated_master_type"] = duplo.ClusterConfig.DedicatedMasterType.Value
 	}
 	clusterConfig["instance_count"] = duplo.ClusterConfig.InstanceCount
