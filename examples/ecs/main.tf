@@ -42,6 +42,11 @@ variable "tenant_id" {
 # Tenant secrets retrieval
 data "duplocloud_tenant_secrets" "test" { tenant_id = var.tenant_id }
 output "tenant_secrets" { value = data.duplocloud_tenant_secrets.test.secrets }
+data "duplocloud_tenant_secret" "test" {
+  tenant_id = var.tenant_id
+  name_suffix = "joetest"
+}
+output "tenant_secret" { value = data.duplocloud_tenant_secret.test }
 
 # resource "duplocloud_ecs_task_definition" "test" {
 #   tenant_id = var.tenant_id

@@ -13,8 +13,8 @@ import (
 )
 
 // DuploEcsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
-func ecsTaskDefinitionSchema() *map[string]*schema.Schema {
-	return &map[string]*schema.Schema{
+func ecsTaskDefinitionSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
 		"tenant_id": {
 			Type:     schema.TypeString,
 			Optional: false,
@@ -198,7 +198,7 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: *ecsTaskDefinitionSchema(),
+		Schema: ecsTaskDefinitionSchema(),
 	}
 }
 
