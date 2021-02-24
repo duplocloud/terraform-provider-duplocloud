@@ -19,9 +19,9 @@ type DuploEcsTaskDefPlacementConstraint struct {
 
 // DuploEcsTaskDefProxyConfig represents an ECS proxy configuration in the Duplo SDK
 type DuploEcsTaskDefProxyConfig struct {
-	ContainerName string            `json:"ContainerName"`
-	Properties    *[]DuploNameValue `json:"Properties"`
-	Type          string            `json:"Type"`
+	ContainerName string                  `json:"ContainerName"`
+	Properties    *[]DuploNameStringValue `json:"Properties"`
+	Type          string                  `json:"Type"`
 }
 
 // DuploEcsTaskDefInferenceAccelerator represents an inference accelerator in the Duplo SDK
@@ -45,14 +45,14 @@ type DuploEcsTaskDef struct {
 	Memory                  string                                 `json:"Memory,omitempty"`
 	IpcMode                 string                                 `json:"IpcMode,omitempty"`
 	PidMode                 string                                 `json:"PidMode,omitempty"`
-	NetworkMode             *DuploValue                            `json:"NetworkMode,omitempty"`
+	NetworkMode             *DuploStringValue                      `json:"NetworkMode,omitempty"`
 	PlacementConstraints    *[]DuploEcsTaskDefPlacementConstraint  `json:"PlacementConstraints,omitempty"`
 	ProxyConfiguration      *DuploEcsTaskDefProxyConfig            `json:"ProxyConfiguration,omitempty"`
 	RequiresAttributes      *[]DuploName                           `json:"RequiresAttributes,omitempty"`
 	RequiresCompatibilities []string                               `json:"RequiresCompatibilities,omitempty"`
-	Tags                    *[]DuploKeyValue                       `json:"Tags,omitempty"`
+	Tags                    *[]DuploKeyStringValue                 `json:"Tags,omitempty"`
 	InferenceAccelerators   *[]DuploEcsTaskDefInferenceAccelerator `json:"InferenceAccelerators,omitempty"`
-	Status                  *DuploValue                            `json:"Status,omitempty"`
+	Status                  *DuploStringValue                      `json:"Status,omitempty"`
 	Volumes                 []map[string]interface{}               `json:"Volumes,omitempty"`
 }
 
@@ -161,7 +161,7 @@ func EcsTaskDefFromState(d *schema.ResourceData) (*DuploEcsTaskDef, error) {
 	duploObject.Memory = d.Get("memory").(string)
 	duploObject.IpcMode = d.Get("ipc_mode").(string)
 	duploObject.PidMode = d.Get("pid_mode").(string)
-	duploObject.NetworkMode = &DuploValue{Value: d.Get("network_mode").(string)}
+	duploObject.NetworkMode = &DuploStringValue{Value: d.Get("network_mode").(string)}
 
 	// Next, convert sets into lists
 	rcs := d.Get("requires_compatibilities").(*schema.Set)
@@ -308,9 +308,9 @@ func ecsProxyConfigFromState(d *schema.ResourceData) *DuploEcsTaskDefProxyConfig
 	log.Printf("[TRACE] ecsProxyConfigFromState ********: have data")
 
 	props := pc["properties"].(map[string]interface{})
-	nvs := make([]DuploNameValue, 0, len(props))
+	nvs := make([]DuploNameStringValue, 0, len(props))
 	for prop := range props {
-		nvs = append(nvs, DuploNameValue{Name: prop, Value: props[prop].(string)})
+		nvs = append(nvs, DuploNameStringValue{Name: prop, Value: props[prop].(string)})
 	}
 
 	return &DuploEcsTaskDefProxyConfig{

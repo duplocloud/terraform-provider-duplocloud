@@ -12,16 +12,16 @@ type DuploTenantSecret struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
 
-	Arn                    string              `json:"ARN"`
-	Name                   string              `json:"Name"`
-	RotationEnabled        bool                `json:"RotationEnabled,omitempty"`
-	SecretVersionsToStages map[string][]string `json:"SecretVersionsToStages,omitempty"`
-	Tags                   *[]DuploKeyValue    `json:"Tags,omitempty"`
-	CreatedDate            string              `json:"CreatedDate,omitempty"`
-	DeletedDate            string              `json:"DeletedDate,omitempty"`
-	LastAccessedDate       string              `json:"LastAccessedDate,omitempty"`
-	LastChangedDate        string              `json:"LastChangedDate,omitempty"`
-	LastRotatedDate        string              `json:"LastRotatedDate,omitempty"`
+	Arn                    string                 `json:"ARN"`
+	Name                   string                 `json:"Name"`
+	RotationEnabled        bool                   `json:"RotationEnabled,omitempty"`
+	SecretVersionsToStages map[string][]string    `json:"SecretVersionsToStages,omitempty"`
+	Tags                   *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	CreatedDate            string                 `json:"CreatedDate,omitempty"`
+	DeletedDate            string                 `json:"DeletedDate,omitempty"`
+	LastAccessedDate       string                 `json:"LastAccessedDate,omitempty"`
+	LastChangedDate        string                 `json:"LastChangedDate,omitempty"`
+	LastRotatedDate        string                 `json:"LastRotatedDate,omitempty"`
 }
 
 // TenantListSecrets retrieves a list of managed secrets
@@ -31,7 +31,7 @@ func (c *Client) TenantListSecrets(tenantID string) (*[]DuploTenantSecret, error
 	url := fmt.Sprintf("%s/subscriptions/%s/ListTenantSecrets", c.HostURL, tenantID)
 	log.Printf("[TRACE] duplo-TenantListSecrets 1 ********: %s ", url)
 
-	// Get the AWS region from Duplo
+	// Get the secrets from Duplo
 	req2, _ := http.NewRequest("GET", url, nil)
 	body, err := c.doRequest(req2)
 	if err != nil {

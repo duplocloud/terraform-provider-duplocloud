@@ -17,6 +17,18 @@ type DuploTenant struct {
 	PlanID      string `json:"PlanID"`
 }
 
+// DuploAwsKmsKey represents an AWS KMS key for a Duplo tenant
+type DuploAwsKmsKey struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	Arn         string `json:"Arn,omitempty"`
+	KeyName     string `json:"KeyName,omitempty"`
+	KeyID       string `json:"KeyId,omitempty"`
+	KeyArn      string `json:"KeyArn,omitempty"`
+	Description string `json:"Description,omitempty"`
+}
+
 // DuploTenantAwsCredentials represents AWS credentials for a Duplo tenant
 type DuploTenantAwsCredentials struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
@@ -318,4 +330,93 @@ func (c *Client) TenantGetAwsCredentials(tenantID string) (*DuploTenantAwsCreden
 	log.Printf("[TRACE] duplo-TenantGetAwsCredentials 4 ********: %s", creds.AccessKeyID)
 	creds.TenantID = tenantID
 	return &creds, nil
+}
+
+// TenantGetInternalSubnets retrieves a list of the internal subnets for a tenant via the Duplo API.
+func (c *Client) TenantGetInternalSubnets(tenantID string) ([]string, error) {
+
+	// Format the URL
+	url := fmt.Sprintf("%s/subscriptions/%s/GetInternalSubnets", c.HostURL, tenantID)
+	log.Printf("[TRACE] duplo-TenantGetInternalSubnets 1 ********: %s ", url)
+
+	// Get the list from Duplo
+	req2, _ := http.NewRequest("GET", url, nil)
+	body, err := c.doRequest(req2)
+	if err != nil {
+		log.Printf("[TRACE] duplo-TenantGetInternalSubnets 2 ********: %s", err.Error())
+		return nil, err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] duplo-TenantGetInternalSubnets 3 ********: %s", bodyString)
+
+	// Return it as an object.
+	list := []string{}
+	err = json.Unmarshal(body, &list)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[TRACE] duplo-TenantGetInternalSubnets 4 ********: %s", strings.Join(list, " "))
+	return list, nil
+}
+
+// TenantGetPlanKmsKeys retrieves a list of the AWS KMS keys for a tenant via the Duplo API.
+func (c *Client) TenantGetPlanKmsKeys(tenantID string) (*[]DuploAwsKmsKey, error) {
+
+	// Format the URL
+	url := fmt.Sprintf("%s/subscriptions/%s/GetPlanKmsKeys", c.HostURL, tenantID)
+	log.Printf("[TRACE] duplo-TenantGetPlanKmsKeys 1 ********: %s ", url)
+
+	// Get the list from Duplo
+	req2, _ := http.NewRequest("GET", url, nil)
+	body, err := c.doRequest(req2)
+	if err != nil {
+		log.Printf("[TRACE] duplo-TenantGetPlanKmsKeys 2 ********: %s", err.Error())
+		return nil, err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] duplo-TenantGetPlanKmsKeys 3 ********: %s", bodyString)
+
+	// Return it as a list.
+	list := []DuploAwsKmsKey{}
+	err = json.Unmarshal(body, &list)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[TRACE] duplo-TenantGetPlanKmsKeys 4 ********: %d items", len(list))
+	for i := range list {
+		list[i].TenantID = tenantID
+		list[i].Arn = list[i].KeyArn
+		list[i].Description = list[i].KeyName
+	}
+	return &list, nil
+}
+
+// TenantGetTenantKmsKey retrieves a tenant specific AWS KMS keys via the Duplo API.
+func (c *Client) TenantGetTenantKmsKey(tenantID string) (*DuploAwsKmsKey, error) {
+
+	// Format the URL
+	url := fmt.Sprintf("%s/subscriptions/%s/GetTenantKmsKey", c.HostURL, tenantID)
+	log.Printf("[TRACE] duplo-TenantGetTenantKmsKey 1 ********: %s ", url)
+
+	// Get the key from Duplo
+	req2, _ := http.NewRequest("GET", url, nil)
+	body, err := c.doRequest(req2)
+	if err != nil {
+		log.Printf("[TRACE] duplo-TenantGetTenantKmsKey 2 ********: %s", err.Error())
+		return nil, err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] duplo-TenantGetTenantKmsKey 3 ********: %s", bodyString)
+
+	// Return it as an object.
+	kms := DuploAwsKmsKey{}
+	err = json.Unmarshal(body, &kms)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[TRACE] duplo-TenantGetTenantKmsKey 4 ********")
+	kms.TenantID = tenantID
+	kms.KeyArn = kms.Arn
+	kms.KeyName = kms.Description
+	return &kms, nil
 }

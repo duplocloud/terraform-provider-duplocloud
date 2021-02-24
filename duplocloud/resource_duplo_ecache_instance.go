@@ -12,6 +12,75 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func ecacheInstanceSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"tenant_id": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+			ForceNew: true, //switch tenant
+		},
+		"name": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"identifier": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"arn": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"endpoint": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"host": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"port": {
+			Type:     schema.TypeInt,
+			Computed: true,
+		},
+		"cache_type": {
+			Type:     schema.TypeInt,
+			Optional: true,
+			ForceNew: true,
+			Default:  0,
+		},
+		"size": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"replicas": {
+			Type:     schema.TypeInt,
+			Optional: true,
+			ForceNew: true,
+			Default:  1,
+		},
+		"encryption_at_rest": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			ForceNew: true,
+			Default:  false,
+		},
+		"encryption_in_transit": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			ForceNew: true,
+			Default:  false,
+		},
+		"instance_status": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+	}
+}
+
 // SCHEMA for resource crud
 func resourceDuploEcacheInstance() *schema.Resource {
 	return &schema.Resource{
@@ -26,7 +95,7 @@ func resourceDuploEcacheInstance() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: *duplosdk.DuploEcacheInstanceSchema(),
+		Schema: ecacheInstanceSchema(),
 	}
 }
 

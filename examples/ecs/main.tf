@@ -89,3 +89,13 @@ resource "duplocloud_ecache_instance" "test" {
 #   master_password = "test12345!"
 #   size = "db.t2.small"
 # }
+
+resource "duplocloud_aws_elasticsearch" "test" {
+  tenant_id = var.tenant_id
+  name = "joe1"
+  cluster_config {
+  }
+  encrypt_at_rest {
+  }
+}
+

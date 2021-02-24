@@ -84,6 +84,10 @@ func FiltersSchema() *schema.Schema {
 	}
 }
 
+func suppressMissingOptionalConfigurationBlock(k, old, new string, d *schema.ResourceData) bool {
+	return old == "1" && new == "0"
+}
+
 func diffSuppressFuncIgnore(k, old, new string, d *schema.ResourceData) bool {
 	return true //ignore????
 }
@@ -103,4 +107,31 @@ func diffIgnoreIfAlreadySet(k, old, new string, d *schema.ResourceData) bool {
 	}
 
 	return false
+}
+
+// Utility function to return a pointer to a single valid (but optional) resource data block.
+func getOptionalBlock(data *schema.ResourceData, key string) (*interface{}, error) {
+	var value *interface{}
+
+	if v, ok := data.GetOk(key); ok {
+		x := v.([]interface{})
+
+		if len(x) == 1 {
+			if x[0] == nil {
+				return nil, fmt.Errorf("At least one field is expected inside %s", key)
+			}
+			value = &x[0]
+		}
+	}
+
+	return value, nil
+}
+
+// Utility function to return a pointer to a single valid (but optional) resource data block as a map.
+func getOptionalBlockAsMap(data *schema.ResourceData, key string) (map[string]interface{}, error) {
+	block, err := getOptionalBlock(data, key)
+	if block == nil || err != nil {
+		return nil, err
+	}
+	return (*block).(map[string]interface{}), nil
 }

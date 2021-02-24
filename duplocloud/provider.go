@@ -36,6 +36,7 @@ func Provider() *schema.Provider {
 			"duplocloud_ecs_service":             resourceDuploEcsService(),
 			"duplocloud_rds_instance":            resourceDuploRdsInstance(),
 			"duplocloud_ecache_instance":         resourceDuploEcacheInstance(),
+			"duplocloud_aws_elasticsearch":       resourceDuploAwsElasticSearch(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_aws_account":             dataSourceAwsAccount(),
