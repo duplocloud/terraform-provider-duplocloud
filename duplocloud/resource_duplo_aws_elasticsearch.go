@@ -148,7 +148,7 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Computed: true,
 			ForceNew: true,
 		},
-		"single_zone": {
+		"selected_zone": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Computed: true,
@@ -206,7 +206,9 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 		},
 		"vpc_options": {
 			Type:     schema.TypeList,
+			Optional: true,
 			Computed: true,
+			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"availability_zones": {
@@ -221,6 +223,7 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 					},
 					"subnet_ids": {
 						Type:     schema.TypeList,
+						Optional: true,
 						Computed: true,
 						Elem:     &schema.Schema{Type: schema.TypeString},
 					},
@@ -356,14 +359,24 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 	duploObject := duplosdk.DuploElasticSearchDomainRequest{
 		Name:    d.Get("name").(string),
 		Version: d.Get("elasticsearch_version").(string),
+		EBSOptions: duplosdk.DuploElasticSearchDomainEBSOptions{
+			VolumeSize: d.Get("storage_size").(int),
+		},
 	}
+
+	c := m.(*duplosdk.Client)
+	tenantID := d.Get("tenant_id").(string)
+	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
 
 	// Set encryption-at-rest
 	encryptAtRest, err := getOptionalBlockAsMap(d, "encrypt_at_rest")
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	duploObject.KmsKeyID = encryptAtRest["kms_key_id"].(string)
+	kmsKeyID, ok := encryptAtRest["kms_key_id"]
+	if ok {
+		duploObject.KmsKeyID = kmsKeyID.(string)
+	}
 
 	// Set cluster config
 	clusterConfig, err := getOptionalBlockAsMap(d, "cluster_config")
@@ -372,12 +385,47 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 	}
 	awsElasticSearchDomainClusterConfigFromState(clusterConfig, &duploObject.ClusterConfig)
 
-	// Populate the identifier field, and determine some other fields
-	tenantID := d.Get("tenant_id").(string)
-	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
+	// Set VPC options
+	vpcOptions, err := getOptionalBlockAsMap(d, "vpc_options")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	selectedSubnetIDs, ok := vpcOptions["subnet_ids"]
+	if ok {
+		duploObject.VPCOptions.SubnetIDs = selectedSubnetIDs.([]string)
+	}
+
+	// Handle subnet selection: either a single zone domain, or explicit subnet IDs
+	selectedZone := d.Get("selected_zone").(int)
+	subnetIDs, err := c.TenantGetInternalSubnets(tenantID)
+	if err != nil {
+		return diag.Errorf("Internal error: failed to get internal subnets for tenant '%s': %s", tenantID, err)
+	}
+	if selectedZone > 0 {
+		if selectedZone > len(subnetIDs) {
+			return diag.Errorf("Invalid ElasticSearch domain '%s': selected_zone == %d but Duplo only has %d zones", id, selectedZone, len(subnetIDs))
+		}
+		if duploObject.ClusterConfig.InstanceCount > 1 {
+			return diag.Errorf("Invalid ElasticSearch domain '%s': selected_zone not supported when cluster_config.instance_count > 1", id)
+		}
+		if len(duploObject.VPCOptions.SubnetIDs) > 0 {
+			return diag.Errorf("Invalid ElasticSearch domain '%s': selected_zone and vpc_options.subnet_ids are mutually exclusive", id)
+		}
+
+		// Populate a single subnet ID automatically, just like the UI
+		duploObject.VPCOptions.SubnetIDs = []string{subnetIDs[selectedZone-1]}
+
+	} else if len(duploObject.VPCOptions.SubnetIDs) == 0 {
+		if duploObject.ClusterConfig.InstanceCount > 1 {
+			// Populate the subnet IDs automatically, just like the UI
+			duploObject.VPCOptions.SubnetIDs = subnetIDs
+		} else {
+			// Require a zone to be selected, just like the UI
+			return diag.Errorf("Invalid ElasticSearch domain '%s': vpc_options.subnet_ids or selected_zone must be set", id)
+		}
+	}
 
 	// Post the object to Duplo
-	c := m.(*duplosdk.Client)
 	err = c.TenantUpdateElasticSearchDomain(tenantID, &duploObject)
 	if err != nil {
 		return diag.Errorf("Error creating ElasticSearch domain '%s': %s", id, err)
@@ -427,9 +475,13 @@ func isDedicatedMasterDisabled(k, old, new string, d *schema.ResourceData) bool 
 func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, duplo *duplosdk.DuploElasticSearchDomainClusterConfig) {
 	if v, ok := m["instance_count"]; ok {
 		duplo.InstanceCount = v.(int)
+	} else {
+		duplo.InstanceCount = 1
 	}
 	if v, ok := m["instance_type"]; ok {
 		duplo.InstanceType.Value = v.(string)
+	} else {
+		duplo.InstanceType.Value = "t2.small.elasticsearch"
 	}
 
 	if v, ok := m["dedicated_master_enabled"]; ok {

@@ -18,10 +18,10 @@ type DuploElasticSearchDomainVPCOptions struct {
 
 // DuploElasticSearchDomainEBSOptions represents an AWS ElasticSearch domain's EBS options for a Duplo tenant
 type DuploElasticSearchDomainEBSOptions struct {
-	EBSEnabled bool             `json:"EBSEnabled,omitempty"`
-	IOPS       int              `json:"Iops,omitempty"`
-	VolumeSize int              `json:"VolumeSize,omitempty"`
-	VolumeType DuploStringValue `json:"VolumeType,omitempty"`
+	EBSEnabled bool              `json:"EBSEnabled,omitempty"`
+	IOPS       int               `json:"Iops,omitempty"`
+	VolumeSize int               `json:"VolumeSize,omitempty"`
+	VolumeType *DuploStringValue `json:"VolumeType,omitempty"`
 }
 
 // DuploElasticSearchDomainEncryptAtRestOptions represents an AWS ElasticSearch domain's endpoint options for a Duplo tenant
@@ -38,11 +38,11 @@ type DuploElasticSearchDomainEndpointOptions struct {
 
 // DuploElasticSearchDomainClusterConfig represents an AWS ElasticSearch domain's endpoint options for a Duplo tenant
 type DuploElasticSearchDomainClusterConfig struct {
-	DedicatedMasterCount   int              `json:"DedicatedMasterCount,omitempty"`
-	DedicatedMasterEnabled bool             `json:"DedicatedMasterEnabled,omitempty"`
-	DedicatedMasterType    DuploStringValue `json:"DedicatedMasterType,omitempty"`
-	InstanceCount          int              `json:"InstanceCount,omitempty"`
-	InstanceType           DuploStringValue `json:"InstanceType,omitempty"`
+	DedicatedMasterCount   int               `json:"DedicatedMasterCount,omitempty"`
+	DedicatedMasterEnabled bool              `json:"DedicatedMasterEnabled,omitempty"`
+	DedicatedMasterType    *DuploStringValue `json:"DedicatedMasterType,omitempty"`
+	InstanceCount          int               `json:"InstanceCount,omitempty"`
+	InstanceType           DuploStringValue  `json:"InstanceType,omitempty"`
 }
 
 // DuploElasticSearchDomainSnapshotOptions represents an AWS ElasticSearch domain's endpoint options for a Duplo tenant
