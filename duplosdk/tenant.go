@@ -420,3 +420,70 @@ func (c *Client) TenantGetTenantKmsKey(tenantID string) (*DuploAwsKmsKey, error)
 	kms.KeyName = kms.Description
 	return &kms, nil
 }
+
+// TenantGetAllKmsKeys retrieves a list of all AWS KMS keys usable by a tenant via the Duplo API.
+func (c *Client) TenantGetAllKmsKeys(tenantID string) ([]DuploAwsKmsKey, error) {
+
+	// Tenant specific key
+	tenantKey, err := c.TenantGetTenantKmsKey(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Plan keys
+	planKeys, err := c.TenantGetPlanKmsKeys(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Make a list of all keys that have an ID
+	allKeys := make([]DuploAwsKmsKey, 1, len(*planKeys)+1)
+	allKeys[0] = *tenantKey
+	for _, key := range *planKeys {
+		if key.KeyID != "" {
+			allKeys = append(allKeys, key)
+		}
+	}
+
+	return allKeys, nil
+}
+
+// TenantGetKmsKeyByName retrieves a KMS key with a specific name, that is usable by a tenant via the Duplo API.
+func (c *Client) TenantGetKmsKeyByName(tenantID string, keyName string) (*DuploAwsKmsKey, error) {
+
+	// Get all keys.
+	allKeys, err := c.TenantGetAllKmsKeys(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find and return the key with the specific name.
+	for _, key := range allKeys {
+		if key.KeyName == keyName {
+			return &key, nil
+		}
+	}
+
+	// No key was found.
+	return nil, nil
+}
+
+// TenantGetKmsKeyByID retrieves a KMS key with a specific ID, that is usable by a tenant via the Duplo API.
+func (c *Client) TenantGetKmsKeyByID(tenantID string, keyID string) (*DuploAwsKmsKey, error) {
+
+	// Get all keys.
+	allKeys, err := c.TenantGetAllKmsKeys(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find and return the key with the specific name.
+	for _, key := range allKeys {
+		if key.KeyID == keyID {
+			return &key, nil
+		}
+	}
+
+	// No key was found.
+	return nil, nil
+}

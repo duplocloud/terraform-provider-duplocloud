@@ -296,7 +296,7 @@ func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceDa
 
 	// Set more complex fields next.
 	d.Set("cluster_config", awsElasticSearchDomainClusterConfigToState(&duplo.ClusterConfig))
-	d.Set("encrypt_at_rest", awsElasticSearchDomainEncryptionAtRestToState(&duplo.EncryptionAtRestOptions))
+	d.Set("encrypt_at_rest", awsElasticSearchDomainEncryptionAtRestToState(c, tenantID, &duplo.EncryptionAtRestOptions))
 	d.Set("ebs_options", awsElasticSearchDomainEBSOptionsToState(&duplo.EBSOptions))
 	if duplo.EBSOptions.EBSEnabled {
 		d.Set("storage_size", duplo.EBSOptions.VolumeSize)
@@ -357,9 +357,24 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	kmsKeyID, ok := encryptAtRest["kms_key_id"]
-	if ok {
-		duploObject.KmsKeyID = kmsKeyID.(string)
+	if kmsKeyName, ok := encryptAtRest["kms_key_name"]; ok && kmsKeyName != nil {
+		if _, ok = encryptAtRest["kms_key_id"]; ok {
+			return diag.Errorf("encrypt_at_rest.kms_key_name and encrypt_at_rest.kms_key_id are mutually exclusive")
+		}
+
+		// Let the user pick a KMS key by name, just like the UI.
+		kmsKey, err := c.TenantGetKmsKeyByName(tenantID, kmsKeyName.(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if kmsKey != nil {
+			duploObject.KmsKeyID = kmsKey.KeyID
+		}
+
+	} else if kmsKeyID, ok := encryptAtRest["kms_key_id"]; ok {
+		if kmsKeyID != nil {
+			duploObject.KmsKeyID = kmsKeyID.(string)
+		}
 	}
 
 	// Set cluster config
@@ -476,12 +491,17 @@ func isDedicatedMasterDisabled(k, old, new string, d *schema.ResourceData) bool 
 	return true
 }
 
-func awsElasticSearchDomainEncryptionAtRestToState(duplo *duplosdk.DuploElasticSearchDomainEncryptAtRestOptions) []map[string]interface{} {
+func awsElasticSearchDomainEncryptionAtRestToState(c *duplosdk.Client, tenantID string, duplo *duplosdk.DuploElasticSearchDomainEncryptAtRestOptions) []map[string]interface{} {
+
+	// Finally, set the fields.
 	encryptAtRest := map[string]interface{}{}
 	if duplo.Enabled {
 		encryptAtRest["enabled"] = true
 		if duplo.KmsKeyID != "" {
 			encryptAtRest["kms_key_id"] = duplo.KmsKeyID
+			if kmsKeyName, err := c.TenantGetKmsKeyByID(tenantID, duplo.KmsKeyID); err == nil {
+				encryptAtRest["kms_key_name"] = kmsKeyName
+			}
 		} else {
 			encryptAtRest["kms_key_id"] = nil
 		}

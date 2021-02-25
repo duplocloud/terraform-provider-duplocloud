@@ -92,7 +92,11 @@ resource "duplocloud_ecache_instance" "test" {
 
 resource "duplocloud_aws_elasticsearch" "test" {
   tenant_id = var.tenant_id
-  name = "joe1"
+  name = "joe2"
   storage_size = 20
   selected_zone = 1
+
+  encrypt_at_rest {
+    kms_key_name = "duploservices-default"
+  }
 }
