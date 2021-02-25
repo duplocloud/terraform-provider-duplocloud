@@ -95,12 +95,4 @@ resource "duplocloud_aws_elasticsearch" "test" {
   name = "joe2"
   storage_size = 20
   selected_zone = 1
-
-  cluster_config {
-    instance_type = "m4.large.elasticsearch"
-  }
-
-  encrypt_at_rest {
-    kms_key_name = "duploservices-default"
-  }
 }
