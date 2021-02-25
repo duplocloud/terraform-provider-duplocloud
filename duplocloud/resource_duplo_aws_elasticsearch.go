@@ -266,7 +266,7 @@ func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceDa
 
 	// Get the object from Duplo, detecting a missing or deleted object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.TenantGetElasticSearchDomain(tenantID, name)
+	duplo, err := c.TenantGetElasticSearchDomain(tenantID, name, false)
 	if duplo == nil || duplo.Deleted {
 		d.SetId("") // object missing or deleted
 		return nil
@@ -450,7 +450,7 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 
 	// Wait up to 60 seconds for Duplo to be able to return the domain's details.
 	err = resource.Retry(time.Minute, func() *resource.RetryError {
-		resp, errget := c.TenantGetElasticSearchDomain(tenantID, duploObject.Name)
+		resp, errget := c.TenantGetElasticSearchDomain(tenantID, duploObject.Name, false)
 
 		if errget != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error getting ElasticSearch domain '%s': %s", id, err))
@@ -476,6 +476,26 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 
 /// DELETE resource
 func resourceDuploAwsElasticSearchDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceDuploAwsElasticSearchDelete ******** start")
+
+	// Delete the object with Duplo
+	c := m.(*duplosdk.Client)
+	id := d.Id()
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("name").(string)
+	domainName := d.Get("domain_name").(string)
+	err := c.TenantDeleteElasticSearchDomain(tenantID, domainName)
+	if err != nil {
+		return diag.Errorf("Error deleting ElasticSearch domain '%s': %s", id, err)
+	}
+
+	// Wait for the instance to become deleted.
+	err = awsElasticSearchDomainWaitUntilDeleted(c, tenantID, name)
+	if err != nil {
+		return diag.Errorf("Error waiting for ElasticSearch domain '%s' to be deleted: %s", id, err)
+	}
+
+	log.Printf("[TRACE] resourceDuploAwsElasticSearchDelete ******** end")
 	return nil
 }
 
@@ -515,7 +535,7 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 	}
 }
 
-// awsElasticSearchDomainWaitUntilAvailable waits until an ECache instance is available.
+// awsElasticSearchDomainWaitUntilAvailable waits until an ES domainis available.
 //
 // It should be usable both post-creation and post-modification.
 func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID string, name string) error {
@@ -527,7 +547,7 @@ func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID strin
 		Timeout:      60 * time.Minute,
 		Refresh: func() (interface{}, string, error) {
 			status := "new"
-			resp, err := c.TenantGetElasticSearchDomain(tenantID, name)
+			resp, err := c.TenantGetElasticSearchDomain(tenantID, name, false)
 			if err != nil {
 				return 0, "", err
 			}
@@ -546,6 +566,41 @@ func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID strin
 		},
 	}
 	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilAvailable (%s/%s)", tenantID, name)
+	_, err := stateConf.WaitForState()
+	return err
+}
+
+// awsElasticSearchDomainWaitUntilDeleted waits until an ES domain is deleted.
+//
+// It should be usable both post-creation and post-modification.
+func awsElasticSearchDomainWaitUntilDeleted(c *duplosdk.Client, tenantID string, name string) error {
+	stateConf := &resource.StateChangeConf{
+		Pending:      []string{"waiting", "processing", "upgrade-processing"},
+		Target:       []string{"deleted"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      15 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			status := "waiting"
+			resp, err := c.TenantGetElasticSearchDomain(tenantID, name, true)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp == nil {
+				status = "deleted"
+			} else if resp.Processing {
+				status = "processing"
+			} else if resp.UpgradeProcessing {
+				status = "upgrade-processing"
+			} else if resp.Deleted {
+				status = "deleted"
+			} else if resp.Created {
+				status = "created"
+			}
+			return resp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilDeleted (%s/%s)", tenantID, name)
 	_, err := stateConf.WaitForState()
 	return err
 }

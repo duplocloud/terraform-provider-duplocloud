@@ -84,6 +84,7 @@ type DuploElasticSearchDomain struct {
 // DuploElasticSearchDomainRequest represents a request to create an AWS ElasticSearch domain for a Duplo tenant
 type DuploElasticSearchDomainRequest struct {
 	Name          string                                `json:"Name,omitempty"`
+	State         string                                `json:"State,omitempty"`
 	Version       string                                `json:"Version,omitempty"`
 	KmsKeyID      string                                `json:"KmsKeyId,omitempty"`
 	ClusterConfig DuploElasticSearchDomainClusterConfig `json:"ClusterConfig,omitempty"`
@@ -128,7 +129,7 @@ func (c *Client) TenantListElasticSearchDomains(tenantID string) (*[]DuploElasti
 }
 
 // TenantGetElasticSearchDomain retrieves a single AWS ElasticSearch domains from the list returned by Duplo.
-func (c *Client) TenantGetElasticSearchDomain(tenantID string, name string) (*DuploElasticSearchDomain, error) {
+func (c *Client) TenantGetElasticSearchDomain(tenantID string, name string, deleted bool) (*DuploElasticSearchDomain, error) {
 	log.Printf("[TRACE] duplo-TenantGetElasticSearchDomain 1 ********")
 
 	// Get the list from Duplo
@@ -139,7 +140,7 @@ func (c *Client) TenantGetElasticSearchDomain(tenantID string, name string) (*Du
 
 	// Return the matching object
 	for _, duploObject := range *duploObjects {
-		if duploObject.Name == name {
+		if duploObject.Name == name && (deleted || !duploObject.Deleted) {
 			log.Printf("[TRACE] duplo-TenantGetElasticSearchDomain 2 ********: %s", duploObject.DomainName)
 			return &duploObject, nil
 		}
@@ -150,7 +151,7 @@ func (c *Client) TenantGetElasticSearchDomain(tenantID string, name string) (*Du
 	return nil, nil
 }
 
-// TenantUpdateElasticSearchDomain creates or updates a single AWS ElasticSearch domain via Duplo.
+// TenantUpdateElasticSearchDomain creates a single AWS ElasticSearch domain via Duplo.
 func (c *Client) TenantUpdateElasticSearchDomain(tenantID string, duplo *DuploElasticSearchDomainRequest) error {
 	// Build the request
 	rqBody, err := json.Marshal(&duplo)
@@ -179,4 +180,37 @@ func (c *Client) TenantUpdateElasticSearchDomain(tenantID string, duplo *DuploEl
 		return nil
 	}
 	return fmt.Errorf("Tenant %s failed to create ElasticSearch domain %s: '%s'", tenantID, duplo.Name, bodyString)
+}
+
+// TenantDeleteElasticSearchDomain deletes a single AWS ElasticSearch domain via Duplo.
+func (c *Client) TenantDeleteElasticSearchDomain(tenantID string, domainName string) error {
+	duplo := DuploElasticSearchDomainRequest{Name: domainName, State: "delete"}
+
+	// Build the request
+	rqBody, err := json.Marshal(&duplo)
+	if err != nil {
+		log.Printf("[TRACE] TenantDeleteElasticSearchDomain 1 JSON gen : %s", err.Error())
+		return err
+	}
+	url := fmt.Sprintf("%s/subscriptions/%s/ElasticSearchDomainUpdate", c.HostURL, tenantID)
+	log.Printf("[TRACE] TenantDeleteElasticSearchDomain 2 : %s <= %s", url, rqBody)
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	if err != nil {
+		log.Printf("[TRACE] TenantDeleteElasticSearchDomain 3 HTTP builder : %s", err.Error())
+		return err
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] TenantDeleteElasticSearchDomain 4 HTTP POST : %s", err.Error())
+		return fmt.Errorf("Tenant %s failed to delete ElasticSearch domain %s: '%s'", tenantID, duplo.Name, err)
+	}
+	bodyString := string(body)
+
+	// Expect the response to be "null"
+	if bodyString == "null" {
+		return nil
+	}
+	return fmt.Errorf("Tenant %s failed to delete ElasticSearch domain %s: '%s'", tenantID, duplo.Name, bodyString)
 }
