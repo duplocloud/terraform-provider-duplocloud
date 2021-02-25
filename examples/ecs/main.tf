@@ -39,14 +39,16 @@ variable "tenant_id" {
 # data "duplocloud_tenant_aws_region" "test" { tenant_id = var.tenant_id }
 # output "aws_region" { value = data.duplocloud_tenant_aws_region.test.aws_region }
 
-# Tenant secrets retrieval
-data "duplocloud_tenant_secrets" "test" { tenant_id = var.tenant_id }
-output "tenant_secrets" { value = data.duplocloud_tenant_secrets.test.secrets }
-data "duplocloud_tenant_secret" "test" {
+# # Tenant secrets retrieval
+# data "duplocloud_tenant_secrets" "test" { tenant_id = var.tenant_id }
+# output "tenant_secrets" { value = data.duplocloud_tenant_secrets.test.secrets }
+
+resource "duplocloud_tenant_secret" "test" {
   tenant_id = var.tenant_id
   name_suffix = "joetest"
+  data = jsonencode({ foo = "bar" })
 }
-output "tenant_secret" { value = data.duplocloud_tenant_secret.test }
+output "tenant_secret_name" { value = duplocloud_tenant_secret.test.name }
 
 # resource "duplocloud_ecs_task_definition" "test" {
 #   tenant_id = var.tenant_id

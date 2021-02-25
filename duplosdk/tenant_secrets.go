@@ -55,8 +55,8 @@ func (c *Client) TenantListSecrets(tenantID string) (*[]DuploTenantSecret, error
 		return nil, err
 	}
 	log.Printf("[TRACE] duplo-TenantGetAwsCredentials 4 ********")
-	for _, duploObject := range duploObjects {
-		duploObject.TenantID = tenantID
+	for i := range duploObjects {
+		duploObjects[i].TenantID = tenantID
 	}
 	return &duploObjects, nil
 }

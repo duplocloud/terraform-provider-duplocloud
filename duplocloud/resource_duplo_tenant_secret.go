@@ -32,7 +32,6 @@ func tenantSecretSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
-			Computed: true,
 		},
 		"data": {
 			Type:      schema.TypeString,
