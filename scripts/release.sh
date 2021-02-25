@@ -23,7 +23,8 @@ release_finish() {
     GIT_MERGE_AUTOEDIT=no git flow release finish "$version"
     git push origin develop:develop
     git push origin "$version"
-    git push origin master:master
+    (git checkout master && git pull && git push origin master:master)
+    git checkout develop
 }
 
 # Changes the version number in all relevant files
