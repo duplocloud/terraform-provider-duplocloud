@@ -69,7 +69,6 @@ type DuploElasticSearchDomain struct {
 	NodeToNodeEncryptionOptions DuploEnabled                                 `json:"NodeToNodeEncryptionOptions,omitempty"`
 	ElasticSearchVersion        string                                       `json:"ElasticsearchVersion,omitempty"`
 	EncryptionAtRestOptions     DuploElasticSearchDomainEncryptAtRestOptions `json:"EncryptionAtRestOptions,omitempty"`
-	KmsKeyID                    string                                       `json:"KmsKeyId,omitempty"`
 	Endpoints                   map[string]interface{}                       `json:"Endpoints,omitempty"`
 	LogPublishingOptions        map[string]interface{}                       `json:"LogPublishingOptions,omitempty"`
 	SnapshotOptions             DuploElasticSearchDomainSnapshotOptions      `json:"SnapshotOptions,omitempty"`

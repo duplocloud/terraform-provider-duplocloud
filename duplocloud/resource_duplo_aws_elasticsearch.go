@@ -134,9 +134,16 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 						Type:     schema.TypeBool,
 						Computed: true,
 					},
+					"kms_key_name": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Computed: true,
+						ForceNew: true,
+					},
 					"kms_key_id": {
 						Type:     schema.TypeString,
 						Optional: true,
+						Computed: true,
 						ForceNew: true,
 					},
 				},
@@ -287,65 +294,26 @@ func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("advanced_options", duplo.AdvancedOptions)
 	d.Set("enable_node_to_node_encryption", duplo.NodeToNodeEncryptionOptions.Enabled)
 
-	// Interpret the cluster config options.
-	clusterConfig := map[string]interface{}{}
-	clusterConfig["dedicated_master_enabled"] = duplo.ClusterConfig.DedicatedMasterEnabled
-	if duplo.ClusterConfig.DedicatedMasterEnabled {
-		clusterConfig["dedicated_master_count"] = duplo.ClusterConfig.DedicatedMasterCount
-		clusterConfig["dedicated_master_type"] = duplo.ClusterConfig.DedicatedMasterType.Value
-	}
-	clusterConfig["instance_count"] = duplo.ClusterConfig.InstanceCount
-	clusterConfig["instance_type"] = duplo.ClusterConfig.InstanceType.Value
-	d.Set("cluster_config", []map[string]interface{}{clusterConfig})
-
-	// Interpret the EBS options.
-	ebsOptions := map[string]interface{}{}
+	// Set more complex fields next.
+	d.Set("cluster_config", awsElasticSearchDomainClusterConfigToState(&duplo.ClusterConfig))
+	d.Set("encrypt_at_rest", awsElasticSearchDomainEncryptionAtRestToState(&duplo.EncryptionAtRestOptions))
+	d.Set("ebs_options", awsElasticSearchDomainEBSOptionsToState(&duplo.EBSOptions))
 	if duplo.EBSOptions.EBSEnabled {
-		ebsOptions["ebs_enabled"] = true
-		ebsOptions["iops"] = duplo.EBSOptions.IOPS
-		ebsOptions["volume_type"] = duplo.EBSOptions.VolumeType.Value
-		ebsOptions["volume_size"] = duplo.EBSOptions.VolumeSize
 		d.Set("storage_size", duplo.EBSOptions.VolumeSize)
-	} else {
-		ebsOptions["ebs_enabled"] = false
 	}
-	d.Set("ebs_options", []map[string]interface{}{ebsOptions})
-
-	// Interpret the encryption at rest options.
-	encryptAtRest := map[string]interface{}{}
-	if duplo.EncryptionAtRestOptions.Enabled {
-		encryptAtRest["enabled"] = true
-		if duplo.EncryptionAtRestOptions.KmsKeyID != "" {
-			encryptAtRest["kms_key_id"] = duplo.EncryptionAtRestOptions.KmsKeyID
-		} else if duplo.KmsKeyID != "" {
-			encryptAtRest["kms_key_id"] = duplo.KmsKeyID
-		} else {
-			encryptAtRest["kms_key_id"] = nil
-		}
-	} else {
-		encryptAtRest["enabled"] = false
-		encryptAtRest["kms_key_id"] = nil
-	}
-	d.Set("encrypt_at_rest", []map[string]interface{}{encryptAtRest})
-
-	// Interpret the snapshot options.
-	snapshotOptions := map[string]interface{}{}
-	snapshotOptions["automated_snapshot_start_hour"] = duplo.SnapshotOptions.AutomatedSnapshotStartHour
-	d.Set("snapshot_options", []map[string]interface{}{snapshotOptions})
-
-	// Interpret the domain endpoint options.
-	endpointOptions := map[string]interface{}{}
-	endpointOptions["enforce_https"] = duplo.DomainEndpointOptions.EnforceHTTPS
-	endpointOptions["tls_security_policy"] = duplo.DomainEndpointOptions.TLSSecurityPolicy.Value
-	d.Set("domain_endpoint_options", []map[string]interface{}{endpointOptions})
-
-	// Interpret the VPC options.
-	vpcOptions := map[string]interface{}{}
-	vpcOptions["vpc_id"] = duplo.VPCOptions.VpcID
-	vpcOptions["availability_zones"] = duplo.VPCOptions.AvailabilityZones
-	vpcOptions["security_group_ids"] = duplo.VPCOptions.SecurityGroupIDs
-	vpcOptions["subnet_ids"] = duplo.VPCOptions.SubnetIDs
-	d.Set("vpc_options", []map[string]interface{}{vpcOptions})
+	d.Set("snapshot_options", []map[string]interface{}{{
+		"automated_snapshot_start_hour": duplo.SnapshotOptions.AutomatedSnapshotStartHour,
+	}})
+	d.Set("domain_endpoint_options", []map[string]interface{}{{
+		"enforce_https":       duplo.DomainEndpointOptions.EnforceHTTPS,
+		"tls_security_policy": duplo.DomainEndpointOptions.TLSSecurityPolicy.Value,
+	}})
+	d.Set("vpc_options", []map[string]interface{}{{
+		"vpc_id":             duplo.VPCOptions.VpcID,
+		"availability_zones": duplo.VPCOptions.AvailabilityZones,
+		"security_group_ids": duplo.VPCOptions.SecurityGroupIDs,
+		"subnet_ids":         duplo.VPCOptions.SubnetIDs,
+	}})
 
 	// Interpret the selected zone.
 	if duplo.ClusterConfig.InstanceCount == 1 && len(duplo.VPCOptions.SubnetIDs) == 1 {
@@ -506,6 +474,47 @@ func isDedicatedMasterDisabled(k, old, new string, d *schema.ResourceData) bool 
 		return !clusterConfig["dedicated_master_enabled"].(bool)
 	}
 	return true
+}
+
+func awsElasticSearchDomainEncryptionAtRestToState(duplo *duplosdk.DuploElasticSearchDomainEncryptAtRestOptions) []map[string]interface{} {
+	encryptAtRest := map[string]interface{}{}
+	if duplo.Enabled {
+		encryptAtRest["enabled"] = true
+		if duplo.KmsKeyID != "" {
+			encryptAtRest["kms_key_id"] = duplo.KmsKeyID
+		} else {
+			encryptAtRest["kms_key_id"] = nil
+		}
+	} else {
+		encryptAtRest["enabled"] = false
+		encryptAtRest["kms_key_id"] = nil
+	}
+	return []map[string]interface{}{encryptAtRest}
+}
+
+func awsElasticSearchDomainEBSOptionsToState(duplo *duplosdk.DuploElasticSearchDomainEBSOptions) []map[string]interface{} {
+	ebsOptions := map[string]interface{}{}
+	if duplo.EBSEnabled {
+		ebsOptions["ebs_enabled"] = true
+		ebsOptions["iops"] = duplo.IOPS
+		ebsOptions["volume_type"] = duplo.VolumeType.Value
+		ebsOptions["volume_size"] = duplo.VolumeSize
+	} else {
+		ebsOptions["ebs_enabled"] = false
+	}
+	return []map[string]interface{}{ebsOptions}
+}
+
+func awsElasticSearchDomainClusterConfigToState(duplo *duplosdk.DuploElasticSearchDomainClusterConfig) []map[string]interface{} {
+	clusterConfig := map[string]interface{}{}
+	clusterConfig["dedicated_master_enabled"] = duplo.DedicatedMasterEnabled
+	if duplo.DedicatedMasterEnabled {
+		clusterConfig["dedicated_master_count"] = duplo.DedicatedMasterCount
+		clusterConfig["dedicated_master_type"] = duplo.DedicatedMasterType.Value
+	}
+	clusterConfig["instance_count"] = duplo.InstanceCount
+	clusterConfig["instance_type"] = duplo.InstanceType.Value
+	return []map[string]interface{}{clusterConfig}
 }
 
 func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, duplo *duplosdk.DuploElasticSearchDomainClusterConfig) {
