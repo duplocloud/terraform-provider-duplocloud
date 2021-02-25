@@ -57,8 +57,7 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"advanced_options": {
-			Type: schema.TypeMap,
-			// Optional: true,
+			Type:     schema.TypeMap,
 			Computed: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
@@ -84,13 +83,10 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			ForceNew: true,
 			Default:  "7.9",
 		},
-		"endpoint": {
-			Type:     schema.TypeString,
+		"endpoints": {
+			Type:     schema.TypeMap,
 			Computed: true,
-		},
-		"kibana_endpoint": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		"storage_size": {
 			Type:     schema.TypeInt,
@@ -291,6 +287,7 @@ func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("elasticsearch_version", duplo.ElasticSearchVersion)
 	d.Set("access_policies", duplo.AccessPolicies)
 	d.Set("advanced_options", duplo.AdvancedOptions)
+	d.Set("endpoints", duplo.Endpoints)
 	d.Set("enable_node_to_node_encryption", duplo.NodeToNodeEncryptionOptions.Enabled)
 
 	// Set more complex fields next.
