@@ -247,8 +247,8 @@ func resourceDuploAwsElasticSearch() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(15 * time.Minute),
-			Update: schema.DefaultTimeout(15 * time.Minute),
+			Create: schema.DefaultTimeout(60 * time.Minute),
+			Update: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: awsElasticSearchSchema(),
@@ -524,7 +524,7 @@ func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID strin
 		Target:       []string{"created"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
+		Timeout:      60 * time.Minute,
 		Refresh: func() (interface{}, string, error) {
 			status := "new"
 			resp, err := c.TenantGetElasticSearchDomain(tenantID, name)
