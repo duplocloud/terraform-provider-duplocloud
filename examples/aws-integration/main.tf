@@ -38,5 +38,11 @@ provider "aws" {
   region     = data.duplocloud_tenant_aws_credentials.test.region
 }
 
+# For example, get the account ID
 data "aws_caller_identity" "current" {}
 output "aws_account_id" { value = data.aws_caller_identity.current.account_id }
+
+# Or, get information on your Duplo tenant's KMS key
+data "duplocloud_tenant_aws_kms_key" "test" { tenant_id = var.tenant_id }
+data "aws_kms_key" "test" { key_id = data.duplocloud_tenant_aws_kms_key.test.key_id }
+output "kms_key_state" { value = data.aws_kms_key.test.key_state }
