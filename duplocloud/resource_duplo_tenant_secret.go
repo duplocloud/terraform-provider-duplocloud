@@ -34,11 +34,15 @@ func tenantSecretSchema() map[string]*schema.Schema {
 			ForceNew: true,
 		},
 		"data": {
-			Type:             schema.TypeString,
-			Required:         true,
-			ForceNew:         true,
-			Sensitive:        true,
-			DiffSuppressFunc: diffSuppressFuncIgnore,
+			Type:      schema.TypeString,
+			Required:  true,
+			ForceNew:  true,
+			Sensitive: true,
+
+			// Supresses diffs for existing resources that were imported, so they have a blank secret data.
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				return d.Id() != "" && old == ""
+			},
 		},
 		"rotation_enabled": {
 			Type:     schema.TypeBool,
@@ -71,7 +75,7 @@ func resourceTenantSecret() *schema.Resource {
 
 /// READ resource
 func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] rresourceTenantSecretRead ******** start")
+	log.Printf("[TRACE] resourceTenantSecretRead ******** start")
 
 	// Parse the identifying attributes
 	id := d.Id()
