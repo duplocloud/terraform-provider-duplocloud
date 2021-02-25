@@ -354,7 +354,7 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 	if kmsKeyName, ok := encryptAtRest["kms_key_name"]; ok && kmsKeyName != nil {
-		if _, ok = encryptAtRest["kms_key_id"]; ok {
+		if kmsKeyID, ok := encryptAtRest["kms_key_id"]; ok && kmsKeyID != nil && kmsKeyID.(string) != "" {
 			return diag.Errorf("encrypt_at_rest.kms_key_name and encrypt_at_rest.kms_key_id are mutually exclusive")
 		}
 
