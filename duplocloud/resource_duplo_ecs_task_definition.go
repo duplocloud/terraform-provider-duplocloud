@@ -9,7 +9,179 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
+
+// DuploEcsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
+func ecsTaskDefinitionSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"tenant_id": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+			ForceNew: true, //switch tenant
+		},
+		"family": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"revision": {
+			Type:     schema.TypeInt,
+			Computed: true,
+		},
+		"arn": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"status": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"container_definitions": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"volumes": {
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+			Default:  "[]",
+		},
+		"cpu": {
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
+		"task_role_arn": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"execution_role_arn": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"memory": {
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
+		"network_mode": {
+			Type:         schema.TypeString,
+			Optional:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringInSlice([]string{"bridge", "host", "awsvpc", "none"}, false),
+			Default:      "awsvpc",
+		},
+		"placement_constraints": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			ForceNew: true,
+			MaxItems: 10,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"type": {
+						Type:         schema.TypeString,
+						ForceNew:     true,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"memberOf"}, false),
+					},
+					"expression": {
+						Type:     schema.TypeString,
+						ForceNew: true,
+						Optional: true,
+					},
+				},
+			},
+		},
+		"requires_attributes": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			ForceNew: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:     schema.TypeString,
+						ForceNew: true,
+						Required: true,
+					},
+				},
+			},
+		},
+		"requires_compatibilities": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			ForceNew: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		"ipc_mode": {
+			Type:         schema.TypeString,
+			Optional:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringInSlice([]string{"host", "none", "task"}, false),
+		},
+		"pid_mode": {
+			Type:         schema.TypeString,
+			Optional:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringInSlice([]string{"host", "task"}, false),
+		},
+		"proxy_configuration": {
+			Type:     schema.TypeList,
+			MaxItems: 1,
+			Optional: true,
+			ForceNew: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"container_name": {
+						Type:     schema.TypeString,
+						Required: true,
+						ForceNew: true,
+					},
+					"properties": {
+						Type:     schema.TypeMap,
+						Elem:     &schema.Schema{Type: schema.TypeString},
+						Optional: true,
+						ForceNew: true,
+					},
+					"type": {
+						Type:         schema.TypeString,
+						Default:      "APPMESH",
+						Optional:     true,
+						ForceNew:     true,
+						ValidateFunc: validation.StringInSlice([]string{"APPMESH"}, false),
+					},
+				},
+			},
+		},
+		"tags": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Required: false,
+			Elem:     KeyValueSchema(),
+		},
+		"inference_accelerator": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			ForceNew: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"device_name": {
+						Type:     schema.TypeString,
+						Required: true,
+						ForceNew: true,
+					},
+					"device_type": {
+						Type:     schema.TypeString,
+						Required: true,
+						ForceNew: true,
+					},
+				},
+			},
+		},
+	}
+}
 
 // SCHEMA for resource crud
 func resourceDuploEcsTaskDefinition() *schema.Resource {
@@ -26,7 +198,7 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: *duplosdk.DuploEcsTaskDefinitionSchema(),
+		Schema: ecsTaskDefinitionSchema(),
 	}
 }
 

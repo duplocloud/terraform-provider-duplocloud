@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // DuploEcsTaskDefPlacementConstraint represents an ECS placement constraint in the Duplo SDK
@@ -20,9 +19,9 @@ type DuploEcsTaskDefPlacementConstraint struct {
 
 // DuploEcsTaskDefProxyConfig represents an ECS proxy configuration in the Duplo SDK
 type DuploEcsTaskDefProxyConfig struct {
-	ContainerName string            `json:"ContainerName"`
-	Properties    *[]DuploNameValue `json:"Properties"`
-	Type          string            `json:"Type"`
+	ContainerName string                  `json:"ContainerName"`
+	Properties    *[]DuploNameStringValue `json:"Properties"`
+	Type          string                  `json:"Type"`
 }
 
 // DuploEcsTaskDefInferenceAccelerator represents an inference accelerator in the Duplo SDK
@@ -46,197 +45,15 @@ type DuploEcsTaskDef struct {
 	Memory                  string                                 `json:"Memory,omitempty"`
 	IpcMode                 string                                 `json:"IpcMode,omitempty"`
 	PidMode                 string                                 `json:"PidMode,omitempty"`
-	NetworkMode             *DuploValue                            `json:"NetworkMode,omitempty"`
+	NetworkMode             *DuploStringValue                      `json:"NetworkMode,omitempty"`
 	PlacementConstraints    *[]DuploEcsTaskDefPlacementConstraint  `json:"PlacementConstraints,omitempty"`
 	ProxyConfiguration      *DuploEcsTaskDefProxyConfig            `json:"ProxyConfiguration,omitempty"`
 	RequiresAttributes      *[]DuploName                           `json:"RequiresAttributes,omitempty"`
 	RequiresCompatibilities []string                               `json:"RequiresCompatibilities,omitempty"`
-	Tags                    *[]DuploKeyValue                       `json:"Tags,omitempty"`
+	Tags                    *[]DuploKeyStringValue                 `json:"Tags,omitempty"`
 	InferenceAccelerators   *[]DuploEcsTaskDefInferenceAccelerator `json:"InferenceAccelerators,omitempty"`
-	Status                  *DuploValue                            `json:"Status,omitempty"`
+	Status                  *DuploStringValue                      `json:"Status,omitempty"`
 	Volumes                 []map[string]interface{}               `json:"Volumes,omitempty"`
-}
-
-// DuploEcsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
-func DuploEcsTaskDefinitionSchema() *map[string]*schema.Schema {
-	return &map[string]*schema.Schema{
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch tenant
-		},
-		"family": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"revision": {
-			Type:     schema.TypeInt,
-			Computed: true,
-		},
-		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"status": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"container_definitions": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"volumes": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
-			Default:  "[]",
-		},
-		"cpu": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
-		},
-		"task_role_arn": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"execution_role_arn": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"memory": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
-		},
-		"network_mode": {
-			Type:         schema.TypeString,
-			Optional:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.StringInSlice([]string{"bridge", "host", "awsvpc", "none"}, false),
-			Default:      "awsvpc",
-		},
-		"placement_constraints": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			ForceNew: true,
-			MaxItems: 10,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"type": {
-						Type:         schema.TypeString,
-						ForceNew:     true,
-						Required:     true,
-						ValidateFunc: validation.StringInSlice([]string{"memberOf"}, false),
-					},
-					"expression": {
-						Type:     schema.TypeString,
-						ForceNew: true,
-						Optional: true,
-					},
-				},
-			},
-		},
-		"requires_attributes": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			ForceNew: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"name": {
-						Type:     schema.TypeString,
-						ForceNew: true,
-						Required: true,
-					},
-				},
-			},
-		},
-		"requires_compatibilities": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			ForceNew: true,
-			Elem:     &schema.Schema{Type: schema.TypeString},
-		},
-		"ipc_mode": {
-			Type:         schema.TypeString,
-			Optional:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.StringInSlice([]string{"host", "none", "task"}, false),
-		},
-		"pid_mode": {
-			Type:         schema.TypeString,
-			Optional:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.StringInSlice([]string{"host", "task"}, false),
-		},
-		"proxy_configuration": {
-			Type:     schema.TypeList,
-			MaxItems: 1,
-			Optional: true,
-			ForceNew: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"container_name": {
-						Type:     schema.TypeString,
-						Required: true,
-						ForceNew: true,
-					},
-					"properties": {
-						Type:     schema.TypeMap,
-						Elem:     &schema.Schema{Type: schema.TypeString},
-						Optional: true,
-						ForceNew: true,
-					},
-					"type": {
-						Type:         schema.TypeString,
-						Default:      "APPMESH",
-						Optional:     true,
-						ForceNew:     true,
-						ValidateFunc: validation.StringInSlice([]string{"APPMESH"}, false),
-					},
-				},
-			},
-		},
-		"tags": {
-			Type:     schema.TypeList,
-			Computed: true,
-			Required: false,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"key": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-					"value": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-				},
-			},
-		},
-		"inference_accelerator": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			ForceNew: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"device_name": {
-						Type:     schema.TypeString,
-						Required: true,
-						ForceNew: true,
-					},
-					"device_type": {
-						Type:     schema.TypeString,
-						Required: true,
-						ForceNew: true,
-					},
-				},
-			},
-		},
-	}
 }
 
 /*************************************************
@@ -344,7 +161,7 @@ func EcsTaskDefFromState(d *schema.ResourceData) (*DuploEcsTaskDef, error) {
 	duploObject.Memory = d.Get("memory").(string)
 	duploObject.IpcMode = d.Get("ipc_mode").(string)
 	duploObject.PidMode = d.Get("pid_mode").(string)
-	duploObject.NetworkMode = &DuploValue{Value: d.Get("network_mode").(string)}
+	duploObject.NetworkMode = &DuploStringValue{Value: d.Get("network_mode").(string)}
 
 	// Next, convert sets into lists
 	rcs := d.Get("requires_compatibilities").(*schema.Set)
@@ -418,7 +235,7 @@ func EcsTaskDefToState(duploObject *DuploEcsTaskDef, d *schema.ResourceData) map
 	jo["proxy_configuration"] = ecsProxyConfigToState(duploObject.ProxyConfiguration)
 	jo["inference_accelerator"] = ecsInferenceAcceleratorsToState(duploObject.InferenceAccelerators)
 	jo["requires_attributes"] = ecsRequiresAttributesToState(duploObject.RequiresAttributes)
-	jo["tags"] = duploKeyValueToState("tags", duploObject.Tags)
+	jo["tags"] = KeyValueToState("tags", duploObject.Tags)
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-EcsTaskDefToState ******** 2: OUTPUT => %s ", jsonData2)
@@ -491,9 +308,9 @@ func ecsProxyConfigFromState(d *schema.ResourceData) *DuploEcsTaskDefProxyConfig
 	log.Printf("[TRACE] ecsProxyConfigFromState ********: have data")
 
 	props := pc["properties"].(map[string]interface{})
-	nvs := make([]DuploNameValue, 0, len(props))
+	nvs := make([]DuploNameStringValue, 0, len(props))
 	for prop := range props {
-		nvs = append(nvs, DuploNameValue{Name: prop, Value: props[prop].(string)})
+		nvs = append(nvs, DuploNameStringValue{Name: prop, Value: props[prop].(string)})
 	}
 
 	return &DuploEcsTaskDefProxyConfig{

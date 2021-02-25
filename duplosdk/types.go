@@ -7,8 +7,13 @@ import (
 	"log"
 )
 
-// DuploValue is a generic value holder
-type DuploValue struct {
+// DuploEnabled is a generic flag holder
+type DuploEnabled struct {
+	Enabled bool `json:"Enabled,omitempty"`
+}
+
+// DuploStringValue is a generic value holder
+type DuploStringValue struct {
 	Value string `json:"Value,omitempty"`
 }
 
@@ -17,28 +22,43 @@ type DuploName struct {
 	Name string `json:"Name,omitempty"`
 }
 
-// DuploKeyValue is a generic key value holder
-type DuploKeyValue struct {
+// DuploKeyStringValue is a generic key value holder
+type DuploKeyStringValue struct {
 	Key   string `json:"Key"`
 	Value string `json:"Value,omitempty"`
 }
 
-// DuploNameValue is a generic name value holder
-type DuploNameValue struct {
+// DuploNameStringValue is a generic name value holder
+type DuploNameStringValue struct {
 	Name  string `json:"Name"`
 	Value string `json:"Value,omitempty"`
 }
 
-func duploKeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKeyValue {
-	var ary []DuploKeyValue
+func duploKeyValueSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"value": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+	}
+}
+
+func duploKeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKeyStringValue {
+	var ary []DuploKeyStringValue
 
 	kvs := d.Get(fieldName).([]interface{})
 	if len(kvs) > 0 {
 		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
-		ary = make([]DuploKeyValue, 0, len(kvs))
+		ary = make([]DuploKeyStringValue, 0, len(kvs))
 		for _, raw := range kvs {
 			kv := raw.(map[string]interface{})
-			ary = append(ary, DuploKeyValue{
+			ary = append(ary, DuploKeyStringValue{
 				Key:   kv["key"].(string),
 				Value: kv["value"].(string),
 			})
@@ -48,7 +68,8 @@ func duploKeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKe
 	return &ary
 }
 
-func duploKeyValueToState(fieldName string, duploObjects *[]DuploKeyValue) []interface{} {
+// KeyValueToState converts a DuploKeyValue array into terraform resource data.
+func KeyValueToState(fieldName string, duploObjects *[]DuploKeyStringValue) []interface{} {
 	if duploObjects != nil {
 		input, _ := json.Marshal(&duploObjects)
 		log.Printf("[TRACE] duploKeyValueToState[%s] ******** INPUT <= %s", fieldName, input)

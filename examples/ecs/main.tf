@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.4.4" # RELEASE VERSION
+      version = "0.4.5" # RELEASE VERSION
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -39,31 +39,40 @@ variable "tenant_id" {
 # data "duplocloud_tenant_aws_region" "test" { tenant_id = var.tenant_id }
 # output "aws_region" { value = data.duplocloud_tenant_aws_region.test.aws_region }
 
-resource "duplocloud_ecs_task_definition" "test" {
+# Tenant secrets retrieval
+data "duplocloud_tenant_secrets" "test" { tenant_id = var.tenant_id }
+output "tenant_secrets" { value = data.duplocloud_tenant_secrets.test.secrets }
+data "duplocloud_tenant_secret" "test" {
   tenant_id = var.tenant_id
-  family = "duploservices-default-joedemo"
-  container_definitions = jsonencode([{
-    Name = "default"
-    Image = "nginx:latest"
-    Essential = true
-  }])
-  cpu = "256"
-  memory = "1024"
-  requires_compatibilities = [ "FARGATE" ]
+  name_suffix = "joetest"
 }
+output "tenant_secret" { value = data.duplocloud_tenant_secret.test }
 
-resource "duplocloud_ecs_service" "test" {
-  tenant_id = var.tenant_id
-  name = "joedemo"
-  task_definition = duplocloud_ecs_task_definition.test.arn
-  replicas = 2
-  load_balancer {
-    lb_type = 1
-    port = 8080
-    external_port = 80
-    protocol = "HTTP"
-  }
-}
+# resource "duplocloud_ecs_task_definition" "test" {
+#   tenant_id = var.tenant_id
+#   family = "duploservices-default-joedemo"
+#   container_definitions = jsonencode([{
+#     Name = "default"
+#     Image = "nginx:latest"
+#     Essential = true
+#   }])
+#   cpu = "256"
+#   memory = "1024"
+#   requires_compatibilities = [ "FARGATE" ]
+# }
+
+# resource "duplocloud_ecs_service" "test" {
+#   tenant_id = var.tenant_id
+#   name = "joedemo"
+#   task_definition = duplocloud_ecs_task_definition.test.arn
+#   replicas = 2
+#   load_balancer {
+#     lb_type = 1
+#     port = 8080
+#     external_port = 80
+#     protocol = "HTTP"
+#   }
+# }
 
 resource "duplocloud_ecache_instance" "test" {
   tenant_id = var.tenant_id
@@ -73,10 +82,17 @@ resource "duplocloud_ecache_instance" "test" {
   size = "cache.t2.small"
 }
 
-resource "duplocloud_rds_instance" "test" {
+# resource "duplocloud_rds_instance" "test" {
+#   tenant_id = var.tenant_id
+#   name = "joetest"
+#   master_username = "joe"
+#   master_password = "test12345!"
+#   size = "db.t2.small"
+# }
+
+resource "duplocloud_aws_elasticsearch" "test" {
   tenant_id = var.tenant_id
-  name = "joetest"
-  master_username = "joe"
-  master_password = "test12345!"
-  size = "db.t2.small"
+  name = "joe2"
+  storage_size = 20
+  selected_zone = 1
 }
