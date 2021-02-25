@@ -254,8 +254,7 @@ func resourceDuploAwsElasticSearch() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(60 * time.Minute),
-			Update: schema.DefaultTimeout(60 * time.Minute),
+			Create: schema.DefaultTimeout(75 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: awsElasticSearchSchema(),
@@ -447,7 +446,7 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 	})
 
 	// Wait for the instance to become available.
-	err = awsElasticSearchDomainWaitUntilAvailable(c, tenantID, duploObject.Name)
+	err = awsElasticSearchDomainWaitUntilAvailable(c, tenantID, duploObject.Name, d.Timeout("create"))
 	if err != nil {
 		return diag.Errorf("Error waiting for ElasticSearch domain '%s' to be available: %s", id, err)
 	}
@@ -473,7 +472,7 @@ func resourceDuploAwsElasticSearchDelete(ctx context.Context, d *schema.Resource
 	}
 
 	// Wait for the instance to become deleted.
-	err = awsElasticSearchDomainWaitUntilDeleted(c, tenantID, name)
+	err = awsElasticSearchDomainWaitUntilDeleted(c, tenantID, name, d.Timeout("delete"))
 	if err != nil {
 		return diag.Errorf("Error waiting for ElasticSearch domain '%s' to be deleted: %s", id, err)
 	}
@@ -567,13 +566,13 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 // awsElasticSearchDomainWaitUntilAvailable waits until an ES domainis available.
 //
 // It should be usable both post-creation and post-modification.
-func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID string, name string) error {
+func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending:      []string{"new", "processing", "upgrade-processing"},
 		Target:       []string{"created"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
-		Timeout:      60 * time.Minute,
+		Timeout:      timeout,
 		Refresh: func() (interface{}, string, error) {
 			status := "new"
 			resp, err := c.TenantGetElasticSearchDomain(tenantID, name, false)
@@ -602,13 +601,13 @@ func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID strin
 // awsElasticSearchDomainWaitUntilDeleted waits until an ES domain is deleted.
 //
 // It should be usable both post-creation and post-modification.
-func awsElasticSearchDomainWaitUntilDeleted(c *duplosdk.Client, tenantID string, name string) error {
+func awsElasticSearchDomainWaitUntilDeleted(c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending:      []string{"waiting", "processing", "upgrade-processing"},
 		Target:       []string{"deleted"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
-		Timeout:      15 * time.Minute,
+		Timeout:      timeout,
 		Refresh: func() (interface{}, string, error) {
 			status := "waiting"
 			resp, err := c.TenantGetElasticSearchDomain(tenantID, name, true)
