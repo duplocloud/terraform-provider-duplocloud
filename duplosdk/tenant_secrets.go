@@ -107,7 +107,7 @@ func (c *Client) TenantCreateSecret(tenantID string, duplo *DuploTenantSecretReq
 		return err
 	}
 	url := fmt.Sprintf("%s/subscriptions/%s/CreateTenantSecret", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantCreateSecret 2 : %s", url)
+	log.Printf("[TRACE] TenantCreateSecret 2 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
 	if err != nil {
 		log.Printf("[TRACE] TenantCreateSecret 3 HTTP builder : %s", err.Error())

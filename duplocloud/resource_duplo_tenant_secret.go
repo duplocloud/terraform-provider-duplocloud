@@ -34,10 +34,11 @@ func tenantSecretSchema() map[string]*schema.Schema {
 			ForceNew: true,
 		},
 		"data": {
-			Type:      schema.TypeString,
-			Required:  true,
-			ForceNew:  true,
-			Sensitive: true,
+			Type:             schema.TypeString,
+			Required:         true,
+			ForceNew:         true,
+			Sensitive:        true,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
 		},
 		"rotation_enabled": {
 			Type:     schema.TypeBool,
@@ -156,8 +157,8 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
 	id := d.Id()
-	idParts := strings.SplitN(id, ",", 2)
-	err := c.TenantDeleteElasticSearchDomain(idParts[0], idParts[1])
+	idParts := strings.SplitN(id, "/", 2)
+	err := c.TenantDeleteSecret(idParts[0], idParts[1])
 	if err != nil {
 		return diag.Errorf("Error deleting secret '%s': %s", id, err)
 	}
@@ -176,6 +177,9 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 
 		return nil
 	})
+
+	// Wait 60 more seconds to deal with consistency issues.
+	time.Sleep(time.Minute)
 
 	log.Printf("[TRACE] resourceTenantSecretDelete ******** end")
 	return nil
