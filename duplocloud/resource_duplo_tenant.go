@@ -3,7 +3,6 @@ package duplocloud
 import (
 	"context"
 	"log"
-	"strconv"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -31,45 +30,6 @@ func resourceTenant() *schema.Resource {
 		},
 		Schema: *duplosdk.TenantSchema(),
 	}
-}
-
-// SCHEMA for resource data/search
-func dataSourceTenant() *schema.Resource {
-	return &schema.Resource{
-		ReadContext: dataSourceTenantRead,
-		Schema: map[string]*schema.Schema{
-			"data": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: *duplosdk.TenantSchema(),
-				},
-			},
-		},
-	}
-}
-
-/// READ/SEARCH resources
-func dataSourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-dataSourceTenantRead ******** start")
-
-	c := m.(*duplosdk.Client)
-	var diags diag.Diagnostics
-	duploObjs, err := c.TenantGetList(d, m)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	itemList := c.TenantsFlatten(duploObjs, d)
-	if err := d.Set("data", itemList); err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
-
-	log.Printf("[TRACE] duplo-dataSourceTenantRead ******** end")
-
-	return diags
 }
 
 /// READ resource
