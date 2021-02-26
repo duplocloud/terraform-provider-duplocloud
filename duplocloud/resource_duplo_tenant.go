@@ -25,6 +25,31 @@ func tenantSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"infra_owner": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"policy": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"allow_volume_mapping": {
+						Type:     schema.TypeBool,
+						Computed: true,
+					},
+					"block_external_ep": {
+						Type:     schema.TypeBool,
+						Computed: true,
+					},
+				},
+			},
+		},
+		"tags": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem:     KeyValueSchema(),
+		},
 	}
 }
 

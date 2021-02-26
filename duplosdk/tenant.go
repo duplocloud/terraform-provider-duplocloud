@@ -46,6 +46,14 @@ func (c *Client) TenantFlatten(duploTenant *DuploTenant, d *schema.ResourceData)
 		c["account_name"] = duploTenant.AccountName
 		c["tenant_id"] = duploTenant.TenantID
 		c["plan_id"] = duploTenant.PlanID
+		c["infra_owner"] = duploTenant.InfraOwner
+		if duploTenant.TenantPolicy != nil {
+			d.Set("policy", []map[string]interface{}{{
+				"allow_volume_mapping": true,
+				"block_external_ep":    true,
+			}})
+		}
+		c["tags"] = KeyValueToState("tags", duploTenant.Tags)
 
 		jsonData, _ := json.Marshal(duploTenant)
 		log.Printf("[TRACE] duplo-TenantFlatten ********: jsonData %s ", jsonData)
