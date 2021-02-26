@@ -38,27 +38,6 @@ type DuploTenantAwsCredentials struct {
 	SessionToken    string `json:"SessionToken,omitempty"`
 }
 
-// TenantSchema returns a Terraform resource schema for a Duplo Tenant
-func TenantSchema() *map[string]*schema.Schema {
-	return &map[string]*schema.Schema{
-		"account_name": {
-			Type:     schema.TypeString,
-			Computed: false,
-			Required: true,
-		},
-		"plan_id": {
-			Type:     schema.TypeString,
-			Computed: false,
-			Required: true,
-		},
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Computed: true,
-			Required: false,
-		},
-	}
-}
-
 // TenantFlatten converts a list of Duplo SDK objects into Terraform resource data
 func (c *Client) TenantFlatten(duploTenant *DuploTenant, d *schema.ResourceData) map[string]interface{} {
 	if duploTenant != nil {
