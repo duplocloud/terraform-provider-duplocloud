@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.4.6" # RELEASE VERSION
+      version = "0.4.7" # RELEASE VERSION
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -42,6 +42,14 @@ variable "tenant_id" {
 # # Tenant secrets retrieval
 # data "duplocloud_tenant_secrets" "test" { tenant_id = var.tenant_id }
 # output "tenant_secrets" { value = data.duplocloud_tenant_secrets.test.secrets }
+
+# Tenant information 
+data "duplocloud_tenant" "test" { name = "default" }
+output "tenant" { value = data.duplocloud_tenant.test }
+
+# Tenant listing
+data "duplocloud_tenants" "test" {}
+output "tenants" { value = data.duplocloud_tenants.test.tenants }
 
 resource "duplocloud_tenant_secret" "test" {
   tenant_id = var.tenant_id

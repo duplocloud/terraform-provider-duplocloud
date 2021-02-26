@@ -12,9 +12,18 @@ import (
 
 // DuploTenant represents a Duplo tenant
 type DuploTenant struct {
-	TenantID    string `json:"TenantId,omitempty"`
-	AccountName string `json:"AccountName"`
-	PlanID      string `json:"PlanID"`
+	TenantID     string                 `json:"TenantId,omitempty"`
+	AccountName  string                 `json:"AccountName"`
+	PlanID       string                 `json:"PlanID"`
+	InfraOwner   string                 `json:"InfraOwner,omitempty"`
+	TenantPolicy *DuploTenantPolicy     `json:"TenantPolicy,omitempty"`
+	Tags         *[]DuploKeyStringValue `json:"Tags,omitempty"`
+}
+
+// DuploTenantPolicy reprsents policies for a Duplo Tenant
+type DuploTenantPolicy struct {
+	AllowVolumeMapping bool `json:"AllowVolumeMapping,omitempty"`
+	BlockExternalEp    bool `json:"BlockExternalEp,omitempty"`
 }
 
 // DuploAwsKmsKey represents an AWS KMS key for a Duplo tenant
@@ -125,20 +134,6 @@ func (c *Client) TenantURLList(d *schema.ResourceData) string {
 
 /////////// common place to get url + Id : follow Azure  style Ids for import//////////
 
-// TenantsFlatten converts a list of Duplo SDK objects into Terraform resource data
-func (c *Client) TenantsFlatten(duploTenants *[]DuploTenant, d *schema.ResourceData) []interface{} {
-	if duploTenants != nil {
-		ois := make([]interface{}, len(*duploTenants), len(*duploTenants))
-		for i, duploTenant := range *duploTenants {
-			ois[i] = c.TenantFlatten(&duploTenant, d)
-		}
-		jsonData, _ := json.Marshal(ois)
-		log.Printf("[TRACE] duplo-TenantFlatten ******** jsonData: \n%s", jsonData)
-		return ois
-	}
-	return make([]interface{}, 0)
-}
-
 // TenantFillGet converts a Duplo SDK object into Terraform resource data
 func (c *Client) TenantFillGet(duploTenant *DuploTenant, d *schema.ResourceData) error {
 	if duploTenant != nil {
@@ -152,32 +147,6 @@ func (c *Client) TenantFillGet(duploTenant *DuploTenant, d *schema.ResourceData)
 		return nil
 	}
 	return fmt.Errorf("Tenant not found 2")
-}
-
-/////////  API list //////////
-
-// TenantGetList retrieves a list of tenants via the Duplo API.
-func (c *Client) TenantGetList(d *schema.ResourceData, m interface{}) (*[]DuploTenant, error) {
-
-	url := c.TenantURLList(d)
-
-	req2, _ := http.NewRequest("GET", url, nil)
-	body, err := c.doRequest(req2)
-	if err != nil {
-		log.Printf("[TRACE] duplo-GetListTenant %s 1 ********: %s", url, err.Error())
-		return nil, err
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] duplo-GetListTenant %s 2 ********: \n%s", url, bodyString)
-
-	duploTenants := []DuploTenant{}
-	err = json.Unmarshal(body, &duploTenants)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("[TRACE] duplo-GetListTenant %s 3 ********: %d", url, len(duploTenants))
-
-	return &duploTenants, nil
 }
 
 // TenantGet retrieves a tenant via the Duplo API.
@@ -274,6 +243,95 @@ func (c *Client) TenantCreateOrUpdate(d *schema.ResourceData, m interface{}, isU
 // TenantDelete deletes an AWS host via the Duplo API.
 func (c *Client) TenantDelete(d *schema.ResourceData, m interface{}) (*DuploTenant, error) {
 	// No-op
+	return nil, nil
+}
+
+// ListTenantsForUser retrieves a list of tenants for the current user via the Duplo API.
+func (c *Client) ListTenantsForUser() (*[]DuploTenant, error) {
+
+	// Format the URL
+	url := fmt.Sprintf("%s/admin/GetTenantsForUser", c.HostURL)
+	log.Printf("[TRACE] duplo-ListTenantsForUser 1 ********: %s ", url)
+
+	// Get the AWS region from Duplo
+	req2, _ := http.NewRequest("GET", url, nil)
+	body, err := c.doRequest(req2)
+	if err != nil {
+		log.Printf("[TRACE] duplo-ListTenantsForUser 2 ********: %s", err.Error())
+		return nil, err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] duplo-ListTenantsForUser 3 ********: %s", bodyString)
+
+	// Return it as a list
+	duploTenants := []DuploTenant{}
+	err = json.Unmarshal(body, &duploTenants)
+	if err != nil {
+		return nil, err
+	}
+
+	return &duploTenants, nil
+}
+
+// ListTenantsForUserByPlan retrieves a list of tenants with the given plan for the current user via the Duplo API.
+// If the planID is an empty string, returns all
+func (c *Client) ListTenantsForUserByPlan(planID string) (*[]DuploTenant, error) {
+	// Get all tenants.
+	allTenants, err := c.ListTenantsForUser()
+	if err != nil {
+		return nil, err
+	}
+	if planID == "" {
+		return allTenants, nil
+	}
+
+	// Build a new list of tenants with the given plan ID.
+	planTenants := make([]DuploTenant, 0, len(*allTenants))
+	for _, tenant := range *allTenants {
+		if tenant.PlanID == planID {
+			planTenants = append(planTenants, tenant)
+		}
+	}
+
+	// Return the new list
+	return &planTenants, nil
+}
+
+// GetTenantByNameForUser retrieves a single tenant by name for the current user via the Duplo API.
+func (c *Client) GetTenantByNameForUser(name string) (*DuploTenant, error) {
+	// Get all tenants.
+	allTenants, err := c.ListTenantsForUser()
+	if err != nil {
+		return nil, err
+	}
+
+	// Find and return the tenant with the specific name.
+	for _, tenant := range *allTenants {
+		if tenant.AccountName == name {
+			return &tenant, nil
+		}
+	}
+
+	// No tenant was found.
+	return nil, nil
+}
+
+// GetTenantForUser retrieves a single tenant by ID for the current user via the Duplo API.
+func (c *Client) GetTenantForUser(tenantID string) (*DuploTenant, error) {
+	// Get all tenants.
+	allTenants, err := c.ListTenantsForUser()
+	if err != nil {
+		return nil, err
+	}
+
+	// Find and return the tenant with the specific name.
+	for _, tenant := range *allTenants {
+		if tenant.TenantID == tenantID {
+			return &tenant, nil
+		}
+	}
+
+	// No tenant was found.
 	return nil, nil
 }
 
