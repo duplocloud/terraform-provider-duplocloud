@@ -11,7 +11,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// SCHEMA for resource crud
+func tenantSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"account_name": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"plan_id": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"tenant_id": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+	}
+}
+
 func resourceTenant() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceTenantRead,
@@ -28,7 +44,7 @@ func resourceTenant() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
-		Schema: *duplosdk.TenantSchema(),
+		Schema: tenantSchema(),
 	}
 }
 
