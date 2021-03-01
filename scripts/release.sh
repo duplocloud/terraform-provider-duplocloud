@@ -36,8 +36,10 @@ release_finish() {
     rm -f bin/* ; make release
 
     # Create a github release
-    gh release create -t "v${version} - DuploCloud Terraform provider" -n "$(git tag -l -n100 "$version" | sed '1 { s/^'"$version"'\([[:space:]]*\)//g ; }')"
-    gh release upload "$version" "bin/terraform-provider-duplocloud_${version}_"*
+    gh release create "$version" \
+        -t "v${version} - DuploCloud Terraform provider" \
+        -n "$(git tag -l -n100 "$version" | sed '1 { s/^'"$version"'\([[:space:]]*\)//g ; }')" \
+        "bin/terraform-provider-duplocloud_${version}_"*
 
     # Push the updated develop to master
     git checkout develop ; git push
