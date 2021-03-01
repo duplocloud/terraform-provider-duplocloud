@@ -37,7 +37,7 @@ release_finish() {
 
     # Create a github release
     gh release create -t "v${version} - DuploCloud Terraform provider"
-    gh release upload "$version" "bin/terraform-provider-duplocloud_${version}_*"
+    gh release upload "$version" "bin/terraform-provider-duplocloud_${version}_"*
 
     # Push the updated develop to master
     git checkout develop ; git push
