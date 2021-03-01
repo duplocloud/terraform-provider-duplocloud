@@ -115,7 +115,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
-	err = resource.RetryContext(ctx, time.Minute, func() *resource.RetryError {
+	err = resource.RetryContext(ctx, d.Timeout("create"), func() *resource.RetryError {
 		resp, errget := c.TenantGetS3Bucket(tenantID, duploObject.Name)
 
 		if errget != nil {
@@ -153,7 +153,7 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the bucket.
-	err = resource.RetryContext(ctx, time.Minute, func() *resource.RetryError {
+	err = resource.RetryContext(ctx, d.Timeout("delete"), func() *resource.RetryError {
 		resp, errget := c.TenantGetS3Bucket(idParts[0], idParts[1])
 
 		if errget != nil {
