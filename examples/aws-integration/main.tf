@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.4.7" # RELEASE VERSION
+      version = "0.4.8" # RELEASE VERSION
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
     aws = {
@@ -41,6 +41,19 @@ provider "aws" {
 # For example, get the account ID
 data "aws_caller_identity" "current" {}
 output "aws_account_id" { value = data.aws_caller_identity.current.account_id }
+
+# Or, apply additional policy to an S3 bucket created by Duplo.
+resource "duplocloud_s3_bucket" "test" {
+  tenant_id = var.tenant_id
+  name = "joetest"
+}
+resource "aws_s3_bucket_public_access_block" "test" {
+  bucket = duplocloud_s3_bucket.test.fullname
+  block_public_acls = true
+  ignore_public_acls = true
+  block_public_policy = true
+  restrict_public_buckets = true
+}
 
 # Or, get information on one of your KMS keys
 #data "duplocloud_tenant_aws_kms_keys" "test" { tenant_id = var.tenant_id }
