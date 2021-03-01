@@ -85,7 +85,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	// Set simple fields first.
-	d.SetId(fmt.Sprintf("%s/%s", duplo.TenantID, duplo.Name))
+	d.SetId(fmt.Sprintf("%s/%s", duplo.TenantID, name))
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("fullname", duplo.Name)
@@ -114,8 +114,8 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.Errorf("Error creating tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
 	}
 
-	// Wait up to 60 seconds for Duplo to be able to return the secret's details.
-	err = resource.Retry(time.Minute, func() *resource.RetryError {
+	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
+	err = resource.RetryContext(ctx, time.Minute, func() *resource.RetryError {
 		resp, errget := c.TenantGetS3Bucket(tenantID, duploObject.Name)
 
 		if errget != nil {
@@ -130,6 +130,9 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		d.SetId(fmt.Sprintf("%s/%s", tenantID, duploObject.Name))
 		return nil
 	})
+	if err != nil {
+		return diag.Errorf("Error creating tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+	}
 
 	diags := resourceS3BucketRead(ctx, d, m)
 	log.Printf("[TRACE] resourceS3BucketCreate ******** end")
@@ -149,8 +152,8 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.Errorf("Error deleting bucket '%s': %s", id, err)
 	}
 
-	// Wait up to 60 seconds for Duplo to delete the secret.
-	err = resource.Retry(time.Minute, func() *resource.RetryError {
+	// Wait up to 60 seconds for Duplo to delete the bucket.
+	err = resource.RetryContext(ctx, time.Minute, func() *resource.RetryError {
 		resp, errget := c.TenantGetS3Bucket(idParts[0], idParts[1])
 
 		if errget != nil {
@@ -163,6 +166,9 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 
 		return nil
 	})
+	if err != nil {
+		return diag.Errorf("Error deleting s bucket '%s': %s", id, err)
+	}
 
 	// Wait 60 more seconds to deal with consistency issues.
 	time.Sleep(time.Minute)

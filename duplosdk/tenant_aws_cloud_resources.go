@@ -97,7 +97,7 @@ func (c *Client) TenantGetS3BucketFullName(tenantID string, name string) (string
 		return "", err
 	}
 
-	return strings.Join([]string{tenant.AccountName, name, accountID}, "-"), nil
+	return fmt.Sprintf("duploservices-%s-%s-%s", tenant.AccountName, name, accountID), nil
 }
 
 // TenantGetS3Bucket retrieves a managed S3 bucket via the Duplo API
