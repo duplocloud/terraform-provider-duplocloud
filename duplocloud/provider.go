@@ -36,6 +36,7 @@ func Provider() *schema.Provider {
 			"duplocloud_k8_secret":               resourceK8Secret(),
 			"duplocloud_infrastructure":          resourceInfrastructure(),
 			"duplocloud_rds_instance":            resourceDuploRdsInstance(),
+			"duplocloud_s3_bucket":               resourceS3Bucket(),
 			"duplocloud_tenant":                  resourceTenant(),
 			"duplocloud_tenant_secret":           resourceTenantSecret(),
 		},

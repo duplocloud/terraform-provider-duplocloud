@@ -391,3 +391,31 @@ func (c *Client) TenantGetInternalSubnets(tenantID string) ([]string, error) {
 	log.Printf("[TRACE] duplo-TenantGetInternalSubnets 4 ********: %s", strings.Join(list, " "))
 	return list, nil
 }
+
+// TenantGetAwsAccountID retrieves the AWS account ID via the Duplo API.
+func (c *Client) TenantGetAwsAccountID(tenantID string) (string, error) {
+
+	// Format the URL
+	url := fmt.Sprintf("%s/subscriptions/%s/GetTenantAwsAccountId", c.HostURL, tenantID)
+	log.Printf("[TRACE] duplo-TenantGetAwsAccountID 1 ********: %s ", url)
+
+	// Get the AWS region from Duplo
+	req2, _ := http.NewRequest("GET", url, nil)
+	body, err := c.doRequest(req2)
+	if err != nil {
+		log.Printf("[TRACE] duplo-TenantGetAwsAccountID 2 ********: %s", err.Error())
+		return "", err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] duplo-TenantGetAwsAccountID 3 ********: %s", bodyString)
+
+	// Return it as a string.
+	awsAccount := ""
+	err = json.Unmarshal(body, &awsAccount)
+	if err != nil {
+		return "", err
+	}
+	log.Printf("[TRACE] duplo-TenantGetAwsAccountID 4 ********: %s", awsAccount)
+
+	return awsAccount, nil
+}
