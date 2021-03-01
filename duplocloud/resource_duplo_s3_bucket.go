@@ -36,6 +36,7 @@ func s3BucketSchema() map[string]*schema.Schema {
 		"in_tenant_region": {
 			Type:     schema.TypeBool,
 			Optional: true,
+			ForceNew: true,
 			Default:  false,
 
 			// Supresses diffs for existing resources that were imported, so they have a blank region flag.

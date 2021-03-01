@@ -42,6 +42,19 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 output "aws_account_id" { value = data.aws_caller_identity.current.account_id }
 
+# Or, apply additional policy to an S3 bucket created by Duplo.
+resource "duplocloud_s3_bucket" "test" {
+  tenant_id = var.tenant_id
+  name = "joetest"
+}
+resource "aws_s3_bucket_public_access_block" "test" {
+  bucket = duplocloud_s3_bucket.test.fullname
+  block_public_acls = true
+  ignore_public_acls = true
+  block_public_policy = true
+  restrict_public_buckets = true
+}
+
 # Or, get information on one of your KMS keys
 #data "duplocloud_tenant_aws_kms_keys" "test" { tenant_id = var.tenant_id }
 #data "aws_kms_key" "test" { key_id = data.duplocloud_tenant_aws_kms_keys.test.keys[1].key_id }
