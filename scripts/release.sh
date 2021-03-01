@@ -20,11 +20,27 @@ release_finish() {
     local version
     version="$(echo_version)"
 
+    # Prepare local branches
+    git checkout develop ; git pull
+    git checkout master ; git pull
+    git checkout "release/$version"
+
+    # Finish the release
     GIT_MERGE_AUTOEDIT=no git flow release finish "$version"
-    git push origin develop:develop
-    git push origin "$version"
-    (git checkout master && git pull && git push origin master:master)
-    git checkout develop
+
+    # Push updated master and tag to github
+    git checkout master ; git push
+    git checkout "$version" ; git push origin "$version"
+
+    # Build the release binaries
+    rm -f bin/* ; make release
+
+    # Create a github release
+    gh release create -t "v${version} - DuploCloud Terraform provider"
+    gh release upload "$version" "bin/terraform-provider-duplocloud_${version}_*"
+
+    # Push the updated develop to master
+    git checkout develop ; git push
 }
 
 # Changes the version number in all relevant files
