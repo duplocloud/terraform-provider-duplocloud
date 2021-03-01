@@ -31,8 +31,8 @@ def check_containers_running(g_serviceName, aInHeaders):
             logger.info('Service %s at least one container is not running, current status %s', g_serviceName, pod["CurrentStatus"])
             return False
     
-	logger.info("All containers in service %s are running", g_serviceName)
-	return True
+        logger.info("All containers in service %s are running", g_serviceName)
+        return True
 
 def validate_service(g_serviceName, aInHeaders):
     allOk = False
