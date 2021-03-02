@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func s3BucketSchema() map[string]*schema.Schema {
@@ -36,11 +37,31 @@ func s3BucketSchema() map[string]*schema.Schema {
 		"block_public_access": {
 			Type:     schema.TypeBool,
 			Optional: true,
-			ForceNew: true,
 
 			// Supresses diffs for existing resources that were imported, so they have a blank public access block flag.
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 				return d.Id() != "" && old == ""
+			},
+		},
+		"default_encryption": {
+			Type:     schema.TypeList,
+			Optional: true,
+			MaxItems: 1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"method": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						Default:      "AES256",
+						ValidateFunc: validation.StringInSlice([]string{"none", "AES256", "aws:kms", "tenant:kms"}, false),
+					},
+					// RESERVED FOR THE FUTURE
+					//
+					//"kms_key_id": {
+					//	Type:     schema.TypeString,
+					//	Optional: true,
+					//},
+				},
 			},
 		},
 		"in_tenant_region": {
@@ -62,6 +83,7 @@ func resourceS3Bucket() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceS3BucketRead,
 		CreateContext: resourceS3BucketCreate,
+		UpdateContext: resourceS3BucketUpdate,
 		DeleteContext: resourceS3BucketDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -107,25 +129,46 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 /// CREATE resource
 func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceS3BucketCreate ******** start")
+	return resourceS3BucketCreateOrUpdate(ctx, d, m, true)
+}
+
+/// UPDATE resource
+func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	return resourceS3BucketCreateOrUpdate(ctx, d, m, false)
+}
+
+/// CREATE or UPDATE resource
+func resourceS3BucketCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, create bool) diag.Diagnostics {
+	log.Printf("[TRACE] resourceS3BucketCreateOrUpdate ******** start")
 
 	// Create the request object.
 	duploObject := duplosdk.DuploS3BucketRequest{
 		Name:           d.Get("name").(string),
 		InTenantRegion: d.Get("in_tenant_region").(bool),
 	}
+
+	// Set the public access block.
 	if v, ok := d.GetOk("block_public_access"); ok && v != nil {
 		blockPublicAccess := v.(bool)
 		duploObject.BlockPublicAccess = &blockPublicAccess
+	}
+
+	// Set the defaut encryption.
+	defaultEncryption, err := getOptionalBlockAsMap(d, "default_encryption")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if v, ok := defaultEncryption["method"]; ok && v != nil {
+		duploObject.DefaultEncryption = v.(string)
 	}
 
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	err := c.TenantCreateS3Bucket(tenantID, duploObject)
+	err = c.TenantCreateOrUpdateS3Bucket(tenantID, duploObject, create)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
@@ -145,11 +188,11 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		return nil
 	})
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
 	}
 
 	diags := resourceS3BucketRead(ctx, d, m)
-	log.Printf("[TRACE] resourceS3BucketCreate ******** end")
+	log.Printf("[TRACE] resourceS3BucketCreateOrUpdate ******** end")
 	return diags
 }
 

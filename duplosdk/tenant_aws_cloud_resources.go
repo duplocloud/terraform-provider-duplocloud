@@ -35,6 +35,7 @@ type DuploS3BucketRequest struct {
 	State             string `json:"State,omitempty"`
 	InTenantRegion    bool   `json:"InTenantRegion"`
 	BlockPublicAccess *bool  `json:"BlockPublicAccess,omitempty"`
+	DefaultEncryption string `json:"DefaultEncryption,omitempty"`
 }
 
 // TenantListAwsCloudResources retrieves a list of the generic AWS cloud resources for a tenant via the Duplo API.
@@ -122,9 +123,12 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 	}, nil
 }
 
-// TenantCreateS3Bucket creates an S3 bucket resource via Duplo.
-func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketRequest) error {
+// TenantCreateOrUpdateS3Bucket creates or updates an S3 bucket resource via Duplo.
+func (c *Client) TenantCreateOrUpdateS3Bucket(tenantID string, duplo DuploS3BucketRequest, create bool) error {
 	duplo.Type = 1 // type of "1" signifies an S3 bucket
+	if !create {
+		duplo.State = "update"
+	}
 
 	// Build the request
 	rqBody, err := json.Marshal(&duplo)
@@ -133,7 +137,7 @@ func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketReques
 		return err
 	}
 	url := fmt.Sprintf("%s/subscriptions/%s/S3BucketUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantCreateS3Bucket 2 : %s <= %s", url, rqBody)
+	log.Printf("[TRACE] TenantCreateOrUpdateS3Bucket 2 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
 	if err != nil {
 		log.Printf("[TRACE] TenantCreateS3Bucket 3 HTTP builder : %s", err.Error())
@@ -143,7 +147,7 @@ func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketReques
 	// Call the API and get the response
 	body, err := c.doRequest(req)
 	if err != nil {
-		log.Printf("[TRACE] TenantCreateS3Bucket 4 HTTP POST : %s", err.Error())
+		log.Printf("[TRACE] TenantCreateOrUpdateS3Bucket 4 HTTP POST : %s", err.Error())
 		return fmt.Errorf("Tenant %s failed to create bucket %s: '%s'", tenantID, duplo.Name, err)
 	}
 	bodyString := string(body)

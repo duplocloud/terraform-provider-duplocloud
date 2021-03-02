@@ -45,7 +45,10 @@ output "aws_account_id" { value = data.aws_caller_identity.current.account_id }
 # Or, apply additional policy to an S3 bucket created by Duplo.
 resource "duplocloud_s3_bucket" "test" {
   tenant_id = var.tenant_id
-  name = "joetest"
+  name = "joetest3"
+  default_encryption {
+    method = "tenant:kms"
+  }
 }
 
 # Or, get information on one of your KMS keys
