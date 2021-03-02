@@ -33,6 +33,16 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"block_public_access": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			ForceNew: true,
+
+			// Supresses diffs for existing resources that were imported, so they have a blank public access block flag.
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				return d.Id() != "" && old == ""
+			},
+		},
 		"in_tenant_region": {
 			Type:     schema.TypeBool,
 			Optional: true,
@@ -104,6 +114,10 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		Name:           d.Get("name").(string),
 		InTenantRegion: d.Get("in_tenant_region").(bool),
 	}
+	if v, ok := d.GetOk("block_public_access"); ok && v != nil {
+		blockPublicAccess := v.(bool)
+		duploObject.BlockPublicAccess = &blockPublicAccess
+	}
 
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
@@ -119,7 +133,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		resp, errget := c.TenantGetS3Bucket(tenantID, duploObject.Name)
 
 		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting tenant %s bucket'%s': %s", tenantID, duploObject.Name, err))
+			return resource.NonRetryableError(fmt.Errorf("Error getting tenant %s bucket '%s': %s", tenantID, duploObject.Name, errget))
 		}
 
 		if resp == nil {
@@ -157,7 +171,7 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 		resp, errget := c.TenantGetS3Bucket(idParts[0], idParts[1])
 
 		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting a bucket '%s': %s", id, err))
+			return resource.NonRetryableError(fmt.Errorf("Error getting a bucket '%s': %s", id, errget))
 		}
 
 		if resp != nil {
@@ -170,8 +184,8 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.Errorf("Error deleting s bucket '%s': %s", id, err)
 	}
 
-	// Wait 60 more seconds to deal with consistency issues.
-	time.Sleep(time.Minute)
+	// Wait 10 more seconds to deal with consistency issues.
+	time.Sleep(10 * time.Second)
 
 	log.Printf("[TRACE] resourceS3BucketDelete ******** end")
 	return nil

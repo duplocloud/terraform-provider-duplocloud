@@ -30,10 +30,11 @@ type DuploS3Bucket struct {
 
 // DuploS3BucketRequest represents a request to create an S3 bucket resource
 type DuploS3BucketRequest struct {
-	Type           int    `json:"ResourceType"`
-	Name           string `json:"Name"`
-	State          string `json:"State,omitempty"`
-	InTenantRegion bool   `json:"InTenantRegion"`
+	Type              int    `json:"ResourceType"`
+	Name              string `json:"Name"`
+	State             string `json:"State,omitempty"`
+	InTenantRegion    bool   `json:"InTenantRegion"`
+	BlockPublicAccess *bool  `json:"BlockPublicAccess,omitempty"`
 }
 
 // TenantListAwsCloudResources retrieves a list of the generic AWS cloud resources for a tenant via the Duplo API.
