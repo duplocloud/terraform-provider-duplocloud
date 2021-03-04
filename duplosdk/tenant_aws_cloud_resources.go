@@ -13,10 +13,14 @@ type DuploAwsCloudResource struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
 
-	Type     int    `json:"ResourceType,omitempty"`
-	Name     string `json:"Name,omitempty"`
-	Arn      string `json:"Arn,omitempty"`
-	MetaData string `json:"MetaData,omitempty"`
+	Type              int      `json:"ResourceType,omitempty"`
+	Name              string   `json:"Name,omitempty"`
+	Arn               string   `json:"Arn,omitempty"`
+	MetaData          string   `json:"MetaData,omitempty"`
+	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
+	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
+	Policies          []string `json:"Policies,omitempty"`
 }
 
 // DuploS3Bucket represents an S3 bucket resource for a Duplo tenant
@@ -24,18 +28,25 @@ type DuploS3Bucket struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
 
-	Name string `json:"Name,omitempty"`
-	Arn  string `json:"Arn,omitempty"`
+	Name              string   `json:"Name,omitempty"`
+	Arn               string   `json:"Arn,omitempty"`
+	MetaData          string   `json:"MetaData,omitempty"`
+	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
+	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
+	Policies          []string `json:"Policies,omitempty"`
 }
 
 // DuploS3BucketRequest represents a request to create an S3 bucket resource
 type DuploS3BucketRequest struct {
-	Type              int    `json:"ResourceType"`
-	Name              string `json:"Name"`
-	State             string `json:"State,omitempty"`
-	InTenantRegion    bool   `json:"InTenantRegion"`
-	BlockPublicAccess *bool  `json:"BlockPublicAccess,omitempty"`
-	DefaultEncryption string `json:"DefaultEncryption,omitempty"`
+	Type              int      `json:"ResourceType"`
+	Name              string   `json:"Name"`
+	State             string   `json:"State,omitempty"`
+	InTenantRegion    bool     `json:"InTenantRegion"`
+	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
+	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
+	Policies          []string `json:"Policies,omitempty"`
 }
 
 // TenantListAwsCloudResources retrieves a list of the generic AWS cloud resources for a tenant via the Duplo API.
@@ -117,9 +128,14 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 	}
 
 	return &DuploS3Bucket{
-		TenantID: tenantID,
-		Name:     resource.Name,
-		Arn:      fmt.Sprintf("arn:aws:s3:::%s", resource.Name),
+		TenantID:          tenantID,
+		Name:              resource.Name,
+		Arn:               resource.Arn,
+		MetaData:          resource.MetaData,
+		EnableVersioning:  resource.EnableVersioning,
+		AllowPublicAccess: resource.AllowPublicAccess,
+		DefaultEncryption: resource.DefaultEncryption,
+		Policies:          resource.Policies,
 	}, nil
 }
 

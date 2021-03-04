@@ -151,3 +151,18 @@ func getOptionalBlockAsMap(data *schema.ResourceData, key string) (map[string]in
 	}
 	return (*block).(map[string]interface{}), nil
 }
+
+func getAsStringArray(data *schema.ResourceData, key string) ([]string, bool) {
+	var ok bool
+	var result []string
+
+	if v, ok := data.GetOk(key); ok && v != nil {
+		list := v.([]interface{})
+		result = make([]string, len(list), len(list))
+		for i, el := range list {
+			result[i] = el.(string)
+		}
+	}
+
+	return result, ok
+}

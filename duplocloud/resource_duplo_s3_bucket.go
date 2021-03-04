@@ -34,9 +34,20 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"block_public_access": {
+		"enable_versioning": {
 			Type:     schema.TypeBool,
 			Optional: true,
+			Computed: true,
+
+			// Supresses diffs for existing resources that were imported, so they have a blank versioning flag.
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				return d.Id() != "" && old == ""
+			},
+		},
+		"allow_public_access": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
 
 			// Supresses diffs for existing resources that were imported, so they have a blank public access block flag.
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
@@ -46,6 +57,7 @@ func s3BucketSchema() map[string]*schema.Schema {
 		"default_encryption": {
 			Type:     schema.TypeList,
 			Optional: true,
+			Computed: true,
 			MaxItems: 1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -63,6 +75,12 @@ func s3BucketSchema() map[string]*schema.Schema {
 					//},
 				},
 			},
+		},
+		"managed_policies": {
+			Type:     schema.TypeList,
+			Optional: true,
+			Computed: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		"in_tenant_region": {
 			Type:     schema.TypeBool,
@@ -122,6 +140,12 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	d.Set("name", name)
 	d.Set("fullname", duplo.Name)
 	d.Set("arn", duplo.Arn)
+	d.Set("enable_versioning", duplo.EnableVersioning)
+	d.Set("allow_public_access", duplo.AllowPublicAccess)
+	d.Set("default_encryption", []map[string]interface{}{{
+		"method": duplo.DefaultEncryption,
+	}})
+	d.Set("managed_policies", duplo.Policies)
 
 	log.Printf("[TRACE] resourceS3BucketRead ******** end")
 	return nil
@@ -147,19 +171,28 @@ func resourceS3BucketCreateOrUpdate(ctx context.Context, d *schema.ResourceData,
 		InTenantRegion: d.Get("in_tenant_region").(bool),
 	}
 
-	// Set the public access block.
-	if v, ok := d.GetOk("block_public_access"); ok && v != nil {
-		blockPublicAccess := v.(bool)
-		duploObject.BlockPublicAccess = &blockPublicAccess
+	// Set the object versioning
+	if v, ok := d.GetOk("enable_versioning"); ok && v != nil {
+		duploObject.EnableVersioning = v.(bool)
 	}
 
-	// Set the defaut encryption.
+	// Set the public access block.
+	if v, ok := d.GetOk("allow_public_access"); ok && v != nil {
+		duploObject.AllowPublicAccess = v.(bool)
+	}
+
+	// Set the default encryption.
 	defaultEncryption, err := getOptionalBlockAsMap(d, "default_encryption")
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	if v, ok := defaultEncryption["method"]; ok && v != nil {
 		duploObject.DefaultEncryption = v.(string)
+	}
+
+	// Set the managed policies.
+	if v, ok := getAsStringArray(d, "managed_policies"); ok && v != nil {
+		duploObject.Policies = v
 	}
 
 	c := m.(*duplosdk.Client)
