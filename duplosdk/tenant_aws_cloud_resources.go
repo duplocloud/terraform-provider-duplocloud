@@ -18,6 +18,7 @@ type DuploAwsCloudResource struct {
 	Arn               string   `json:"Arn,omitempty"`
 	MetaData          string   `json:"MetaData,omitempty"`
 	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
+	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
 	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
 	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
 	Policies          []string `json:"Policies,omitempty"`
@@ -32,6 +33,7 @@ type DuploS3Bucket struct {
 	Arn               string   `json:"Arn,omitempty"`
 	MetaData          string   `json:"MetaData,omitempty"`
 	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
+	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
 	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
 	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
 	Policies          []string `json:"Policies,omitempty"`
@@ -44,6 +46,7 @@ type DuploS3BucketRequest struct {
 	State             string   `json:"State,omitempty"`
 	InTenantRegion    bool     `json:"InTenantRegion"`
 	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
+	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
 	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
 	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
 	Policies          []string `json:"Policies,omitempty"`

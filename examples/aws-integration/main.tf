@@ -47,9 +47,11 @@ output "aws_account_id" { value = data.aws_caller_identity.current.account_id }
 resource "duplocloud_s3_bucket" "test" {
   tenant_id = var.tenant_id
   name = "joetest2"
+  allow_public_access = false
   enable_versioning = true
+  enable_access_logs = true
   default_encryption {
-    method = "none"
+    method = "tenant:kms"
   }
 }
 

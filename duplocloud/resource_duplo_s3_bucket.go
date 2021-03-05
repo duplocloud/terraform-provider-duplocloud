@@ -38,21 +38,16 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Computed: true,
-
-			// Supresses diffs for existing resources that were imported, so they have a blank versioning flag.
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				return d.Id() != "" && old == ""
-			},
+		},
+		"enable_access_logs": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
 		},
 		"allow_public_access": {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Computed: true,
-
-			// Supresses diffs for existing resources that were imported, so they have a blank public access block flag.
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				return d.Id() != "" && old == ""
-			},
 		},
 		"default_encryption": {
 			Type:     schema.TypeList,
@@ -141,6 +136,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	d.Set("fullname", duplo.Name)
 	d.Set("arn", duplo.Arn)
 	d.Set("enable_versioning", duplo.EnableVersioning)
+	d.Set("enable_access_logs", duplo.EnableAccessLogs)
 	d.Set("allow_public_access", duplo.AllowPublicAccess)
 	d.Set("default_encryption", []map[string]interface{}{{
 		"method": duplo.DefaultEncryption,
@@ -174,6 +170,11 @@ func resourceS3BucketCreateOrUpdate(ctx context.Context, d *schema.ResourceData,
 	// Set the object versioning
 	if v, ok := d.GetOk("enable_versioning"); ok && v != nil {
 		duploObject.EnableVersioning = v.(bool)
+	}
+
+	// Set the access logs flag
+	if v, ok := d.GetOk("enable_access_logs"); ok && v != nil {
+		duploObject.EnableAccessLogs = v.(bool)
 	}
 
 	// Set the public access block.
