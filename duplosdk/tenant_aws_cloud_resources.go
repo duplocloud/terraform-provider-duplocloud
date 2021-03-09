@@ -142,6 +142,7 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 		MetaData:          resource.MetaData,
 		EnableVersioning:  resource.EnableVersioning,
 		AllowPublicAccess: resource.AllowPublicAccess,
+		EnableAccessLogs:  resource.EnableAccessLogs,
 		DefaultEncryption: resource.DefaultEncryption,
 		Policies:          resource.Policies,
 	}, nil
