@@ -1,8 +1,11 @@
 package duplocloud
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 )
@@ -166,4 +169,44 @@ func getAsStringArray(data *schema.ResourceData, key string) (*[]string, bool) {
 	}
 
 	return &result, ok
+}
+
+func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, error)) diag.Diagnostics {
+	err := resource.RetryContext(ctx, d.Timeout("delete"), func() *resource.RetryError {
+		resp, errget := get()
+
+		if errget != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error getting %s '%s': %s", kind, id, errget))
+		}
+
+		if resp != nil {
+			return resource.RetryableError(fmt.Errorf("Expected %s '%s' to be missing, but it still exists", kind, id))
+		}
+
+		return nil
+	})
+	if err != nil {
+		return diag.Errorf("Error deleting %s '%s': %s", kind, id, err)
+	}
+	return nil
+}
+
+func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, error)) diag.Diagnostics {
+	err := resource.RetryContext(ctx, d.Timeout("create"), func() *resource.RetryError {
+		resp, errget := get()
+
+		if errget != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error getting %s '%s': %s", kind, id, errget))
+		}
+
+		if resp == nil {
+			return resource.RetryableError(fmt.Errorf("Expected %s '%s' to be retrieved, but got: nil", kind, id))
+		}
+
+		return nil
+	})
+	if err != nil {
+		return diag.Errorf("Error creating %s '%s': %s", kind, id, err)
+	}
+	return nil
 }

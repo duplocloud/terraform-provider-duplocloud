@@ -8,20 +8,35 @@ import (
 	"strings"
 )
 
+const (
+	// ResourceTypeS3Bucket represents an S3 bucket
+	ResourceTypeS3Bucket int = 1
+
+	// ResourceTypeApplicationLB represents an AWS application LB
+	ResourceTypeApplicationLB int = 16
+)
+
 // DuploAwsCloudResource represents a generic AWS cloud resource for a Duplo tenant
 type DuploAwsCloudResource struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
 
-	Type              int      `json:"ResourceType,omitempty"`
-	Name              string   `json:"Name,omitempty"`
-	Arn               string   `json:"Arn,omitempty"`
-	MetaData          string   `json:"MetaData,omitempty"`
+	Type     int    `json:"ResourceType,omitempty"`
+	Name     string `json:"Name,omitempty"`
+	Arn      string `json:"Arn,omitempty"`
+	MetaData string `json:"MetaData,omitempty"`
+
+	// S3 bucket and load balancer
+	EnableAccessLogs bool `json:"EnableAccessLogs,omitempty"`
+
+	// Only S3 bucket
 	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
-	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
 	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
 	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
 	Policies          []string `json:"Policies,omitempty"`
+
+	// Only Load balancer
+	IsInternal bool `json:"IsInternal,omitempty"`
 }
 
 // DuploS3Bucket represents an S3 bucket resource for a Duplo tenant
@@ -37,6 +52,33 @@ type DuploS3Bucket struct {
 	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
 	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
 	Policies          []string `json:"Policies,omitempty"`
+}
+
+// DuploApplicationLB represents an AWS application load balancer resource for a Duplo tenant
+type DuploApplicationLB struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	Name             string `json:"Name,omitempty"`
+	Arn              string `json:"Arn,omitempty"`
+	DNSName          string `json:"MetaData,omitempty"`
+	EnableAccessLogs bool   `json:"EnableAccessLogs,omitempty"`
+	IsInternal       bool   `json:"IsInternal,omitempty"`
+}
+
+// DuploAwsLBConfiguration represents a request to create an AWS application load balancer resource
+type DuploAwsLBConfiguration struct {
+	Name             string `json:"Name"`
+	State            string `json:"State,omitempty"`
+	IsInternal       bool   `json:"IsInternal,omitempty"`
+	EnableAccessLogs bool   `json:"EnableAccessLogs,omitempty"`
+}
+
+// DuploAwsLBAccessLogsRequest represents a request to create an S3 bucket resource
+type DuploAwsLBAccessLogsRequest struct {
+	Name    string `json:"RoleName"`
+	State   string `json:"State"`
+	IsEcsLB bool   `json:"IsEcsLB"`
 }
 
 // DuploS3BucketRequest represents a request to create an S3 bucket resource
@@ -96,8 +138,24 @@ func (c *Client) TenantGetAwsCloudResource(tenantID string, resourceType int, na
 
 	// Find and return the secret with the specific type and name.
 	for _, resource := range *allResources {
-		if resource.Type == resourceType && resource.Name == name {
-			return &resource, nil
+		if resource.Type != resourceType {
+			continue
+		}
+
+		switch resourceType {
+
+		// Resources that won't have static full names.
+		case ResourceTypeApplicationLB:
+			nameParts := strings.SplitN(resource.Name, "-", 3)
+			if len(nameParts) == 3 && nameParts[2] == name {
+				return &resource, nil
+			}
+
+		// Resources that can be compared by full name.
+		default:
+			if resource.Name == name {
+				return &resource, nil
+			}
 		}
 	}
 
@@ -130,7 +188,7 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 	}
 
 	// Get the resource from Duplo.
-	resource, err := c.TenantGetAwsCloudResource(tenantID, 1, fullName)
+	resource, err := c.TenantGetAwsCloudResource(tenantID, ResourceTypeS3Bucket, fullName)
 	if err != nil || resource == nil {
 		return nil, err
 	}
@@ -148,9 +206,28 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 	}, nil
 }
 
+// TenantGetApplicationLB retrieves an application load balancer via the Duplo API
+func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApplicationLB, error) {
+
+	// Get the resource from Duplo.
+	resource, err := c.TenantGetAwsCloudResource(tenantID, ResourceTypeApplicationLB, name)
+	if err != nil || resource == nil {
+		return nil, err
+	}
+
+	return &DuploApplicationLB{
+		TenantID:         tenantID,
+		Name:             resource.Name,
+		Arn:              resource.Arn,
+		DNSName:          resource.MetaData,
+		IsInternal:       resource.IsInternal,
+		EnableAccessLogs: resource.EnableAccessLogs,
+	}, nil
+}
+
 // TenantCreateS3Bucket creates an S3 bucket resource via Duplo.
 func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketRequest) error {
-	duplo.Type = 1 // type of "1" signifies an S3 bucket
+	duplo.Type = ResourceTypeS3Bucket
 
 	// Build the request
 	rqBody, err := json.Marshal(&duplo)
@@ -191,7 +268,7 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) error {
 
 	// Build the request
 	duplo := DuploS3BucketRequest{
-		Type:  1, // type of "1" signifies an S3 bucket
+		Type:  ResourceTypeS3Bucket,
 		Name:  fullName,
 		State: "delete",
 	}
@@ -267,4 +344,103 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 
 	resource.TenantID = tenantID
 	return &resource, nil
+}
+
+// TenantUpdateApplicationLBAccessLogs creates an applicaiton LB resource via Duplo.
+func (c *Client) TenantUpdateApplicationLBAccessLogs(tenantID string, duplo DuploAwsLBAccessLogsRequest) error {
+
+	// Build the request
+	rqBody, err := json.Marshal(&duplo)
+	if err != nil {
+		log.Printf("[TRACE] TenantUpdateApplicationLBAccessLogs 1 JSON gen : %s", err.Error())
+		return err
+	}
+	url := fmt.Sprintf("%s/subscriptions/%s/UpdateLbAccessLogs", c.HostURL, tenantID)
+	log.Printf("[TRACE] TenantUpdateApplicationLBAccessLogs 2 : %s <= %s", url, rqBody)
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	if err != nil {
+		log.Printf("[TRACE] TenantUpdateApplicationLBAccessLogs 3 HTTP builder : %s", err.Error())
+		return err
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] TenantUpdateApplicationLBAccessLogs 4 HTTP POST : %s", err.Error())
+		return fmt.Errorf("Tenant %s failed to update load balancer %s: '%s'", tenantID, duplo.Name, err)
+	}
+	bodyString := string(body)
+
+	// Expect the response to be "null"
+	if bodyString == "null" {
+		return nil
+	}
+	return fmt.Errorf("Tenant %s failed to update load balancer %s: no result from backend", tenantID, duplo.Name)
+}
+
+// TenantCreateApplicationLB creates or updates an applicaiton LB resource via Duplo.
+func (c *Client) TenantCreateApplicationLB(tenantID string, duplo DuploAwsLBConfiguration) error {
+	// Build the request
+	rqBody, err := json.Marshal(&duplo)
+	if err != nil {
+		log.Printf("[TRACE] TenantCreateOrUpdateApplicationLB 1 JSON gen : %s", err.Error())
+		return err
+	}
+	url := fmt.Sprintf("%s/subscriptions/%s/ApplicationLbUpdate", c.HostURL, tenantID)
+	log.Printf("[TRACE] TenantCreateApplicationLB 2 : %s <= %s", url, rqBody)
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	if err != nil {
+		log.Printf("[TRACE] TenantCreateOrUpdateApplicationLB 3 HTTP builder : %s", err.Error())
+		return err
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] TenantCreateOrUpdateApplicationLB 4 HTTP POST : %s", err.Error())
+		return fmt.Errorf("Tenant %s failed to apply load balancer %s: '%s'", tenantID, duplo.Name, err)
+	}
+	bodyString := string(body)
+
+	// Expect the response to be "null"
+	if bodyString == "null" {
+		return nil
+	}
+	return fmt.Errorf("Tenant %s failed to apply load balancer %s: '%s'", tenantID, duplo.Name, bodyString)
+}
+
+// TenantDeleteApplicationLB deletes an AWS application LB resource via Duplo.
+func (c *Client) TenantDeleteApplicationLB(tenantID string, fullName string) error {
+
+	// Build the request
+	duplo := DuploAwsLBConfiguration{
+		Name:  fullName,
+		State: "delete",
+	}
+	rqBody, err := json.Marshal(&duplo)
+	if err != nil {
+		log.Printf("[TRACE] TenantDeleteApplicationLB 1 JSON gen : %s", err.Error())
+		return err
+	}
+	url := fmt.Sprintf("%s/subscriptions/%s/ApplicationLbUpdate", c.HostURL, tenantID)
+	log.Printf("[TRACE] TenantDeleteApplicationLB 2 : %s <= %s", url, rqBody)
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	if err != nil {
+		log.Printf("[TRACE] TenantDeleteApplicationLB 3 HTTP builder : %s", err.Error())
+		return err
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] TenantDeleteApplicationLB 4 HTTP POST : %s", err.Error())
+		return fmt.Errorf("Tenant %s failed to delete load balancer %s: '%s'", tenantID, duplo.Name, err)
+	}
+	bodyString := string(body)
+
+	// Expect the response to be "null"
+	if bodyString == "null" {
+		return nil
+	}
+	return fmt.Errorf("Tenant %s failed to delete load balancer %s: '%s'", tenantID, duplo.Name, bodyString)
 }

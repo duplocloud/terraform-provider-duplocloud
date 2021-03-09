@@ -58,6 +58,13 @@ resource "duplocloud_tenant_secret" "test" {
 }
 output "tenant_secret_name" { value = duplocloud_tenant_secret.test.name }
 
+resource "duplocloud_aws_load_balancer" "test" {
+  tenant_id = var.tenant_id
+  name = "joetest"
+  is_internal = true
+  enable_access_logs = true
+}
+
 # resource "duplocloud_ecs_task_definition" "test" {
 #   tenant_id = var.tenant_id
 #   family = "duploservices-default-joedemo"
@@ -84,13 +91,13 @@ output "tenant_secret_name" { value = duplocloud_tenant_secret.test.name }
 #   }
 # }
 
-resource "duplocloud_ecache_instance" "test" {
-  tenant_id = var.tenant_id
-  name = "joetest"
-  cache_type = 0
-  replicas = 1
-  size = "cache.t2.small"
-}
+#resource "duplocloud_ecache_instance" "test" {
+#  tenant_id = var.tenant_id
+#  name = "joetest"
+#  cache_type = 0
+#  replicas = 1
+#  size = "cache.t2.small"
+#}
 
 # resource "duplocloud_rds_instance" "test" {
 #   tenant_id = var.tenant_id
@@ -100,9 +107,9 @@ resource "duplocloud_ecache_instance" "test" {
 #   size = "db.t2.small"
 # }
 
-resource "duplocloud_aws_elasticsearch" "test" {
-  tenant_id = var.tenant_id
-  name = "joe2"
-  storage_size = 20
-  selected_zone = 1
-}
+#resource "duplocloud_aws_elasticsearch" "test" {
+#  tenant_id = var.tenant_id
+#  name = "joe2"
+#  storage_size = 20
+#  selected_zone = 1
+#}
