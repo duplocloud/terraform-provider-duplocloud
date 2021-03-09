@@ -46,10 +46,11 @@ output "aws_account_id" { value = data.aws_caller_identity.current.account_id }
 # Or, apply additional policy to an S3 bucket created by Duplo.
 resource "duplocloud_s3_bucket" "test" {
   tenant_id = var.tenant_id
-  name = "joetest2"
+  name = "joetest3"
   allow_public_access = false
   enable_versioning = true
   enable_access_logs = true
+  managed_policies = ["ssl"]
   default_encryption {
     method = "Sse"
   }

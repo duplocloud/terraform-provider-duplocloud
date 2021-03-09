@@ -216,7 +216,7 @@ func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Set the managed policies.
 	if v, ok := getAsStringArray(d, "managed_policies"); ok && v != nil {
-		duploObject.Policies = v
+		duploObject.Policies = *v
 	}
 
 	c := m.(*duplosdk.Client)
