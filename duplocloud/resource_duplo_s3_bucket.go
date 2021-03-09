@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func s3BucketSchema() map[string]*schema.Schema {
@@ -33,6 +34,49 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"enable_versioning": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
+		},
+		"enable_access_logs": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
+		},
+		"allow_public_access": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
+		},
+		"default_encryption": {
+			Type:     schema.TypeList,
+			Optional: true,
+			Computed: true,
+			MaxItems: 1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"method": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						Default:      "Sse",
+						ValidateFunc: validation.StringInSlice([]string{"None", "Sse", "AwsKms", "TenantKms"}, false),
+					},
+					// RESERVED FOR THE FUTURE
+					//
+					//"kms_key_id": {
+					//	Type:     schema.TypeString,
+					//	Optional: true,
+					//},
+				},
+			},
+		},
+		"managed_policies": {
+			Type:     schema.TypeList,
+			Optional: true,
+			Computed: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
 		"in_tenant_region": {
 			Type:     schema.TypeBool,
 			Optional: true,
@@ -52,6 +96,7 @@ func resourceS3Bucket() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceS3BucketRead,
 		CreateContext: resourceS3BucketCreate,
+		UpdateContext: resourceS3BucketUpdate,
 		DeleteContext: resourceS3BucketDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -86,10 +131,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Set simple fields first.
 	d.SetId(fmt.Sprintf("%s/%s", duplo.TenantID, name))
-	d.Set("tenant_id", tenantID)
-	d.Set("name", name)
-	d.Set("fullname", duplo.Name)
-	d.Set("arn", duplo.Arn)
+	resourceS3BucketSetData(d, tenantID, name, duplo)
 
 	log.Printf("[TRACE] resourceS3BucketRead ******** end")
 	return nil
@@ -111,7 +153,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 	// Post the object to Duplo
 	err := c.TenantCreateS3Bucket(tenantID, duploObject)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
@@ -119,7 +161,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		resp, errget := c.TenantGetS3Bucket(tenantID, duploObject.Name)
 
 		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting tenant %s bucket'%s': %s", tenantID, duploObject.Name, err))
+			return resource.NonRetryableError(fmt.Errorf("Error getting tenant %s bucket '%s': %s", tenantID, duploObject.Name, errget))
 		}
 
 		if resp == nil {
@@ -131,12 +173,64 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		return nil
 	})
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
 	}
 
-	diags := resourceS3BucketRead(ctx, d, m)
+	diags := resourceS3BucketUpdate(ctx, d, m)
 	log.Printf("[TRACE] resourceS3BucketCreate ******** end")
 	return diags
+}
+
+/// UPDATE resource
+func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceS3BucketUpdate ******** start")
+
+	// Create the request object.
+	duploObject := duplosdk.DuploS3BucketSettingsRequest{
+		Name: d.Get("name").(string),
+	}
+
+	// Set the object versioning
+	if v, ok := d.GetOk("enable_versioning"); ok && v != nil {
+		duploObject.EnableVersioning = v.(bool)
+	}
+
+	// Set the access logs flag
+	if v, ok := d.GetOk("enable_access_logs"); ok && v != nil {
+		duploObject.EnableAccessLogs = v.(bool)
+	}
+
+	// Set the public access block.
+	if v, ok := d.GetOk("allow_public_access"); ok && v != nil {
+		duploObject.AllowPublicAccess = v.(bool)
+	}
+
+	// Set the default encryption.
+	defaultEncryption, err := getOptionalBlockAsMap(d, "default_encryption")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if v, ok := defaultEncryption["method"]; ok && v != nil {
+		duploObject.DefaultEncryption = v.(string)
+	}
+
+	// Set the managed policies.
+	if v, ok := getAsStringArray(d, "managed_policies"); ok && v != nil {
+		duploObject.Policies = *v
+	}
+
+	c := m.(*duplosdk.Client)
+	tenantID := d.Get("tenant_id").(string)
+
+	// Post the object to Duplo
+	resource, err := c.TenantApplyS3BucketSettings(tenantID, duploObject)
+	if err != nil {
+		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+	}
+	resourceS3BucketSetData(d, tenantID, d.Get("name").(string), resource)
+
+	log.Printf("[TRACE] resourceS3BucketUpdate ******** end")
+	return nil
 }
 
 /// DELETE resource
@@ -157,7 +251,7 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 		resp, errget := c.TenantGetS3Bucket(idParts[0], idParts[1])
 
 		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting a bucket '%s': %s", id, err))
+			return resource.NonRetryableError(fmt.Errorf("Error getting a bucket '%s': %s", id, errget))
 		}
 
 		if resp != nil {
@@ -170,9 +264,23 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.Errorf("Error deleting s bucket '%s': %s", id, err)
 	}
 
-	// Wait 60 more seconds to deal with consistency issues.
-	time.Sleep(time.Minute)
+	// Wait 10 more seconds to deal with consistency issues.
+	time.Sleep(10 * time.Second)
 
 	log.Printf("[TRACE] resourceS3BucketDelete ******** end")
 	return nil
+}
+
+func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploS3Bucket) {
+	d.Set("tenant_id", tenantID)
+	d.Set("name", name)
+	d.Set("fullname", duplo.Name)
+	d.Set("arn", duplo.Arn)
+	d.Set("enable_versioning", duplo.EnableVersioning)
+	d.Set("enable_access_logs", duplo.EnableAccessLogs)
+	d.Set("allow_public_access", duplo.AllowPublicAccess)
+	d.Set("default_encryption", []map[string]interface{}{{
+		"method": duplo.DefaultEncryption,
+	}})
+	d.Set("managed_policies", duplo.Policies)
 }
