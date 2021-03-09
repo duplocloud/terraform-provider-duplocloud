@@ -59,8 +59,8 @@ func s3BucketSchema() map[string]*schema.Schema {
 					"method": {
 						Type:         schema.TypeString,
 						Optional:     true,
-						Default:      "AES256",
-						ValidateFunc: validation.StringInSlice([]string{"none", "AES256", "aws:kms", "tenant:kms"}, false),
+						Default:      "Sse",
+						ValidateFunc: validation.StringInSlice([]string{"None", "Sse", "AwsKms", "TenantKms"}, false),
 					},
 					// RESERVED FOR THE FUTURE
 					//
@@ -131,17 +131,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Set simple fields first.
 	d.SetId(fmt.Sprintf("%s/%s", duplo.TenantID, name))
-	d.Set("tenant_id", tenantID)
-	d.Set("name", name)
-	d.Set("fullname", duplo.Name)
-	d.Set("arn", duplo.Arn)
-	d.Set("enable_versioning", duplo.EnableVersioning)
-	d.Set("enable_access_logs", duplo.EnableAccessLogs)
-	d.Set("allow_public_access", duplo.AllowPublicAccess)
-	d.Set("default_encryption", []map[string]interface{}{{
-		"method": duplo.DefaultEncryption,
-	}})
-	d.Set("managed_policies", duplo.Policies)
+	resourceS3BucketSetData(d, tenantID, name, duplo)
 
 	log.Printf("[TRACE] resourceS3BucketRead ******** end")
 	return nil
@@ -149,22 +139,55 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 /// CREATE resource
 func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return resourceS3BucketCreateOrUpdate(ctx, d, m, true)
-}
-
-/// UPDATE resource
-func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return resourceS3BucketCreateOrUpdate(ctx, d, m, false)
-}
-
-/// CREATE or UPDATE resource
-func resourceS3BucketCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, create bool) diag.Diagnostics {
-	log.Printf("[TRACE] resourceS3BucketCreateOrUpdate ******** start")
+	log.Printf("[TRACE] resourceS3BucketCreate ******** start")
 
 	// Create the request object.
 	duploObject := duplosdk.DuploS3BucketRequest{
 		Name:           d.Get("name").(string),
 		InTenantRegion: d.Get("in_tenant_region").(bool),
+	}
+
+	c := m.(*duplosdk.Client)
+	tenantID := d.Get("tenant_id").(string)
+
+	// Post the object to Duplo
+	err := c.TenantCreateS3Bucket(tenantID, duploObject)
+	if err != nil {
+		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+	}
+
+	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
+	err = resource.RetryContext(ctx, d.Timeout("create"), func() *resource.RetryError {
+		resp, errget := c.TenantGetS3Bucket(tenantID, duploObject.Name)
+
+		if errget != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error getting tenant %s bucket '%s': %s", tenantID, duploObject.Name, errget))
+		}
+
+		if resp == nil {
+			return resource.RetryableError(fmt.Errorf("Expected tenant %s bucket '%s' to be retrieved, but got: nil", tenantID, duploObject.Name))
+		}
+
+		// Finally, we can set the ID
+		d.SetId(fmt.Sprintf("%s/%s", tenantID, duploObject.Name))
+		return nil
+	})
+	if err != nil {
+		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+	}
+
+	diags := resourceS3BucketUpdate(ctx, d, m)
+	log.Printf("[TRACE] resourceS3BucketCreate ******** end")
+	return diags
+}
+
+/// UPDATE resource
+func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceS3BucketUpdate ******** start")
+
+	// Create the request object.
+	duploObject := duplosdk.DuploS3BucketSettingsRequest{
+		Name: d.Get("name").(string),
 	}
 
 	// Set the object versioning
@@ -200,34 +223,14 @@ func resourceS3BucketCreateOrUpdate(ctx context.Context, d *schema.ResourceData,
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	err = c.TenantCreateOrUpdateS3Bucket(tenantID, duploObject, create)
+	resource, err := c.TenantApplyS3BucketSettings(tenantID, duploObject)
 	if err != nil {
 		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
 	}
+	resourceS3BucketSetData(d, tenantID, d.Get("name").(string), resource)
 
-	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
-	err = resource.RetryContext(ctx, d.Timeout("create"), func() *resource.RetryError {
-		resp, errget := c.TenantGetS3Bucket(tenantID, duploObject.Name)
-
-		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting tenant %s bucket '%s': %s", tenantID, duploObject.Name, errget))
-		}
-
-		if resp == nil {
-			return resource.RetryableError(fmt.Errorf("Expected tenant %s bucket '%s' to be retrieved, but got: nil", tenantID, duploObject.Name))
-		}
-
-		// Finally, we can set the ID
-		d.SetId(fmt.Sprintf("%s/%s", tenantID, duploObject.Name))
-		return nil
-	})
-	if err != nil {
-		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
-	}
-
-	diags := resourceS3BucketRead(ctx, d, m)
-	log.Printf("[TRACE] resourceS3BucketCreateOrUpdate ******** end")
-	return diags
+	log.Printf("[TRACE] resourceS3BucketUpdate ******** end")
+	return nil
 }
 
 /// DELETE resource
@@ -266,4 +269,18 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 
 	log.Printf("[TRACE] resourceS3BucketDelete ******** end")
 	return nil
+}
+
+func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploS3Bucket) {
+	d.Set("tenant_id", tenantID)
+	d.Set("name", name)
+	d.Set("fullname", duplo.Name)
+	d.Set("arn", duplo.Arn)
+	d.Set("enable_versioning", duplo.EnableVersioning)
+	d.Set("enable_access_logs", duplo.EnableAccessLogs)
+	d.Set("allow_public_access", duplo.AllowPublicAccess)
+	d.Set("default_encryption", []map[string]interface{}{{
+		"method": duplo.DefaultEncryption,
+	}})
+	d.Set("managed_policies", duplo.Policies)
 }

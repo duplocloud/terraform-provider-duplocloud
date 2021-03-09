@@ -51,7 +51,7 @@ resource "duplocloud_s3_bucket" "test" {
   enable_versioning = true
   enable_access_logs = true
   default_encryption {
-    method = "tenant:kms"
+    method = "Sse"
   }
 }
 

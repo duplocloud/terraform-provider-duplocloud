@@ -41,10 +41,15 @@ type DuploS3Bucket struct {
 
 // DuploS3BucketRequest represents a request to create an S3 bucket resource
 type DuploS3BucketRequest struct {
-	Type              int      `json:"ResourceType"`
+	Type           int    `json:"ResourceType"`
+	Name           string `json:"Name"`
+	State          string `json:"State,omitempty"`
+	InTenantRegion bool   `json:"InTenantRegion"`
+}
+
+// DuploS3BucketSettingsRequest represents a request to create an S3 bucket resource
+type DuploS3BucketSettingsRequest struct {
 	Name              string   `json:"Name"`
-	State             string   `json:"State,omitempty"`
-	InTenantRegion    bool     `json:"InTenantRegion"`
 	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
 	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
 	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
@@ -142,12 +147,9 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 	}, nil
 }
 
-// TenantCreateOrUpdateS3Bucket creates or updates an S3 bucket resource via Duplo.
-func (c *Client) TenantCreateOrUpdateS3Bucket(tenantID string, duplo DuploS3BucketRequest, create bool) error {
+// TenantCreateS3Bucket creates an S3 bucket resource via Duplo.
+func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketRequest) error {
 	duplo.Type = 1 // type of "1" signifies an S3 bucket
-	if !create {
-		duplo.State = "update"
-	}
 
 	// Build the request
 	rqBody, err := json.Marshal(&duplo)
@@ -156,7 +158,7 @@ func (c *Client) TenantCreateOrUpdateS3Bucket(tenantID string, duplo DuploS3Buck
 		return err
 	}
 	url := fmt.Sprintf("%s/subscriptions/%s/S3BucketUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantCreateOrUpdateS3Bucket 2 : %s <= %s", url, rqBody)
+	log.Printf("[TRACE] TenantCreateS3Bucket 2 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
 	if err != nil {
 		log.Printf("[TRACE] TenantCreateS3Bucket 3 HTTP builder : %s", err.Error())
@@ -166,7 +168,7 @@ func (c *Client) TenantCreateOrUpdateS3Bucket(tenantID string, duplo DuploS3Buck
 	// Call the API and get the response
 	body, err := c.doRequest(req)
 	if err != nil {
-		log.Printf("[TRACE] TenantCreateOrUpdateS3Bucket 4 HTTP POST : %s", err.Error())
+		log.Printf("[TRACE] TenantCreateS3Bucket 4 HTTP POST : %s", err.Error())
 		return fmt.Errorf("Tenant %s failed to create bucket %s: '%s'", tenantID, duplo.Name, err)
 	}
 	bodyString := string(body)
@@ -218,4 +220,50 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) error {
 		return nil
 	}
 	return fmt.Errorf("Tenant %s failed to delete bucket %s: '%s'", tenantID, duplo.Name, bodyString)
+}
+
+// TenantApplyS3BucketSettings applies settings to an S3 bucket resource via Duplo.
+func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, error) {
+	// Figure out the full resource name.
+	fullName, err := c.TenantGetS3BucketFullName(tenantID, duplo.Name)
+	if err != nil {
+		return nil, err
+	}
+	duplo.Name = fullName
+
+	// Build the request
+	rqBody, err := json.Marshal(&duplo)
+	if err != nil {
+		log.Printf("[TRACE] TenantApplyS3BucketSettings 1 JSON gen : %s", err.Error())
+		return nil, err
+	}
+	url := fmt.Sprintf("%s/subscriptions/%s/ApplyS3BucketSettings", c.HostURL, tenantID)
+	log.Printf("[TRACE] TenantApplyS3BucketSettings 2 : %s <= %s", url, rqBody)
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	if err != nil {
+		log.Printf("[TRACE] TenantApplyS3BucketSettings 3 HTTP builder : %s", err.Error())
+		return nil, err
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] TenantApplyS3BucketSettings 4 HTTP POST : %s", err.Error())
+		return nil, fmt.Errorf("Tenant %s failed to update bucket %s: '%s'", tenantID, duplo.Name, err)
+	}
+	bodyString := string(body)
+
+	// Return it as a list.
+	resource := DuploS3Bucket{}
+	if bodyString == "" {
+		log.Printf("[TRACE] TenantApplyS3BucketSettings 5 NO RESULT : %s", bodyString)
+		return nil, fmt.Errorf("Tenant %s failed to update bucket %s: no result from backend", tenantID, duplo.Name)
+	}
+	err = json.Unmarshal(body, &resource)
+	if err != nil {
+		return nil, err
+	}
+
+	resource.TenantID = tenantID
+	return &resource, nil
 }
