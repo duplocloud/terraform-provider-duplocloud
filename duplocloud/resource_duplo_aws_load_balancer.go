@@ -43,6 +43,11 @@ func awsLoadBalancerSchema() map[string]*schema.Schema {
 			Optional: true,
 			Computed: true,
 		},
+		"web_acl_id": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
+		},
 		"tags": {
 			Type:     schema.TypeList,
 			Computed: true,
@@ -87,6 +92,12 @@ func resourceAwsLoadBalancerRead(ctx context.Context, d *schema.ResourceData, m 
 	}
 	if err != nil {
 		return diag.Errorf("Unable to retrieve tenant %s load balancer '%s': %s", tenantID, name, err)
+	}
+
+	// Next, get the web ACL.
+	duplo.WebACLID, err = c.TenantGetApplicationLBWaf(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Unable to retrieve tenant %s load balancer '%s' WAF: %s", tenantID, name, err)
 	}
 
 	// Set simple fields first.
@@ -134,23 +145,38 @@ func resourceAwsLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, 
 func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** start")
 
-	// Create the request object.
-	duploObject := duplosdk.DuploAwsLBAccessLogsRequest{Name: d.Get("name").(string), IsEcsLB: true}
+	c := m.(*duplosdk.Client)
+	tenantID := d.Get("tenant_id").(string)
+
+	// apply access logs settings
+	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** update access logs: start")
+	duploObject := duplosdk.DuploAwsLBAccessLogsRequest{Name: d.Get("name").(string)}
 	enableAccessLogs := d.Get("enable_access_logs").(bool)
 	if enableAccessLogs {
 		duploObject.State = "create"
 	} else {
 		duploObject.State = "delete"
 	}
-
-	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
-
-	// Post the object to Duplo
 	err := c.TenantUpdateApplicationLBAccessLogs(tenantID, duploObject)
 	if err != nil {
-		return diag.Errorf("Error applying load balancer '%s/%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("Error configuring load balancer access logs '%s/%s': %s", tenantID, duploObject.Name, err)
 	}
+	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** update access logs: end")
+
+	// apply WAF settings
+	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** update WAF: start")
+	wafRequest := duplosdk.DuploAwsWafUpdateRequest{Name: d.Get("name").(string)}
+	if webACLID, ok := d.GetOk("web_acl_id"); ok && webACLID != nil && webACLID.(string) != "" {
+		wafRequest.State = "create"
+		wafRequest.WebACLID = webACLID.(string)
+	} else {
+		duploObject.State = "delete"
+	}
+	err = c.TenantUpdateApplicationLBWaf(tenantID, wafRequest)
+	if err != nil {
+		return diag.Errorf("Error configuring load balancer WAF '%s/%s': %s", tenantID, duploObject.Name, err)
+	}
+	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** update WAF: end")
 
 	// Get the result from Duplo, overriding any fields that might be cached by the backend.
 	resource, err := c.TenantGetApplicationLB(tenantID, duploObject.Name)
@@ -158,6 +184,7 @@ func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Error retrieving load balancer '%s/%s': %s", tenantID, duploObject.Name, err)
 	}
 	resource.EnableAccessLogs = enableAccessLogs
+	resource.WebACLID = wafRequest.WebACLID
 	resourceAwsLoadBalancerSetData(d, tenantID, resource.Name, resource)
 
 	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** end")
@@ -196,5 +223,6 @@ func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, nam
 	d.Set("arn", duplo.Arn)
 	d.Set("is_internal", duplo.IsInternal)
 	d.Set("enable_access_logs", duplo.EnableAccessLogs)
+	d.Set("web_acl_id", duplo.WebACLID)
 	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 }

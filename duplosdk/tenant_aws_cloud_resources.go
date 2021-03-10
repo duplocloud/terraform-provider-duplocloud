@@ -37,7 +37,8 @@ type DuploAwsCloudResource struct {
 	Policies          []string `json:"Policies,omitempty"`
 
 	// Only Load balancer
-	IsInternal bool `json:"IsInternal,omitempty"`
+	IsInternal bool   `json:"IsInternal,omitempty"`
+	WebACLID   string `json:"WebACLID,omitempty"`
 }
 
 // DuploS3Bucket represents an S3 bucket resource for a Duplo tenant
@@ -66,6 +67,7 @@ type DuploApplicationLB struct {
 	DNSName          string                 `json:"MetaData,omitempty"`
 	EnableAccessLogs bool                   `json:"EnableAccessLogs,omitempty"`
 	IsInternal       bool                   `json:"IsInternal,omitempty"`
+	WebACLID         string                 `json:"WebACLID,omitempty"`
 	Tags             *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
 
@@ -81,6 +83,15 @@ type DuploAwsLBConfiguration struct {
 type DuploAwsLBAccessLogsRequest struct {
 	Name         string `json:"RoleName"`
 	State        string `json:"State"`
+	IsEcsLB      bool   `json:"IsEcsLB"`
+	IsPassThruLB bool   `json:"IsPassThruLB"`
+}
+
+// DuploAwsWafUpdateRequest represents a request to create an S3 bucket resource
+type DuploAwsWafUpdateRequest struct {
+	Name         string `json:"RoleName"`
+	State        string `json:"State"`
+	WebACLID     string `json:"WebAclId"`
 	IsEcsLB      bool   `json:"IsEcsLB"`
 	IsPassThruLB bool   `json:"IsPassThruLB"`
 }
@@ -337,7 +348,7 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 	}
 	bodyString := string(body)
 
-	// Return it as a list.
+	// Return it as a resource.
 	resource := DuploS3Bucket{}
 	if bodyString == "" {
 		log.Printf("[TRACE] TenantApplyS3BucketSettings 5 NO RESULT : %s", bodyString)
@@ -352,7 +363,7 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 	return &resource, nil
 }
 
-// TenantUpdateApplicationLBAccessLogs creates an applicaiton LB resource via Duplo.
+// TenantUpdateApplicationLBAccessLogs update an application LB resource's access log settings via Duplo.
 func (c *Client) TenantUpdateApplicationLBAccessLogs(tenantID string, duplo DuploAwsLBAccessLogsRequest) error {
 
 	// Build the request
@@ -385,26 +396,91 @@ func (c *Client) TenantUpdateApplicationLBAccessLogs(tenantID string, duplo Dupl
 	return fmt.Errorf("Tenant %s failed to update load balancer %s: no result from backend", tenantID, duplo.Name)
 }
 
-// TenantCreateApplicationLB creates or updates an applicaiton LB resource via Duplo.
-func (c *Client) TenantCreateApplicationLB(tenantID string, duplo DuploAwsLBConfiguration) error {
+// TenantUpdateApplicationLBWaf updates an application LB resource's WAF association via Duplo.
+func (c *Client) TenantUpdateApplicationLBWaf(tenantID string, duplo DuploAwsWafUpdateRequest) error {
+
 	// Build the request
+	duplo.IsPassThruLB = true
 	rqBody, err := json.Marshal(&duplo)
 	if err != nil {
-		log.Printf("[TRACE] TenantCreateOrUpdateApplicationLB 1 JSON gen : %s", err.Error())
+		log.Printf("[TRACE] TenantUpdateApplicationLBWaf 1 JSON gen : %s", err.Error())
 		return err
 	}
-	url := fmt.Sprintf("%s/subscriptions/%s/ApplicationLbUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantCreateApplicationLB 2 : %s <= %s", url, rqBody)
+	url := fmt.Sprintf("%s/subscriptions/%s/UpdateWafInLb", c.HostURL, tenantID)
+	log.Printf("[TRACE] TenantUpdateApplicationLBWaf 2 : %s <= %s", url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
 	if err != nil {
-		log.Printf("[TRACE] TenantCreateOrUpdateApplicationLB 3 HTTP builder : %s", err.Error())
+		log.Printf("[TRACE] TenantUpdateApplicationLBWaf 3 HTTP builder : %s", err.Error())
 		return err
 	}
 
 	// Call the API and get the response
 	body, err := c.doRequest(req)
 	if err != nil {
-		log.Printf("[TRACE] TenantCreateOrUpdateApplicationLB 4 HTTP POST : %s", err.Error())
+		log.Printf("[TRACE] TenantUpdateApplicationLBWaf 4 HTTP POST : %s", err.Error())
+		return fmt.Errorf("Tenant %s failed to update load balancer %s: '%s'", tenantID, duplo.Name, err)
+	}
+	bodyString := string(body)
+
+	// Expect the response to be "null"
+	if bodyString == "null" {
+		return nil
+	}
+	return fmt.Errorf("Tenant %s failed to update load balancer %s: no result from backend", tenantID, duplo.Name)
+}
+
+// TenantGetApplicationLBWaf retrieves an application LB resource's WAF association via Duplo.
+func (c *Client) TenantGetApplicationLBWaf(tenantID string, name string) (string, error) {
+
+	// Build the request
+	url := fmt.Sprintf("%s/subscriptions/%s/GetWafInPassThruLb/%s", c.HostURL, tenantID, name)
+	log.Printf("[TRACE] TenantGetApplicationLBWaf 2 : %s", url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Printf("[TRACE] TenantGetApplicationLBWaf 3 HTTP builder : %s", err.Error())
+		return "", err
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] TenantGetApplicationLBWaf 4 HTTP POST : %s", err.Error())
+		return "", fmt.Errorf("Tenant %s failed to get load balancer %s WAF: %s", tenantID, name, err)
+	}
+	bodyString := string(body)
+
+	// Expect the response to be a string or "null"
+	webACLID := ""
+	if bodyString != "null" {
+		err = json.Unmarshal(body, &webACLID)
+	}
+	if err != nil {
+		return "", err
+	}
+
+	return webACLID, nil
+}
+
+// TenantCreateApplicationLB creates an application LB resource via Duplo.
+func (c *Client) TenantCreateApplicationLB(tenantID string, duplo DuploAwsLBConfiguration) error {
+	// Build the request
+	rqBody, err := json.Marshal(&duplo)
+	if err != nil {
+		log.Printf("[TRACE] TenantCreateApplicationLB 1 JSON gen : %s", err.Error())
+		return err
+	}
+	url := fmt.Sprintf("%s/subscriptions/%s/ApplicationLbUpdate", c.HostURL, tenantID)
+	log.Printf("[TRACE] TenantCreateApplicationLB 2 : %s <= %s", url, rqBody)
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	if err != nil {
+		log.Printf("[TRACE] TenantCreateApplicationLB 3 HTTP builder : %s", err.Error())
+		return err
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] TenantCreateApplicationLB 4 HTTP POST : %s", err.Error())
 		return fmt.Errorf("Tenant %s failed to apply load balancer %s: '%s'", tenantID, duplo.Name, err)
 	}
 	bodyString := string(body)
