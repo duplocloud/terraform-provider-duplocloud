@@ -444,7 +444,7 @@ func (c *Client) TenantGetApplicationLBWaf(tenantID string, name string) (string
 	// Call the API and get the response
 	body, err := c.doRequest(req)
 	if err != nil {
-		log.Printf("[TRACE] TenantGetApplicationLBWaf 4 HTTP POST : %s", err.Error())
+		log.Printf("[TRACE] TenantGetApplicationLBWaf 4 HTTP GET : %s", err.Error())
 		return "", fmt.Errorf("Tenant %s failed to get load balancer %s WAF: %s", tenantID, name, err)
 	}
 	bodyString := string(body)
