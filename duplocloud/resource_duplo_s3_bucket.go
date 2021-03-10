@@ -88,6 +88,11 @@ func s3BucketSchema() map[string]*schema.Schema {
 				return d.Id() != "" && old == ""
 			},
 		},
+		"tags": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem:     KeyValueSchema(),
+		},
 	}
 }
 
@@ -283,4 +288,5 @@ func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name strin
 		"method": duplo.DefaultEncryption,
 	}})
 	d.Set("managed_policies", duplo.Policies)
+	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 }

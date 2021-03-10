@@ -43,6 +43,11 @@ func awsLoadBalancerSchema() map[string]*schema.Schema {
 			Optional: true,
 			Computed: true,
 		},
+		"tags": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem:     KeyValueSchema(),
+		},
 	}
 }
 
@@ -191,4 +196,5 @@ func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, nam
 	d.Set("arn", duplo.Arn)
 	d.Set("is_internal", duplo.IsInternal)
 	d.Set("enable_access_logs", duplo.EnableAccessLogs)
+	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 }

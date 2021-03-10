@@ -27,7 +27,8 @@ type DuploAwsCloudResource struct {
 	MetaData string `json:"MetaData,omitempty"`
 
 	// S3 bucket and load balancer
-	EnableAccessLogs bool `json:"EnableAccessLogs,omitempty"`
+	EnableAccessLogs bool                   `json:"EnableAccessLogs,omitempty"`
+	Tags             *[]DuploKeyStringValue `json:"Tags,omitempty"`
 
 	// Only S3 bucket
 	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
@@ -44,14 +45,15 @@ type DuploS3Bucket struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
 
-	Name              string   `json:"Name,omitempty"`
-	Arn               string   `json:"Arn,omitempty"`
-	MetaData          string   `json:"MetaData,omitempty"`
-	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
-	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
-	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
-	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
-	Policies          []string `json:"Policies,omitempty"`
+	Name              string                 `json:"Name,omitempty"`
+	Arn               string                 `json:"Arn,omitempty"`
+	MetaData          string                 `json:"MetaData,omitempty"`
+	EnableVersioning  bool                   `json:"EnableVersioning,omitempty"`
+	EnableAccessLogs  bool                   `json:"EnableAccessLogs,omitempty"`
+	AllowPublicAccess bool                   `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryption string                 `json:"DefaultEncryption,omitempty"`
+	Policies          []string               `json:"Policies,omitempty"`
+	Tags              *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
 
 // DuploApplicationLB represents an AWS application load balancer resource for a Duplo tenant
@@ -59,11 +61,12 @@ type DuploApplicationLB struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
 
-	Name             string `json:"Name,omitempty"`
-	Arn              string `json:"Arn,omitempty"`
-	DNSName          string `json:"MetaData,omitempty"`
-	EnableAccessLogs bool   `json:"EnableAccessLogs,omitempty"`
-	IsInternal       bool   `json:"IsInternal,omitempty"`
+	Name             string                 `json:"Name,omitempty"`
+	Arn              string                 `json:"Arn,omitempty"`
+	DNSName          string                 `json:"MetaData,omitempty"`
+	EnableAccessLogs bool                   `json:"EnableAccessLogs,omitempty"`
+	IsInternal       bool                   `json:"IsInternal,omitempty"`
+	Tags             *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
 
 // DuploAwsLBConfiguration represents a request to create an AWS application load balancer resource
@@ -200,6 +203,7 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 		EnableAccessLogs:  resource.EnableAccessLogs,
 		DefaultEncryption: resource.DefaultEncryption,
 		Policies:          resource.Policies,
+		Tags:              resource.Tags,
 	}, nil
 }
 
@@ -223,6 +227,7 @@ func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApp
 		DNSName:          resource.MetaData,
 		IsInternal:       resource.IsInternal,
 		EnableAccessLogs: resource.EnableAccessLogs,
+		Tags:             resource.Tags,
 	}, nil
 }
 
