@@ -180,7 +180,7 @@ func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.Resour
 			return resource.NonRetryableError(fmt.Errorf("Error getting %s '%s': %s", kind, id, errget))
 		}
 
-		if resp != nil && !(reflect.ValueOf(resp).Kind() == reflect.Ptr && reflect.ValueOf(resp).IsNil()) {
+		if !isInterfaceNil(resp) {
 			return resource.RetryableError(fmt.Errorf("Expected %s '%s' to be missing, but it still exists", kind, id))
 		}
 
@@ -200,7 +200,7 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 			return resource.NonRetryableError(fmt.Errorf("Error getting %s '%s': %s", kind, id, errget))
 		}
 
-		if resp == nil || (reflect.ValueOf(resp).Kind() == reflect.Ptr && reflect.ValueOf(resp).IsNil()) {
+		if isInterfaceNil(resp) {
 			return resource.RetryableError(fmt.Errorf("Expected %s '%s' to be retrieved, but got: nil", kind, id))
 		}
 
@@ -210,4 +210,8 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 		return diag.Errorf("Error creating %s '%s': %s", kind, id, err)
 	}
 	return nil
+}
+
+func isInterfaceNil(v interface{}) bool {
+	return v == nil || (reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil())
 }
