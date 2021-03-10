@@ -139,24 +139,8 @@ func (c *Client) TenantGetAwsCloudResource(tenantID string, resourceType int, na
 
 	// Find and return the secret with the specific type and name.
 	for _, resource := range *allResources {
-		if resource.Type != resourceType {
-			continue
-		}
-
-		switch resourceType {
-
-		// Resources that won't have static full names.
-		case ResourceTypeApplicationLB:
-			nameParts := strings.SplitN(resource.Name, "-", 3)
-			if len(nameParts) == 3 && nameParts[2] == name {
-				return &resource, nil
-			}
-
-		// Resources that can be compared by full name.
-		default:
-			if resource.Name == name {
-				return &resource, nil
-			}
+		if resource.Type == resourceType && resource.Name == name {
+			return &resource, nil
 		}
 	}
 
@@ -178,6 +162,18 @@ func (c *Client) TenantGetS3BucketFullName(tenantID string, name string) (string
 	}
 
 	return fmt.Sprintf("duploservices-%s-%s-%s", tenant.AccountName, name, accountID), nil
+}
+
+// TenantGetApplicationLbFullName retrieves the full name of a pass-thru AWS application load balancer.
+func (c *Client) TenantGetApplicationLbFullName(tenantID string, name string) (string, error) {
+
+	// Figure out the full resource name.
+	tenant, err := c.GetTenantForUser(tenantID)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("duplo3-%s-%s", tenant.AccountName, name), nil
 }
 
 // TenantGetS3Bucket retrieves a managed S3 bucket via the Duplo API
@@ -208,10 +204,14 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 }
 
 // TenantGetApplicationLB retrieves an application load balancer via the Duplo API
-func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApplicationLB, error) {
+func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApplicationLB, error) { // Figure out the full resource name.
+	fullName, err := c.TenantGetApplicationLbFullName(tenantID, name)
+	if err != nil {
+		return nil, err
+	}
 
 	// Get the resource from Duplo.
-	resource, err := c.TenantGetAwsCloudResource(tenantID, ResourceTypeApplicationLB, name)
+	resource, err := c.TenantGetAwsCloudResource(tenantID, ResourceTypeApplicationLB, fullName)
 	if err != nil || resource == nil {
 		return nil, err
 	}
@@ -412,7 +412,11 @@ func (c *Client) TenantCreateApplicationLB(tenantID string, duplo DuploAwsLBConf
 }
 
 // TenantDeleteApplicationLB deletes an AWS application LB resource via Duplo.
-func (c *Client) TenantDeleteApplicationLB(tenantID string, fullName string) error {
+func (c *Client) TenantDeleteApplicationLB(tenantID string, name string) error {
+	fullName, err := c.TenantGetApplicationLbFullName(tenantID, name)
+	if err != nil {
+		return err
+	}
 
 	// Build the request
 	duplo := DuploAwsLBConfiguration{

@@ -60,7 +60,7 @@ output "tenant_secret_name" { value = duplocloud_tenant_secret.test.name }
 
 resource "duplocloud_aws_load_balancer" "test" {
   tenant_id = var.tenant_id
-  name = "joetest"
+  name = "joetest2"
   is_internal = true
   enable_access_logs = true
 }
