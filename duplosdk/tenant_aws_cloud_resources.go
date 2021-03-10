@@ -76,9 +76,10 @@ type DuploAwsLBConfiguration struct {
 
 // DuploAwsLBAccessLogsRequest represents a request to create an S3 bucket resource
 type DuploAwsLBAccessLogsRequest struct {
-	Name    string `json:"RoleName"`
-	State   string `json:"State"`
-	IsEcsLB bool   `json:"IsEcsLB"`
+	Name         string `json:"RoleName"`
+	State        string `json:"State"`
+	IsEcsLB      bool   `json:"IsEcsLB"`
+	IsPassThruLB bool   `json:"IsPassThruLB"`
 }
 
 // DuploS3BucketRequest represents a request to create an S3 bucket resource
@@ -350,6 +351,7 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 func (c *Client) TenantUpdateApplicationLBAccessLogs(tenantID string, duplo DuploAwsLBAccessLogsRequest) error {
 
 	// Build the request
+	duplo.IsPassThruLB = true
 	rqBody, err := json.Marshal(&duplo)
 	if err != nil {
 		log.Printf("[TRACE] TenantUpdateApplicationLBAccessLogs 1 JSON gen : %s", err.Error())

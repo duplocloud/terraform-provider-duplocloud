@@ -36,6 +36,7 @@ func awsLoadBalancerSchema() map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Computed: true,
+			ForceNew: true,
 		},
 		"enable_access_logs": {
 			Type:     schema.TypeBool,
@@ -85,7 +86,7 @@ func resourceAwsLoadBalancerRead(ctx context.Context, d *schema.ResourceData, m 
 
 	// Set simple fields first.
 	d.SetId(fmt.Sprintf("%s/%s", duplo.TenantID, name))
-
+	resourceAwsLoadBalancerSetData(d, tenantID, name, duplo)
 	log.Printf("[TRACE] resourceAwsLoadBalancerRead ******** end")
 	return nil
 }
