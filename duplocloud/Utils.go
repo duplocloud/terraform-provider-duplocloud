@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -179,7 +180,7 @@ func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.Resour
 			return resource.NonRetryableError(fmt.Errorf("Error getting %s '%s': %s", kind, id, errget))
 		}
 
-		if resp != nil {
+		if resp != nil && !(reflect.ValueOf(resp).Kind() == reflect.Ptr && reflect.ValueOf(resp).IsNil()) {
 			return resource.RetryableError(fmt.Errorf("Expected %s '%s' to be missing, but it still exists", kind, id))
 		}
 
@@ -199,7 +200,7 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 			return resource.NonRetryableError(fmt.Errorf("Error getting %s '%s': %s", kind, id, errget))
 		}
 
-		if resp == nil {
+		if resp == nil || (reflect.ValueOf(resp).Kind() == reflect.Ptr && reflect.ValueOf(resp).IsNil()) {
 			return resource.RetryableError(fmt.Errorf("Expected %s '%s' to be retrieved, but got: nil", kind, id))
 		}
 

@@ -49,7 +49,7 @@ output "tenant" { value = data.duplocloud_tenant.test }
 
 # Tenant listing
 data "duplocloud_tenants" "test" {}
-output "tenants" { value = data.duplocloud_tenants.test.tenants }
+output "tenants" { value = data.duplocloud_tenants.test.tenants.*.name }
 
 resource "duplocloud_tenant_secret" "test" {
   tenant_id = var.tenant_id
