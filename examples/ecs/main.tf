@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.5.1" # RELEASE VERSION
+      version = "0.5.2" # RELEASE VERSION
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -107,9 +107,12 @@ resource "duplocloud_aws_load_balancer" "test" {
 #   size = "db.t2.small"
 # }
 
-#resource "duplocloud_aws_elasticsearch" "test" {
-#  tenant_id = var.tenant_id
-#  name = "joe2"
-#  storage_size = 20
-#  selected_zone = 1
-#}
+resource "duplocloud_aws_elasticsearch" "test" {
+ tenant_id = var.tenant_id
+ name = "joe2"
+ storage_size = 20
+ selected_zone = 1
+ enable_node_to_node_encryption = true
+ require_ssl = true
+ use_latest_tls_cipher = true
+}

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -162,26 +161,16 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
-	err = resource.RetryContext(ctx, d.Timeout("create"), func() *resource.RetryError {
-		resp, errget := c.TenantGetS3Bucket(tenantID, duploObject.Name)
-
-		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting tenant %s bucket '%s': %s", tenantID, duploObject.Name, errget))
-		}
-
-		if resp == nil {
-			return resource.RetryableError(fmt.Errorf("Expected tenant %s bucket '%s' to be retrieved, but got: nil", tenantID, duploObject.Name))
-		}
-
-		// Finally, we can set the ID
-		d.SetId(fmt.Sprintf("%s/%s", tenantID, duploObject.Name))
-		return nil
+	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "load balancer", id, func() (interface{}, error) {
+		return c.TenantGetS3Bucket(tenantID, duploObject.Name)
 	})
-	if err != nil {
-		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+	if diags != nil {
+		return diags
 	}
+	d.SetId(id)
 
-	diags := resourceS3BucketUpdate(ctx, d, m)
+	diags = resourceS3BucketUpdate(ctx, d, m)
 	log.Printf("[TRACE] resourceS3BucketCreate ******** end")
 	return diags
 }
@@ -252,21 +241,11 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the bucket.
-	err = resource.RetryContext(ctx, d.Timeout("delete"), func() *resource.RetryError {
-		resp, errget := c.TenantGetS3Bucket(idParts[0], idParts[1])
-
-		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting a bucket '%s': %s", id, errget))
-		}
-
-		if resp != nil {
-			return resource.RetryableError(fmt.Errorf("Expected bucket '%s' to be missing, but it still exists", id))
-		}
-
-		return nil
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "bucket", id, func() (interface{}, error) {
+		return c.TenantGetS3Bucket(idParts[0], idParts[1])
 	})
-	if err != nil {
-		return diag.Errorf("Error deleting s bucket '%s': %s", id, err)
+	if diag != nil {
+		return diag
 	}
 
 	// Wait 10 more seconds to deal with consistency issues.

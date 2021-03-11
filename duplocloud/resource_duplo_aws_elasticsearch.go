@@ -61,21 +61,15 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Computed: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
-		"domain_endpoint_options": {
-			Type:     schema.TypeList,
+		"require_ssl": {
+			Type:     schema.TypeBool,
+			Optional: true,
 			Computed: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"enforce_https": {
-						Type:     schema.TypeBool,
-						Computed: true,
-					},
-					"tls_security_policy": {
-						Type:     schema.TypeString,
-						Computed: true,
-					},
-				},
-			},
+		},
+		"use_latest_tls_cipher": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
 		},
 		"elasticsearch_version": {
 			Type:     schema.TypeString,
@@ -289,6 +283,8 @@ func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("advanced_options", duplo.AdvancedOptions)
 	d.Set("endpoints", duplo.Endpoints)
 	d.Set("enable_node_to_node_encryption", duplo.NodeToNodeEncryptionOptions.Enabled)
+	d.Set("require_ssl", duplo.DomainEndpointOptions.EnforceHTTPS)
+	d.Set("use_latest_tls_cipher", duplo.DomainEndpointOptions.TLSSecurityPolicy.Value == TLSSecurityPolicyPolicyMinTLS12201907)
 
 	// Set more complex fields next.
 	d.Set("cluster_config", awsElasticSearchDomainClusterConfigToState(&duplo.ClusterConfig))
@@ -299,10 +295,6 @@ func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceDa
 	}
 	d.Set("snapshot_options", []map[string]interface{}{{
 		"automated_snapshot_start_hour": duplo.SnapshotOptions.AutomatedSnapshotStartHour,
-	}})
-	d.Set("domain_endpoint_options", []map[string]interface{}{{
-		"enforce_https":       duplo.DomainEndpointOptions.EnforceHTTPS,
-		"tls_security_policy": duplo.DomainEndpointOptions.TLSSecurityPolicy.Value,
 	}})
 	d.Set("vpc_options", []map[string]interface{}{{
 		"vpc_id":             duplo.VPCOptions.VpcID,
@@ -337,8 +329,11 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 
 	// Set simple fields first.
 	duploObject := duplosdk.DuploElasticSearchDomainRequest{
-		Name:    d.Get("name").(string),
-		Version: d.Get("elasticsearch_version").(string),
+		Name:                       d.Get("name").(string),
+		Version:                    d.Get("elasticsearch_version").(string),
+		RequireSSL:                 d.Get("require_ssl").(bool),
+		UseLatestTLSCipher:         d.Get("use_latest_tls_cipher").(bool),
+		EnableNodeToNodeEncryption: d.Get("enable_node_to_node_encryption").(bool),
 		EBSOptions: duplosdk.DuploElasticSearchDomainEBSOptions{
 			VolumeSize: d.Get("storage_size").(int),
 		},
@@ -425,22 +420,15 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 	if err != nil {
 		return diag.Errorf("Error creating ElasticSearch domain '%s': %s", id, err)
 	}
-	d.SetId(id)
 
 	// Wait up to 60 seconds for Duplo to be able to return the domain's details.
-	err = resource.Retry(time.Minute, func() *resource.RetryError {
-		resp, errget := c.TenantGetElasticSearchDomain(tenantID, duploObject.Name, false)
-
-		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting ElasticSearch domain '%s': %s", id, err))
-		}
-
-		if resp == nil {
-			return resource.RetryableError(fmt.Errorf("Expected ElasticSearch domain '%s' to be retrieved, but got: nil", id))
-		}
-
-		return nil
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ElasticSearch domain", id, func() (interface{}, error) {
+		return c.TenantGetElasticSearchDomain(tenantID, duploObject.Name, false)
 	})
+	if diags != nil {
+		return diags
+	}
+	d.SetId(id)
 
 	// Wait for the instance to become available.
 	err = awsElasticSearchDomainWaitUntilAvailable(c, tenantID, duploObject.Name, d.Timeout("create"))
@@ -448,7 +436,7 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 		return diag.Errorf("Error waiting for ElasticSearch domain '%s' to be available: %s", id, err)
 	}
 
-	diags := resourceDuploAwsElasticSearchRead(ctx, d, m)
+	diags = resourceDuploAwsElasticSearchRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploAwsElasticSearchCreate ******** end")
 	return diags
 }

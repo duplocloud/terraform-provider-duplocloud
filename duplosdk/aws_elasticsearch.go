@@ -82,13 +82,16 @@ type DuploElasticSearchDomain struct {
 
 // DuploElasticSearchDomainRequest represents a request to create an AWS ElasticSearch domain for a Duplo tenant
 type DuploElasticSearchDomainRequest struct {
-	Name          string                                `json:"Name,omitempty"`
-	State         string                                `json:"State,omitempty"`
-	Version       string                                `json:"Version,omitempty"`
-	KmsKeyID      string                                `json:"KmsKeyId,omitempty"`
-	ClusterConfig DuploElasticSearchDomainClusterConfig `json:"ClusterConfig,omitempty"`
-	EBSOptions    DuploElasticSearchDomainEBSOptions    `json:"EbsOptions,omitempty"`
-	VPCOptions    DuploElasticSearchDomainVPCOptions    `json:"VPCOptions,omitempty"`
+	Name                       string                                `json:"Name,omitempty"`
+	State                      string                                `json:"State,omitempty"`
+	Version                    string                                `json:"Version,omitempty"`
+	KmsKeyID                   string                                `json:"KmsKeyId,omitempty"`
+	ClusterConfig              DuploElasticSearchDomainClusterConfig `json:"ClusterConfig,omitempty"`
+	EBSOptions                 DuploElasticSearchDomainEBSOptions    `json:"EbsOptions,omitempty"`
+	VPCOptions                 DuploElasticSearchDomainVPCOptions    `json:"VPCOptions,omitempty"`
+	EnableNodeToNodeEncryption bool                                  `json:"EnableNodeToNodeEncryption,omitempty"`
+	RequireSSL                 bool                                  `json:"RequireSSL,omitempty"`
+	UseLatestTLSCipher         bool                                  `json:"UseLatestTLSCipher,omitempty"`
 }
 
 // TenantListElasticSearchDomains retrieves a list of AWS ElasticSearch domains.
