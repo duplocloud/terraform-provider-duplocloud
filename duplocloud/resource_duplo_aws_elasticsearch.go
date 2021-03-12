@@ -239,6 +239,7 @@ func resourceDuploAwsElasticSearch() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceDuploAwsElasticSearchRead,
 		CreateContext: resourceDuploAwsElasticSearchCreate,
+		UpdateContext: resourceDuploAwsElasticSearchUpdate,
 		DeleteContext: resourceDuploAwsElasticSearchDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -441,6 +442,45 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 	return diags
 }
 
+/// UPDATE jresource
+func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceDuploAwsElasticSearchUpdate ******** start")
+
+	// Set simple fields first.
+	duploObject := duplosdk.DuploElasticSearchDomainRequest{
+		State:              "update",
+		Name:               d.Get("name").(string),
+		RequireSSL:         d.Get("require_ssl").(bool),
+		UseLatestTLSCipher: d.Get("use_latest_tls_cipher").(bool),
+	}
+
+	c := m.(*duplosdk.Client)
+	tenantID := d.Get("tenant_id").(string)
+	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
+
+	// Post the object to Duplo
+	err := c.TenantUpdateElasticSearchDomain(tenantID, &duploObject)
+	if err != nil {
+		return diag.Errorf("Error updating ElasticSearch domain '%s': %s", id, err)
+	}
+
+	// Wait up to 60 seconds for the ES domain to start processing.
+	err = awsElasticSearchDomainWaitUntilAvailable(c, tenantID, duploObject.Name, d.Timeout("update"))
+	if err != nil {
+		return diag.Errorf("Error waiting for ElasticSearch domain '%s' changes to begin processing: %s", id, err)
+	}
+
+	// Wait for the instance to become available.
+	err = awsElasticSearchDomainWaitUntilAvailable(c, tenantID, duploObject.Name, d.Timeout("update"))
+	if err != nil {
+		return diag.Errorf("Error waiting for ElasticSearch domain '%s' to be available: %s", id, err)
+	}
+
+	diags := resourceDuploAwsElasticSearchRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploAwsElasticSearchUpdate ******** end")
+	return diags
+}
+
 /// DELETE resource
 func resourceDuploAwsElasticSearchDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploAwsElasticSearchDelete ******** start")
@@ -548,7 +588,7 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 	}
 }
 
-// awsElasticSearchDomainWaitUntilAvailable waits until an ES domainis available.
+// awsElasticSearchDomainWaitUntilAvailable waits until an ES domain is unavailable.
 //
 // It should be usable both post-creation and post-modification.
 func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
@@ -579,6 +619,41 @@ func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID strin
 		},
 	}
 	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilAvailable (%s/%s)", tenantID, name)
+	_, err := stateConf.WaitForState()
+	return err
+}
+
+// awsElasticSearchDomainWaitUntilUnavailable waits until an ES domain is unavailable.
+//
+// It should be usable post-modification.
+func awsElasticSearchDomainWaitUntilUnavailable(c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &resource.StateChangeConf{
+		Pending:      []string{"created"},
+		Target:       []string{"processing", "upgrade-processing"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			status := "new"
+			resp, err := c.TenantGetElasticSearchDomain(tenantID, name, false)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp == nil {
+				status = "missing"
+			} else if resp.Processing {
+				status = "processing"
+			} else if resp.UpgradeProcessing {
+				status = "upgrade-processing"
+			} else if resp.Deleted {
+				status = "deleted"
+			} else if resp.Created {
+				status = "created"
+			}
+			return resp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilUnavailable (%s/%s)", tenantID, name)
 	_, err := stateConf.WaitForState()
 	return err
 }
