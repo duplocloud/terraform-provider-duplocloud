@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -162,40 +161,20 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 	if updating {
 		verb = "PUT"
 	}
-	rqBody, err := json.Marshal(&duploObject)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceCreateOrUpdate 1 JSON gen : %s", err.Error())
-		return nil, err
-	}
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/RDSDBInstance", c.HostURL, tenantID)
-	log.Printf("[TRACE] RdsInstanceCreate 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceCreateOrUpdate 3 HTTP builder : %s", err.Error())
-		return nil, err
-	}
 
-	// Call the API and get the response
-	body, err := c.doRequest(req)
+	// Call the API.
+	rp := DuploRdsInstance{}
+	err := c.doAPIWithRequest(
+		verb,
+		fmt.Sprintf("RdsInstanceCreateOrUpdate(%s, duplo%s)", tenantID, duploObject.Name),
+		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance", tenantID),
+		&duploObject,
+		&rp,
+	)
 	if err != nil {
-		log.Printf("[TRACE] RdsInstanceCreateOrUpdate 4 HTTP %s : %s", verb, err.Error())
 		return nil, err
 	}
-	bodyString := string(body)
-	log.Printf("[TRACE] RdsInstanceCreateOrUpdate 4 HTTP RESPONSE : %s", bodyString)
-
-	// Handle the response
-	rpObject := DuploRdsInstance{}
-	if bodyString == "" {
-		log.Printf("[TRACE] RdsInstanceCreateOrUpdate 5 NO RESULT : %s", bodyString)
-		return nil, err
-	}
-	err = json.Unmarshal(body, &rpObject)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceCreateOrUpdate 6 JSON parse : %s", err.Error())
-		return nil, err
-	}
-	return &rpObject, nil
+	return &rp, err
 }
 
 // RdsInstanceDelete deletes an RDS instance via the Duplo API.
@@ -204,35 +183,19 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, error) {
 	tenantID := idParts[2]
 	name := idParts[4]
 
-	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/RDSDBInstance/duplo%s", c.HostURL, tenantID, name)
-	log.Printf("[TRACE] RdsInstanceGet 1 : %s", url)
-	req, err := http.NewRequest("DELETE", url, nil)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceGet 2 HTTP builder : %s", err.Error())
-		return nil, err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	bodyString := string(body)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceGet 3 HTTP DELETE : %s", err.Error())
-		return nil, err
-	}
-	log.Printf("[TRACE] RdsInstanceGet 4 HTTP RESPONSE : %s", bodyString)
-
-	// Parse the response into a duplo object
+	// Call the API.
 	duploObject := DuploRdsInstance{}
-	if bodyString == "" {
-		// tolerate an empty response from DELETE
+	err := c.deleteAPI(
+		fmt.Sprintf("RdsInstanceDelete(%s, duplo%s)", tenantID, name),
+		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/duplo%s", tenantID, name),
+		&duploObject)
+	if err != nil {
+		return nil, err
+	}
+
+	// Tolerate an empty response from the DELETE.
+	if duploObject.Name == "" {
 		duploObject.Name = name
-	} else {
-		err = json.Unmarshal(body, &duploObject)
-		if err != nil {
-			log.Printf("[TRACE] RdsInstanceGet 5 JSON PARSE : %s", bodyString)
-			return nil, err
-		}
 	}
 
 	// Fill in the tenant ID and return the object
@@ -246,32 +209,13 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 	tenantID := idParts[2]
 	name := idParts[4]
 
-	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/RDSDBInstance/duplo%s", c.HostURL, tenantID, name)
-	log.Printf("[TRACE] RdsInstanceGet 1 : %s", url)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceGet 2 HTTP builder : %s", err.Error())
-		return nil, err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceGet 3 HTTP GET : %s", err.Error())
-		return nil, err
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] RdsInstanceGet 4 HTTP RESPONSE : %s", bodyString)
-
-	// Parse the response into a duplo object, detecting a missing object
-	if bodyString == "null" {
-		return nil, nil
-	}
+	// Call the API.
 	duploObject := DuploRdsInstance{}
-	err = json.Unmarshal(body, &duploObject)
+	err := c.getAPI(
+		fmt.Sprintf("RdsInstanceGet(%s, duplo%s)", tenantID, name),
+		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/duplo%s", tenantID, name),
+		&duploObject)
 	if err != nil {
-		log.Printf("[TRACE] RdsInstanceGet 5 JSON PARSE : %s", bodyString)
 		return nil, err
 	}
 
@@ -283,36 +227,13 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 
 // RdsInstanceChangePassword creates or updates an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRdsInstancePasswordChange) error {
-
-	// Build the request
-	rqBody, err := json.Marshal(&duploObject)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceChangePassword 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/RDSInstancePasswordChange", c.HostURL, tenantID)
-	log.Printf("[TRACE] RdsInstanceChangePassword 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceChangePassword 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceChangePassword 4 HTTP POST : %s", err.Error())
-		return err
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] RdsInstanceChangePassword 4 HTTP RESPONSE : %s", bodyString)
-
-	// Handle the response
-	if bodyString != "null" {
-		log.Printf("[TRACE] RdsInstanceChangePassword 5 UNEXPECTED RESULT : %s", bodyString)
-		return fmt.Errorf("Unexpected result from backend: '%s'", bodyString)
-	}
-	return nil
+	// Call the API.
+	return c.postAPI(
+		fmt.Sprintf("RdsInstanceChangePassword(%s, %s)", tenantID, duploObject.Identifier),
+		fmt.Sprintf("subscriptions/%s/RDSInstancePasswordChange", tenantID),
+		&duploObject,
+		nil,
+	)
 }
 
 // RdsInstanceWaitUntilAvailable waits until an RDS instance is available.

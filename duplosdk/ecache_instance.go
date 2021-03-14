@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -36,17 +35,17 @@ type DuploEcacheInstance struct {
  * API CALLS to duplo
  */
 
-// EcacheInstanceCreate creates an ECS service via the Duplo API.
+// EcacheInstanceCreate creates an ECache instance via the Duplo API.
 func (c *Client) EcacheInstanceCreate(tenantID string, duploObject *DuploEcacheInstance) (*DuploEcacheInstance, error) {
 	return c.EcacheInstanceCreateOrUpdate(tenantID, duploObject, false)
 }
 
-// EcacheInstanceUpdate updates an ECS service via the Duplo API.
+// EcacheInstanceUpdate updates an ECache instance via the Duplo API.
 func (c *Client) EcacheInstanceUpdate(tenantID string, duploObject *DuploEcacheInstance) (*DuploEcacheInstance, error) {
 	return c.EcacheInstanceCreateOrUpdate(tenantID, duploObject, true)
 }
 
-// EcacheInstanceCreateOrUpdate creates or updates an ECS service via the Duplo API.
+// EcacheInstanceCreateOrUpdate creates or updates an ECache instance via the Duplo API.
 func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *DuploEcacheInstance, updating bool) (*DuploEcacheInstance, error) {
 
 	// Build the request
@@ -54,77 +53,41 @@ func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *Dupl
 	if updating {
 		verb = "PUT"
 	}
-	rqBody, err := json.Marshal(&duploObject)
-	if err != nil {
-		log.Printf("[TRACE] EcacheInstanceCreateOrUpdate 1 JSON gen : %s", err.Error())
-		return nil, err
-	}
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/ECacheDBInstance", c.HostURL, tenantID)
-	log.Printf("[TRACE] EcacheInstanceCreate 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] EcacheInstanceCreateOrUpdate 3 HTTP builder : %s", err.Error())
-		return nil, err
-	}
 
-	// Call the API and get the response
-	body, err := c.doRequest(req)
+	// Call the API.
+	rp := DuploEcacheInstance{}
+	err := c.doAPIWithRequest(
+		verb,
+		fmt.Sprintf("EcacheInstanceCreateOrUpdate(%s, duplo-%s)", tenantID, duploObject.Name),
+		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance", tenantID),
+		&duploObject,
+		&rp,
+	)
 	if err != nil {
-		log.Printf("[TRACE] EcacheInstanceCreateOrUpdate 4 HTTP %s : %s", verb, err.Error())
 		return nil, err
 	}
-	bodyString := string(body)
-	log.Printf("[TRACE] EcacheInstanceCreateOrUpdate 4 HTTP RESPONSE : %s", bodyString)
-
-	// Handle the response
-	rpObject := DuploEcacheInstance{}
-	if bodyString == "" {
-		log.Printf("[TRACE] EcacheInstanceCreateOrUpdate 5 NO RESULT : %s", bodyString)
-		return nil, err
-	}
-	err = json.Unmarshal(body, &rpObject)
-	if err != nil {
-		log.Printf("[TRACE] EcacheInstanceCreateOrUpdate 6 JSON parse : %s", err.Error())
-		return nil, err
-	}
-	return &rpObject, nil
+	return &rp, err
 }
 
-// EcacheInstanceDelete deletes an ECS service via the Duplo API.
+// EcacheInstanceDelete deletes an ECache instance via the Duplo API.
 func (c *Client) EcacheInstanceDelete(id string) (*DuploEcacheInstance, error) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]
 
-	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/ECacheDBInstance/duplo-%s", c.HostURL, tenantID, name)
-	log.Printf("[TRACE] EcacheInstanceGet 1 : %s", url)
-	req, err := http.NewRequest("DELETE", url, nil)
-	if err != nil {
-		log.Printf("[TRACE] EcacheInstanceGet 2 HTTP builder : %s", err.Error())
-		return nil, err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	bodyString := string(body)
-	if err != nil {
-		log.Printf("[TRACE] EcacheInstanceGet 3 HTTP DELETE : %s", err.Error())
-		return nil, err
-	}
-	log.Printf("[TRACE] EcacheInstanceGet 4 HTTP RESPONSE : %s", bodyString)
-
-	// Parse the response into a duplo object
+	// Call the API.
 	duploObject := DuploEcacheInstance{}
-	if bodyString == "" {
-		// tolerate an empty response from DELETE
+	err := c.deleteAPI(
+		fmt.Sprintf("EcacheInstanceDelete(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/duplo-%s", tenantID, name),
+		&duploObject)
+	if err != nil {
+		return nil, err
+	}
+
+	// Tolerate an empty response from the DELETE.
+	if duploObject.Name == "" {
 		duploObject.Name = name
-	} else {
-		err = json.Unmarshal(body, &duploObject)
-		if err != nil {
-			log.Printf("[TRACE] EcacheInstanceGet 5 JSON PARSE : %s", bodyString)
-			return nil, err
-		}
 	}
 
 	// Fill in the tenant ID and return the object
@@ -138,33 +101,19 @@ func (c *Client) EcacheInstanceGet(id string) (*DuploEcacheInstance, error) {
 	tenantID := idParts[2]
 	name := idParts[4]
 
-	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/ECacheDBInstance/duplo-%s", c.HostURL, tenantID, name)
-	log.Printf("[TRACE] EcacheInstanceGet 1 : %s", url)
-	req, err := http.NewRequest("GET", url, nil)
+	// Call the API.
+	duploObject := DuploEcacheInstance{}
+	err := c.getAPI(
+		fmt.Sprintf("EcacheInstanceGet(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/duplo-%s", tenantID, name),
+		&duploObject)
 	if err != nil {
-		log.Printf("[TRACE] EcacheInstanceGet 2 HTTP builder : %s", err.Error())
 		return nil, err
 	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] EcacheInstanceGet 3 HTTP GET : %s", err.Error())
-		return nil, err
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] EcacheInstanceGet 4 HTTP RESPONSE : %s", bodyString)
 
 	// Parse the response into a duplo object, detecting a missing object
-	if bodyString == "null" {
+	if duploObject.Identifier == "" {
 		return nil, nil
-	}
-	duploObject := DuploEcacheInstance{}
-	err = json.Unmarshal(body, &duploObject)
-	if err != nil {
-		log.Printf("[TRACE] EcacheInstanceGet 5 JSON PARSE : %s", bodyString)
-		return nil, err
 	}
 
 	// Fill in the tenant ID and the name and return the object

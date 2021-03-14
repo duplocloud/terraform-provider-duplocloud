@@ -129,67 +129,79 @@ func (c *Client) doPostRequest(req *http.Request, caller string) ([]byte, error)
 
 // Utility method to call an API with a GET request, handling logging, etc.
 func (c *Client) getAPI(apiName string, apiPath string, rp interface{}) error {
+	return c.doAPI("GET", apiName, apiPath, rp)
+}
+
+// Utility method to call an API with a DELETE request, handling logging, etc.
+func (c *Client) deleteAPI(apiName string, apiPath string, rp interface{}) error {
+	return c.doAPI("DELETE", apiName, apiPath, rp)
+}
+
+// Utility method to call an API without a request body, handling logging, etc.
+func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface{}) error {
+	apiName = fmt.Sprintf("%sAPI %s", strings.ToLower(verb), apiName)
 
 	// Build the request
 	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
-	log.Printf("[TRACE] getAPI %s: prepared request: %s", apiName, url)
-	req, err := http.NewRequest("GET", url, nil)
+	log.Printf("[TRACE] %s: prepared request: %s", apiName, url)
+	req, err := http.NewRequest(verb, url, nil)
 	if err != nil {
-		log.Printf("[TRACE] getAPI %s: cannot build request: %s", apiName, err.Error())
+		log.Printf("[TRACE] %s: cannot build request: %s", apiName, err.Error())
 		return nil
 	}
 
 	// Call the API and get the response.
 	body, err := c.doRequest(req)
 	if err != nil {
-		log.Printf("[TRACE] getAPI %s: GET failed: %s", apiName, err.Error())
+		log.Printf("[TRACE] %s: failed: %s", apiName, err.Error())
 		return err
 	}
 	bodyString := string(body)
-	log.Printf("[TRACE] getAPI %s: received response: %s", apiName, bodyString)
+	log.Printf("[TRACE] %s: received response: %s", apiName, bodyString)
 
 	// Interpret the response as an object.
 	err = json.Unmarshal(body, rp)
 	if err != nil {
-		log.Printf("[TRACE] getAPI %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
+		log.Printf("[TRACE] %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
 		return err
 	}
 	return nil
 }
 
-// Utility method to call an API with a POST request, handling logging, etc.
-func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
+// Utility method to call an API with a request, handling logging, etc.
+func (c *Client) doAPIWithRequest(verb string, apiName string, apiPath string, rq interface{}, rp interface{}) error {
+	apiName = fmt.Sprintf("%sAPI %s", strings.ToLower(verb), apiName)
 
 	// Build the request
 	rqBody, err := json.Marshal(rq)
 	if err != nil {
-		log.Printf("[TRACE] postAPI %s: cannot marshal request to JSON: %s", apiName, err.Error())
+		log.Printf("[TRACE] %s: cannot marshal request to JSON: %s", apiName, err.Error())
 		return err
 	}
 	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
-	log.Printf("[TRACE] postAPI %s: prepared request: %s <= (%s)", apiName, url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	log.Printf("[TRACE] %s: prepared request: %s <= (%s)", apiName, url, rqBody)
+	req, err := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
 	if err != nil {
-		log.Printf("[TRACE] postAPI %s: cannot build request: %s", apiName, err.Error())
+		log.Printf("[TRACE] %s: cannot build request: %s", apiName, err.Error())
 		return nil
 	}
 
 	// Call the API and get the response
 	body, err := c.doPostRequest(req, apiName)
 	if err != nil {
-		log.Printf("[TRACE] postAPI %s: POST failed: %s", apiName, err.Error())
+		log.Printf("[TRACE] %s: failed: %s", apiName, err.Error())
 		return err
 	}
 	bodyString := string(body)
-	log.Printf("[TRACE] postAPI %s: received response: %s", apiName, bodyString)
+	log.Printf("[TRACE] %s: received response: %s", apiName, bodyString)
 
 	// Check for an expected "null" response.
 	if rp == nil {
-		log.Printf("[TRACE] post API %s: expected null response", apiName)
+		log.Printf("[TRACE] %s: expected null response", apiName)
 		if bodyString == "null" || bodyString == "" {
 			return nil
 		}
-		err = fmt.Errorf("post API %s: received unexpected response: %s", apiName, bodyString)
+		err = fmt.Errorf("%s: received unexpected response: %s", apiName, bodyString)
 		log.Printf("[TRACE] %s", err)
 		return err
 	}
@@ -197,10 +209,20 @@ func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp inte
 	// Otherwise, interpret it as an object.
 	err = json.Unmarshal(body, rp)
 	if err != nil {
-		log.Printf("[TRACE] postAPI %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
+		log.Printf("[TRACE] %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
 		return err
 	}
 	return nil
+}
+
+// Utility method to call an API with a PUT request, handling logging, etc.
+func (c *Client) putAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
+	return c.doAPIWithRequest("PUT", apiName, apiPath, rq, rp)
+}
+
+// Utility method to call an API with a POST request, handling logging, etc.
+func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
+	return c.doAPIWithRequest("POST", apiName, apiPath, rq, rp)
 }
 
 // StructToString converts a structure to a JSON string
