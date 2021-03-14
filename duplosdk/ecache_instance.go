@@ -49,7 +49,7 @@ func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *Dupl
 
 	// Call the API.
 	rp := DuploEcacheInstance{}
-	err := c.doAPIWithRequest(
+	err := c.doAPIWithRequestBody(
 		verb,
 		fmt.Sprintf("EcacheInstanceCreateOrUpdate(%s, duplo-%s)", tenantID, duploObject.Name),
 		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance", tenantID),

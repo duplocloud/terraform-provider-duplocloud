@@ -61,7 +61,7 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 
 	// Call the API.
 	rp := DuploRdsInstance{}
-	err := c.doAPIWithRequest(
+	err := c.doAPIWithRequestBody(
 		verb,
 		fmt.Sprintf("RdsInstanceCreateOrUpdate(%s, duplo%s)", tenantID, duploObject.Name),
 		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance", tenantID),

@@ -102,7 +102,7 @@ func (c *Client) doRequestWithStatus(req *http.Request, statusCode int) ([]byte,
 	return body, err
 }
 
-func (c *Client) doPostRequest(req *http.Request, caller string) ([]byte, error) {
+func (c *Client) doRequestWithBody(req *http.Request, caller string) ([]byte, error) {
 	req.Header.Set("Authorization", c.Token)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
@@ -180,7 +180,7 @@ func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface
 }
 
 // Utility method to call an API with a request, handling logging, etc.
-func (c *Client) doAPIWithRequest(verb string, apiName string, apiPath string, rq interface{}, rp interface{}) error {
+func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath string, rq interface{}, rp interface{}) error {
 	apiName = fmt.Sprintf("%sAPI %s", strings.ToLower(verb), apiName)
 
 	// Build the request
@@ -198,7 +198,7 @@ func (c *Client) doAPIWithRequest(verb string, apiName string, apiPath string, r
 	}
 
 	// Call the API and get the response
-	body, err := c.doPostRequest(req, apiName)
+	body, err := c.doRequestWithBody(req, apiName)
 	if err != nil {
 		log.Printf("[TRACE] %s: failed: %s", apiName, err.Error())
 		return err
@@ -228,12 +228,12 @@ func (c *Client) doAPIWithRequest(verb string, apiName string, apiPath string, r
 
 // Utility method to call an API with a PUT request, handling logging, etc.
 func (c *Client) putAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
-	return c.doAPIWithRequest("PUT", apiName, apiPath, rq, rp)
+	return c.doAPIWithRequestBody("PUT", apiName, apiPath, rq, rp)
 }
 
 // Utility method to call an API with a POST request, handling logging, etc.
 func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
-	return c.doAPIWithRequest("POST", apiName, apiPath, rq, rp)
+	return c.doAPIWithRequestBody("POST", apiName, apiPath, rq, rp)
 }
 
 // StructToString converts a structure to a JSON string
