@@ -175,7 +175,7 @@ func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp inte
 	}
 
 	// Call the API and get the response
-	body, err := c.doRequest(req)
+	body, err := c.doPostRequest(req, apiName)
 	if err != nil {
 		log.Printf("[TRACE] postAPI %s: POST failed: %s", apiName, err.Error())
 		return err
