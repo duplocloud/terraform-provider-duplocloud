@@ -154,7 +154,18 @@ func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp inte
 	bodyString := string(body)
 	log.Printf("[TRACE] post API %s: received response: %s", apiName, bodyString)
 
-	// Interpret it as an object.
+	// Check for an expected "null" response.
+	if rp == nil {
+		log.Printf("[TRACE] post API %s: expected null response", apiName)
+		if bodyString == "null" || bodyString == "" {
+			return nil
+		}
+		err = fmt.Errorf("post API %s: received unexpected response: %s", apiName, bodyString)
+		log.Printf("[TRACE] %s", err)
+		return err
+	}
+
+	// Otherwise, interpret it as an object.
 	err = json.Unmarshal(body, rp)
 	if err != nil {
 		log.Printf("[TRACE] postAPI %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
