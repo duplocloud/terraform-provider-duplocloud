@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 )
 
 const (
@@ -248,79 +247,35 @@ func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApp
 func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketRequest) error {
 	duplo.Type = ResourceTypeS3Bucket
 
-	// Build the request
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateS3Bucket 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/S3BucketUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantCreateS3Bucket 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateS3Bucket 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateS3Bucket 4 HTTP POST : %s", err.Error())
-		return fmt.Errorf("Tenant %s failed to create bucket %s: '%s'", tenantID, duplo.Name, err)
-	}
-	bodyString := string(body)
-
-	// Expect the response to be "null"
-	if bodyString == "null" {
-		return nil
-	}
-	return fmt.Errorf("Tenant %s failed to create bucket %s: '%s'", tenantID, duplo.Name, bodyString)
+	// Create the bucket via Duplo.
+	return c.postAPI(
+		fmt.Sprintf("TenantCreateS3Bucket(%s, %s)", tenantID, duplo.Name),
+		fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
+		&duplo,
+		nil)
 }
 
 // TenantDeleteS3Bucket deletes an S3 bucket resource via Duplo.
 func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) error {
-	// Figure out the full resource name.
+
+	// Get the full name of the S3 bucket
 	fullName, err := c.TenantGetS3BucketFullName(tenantID, name)
 	if err != nil {
 		return err
 	}
 
-	// Build the request
-	duplo := DuploS3BucketRequest{
-		Type:  ResourceTypeS3Bucket,
-		Name:  fullName,
-		State: "delete",
-	}
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteS3Bucket 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/S3BucketUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantDeleteS3Bucket 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteS3Bucket 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteS3Bucket 4 HTTP POST : %s", err.Error())
-		return fmt.Errorf("Tenant %s failed to create bucket %s: '%s'", tenantID, duplo.Name, err)
-	}
-	bodyString := string(body)
-
-	// Expect the response to be "null"
-	if bodyString == "null" {
-		return nil
-	}
-	return fmt.Errorf("Tenant %s failed to delete bucket %s: '%s'", tenantID, duplo.Name, bodyString)
+	// Delete the bucket via Duplo.
+	return c.postAPI(
+		fmt.Sprintf("TenantDeleteS3Bucket(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
+		&DuploS3BucketRequest{Type: ResourceTypeS3Bucket, Name: fullName, State: "delete"},
+		nil)
 }
 
 // TenantApplyS3BucketSettings applies settings to an S3 bucket resource via Duplo.
 func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, error) {
+	apiName := fmt.Sprintf("TenantApplyS3BucketSettings(%s, %s)", tenantID, duplo.Name)
+
 	// Figure out the full resource name.
 	fullName, err := c.TenantGetS3BucketFullName(tenantID, duplo.Name)
 	if err != nil {
@@ -328,41 +283,23 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 	}
 	duplo.Name = fullName
 
-	// Build the request
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantApplyS3BucketSettings 1 JSON gen : %s", err.Error())
-		return nil, err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/ApplyS3BucketSettings", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantApplyS3BucketSettings 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantApplyS3BucketSettings 3 HTTP builder : %s", err.Error())
-		return nil, err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantApplyS3BucketSettings 4 HTTP POST : %s", err.Error())
-		return nil, fmt.Errorf("Tenant %s failed to update bucket %s: '%s'", tenantID, duplo.Name, err)
-	}
-	bodyString := string(body)
-
-	// Return it as a resource.
-	resource := DuploS3Bucket{}
-	if bodyString == "" {
-		log.Printf("[TRACE] TenantApplyS3BucketSettings 5 NO RESULT : %s", bodyString)
-		return nil, fmt.Errorf("Tenant %s failed to update bucket %s: no result from backend", tenantID, duplo.Name)
-	}
-	err = json.Unmarshal(body, &resource)
+	// Apply the settings via Duplo.
+	rp := DuploS3Bucket{}
+	err = c.postAPI(apiName, fmt.Sprintf("subscriptions/%s/ApplyS3BucketSettings", tenantID), &duplo, &rp)
 	if err != nil {
 		return nil, err
 	}
 
-	resource.TenantID = tenantID
-	return &resource, nil
+	// Deal with a missing response.
+	if rp.Name == "" {
+		err := fmt.Errorf("%s: unexpected missing response from backend", apiName)
+		log.Printf("[TRACE] %s", err)
+		return nil, err
+	}
+
+	// Return the response.
+	rp.TenantID = tenantID
+	return &rp, nil
 }
 
 // TenantUpdateApplicationLbSettings updates an application LB resource's settings via Duplo.
