@@ -127,6 +127,36 @@ func (c *Client) doPostRequest(req *http.Request, caller string) ([]byte, error)
 	return body, err
 }
 
+// Utility method to call an API with a GET request, handling logging, etc.
+func (c *Client) getAPI(apiName string, apiPath string, rp interface{}) error {
+
+	// Build the request
+	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
+	log.Printf("[TRACE] getAPI %s: prepared request: %s", apiName, url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Printf("[TRACE] getAPI %s: cannot build request: %s", apiName, err.Error())
+		return nil
+	}
+
+	// Call the API and get the response.
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] getAPI %s: GET failed: %s", apiName, err.Error())
+		return err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] getAPI %s: received response: %s", apiName, bodyString)
+
+	// Interpret the response as an object.
+	err = json.Unmarshal(body, rp)
+	if err != nil {
+		log.Printf("[TRACE] getAPI %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
+		return err
+	}
+	return nil
+}
+
 // Utility method to call an API with a POST request, handling logging, etc.
 func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
 
@@ -136,7 +166,6 @@ func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp inte
 		log.Printf("[TRACE] postAPI %s: cannot marshal request to JSON: %s", apiName, err.Error())
 		return err
 	}
-
 	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
 	log.Printf("[TRACE] postAPI %s: prepared request: %s <= (%s)", apiName, url, rqBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
@@ -152,7 +181,7 @@ func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp inte
 		return err
 	}
 	bodyString := string(body)
-	log.Printf("[TRACE] post API %s: received response: %s", apiName, bodyString)
+	log.Printf("[TRACE] postAPI %s: received response: %s", apiName, bodyString)
 
 	// Check for an expected "null" response.
 	if rp == nil {

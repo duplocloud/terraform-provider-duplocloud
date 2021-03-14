@@ -1,10 +1,8 @@
 package duplosdk
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 )
 
 const (
@@ -117,28 +115,17 @@ type DuploS3BucketSettingsRequest struct {
 
 // TenantListAwsCloudResources retrieves a list of the generic AWS cloud resources for a tenant via the Duplo API.
 func (c *Client) TenantListAwsCloudResources(tenantID string) (*[]DuploAwsCloudResource, error) {
-
-	// Format the URL
-	url := fmt.Sprintf("%s/subscriptions/%s/GetCloudResources", c.HostURL, tenantID)
-	log.Printf("[TRACE] duplo-TenantListAwsCloudResources 1 ********: %s ", url)
+	apiName := fmt.Sprintf("TenantListAwsCloudResources(%s)", tenantID)
+	list := []DuploAwsCloudResource{}
 
 	// Get the list from Duplo
-	req2, _ := http.NewRequest("GET", url, nil)
-	body, err := c.doRequest(req2)
+	err := c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetCloudResources", tenantID), &list)
 	if err != nil {
-		log.Printf("[TRACE] duplo-TenantListAwsCloudResources 2 ********: %s", err.Error())
 		return nil, err
 	}
-	bodyString := string(body)
-	log.Printf("[TRACE] duplo-TenantListAwsCloudResources 3 ********: %s", bodyString)
 
-	// Return it as a list.
-	list := []DuploAwsCloudResource{}
-	err = json.Unmarshal(body, &list)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("[TRACE] duplo-TenantListAwsCloudResources 4 ********: %d items", len(list))
+	// Add the tenant ID to each element and return the list.
+	log.Printf("[TRACE] %s: %d items", apiName, len(list))
 	for i := range list {
 		list[i].TenantID = tenantID
 	}
