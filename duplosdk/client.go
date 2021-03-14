@@ -101,6 +101,7 @@ func (c *Client) doRequestWithStatus(req *http.Request, statusCode int) ([]byte,
 
 	return body, err
 }
+
 func (c *Client) doPostRequest(req *http.Request, caller string) ([]byte, error) {
 	req.Header.Set("Authorization", c.Token)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -124,6 +125,42 @@ func (c *Client) doPostRequest(req *http.Request, caller string) ([]byte, error)
 	}
 
 	return body, err
+}
+
+// Utility method to call an API with a POST request, handling logging, etc.
+func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
+
+	// Build the request
+	rqBody, err := json.Marshal(rq)
+	if err != nil {
+		log.Printf("[TRACE] postAPI %s: cannot marshal request to JSON: %s", apiName, err.Error())
+		return err
+	}
+
+	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
+	log.Printf("[TRACE] postAPI %s: prepared request: %s <= (%s)", apiName, url, rqBody)
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
+	if err != nil {
+		log.Printf("[TRACE] postAPI %s: cannot build request: %s", apiName, err.Error())
+		return nil
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] postAPI %s: POST failed: %s", apiName, err.Error())
+		return err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] post API %s: received response: %s", apiName, bodyString)
+
+	// Interpret it as an object.
+	err = json.Unmarshal(body, rp)
+	if err != nil {
+		log.Printf("[TRACE] postAPI %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
+		return err
+	}
+	return nil
 }
 
 // StructToString converts a structure to a JSON string

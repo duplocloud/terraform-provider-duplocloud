@@ -367,139 +367,43 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 
 // TenantUpdateApplicationLbSettings updates an application LB resource's settings via Duplo.
 func (c *Client) TenantUpdateApplicationLbSettings(tenantID string, duplo DuploAwsLbSettingsUpdateRequest) error {
-
-	// Build the request
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantUpdateApplicationLbSettings 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/UpdateLbSettings", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantUpdateApplicationLbSettings 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantUpdateApplicationLbSettings 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantUpdateApplicationLbSettings 4 HTTP POST : %s", err.Error())
-		return fmt.Errorf("Tenant %s failed to update load balancer %s: '%s'", tenantID, duplo.LoadBalancerArn, err)
-	}
-	bodyString := string(body)
-
-	// Expect the response to be "null"
-	if bodyString == "null" {
-		return nil
-	}
-	return fmt.Errorf("Tenant %s failed to update load balancer %s: no result from backend", tenantID, duplo.LoadBalancerArn)
+	return c.postAPI("TenantUpdateApplicationLbSettings",
+		fmt.Sprintf("subscriptions/%s/UpdateLbSettings", tenantID),
+		&duplo,
+		nil)
 }
 
 // TenantGetApplicationLbSettings updates an application LB resource's WAF association via Duplo.
 func (c *Client) TenantGetApplicationLbSettings(tenantID string, loadBalancerArn string) (*DuploAwsLbSettings, error) {
+	rp := DuploAwsLbSettings{}
 
-	// Build the request
-	rq := DuploAwsLbSettingsRequest{LoadBalancerArn: loadBalancerArn}
-	rqBody, err := json.Marshal(&rq)
-	if err != nil {
-		log.Printf("[TRACE] TenantGetApplicationLbSettings 1 JSON gen : %s", err.Error())
-		return nil, err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/GetLbSettings", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantGetApplicationLbSettings 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantGetApplicationLbSettings 3 HTTP builder : %s", err.Error())
-		return nil, err
-	}
+	err := c.postAPI("TenantGetApplicationLbSettings",
+		fmt.Sprintf("subscriptions/%s/GetLbSettings", tenantID),
+		&DuploAwsLbSettingsRequest{LoadBalancerArn: loadBalancerArn},
+		&rp)
 
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantGetApplicationLbSettings 4 HTTP POST : %s", err.Error())
-		return nil, fmt.Errorf("Tenant %s failed to get load balancer %s setings: '%s'", tenantID, loadBalancerArn, err)
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] TenantGetApplicationLbSettings 5 ********: %s", bodyString)
-
-	// Return it as an object.
-	result := DuploAwsLbSettings{}
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
+	return &rp, err
 }
 
 // TenantCreateApplicationLB creates an application LB resource via Duplo.
 func (c *Client) TenantCreateApplicationLB(tenantID string, duplo DuploAwsLBConfiguration) error {
-	// Build the request
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateApplicationLB 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/ApplicationLbUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantCreateApplicationLB 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateApplicationLB 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateApplicationLB 4 HTTP POST : %s", err.Error())
-		return fmt.Errorf("Tenant %s failed to apply load balancer %s: '%s'", tenantID, duplo.Name, err)
-	}
-	bodyString := string(body)
-
-	// Expect the response to be "null"
-	if bodyString == "null" {
-		return nil
-	}
-	return fmt.Errorf("Tenant %s failed to apply load balancer %s: '%s'", tenantID, duplo.Name, bodyString)
+	return c.postAPI("TenantCreateApplicationLB",
+		fmt.Sprintf("subscriptions/%s/ApplicationLbUpdate", tenantID),
+		&duplo,
+		nil)
 }
 
 // TenantDeleteApplicationLB deletes an AWS application LB resource via Duplo.
 func (c *Client) TenantDeleteApplicationLB(tenantID string, name string) error {
+	// Get the full name of the ALB.
 	fullName, err := c.TenantGetApplicationLbFullName(tenantID, name)
 	if err != nil {
 		return err
 	}
 
-	// Build the request
-	duplo := DuploAwsLBConfiguration{
-		Name:  fullName,
-		State: "delete",
-	}
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteApplicationLB 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/ApplicationLbUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantDeleteApplicationLB 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteApplicationLB 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteApplicationLB 4 HTTP POST : %s", err.Error())
-		return fmt.Errorf("Tenant %s failed to delete load balancer %s: '%s'", tenantID, duplo.Name, err)
-	}
-	bodyString := string(body)
-
-	// Expect the response to be "null"
-	if bodyString == "null" {
-		return nil
-	}
-	return fmt.Errorf("Tenant %s failed to delete load balancer %s: '%s'", tenantID, duplo.Name, bodyString)
+	// Call the API.
+	return c.postAPI("TenantDeleteApplicationLB",
+		fmt.Sprintf("subscriptions/%s/ApplicationLbUpdate", tenantID),
+		&DuploAwsLBConfiguration{Name: fullName, State: "delete"},
+		nil)
 }
