@@ -1,15 +1,8 @@
 package duplosdk
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
-	"strconv"
 	"strings"
-	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // DuploRdsInstance is a Duplo SDK object that represents an RDS instance
@@ -41,102 +34,6 @@ type DuploRdsInstancePasswordChange struct {
 	Identifier     string `json:"Identifier"`
 	MasterPassword string `json:"MasterPassword"`
 	StorePassword  bool   `json:"StorePassword,omitempty"`
-}
-
-// DuploRdsInstanceSchema returns a Terraform resource schema for an ECS Service
-func DuploRdsInstanceSchema() *map[string]*schema.Schema {
-	return &map[string]*schema.Schema{
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch tenant
-		},
-		"name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"identifier": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"endpoint": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"host": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"port": {
-			Type:     schema.TypeInt,
-			Computed: true,
-		},
-		"master_username": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
-		},
-		"master_password": {
-			Type:      schema.TypeString,
-			Optional:  true,
-			Sensitive: true,
-		},
-		"engine": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
-		},
-		"engine_version": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
-		},
-		"snapshot_id": {
-			Type:          schema.TypeString,
-			Optional:      true,
-			ForceNew:      true,
-			ConflictsWith: []string{"master_username"},
-		},
-		"parameter_group_name": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"store_details_in_secret_manager": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			ForceNew: true,
-		},
-		"cloud": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			ForceNew: true,
-			Default:  0,
-		},
-		"size": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"encrypt_storage": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			ForceNew: true,
-		},
-		"instance_status": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-	}
 }
 
 /*************************************************
@@ -184,23 +81,16 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, error) {
 	name := idParts[4]
 
 	// Call the API.
-	duploObject := DuploRdsInstance{}
 	err := c.deleteAPI(
 		fmt.Sprintf("RdsInstanceDelete(%s, duplo%s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/duplo%s", tenantID, name),
-		&duploObject)
+		nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// Tolerate an empty response from the DELETE.
-	if duploObject.Name == "" {
-		duploObject.Name = name
-	}
-
-	// Fill in the tenant ID and return the object
-	duploObject.TenantID = tenantID
-	return &duploObject, nil
+	// Return a placeholder - since the API does not return responses.
+	return &DuploRdsInstance{TenantID: tenantID, Name: name}, nil
 }
 
 // RdsInstanceGet retrieves an RDS instance via the Duplo API.
@@ -234,131 +124,4 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 		&duploObject,
 		nil,
 	)
-}
-
-// RdsInstanceWaitUntilAvailable waits until an RDS instance is available.
-//
-// It should be usable both post-creation and post-modification.
-func RdsInstanceWaitUntilAvailable(c *Client, id string) error {
-	stateConf := &resource.StateChangeConf{
-		Pending: []string{
-			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
-			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
-			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
-		},
-		Target:       []string{"available"},
-		MinTimeout:   10 * time.Second,
-		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
-		Refresh: func() (interface{}, string, error) {
-			resp, err := c.RdsInstanceGet(id)
-			if err != nil {
-				return 0, "", err
-			}
-			if resp.InstanceStatus == "" {
-				resp.InstanceStatus = "processing"
-			}
-			return resp, resp.InstanceStatus, nil
-		},
-	}
-	log.Printf("[DEBUG] RdsInstanceWaitUntilAvailable (%s)", id)
-	_, err := stateConf.WaitForState()
-	return err
-}
-
-// RdsInstanceWaitUntilUnavailable waits until an RDS instance is unavailable.
-//
-// It should be usable post-modification.
-func RdsInstanceWaitUntilUnavailable(c *Client, id string) error {
-	stateConf := &resource.StateChangeConf{
-		Target: []string{
-			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
-			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
-			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
-		},
-		Pending:      []string{"available"},
-		MinTimeout:   10 * time.Second,
-		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
-		Refresh: func() (interface{}, string, error) {
-			resp, err := c.RdsInstanceGet(id)
-			if err != nil {
-				return 0, "", err
-			}
-			if resp.InstanceStatus == "" {
-				resp.InstanceStatus = "available"
-			}
-			return resp, resp.InstanceStatus, nil
-		},
-	}
-	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
-	_, err := stateConf.WaitForState()
-	return err
-}
-
-/*************************************************
- * DATA CONVERSIONS to/from duplo/terraform
- */
-
-// RdsInstanceFromState converts resource data respresenting an RDS instance to a Duplo SDK object.
-func RdsInstanceFromState(d *schema.ResourceData) (*DuploRdsInstance, error) {
-	duploObject := new(DuploRdsInstance)
-
-	// First, convert things into simple scalars
-	duploObject.Name = d.Get("name").(string)
-	duploObject.Identifier = d.Get("identifier").(string)
-	duploObject.Arn = d.Get("arn").(string)
-	duploObject.Endpoint = d.Get("endpoint").(string)
-	duploObject.MasterUsername = d.Get("master_username").(string)
-	duploObject.MasterPassword = d.Get("master_password").(string)
-	duploObject.Engine = d.Get("engine").(int)
-	duploObject.EngineVersion = d.Get("engine_version").(string)
-	duploObject.SnapshotID = d.Get("snapshot_id").(string)
-	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
-	duploObject.Cloud = d.Get("cloud").(int)
-	duploObject.SizeEx = d.Get("size").(string)
-	duploObject.EncryptStorage = d.Get("encrypt_storage").(bool)
-	duploObject.InstanceStatus = d.Get("instance_status").(string)
-
-	return duploObject, nil
-}
-
-// RdsInstanceToState converts a Duplo SDK object respresenting an RDS instance to terraform resource data.
-func RdsInstanceToState(duploObject *DuploRdsInstance, d *schema.ResourceData) map[string]interface{} {
-	if duploObject == nil {
-		return nil
-	}
-	jsonData, _ := json.Marshal(duploObject)
-	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 1: INPUT <= %s ", jsonData)
-
-	jo := make(map[string]interface{})
-
-	// First, convert things into simple scalars
-	jo["tenant_id"] = duploObject.TenantID
-	jo["name"] = duploObject.Name
-	jo["identifier"] = duploObject.Identifier
-	jo["arn"] = duploObject.Arn
-	jo["endpoint"] = duploObject.Endpoint
-	if duploObject.Endpoint != "" {
-		uriParts := strings.SplitN(duploObject.Endpoint, ":", 2)
-		jo["host"] = uriParts[0]
-		if len(uriParts) == 2 {
-			jo["port"], _ = strconv.Atoi(uriParts[1])
-		}
-	}
-	jo["master_username"] = duploObject.MasterUsername
-	jo["master_password"] = duploObject.MasterPassword
-	jo["engine"] = duploObject.Engine
-	jo["engine_version"] = duploObject.EngineVersion
-	jo["snapshot_id"] = duploObject.SnapshotID
-	jo["parameter_group_name"] = duploObject.DBParameterGroupName
-	jo["cloud"] = duploObject.Cloud
-	jo["size"] = duploObject.SizeEx
-	jo["encrypt_storage"] = duploObject.EncryptStorage
-	jo["instance_status"] = duploObject.InstanceStatus
-
-	jsonData2, _ := json.Marshal(jo)
-	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
-
-	return jo
 }

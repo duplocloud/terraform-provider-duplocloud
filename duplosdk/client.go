@@ -159,7 +159,18 @@ func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface
 	bodyString := string(body)
 	log.Printf("[TRACE] %s: received response: %s", apiName, bodyString)
 
-	// Interpret the response as an object.
+	// Check for an expected "null" response.
+	if rp == nil {
+		log.Printf("[TRACE] %s: expected null response", apiName)
+		if bodyString == "null" || bodyString == "" {
+			return nil
+		}
+		err = fmt.Errorf("%s: received unexpected response: %s", apiName, bodyString)
+		log.Printf("[TRACE] %s", err)
+		return err
+	}
+
+	// Otherwise, interpret it as an object.
 	err = json.Unmarshal(body, rp)
 	if err != nil {
 		log.Printf("[TRACE] %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
