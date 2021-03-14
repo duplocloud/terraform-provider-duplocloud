@@ -57,11 +57,13 @@ resource "duplocloud_s3_bucket" "test" {
 }
 
 # Or, get information on one of your KMS keys
-#data "duplocloud_tenant_aws_kms_keys" "test" { tenant_id = var.tenant_id }
-#data "aws_kms_key" "test" { key_id = data.duplocloud_tenant_aws_kms_keys.test.keys[1].key_id }
-#output "kms_key_state" { value = data.aws_kms_key.test.key_state }
+data "duplocloud_tenant_aws_kms_keys" "test" { tenant_id = var.tenant_id }
+output "kms_key_id" { value = data.duplocloud_tenant_aws_kms_keys.test.keys[1].key_id }
+//data "aws_kms_key" "test" { key_id = 
+//output "kms_key_state" { value = data.aws_kms_key.test.key_state }
 
 # Or, get information on your Duplo tenant's KMS key
-#data "duplocloud_tenant_aws_kms_key" "test" { tenant_id = var.tenant_id }
-#data "aws_kms_key" "test" { key_id = data.duplocloud_tenant_aws_kms_key.test.key_id }
-#output "kms_key_state" { value = data.aws_kms_key.test.key_state }
+data "duplocloud_tenant_aws_kms_key" "test" { tenant_id = var.tenant_id }
+output "kms_key_id2" { value = data.duplocloud_tenant_aws_kms_key.test.key_id }
+//data "aws_kms_key" "test2" { key_id = data.duplocloud_tenant_aws_kms_key.test.key_id }
+//output "kms_key_state2" { value = data.aws_kms_key.test2.key_state }
