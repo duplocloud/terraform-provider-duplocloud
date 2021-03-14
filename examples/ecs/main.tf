@@ -54,7 +54,7 @@ output "tenants" { value = data.duplocloud_tenants.test.tenants.*.name }
 resource "duplocloud_tenant_secret" "test" {
   tenant_id = var.tenant_id
   name_suffix = "joetest2"
-  data = "{ \"foo\" : \"bar3\" }" // jsonencode({ foo = "bar" })
+  data = "{ \"foo\" : \"bar4\" }"
 }
 output "tenant_secret_name" { value = duplocloud_tenant_secret.test.name }
 
