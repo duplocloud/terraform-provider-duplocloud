@@ -77,9 +77,9 @@ func dataSourceTenantAwsKmsKeysRead(d *schema.ResourceData, m interface{}) error
 	}
 	d.SetId(tenantID)
 
+	// Apply the result
 	dumpKeys, _ := json.Marshal(selectedKeys)
 	log.Printf("[TRACE] dataSourceTenantAwsKmsKeysRead ******** 2 dump: %s", dumpKeys)
-
 	d.Set("keys", selectedKeys)
 
 	log.Printf("[TRACE] dataSourceTenantAwsKmsKeysRead ******** 3 end")

@@ -137,12 +137,12 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	duplo, err := c.RdsInstanceGet(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	if duplo == nil {
 		d.SetId("")
 		return nil
-	}
-	if err != nil {
-		return diag.FromErr(err)
 	}
 
 	// Convert the object into Terraform resource data

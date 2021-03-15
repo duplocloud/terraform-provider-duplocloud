@@ -28,86 +28,6 @@ type DuploService struct {
 	Tags                    []map[string]interface{} `json:"Tags,omitempty"`
 }
 
-// DuploServiceSchema returns a Terraform resource schema for a service's parameters
-func DuploServiceSchema() *map[string]*schema.Schema {
-	return &map[string]*schema.Schema{
-		"name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch tenant
-		},
-		"other_docker_host_config": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
-		},
-		"other_docker_config": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
-		},
-		"extra_config": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
-		},
-		"allocation_tags": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
-		},
-		"volumes": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
-		},
-		"commands": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
-		},
-		"cloud": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			Required: false,
-			Default:  0,
-		},
-		"agent_platform": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			Required: false,
-			Default:  0,
-		},
-		"replicas": {
-			Type:     schema.TypeInt,
-			Optional: false,
-			Required: true,
-		},
-		"replicas_matching_asg_name": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
-		},
-		"docker_image": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-		},
-		//
-		"tags": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
-		},
-	}
-}
-
 // DuploServiceToState converts a Duplo SDK object respresenting a service to terraform resource data.
 func (c *Client) DuploServiceToState(duploObject *DuploService, d *schema.ResourceData) map[string]interface{} {
 	if duploObject != nil {
@@ -201,7 +121,7 @@ func (c *Client) DuploServiceURL(d *schema.ResourceData) string {
 
 // DuploServiceListURL returns the base API URL for crud -- get list + create + update
 func (c *Client) DuploServiceListURL(d *schema.ResourceData) string {
-	tenantID := c.DuploServiceParamsGetTenantID(d)
+	tenantID := c.DuploServiceGetTenantID(d)
 	api := fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2", tenantID)
 	host := fmt.Sprintf("%s/%s", c.HostURL, api)
 	log.Printf("[TRACE] duplo-DuploServiceListUrl %s 1 ********: %s", api, host)

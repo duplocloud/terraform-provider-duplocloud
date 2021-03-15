@@ -30,7 +30,6 @@ resource "duplocloud_duplo_service" "test" {
   replicas       = 1
 }
 
-
 resource "duplocloud_duplo_service_lbconfigs" "test" {
   tenant_id = var.tenant_id
   replication_controller_name = duplocloud_duplo_service.test.name
@@ -55,5 +54,5 @@ resource "duplocloud_duplo_service_params" "test" {
   tenant_id = var.tenant_id
 
   replication_controller_name = duplocloud_duplo_service_lbconfigs.test.replication_controller_name
-  dns_prfx                    = "joedemo"
+  dns_prfx                    = "joedemo-svc"
 }

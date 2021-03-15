@@ -147,7 +147,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	c := m.(*duplosdk.Client)
 	_, err = c.EcacheInstanceCreate(tenantID, duploObject)
 	if err != nil {
-		return diag.Errorf("Error creating ECache instance '%s': %s", id, err)
+		return diag.Errorf("Error updating ECache instance '%s': %s", id, err)
 	}
 	d.SetId(id)
 
