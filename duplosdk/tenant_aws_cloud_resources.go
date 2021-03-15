@@ -3,6 +3,7 @@ package duplosdk
 import (
 	"fmt"
 	"log"
+	"time"
 )
 
 const (
@@ -74,6 +75,31 @@ type DuploAwsLBConfiguration struct {
 	State            string `json:"State,omitempty"`
 	IsInternal       bool   `json:"IsInternal,omitempty"`
 	EnableAccessLogs bool   `json:"EnableAccessLogs,omitempty"`
+}
+
+type DuploAwsLbState struct {
+	Code *DuploStringValue `json:"Code,omitempty"`
+}
+
+type DuploAwsLbAvailabilityZone struct {
+	SubnetID string `json:"SubnetId,omitempty"`
+	ZoneName string `json:"ZoneName,omitempty"`
+}
+
+// DuploAwsLbSettings represents an AWS application load balancer's details, via a Duplo Service
+type DuploAwsLbDetailsInService struct {
+	LoadBalancerName      string                       `json:"LoadBalancerName"`
+	LoadBalancerArn       string                       `json:"LoadBalancerArn"`
+	AvailabilityZones     []DuploAwsLbAvailabilityZone `json:"AvailabilityZones"`
+	CanonicalHostedZoneId string                       `json:"CanonicalHostedZoneId"`
+	CreatedTime           time.Time                    `json:"CreatedTime"`
+	DNSName               string                       `json:"DNSName"`
+	IPAddressType         *DuploStringValue            `json:"IPAddressType,omitempty"`
+	Scheme                *DuploStringValue            `json:"Scheme,omitempty"`
+	Type                  *DuploStringValue            `json:"Type,omitempty"`
+	SecurityGroups        []string                     `json:"SecurityGroups"`
+	State                 *DuploAwsLbState             `json:"State,omitempty"`
+	VpcID                 string                       `json:"VpcId,omitempty"`
 }
 
 // DuploAwsLbSettings represents an AWS application load balancer's settings
@@ -309,6 +335,20 @@ func (c *Client) TenantGetApplicationLbSettings(tenantID string, loadBalancerArn
 		&rp)
 
 	return &rp, err
+}
+
+// TenantGetLbDetailsInService retrieves load balancer details via a Duplo service.
+func (c *Client) TenantGetLbDetailsInService(tenantID string, name string) (*DuploAwsLbDetailsInService, error) {
+	apiName := fmt.Sprintf("TenantGetLbDetailsInService(%s, %s)", tenantID, name)
+	details := DuploAwsLbDetailsInService{}
+
+	// Get the list from Duplo
+	err := c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetLbDetailsInSErvice/%s", tenantID, name), &details)
+	if err != nil {
+		return nil, err
+	}
+
+	return &details, nil
 }
 
 // TenantCreateApplicationLB creates an application LB resource via Duplo.
