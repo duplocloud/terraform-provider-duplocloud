@@ -43,6 +43,11 @@ func awsLoadBalancerSchema() map[string]*schema.Schema {
 			Optional: true,
 			Computed: true,
 		},
+		"drop_invalid_headers": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
+		},
 		"web_acl_id": {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -156,9 +161,10 @@ func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, 
 	// apply load balancer settings
 	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** update settings: start")
 	settingsRq := duplosdk.DuploAwsLbSettingsUpdateRequest{
-		LoadBalancerArn:  d.Get("arn").(string),
-		EnableAccessLogs: d.Get("enable_access_logs").(bool),
-		WebACLID:         d.Get("web_acl_id").(string),
+		LoadBalancerArn:    d.Get("arn").(string),
+		EnableAccessLogs:   d.Get("enable_access_logs").(bool),
+		DropInvalidHeaders: d.Get("drop_invalid_headers").(bool),
+		WebACLID:           d.Get("web_acl_id").(string),
 	}
 	err := c.TenantUpdateApplicationLbSettings(tenantID, settingsRq)
 	if err != nil {
@@ -213,6 +219,7 @@ func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, nam
 	d.Set("arn", duplo.Arn)
 	d.Set("is_internal", duplo.IsInternal)
 	d.Set("enable_access_logs", settings.EnableAccessLogs)
+	d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
 	d.Set("web_acl_id", settings.WebACLID)
 	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 }

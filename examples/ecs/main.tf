@@ -63,6 +63,7 @@ resource "duplocloud_aws_load_balancer" "test" {
   name = "joetest2"
   is_internal = true
   enable_access_logs = true
+  drop_invalid_headers = true
 }
 
 # resource "duplocloud_ecs_task_definition" "test" {
