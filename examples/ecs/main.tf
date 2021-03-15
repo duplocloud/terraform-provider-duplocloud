@@ -66,31 +66,33 @@ resource "duplocloud_aws_load_balancer" "test" {
   drop_invalid_headers = true
 }
 
-# resource "duplocloud_ecs_task_definition" "test" {
-#   tenant_id = var.tenant_id
-#   family = "duploservices-default-joedemo"
-#   container_definitions = jsonencode([{
-#     Name = "default"
-#     Image = "nginx:latest"
-#     Essential = true
-#   }])
-#   cpu = "256"
-#   memory = "1024"
-#   requires_compatibilities = [ "FARGATE" ]
-# }
+resource "duplocloud_ecs_task_definition" "test" {
+  tenant_id = var.tenant_id
+  family = "duploservices-default-joedemo"
+  container_definitions = jsonencode([{
+    Name = "default"
+    Image = "nginx:latest"
+    Essential = true
+  }])
+  cpu = "256"
+  memory = "1024"
+  requires_compatibilities = [ "FARGATE" ]
+}
 
-# resource "duplocloud_ecs_service" "test" {
-#   tenant_id = var.tenant_id
-#   name = "joedemo"
-#   task_definition = duplocloud_ecs_task_definition.test.arn
-#   replicas = 2
-#   load_balancer {
-#     lb_type = 1
-#     port = 8080
-#     external_port = 80
-#     protocol = "HTTP"
-#   }
-# }
+resource "duplocloud_ecs_service" "test" {
+  tenant_id = var.tenant_id
+  name = "joedemo-ecs"
+  task_definition = duplocloud_ecs_task_definition.test.arn
+  replicas = 2
+  load_balancer {
+    lb_type = 1
+    port = 8080
+    external_port = 80
+    protocol = "HTTP"
+    enable_access_logs = true
+    drop_invalid_headers = true
+  }
+}
 
 resource "duplocloud_ecache_instance" "test" {
  tenant_id = var.tenant_id

@@ -102,27 +102,9 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 	d.Set("dns_prfx", duplo.DNSPrfx)
 
 	// Next, look for load balancer settings.
-	details, err := c.TenantGetLbDetailsInService(tenantID, name)
+	err = readDuploServiceAwsLbSettings(tenantID, name, d, c)
 	if err != nil {
 		return diag.FromErr(err)
-	}
-	if details != nil && details.LoadBalancerArn != "" {
-
-		// Populate load balancer details.
-		d.Set("load_balancer_arn", details.LoadBalancerArn)
-		d.Set("load_balancer_name", details.LoadBalancerName)
-
-		settings, err := c.TenantGetApplicationLbSettings(tenantID, details.LoadBalancerArn)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		if settings != nil && settings.LoadBalancerArn != "" {
-
-			// Populate load balancer settings.
-			d.Set("webaclid", settings.WebACLID)
-			d.Set("enable_access_logs", settings.EnableAccessLogs)
-			d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
-		}
 	}
 
 	log.Printf("[TRACE] resourceDuploServiceParamsRead(%s): end", id)
@@ -170,29 +152,9 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 	}
 
 	// Next, we need to apply load balancer settings.
-	settings := duplosdk.DuploAwsLbSettingsUpdateRequest{}
-	haveSettings := false
-	if v, ok := d.GetOk("enable_access_logs"); ok && v != nil {
-		settings.EnableAccessLogs = v.(bool)
-		haveSettings = true
-	}
-	if v, ok := d.GetOk("drop_invalid_headers"); ok && v != nil {
-		settings.DropInvalidHeaders = v.(bool)
-		haveSettings = true
-	}
-	if haveSettings {
-		details, err := c.TenantGetLbDetailsInService(tenantID, duplo.ReplicationControllerName)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		if details != nil && details.LoadBalancerArn != "" {
-			settings.LoadBalancerArn = details.LoadBalancerArn
-			settings.WebACLID = duplo.WebACLId
-			err = c.TenantUpdateApplicationLbSettings(tenantID, settings)
-			if err != nil {
-				return diag.Errorf("Error applying Duplo service params '%s': %s", id, err)
-			}
-		}
+	err = updateDuploServiceAwsLbSettings(tenantID, duplo.ReplicationControllerName, d, c)
+	if err != nil {
+		return diag.Errorf("Error applying Duplo service params '%s': %s", id, err)
 	}
 
 	diags := resourceDuploServiceParamsRead(ctx, d, m)
@@ -215,6 +177,72 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 	}
 
 	log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s): end", id)
+
+	return nil
+}
+
+func readDuploServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
+
+	// Next, look for load balancer settings.
+	details, err := c.TenantGetLbDetailsInService(tenantID, name)
+	if err != nil {
+		return err
+	}
+	if details != nil && details.LoadBalancerArn != "" {
+
+		// Populate load balancer details.
+		d.Set("load_balancer_arn", details.LoadBalancerArn)
+		d.Set("load_balancer_name", details.LoadBalancerName)
+
+		settings, err := c.TenantGetApplicationLbSettings(tenantID, details.LoadBalancerArn)
+		if err != nil {
+			return err
+		}
+		if settings != nil && settings.LoadBalancerArn != "" {
+
+			// Populate load balancer settings.
+			d.Set("webaclid", settings.WebACLID)
+			d.Set("enable_access_logs", settings.EnableAccessLogs)
+			d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
+		}
+	}
+
+	return nil
+}
+
+func updateDuploServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
+
+	// Get any load balancer settings from the user.
+	settings := duplosdk.DuploAwsLbSettingsUpdateRequest{}
+	haveSettings := false
+	if v, ok := d.GetOk("enable_access_logs"); ok && v != nil {
+		settings.EnableAccessLogs = v.(bool)
+		haveSettings = true
+	}
+	if v, ok := d.GetOk("drop_invalid_headers"); ok && v != nil {
+		settings.DropInvalidHeaders = v.(bool)
+		haveSettings = true
+	}
+	if v, ok := d.GetOk("webaclid"); ok && v != nil {
+		settings.WebACLID = v.(string)
+		haveSettings = true
+	}
+
+	// If we have load balancer settings, apply them.
+	if haveSettings {
+		details, err := c.TenantGetLbDetailsInService(tenantID, name)
+		if err != nil {
+			return err
+		}
+
+		if details != nil && details.LoadBalancerArn != "" {
+			settings.LoadBalancerArn = details.LoadBalancerArn
+			err = c.TenantUpdateApplicationLbSettings(tenantID, settings)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }
