@@ -105,7 +105,7 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 		fmt.Sprintf("RdsInstanceGet(%s, duplo%s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/duplo%s", tenantID, name),
 		&duploObject)
-	if err != nil {
+	if err != nil || duploObject.Identifier == "" {
 		return nil, err
 	}
 

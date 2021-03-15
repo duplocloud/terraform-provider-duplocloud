@@ -93,13 +93,8 @@ func (c *Client) EcacheInstanceGet(id string) (*DuploEcacheInstance, error) {
 		fmt.Sprintf("EcacheInstanceGet(%s, duplo-%s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/duplo-%s", tenantID, name),
 		&duploObject)
-	if err != nil {
+	if err != nil || duploObject.Identifier == "" {
 		return nil, err
-	}
-
-	// Parse the response into a duplo object, detecting a missing object
-	if duploObject.Identifier == "" {
-		return nil, nil
 	}
 
 	// Fill in the tenant ID and the name and return the object
