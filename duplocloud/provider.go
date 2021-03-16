@@ -42,6 +42,7 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant_secret":           resourceTenantSecret(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
+			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
 			"duplocloud_aws_account":             dataSourceAwsAccount(),
 			"duplocloud_aws_host":                dataSourceAwsHost(),
 			"duplocloud_eks_credentials":         dataSourceEksCredentials(),
