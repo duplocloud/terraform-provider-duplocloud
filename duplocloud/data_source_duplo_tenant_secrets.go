@@ -23,7 +23,37 @@ func dataSourceTenantSecrets() *schema.Resource {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: tenantSecretSchemaComputed(),
+					Schema: map[string]*schema.Schema{
+						"tenant_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"arn": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"name_suffix": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"rotation_enabled": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"tags": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Required: false,
+							Elem:     KeyValueSchema(),
+						},
+					},
 				},
 			},
 		},

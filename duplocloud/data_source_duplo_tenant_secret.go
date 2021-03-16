@@ -10,48 +10,42 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// SCHEMA for secrets
-func tenantSecretSchemaComputed() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			Computed: true,
-		},
-		"arn": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"name": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"name_suffix": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"rotation_enabled": {
-			Type:     schema.TypeBool,
-			Computed: true,
-		},
-		"tags": {
-			Type:     schema.TypeList,
-			Computed: true,
-			Required: false,
-			Elem:     KeyValueSchema(),
-		},
-	}
-}
-
 // Data source retrieving a secret
 func dataSourceTenantSecret() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceTenantSecretRead,
 
-		Schema: tenantSecretSchemaComputed(),
+		Schema: map[string]*schema.Schema{
+			"tenant_id": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"arn": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"name": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"name_suffix": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"rotation_enabled": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+			"tags": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Required: false,
+				Elem:     KeyValueSchema(),
+			},
+		},
 	}
 }
 
