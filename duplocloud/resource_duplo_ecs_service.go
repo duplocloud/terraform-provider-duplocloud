@@ -355,7 +355,7 @@ func readEcsServiceAwsLbSettings(tenantID string, name string, lb map[string]int
 func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
 	state, err := getOptionalBlockAsMap(d, "load_balancer")
 	if err != nil || state == nil {
-		return nil
+		return err
 	}
 
 	// Get any load balancer settings from the user.
