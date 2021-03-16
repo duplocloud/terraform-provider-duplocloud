@@ -39,6 +39,7 @@ func Provider() *schema.Provider {
 			"duplocloud_rds_instance":            resourceDuploRdsInstance(),
 			"duplocloud_s3_bucket":               resourceS3Bucket(),
 			"duplocloud_tenant":                  resourceTenant(),
+			"duplocloud_tenant_config":           resourceTenantConfig(),
 			"duplocloud_tenant_secret":           resourceTenantSecret(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
@@ -59,6 +60,7 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant_aws_kms_key":      dataSourceTenantAwsKmsKey(),
 			"duplocloud_tenant_aws_kms_keys":     dataSourceTenantAwsKmsKeys(),
 			"duplocloud_tenant_internal_subnets": dataSourceTenantInternalSubnets(),
+			"duplocloud_tenant_config":           dataSourceTenantConfig(),
 			"duplocloud_tenant_secret":           dataSourceTenantSecret(),
 			"duplocloud_tenant_secrets":          dataSourceTenantSecrets(),
 		},

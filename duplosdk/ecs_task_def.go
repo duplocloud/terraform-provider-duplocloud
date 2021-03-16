@@ -186,7 +186,7 @@ func EcsTaskDefFromState(d *schema.ResourceData) (*DuploEcsTaskDef, error) {
 	}
 
 	// Next, convert things into structured data.
-	duploObject.Tags = duploKeyValueFromState("tags", d)
+	duploObject.Tags = KeyValueFromState("tags", d)
 	duploObject.PlacementConstraints = ecsPlacementConstraintsFromState(d)
 	duploObject.ProxyConfiguration = ecsProxyConfigFromState(d)
 	duploObject.InferenceAccelerators = ecsInferenceAcceleratorsFromState(d)

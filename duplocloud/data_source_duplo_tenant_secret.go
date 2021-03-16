@@ -15,7 +15,7 @@ func tenantSecretSchemaComputed() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
 			Type:     schema.TypeString,
-			Optional: true,
+			Required: true,
 			Computed: true,
 		},
 		"arn": {
@@ -60,10 +60,8 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceTenantSecretRead ******** start")
 
 	// Get and validate the retrieval criteria.
-	var tenantID, arn, name, nameSuffix, secretID string
-	if v, ok := d.GetOk("tenant_id"); ok {
-		tenantID = v.(string)
-	}
+	var arn, name, nameSuffix, secretID string
+	tenantID := d.Get("tenant_id").(string)
 	if v, ok := d.GetOk("arn"); ok {
 		arn = v.(string)
 		secretID = arn // for error reporting
@@ -81,9 +79,6 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 		}
 		nameSuffix = v.(string)
 		secretID = nameSuffix // for error reporting
-	}
-	if tenantID == "" {
-		return errors.New("tenant_id is required")
 	}
 	if arn == "" && name == "" && nameSuffix == "" {
 		return errors.New("must specify either arn or name or name_suffix")

@@ -2,9 +2,6 @@ package duplosdk
 
 import (
 	"fmt"
-	"log"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // DuploTenant represents a Duplo tenant
@@ -23,6 +20,20 @@ type DuploTenantPolicy struct {
 	BlockExternalEp    bool `json:"BlockExternalEp,omitempty"`
 }
 
+// DuploTenantConfig represents a Duplo tenant's configuration
+type DuploTenantConfig struct {
+	TenantID string                 `json:"TenantId,omitempty"`
+	Metadata *[]DuploKeyStringValue `json:"MetaData,omitempty"`
+}
+
+// DuploTenantConfigUpdateRequest represents a request to update a Duplo tenant's configuration
+type DuploTenantConfigUpdateRequest struct {
+	TenantID string `json:"ComponentId,omitempty"`
+	Key      string `json:"Key,omitempty"`
+	State    string `json:"State,omitempty"`
+	Value    string `json:"Value,omitempty"`
+}
+
 // DuploTenantAwsCredentials represents AWS credentials for a Duplo tenant
 type DuploTenantAwsCredentials struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
@@ -33,14 +44,6 @@ type DuploTenantAwsCredentials struct {
 	SecretAccessKey string `json:"SecretAccessKey"`
 	Region          string `json:"Region"`
 	SessionToken    string `json:"SessionToken,omitempty"`
-}
-
-// TenantURLList returns the base API URL for crud -- get list + create + update
-func (c *Client) TenantURLList(d *schema.ResourceData) string {
-	api := "v2/admin/TenantV2"
-	url := fmt.Sprintf("%s/%s", c.HostURL, api)
-	log.Printf("[TRACE] duplo-TenantUrlList %s 1 ********: %s", api, url)
-	return url
 }
 
 // TenantGet retrieves a tenant via the Duplo API.
@@ -148,6 +151,62 @@ func (c *Client) GetTenantForUser(tenantID string) (*DuploTenant, error) {
 
 	// No tenant was found.
 	return nil, nil
+}
+
+// TenantGetConfig retrieves tenant configuration metadata via the Duplo API.
+func (c *Client) TenantGetConfig(tenantID string) (*DuploTenantConfig, error) {
+	list := []DuploKeyStringValue{}
+	err := c.getAPI(fmt.Sprintf("TenantGetConfig(%s)", tenantID), fmt.Sprintf("adminproxy/GetTenantMetadata/%s", tenantID), &list)
+	if err != nil {
+		return nil, err
+	}
+	return &DuploTenantConfig{TenantID: tenantID, Metadata: &list}, nil
+}
+
+// TenantReplaceConfig replaces tenant configuration metadata via the Duplo API.
+func (c *Client) TenantReplaceConfig(config DuploTenantConfig) error {
+
+	// First, get the existing configuration.
+	existing, err := c.TenantGetConfig(config.TenantID)
+	if err != nil {
+		return err
+	}
+
+	// Next, update all keys that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if config.Metadata != nil {
+		for _, kv := range *config.Metadata {
+			if err = c.TenantSetConfigKey(config.TenantID, kv.Key, kv.Value); err != nil {
+				return err
+			}
+			present[kv.Key] = struct{}{}
+		}
+	}
+
+	// Finally, delete any keys that are no longer present.
+	if existing.Metadata != nil {
+		for _, kv := range *existing.Metadata {
+			if _, ok := present[kv.Key]; !ok {
+				if err = c.TenantDeleteConfigKey(config.TenantID, kv.Key); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// TenantDeleteConfigKey deletes a specific configuration key for a tenant via the Duplo API.
+func (c *Client) TenantDeleteConfigKey(tenantID, key string) error {
+	rq := DuploTenantConfigUpdateRequest{TenantID: tenantID, State: "delete", Key: key}
+	return c.postAPI(fmt.Sprintf("TenantDeleteConfigKey(%s, %s)", tenantID, key), "adminproxy/TenantMetadataUpdate", &rq, nil)
+}
+
+// TenantSetConfigKey set a specific configuration key for a tenant via the Duplo API.
+func (c *Client) TenantSetConfigKey(tenantID, key, value string) error {
+	rq := DuploTenantConfigUpdateRequest{TenantID: tenantID, Key: key, Value: value}
+	return c.postAPI(fmt.Sprintf("TenantSetConfigKey(%s, %s)", tenantID, key), "adminproxy/TenantMetadataUpdate", &rq, nil)
 }
 
 // TenantGetAwsRegion retrieves a tenant's AWS region via the Duplo API.
