@@ -37,65 +37,6 @@ type DuploInfrastructure struct {
 	ProvisioningStatus string `json:"ProvisioningStatus"`
 }
 
-/////------ schema ------////
-func InfrastructureSchema() *map[string]*schema.Schema {
-	return &map[string]*schema.Schema{
-		"infra_name": &schema.Schema{
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true,
-		},
-		"account_id": &schema.Schema{
-			Type:     schema.TypeString,
-			Computed: true,
-			Required: false,
-			ForceNew: true,
-		},
-		"cloud": &schema.Schema{
-			Type:     schema.TypeInt,
-			Optional: true,
-			Required: false,
-			ForceNew: true,
-			Default:  0,
-		},
-		"region": &schema.Schema{
-			Type:     schema.TypeString,
-			Optional: false,
-			ForceNew: true,
-			Required: true,
-		},
-		"azcount": &schema.Schema{
-			Type:     schema.TypeInt,
-			Optional: false,
-			ForceNew: true,
-			Required: true,
-		},
-		"enable_k8_cluster": &schema.Schema{
-			Type:     schema.TypeBool,
-			Optional: false,
-			Required: true,
-		},
-		"address_prefix": &schema.Schema{
-			Type:     schema.TypeString,
-			Optional: false,
-			ForceNew: true,
-			Required: true,
-		},
-		"subnet_cidr": &schema.Schema{
-			Type:     schema.TypeInt,
-			Optional: false,
-			ForceNew: true,
-			Required: true,
-		},
-		"status": &schema.Schema{
-			Type:     schema.TypeString,
-			Computed: true,
-			Required: false,
-		},
-	}
-}
-
 ////// convert from cloud to state and vice versa :  cloud names (CamelCase) to tf names (SnakeCase)
 func (c *Client) InfrastructureToState(duploObject *DuploInfrastructure, d *schema.ResourceData) map[string]interface{} {
 	if duploObject != nil {
@@ -217,6 +158,7 @@ func (c *Client) InfrastructureFillGet(duploObject *DuploInfrastructure, d *sche
 
 /////////  API list //////////
 func (c *Client) InfrastructureGetList(d *schema.ResourceData, m interface{}) (*[]DuploInfrastructure, error) {
+	api := "v2/admin/InfrastructureV2"
 	//todo: filter other than tenant
 	filters, filtersOk := d.GetOk("filter")
 	log.Printf("[TRACE] InfrastructureGetList filters 1 ********* : %s  %s", filters, filtersOk)
@@ -431,28 +373,12 @@ func DuploInfrastructureWaitForCreation(c *Client, url string) error {
 
 // GetEksCredentials retrieves just-in-time EKS credentials via the Duplo API.
 func (c *Client) GetEksCredentials(planID string) (*DuploEksCredentials, error) {
-
-	// Format the URL
-	url := fmt.Sprintf("%s/adminproxy/%s/GetEksClusterByInfra", c.HostURL, planID)
-	log.Printf("[TRACE] duplo-GetEksCredentials 1 ********: %s ", url)
-
-	// Get the AWS region from Duplo
-	req2, _ := http.NewRequest("GET", url, nil)
-	body, err := c.doRequest(req2)
-	if err != nil {
-		log.Printf("[TRACE] duplo-GetEksCredentials 2 ********: %s", err.Error())
-		return nil, err
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] duplo-GetEksCredentials 3 ********: %s", bodyString)
-
-	// Return it as an object.
+	apiName := fmt.Sprintf("GetEksCredentials(%s)", planID)
 	creds := DuploEksCredentials{}
-	err = json.Unmarshal(body, &creds)
+	err := c.getAPI(apiName, fmt.Sprintf("adminproxy/%s/GetEksClusterByInfra", planID), &creds)
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[TRACE] duplo-GetEksCredentials 4 ********: %s", creds.Name)
 	creds.PlanID = planID
 	return &creds, nil
 }

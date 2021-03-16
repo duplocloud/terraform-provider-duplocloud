@@ -2,7 +2,6 @@ package duplocloud
 
 import (
 	"context"
-	"strconv"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -23,57 +22,66 @@ func resourceInfrastructure() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(15 * time.Minute),
-			Update: schema.DefaultTimeout(15 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Create: schema.DefaultTimeout(30 * time.Minute),
+			Update: schema.DefaultTimeout(30 * time.Minute),
+			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
-		Schema: *duplosdk.InfrastructureSchema(),
-	}
-}
-
-// SCHEMA for resource data/search
-func dataSourceInfrastructure() *schema.Resource {
-	return &schema.Resource{
-		ReadContext: dataSourceInfrastructureRead,
 		Schema: map[string]*schema.Schema{
-			"filter": FilterSchema(), // todo: search specific to this object... may be api should support filter?
-			"tenant_id": {
+			"infra_name": {
 				Type:     schema.TypeString,
-				Computed: false,
-				Optional: true,
+				Optional: false,
+				Required: true,
+				ForceNew: true,
 			},
-			"data": {
-				Type:     schema.TypeList,
+			"account_id": {
+				Type:     schema.TypeString,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: *duplosdk.InfrastructureSchema(),
-				},
+				Required: false,
+				ForceNew: true,
+			},
+			"cloud": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Required: false,
+				ForceNew: true,
+				Default:  0,
+			},
+			"region": {
+				Type:     schema.TypeString,
+				Optional: false,
+				ForceNew: true,
+				Required: true,
+			},
+			"azcount": {
+				Type:     schema.TypeInt,
+				Optional: false,
+				ForceNew: true,
+				Required: true,
+			},
+			"enable_k8_cluster": {
+				Type:     schema.TypeBool,
+				Optional: false,
+				Required: true,
+			},
+			"address_prefix": {
+				Type:     schema.TypeString,
+				Optional: false,
+				ForceNew: true,
+				Required: true,
+			},
+			"subnet_cidr": {
+				Type:     schema.TypeInt,
+				Optional: false,
+				ForceNew: true,
+				Required: true,
+			},
+			"status": {
+				Type:     schema.TypeString,
+				Computed: true,
+				Required: false,
 			},
 		},
 	}
-}
-
-/// READ/SEARCH resources
-func dataSourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-dataSourceInfrastructureRead ******** start")
-
-	c := m.(*duplosdk.Client)
-	var diags diag.Diagnostics
-	duploObjs, err := c.InfrastructureGetList(d, m)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	itemList := c.InfrastructuresFlatten(duploObjs, d)
-	if err := d.Set("data", itemList); err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
-
-	log.Printf("[TRACE] duplo-dataSourceInfrastructureRead ******** end")
-
-	return diags
 }
 
 /// READ resource
