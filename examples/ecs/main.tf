@@ -86,11 +86,12 @@ resource "duplocloud_ecs_service" "test" {
   replicas = 2
   load_balancer {
     lb_type = 1
-    port = 8080
+    port = "8080"
     external_port = 80
     protocol = "HTTP"
-    enable_access_logs = true
+    enable_access_logs = false
     drop_invalid_headers = true
+    webaclid = ""
   }
 }
 
