@@ -13,6 +13,85 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// DuploServiceSchema returns a Terraform resource schema for a service's parameters
+func duploServiceSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"tenant_id": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+			ForceNew: true, //switch tenant
+		},
+		"other_docker_host_config": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
+		},
+		"other_docker_config": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
+		},
+		"extra_config": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
+		},
+		"allocation_tags": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
+		},
+		"volumes": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
+		},
+		"commands": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
+		},
+		"cloud": {
+			Type:     schema.TypeInt,
+			Optional: true,
+			Required: false,
+			Default:  0,
+		},
+		"agent_platform": {
+			Type:     schema.TypeInt,
+			Optional: true,
+			Required: false,
+			Default:  0,
+		},
+		"replicas": {
+			Type:     schema.TypeInt,
+			Optional: false,
+			Required: true,
+		},
+		"replicas_matching_asg_name": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
+		},
+		"docker_image": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+		},
+		"tags": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem:     KeyValueSchema(),
+		},
+	}
+}
+
 // SCHEMA for resource crud
 func resourceDuploService() *schema.Resource {
 	return &schema.Resource{
@@ -28,7 +107,7 @@ func resourceDuploService() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: *duplosdk.DuploServiceSchema(),
+		Schema: duploServiceSchema(),
 	}
 }
 
@@ -47,7 +126,7 @@ func dataSourceDuploService() *schema.Resource {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: *duplosdk.DuploServiceSchema(),
+					Schema: duploServiceSchema(),
 				},
 			},
 		},

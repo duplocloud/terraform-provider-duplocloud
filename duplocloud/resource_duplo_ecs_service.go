@@ -11,6 +11,134 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// DuploEcsServiceSchema returns a Terraform resource schema for an ECS Service
+func ecsServiceSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"tenant_id": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+			ForceNew: true, //switch tenant
+		},
+		"name": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"task_definition": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"replicas": {
+			Type:     schema.TypeInt,
+			Optional: false,
+			Required: true,
+		},
+		"health_check_grace_period_seconds": {
+			Type:     schema.TypeInt,
+			Optional: true,
+			Required: false,
+			Default:  0,
+		},
+		"old_task_definition_buffer_size": {
+			Type:     schema.TypeInt,
+			Optional: true,
+			Required: false,
+			Default:  10,
+		},
+		"is_target_group_only": {
+			Type:     schema.TypeBool,
+			ForceNew: true,
+			Optional: true,
+			Required: false,
+			Default:  false,
+		},
+		"dns_prfx": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
+		},
+		"load_balancer": {
+			Type:     schema.TypeList,
+			Optional: true,
+			ForceNew: true,
+			MaxItems: 1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"replication_controller_name": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"lb_type": {
+						Type:     schema.TypeInt,
+						Optional: false,
+						Required: true,
+					},
+					"port": {
+						Type:     schema.TypeString,
+						Optional: false,
+						Required: true,
+					},
+					"protocol": {
+						Type:     schema.TypeString,
+						Optional: false,
+						Required: true,
+					},
+					"external_port": {
+						Type:     schema.TypeInt,
+						Optional: false,
+						Required: true,
+					},
+					"backend_protocol": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Computed: true,
+					},
+					"is_internal": {
+						Type:     schema.TypeBool,
+						Optional: true,
+						Required: false,
+						Default:  false,
+					},
+					"health_check_url": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Required: false,
+					},
+					"certificate_arn": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Required: false,
+					},
+					"load_balancer_name": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"load_balancer_arn": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"enable_access_logs": {
+						Type:     schema.TypeBool,
+						Optional: true,
+						Computed: true,
+					},
+					"drop_invalid_headers": {
+						Type:     schema.TypeBool,
+						Optional: true,
+						Computed: true,
+					},
+					"webaclid": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Computed: true,
+					},
+				},
+			},
+		},
+	}
+}
+
 // SCHEMA for resource crud
 func resourceDuploEcsService() *schema.Resource {
 	return &schema.Resource{
@@ -26,7 +154,7 @@ func resourceDuploEcsService() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: *duplosdk.DuploEcsServiceSchema(),
+		Schema: ecsServiceSchema(),
 	}
 }
 
@@ -45,12 +173,27 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 		return diag.FromErr(err)
 	}
 
-	// Convert the object into Terraform resource data
-	jo := duplosdk.EcsServiceToState(duplo, d)
-	for key := range jo {
-		d.Set(key, jo[key])
+	// First, convert things into simple scalars
+	d.Set("tenant_id", duplo.TenantID)
+	d.Set("name", duplo.Name)
+	d.Set("task_definition", duplo.TaskDefinition)
+	d.Set("replicas", duplo.Replicas)
+	d.Set("health_check_grace_period_seconds", duplo.HealthCheckGracePeriodSeconds)
+	d.Set("old_task_definition_buffer_size", duplo.OldTaskDefinitionBufferSize)
+	d.Set("is_target_group_only", duplo.IsTargetGroupOnly)
+	d.Set("dns_prfx", duplo.DNSPrfx)
+
+	// Next, convert things into structured data.
+	loadBalancers := ecsLoadBalancersToState(duplo.Name, duplo.LBConfigurations)
+
+	// Retrieve the load balancer settings.
+	if len(loadBalancers) > 0 {
+		err = readEcsServiceAwsLbSettings(duplo.TenantID, duplo.Name, loadBalancers[0], c)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", duplo.TenantID, duplo.Name))
+	d.Set("load_balancer", loadBalancers)
 
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** end")
 	return nil
@@ -58,48 +201,40 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 
 /// CREATE resource
 func resourceDuploEcsServiceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploEcsServiceCreate ******** start")
-
-	// Convert the Terraform resource data into a Duplo object
-	duploObject, err := duplosdk.EcsServiceFromState(d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Post the object to Duplo
-	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
-	rpObject, err := c.EcsServiceCreate(tenantID, duploObject)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantID, rpObject.Name))
-
-	diags := resourceDuploEcsServiceRead(ctx, d, m)
-	log.Printf("[TRACE] resourceDuploEcsServiceCreate ******** end")
-	return diags
+	return resourceDuploEcsServiceCreateOrUpdate(ctx, d, m, false)
 }
 
 /// UPDATE resource
 func resourceDuploEcsServiceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploEcsServiceUpdate ******** start")
+	return resourceDuploEcsServiceCreateOrUpdate(ctx, d, m, true)
+}
 
-	// Convert the Terraform resource data into a Duplo object
-	duploObject, err := duplosdk.EcsServiceFromState(d)
+func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, updating bool) diag.Diagnostics {
+	tenantID := d.Get("tenant_id").(string)
+
+	// Create the request object.
+	duplo := ecsServiceFromState(d)
+
+	log.Printf("[TRACE] resourceDuploEcsServiceCreateOrUpdate(%s, %s): start", tenantID, duplo.Name)
+
+	// Create the ECS service.
+	c := m.(*duplosdk.Client)
+	rpObject, err := c.EcsServiceCreateOrUpdate(tenantID, &duplo, updating)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	if !updating {
+		d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantID, rpObject.Name))
+	}
 
-	// Put the object to Duplo
-	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
-	_, err = c.EcsServiceUpdate(tenantID, duploObject)
+	// Next, we need to apply load balancer settings.
+	err = updateEcsServiceAwsLbSettings(tenantID, rpObject.Name, d, c)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Error applying ECS load balancer settings '%s': %s", d.Id(), err)
 	}
 
 	diags := resourceDuploEcsServiceRead(ctx, d, m)
-	log.Printf("[TRACE] resourceDuploEcsServiceUpdate ******** end")
+	log.Printf("[TRACE] resourceDuploEcsServiceCreate ******** end")
 	return diags
 }
 
@@ -115,5 +250,145 @@ func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	log.Printf("[TRACE] resourceDuploEcsServiceDelete ******** end")
+	return nil
+}
+
+// EcsServiceFromState converts resource data respresenting an ECS Service to a Duplo SDK object.
+func ecsServiceFromState(d *schema.ResourceData) duplosdk.DuploEcsService {
+	duploObject := duplosdk.DuploEcsService{}
+
+	// First, convert things into simple scalars
+	duploObject.Name = d.Get("name").(string)
+	duploObject.TaskDefinition = d.Get("task_definition").(string)
+	duploObject.Replicas = d.Get("replicas").(int)
+	duploObject.HealthCheckGracePeriodSeconds = d.Get("health_check_grace_period_seconds").(int)
+	duploObject.OldTaskDefinitionBufferSize = d.Get("old_task_definition_buffer_size").(int)
+	duploObject.IsTargetGroupOnly = d.Get("is_target_group_only").(bool)
+	duploObject.DNSPrfx = d.Get("dns_prfx").(string)
+
+	// Next, convert things into structured data.
+	duploObject.LBConfigurations = ecsLoadBalancersFromState(d)
+
+	return duploObject
+}
+
+func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConfig) []map[string]interface{} {
+	if lbcs == nil {
+		return nil
+	}
+
+	var ary []map[string]interface{}
+
+	for _, lbc := range *lbcs {
+		jo := make(map[string]interface{})
+		jo["replication_controller_name"] = name
+		jo["lb_type"] = lbc.LbType
+		jo["port"] = lbc.Port
+		jo["protocol"] = lbc.Protocol
+		jo["backend_protocol"] = lbc.BackendProtocol
+		if jo["backend_protocol"] == "" {
+			jo["backend_protocol"] = "HTTP"
+		}
+		jo["external_port"] = lbc.ExternalPort
+		jo["is_internal"] = lbc.IsInternal
+		jo["health_check_url"] = lbc.HealthCheckURL
+		jo["certificate_arn"] = lbc.CertificateArn
+		ary = append(ary, jo)
+	}
+
+	return ary
+}
+
+func ecsLoadBalancersFromState(d *schema.ResourceData) *[]duplosdk.DuploEcsServiceLbConfig {
+	var ary []duplosdk.DuploEcsServiceLbConfig
+
+	lb, err := getOptionalBlockAsMap(d, "load_balancer")
+	if err != nil || lb == nil {
+		return &ary
+	}
+
+	log.Printf("[TRACE] ecsLoadBalancersFromState ********: have data")
+
+	ary = append(ary, duplosdk.DuploEcsServiceLbConfig{
+		ReplicationControllerName: lb["replication_controller_name"].(string),
+		LbType:                    lb["lb_type"].(int),
+		Port:                      lb["port"].(string),
+		Protocol:                  lb["protocol"].(string),
+		BackendProtocol:           lb["backend_protocol"].(string),
+		ExternalPort:              lb["external_port"].(int),
+		IsInternal:                lb["is_internal"].(bool),
+		HealthCheckURL:            lb["health_check_url"].(string),
+		CertificateArn:            lb["certificate_arn"].(string),
+	})
+
+	return &ary
+}
+
+func readEcsServiceAwsLbSettings(tenantID string, name string, lb map[string]interface{}, c *duplosdk.Client) error {
+	// Next, look for load balancer settings.
+	details, err := c.TenantGetLbDetailsInService(tenantID, name)
+	if err != nil {
+		return err
+	}
+	if details != nil && details.LoadBalancerArn != "" {
+
+		// Populate load balancer details.
+		lb["load_balancer_arn"] = details.LoadBalancerArn
+		lb["load_balancer_name"] = details.LoadBalancerName
+
+		settings, err := c.TenantGetApplicationLbSettings(tenantID, details.LoadBalancerArn)
+		if err != nil {
+			return err
+		}
+		if settings != nil && settings.LoadBalancerArn != "" {
+
+			// Populate load balancer settings.
+			lb["webaclid"] = settings.WebACLID
+			lb["enable_access_logs"] = settings.EnableAccessLogs
+			lb["drop_invalid_headers"] = settings.DropInvalidHeaders
+		}
+	}
+
+	return nil
+}
+
+func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
+	state, err := getOptionalBlockAsMap(d, "load_balancer")
+	if err != nil || state == nil {
+		return err
+	}
+
+	// Get any load balancer settings from the user.
+	settings := duplosdk.DuploAwsLbSettingsUpdateRequest{}
+	haveSettings := false
+	if v, ok := state["enable_access_logs"]; ok && v != nil {
+		settings.EnableAccessLogs = v.(bool)
+		haveSettings = true
+	}
+	if v, ok := state["drop_invalid_headers"]; ok && v != nil {
+		settings.DropInvalidHeaders = v.(bool)
+		haveSettings = true
+	}
+	if v, ok := state["webaclid"]; ok && v != nil {
+		settings.WebACLID = v.(string)
+		haveSettings = true
+	}
+
+	// If we have load balancer settings, apply them.
+	if haveSettings {
+		details, err := c.TenantGetLbDetailsInService(tenantID, name)
+		if err != nil {
+			return err
+		}
+
+		if details != nil && details.LoadBalancerArn != "" {
+			settings.LoadBalancerArn = details.LoadBalancerArn
+			err = c.TenantUpdateApplicationLbSettings(tenantID, settings)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }

@@ -1,16 +1,8 @@
 package duplosdk
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strconv"
 	"strings"
-	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // DuploRdsInstance is a Duplo SDK object that represents an RDS instance
@@ -44,102 +36,6 @@ type DuploRdsInstancePasswordChange struct {
 	StorePassword  bool   `json:"StorePassword,omitempty"`
 }
 
-// DuploRdsInstanceSchema returns a Terraform resource schema for an ECS Service
-func DuploRdsInstanceSchema() *map[string]*schema.Schema {
-	return &map[string]*schema.Schema{
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch tenant
-		},
-		"name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"identifier": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"endpoint": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"host": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"port": {
-			Type:     schema.TypeInt,
-			Computed: true,
-		},
-		"master_username": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
-		},
-		"master_password": {
-			Type:      schema.TypeString,
-			Optional:  true,
-			Sensitive: true,
-		},
-		"engine": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
-		},
-		"engine_version": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
-		},
-		"snapshot_id": {
-			Type:          schema.TypeString,
-			Optional:      true,
-			ForceNew:      true,
-			ConflictsWith: []string{"master_username"},
-		},
-		"parameter_group_name": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"store_details_in_secret_manager": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			ForceNew: true,
-		},
-		"cloud": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			ForceNew: true,
-			Default:  0,
-		},
-		"size": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"encrypt_storage": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			ForceNew: true,
-		},
-		"instance_status": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-	}
-}
-
 /*************************************************
  * API CALLS to duplo
  */
@@ -162,40 +58,20 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 	if updating {
 		verb = "PUT"
 	}
-	rqBody, err := json.Marshal(&duploObject)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceCreateOrUpdate 1 JSON gen : %s", err.Error())
-		return nil, err
-	}
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/RDSDBInstance", c.HostURL, tenantID)
-	log.Printf("[TRACE] RdsInstanceCreate 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceCreateOrUpdate 3 HTTP builder : %s", err.Error())
-		return nil, err
-	}
 
-	// Call the API and get the response
-	body, err := c.doRequest(req)
+	// Call the API.
+	rp := DuploRdsInstance{}
+	err := c.doAPIWithRequestBody(
+		verb,
+		fmt.Sprintf("RdsInstanceCreateOrUpdate(%s, duplo%s)", tenantID, duploObject.Name),
+		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance", tenantID),
+		&duploObject,
+		&rp,
+	)
 	if err != nil {
-		log.Printf("[TRACE] RdsInstanceCreateOrUpdate 4 HTTP %s : %s", verb, err.Error())
 		return nil, err
 	}
-	bodyString := string(body)
-	log.Printf("[TRACE] RdsInstanceCreateOrUpdate 4 HTTP RESPONSE : %s", bodyString)
-
-	// Handle the response
-	rpObject := DuploRdsInstance{}
-	if bodyString == "" {
-		log.Printf("[TRACE] RdsInstanceCreateOrUpdate 5 NO RESULT : %s", bodyString)
-		return nil, err
-	}
-	err = json.Unmarshal(body, &rpObject)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceCreateOrUpdate 6 JSON parse : %s", err.Error())
-		return nil, err
-	}
-	return &rpObject, nil
+	return &rp, err
 }
 
 // RdsInstanceDelete deletes an RDS instance via the Duplo API.
@@ -204,40 +80,17 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, error) {
 	tenantID := idParts[2]
 	name := idParts[4]
 
-	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/RDSDBInstance/duplo%s", c.HostURL, tenantID, name)
-	log.Printf("[TRACE] RdsInstanceGet 1 : %s", url)
-	req, err := http.NewRequest("DELETE", url, nil)
+	// Call the API.
+	err := c.deleteAPI(
+		fmt.Sprintf("RdsInstanceDelete(%s, duplo%s)", tenantID, name),
+		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/duplo%s", tenantID, name),
+		nil)
 	if err != nil {
-		log.Printf("[TRACE] RdsInstanceGet 2 HTTP builder : %s", err.Error())
 		return nil, err
 	}
 
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	bodyString := string(body)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceGet 3 HTTP DELETE : %s", err.Error())
-		return nil, err
-	}
-	log.Printf("[TRACE] RdsInstanceGet 4 HTTP RESPONSE : %s", bodyString)
-
-	// Parse the response into a duplo object
-	duploObject := DuploRdsInstance{}
-	if bodyString == "" {
-		// tolerate an empty response from DELETE
-		duploObject.Name = name
-	} else {
-		err = json.Unmarshal(body, &duploObject)
-		if err != nil {
-			log.Printf("[TRACE] RdsInstanceGet 5 JSON PARSE : %s", bodyString)
-			return nil, err
-		}
-	}
-
-	// Fill in the tenant ID and return the object
-	duploObject.TenantID = tenantID
-	return &duploObject, nil
+	// Return a placeholder - since the API does not return responses.
+	return &DuploRdsInstance{TenantID: tenantID, Name: name}, nil
 }
 
 // RdsInstanceGet retrieves an RDS instance via the Duplo API.
@@ -246,32 +99,13 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 	tenantID := idParts[2]
 	name := idParts[4]
 
-	// Build the request
-	url := fmt.Sprintf("%s/v2/subscriptions/%s/RDSDBInstance/duplo%s", c.HostURL, tenantID, name)
-	log.Printf("[TRACE] RdsInstanceGet 1 : %s", url)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceGet 2 HTTP builder : %s", err.Error())
-		return nil, err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceGet 3 HTTP GET : %s", err.Error())
-		return nil, err
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] RdsInstanceGet 4 HTTP RESPONSE : %s", bodyString)
-
-	// Parse the response into a duplo object, detecting a missing object
-	if bodyString == "null" {
-		return nil, nil
-	}
+	// Call the API.
 	duploObject := DuploRdsInstance{}
-	err = json.Unmarshal(body, &duploObject)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceGet 5 JSON PARSE : %s", bodyString)
+	err := c.getAPI(
+		fmt.Sprintf("RdsInstanceGet(%s, duplo%s)", tenantID, name),
+		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/duplo%s", tenantID, name),
+		&duploObject)
+	if err != nil || duploObject.Identifier == "" {
 		return nil, err
 	}
 
@@ -283,161 +117,11 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 
 // RdsInstanceChangePassword creates or updates an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRdsInstancePasswordChange) error {
-
-	// Build the request
-	rqBody, err := json.Marshal(&duploObject)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceChangePassword 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/RDSInstancePasswordChange", c.HostURL, tenantID)
-	log.Printf("[TRACE] RdsInstanceChangePassword 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceChangePassword 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] RdsInstanceChangePassword 4 HTTP POST : %s", err.Error())
-		return err
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] RdsInstanceChangePassword 4 HTTP RESPONSE : %s", bodyString)
-
-	// Handle the response
-	if bodyString != "null" {
-		log.Printf("[TRACE] RdsInstanceChangePassword 5 UNEXPECTED RESULT : %s", bodyString)
-		return fmt.Errorf("Unexpected result from backend: '%s'", bodyString)
-	}
-	return nil
-}
-
-// RdsInstanceWaitUntilAvailable waits until an RDS instance is available.
-//
-// It should be usable both post-creation and post-modification.
-func RdsInstanceWaitUntilAvailable(c *Client, id string) error {
-	stateConf := &resource.StateChangeConf{
-		Pending: []string{
-			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
-			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
-			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
-		},
-		Target:       []string{"available"},
-		MinTimeout:   10 * time.Second,
-		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
-		Refresh: func() (interface{}, string, error) {
-			resp, err := c.RdsInstanceGet(id)
-			if err != nil {
-				return 0, "", err
-			}
-			if resp.InstanceStatus == "" {
-				resp.InstanceStatus = "processing"
-			}
-			return resp, resp.InstanceStatus, nil
-		},
-	}
-	log.Printf("[DEBUG] RdsInstanceWaitUntilAvailable (%s)", id)
-	_, err := stateConf.WaitForState()
-	return err
-}
-
-// RdsInstanceWaitUntilUnavailable waits until an RDS instance is unavailable.
-//
-// It should be usable post-modification.
-func RdsInstanceWaitUntilUnavailable(c *Client, id string) error {
-	stateConf := &resource.StateChangeConf{
-		Target: []string{
-			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
-			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
-			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
-		},
-		Pending:      []string{"available"},
-		MinTimeout:   10 * time.Second,
-		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
-		Refresh: func() (interface{}, string, error) {
-			resp, err := c.RdsInstanceGet(id)
-			if err != nil {
-				return 0, "", err
-			}
-			if resp.InstanceStatus == "" {
-				resp.InstanceStatus = "available"
-			}
-			return resp, resp.InstanceStatus, nil
-		},
-	}
-	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
-	_, err := stateConf.WaitForState()
-	return err
-}
-
-/*************************************************
- * DATA CONVERSIONS to/from duplo/terraform
- */
-
-// RdsInstanceFromState converts resource data respresenting an RDS instance to a Duplo SDK object.
-func RdsInstanceFromState(d *schema.ResourceData) (*DuploRdsInstance, error) {
-	duploObject := new(DuploRdsInstance)
-
-	// First, convert things into simple scalars
-	duploObject.Name = d.Get("name").(string)
-	duploObject.Identifier = d.Get("identifier").(string)
-	duploObject.Arn = d.Get("arn").(string)
-	duploObject.Endpoint = d.Get("endpoint").(string)
-	duploObject.MasterUsername = d.Get("master_username").(string)
-	duploObject.MasterPassword = d.Get("master_password").(string)
-	duploObject.Engine = d.Get("engine").(int)
-	duploObject.EngineVersion = d.Get("engine_version").(string)
-	duploObject.SnapshotID = d.Get("snapshot_id").(string)
-	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
-	duploObject.Cloud = d.Get("cloud").(int)
-	duploObject.SizeEx = d.Get("size").(string)
-	duploObject.EncryptStorage = d.Get("encrypt_storage").(bool)
-	duploObject.InstanceStatus = d.Get("instance_status").(string)
-
-	return duploObject, nil
-}
-
-// RdsInstanceToState converts a Duplo SDK object respresenting an RDS instance to terraform resource data.
-func RdsInstanceToState(duploObject *DuploRdsInstance, d *schema.ResourceData) map[string]interface{} {
-	if duploObject == nil {
-		return nil
-	}
-	jsonData, _ := json.Marshal(duploObject)
-	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 1: INPUT <= %s ", jsonData)
-
-	jo := make(map[string]interface{})
-
-	// First, convert things into simple scalars
-	jo["tenant_id"] = duploObject.TenantID
-	jo["name"] = duploObject.Name
-	jo["identifier"] = duploObject.Identifier
-	jo["arn"] = duploObject.Arn
-	jo["endpoint"] = duploObject.Endpoint
-	if duploObject.Endpoint != "" {
-		uriParts := strings.SplitN(duploObject.Endpoint, ":", 2)
-		jo["host"] = uriParts[0]
-		if len(uriParts) == 2 {
-			jo["port"], _ = strconv.Atoi(uriParts[1])
-		}
-	}
-	jo["master_username"] = duploObject.MasterUsername
-	jo["master_password"] = duploObject.MasterPassword
-	jo["engine"] = duploObject.Engine
-	jo["engine_version"] = duploObject.EngineVersion
-	jo["snapshot_id"] = duploObject.SnapshotID
-	jo["parameter_group_name"] = duploObject.DBParameterGroupName
-	jo["cloud"] = duploObject.Cloud
-	jo["size"] = duploObject.SizeEx
-	jo["encrypt_storage"] = duploObject.EncryptStorage
-	jo["instance_status"] = duploObject.InstanceStatus
-
-	jsonData2, _ := json.Marshal(jo)
-	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
-
-	return jo
+	// Call the API.
+	return c.postAPI(
+		fmt.Sprintf("RdsInstanceChangePassword(%s, %s)", tenantID, duploObject.Identifier),
+		fmt.Sprintf("subscriptions/%s/RDSInstancePasswordChange", tenantID),
+		&duploObject,
+		nil,
+	)
 }

@@ -1,10 +1,8 @@
 package duplosdk
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 )
 
 // DuploAwsKmsKey represents an AWS KMS key for a Duplo tenant
@@ -21,28 +19,17 @@ type DuploAwsKmsKey struct {
 
 // TenantGetPlanKmsKeys retrieves a list of the AWS KMS keys for a tenant via the Duplo API.
 func (c *Client) TenantGetPlanKmsKeys(tenantID string) (*[]DuploAwsKmsKey, error) {
-
-	// Format the URL
-	url := fmt.Sprintf("%s/subscriptions/%s/GetPlanKmsKeys", c.HostURL, tenantID)
-	log.Printf("[TRACE] duplo-TenantGetPlanKmsKeys 1 ********: %s ", url)
+	apiName := fmt.Sprintf("TenantGetPlanKmsKeys(%s)", tenantID)
+	list := []DuploAwsKmsKey{}
 
 	// Get the list from Duplo
-	req2, _ := http.NewRequest("GET", url, nil)
-	body, err := c.doRequest(req2)
+	err := c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetPlanKmsKeys", tenantID), &list)
 	if err != nil {
-		log.Printf("[TRACE] duplo-TenantGetPlanKmsKeys 2 ********: %s", err.Error())
 		return nil, err
 	}
-	bodyString := string(body)
-	log.Printf("[TRACE] duplo-TenantGetPlanKmsKeys 3 ********: %s", bodyString)
 
-	// Return it as a list.
-	list := []DuploAwsKmsKey{}
-	err = json.Unmarshal(body, &list)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("[TRACE] duplo-TenantGetPlanKmsKeys 4 ********: %d items", len(list))
+	// Update each element and return the list.
+	log.Printf("[TRACE] %s: %d items", apiName, len(list))
 	for i := range list {
 		list[i].TenantID = tenantID
 		list[i].Arn = list[i].KeyArn
@@ -53,27 +40,15 @@ func (c *Client) TenantGetPlanKmsKeys(tenantID string) (*[]DuploAwsKmsKey, error
 
 // TenantGetTenantKmsKey retrieves a tenant specific AWS KMS keys via the Duplo API.
 func (c *Client) TenantGetTenantKmsKey(tenantID string) (*DuploAwsKmsKey, error) {
-
-	// Format the URL
-	url := fmt.Sprintf("%s/subscriptions/%s/GetTenantKmsKey", c.HostURL, tenantID)
-	log.Printf("[TRACE] duplo-TenantGetTenantKmsKey 1 ********: %s ", url)
-
-	// Get the key from Duplo
-	req2, _ := http.NewRequest("GET", url, nil)
-	body, err := c.doRequest(req2)
-	if err != nil {
-		log.Printf("[TRACE] duplo-TenantGetTenantKmsKey 2 ********: %s", err.Error())
-		return nil, err
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] duplo-TenantGetTenantKmsKey 3 ********: %s", bodyString)
-
-	// Return it as an object.
 	kms := DuploAwsKmsKey{}
-	err = json.Unmarshal(body, &kms)
+
+	// Get the list from Duplo
+	err := c.getAPI(fmt.Sprintf("TenantGetTenantKmsKey(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetTenantKmsKey", tenantID), &kms)
 	if err != nil {
 		return nil, err
 	}
+
+	// Update the element and return it.
 	log.Printf("[TRACE] duplo-TenantGetTenantKmsKey 4 ********")
 	kms.TenantID = tenantID
 	kms.KeyArn = kms.Arn

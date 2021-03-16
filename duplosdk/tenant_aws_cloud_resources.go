@@ -1,11 +1,9 @@
 package duplosdk
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
-	"strings"
+	"time"
 )
 
 const (
@@ -79,11 +77,37 @@ type DuploAwsLBConfiguration struct {
 	EnableAccessLogs bool   `json:"EnableAccessLogs,omitempty"`
 }
 
+type DuploAwsLbState struct {
+	Code *DuploStringValue `json:"Code,omitempty"`
+}
+
+type DuploAwsLbAvailabilityZone struct {
+	SubnetID string `json:"SubnetId,omitempty"`
+	ZoneName string `json:"ZoneName,omitempty"`
+}
+
+// DuploAwsLbSettings represents an AWS application load balancer's details, via a Duplo Service
+type DuploAwsLbDetailsInService struct {
+	LoadBalancerName      string                       `json:"LoadBalancerName"`
+	LoadBalancerArn       string                       `json:"LoadBalancerArn"`
+	AvailabilityZones     []DuploAwsLbAvailabilityZone `json:"AvailabilityZones"`
+	CanonicalHostedZoneId string                       `json:"CanonicalHostedZoneId"`
+	CreatedTime           time.Time                    `json:"CreatedTime"`
+	DNSName               string                       `json:"DNSName"`
+	IPAddressType         *DuploStringValue            `json:"IPAddressType,omitempty"`
+	Scheme                *DuploStringValue            `json:"Scheme,omitempty"`
+	Type                  *DuploStringValue            `json:"Type,omitempty"`
+	SecurityGroups        []string                     `json:"SecurityGroups"`
+	State                 *DuploAwsLbState             `json:"State,omitempty"`
+	VpcID                 string                       `json:"VpcId,omitempty"`
+}
+
 // DuploAwsLbSettings represents an AWS application load balancer's settings
 type DuploAwsLbSettings struct {
-	LoadBalancerArn  string `json:"LoadBalancerArn"`
-	EnableAccessLogs bool   `json:"EnableAccessLogs,omitempty"`
-	WebACLID         string `json:"WebACLId,omitempty"`
+	LoadBalancerArn    string `json:"LoadBalancerArn"`
+	EnableAccessLogs   bool   `json:"EnableAccessLogs,omitempty"`
+	DropInvalidHeaders bool   `json:"DropInvalidHeaders,omitempty"`
+	WebACLID           string `json:"WebACLId,omitempty"`
 }
 
 // DuploAwsLBAccessLogsRequest represents a request to retrieve an AWS application load balancer's settings.
@@ -93,9 +117,10 @@ type DuploAwsLbSettingsRequest struct {
 
 // DuploAwsLBAccessLogsUpdateRequest represents a request to update an AWS application load balancer's settings.
 type DuploAwsLbSettingsUpdateRequest struct {
-	LoadBalancerArn  string `json:"LoadBalancerArn"`
-	EnableAccessLogs bool   `json:"EnableAccessLogs,omitempty"`
-	WebACLID         string `json:"WebACLId,omitempty"`
+	LoadBalancerArn    string `json:"LoadBalancerArn"`
+	EnableAccessLogs   bool   `json:"EnableAccessLogs,omitempty"`
+	DropInvalidHeaders bool   `json:"DropInvalidHeaders,omitempty"`
+	WebACLID           string `json:"WebACLId,omitempty"`
 }
 
 // DuploS3BucketRequest represents a request to create an S3 bucket resource
@@ -118,28 +143,17 @@ type DuploS3BucketSettingsRequest struct {
 
 // TenantListAwsCloudResources retrieves a list of the generic AWS cloud resources for a tenant via the Duplo API.
 func (c *Client) TenantListAwsCloudResources(tenantID string) (*[]DuploAwsCloudResource, error) {
-
-	// Format the URL
-	url := fmt.Sprintf("%s/subscriptions/%s/GetCloudResources", c.HostURL, tenantID)
-	log.Printf("[TRACE] duplo-TenantListAwsCloudResources 1 ********: %s ", url)
+	apiName := fmt.Sprintf("TenantListAwsCloudResources(%s)", tenantID)
+	list := []DuploAwsCloudResource{}
 
 	// Get the list from Duplo
-	req2, _ := http.NewRequest("GET", url, nil)
-	body, err := c.doRequest(req2)
+	err := c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetCloudResources", tenantID), &list)
 	if err != nil {
-		log.Printf("[TRACE] duplo-TenantListAwsCloudResources 2 ********: %s", err.Error())
 		return nil, err
 	}
-	bodyString := string(body)
-	log.Printf("[TRACE] duplo-TenantListAwsCloudResources 3 ********: %s", bodyString)
 
-	// Return it as a list.
-	list := []DuploAwsCloudResource{}
-	err = json.Unmarshal(body, &list)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("[TRACE] duplo-TenantListAwsCloudResources 4 ********: %d items", len(list))
+	// Add the tenant ID to each element and return the list.
+	log.Printf("[TRACE] %s: %d items", apiName, len(list))
 	for i := range list {
 		list[i].TenantID = tenantID
 	}
@@ -248,79 +262,35 @@ func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApp
 func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketRequest) error {
 	duplo.Type = ResourceTypeS3Bucket
 
-	// Build the request
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateS3Bucket 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/S3BucketUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantCreateS3Bucket 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateS3Bucket 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateS3Bucket 4 HTTP POST : %s", err.Error())
-		return fmt.Errorf("Tenant %s failed to create bucket %s: '%s'", tenantID, duplo.Name, err)
-	}
-	bodyString := string(body)
-
-	// Expect the response to be "null"
-	if bodyString == "null" {
-		return nil
-	}
-	return fmt.Errorf("Tenant %s failed to create bucket %s: '%s'", tenantID, duplo.Name, bodyString)
+	// Create the bucket via Duplo.
+	return c.postAPI(
+		fmt.Sprintf("TenantCreateS3Bucket(%s, %s)", tenantID, duplo.Name),
+		fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
+		&duplo,
+		nil)
 }
 
 // TenantDeleteS3Bucket deletes an S3 bucket resource via Duplo.
 func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) error {
-	// Figure out the full resource name.
+
+	// Get the full name of the S3 bucket
 	fullName, err := c.TenantGetS3BucketFullName(tenantID, name)
 	if err != nil {
 		return err
 	}
 
-	// Build the request
-	duplo := DuploS3BucketRequest{
-		Type:  ResourceTypeS3Bucket,
-		Name:  fullName,
-		State: "delete",
-	}
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteS3Bucket 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/S3BucketUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantDeleteS3Bucket 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteS3Bucket 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteS3Bucket 4 HTTP POST : %s", err.Error())
-		return fmt.Errorf("Tenant %s failed to create bucket %s: '%s'", tenantID, duplo.Name, err)
-	}
-	bodyString := string(body)
-
-	// Expect the response to be "null"
-	if bodyString == "null" {
-		return nil
-	}
-	return fmt.Errorf("Tenant %s failed to delete bucket %s: '%s'", tenantID, duplo.Name, bodyString)
+	// Delete the bucket via Duplo.
+	return c.postAPI(
+		fmt.Sprintf("TenantDeleteS3Bucket(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
+		&DuploS3BucketRequest{Type: ResourceTypeS3Bucket, Name: fullName, State: "delete"},
+		nil)
 }
 
 // TenantApplyS3BucketSettings applies settings to an S3 bucket resource via Duplo.
 func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, error) {
+	apiName := fmt.Sprintf("TenantApplyS3BucketSettings(%s, %s)", tenantID, duplo.Name)
+
 	// Figure out the full resource name.
 	fullName, err := c.TenantGetS3BucketFullName(tenantID, duplo.Name)
 	if err != nil {
@@ -328,178 +298,78 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 	}
 	duplo.Name = fullName
 
-	// Build the request
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantApplyS3BucketSettings 1 JSON gen : %s", err.Error())
-		return nil, err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/ApplyS3BucketSettings", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantApplyS3BucketSettings 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantApplyS3BucketSettings 3 HTTP builder : %s", err.Error())
-		return nil, err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantApplyS3BucketSettings 4 HTTP POST : %s", err.Error())
-		return nil, fmt.Errorf("Tenant %s failed to update bucket %s: '%s'", tenantID, duplo.Name, err)
-	}
-	bodyString := string(body)
-
-	// Return it as a resource.
-	resource := DuploS3Bucket{}
-	if bodyString == "" {
-		log.Printf("[TRACE] TenantApplyS3BucketSettings 5 NO RESULT : %s", bodyString)
-		return nil, fmt.Errorf("Tenant %s failed to update bucket %s: no result from backend", tenantID, duplo.Name)
-	}
-	err = json.Unmarshal(body, &resource)
+	// Apply the settings via Duplo.
+	rp := DuploS3Bucket{}
+	err = c.postAPI(apiName, fmt.Sprintf("subscriptions/%s/ApplyS3BucketSettings", tenantID), &duplo, &rp)
 	if err != nil {
 		return nil, err
 	}
 
-	resource.TenantID = tenantID
-	return &resource, nil
+	// Deal with a missing response.
+	if rp.Name == "" {
+		err := fmt.Errorf("%s: unexpected missing response from backend", apiName)
+		log.Printf("[TRACE] %s", err)
+		return nil, err
+	}
+
+	// Return the response.
+	rp.TenantID = tenantID
+	return &rp, nil
 }
 
 // TenantUpdateApplicationLbSettings updates an application LB resource's settings via Duplo.
 func (c *Client) TenantUpdateApplicationLbSettings(tenantID string, duplo DuploAwsLbSettingsUpdateRequest) error {
-
-	// Build the request
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantUpdateApplicationLbSettings 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/UpdateLbSettings", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantUpdateApplicationLbSettings 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantUpdateApplicationLbSettings 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantUpdateApplicationLbSettings 4 HTTP POST : %s", err.Error())
-		return fmt.Errorf("Tenant %s failed to update load balancer %s: '%s'", tenantID, duplo.LoadBalancerArn, err)
-	}
-	bodyString := string(body)
-
-	// Expect the response to be "null"
-	if bodyString == "null" {
-		return nil
-	}
-	return fmt.Errorf("Tenant %s failed to update load balancer %s: no result from backend", tenantID, duplo.LoadBalancerArn)
+	return c.postAPI("TenantUpdateApplicationLbSettings",
+		fmt.Sprintf("subscriptions/%s/UpdateLbSettings", tenantID),
+		&duplo,
+		nil)
 }
 
 // TenantGetApplicationLbSettings updates an application LB resource's WAF association via Duplo.
 func (c *Client) TenantGetApplicationLbSettings(tenantID string, loadBalancerArn string) (*DuploAwsLbSettings, error) {
+	rp := DuploAwsLbSettings{}
 
-	// Build the request
-	rq := DuploAwsLbSettingsRequest{LoadBalancerArn: loadBalancerArn}
-	rqBody, err := json.Marshal(&rq)
-	if err != nil {
-		log.Printf("[TRACE] TenantGetApplicationLbSettings 1 JSON gen : %s", err.Error())
-		return nil, err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/GetLbSettings", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantGetApplicationLbSettings 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantGetApplicationLbSettings 3 HTTP builder : %s", err.Error())
-		return nil, err
-	}
+	err := c.postAPI("TenantGetApplicationLbSettings",
+		fmt.Sprintf("subscriptions/%s/GetLbSettings", tenantID),
+		&DuploAwsLbSettingsRequest{LoadBalancerArn: loadBalancerArn},
+		&rp)
 
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantGetApplicationLbSettings 4 HTTP POST : %s", err.Error())
-		return nil, fmt.Errorf("Tenant %s failed to get load balancer %s setings: '%s'", tenantID, loadBalancerArn, err)
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] TenantGetApplicationLbSettings 5 ********: %s", bodyString)
+	return &rp, err
+}
 
-	// Return it as an object.
-	result := DuploAwsLbSettings{}
-	err = json.Unmarshal(body, &result)
+// TenantGetLbDetailsInService retrieves load balancer details via a Duplo service.
+func (c *Client) TenantGetLbDetailsInService(tenantID string, name string) (*DuploAwsLbDetailsInService, error) {
+	apiName := fmt.Sprintf("TenantGetLbDetailsInService(%s, %s)", tenantID, name)
+	details := DuploAwsLbDetailsInService{}
+
+	// Get the list from Duplo
+	err := c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetLbDetailsInSErvice/%s", tenantID, name), &details)
 	if err != nil {
 		return nil, err
 	}
-	return &result, nil
+
+	return &details, nil
 }
 
 // TenantCreateApplicationLB creates an application LB resource via Duplo.
 func (c *Client) TenantCreateApplicationLB(tenantID string, duplo DuploAwsLBConfiguration) error {
-	// Build the request
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateApplicationLB 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/ApplicationLbUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantCreateApplicationLB 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateApplicationLB 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantCreateApplicationLB 4 HTTP POST : %s", err.Error())
-		return fmt.Errorf("Tenant %s failed to apply load balancer %s: '%s'", tenantID, duplo.Name, err)
-	}
-	bodyString := string(body)
-
-	// Expect the response to be "null"
-	if bodyString == "null" {
-		return nil
-	}
-	return fmt.Errorf("Tenant %s failed to apply load balancer %s: '%s'", tenantID, duplo.Name, bodyString)
+	return c.postAPI("TenantCreateApplicationLB",
+		fmt.Sprintf("subscriptions/%s/ApplicationLbUpdate", tenantID),
+		&duplo,
+		nil)
 }
 
 // TenantDeleteApplicationLB deletes an AWS application LB resource via Duplo.
 func (c *Client) TenantDeleteApplicationLB(tenantID string, name string) error {
+	// Get the full name of the ALB.
 	fullName, err := c.TenantGetApplicationLbFullName(tenantID, name)
 	if err != nil {
 		return err
 	}
 
-	// Build the request
-	duplo := DuploAwsLBConfiguration{
-		Name:  fullName,
-		State: "delete",
-	}
-	rqBody, err := json.Marshal(&duplo)
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteApplicationLB 1 JSON gen : %s", err.Error())
-		return err
-	}
-	url := fmt.Sprintf("%s/subscriptions/%s/ApplicationLbUpdate", c.HostURL, tenantID)
-	log.Printf("[TRACE] TenantDeleteApplicationLB 2 : %s <= %s", url, rqBody)
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(rqBody)))
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteApplicationLB 3 HTTP builder : %s", err.Error())
-		return err
-	}
-
-	// Call the API and get the response
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] TenantDeleteApplicationLB 4 HTTP POST : %s", err.Error())
-		return fmt.Errorf("Tenant %s failed to delete load balancer %s: '%s'", tenantID, duplo.Name, err)
-	}
-	bodyString := string(body)
-
-	// Expect the response to be "null"
-	if bodyString == "null" {
-		return nil
-	}
-	return fmt.Errorf("Tenant %s failed to delete load balancer %s: '%s'", tenantID, duplo.Name, bodyString)
+	// Call the API.
+	return c.postAPI("TenantDeleteApplicationLB",
+		fmt.Sprintf("subscriptions/%s/ApplicationLbUpdate", tenantID),
+		&DuploAwsLBConfiguration{Name: fullName, State: "delete"},
+		nil)
 }

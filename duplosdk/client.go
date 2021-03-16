@@ -101,7 +101,8 @@ func (c *Client) doRequestWithStatus(req *http.Request, statusCode int) ([]byte,
 
 	return body, err
 }
-func (c *Client) doPostRequest(req *http.Request, caller string) ([]byte, error) {
+
+func (c *Client) doRequestWithBody(req *http.Request, caller string) ([]byte, error) {
 	req.Header.Set("Authorization", c.Token)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
@@ -124,6 +125,115 @@ func (c *Client) doPostRequest(req *http.Request, caller string) ([]byte, error)
 	}
 
 	return body, err
+}
+
+// Utility method to call an API with a GET request, handling logging, etc.
+func (c *Client) getAPI(apiName string, apiPath string, rp interface{}) error {
+	return c.doAPI("GET", apiName, apiPath, rp)
+}
+
+// Utility method to call an API with a DELETE request, handling logging, etc.
+func (c *Client) deleteAPI(apiName string, apiPath string, rp interface{}) error {
+	return c.doAPI("DELETE", apiName, apiPath, rp)
+}
+
+// Utility method to call an API without a request body, handling logging, etc.
+func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface{}) error {
+	apiName = fmt.Sprintf("%sAPI %s", strings.ToLower(verb), apiName)
+
+	// Build the request
+	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
+	log.Printf("[TRACE] %s: prepared request: %s", apiName, url)
+	req, err := http.NewRequest(verb, url, nil)
+	if err != nil {
+		log.Printf("[TRACE] %s: cannot build request: %s", apiName, err.Error())
+		return nil
+	}
+
+	// Call the API and get the response.
+	body, err := c.doRequest(req)
+	if err != nil {
+		log.Printf("[TRACE] %s: failed: %s", apiName, err.Error())
+		return err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] %s: received response: %s", apiName, bodyString)
+
+	// Check for an expected "null" response.
+	if rp == nil {
+		log.Printf("[TRACE] %s: expected null response", apiName)
+		if bodyString == "null" || bodyString == "" {
+			return nil
+		}
+		err = fmt.Errorf("%s: received unexpected response: %s", apiName, bodyString)
+		log.Printf("[TRACE] %s", err)
+		return err
+	}
+
+	// Otherwise, interpret it as an object.
+	err = json.Unmarshal(body, rp)
+	if err != nil {
+		log.Printf("[TRACE] %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
+		return err
+	}
+	return nil
+}
+
+// Utility method to call an API with a request, handling logging, etc.
+func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath string, rq interface{}, rp interface{}) error {
+	apiName = fmt.Sprintf("%sAPI %s", strings.ToLower(verb), apiName)
+
+	// Build the request
+	rqBody, err := json.Marshal(rq)
+	if err != nil {
+		log.Printf("[TRACE] %s: cannot marshal request to JSON: %s", apiName, err.Error())
+		return err
+	}
+	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
+	log.Printf("[TRACE] %s: prepared request: %s <= (%s)", apiName, url, rqBody)
+	req, err := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
+	if err != nil {
+		log.Printf("[TRACE] %s: cannot build request: %s", apiName, err.Error())
+		return nil
+	}
+
+	// Call the API and get the response
+	body, err := c.doRequestWithBody(req, apiName)
+	if err != nil {
+		log.Printf("[TRACE] %s: failed: %s", apiName, err.Error())
+		return err
+	}
+	bodyString := string(body)
+	log.Printf("[TRACE] %s: received response: %s", apiName, bodyString)
+
+	// Check for an expected "null" response.
+	if rp == nil {
+		log.Printf("[TRACE] %s: expected null response", apiName)
+		if bodyString == "null" || bodyString == "" {
+			return nil
+		}
+		err = fmt.Errorf("%s: received unexpected response: %s", apiName, bodyString)
+		log.Printf("[TRACE] %s", err)
+		return err
+	}
+
+	// Otherwise, interpret it as an object.
+	err = json.Unmarshal(body, rp)
+	if err != nil {
+		log.Printf("[TRACE] %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
+		return err
+	}
+	return nil
+}
+
+// Utility method to call an API with a PUT request, handling logging, etc.
+func (c *Client) putAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
+	return c.doAPIWithRequestBody("PUT", apiName, apiPath, rq, rp)
+}
+
+// Utility method to call an API with a POST request, handling logging, etc.
+func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
+	return c.doAPIWithRequestBody("POST", apiName, apiPath, rq, rp)
 }
 
 // StructToString converts a structure to a JSON string

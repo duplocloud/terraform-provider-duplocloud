@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.5.4" # RELEASE VERSION
+      version = "0.5.5" # RELEASE VERSION
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -54,7 +54,7 @@ output "tenants" { value = data.duplocloud_tenants.test.tenants.*.name }
 resource "duplocloud_tenant_secret" "test" {
   tenant_id = var.tenant_id
   name_suffix = "joetest2"
-  data = "{ \"foo\" : \"bar3\" }" // jsonencode({ foo = "bar" })
+  data = "{ \"foo\" : \"bar4\" }"
 }
 output "tenant_secret_name" { value = duplocloud_tenant_secret.test.name }
 
@@ -63,56 +63,60 @@ resource "duplocloud_aws_load_balancer" "test" {
   name = "joetest2"
   is_internal = true
   enable_access_logs = true
+  drop_invalid_headers = true
 }
 
-# resource "duplocloud_ecs_task_definition" "test" {
-#   tenant_id = var.tenant_id
-#   family = "duploservices-default-joedemo"
-#   container_definitions = jsonencode([{
-#     Name = "default"
-#     Image = "nginx:latest"
-#     Essential = true
-#   }])
-#   cpu = "256"
-#   memory = "1024"
-#   requires_compatibilities = [ "FARGATE" ]
-# }
+resource "duplocloud_ecs_task_definition" "test" {
+  tenant_id = var.tenant_id
+  family = "duploservices-default-joedemo"
+  container_definitions = jsonencode([{
+    Name = "default"
+    Image = "nginx:latest"
+    Essential = true
+  }])
+  cpu = "256"
+  memory = "1024"
+  requires_compatibilities = [ "FARGATE" ]
+}
 
-# resource "duplocloud_ecs_service" "test" {
-#   tenant_id = var.tenant_id
-#   name = "joedemo"
-#   task_definition = duplocloud_ecs_task_definition.test.arn
-#   replicas = 2
-#   load_balancer {
-#     lb_type = 1
-#     port = 8080
-#     external_port = 80
-#     protocol = "HTTP"
-#   }
-# }
+resource "duplocloud_ecs_service" "test" {
+  tenant_id = var.tenant_id
+  name = "joedemo-ecs"
+  task_definition = duplocloud_ecs_task_definition.test.arn
+  replicas = 2
+  load_balancer {
+    lb_type = 1
+    port = "8080"
+    external_port = 80
+    protocol = "HTTP"
+    enable_access_logs = false
+    drop_invalid_headers = true
+    webaclid = ""
+  }
+}
 
-#resource "duplocloud_ecache_instance" "test" {
-#  tenant_id = var.tenant_id
-#  name = "joetest"
-#  cache_type = 0
-#  replicas = 1
-#  size = "cache.t2.small"
-#}
+resource "duplocloud_ecache_instance" "test" {
+ tenant_id = var.tenant_id
+ name = "joetest"
+ cache_type = 0
+ replicas = 1
+ size = "cache.t2.small"
+}
 
-# resource "duplocloud_rds_instance" "test" {
-#   tenant_id = var.tenant_id
-#   name = "joetest"
-#   master_username = "joe"
-#   master_password = "test12345!"
-#   size = "db.t2.small"
-# }
+resource "duplocloud_rds_instance" "test" {
+  tenant_id = var.tenant_id
+  name = "joetest"
+  master_username = "joe"
+  master_password = "test12345!"
+  size = "db.t2.small"
+}
 
-# resource "duplocloud_aws_elasticsearch" "test" {
-#  tenant_id = var.tenant_id
-#  name = "joe2"
-#  storage_size = 20
-#  selected_zone = 1
-#  enable_node_to_node_encryption = true
-#  require_ssl = true
-#  use_latest_tls_cipher = true
-# }
+resource "duplocloud_aws_elasticsearch" "test" {
+ tenant_id = var.tenant_id
+ name = "joe2"
+ storage_size = 20
+ selected_zone = 1
+ enable_node_to_node_encryption = true
+ require_ssl = true
+ use_latest_tls_cipher = true
+}

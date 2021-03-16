@@ -2,7 +2,7 @@ package duplocloud
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -11,6 +11,52 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+// duploServiceParamsSchema returns a Terraform resource schema for a service's parameters
+func duploServiceParamsSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"tenant_id": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+			ForceNew: true, //switch tenant
+		},
+		"replication_controller_name": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+			ForceNew: true, //switch service
+		},
+		"load_balancer_name": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"load_balancer_arn": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"webaclid": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
+		},
+		"dns_prfx": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
+		},
+		"enable_access_logs": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
+		},
+		"drop_invalid_headers": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
+		},
+	}
+}
 
 // SCHEMA for resource crud
 func resourceDuploServiceParams() *schema.Resource {
@@ -27,123 +73,176 @@ func resourceDuploServiceParams() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: *duplosdk.DuploServiceParamsSchema(),
+		Schema: duploServiceParamsSchema(),
 	}
-}
-
-// SCHEMA for resource data/search
-func dataSourceDuploServiceParams() *schema.Resource {
-	return &schema.Resource{
-		ReadContext: dataSourceDuploServiceParamsRead,
-		Schema: map[string]*schema.Schema{
-			"filter": FilterSchema(), // todo: search specific to this object... may be api should support filter?
-			"tenant_id": {
-				Type:     schema.TypeString,
-				Computed: false,
-				Optional: true,
-			},
-			"data": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: *duplosdk.DuploServiceParamsSchema(),
-				},
-			},
-		},
-	}
-}
-
-/// READ/SEARCH resources
-func dataSourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-dataSourceDuploServiceParamsRead ******** start")
-
-	c := m.(*duplosdk.Client)
-	var diags diag.Diagnostics
-	duploObjs, err := c.DuploServiceParamsGetList(d, m)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	itemList := c.DuploServiceParamsFlatten(duploObjs, d)
-	if err := d.Set("data", itemList); err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
-
-	log.Printf("[TRACE] duplo-dataSourceDuploServiceParamsRead ******** end")
-
-	return diags
 }
 
 /// READ resource
 func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceParamsRead ******** start")
+	id := d.Id()
+	log.Printf("[TRACE] resourceDuploServiceParamsRead(%s): start", id)
 
+	// Get the object from Duplo, handling a missing object
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("replication_controller_name").(string)
 	c := m.(*duplosdk.Client)
+	duplo, err := c.DuploServiceParamsGet(tenantID, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if duplo == nil {
+		d.SetId("")
+		return nil
+	}
 
-	var diags diag.Diagnostics
-	err := c.DuploServiceParamsGet(d, m)
+	// Convert the object into Terraform resource data
+	d.Set("replication_controller_name", duplo.ReplicationControllerName)
+	d.Set("webaclid", duplo.WebACLId)
+	d.Set("tenant_id", duplo.TenantID)
+	d.Set("dns_prfx", duplo.DNSPrfx)
+
+	// Next, look for load balancer settings.
+	err = readDuploServiceAwsLbSettings(tenantID, name, d, c)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	c.DuploServiceParamsSetID(d)
-	log.Printf("[TRACE] duplo-resourceDuploServiceParamsRead ******** end")
-	return diags
+	log.Printf("[TRACE] resourceDuploServiceParamsRead(%s): end", id)
+	return nil
 }
 
 /// CREATE resource
 func resourceDuploServiceParamsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceParamsCreate ******** start")
-
-	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.DuploServiceParamsCreate(d, m)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	c.DuploServiceParamsSetID(d)
-	resourceDuploServiceParamsRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceDuploServiceParamsCreate ******** end")
-	return diags
+	return resourceDuploServiceParamsCreateOrUpdate(ctx, d, m, true)
 }
 
 /// UPDATE resource
 func resourceDuploServiceParamsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceParamsUpdate ******** start")
+	return resourceDuploServiceParamsCreateOrUpdate(ctx, d, m, true)
+}
 
-	c := m.(*duplosdk.Client)
+func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, isUpdate bool) diag.Diagnostics {
+	tenantID := d.Get("tenant_id").(string)
 
-	var diags diag.Diagnostics
-	_, err := c.DuploServiceParamsUpdate(d, m)
-	if err != nil {
-		return diag.FromErr(err)
+	// Create the request object.
+	duplo := duplosdk.DuploServiceParams{
+		ReplicationControllerName: d.Get("replication_controller_name").(string),
+		WebACLId:                  d.Get("webaclid").(string),
+		DNSPrfx:                   d.Get("dns_prfx").(string),
 	}
 
-	c.DuploServiceParamsSetID(d)
-	resourceDuploServiceParamsRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceDuploServiceParamsUpdate ******** end")
+	log.Printf("[TRACE] resourceDuploServiceParamsCreateOrUpdate(%s, %s): start", tenantID, duplo.ReplicationControllerName)
 
+	// Get or generate the ID.
+	var id string
+	if isUpdate {
+		id = d.Id()
+	} else {
+		id = fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerParamsV2/%s", tenantID, duplo.ReplicationControllerName)
+	}
+
+	// Create the service paramaters.
+	c := m.(*duplosdk.Client)
+	_, err := c.DuploServiceParamsCreateOrUpdate(tenantID, &duplo, isUpdate)
+	if err != nil {
+		return diag.Errorf("Error applying Duplo service params '%s': %s", id, err)
+	}
+	if !isUpdate {
+		d.SetId(id)
+	}
+
+	// Next, we need to apply load balancer settings.
+	err = updateDuploServiceAwsLbSettings(tenantID, duplo.ReplicationControllerName, d, c)
+	if err != nil {
+		return diag.Errorf("Error applying Duplo service params '%s': %s", id, err)
+	}
+
+	diags := resourceDuploServiceParamsRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploServiceParamsCreateOrUpdate(%s, %s): end", tenantID, duplo.ReplicationControllerName)
 	return diags
 }
 
 /// DELETE resource
 func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceParamsDelete ******** start")
+	id := d.Id()
+	log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s): start", id)
 
+	// Delete the object from Duplo
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("replication_controller_name").(string)
 	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.DuploServiceParamsDelete(d, m)
+	err := c.DuploServiceParamsDelete(tenantID, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	//todo: wait for it completely deleted
 
-	log.Printf("[TRACE] duplo-resourceDuploServiceParamsDelete ******** end")
+	log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s): end", id)
 
-	return diags
+	return nil
+}
+
+func readDuploServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
+
+	// Next, look for load balancer settings.
+	details, err := c.TenantGetLbDetailsInService(tenantID, name)
+	if err != nil {
+		return err
+	}
+	if details != nil && details.LoadBalancerArn != "" {
+
+		// Populate load balancer details.
+		d.Set("load_balancer_arn", details.LoadBalancerArn)
+		d.Set("load_balancer_name", details.LoadBalancerName)
+
+		settings, err := c.TenantGetApplicationLbSettings(tenantID, details.LoadBalancerArn)
+		if err != nil {
+			return err
+		}
+		if settings != nil && settings.LoadBalancerArn != "" {
+
+			// Populate load balancer settings.
+			d.Set("webaclid", settings.WebACLID)
+			d.Set("enable_access_logs", settings.EnableAccessLogs)
+			d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
+		}
+	}
+
+	return nil
+}
+
+func updateDuploServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
+
+	// Get any load balancer settings from the user.
+	settings := duplosdk.DuploAwsLbSettingsUpdateRequest{}
+	haveSettings := false
+	if v, ok := d.GetOk("enable_access_logs"); ok && v != nil {
+		settings.EnableAccessLogs = v.(bool)
+		haveSettings = true
+	}
+	if v, ok := d.GetOk("drop_invalid_headers"); ok && v != nil {
+		settings.DropInvalidHeaders = v.(bool)
+		haveSettings = true
+	}
+	if v, ok := d.GetOk("webaclid"); ok && v != nil {
+		settings.WebACLID = v.(string)
+		haveSettings = true
+	}
+
+	// If we have load balancer settings, apply them.
+	if haveSettings {
+		details, err := c.TenantGetLbDetailsInService(tenantID, name)
+		if err != nil {
+			return err
+		}
+
+		if details != nil && details.LoadBalancerArn != "" {
+			settings.LoadBalancerArn = details.LoadBalancerArn
+			err = c.TenantUpdateApplicationLbSettings(tenantID, settings)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
