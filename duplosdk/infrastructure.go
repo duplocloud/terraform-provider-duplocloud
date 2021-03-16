@@ -158,7 +158,6 @@ func (c *Client) InfrastructureFillGet(duploObject *DuploInfrastructure, d *sche
 
 /////////  API list //////////
 func (c *Client) InfrastructureGetList(d *schema.ResourceData, m interface{}) (*[]DuploInfrastructure, error) {
-	api := "v2/admin/InfrastructureV2"
 	//todo: filter other than tenant
 	filters, filtersOk := d.GetOk("filter")
 	log.Printf("[TRACE] InfrastructureGetList filters 1 ********* : %s  %s", filters, filtersOk)

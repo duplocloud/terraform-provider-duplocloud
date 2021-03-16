@@ -287,6 +287,19 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) error {
 		nil)
 }
 
+// TenantGetS3BucketSettings gets a non-cached view of the  S3 buckets's settings via Duplo.
+func (c *Client) TenantGetS3BucketSettings(tenantID string, name string) (*DuploS3Bucket, error) {
+	rp := DuploS3Bucket{}
+
+	err := c.getAPI(fmt.Sprintf("TenantGetS3BucketSettings(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/GetS3BucketSettings/%s", tenantID, name),
+		&rp)
+	if err != nil || rp.Name == "" {
+		return nil, err
+	}
+	return &rp, err
+}
+
 // TenantApplyS3BucketSettings applies settings to an S3 bucket resource via Duplo.
 func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, error) {
 	apiName := fmt.Sprintf("TenantApplyS3BucketSettings(%s, %s)", tenantID, duplo.Name)

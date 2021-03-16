@@ -124,7 +124,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.TenantGetS3Bucket(tenantID, name)
+	duplo, err := c.TenantGetS3BucketSettings(tenantID, name)
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
@@ -134,7 +134,6 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	// Set simple fields first.
-	d.SetId(fmt.Sprintf("%s/%s", duplo.TenantID, name))
 	resourceS3BucketSetData(d, tenantID, name, duplo)
 
 	log.Printf("[TRACE] resourceS3BucketRead ******** end")

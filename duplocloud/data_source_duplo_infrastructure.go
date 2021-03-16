@@ -17,7 +17,6 @@ func dataSourceInfrastructure() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceInfrastructureRead,
 		Schema: map[string]*schema.Schema{
-			"filter": FilterSchema(), // todo: search specific to this object... may be api should support filter?
 			"tenant_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -29,7 +28,7 @@ func dataSourceInfrastructure() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"infra_name": {
 							Type:     schema.TypeString,
-							Computed: false,
+							Computed: true,
 						},
 						"account_id": {
 							Type:     schema.TypeString,
