@@ -49,11 +49,11 @@ func duploKeyValueSchema() *schema.Resource {
 	}
 }
 
-func duploKeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKeyStringValue {
+func KeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKeyStringValue {
 	var ary []DuploKeyStringValue
 
-	kvs := d.Get(fieldName).([]interface{})
-	if len(kvs) > 0 {
+	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
+		kvs := v.([]interface{})
 		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
 		ary = make([]DuploKeyStringValue, 0, len(kvs))
 		for _, raw := range kvs {

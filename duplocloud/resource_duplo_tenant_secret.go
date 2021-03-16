@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -66,8 +65,8 @@ func resourceTenantSecret() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(75 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Create: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(5 * time.Minute),
 		},
 		Schema: tenantSecretSchema(),
 	}
@@ -75,26 +74,26 @@ func resourceTenantSecret() *schema.Resource {
 
 /// READ resource
 func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceTenantSecretRead ******** start")
 
 	// Parse the identifying attributes
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
 	tenantID, name := idParts[0], idParts[1]
 
+	log.Printf("[TRACE] resourceTenantSecretRead(%s, %s): start", tenantID, name)
+
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	duplo, err := c.TenantGetSecretByName(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Unable to retrieve secret '%s': %s", id, err)
+	}
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
 	}
-	if err != nil {
-		return diag.Errorf("Unable to retrieve tenant %s secret '%s': %s", tenantID, name, err)
-	}
 
 	// Set simple fields first.
-	d.SetId(fmt.Sprintf("%s/%s", duplo.TenantID, duplo.Name))
 	d.Set("tenant_id", tenantID)
 	d.Set("name", duplo.Name)
 	d.Set("arn", duplo.Arn)
@@ -109,19 +108,18 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	// Set tags
 	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 
-	log.Printf("[TRACE] resourceTenantSecretRead ******** end")
+	log.Printf("[TRACE] resourceTenantSecretRead(%s, %s): end", tenantID, name)
 	return nil
 }
 
 /// CREATE resource
 func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceTenantSecretCreate ******** start")
-
-	// Create the request object.
 	duploObject := duplosdk.DuploTenantSecretRequest{
 		Name:         d.Get("name_suffix").(string),
 		SecretString: d.Get("data").(string),
 	}
+
+	log.Printf("[TRACE] resourceTenantSecretCreate(%s): start", duploObject.Name)
 
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
@@ -131,60 +129,50 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s secret '%s': %s", tenantID, duploObject.Name, err)
 	}
+	tempID := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
 
-	// Wait up to 60 seconds for Duplo to be able to return the secret's details.
-	err = resource.Retry(time.Minute, func() *resource.RetryError {
-		resp, errget := c.TenantGetSecretByNameSuffix(tenantID, duploObject.Name)
-
-		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting tenant %s secret '%s': %s", tenantID, duploObject.Name, err))
+	// Wait for Duplo to be able to return the secret's details.
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "tenant secret", tempID, func() (interface{}, error) {
+		rp, errget := c.TenantGetSecretByNameSuffix(tenantID, duploObject.Name)
+		if errget == nil && rp != nil {
+			d.SetId(fmt.Sprintf("%s/%s", tenantID, rp.Name))
 		}
-
-		if resp == nil {
-			return resource.RetryableError(fmt.Errorf("Expected tenant %s secret '%s' to be retrieved, but got: nil", tenantID, duploObject.Name))
-		}
-
-		// Finally, we can set the ID
-		d.SetId(fmt.Sprintf("%s/%s", tenantID, resp.Name))
-		return nil
+		return rp, errget
 	})
-
-	diags := resourceTenantSecretRead(ctx, d, m)
-	log.Printf("[TRACE] resourceTenantSecretCreate ******** end")
+	if diags == nil {
+		diags = resourceTenantSecretRead(ctx, d, m)
+	}
+	log.Printf("[TRACE] resourceTenantSecretCreate(%s): end", duploObject.Name)
 	return diags
 }
 
 /// DELETE resource
 func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceTenantSecretDelete ******** start")
+
+	// Parse the identifying attributes
+	id := d.Id()
+	idParts := strings.SplitN(id, "/", 2)
+	tenantID, name := idParts[0], idParts[1]
+
+	log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): start", tenantID, name)
 
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
-	id := d.Id()
-	idParts := strings.SplitN(id, "/", 2)
-	err := c.TenantDeleteSecret(idParts[0], idParts[1])
+	err := c.TenantDeleteSecret(tenantID, name)
 	if err != nil {
 		return diag.Errorf("Error deleting secret '%s': %s", id, err)
 	}
 
-	// Wait up to 60 seconds for Duplo to delete the secret.
-	err = resource.Retry(time.Minute, func() *resource.RetryError {
-		resp, errget := c.TenantGetSecretByName(idParts[0], idParts[1])
-
-		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting s secret '%s': %s", id, err))
-		}
-
-		if resp != nil {
-			return resource.RetryableError(fmt.Errorf("Expected secret '%s' to be missing, but it still exists", id))
-		}
-
-		return nil
+	// Wait for Duplo to delete the secret.
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "tenant secret", id, func() (interface{}, error) {
+		return c.TenantGetSecretByName(tenantID, name)
 	})
 
 	// Wait 60 more seconds to deal with consistency issues.
-	time.Sleep(time.Minute)
+	if diags == nil {
+		time.Sleep(time.Minute)
+	}
 
-	log.Printf("[TRACE] resourceTenantSecretDelete ******** end")
-	return nil
+	log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): end", tenantID, name)
+	return diags
 }

@@ -10,48 +10,42 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// SCHEMA for secrets
-func tenantSecretSchemaComputed() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"arn": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"name": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"name_suffix": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"rotation_enabled": {
-			Type:     schema.TypeBool,
-			Computed: true,
-		},
-		"tags": {
-			Type:     schema.TypeList,
-			Computed: true,
-			Required: false,
-			Elem:     KeyValueSchema(),
-		},
-	}
-}
-
 // Data source retrieving a secret
 func dataSourceTenantSecret() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceTenantSecretRead,
 
-		Schema: tenantSecretSchemaComputed(),
+		Schema: map[string]*schema.Schema{
+			"tenant_id": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"arn": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"name": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"name_suffix": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"rotation_enabled": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+			"tags": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Required: false,
+				Elem:     KeyValueSchema(),
+			},
+		},
 	}
 }
 
@@ -60,10 +54,8 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceTenantSecretRead ******** start")
 
 	// Get and validate the retrieval criteria.
-	var tenantID, arn, name, nameSuffix, secretID string
-	if v, ok := d.GetOk("tenant_id"); ok {
-		tenantID = v.(string)
-	}
+	var arn, name, nameSuffix, secretID string
+	tenantID := d.Get("tenant_id").(string)
 	if v, ok := d.GetOk("arn"); ok {
 		arn = v.(string)
 		secretID = arn // for error reporting
@@ -81,9 +73,6 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 		}
 		nameSuffix = v.(string)
 		secretID = nameSuffix // for error reporting
-	}
-	if tenantID == "" {
-		return errors.New("tenant_id is required")
 	}
 	if arn == "" && name == "" && nameSuffix == "" {
 		return errors.New("must specify either arn or name or name_suffix")

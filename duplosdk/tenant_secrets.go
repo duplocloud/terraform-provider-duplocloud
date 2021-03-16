@@ -87,7 +87,6 @@ func (c *Client) TenantGetSecretByNameSuffix(tenantID string, nameSuffix string)
 
 // TenantCreateSecret creates a tenant secret via Duplo.
 func (c *Client) TenantCreateSecret(tenantID string, duplo *DuploTenantSecretRequest) error {
-	// Create the secret via Duplo.
 	return c.postAPI(
 		fmt.Sprintf("TenantCreateSecret(%s, %s)", tenantID, duplo.Name),
 		fmt.Sprintf("subscriptions/%s/CreateTenantSecret", tenantID),
@@ -97,8 +96,6 @@ func (c *Client) TenantCreateSecret(tenantID string, duplo *DuploTenantSecretReq
 
 // TenantDeleteSecret deletes a tenant secret via Duplo.
 func (c *Client) TenantDeleteSecret(tenantID string, name string) error {
-
-	// Delete the bucket via Duplo.
 	return c.postAPI(
 		fmt.Sprintf("TenantDeleteSecret(%s, %s)", tenantID, name),
 		fmt.Sprintf("subscriptions/%s/deleteTenantSecret", tenantID),

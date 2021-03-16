@@ -11,15 +11,11 @@ import (
 )
 
 // SCHEMA for resource crud
-func dataSourceTenantAwsCredentials() *schema.Resource {
+func dataSourceAdminAwsCredentials() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceTenantAwsCredentialsRead,
 
 		Schema: map[string]*schema.Schema{
-			"tenant_id": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
 			"console_url": {
 				Type:      schema.TypeString,
 				Computed:  true,
@@ -49,26 +45,24 @@ func dataSourceTenantAwsCredentials() *schema.Resource {
 }
 
 /// READ resource
-func dataSourceTenantAwsCredentialsRead(d *schema.ResourceData, m interface{}) error {
-	log.Printf("[TRACE] dataSourceTenantAwsCredentialsRead ******** start")
+func dataSourceAdminAwsCredentialsRead(d *schema.ResourceData, m interface{}) error {
+	log.Printf("[TRACE] dataSourceAdminAwsCredentialsRead ******** start")
 
 	// Get the region from Duplo.
 	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
-	creds, err := c.TenantGetAwsCredentials(tenantID)
-	d.SetId(fmt.Sprintf("%s-%s", tenantID, strconv.FormatInt(time.Now().Unix(), 10)))
+	creds, err := c.AdminGetAwsCredentials()
+	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 	if err != nil {
-		return fmt.Errorf("Failed to read AWS credentials from tenant '%s': %s", tenantID, err)
+		return fmt.Errorf("Failed to read admin AWS credentials: %s", err)
 	}
 
 	// Set the Terraform resource data
-	d.Set("tenant_id", tenantID)
 	d.Set("console_url", creds.ConsoleURL)
 	d.Set("access_key_id", creds.AccessKeyID)
 	d.Set("secret_access_key", creds.SecretAccessKey)
 	d.Set("session_token", creds.SessionToken)
 	d.Set("region", creds.Region)
 
-	log.Printf("[TRACE] dataSourceTenantAwsCredentialsRead ******** end")
+	log.Printf("[TRACE] dataSourceAdminAwsCredentialsRead ******** end")
 	return nil
 }

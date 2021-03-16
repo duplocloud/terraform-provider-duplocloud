@@ -2,12 +2,12 @@ package duplocloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -15,10 +15,12 @@ func tenantSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"account_name": {
 			Type:     schema.TypeString,
+			ForceNew: true, // Change tenant name
 			Required: true,
 		},
 		"plan_id": {
 			Type:     schema.TypeString,
+			ForceNew: true, // Change plan (infrastructure)
 			Required: true,
 		},
 		"tenant_id": {
@@ -57,7 +59,6 @@ func resourceTenant() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceTenantRead,
 		CreateContext: resourceTenantCreate,
-		UpdateContext: resourceTenantUpdate,
 		DeleteContext: resourceTenantDelete,
 
 		Timeouts: &schema.ResourceTimeout{
@@ -75,80 +76,79 @@ func resourceTenant() *schema.Resource {
 
 /// READ resource
 func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceTenantRead ******** start")
+	tenantID := d.Get("tenant_id").(string)
 
+	log.Printf("[TRACE] resourceTenantRead(%s): start", tenantID)
+
+	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	err := c.TenantGet(d, m)
+	duplo, err := c.TenantGet(tenantID)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
+	}
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
 	}
 
-	c.TenantSetID(d)
-	log.Printf("[TRACE] duplo-resourceTenantRead ******** end")
-	return diags
+	// Set simple fields first.
+	d.Set("account_name", duplo.AccountName)
+	d.Set("tenant_id", duplo.TenantID)
+	d.Set("plan_id", duplo.PlanID)
+	d.Set("infra_owner", duplo.InfraOwner)
+
+	// Next, set nested fields.
+	if duplo.TenantPolicy != nil {
+		d.Set("policy", []map[string]interface{}{{
+			"allow_volume_mapping": true,
+			"block_external_ep":    true,
+		}})
+	}
+	d.Set("tag", duplosdk.KeyValueToState("tags", duplo.Tags))
+
+	log.Printf("[TRACE] resourceTenantRead(%s): end", tenantID)
+	return nil
 }
 
 /// CREATE resource
 func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceTenantCreate ******** start")
-
-	c := m.(*duplosdk.Client)
-	var diags diag.Diagnostics
-
-	err := resource.Retry(4*time.Minute, func() *resource.RetryError {
-		_, err := c.TenantCreate(d, m)
-		if err != nil {
-			return resource.NonRetryableError(err)
-		}
-		time.Sleep(time.Duration(3) * time.Minute)
-		return nil
-	})
-
-	if err != nil {
-		return diag.FromErr(err)
+	duplo := duplosdk.DuploTenant{
+		AccountName: d.Get("account_name").(string),
+		PlanID:      d.Get("plan_id").(string),
 	}
 
-	c.TenantSetID(d)
-	resourceTenantRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceTenantCreate ******** end")
+	log.Printf("[TRACE] resourceTenantCreate(%s): start", duplo.AccountName)
 
-	return diags
-}
-
-/// UPDATE resource
-func resourceTenantUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceTenantUpdate ******** start")
-
+	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.TenantUpdate(d, m)
+	_, err := c.TenantCreate(duplo)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Unable to create tenant '%s': %s", duplo.AccountName, err)
 	}
 
-	c.TenantSetID(d)
-	resourceTenantRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceTenantUpdate ******** end")
+	d.SetId(fmt.Sprintf("v2/admin/TenantV2/%s", duplo.TenantID))
 
+	// Wait for 3 minutes to allow infrastructure creation.
+	time.Sleep(time.Duration(3) * time.Minute)
+
+	diags := resourceTenantRead(ctx, d, m)
+	log.Printf("[TRACE] resourceTenantCreate(%s): end", duplo.AccountName)
 	return diags
 }
 
 /// DELETE resource
 func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceTenantDelete ******** start")
+	tenantID := d.Get("tenant_id").(string)
 
+	log.Printf("[TRACE] resourceTenantDelete(%s): start", tenantID)
+
+	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.TenantDelete(d, m)
+	_, err := c.TenantDelete(tenantID)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Error deleting tenant '%s': %s", tenantID, err)
 	}
 
-	log.Printf("[TRACE] duplo-resourceTenantDelete ******** end")
-
-	return diags
+	log.Printf("[TRACE] resourceTenantDelete(%s): end", tenantID)
+	return nil
 }

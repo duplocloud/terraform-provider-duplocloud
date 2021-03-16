@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.5.5" # RELEASE VERSION
+      version = "0.5.6" # RELEASE VERSION
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
     aws = {
@@ -24,8 +24,10 @@ variable "tenant_id" {
   type = string
 }
 
-# AWS region retrieval - straight from Duplo!
+# AWS information retrieval
+data "duplocloud_aws_account" "test" { tenant_id = var.tenant_id }
 data "duplocloud_tenant_aws_region" "test" { tenant_id = var.tenant_id }
+output "aws_account_id" { value = data.duplocloud_aws_account.test.account_id }
 output "aws_region" { value = data.duplocloud_tenant_aws_region.test.aws_region }
 
 # Use any AWS terraform resource with just-in-time Duplo credentials!
@@ -38,10 +40,6 @@ provider "aws" {
   region     = data.duplocloud_tenant_aws_credentials.test.region
   skip_get_ec2_platforms = true
 }
-
-# For example, get the account ID
-data "aws_caller_identity" "current" {}
-output "aws_account_id" { value = data.aws_caller_identity.current.account_id }
 
 # Or, apply additional policy to an S3 bucket created by Duplo.
 resource "duplocloud_s3_bucket" "test" {
