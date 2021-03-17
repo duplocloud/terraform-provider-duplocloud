@@ -103,8 +103,10 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 			"allow_volume_mapping": true,
 			"block_external_ep":    true,
 		}})
+	} else {
+		d.Set("policy", []map[string]interface{}{})
 	}
-	d.Set("tag", duplosdk.KeyValueToState("tags", duplo.Tags))
+	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 
 	log.Printf("[TRACE] resourceTenantRead(%s): end", tenantID)
 	return nil
@@ -112,27 +114,28 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 
 /// CREATE resource
 func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	duplo := duplosdk.DuploTenant{
+	rq := duplosdk.DuploTenant{
 		AccountName: d.Get("account_name").(string),
 		PlanID:      d.Get("plan_id").(string),
 	}
 
-	log.Printf("[TRACE] resourceTenantCreate(%s): start", duplo.AccountName)
+	log.Printf("[TRACE] resourceTenantCreate(%s): start", rq.AccountName)
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	_, err := c.TenantCreate(duplo)
+	rp, err := c.TenantCreate(rq)
 	if err != nil {
-		return diag.Errorf("Unable to create tenant '%s': %s", duplo.AccountName, err)
+		return diag.Errorf("Unable to create tenant '%s': %s", rq.AccountName, err)
 	}
 
-	d.SetId(fmt.Sprintf("v2/admin/TenantV2/%s", duplo.TenantID))
+	d.SetId(fmt.Sprintf("v2/admin/TenantV2/%s", rp.TenantID))
+	d.Set("tenant_id", rp.TenantID)
 
 	// Wait for 3 minutes to allow infrastructure creation.
 	time.Sleep(time.Duration(3) * time.Minute)
 
 	diags := resourceTenantRead(ctx, d, m)
-	log.Printf("[TRACE] resourceTenantCreate(%s): end", duplo.AccountName)
+	log.Printf("[TRACE] resourceTenantCreate(%s): end", rq.AccountName)
 	return diags
 }
 

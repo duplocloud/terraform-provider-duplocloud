@@ -165,18 +165,22 @@ func (c *Client) TenantGetConfig(tenantID string) (*DuploTenantConfig, error) {
 
 // TenantReplaceConfig replaces tenant configuration metadata via the Duplo API.
 func (c *Client) TenantReplaceConfig(config DuploTenantConfig) error {
-
-	// First, get the existing configuration.
 	existing, err := c.TenantGetConfig(config.TenantID)
 	if err != nil {
 		return err
 	}
+	return c.TenantChangeConfig(config.TenantID, existing.Metadata, config.Metadata)
+}
+
+// TenantReplaceConfig changes tenant configuration metadata via the Duplo API, using the supplied
+// oldConfig and newConfig, for the given tenantID.
+func (c *Client) TenantChangeConfig(tenantID string, oldConfig, newConfig *[]DuploKeyStringValue) error {
 
 	// Next, update all keys that are present, keeping a record of each one that is present
 	present := map[string]struct{}{}
-	if config.Metadata != nil {
-		for _, kv := range *config.Metadata {
-			if err = c.TenantSetConfigKey(config.TenantID, kv.Key, kv.Value); err != nil {
+	if newConfig != nil {
+		for _, kv := range *newConfig {
+			if err := c.TenantSetConfigKey(tenantID, kv.Key, kv.Value); err != nil {
 				return err
 			}
 			present[kv.Key] = struct{}{}
@@ -184,10 +188,10 @@ func (c *Client) TenantReplaceConfig(config DuploTenantConfig) error {
 	}
 
 	// Finally, delete any keys that are no longer present.
-	if existing.Metadata != nil {
-		for _, kv := range *existing.Metadata {
+	if oldConfig != nil {
+		for _, kv := range *oldConfig {
 			if _, ok := present[kv.Key]; !ok {
-				if err = c.TenantDeleteConfigKey(config.TenantID, kv.Key); err != nil {
+				if err := c.TenantDeleteConfigKey(tenantID, kv.Key); err != nil {
 					return err
 				}
 			}
