@@ -120,6 +120,9 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	// Parse the identifying attributes
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
+	if len(idParts) < 2 {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
 	tenantID, name := idParts[0], idParts[1]
 
 	// Get the object from Duplo, detecting a missing object
@@ -234,6 +237,9 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 	c := m.(*duplosdk.Client)
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
+	if len(idParts) < 2 {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
 	err := c.TenantDeleteS3Bucket(idParts[0], idParts[1])
 	if err != nil {
 		return diag.Errorf("Error deleting bucket '%s': %s", id, err)

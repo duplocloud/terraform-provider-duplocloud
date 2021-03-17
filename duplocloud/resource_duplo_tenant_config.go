@@ -58,7 +58,7 @@ func resourceTenantConfig() *schema.Resource {
 func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
-	tenantID := d.Get("tenant_id").(string)
+	tenantID := d.Id()
 	log.Printf("[TRACE] resourceTenantConfigRead(%s): start", tenantID)
 
 	// Get the object from Duplo, detecting a missing object
