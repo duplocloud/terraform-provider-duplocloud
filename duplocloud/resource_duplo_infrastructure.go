@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -87,7 +88,12 @@ func resourceInfrastructure() *schema.Resource {
 
 /// READ resource
 func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	name := d.Get("infra_name").(string)
+	id := d.Id()
+	idParts := strings.SplitN(id, "/", 4)
+	if len(idParts) < 4 {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
+	name := idParts[3]
 
 	log.Printf("[TRACE] resourceInfrastructureRead(%s): start", name)
 
@@ -179,7 +185,12 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 
 /// DELETE resource
 func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	name := d.Get("infra_name").(string)
+	id := d.Id()
+	idParts := strings.SplitN(id, "/", 4)
+	if len(idParts) < 4 {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
+	name := idParts[3]
 
 	log.Printf("[TRACE] resourceInfrastructureDelete(%s): start", name)
 

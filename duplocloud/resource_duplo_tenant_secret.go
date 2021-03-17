@@ -78,6 +78,9 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	// Parse the identifying attributes
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
+	if len(idParts) < 2 {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
 	tenantID, name := idParts[0], idParts[1]
 
 	log.Printf("[TRACE] resourceTenantSecretRead(%s, %s): start", tenantID, name)

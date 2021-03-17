@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -83,8 +84,12 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceDuploServiceParamsRead(%s): start", id)
 
 	// Get the object from Duplo, handling a missing object
-	tenantID := d.Get("tenant_id").(string)
-	name := d.Get("replication_controller_name").(string)
+	idParts := strings.SplitN(id, "/", 5)
+	if len(idParts) < 5 {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
+	tenantID := idParts[2]
+	name := idParts[4]
 	c := m.(*duplosdk.Client)
 	duplo, err := c.DuploServiceParamsGet(tenantID, name)
 	if err != nil {
