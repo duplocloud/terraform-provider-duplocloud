@@ -71,23 +71,40 @@ func dataSourceInfrastructure() *schema.Resource {
 
 /// READ/SEARCH resources
 func dataSourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-dataSourceInfrastructureRead ******** start")
+	log.Printf("[TRACE] dataSourceInfrastructureRead(): start")
 
+	// Retrieve the objects from duplo.
 	c := m.(*duplosdk.Client)
-	var diags diag.Diagnostics
-	duploObjs, err := c.InfrastructureGetList(d, m)
+	list, err := c.InfrastructureGetList()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	itemList := c.InfrastructuresFlatten(duploObjs, d)
-	if err := d.Set("data", itemList); err != nil {
+	// Populate the results from the list.
+	data := make([]interface{}, 0, len(*list))
+	for _, duplo := range *list {
+
+		// TODO: ability to filter by tenant
+
+		data = append(data, map[string]interface{}{
+			"infra_name":        duplo.Name,
+			"account_id":        duplo.AccountId,
+			"cloud":             duplo.Cloud,
+			"region":            duplo.Region,
+			"azcount":           duplo.AzCount,
+			"enable_k8_cluster": duplo.EnableK8Cluster,
+			"address_prefix":    duplo.AddressPrefix,
+			"subnet_cidr":       duplo.SubnetCidr,
+			"status":            duplo.ProvisioningStatus,
+		})
+	}
+
+	if err := d.Set("data", data); err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
-	log.Printf("[TRACE] duplo-dataSourceInfrastructureRead ******** end")
-
-	return diags
+	log.Printf("[TRACE] dataSourceInfrastructureRead(): start")
+	return nil
 }

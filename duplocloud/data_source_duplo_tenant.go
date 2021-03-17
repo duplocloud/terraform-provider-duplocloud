@@ -72,7 +72,7 @@ func dataSourceTenant() *schema.Resource {
 
 /// READ resource
 func dataSourceTenantRead(d *schema.ResourceData, m interface{}) error {
-	log.Printf("[TRACE] dataSourceTenantRead ******** start")
+	log.Printf("[TRACE] dataSourceTenantRead(): start")
 
 	var tenantID, tenantName string
 	if v, ok := d.GetOk("tenant_id"); ok && v != nil {
@@ -111,6 +111,6 @@ func dataSourceTenantRead(d *schema.ResourceData, m interface{}) error {
 	}
 	d.Set("tags", duplosdk.KeyValueToState("tags", duploTenant.Tags))
 
-	log.Printf("[TRACE] dataSourceTenantRead ******** end")
+	log.Printf("[TRACE] dataSourceTenantRead(): end")
 	return nil
 }

@@ -2,12 +2,14 @@ package duplocloud
 
 import (
 	"context"
+	"fmt"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -78,7 +80,6 @@ func resourceInfrastructure() *schema.Resource {
 			"status": {
 				Type:     schema.TypeString,
 				Computed: true,
-				Required: false,
 			},
 		},
 	}
@@ -86,71 +87,144 @@ func resourceInfrastructure() *schema.Resource {
 
 /// READ resource
 func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceInfrastructureRead ******** start")
+	name := d.Get("infra_name").(string)
 
+	log.Printf("[TRACE] resourceInfrastructureRead(%s): start", name)
+
+	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	err := c.InfrastructureGet(d, m)
+	duplo, err := c.InfrastructureGet(name)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Unable to retrieve infrastructure '%s': %s", name, err)
+	}
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
 	}
 
-	c.InfrastructureSetId(d)
-	log.Printf("[TRACE] duplo-resourceInfrastructureRead ******** end")
-	return diags
+	d.Set("infra_name", duplo.Name)
+	d.Set("account_id", duplo.AccountId)
+	d.Set("cloud", duplo.Cloud)
+	d.Set("region", duplo.Region)
+	d.Set("azcount", duplo.AzCount)
+	d.Set("enable_k8_cluster", duplo.EnableK8Cluster)
+	d.Set("address_prefix", duplo.AddressPrefix)
+	d.Set("subnet_cidr", duplo.SubnetCidr)
+	d.Set("status", duplo.ProvisioningStatus)
+
+	log.Printf("[TRACE] resourceInfrastructureRead(%s): end", name)
+	return nil
 }
 
 /// CREATE resource
 func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceInfrastructureCreate ******** start")
+	rq := duploInfrastructureFromState(d)
 
+	log.Printf("[TRACE] resourceInfrastructureCreate(%s): start", rq.Name)
+
+	// Post the object to Duplo.
 	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.InfrastructureCreate(d, m)
+	_, err := c.InfrastructureCreate(rq)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	c.InfrastructureSetId(d)
+	// Wait up to 60 seconds for Duplo to be able to return the infrastructure details.
+	id := fmt.Sprintf("v2/admin/InfrastructureV2/%s", rq.Name)
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, error) {
+		return c.InfrastructureGet(rq.Name)
+	})
+	if diags != nil {
+		return diags
+	}
+	d.SetId(id)
+
+	// Then, wait until the infrastructure is completely ready.
+	err = duploInfrastructureWaitUntilReady(c, rq.Name, d.Timeout("create"))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	resourceInfrastructureRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceInfrastructureCreate ******** end")
-	return diags
+	log.Printf("[TRACE] resourceInfrastructureCreate(%s): end", rq.Name)
+	return nil
 }
 
 /// UPDATE resource
 func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceInfrastructureUpdate ******** start")
+	rq := duploInfrastructureFromState(d)
 
+	log.Printf("[TRACE] resourceInfrastructureUpdate(%s): start", rq.Name)
+
+	// Put the object to Duplo.
 	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.InfrastructureUpdate(d, m)
+	_, err := c.InfrastructureUpdate(rq)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	c.InfrastructureSetId(d)
-	resourceInfrastructureRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceInfrastructureUpdate ******** end")
+	// Wait for 60 seconds, at first.
+	time.Sleep(time.Minute)
 
-	return diags
+	// Then, wait until the infrastructure is completely ready.
+	err = duploInfrastructureWaitUntilReady(c, rq.Name, d.Timeout("update"))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	resourceInfrastructureRead(ctx, d, m)
+	log.Printf("[TRACE] resourceInfrastructureUpdate(%s): end", rq.Name)
+	return nil
 }
 
 /// DELETE resource
 func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceInfrastructureDelete ******** start")
+	name := d.Get("infra_name").(string)
+
+	log.Printf("[TRACE] resourceInfrastructureDelete(%s): start", name)
 
 	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.InfrastructureDelete(d, m)
+	err := c.InfrastructureDelete(name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	//todo: wait for it completely deleted
-	log.Printf("[TRACE] duplo-resourceInfrastructureDelete ******** end")
 
-	return diags
+	// TODO: wait for it completely deleted (is there an API that will actually show the status?)
+
+	log.Printf("[TRACE] resourceInfrastructureDelete(%s): end", name)
+	return nil
+}
+
+func duploInfrastructureFromState(d *schema.ResourceData) duplosdk.DuploInfrastructure {
+	return duplosdk.DuploInfrastructure{
+		Name:            d.Get("infra_name").(string),
+		AccountId:       d.Get("account_id").(string),
+		Cloud:           d.Get("cloud").(int),
+		Region:          d.Get("region").(string),
+		AzCount:         d.Get("azcount").(int),
+		EnableK8Cluster: d.Get("enable_k8_cluster").(bool),
+		AddressPrefix:   d.Get("address_prefix").(string),
+		SubnetCidr:      d.Get("subnet_cidr").(int),
+	}
+}
+
+func duploInfrastructureWaitUntilReady(c *duplosdk.Client, name string, timeout time.Duration) error {
+	stateConf := &resource.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.InfrastructureGet(name)
+			status := "pending"
+			if err == nil && rp.ProvisioningStatus == "Complete" {
+				status = "ready"
+			}
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] duploInfrastructureWaitUntilReady(%s)", name)
+	_, err := stateConf.WaitForState()
+	return err
 }
