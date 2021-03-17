@@ -31,10 +31,25 @@ func resourceTenantConfig() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"metadata": {
+			"setting": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     KeyValueSchema(),
+			},
+			"delete_unspecified_settings": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			"metadata": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem:     KeyValueSchema(),
+			},
+			"specified_settings": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -43,7 +58,7 @@ func resourceTenantConfig() *schema.Resource {
 func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
-	tenantID := d.Id()
+	tenantID := d.Get("tenant_id").(string)
 	log.Printf("[TRACE] resourceTenantConfigRead(%s): start", tenantID)
 
 	// Get the object from Duplo, detecting a missing object
@@ -57,9 +72,14 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 		return nil
 	}
 
-	// Set the fields
+	// Set the simple fields first.
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("metadata", duplosdk.KeyValueToState("metadata", duplo.Metadata))
+
+	// Build a list of current state, to replace the user-supplied settings.
+	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
+		d.Set("setting", duplosdk.KeyValueToState("setting", selectTenantConfig(duplo.Metadata, *v)))
+	}
 
 	log.Printf("[TRACE] resourceTenantConfigRead(%s): end", tenantID)
 	return nil
@@ -68,24 +88,44 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
-	tenantID := d.Id()
-	log.Printf("[TRACE] resourceTenantConfigCreate(%s): start", tenantID)
+	tenantID := d.Get("tenant_id").(string)
+	log.Printf("[TRACE] resourceTenantConfigCreateOrUpdate(%s): start", tenantID)
 
-	// Build the request
-	config := duplosdk.DuploTenantConfig{
-		TenantID: tenantID,
-		Metadata: duplosdk.KeyValueFromState("metadata", d),
+	// Collect the current state of settings specified by the user.
+	c := m.(*duplosdk.Client)
+	config, err := c.TenantGetConfig(tenantID)
+	if err != nil {
+		return diag.Errorf("Error retrieving tenant config for '%s': %s", tenantID, err)
+	}
+	var existing *[]duplosdk.DuploKeyStringValue
+	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
+		existing = selectTenantConfig(config.Metadata, *v)
+	} else {
+		existing = &[]duplosdk.DuploKeyStringValue{}
 	}
 
+	// Collect the desired state of settings specified by the user.
+	settings := duplosdk.KeyValueFromState("setting", d)
+	specified := make([]string, len(*settings))
+	for i, kv := range *settings {
+		specified[i] = kv.Key
+	}
+	d.Set("specified_settings", specified)
+
 	// Apply the changes via Duplo
-	c := m.(*duplosdk.Client)
-	err := c.TenantReplaceConfig(config)
+	if d.Get("delete_unspecified_settings").(bool) {
+		err = c.TenantReplaceConfig(duplosdk.DuploTenantConfig{TenantID: tenantID, Metadata: settings})
+	} else {
+		err = c.TenantChangeConfig(tenantID, existing, settings)
+	}
 	if err != nil {
 		return diag.Errorf("Error updating tenant config for '%s': %s", tenantID, err)
 	}
+	d.SetId(tenantID)
 
-	log.Printf("[TRACE] resourceTenantConfigCreate(%s): end", tenantID)
-	return nil
+	diags := resourceTenantConfigRead(ctx, d, m)
+	log.Printf("[TRACE] resourceTenantConfigCreateOrUpdate(%s): end", tenantID)
+	return diags
 }
 
 func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -101,6 +141,24 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 		return diag.Errorf("Error deleting tenant config for '%s': %s", tenantID, err)
 	}
 
+	diags := resourceTenantConfigRead(ctx, d, m)
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): end", tenantID)
-	return nil
+	return diags
+}
+
+// Utiliy function to return a filtered list of tenant metadata, given the selected keys.
+func selectTenantConfig(metadata *[]duplosdk.DuploKeyStringValue, keys []string) *[]duplosdk.DuploKeyStringValue {
+	specified := map[string]struct{}{}
+	for _, k := range keys {
+		specified[k] = struct{}{}
+	}
+
+	settings := make([]duplosdk.DuploKeyStringValue, 0, len(keys))
+	for _, kv := range *metadata {
+		if _, ok := specified[kv.Key]; ok {
+			settings = append(settings, kv)
+		}
+	}
+
+	return &settings
 }

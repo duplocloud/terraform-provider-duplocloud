@@ -33,10 +33,14 @@ resource "duplocloud_tenant" "test" {
   plan_id = duplocloud_infrastructure.test.infra_name
 }
 
-#resource "duplocloud_tenant_config" "test" {
-#  tenant_id = duplocloud_tenant.test.tenant_id
-#  metadata {
-#    key = "block_public_access_to_s3"
-#    value = "true"
-#  }
-#}
+resource "duplocloud_tenant_config" "test" {
+  tenant_id = duplocloud_tenant.test.tenant_id
+  setting {
+    key = "block_public_access_to_s3"
+    value = "true"
+  }
+  setting {
+    key = "enforce_ssl_for_s3"
+    value = "true"
+  }
+}

@@ -103,6 +103,8 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 			"allow_volume_mapping": true,
 			"block_external_ep":    true,
 		}})
+	} else {
+		d.Set("policy", []map[string]interface{}{})
 	}
 	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 
