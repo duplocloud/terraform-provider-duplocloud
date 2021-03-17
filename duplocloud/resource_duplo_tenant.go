@@ -127,6 +127,7 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	d.SetId(fmt.Sprintf("v2/admin/TenantV2/%s", rp.TenantID))
+	d.Set("tenant_id", rp.TenantID)
 
 	// Wait for 3 minutes to allow infrastructure creation.
 	time.Sleep(time.Duration(3) * time.Minute)
