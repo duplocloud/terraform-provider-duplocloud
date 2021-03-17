@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // Client is a Duplo API client
@@ -234,37 +232,4 @@ func (c *Client) putAPI(apiName string, apiPath string, rq interface{}, rp inter
 // Utility method to call an API with a POST request, handling logging, etc.
 func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
 	return c.doAPIWithRequestBody("POST", apiName, apiPath, rq, rp)
-}
-
-// StructToString converts a structure to a JSON string
-func (c *Client) StructToString(structObj []map[string]interface{}) string {
-	if structObj != nil {
-		tags, err := json.Marshal(structObj)
-		if err == nil {
-			return string(tags)
-		}
-	}
-	return ""
-}
-
-// GetID returns a terraform resource data's ID field
-func (c *Client) GetID(d *schema.ResourceData, idKey string) string {
-	var id = d.Id()
-	if id == "" {
-		id = d.Get(idKey).(string)
-	}
-	return id
-}
-
-// GetIDForChild returns a terraform resource data's ID field as an array of multiple components.
-func (c *Client) GetIDForChild(d *schema.ResourceData) []string {
-	var ids = d.Id()
-	if ids != "" {
-		hasChilds := strings.Index(ids, "/")
-		if hasChilds != -1 {
-			idArray := strings.Split(ids, "/")
-			return idArray
-		}
-	}
-	return nil
 }
