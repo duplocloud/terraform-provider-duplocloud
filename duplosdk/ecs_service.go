@@ -73,22 +73,16 @@ func (c *Client) EcsServiceCreateOrUpdate(tenantID string, rq *DuploEcsService, 
 }
 
 // EcsServiceDelete deletes an ECS service via the Duplo API.
-func (c *Client) EcsServiceDelete(id string) (*DuploEcsService, error) {
+func (c *Client) EcsServiceDelete(id string) error {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]
 
 	// Delete the ECS service
-	rp := DuploEcsService{}
-	err := c.deleteAPI(
+	return c.deleteAPI(
 		fmt.Sprintf("EcsServiceDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantID, name),
-		&rp)
-	if err != nil {
-		return nil, err
-	}
-	rp.TenantID = tenantID
-	return &rp, err
+		nil)
 }
 
 // EcsServiceGet retrieves an ECS service via the Duplo API.
