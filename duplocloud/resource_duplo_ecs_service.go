@@ -242,11 +242,14 @@ func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.Resour
 func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploEcsServiceDelete ******** start")
 
-	// Delete the object from Duplo
+	// Check if the object exists before attempting a delete.
 	c := m.(*duplosdk.Client)
-	_, err := c.EcsServiceDelete(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
+	duplo, err := c.EcsServiceGet(d.Id())
+	if err != nil || duplo != nil {
+		err = c.EcsServiceDelete(d.Id())
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	log.Printf("[TRACE] resourceDuploEcsServiceDelete ******** end")
