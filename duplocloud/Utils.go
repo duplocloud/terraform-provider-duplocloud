@@ -1,8 +1,13 @@
 package duplocloud
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"reflect"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 )
@@ -150,4 +155,80 @@ func getOptionalBlockAsMap(data *schema.ResourceData, key string) (map[string]in
 		return nil, err
 	}
 	return (*block).(map[string]interface{}), nil
+}
+
+func getAsStringArray(data *schema.ResourceData, key string) (*[]string, bool) {
+	var ok bool
+	var result []string
+	var v interface{}
+
+	if v, ok = data.GetOk(key); ok && v != nil {
+		list := v.([]interface{})
+		result = make([]string, len(list), len(list))
+		for i, el := range list {
+			result[i] = el.(string)
+		}
+	}
+
+	return &result, ok
+}
+
+func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, error)) diag.Diagnostics {
+	err := resource.RetryContext(ctx, d.Timeout("delete"), func() *resource.RetryError {
+		resp, errget := get()
+
+		if errget != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error getting %s '%s': %s", kind, id, errget))
+		}
+
+		if !isInterfaceNil(resp) {
+			return resource.RetryableError(fmt.Errorf("Expected %s '%s' to be missing, but it still exists", kind, id))
+		}
+
+		return nil
+	})
+	if err != nil {
+		return diag.Errorf("Error deleting %s '%s': %s", kind, id, err)
+	}
+	return nil
+}
+
+func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, error)) diag.Diagnostics {
+	err := resource.RetryContext(ctx, d.Timeout("create"), func() *resource.RetryError {
+		resp, errget := get()
+
+		if errget != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error getting %s '%s': %s", kind, id, errget))
+		}
+
+		if isInterfaceNil(resp) {
+			return resource.RetryableError(fmt.Errorf("Expected %s '%s' to be retrieved, but got: nil", kind, id))
+		}
+
+		return nil
+	})
+	if err != nil {
+		return diag.Errorf("Error creating %s '%s': %s", kind, id, err)
+	}
+	return nil
+}
+
+func isInterfaceNil(v interface{}) bool {
+	return v == nil || (reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil())
+}
+
+func isInterfaceEmptySlice(v interface{}) bool {
+	slice := reflect.ValueOf(v)
+
+	return slice.Kind() == reflect.Slice && slice.IsValid() && !slice.IsNil() && slice.Len() == 0
+}
+
+// Internal function to check if a given encoded JSON value represents a valid JSON object array.
+func validateJsonObjectArray(key string, value string) (ws []string, errors []error) {
+	result := []map[string]interface{}{}
+	err := json.Unmarshal([]byte(value), &result)
+	if err != nil {
+		errors = append(errors, fmt.Errorf("%s is invalid: %s", key, err))
+	}
+	return
 }

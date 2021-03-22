@@ -2,17 +2,20 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/ucarion/jcs"
 )
 
-// DuploEcsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
+// ecsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
 func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
@@ -42,6 +45,28 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
+			StateFunc: func(v interface{}) string {
+				// Sort the lists of environment variables as they are serialized to state, so we won't get
+				// spurious reorderings in plans (diff is suppressed if the environment variables haven't changed,
+				// but they still show in the plan if some other property changes).
+				log.Printf("[TRACE] container_definitions.StateFunc: <= %s", v.(string))
+				defns, _ := expandEcsContainerDefinitions(v.(string))
+				for i := range defns {
+					reorderEcsEnvironmentVariables(defns[i].(map[string]interface{}))
+				}
+				json, err := jcs.Format(defns)
+				log.Printf("[TRACE] container_definitions.StateFunc: => %s (error: %s)", json, err)
+				return json
+			},
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				networkMode, ok := d.GetOk("network_mode")
+				isAWSVPC := ok && networkMode.(string) == "awsvpc"
+				equal, _ := ecsContainerDefinitionsAreEquivalent(old, new, isAWSVPC)
+				return equal
+			},
+			ValidateFunc: func(v interface{}, k string) ([]string, []error) {
+				return validateJsonObjectArray("Duplo ECS Task Definition container_definitions", v.(string))
+			},
 		},
 		"volumes": {
 			Type:     schema.TypeString,
@@ -188,7 +213,6 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceDuploEcsTaskDefinitionRead,
 		CreateContext: resourceDuploEcsTaskDefinitionCreate,
-		//UpdateContext: resourceDuploEcsTaskDefinitionUpdate,
 		DeleteContext: resourceDuploEcsTaskDefinitionDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -257,5 +281,109 @@ func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.Resourc
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** start")
 	// FIXME: NO-OP
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** end")
+	return nil
+}
+
+// An internal function that compares two ECS container definitions to see if they are equivalent.
+func ecsContainerDefinitionsAreEquivalent(old, new string, isAWSVPC bool) (bool, error) {
+
+	oldCanonical, err := canonicalizeEcsContainerDefinitionsJson(old, isAWSVPC)
+	if err != nil {
+		return false, err
+	}
+
+	newCanonical, err := canonicalizeEcsContainerDefinitionsJson(new, isAWSVPC)
+	if err != nil {
+		return false, err
+	}
+
+	equal := oldCanonical == newCanonical
+	if !equal {
+		log.Printf("[DEBUG] Canonical definitions are not equal.\nFirst: %s\nSecond: %s\n", oldCanonical, newCanonical)
+	}
+	return equal, nil
+}
+
+// Internal function to expand container definitions JSON into an array of maps.
+func expandEcsContainerDefinitions(encoded string) (defn []interface{}, err error) {
+	err = json.Unmarshal([]byte(encoded), &defn)
+	log.Printf("[DEBUG] Expanded container definition: %v", defn)
+	return
+}
+
+// Internal function to unmarshall, reduce, then canonicalize container definitions JSON.
+func canonicalizeEcsContainerDefinitionsJson(encoded string, isAWSVPC bool) (string, error) {
+	var defns []interface{}
+
+	// Unmarshall, reduce, then canonicalize.
+	err := json.Unmarshal([]byte(encoded), &defns)
+	if err != nil {
+		return encoded, err
+	}
+	for i := range defns {
+		err = reduceContainerDefinition(defns[i].(map[string]interface{}), isAWSVPC)
+		if err != nil {
+			return encoded, err
+		}
+	}
+	canonical, err := jcs.Format(defns)
+	if err != nil {
+		return encoded, err
+	}
+
+	return canonical, nil
+}
+
+// Internal function used to re-order environment variables for an ECS task definition.
+func reorderEcsEnvironmentVariables(defn map[string]interface{}) {
+
+	// Re-order environment variables to a canonical order.
+	if v, ok := defn["Environment"]; ok && v != nil {
+		env := v.([]interface{})
+		sort.Slice(env, func(i, j int) bool {
+			mi := env[i].(map[string]interface{})
+			mj := env[j].(map[string]interface{})
+			return mi["Name"].(string) < mj["Name"].(string)
+		})
+	}
+}
+
+// Internal function used to reduce a container definition down to a partially "canoncalized" form.
+//
+// See: https://github.com/hashicorp/terraform-provider-aws/blob/7141d1c315dc0c221979f0a4f8855a13b545dbaf/aws/ecs_task_definition_equivalency.go#L58
+func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC bool) error {
+	reorderEcsEnvironmentVariables(defn)
+
+	// Handle fields that have defaults.
+	if v, ok := defn["Cpu"]; ok && v != nil && v.(int) == 0 {
+		defn["Cpu"] = nil
+	}
+	if v, ok := defn["Essential"]; !(ok && v != nil) {
+		defn["Essential"] = true
+	}
+	if v, ok := defn["PortMappings"]; ok && v != nil {
+		pms := v.([]map[string]interface{})
+		for i := range pms {
+			if v2, ok2 := pms[i]["Protocol"]; ok2 && v2 != nil && v2.(string) == "tcp" {
+				pms[i]["Protocol"] = nil
+			}
+			if v2, ok2 := pms[i]["HostPort"]; ok2 {
+				if v2 != nil && v2.(int) == 0 {
+					pms[i]["HostPort"] = nil
+				}
+				if isAWSVPC && pms[i]["HostPort"] == nil {
+					pms[i]["HostPort"] = pms[i]["ContainerPort"]
+				}
+			}
+		}
+	}
+
+	// Set all empty slices to nil.
+	for k, v := range defn {
+		if isInterfaceEmptySlice(v) {
+			defn[k] = nil
+		}
+	}
+
 	return nil
 }
