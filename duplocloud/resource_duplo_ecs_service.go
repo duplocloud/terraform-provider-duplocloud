@@ -310,10 +310,15 @@ func ecsLoadBalancersFromState(d *schema.ResourceData) *[]duplosdk.DuploEcsServi
 		return &ary
 	}
 
+	name := lb["replication_controller_name"].(string)
+	if name == "" {
+		name = d.Get("name").(string)
+	}
+
 	log.Printf("[TRACE] ecsLoadBalancersFromState ********: have data")
 
 	ary = append(ary, duplosdk.DuploEcsServiceLbConfig{
-		ReplicationControllerName: lb["replication_controller_name"].(string),
+		ReplicationControllerName: name,
 		LbType:                    lb["lb_type"].(int),
 		Port:                      lb["port"].(string),
 		Protocol:                  lb["protocol"].(string),
