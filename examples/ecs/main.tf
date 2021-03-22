@@ -58,40 +58,40 @@ resource "duplocloud_tenant_secret" "test" {
 }
 output "tenant_secret_name" { value = duplocloud_tenant_secret.test.name }
 
-# resource "duplocloud_ecs_task_definition" "test" {
-#   tenant_id = var.tenant_id
-#   family = "duploservices-default-joedemo"
-#   container_definitions = jsonencode([{
-#     Name = "default"
-#     Image = "nginx:latest"
-#     Essential = true
-#   }])
-#   cpu = "256"
-#   memory = "1024"
-#   requires_compatibilities = [ "FARGATE" ]
-# }
-
-# resource "duplocloud_ecs_service" "test" {
-#   tenant_id = var.tenant_id
-#   name = "joedemo"
-#   task_definition = duplocloud_ecs_task_definition.test.arn
-#   replicas = 2
-#   load_balancer {
-#     lb_type = 1
-#     port = 8080
-#     external_port = 80
-#     protocol = "HTTP"
-#   }
-# }
-
-resource "duplocloud_ecache_instance" "test" {
+resource "duplocloud_ecs_task_definition" "test" {
   tenant_id = var.tenant_id
-  name = "joetest"
-  cache_type = 0
-  replicas = 1
-  size = "cache.t2.small"
+  family = "duploservices-default-joedemo"
+  container_definitions = jsonencode([{
+    Name = "default"
+    Image = "nginx:latest"
+    Essential = true
+  }])
+  cpu = "256"
+  memory = "1024"
+  requires_compatibilities = [ "FARGATE" ]
 }
 
+resource "duplocloud_ecs_service" "test" {
+  tenant_id = var.tenant_id
+  name = "joedemo-ecs"
+  task_definition = duplocloud_ecs_task_definition.test.arn
+  replicas = 2
+  load_balancer {
+    lb_type = 1
+    port = "8080"
+    external_port = 80
+    protocol = "HTTP1"
+  }
+}
+
+# resource "duplocloud_ecache_instance" "test" {
+#   tenant_id = var.tenant_id
+#   name = "joetest"
+#   cache_type = 0
+#   replicas = 1
+#   size = "cache.t2.small"
+# }
+# 
 # resource "duplocloud_rds_instance" "test" {
 #   tenant_id = var.tenant_id
 #   name = "joetest"
@@ -100,9 +100,9 @@ resource "duplocloud_ecache_instance" "test" {
 #   size = "db.t2.small"
 # }
 
-resource "duplocloud_aws_elasticsearch" "test" {
-  tenant_id = var.tenant_id
-  name = "joe2"
-  storage_size = 20
-  selected_zone = 1
-}
+# resource "duplocloud_aws_elasticsearch" "test" {
+#   tenant_id = var.tenant_id
+#   name = "joe2"
+#   storage_size = 20
+#   selected_zone = 1
+# }
