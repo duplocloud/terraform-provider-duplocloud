@@ -64,6 +64,10 @@ resource "duplocloud_ecs_task_definition" "test" {
   container_definitions = jsonencode([{
     Name = "default"
     Image = "nginx:latest"
+    Environment = [
+      {Name = "foo", Value = "bar"},
+      {Name = "bar", Value = "foo"}
+    ]
     Essential = true
   }])
   cpu = "256"
