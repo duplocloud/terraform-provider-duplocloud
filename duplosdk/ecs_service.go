@@ -374,8 +374,12 @@ func ecsLoadBalancersFromState(d *schema.ResourceData) *[]DuploEcsServiceLbConfi
 
 	for _, _lb := range slb.List() {
 		lb := _lb.(map[string]interface{})
+		name := lb["replication_controller_name"].(string)
+		if name == "" {
+			name = d.Get("name").(string)
+		}
 		ary = append(ary, DuploEcsServiceLbConfig{
-			ReplicationControllerName: lb["replication_controller_name"].(string),
+			ReplicationControllerName: name,
 			LbType:                    lb["lb_type"].(int),
 			Port:                      lb["port"].(string),
 			Protocol:                  lb["protocol"].(string),
