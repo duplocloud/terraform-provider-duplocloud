@@ -84,7 +84,7 @@ resource "duplocloud_ecs_service" "test" {
     lb_type = 1
     port = "8080"
     external_port = 80
-    protocol = "HTTP1"
+    protocol = "HTTP"
   }
 }
 

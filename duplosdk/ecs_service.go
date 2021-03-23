@@ -119,7 +119,6 @@ func DuploEcsServiceSchema() *map[string]*schema.Schema {
 						Type:     schema.TypeString,
 						Optional: true,
 						Required: false,
-						Default:  "HTTP",
 					},
 					"is_internal": {
 						Type:     schema.TypeBool,
