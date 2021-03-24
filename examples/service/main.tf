@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.5.10" # RELEASE VERSION
+      version = "0.4.9" # RELEASE VERSION
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -55,6 +55,4 @@ resource "duplocloud_duplo_service_params" "test" {
 
   replication_controller_name = duplocloud_duplo_service_lbconfigs.test.replication_controller_name
   dns_prfx                    = "joedemo-svc"
-  drop_invalid_headers        = true
-  enable_access_logs          = true
 }
