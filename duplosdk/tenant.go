@@ -46,6 +46,29 @@ type DuploTenantAwsCredentials struct {
 	SessionToken    string `json:"SessionToken,omitempty"`
 }
 
+// DuploTenantEksCredentials represents just-in-time EKS credentials in Duplo
+type DuploTenantK8sCredentials struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	Name        string `json:"Name"`
+	APIServer   string `json:"ApiServer"`
+	Token       string `json:"Token"`
+	AwsRegion   string `json:"AwsRegion"`
+	K8sProvider int    `json:"K8Provider,omitempty"`
+}
+
+// DuploTenantEksSecret represents just-in-time EKS credentials in Duplo
+type DuploTenantEksSecret struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	Name        string            `json:"SecretName"`
+	Type        string            `json:"SecretType"`
+	Data        map[string]string `json:"SecretData"`
+	Annotations map[string]string `json:"SecretAnnotations"`
+}
+
 // TenantGet retrieves a tenant via the Duplo API.
 func (c *Client) TenantGet(tenantID string) (*DuploTenant, error) {
 	apiName := fmt.Sprintf("TenantGet(%s)", tenantID)
@@ -243,4 +266,26 @@ func (c *Client) TenantGetAwsAccountID(tenantID string) (string, error) {
 	awsAccountID := ""
 	err := c.getAPI(fmt.Sprintf("TenantGetAwsAccountID(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetTenantAwsAccountId", tenantID), &awsAccountID)
 	return awsAccountID, err
+}
+
+// GetTenantK8sCredentials retrieves just-in-time K8S cluster credentials via the Duplo API..
+func (c *Client) GetTenantK8sCredentials(tenantID string) (*DuploTenantK8sCredentials, error) {
+	creds := DuploTenantK8sCredentials{}
+	err := c.getAPI(fmt.Sprintf("GetTenantEksCredentials(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetK8ClusterConfigByTenant", tenantID), &creds)
+	if err != nil {
+		return nil, err
+	}
+	creds.TenantID = tenantID
+	return &creds, nil
+}
+
+// GetEksCredentials retrieves just-in-time EKS credentials via the Duplo API.
+func (c *Client) GetTenantEksSecret(tenantID string) (*DuploTenantEksSecret, error) {
+	creds := DuploTenantEksSecret{}
+	err := c.getAPI(fmt.Sprintf("GetTenantEksSecret(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetEksSecret", tenantID), &creds)
+	if err != nil {
+		return nil, err
+	}
+	creds.TenantID = tenantID
+	return &creds, nil
 }

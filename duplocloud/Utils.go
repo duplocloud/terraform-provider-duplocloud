@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 
@@ -214,4 +215,20 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 
 func isInterfaceNil(v interface{}) bool {
 	return v == nil || (reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil())
+}
+
+func isInterfaceEmptySlice(v interface{}) bool {
+	slice := reflect.ValueOf(v)
+
+	return slice.Kind() == reflect.Slice && slice.IsValid() && !slice.IsNil() && slice.Len() == 0
+}
+
+// Internal function to check if a given encoded JSON value represents a valid JSON object array.
+func validateJsonObjectArray(key string, value string) (ws []string, errors []error) {
+	result := []map[string]interface{}{}
+	err := json.Unmarshal([]byte(value), &result)
+	if err != nil {
+		errors = append(errors, fmt.Errorf("%s is invalid: %s", key, err))
+	}
+	return
 }
