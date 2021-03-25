@@ -59,6 +59,7 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant_aws_credentials":  dataSourceTenantAwsCredentials(),
 			"duplocloud_tenant_aws_kms_key":      dataSourceTenantAwsKmsKey(),
 			"duplocloud_tenant_aws_kms_keys":     dataSourceTenantAwsKmsKeys(),
+			"duplocloud_tenant_eks_credentials":  dataSourceTenantEksCredentials(),
 			"duplocloud_tenant_internal_subnets": dataSourceTenantInternalSubnets(),
 			"duplocloud_tenant_config":           dataSourceTenantConfig(),
 			"duplocloud_tenant_secret":           dataSourceTenantSecret(),
