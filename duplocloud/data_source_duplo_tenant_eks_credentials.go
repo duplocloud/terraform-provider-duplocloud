@@ -39,6 +39,10 @@ func dataSourceTenantEksCredentials() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"namespace": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -67,6 +71,7 @@ func dataSourceTenantEksCredentialsRead(d *schema.ResourceData, m interface{}) e
 	d.Set("token", k8sCredentials.Token)
 	d.Set("region", k8sCredentials.AwsRegion)
 	d.Set("ca_certificate_data", eksSecret.Data["ca.crt"])
+	d.Set("namespace", eksSecret.Data["namespace"])
 
 	log.Printf("[TRACE] dataSourceTenantEksCredentialsRead ******** end")
 	return nil
