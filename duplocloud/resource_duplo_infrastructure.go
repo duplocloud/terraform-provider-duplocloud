@@ -14,6 +14,29 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func infrastructureVnetSubnetSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"name": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"zone": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"cidr_block": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+		},
+	}
+}
+
 // SCHEMA for resource crud
 func resourceInfrastructure() *schema.Resource {
 	return &schema.Resource{
@@ -82,6 +105,24 @@ func resourceInfrastructure() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"vpc_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"vpc_name": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"private_subnets": {
+				Type:     schema.TypeSet,
+				Computed: true,
+				Elem:     infrastructureVnetSubnetSchema(),
+			},
+			"public_subnets": {
+				Type:     schema.TypeSet,
+				Computed: true,
+				Elem:     infrastructureVnetSubnetSchema(),
+			},
 		},
 	}
 }
@@ -99,24 +140,59 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.InfrastructureGet(name)
+	infra, err := c.InfrastructureGet(name)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve infrastructure '%s': %s", name, err)
 	}
-	if duplo == nil {
+	config, err := c.InfrastructureGetConfig(name)
+	if err != nil {
+		return diag.Errorf("Unable to retrieve infrastructure config '%s': %s", name, err)
+	}
+	if infra == nil || config == nil {
 		d.SetId("") // object missing
 		return nil
 	}
 
-	d.Set("infra_name", duplo.Name)
-	d.Set("account_id", duplo.AccountId)
-	d.Set("cloud", duplo.Cloud)
-	d.Set("region", duplo.Region)
-	d.Set("azcount", duplo.AzCount)
-	d.Set("enable_k8_cluster", duplo.EnableK8Cluster)
-	d.Set("address_prefix", duplo.AddressPrefix)
-	d.Set("subnet_cidr", duplo.SubnetCidr)
-	d.Set("status", duplo.ProvisioningStatus)
+	d.Set("infra_name", infra.Name)
+	d.Set("account_id", infra.AccountId)
+	d.Set("cloud", infra.Cloud)
+	d.Set("region", infra.Region)
+	d.Set("azcount", infra.AzCount)
+	d.Set("enable_k8_cluster", infra.EnableK8Cluster)
+	d.Set("address_prefix", infra.AddressPrefix)
+	d.Set("subnet_cidr", infra.SubnetCidr)
+	d.Set("status", infra.ProvisioningStatus)
+
+	// Set extended infrastructure information.
+	if config.Vnet != nil {
+		d.Set("vpc_id", config.Vnet.ID)
+		d.Set("vpc_name", config.Vnet.Name)
+
+		if config.Vnet.Subnets != nil {
+			publicSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
+			privateSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
+
+			for _, vnetSubnet := range *config.Vnet.Subnets {
+				nameParts := strings.SplitN(vnetSubnet.Name, " ", 2)
+
+				subnet := map[string]interface{}{
+					"id":         vnetSubnet.ID,
+					"name":       vnetSubnet.Name,
+					"zone":       nameParts[0],
+					"cidr_block": vnetSubnet.AddressPrefix,
+				}
+
+				if nameParts[1] == "private" {
+					privateSubnets = append(privateSubnets, subnet)
+				} else {
+					publicSubnets = append(publicSubnets, subnet)
+				}
+			}
+
+			d.Set("private_subnets", privateSubnets)
+			d.Set("public_subnets", publicSubnets)
+		}
+	}
 
 	log.Printf("[TRACE] resourceInfrastructureRead(%s): end", name)
 	return nil

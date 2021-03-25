@@ -29,6 +29,35 @@ type DuploInfrastructure struct {
 	ProvisioningStatus string `json:"ProvisioningStatus"`
 }
 
+// DuploInfrastructureVnet represents a Duplo infrastructure VNET subnet
+type DuploInfrastructureVnetSubnet struct {
+	AddressPrefix string `json:"AddressPrefix"`
+	Name          string `json:"NameEx"`
+	ID            string `json:"Id"`
+}
+
+// DuploInfrastructureVnet represents a Duplo infrastructure VNET
+type DuploInfrastructureVnet struct {
+	ID                 string                           `json:"Id"`
+	Name               string                           `json:"Name"`
+	AddressPrefix      string                           `json:"AddressPrefix"`
+	SubnetCidr         int                              `json:"SubnetCidr"`
+	Subnets            *[]DuploInfrastructureVnetSubnet `json:"Subnets,omitempty"`
+	ProvisioningStatus string                           `json:"ProvisioningStatus"`
+}
+
+// DuploInfrastructure represents extended information about a Duplo infrastructure
+type DuploInfrastructureConfig struct {
+	Name               string                   `json:"Name"`
+	AccountId          string                   `json:"AccountId"`
+	Cloud              int                      `json:"Cloud"`
+	Region             string                   `json:"Region"`
+	AzCount            int                      `json:"AzCount"`
+	EnableK8Cluster    bool                     `json:"EnableK8Cluster"`
+	Vnet               *DuploInfrastructureVnet `json:"Vnet"`
+	ProvisioningStatus string                   `json:"ProvisioningStatus"`
+}
+
 // InfrastructureGetList retrieves a list of infrastructures via the Duplo API.
 func (c *Client) InfrastructureGetList() (*[]DuploInfrastructure, error) {
 	list := []DuploInfrastructure{}
@@ -43,6 +72,16 @@ func (c *Client) InfrastructureGetList() (*[]DuploInfrastructure, error) {
 func (c *Client) InfrastructureGet(name string) (*DuploInfrastructure, error) {
 	rp := DuploInfrastructure{}
 	err := c.getAPI(fmt.Sprintf("InfrastructureGet(%s)", name), fmt.Sprintf("v2/admin/InfrastructureV2/%s", name), &rp)
+	if err != nil || rp.Name == "" {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+// InfrastructureGet retrieves extended infrastructure configuration by name via the Duplo API.
+func (c *Client) InfrastructureGetConfig(name string) (*DuploInfrastructureConfig, error) {
+	rp := DuploInfrastructureConfig{}
+	err := c.getAPI(fmt.Sprintf("InfrastructureGetConfig(%s)", name), fmt.Sprintf("adminproxy/GetInfrastructureConfig/%s", name), &rp)
 	if err != nil || rp.Name == "" {
 		return nil, err
 	}
