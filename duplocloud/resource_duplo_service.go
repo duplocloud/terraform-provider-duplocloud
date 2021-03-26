@@ -2,8 +2,9 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"strconv"
+	"strings"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/ucarion/jcs"
 )
 
 // DuploServiceSchema returns a Terraform resource schema for a service's parameters
@@ -35,7 +37,21 @@ func duploServiceSchema() map[string]*schema.Schema {
 		"other_docker_config": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Required: false,
+			Computed: true,
+			StateFunc: func(v interface{}) string {
+				// Creates canonical JSON as it is serialized to state, so we won't get
+				// spurious reorderings in plans (diff is suppressed if the environment variables haven't changed,
+				// but they still show in the plan if some other property changes).
+				log.Printf("[TRACE] duplocloud_duplo_service.other_docker_config.StateFunc: <= %v", v)
+				defn, _ := expandOtherDockerConfig(v.(string))
+				json, err := jcs.Format(defn)
+				log.Printf("[TRACE] duplocloud_duplo_service.other_docker_config.StateFunc: => %s (error: %s)", json, err)
+				return json
+			},
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				equal, _ := otherDockerConfigsAreEquivalent(old, new)
+				return equal
+			},
 		},
 		"extra_config": {
 			Type:     schema.TypeString,
@@ -111,128 +127,175 @@ func resourceDuploService() *schema.Resource {
 	}
 }
 
-// SCHEMA for resource data/search
-func dataSourceDuploService() *schema.Resource {
-	return &schema.Resource{
-		ReadContext: dataSourceDuploServiceRead,
-		Schema: map[string]*schema.Schema{
-			"filter": FilterSchema(), // todo: search specific to this object... may be api should support filter?
-			"tenant_id": {
-				Type:     schema.TypeString,
-				Computed: false,
-				Optional: true,
-			},
-			"data": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: duploServiceSchema(),
-				},
-			},
-		},
-	}
-}
-
-/// READ/SEARCH resources
-func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-dataSourceDuploServiceRead ******** start")
-
-	c := m.(*duplosdk.Client)
-	var diags diag.Diagnostics
-	duploObjs, err := c.DuploServiceGetList(d, m)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	itemList := c.DuploServicesFlatten(duploObjs, d)
-	if err := d.Set("data", itemList); err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
-
-	log.Printf("[TRACE] duplo-dataSourceDuploServiceRead ******** end")
-
-	return diags
-}
-
 /// READ resource
 func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceRead ******** start")
+	log.Printf("[TRACE] resourceDuploServiceRead ******** start")
 
+	// Parse the identifying attributes
+	tenantID, name := parseDuploServiceIdParts(d.Id())
+	if tenantID == "" || name == "" {
+		return diag.Errorf("Invalid resource ID: %s", d.Id())
+	}
+
+	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	err := c.DuploServiceGet(d, m)
-	if d.Get("name").(string) == "" {
-		return diag.Diagnostics{
-			{
-				Severity: diag.Warning,
-				Summary:  "Service does not exist",
-				Detail:   fmt.Sprintf("Service: %v does not exist. It may have been deleted outside of Terraform", d.Id()),
-			},
-		}
+	duplo, err := c.DuploServiceGet(tenantID, name)
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
 	}
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Unable to retrieve tenant %s service '%s': %s", tenantID, name, err)
 	}
 
-	c.DuploServiceSetID(d)
-	log.Printf("[TRACE] duplo-resourceDuploServiceRead ******** end")
-	return diags
+	// Record the state of the object.
+	d.Set("name", duplo.Name)
+	d.Set("tenant_id", duplo.TenantID)
+	d.Set("other_docker_host_config", duplo.OtherDockerHostConfig)
+	d.Set("other_docker_config", duplo.OtherDockerConfig)
+	d.Set("allocation_tags", duplo.AllocationTags)
+	d.Set("extra_config", duplo.ExtraConfig)
+	d.Set("commands", duplo.Commands)
+	d.Set("volumes", duplo.Volumes)
+	d.Set("docker_image", duplo.DockerImage)
+	d.Set("agent_platform", duplo.AgentPlatform)
+	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
+	d.Set("replicas", duplo.Replicas)
+	d.Set("cloud", duplo.Cloud)
+	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+
+	log.Printf("[TRACE] resourceDuploServiceRead ******** start")
+	return nil
 }
 
 /// CREATE resource
 func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceCreate ******** start")
-
-	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.DuploServiceCreate(d, m)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	c.DuploServiceSetID(d)
-	resourceDuploServiceRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceDuploServiceCreate ******** end")
+	log.Printf("[TRACE] resourceDuploServiceCreate ******** start")
+	diags := resourceDuploServiceCreateOrUpdate(ctx, d, m, false)
+	log.Printf("[TRACE] resourceDuploServiceCreate ******** end")
 	return diags
 }
 
 /// UPDATE resource
 func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceUpdate ******** start")
+	log.Printf("[TRACE] resourceDuploServiceUpdate ******** start")
+	diags := resourceDuploServiceCreateOrUpdate(ctx, d, m, true)
+	log.Printf("[TRACE] resourceDuploServiceUpdate ******** end")
+	return diags
+}
 
-	c := m.(*duplosdk.Client)
+func resourceDuploServiceCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, updating bool) diag.Diagnostics {
+	log.Printf("[TRACE] resourceDuploServiceCreateOrUpdate ******** start")
 
-	var diags diag.Diagnostics
-	_, err := c.DuploServiceUpdate(d, m)
-	if err != nil {
-		return diag.FromErr(err)
+	// Build the request.
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("name").(string)
+	rq := duplosdk.DuploService{
+		Name:                    name,
+		OtherDockerHostConfig:   d.Get("other_docker_host_config").(string),
+		OtherDockerConfig:       d.Get("other_docker_config").(string),
+		AllocationTags:          d.Get("allocation_tags").(string),
+		ExtraConfig:             d.Get("extra_config").(string),
+		Commands:                d.Get("commands").(string),
+		Volumes:                 d.Get("volumes").(string),
+		AgentPlatform:           d.Get("agent_platform").(int),
+		DockerImage:             d.Get("docker_image").(string),
+		ReplicasMatchingAsgName: d.Get("replicas_matching_asg_name").(string),
+		Cloud:                   d.Get("cloud").(int),
+		Replicas:                d.Get("replicas").(int),
 	}
 
-	c.DuploServiceSetID(d)
-	resourceDuploServiceRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceDuploServiceUpdate ******** end")
+	// Post the object to Duplo
+	id := fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2/%s", tenantID, name)
+	c := m.(*duplosdk.Client)
+	_, err := c.DuploServiceCreateOrUpdate(tenantID, &rq, updating)
+	if err != nil {
+		return diag.Errorf("Error applying Duplo service '%s': %s", id, err)
+	}
+	if !updating {
+		d.SetId(id)
+	}
 
+	// Read the latest status from Duplo
+	diags := resourceDuploServiceRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploServiceCreateOrUpdate ******** end")
 	return diags
 }
 
 /// DELETE resource
 func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceDelete ******** start")
+	log.Printf("[TRACE] resourceDuploServiceDelete ******** start")
 
-	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.DuploServiceDelete(d, m)
-	if err != nil {
-		return diag.FromErr(err)
+	// Parse the identifying attributes
+	tenantID, name := parseDuploServiceIdParts(d.Id())
+	if tenantID == "" || name == "" {
+		return diag.Errorf("Invalid resource ID: %s", d.Id())
 	}
-	//todo: wait for it completely deleted
 
-	log.Printf("[TRACE] duplo-resourceDuploServiceDelete ******** end")
+	// Delete the object from Duplo
+	c := m.(*duplosdk.Client)
+	err := c.DuploServiceDelete(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
+	}
+	//todo: wait for it to be completely deleted
 
-	return diags
+	log.Printf("[TRACE] resourceDuploServiceDelete ******** end")
+	return nil
+}
+
+// Internal function to expand other_docker_config JSON into a structure.
+func expandOtherDockerConfig(encoded string) (defn interface{}, err error) {
+	err = json.Unmarshal([]byte(encoded), &defn)
+	log.Printf("[DEBUG] Expanded duplocloud_duplo_service.other_docker_config: %v", defn)
+	return
+}
+
+// Internal function to unmarshal, reduce, then canonicalize other_docker_config JSON.
+func canonicalizeOtherDockerConfigJson(encoded string) (string, error) {
+	var defn interface{}
+
+	// Unmarshall, reduce, then canonicalize.
+	err := json.Unmarshal([]byte(encoded), &defn)
+	if err != nil {
+		return encoded, err
+	}
+	// err = reduceOtherDockerConfig(defn.(map[string]interface{}))
+	// if err != nil {
+	// 	return encoded, err
+	// }
+	canonical, err := jcs.Format(defn)
+	if err != nil {
+		return encoded, err
+	}
+
+	return canonical, nil
+}
+
+// An internal function that compares two other_docker_config values to see if they are equivalent.
+func otherDockerConfigsAreEquivalent(old, new string) (bool, error) {
+
+	oldCanonical, err := canonicalizeOtherDockerConfigJson(old)
+	if err != nil {
+		return false, err
+	}
+
+	newCanonical, err := canonicalizeOtherDockerConfigJson(new)
+	if err != nil {
+		return false, err
+	}
+
+	equal := oldCanonical == newCanonical
+	if !equal {
+		log.Printf("[DEBUG] Canonical definitions are not equal.\nFirst: %s\nSecond: %s\n", oldCanonical, newCanonical)
+	}
+	return equal, nil
+}
+
+func parseDuploServiceIdParts(id string) (tenantID, name string) {
+	idParts := strings.SplitN(id, "/", 5)
+	if len(idParts) == 5 {
+		tenantID, name = idParts[2], idParts[4]
+	}
+	return
 }
