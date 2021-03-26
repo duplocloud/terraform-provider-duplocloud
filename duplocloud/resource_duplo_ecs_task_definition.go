@@ -311,7 +311,7 @@ func expandEcsContainerDefinitions(encoded string) (defn []interface{}, err erro
 	return
 }
 
-// Internal function to unmarshall, reduce, then canonicalize container definitions JSON.
+// Internal function to unmarshal, reduce, then canonicalize container definitions JSON.
 func canonicalizeEcsContainerDefinitionsJson(encoded string, isAWSVPC bool) (string, error) {
 	var defns []interface{}
 
