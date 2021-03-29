@@ -247,6 +247,9 @@ func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData,
 		return c.RdsInstanceGet(id)
 	})
 
+	// Wait 60 more seconds to deal with consistency issues.
+	time.Sleep(time.Minute)
+
 	log.Printf("[TRACE] resourceDuploRdsInstanceDelete ******** end")
 	return diags
 }

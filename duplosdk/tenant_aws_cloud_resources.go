@@ -10,6 +10,9 @@ const (
 	// ResourceTypeS3Bucket represents an S3 bucket
 	ResourceTypeS3Bucket int = 1
 
+	// ResourceTypeKafkaCluster represents a Kafka cluster
+	ResourceTypeKafkaCluster int = 14
+
 	// ResourceTypeApplicationLB represents an AWS application LB
 	ResourceTypeApplicationLB int = 16
 )
@@ -141,6 +144,114 @@ type DuploS3BucketSettingsRequest struct {
 	Policies          []string `json:"Policies,omitempty"`
 }
 
+// DuploKafkaEbsStorageInfo represents a Kafka cluster's EBS storage info
+type DuploKafkaEbsStorageInfo struct {
+	VolumeSize int `json:"VolumeSize"`
+}
+
+// DuploKafkaBrokerStorageInfo represents a Kafka cluster's broker storage info
+type DuploKafkaBrokerStorageInfo struct {
+	EbsStorageInfo DuploKafkaEbsStorageInfo `json:"EbsStorageInfo"`
+}
+
+// DuploKafkaBrokerSoftwareInfo represents a Kafka cluster's broker software info
+type DuploKafkaBrokerSoftwareInfo struct {
+	ConfigurationRevision int    `json:"ConfigurationRevision,omitempty"`
+	KafkaVersion          string `json:"KafkaVersion,omitempty"`
+}
+
+// DuploKafkaClusterPrometheusExporter represents a Kafka cluster's prometheus exporter info
+type DuploKafkaClusterPrometheusExporter struct {
+	EnabledInBroker bool `json:"EnabledInBroker,omitempty"`
+}
+
+// DuploKafkaClusterPrometheus represents a Kafka cluster's prometheus info
+type DuploKafkaClusterPrometheus struct {
+	JmxExporter  *DuploKafkaClusterPrometheusExporter `json:"JmxExporter,omitempty"`
+	NodeExporter *DuploKafkaClusterPrometheusExporter `json:"NodeExporter,omitempty"`
+}
+
+// DuploKafkaClusterOpenMonitoring represents a Kafka cluster's open monitoring info
+type DuploKafkaClusterOpenMonitoring struct {
+	Prometheus *DuploKafkaClusterPrometheus `json:"Prometheus,omitempty"`
+}
+
+// DuploKafkaClusterEncryptionAtRest represents a Kafka cluster's encryption-at-rest info
+type DuploKafkaClusterEncryptionAtRest struct {
+	KmsKeyID string `json:"DataVolumeKMSKeyId,omitempty"`
+}
+
+// DuploKafkaClusterEncryptionInTransit represents a Kafka cluster's encryption-in-transit info
+type DuploKafkaClusterEncryptionInTransit struct {
+	ClientBroker *DuploStringValue `json:"ClientBroker,omitempty"`
+	InCluster    bool              `json:"InCluster,omitempty"`
+}
+
+// DuploKafkaClusterEncryptionInfo represents a Kafka cluster's encryption info
+type DuploKafkaClusterEncryptionInfo struct {
+	AtRest    *DuploKafkaClusterEncryptionAtRest    `json:"EncryptionAtRest,omitempty"`
+	InTransit *DuploKafkaClusterEncryptionInTransit `json:"EncryptionInTransit,omitempty"`
+}
+
+// DuploKafkaBrokerNodeGroupInfo represents a Kafka cluster's broker node group info
+type DuploKafkaBrokerNodeGroupInfo struct {
+	InstanceType   string                      `json:"InstanceType,omitempty"`
+	Subnets        *[]string                   `json:"ClientSubnets,omitempty"`
+	SecurityGroups *[]string                   `json:"SecurityGroups,omitempty"`
+	AZDistribution *DuploStringValue           `json:"BrokerAZDistribution,omitempty"`
+	StorageInfo    DuploKafkaBrokerStorageInfo `json:"StorageInfo"`
+}
+
+// DuploKafkaClusterRequest represents a request to create a Kafka Cluster
+type DuploKafkaClusterRequest struct {
+	Name            string                         `json:"ClusterName,omitempty"`
+	Arn             string                         `json:"ClusterArn,omitempty"`
+	KafkaVersion    string                         `json:"KafkaVersion,omitempty"`
+	BrokerNodeGroup *DuploKafkaBrokerNodeGroupInfo `json:"BrokerNodeGroupInfo,omitempty"`
+	State           string                         `json:"State,omitempty"`
+}
+
+// DuploKafkaCluster represents an AWS kafka cluster resource for a Duplo tenant
+type DuploKafkaCluster struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	Name string `json:"Name,omitempty"`
+	Arn  string `json:"Arn,omitempty"`
+}
+
+// DuploKafkaClusterInfo represents a non-cached view of an AWS kafka cluster for a Duplo tenant
+type DuploKafkaClusterInfo struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	Name                      string                           `json:"ClusterName,omitempty"`
+	Arn                       string                           `json:"ClusterArn,omitempty"`
+	CreationTime              time.Time                        `json:"CreationTime,omitempty"`
+	CurrentVersion            string                           `json:"CurrentVersion,omitempty"`
+	BrokerNodeGroup           *DuploKafkaBrokerNodeGroupInfo   `json:"BrokerNodeGroupInfo,omitempty"`
+	CurrentSoftware           *DuploKafkaBrokerSoftwareInfo    `json:"CurrentBrokerSoftwareInfo,omitempty"`
+	NumberOfBrokerNodes       int                              `json:"NumberOfBrokerNodes,omitempty"`
+	EnhancedMonitoring        *DuploStringValue                `json:"EnhancedMonitoring,omitempty"`
+	OpenMonitoring            *DuploKafkaClusterOpenMonitoring `json:"OpenMonitoring,omitempty"`
+	State                     *DuploStringValue                `json:"State,omitempty"`
+	Tags                      map[string]interface{}           `json:"Tags,omitempty"`
+	ZookeeperConnectString    string                           `json:"ZookeeperConnectString,omitempty"`
+	ZookeeperConnectStringTls string                           `json:"ZookeeperConnectStringTls,omitempty"`
+}
+
+// DuploKafkaBootstrapBrokers represents a non-cached view of an AWS kafka cluster's bootstrap brokers for a Duplo tenant
+type DuploKafkaBootstrapBrokers struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	// NOTE: The Name field does not come from the backend - we synthesize it
+	Name string `json:"Name,omitempty"`
+
+	BootstrapBrokerString    string `json:"BootstrapBrokerString,omitempty"`
+	BootstrapBrokerStringTls string `json:"BootstrapBrokerStringTls,omitempty"`
+}
+
 // TenantListAwsCloudResources retrieves a list of the generic AWS cloud resources for a tenant via the Duplo API.
 func (c *Client) TenantListAwsCloudResources(tenantID string) (*[]DuploAwsCloudResource, error) {
 	apiName := fmt.Sprintf("TenantListAwsCloudResources(%s)", tenantID)
@@ -176,6 +287,18 @@ func (c *Client) TenantGetAwsCloudResource(tenantID string, resourceType int, na
 
 	// No resource was found.
 	return nil, nil
+}
+
+// TenantGetKafkaClusterFullName retrieves the full name of a managed kafka cluster.
+func (c *Client) TenantGetKafkaClusterFullName(tenantID string, name string) (string, error) {
+
+	// Figure out the full resource name.
+	tenant, err := c.GetTenantForUser(tenantID)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("duploservices-%s-%s", tenant.AccountName, name), nil
 }
 
 // TenantGetS3BucketFullName retrieves the full name of a managed S3 bucket.
@@ -231,6 +354,27 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 		DefaultEncryption: resource.DefaultEncryption,
 		Policies:          resource.Policies,
 		Tags:              resource.Tags,
+	}, nil
+}
+
+// TenantGetKafkaCluster retrieves a managed Kafka Cluster via the Duplo API
+func (c *Client) TenantGetKafkaCluster(tenantID string, name string) (*DuploKafkaCluster, error) {
+	// Figure out the full resource name.
+	fullName, err := c.TenantGetKafkaClusterFullName(tenantID, name)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the resource from Duplo.
+	resource, err := c.TenantGetAwsCloudResource(tenantID, ResourceTypeKafkaCluster, fullName)
+	if err != nil || resource == nil {
+		return nil, err
+	}
+
+	return &DuploKafkaCluster{
+		TenantID: tenantID,
+		Name:     resource.Name,
+		Arn:      resource.Arn,
 	}, nil
 }
 
@@ -328,6 +472,52 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 	// Return the response.
 	rp.TenantID = tenantID
 	return &rp, nil
+}
+
+// TenantCreateKafkaCluster creates a kafka cluster resource via Duplo.
+func (c *Client) TenantCreateKafkaCluster(tenantID string, duplo DuploKafkaClusterRequest) error {
+	return c.postAPI(
+		fmt.Sprintf("TenantCreateKafkaCluster(%s, %s)", tenantID, duplo.Name),
+		fmt.Sprintf("subscriptions/%s/KafkaClusterUpdate", tenantID),
+		&duplo,
+		nil)
+}
+
+// TenantDeleteKafkaCluster deletes a kafka cluster resource via Duplo.
+func (c *Client) TenantDeleteKafkaCluster(tenantID, arn string) error {
+	return c.postAPI(
+		fmt.Sprintf("TenantDeleteKafkaCluster(%s, %s)", tenantID, arn),
+		fmt.Sprintf("subscriptions/%s/KafkaClusterUpdate", tenantID),
+		&DuploKafkaClusterRequest{Arn: arn, State: "delete"},
+		nil)
+}
+
+// TenantGetKafkaClusterInfo gets a non-cached view of the kafka cluster's info via Duplo.
+func (c *Client) TenantGetKafkaClusterInfo(tenantID string, arn string) (*DuploKafkaClusterInfo, error) {
+	rp := DuploKafkaClusterInfo{}
+
+	err := c.postAPI(fmt.Sprintf("TenantGetKafkaClusterInfo(%s, %s)", tenantID, arn),
+		fmt.Sprintf("subscriptions/%s/FetchKafkaClusterInfo", tenantID),
+		map[string]interface{}{"ClusterArn": arn},
+		&rp)
+	if err != nil || rp.Name == "" {
+		return nil, err
+	}
+	return &rp, err
+}
+
+// TenantGetKafkaClusterBootstrapBrokers gets a non-cached view of the kafka cluster's info via Duplo.
+func (c *Client) TenantGetKafkaClusterBootstrapBrokers(tenantID string, arn string) (*DuploKafkaBootstrapBrokers, error) {
+	rp := DuploKafkaBootstrapBrokers{}
+
+	err := c.postAPI(fmt.Sprintf("TenantGetKafkaClusterBootstrapBrokers(%s, %s)", tenantID, arn),
+		fmt.Sprintf("subscriptions/%s/FetchKafkaBootstrapBrokers", tenantID),
+		map[string]interface{}{"ClusterArn": arn},
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, err
 }
 
 // TenantUpdateApplicationLbSettings updates an application LB resource's settings via Duplo.

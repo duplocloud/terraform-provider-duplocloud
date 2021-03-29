@@ -164,7 +164,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
 	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "load balancer", id, func() (interface{}, error) {
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "S3 bucket", id, func() (interface{}, error) {
 		return c.TenantGetS3Bucket(tenantID, duploObject.Name)
 	})
 	if diags != nil {

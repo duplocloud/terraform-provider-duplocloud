@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"fmt"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -18,65 +19,51 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 		},
 		"tenant_id": {
 			Type:     schema.TypeString,
-			Optional: false,
 			Required: true,
 		},
 		"other_docker_host_config": {
 			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
+			Computed: true,
 		},
 		"other_docker_config": {
 			Type:     schema.TypeString,
-			Optional: true,
 			Computed: true,
 		},
 		"extra_config": {
 			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
+			Computed: true,
 		},
 		"allocation_tags": {
 			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
+			Computed: true,
 		},
 		"volumes": {
 			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
+			Computed: true,
 		},
 		"commands": {
 			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
+			Computed: true,
 		},
 		"cloud": {
 			Type:     schema.TypeInt,
-			Optional: true,
-			Required: false,
-			Default:  0,
+			Computed: true,
 		},
 		"agent_platform": {
 			Type:     schema.TypeInt,
-			Optional: true,
-			Required: false,
-			Default:  0,
+			Computed: true,
 		},
 		"replicas": {
 			Type:     schema.TypeInt,
-			Optional: false,
-			Required: true,
+			Computed: true,
 		},
 		"replicas_matching_asg_name": {
 			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
+			Computed: true,
 		},
 		"docker_image": {
 			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
+			Computed: true,
 		},
 		"tags": {
 			Type:     schema.TypeList,
@@ -89,7 +76,7 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 // SCHEMA for resource data/search
 func dataSourceDuploServices() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceDuploServiceRead,
+		ReadContext: dataSourceDuploServicesRead,
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
 				Type:     schema.TypeString,
@@ -106,9 +93,15 @@ func dataSourceDuploServices() *schema.Resource {
 	}
 }
 
-/// READ/SEARCH resources
-func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] dataSourceDuploServiceRead ******** start")
+func dataSourceDuploService() *schema.Resource {
+	return &schema.Resource{
+		ReadContext: dataSourceDuploServiceRead,
+		Schema:      duploServiceComputedSchema(),
+	}
+}
+
+func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] dataSourceDuploServicesRead ******** start")
 
 	// Parse the identifying attributes
 	tenantID := d.Get("tenant_id").(string)
@@ -148,6 +141,41 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 		}
 	}
 	d.Set("services", services)
+
+	log.Printf("[TRACE] dataSourceDuploServicesRead ******** end")
+	return nil
+}
+
+func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] dataSourceDuploServiceRead ******** start")
+
+	// Parse the identifying attributes
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("name").(string)
+
+	// Get the object from Duplo, detecting a missing object
+	c := m.(*duplosdk.Client)
+	duplo, err := c.DuploServiceGet(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, err)
+	}
+	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
+
+	// Apply TF state
+	if duplo.Name != "" {
+		d.Set("other_docker_host_config", duplo.OtherDockerHostConfig)
+		d.Set("other_docker_config", duplo.OtherDockerConfig)
+		d.Set("allocation_tags", duplo.AllocationTags)
+		d.Set("extra_config", duplo.ExtraConfig)
+		d.Set("commands", duplo.Commands)
+		d.Set("volumes", duplo.Volumes)
+		d.Set("docker_image", duplo.DockerImage)
+		d.Set("agent_platform", duplo.AgentPlatform)
+		d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
+		d.Set("replicas", duplo.Replicas)
+		d.Set("cloud", duplo.Cloud)
+		d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+	}
 
 	log.Printf("[TRACE] dataSourceDuploServiceRead ******** end")
 	return nil
