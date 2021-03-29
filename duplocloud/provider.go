@@ -27,6 +27,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_elasticsearch":       resourceDuploAwsElasticSearch(),
 			"duplocloud_aws_host":                resourceAwsHost(),
 			"duplocloud_aws_load_balancer":       resourceAwsLoadBalancer(),
+			"duplocloud_aws_kafka_cluster":       resourceAwsKafkaCluster(),
 			"duplocloud_duplo_service":           resourceDuploService(),
 			"duplocloud_duplo_service_lbconfigs": resourceDuploServiceLBConfigs(),
 			"duplocloud_duplo_service_params":    resourceDuploServiceParams(),
