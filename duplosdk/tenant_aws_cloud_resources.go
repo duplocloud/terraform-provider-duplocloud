@@ -476,8 +476,6 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 
 // TenantCreateKafkaCluster creates a kafka cluster resource via Duplo.
 func (c *Client) TenantCreateKafkaCluster(tenantID string, duplo DuploKafkaClusterRequest) error {
-
-	// Create the bucket via Duplo.
 	return c.postAPI(
 		fmt.Sprintf("TenantCreateKafkaCluster(%s, %s)", tenantID, duplo.Name),
 		fmt.Sprintf("subscriptions/%s/KafkaClusterUpdate", tenantID),
@@ -486,19 +484,11 @@ func (c *Client) TenantCreateKafkaCluster(tenantID string, duplo DuploKafkaClust
 }
 
 // TenantDeleteKafkaCluster deletes a kafka cluster resource via Duplo.
-func (c *Client) TenantDeleteKafkaCluster(tenantID string, name string) error {
-
-	// Get the full name of the S3 bucket
-	fullName, err := c.TenantGetKafkaClusterFullName(tenantID, name)
-	if err != nil {
-		return err
-	}
-
-	// Delete the bucket via Duplo.
+func (c *Client) TenantDeleteKafkaCluster(tenantID, arn string) error {
 	return c.postAPI(
-		fmt.Sprintf("TenantDeleteKafkaCluster(%s, %s)", tenantID, name),
+		fmt.Sprintf("TenantDeleteKafkaCluster(%s, %s)", tenantID, arn),
 		fmt.Sprintf("subscriptions/%s/KafkaClusterUpdate", tenantID),
-		&DuploKafkaClusterRequest{Name: fullName, State: "delete"},
+		&DuploKafkaClusterRequest{Arn: arn, State: "delete"},
 		nil)
 }
 

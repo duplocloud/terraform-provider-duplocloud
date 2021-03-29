@@ -229,24 +229,36 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 func resourceKafkaClusterDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceKafkaClusterDelete ******** start")
 
-	// Delete the object with Duplo
+	// Prepare for the request.
 	c := m.(*duplosdk.Client)
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) < 2 {
 		return diag.Errorf("Invalid resource ID: %s", id)
 	}
-	err := c.TenantDeleteKafkaCluster(idParts[0], idParts[1])
-	if err != nil {
-		return diag.Errorf("Error deleting kafka cluster '%s': %s", id, err)
-	}
+	tenantID, name := idParts[0], idParts[1]
 
-	// Wait up to 60 seconds for Duplo to delete the cluster.
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "kafka cluster", id, func() (interface{}, error) {
-		return c.TenantGetKafkaCluster(idParts[0], idParts[1])
-	})
-	if diag != nil {
-		return diag
+	// See if the object still exists in Duplo.
+	duplo, err := c.TenantGetKafkaCluster(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Unable to get kafka cluster '%s': %s", id, err)
+	}
+	if duplo != nil {
+		arn := duplo.Arn
+
+		// Delete the cluster.
+		err := c.TenantDeleteKafkaCluster(tenantID, arn)
+		if err != nil {
+			return diag.Errorf("Error deleting kafka cluster '%s': %s", id, err)
+		}
+
+		// Wait up to 60 seconds for Duplo to delete the cluster.
+		diag := waitForResourceToBeMissingAfterDelete(ctx, d, "kafka cluster", id, func() (interface{}, error) {
+			return c.TenantGetKafkaCluster(tenantID, name)
+		})
+		if diag != nil {
+			return diag
+		}
 	}
 
 	// Wait 10 more seconds to deal with consistency issues.
