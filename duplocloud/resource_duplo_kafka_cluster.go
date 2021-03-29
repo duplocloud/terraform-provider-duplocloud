@@ -83,9 +83,9 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"tags": {
-			Type:     schema.TypeList,
+			Type:     schema.TypeMap,
 			Computed: true,
-			Elem:     KeyValueSchema(),
+			Elem:     schema.TypeString,
 		},
 	}
 }
@@ -153,7 +153,7 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 			d.Set("plaintext_zookeeper_connect_string", info.ZookeeperConnectString)
 			d.Set("tls_zookeeper_connect_string", info.ZookeeperConnectStringTls)
 			if info.BrokerNodeGroup.AZDistribution != nil {
-				d.Set("az_distribution", info.BrokerNodeGroup.AZDistribution)
+				d.Set("az_distribution", info.BrokerNodeGroup.AZDistribution.Value)
 			}
 			if info.BrokerNodeGroup.Subnets != nil {
 				d.Set("subnets", info.BrokerNodeGroup.Subnets)

@@ -514,7 +514,7 @@ func (c *Client) TenantGetKafkaClusterBootstrapBrokers(tenantID string, arn stri
 		fmt.Sprintf("subscriptions/%s/FetchKafkaBootstrapBrokers", tenantID),
 		map[string]interface{}{"ClusterArn": arn},
 		&rp)
-	if err != nil || rp.Name == "" {
+	if err != nil {
 		return nil, err
 	}
 	return &rp, err
