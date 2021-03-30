@@ -325,6 +325,9 @@ func (c *Client) TenantGetExtConnSecurityGroupRules(tenantID string) (*[]DuploTe
 		fmt.Sprintf("subscriptions/%s/GetAllTenantExtConnSgRules", tenantID),
 		map[string]interface{}{},
 		&list)
+	for i := range list {
+		list[i].TenantID = tenantID
+	}
 	return &list, err
 }
 
