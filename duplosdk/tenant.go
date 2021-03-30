@@ -4,6 +4,11 @@ import (
 	"fmt"
 )
 
+const (
+	// SGSourceTypeTenant represents a Duplo Tenant as an SG rule source
+	SGSourceTypeTenant int = 0
+)
+
 // DuploTenant represents a Duplo tenant
 type DuploTenant struct {
 	TenantID     string                 `json:"TenantId,omitempty"`
@@ -67,6 +72,26 @@ type DuploTenantEksSecret struct {
 	Type        string            `json:"SecretType"`
 	Data        map[string]string `json:"SecretData"`
 	Annotations map[string]string `json:"SecretAnnotations"`
+}
+
+// DuploTenantExtConnSecurityGroupSource represents an external connection SG source for a Duplo tenant.
+type DuploTenantExtConnSecurityGroupSource struct {
+	Description string `json:"Description"`
+	Type        int    `json:"Type"`
+	Value       string `json:"Value"`
+}
+
+// DuploTenantExtConnSecurityGroupRule represents just-in-time EKS credentials in Duplo
+type DuploTenantExtConnSecurityGroupRule struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	State    string                                   `json:"State,omitempty"`
+	Protocol string                                   `json:"ServiceProtocol,omitempty"`
+	Type     int                                      `json:"ServiceType,omitempty"`
+	FromPort int                                      `json:"FromPort,omitempty"`
+	Sources  *[]DuploTenantExtConnSecurityGroupSource `json:"SourceInfos,omitempty"`
+	ToPort   int                                      `json:"ToPort,omitempty"`
 }
 
 // TenantGet retrieves a tenant via the Duplo API.
@@ -288,4 +313,29 @@ func (c *Client) GetTenantEksSecret(tenantID string) (*DuploTenantEksSecret, err
 	}
 	creds.TenantID = tenantID
 	return &creds, nil
+}
+
+// TenantGetExtConnSecurityGroups retrieves a list of the external connection security group rules for a Duplo tenant.
+func (c *Client) TenantGetExtConnSecurityGroups(tenantID string) (*[]DuploTenantExtConnSecurityGroupRule, error) {
+	list := []DuploTenantExtConnSecurityGroupRule{}
+	err := c.getAPI(fmt.Sprintf("TenantGetExtConnSecurityGroups(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetAllTenantExtConnSgRules", tenantID), &list)
+	return &list, err
+}
+
+// TenantUpdateExtConnSecurityGroupRule creates or updates an external connection security group rule for a Duplo tenant.
+func (c *Client) TenantUpdateExtConnSecurityGroupRule(rq DuploTenantExtConnSecurityGroupRule) error {
+	rq.State = ""
+	return c.postAPI(fmt.Sprintf("TenantUpdateExtConnSecurityGroupRule(%s, %v)", rq.TenantID, rq.Sources),
+		fmt.Sprintf("subscriptions/%s/TenantExtConnSgRuleUpdate", rq.TenantID),
+		&rq,
+		nil)
+}
+
+// TenantDeleteExtConnSecurityGroupRule deletes an external connection security group rule for a Duplo tenant.
+func (c *Client) TenantDeleteExtConnSecurityGroupRule(rq DuploTenantExtConnSecurityGroupRule) error {
+	rq.State = "delete"
+	return c.postAPI(fmt.Sprintf("TenantDeleteExtConnSecurityGroupRule(%s, %v)", rq.TenantID, rq.Sources),
+		fmt.Sprintf("subscriptions/%s/TenantExtConnSgRuleUpdate", rq.TenantID),
+		&rq,
+		nil)
 }
