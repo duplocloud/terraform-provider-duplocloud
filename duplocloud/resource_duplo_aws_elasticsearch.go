@@ -596,8 +596,8 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 // It should be usable both post-creation and post-modification.
 func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
-		Pending:      []string{"new", "processing", "upgrade-processing"},
-		Target:       []string{"created"},
+		Pending:      []string{"new", "processing", "upgrade-processing", "created"},
+		Target:       []string{"available"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
 		Timeout:      timeout,
@@ -616,7 +616,11 @@ func awsElasticSearchDomainWaitUntilAvailable(c *duplosdk.Client, tenantID strin
 			} else if resp.Deleted {
 				status = "deleted"
 			} else if resp.Created {
-				status = "created"
+				if len(resp.Endpoints) == 0 {
+					status = "created"
+				} else {
+					status = "available"
+				}
 			}
 			return resp, status, nil
 		},

@@ -4,6 +4,14 @@ import (
 	"fmt"
 )
 
+const (
+	// SGSourceTypeTenant represents a Duplo Tenant as an SG rule source
+	SGSourceTypeTenant int = 0
+
+	// SGSourceTypeIPAddress represents an IP Address as an SG rule source
+	SGSourceTypeIPAddress int = 0
+)
+
 // DuploTenant represents a Duplo tenant
 type DuploTenant struct {
 	TenantID     string                 `json:"TenantId,omitempty"`
@@ -67,6 +75,26 @@ type DuploTenantEksSecret struct {
 	Type        string            `json:"SecretType"`
 	Data        map[string]string `json:"SecretData"`
 	Annotations map[string]string `json:"SecretAnnotations"`
+}
+
+// DuploTenantExtConnSecurityGroupSource represents an external connection SG source for a Duplo tenant.
+type DuploTenantExtConnSecurityGroupSource struct {
+	Description string `json:"Description"`
+	Type        int    `json:"Type"`
+	Value       string `json:"Value"`
+}
+
+// DuploTenantExtConnSecurityGroupRule represents just-in-time EKS credentials in Duplo
+type DuploTenantExtConnSecurityGroupRule struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	State    string                                   `json:"State,omitempty"`
+	Protocol string                                   `json:"ServiceProtocol,omitempty"`
+	Type     int                                      `json:"ServiceType,omitempty"`
+	FromPort int                                      `json:"FromPort,omitempty"`
+	Sources  *[]DuploTenantExtConnSecurityGroupSource `json:"SourceInfos,omitempty"`
+	ToPort   int                                      `json:"ToPort,omitempty"`
 }
 
 // TenantGet retrieves a tenant via the Duplo API.
@@ -288,4 +316,56 @@ func (c *Client) GetTenantEksSecret(tenantID string) (*DuploTenantEksSecret, err
 	}
 	creds.TenantID = tenantID
 	return &creds, nil
+}
+
+// TenantGetExtConnSecurityGroupRules retrieves a list of the external connection security group rules for a Duplo tenant.
+func (c *Client) TenantGetExtConnSecurityGroupRules(tenantID string) (*[]DuploTenantExtConnSecurityGroupRule, error) {
+	list := []DuploTenantExtConnSecurityGroupRule{}
+	err := c.postAPI(fmt.Sprintf("TenantGetExtConnSecurityGroups(%s)", tenantID),
+		fmt.Sprintf("subscriptions/%s/GetAllTenantExtConnSgRules", tenantID),
+		map[string]interface{}{},
+		&list)
+	for i := range list {
+		list[i].TenantID = tenantID
+	}
+	return &list, err
+}
+
+// TenantGetExtConnSecurityGroupRule retrieves an external connection security group rule for a Duplo tenant.
+func (c *Client) TenantGetExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurityGroupRule) (*DuploTenantExtConnSecurityGroupRule, error) {
+	list, err := c.TenantGetExtConnSecurityGroupRules(rq.TenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rule := range *list {
+		if rule.Type == rq.Type && rule.Protocol == rq.Protocol && rule.FromPort == rq.FromPort && rule.ToPort == rule.ToPort && rule.Sources != nil && len(*rule.Sources) > 0 {
+			if len(*rule.Sources) != 1 {
+				return nil, fmt.Errorf("Found a rule with %d sources, no idea how process it!", len(*rule.Sources))
+			}
+			if rq.Sources == nil || len(*rq.Sources) == 0 || ((*rule.Sources)[0].Type == rq.Type && (*rule.Sources)[0].Value == (*rq.Sources)[0].Value) {
+				return &rule, nil
+			}
+		}
+	}
+
+	return nil, nil
+}
+
+// TenantUpdateExtConnSecurityGroupRule creates or updates an external connection security group rule for a Duplo tenant.
+func (c *Client) TenantUpdateExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurityGroupRule) error {
+	rq.State = ""
+	return c.postAPI(fmt.Sprintf("TenantUpdateExtConnSecurityGroupRule(%s, %v)", rq.TenantID, rq.Sources),
+		fmt.Sprintf("subscriptions/%s/TenantExtConnSgRuleUpdate", rq.TenantID),
+		rq,
+		nil)
+}
+
+// TenantDeleteExtConnSecurityGroupRule deletes an external connection security group rule for a Duplo tenant.
+func (c *Client) TenantDeleteExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurityGroupRule) error {
+	rq.State = "delete"
+	return c.postAPI(fmt.Sprintf("TenantDeleteExtConnSecurityGroupRule(%s, %v)", rq.TenantID, rq.Sources),
+		fmt.Sprintf("subscriptions/%s/TenantExtConnSgRuleUpdate", rq.TenantID),
+		rq,
+		nil)
 }
