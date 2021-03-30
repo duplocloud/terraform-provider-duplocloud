@@ -427,7 +427,11 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 
 	// Wait up to 60 seconds for Duplo to be able to return the domain's details.
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ElasticSearch domain", id, func() (interface{}, error) {
-		return c.TenantGetElasticSearchDomain(tenantID, duploObject.Name, false)
+		rq, errget := c.TenantGetElasticSearchDomain(tenantID, duploObject.Name, false)
+		if rq == nil || len(rq.Endpoints) == 0 {
+			return nil, errget
+		}
+		return rq, errget
 	})
 	if diags != nil {
 		return diags
