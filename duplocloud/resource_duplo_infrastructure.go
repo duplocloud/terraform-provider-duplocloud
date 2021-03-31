@@ -175,17 +175,19 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 			for _, vnetSubnet := range *config.Vnet.Subnets {
 				nameParts := strings.SplitN(vnetSubnet.Name, " ", 2)
 
-				subnet := map[string]interface{}{
-					"id":         vnetSubnet.ID,
-					"name":       vnetSubnet.Name,
-					"zone":       nameParts[0],
-					"cidr_block": vnetSubnet.AddressPrefix,
-				}
+				if len(nameParts) == 2 {
+					subnet := map[string]interface{}{
+						"id":         vnetSubnet.ID,
+						"name":       vnetSubnet.Name,
+						"zone":       nameParts[0],
+						"cidr_block": vnetSubnet.AddressPrefix,
+					}
 
-				if nameParts[1] == "private" {
-					privateSubnets = append(privateSubnets, subnet)
-				} else {
-					publicSubnets = append(publicSubnets, subnet)
+					if nameParts[1] == "private" {
+						privateSubnets = append(privateSubnets, subnet)
+					} else if nameParts[1] == "public" {
+						publicSubnets = append(publicSubnets, subnet)
+					}
 				}
 			}
 
