@@ -343,7 +343,15 @@ func reorderEcsEnvironmentVariables(defn map[string]interface{}) {
 		sort.Slice(env, func(i, j int) bool {
 			mi := env[i].(map[string]interface{})
 			mj := env[j].(map[string]interface{})
-			return mi["Name"].(string) < mj["Name"].(string)
+			si := ""
+			sj := ""
+			if v, ok = mi["Name"]; ok && !isInterfaceNil(v) {
+				si = v.(string)
+			}
+			if v, ok = mj["Name"]; ok && !isInterfaceNil(v) {
+				sj = v.(string)
+			}
+			return si < sj
 		})
 	}
 }
