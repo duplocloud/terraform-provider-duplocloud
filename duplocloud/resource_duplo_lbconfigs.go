@@ -2,13 +2,15 @@ package duplocloud
 
 import (
 	"context"
-	"strconv"
+	"fmt"
+	"strings"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -27,122 +29,282 @@ func resourceDuploServiceLBConfigs() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: *duplosdk.DuploServiceLBConfigsSchema(),
+		Schema: duploServiceLBConfigsSchema(),
 	}
 }
 
-// SCHEMA for resource search/data
-func dataSourceDuploServiceLBConfigs() *schema.Resource {
-	return &schema.Resource{
-		ReadContext: dataSourceDuploServiceLBConfigsRead,
-		Schema: map[string]*schema.Schema{
-			"filter": FilterSchema(), // todo: search specific to this object... may be api should support filter?
-			"tenant_id": {
-				Type:     schema.TypeString,
-				Computed: false,
-				Optional: true,
-			},
-			"data": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: *duplosdk.DuploServiceLBConfigsSchema(),
+// DuploServiceLBConfigsSchema returns a Terraform resource schema for a service's load balancer
+func duploServiceLBConfigsSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"replication_controller_name": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"tenant_id": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+			ForceNew: true, //switch tenant
+		},
+		"arn": {
+			Type:     schema.TypeString,
+			Computed: true,
+			Optional: true,
+		},
+		"status": {
+			Type:     schema.TypeString,
+			Computed: true,
+			Optional: true,
+		},
+		"lbconfigs": {
+			Type:     schema.TypeList,
+			Optional: false,
+			Required: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"lb_type": {
+						Type:     schema.TypeInt,
+						Required: true,
+						ForceNew: true,
+					},
+					"protocol": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"port": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"external_port": {
+						Type:     schema.TypeInt,
+						Required: true,
+					},
+					"health_check_url": {
+						Type:     schema.TypeString,
+						Required: false,
+						Optional: true,
+					},
+					"certificate_arn": {
+						Type:     schema.TypeString,
+						Required: false,
+						Optional: true,
+					},
+					"replication_controller_name": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"is_native": {
+						Type:     schema.TypeBool,
+						Required: false,
+						Optional: true,
+					},
+					"is_internal": {
+						Type:     schema.TypeBool,
+						Required: false,
+						Optional: true,
+					},
 				},
 			},
 		},
 	}
 }
 
-/// READ/SEARCH resources
-func dataSourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-dataSourceDuploServiceLBConfigsRead ******** start")
-
-	c := m.(*duplosdk.Client)
-	var diags diag.Diagnostics
-	duploObjs, err := c.DuploServiceLBConfigsGetList(d, m)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	itemList := c.DuploServiceLBConfigsListFlatten(duploObjs, d)
-	if err := d.Set("data", itemList); err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
-
-	log.Printf("[TRACE] duplo-dataSourceDuploServiceLBConfigsRead ******** end")
-
-	return diags
-}
-
 /// READ resource
 func resourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsRead ******** start")
+	log.Printf("[TRACE] resourceDuploServiceLBConfigsRead: start")
 
-	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	err := c.DuploServiceLBConfigsGet(d, m)
-	if err != nil {
-		return diag.FromErr(err)
+	// Parse the identifying attributes
+	tenantID, name := parseDuploServiceLBConfigsIdParts(d.Id())
+	if tenantID == "" || name == "" {
+		return diag.Errorf("Invalid resource ID: %s", d.Id())
 	}
 
-	c.DuploServiceLBConfigsSetID(d)
-	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsRead ******** end")
-	return diags
+	// Get the object from Duplo, detecting a missing object
+	c := m.(*duplosdk.Client)
+	duplo, err := c.DuploServiceLBConfigsGet(tenantID, name)
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
+	if err != nil {
+		return diag.Errorf("Unable to retrieve tenant %s service '%s' load balancer configs: %s", tenantID, name, err)
+	}
+
+	// Apply the TF state
+	d.Set("tenant_id", duplo.TenantID)
+	d.Set("replication_controller_name", duplo.ReplicationControllerName)
+	d.Set("arn", duplo.Arn)
+	d.Set("status", duplo.Status)
+	d.Set("lbconfigs", flattenDuploServiceLBConfigurations(duplo.LBConfigs))
+
+	log.Printf("[TRACE] resourceDuploServiceLBConfigsRead: start")
+	return nil
 }
 
 /// CREATE resource
 func resourceDuploServiceLBConfigsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsCreate ******** start")
-
-	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.DuploServiceLBConfigsCreate(d, m)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	c.DuploServiceLBConfigsSetID(d)
-	resourceDuploServiceLBConfigsRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsCreate ******** end")
+	log.Printf("[TRACE] resourceDuploServiceLBConfigsCreate: start")
+	diags := resourceDuploServiceLBConfigsCreateOrUpdate(ctx, d, m, false)
+	log.Printf("[TRACE] resourceDuploServiceLBConfigsCreate: end")
 	return diags
 }
 
 /// UPDATE resource
 func resourceDuploServiceLBConfigsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsUpdate ******** start")
+	log.Printf("[TRACE] resourceDuploServiceLBConfigsUpdate: start")
+	diags := resourceDuploServiceLBConfigsCreateOrUpdate(ctx, d, m, true)
+	return diags
+}
 
-	c := m.(*duplosdk.Client)
+func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, updating bool) diag.Diagnostics {
+	log.Printf("[TRACE] resourceDuploServiceLBConfigsCreateOrUpdate: start")
 
-	var diags diag.Diagnostics
-	_, err := c.DuploServiceLBConfigsUpdate(d, m)
-	if err != nil {
-		return diag.FromErr(err)
+	// Start the build the reqeust.
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("replication_controller_name").(string)
+	rq := duplosdk.DuploServiceLBConfigs{
+		ReplicationControllerName: name,
+		TenantID:                  tenantID,
+		Arn:                       d.Get("arn").(string),
+		Status:                    d.Get("status").(string),
 	}
 
-	c.DuploServiceLBConfigsSetID(d)
-	resourceDuploServiceLBConfigsRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsUpdate ******** end")
+	// Append all load balancer configs to the request.
+	if v, ok := d.GetOk("lbconfigs"); ok {
+		lbconfigs := v.([]interface{})
 
+		if len(lbconfigs) > 0 {
+			var lbcs []duplosdk.DuploLBConfiguration
+
+			for _, vLbc := range lbconfigs {
+				lbc := vLbc.(map[string]interface{})
+				lbcs = append(lbcs, duplosdk.DuploLBConfiguration{
+					LBType:                    lbc["lb_type"].(int),
+					Protocol:                  lbc["protocol"].(string),
+					Port:                      lbc["port"].(string),
+					ExternalPort:              lbc["external_port"].(int),
+					HealthCheckURL:            lbc["health_check_url"].(string),
+					CertificateArn:            lbc["certificate_arn"].(string),
+					ReplicationControllerName: name,
+					IsNative:                  lbc["is_native"].(bool),
+					IsInternal:                lbc["is_internal"].(bool),
+				})
+			}
+
+			rq.LBConfigs = &lbcs
+		}
+	}
+
+	// Post the object to Duplo
+	id := fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2/%s", tenantID, name)
+	c := m.(*duplosdk.Client)
+	_, err := c.DuploServiceLBConfigsCreateOrUpdate(tenantID, &rq, updating)
+	if err != nil {
+		return diag.Errorf("Error applying Duplo service '%s' load balancer configs: %s", id, err)
+	}
+	if !updating {
+		d.SetId(id)
+	}
+
+	// Wait for the load balancers to be ready.
+	err = duploServiceLBConfigsWaitUntilReady(c, tenantID, name)
+	if err != nil {
+		return diag.Errorf("Error waiting for Duplo service '%s' load balancer configs to be ready: %s", id, err)
+	}
+
+	// Read the latest status from Duplo
+	diags := resourceDuploServiceLBConfigsRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploServiceLBConfigsCreateOrUpdate: end")
 	return diags
 }
 
 /// DELETE resource
 func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsDelete ******** start")
+	log.Printf("[TRACE] resourceDuploServiceLBConfigsDelete: start")
 
-	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.DuploServiceLBConfigsDelete(d, m)
-	if err != nil {
-		return diag.FromErr(err)
+	// Parse the identifying attributes
+	id := d.Id()
+	tenantID, name := parseDuploServiceLBConfigsIdParts(id)
+	if tenantID == "" || name == "" {
+		return diag.Errorf("Invalid resource ID: %s", id)
 	}
-	//todo: wait for it completely deleted
-	log.Printf("[TRACE] duplo-resourceDuploServiceLBConfigsDelete ******** end")
 
+	// Delete the object from Duplo
+	c := m.(*duplosdk.Client)
+	err := c.DuploServiceLBConfigsDelete(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Error deleting Duplo service '%s' load balancer configs: %s", id, err)
+	}
+
+	// Wait for it to be deleted
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service load balancer configs", id, func() (interface{}, error) {
+		return c.DuploServiceLBConfigsGet(tenantID, name)
+	})
+
+	// Wait 40 more seconds to deal with consistency issues.
+	if diags != nil {
+		time.Sleep(40 * time.Second)
+	}
+
+	log.Printf("[TRACE] resourceDuploServiceLBConfigsDelete: end")
 	return diags
+}
+
+func flattenDuploServiceLBConfigurations(list *[]duplosdk.DuploLBConfiguration) []interface{} {
+	if list == nil {
+		return []interface{}{}
+	}
+
+	lbconfigs := make([]interface{}, 0, len(*list))
+
+	for _, lbc := range *list {
+		lbconfigs = append(lbconfigs, map[string]interface{}{
+			"lb_type":                     lbc.LBType,
+			"protocol":                    lbc.Protocol,
+			"port":                        lbc.Port,
+			"external_port":               lbc.ExternalPort,
+			"health_check_url":            lbc.HealthCheckURL,
+			"certificate_arn":             lbc.CertificateArn,
+			"replication_controller_name": lbc.ReplicationControllerName,
+			"is_native":                   lbc.IsNative,
+			"is_internal":                 lbc.IsInternal,
+		})
+	}
+
+	return lbconfigs
+}
+
+func parseDuploServiceLBConfigsIdParts(id string) (tenantID, name string) {
+	idParts := strings.SplitN(id, "/", 5)
+	if len(idParts) == 5 {
+		tenantID, name = idParts[2], idParts[4]
+	}
+	return
+}
+
+// DuploServiceLBConfigsWaitForCreation waits for creation of an service's load balancer by the Duplo API
+func duploServiceLBConfigsWaitUntilReady(c *duplosdk.Client, tenantID, name string) error {
+	stateConf := &resource.StateChangeConf{
+		Pending: []string{"missing", "pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.DuploServiceLBConfigsGet(tenantID, name)
+			if err != nil || rp == nil {
+				return nil, "missing", err
+			}
+
+			status := "pending"
+			if rp.Status == "Ready" {
+				status = "ready"
+			}
+			return rp, status, nil
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+	}
+	log.Printf("[DEBUG] duploServiceLBConfigsWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForState()
+	return err
 }
