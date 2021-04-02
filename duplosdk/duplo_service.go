@@ -69,7 +69,7 @@ func (c *Client) DuploServiceCreateOrUpdate(tenantID string, rq *DuploService, u
 	rp := DuploService{}
 	err := c.doAPIWithRequestBody(
 		verb,
-		fmt.Sprintf("DuploServiceCreateOrUpdate(%s, duplo-%s)", tenantID, rq.Name),
+		fmt.Sprintf("DuploServiceCreateOrUpdate(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2", tenantID),
 		&rq,
 		&rp,

@@ -227,18 +227,28 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 	log.Printf("[TRACE] resourceDuploServiceDelete ******** start")
 
 	// Parse the identifying attributes
-	tenantID, name := parseDuploServiceIdParts(d.Id())
+	id := d.Id()
+	tenantID, name := parseDuploServiceIdParts(id)
 	if tenantID == "" || name == "" {
-		return diag.Errorf("Invalid resource ID: %s", d.Id())
+		return diag.Errorf("Invalid resource ID: %s", id)
 	}
 
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
 	err := c.DuploServiceDelete(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
+		return diag.Errorf("Error deleting Duplo service '%s': %s", id, err)
 	}
-	//todo: wait for it to be completely deleted
+
+	// Wait for it to be deleted
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service", id, func() (interface{}, error) {
+		return c.DuploServiceGet(tenantID, name)
+	})
+
+	// Wait 40 more seconds to deal with consistency issues.
+	if diags == nil {
+		time.Sleep(40 * time.Second)
+	}
 
 	log.Printf("[TRACE] resourceDuploServiceDelete ******** end")
 	return nil

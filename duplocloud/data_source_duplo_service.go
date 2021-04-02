@@ -101,7 +101,7 @@ func dataSourceDuploService() *schema.Resource {
 }
 
 func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] dataSourceDuploServicesRead ******** start")
+	log.Printf("[TRACE] dataSourceDuploServicesRead: start")
 
 	// Parse the identifying attributes
 	tenantID := d.Get("tenant_id").(string)
@@ -142,12 +142,12 @@ func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m 
 	}
 	d.Set("services", services)
 
-	log.Printf("[TRACE] dataSourceDuploServicesRead ******** end")
+	log.Printf("[TRACE] dataSourceDuploServicesRead: end")
 	return nil
 }
 
 func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] dataSourceDuploServiceRead ******** start")
+	log.Printf("[TRACE] dataSourceDuploServiceRead: start")
 
 	// Parse the identifying attributes
 	tenantID := d.Get("tenant_id").(string)
@@ -177,6 +177,6 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 		d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 	}
 
-	log.Printf("[TRACE] dataSourceDuploServiceRead ******** end")
+	log.Printf("[TRACE] dataSourceDuploServiceRead: end")
 	return nil
 }

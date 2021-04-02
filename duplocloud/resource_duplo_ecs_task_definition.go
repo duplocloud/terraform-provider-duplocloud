@@ -343,7 +343,15 @@ func reorderEcsEnvironmentVariables(defn map[string]interface{}) {
 		sort.Slice(env, func(i, j int) bool {
 			mi := env[i].(map[string]interface{})
 			mj := env[j].(map[string]interface{})
-			return mi["Name"].(string) < mj["Name"].(string)
+			si := ""
+			sj := ""
+			if v, ok = mi["Name"]; ok && !isInterfaceNil(v) {
+				si = v.(string)
+			}
+			if v, ok = mj["Name"]; ok && !isInterfaceNil(v) {
+				sj = v.(string)
+			}
+			return si < sj
 		})
 	}
 }
@@ -362,17 +370,19 @@ func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC bool) error
 		defn["Essential"] = true
 	}
 	if v, ok := defn["PortMappings"]; ok && v != nil {
-		pms := v.([]map[string]interface{})
-		for i := range pms {
-			if v2, ok2 := pms[i]["Protocol"]; ok2 && v2 != nil && v2.(string) == "tcp" {
-				pms[i]["Protocol"] = nil
+		pmi := v.([]interface{})
+		for i := range pmi {
+			pms := pmi[i].(map[string]interface{})
+
+			if v2, ok2 := pms["Protocol"]; ok2 && !isInterfaceNil(v2) && v2.(string) == "tcp" {
+				pms["Protocol"] = nil
 			}
-			if v2, ok2 := pms[i]["HostPort"]; ok2 {
-				if v2 != nil && v2.(int) == 0 {
-					pms[i]["HostPort"] = nil
+			if v2, ok2 := pms["HostPort"]; ok2 {
+				if !isInterfaceNil(v2) && v2.(int) == 0 {
+					pms["HostPort"] = nil
 				}
-				if isAWSVPC && pms[i]["HostPort"] == nil {
-					pms[i]["HostPort"] = pms[i]["ContainerPort"]
+				if isAWSVPC && pms["HostPort"] == nil {
+					pms["HostPort"] = pms["ContainerPort"]
 				}
 			}
 		}
