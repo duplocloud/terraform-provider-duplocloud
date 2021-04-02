@@ -123,7 +123,7 @@ func resourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.ResourceDa
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	duplo, err := c.DuploServiceLBConfigsGet(tenantID, name)
-	if duplo == nil {
+	if duplo == nil || duplo.LBConfigs == nil || len(*duplo.LBConfigs) == 0 {
 		d.SetId("") // object missing
 		return nil
 	}
@@ -239,7 +239,11 @@ func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.Resource
 
 	// Wait for it to be deleted
 	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service load balancer configs", id, func() (interface{}, error) {
-		return c.DuploServiceLBConfigsGet(tenantID, name)
+		rp, errget := c.DuploServiceLBConfigsGet(tenantID, name)
+		if errget == nil && (rp == nil || rp.LBConfigs == nil || len(*rp.LBConfigs) == 0) {
+			rp = nil
+		}
+		return rp, errget
 	})
 
 	// Wait 40 more seconds to deal with consistency issues.
