@@ -246,7 +246,7 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 	})
 
 	// Wait 40 more seconds to deal with consistency issues.
-	if diags != nil {
+	if diags == nil {
 		time.Sleep(40 * time.Second)
 	}
 

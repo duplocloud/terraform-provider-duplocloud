@@ -43,23 +43,19 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 		},
 		"tenant_id": {
 			Type:     schema.TypeString,
-			Optional: false,
 			Required: true,
 			ForceNew: true, //switch tenant
 		},
 		"arn": {
 			Type:     schema.TypeString,
 			Computed: true,
-			Optional: true,
 		},
 		"status": {
 			Type:     schema.TypeString,
 			Computed: true,
-			Optional: true,
 		},
 		"lbconfigs": {
 			Type:     schema.TypeList,
-			Optional: false,
 			Required: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -82,26 +78,28 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 					},
 					"health_check_url": {
 						Type:     schema.TypeString,
-						Required: false,
+						Computed: true,
 						Optional: true,
 					},
 					"certificate_arn": {
 						Type:     schema.TypeString,
-						Required: false,
+						Computed: true,
 						Optional: true,
 					},
 					"replication_controller_name": {
-						Type:     schema.TypeString,
-						Required: true,
+						Type:       schema.TypeString,
+						Computed:   true,
+						Optional:   true,
+						Deprecated: "Set the replication_controller_name field instead of lbconfigs.replication_controller_name",
 					},
 					"is_native": {
 						Type:     schema.TypeBool,
-						Required: false,
+						Computed: true,
 						Optional: true,
 					},
 					"is_internal": {
 						Type:     schema.TypeBool,
-						Required: false,
+						Computed: true,
 						Optional: true,
 					},
 				},
@@ -247,7 +245,7 @@ func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.Resource
 	})
 
 	// Wait 40 more seconds to deal with consistency issues.
-	if diags != nil {
+	if diags == nil {
 		time.Sleep(40 * time.Second)
 	}
 

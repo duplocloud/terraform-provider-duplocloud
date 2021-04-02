@@ -248,7 +248,7 @@ func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData,
 	})
 
 	// Wait 1 more minute to deal with consistency issues.
-	if diags != nil {
+	if diags == nil {
 		time.Sleep(time.Minute)
 	}
 
