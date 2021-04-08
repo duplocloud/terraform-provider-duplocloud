@@ -369,6 +369,11 @@ func reorderEcsEnvironmentVariables(defn map[string]interface{}) {
 //
 // See: https://github.com/hashicorp/terraform-provider-aws/blob/7141d1c315dc0c221979f0a4f8855a13b545dbaf/aws/ecs_task_definition_equivalency.go#L58
 func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC bool) error {
+
+	// Ensure we are using upper-camel case.
+	makeMapUpperCamelCase(defn)
+
+	// Reorder the environment variables.
 	reorderEcsEnvironmentVariables(defn)
 
 	// Handle fields that have defaults.
