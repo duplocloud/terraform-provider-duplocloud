@@ -163,7 +163,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	// Convert the Terraform resource data into a Duplo object
 	duploObject, err := rdsInstanceFromState(d)
 	if err != nil {
-		return diag.Errorf("Internal error: %s")
+		return diag.Errorf("Internal error: %s", err)
 	}
 
 	// Populate the identifier field, and determine some other fields
