@@ -110,7 +110,7 @@ func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m 
 	c := m.(*duplosdk.Client)
 	list, err := c.DuploServiceList(tenantID)
 	if err != nil {
-		return diag.Errorf("Unable to list tenant %s services '%s': %s", tenantID, err)
+		return diag.Errorf("Unable to list tenant %s services: %s", tenantID, err)
 	}
 	d.SetId(tenantID)
 
@@ -157,7 +157,7 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 	duplo, err := c.DuploServiceGet(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, err)
+		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
 	}
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
 
