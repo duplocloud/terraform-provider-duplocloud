@@ -1,4 +1,4 @@
-TEST?=$$(go list ./... | grep -v 'vendor')
+TEST?=$$(go list ./duplocloud/... ./duplosdk/...)
 #
 HOSTNAME=registry.terraform.io
 NAMESPACE=duplocloud
