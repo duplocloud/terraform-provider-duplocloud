@@ -132,7 +132,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	// Convert the Terraform resource data into a Duplo object
 	duploObject, err := duplosdk.EcacheInstanceFromState(d)
 	if err != nil {
-		return diag.Errorf("Internal error: %s")
+		return diag.Errorf("Internal error: %s", err)
 	}
 
 	// Populate the identifier field, and determine some other fields
