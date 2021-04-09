@@ -40,7 +40,7 @@ func tenantSecretSchema() map[string]*schema.Schema {
 
 			// Supresses diffs for existing resources that were imported, so they have a blank secret data.
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				return d.Id() != "" && old == ""
+				return d.Id() != "" && (old == "" || old == new)
 			},
 		},
 		"rotation_enabled": {

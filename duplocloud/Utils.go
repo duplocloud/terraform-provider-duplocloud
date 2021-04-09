@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
+	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -231,4 +233,26 @@ func validateJsonObjectArray(key string, value string) (ws []string, errors []er
 		errors = append(errors, fmt.Errorf("%s is invalid: %s", key, err))
 	}
 	return
+}
+
+// Internal function to convert map keys from lower camel-case to upper camel-case.
+//  - Adds an upper camel-case entry for each lower camel-case entry, unless the upper exists already.
+//  - Removes any lower camel-case entry.
+//  - Never overwrites any existing upper camel-case keys.
+func makeMapUpperCamelCase(m map[string]interface{}) {
+	for k := range m {
+
+		// Only convert lowercase entries.
+		if unicode.IsLower([]rune(k)[0]) {
+			upper := strings.Title(k)
+
+			// Add the upper camel-case entry, if it doesn't exist.
+			if _, ok := m[upper]; !ok {
+				m[upper] = m[k]
+			}
+
+			// Remove the lower camel-case entry.
+			delete(m, k)
+		}
+	}
 }

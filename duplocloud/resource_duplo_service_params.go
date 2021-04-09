@@ -118,7 +118,7 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 
 /// CREATE resource
 func resourceDuploServiceParamsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return resourceDuploServiceParamsCreateOrUpdate(ctx, d, m, true)
+	return resourceDuploServiceParamsCreateOrUpdate(ctx, d, m, false)
 }
 
 /// UPDATE resource

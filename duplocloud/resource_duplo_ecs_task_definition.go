@@ -339,20 +339,29 @@ func reorderEcsEnvironmentVariables(defn map[string]interface{}) {
 
 	// Re-order environment variables to a canonical order.
 	if v, ok := defn["Environment"]; ok && v != nil {
-		env := v.([]interface{})
-		sort.Slice(env, func(i, j int) bool {
-			mi := env[i].(map[string]interface{})
-			mj := env[j].(map[string]interface{})
-			si := ""
-			sj := ""
-			if v, ok = mi["Name"]; ok && !isInterfaceNil(v) {
-				si = v.(string)
-			}
-			if v, ok = mj["Name"]; ok && !isInterfaceNil(v) {
-				sj = v.(string)
-			}
-			return si < sj
-		})
+		if env, ok := v.([]interface{}); ok && env != nil {
+			sort.Slice(env, func(i, j int) bool {
+
+				// Get both maps, ensure we are using upper camel-case.
+				mi := env[i].(map[string]interface{})
+				mj := env[j].(map[string]interface{})
+				makeMapUpperCamelCase(mi)
+				makeMapUpperCamelCase(mj)
+
+				// Get both name keys, fall back on an empty string.
+				si := ""
+				sj := ""
+				if v, ok = mi["Name"]; ok && !isInterfaceNil(v) {
+					si = v.(string)
+				}
+				if v, ok = mj["Name"]; ok && !isInterfaceNil(v) {
+					sj = v.(string)
+				}
+
+				// Compare the two.
+				return si < sj
+			})
+		}
 	}
 }
 
@@ -360,29 +369,53 @@ func reorderEcsEnvironmentVariables(defn map[string]interface{}) {
 //
 // See: https://github.com/hashicorp/terraform-provider-aws/blob/7141d1c315dc0c221979f0a4f8855a13b545dbaf/aws/ecs_task_definition_equivalency.go#L58
 func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC bool) error {
+
+	// Ensure we are using upper-camel case.
+	makeMapUpperCamelCase(defn)
+
+	// Reorder the environment variables.
 	reorderEcsEnvironmentVariables(defn)
 
 	// Handle fields that have defaults.
-	if v, ok := defn["Cpu"]; ok && v != nil && v.(int) == 0 {
-		defn["Cpu"] = nil
+	if v, ok := defn["Cpu"]; ok {
+		if v2, ok := v.(int); ok && v2 == 0 {
+			defn["Cpu"] = nil
+		}
 	}
-	if v, ok := defn["Essential"]; !(ok && v != nil) {
+	if v, ok := defn["Essential"]; !ok || isInterfaceNil(v) {
 		defn["Essential"] = true
 	}
-	if v, ok := defn["PortMappings"]; ok && v != nil {
-		pmi := v.([]interface{})
-		for i := range pmi {
-			pms := pmi[i].(map[string]interface{})
 
-			if v2, ok2 := pms["Protocol"]; ok2 && !isInterfaceNil(v2) && v2.(string) == "tcp" {
-				pms["Protocol"] = nil
-			}
-			if v2, ok2 := pms["HostPort"]; ok2 {
-				if !isInterfaceNil(v2) && v2.(int) == 0 {
-					pms["HostPort"] = nil
-				}
-				if isAWSVPC && pms["HostPort"] == nil {
-					pms["HostPort"] = pms["ContainerPort"]
+	// Handle port mappings array
+	if v, ok := defn["PortMappings"]; ok && v != nil {
+		if pmi, ok := v.([]interface{}); ok {
+
+			// Handle each port mapping
+			for i := range pmi {
+				if pms, ok := pmi[i].(map[string]interface{}); ok {
+
+					// Handle protocol == "tcp"
+					if protocol, ok := pms["Protocol"]; ok {
+						if v2, ok := protocol.(string); ok && v2 == "tcp" {
+							pms["Protocol"] = nil
+						}
+					}
+
+					// Handle HostPort
+					if hostPort, ok := pms["HostPort"]; ok {
+
+						// Handle HostPort == 0 or blank
+						if v2, ok := hostPort.(int); ok && v2 == 0 {
+							pms["HostPort"] = nil
+						} else if v2, ok := hostPort.(string); ok && (v2 == "0" || v2 == "") {
+							pms["HostPort"] = nil
+						}
+
+						// Handle HostPort == null when using AWSVPC networking
+						if isAWSVPC && pms["HostPort"] == nil {
+							pms["HostPort"] = pms["ContainerPort"]
+						}
+					}
 				}
 			}
 		}
