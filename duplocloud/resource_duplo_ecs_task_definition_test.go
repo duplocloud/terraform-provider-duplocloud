@@ -116,16 +116,64 @@ func TestReduceContaineDefinition(t *testing.T) {
 			},
 		},
 
+		// user missing HostPort
+		{
+			given: map[string]interface{}{
+				"Name":      "default",
+				"Image":     "nginx:latest",
+				"Essential": true,
+				"PortMappings": []interface{}{
+					map[string]interface{}{
+						"Protocol": "tcp",
+						"HostPort": 0,
+					},
+				},
+			},
+			isAWSVPC: true,
+			expected: map[string]interface{}{
+				"Name":      "default",
+				"Image":     "nginx:latest",
+				"Essential": true,
+				"PortMappings": []interface{}{
+					map[string]interface{}{
+						"Protocol": nil,
+						"HostPort": nil,
+					},
+				},
+			},
+		},
+		{
+			given: map[string]interface{}{
+				"Name":  "default",
+				"Image": "nginx:latest",
+				"PortMappings": []interface{}{
+					map[string]interface{}{
+						"Protocol":      "tcp",
+						"ContainerPort": "80",
+					},
+				},
+			},
+			isAWSVPC: true,
+			expected: map[string]interface{}{
+				"Name":      "default",
+				"Image":     "nginx:latest",
+				"Essential": true,
+				"PortMappings": []interface{}{
+					map[string]interface{}{
+						"Protocol":      nil,
+						"HostPort":      "80",
+						"ContainerPort": "80",
+					},
+				},
+			},
+		},
+
 		// user giving ports as strings
 		{
 			given: map[string]interface{}{
 				"Name":      "default",
 				"Image":     "nginx:latest",
 				"Essential": true,
-				"Environment": []interface{}{
-					map[string]interface{}{"Name": "bar", "Value": "foo"},
-					map[string]interface{}{"Name": "foo", "Value": "bar"},
-				},
 				"PortMappings": []interface{}{
 					map[string]interface{}{
 						"Protocol": "tcp",
@@ -138,14 +186,35 @@ func TestReduceContaineDefinition(t *testing.T) {
 				"Name":      "default",
 				"Image":     "nginx:latest",
 				"Essential": true,
-				"Environment": []interface{}{
-					map[string]interface{}{"Name": "bar", "Value": "foo"},
-					map[string]interface{}{"Name": "foo", "Value": "bar"},
-				},
 				"PortMappings": []interface{}{
 					map[string]interface{}{
 						"Protocol": nil,
 						"HostPort": "80",
+					},
+				},
+			},
+		},
+		{
+			given: map[string]interface{}{
+				"Name":      "default",
+				"Image":     "nginx:latest",
+				"Essential": true,
+				"PortMappings": []interface{}{
+					map[string]interface{}{
+						"Protocol": "tcp",
+						"HostPort": "0",
+					},
+				},
+			},
+			isAWSVPC: true,
+			expected: map[string]interface{}{
+				"Name":      "default",
+				"Image":     "nginx:latest",
+				"Essential": true,
+				"PortMappings": []interface{}{
+					map[string]interface{}{
+						"Protocol": nil,
+						"HostPort": nil,
 					},
 				},
 			},
