@@ -394,6 +394,9 @@ func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC bool) error
 			for i := range pmi {
 				if pms, ok := pmi[i].(map[string]interface{}); ok {
 
+					// Ensure we are using upper-camel case.
+					makeMapUpperCamelCase(pms)
+
 					// Handle protocol == "tcp"
 					if protocol, ok := pms["Protocol"]; ok {
 						if v2, ok := protocol.(string); ok && v2 == "tcp" {
@@ -410,11 +413,11 @@ func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC bool) error
 						} else if v2, ok := hostPort.(string); ok && (v2 == "0" || v2 == "") {
 							pms["HostPort"] = nil
 						}
+					}
 
-						// Handle HostPort == null when using AWSVPC networking
-						if isAWSVPC && pms["HostPort"] == nil {
-							pms["HostPort"] = pms["ContainerPort"]
-						}
+					// Handle HostPort == null when using AWSVPC networking
+					if isAWSVPC && pms["HostPort"] == nil {
+						pms["HostPort"] = pms["ContainerPort"]
 					}
 				}
 			}
