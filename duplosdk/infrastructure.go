@@ -219,7 +219,7 @@ func (c *Client) InfrastructureFillGet(duploObject *DuploInfrastructure, d *sche
 func (c *Client) InfrastructureGetList(d *schema.ResourceData, m interface{}) (*[]DuploInfrastructure, error) {
 	//todo: filter other than tenant
 	filters, filtersOk := d.GetOk("filter")
-	log.Printf("[TRACE] InfrastructureGetList filters 1 ********* : %s  %s", filters, filtersOk)
+	log.Printf("[TRACE] InfrastructureGetList filters 1 ********* : %s  %v", filters, filtersOk)
 	//
 	api := c.InfrastructureCreateOrListUrl(d)
 	url := api
@@ -239,7 +239,7 @@ func (c *Client) InfrastructureGetList(d *schema.ResourceData, m interface{}) (*
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[TRACE] duplo-InfrastructureGetList 5 %s  ********: %s", api, len(duploObjects))
+	log.Printf("[TRACE] duplo-InfrastructureGetList 5 %s  ********: %d", api, len(duploObjects))
 
 	return &duploObjects, nil
 }
@@ -270,7 +270,7 @@ func (c *Client) InfrastructureGet(d *schema.ResourceData, m interface{}) error 
 	log.Printf("[TRACE] duplo-InfrastructureGet 5 %s ******** ", api)
 	if duploObject.Name != "" {
 		c.InfrastructureFillGet(&duploObject, d)
-		log.Printf("[TRACE] duplo-InfrastructureGet 6 FOUND *****", api)
+		log.Printf("[TRACE] duplo-InfrastructureGet 6 %s FOUND *****", api)
 		return nil
 	}
 	err_msg := fmt.Errorf("Infrastructure not found  : %s body:%s", api, bodyString)
@@ -348,7 +348,7 @@ func (c *Client) InfrastructureCreateOrUpdate(d *schema.ResourceData, m interfac
 
 		return nil, nil
 	}
-	err_msg := fmt.Errorf("ERROR: in create %d,   body: %s", api, body)
+	err_msg := fmt.Errorf("ERROR: in create %s,   body: %s", api, body)
 	return nil, err_msg
 }
 
@@ -377,7 +377,7 @@ func (c *Client) InfrastructureDelete(d *schema.ResourceData, m interface{}) (*D
 		//nothing ?
 	}
 
-	log.Printf("[TRACE] DONE duplo-InfrastructureDelete %s 4 ********: %s", api)
+	log.Printf("[TRACE] DONE duplo-InfrastructureDelete %s 4 ********", api)
 	return nil, nil
 }
 
