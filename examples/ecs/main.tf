@@ -66,6 +66,12 @@ resource "duplocloud_aws_load_balancer" "test" {
   drop_invalid_headers = true
 }
 
+data "duplocloud_aws_lb_listeners" "test" {
+  tenant_id = var.tenant_id
+  name = duplocloud_aws_load_balancer.test.name
+}
+output "test_lb_listeners" { value = data.duplocloud_aws_lb_listeners.test.listeners }
+
 resource "duplocloud_ecs_task_definition" "test" {
   tenant_id = var.tenant_id
   family = "duploservices-default-joedemo"

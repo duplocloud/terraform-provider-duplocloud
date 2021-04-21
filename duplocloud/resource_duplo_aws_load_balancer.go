@@ -184,7 +184,7 @@ func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.Errorf("Error retrieving load balancer %s settings: %s", settingsRq.LoadBalancerArn, err)
 	}
-	resourceAwsLoadBalancerSetData(d, tenantID, resource.Name, resource, settings)
+	resourceAwsLoadBalancerSetData(d, tenantID, name, resource, settings)
 
 	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** end")
 	return nil

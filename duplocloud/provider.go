@@ -48,6 +48,7 @@ func Provider() *schema.Provider {
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
 			"duplocloud_aws_account":             dataSourceAwsAccount(),
 			"duplocloud_aws_host":                dataSourceAwsHost(),
+			"duplocloud_aws_lb_listeners":        dataSourceTenantAwsLbListeners(),
 			"duplocloud_eks_credentials":         dataSourceEksCredentials(),
 			"duplocloud_duplo_service":           dataSourceDuploService(),
 			"duplocloud_duplo_services":          dataSourceDuploServices(),

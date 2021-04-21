@@ -105,12 +105,61 @@ type DuploAwsLbDetailsInService struct {
 	VpcID                 string                       `json:"VpcId,omitempty"`
 }
 
+// DuploAwsLbListenerCertificate represents a AWS load balancer listener's SSL Certificate
+type DuploAwsLbListenerCertificate struct {
+	CertificateArn string `json:"CertificateArn"`
+	IsDefault      bool   `json:"IsDefault,omitempty"`
+}
+
+// DuploAwsLbListenerAction represents a AWS load balancer listener action
+type DuploAwsLbListenerAction struct {
+	Order          int               `json:"Order"`
+	TargetGroupArn string            `json:"TargetGroupArn"`
+	Type           *DuploStringValue `json:"Type,omitempty"`
+}
+
 // DuploAwsLbSettings represents an AWS application load balancer's settings
 type DuploAwsLbSettings struct {
 	LoadBalancerArn    string `json:"LoadBalancerArn"`
 	EnableAccessLogs   bool   `json:"EnableAccessLogs,omitempty"`
 	DropInvalidHeaders bool   `json:"DropInvalidHeaders,omitempty"`
 	WebACLID           string `json:"WebACLId,omitempty"`
+}
+
+// DuploAwsLbListener represents an AWS application load balancer listener
+type DuploAwsLbListener struct {
+	LoadBalancerArn string                          `json:"LoadBalancerArn"`
+	Certificates    []DuploAwsLbListenerCertificate `json:"Certificates"`
+	ListenerArn     string                          `json:"ListenerArn"`
+	SSLPolicy       string                          `json:"SslPolicy,omitempty"`
+	Port            int                             `json:"Port"`
+	Protocol        *DuploStringValue               `json:"Protocol,omitempty"`
+	DefaultActions  []DuploAwsLbListenerAction      `json:"DefaultActions"`
+}
+
+// DuploAwsTargetGroupMatcher represents an AWS lb target group matcher
+type DuploAwsTargetGroupMatcher struct {
+	HttpCode string `json:"HttpCode"`
+}
+
+// DuploAwsLbTargetGroup represents an AWS lb target group
+type DuploAwsLbTargetGroup struct {
+	HealthCheckEnabled         bool                        `json:"HealthCheckEnabled"`
+	HealthCheckIntervalSeconds int                         `json:"HealthCheckIntervalSeconds"`
+	HealthCheckPath            string                      `json:"HealthCheckPath"`
+	HealthCheckPort            string                      `json:"HealthCheckPort"`
+	HealthCheckProtocol        *DuploStringValue           `json:"HealthCheckProtocol,omitempty"`
+	HealthyThresholdCount      int                         `json:"HealthyThresholdCount"`
+	HealthCheckTimeoutSeconds  int                         `json:"HealthCheckTimeoutSeconds"`
+	LoadBalancerArns           []string                    `json:"LoadBalancerArns"`
+	Matcher                    *DuploAwsTargetGroupMatcher `json:"Matcher,omitempty"`
+	Protocol                   *DuploStringValue           `json:"Protocol,omitempty"`
+	ProtocolVersion            string                      `json:"ProtocolVersion"`
+	TargetGroupArn             []string                    `json:"TargetGroupArn"`
+	TargetGroupName            []string                    `json:"TargetGroupName"`
+	TargetType                 *DuploStringValue           `json:"TargetType,omitempty"`
+	UnhealthyThresholdCount    int                         `json:"UnhealthThresholdCount"`
+	VpcID                      string                      `json:"VpcID"`
 }
 
 // DuploAwsLBAccessLogsRequest represents a request to retrieve an AWS application load balancer's settings.
@@ -324,6 +373,9 @@ func (c *Client) TenantGetApplicationLbFullName(tenantID string, name string) (s
 	tenant, err := c.GetTenantForUser(tenantID)
 	if err != nil {
 		return "", err
+	}
+	if tenant == nil || tenant.AccountName == "" {
+		return "", fmt.Errorf("tenant: %s: not found", tenantID)
 	}
 
 	return fmt.Sprintf("duplo3-%s-%s", tenant.AccountName, name), nil
@@ -575,4 +627,32 @@ func (c *Client) TenantDeleteApplicationLB(tenantID string, name string) error {
 		fmt.Sprintf("subscriptions/%s/ApplicationLbUpdate", tenantID),
 		&DuploAwsLBConfiguration{Name: fullName, State: "delete"},
 		nil)
+}
+
+// TenantListApplicationLbTargetGroups retrieves a list of AWS LB target groups
+func (c *Client) TenantListApplicationLbTargetGroups(tenantID string) (*[]DuploAwsLbTargetGroup, error) {
+	rp := []DuploAwsLbTargetGroup{}
+
+	err := c.getAPI("TenantListApplicationLbTargetGroups",
+		fmt.Sprintf("subscriptions/%s/ListApplicationLbTargetGroups", tenantID),
+		&rp)
+
+	return &rp, err
+}
+
+// TenantListApplicationLbListeners retrieves a list of AWS LB listeners
+func (c *Client) TenantListApplicationLbListeners(tenantID string, name string) (*[]DuploAwsLbListener, error) {
+	// Get the full name of the ALB.
+	fullName, err := c.TenantGetApplicationLbFullName(tenantID, name)
+	if err != nil {
+		return nil, err
+	}
+
+	rp := []DuploAwsLbListener{}
+
+	err = c.getAPI("TenantListApplicationLbListeners",
+		fmt.Sprintf("subscriptions/%s/ListApplicationLbListerner/%s", tenantID, fullName),
+		&rp)
+
+	return &rp, err
 }
