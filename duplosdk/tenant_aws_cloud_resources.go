@@ -140,6 +140,7 @@ type DuploAwsLbListener struct {
 // DuploAwsTargetGroupMatcher represents an AWS lb target group matcher
 type DuploAwsTargetGroupMatcher struct {
 	HttpCode string `json:"HttpCode"`
+	GrpcCode string `json:"GrpcCode"`
 }
 
 // DuploAwsLbTargetGroup represents an AWS lb target group
@@ -149,17 +150,17 @@ type DuploAwsLbTargetGroup struct {
 	HealthCheckPath            string                      `json:"HealthCheckPath"`
 	HealthCheckPort            string                      `json:"HealthCheckPort"`
 	HealthCheckProtocol        *DuploStringValue           `json:"HealthCheckProtocol,omitempty"`
-	HealthyThresholdCount      int                         `json:"HealthyThresholdCount"`
+	HealthyThreshold           int                         `json:"HealthyThresholdCount"`
 	HealthCheckTimeoutSeconds  int                         `json:"HealthCheckTimeoutSeconds"`
 	LoadBalancerArns           []string                    `json:"LoadBalancerArns"`
-	Matcher                    *DuploAwsTargetGroupMatcher `json:"Matcher,omitempty"`
+	HealthMatcher              *DuploAwsTargetGroupMatcher `json:"Matcher,omitempty"`
 	Protocol                   *DuploStringValue           `json:"Protocol,omitempty"`
 	ProtocolVersion            string                      `json:"ProtocolVersion"`
-	TargetGroupArn             []string                    `json:"TargetGroupArn"`
-	TargetGroupName            []string                    `json:"TargetGroupName"`
+	TargetGroupArn             string                      `json:"TargetGroupArn"`
+	TargetGroupName            string                      `json:"TargetGroupName"`
 	TargetType                 *DuploStringValue           `json:"TargetType,omitempty"`
-	UnhealthyThresholdCount    int                         `json:"UnhealthThresholdCount"`
-	VpcID                      string                      `json:"VpcID"`
+	UnhealthyThreshold         int                         `json:"UnhealthThresholdCount"`
+	VpcID                      string                      `json:"VpcId"`
 }
 
 // DuploAwsLBAccessLogsRequest represents a request to retrieve an AWS application load balancer's settings.

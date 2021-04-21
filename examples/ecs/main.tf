@@ -71,6 +71,10 @@ data "duplocloud_aws_lb_listeners" "test" {
   name = duplocloud_aws_load_balancer.test.name
 }
 output "test_lb_listeners" { value = data.duplocloud_aws_lb_listeners.test.listeners }
+data "duplocloud_aws_lb_target_groups" "test" {
+  tenant_id = var.tenant_id
+}
+output "test_lb_target_groups" { value = data.duplocloud_aws_lb_target_groups.test.target_groups }
 
 resource "duplocloud_ecs_task_definition" "test" {
   tenant_id = var.tenant_id

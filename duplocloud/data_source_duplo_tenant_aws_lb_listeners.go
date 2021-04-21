@@ -161,8 +161,8 @@ func dataSourceTenantAwsLbListenersRead(d *schema.ResourceData, m interface{}) e
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
 
 	// Apply the result
-	dumpKeys, _ := json.Marshal(listeners)
-	log.Printf("[TRACE] dataSourceTenantAwsLbListenersRead ******** 2 dump: %s", dumpKeys)
+	dump, _ := json.Marshal(listeners)
+	log.Printf("[TRACE] dataSourceTenantAwsLbListenersRead ******** 2 dump: %s", dump)
 	d.Set("listeners", listeners)
 
 	log.Printf("[TRACE] dataSourceTenantAwsLbListenersRead ******** 3 end")
