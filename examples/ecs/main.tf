@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.5.17" # RELEASE VERSION
+      version = "0.5.18" # RELEASE VERSION
       source = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -65,6 +65,16 @@ resource "duplocloud_aws_load_balancer" "test" {
   enable_access_logs = true
   drop_invalid_headers = true
 }
+
+data "duplocloud_aws_lb_listeners" "test" {
+  tenant_id = var.tenant_id
+  name = duplocloud_aws_load_balancer.test.name
+}
+output "test_lb_listeners" { value = data.duplocloud_aws_lb_listeners.test.listeners }
+data "duplocloud_aws_lb_target_groups" "test" {
+  tenant_id = var.tenant_id
+}
+output "test_lb_target_groups" { value = data.duplocloud_aws_lb_target_groups.test.target_groups }
 
 resource "duplocloud_ecs_task_definition" "test" {
   tenant_id = var.tenant_id

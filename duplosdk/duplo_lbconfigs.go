@@ -15,10 +15,10 @@ type DuploServiceLBConfigs struct {
 
 // DuploLBConfiguration represents an load balancer's configuration in the Duplo SDK
 type DuploLBConfiguration struct {
-	LBType                    int    `LBType:"LBType,omitempty"`
+	LBType                    int    `json:"LBType,omitempty"`
 	Protocol                  string `json:"Protocol,omitempty"`
-	Port                      string `Port:"Port,omitempty"`
-	ExternalPort              int    `ExternalPort:"ExternalPort,omitempty"`
+	Port                      string `json:"Port,omitempty"`
+	ExternalPort              int    `json:"ExternalPort,omitempty"`
 	HealthCheckURL            string `json:"HealthCheckUrl,omitempty"`
 	CertificateArn            string `json:"CertificateArn,omitempty"`
 	ReplicationControllerName string `json:"ReplicationControllerName"`

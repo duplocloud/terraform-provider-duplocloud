@@ -20,6 +20,9 @@ release_finish() {
     local version
     version="$(echo_version)"
 
+    # Run tests
+    make test
+
     # Prepare local branches
     git checkout develop ; git pull
     git checkout master ; git pull
