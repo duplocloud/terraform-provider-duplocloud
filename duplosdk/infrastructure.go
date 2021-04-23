@@ -31,9 +31,12 @@ type DuploInfrastructure struct {
 
 // DuploInfrastructureVnet represents a Duplo infrastructure VNET subnet
 type DuploInfrastructureVnetSubnet struct {
-	AddressPrefix string `json:"AddressPrefix"`
-	Name          string `json:"NameEx"`
-	ID            string `json:"Id"`
+	ID            string                 `json:"Id"`
+	AddressPrefix string                 `json:"AddressPrefix"`
+	Name          string                 `json:"NameEx"`
+	Zone          string                 `json:"Zone"`
+	SubnetType    string                 `json:"SubnetType"`
+	Tags          *[]DuploKeyStringValue `json:"Tags"`
 }
 
 // DuploInfrastructureVnet represents a Duplo infrastructure VNET

@@ -25,13 +25,22 @@ func infrastructureVnetSubnetSchema() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"cidr_block": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"type": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"zone": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"cidr_block": {
-				Type:     schema.TypeString,
+			"tags": {
+				Type:     schema.TypeList,
 				Computed: true,
+				Elem:     KeyValueSchema(),
 			},
 		},
 	}
@@ -173,19 +182,43 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 			privateSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
 
 			for _, vnetSubnet := range *config.Vnet.Subnets {
+
+				// Skip it unless it's a duplo managed subnet.
+				isDuploSubnet := false
+				for _, tag := range *vnetSubnet.Tags {
+					if tag.Key == "aws:cloudformation:stack-name" && strings.HasPrefix(tag.Value, "duplo") {
+						isDuploSubnet = true
+						break
+					}
+				}
+				if !isDuploSubnet {
+					continue
+				}
+
+				// The server may or may not have the new fields.
 				nameParts := strings.SplitN(vnetSubnet.Name, " ", 2)
+				zone := vnetSubnet.Zone
+				subnetType := vnetSubnet.SubnetType
+				if zone == "" {
+					zone = nameParts[0]
+				}
+				if subnetType == "" {
+					subnetType = nameParts[1]
+				}
 
 				if len(nameParts) == 2 {
 					subnet := map[string]interface{}{
 						"id":         vnetSubnet.ID,
 						"name":       vnetSubnet.Name,
-						"zone":       nameParts[0],
 						"cidr_block": vnetSubnet.AddressPrefix,
+						"type":       subnetType,
+						"zone":       zone,
+						"tags":       duplosdk.KeyValueToState("tags", vnetSubnet.Tags),
 					}
 
-					if nameParts[1] == "private" {
+					if subnetType == "private" {
 						privateSubnets = append(privateSubnets, subnet)
-					} else if nameParts[1] == "public" {
+					} else if subnetType == "public" {
 						publicSubnets = append(publicSubnets, subnet)
 					}
 				}
