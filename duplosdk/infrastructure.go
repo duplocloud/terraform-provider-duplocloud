@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"strings"
 )
 
 // DuploEksCredentials represents just-in-time EKS credentials in Duplo
@@ -31,7 +32,14 @@ type DuploInfrastructure struct {
 
 // DuploInfrastructureVnet represents a Duplo infrastructure VNET subnet
 type DuploInfrastructureVnetSubnet struct {
-	ID            string                 `json:"Id"`
+	// Only used by write APIs
+	State              string `json:"State,omitempty"`
+	InfrastructureName string `json:"InfrastructureName,omitempty"`
+
+	// Only used by read APIs
+	ID string `json:"Id"`
+
+	// Used by both read and write APIs
 	AddressPrefix string                 `json:"AddressPrefix"`
 	Name          string                 `json:"NameEx"`
 	Zone          string                 `json:"Zone"`
@@ -81,7 +89,7 @@ func (c *Client) InfrastructureGet(name string) (*DuploInfrastructure, error) {
 	return &rp, nil
 }
 
-// InfrastructureGet retrieves extended infrastructure configuration by name via the Duplo API.
+// InfrastructureGetConfig retrieves extended infrastructure configuration by name via the Duplo API.
 func (c *Client) InfrastructureGetConfig(name string) (*DuploInfrastructureConfig, error) {
 	rp := DuploInfrastructureConfig{}
 	err := c.getAPI(fmt.Sprintf("InfrastructureGetConfig(%s)", name), fmt.Sprintf("adminproxy/GetInfrastructureConfig/%s", name), &rp)
@@ -89,6 +97,60 @@ func (c *Client) InfrastructureGetConfig(name string) (*DuploInfrastructureConfi
 		return nil, err
 	}
 	return &rp, nil
+}
+
+// InfrastructureGetSubnet retrieves a specific infrastructure subnet via the Duplo API.
+func (c *Client) InfrastructureGetSubnet(infraName string, subnetName string, subnetCidr string) (*DuploInfrastructureVnetSubnet, error) {
+
+	// Get the entire infra config, since there is no limited API to call.
+	config, err := c.InfrastructureGetConfig(infraName)
+	if config == nil || err != nil {
+		return nil, err
+	}
+
+	// Return the subnet, if it exists.
+	for _, subnet := range *config.Vnet.Subnets {
+		if subnet.Name == subnetName && subnet.AddressPrefix == subnetCidr {
+
+			// Interpret the subnet type (FIXME - the backend needs to return this)
+			if subnet.SubnetType == "" {
+				if strings.Contains(strings.ToLower(subnet.Name), "public") {
+					subnet.SubnetType = "public"
+				} else {
+					subnet.SubnetType = "private"
+				}
+			}
+
+			return &subnet, nil
+		}
+	}
+
+	// Nothing was found.
+	return nil, nil
+}
+
+// InfrastructureCreateOrUpdateSubnet creates or updates an infrastructure subnet via the Duplo API.
+func (c *Client) InfrastructureCreateOrUpdateSubnet(rq DuploInfrastructureVnetSubnet) error {
+	return c.postAPI(
+		fmt.Sprintf("InfrastructureCreateOrUpdateSubnet(%s, %s)", rq.InfrastructureName, rq.Name),
+		"adminproxy/UpdateInfrastructureSubnet",
+		&rq,
+		nil)
+}
+
+// InfrastructureDeleteSubnet deletes an infrastructure subnet via the Duplo API.
+func (c *Client) InfrastructureDeleteSubnet(infraName, subnetName, subnetCidr string) error {
+	rq := DuploInfrastructureVnetSubnet{
+		State:              "delete",
+		InfrastructureName: infraName,
+		Name:               subnetName,
+		AddressPrefix:      subnetCidr,
+	}
+	return c.postAPI(
+		fmt.Sprintf("InfrastructureDeletSubnet(%s, %s)", infraName, subnetName),
+		"adminproxy/UpdateInfrastructureSubnet",
+		&rq,
+		nil)
 }
 
 // InfrastructureCreate creates an infrastructure by name via the Duplo API.
