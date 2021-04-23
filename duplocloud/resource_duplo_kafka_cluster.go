@@ -38,6 +38,18 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			Required: true,
 			ForceNew: true,
 		},
+		"configuration_arn": {
+			Type:     schema.TypeString,
+			ForceNew: true,
+			Optional: true,
+			Computed: true,
+		},
+		"configuration_revision": {
+			Type:     schema.TypeInt,
+			ForceNew: true,
+			Optional: true,
+			Computed: true,
+		},
 		"instance_type": {
 			Type:     schema.TypeString,
 			Required: true,
@@ -164,6 +176,8 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 		}
 		if info.CurrentSoftware != nil {
 			d.Set("kafka_version", info.CurrentSoftware.KafkaVersion)
+			d.Set("configuration_arn", info.CurrentSoftware.ConfigurationArn)
+			d.Set("configuration_revision", info.CurrentSoftware.ConfigurationRevision)
 		}
 	}
 	if bootstrap != nil {
@@ -188,6 +202,14 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 		BrokerNodeGroup: &duplosdk.DuploKafkaBrokerNodeGroupInfo{InstanceType: d.Get("instance_type").(string)},
 	}
 	rq.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize = d.Get("storage_size").(int)
+
+	// Apply any custom configuration.
+	if v, ok := d.GetOk("configuration_arn"); ok {
+		rq.ConfigurationInfo = &duplosdk.DuploKafkaConfigurationInfo{
+			Arn:      v.(string),
+			Revision: int64(d.Get("configuration_revision").(int)),
+		}
+	}
 
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)

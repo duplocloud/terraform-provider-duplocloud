@@ -206,6 +206,7 @@ type DuploKafkaBrokerStorageInfo struct {
 
 // DuploKafkaBrokerSoftwareInfo represents a Kafka cluster's broker software info
 type DuploKafkaBrokerSoftwareInfo struct {
+	ConfigurationArn      string `json:"ConfigurationArn,omitempty"`
 	ConfigurationRevision int    `json:"ConfigurationRevision,omitempty"`
 	KafkaVersion          string `json:"KafkaVersion,omitempty"`
 }
@@ -252,13 +253,20 @@ type DuploKafkaBrokerNodeGroupInfo struct {
 	StorageInfo    DuploKafkaBrokerStorageInfo `json:"StorageInfo"`
 }
 
+// DuploKafkaConfigurationInfo represents a Kafka cluster's configuration
+type DuploKafkaConfigurationInfo struct {
+	Arn      string `json:"Arn,omitempty"`
+	Revision int64  `json:"Revision,omitempty"`
+}
+
 // DuploKafkaClusterRequest represents a request to create a Kafka Cluster
 type DuploKafkaClusterRequest struct {
-	Name            string                         `json:"ClusterName,omitempty"`
-	Arn             string                         `json:"ClusterArn,omitempty"`
-	KafkaVersion    string                         `json:"KafkaVersion,omitempty"`
-	BrokerNodeGroup *DuploKafkaBrokerNodeGroupInfo `json:"BrokerNodeGroupInfo,omitempty"`
-	State           string                         `json:"State,omitempty"`
+	Name              string                         `json:"ClusterName,omitempty"`
+	Arn               string                         `json:"ClusterArn,omitempty"`
+	KafkaVersion      string                         `json:"KafkaVersion,omitempty"`
+	BrokerNodeGroup   *DuploKafkaBrokerNodeGroupInfo `json:"BrokerNodeGroupInfo,omitempty"`
+	ConfigurationInfo *DuploKafkaConfigurationInfo   `json:"ConfigurationInfo,omitempty"`
+	State             string                         `json:"State,omitempty"`
 }
 
 // DuploKafkaCluster represents an AWS kafka cluster resource for a Duplo tenant
