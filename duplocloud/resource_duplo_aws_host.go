@@ -213,6 +213,14 @@ func nativeHostSchema() map[string]*schema.Schema {
 
 // SCHEMA for resource crud
 func resourceAwsHost() *schema.Resource {
+	awsHostSchema := nativeHostSchema()
+
+	awsHostSchema["wait_until_connected"] = &schema.Schema{
+		Type:     schema.TypeBool,
+		Optional: true,
+		Default:  true,
+	}
+
 	return &schema.Resource{
 		ReadContext:   resourceAwsHostRead,
 		CreateContext: resourceAwsHostCreate,
@@ -226,7 +234,7 @@ func resourceAwsHost() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: nativeHostSchema(),
+		Schema: awsHostSchema,
 	}
 }
 
@@ -284,10 +292,12 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 	d.SetId(id)
 
-	// Then, wait until the host is completely ready.
-	err = nativeHostWaitUntilReady(c, rp.TenantID, rp.InstanceID, d.Timeout("create"))
-	if err != nil {
-		return diag.FromErr(err)
+	// By default, wait until the host is completely ready.
+	if v, ok := d.GetOk("wait_until_connected"); !ok || v == nil || v.(bool) {
+		err = nativeHostWaitUntilReady(c, rp.TenantID, rp.InstanceID, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// Read the host from the backend again.
@@ -340,7 +350,10 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 
 		// Wait for the host to be missing
 		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "AWS host", id, func() (interface{}, error) {
-			return c.NativeHostGet(tenantID, instanceID)
+
+			// Backend does not return 404 or even null when missing - it returns a 400
+			rp, _ := c.NativeHostGet(tenantID, instanceID)
+			return rp, nil
 		})
 	}
 
@@ -378,8 +391,6 @@ func expandNativeHostVolumes(key string, d *schema.ResourceData) *[]duplosdk.Dup
 	if rawlist, ok := d.GetOk(key); ok && rawlist != nil && len(rawlist.([]interface{})) > 0 {
 		volumes := rawlist.([]interface{})
 
-		log.Printf("[TRACE] expandNativeHostVolumes ********: found %s", key)
-
 		result = make([]duplosdk.DuploNativeHostVolume, 0, len(volumes))
 		for _, raw := range volumes {
 			volume := raw.(map[string]interface{})
@@ -410,13 +421,8 @@ func expandNativeHostVolumes(key string, d *schema.ResourceData) *[]duplosdk.Dup
 func expandNativeHostNetworkInterfaces(key string, d *schema.ResourceData) *[]duplosdk.DuploNativeHostNetworkInterface {
 	var result []duplosdk.DuploNativeHostNetworkInterface
 
-	x, y := d.GetOk("network_interface")
-	log.Printf("[TRACE] expandNativeHostNetworkInterface ********: HERE %s => %v, %v", key, x, y)
-
 	if rawlist, ok := d.GetOk(key); ok && rawlist != nil && len(rawlist.([]interface{})) > 0 {
 		nics := rawlist.([]interface{})
-
-		log.Printf("[TRACE] expandNativeHostNetworkInterface ********: found %s", key)
 
 		result = make([]duplosdk.DuploNativeHostNetworkInterface, 0, len(nics))
 		for _, raw := range nics {
@@ -453,21 +459,27 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("friendly_name", duplo.FriendlyName)
 	d.Set("capacity", duplo.Capacity)
-	d.Set("zone", duplo.Zone)
 	d.Set("is_minion", duplo.IsMinion)
 	d.Set("image_id", duplo.ImageID)
 	d.Set("base64_user_data", duplo.Base64UserData)
 	d.Set("agent_platform", duplo.AgentPlatform)
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
-	d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
 	d.Set("cloud", duplo.Cloud)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("status", duplo.Status)
 	d.Set("identity_role", duplo.IdentityRole)
 	d.Set("private_ip_address", duplo.PrivateIPAddress)
-	d.Set("metadata", duplosdk.KeyValueToState("metadata", duplo.MetaData))
 	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", duplosdk.KeyValueToState("minion_tags", duplo.MinionTags))
+
+	// If a network interface was customized, certain fields are not returned by the backend.
+	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
+		d.Set("zone", duplo.Zone)
+		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
+	}
+
+	// TODO:  The backend doesn't return these yet.
+	// d.Set("metadata", duplosdk.KeyValueToState("metadata", duplo.MetaData))
 	// d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	// d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 }
