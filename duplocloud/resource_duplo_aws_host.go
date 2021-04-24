@@ -34,6 +34,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Type:             schema.TypeString,
 			Optional:         false,
 			Required:         true,
+			ForceNew:         true, // relaunch instance
 			DiffSuppressFunc: diffIgnoreIfAlreadySet,
 		},
 		"capacity": {
@@ -51,6 +52,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 		"is_minion": {
 			Type:     schema.TypeBool,
 			Optional: true,
+			ForceNew: true, // relaunch instance
 			Default:  true,
 		},
 		"image_id": {
@@ -61,11 +63,13 @@ func nativeHostSchema() map[string]*schema.Schema {
 		"base64_user_data": {
 			Type:     schema.TypeString,
 			Optional: true,
+			ForceNew: true, // relaunch instance
 			Computed: true,
 		},
 		"agent_platform": {
 			Type:     schema.TypeInt,
 			Optional: true,
+			ForceNew: true, // relaunch instance
 			Default:  0,
 		},
 		"is_ebs_optimized": {
@@ -100,28 +104,33 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 			Optional: true,
+			ForceNew: true, // relaunch instance
 		},
 		"private_ip_address": {
 			Type:     schema.TypeString,
 			Computed: true,
 			Optional: true,
+			ForceNew: true, // relaunch instance
 		},
 		"metadata": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			Elem:     KeyValueSchema(),
+			Type:             schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem:             KeyValueSchema(),
+			DiffSuppressFunc: diffIgnoreIfAlreadySet,
 		},
 		"tags": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
+			ForceNew: true, // relaunch instance
 			Elem:     KeyValueSchema(),
 		},
 		"minion_tags": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
+			ForceNew: true, // relaunch instance
 			Elem:     KeyValueSchema(),
 		},
 		"volume": {
@@ -207,7 +216,7 @@ func resourceAwsHost() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceAwsHostRead,
 		CreateContext: resourceAwsHostCreate,
-		UpdateContext: resourceAwsHostUpdate,
+		//UpdateContext: resourceAwsHostUpdate,
 		DeleteContext: resourceAwsHostDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -342,6 +351,7 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 	return &duplosdk.DuploNativeHost{
 		TenantID:          d.Get("tenant_id").(string),
+		InstanceID:        d.Get("instance_id").(string),
 		UserAccount:       d.Get("user_account").(string),
 		FriendlyName:      d.Get("friendly_name").(string),
 		Capacity:          d.Get("capacity").(string),
