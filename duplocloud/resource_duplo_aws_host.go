@@ -59,10 +59,9 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew: true, // relaunch instance
 		},
 		"base64_user_data": {
-			Type:             schema.TypeString,
-			Optional:         true,
-			Computed:         true,
-			DiffSuppressFunc: diffIgnoreIfAlreadySet,
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
 		},
 		"agent_platform": {
 			Type:     schema.TypeInt,
