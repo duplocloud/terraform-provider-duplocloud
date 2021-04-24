@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
+	"terraform-provider-duplocloud/duplosdk"
 	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -165,6 +167,62 @@ func getAsStringArray(data *schema.ResourceData, key string) (*[]string, bool) {
 	var v interface{}
 
 	if v, ok = data.GetOk(key); ok && v != nil {
+		list := v.([]interface{})
+		result = make([]string, len(list), len(list))
+		for i, el := range list {
+			result[i] = el.(string)
+		}
+	}
+
+	return &result, ok
+}
+
+// Utiliy function to return a filtered list of tenant metadata, given the selected keys.
+func selectKeyValues(metadata *[]duplosdk.DuploKeyStringValue, keys []string) *[]duplosdk.DuploKeyStringValue {
+	specified := map[string]struct{}{}
+	for _, k := range keys {
+		specified[k] = struct{}{}
+	}
+
+	settings := make([]duplosdk.DuploKeyStringValue, 0, len(keys))
+	for _, kv := range *metadata {
+		if _, ok := specified[kv.Key]; ok {
+			settings = append(settings, kv)
+		}
+	}
+
+	return &settings
+}
+
+// Internal function used to re-order key value pairs
+func reorderKeyValues(pairs []interface{}) {
+
+	// Re-order environment variables to a canonical order.
+	sort.Slice(pairs, func(i, j int) bool {
+		mi := pairs[i].(map[string]interface{})
+		mj := pairs[j].(map[string]interface{})
+
+		// Get both name keys, fall back on an empty string.
+		si := ""
+		sj := ""
+		if v, ok := mi["key"]; ok && !isInterfaceNil(v) {
+			si = v.(string)
+		}
+		if v, ok := mj["key"]; ok && !isInterfaceNil(v) {
+			sj = v.(string)
+		}
+
+		// Compare the two.
+		return si < sj
+	})
+}
+
+func getStringArray(data map[string]interface{}, key string) (*[]string, bool) {
+	var ok bool
+	var result []string
+	var v interface{}
+
+	if v, ok = data[key]; ok && v != nil {
 		list := v.([]interface{})
 		result = make([]string, len(list), len(list))
 		for i, el := range list {
