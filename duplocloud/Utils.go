@@ -34,6 +34,31 @@ func ValidateJSONString(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
+func tagsSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeMap,
+		Optional: true,
+		Elem:     &schema.Schema{Type: schema.TypeString},
+	}
+}
+
+func tagsSchemaForceNew() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeMap,
+		Optional: true,
+		ForceNew: true,
+		Elem:     &schema.Schema{Type: schema.TypeString},
+	}
+}
+
+func tagsSchemaComputed() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeMap,
+		Computed: true,
+		Elem:     &schema.Schema{Type: schema.TypeString},
+	}
+}
+
 // KeyValueSchema returns a Terraform schema to represent a key value pair
 func KeyValueSchema() *schema.Resource {
 	return &schema.Resource{
