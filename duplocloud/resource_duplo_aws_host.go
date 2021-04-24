@@ -216,10 +216,11 @@ func resourceAwsHost() *schema.Resource {
 	awsHostSchema := nativeHostSchema()
 
 	awsHostSchema["wait_until_connected"] = &schema.Schema{
-		Type:     schema.TypeBool,
-		Optional: true,
-		ForceNew: true,
-		Default:  true,
+		Type:             schema.TypeBool,
+		Optional:         true,
+		ForceNew:         true,
+		Default:          true,
+		DiffSuppressFunc: diffSuppressWhenNotCreating,
 	}
 
 	return &schema.Resource{
@@ -253,7 +254,12 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 	c := m.(*duplosdk.Client)
 	duplo, err := c.NativeHostGet(tenantID, instanceID)
 	if err != nil {
-		return diag.Errorf("Unable to retrieve AWS host '%s': %s", id, err)
+
+		// backend may return a 400 instead of a 404
+		exists, err2 := c.NativeHostExists(tenantID, instanceID)
+		if exists || err2 != nil {
+			return diag.Errorf("Unable to retrieve AWS host '%s': %s", id, err)
+		}
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -341,7 +347,11 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 
 	// Check if the host exists
 	c := m.(*duplosdk.Client)
-	if duplo, err := c.NativeHostGet(tenantID, instanceID); duplo != nil && err == nil {
+	exists, err := c.NativeHostExists(tenantID, instanceID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if exists {
 
 		// Delete the host from Duplo
 		err = c.NativeHostDelete(tenantID, instanceID)
@@ -351,7 +361,6 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 
 		// Wait for the host to be missing
 		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "AWS host", id, func() (interface{}, error) {
-
 			// Backend does not return 404 or even null when missing - it returns a 400
 			rp, _ := c.NativeHostGet(tenantID, instanceID)
 			return rp, nil

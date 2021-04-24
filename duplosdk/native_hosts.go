@@ -58,6 +58,27 @@ func (c *Client) NativeHostGetList(tenantID string) (*[]DuploNativeHost, error) 
 	return &rp, err
 }
 
+// NativeHostExists checks if a native host exists via the Duplo API.
+func (c *Client) NativeHostExists(tenantID, instanceID string) (bool, error) {
+
+	// Get the list of hosts
+	// TODO: change the backend error to a 404
+	list, err := c.NativeHostGetList(tenantID)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if the host exists
+	if list != nil {
+		for _, host := range *list {
+			if host.InstanceID == instanceID {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
 // NativeHostGet retrieves an native host via the Duplo API.
 func (c *Client) NativeHostGet(tenantID, instanceID string) (*DuploNativeHost, error) {
 	rp := DuploNativeHost{}
