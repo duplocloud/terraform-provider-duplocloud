@@ -62,16 +62,14 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"tag": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				ForceNew: true,
-				Elem:     KeyValueSchema(),
-			},
-			"tags": {
+			"tags":     tagsSchemaForceNew(),
+			"tags_all": tagsSchemaComputed(),
+
+			// Which tags were specified by the config?
+			"specified_tags": {
 				Type:     schema.TypeList,
 				Computed: true,
-				Elem:     KeyValueSchema(),
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -104,8 +102,13 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 	d.Set("subnet_id", duplo.ID)
 	d.Set("cidr_block", duplo.AddressPrefix)
 	d.Set("zone", duplo.Zone)
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+	d.Set("tags_all", duplosdk.KeyValueToMap(duplo.Tags))
 	d.Set("type", duplo.SubnetType)
+
+	// Build a list of current state, to replace the user-supplied settings.
+	if v, ok := getAsStringArray(d, "specified_tags"); ok && v != nil {
+		d.Set("tags", duplosdk.KeyValueToMap(selectKeyValues(duplo.Tags, *v)))
+	}
 
 	log.Printf("[TRACE] resourceInfrastructureSubnetRead(%s): end", id)
 	return nil
@@ -120,7 +123,7 @@ func resourceInfrastructureSubnetCreate(ctx context.Context, d *schema.ResourceD
 		AddressPrefix:      d.Get("cidr_block").(string),
 		Zone:               d.Get("zone").(string),
 		SubnetType:         d.Get("type").(string),
-		Tags:               duplosdk.KeyValueFromState("tag", d),
+		Tags:               duplosdk.KeyValueFromMap("tags", d.Get("tags").(map[string]interface{})),
 	}
 
 	// Build the ID - it is okay that the CIDR includes a slash
@@ -134,6 +137,13 @@ func resourceInfrastructureSubnetCreate(ctx context.Context, d *schema.ResourceD
 		return diag.Errorf("Error creating infrastructure subnet '%s': %s", id, err)
 	}
 	d.SetId(id)
+
+	// Collect the desired state of settings specified by the user.
+	specified := make([]string, len(*rq.Tags))
+	for i, kv := range *rq.Tags {
+		specified[i] = kv.Key
+	}
+	d.Set("specified_tags", specified)
 
 	diags := resourceInfrastructureSubnetRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureSubnetCreate(%s): end", id)
