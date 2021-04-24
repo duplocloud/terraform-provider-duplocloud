@@ -218,6 +218,7 @@ func resourceAwsHost() *schema.Resource {
 	awsHostSchema["wait_until_connected"] = &schema.Schema{
 		Type:     schema.TypeBool,
 		Optional: true,
+		ForceNew: true,
 		Default:  true,
 	}
 
