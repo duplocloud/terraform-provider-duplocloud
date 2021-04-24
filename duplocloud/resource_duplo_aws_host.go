@@ -125,11 +125,10 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Computed: true,
 			Elem:     KeyValueSchema(),
 		},
-		"volumes": {
-			Type:             schema.TypeSet,
-			Optional:         true,
-			ForceNew:         true, // relaunch instance
-			DiffSuppressFunc: diffSuppressFuncIgnore,
+		"volume": {
+			Type:     schema.TypeList,
+			Optional: true,
+			ForceNew: true, // relaunch instance
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"iops": {
@@ -160,11 +159,10 @@ func nativeHostSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"network_interfaces": {
-			Type:             schema.TypeSet,
-			Optional:         true,
-			ForceNew:         true, // relaunch instance
-			DiffSuppressFunc: diffSuppressFuncIgnore,
+		"network_interface": {
+			Type:     schema.TypeList,
+			Optional: true,
+			ForceNew: true, // relaunch instance
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"network_interface_id": {
@@ -264,7 +262,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 	if err != nil {
 		return diag.Errorf("Error creating AWS host '%s': %s", rq.FriendlyName, err)
 	}
-	if rq.InstanceID == "" {
+	if rp.InstanceID == "" {
 		return diag.Errorf("Error creating AWS host '%s': no instance ID was received", rq.FriendlyName)
 	}
 
@@ -312,6 +310,7 @@ func resourceAwsHostUpdate(ctx context.Context, d *schema.ResourceData, m interf
 
 /// DELETE resource
 func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
 
 	// Parse the identifying attributes
 	id := d.Id()
@@ -321,17 +320,21 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	// Delete the host from Duplo
+	// Check if the host exists
 	c := m.(*duplosdk.Client)
-	err = c.NativeHostDelete(tenantID, instanceID)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	if duplo, err := c.NativeHostGet(tenantID, instanceID); duplo != nil && err == nil {
 
-	// Wait for the host to be missing
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "AWS host", id, func() (interface{}, error) {
-		return c.NativeHostGet(tenantID, instanceID)
-	})
+		// Delete the host from Duplo
+		err = c.NativeHostDelete(tenantID, instanceID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Wait for the host to be missing
+		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "AWS host", id, func() (interface{}, error) {
+			return c.NativeHostGet(tenantID, instanceID)
+		})
+	}
 
 	log.Printf("[TRACE] resourceAwsHostDelete(%s): end", id)
 	return diags
@@ -355,8 +358,8 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		MetaData:          duplosdk.KeyValueFromState("metadata", d),
 		Tags:              duplosdk.KeyValueFromState("tag", d),
 		MinionTags:        duplosdk.KeyValueFromState("minion_tags", d),
-		Volumes:           expandNativeHostVolumes("volumes", d),
-		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interfaces", d),
+		Volumes:           expandNativeHostVolumes("volume", d),
+		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
 	}
 }
 
@@ -397,6 +400,9 @@ func expandNativeHostVolumes(key string, d *schema.ResourceData) *[]duplosdk.Dup
 
 func expandNativeHostNetworkInterfaces(key string, d *schema.ResourceData) *[]duplosdk.DuploNativeHostNetworkInterface {
 	var result []duplosdk.DuploNativeHostNetworkInterface
+
+	x, y := d.GetOk("network_interface")
+	log.Printf("[TRACE] expandNativeHostNetworkInterface ********: HERE %s => %v, %v", key, x, y)
 
 	if rawlist, ok := d.GetOk(key); ok && rawlist != nil && len(rawlist.([]interface{})) > 0 {
 		nics := rawlist.([]interface{})
@@ -453,8 +459,8 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("metadata", duplosdk.KeyValueToState("metadata", duplo.MetaData))
 	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", duplosdk.KeyValueToState("minion_tags", duplo.MinionTags))
-	d.Set("volumes", flattenNativeHostVolumes(duplo.Volumes))
-	d.Set("network_interfaces", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	// d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
+	// d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 }
 
 func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []map[string]interface{} {
