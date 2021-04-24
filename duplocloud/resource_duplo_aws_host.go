@@ -361,9 +361,10 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 
 		// Wait for the host to be missing
 		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "AWS host", id, func() (interface{}, error) {
-			// Backend does not return 404 or even null when missing - it returns a 400
-			rp, _ := c.NativeHostGet(tenantID, instanceID)
-			return rp, nil
+			if rp, err := c.NativeHostExists(tenantID, instanceID); rp || err != nil {
+				return rp, err
+			}
+			return nil, nil
 		})
 	}
 
