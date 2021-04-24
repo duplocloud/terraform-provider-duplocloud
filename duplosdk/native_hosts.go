@@ -81,19 +81,21 @@ func (c *Client) NativeHostUpdate(rq *DuploNativeHost) (*DuploNativeHost, error)
 func (c *Client) NativeHostCreateOrUpdate(rq *DuploNativeHost, updating bool) (*DuploNativeHost, error) {
 
 	// Build the request
-	var verb, msg string
+	var verb, msg, api string
 
 	if updating {
 		verb = "PUT"
-		msg = fmt.Sprintf("NativeHostUpdate(%s, %s)", rq.TenantID, rq.FriendlyName)
+		msg = fmt.Sprintf("NativeHostUpdate(%s, %s)", rq.TenantID, rq.InstanceID)
+		api = fmt.Sprintf("v2/subscriptions/%s/NativeHostV2/%s", rq.TenantID, rq.InstanceID)
 	} else {
 		verb = "POST"
-		msg = fmt.Sprintf("NativeHostCreate(%s, %s)", rq.TenantID, rq.InstanceID)
+		msg = fmt.Sprintf("NativeHostCreate(%s, %s)", rq.TenantID, rq.FriendlyName)
+		api = fmt.Sprintf("v2/subscriptions/%s/NativeHostV2", rq.TenantID)
 	}
 
 	// Call the API.
 	rp := DuploNativeHost{}
-	err := c.doAPIWithRequestBody(verb, msg, fmt.Sprintf("v2/subscriptions/%s/NativeHostV2", rq.TenantID), &rq, &rp)
+	err := c.doAPIWithRequestBody(verb, msg, api, &rq, &rp)
 	if err != nil {
 		return nil, err
 	}
