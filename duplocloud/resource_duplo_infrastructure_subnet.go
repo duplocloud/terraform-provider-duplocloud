@@ -62,10 +62,14 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"tags": {
-				Type:     schema.TypeList,
+			"tag": {
+				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
+				Elem:     KeyValueSchema(),
+			},
+			"tags": {
+				Type:     schema.TypeList,
 				Computed: true,
 				Elem:     KeyValueSchema(),
 			},
@@ -95,7 +99,7 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Set the simple fields first.
-	d.Set("infra_name", duplo.InfrastructureName)
+	d.Set("infra_name", rq.InfrastructureName)
 	d.Set("subnet_name", duplo.Name)
 	d.Set("subnet_id", duplo.ID)
 	d.Set("cidr_block", duplo.AddressPrefix)
@@ -116,7 +120,7 @@ func resourceInfrastructureSubnetCreate(ctx context.Context, d *schema.ResourceD
 		AddressPrefix:      d.Get("cidr_block").(string),
 		Zone:               d.Get("zone").(string),
 		SubnetType:         d.Get("type").(string),
-		Tags:               duplosdk.KeyValueFromState("tags", d),
+		Tags:               duplosdk.KeyValueFromState("tag", d),
 	}
 
 	// Build the ID - it is okay that the CIDR includes a slash
