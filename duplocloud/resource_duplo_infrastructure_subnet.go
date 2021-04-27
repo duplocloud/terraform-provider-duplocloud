@@ -18,6 +18,7 @@ func resourceInfrastructureSubnet() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceInfrastructureSubnetRead,
 		CreateContext: resourceInfrastructureSubnetCreate,
+		UpdateContext: resourceInfrastructureSubnetUpdate,
 		DeleteContext: resourceInfrastructureSubnetDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -62,13 +63,8 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"tags": {
-				Type:     schema.TypeList,
-				Optional: true,
-				ForceNew: true,
-				Computed: true,
-				Elem:     KeyValueSchema(),
-			},
+			"tags":     tagsSchema(),
+			"tags_all": tagsSchemaComputed(),
 		},
 	}
 }
@@ -95,13 +91,21 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Set the simple fields first.
-	d.Set("infra_name", duplo.InfrastructureName)
+	d.Set("infra_name", rq.InfrastructureName)
 	d.Set("subnet_name", duplo.Name)
 	d.Set("subnet_id", duplo.ID)
 	d.Set("cidr_block", duplo.AddressPrefix)
 	d.Set("zone", duplo.Zone)
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+	d.Set("tags_all", duplosdk.KeyValueToMap(duplo.Tags))
 	d.Set("type", duplo.SubnetType)
+
+	x := d.Get("tags")
+	log.Printf("[TRACE] infra subnet tags %v", x)
+
+	// Build a list of current state, to replace the user-supplied settings.
+	if v, ok := d.GetOk("tags"); ok && v != nil && len(v.(map[string]interface{})) > 0 {
+		d.Set("tags", duplosdk.KeyValueToMap(selectKeyValuesFromMap(duplo.Tags, v.(map[string]interface{}))))
+	}
 
 	log.Printf("[TRACE] resourceInfrastructureSubnetRead(%s): end", id)
 	return nil
@@ -116,7 +120,7 @@ func resourceInfrastructureSubnetCreate(ctx context.Context, d *schema.ResourceD
 		AddressPrefix:      d.Get("cidr_block").(string),
 		Zone:               d.Get("zone").(string),
 		SubnetType:         d.Get("type").(string),
-		Tags:               duplosdk.KeyValueFromState("tags", d),
+		Tags:               duplosdk.KeyValueFromMap("tags", d.Get("tags").(map[string]interface{})),
 	}
 
 	// Build the ID - it is okay that the CIDR includes a slash
@@ -134,6 +138,11 @@ func resourceInfrastructureSubnetCreate(ctx context.Context, d *schema.ResourceD
 	diags := resourceInfrastructureSubnetRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureSubnetCreate(%s): end", id)
 	return diags
+}
+
+func resourceInfrastructureSubnetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	// NO-OP
+	return resourceInfrastructureSubnetRead(ctx, d, m)
 }
 
 func resourceInfrastructureSubnetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

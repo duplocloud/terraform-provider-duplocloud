@@ -48,7 +48,6 @@ func Provider() *schema.Provider {
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
 			"duplocloud_aws_account":             dataSourceAwsAccount(),
-			"duplocloud_aws_host":                dataSourceAwsHost(),
 			"duplocloud_aws_lb_listeners":        dataSourceTenantAwsLbListeners(),
 			"duplocloud_aws_lb_target_groups":    dataSourceTenantAwsLbTargetGroups(),
 			"duplocloud_eks_credentials":         dataSourceEksCredentials(),
@@ -57,8 +56,10 @@ func Provider() *schema.Provider {
 			"duplocloud_duplo_service_lbconfigs": dataSourceDuploServiceLBConfigs(),
 			"duplocloud_duplo_service_params":    dataSourceDuploServiceParams(),
 			"duplocloud_infrastructure":          dataSourceInfrastructure(),
+			"duplocloud_infrastructures":         dataSourceInfrastructures(),
 			"duplocloud_k8_config_map":           dataSourceK8ConfigMap(),
 			"duplocloud_k8_secret":               dataSourceK8Secret(),
+			"duplocloud_native_hosts":            dataSourceNativeHosts(),
 			"duplocloud_tenant":                  dataSourceTenant(),
 			"duplocloud_tenants":                 dataSourceTenants(),
 			"duplocloud_tenant_aws_region":       dataSourceTenantAwsRegion(),

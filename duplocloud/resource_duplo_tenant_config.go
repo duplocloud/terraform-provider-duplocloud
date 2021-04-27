@@ -78,7 +78,7 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
-		d.Set("setting", duplosdk.KeyValueToState("setting", selectTenantConfig(duplo.Metadata, *v)))
+		d.Set("setting", duplosdk.KeyValueToState("setting", selectKeyValues(duplo.Metadata, *v)))
 	}
 
 	log.Printf("[TRACE] resourceTenantConfigRead(%s): end", tenantID)
@@ -99,7 +99,7 @@ func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	}
 	var existing *[]duplosdk.DuploKeyStringValue
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
-		existing = selectTenantConfig(config.Metadata, *v)
+		existing = selectKeyValues(config.Metadata, *v)
 	} else {
 		existing = &[]duplosdk.DuploKeyStringValue{}
 	}
@@ -144,21 +144,4 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 	diags := resourceTenantConfigRead(ctx, d, m)
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): end", tenantID)
 	return diags
-}
-
-// Utiliy function to return a filtered list of tenant metadata, given the selected keys.
-func selectTenantConfig(metadata *[]duplosdk.DuploKeyStringValue, keys []string) *[]duplosdk.DuploKeyStringValue {
-	specified := map[string]struct{}{}
-	for _, k := range keys {
-		specified[k] = struct{}{}
-	}
-
-	settings := make([]duplosdk.DuploKeyStringValue, 0, len(keys))
-	for _, kv := range *metadata {
-		if _, ok := specified[kv.Key]; ok {
-			settings = append(settings, kv)
-		}
-	}
-
-	return &settings
 }
