@@ -203,20 +203,25 @@ func getAsStringArray(data *schema.ResourceData, key string) (*[]string, bool) {
 }
 
 // Utiliy function to return a filtered list of tenant metadata, given the selected keys.
-func selectKeyValues(metadata *[]duplosdk.DuploKeyStringValue, keys []string) *[]duplosdk.DuploKeyStringValue {
-	specified := map[string]struct{}{}
-	for _, k := range keys {
-		specified[k] = struct{}{}
-	}
-
+func selectKeyValuesFromMap(metadata *[]duplosdk.DuploKeyStringValue, keys map[string]interface{}) *[]duplosdk.DuploKeyStringValue {
 	settings := make([]duplosdk.DuploKeyStringValue, 0, len(keys))
 	for _, kv := range *metadata {
-		if _, ok := specified[kv.Key]; ok {
+		if _, ok := keys[kv.Key]; ok {
 			settings = append(settings, kv)
 		}
 	}
 
 	return &settings
+}
+
+// Utiliy function to return a filtered list of tenant metadata, given the selected keys.
+func selectKeyValues(metadata *[]duplosdk.DuploKeyStringValue, keys []string) *[]duplosdk.DuploKeyStringValue {
+	specified := map[string]interface{}{}
+	for _, k := range keys {
+		specified[k] = struct{}{}
+	}
+
+	return selectKeyValuesFromMap(metadata, specified)
 }
 
 // Internal function used to re-order key value pairs

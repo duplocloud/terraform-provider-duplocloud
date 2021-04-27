@@ -18,6 +18,7 @@ func resourceInfrastructureSubnet() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceInfrastructureSubnetRead,
 		CreateContext: resourceInfrastructureSubnetCreate,
+		UpdateContext: resourceInfrastructureSubnetUpdate,
 		DeleteContext: resourceInfrastructureSubnetDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -62,15 +63,8 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"tags":     tagsSchemaForceNew(),
+			"tags":     tagsSchema(),
 			"tags_all": tagsSchemaComputed(),
-
-			// Which tags were specified by the config?
-			"specified_tags": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
 		},
 	}
 }
@@ -105,9 +99,12 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 	d.Set("tags_all", duplosdk.KeyValueToMap(duplo.Tags))
 	d.Set("type", duplo.SubnetType)
 
+	x := d.Get("tags")
+	log.Printf("[TRACE] infra subnet tags %v", x)
+
 	// Build a list of current state, to replace the user-supplied settings.
-	if v, ok := getAsStringArray(d, "specified_tags"); ok && v != nil {
-		d.Set("tags", duplosdk.KeyValueToMap(selectKeyValues(duplo.Tags, *v)))
+	if v, ok := d.GetOk("tags"); ok && v != nil && len(v.(map[string]interface{})) > 0 {
+		d.Set("tags", duplosdk.KeyValueToMap(selectKeyValuesFromMap(duplo.Tags, v.(map[string]interface{}))))
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureSubnetRead(%s): end", id)
@@ -138,16 +135,14 @@ func resourceInfrastructureSubnetCreate(ctx context.Context, d *schema.ResourceD
 	}
 	d.SetId(id)
 
-	// Collect the desired state of settings specified by the user.
-	specified := make([]string, len(*rq.Tags))
-	for i, kv := range *rq.Tags {
-		specified[i] = kv.Key
-	}
-	d.Set("specified_tags", specified)
-
 	diags := resourceInfrastructureSubnetRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureSubnetCreate(%s): end", id)
 	return diags
+}
+
+func resourceInfrastructureSubnetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	// NO-OP
+	return resourceInfrastructureSubnetRead(ctx, d, m)
 }
 
 func resourceInfrastructureSubnetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
