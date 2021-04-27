@@ -64,49 +64,40 @@ func resourceInfrastructure() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"infra_name": {
 				Type:     schema.TypeString,
-				Optional: false,
 				Required: true,
 				ForceNew: true,
 			},
 			"account_id": {
 				Type:     schema.TypeString,
 				Computed: true,
-				Required: false,
-				ForceNew: true,
 			},
 			"cloud": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Required: false,
 				ForceNew: true,
 				Default:  0,
 			},
 			"region": {
 				Type:     schema.TypeString,
-				Optional: false,
 				ForceNew: true,
 				Required: true,
 			},
 			"azcount": {
 				Type:     schema.TypeInt,
-				Optional: false,
 				ForceNew: true,
 				Required: true,
 			},
 			"enable_k8_cluster": {
 				Type:     schema.TypeBool,
-				Optional: false,
 				Required: true,
 			},
 			"address_prefix": {
 				Type:     schema.TypeString,
-				Optional: false,
 				ForceNew: true,
 				Required: true,
 			},
 			"subnet_cidr": {
 				Type:     schema.TypeInt,
-				Optional: false,
 				ForceNew: true,
 				Required: true,
 			},
@@ -149,84 +140,13 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	infra, err := c.InfrastructureGet(name)
+	missing, err := infrastructureRead(c, d, name)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve infrastructure '%s': %s", name, err)
 	}
-	config, err := c.InfrastructureGetConfig(name)
-	if err != nil {
-		return diag.Errorf("Unable to retrieve infrastructure config '%s': %s", name, err)
-	}
-	if infra == nil || config == nil {
+	if missing {
 		d.SetId("") // object missing
 		return nil
-	}
-
-	d.Set("infra_name", infra.Name)
-	d.Set("account_id", infra.AccountId)
-	d.Set("cloud", infra.Cloud)
-	d.Set("region", infra.Region)
-	d.Set("azcount", infra.AzCount)
-	d.Set("enable_k8_cluster", infra.EnableK8Cluster)
-	d.Set("address_prefix", infra.AddressPrefix)
-	d.Set("subnet_cidr", infra.SubnetCidr)
-	d.Set("status", infra.ProvisioningStatus)
-
-	// Set extended infrastructure information.
-	if config.Vnet != nil {
-		d.Set("vpc_id", config.Vnet.ID)
-		d.Set("vpc_name", config.Vnet.Name)
-
-		if config.Vnet.Subnets != nil {
-			publicSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
-			privateSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
-
-			for _, vnetSubnet := range *config.Vnet.Subnets {
-
-				// Skip it unless it's a duplo managed subnet.
-				isDuploSubnet := false
-				for _, tag := range *vnetSubnet.Tags {
-					if tag.Key == "aws:cloudformation:stack-name" && strings.HasPrefix(tag.Value, "duplo") {
-						isDuploSubnet = true
-						break
-					}
-				}
-				if !isDuploSubnet {
-					continue
-				}
-
-				// The server may or may not have the new fields.
-				nameParts := strings.SplitN(vnetSubnet.Name, " ", 2)
-				zone := vnetSubnet.Zone
-				subnetType := vnetSubnet.SubnetType
-				if zone == "" {
-					zone = nameParts[0]
-				}
-				if subnetType == "" {
-					subnetType = nameParts[1]
-				}
-
-				if len(nameParts) == 2 {
-					subnet := map[string]interface{}{
-						"id":         vnetSubnet.ID,
-						"name":       vnetSubnet.Name,
-						"cidr_block": vnetSubnet.AddressPrefix,
-						"type":       subnetType,
-						"zone":       zone,
-						"tags":       duplosdk.KeyValueToState("tags", vnetSubnet.Tags),
-					}
-
-					if subnetType == "private" {
-						privateSubnets = append(privateSubnets, subnet)
-					} else if subnetType == "public" {
-						publicSubnets = append(publicSubnets, subnet)
-					}
-				}
-			}
-
-			d.Set("private_subnets", privateSubnets)
-			d.Set("public_subnets", publicSubnets)
-		}
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureRead(%s): end", name)
@@ -349,4 +269,88 @@ func duploInfrastructureWaitUntilReady(c *duplosdk.Client, name string, timeout 
 	log.Printf("[DEBUG] duploInfrastructureWaitUntilReady(%s)", name)
 	_, err := stateConf.WaitForState()
 	return err
+}
+
+func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string) (bool, error) {
+
+	infra, err := c.InfrastructureGet(name)
+	if err != nil {
+		return false, err
+	}
+	config, err := c.InfrastructureGetConfig(name)
+	if err != nil {
+		return false, err
+	}
+	if infra == nil || config == nil {
+		return true, nil // object missing
+	}
+
+	d.Set("infra_name", infra.Name)
+	d.Set("account_id", infra.AccountId)
+	d.Set("cloud", infra.Cloud)
+	d.Set("region", infra.Region)
+	d.Set("azcount", infra.AzCount)
+	d.Set("enable_k8_cluster", infra.EnableK8Cluster)
+	d.Set("address_prefix", infra.AddressPrefix)
+	d.Set("subnet_cidr", infra.SubnetCidr)
+	d.Set("status", infra.ProvisioningStatus)
+
+	// Set extended infrastructure information.
+	if config.Vnet != nil {
+		d.Set("vpc_id", config.Vnet.ID)
+		d.Set("vpc_name", config.Vnet.Name)
+
+		if config.Vnet.Subnets != nil {
+			publicSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
+			privateSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
+
+			for _, vnetSubnet := range *config.Vnet.Subnets {
+
+				// Skip it unless it's a duplo managed subnet.
+				isDuploSubnet := false
+				for _, tag := range *vnetSubnet.Tags {
+					if tag.Key == "aws:cloudformation:stack-name" && strings.HasPrefix(tag.Value, "duplo") {
+						isDuploSubnet = true
+						break
+					}
+				}
+				if !isDuploSubnet {
+					continue
+				}
+
+				// The server may or may not have the new fields.
+				nameParts := strings.SplitN(vnetSubnet.Name, " ", 2)
+				zone := vnetSubnet.Zone
+				subnetType := vnetSubnet.SubnetType
+				if zone == "" {
+					zone = nameParts[0]
+				}
+				if subnetType == "" {
+					subnetType = nameParts[1]
+				}
+
+				if len(nameParts) == 2 {
+					subnet := map[string]interface{}{
+						"id":         vnetSubnet.ID,
+						"name":       vnetSubnet.Name,
+						"cidr_block": vnetSubnet.AddressPrefix,
+						"type":       subnetType,
+						"zone":       zone,
+						"tags":       duplosdk.KeyValueToState("tags", vnetSubnet.Tags),
+					}
+
+					if subnetType == "private" {
+						privateSubnets = append(privateSubnets, subnet)
+					} else if subnetType == "public" {
+						publicSubnets = append(publicSubnets, subnet)
+					}
+				}
+			}
+
+			d.Set("private_subnets", privateSubnets)
+			d.Set("public_subnets", publicSubnets)
+		}
+	}
+
+	return false, nil
 }
