@@ -103,9 +103,9 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("rotation_enabled", duplo.RotationEnabled)
 
 	// Set name suffix.
-	nameParts := strings.SplitN(duplo.Name, "-", 3)
-	if len(nameParts) == 3 {
-		d.Set("name_suffix", nameParts[2])
+	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	if name, ok := duplosdk.UnprefixName(prefix, duplo.Name); ok {
+		d.Set("name_suffix", name)
 	}
 
 	// Set tags
