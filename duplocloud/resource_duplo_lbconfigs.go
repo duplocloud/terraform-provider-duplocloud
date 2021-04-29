@@ -97,6 +97,11 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 						Computed: true,
 						Optional: true,
 					},
+					"external_traffic_policy": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Computed: true,
+					},
 					"is_internal": {
 						Type:     schema.TypeBool,
 						Computed: true,
@@ -187,6 +192,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					ReplicationControllerName: name,
 					IsNative:                  lbc["is_native"].(bool),
 					IsInternal:                lbc["is_internal"].(bool),
+					ExternalTrafficPolicy:     lbc["external_traffic_policy"].(string),
 				})
 			}
 
@@ -271,6 +277,7 @@ func flattenDuploServiceLBConfigurations(list *[]duplosdk.DuploLBConfiguration) 
 			"replication_controller_name": lbc.ReplicationControllerName,
 			"is_native":                   lbc.IsNative,
 			"is_internal":                 lbc.IsInternal,
+			"external_traffic_policy":     lbc.ExternalTrafficPolicy,
 		})
 	}
 
