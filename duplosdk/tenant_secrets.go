@@ -3,7 +3,6 @@ package duplosdk
 import (
 	"fmt"
 	"log"
-	"strings"
 )
 
 // DuploTenantSecret represents a managed secret for a Duplo tenant
@@ -68,21 +67,11 @@ func (c *Client) TenantGetSecretByName(tenantID string, name string) (*DuploTena
 
 // TenantGetSecretByNameSuffix retrieves a managed secret via the Duplo API
 func (c *Client) TenantGetSecretByNameSuffix(tenantID string, nameSuffix string) (*DuploTenantSecret, error) {
-	allSecrets, err := c.TenantListSecrets(tenantID)
+	name, err := c.GetDuploServicesName(tenantID, nameSuffix)
 	if err != nil {
 		return nil, err
 	}
-
-	// Find and return the secret with the specific name.
-	for _, secret := range *allSecrets {
-		nameParts := strings.SplitN(secret.Name, "-", 3)
-		if len(nameParts) == 3 && nameParts[2] == nameSuffix {
-			return &secret, nil
-		}
-	}
-
-	// No secret was found.
-	return nil, nil
+	return c.TenantGetSecretByName(tenantID, name)
 }
 
 // TenantCreateSecret creates a tenant secret via Duplo.

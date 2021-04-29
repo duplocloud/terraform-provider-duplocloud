@@ -3,7 +3,6 @@ package duplosdk
 import (
 	"fmt"
 	"log"
-	"strings"
 )
 
 // DuploElasticSearchDomainVPCOptions represents an AWS ElasticSearch domain's VPC options for a Duplo tenant
@@ -94,11 +93,16 @@ type DuploElasticSearchDomainRequest struct {
 
 // TenantListElasticSearchDomains retrieves a list of AWS ElasticSearch domains.
 func (c *Client) TenantListElasticSearchDomains(tenantID string) (*[]DuploElasticSearchDomain, error) {
+	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
 	apiName := fmt.Sprintf("TenantListElasticSearchDomains(%s)", tenantID)
 	list := []DuploElasticSearchDomain{}
 
 	// Get the list from Duplo
-	err := c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetElasticSearchDomains", tenantID), &list)
+	err = c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetElasticSearchDomains", tenantID), &list)
 	if err != nil {
 		return nil, err
 	}
@@ -106,13 +110,8 @@ func (c *Client) TenantListElasticSearchDomains(tenantID string) (*[]DuploElasti
 	// Add the tenant ID and name to each element and return the list.
 	log.Printf("[TRACE] %s: %d items", apiName, len(list))
 	for i := range list {
-		parts := strings.SplitN(list[i].DomainName, "-", 3)
-		name := list[i].DomainName
-		if len(parts) == 3 {
-			name = parts[2]
-		}
 		list[i].TenantID = tenantID
-		list[i].Name = name
+		list[i].Name, _ = UnprefixName(prefix, list[i].DomainName)
 	}
 	return &list, nil
 }

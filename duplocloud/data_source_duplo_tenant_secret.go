@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -84,14 +83,14 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Failed to list secrets: %s", err)
 	}
+	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	if err != nil {
+		return fmt.Errorf("Failed to get tenant prefix: %s", err)
+	}
 
 	// Set the Terraform resource data
 	for _, duploSecret := range *duploSecrets {
-		parts := strings.SplitN(duploSecret.Name, "-", 3)
-		objNameSuffix := duploSecret.Name
-		if len(parts) == 3 {
-			objNameSuffix = parts[2]
-		}
+		objNameSuffix, _ := duplosdk.UnprefixName(prefix, duploSecret.Name)
 
 		if (arn != "" && duploSecret.Arn == arn) || (name != "" && duploSecret.Name == name) || (nameSuffix != "" && objNameSuffix == nameSuffix) {
 			d.SetId(fmt.Sprintf("%s/%s", tenantID, arn))

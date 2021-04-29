@@ -3,7 +3,6 @@ package duplocloud
 import (
 	"fmt"
 	"log"
-	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -71,16 +70,16 @@ func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Failed to list secrets: %s", err)
 	}
+	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	if err != nil {
+		return fmt.Errorf("Failed to get tenant prefix: %s", err)
+	}
 	d.SetId(tenantID)
 
 	// Set the Terraform resource data
 	secrets := make([]map[string]interface{}, 0, len(*duploSecrets))
 	for _, duploSecret := range *duploSecrets {
-		parts := strings.SplitN(duploSecret.Name, "-", 3)
-		nameSuffix := duploSecret.Name
-		if len(parts) == 3 {
-			nameSuffix = parts[2]
-		}
+		nameSuffix, _ := duplosdk.UnprefixName(prefix, duploSecret.Name)
 
 		secrets = append(secrets, map[string]interface{}{
 			"tenant_id":        tenantID,
