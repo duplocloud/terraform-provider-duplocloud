@@ -24,6 +24,7 @@ type DuploLBConfiguration struct {
 	ReplicationControllerName string `json:"ReplicationControllerName"`
 	IsNative                  bool   `json:"IsNative"`
 	IsInternal                bool   `json:"IsInternal"`
+	ExternalTrafficPolicy     string `json:"ExternalTrafficPolicy"`
 }
 
 // DuploServiceLBConfigsGetList retrieves a list of services via the Duplo API.
