@@ -12,7 +12,7 @@ type DuploAdminAwsCredentials struct {
 // GetAwsAccountID retrieves the AWS account ID via the Duplo API.
 func (c *Client) GetAwsAccountID() (string, error) {
 	awsAccount := ""
-	err := c.getAPI("GetAwsAccountID()", "admin/GetAwsAccountId", &awsAccount)
+	err := c.getAPI("GetAwsAccountID()", "adminproxy/GetAwsAccountId", &awsAccount)
 	return awsAccount, err
 }
 
