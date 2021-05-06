@@ -14,13 +14,15 @@ func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"duplo_host": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "This is the base URL to the Duplo REST API.  It must be provided, but it can also be sourced from the `duplo_host` environment variable.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			"duplo_token": {
-				Type:      schema.TypeString,
-				Optional:  true,
-				Sensitive: true,
+				Description: "This is a bearer token used to authenticate to the Duplo REST API.  It must be provided, but it can also be sourced from the `duplo_token` environment variable.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
