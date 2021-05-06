@@ -2,7 +2,7 @@ terraform {
   required_providers {
     duplocloud = {
       version = "0.5.23" # RELEASE VERSION
-      source = "registry.terraform.io/duplocloud/duplocloud"
+      source  = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
 }
@@ -13,7 +13,7 @@ provider "duplocloud" {
 }
 
 variable "plan_id" {
-  type = string
+  type    = string
   default = "default"
 }
 
@@ -31,7 +31,7 @@ resource "duplocloud_duplo_service" "test" {
 }
 
 resource "duplocloud_duplo_service_lbconfigs" "test" {
-  tenant_id = var.tenant_id
+  tenant_id                   = var.tenant_id
   replication_controller_name = duplocloud_duplo_service.test.name
 
   lbconfigs {

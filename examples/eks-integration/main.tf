@@ -2,7 +2,7 @@ terraform {
   required_providers {
     duplocloud = {
       version = "0.5.23" # RELEASE VERSION
-      source = "registry.terraform.io/duplocloud/duplocloud"
+      source  = "registry.terraform.io/duplocloud/duplocloud"
     }
     aws = {
       version = "~> 3.29.1"
@@ -19,7 +19,7 @@ provider "duplocloud" {
 }
 
 variable "plan_id" {
-  type = string
+  type    = string
   default = "default"
 }
 
