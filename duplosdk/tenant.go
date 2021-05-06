@@ -9,7 +9,7 @@ const (
 	SGSourceTypeTenant int = 0
 
 	// SGSourceTypeIPAddress represents an IP Address as an SG rule source
-	SGSourceTypeIPAddress int = 0
+	SGSourceTypeIPAddress int = 1
 )
 
 // DuploTenant represents a Duplo tenant
