@@ -1,1 +1,1 @@
-terraform import duplocloud_tenant.myapp v2/admin/TenantV2/*tenant_id*
+terraform import duplocloud_tenant.myapp v2/admin/TenantV2/*TENANT_ID*

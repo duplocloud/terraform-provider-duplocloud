@@ -12,52 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func tenantSecretSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"name": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"name_suffix": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"data": {
-			Type:      schema.TypeString,
-			Required:  true,
-			ForceNew:  true,
-			Sensitive: true,
-
-			// Supresses diffs for existing resources that were imported, so they have a blank secret data.
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				return d.Id() != "" && (old == "" || old == new)
-			},
-		},
-		"rotation_enabled": {
-			Type:     schema.TypeBool,
-			Computed: true,
-		},
-		"tags": {
-			Type:     schema.TypeList,
-			Computed: true,
-			Elem:     KeyValueSchema(),
-		},
-	}
-}
-
 // Resource for managing an AWS ElasticSearch instance
 func resourceTenantSecret() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_tenant_secret` manages a tenant secret in Duplo.",
+
 		ReadContext:   resourceTenantSecretRead,
 		CreateContext: resourceTenantSecretCreate,
 		DeleteContext: resourceTenantSecretDelete,
@@ -68,7 +27,58 @@ func resourceTenantSecret() *schema.Resource {
 			Create: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(5 * time.Minute),
 		},
-		Schema: tenantSecretSchema(),
+
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"tenant_id": {
+				Description: "The GUID of the tenant that the secret will be created in.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
+			"arn": {
+				Description: "The ARN of the created secret.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"name": {
+				Description: "The full name of the secret.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"name_suffix": {
+				Description: "The short name of the secret. You can get the fullname from the `name` attribute after creation.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
+			"data": {
+				Description: "The plaintext secret data. You can use the `jsonencode()` function to store JSON data in this field.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Sensitive:   true,
+
+				// Supresses diffs for existing resources that were imported, so they have a blank secret data.
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return d.Id() != "" && (old == "" || old == new)
+				},
+			},
+			"rotation_enabled": {
+				Description: "Whether or not rotation is enabled for this secret.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+			"tags": {
+				Description: "A list of tags for this secret.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        KeyValueSchema(),
+			},
+		},
 	}
 }
 

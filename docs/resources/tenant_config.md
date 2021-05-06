@@ -89,5 +89,5 @@ Read-Only:
 Import is supported using the following syntax:
 
 ```shell
-terraform import duplocloud_tenant_config.myapp *tenant_id*
+terraform import duplocloud_tenant_config.myapp TENANT_ID
 ```
