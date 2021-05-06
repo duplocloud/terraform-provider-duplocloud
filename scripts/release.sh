@@ -28,6 +28,11 @@ release_finish() {
     git checkout master ; git pull
     git checkout "release/$version"
 
+    # Update any generated code
+    go generate
+    git commit -am 'update generated docs and examples'
+    git push
+
     # Finish the release
     GIT_MERGE_AUTOEDIT=no git flow release finish "$version"
 
