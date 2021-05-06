@@ -13,6 +13,10 @@ import (
 // Resource for managing an AWS ElasticSearch instance
 func resourceTenantConfig() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_tenant_config` manages a tenant's configuration in Duplo.\n\n" +
+			"Tenant configuration is initially populated by Duplo when a tenant is created.  This resource " +
+			"allows you take control of individual configuration settings for a specific tenant.",
+
 		ReadContext:   resourceTenantConfigRead,
 		CreateContext: resourceTenantConfigCreateOrUpdate,
 		UpdateContext: resourceTenantConfigCreateOrUpdate,
@@ -25,31 +29,42 @@ func resourceTenantConfig() *schema.Resource {
 			Update: schema.DefaultTimeout(2 * time.Minute),
 			Delete: schema.DefaultTimeout(2 * time.Minute),
 		},
+
 		Schema: map[string]*schema.Schema{
-			"tenant_id": {
+			"id": {
 				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Computed: true,
+			},
+			"tenant_id": {
+				Description: "The GUID of the tenant to configure.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"setting": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem:     KeyValueSchema(),
+				Description: "A list of configuration settings to manage, expressed as key / value pairs.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        KeyValueSchema(),
 			},
 			"delete_unspecified_settings": {
+				Description: "Whether or not this resource should delete any settings not specified by this resource. " +
+					"**WARNING:**  It is not recommended to change the default value of `false`.",
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 			"metadata": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     KeyValueSchema(),
+				Description: "A complete list of configuration settings for this tenant, even ones not being managed by this resource.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        KeyValueSchema(),
 			},
 			"specified_settings": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "A list of configuration setting key being managed by this resource.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
