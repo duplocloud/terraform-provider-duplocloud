@@ -66,6 +66,7 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 		},
 		"subnets": {
 			Type:     schema.TypeList,
+			Optional: true,
 			Computed: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
@@ -202,6 +203,11 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 		BrokerNodeGroup: &duplosdk.DuploKafkaBrokerNodeGroupInfo{InstanceType: d.Get("instance_type").(string)},
 	}
 	rq.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize = d.Get("storage_size").(int)
+
+	// Apply any subnet settings
+	if subnets, ok := getAsStringArray(d, "subnets"); ok && len(*subnets) > 0 {
+		rq.BrokerNodeGroup.Subnets = subnets
+	}
 
 	// Apply any custom configuration.
 	if v, ok := d.GetOk("configuration_arn"); ok {
