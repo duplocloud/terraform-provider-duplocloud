@@ -14,28 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// duploServiceParamsSchema returns a Terraform resource schema for a service's parameters
-func dataSourceDuploServiceParamSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-		},
-		"replication_controller_name": {
-			Type:     schema.TypeString,
-			Required: true,
-		},
-		"dns_prfx": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"webaclid": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-	}
-}
-
 // SCHEMA for resource data/search
 func dataSourceDuploServiceParams() *schema.Resource {
 	return &schema.Resource{

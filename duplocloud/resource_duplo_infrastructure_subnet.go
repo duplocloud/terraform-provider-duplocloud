@@ -169,7 +169,7 @@ func resourceInfrastructureSubnetDelete(ctx context.Context, d *schema.ResourceD
 func duploInfrastructureSubnetFromId(id string) (*duplosdk.DuploInfrastructureVnetSubnet, error) {
 	idParts := strings.SplitN(id, "/", 4)
 	if len(idParts) < 4 {
-		return nil, fmt.Errorf("Invalid resource ID: %s", id)
+		return nil, fmt.Errorf("invalid resource ID: %s", id)
 	}
 
 	return &duplosdk.DuploInfrastructureVnetSubnet{

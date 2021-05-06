@@ -212,7 +212,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 	}
 
 	// Wait for the load balancers to be ready.
-	err = duploServiceLBConfigsWaitUntilReady(c, tenantID, name)
+	err = duploServiceLBConfigsWaitUntilReady(ctx, c, tenantID, name)
 	if err != nil {
 		return diag.Errorf("Error waiting for Duplo service '%s' load balancer configs to be ready: %s", id, err)
 	}
@@ -293,7 +293,7 @@ func parseDuploServiceLBConfigsIdParts(id string) (tenantID, name string) {
 }
 
 // DuploServiceLBConfigsWaitForCreation waits for creation of an service's load balancer by the Duplo API
-func duploServiceLBConfigsWaitUntilReady(c *duplosdk.Client, tenantID, name string) error {
+func duploServiceLBConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID, name string) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"missing", "pending"},
 		Target:  []string{"ready"},
@@ -314,6 +314,6 @@ func duploServiceLBConfigsWaitUntilReady(c *duplosdk.Client, tenantID, name stri
 		Timeout:      20 * time.Minute,
 	}
 	log.Printf("[DEBUG] duploServiceLBConfigsWaitUntilReady(%s, %s)", tenantID, name)
-	_, err := stateConf.WaitForState()
+	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }

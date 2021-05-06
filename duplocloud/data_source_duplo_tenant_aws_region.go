@@ -36,7 +36,7 @@ func dataSourceTenantAwsRegionRead(d *schema.ResourceData, m interface{}) error 
 	awsRegion, err := c.TenantGetAwsRegion(tenantID)
 	d.SetId(tenantID)
 	if err != nil {
-		return fmt.Errorf("Failed to read AWS region from tenant '%s': %s", tenantID, err)
+		return fmt.Errorf("failed to read AWS region from tenant '%s': %s", tenantID, err)
 	}
 
 	// Set the Terraform resource data

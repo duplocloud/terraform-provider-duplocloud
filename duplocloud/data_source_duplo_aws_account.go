@@ -46,7 +46,7 @@ func dataSourceAwsAccountRead(d *schema.ResourceData, m interface{}) error {
 		d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 	}
 	if err != nil {
-		return fmt.Errorf("Failed to read AWS account ID: %s", err)
+		return fmt.Errorf("failed to read AWS account ID: %s", err)
 	}
 
 	// Set the Terraform resource data

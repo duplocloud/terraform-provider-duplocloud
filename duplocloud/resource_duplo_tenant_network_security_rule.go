@@ -179,20 +179,20 @@ func resourceTenantNetworkSecurityRuleDelete(ctx context.Context, d *schema.Reso
 func duploTenantNetworkSecurityRuleFromId(id string) (*duplosdk.DuploTenantExtConnSecurityGroupRule, error) {
 	idParts := strings.SplitN(id, "/", 6)
 	if len(idParts) < 6 {
-		return nil, fmt.Errorf("Invalid resource ID: %s", id)
+		return nil, fmt.Errorf("invalid resource ID: %s", id)
 	}
 
 	ruleType, err := strconv.Atoi(idParts[1])
 	if err != nil {
-		return nil, fmt.Errorf("Invalid resource ID: %s: type: %s", id, err)
+		return nil, fmt.Errorf("invalid resource ID: %s: type: %s", id, err)
 	}
 	fromPort, err := strconv.Atoi(idParts[4])
 	if err != nil {
-		return nil, fmt.Errorf("Invalid resource ID: %s: fromPort: %s", id, err)
+		return nil, fmt.Errorf("invalid resource ID: %s: fromPort: %s", id, err)
 	}
 	toPort, err := strconv.Atoi(idParts[5])
 	if err != nil {
-		return nil, fmt.Errorf("Invalid resource ID: %s: toPort: %s", id, err)
+		return nil, fmt.Errorf("invalid resource ID: %s: toPort: %s", id, err)
 	}
 
 	return &duplosdk.DuploTenantExtConnSecurityGroupRule{

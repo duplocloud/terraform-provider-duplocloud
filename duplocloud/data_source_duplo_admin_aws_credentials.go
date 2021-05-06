@@ -13,7 +13,7 @@ import (
 // SCHEMA for resource crud
 func dataSourceAdminAwsCredentials() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTenantAwsCredentialsRead,
+		Read: dataSourceAdminAwsCredentialsRead,
 
 		Schema: map[string]*schema.Schema{
 			"console_url": {
@@ -53,7 +53,7 @@ func dataSourceAdminAwsCredentialsRead(d *schema.ResourceData, m interface{}) er
 	creds, err := c.AdminGetAwsCredentials()
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 	if err != nil {
-		return fmt.Errorf("Failed to read admin AWS credentials: %s", err)
+		return fmt.Errorf("failed to read admin AWS credentials: %s", err)
 	}
 
 	// Set the Terraform resource data

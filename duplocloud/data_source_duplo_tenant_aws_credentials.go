@@ -58,7 +58,7 @@ func dataSourceTenantAwsCredentialsRead(d *schema.ResourceData, m interface{}) e
 	creds, err := c.TenantGetAwsCredentials(tenantID)
 	d.SetId(fmt.Sprintf("%s-%s", tenantID, strconv.FormatInt(time.Now().Unix(), 10)))
 	if err != nil {
-		return fmt.Errorf("Failed to read AWS credentials from tenant '%s': %s", tenantID, err)
+		return fmt.Errorf("failed to read AWS credentials from tenant '%s': %s", tenantID, err)
 	}
 
 	// Set the Terraform resource data

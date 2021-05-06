@@ -56,11 +56,11 @@ func dataSourceTenantEksCredentialsRead(d *schema.ResourceData, m interface{}) e
 	c := m.(*duplosdk.Client)
 	k8sCredentials, err := c.GetTenantK8sCredentials(tenantID)
 	if err != nil {
-		return fmt.Errorf("Failed to read tenant %s kubernetes credentials: %s", tenantID, err)
+		return fmt.Errorf("failed to read tenant %s kubernetes credentials: %s", tenantID, err)
 	}
 	eksSecret, err := c.GetTenantEksSecret(tenantID)
 	if err != nil {
-		return fmt.Errorf("Failed to read tenant %s EKS CA certificate data: %s", tenantID, err)
+		return fmt.Errorf("failed to read tenant %s EKS CA certificate data: %s", tenantID, err)
 	}
 	d.SetId(tenantID)
 

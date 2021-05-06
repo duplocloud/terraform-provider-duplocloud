@@ -26,7 +26,7 @@ func tenantConfigSchemaComputed() map[string]*schema.Schema {
 // Data source retrieving a secret
 func dataSourceTenantConfig() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTenantSecretRead,
+		Read: dataSourceTenantConfigRead,
 
 		Schema: tenantConfigSchemaComputed(),
 	}
@@ -43,7 +43,7 @@ func dataSourceTenantConfigRead(d *schema.ResourceData, m interface{}) error {
 	c := m.(*duplosdk.Client)
 	duplo, err := c.TenantGetConfig(tenantID)
 	if err != nil {
-		return fmt.Errorf("Unable to retrieve tenant config for '%s': %s", tenantID, err)
+		return fmt.Errorf("unable to retrieve tenant config for '%s': %s", tenantID, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing

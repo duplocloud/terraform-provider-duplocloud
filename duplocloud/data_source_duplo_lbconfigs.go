@@ -124,7 +124,7 @@ func dataSourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.Resource
 	// Apply the Terraform state for each service, or an empty list
 	services := []interface{}{}
 	if list != nil {
-		services := make([]interface{}, 0, len(*list))
+		services = make([]interface{}, 0, len(*list))
 		for _, service := range *list {
 			services = append(services, map[string]interface{}{
 				"replication_controller_name": service.ReplicationControllerName,

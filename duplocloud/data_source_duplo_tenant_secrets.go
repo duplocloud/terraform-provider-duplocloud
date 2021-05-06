@@ -68,11 +68,11 @@ func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
 	c := m.(*duplosdk.Client)
 	duploSecrets, err := c.TenantListSecrets(tenantID)
 	if err != nil {
-		return fmt.Errorf("Failed to list secrets: %s", err)
+		return fmt.Errorf("failed to list secrets: %s", err)
 	}
 	prefix, err := c.GetDuploServicesPrefix(tenantID)
 	if err != nil {
-		return fmt.Errorf("Failed to get tenant prefix: %s", err)
+		return fmt.Errorf("failed to get tenant prefix: %s", err)
 	}
 	d.SetId(tenantID)
 

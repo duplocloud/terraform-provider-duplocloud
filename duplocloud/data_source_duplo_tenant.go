@@ -91,7 +91,7 @@ func dataSourceTenantRead(d *schema.ResourceData, m interface{}) error {
 		duploTenant, err = c.GetTenantByNameForUser(tenantName)
 	}
 	if err != nil {
-		return fmt.Errorf("Failed to get tenant: %s", err)
+		return fmt.Errorf("failed to get tenant: %s", err)
 	}
 	if duploTenant == nil {
 		return nil // not found

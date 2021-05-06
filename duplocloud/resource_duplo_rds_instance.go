@@ -188,7 +188,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// Wait for the instance to become available.
-	err = rdsInstanceWaitUntilAvailable(c, id)
+	err = rdsInstanceWaitUntilAvailable(ctx, c, id)
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
@@ -216,13 +216,13 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// Wait for the instance to become unavailable.
-	err = rdsInstanceWaitUntilUnavailable(c, id)
+	err = rdsInstanceWaitUntilUnavailable(ctx, c, id)
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
 	}
 
 	// Wait for the instance to become available.
-	err = rdsInstanceWaitUntilAvailable(c, id)
+	err = rdsInstanceWaitUntilAvailable(ctx, c, id)
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
@@ -259,7 +259,7 @@ func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData,
 // RdsInstanceWaitUntilAvailable waits until an RDS instance is available.
 //
 // It should be usable both post-creation and post-modification.
-func rdsInstanceWaitUntilAvailable(c *duplosdk.Client, id string) error {
+func rdsInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, id string) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{
 			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
@@ -282,14 +282,14 @@ func rdsInstanceWaitUntilAvailable(c *duplosdk.Client, id string) error {
 		},
 	}
 	log.Printf("[DEBUG] RdsInstanceWaitUntilAvailable (%s)", id)
-	_, err := stateConf.WaitForState()
+	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
 
 // RdsInstanceWaitUntilUnavailable waits until an RDS instance is unavailable.
 //
 // It should be usable post-modification.
-func rdsInstanceWaitUntilUnavailable(c *duplosdk.Client, id string) error {
+func rdsInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, id string) error {
 	stateConf := &resource.StateChangeConf{
 		Target: []string{
 			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
@@ -312,7 +312,7 @@ func rdsInstanceWaitUntilUnavailable(c *duplosdk.Client, id string) error {
 		},
 	}
 	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
-	_, err := stateConf.WaitForState()
+	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
 

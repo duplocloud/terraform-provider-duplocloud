@@ -79,7 +79,7 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) < 2 {
-		return diag.Errorf("Invalid resource ID: %s", id)
+		return diag.Errorf("invalid resource ID: %s", id)
 	}
 	tenantID, name := idParts[0], idParts[1]
 
@@ -89,7 +89,7 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	c := m.(*duplosdk.Client)
 	duplo, err := c.TenantGetSecretByName(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Unable to retrieve secret '%s': %s", id, err)
+		return diag.Errorf("unable to retrieve secret '%s': %s", id, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -103,7 +103,7 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("rotation_enabled", duplo.RotationEnabled)
 
 	// Set name suffix.
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, _ := c.GetDuploServicesPrefix(tenantID)
 	if name, ok := duplosdk.UnprefixName(prefix, duplo.Name); ok {
 		d.Set("name_suffix", name)
 	}
@@ -130,7 +130,7 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 	// Post the object to Duplo
 	err := c.TenantCreateSecret(tenantID, &duploObject)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s secret '%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("error creating tenant %s secret '%s': %s", tenantID, duploObject.Name, err)
 	}
 	tempID := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
 
@@ -163,7 +163,7 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 	err := c.TenantDeleteSecret(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Error deleting secret '%s': %s", id, err)
+		return diag.Errorf("error deleting secret '%s': %s", id, err)
 	}
 
 	// Wait for Duplo to delete the secret.

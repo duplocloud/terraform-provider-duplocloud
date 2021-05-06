@@ -301,7 +301,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 	// By default, wait until the host is completely ready.
 	if v, ok := d.GetOk("wait_until_connected"); !ok || v == nil || v.(bool) {
-		err = nativeHostWaitUntilReady(c, rp.TenantID, rp.InstanceID, d.Timeout("create"))
+		err = nativeHostWaitUntilReady(ctx, c, rp.TenantID, rp.InstanceID, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -500,7 +500,7 @@ func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []map[str
 		return []map[string]interface{}{}
 	}
 
-	list := make([]map[string]interface{}, len(*duplo), len(*duplo))
+	list := make([]map[string]interface{}, len(*duplo))
 	for _, item := range *duplo {
 		list = append(list, map[string]interface{}{
 			"iops":        item.Iops,
@@ -519,7 +519,7 @@ func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetwork
 		return []map[string]interface{}{}
 	}
 
-	list := make([]map[string]interface{}, len(*duplo), len(*duplo))
+	list := make([]map[string]interface{}, len(*duplo))
 	for _, item := range *duplo {
 		nic := map[string]interface{}{
 			"associate_public_ip": item.AssociatePublicIP,
@@ -548,13 +548,13 @@ func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetwork
 func nativeHostIdParts(id string) (string, string, error) {
 	idParts := strings.SplitN(id, "/", 5)
 	if len(idParts) < 5 {
-		return "", "", fmt.Errorf("Invalid resource ID: %s", id)
+		return "", "", fmt.Errorf("invalid resource ID: %s", id)
 	}
 	return idParts[2], idParts[4], nil
 }
 
 // NativeHostWaitForCreation waits for creation of an AWS Host by the Duplo API
-func nativeHostWaitUntilReady(c *duplosdk.Client, tenantID, instanceID string, timeout time.Duration) error {
+func nativeHostWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID, instanceID string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -571,6 +571,6 @@ func nativeHostWaitUntilReady(c *duplosdk.Client, tenantID, instanceID string, t
 		Timeout:      timeout,
 	}
 	log.Printf("[DEBUG] duploNativeHostWaitUntilReady(%s, %s)", tenantID, instanceID)
-	_, err := stateConf.WaitForState()
+	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
