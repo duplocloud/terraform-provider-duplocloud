@@ -37,7 +37,7 @@ func resourceTenantSecurityRule() *schema.Resource {
 				Computed: true,
 			},
 			"tenant_id": {
-				Description: "The GUID of the tenant that the secret will be created in.",
+				Description: "The GUID of the tenant that the network security rule will be created in.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

@@ -20,7 +20,7 @@ resource "duplocloud_tenant" "myapp" {
 
 # Allow the "default" tenant to send HTTPS requests to "myapp"
 resource "duplocloud_tenant_network_security_rule" "myrule" {
-  tenant_id = duplocloud_tenant.myapp.tenant_idd
+  tenant_id = duplocloud_tenant.myapp.tenant_id
 
   source_tenant = "default"
   protocol      = "tcp"
@@ -36,7 +36,7 @@ resource "duplocloud_tenant_network_security_rule" "myrule" {
 ### Required
 
 - **description** (String) A description for this rule.
-- **tenant_id** (String) The GUID of the tenant that the secret will be created in.
+- **tenant_id** (String) The GUID of the tenant that the network security rule will be created in.
 
 ### Optional
 

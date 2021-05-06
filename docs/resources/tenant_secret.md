@@ -20,7 +20,7 @@ resource "duplocloud_tenant" "myapp" {
 
 # Example with plaintext data.
 resource "duplocloud_tenant_secret" "mysecret1" {
-  tenant_id = duplocloud_tenant.myapp.tenant_idd
+  tenant_id = duplocloud_tenant.myapp.tenant_id
 
   # The full name will be:  duploservices-myapp-mytext
   name_suffix = "mytext"
@@ -30,7 +30,7 @@ resource "duplocloud_tenant_secret" "mysecret1" {
 
 # Example with JSON data.
 resource "duplocloud_tenant_secret" "mysecret2" {
-  tenant_id = duplocloud_tenant.myapp.tenant_idd
+  tenant_id = duplocloud_tenant.myapp.tenant_id
 
   # The full name will be:  duploservices-myapp-myjson
   name_suffix = "myjson"

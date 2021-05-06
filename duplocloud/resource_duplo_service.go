@@ -18,16 +18,21 @@ import (
 // DuploServiceSchema returns a Terraform resource schema for a service's parameters
 func duploServiceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"name": {
+		"id": {
 			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Computed: true,
+		},
+		"name": {
+			Description: "The name of the service to create.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch tenant
+			Description: "The GUID of the tenant that the service will be created in.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true, //switch tenant
 		},
 		"other_docker_host_config": {
 			Type:     schema.TypeString,
@@ -74,21 +79,24 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Required: false,
 		},
 		"cloud": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			Required: false,
-			Default:  0,
+			Description: "The numeric ID of the cloud provider to launch the service in. Defaults to AWS.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Required:    false,
+			Default:     0,
 		},
 		"agent_platform": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			Required: false,
-			Default:  0,
+			Description: "The numeric ID of the container agent to use for deployment.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Required:    false,
+			Default:     0,
 		},
 		"replicas": {
-			Type:     schema.TypeInt,
-			Optional: false,
-			Required: true,
+			Description: "The number of container replicas to deploy.",
+			Type:        schema.TypeInt,
+			Optional:    false,
+			Required:    true,
 		},
 		"replicas_matching_asg_name": {
 			Type:     schema.TypeString,
@@ -96,9 +104,10 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Required: false,
 		},
 		"docker_image": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
+			Description: "The docker image to use for the launched container(s).",
+			Type:        schema.TypeString,
+			Optional:    false,
+			Required:    true,
 		},
 		"tags": {
 			Type:     schema.TypeList,
@@ -111,6 +120,9 @@ func duploServiceSchema() map[string]*schema.Schema {
 // SCHEMA for resource crud
 func resourceDuploService() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_duplo_service` manages a container-based service in Duplo.\n\n" +
+			"NOTE: For Amazon ECS services, see the `duplocloud_ecs_service` resource.",
+
 		ReadContext:   resourceDuploServiceRead,
 		CreateContext: resourceDuploServiceCreate,
 		UpdateContext: resourceDuploServiceUpdate,
@@ -123,6 +135,7 @@ func resourceDuploService() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
+
 		Schema: duploServiceSchema(),
 	}
 }

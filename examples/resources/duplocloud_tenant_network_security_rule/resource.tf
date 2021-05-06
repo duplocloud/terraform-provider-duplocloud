@@ -5,7 +5,7 @@ resource "duplocloud_tenant" "myapp" {
 
 # Allow the "default" tenant to send HTTPS requests to "myapp"
 resource "duplocloud_tenant_network_security_rule" "myrule" {
-  tenant_id = duplocloud_tenant.myapp.tenant_idd
+  tenant_id = duplocloud_tenant.myapp.tenant_id
 
   source_tenant = "default"
   protocol      = "tcp"
