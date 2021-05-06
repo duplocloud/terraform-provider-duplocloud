@@ -30,7 +30,8 @@ release_finish() {
 
     # Update any generated code
     go generate
-    git commit -am 'update generated docs and examples'
+    git add docs examples
+    git commit -m 'update generated docs and examples' docs examples
     git push
 
     # Finish the release
