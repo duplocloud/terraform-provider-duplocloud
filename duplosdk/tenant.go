@@ -339,9 +339,9 @@ func (c *Client) TenantGetExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurit
 	}
 
 	for _, rule := range *list {
-		if rule.Type == rq.Type && rule.Protocol == rq.Protocol && rule.FromPort == rq.FromPort && rule.ToPort == rule.ToPort && rule.Sources != nil && len(*rule.Sources) > 0 {
+		if rule.Type == rq.Type && rule.Protocol == rq.Protocol && rule.FromPort == rq.FromPort && rule.ToPort == rq.ToPort && rule.Sources != nil && len(*rule.Sources) > 0 {
 			if len(*rule.Sources) != 1 {
-				return nil, fmt.Errorf("Found a rule with %d sources, no idea how process it!", len(*rule.Sources))
+				return nil, fmt.Errorf("found a rule with %d sources, no idea how process it", len(*rule.Sources))
 			}
 			if rq.Sources == nil || len(*rq.Sources) == 0 || ((*rule.Sources)[0].Type == rq.Type && (*rule.Sources)[0].Value == (*rq.Sources)[0].Value) {
 				return &rule, nil
