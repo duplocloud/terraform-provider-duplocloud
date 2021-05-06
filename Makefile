@@ -18,6 +18,9 @@ OS_ARCH_DOCKER=linux_amd64
 
 default: install
 
+doc:
+	go generate
+
 build:
 	go build -o ${BINARY}
 

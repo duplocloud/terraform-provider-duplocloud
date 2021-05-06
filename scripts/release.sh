@@ -29,7 +29,7 @@ release_finish() {
     git checkout "release/$version"
 
     # Update any generated code
-    go generate
+    make doc
     git add docs examples
     git commit -m 'update generated docs and examples' docs examples
     git push
