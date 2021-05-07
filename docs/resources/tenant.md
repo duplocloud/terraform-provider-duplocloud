@@ -29,11 +29,11 @@ resource "duplocloud_tenant" "myapp" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **infra_owner** (String)
 - **policy** (List of Object) (see [below for nested schema](#nestedatt--policy))
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))

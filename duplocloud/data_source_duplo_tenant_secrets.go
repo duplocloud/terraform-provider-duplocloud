@@ -61,10 +61,11 @@ func dataSourceTenantSecrets() *schema.Resource {
 
 /// READ resource
 func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
-	log.Printf("[TRACE] dataSourceTenantSecretsRead ******** start")
+	tenantID := d.Get("tenant_id").(string)
+
+	log.Printf("[TRACE] dataSourceTenantSecretsRead(%s): start", tenantID)
 
 	// List the secrets from Duplo.
-	tenantID := d.Get("tenant_id").(string)
 	c := m.(*duplosdk.Client)
 	duploSecrets, err := c.TenantListSecrets(tenantID)
 	if err != nil {
@@ -93,6 +94,6 @@ func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
 
 	d.Set("secrets", secrets)
 
-	log.Printf("[TRACE] dataSourceTenantSecretsRead ******** end")
+	log.Printf("[TRACE] dataSourceTenantSecretsRead(%s): end", tenantID)
 	return nil
 }

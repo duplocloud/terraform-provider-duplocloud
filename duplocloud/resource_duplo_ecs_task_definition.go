@@ -352,16 +352,8 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	}
 
 	// Next, convert things into embedded JSON
-	if json, err := json.Marshal(duplo.ContainerDefinitions); err == nil {
-		d.Set("container_definitions", string(json))
-	} else {
-		log.Printf("[DEBUG] flattenEcsTaskDefinition: failed to serilize container_definitions to JSON: %s", err)
-	}
-	if json, err := json.Marshal(duplo.Volumes); err == nil {
-		d.Set("volumes", string(json))
-	} else {
-		log.Printf("[DEBUG] flattenEcsTaskDefinition: failed to serilize volumes to JSON: %s", err)
-	}
+	toJsonStringState("container_definitions", duplo.ContainerDefinitions, d)
+	toJsonStringState("volumes", duplo.Volumes, d)
 
 	// Next, convert things into structured data.
 	d.Set("placement_constraints", ecsPlacementConstraintsToState(duplo.PlacementConstraints))

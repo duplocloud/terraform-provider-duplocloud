@@ -17,6 +17,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 )
 
+// Utility function to convert the `from` interface to a JSON encoded string `field` in the `to` map.
+func toJsonStringField(field string, from interface{}, to map[string]interface{}) {
+	if json, err := json.Marshal(from); err == nil {
+		to[field] = string(json)
+	} else {
+		log.Printf("[DEBUG] mapToJsonStringField: failed to serialize %s to JSON: %s", field, err)
+	}
+}
+
+// Utility function to convert the `from` interface to a JSON encoded string `field`.
+func toJsonStringState(field string, from interface{}, to *schema.ResourceData) {
+	if json, err := json.Marshal(from); err == nil {
+		to.Set(field, string(json))
+	} else {
+		log.Printf("[DEBUG] mapToJsonStringState: failed to serialize %s to JSON: %s", field, err)
+	}
+}
+
 // ValidateJSONString performs validation of a string that is supposed to be JSON.
 func ValidateJSONString(v interface{}, k string) (ws []string, errors []error) {
 	// IAM Policy documents need to be valid JSON, and pass legacy parsing

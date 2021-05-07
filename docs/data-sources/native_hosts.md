@@ -3,12 +3,12 @@
 page_title: "duplocloud_native_hosts Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_native_hosts lists a native hosts in a Duplo tenant.
+  duplocloud_native_hosts lists native hosts in a Duplo tenant.
 ---
 
 # duplocloud_native_hosts (Data Source)
 
-`duplocloud_native_hosts` lists a native hosts in a Duplo tenant.
+`duplocloud_native_hosts` lists native hosts in a Duplo tenant.
 
 
 
@@ -39,7 +39,6 @@ Read-Only:
 - **cloud** (Number)
 - **encrypt_disk** (Boolean)
 - **friendly_name** (String)
-- **id** (String)
 - **identity_role** (String)
 - **image_id** (String)
 - **instance_id** (String)
