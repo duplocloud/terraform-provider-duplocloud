@@ -22,7 +22,7 @@ description: |-
 ### Optional
 
 - **id** (String) The ID of this resource.
-- **selectable** (Boolean)
+- **selectable** (Boolean) Defaults to `true`.
 
 ### Read-Only
 

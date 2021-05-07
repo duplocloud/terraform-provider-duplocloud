@@ -25,11 +25,11 @@ description: |-
 ### Optional
 
 - **dns_prfx** (String)
-- **health_check_grace_period_seconds** (Number)
+- **health_check_grace_period_seconds** (Number) Defaults to `0`.
 - **id** (String) The ID of this resource.
-- **is_target_group_only** (Boolean)
+- **is_target_group_only** (Boolean) Defaults to `false`.
 - **load_balancer** (Block List, Max: 1) (see [below for nested schema](#nestedblock--load_balancer))
-- **old_task_definition_buffer_size** (Number)
+- **old_task_definition_buffer_size** (Number) Defaults to `10`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 <a id="nestedblock--load_balancer"></a>
@@ -49,7 +49,7 @@ Optional:
 - **drop_invalid_headers** (Boolean)
 - **enable_access_logs** (Boolean)
 - **health_check_url** (String)
-- **is_internal** (Boolean)
+- **is_internal** (Boolean) Defaults to `false`.
 - **webaclid** (String)
 
 Read-Only:

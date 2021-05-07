@@ -23,11 +23,11 @@ description: |-
 
 ### Optional
 
-- **cache_type** (Number)
-- **encryption_at_rest** (Boolean)
-- **encryption_in_transit** (Boolean)
+- **cache_type** (Number) Defaults to `0`.
+- **encryption_at_rest** (Boolean) Defaults to `false`.
+- **encryption_in_transit** (Boolean) Defaults to `false`.
 - **id** (String) The ID of this resource.
-- **replicas** (Number)
+- **replicas** (Number) Defaults to `1`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only

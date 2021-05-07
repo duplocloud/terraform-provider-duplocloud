@@ -24,15 +24,15 @@ description: |-
 
 ### Optional
 
-- **agent_platform** (Number)
-- **allocated_public_ip** (Boolean)
+- **agent_platform** (Number) Defaults to `0`.
+- **allocated_public_ip** (Boolean) Defaults to `false`.
 - **base64_user_data** (String)
-- **cloud** (Number)
-- **encrypt_disk** (Boolean)
+- **cloud** (Number) Defaults to `0`.
+- **encrypt_disk** (Boolean) Defaults to `false`.
 - **id** (String) The ID of this resource.
 - **identity_role** (String)
-- **is_ebs_optimized** (Boolean)
-- **is_minion** (Boolean)
+- **is_ebs_optimized** (Boolean) Defaults to `false`.
+- **is_minion** (Boolean) Defaults to `true`.
 - **metadata** (Block List) (see [below for nested schema](#nestedblock--metadata))
 - **minion_tags** (Block List) (see [below for nested schema](#nestedblock--minion_tags))
 - **network_interface** (Block List) (see [below for nested schema](#nestedblock--network_interface))
@@ -41,8 +41,8 @@ description: |-
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **user_account** (String)
 - **volume** (Block List) (see [below for nested schema](#nestedblock--volume))
-- **wait_until_connected** (Boolean)
-- **zone** (Number)
+- **wait_until_connected** (Boolean) Defaults to `true`.
+- **zone** (Number) Defaults to `0`.
 
 ### Read-Only
 

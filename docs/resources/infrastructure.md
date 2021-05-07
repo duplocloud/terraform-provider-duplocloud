@@ -26,7 +26,7 @@ description: |-
 
 ### Optional
 
-- **cloud** (Number)
+- **cloud** (Number) Defaults to `0`.
 - **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

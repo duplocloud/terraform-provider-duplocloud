@@ -23,7 +23,7 @@ description: |-
 
 ### Optional
 
-- **cloud** (Number)
+- **cloud** (Number) Defaults to `0`.
 - **encrypt_storage** (Boolean)
 - **engine** (Number)
 - **engine_version** (String)

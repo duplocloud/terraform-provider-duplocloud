@@ -48,7 +48,7 @@ Optional:
 - **health_check_url** (String)
 - **is_internal** (Boolean)
 - **is_native** (Boolean)
-- **replication_controller_name** (String, Deprecated)
+- **replication_controller_name** (String, Deprecated) Set the replication_controller_name field instead of lbconfigs.replication_controller_name
 
 
 <a id="nestedblock--timeouts"></a>

@@ -47,7 +47,7 @@ resource "duplocloud_tenant_config" "myapp" {
 
 ### Optional
 
-- **delete_unspecified_settings** (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`.
+- **delete_unspecified_settings** (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
 - **setting** (Block List) A list of configuration settings to manage, expressed as key / value pairs. (see [below for nested schema](#nestedblock--setting))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

@@ -27,7 +27,7 @@ description: |-
 - **enable_access_logs** (Boolean)
 - **enable_versioning** (Boolean)
 - **id** (String) The ID of this resource.
-- **in_tenant_region** (Boolean)
+- **in_tenant_region** (Boolean) Defaults to `false`.
 - **managed_policies** (List of String)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
@@ -42,7 +42,7 @@ description: |-
 
 Optional:
 
-- **method** (String)
+- **method** (String) Defaults to `Sse`.
 
 
 <a id="nestedblock--timeouts"></a>
