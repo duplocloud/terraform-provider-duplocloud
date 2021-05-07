@@ -239,6 +239,7 @@ func resourceAwsHost() *schema.Resource {
 	awsHostSchema := nativeHostSchema()
 
 	awsHostSchema["wait_until_connected"] = &schema.Schema{
+		Description:      "Whether or not to wait until Duplo can connect to the host, after creation.",
 		Type:             schema.TypeBool,
 		Optional:         true,
 		ForceNew:         true,
@@ -247,6 +248,8 @@ func resourceAwsHost() *schema.Resource {
 	}
 
 	return &schema.Resource{
+		Description: "`duplocloud_aws_host` manages a native AWS host in Duplo.",
+
 		ReadContext:   resourceAwsHostRead,
 		CreateContext: resourceAwsHostCreate,
 		//UpdateContext: resourceAwsHostUpdate,

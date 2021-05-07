@@ -3,12 +3,12 @@
 page_title: "duplocloud_aws_host Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_aws_host manages a native AWS host in Duplo.
 ---
 
 # duplocloud_aws_host (Resource)
 
-
+`duplocloud_aws_host` manages a native AWS host in Duplo.
 
 ## Example Usage
 
@@ -27,10 +27,10 @@ resource "duplocloud_aws_host" "native" {
   capacity       = "t3a.medium"
   agent_platform = 0          # Duplo native container agent
   zone           = 0          # Zone A
-  user_account   = "ec2-user" # <== default username for Amazon Linux
+  user_account   = "ec2-user" # default username for Amazon Linux
 }
 
-# Simple Example 2:  Deploy NGINX to be used with EKS
+# Simple Example 2:  Deploy a host to be used with EKS
 resource "duplocloud_aws_host" "eks" {
   tenant_id     = duplocloud_tenant.myapp.tenant_id
   friendly_name = "host2"
@@ -39,7 +39,7 @@ resource "duplocloud_aws_host" "eks" {
   capacity       = "t3a.medium"
   agent_platform = 7          # Duplo EKS agent
   zone           = 0          # Zone A
-  user_account   = "ec2-user" # <== default username for Amazon Linux
+  user_account   = "ec2-user" # default username for Amazon Linux
 }
 ```
 
@@ -75,7 +75,7 @@ Amazon Linux example: `ec2-user`.
 
 Ubuntu Linux example: `ubuntu`.
 - **volume** (Block List) (see [below for nested schema](#nestedblock--volume))
-- **wait_until_connected** (Boolean) Defaults to `true`.
+- **wait_until_connected** (Boolean) Whether or not to wait until Duplo can connect to the host, after creation. Defaults to `true`.
 - **zone** (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.
 
 ### Read-Only
