@@ -9,5 +9,4 @@ require (
 	github.com/ucarion/jcs v0.1.2
 	golang.org/x/mod v0.4.0 // indirect
 	golang.org/x/tools v0.1.1-0.20210201201750-4d4ee958a9b7 // indirect
-	golang.org/x/tools/gopls v0.6.5 // indirect
 )
