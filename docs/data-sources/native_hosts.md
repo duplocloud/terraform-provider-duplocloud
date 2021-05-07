@@ -39,6 +39,7 @@ Read-Only:
 - **cloud** (Number)
 - **encrypt_disk** (Boolean)
 - **friendly_name** (String)
+- **id** (String)
 - **identity_role** (String)
 - **image_id** (String)
 - **instance_id** (String)

@@ -15,22 +15,33 @@ import (
 
 func nativeHostSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"instance_id": {
+		"id": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"instance_id": {
+			Description: "The AWS EC2 instance ID of the host.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"user_account": {
+			Description: "The default username for the host.\n\n" +
+				"Windows example: `Administrator`.\n\n" +
+				"Amazon Linux example: `ec2-user`.\n\n" +
+				"Ubuntu Linux example: `ubuntu`.\n\n",
 			Type:             schema.TypeString,
 			Optional:         true,
 			Computed:         true,
 			DiffSuppressFunc: diffSuppressFuncIgnore,
 		},
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true, //switch tenant
+			Description: "The GUID of the tenant that the host will be created in.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true, //switch tenant
 		},
 		"friendly_name": {
+			Description:      "The short name of the host.",
 			Type:             schema.TypeString,
 			Optional:         false,
 			Required:         true,
@@ -38,16 +49,18 @@ func nativeHostSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: diffIgnoreIfAlreadySet,
 		},
 		"capacity": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, // relaunch instnace
+			Description: "The AWS EC2 instance type.",
+			Type:        schema.TypeString,
+			Optional:    false,
+			Required:    true,
+			ForceNew:    true, // relaunch instnace
 		},
 		"zone": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			ForceNew: true, // relaunch instance
-			Default:  0,
+			Description: "The availability zone to launch the host in, expressed as a number and starting at 0.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
+			Default:     0,
 		},
 		"is_minion": {
 			Type:     schema.TypeBool,
@@ -56,21 +69,24 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Default:  true,
 		},
 		"image_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true, // relaunch instance
+			Description: "The AMI ID to use.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true, // relaunch instance
 		},
 		"base64_user_data": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true, // relaunch instance
-			Computed: true,
+			Description: "Base64 encoded EC2 user data to associated with the host.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
+			Computed:    true,
 		},
 		"agent_platform": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			ForceNew: true, // relaunch instance
-			Default:  0,
+			Description: "The numeric ID of the container agent pool that this host is added to.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
+			Default:     0,
 		},
 		"is_ebs_optimized": {
 			Type:     schema.TypeBool,
@@ -79,16 +95,18 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew: true, // relaunch instance
 		},
 		"allocated_public_ip": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Default:  false,
-			ForceNew: true, // relaunch instance
+			Description: "Whether or not to allocate a public IP.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+			ForceNew:    true, // relaunch instance
 		},
 		"cloud": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			Default:  0,
-			ForceNew: true, // relaunch instance
+			Description: "The numeric ID of the cloud provider to launch the host in.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Default:     0,
+			ForceNew:    true, // relaunch instance
 		},
 		"encrypt_disk": {
 			Type:     schema.TypeBool,
@@ -97,22 +115,22 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew: true, // relaunch instance
 		},
 		"status": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The current status of the host.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"identity_role": {
-			Type:     schema.TypeString,
-			Computed: true,
-			Optional: true,
-			ForceNew: true, // relaunch instance
+			Description: "The name of the IAM role associated with this host.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"private_ip_address": {
-			Type:     schema.TypeString,
-			Computed: true,
-			Optional: true,
-			ForceNew: true, // relaunch instance
+			Description: "The primary private IP address assigned to the host.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"metadata": {
+			Description:      "Configuration metadata used when creating the host.",
 			Type:             schema.TypeList,
 			Optional:         true,
 			Computed:         true,
@@ -168,30 +186,35 @@ func nativeHostSchema() map[string]*schema.Schema {
 			},
 		},
 		"network_interface": {
-			Type:     schema.TypeList,
-			Optional: true,
-			ForceNew: true, // relaunch instance
+			Description: "An optional list of custom network interface configurations to use when creating the host.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"network_interface_id": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Computed: true,
+						Description: "The ID of an ENI to attach to this host.  Cannot be specified if `subnet_id` or `associate_public_ip` is specified.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
 					},
 					"subnet_id": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Computed: true,
+						Description: "The ID of a subnet in which to create a new ENI.  Cannot be specified if `network_interface_id` is specified.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
 					},
 					"device_index": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Description: "The device index to pass to AWS for attaching the ENI.  Starts at zero.",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
 					},
 					"associate_public_ip": {
-						Type:     schema.TypeBool,
-						Optional: true,
-						Computed: true,
+						Description: "Whether or not to associate a public IP with the newly created ENI.  Cannot be specified if `network_interface_id` is specified.",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Computed:    true,
 					},
 					"groups": {
 						Type:     schema.TypeList,

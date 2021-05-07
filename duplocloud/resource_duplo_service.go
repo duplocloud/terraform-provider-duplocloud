@@ -79,7 +79,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Required: false,
 		},
 		"cloud": {
-			Description: "The numeric ID of the cloud provider to launch the service in. Defaults to AWS.",
+			Description: "The numeric ID of the cloud provider to launch the service in.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Required:    false,
