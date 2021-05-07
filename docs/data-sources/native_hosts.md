@@ -19,13 +19,10 @@ description: |-
 
 - **tenant_id** (String) The GUID of the tenant in which to list the hosts.
 
-### Optional
-
-- **id** (String) The ID of this resource.
-
 ### Read-Only
 
 - **hosts** (List of Object) The list of native hosts. (see [below for nested schema](#nestedatt--hosts))
+- **id** (String) The ID of this resource.
 
 <a id="nestedatt--hosts"></a>
 ### Nested Schema for `hosts`

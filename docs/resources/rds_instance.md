@@ -27,7 +27,6 @@ description: |-
 - **encrypt_storage** (Boolean)
 - **engine** (Number)
 - **engine_version** (String)
-- **id** (String) The ID of this resource.
 - **master_password** (String, Sensitive)
 - **master_username** (String)
 - **parameter_group_name** (String)
@@ -40,6 +39,7 @@ description: |-
 - **arn** (String)
 - **endpoint** (String)
 - **host** (String)
+- **id** (String) The ID of this resource.
 - **identifier** (String)
 - **instance_status** (String)
 - **port** (Number)

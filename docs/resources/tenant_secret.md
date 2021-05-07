@@ -50,12 +50,12 @@ resource "duplocloud_tenant_secret" "mysecret2" {
 
 ### Optional
 
-- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **arn** (String) The ARN of the created secret.
+- **id** (String) The ID of this resource.
 - **name** (String) The full name of the secret.
 - **rotation_enabled** (Boolean) Whether or not rotation is enabled for this secret.
 - **tags** (List of Object) A list of tags for this secret. (see [below for nested schema](#nestedatt--tags))

@@ -23,12 +23,12 @@ description: |-
 
 ### Optional
 
-- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **arn** (String)
+- **id** (String) The ID of this resource.
 - **status** (String)
 
 <a id="nestedblock--lbconfigs"></a>

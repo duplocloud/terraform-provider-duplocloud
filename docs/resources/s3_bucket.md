@@ -26,7 +26,6 @@ description: |-
 - **default_encryption** (Block List, Max: 1) (see [below for nested schema](#nestedblock--default_encryption))
 - **enable_access_logs** (Boolean)
 - **enable_versioning** (Boolean)
-- **id** (String) The ID of this resource.
 - **in_tenant_region** (Boolean) Defaults to `false`.
 - **managed_policies** (List of String)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -35,6 +34,7 @@ description: |-
 
 - **arn** (String)
 - **fullname** (String)
+- **id** (String) The ID of this resource.
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--default_encryption"></a>

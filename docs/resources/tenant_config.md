@@ -48,12 +48,12 @@ resource "duplocloud_tenant_config" "myapp" {
 ### Optional
 
 - **delete_unspecified_settings** (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
-- **id** (String) The ID of this resource.
 - **setting** (Block List) A list of configuration settings to manage, expressed as key / value pairs. (see [below for nested schema](#nestedblock--setting))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
+- **id** (String) The ID of this resource.
 - **metadata** (List of Object) A complete list of configuration settings for this tenant, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--metadata))
 - **specified_settings** (List of String) A list of configuration setting key being managed by this resource.
 

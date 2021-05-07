@@ -21,11 +21,11 @@ description: |-
 
 ### Optional
 
-- **id** (String) The ID of this resource.
 - **key_name** (String)
 
 ### Read-Only
 
+- **id** (String) The ID of this resource.
 - **key_arn** (String)
 - **key_id** (String)
 

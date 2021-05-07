@@ -25,12 +25,12 @@ description: |-
 - **dns_prfx** (String)
 - **drop_invalid_headers** (Boolean)
 - **enable_access_logs** (Boolean)
-- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **webaclid** (String)
 
 ### Read-Only
 
+- **id** (String) The ID of this resource.
 - **load_balancer_arn** (String)
 - **load_balancer_name** (String)
 

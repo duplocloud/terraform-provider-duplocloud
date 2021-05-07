@@ -18,12 +18,12 @@ description: |-
 ### Optional
 
 - **filter** (Block Set) (see [below for nested schema](#nestedblock--filter))
-- **id** (String) The ID of this resource.
 - **tenant_id** (String)
 
 ### Read-Only
 
 - **data** (List of Object) (see [below for nested schema](#nestedatt--data))
+- **id** (String) The ID of this resource.
 
 <a id="nestedblock--filter"></a>
 ### Nested Schema for `filter`

@@ -59,7 +59,6 @@ resource "duplocloud_duplo_service" "myservice" {
 - **cloud** (Number) The numeric ID of the cloud provider to launch the service in. Defaults to `0`.
 - **commands** (String)
 - **extra_config** (String)
-- **id** (String) The ID of this resource.
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
 - **replicas_matching_asg_name** (String)
@@ -68,6 +67,7 @@ resource "duplocloud_duplo_service" "myservice" {
 
 ### Read-Only
 
+- **id** (String) The ID of this resource.
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--timeouts"></a>

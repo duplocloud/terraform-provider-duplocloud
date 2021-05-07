@@ -26,7 +26,6 @@ description: |-
 - **elasticsearch_version** (String) Defaults to `7.9`.
 - **enable_node_to_node_encryption** (Boolean)
 - **encrypt_at_rest** (Block List, Max: 1) (see [below for nested schema](#nestedblock--encrypt_at_rest))
-- **id** (String) The ID of this resource.
 - **require_ssl** (Boolean)
 - **selected_zone** (Number)
 - **storage_size** (Number) Defaults to `20`.
@@ -43,6 +42,7 @@ description: |-
 - **domain_name** (String)
 - **ebs_options** (List of Object) (see [below for nested schema](#nestedatt--ebs_options))
 - **endpoints** (Map of String)
+- **id** (String) The ID of this resource.
 - **snapshot_options** (List of Object) (see [below for nested schema](#nestedatt--snapshot_options))
 
 <a id="nestedblock--cluster_config"></a>

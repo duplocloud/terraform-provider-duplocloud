@@ -25,12 +25,12 @@ description: |-
 
 ### Optional
 
-- **id** (String) The ID of this resource.
 - **tags** (Map of String)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
+- **id** (String) The ID of this resource.
 - **subnet_id** (String)
 - **subnet_name** (String)
 - **tags_all** (Map of String)

@@ -19,12 +19,9 @@ description: |-
 
 - **tenant_id** (String)
 
-### Optional
-
-- **id** (String) The ID of this resource.
-
 ### Read-Only
 
+- **id** (String) The ID of this resource.
 - **subnet_ids** (List of String)
 
 

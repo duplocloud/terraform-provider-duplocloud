@@ -29,13 +29,10 @@ output "config_maps" {
 
 - **tenant_id** (String)
 
-### Optional
-
-- **id** (String) The ID of this resource.
-
 ### Read-Only
 
 - **config_maps** (List of Object) (see [below for nested schema](#nestedatt--config_maps))
+- **id** (String) The ID of this resource.
 
 <a id="nestedatt--config_maps"></a>
 ### Nested Schema for `config_maps`

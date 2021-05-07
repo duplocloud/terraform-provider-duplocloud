@@ -22,12 +22,12 @@ description: |-
 ### Optional
 
 - **arn** (String)
-- **id** (String) The ID of this resource.
 - **name** (String)
 - **name_suffix** (String)
 
 ### Read-Only
 
+- **id** (String) The ID of this resource.
 - **rotation_enabled** (Boolean)
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
 

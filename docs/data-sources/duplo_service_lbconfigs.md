@@ -21,11 +21,11 @@ description: |-
 
 ### Optional
 
-- **id** (String) The ID of this resource.
 - **name** (String)
 
 ### Read-Only
 
+- **id** (String) The ID of this resource.
 - **services** (List of Object) (see [below for nested schema](#nestedatt--services))
 
 <a id="nestedatt--services"></a>

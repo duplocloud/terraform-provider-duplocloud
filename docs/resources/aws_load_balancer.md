@@ -24,7 +24,6 @@ description: |-
 
 - **drop_invalid_headers** (Boolean)
 - **enable_access_logs** (Boolean)
-- **id** (String) The ID of this resource.
 - **is_internal** (Boolean)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **web_acl_id** (String)
@@ -33,6 +32,7 @@ description: |-
 
 - **arn** (String)
 - **fullname** (String)
+- **id** (String) The ID of this resource.
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--timeouts"></a>

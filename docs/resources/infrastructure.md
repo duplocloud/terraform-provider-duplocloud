@@ -27,12 +27,12 @@ description: |-
 ### Optional
 
 - **cloud** (Number) Defaults to `0`.
-- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **account_id** (String)
+- **id** (String) The ID of this resource.
 - **private_subnets** (Set of Object) (see [below for nested schema](#nestedatt--private_subnets))
 - **public_subnets** (Set of Object) (see [below for nested schema](#nestedatt--public_subnets))
 - **status** (String)

@@ -26,11 +26,14 @@ description: |-
 
 - **dns_prfx** (String)
 - **health_check_grace_period_seconds** (Number) Defaults to `0`.
-- **id** (String) The ID of this resource.
 - **is_target_group_only** (Boolean) Defaults to `false`.
 - **load_balancer** (Block List, Max: 1) (see [below for nested schema](#nestedblock--load_balancer))
 - **old_task_definition_buffer_size** (Number) Defaults to `10`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+### Read-Only
+
+- **id** (String) The ID of this resource.
 
 <a id="nestedblock--load_balancer"></a>
 ### Nested Schema for `load_balancer`

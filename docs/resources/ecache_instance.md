@@ -26,7 +26,6 @@ description: |-
 - **cache_type** (Number) Defaults to `0`.
 - **encryption_at_rest** (Boolean) Defaults to `false`.
 - **encryption_in_transit** (Boolean) Defaults to `false`.
-- **id** (String) The ID of this resource.
 - **replicas** (Number) Defaults to `1`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
@@ -35,6 +34,7 @@ description: |-
 - **arn** (String)
 - **endpoint** (String)
 - **host** (String)
+- **id** (String) The ID of this resource.
 - **identifier** (String)
 - **instance_status** (String)
 - **port** (Number)
