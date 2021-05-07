@@ -43,6 +43,8 @@ func k8sConfigMapSchemaComputed() map[string]*schema.Schema {
 // SCHEMA for resource data/search
 func dataSourceK8ConfigMap() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_k8_config_map` reads data from a single kubernetes configmap in a Duplo tenant.",
+
 		ReadContext: dataSourceK8ConfigMapRead,
 		Schema:      k8sConfigMapSchemaComputed(),
 	}

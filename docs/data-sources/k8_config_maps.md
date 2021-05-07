@@ -3,12 +3,12 @@
 page_title: "duplocloud_k8_config_maps Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_k8_config_maps lists all kubernetes configmaps in a Duplo tenant.
 ---
 
 # duplocloud_k8_config_maps (Data Source)
 
-
+`duplocloud_k8_config_maps` lists all kubernetes configmaps in a Duplo tenant.
 
 ## Example Usage
 

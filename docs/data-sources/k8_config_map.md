@@ -3,12 +3,12 @@
 page_title: "duplocloud_k8_config_map Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_k8_config_map reads data from a single kubernetes configmap in a Duplo tenant.
 ---
 
 # duplocloud_k8_config_map (Data Source)
 
-
+`duplocloud_k8_config_map` reads data from a single kubernetes configmap in a Duplo tenant.
 
 ## Example Usage
 

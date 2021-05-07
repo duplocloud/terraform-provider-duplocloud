@@ -13,6 +13,8 @@ import (
 // SCHEMA for resource data/search
 func dataSourceK8ConfigMaps() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_k8_config_maps` lists all kubernetes configmaps in a Duplo tenant.",
+
 		ReadContext: dataSourceK8ConfigMapsRead,
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
