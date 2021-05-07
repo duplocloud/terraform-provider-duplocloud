@@ -10,35 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// K8ConfigMapSchema returns a Terraform resource schema for a k8s configmap
-func K8ConfigMapSchema() *map[string]*schema.Schema {
-	return &map[string]*schema.Schema{
-		"name": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true,
-		},
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true,
-		},
-		"data": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-		},
-		"metadata": {
-			Type:             schema.TypeString,
-			Optional:         true,
-			Required:         false,
-			DiffSuppressFunc: diffSuppressFuncIgnore,
-		},
-	}
-}
-
 // K8ConfigMapToState converts a Duplo SDK object respresenting a k8s configmap to terraform resource data.
 func (c *Client) K8ConfigMapToState(pduploObject *map[string]interface{}, d *schema.ResourceData) map[string]interface{} {
 	duploObject := *pduploObject

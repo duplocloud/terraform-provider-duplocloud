@@ -87,7 +87,7 @@ func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
 			"name":             duploSecret.Name,
 			"name_suffix":      nameSuffix,
 			"rotation_enabled": duploSecret.RotationEnabled,
-			"tags":             duplosdk.KeyValueToState("tags", duploSecret.Tags),
+			"tags":             keyValueToState("tags", duploSecret.Tags),
 		})
 	}
 

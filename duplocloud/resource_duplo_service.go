@@ -171,7 +171,7 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("cloud", duplo.Cloud)
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
 
 	log.Printf("[TRACE] resourceDuploServiceRead ******** start")
 	return nil

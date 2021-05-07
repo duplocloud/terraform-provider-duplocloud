@@ -12,6 +12,34 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func k8sConfigMapSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+			ForceNew: true,
+		},
+		"tenant_id": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+			ForceNew: true,
+		},
+		"data": {
+			Type:     schema.TypeString,
+			Optional: false,
+			Required: true,
+		},
+		"metadata": {
+			Type:             schema.TypeString,
+			Optional:         true,
+			Required:         false,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
+		},
+	}
+}
+
 // SCHEMA for resource crud
 func resourceK8ConfigMap() *schema.Resource {
 	return &schema.Resource{
@@ -27,7 +55,7 @@ func resourceK8ConfigMap() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: *duplosdk.K8ConfigMapSchema(),
+		Schema: k8sConfigMapSchema(),
 	}
 }
 
@@ -46,7 +74,7 @@ func dataSourceK8ConfigMap() *schema.Resource {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: *duplosdk.K8ConfigMapSchema(),
+					Schema: k8sConfigMapSchema(),
 				},
 			},
 		},

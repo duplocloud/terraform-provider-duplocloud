@@ -224,5 +224,5 @@ func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, nam
 	d.Set("enable_access_logs", settings.EnableAccessLogs)
 	d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
 	d.Set("web_acl_id", settings.WebACLID)
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
 }

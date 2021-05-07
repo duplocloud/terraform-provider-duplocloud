@@ -84,9 +84,9 @@ func flattenNativeHost(duplo *duplosdk.DuploNativeHost) map[string]interface{} {
 		"status":              duplo.Status,
 		"identity_role":       duplo.IdentityRole,
 		"private_ip_address":  duplo.PrivateIPAddress,
-		"metadata":            duplosdk.KeyValueToState("metadata", duplo.MetaData),
-		"tags":                duplosdk.KeyValueToState("tags", duplo.Tags),
-		"minion_tags":         duplosdk.KeyValueToState("minion_tags", duplo.MinionTags),
+		"metadata":            keyValueToState("metadata", duplo.MetaData),
+		"tags":                keyValueToState("tags", duplo.Tags),
+		"minion_tags":         keyValueToState("minion_tags", duplo.MinionTags),
 		"volumes":             flattenNativeHostVolumes(duplo.Volumes),
 		"network_interfaces":  flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 	}

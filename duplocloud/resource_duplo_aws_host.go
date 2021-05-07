@@ -410,9 +410,9 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		AllocatedPublicIP: d.Get("allocated_public_ip").(bool),
 		Cloud:             d.Get("cloud").(int),
 		EncryptDisk:       d.Get("encrypt_disk").(bool),
-		MetaData:          duplosdk.KeyValueFromState("metadata", d),
-		Tags:              duplosdk.KeyValueFromState("tag", d),
-		MinionTags:        duplosdk.KeyValueFromState("minion_tags", d),
+		MetaData:          keyValueFromState("metadata", d),
+		Tags:              keyValueFromState("tag", d),
+		MinionTags:        keyValueFromState("minion_tags", d),
 		Volumes:           expandNativeHostVolumes("volume", d),
 		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
 	}
@@ -463,7 +463,7 @@ func expandNativeHostNetworkInterfaces(key string, d *schema.ResourceData) *[]du
 
 			duplo := duplosdk.DuploNativeHostNetworkInterface{
 				AssociatePublicIP: nic["associate_public_ip"].(bool),
-				MetaData:          duplosdk.KeyValueFromMap("metadata", nic),
+				MetaData:          keyValueFromStateList("metadata", nic),
 			}
 
 			if v, ok := nic["subnet_id"]; ok && v != nil && v.(string) != "" {
@@ -502,8 +502,8 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("status", duplo.Status)
 	d.Set("identity_role", duplo.IdentityRole)
 	d.Set("private_ip_address", duplo.PrivateIPAddress)
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
-	d.Set("minion_tags", duplosdk.KeyValueToState("minion_tags", duplo.MinionTags))
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
+	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
@@ -512,7 +512,7 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	}
 
 	// TODO:  The backend doesn't return these yet.
-	// d.Set("metadata", duplosdk.KeyValueToState("metadata", duplo.MetaData))
+	// d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	// d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	// d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 }
@@ -545,7 +545,7 @@ func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetwork
 	for _, item := range *duplo {
 		nic := map[string]interface{}{
 			"associate_public_ip": item.AssociatePublicIP,
-			"metadata":            duplosdk.KeyValueToState("metadata", item.MetaData),
+			"metadata":            keyValueToState("metadata", item.MetaData),
 		}
 
 		if item.NetworkInterfaceID != "" {

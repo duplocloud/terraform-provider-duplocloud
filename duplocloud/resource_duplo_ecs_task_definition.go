@@ -321,7 +321,7 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	}
 
 	// Next, convert things into structured data.
-	duplo.Tags = duplosdk.KeyValueFromState("tags", d)
+	duplo.Tags = keyValueFromState("tags", d)
 	duplo.PlacementConstraints = ecsPlacementConstraintsFromState(d)
 	duplo.ProxyConfiguration = ecsProxyConfigFromState(d)
 	duplo.InferenceAccelerators = ecsInferenceAcceleratorsFromState(d)
@@ -368,7 +368,7 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("proxy_configuration", ecsProxyConfigToState(duplo.ProxyConfiguration))
 	d.Set("inference_accelerator", ecsInferenceAcceleratorsToState(duplo.InferenceAccelerators))
 	d.Set("requires_attributes", ecsRequiresAttributesToState(duplo.RequiresAttributes))
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.

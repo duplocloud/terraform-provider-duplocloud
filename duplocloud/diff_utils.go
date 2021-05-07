@@ -1,4 +1,4 @@
-package duplosdk
+package duplocloud
 
 import (
 	"bytes"
@@ -67,14 +67,45 @@ func jsonBytesEqual(b1, b2 []byte) bool {
 	return reflect.DeepEqual(o1, o2)
 }
 
-func diffSuppressFuncIgnore(k, old, new string, d *schema.ResourceData) bool {
-	return true //ignore????
+func suppressMissingOptionalConfigurationBlock(k, old, new string, d *schema.ResourceData) bool {
+	return old == "1" && new == "0"
 }
 
+// suppresses a diff when not (re)creating a resource.
+func diffSuppressWhenNotCreating(k, old, new string, d *schema.ResourceData) bool {
+	return d.Id() != ""
+}
+
+// suppresses a diff when a resource is brand new
+func diffSuppressWhenNew(k, old, new string, d *schema.ResourceData) bool {
+	return d.IsNewResource()
+}
+
+// suppresses a diff when a resource exists
+func diffSuppressWhenExisting(k, old, new string, d *schema.ResourceData) bool {
+	return !d.IsNewResource()
+}
+
+// suppresses a diff at all times
+func diffSuppressFuncIgnore(k, old, new string, d *schema.ResourceData) bool {
+	return true
+}
+
+//func diffIgnoreIfAlreadySet(k, old, new string, d *schema.ResourceData) bool {
+//
+//	if new !="" || old !="" {
+//		return true
+//	}
+//
+//	return false
+//}
+
 func diffIgnoreIfAlreadySet(k, old, new string, d *schema.ResourceData) bool {
+
 	if old != "" {
 		return true
 	}
+
 	return false
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"sort"
 	"strings"
@@ -75,6 +76,88 @@ func KeyValueSchema() *schema.Resource {
 	}
 }
 
+func keyValueToState(fieldName string, duploObjects *[]duplosdk.DuploKeyStringValue) []interface{} {
+	if duploObjects != nil {
+		input, _ := json.Marshal(&duploObjects)
+		log.Printf("[TRACE] duplokeyValueToState[%s] ******** INPUT <= %s", fieldName, input)
+
+		output := make([]interface{}, len(*duploObjects))
+		for i, duploObject := range *duploObjects {
+			jo := make(map[string]interface{})
+			jo["key"] = duploObject.Key
+			jo["value"] = duploObject.Value
+			output[i] = jo
+		}
+		dump, _ := json.Marshal(output)
+		log.Printf("[TRACE] duplokeyValueToState[%s] ******** OUTPUT => %s", fieldName, dump)
+		return output
+	}
+
+	log.Printf("[TRACE] duplokeyValueToState[%s] ******** EMPTY INPUT", fieldName)
+	return make([]interface{}, 0)
+}
+
+func keyValueFromState(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploKeyStringValue {
+	var ary []duplosdk.DuploKeyStringValue
+
+	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
+		kvs := v.([]interface{})
+		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
+		ary = make([]duplosdk.DuploKeyStringValue, 0, len(kvs))
+		for _, raw := range kvs {
+			kv := raw.(map[string]interface{})
+			ary = append(ary, duplosdk.DuploKeyStringValue{
+				Key:   kv["key"].(string),
+				Value: kv["value"].(string),
+			})
+		}
+	}
+
+	return &ary
+}
+
+func keyValueToMap(list *[]duplosdk.DuploKeyStringValue) map[string]interface{} {
+	result := map[string]interface{}{}
+	if list != nil {
+		for _, item := range *list {
+			result[item.Key] = item.Value
+		}
+	}
+	return result
+}
+
+func keyValueFromMap(d map[string]interface{}) *[]duplosdk.DuploKeyStringValue {
+	list := make([]duplosdk.DuploKeyStringValue, 0, len(d))
+
+	for k, v := range d {
+		list = append(list, duplosdk.DuploKeyStringValue{
+			Key:   k,
+			Value: v.(string),
+		})
+	}
+
+	return &list
+}
+
+func keyValueFromStateList(fieldName string, d map[string]interface{}) *[]duplosdk.DuploKeyStringValue {
+	var ary []duplosdk.DuploKeyStringValue
+
+	if v, ok := d[fieldName]; ok && v != nil && len(v.([]interface{})) > 0 {
+		kvs := v.([]interface{})
+		log.Printf("[TRACE] duploKeyValueFromMap ********: found %s", fieldName)
+		ary = make([]duplosdk.DuploKeyStringValue, 0, len(kvs))
+		for _, raw := range kvs {
+			kv := raw.(map[string]interface{})
+			ary = append(ary, duplosdk.DuploKeyStringValue{
+				Key:   kv["key"].(string),
+				Value: kv["value"].(string),
+			})
+		}
+	}
+
+	return &ary
+}
+
 // FilterSchema returns a Terraform schema to represent a filter
 func FilterSchema() *schema.Schema {
 	return &schema.Schema{
@@ -116,47 +199,6 @@ func FiltersSchema() *schema.Schema {
 			},
 		},
 	}
-}
-
-func suppressMissingOptionalConfigurationBlock(k, old, new string, d *schema.ResourceData) bool {
-	return old == "1" && new == "0"
-}
-
-// suppresses a diff when not (re)creating a resource.
-func diffSuppressWhenNotCreating(k, old, new string, d *schema.ResourceData) bool {
-	return d.Id() != ""
-}
-
-// suppresses a diff when a resource is brand new
-func diffSuppressWhenNew(k, old, new string, d *schema.ResourceData) bool {
-	return d.IsNewResource()
-}
-
-// suppresses a diff when a resource exists
-func diffSuppressWhenExisting(k, old, new string, d *schema.ResourceData) bool {
-	return !d.IsNewResource()
-}
-
-// suppresses a diff at all times
-func diffSuppressFuncIgnore(k, old, new string, d *schema.ResourceData) bool {
-	return true
-}
-
-//func diffIgnoreIfAlreadySet(k, old, new string, d *schema.ResourceData) bool {
-//
-//	if new !="" || old !="" {
-//		return true
-//	}
-//
-//	return false
-//}
-func diffIgnoreIfAlreadySet(k, old, new string, d *schema.ResourceData) bool {
-
-	if old != "" {
-		return true
-	}
-
-	return false
 }
 
 // Utility function to return a pointer to a single valid (but optional) resource data block.

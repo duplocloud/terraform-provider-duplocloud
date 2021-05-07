@@ -108,7 +108,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 	} else {
 		d.Set("policy", []map[string]interface{}{})
 	}
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
 
 	log.Printf("[TRACE] resourceTenantRead(%s): end", tenantID)
 	return nil

@@ -85,11 +85,11 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Set the simple fields first.
 	d.Set("tenant_id", duplo.TenantID)
-	d.Set("metadata", duplosdk.KeyValueToState("metadata", duplo.Metadata))
+	d.Set("metadata", keyValueToState("metadata", duplo.Metadata))
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
-		d.Set("setting", duplosdk.KeyValueToState("setting", selectKeyValues(duplo.Metadata, *v)))
+		d.Set("setting", keyValueToState("setting", selectKeyValues(duplo.Metadata, *v)))
 	}
 
 	log.Printf("[TRACE] resourceTenantConfigRead(%s): end", tenantID)
@@ -116,7 +116,7 @@ func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	// Collect the desired state of settings specified by the user.
-	settings := duplosdk.KeyValueFromState("setting", d)
+	settings := keyValueFromState("setting", d)
 	specified := make([]string, len(*settings))
 	for i, kv := range *settings {
 		specified[i] = kv.Key

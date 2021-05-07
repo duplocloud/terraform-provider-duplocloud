@@ -99,7 +99,7 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 			d.Set("name", duploSecret.Name)
 			d.Set("name_suffix", objNameSuffix)
 			d.Set("rotation_enabled", duploSecret.RotationEnabled)
-			d.Set("tags", duplosdk.KeyValueToState("tags", duploSecret.Tags))
+			d.Set("tags", keyValueToState("tags", duploSecret.Tags))
 			break
 		}
 	}

@@ -109,7 +109,7 @@ func dataSourceTenantRead(d *schema.ResourceData, m interface{}) error {
 			"block_external_ep":    true,
 		}})
 	}
-	d.Set("tags", duplosdk.KeyValueToState("tags", duploTenant.Tags))
+	d.Set("tags", keyValueToState("tags", duploTenant.Tags))
 
 	log.Printf("[TRACE] dataSourceTenantRead(): end")
 	return nil

@@ -136,7 +136,7 @@ func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m 
 				"replicas_matching_asg_name": duplo.ReplicasMatchingAsgName,
 				"replicas":                   duplo.Replicas,
 				"cloud":                      duplo.Cloud,
-				"tags":                       duplosdk.KeyValueToState("tags", duplo.Tags),
+				"tags":                       keyValueToState("tags", duplo.Tags),
 			})
 		}
 	}
@@ -174,7 +174,7 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 		d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 		d.Set("replicas", duplo.Replicas)
 		d.Set("cloud", duplo.Cloud)
-		d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+		d.Set("tags", keyValueToState("tags", duplo.Tags))
 	}
 
 	log.Printf("[TRACE] dataSourceDuploServiceRead: end")

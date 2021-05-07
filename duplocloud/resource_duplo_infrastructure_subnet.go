@@ -96,7 +96,7 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 	d.Set("subnet_id", duplo.ID)
 	d.Set("cidr_block", duplo.AddressPrefix)
 	d.Set("zone", duplo.Zone)
-	d.Set("tags_all", duplosdk.KeyValueToMap(duplo.Tags))
+	d.Set("tags_all", keyValueToMap(duplo.Tags))
 	d.Set("type", duplo.SubnetType)
 
 	x := d.Get("tags")
@@ -104,7 +104,7 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := d.GetOk("tags"); ok && v != nil && len(v.(map[string]interface{})) > 0 {
-		d.Set("tags", duplosdk.KeyValueToMap(selectKeyValuesFromMap(duplo.Tags, v.(map[string]interface{}))))
+		d.Set("tags", keyValueToMap(selectKeyValuesFromMap(duplo.Tags, v.(map[string]interface{}))))
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureSubnetRead(%s): end", id)
@@ -120,7 +120,7 @@ func resourceInfrastructureSubnetCreate(ctx context.Context, d *schema.ResourceD
 		AddressPrefix:      d.Get("cidr_block").(string),
 		Zone:               d.Get("zone").(string),
 		SubnetType:         d.Get("type").(string),
-		Tags:               duplosdk.KeyValueFromMap("tags", d.Get("tags").(map[string]interface{})),
+		Tags:               keyValueFromMap(d.Get("tags").(map[string]interface{})),
 	}
 
 	// Build the ID - it is okay that the CIDR includes a slash
