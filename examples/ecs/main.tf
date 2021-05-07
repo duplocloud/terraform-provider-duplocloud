@@ -83,7 +83,7 @@ resource "duplocloud_ecs_task_definition" "test" {
     Name  = "default"
     Image = "nginx:latest"
     Environment = [
-      { Name = "foo", Value = "bar" },
+      { Name = "foo", Value = "bar2" },
       { Name = "bar", Value = "foo" }
     ]
   }])

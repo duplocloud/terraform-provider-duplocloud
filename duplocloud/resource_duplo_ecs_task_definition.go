@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -123,6 +124,7 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 		"requires_attributes": {
 			Type:     schema.TypeSet,
 			Optional: true,
+			Computed: true,
 			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -215,7 +217,7 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 		CreateContext: resourceDuploEcsTaskDefinitionCreate,
 		DeleteContext: resourceDuploEcsTaskDefinitionDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
@@ -228,51 +230,52 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 
 /// READ resource
 func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead ******** start")
-
-	// Get the object from Duplo, detecting a missing object
-	c := m.(*duplosdk.Client)
-	duplo, err := c.EcsTaskDefinitionGet(d.Id())
-	if duplo == nil {
-		d.SetId("")
-		return nil
-	}
+	tenantID, arn, err := parseEcsTaskDefIdParts(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// Convert the object into Terraform resource data
-	jo := duplosdk.EcsTaskDefToState(duplo, d)
-	for key := range jo {
-		d.Set(key, jo[key])
-	}
-	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", duplo.TenantID, duplo.Arn))
+	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead(%s, %s): start", tenantID, arn)
 
-	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead ******** end")
+	// Get the object from Duplo, detecting a missing object
+	c := m.(*duplosdk.Client)
+	rp, err := c.EcsTaskDefinitionGet(tenantID, arn)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if rp == nil || rp.Arn == "" {
+		d.SetId("")
+		return nil
+	}
+
+	// Convert the object into Terraform resource data
+	flattenEcsTaskDefinition(rp, d)
+
+	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead(%s, %s): end", tenantID, arn)
 	return nil
 }
 
 /// CREATE resource
 func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionCreate ******** start")
+	tenantID := d.Get("tenant_id").(string)
 
 	// Convert the Terraform resource data into a Duplo object
-	duploObject, err := duplosdk.EcsTaskDefFromState(d)
+	rq, err := expandEcsTaskDefinition(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionCreate(%s, %s): start", tenantID, rq.Family)
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
-	arn, err := c.EcsTaskDefinitionCreate(tenantID, duploObject)
+	arn, err := c.EcsTaskDefinitionCreate(tenantID, rq)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", tenantID, arn))
 
 	diags := resourceDuploEcsTaskDefinitionRead(ctx, d, m)
-	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionCreate ******** end")
+	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionCreate(%s, %s): end", tenantID, rq.Family)
 	return diags
 }
 
@@ -282,6 +285,90 @@ func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.Resourc
 	// FIXME: NO-OP
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** end")
 	return nil
+}
+
+func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef, error) {
+	// First, convert things into simple scalars
+	duplo := duplosdk.DuploEcsTaskDef{
+		Family:      d.Get("family").(string),
+		CPU:         d.Get("cpu").(string),
+		Memory:      d.Get("memory").(string),
+		IpcMode:     d.Get("ipc_mode").(string),
+		PidMode:     d.Get("pid_mode").(string),
+		NetworkMode: &duplosdk.DuploStringValue{Value: d.Get("network_mode").(string)},
+	}
+
+	// Next, convert sets into lists
+	rcs := d.Get("requires_compatibilities").(*schema.Set)
+	dorcs := make([]string, 0, rcs.Len())
+	for _, rc := range rcs.List() {
+		dorcs = append(dorcs, rc.(string))
+	}
+	duplo.RequiresCompatibilities = dorcs
+
+	// Next, convert things from embedded JSON
+	condefs := d.Get("container_definitions").(string)
+	err := json.Unmarshal([]byte(condefs), &duplo.ContainerDefinitions)
+	if err != nil {
+		log.Printf("[TRACE] expandEcsTaskDefinition: failed to parse container_definitions: %s", condefs)
+		return nil, err
+	}
+	vols := d.Get("volumes").(string)
+	err2 := json.Unmarshal([]byte(vols), &duplo.Volumes)
+	if err2 != nil {
+		log.Printf("[TRACE] expandEcsTaskDefinition: failed to parse volumes: %s", condefs)
+		return nil, err
+	}
+
+	// Next, convert things into structured data.
+	duplo.Tags = duplosdk.KeyValueFromState("tags", d)
+	duplo.PlacementConstraints = ecsPlacementConstraintsFromState(d)
+	duplo.ProxyConfiguration = ecsProxyConfigFromState(d)
+	duplo.InferenceAccelerators = ecsInferenceAcceleratorsFromState(d)
+	duplo.RequiresAttributes = ecsRequiresAttributesFromState(d)
+
+	return &duplo, nil
+}
+
+func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.ResourceData) {
+
+	// First, convert things into simple scalars
+	d.Set("tenant_id", duplo.TenantID)
+	d.Set("family", duplo.Family)
+	d.Set("revision", duplo.Revision)
+	d.Set("arn", duplo.Arn)
+	d.Set("cpu", duplo.CPU)
+	d.Set("task_role_arn", duplo.TaskRoleArn)
+	d.Set("execution_role_arn", duplo.ExecutionRoleArn)
+	d.Set("memory", duplo.Memory)
+	d.Set("ipc_mode", duplo.IpcMode)
+	d.Set("pid_mode", duplo.PidMode)
+	d.Set("requires_compatibilities", duplo.RequiresCompatibilities)
+	if duplo.NetworkMode != nil {
+		d.Set("network_mode", duplo.NetworkMode.Value)
+	}
+	if duplo.Status != nil {
+		d.Set("status", duplo.Status.Value)
+	}
+
+	// Next, convert things into embedded JSON
+	if json, err := json.Marshal(duplo.ContainerDefinitions); err == nil {
+		d.Set("container_definitions", string(json))
+	} else {
+		log.Printf("[DEBUG] flattenEcsTaskDefinition: failed to serilize container_definitions to JSON: %s", err)
+	}
+	if json, err := json.Marshal(duplo.Volumes); err == nil {
+		d.Set("volumes", string(json))
+	} else {
+		log.Printf("[DEBUG] flattenEcsTaskDefinition: failed to serilize volumes to JSON: %s", err)
+	}
+
+	// Next, convert things into structured data.
+	d.Set("placement_constraints", ecsPlacementConstraintsToState(duplo.PlacementConstraints))
+	d.Set("proxy_configuration", ecsProxyConfigToState(duplo.ProxyConfiguration))
+	d.Set("inference_accelerator", ecsInferenceAcceleratorsToState(duplo.InferenceAccelerators))
+	d.Set("requires_attributes", ecsRequiresAttributesToState(duplo.RequiresAttributes))
+	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
@@ -432,4 +519,159 @@ func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC bool) error
 	}
 
 	return nil
+}
+
+func ecsPlacementConstraintsToState(pcs *[]duplosdk.DuploEcsTaskDefPlacementConstraint) []map[string]interface{} {
+	if len(*pcs) == 0 {
+		return nil
+	}
+
+	results := make([]map[string]interface{}, 0)
+	for _, pc := range *pcs {
+		c := make(map[string]interface{})
+		c["type"] = pc.Type
+		c["expression"] = pc.Expression
+		results = append(results, c)
+	}
+	return results
+}
+
+func ecsPlacementConstraintsFromState(d *schema.ResourceData) *[]duplosdk.DuploEcsTaskDefPlacementConstraint {
+	spcs := d.Get("placement_constraints").(*schema.Set)
+	if spcs == nil || spcs.Len() == 0 {
+		return nil
+	}
+	pcs := spcs.List()
+
+	log.Printf("[TRACE] ecsPlacementConstraintsFromState ********: have data")
+
+	duplo := make([]duplosdk.DuploEcsTaskDefPlacementConstraint, 0, len(pcs))
+	for _, pc := range pcs {
+		duplo = append(duplo, duplosdk.DuploEcsTaskDefPlacementConstraint{
+			Type:       pc.(map[string]string)["type"],
+			Expression: pc.(map[string]string)["expression"],
+		})
+	}
+
+	return &duplo
+}
+
+func ecsProxyConfigToState(pc *duplosdk.DuploEcsTaskDefProxyConfig) []map[string]interface{} {
+	if pc == nil {
+		return nil
+	}
+
+	props := make(map[string]string)
+	if pc.Properties != nil {
+		for _, prop := range *pc.Properties {
+			props[prop.Name] = prop.Value
+		}
+	}
+
+	config := make(map[string]interface{})
+	config["container_name"] = pc.ContainerName
+	config["type"] = pc.Type
+	config["properties"] = props
+
+	return []map[string]interface{}{config}
+}
+
+func ecsProxyConfigFromState(d *schema.ResourceData) *duplosdk.DuploEcsTaskDefProxyConfig {
+	lpc := d.Get("proxy_configuration").([]interface{})
+	if len(lpc) == 0 {
+		return nil
+	}
+	pc := lpc[0].(map[string]interface{})
+
+	log.Printf("[TRACE] ecsProxyConfigFromState ********: have data")
+
+	props := pc["properties"].(map[string]interface{})
+	nvs := make([]duplosdk.DuploNameStringValue, 0, len(props))
+	for prop := range props {
+		nvs = append(nvs, duplosdk.DuploNameStringValue{Name: prop, Value: props[prop].(string)})
+	}
+
+	return &duplosdk.DuploEcsTaskDefProxyConfig{
+		ContainerName: pc["container_name"].(string),
+		Properties:    &nvs,
+		Type:          pc["type"].(string),
+	}
+}
+
+func ecsInferenceAcceleratorsToState(ias *[]duplosdk.DuploEcsTaskDefInferenceAccelerator) []map[string]interface{} {
+	if ias == nil {
+		return nil
+	}
+
+	result := make([]map[string]interface{}, 0, len(*ias))
+	for _, iAcc := range *ias {
+		l := map[string]interface{}{
+			"device_name": iAcc.DeviceName,
+			"device_type": iAcc.DeviceType,
+		}
+
+		result = append(result, l)
+	}
+	return result
+}
+
+func ecsInferenceAcceleratorsFromState(d *schema.ResourceData) *[]duplosdk.DuploEcsTaskDefInferenceAccelerator {
+	var ary []duplosdk.DuploEcsTaskDefInferenceAccelerator
+
+	sias := d.Get("inference_accelerator").(*schema.Set)
+	if sias == nil || sias.Len() == 0 {
+		return nil
+	}
+	ias := sias.List()
+	if len(ias) > 0 {
+		log.Printf("[TRACE] ecsInferenceAcceleratorsFromState ********: have data")
+		for _, ia := range ias {
+			ary = append(ary, duplosdk.DuploEcsTaskDefInferenceAccelerator{
+				DeviceName: ia.(map[string]string)["device_name"],
+				DeviceType: ia.(map[string]string)["device_type"],
+			})
+		}
+	}
+
+	return &ary
+}
+
+func ecsRequiresAttributesToState(nms *[]duplosdk.DuploName) []map[string]interface{} {
+	results := make([]map[string]interface{}, 0, len(*nms))
+	for _, nm := range *nms {
+		results = append(results, map[string]interface{}{"name": nm.Name})
+	}
+	return results
+}
+
+func ecsRequiresAttributesFromState(d *schema.ResourceData) *[]duplosdk.DuploName {
+	var ary []duplosdk.DuploName
+
+	sras := d.Get("requires_attributes").(*schema.Set)
+	if sras == nil || sras.Len() == 0 {
+		return nil
+	}
+	ras := sras.List()
+	if len(ras) > 0 {
+		log.Printf("[TRACE] ecsRequiresAttributesFromState ********: have data")
+		for _, ra := range ras {
+			if ram, ok := ra.(map[string]interface{}); ok {
+				if v, ok := ram["name"]; ok && v != nil {
+					ary = append(ary, duplosdk.DuploName{Name: v.(string)})
+				}
+			}
+		}
+	}
+
+	return &ary
+}
+
+func parseEcsTaskDefIdParts(id string) (tenantID, arn string, err error) {
+	idParts := strings.SplitN(id, "/", 4)
+	if len(idParts) == 4 {
+		tenantID, arn = idParts[1], idParts[3]
+	} else {
+		err = fmt.Errorf("invalid resource ID: %s", id)
+	}
+	return
 }

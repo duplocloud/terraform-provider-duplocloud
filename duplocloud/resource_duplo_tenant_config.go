@@ -31,10 +31,6 @@ func resourceTenantConfig() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"id": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"tenant_id": {
 				Description: "The GUID of the tenant to configure.",
 				Type:        schema.TypeString,

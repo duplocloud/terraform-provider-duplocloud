@@ -15,10 +15,6 @@ import (
 
 func nativeHostSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"id": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
 		"instance_id": {
 			Description: "The AWS EC2 instance ID of the host.",
 			Type:        schema.TypeString,

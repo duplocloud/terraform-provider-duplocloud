@@ -141,7 +141,7 @@ func resourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("status", duplo.Status)
 	d.Set("lbconfigs", flattenDuploServiceLBConfigurations(duplo.LBConfigs))
 
-	log.Printf("[TRACE] resourceDuploServiceLBConfigsRead: start")
+	log.Printf("[TRACE] resourceDuploServiceLBConfigsRead: end")
 	return nil
 }
 

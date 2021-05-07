@@ -18,10 +18,6 @@ import (
 // DuploServiceSchema returns a Terraform resource schema for a service's parameters
 func duploServiceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"id": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
 		"name": {
 			Description: "The name of the service to create.",
 			Type:        schema.TypeString,
