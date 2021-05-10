@@ -32,10 +32,6 @@ func resourceTenantSecurityRule() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"id": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"tenant_id": {
 				Description: "The GUID of the tenant that the network security rule will be created in.",
 				Type:        schema.TypeString,

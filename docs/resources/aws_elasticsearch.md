@@ -23,13 +23,12 @@ description: |-
 ### Optional
 
 - **cluster_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--cluster_config))
-- **elasticsearch_version** (String)
+- **elasticsearch_version** (String) Defaults to `7.9`.
 - **enable_node_to_node_encryption** (Boolean)
 - **encrypt_at_rest** (Block List, Max: 1) (see [below for nested schema](#nestedblock--encrypt_at_rest))
-- **id** (String) The ID of this resource.
 - **require_ssl** (Boolean)
 - **selected_zone** (Number)
-- **storage_size** (Number)
+- **storage_size** (Number) Defaults to `20`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **use_latest_tls_cipher** (Boolean)
 - **vpc_options** (Block List) (see [below for nested schema](#nestedblock--vpc_options))
@@ -43,6 +42,7 @@ description: |-
 - **domain_name** (String)
 - **ebs_options** (List of Object) (see [below for nested schema](#nestedatt--ebs_options))
 - **endpoints** (Map of String)
+- **id** (String) The ID of this resource.
 - **snapshot_options** (List of Object) (see [below for nested schema](#nestedatt--snapshot_options))
 
 <a id="nestedblock--cluster_config"></a>
@@ -50,11 +50,11 @@ description: |-
 
 Optional:
 
-- **dedicated_master_count** (Number)
-- **dedicated_master_enabled** (Boolean)
-- **dedicated_master_type** (String)
-- **instance_count** (Number)
-- **instance_type** (String)
+- **dedicated_master_count** (Number) Defaults to `0`.
+- **dedicated_master_enabled** (Boolean) Defaults to `false`.
+- **dedicated_master_type** (String) Defaults to `t2.small.elasticsearch`.
+- **instance_count** (Number) Defaults to `1`.
+- **instance_type** (String) Defaults to `t2.small.elasticsearch`.
 
 
 <a id="nestedblock--encrypt_at_rest"></a>

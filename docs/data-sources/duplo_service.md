@@ -20,10 +20,6 @@ description: |-
 - **name** (String)
 - **tenant_id** (String)
 
-### Optional
-
-- **id** (String) The ID of this resource.
-
 ### Read-Only
 
 - **agent_platform** (Number)
@@ -32,6 +28,7 @@ description: |-
 - **commands** (String)
 - **docker_image** (String)
 - **extra_config** (String)
+- **id** (String) The ID of this resource.
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
 - **replicas** (Number)

@@ -3,12 +3,12 @@
 page_title: "duplocloud_native_hosts Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_native_hosts lists native hosts in a Duplo tenant.
 ---
 
 # duplocloud_native_hosts (Data Source)
 
-
+`duplocloud_native_hosts` lists native hosts in a Duplo tenant.
 
 
 
@@ -17,15 +17,12 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- **tenant_id** (String) The GUID of the tenant in which to list the hosts.
 
 ### Read-Only
 
-- **hosts** (List of Object) (see [below for nested schema](#nestedatt--hosts))
+- **hosts** (List of Object) The list of native hosts. (see [below for nested schema](#nestedatt--hosts))
+- **id** (String) The ID of this resource.
 
 <a id="nestedatt--hosts"></a>
 ### Nested Schema for `hosts`

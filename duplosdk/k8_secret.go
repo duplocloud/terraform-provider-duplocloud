@@ -10,42 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// K8SecretSchema returns a Terraform resource schema for an ECS Service
-func K8SecretSchema() *map[string]*schema.Schema {
-	return &map[string]*schema.Schema{
-		"secret_name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"secret_type": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"client_secret_version": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"secret_version": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"secret_data": {
-			Type:      schema.TypeString,
-			Optional:  true,
-			Sensitive: true,
-			//DiffSuppressFunc: diffIgnoreIfSameHash,
-			DiffSuppressFunc: diffIgnoreForSecretMap,
-		},
-	}
-}
-
 // K8SecretToState converts a Duplo SDK object respresenting a k8s secret to terraform resource data.
 func (c *Client) K8SecretToState(pduploObject *map[string]interface{}, d *schema.ResourceData) map[string]interface{} {
 	duploObject := *pduploObject
@@ -76,16 +40,6 @@ func (c *Client) K8SecretToState(pduploObject *map[string]interface{}, d *schema
 		return cObj
 	}
 	return nil
-}
-
-func diffIgnoreForSecretMap(k, old, new string, d *schema.ResourceData) bool {
-	mapFieldName := "client_secret_version"
-	hashFieldName := "secret_data"
-	_, dataNew := d.GetChange(hashFieldName)
-	hashOld := d.Get(mapFieldName).(string)
-	hashNew := hashForData(dataNew.(string))
-	log.Printf("[TRACE] duplo-diffIgnoreForSecretMap ******** 1: hash_old %s hash_new %s", hashNew, hashOld)
-	return hashOld == hashNew
 }
 
 // DuploK8SecretFromState converts resource data respresenting a k8s secret to a Duplo SDK object.

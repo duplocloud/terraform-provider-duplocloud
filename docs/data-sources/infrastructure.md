@@ -17,7 +17,6 @@ description: |-
 
 ### Optional
 
-- **id** (String) The ID of this resource.
 - **infra_name** (String)
 - **tenant_id** (String)
 
@@ -28,6 +27,7 @@ description: |-
 - **azcount** (Number)
 - **cloud** (Number)
 - **enable_k8_cluster** (Boolean)
+- **id** (String) The ID of this resource.
 - **private_subnets** (Set of Object) (see [below for nested schema](#nestedatt--private_subnets))
 - **public_subnets** (Set of Object) (see [below for nested schema](#nestedatt--public_subnets))
 - **region** (String)

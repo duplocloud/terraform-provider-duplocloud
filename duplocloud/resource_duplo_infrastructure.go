@@ -336,7 +336,7 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 						"cidr_block": vnetSubnet.AddressPrefix,
 						"type":       subnetType,
 						"zone":       zone,
-						"tags":       duplosdk.KeyValueToState("tags", vnetSubnet.Tags),
+						"tags":       keyValueToState("tags", vnetSubnet.Tags),
 					}
 
 					if subnetType == "private" {

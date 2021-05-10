@@ -29,10 +29,6 @@ func resourceTenant() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
-			"id": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"account_name": {
 				Description:  "The name of the tenant.  Tenant names are globally unique, less than 11 characters, and cannot be a prefix of any other tenant name.",
 				Type:         schema.TypeString,
@@ -112,7 +108,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 	} else {
 		d.Set("policy", []map[string]interface{}{})
 	}
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
 
 	log.Printf("[TRACE] resourceTenantRead(%s): end", tenantID)
 	return nil

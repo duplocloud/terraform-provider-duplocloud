@@ -27,7 +27,6 @@ description: |-
 
 - **configuration_arn** (String)
 - **configuration_revision** (Number)
-- **id** (String) The ID of this resource.
 - **subnets** (List of String)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
@@ -36,6 +35,7 @@ description: |-
 - **arn** (String)
 - **az_distribution** (String)
 - **fullname** (String)
+- **id** (String) The ID of this resource.
 - **plaintext_bootstrap_broker_string** (String)
 - **plaintext_zookeeper_connect_string** (String)
 - **security_groups** (List of String)

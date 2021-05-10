@@ -19,13 +19,10 @@ description: |-
 
 - **plan_id** (String)
 
-### Optional
-
-- **id** (String) The ID of this resource.
-
 ### Read-Only
 
 - **endpoint** (String)
+- **id** (String) The ID of this resource.
 - **name** (String)
 - **region** (String)
 - **token** (String, Sensitive)

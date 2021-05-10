@@ -12,6 +12,41 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func k8sSecretSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"secret_name": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"secret_type": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"tenant_id": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"client_secret_version": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"secret_version": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"secret_data": {
+			Type:      schema.TypeString,
+			Optional:  true,
+			Sensitive: true,
+			//DiffSuppressFunc: diffIgnoreIfSameHash,
+			DiffSuppressFunc: diffIgnoreForSecretMap,
+		},
+	}
+}
+
 // SCHEMA for resource crud
 func resourceK8Secret() *schema.Resource {
 	return &schema.Resource{
@@ -27,7 +62,7 @@ func resourceK8Secret() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: *duplosdk.K8SecretSchema(),
+		Schema: k8sSecretSchema(),
 	}
 }
 
@@ -46,7 +81,7 @@ func dataSourceK8Secret() *schema.Resource {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: *duplosdk.K8SecretSchema(),
+					Schema: k8sSecretSchema(),
 				},
 			},
 		},
@@ -145,4 +180,14 @@ func resourceK8SecretDelete(ctx context.Context, d *schema.ResourceData, m inter
 	log.Printf("[TRACE] duplo-resourceK8SecretDelete ******** end")
 
 	return diags
+}
+
+func diffIgnoreForSecretMap(k, old, new string, d *schema.ResourceData) bool {
+	mapFieldName := "client_secret_version"
+	hashFieldName := "secret_data"
+	_, dataNew := d.GetChange(hashFieldName)
+	hashOld := d.Get(mapFieldName).(string)
+	hashNew := hashForData(dataNew.(string))
+	log.Printf("[TRACE] duplo-diffIgnoreForSecretMap ******** 1: hash_old %s hash_new %s", hashNew, hashOld)
+	return hashOld == hashNew
 }

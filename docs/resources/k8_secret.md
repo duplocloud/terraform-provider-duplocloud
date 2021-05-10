@@ -23,13 +23,13 @@ description: |-
 
 ### Optional
 
-- **id** (String) The ID of this resource.
 - **secret_data** (String, Sensitive)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **client_secret_version** (String)
+- **id** (String) The ID of this resource.
 - **secret_version** (String)
 
 <a id="nestedblock--timeouts"></a>

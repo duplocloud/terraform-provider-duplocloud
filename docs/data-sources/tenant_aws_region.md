@@ -19,12 +19,9 @@ description: |-
 
 - **tenant_id** (String)
 
-### Optional
-
-- **id** (String) The ID of this resource.
-
 ### Read-Only
 
 - **aws_region** (String)
+- **id** (String) The ID of this resource.
 
 

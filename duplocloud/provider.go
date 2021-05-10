@@ -2,12 +2,31 @@ package duplocloud
 
 import (
 	"context"
+	"crypto/tls"
+	"fmt"
+	"net/http"
 	"os"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+func init() {
+	schema.DescriptionKind = schema.StringMarkdown
+
+	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
+		desc := s.Description
+		if s.Default != nil {
+			desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
+		}
+		if s.Deprecated != "" {
+			desc += " " + s.Deprecated
+		}
+		return strings.TrimSpace(desc)
+	}
+}
 
 // Provider return a Terraform provider schema
 func Provider() *schema.Provider {
@@ -23,6 +42,12 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   true,
+			},
+			"ssl_no_verify": {
+				Description: "Disable SSL certificate verification.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
@@ -60,6 +85,7 @@ func Provider() *schema.Provider {
 			"duplocloud_infrastructure":          dataSourceInfrastructure(),
 			"duplocloud_infrastructures":         dataSourceInfrastructures(),
 			"duplocloud_k8_config_map":           dataSourceK8ConfigMap(),
+			"duplocloud_k8_config_maps":          dataSourceK8ConfigMaps(),
 			"duplocloud_k8_secret":               dataSourceK8Secret(),
 			"duplocloud_native_hosts":            dataSourceNativeHosts(),
 			"duplocloud_tenant":                  dataSourceTenant(),
@@ -92,6 +118,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	}
 
 	c, err := duplosdk.NewClient(host, token)
+
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -100,5 +127,12 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		})
 		return nil, diags
 	}
+
+	if sslNoVerify, ok := d.GetOk("ssl_no_verify"); ok && sslNoVerify.(bool) {
+		c.HTTPClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
+
 	return c, diags
 }

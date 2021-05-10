@@ -18,10 +18,6 @@ import (
 // DuploServiceSchema returns a Terraform resource schema for a service's parameters
 func duploServiceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"id": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
 		"name": {
 			Description: "The name of the service to create.",
 			Type:        schema.TypeString,
@@ -79,7 +75,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Required: false,
 		},
 		"cloud": {
-			Description: "The numeric ID of the cloud provider to launch the service in. Defaults to AWS.",
+			Description: "The numeric ID of the cloud provider to launch the service in.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Required:    false,
@@ -175,7 +171,7 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("cloud", duplo.Cloud)
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
 
 	log.Printf("[TRACE] resourceDuploServiceRead ******** start")
 	return nil

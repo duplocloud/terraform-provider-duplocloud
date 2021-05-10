@@ -10,3 +10,5 @@ require (
 	golang.org/x/mod v0.4.0 // indirect
 	golang.org/x/tools v0.1.1-0.20210201201750-4d4ee958a9b7 // indirect
 )
+
+replace github.com/hashicorp/terraform-plugin-docs v0.4.0 => github.com/nmuesch/terraform-plugin-docs v0.4.1-0.20210304202717-40b0963b9557

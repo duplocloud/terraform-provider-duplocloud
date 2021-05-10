@@ -2,9 +2,6 @@ package duplosdk
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	"encoding/json"
-	"log"
 )
 
 // DuploEnabled is a generic flag holder
@@ -47,75 +44,4 @@ func duploKeyValueSchema() *schema.Resource {
 			},
 		},
 	}
-}
-
-func KeyValueFromState(fieldName string, d *schema.ResourceData) *[]DuploKeyStringValue {
-	var ary []DuploKeyStringValue
-
-	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
-		kvs := v.([]interface{})
-		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
-		ary = make([]DuploKeyStringValue, 0, len(kvs))
-		for _, raw := range kvs {
-			kv := raw.(map[string]interface{})
-			ary = append(ary, DuploKeyStringValue{
-				Key:   kv["key"].(string),
-				Value: kv["value"].(string),
-			})
-		}
-	}
-
-	return &ary
-}
-
-func KeyValueFromMap(fieldName string, d map[string]interface{}) *[]DuploKeyStringValue {
-	var ary []DuploKeyStringValue
-
-	if v, ok := d[fieldName]; ok && v != nil && len(v.([]interface{})) > 0 {
-		kvs := v.([]interface{})
-		log.Printf("[TRACE] duploKeyValueFromMap ********: found %s", fieldName)
-		ary = make([]DuploKeyStringValue, 0, len(kvs))
-		for _, raw := range kvs {
-			kv := raw.(map[string]interface{})
-			ary = append(ary, DuploKeyStringValue{
-				Key:   kv["key"].(string),
-				Value: kv["value"].(string),
-			})
-		}
-	}
-
-	return &ary
-}
-
-// KeyValueToState converts a DuploKeyValue array into terraform resource data.
-func KeyValueToState(fieldName string, duploObjects *[]DuploKeyStringValue) []interface{} {
-	if duploObjects != nil {
-		input, _ := json.Marshal(&duploObjects)
-		log.Printf("[TRACE] duploKeyValueToState[%s] ******** INPUT <= %s", fieldName, input)
-
-		output := make([]interface{}, len(*duploObjects), len(*duploObjects))
-		for i, duploObject := range *duploObjects {
-			jo := make(map[string]interface{})
-			jo["key"] = duploObject.Key
-			jo["value"] = duploObject.Value
-			output[i] = jo
-		}
-		dump, _ := json.Marshal(output)
-		log.Printf("[TRACE] duploKeyValueToState[%s] ******** OUTPUT => %s", fieldName, dump)
-		return output
-	}
-
-	log.Printf("[TRACE] duploKeyValueToState[%s] ******** EMPTY INPUT", fieldName)
-	return make([]interface{}, 0)
-}
-
-// Utility function to convert a list of key value pairs to a map.
-func KeyValueToMap(list *[]DuploKeyStringValue) map[string]interface{} {
-	result := map[string]interface{}{}
-	if list != nil {
-		for _, item := range *list {
-			result[item.Key] = item.Value
-		}
-	}
-	return result
 }

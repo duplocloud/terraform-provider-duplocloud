@@ -13,16 +13,20 @@ import (
 // SCHEMA for resource data/search
 func dataSourceNativeHosts() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_native_hosts` lists native hosts in a Duplo tenant.",
+
 		ReadContext: dataSourceNativeHostsRead,
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Type:     schema.TypeString,
-				Computed: false,
-				Required: true,
+				Description: "The GUID of the tenant in which to list the hosts.",
+				Type:        schema.TypeString,
+				Computed:    false,
+				Required:    true,
 			},
 			"hosts": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "The list of native hosts.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: nativeHostSchema(),
 				},
@@ -80,9 +84,9 @@ func flattenNativeHost(duplo *duplosdk.DuploNativeHost) map[string]interface{} {
 		"status":              duplo.Status,
 		"identity_role":       duplo.IdentityRole,
 		"private_ip_address":  duplo.PrivateIPAddress,
-		"metadata":            duplosdk.KeyValueToState("metadata", duplo.MetaData),
-		"tags":                duplosdk.KeyValueToState("tags", duplo.Tags),
-		"minion_tags":         duplosdk.KeyValueToState("minion_tags", duplo.MinionTags),
+		"metadata":            keyValueToState("metadata", duplo.MetaData),
+		"tags":                keyValueToState("tags", duplo.Tags),
+		"minion_tags":         keyValueToState("minion_tags", duplo.MinionTags),
 		"volumes":             flattenNativeHostVolumes(duplo.Volumes),
 		"network_interfaces":  flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 	}

@@ -53,7 +53,7 @@ func dataSourceTenantsRead(d *schema.ResourceData, m interface{}) error {
 			"name":        duploTenant.AccountName,
 			"plan_id":     duploTenant.PlanID,
 			"infra_owner": duploTenant.InfraOwner,
-			"tags":        duplosdk.KeyValueToState("tags", duploTenant.Tags),
+			"tags":        keyValueToState("tags", duploTenant.Tags),
 		}
 		if duploTenant.TenantPolicy != nil {
 			tenant["policy"] = []map[string]interface{}{{
