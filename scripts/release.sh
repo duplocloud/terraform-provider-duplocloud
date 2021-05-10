@@ -31,7 +31,7 @@ release_finish() {
     # Update any generated code
     make doc
     git add docs examples
-    git commit -m 'update generated docs and examples' docs examples
+    git commit -m 'update generated docs and examples' docs examples || true
 
     # Finish the release
     GIT_MERGE_AUTOEDIT=no git flow release finish "$version"
