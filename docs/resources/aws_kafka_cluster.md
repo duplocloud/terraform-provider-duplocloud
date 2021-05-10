@@ -17,32 +17,33 @@ description: |-
 
 ### Required
 
-- **instance_type** (String)
-- **kafka_version** (String)
-- **name** (String)
-- **storage_size** (Number)
-- **tenant_id** (String)
+- **instance_type** (String) The Kafka node instance type to use.
+See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html) for more information.
+- **kafka_version** (String) The version of the Kafka cluster.
+- **name** (String) The short name of the Kafka cluster.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- **storage_size** (Number) The size of the Kafka storage, in gigabytes.
+- **tenant_id** (String) The GUID of the tenant that the Kafka cluster will be created in.
 
 ### Optional
 
-- **configuration_arn** (String)
-- **configuration_revision** (Number)
-- **subnets** (List of String)
+- **configuration_arn** (String) An ARN of a Kafka configuration to apply to the cluster.
+- **configuration_revision** (Number) An revision of a Kafka configuration to apply to the cluster.
+- **subnets** (List of String) The list of subnets that the cluster will be launched in.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String)
-- **az_distribution** (String)
-- **fullname** (String)
+- **arn** (String) The ARN of the Kafka cluster.
+- **az_distribution** (String) The availability zone distribution used by the cluster.
+- **fullname** (String) The full name of the Kakfa cluster.
 - **id** (String) The ID of this resource.
-- **plaintext_bootstrap_broker_string** (String)
-- **plaintext_zookeeper_connect_string** (String)
-- **security_groups** (List of String)
-- **state** (String)
+- **plaintext_bootstrap_broker_string** (String) The bootstrap broker connect string for plaintext (unencrypted) connections.
+- **plaintext_zookeeper_connect_string** (String) The Zookeeper connect string for plaintext (unencrypted) connections.
+- **security_groups** (List of String) The list of security groups used by the cluster.
+- **state** (String) The current state of the cluster.
 - **tags** (Map of String)
-- **tls_bootstrap_broker_string** (String)
-- **tls_zookeeper_connect_string** (String)
+- **tls_bootstrap_broker_string** (String) The bootstrap broker connect string for TLS (encrypted) connections.
+- **tls_zookeeper_connect_string** (String) The Zookeeper connect string for TLS (encrypted) connections.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

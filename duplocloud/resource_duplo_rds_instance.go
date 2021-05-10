@@ -15,98 +15,119 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// DuploRdsInstanceSchema returns a Terraform resource schema for an ECS Service
+// DuploRdsInstanceSchema returns a Terraform resource schema for an RDS instance.
 func rdsInstanceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch tenant
+			Description: "The GUID of the tenant that the RDS instance will be created in.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true, //switch tenant
 		},
 		"name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The short name of the RDS instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"identifier": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The full name of the RDS instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The ARN of the RDS instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"endpoint": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The endpoint of the RDS instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"host": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The DNS hostname of the RDS instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"port": {
-			Type:     schema.TypeInt,
-			Computed: true,
+			Description: "The listening port of the RDS instance.",
+			Type:        schema.TypeInt,
+			Computed:    true,
 		},
 		"master_username": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
+			Description: "The master username of the RDS instance.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true,
 		},
 		"master_password": {
-			Type:      schema.TypeString,
-			Optional:  true,
-			Sensitive: true,
+			Description: "The master password of the RDS instance.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Sensitive:   true,
 		},
 		"engine": {
+			Description: "The numerical index of database engine to use the for the RDS instance.\n" +
+				"Should be one of:\n\n" +
+				"   - `0` : MySQL\n" +
+				"   - `1` : PostgreSQL\n" +
+				"   - `2` : MsftSQL-Express\n" +
+				"   - `3` : MsftSQL-Standard\n" +
+				"   - `8` : Aurora-MySQL\n" +
+				"   - `9` : Aurora-PostgreSQL\n" +
+				"   - `10` : MsftSQL-Web\n" +
+				"   - `11` : Aurora-Serverless-MySql\n" +
+				"   - `12` : Aurora-Serverless-PostgreSql\n" +
+				"   - `13` : DocumentDB\n",
 			Type:     schema.TypeInt,
-			Optional: true,
-			Computed: true,
+			Required: true,
 			ForceNew: true,
 		},
 		"engine_version": {
+			Description: "The database engine version to use the for the RDS instance.\n" +
+				"If you don't know the available engine versions for your RDS instance, you can use the [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-engine-versions.html) to retrieve a list.",
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
 			ForceNew: true,
 		},
 		"snapshot_id": {
+			Description:   "A database snapshot to initialize the RDS instance from, at launch.",
 			Type:          schema.TypeString,
 			Optional:      true,
 			ForceNew:      true,
 			ConflictsWith: []string{"master_username"},
 		},
 		"parameter_group_name": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Description: "A RDS parameter group name to apply to the RDS instance.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
 		},
 		"store_details_in_secret_manager": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			ForceNew: true,
-		},
-		"cloud": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			ForceNew: true,
-			Default:  0,
+			Description: "Whether or not to store RDS details in the AWS secrets manager.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true,
 		},
 		"size": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The size of the RDS instance storage, in gigabytes.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"encrypt_storage": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			ForceNew: true,
+			Description: "Whether or not to encrypt the RDS instance storage.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true,
 		},
 		"instance_status": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The current status of the RDS instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 	}
 }
@@ -119,7 +140,7 @@ func resourceDuploRdsInstance() *schema.Resource {
 		UpdateContext: resourceDuploRdsInstanceUpdate,
 		DeleteContext: resourceDuploRdsInstanceDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
@@ -335,7 +356,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.EngineVersion = d.Get("engine_version").(string)
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
 	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
-	duploObject.Cloud = d.Get("cloud").(int)
+	duploObject.Cloud = 0 // AWS
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.EncryptStorage = d.Get("encrypt_storage").(bool)
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
@@ -372,7 +393,6 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["snapshot_id"] = duploObject.SnapshotID
 	jo["parameter_group_name"] = duploObject.DBParameterGroupName
-	jo["cloud"] = duploObject.Cloud
 	jo["size"] = duploObject.SizeEx
 	jo["encrypt_storage"] = duploObject.EncryptStorage
 	jo["instance_status"] = duploObject.InstanceStatus

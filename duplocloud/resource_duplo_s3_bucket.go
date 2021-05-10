@@ -16,46 +16,55 @@ import (
 func s3BucketSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The GUID of the tenant that the S3 bucket will be created in.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The short name of the S3 bucket.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"fullname": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The full name of the S3 bucket.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The ARN of the S3 bucket.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"enable_versioning": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
+			Description: "Whether or not to enable versioning.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"enable_access_logs": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
+			Description: "Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"allow_public_access": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
+			Description: "Whether or not to remove the public access block from the bucket.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"default_encryption": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			MaxItems: 1,
+			Description: "Default encryption settings for objects uploaded to the bucket.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"method": {
+						Description:  "Default encryption method.  Must be one of: `None`, `Sse`, `AwsKms`, `TenantKms`.",
 						Type:         schema.TypeString,
 						Optional:     true,
 						Default:      "Sse",
@@ -71,21 +80,13 @@ func s3BucketSchema() map[string]*schema.Schema {
 			},
 		},
 		"managed_policies": {
+			Description: "Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:\n\n" +
+				" - `\"ssl\"`: Require SSL / HTTPS when accessing the bucket.\n" +
+				" - `\"ignore\"`: If this key is present, Duplo will not manage your bucket policy.\n",
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
-		},
-		"in_tenant_region": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			ForceNew: true,
-			Default:  false,
-
-			// Supresses diffs for existing resources that were imported, so they have a blank region flag.
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				return d.Id() != "" && old == ""
-			},
 		},
 		"tags": {
 			Type:     schema.TypeList,
@@ -103,7 +104,7 @@ func resourceS3Bucket() *schema.Resource {
 		UpdateContext: resourceS3BucketUpdate,
 		DeleteContext: resourceS3BucketDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(5 * time.Minute),
