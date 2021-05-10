@@ -71,16 +71,16 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 		"engine": {
 			Description: "The numerical index of database engine to use the for the RDS instance.\n" +
 				"Should be one of:\n\n" +
-				" - `0` : MySQL\n" +
-				" - `1` : PostgreSQL\n" +
-				" - `2` : MsftSQL-Express\n" +
-				" - `3` : MsftSQL-Standard\n" +
-				" - `8` : Aurora-MySQL\n" +
-				" - `9` : Aurora-PostgreSQL\n" +
-				" - `10` : MsftSQL-Web\n" +
-				" - `11` : Aurora-Serverless-MySql\n" +
-				" - `12` : Aurora-Serverless-PostgreSql\n" +
-				" - `13` : DocumentDB\n",
+				"   - `0` : MySQL\n" +
+				"   - `1` : PostgreSQL\n" +
+				"   - `2` : MsftSQL-Express\n" +
+				"   - `3` : MsftSQL-Standard\n" +
+				"   - `8` : Aurora-MySQL\n" +
+				"   - `9` : Aurora-PostgreSQL\n" +
+				"   - `10` : MsftSQL-Web\n" +
+				"   - `11` : Aurora-Serverless-MySql\n" +
+				"   - `12` : Aurora-Serverless-PostgreSql\n" +
+				"   - `13` : DocumentDB\n",
 			Type:     schema.TypeInt,
 			Required: true,
 			ForceNew: true,

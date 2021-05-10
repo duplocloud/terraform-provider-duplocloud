@@ -48,16 +48,16 @@ resource "duplocloud_rds_instance" "mydb" {
 - **engine** (Number) The numerical index of database engine to use the for the RDS instance.
 Should be one of:
 
- - `0` : MySQL
- - `1` : PostgreSQL
- - `2` : MsftSQL-Express
- - `3` : MsftSQL-Standard
- - `8` : Aurora-MySQL
- - `9` : Aurora-PostgreSQL
- - `10` : MsftSQL-Web
- - `11` : Aurora-Serverless-MySql
- - `12` : Aurora-Serverless-PostgreSql
- - `13` : DocumentDB
+   - `0` : MySQL
+   - `1` : PostgreSQL
+   - `2` : MsftSQL-Express
+   - `3` : MsftSQL-Standard
+   - `8` : Aurora-MySQL
+   - `9` : Aurora-PostgreSQL
+   - `10` : MsftSQL-Web
+   - `11` : Aurora-Serverless-MySql
+   - `12` : Aurora-Serverless-PostgreSql
+   - `13` : DocumentDB
 - **name** (String) The short name of the RDS instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
 - **size** (String) The size of the RDS instance storage, in gigabytes.
 - **tenant_id** (String) The GUID of the tenant that the RDS instance will be created in.
