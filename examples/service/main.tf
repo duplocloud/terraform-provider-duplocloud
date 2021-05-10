@@ -28,6 +28,14 @@ resource "duplocloud_duplo_service" "test" {
   agent_platform = 0
   docker_image   = "nginx:latest"
   replicas       = 1
+
+  other_docker_host_config = jsonencode({ NetworkMode = "host", CapAdd = ["NET_ADMIN"] })
+  other_docker_config = jsonencode({
+    Env = [
+      { Name = "NGINX_HOST", Value = "foo" },
+      { Name = "NGINX_PORT", Value = "8080" },
+    ]
+  })
 }
 
 resource "duplocloud_duplo_service_lbconfigs" "test" {
