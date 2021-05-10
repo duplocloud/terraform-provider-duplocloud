@@ -60,7 +60,7 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			RequiredWith: []string{"configuration_arn"},
 		},
 		"instance_type": {
-			Description: "The Kafka node instance type to use. " +
+			Description: "The Kafka node instance type to use.\n" +
 				"See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html) for more information.",
 			Type:     schema.TypeString,
 			Required: true,

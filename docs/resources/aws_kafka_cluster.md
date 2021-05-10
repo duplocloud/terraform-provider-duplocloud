@@ -17,7 +17,8 @@ description: |-
 
 ### Required
 
-- **instance_type** (String) The Kafka node instance type to use. See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html) for more information.
+- **instance_type** (String) The Kafka node instance type to use.
+See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html) for more information.
 - **kafka_version** (String) The version of the Kafka cluster.
 - **name** (String) The short name of the Kafka cluster.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
 - **storage_size** (Number) The size of the Kafka storage, in gigabytes.
