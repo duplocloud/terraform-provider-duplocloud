@@ -15,8 +15,6 @@ type Client struct {
 	HTTPClient *http.Client
 	HostURL    string
 	Token      string
-	//Api        string
-	//TenantId   string
 }
 
 // NewClient creates a new Duplo API client

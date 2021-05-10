@@ -13,6 +13,10 @@ import (
 // Resource for managing an AWS ElasticSearch instance
 func resourceTenantConfig() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_tenant_config` manages a tenant's configuration in Duplo.\n\n" +
+			"Tenant configuration is initially populated by Duplo when a tenant is created.  This resource " +
+			"allows you take control of individual configuration settings for a specific tenant.",
+
 		ReadContext:   resourceTenantConfigRead,
 		CreateContext: resourceTenantConfigCreateOrUpdate,
 		UpdateContext: resourceTenantConfigCreateOrUpdate,
@@ -25,31 +29,38 @@ func resourceTenantConfig() *schema.Resource {
 			Update: schema.DefaultTimeout(2 * time.Minute),
 			Delete: schema.DefaultTimeout(2 * time.Minute),
 		},
+
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The GUID of the tenant to configure.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"setting": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem:     KeyValueSchema(),
+				Description: "A list of configuration settings to manage, expressed as key / value pairs.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        KeyValueSchema(),
 			},
 			"delete_unspecified_settings": {
+				Description: "Whether or not this resource should delete any settings not specified by this resource. " +
+					"**WARNING:**  It is not recommended to change the default value of `false`.",
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 			"metadata": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     KeyValueSchema(),
+				Description: "A complete list of configuration settings for this tenant, even ones not being managed by this resource.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        KeyValueSchema(),
 			},
 			"specified_settings": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "A list of configuration setting key being managed by this resource.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -74,11 +85,11 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Set the simple fields first.
 	d.Set("tenant_id", duplo.TenantID)
-	d.Set("metadata", duplosdk.KeyValueToState("metadata", duplo.Metadata))
+	d.Set("metadata", keyValueToState("metadata", duplo.Metadata))
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
-		d.Set("setting", duplosdk.KeyValueToState("setting", selectKeyValues(duplo.Metadata, *v)))
+		d.Set("setting", keyValueToState("setting", selectKeyValues(duplo.Metadata, *v)))
 	}
 
 	log.Printf("[TRACE] resourceTenantConfigRead(%s): end", tenantID)
@@ -105,7 +116,7 @@ func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	// Collect the desired state of settings specified by the user.
-	settings := duplosdk.KeyValueFromState("setting", d)
+	settings := keyValueFromState("setting", d)
 	specified := make([]string, len(*settings))
 	for i, kv := range *settings {
 		specified[i] = kv.Key

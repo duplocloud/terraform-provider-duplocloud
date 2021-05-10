@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.5.22" # RELEASE VERSION
-      source = "registry.terraform.io/duplocloud/duplocloud"
+      version = "0.5.23" # RELEASE VERSION
+      source  = "registry.terraform.io/duplocloud/duplocloud"
     }
     aws = {
       version = "~> 3.29.1"
@@ -16,7 +16,7 @@ provider "duplocloud" {
 }
 
 variable "plan_id" {
-  type = string
+  type    = string
   default = "default"
 }
 
@@ -34,21 +34,21 @@ output "aws_region" { value = data.duplocloud_tenant_aws_region.test.aws_region 
 data "duplocloud_tenant_aws_credentials" "test" { tenant_id = var.tenant_id }
 provider "aws" {
   # The following credentials are temporary "just in time" credentials created by Duplo.
-  access_key = data.duplocloud_tenant_aws_credentials.test.access_key_id
-  secret_key = data.duplocloud_tenant_aws_credentials.test.secret_access_key
-  token      = data.duplocloud_tenant_aws_credentials.test.session_token
-  region     = data.duplocloud_tenant_aws_credentials.test.region
+  access_key             = data.duplocloud_tenant_aws_credentials.test.access_key_id
+  secret_key             = data.duplocloud_tenant_aws_credentials.test.secret_access_key
+  token                  = data.duplocloud_tenant_aws_credentials.test.session_token
+  region                 = data.duplocloud_tenant_aws_credentials.test.region
   skip_get_ec2_platforms = true
 }
 
 # Or, apply additional policy to an S3 bucket created by Duplo.
 resource "duplocloud_s3_bucket" "test" {
-  tenant_id = var.tenant_id
-  name = "joetest3"
+  tenant_id           = var.tenant_id
+  name                = "joetest3"
   allow_public_access = false
-  enable_versioning = true
-  enable_access_logs = true
-  managed_policies = ["ssl"]
+  enable_versioning   = true
+  enable_access_logs  = true
+  managed_policies    = ["ssl"]
   default_encryption {
     method = "Sse"
   }

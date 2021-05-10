@@ -243,7 +243,7 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 	d.SetId(id)
 
 	// Next, wait for the cluster to become active.
-	err = duploKafkaClusterWaitUntilReady(c, tenantID, rp.Arn, d.Timeout("create"))
+	err = duploKafkaClusterWaitUntilReady(ctx, c, tenantID, rp.Arn, d.Timeout("create"))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -296,7 +296,7 @@ func resourceKafkaClusterDelete(ctx context.Context, d *schema.ResourceData, m i
 	return nil
 }
 
-func duploKafkaClusterWaitUntilReady(c *duplosdk.Client, tenantID, arn string, timeout time.Duration) error {
+func duploKafkaClusterWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID, arn string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -313,6 +313,6 @@ func duploKafkaClusterWaitUntilReady(c *duplosdk.Client, tenantID, arn string, t
 		Timeout:      timeout,
 	}
 	log.Printf("[DEBUG] duploKafkaClusterWaitUntilReady(%s, %s)", tenantID, arn)
-	_, err := stateConf.WaitForState()
+	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }

@@ -11,7 +11,7 @@ import (
 // Data source listing secrets
 func dataSourceTenantInternalSubnets() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTenantSecretsRead,
+		Read: dataSourceTenantInternalSubnetsRead,
 
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
@@ -36,7 +36,7 @@ func dataSourceTenantInternalSubnetsRead(d *schema.ResourceData, m interface{}) 
 	c := m.(*duplosdk.Client)
 	subnetIDs, err := c.TenantGetInternalSubnets(tenantID)
 	if err != nil {
-		return fmt.Errorf("Failed to list subnets: %s", err)
+		return fmt.Errorf("failed to list subnets: %s", err)
 	}
 	d.SetId(tenantID)
 	d.Set("subnet_ids", subnetIDs)

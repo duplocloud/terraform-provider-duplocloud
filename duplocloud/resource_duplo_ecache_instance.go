@@ -160,7 +160,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Wait for the instance to become available.
-	err = ecacheInstanceWaitUntilAvailable(c, id)
+	err = ecacheInstanceWaitUntilAvailable(ctx, c, id)
 	if err != nil {
 		return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
 	}
@@ -252,7 +252,7 @@ func ecacheInstanceToState(duploObject *duplosdk.DuploEcacheInstance, d *schema.
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
 //
 // It should be usable both post-creation and post-modification.
-func ecacheInstanceWaitUntilAvailable(c *duplosdk.Client, id string) error {
+func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, id string) error {
 	stateConf := &resource.StateChangeConf{
 		Pending:      []string{"processing", "creating", "modifying", "rebooting cluster nodes", "snapshotting"},
 		Target:       []string{"available"},
@@ -271,6 +271,6 @@ func ecacheInstanceWaitUntilAvailable(c *duplosdk.Client, id string) error {
 		},
 	}
 	log.Printf("[DEBUG] EcacheInstanceWaitUntilAvailable (%s)", id)
-	_, err := stateConf.WaitForState()
+	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }

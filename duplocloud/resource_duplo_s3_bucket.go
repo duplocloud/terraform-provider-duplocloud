@@ -272,5 +272,5 @@ func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name strin
 		"method": duplo.DefaultEncryption,
 	}})
 	d.Set("managed_policies", duplo.Policies)
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
 }

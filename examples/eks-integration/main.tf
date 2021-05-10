@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.5.22" # RELEASE VERSION
-      source = "registry.terraform.io/duplocloud/duplocloud"
+      version = "0.5.23" # RELEASE VERSION
+      source  = "registry.terraform.io/duplocloud/duplocloud"
     }
     aws = {
       version = "~> 3.29.1"
@@ -19,7 +19,7 @@ provider "duplocloud" {
 }
 
 variable "plan_id" {
-  type = string
+  type    = string
   default = "default"
 }
 
@@ -54,3 +54,20 @@ output "all-ns" { value = data.kubernetes_all_namespaces.allns.namespaces }
 output "eks_creds_name" { value = data.duplocloud_eks_credentials.test.name }
 output "eks_creds_endpoint" { value = data.duplocloud_eks_credentials.test.endpoint }
 output "eks_creds_region" { value = data.duplocloud_eks_credentials.test.region }
+
+data "duplocloud_k8_config_maps" "test" {
+  tenant_id = var.tenant_id
+}
+output "config_maps" { value = data.duplocloud_k8_config_maps.test.config_maps }
+data "duplocloud_k8_config_map" "test" {
+  tenant_id = var.tenant_id
+  name      = "joetest"
+}
+output "config_map" { value = jsondecode(data.duplocloud_k8_config_map.test.data) }
+resource "duplocloud_k8_config_map" "test" {
+  tenant_id = var.tenant_id
+
+  name = "joetest"
+
+  data = jsonencode({ foo = "bar2" })
+}

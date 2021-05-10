@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.5.22" # RELEASE VERSION
-      source = "registry.terraform.io/duplocloud/duplocloud"
+      version = "0.5.23" # RELEASE VERSION
+      source  = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
 }
@@ -13,7 +13,7 @@ provider "duplocloud" {
 }
 
 variable "plan_id" {
-  type = string
+  type    = string
   default = "default"
 }
 
@@ -52,23 +52,23 @@ data "duplocloud_tenants" "test" {}
 output "tenants" { value = data.duplocloud_tenants.test.tenants.*.name }
 
 resource "duplocloud_tenant_secret" "test" {
-  tenant_id = var.tenant_id
+  tenant_id   = var.tenant_id
   name_suffix = "joetest2"
-  data = "{ \"foo\" : \"bar4\" }"
+  data        = "{ \"foo\" : \"bar4\" }"
 }
 output "tenant_secret_name" { value = duplocloud_tenant_secret.test.name }
 
 resource "duplocloud_aws_load_balancer" "test" {
-  tenant_id = var.tenant_id
-  name = "joetest2"
-  is_internal = true
-  enable_access_logs = true
+  tenant_id            = var.tenant_id
+  name                 = "joetest2"
+  is_internal          = true
+  enable_access_logs   = true
   drop_invalid_headers = true
 }
 
 data "duplocloud_aws_lb_listeners" "test" {
   tenant_id = var.tenant_id
-  name = duplocloud_aws_load_balancer.test.name
+  name      = duplocloud_aws_load_balancer.test.name
 }
 output "test_lb_listeners" { value = data.duplocloud_aws_lb_listeners.test.listeners }
 data "duplocloud_aws_lb_target_groups" "test" {
@@ -78,58 +78,58 @@ output "test_lb_target_groups" { value = data.duplocloud_aws_lb_target_groups.te
 
 resource "duplocloud_ecs_task_definition" "test" {
   tenant_id = var.tenant_id
-  family = "duploservices-default-joedemo"
+  family    = "duploservices-default-joedemo"
   container_definitions = jsonencode([{
-    Name = "default"
+    Name  = "default"
     Image = "nginx:latest"
     Environment = [
-      {Name = "foo", Value = "bar"},
-      {Name = "bar", Value = "foo"}
+      { Name = "foo", Value = "bar2" },
+      { Name = "bar", Value = "foo" }
     ]
   }])
-  cpu = "256"
-  memory = "1024"
-  requires_compatibilities = [ "FARGATE" ]
+  cpu                      = "256"
+  memory                   = "1024"
+  requires_compatibilities = ["FARGATE"]
 }
 
 resource "duplocloud_ecs_service" "test" {
-  tenant_id = var.tenant_id
-  name = "joedemo-ecs"
+  tenant_id       = var.tenant_id
+  name            = "joedemo-ecs"
   task_definition = duplocloud_ecs_task_definition.test.arn
-  replicas = 2
+  replicas        = 2
   load_balancer {
-    lb_type = 1
-    port = "8080"
-    external_port = 80
-    protocol = "HTTP"
-    enable_access_logs = false
+    lb_type              = 1
+    port                 = "8080"
+    external_port        = 80
+    protocol             = "HTTP"
+    enable_access_logs   = false
     drop_invalid_headers = true
-    webaclid = ""
+    webaclid             = ""
   }
 }
 
 resource "duplocloud_ecache_instance" "test" {
- tenant_id = var.tenant_id
- name = "joetest"
- cache_type = 0
- replicas = 1
- size = "cache.t2.small"
+  tenant_id  = var.tenant_id
+  name       = "joetest"
+  cache_type = 0
+  replicas   = 1
+  size       = "cache.t2.small"
 }
 
 resource "duplocloud_rds_instance" "test" {
-  tenant_id = var.tenant_id
-  name = "joetest"
+  tenant_id       = var.tenant_id
+  name            = "joetest"
   master_username = "joe"
   master_password = "test12345!"
-  size = "db.t2.small"
+  size            = "db.t2.small"
 }
 
 resource "duplocloud_aws_elasticsearch" "test" {
- tenant_id = var.tenant_id
- name = "joe2"
- storage_size = 20
- selected_zone = 1
- enable_node_to_node_encryption = true
- require_ssl = true
- use_latest_tls_cipher = true
+  tenant_id                      = var.tenant_id
+  name                           = "joe2"
+  storage_size                   = 20
+  selected_zone                  = 1
+  enable_node_to_node_encryption = true
+  require_ssl                    = true
+  use_latest_tls_cipher          = true
 }

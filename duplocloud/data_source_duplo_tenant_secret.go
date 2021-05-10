@@ -81,11 +81,11 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 	c := m.(*duplosdk.Client)
 	duploSecrets, err := c.TenantListSecrets(tenantID)
 	if err != nil {
-		return fmt.Errorf("Failed to list secrets: %s", err)
+		return fmt.Errorf("failed to list secrets: %s", err)
 	}
 	prefix, err := c.GetDuploServicesPrefix(tenantID)
 	if err != nil {
-		return fmt.Errorf("Failed to get tenant prefix: %s", err)
+		return fmt.Errorf("failed to get tenant prefix: %s", err)
 	}
 
 	// Set the Terraform resource data
@@ -99,14 +99,14 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 			d.Set("name", duploSecret.Name)
 			d.Set("name_suffix", objNameSuffix)
 			d.Set("rotation_enabled", duploSecret.RotationEnabled)
-			d.Set("tags", duplosdk.KeyValueToState("tags", duploSecret.Tags))
+			d.Set("tags", keyValueToState("tags", duploSecret.Tags))
 			break
 		}
 	}
 
 	// Check for missing result
 	if d.Id() == "" {
-		return fmt.Errorf("Tenant secret '%s' not found", secretID)
+		return fmt.Errorf("tenant secret '%s' not found", secretID)
 	}
 
 	log.Printf("[TRACE] dataSourceTenantSecretRead ******** end")

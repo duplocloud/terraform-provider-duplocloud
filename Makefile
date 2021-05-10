@@ -8,7 +8,7 @@ NAMESPACE=duplocloud
 
 NAME=duplocloud
 BINARY=terraform-provider-${NAME}
-VERSION=0.5.22
+VERSION=0.5.23
 #mac
 #OS_ARCH=darwin_amd64
 #OS_ARCH=linux_amd64
@@ -17,6 +17,9 @@ OS_ARCH_MAC=darwin_amd64
 OS_ARCH_DOCKER=linux_amd64
 
 default: install
+
+doc:
+	go generate
 
 build:
 	go build -o ${BINARY}

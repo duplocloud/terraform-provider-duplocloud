@@ -61,18 +61,19 @@ func dataSourceTenantSecrets() *schema.Resource {
 
 /// READ resource
 func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
-	log.Printf("[TRACE] dataSourceTenantSecretsRead ******** start")
+	tenantID := d.Get("tenant_id").(string)
+
+	log.Printf("[TRACE] dataSourceTenantSecretsRead(%s): start", tenantID)
 
 	// List the secrets from Duplo.
-	tenantID := d.Get("tenant_id").(string)
 	c := m.(*duplosdk.Client)
 	duploSecrets, err := c.TenantListSecrets(tenantID)
 	if err != nil {
-		return fmt.Errorf("Failed to list secrets: %s", err)
+		return fmt.Errorf("failed to list secrets: %s", err)
 	}
 	prefix, err := c.GetDuploServicesPrefix(tenantID)
 	if err != nil {
-		return fmt.Errorf("Failed to get tenant prefix: %s", err)
+		return fmt.Errorf("failed to get tenant prefix: %s", err)
 	}
 	d.SetId(tenantID)
 
@@ -87,12 +88,12 @@ func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
 			"name":             duploSecret.Name,
 			"name_suffix":      nameSuffix,
 			"rotation_enabled": duploSecret.RotationEnabled,
-			"tags":             duplosdk.KeyValueToState("tags", duploSecret.Tags),
+			"tags":             keyValueToState("tags", duploSecret.Tags),
 		})
 	}
 
 	d.Set("secrets", secrets)
 
-	log.Printf("[TRACE] dataSourceTenantSecretsRead ******** end")
+	log.Printf("[TRACE] dataSourceTenantSecretsRead(%s): end", tenantID)
 	return nil
 }

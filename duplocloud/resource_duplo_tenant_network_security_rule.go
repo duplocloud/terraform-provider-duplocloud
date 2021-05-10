@@ -17,6 +17,8 @@ import (
 // Resource for managing an AWS ElasticSearch instance
 func resourceTenantSecurityRule() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_tenant_network_security_rule` manages a single network single rule for a Duplo tenant.",
+
 		ReadContext:   resourceTenantNetworkSecurityRuleRead,
 		CreateContext: resourceTenantNetworkSecurityRuleCreate,
 		DeleteContext: resourceTenantNetworkSecurityRuleDelete,
@@ -28,13 +30,16 @@ func resourceTenantSecurityRule() *schema.Resource {
 			Update: schema.DefaultTimeout(2 * time.Minute),
 			Delete: schema.DefaultTimeout(2 * time.Minute),
 		},
+
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The GUID of the tenant that the network security rule will be created in.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"protocol": {
+				Description:  "The network protocol.  Must be one of:  `tcp`, `udp`, `icmp`",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
@@ -42,18 +47,23 @@ func resourceTenantSecurityRule() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"tcp", "icmp", "udp"}, false),
 			},
 			"source_tenant": {
+				Description: "The source tenant name (*not* GUID) to allow traffic from. " +
+					"Only one of `source_tenant` or `source_address` may be specified.",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"source_address"},
 			},
 			"source_address": {
+				Description: "The source CIDR block to allow traffic from. " +
+					"Only one of `source_tenant` or `source_address` may be specified.",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"source_tenant"},
 			},
 			"from_port": {
+				Description:  "The start of a port range to allow traffic to.",
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ForceNew:     true,
@@ -61,6 +71,7 @@ func resourceTenantSecurityRule() *schema.Resource {
 				ValidateFunc: validation.IntBetween(0, 65535),
 			},
 			"to_port": {
+				Description:  "The end of a port range to allow traffic to.",
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ForceNew:     true,
@@ -68,9 +79,10 @@ func resourceTenantSecurityRule() *schema.Resource {
 				ValidateFunc: validation.IntBetween(0, 65535),
 			},
 			"description": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "A description for this rule.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}
@@ -179,20 +191,20 @@ func resourceTenantNetworkSecurityRuleDelete(ctx context.Context, d *schema.Reso
 func duploTenantNetworkSecurityRuleFromId(id string) (*duplosdk.DuploTenantExtConnSecurityGroupRule, error) {
 	idParts := strings.SplitN(id, "/", 6)
 	if len(idParts) < 6 {
-		return nil, fmt.Errorf("Invalid resource ID: %s", id)
+		return nil, fmt.Errorf("invalid resource ID: %s", id)
 	}
 
 	ruleType, err := strconv.Atoi(idParts[1])
 	if err != nil {
-		return nil, fmt.Errorf("Invalid resource ID: %s: type: %s", id, err)
+		return nil, fmt.Errorf("invalid resource ID: %s: type: %s", id, err)
 	}
 	fromPort, err := strconv.Atoi(idParts[4])
 	if err != nil {
-		return nil, fmt.Errorf("Invalid resource ID: %s: fromPort: %s", id, err)
+		return nil, fmt.Errorf("invalid resource ID: %s: fromPort: %s", id, err)
 	}
 	toPort, err := strconv.Atoi(idParts[5])
 	if err != nil {
-		return nil, fmt.Errorf("Invalid resource ID: %s: toPort: %s", id, err)
+		return nil, fmt.Errorf("invalid resource ID: %s: toPort: %s", id, err)
 	}
 
 	return &duplosdk.DuploTenantExtConnSecurityGroupRule{

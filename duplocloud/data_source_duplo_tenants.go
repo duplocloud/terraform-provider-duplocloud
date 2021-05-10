@@ -42,7 +42,7 @@ func dataSourceTenantsRead(d *schema.ResourceData, m interface{}) error {
 	}
 	duploTenants, err := c.ListTenantsForUserByPlan(planID)
 	if err != nil {
-		return fmt.Errorf("Failed to list tenants: %s", err)
+		return fmt.Errorf("failed to list tenants: %s", err)
 	}
 
 	// Set the Terraform resource data
@@ -53,7 +53,7 @@ func dataSourceTenantsRead(d *schema.ResourceData, m interface{}) error {
 			"name":        duploTenant.AccountName,
 			"plan_id":     duploTenant.PlanID,
 			"infra_owner": duploTenant.InfraOwner,
-			"tags":        duplosdk.KeyValueToState("tags", duploTenant.Tags),
+			"tags":        keyValueToState("tags", duploTenant.Tags),
 		}
 		if duploTenant.TenantPolicy != nil {
 			tenant["policy"] = []map[string]interface{}{{

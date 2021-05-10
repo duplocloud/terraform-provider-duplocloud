@@ -48,7 +48,7 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	c := m.(*duplosdk.Client)
 	eksCredentials, err := c.GetEksCredentials(planID)
 	if err != nil {
-		return fmt.Errorf("Failed to read AWS account ID: %s", err)
+		return fmt.Errorf("failed to read EKS credentials: %s", err)
 	}
 	d.SetId(eksCredentials.Name)
 

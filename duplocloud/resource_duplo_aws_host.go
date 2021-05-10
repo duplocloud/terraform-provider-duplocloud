@@ -16,21 +16,28 @@ import (
 func nativeHostSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"instance_id": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The AWS EC2 instance ID of the host.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"user_account": {
+			Description: "The default username for the host.\n\n" +
+				"Windows example: `Administrator`.\n\n" +
+				"Amazon Linux example: `ec2-user`.\n\n" +
+				"Ubuntu Linux example: `ubuntu`.\n\n",
 			Type:             schema.TypeString,
 			Optional:         true,
 			Computed:         true,
 			DiffSuppressFunc: diffSuppressFuncIgnore,
 		},
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true, //switch tenant
+			Description: "The GUID of the tenant that the host will be created in.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true, //switch tenant
 		},
 		"friendly_name": {
+			Description:      "The short name of the host.",
 			Type:             schema.TypeString,
 			Optional:         false,
 			Required:         true,
@@ -38,16 +45,18 @@ func nativeHostSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: diffIgnoreIfAlreadySet,
 		},
 		"capacity": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, // relaunch instnace
+			Description: "The AWS EC2 instance type.",
+			Type:        schema.TypeString,
+			Optional:    false,
+			Required:    true,
+			ForceNew:    true, // relaunch instnace
 		},
 		"zone": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			ForceNew: true, // relaunch instance
-			Default:  0,
+			Description: "The availability zone to launch the host in, expressed as a number and starting at 0.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
+			Default:     0,
 		},
 		"is_minion": {
 			Type:     schema.TypeBool,
@@ -56,21 +65,24 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Default:  true,
 		},
 		"image_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true, // relaunch instance
+			Description: "The AMI ID to use.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true, // relaunch instance
 		},
 		"base64_user_data": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true, // relaunch instance
-			Computed: true,
+			Description: "Base64 encoded EC2 user data to associated with the host.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
+			Computed:    true,
 		},
 		"agent_platform": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			ForceNew: true, // relaunch instance
-			Default:  0,
+			Description: "The numeric ID of the container agent pool that this host is added to.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
+			Default:     0,
 		},
 		"is_ebs_optimized": {
 			Type:     schema.TypeBool,
@@ -79,16 +91,18 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew: true, // relaunch instance
 		},
 		"allocated_public_ip": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Default:  false,
-			ForceNew: true, // relaunch instance
+			Description: "Whether or not to allocate a public IP.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+			ForceNew:    true, // relaunch instance
 		},
 		"cloud": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			Default:  0,
-			ForceNew: true, // relaunch instance
+			Description: "The numeric ID of the cloud provider to launch the host in.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Default:     0,
+			ForceNew:    true, // relaunch instance
 		},
 		"encrypt_disk": {
 			Type:     schema.TypeBool,
@@ -97,22 +111,22 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew: true, // relaunch instance
 		},
 		"status": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The current status of the host.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"identity_role": {
-			Type:     schema.TypeString,
-			Computed: true,
-			Optional: true,
-			ForceNew: true, // relaunch instance
+			Description: "The name of the IAM role associated with this host.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"private_ip_address": {
-			Type:     schema.TypeString,
-			Computed: true,
-			Optional: true,
-			ForceNew: true, // relaunch instance
+			Description: "The primary private IP address assigned to the host.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"metadata": {
+			Description:      "Configuration metadata used when creating the host.",
 			Type:             schema.TypeList,
 			Optional:         true,
 			Computed:         true,
@@ -168,30 +182,35 @@ func nativeHostSchema() map[string]*schema.Schema {
 			},
 		},
 		"network_interface": {
-			Type:     schema.TypeList,
-			Optional: true,
-			ForceNew: true, // relaunch instance
+			Description: "An optional list of custom network interface configurations to use when creating the host.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"network_interface_id": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Computed: true,
+						Description: "The ID of an ENI to attach to this host.  Cannot be specified if `subnet_id` or `associate_public_ip` is specified.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
 					},
 					"subnet_id": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Computed: true,
+						Description: "The ID of a subnet in which to create a new ENI.  Cannot be specified if `network_interface_id` is specified.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
 					},
 					"device_index": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Description: "The device index to pass to AWS for attaching the ENI.  Starts at zero.",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
 					},
 					"associate_public_ip": {
-						Type:     schema.TypeBool,
-						Optional: true,
-						Computed: true,
+						Description: "Whether or not to associate a public IP with the newly created ENI.  Cannot be specified if `network_interface_id` is specified.",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Computed:    true,
 					},
 					"groups": {
 						Type:     schema.TypeList,
@@ -216,6 +235,7 @@ func resourceAwsHost() *schema.Resource {
 	awsHostSchema := nativeHostSchema()
 
 	awsHostSchema["wait_until_connected"] = &schema.Schema{
+		Description:      "Whether or not to wait until Duplo can connect to the host, after creation.",
 		Type:             schema.TypeBool,
 		Optional:         true,
 		ForceNew:         true,
@@ -224,6 +244,8 @@ func resourceAwsHost() *schema.Resource {
 	}
 
 	return &schema.Resource{
+		Description: "`duplocloud_aws_host` manages a native AWS host in Duplo.",
+
 		ReadContext:   resourceAwsHostRead,
 		CreateContext: resourceAwsHostCreate,
 		//UpdateContext: resourceAwsHostUpdate,
@@ -301,7 +323,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 	// By default, wait until the host is completely ready.
 	if v, ok := d.GetOk("wait_until_connected"); !ok || v == nil || v.(bool) {
-		err = nativeHostWaitUntilReady(c, rp.TenantID, rp.InstanceID, d.Timeout("create"))
+		err = nativeHostWaitUntilReady(ctx, c, rp.TenantID, rp.InstanceID, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -388,9 +410,9 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		AllocatedPublicIP: d.Get("allocated_public_ip").(bool),
 		Cloud:             d.Get("cloud").(int),
 		EncryptDisk:       d.Get("encrypt_disk").(bool),
-		MetaData:          duplosdk.KeyValueFromState("metadata", d),
-		Tags:              duplosdk.KeyValueFromState("tag", d),
-		MinionTags:        duplosdk.KeyValueFromState("minion_tags", d),
+		MetaData:          keyValueFromState("metadata", d),
+		Tags:              keyValueFromState("tag", d),
+		MinionTags:        keyValueFromState("minion_tags", d),
 		Volumes:           expandNativeHostVolumes("volume", d),
 		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
 	}
@@ -441,7 +463,7 @@ func expandNativeHostNetworkInterfaces(key string, d *schema.ResourceData) *[]du
 
 			duplo := duplosdk.DuploNativeHostNetworkInterface{
 				AssociatePublicIP: nic["associate_public_ip"].(bool),
-				MetaData:          duplosdk.KeyValueFromMap("metadata", nic),
+				MetaData:          keyValueFromStateList("metadata", nic),
 			}
 
 			if v, ok := nic["subnet_id"]; ok && v != nil && v.(string) != "" {
@@ -480,8 +502,8 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("status", duplo.Status)
 	d.Set("identity_role", duplo.IdentityRole)
 	d.Set("private_ip_address", duplo.PrivateIPAddress)
-	d.Set("tags", duplosdk.KeyValueToState("tags", duplo.Tags))
-	d.Set("minion_tags", duplosdk.KeyValueToState("minion_tags", duplo.MinionTags))
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
+	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
@@ -490,7 +512,7 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	}
 
 	// TODO:  The backend doesn't return these yet.
-	// d.Set("metadata", duplosdk.KeyValueToState("metadata", duplo.MetaData))
+	// d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	// d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	// d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 }
@@ -500,7 +522,7 @@ func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []map[str
 		return []map[string]interface{}{}
 	}
 
-	list := make([]map[string]interface{}, len(*duplo), len(*duplo))
+	list := make([]map[string]interface{}, len(*duplo))
 	for _, item := range *duplo {
 		list = append(list, map[string]interface{}{
 			"iops":        item.Iops,
@@ -519,11 +541,11 @@ func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetwork
 		return []map[string]interface{}{}
 	}
 
-	list := make([]map[string]interface{}, len(*duplo), len(*duplo))
+	list := make([]map[string]interface{}, len(*duplo))
 	for _, item := range *duplo {
 		nic := map[string]interface{}{
 			"associate_public_ip": item.AssociatePublicIP,
-			"metadata":            duplosdk.KeyValueToState("metadata", item.MetaData),
+			"metadata":            keyValueToState("metadata", item.MetaData),
 		}
 
 		if item.NetworkInterfaceID != "" {
@@ -548,13 +570,13 @@ func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetwork
 func nativeHostIdParts(id string) (string, string, error) {
 	idParts := strings.SplitN(id, "/", 5)
 	if len(idParts) < 5 {
-		return "", "", fmt.Errorf("Invalid resource ID: %s", id)
+		return "", "", fmt.Errorf("invalid resource ID: %s", id)
 	}
 	return idParts[2], idParts[4], nil
 }
 
 // NativeHostWaitForCreation waits for creation of an AWS Host by the Duplo API
-func nativeHostWaitUntilReady(c *duplosdk.Client, tenantID, instanceID string, timeout time.Duration) error {
+func nativeHostWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID, instanceID string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -571,6 +593,6 @@ func nativeHostWaitUntilReady(c *duplosdk.Client, tenantID, instanceID string, t
 		Timeout:      timeout,
 	}
 	log.Printf("[DEBUG] duploNativeHostWaitUntilReady(%s, %s)", tenantID, instanceID)
-	_, err := stateConf.WaitForState()
+	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }

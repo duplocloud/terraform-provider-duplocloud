@@ -1,49 +1,25 @@
 # Terraform Provider duplocloud
 
+## Building locally.
+
+To build and install, run `make install`.
+
+To generate or update documentation, run `go generate`.
+
+## Running examples.
+
 ```
-go mod init terraform-provider-duplocloud
-go mod vendor
-make build
-make install
-
-
-cd examples
+cd examples/service
 terraform init && terraform apply
 
-terraform init && terraform apply --auto-approve
-
-
-```
-Run the following command to build the provider
-
-```shell
-go build -o terraform-provider-duplocloud
 ```
 
-## Test sample configuration
+## Using debug output during execution.
 
-First, build and install the provider.
-
-```shell
-make install
-```
-
-Then, run the following command to initialize the workspace and apply the sample configuration.
-
-```shell
-terraform init && terraform apply
-```
-
-## log
-*    TF_LOG_PATH TF_LOG to one of the log levels TRACE, DEBUG, INFO, WARN or ERROR
 ``` 
-
 export TF_LOG_PATH=duplo.log
 export TF_LOG=TRACE
-
-cd /Users/brighu/_go/work/terraform-provider-duplocloud/;  make install; cd /Users/brighu/_go/work/terraform-provider-duplocloud/examples
-terraform init && terraform apply --auto-approve
-
+terraform init && terraform apply
 ```
 
 ## useful commands
