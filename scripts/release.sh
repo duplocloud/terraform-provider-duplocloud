@@ -32,7 +32,6 @@ release_finish() {
     make doc
     git add docs examples
     git commit -m 'update generated docs and examples' docs examples
-    git push
 
     # Finish the release
     GIT_MERGE_AUTOEDIT=no git flow release finish "$version"
