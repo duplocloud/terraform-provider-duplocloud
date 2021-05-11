@@ -20,27 +20,32 @@ import (
 func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch tenant
+			Description: "The GUID of the tenant that the task definition will be created in.",
+			Type:        schema.TypeString,
+			Optional:    false,
+			Required:    true,
+			ForceNew:    true, //switch tenant
 		},
 		"family": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The name of the task definition to create.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"revision": {
-			Type:     schema.TypeInt,
-			Computed: true,
+			Description: "The current revision of the task definition.",
+			Type:        schema.TypeInt,
+			Computed:    true,
 		},
 		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The ARN of the task definition.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"status": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The status of the task definition.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"container_definitions": {
 			Type:     schema.TypeString,
@@ -213,6 +218,8 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 // SCHEMA for resource crud
 func resourceDuploEcsTaskDefinition() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_ecs_task_definition` manages a Amazon ECS task definition in Duplo.",
+
 		ReadContext:   resourceDuploEcsTaskDefinitionRead,
 		CreateContext: resourceDuploEcsTaskDefinitionCreate,
 		DeleteContext: resourceDuploEcsTaskDefinitionDelete,

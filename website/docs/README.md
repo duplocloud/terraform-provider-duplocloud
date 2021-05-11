@@ -1,2 +1,0 @@
-# duplocloud terraform docs
-

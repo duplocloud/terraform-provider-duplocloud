@@ -17,44 +17,51 @@ import (
 func duploServiceParamsSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch tenant
+			Description: "The GUID of the tenant that hosts the duplo service.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true, //switch tenant
 		},
 		"replication_controller_name": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch service
+			Description: "The name of the duplo service.",
+			Type:        schema.TypeString,
+			Optional:    false,
+			Required:    true,
+			ForceNew:    true, //switch service
 		},
 		"load_balancer_name": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The load balancer name.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"load_balancer_arn": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The load balancer ARN.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"webaclid": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Description: "The ARN of a web application firewall to associate this load balancer.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
 		},
 		"dns_prfx": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Description: "The DNS prefix to assign to this service's load balancer.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
 		},
 		"enable_access_logs": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
+			Description: "Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"drop_invalid_headers": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
+			Description: "Whether or not to drop invalid HTTP headers received by the load balancer.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 	}
 }
@@ -62,12 +69,15 @@ func duploServiceParamsSchema() map[string]*schema.Schema {
 // SCHEMA for resource crud
 func resourceDuploServiceParams() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_duplo_service_lbconfigs` manages additional configuration for a container-based service in Duplo.\n\n" +
+			"NOTE: For Amazon ECS services, see the `duplocloud_ecs_service` resource.",
+
 		ReadContext:   resourceDuploServiceParamsRead,
 		CreateContext: resourceDuploServiceParamsCreate,
 		UpdateContext: resourceDuploServiceParamsUpdate,
 		DeleteContext: resourceDuploServiceParamsDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
