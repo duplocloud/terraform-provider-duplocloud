@@ -31,7 +31,7 @@ resource "duplocloud_rds_instance" "mydb" {
   name           = "mydb"
   engine         = 1 // PostgreSQL
   engine_version = "12.5"
-  size           = 20
+  size           = "db.t3.medium"
 
   master_username = "myuser"
   master_password = random_password.mypassword.result
@@ -59,7 +59,8 @@ Should be one of:
    - `12` : Aurora-Serverless-PostgreSql
    - `13` : DocumentDB
 - **name** (String) The short name of the RDS instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
-- **size** (String) The size of the RDS instance storage, in gigabytes.
+- **size** (String) The instance type of the RDS instance.
+See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).
 - **tenant_id** (String) The GUID of the tenant that the RDS instance will be created in.
 
 ### Optional

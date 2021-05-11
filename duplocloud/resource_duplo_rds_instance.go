@@ -113,10 +113,11 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"size": {
-			Description: "The size of the RDS instance storage, in gigabytes.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description: "The instance type of the RDS instance.\n" +
+				"See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).",
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
 		},
 		"encrypt_storage": {
 			Description: "Whether or not to encrypt the RDS instance storage.",

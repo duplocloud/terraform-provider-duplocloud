@@ -16,7 +16,7 @@ resource "duplocloud_rds_instance" "mydb" {
   name           = "mydb"
   engine         = 1 // PostgreSQL
   engine_version = "12.5"
-  size           = 20
+  size           = "db.t3.medium"
 
   master_username = "myuser"
   master_password = random_password.mypassword.result

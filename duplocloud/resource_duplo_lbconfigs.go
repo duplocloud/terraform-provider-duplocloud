@@ -17,12 +17,15 @@ import (
 // SCHEMA for resource crud
 func resourceDuploServiceLBConfigs() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_duplo_service_lbconfigs` manages load balancer configuration(s) for a container-based service in Duplo.\n\n" +
+			"NOTE: For Amazon ECS services, see the `duplocloud_ecs_service` resource.",
+
 		ReadContext:   resourceDuploServiceLBConfigsRead,
 		CreateContext: resourceDuploServiceLBConfigsCreate,
 		UpdateContext: resourceDuploServiceLBConfigsUpdate,
 		DeleteContext: resourceDuploServiceLBConfigsDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
@@ -37,22 +40,26 @@ func resourceDuploServiceLBConfigs() *schema.Resource {
 func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"replication_controller_name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The name of the duplo service.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true, //switch tenant
+			Description: "The GUID of the tenant that hosts the duplo service.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true, //switch tenant
 		},
 		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The load balancer ARN.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"status": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The load balancer's current status.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"lbconfigs": {
 			Type:     schema.TypeList,
@@ -60,31 +67,43 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"lb_type": {
+						Description: "The numerical index of the type of load balancer configuration to create.\n" +
+							"Should be one of:\n\n" +
+							"   - `0` : ELB (Classic Load Balancer)\n" +
+							"   - `1` : ALB (Application Load Balancer)\n" +
+							"   - `2` : Health-check Only (No Load Balancer)\n" +
+							"   - `3` : K8S Service w/ Cluster IP (No Load Balancer)\n" +
+							"   - `4` : K8S Service w/ Node Port (No Load Balancer)\n",
 						Type:     schema.TypeInt,
 						Required: true,
 						ForceNew: true,
 					},
 					"protocol": {
-						Type:     schema.TypeString,
-						Required: true,
+						Description: "The frontend protocol associated with this load balancer configuration.",
+						Type:        schema.TypeString,
+						Required:    true,
 					},
 					"port": {
-						Type:     schema.TypeString,
-						Required: true,
+						Description: "The backend port associated with this load balancer configuration.",
+						Type:        schema.TypeString,
+						Required:    true,
 					},
 					"external_port": {
-						Type:     schema.TypeInt,
-						Required: true,
+						Description: "The frontend port associated with this load balancer configuration.",
+						Type:        schema.TypeInt,
+						Required:    true,
 					},
 					"health_check_url": {
-						Type:     schema.TypeString,
-						Computed: true,
-						Optional: true,
+						Description: "The health check URL to associate with this load balancer configuration.",
+						Type:        schema.TypeString,
+						Computed:    true,
+						Optional:    true,
 					},
 					"certificate_arn": {
-						Type:     schema.TypeString,
-						Computed: true,
-						Optional: true,
+						Description: "The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.",
+						Type:        schema.TypeString,
+						Computed:    true,
+						Optional:    true,
 					},
 					"replication_controller_name": {
 						Type:       schema.TypeString,
@@ -98,14 +117,16 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 						Optional: true,
 					},
 					"external_traffic_policy": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Computed: true,
+						Description: "Only for K8S Node Port (`lb_type = 4`).  Set the kubernetes service `externalTrafficPolicy` attribute.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
 					},
 					"is_internal": {
-						Type:     schema.TypeBool,
-						Computed: true,
-						Optional: true,
+						Description: "Whether or not to create an internal load balancer.",
+						Type:        schema.TypeBool,
+						Computed:    true,
+						Optional:    true,
 					},
 				},
 			},
