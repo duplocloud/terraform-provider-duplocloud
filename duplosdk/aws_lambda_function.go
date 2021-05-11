@@ -2,7 +2,6 @@ package duplosdk
 
 import (
 	"fmt"
-	"time"
 )
 
 // DuploLambdaFunction is a Duplo SDK object that represents a lambda function.
@@ -21,7 +20,7 @@ type DuploLambdaFunction struct {
 	FunctionArn   string                    `json:"FunctionArn,omitempty"`
 	FunctionName  string                    `json:"FunctionName,omitempty"`
 	Handler       string                    `json:"Handler,omitempty"`
-	LastModified  time.Time                 `json:"LastModified,omitempty"`
+	LastModified  string                    `json:"LastModified,omitempty"`
 	Role          string                    `json:"Role,omitempty"`
 	MemorySize    int                       `json:"MemorySize"`
 	Runtime       *DuploStringValue         `json:"Runtime,omitempty"`
@@ -34,7 +33,7 @@ type DuploLambdaFunction struct {
 // DuploLambdaCode is a Duplo SDK object that represents a lambda function's code.
 type DuploLambdaCode struct {
 	S3Bucket string `json:"S3Bucket,omitempty"`
-	S3Key    string `json:"S3Bucket,omitempty"`
+	S3Key    string `json:"S3Key,omitempty"`
 }
 
 // DuploLambdaEnvironment is a Duplo SDK object that represents a lambda function's tracing config.
@@ -58,7 +57,7 @@ type DuploLambdaVpcConfig struct {
 type DuploLambdaUpdateRequest struct {
 	FunctionName string `json:"FunctionName,omitempty"`
 	S3Bucket     string `json:"S3Bucket,omitempty"`
-	S3Key        string `json:"S3Bucket,omitempty"`
+	S3Key        string `json:"S3Key,omitempty"`
 }
 
 // DuploLambdaConfigurationRequest is a Duplo SDK object that represents a request to update a lambda function's configuration.
