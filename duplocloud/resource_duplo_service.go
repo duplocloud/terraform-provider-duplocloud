@@ -124,7 +124,7 @@ func resourceDuploService() *schema.Resource {
 		UpdateContext: resourceDuploServiceUpdate,
 		DeleteContext: resourceDuploServiceDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),

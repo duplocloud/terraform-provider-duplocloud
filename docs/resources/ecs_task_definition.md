@@ -3,12 +3,12 @@
 page_title: "duplocloud_ecs_task_definition Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_ecs_task_definition manages a Amazon ECS task definition in Duplo.
 ---
 
 # duplocloud_ecs_task_definition (Resource)
 
-
+`duplocloud_ecs_task_definition` manages a Amazon ECS task definition in Duplo.
 
 ## Example Usage
 
@@ -41,8 +41,8 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 ### Required
 
 - **container_definitions** (String)
-- **family** (String)
-- **tenant_id** (String)
+- **family** (String) The name of the task definition to create.
+- **tenant_id** (String) The GUID of the tenant that the task definition will be created in.
 
 ### Optional
 
@@ -61,11 +61,11 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 
 ### Read-Only
 
-- **arn** (String)
+- **arn** (String) The ARN of the task definition.
 - **execution_role_arn** (String)
 - **id** (String) The ID of this resource.
-- **revision** (Number)
-- **status** (String)
+- **revision** (Number) The current revision of the task definition.
+- **status** (String) The status of the task definition.
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
 - **task_role_arn** (String)
 

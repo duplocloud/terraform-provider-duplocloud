@@ -3,12 +3,12 @@
 page_title: "duplocloud_ecs_service Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_ecs_service manages a Amazon ECS service in Duplo.
 ---
 
 # duplocloud_ecs_service (Resource)
 
-
+`duplocloud_ecs_service` manages a Amazon ECS service in Duplo.
 
 ## Example Usage
 
@@ -44,18 +44,18 @@ resource "duplocloud_ecs_service" "myservice" {
 
 ### Required
 
-- **name** (String)
-- **replicas** (Number)
-- **task_definition** (String)
-- **tenant_id** (String)
+- **name** (String) The name of the service to create.
+- **replicas** (Number) The number of container replicas to create.
+- **task_definition** (String) The ARN of the task definition to use.
+- **tenant_id** (String) The GUID of the tenant that the service will be created in.
 
 ### Optional
 
-- **dns_prfx** (String)
+- **dns_prfx** (String) The DNS prefix to assign to this service's load balancer.
 - **health_check_grace_period_seconds** (Number) Defaults to `0`.
 - **is_target_group_only** (Boolean) Defaults to `false`.
-- **load_balancer** (Block List, Max: 1) (see [below for nested schema](#nestedblock--load_balancer))
-- **old_task_definition_buffer_size** (Number) Defaults to `10`.
+- **load_balancer** (Block List, Max: 1) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedblock--load_balancer))
+- **old_task_definition_buffer_size** (Number) The number of older task definitions to retain in AWS. Defaults to `10`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -67,25 +67,30 @@ resource "duplocloud_ecs_service" "myservice" {
 
 Required:
 
-- **external_port** (Number)
-- **lb_type** (Number)
-- **port** (String)
-- **protocol** (String)
+- **external_port** (Number) The frontend port associated with this load balancer configuration.
+- **lb_type** (Number) The numerical index of the type of load balancer configuration to create.
+Should be one of:
+
+   - `0` : ELB (Classic Load Balancer)
+   - `1` : ALB (Application Load Balancer)
+   - `2` : Health-check Only (No Load Balancer)
+- **port** (String) The backend port associated with this load balancer configuration.
+- **protocol** (String) The frontend protocol associated with this load balancer configuration.
 
 Optional:
 
-- **backend_protocol** (String)
-- **certificate_arn** (String)
-- **drop_invalid_headers** (Boolean)
-- **enable_access_logs** (Boolean)
-- **health_check_url** (String)
-- **is_internal** (Boolean) Defaults to `false`.
-- **webaclid** (String)
+- **backend_protocol** (String) The backend protocol associated with this load balancer configuration.
+- **certificate_arn** (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
+- **drop_invalid_headers** (Boolean) Whether or not to drop invalid HTTP headers received by the load balancer.
+- **enable_access_logs** (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan
+- **health_check_url** (String) The health check URL to associate with this load balancer configuration.
+- **is_internal** (Boolean) Whether or not to create an internal load balancer. Defaults to `false`.
+- **webaclid** (String) The ARN of a web application firewall to associate this load balancer.
 
 Read-Only:
 
-- **load_balancer_arn** (String)
-- **load_balancer_name** (String)
+- **load_balancer_arn** (String) The load balancer ARN.
+- **load_balancer_name** (String) The load balancer name.
 - **replication_controller_name** (String)
 
 
