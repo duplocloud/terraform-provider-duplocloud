@@ -2,13 +2,17 @@
 
 ## Quick List of Steps
 
-There are three steps you must run:
+There are four steps, one of them is done automatically.
 
-  - `scripts/release.sh start`
-  - `scripts/release.sh finish`
-  - `scripts/release.sh next MY.NEXT.VERSION`
+  - Run: `scripts/release.sh start`
+  - Run: `scripts/release.sh finish`
+  - Automatically Done: publishing to github and hashicorp
+  - Run: `scripts/release.sh next MY.NEXT.VERSION`
 
-## Step 1 - release start
+
+## Detailed List of Steps
+
+### Step 1 - release start
 
 **NOTE: In the future, this might be moved to a github action.**
 
@@ -20,7 +24,7 @@ What does this do?
     - Checkout a new branch `release/MY.CURRENT.VERSION` from `develop` and push it to github
   - NOTE: If you forgot to "bump" the version after your prior release, an error will be given.
 
-## Step 2 - release finish
+### Step 2 - release finish
 
 **NOTE: In the future, this should be moved to a github action.**
 
@@ -41,7 +45,7 @@ What does this do?
       - Tag the release as `vMY.CURRENT.VERSION`
     - Push `develop`, `master` and the new release tag to github 
 
-## Step 3 - Publishing to github
+### Step 3 - Publishing to github
 
 This is taken care of automatically by the `.github/workflows/release.yml`
 
@@ -52,7 +56,7 @@ How does this work?
   - Hashicorp has a webhook installed in the git repo which will then pull our release into the registry.
     - It is triggered automatically whenever a github release is created
 
-## Step 4 - Bumping teh version
+### Step 4 - Bumping the version
 
 Run `scripts/release.sh next MY.NEW.VERSION`
 
