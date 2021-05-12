@@ -20,6 +20,9 @@ release_finish() {
     local version
     version="$(echo_version)"
 
+    # Switch to the release branch.
+    git checkout "release/$version"
+
     # Run tests
     make test
 
