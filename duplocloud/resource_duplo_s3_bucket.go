@@ -151,7 +151,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 	// Create the request object.
 	duploObject := duplosdk.DuploS3BucketRequest{
 		Name:           d.Get("name").(string),
-		InTenantRegion: d.Get("in_tenant_region").(bool),
+		InTenantRegion: true,
 	}
 
 	c := m.(*duplosdk.Client)
