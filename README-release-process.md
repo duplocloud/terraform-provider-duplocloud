@@ -1,8 +1,6 @@
-# Release Procesa
+# Release Process
 
-## Performing a release
-
-### Step 1 - release start
+## Step 1 - release start
 
 **NOTE: In the future, this might be moved to a github action.**
 
@@ -35,7 +33,7 @@ What does this do?
       - Tag the release as `vMY.CURRENT.VERSION`
     - Push `develop`, `master` and the new release tag to github 
 
-### Step 3 - Publishing to github
+## Step 3 - Publishing to github
 
 This is taken care of automatically by the `.github/workflows/release.yml`
 
@@ -46,7 +44,7 @@ How does this work?
   - Hashicorp has a webhook installed in the git repo which will then pull our release into the registry.
     - It is triggered automatically whenever a github release is created
 
-### Step 4 - Bumping teh version
+## Step 4 - Bumping teh version
 
 Run `scripts/release.sh next MY.NEW.VERSION`
 
