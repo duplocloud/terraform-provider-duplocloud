@@ -11,16 +11,28 @@ func isInterfaceNil(v interface{}) bool {
 	return v == nil || (reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil())
 }
 
-// GetDuploServicesName builds a duplo resource name, given a tenant ID.
-func (c *Client) GetDuploServicesName(tenantID, name string) (string, error) {
-	return c.GetResourceName("duploservices", tenantID, name)
+// GetDuploServicesNameWithAws builds a duplo resource name, given a tenant ID. The name that includes the AWS account ID suffix.
+func (c *Client) GetDuploServicesNameWithAws(tenantID, name string) (string, error) {
+	return c.GetResourceName("duploservices", tenantID, name, true)
 }
 
-// GetResourceNamebuilds a duplo resource name, given a tenant ID.
-func (c *Client) GetResourceName(prefix, tenantID, name string) (string, error) {
+// GetDuploServicesName builds a duplo resource name, given a tenant ID.
+func (c *Client) GetDuploServicesName(tenantID, name string) (string, error) {
+	return c.GetResourceName("duploservices", tenantID, name, false)
+}
+
+// GetResourceName builds a duplo resource name, given a tenant ID.  It can optionally include the AWS account ID suffix.
+func (c *Client) GetResourceName(prefix, tenantID, name string, withAccountSuffix bool) (string, error) {
 	tenant, err := c.GetTenantForUser(tenantID)
 	if err != nil {
 		return "", err
+	}
+	if withAccountSuffix {
+		accountID, err := c.TenantGetAwsAccountID(tenantID)
+		if err != nil {
+			return "", err
+		}
+		return strings.Join([]string{prefix, tenant.AccountName, name, accountID}, "-"), nil
 	}
 	return strings.Join([]string{prefix, tenant.AccountName, name}, "-"), nil
 }
@@ -46,6 +58,22 @@ func UnprefixName(prefix, name string) (string, bool) {
 	}
 
 	return name, false
+}
+
+// UnwrapName removes a duplo resource prefix and AWS account ID suffix from a name.
+func UnwrapName(prefix, accountID, name string) (string, bool) {
+	suffix := "-" + accountID
+
+	if !strings.HasSuffix(name, suffix) {
+		return name, false
+	}
+
+	part := name[0 : len(name)-len(suffix)]
+	if !strings.HasPrefix(part, prefix) {
+		return name, false
+	}
+
+	return part[len(prefix)+1:], true
 }
 
 func hashForData(s string) string {
