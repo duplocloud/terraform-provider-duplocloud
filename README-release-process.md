@@ -1,5 +1,13 @@
 # Release Process
 
+## Quick List of Steps
+
+There are three steps you must run:
+
+  - `scripts/release.sh start`
+  - `scripts/release.sh finish`
+  - `scripts/release.sh next MY.NEXT.VERSION`
+
 ## Step 1 - release start
 
 **NOTE: In the future, this might be moved to a github action.**
