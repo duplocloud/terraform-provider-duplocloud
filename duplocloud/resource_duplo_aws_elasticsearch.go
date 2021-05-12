@@ -23,34 +23,38 @@ const (
 	TLSSecurityPolicyPolicyMinTLS12201907 = "Policy-Min-TLS-1-2-2019-07"
 )
 
-// DuploEcacheInstanceSchema returns a Terraform resource schema for an ECS Service
 func awsElasticSearchSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch tenant
+			Description: "The GUID of the tenant that the ElasticSearch instance will be created in.",
+			Type:        schema.TypeString,
+			Optional:    false,
+			Required:    true,
+			ForceNew:    true, //switch tenant
 		},
 		"name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The short name of the ElasticSearch instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `domain_name` attribute.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][0-9a-z\-]{1,5}$`),
 				"must start with a lowercase alphabet and be at least 2 and no more than 6 characters long."+
 					" Valid characters are a-z (lowercase letters), 0-9, and - (hyphen)."),
 		},
 		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The ARN of the ElasticSearch instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"domain_id": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The domain ID of the ElasticSearch instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"domain_name": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The full name of the ElasticSearch instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"access_policies": {
 			Type:     schema.TypeString,
@@ -62,31 +66,36 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		"require_ssl": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
+			Description: "Whether or not to require SSL for accessing this ElasticSearch instance.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"use_latest_tls_cipher": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
+			Description: "Whether or not to use the latest TLS cipher for this ElasticSearch instance.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"elasticsearch_version": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
-			Default:  "7.9",
+			Description: "The version of the ElasticSearch instance.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+			Default:     "7.9",
 		},
 		"endpoints": {
-			Type:     schema.TypeMap,
-			Computed: true,
-			Elem:     &schema.Schema{Type: schema.TypeString},
+			Description: "The endpoints to use when connecting to the ElasticSearch instance.",
+			Type:        schema.TypeMap,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"storage_size": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			ForceNew: true,
-			Default:  20,
+			Description: "The storage volume size, in GB, for the ElasticSearch instance.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			ForceNew:    true,
+			Default:     20,
 		},
 		"ebs_options": {
 			Type:     schema.TypeList,
@@ -113,11 +122,12 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			},
 		},
 		"encrypt_at_rest": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
-			MaxItems: 1,
+			Description: "The storage encryption settings for the ElasticSearch instance.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true,
+			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"enabled": {
@@ -125,31 +135,35 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 						Computed: true,
 					},
 					"kms_key_name": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Computed: true,
-						ForceNew: true,
+						Description: "The name of a KMS key to use with the ElasticSearch instance.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
+						ForceNew:    true,
 					},
 					"kms_key_id": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Computed: true,
-						ForceNew: true,
+						Description: "The ID of a KMS key to use with the ElasticSearch instance.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
+						ForceNew:    true,
 					},
 				},
 			},
 		},
 		"enable_node_to_node_encryption": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
+			Description: "Whether or not to use the enable node-to-node encryption for this ElasticSearch instance.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true,
 		},
 		"selected_zone": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
+			Description: "The numerical index of the zone to launch this ElasticSearch instance in.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true,
 		},
 		"cluster_config": {
 			Type:     schema.TypeList,
@@ -237,12 +251,14 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 // Resource for managing an AWS ElasticSearch instance
 func resourceDuploAwsElasticSearch() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_aws_elasticsearch` manages an AWS ElasticSearch instance in Duplo.",
+
 		ReadContext:   resourceDuploAwsElasticSearchRead,
 		CreateContext: resourceDuploAwsElasticSearchCreate,
 		UpdateContext: resourceDuploAwsElasticSearchUpdate,
 		DeleteContext: resourceDuploAwsElasticSearchDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(75 * time.Minute),

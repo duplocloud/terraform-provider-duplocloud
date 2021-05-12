@@ -120,6 +120,10 @@ func (c *Client) LambdaFunctionGetList(tenantID string) (*[]DuploLambdaFunction,
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := c.TenantGetAwsAccountID(tenantID)
+	if err != nil {
+		return nil, err
+	}
 
 	// Get the list from Duplo
 	list := []DuploLambdaFunction{}
@@ -134,7 +138,7 @@ func (c *Client) LambdaFunctionGetList(tenantID string) (*[]DuploLambdaFunction,
 	// Add the tenant ID and name to each element and return the list.
 	for i := range list {
 		list[i].TenantID = tenantID
-		list[i].Name, _ = UnprefixName(prefix, list[i].FunctionName)
+		list[i].Name, _ = UnwrapName(prefix, accountID, list[i].FunctionName)
 	}
 	return &list, nil
 }
