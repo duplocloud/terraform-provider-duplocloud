@@ -327,24 +327,24 @@ func parseAwsLambdaFunctionIdParts(id string) (tenantID, name string, err error)
 }
 
 func flattenAwsLambdaEnvironment(environment *duplosdk.DuploLambdaEnvironment) []interface{} {
-	env := map[string]interface{}{}
+	env := []interface{}{}
 
-	if environment != nil {
+	if environment != nil && environment.Variables != nil && len(environment.Variables) > 0 {
 		vars := map[string]interface{}{}
 		for k, v := range environment.Variables {
 			vars[k] = v
 		}
-		env["variables"] = vars
+		env = []interface{}{map[string]interface{}{"variables": vars}}
 	}
 
-	return []interface{}{env}
+	return env
 }
 
 func expandAwsLambdaEnvironment(environment map[string]interface{}) *duplosdk.DuploLambdaEnvironment {
 	var env *duplosdk.DuploLambdaEnvironment = nil
 
 	if environment != nil {
-		if v, ok := environment["variables"]; ok && v != nil {
+		if v, ok := environment["variables"]; ok && v != nil && len(v.(map[string]interface{})) > 0 {
 			env = &duplosdk.DuploLambdaEnvironment{Variables: map[string]string{}}
 			for k, v := range v.(map[string]interface{}) {
 				if v == nil {
