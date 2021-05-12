@@ -197,12 +197,28 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	// Create the request object.
 	rq := duplosdk.DuploLambdaFunction{
 		FunctionName: name,
+		Handler:      d.Get("handler").(string),
+		Description:  d.Get("description").(string),
+		Timeout:      d.Get("timeout").(int),
+		MemorySize:   d.Get("memory_size").(int),
+		Code: &duplosdk.DuploLambdaCode{
+			S3Bucket: d.Get("s3_bucket").(string),
+			S3Key:    d.Get("s3_key").(string),
+		},
 	}
+	if v, ok := d.GetOk("runtime"); ok && v != nil && v.(string) != "" {
+		rq.Runtime = &duplosdk.DuploStringValue{Value: v.(string)}
+	}
+	environment, err := getOptionalBlockAsMap(d, "environment")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	rq.Environment = expandAwsLambdaEnvironment(environment)
 
 	c := m.(*duplosdk.Client)
 
 	// Post the object to Duplo
-	err := c.LambdaFunctionCreate(tenantID, &rq)
+	err = c.LambdaFunctionCreate(tenantID, &rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s lambda function '%s': %s", tenantID, name, err)
 	}
@@ -324,6 +340,25 @@ func flattenAwsLambdaEnvironment(environment *duplosdk.DuploLambdaEnvironment) [
 	return []interface{}{env}
 }
 
+func expandAwsLambdaEnvironment(environment map[string]interface{}) *duplosdk.DuploLambdaEnvironment {
+	var env *duplosdk.DuploLambdaEnvironment = nil
+
+	if environment != nil {
+		if v, ok := environment["variables"]; ok && v != nil {
+			env = &duplosdk.DuploLambdaEnvironment{Variables: map[string]string{}}
+			for k, v := range v.(map[string]interface{}) {
+				if v == nil {
+					env.Variables[k] = ""
+				} else {
+					env.Variables[k] = v.(string)
+				}
+			}
+		}
+	}
+
+	return env
+}
+
 func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData, c *duplosdk.Client) error {
 	rq := duplosdk.DuploLambdaConfigurationRequest{
 		FunctionName: name,
@@ -341,18 +376,7 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 	if err != nil {
 		return err
 	}
-	if environment != nil {
-		if v, ok := environment["variables"]; ok && v != nil {
-			rq.Environment = &duplosdk.DuploLambdaEnvironment{Variables: map[string]string{}}
-			for k, v := range v.(map[string]interface{}) {
-				if v == nil {
-					rq.Environment.Variables[k] = ""
-				} else {
-					rq.Environment.Variables[k] = v.(string)
-				}
-			}
-		}
-	}
+	rq.Environment = expandAwsLambdaEnvironment(environment)
 
 	err = c.LambdaFunctionUpdateConfiguration(tenantID, &rq)
 
