@@ -108,7 +108,7 @@ func (c *Client) LambdaFunctionUpdateConfiguration(tenantID string, rq *DuploLam
 // LambdaFunctionDelete deletes a lambda function via the Duplo API.
 func (c *Client) LambdaFunctionDelete(tenantID, identifier string) error {
 	return c.postAPI(
-		fmt.Sprintf("LambdaFunctionDelete(%s, duplo%s)", tenantID, identifier),
+		fmt.Sprintf("LambdaFunctionDelete(%s, %s)", tenantID, identifier),
 		fmt.Sprintf("subscriptions/%s/DeleteLambdaFunction/%s", tenantID, identifier),
 		nil,
 		nil)

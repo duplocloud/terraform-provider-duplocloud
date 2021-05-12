@@ -10,6 +10,9 @@ const (
 	// ResourceTypeS3Bucket represents an S3 bucket
 	ResourceTypeS3Bucket int = 1
 
+	// ResourceTypeDynamoDBTable represents an DynamoDB table
+	ResourceTypeDynamoDBTable int = 2
+
 	// ResourceTypeKafkaCluster represents a Kafka cluster
 	ResourceTypeKafkaCluster int = 14
 
@@ -347,53 +350,15 @@ func (c *Client) TenantGetAwsCloudResource(tenantID string, resourceType int, na
 	return nil, nil
 }
 
-// TenantGetKafkaClusterFullName retrieves the full name of a managed kafka cluster.
-func (c *Client) TenantGetKafkaClusterFullName(tenantID string, name string) (string, error) {
-
-	// Figure out the full resource name.
-	tenant, err := c.GetTenantForUser(tenantID)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("duploservices-%s-%s", tenant.AccountName, name), nil
-}
-
-// TenantGetS3BucketFullName retrieves the full name of a managed S3 bucket.
-func (c *Client) TenantGetS3BucketFullName(tenantID string, name string) (string, error) {
-
-	// Figure out the full resource name.
-	accountID, err := c.TenantGetAwsAccountID(tenantID)
-	if err != nil {
-		return "", err
-	}
-	tenant, err := c.GetTenantForUser(tenantID)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("duploservices-%s-%s-%s", tenant.AccountName, name, accountID), nil
-}
-
 // TenantGetApplicationLbFullName retrieves the full name of a pass-thru AWS application load balancer.
 func (c *Client) TenantGetApplicationLbFullName(tenantID string, name string) (string, error) {
-
-	// Figure out the full resource name.
-	tenant, err := c.GetTenantForUser(tenantID)
-	if err != nil {
-		return "", err
-	}
-	if tenant == nil || tenant.AccountName == "" {
-		return "", fmt.Errorf("tenant: %s: not found", tenantID)
-	}
-
-	return fmt.Sprintf("duplo3-%s-%s", tenant.AccountName, name), nil
+	return c.GetResourceName("duplo3", tenantID, name, false)
 }
 
 // TenantGetS3Bucket retrieves a managed S3 bucket via the Duplo API
 func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket, error) {
 	// Figure out the full resource name.
-	fullName, err := c.TenantGetS3BucketFullName(tenantID, name)
+	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
 	if err != nil {
 		return nil, err
 	}
@@ -421,7 +386,7 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 // TenantGetKafkaCluster retrieves a managed Kafka Cluster via the Duplo API
 func (c *Client) TenantGetKafkaCluster(tenantID string, name string) (*DuploKafkaCluster, error) {
 	// Figure out the full resource name.
-	fullName, err := c.TenantGetKafkaClusterFullName(tenantID, name)
+	fullName, err := c.GetDuploServicesName(tenantID, name)
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +444,7 @@ func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketReques
 func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) error {
 
 	// Get the full name of the S3 bucket
-	fullName, err := c.TenantGetS3BucketFullName(tenantID, name)
+	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
 	if err != nil {
 		return err
 	}
@@ -510,7 +475,7 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 	apiName := fmt.Sprintf("TenantApplyS3BucketSettings(%s, %s)", tenantID, duplo.Name)
 
 	// Figure out the full resource name.
-	fullName, err := c.TenantGetS3BucketFullName(tenantID, duplo.Name)
+	fullName, err := c.GetDuploServicesNameWithAws(tenantID, duplo.Name)
 	if err != nil {
 		return nil, err
 	}
