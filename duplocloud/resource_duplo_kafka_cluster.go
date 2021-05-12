@@ -127,6 +127,8 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 // Resource for managing an AWS Kafka cluster
 func resourceAwsKafkaCluster() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_aws_kafka_cluster` manages an AWS MSK cluster in Duplo.",
+
 		ReadContext:   resourceKafkaClusterRead,
 		CreateContext: resourceKafkaClusterCreate,
 		//UpdateContext: resourceKafkaClusterUpdate,

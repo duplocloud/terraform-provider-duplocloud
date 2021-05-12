@@ -3,12 +3,12 @@
 page_title: "duplocloud_aws_kafka_cluster Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_aws_kafka_cluster manages an AWS MSK cluster in Duplo.
 ---
 
 # duplocloud_aws_kafka_cluster (Resource)
 
-
+`duplocloud_aws_kafka_cluster` manages an AWS MSK cluster in Duplo.
 
 
 

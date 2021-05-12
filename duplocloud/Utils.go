@@ -228,7 +228,7 @@ func getOptionalBlock(data *schema.ResourceData, key string) (*interface{}, erro
 
 		if len(x) == 1 {
 			if x[0] == nil {
-				return nil, fmt.Errorf("At least one field is expected inside %s", key)
+				return nil, fmt.Errorf("at least one field is expected inside %s", key)
 			}
 			value = &x[0]
 		}
@@ -253,7 +253,7 @@ func getAsStringArray(data *schema.ResourceData, key string) (*[]string, bool) {
 
 	if v, ok = data.GetOk(key); ok && v != nil {
 		list := v.([]interface{})
-		result = make([]string, len(list), len(list))
+		result = make([]string, len(list))
 		for i, el := range list {
 			result[i] = el.(string)
 		}
@@ -314,7 +314,7 @@ func getStringArray(data map[string]interface{}, key string) (*[]string, bool) {
 
 	if v, ok = data[key]; ok && v != nil {
 		list := v.([]interface{})
-		result = make([]string, len(list), len(list))
+		result = make([]string, len(list))
 		for i, el := range list {
 			result[i] = el.(string)
 		}
@@ -328,17 +328,17 @@ func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.Resour
 		resp, errget := get()
 
 		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting %s '%s': %s", kind, id, errget))
+			return resource.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
 		}
 
 		if !isInterfaceNil(resp) {
-			return resource.RetryableError(fmt.Errorf("Expected %s '%s' to be missing, but it still exists", kind, id))
+			return resource.RetryableError(fmt.Errorf("expected %s '%s' to be missing, but it still exists", kind, id))
 		}
 
 		return nil
 	})
 	if err != nil {
-		return diag.Errorf("Error deleting %s '%s': %s", kind, id, err)
+		return diag.Errorf("error deleting %s '%s': %s", kind, id, err)
 	}
 	return nil
 }
@@ -348,17 +348,17 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 		resp, errget := get()
 
 		if errget != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error getting %s '%s': %s", kind, id, errget))
+			return resource.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
 		}
 
 		if isInterfaceNil(resp) {
-			return resource.RetryableError(fmt.Errorf("Expected %s '%s' to be retrieved, but got: nil", kind, id))
+			return resource.RetryableError(fmt.Errorf("expected %s '%s' to be retrieved, but got: nil", kind, id))
 		}
 
 		return nil
 	})
 	if err != nil {
-		return diag.Errorf("Error creating %s '%s': %s", kind, id, err)
+		return diag.Errorf("error creating %s '%s': %s", kind, id, err)
 	}
 	return nil
 }
