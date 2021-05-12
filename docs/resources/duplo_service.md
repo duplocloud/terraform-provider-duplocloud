@@ -50,10 +50,9 @@ resource "duplocloud_duplo_service" "myservice" {
   docker_image   = "nginx:latest"
   replicas       = 1
 
-  other_docker_config = jsonencode({
-    Env = [
-      { Name = "NGINX_HOST", Value = "foo" },
-    ]
+  extra_config = jsonencode({
+    "NGINX_HOST" = "foo",
+    "NGINX_PORT" = "8080"
   })
 
   // Enables host networking, and listening on ports < 1000
