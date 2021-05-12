@@ -33,6 +33,15 @@ There is a `scripts/release.sh` tool to automate the process.
        - Tag the release as `vMY.CURRENT.VERSION`
      - Push `develop`, `master` and the new release tag to github 
 
+### Final publishing.
+
+  - This is taken care of automatically by the `.github/workflows/release.yml`
+    - It uses the `goreleaser` tool to build and publish the release.
+    - It is triggered by the release tag pushed by the "Finishing a release" step above.
+  - Hashicorp has a webhook installed in the git repo which will then pull our release into the registry.
+    - It is triggered automatically whenever a github release is created
+
+
 ### Bumping the version after a release.
 
  - Run `scripts/release.sh next MY.NEW.VERSION`
