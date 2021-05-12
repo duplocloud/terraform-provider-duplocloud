@@ -343,7 +343,7 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 	}
 	if environment != nil {
 		if v, ok := environment["variables"]; ok && v != nil {
-			rq.Environment = &duplosdk.DuploLambdaEnvironment{}
+			rq.Environment = &duplosdk.DuploLambdaEnvironment{Variables: map[string]string{}}
 			for k, v := range v.(map[string]interface{}) {
 				if v == nil {
 					rq.Environment.Variables[k] = ""
