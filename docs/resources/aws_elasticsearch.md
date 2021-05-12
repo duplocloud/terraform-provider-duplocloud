@@ -3,12 +3,12 @@
 page_title: "duplocloud_aws_elasticsearch Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_aws_elasticsearch manages an AWS ElasticSearch instance in Duplo.
 ---
 
 # duplocloud_aws_elasticsearch (Resource)
 
-
+`duplocloud_aws_elasticsearch` manages an AWS ElasticSearch instance in Duplo.
 
 
 
@@ -17,31 +17,31 @@ description: |-
 
 ### Required
 
-- **name** (String)
-- **tenant_id** (String)
+- **name** (String) The short name of the ElasticSearch instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `domain_name` attribute.
+- **tenant_id** (String) The GUID of the tenant that the ElasticSearch instance will be created in.
 
 ### Optional
 
 - **cluster_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--cluster_config))
-- **elasticsearch_version** (String) Defaults to `7.9`.
-- **enable_node_to_node_encryption** (Boolean)
-- **encrypt_at_rest** (Block List, Max: 1) (see [below for nested schema](#nestedblock--encrypt_at_rest))
-- **require_ssl** (Boolean)
-- **selected_zone** (Number)
-- **storage_size** (Number) Defaults to `20`.
+- **elasticsearch_version** (String) The version of the ElasticSearch instance. Defaults to `7.9`.
+- **enable_node_to_node_encryption** (Boolean) Whether or not to use the enable node-to-node encryption for this ElasticSearch instance.
+- **encrypt_at_rest** (Block List, Max: 1) The storage encryption settings for the ElasticSearch instance. (see [below for nested schema](#nestedblock--encrypt_at_rest))
+- **require_ssl** (Boolean) Whether or not to require SSL for accessing this ElasticSearch instance.
+- **selected_zone** (Number) The numerical index of the zone to launch this ElasticSearch instance in.
+- **storage_size** (Number) The storage volume size, in GB, for the ElasticSearch instance. Defaults to `20`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **use_latest_tls_cipher** (Boolean)
+- **use_latest_tls_cipher** (Boolean) Whether or not to use the latest TLS cipher for this ElasticSearch instance.
 - **vpc_options** (Block List) (see [below for nested schema](#nestedblock--vpc_options))
 
 ### Read-Only
 
 - **access_policies** (String)
 - **advanced_options** (Map of String)
-- **arn** (String)
-- **domain_id** (String)
-- **domain_name** (String)
+- **arn** (String) The ARN of the ElasticSearch instance.
+- **domain_id** (String) The domain ID of the ElasticSearch instance.
+- **domain_name** (String) The full name of the ElasticSearch instance.
 - **ebs_options** (List of Object) (see [below for nested schema](#nestedatt--ebs_options))
-- **endpoints** (Map of String)
+- **endpoints** (Map of String) The endpoints to use when connecting to the ElasticSearch instance.
 - **id** (String) The ID of this resource.
 - **snapshot_options** (List of Object) (see [below for nested schema](#nestedatt--snapshot_options))
 
@@ -62,8 +62,8 @@ Optional:
 
 Optional:
 
-- **kms_key_id** (String)
-- **kms_key_name** (String)
+- **kms_key_id** (String) The ID of a KMS key to use with the ElasticSearch instance.
+- **kms_key_name** (String) The name of a KMS key to use with the ElasticSearch instance.
 
 Read-Only:
 

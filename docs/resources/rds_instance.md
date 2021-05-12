@@ -3,12 +3,12 @@
 page_title: "duplocloud_rds_instance Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_rds_instance manages an AWS RDS instance in Duplo.
 ---
 
 # duplocloud_rds_instance (Resource)
 
-
+`duplocloud_rds_instance` manages an AWS RDS instance in Duplo.
 
 ## Example Usage
 
