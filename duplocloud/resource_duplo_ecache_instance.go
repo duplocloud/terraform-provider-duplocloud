@@ -2,7 +2,6 @@ package duplocloud
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -18,68 +17,85 @@ import (
 func ecacheInstanceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
-			ForceNew: true, //switch tenant
+			Description: "The GUID of the tenant that the elasticache instance will be created in.",
+			Type:        schema.TypeString,
+			Optional:    false,
+			Required:    true,
+			ForceNew:    true, //switch tenant
 		},
 		"name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The short name of the elasticache instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"identifier": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The full name of the elasticache instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The ARN of the elasticache instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"endpoint": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The endpoint of the elasticache instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"host": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The DNS hostname of the elasticache instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"port": {
-			Type:     schema.TypeInt,
-			Computed: true,
+			Description: "The listening port of the elasticache instance.",
+			Type:        schema.TypeInt,
+			Computed:    true,
 		},
 		"cache_type": {
+			Description: "The numerical index of elasticache instance type.\n" +
+				"Should be one of:\n\n" +
+				"   - `0` : Redis\n" +
+				"   - `1` : Memcache\n",
 			Type:     schema.TypeInt,
 			Optional: true,
 			ForceNew: true,
 			Default:  0,
 		},
 		"size": {
+			Description: "The instance type of the elasticache instance.\n" +
+				"See AWS documentation for the [available instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CacheNodes.SupportedTypes.html).",
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
 		"replicas": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			ForceNew: true,
-			Default:  1,
+			Description: "The number of replicas to create.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			ForceNew:    true,
+			Default:     1,
 		},
 		"encryption_at_rest": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			ForceNew: true,
-			Default:  false,
+			Description: "Enables encryption-at-rest.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true,
+			Default:     false,
 		},
 		"encryption_in_transit": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			ForceNew: true,
-			Default:  false,
+			Description: "Enables encryption-in-transit.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true,
+			Default:     false,
 		},
 		"instance_status": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The status of the elasticache instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 	}
 }
@@ -87,11 +103,13 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 // SCHEMA for resource crud
 func resourceDuploEcacheInstance() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_ecache_instance` manages an ElastiCache instance in Duplo.",
+
 		ReadContext:   resourceDuploEcacheInstanceRead,
 		CreateContext: resourceDuploEcacheInstanceCreate,
 		DeleteContext: resourceDuploEcacheInstanceDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
@@ -104,11 +122,18 @@ func resourceDuploEcacheInstance() *schema.Resource {
 
 /// READ resource
 func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploEcacheInstanceRead ******** start")
+
+	// Parse the identifying attributes
+	id := d.Id()
+	tenantID, name, err := parseECacheInstanceIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceDuploEcacheInstanceRead(%s, %s): start", tenantID, name)
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.EcacheInstanceGet(d.Id())
+	duplo, err := c.EcacheInstanceGet(tenantID, name)
 	if duplo == nil {
 		d.SetId("")
 		return nil
@@ -118,34 +143,25 @@ func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	// Convert the object into Terraform resource data
-	jo := ecacheInstanceToState(duplo, d)
-	for key := range jo {
-		d.Set(key, jo[key])
-	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", duplo.TenantID, duplo.Name))
+	flattenEcacheInstance(duplo, d)
 
-	log.Printf("[TRACE] resourceDuploEcacheInstanceRead ******** end")
+	log.Printf("[TRACE] resourceDuploEcacheInstanceRead(%s, %s): end", tenantID, name)
 	return nil
 }
 
 /// CREATE resource
 func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate ******** start")
-
-	// Convert the Terraform resource data into a Duplo object
-	duploObject, err := ecacheInstanceFromState(d)
-	if err != nil {
-		return diag.Errorf("Internal error: %s", err)
-	}
-
-	// Populate the identifier field, and determine some other fields
-	duploObject.Identifier = duploObject.Name
 	tenantID := d.Get("tenant_id").(string)
-	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duploObject.Name)
+
+	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s): start", tenantID)
+
+	duplo := expandEcacheInstance(d)
+	duplo.Identifier = duplo.Name
+	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duplo.Name)
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	_, err = c.EcacheInstanceCreate(tenantID, duploObject)
+	_, err := c.EcacheInstanceCreate(tenantID, duplo)
 	if err != nil {
 		return diag.Errorf("Error updating ECache instance '%s': %s", id, err)
 	}
@@ -153,40 +169,46 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 
 	// Wait up to 60 seconds for Duplo to be able to return the instance details.
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ECache instance", id, func() (interface{}, error) {
-		return c.EcacheInstanceGet(id)
+		return c.EcacheInstanceGet(tenantID, duplo.Name)
 	})
 	if diags != nil {
 		return diags
 	}
 
 	// Wait for the instance to become available.
-	err = ecacheInstanceWaitUntilAvailable(ctx, c, id)
+	err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, duplo.Name)
 	if err != nil {
 		return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
 	}
 
 	diags = resourceDuploEcacheInstanceRead(ctx, d, m)
-	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate ******** end")
+	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s, %s): end", tenantID, duplo.Name)
 	return diags
 }
 
 /// DELETE resource
 func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploEcacheInstanceDelete ******** start")
+
+	// Parse the identifying attributes
+	id := d.Id()
+	tenantID, name, err := parseECacheInstanceIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceDuploEcacheInstanceDelete(%s, %s): start", tenantID, name)
 
 	// Delete the object from Duplo
-	id := d.Id()
 	c := m.(*duplosdk.Client)
-	_, err := c.EcacheInstanceDelete(id)
+	err = c.EcacheInstanceDelete(tenantID, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Wait up to 60 seconds for Duplo to show the object as deleted.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "ECache instance", id, func() (interface{}, error) {
-		return c.EcacheInstanceGet(id)
+		return c.EcacheInstanceGet(tenantID, name)
 	})
-	log.Printf("[TRACE] resourceDuploEcacheInstanceDelete ******** end")
+	log.Printf("[TRACE] resourceDuploEcacheInstanceDelete(%s, %s): end", tenantID, name)
 	return diag
 }
 
@@ -194,65 +216,49 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
  * DATA CONVERSIONS to/from duplo/terraform
  */
 
-// ecacheInstanceFromState converts resource data respresenting an ECache instance to a Duplo SDK object.
-func ecacheInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploEcacheInstance, error) {
-	duploObject := new(duplosdk.DuploEcacheInstance)
-
-	// First, convert things into simple scalars
-	duploObject.Name = d.Get("name").(string)
-	duploObject.Identifier = d.Get("identifier").(string)
-	duploObject.Arn = d.Get("arn").(string)
-	duploObject.Endpoint = d.Get("endpoint").(string)
-	duploObject.CacheType = d.Get("cache_type").(int)
-	duploObject.Size = d.Get("size").(string)
-	duploObject.Replicas = d.Get("replicas").(int)
-	duploObject.EncryptionAtRest = d.Get("encryption_at_rest").(bool)
-	duploObject.EncryptionInTransit = d.Get("encryption_in_transit").(bool)
-	duploObject.InstanceStatus = d.Get("instance_status").(string)
-
-	return duploObject, nil
+// expandEcacheInstance converts resource data respresenting an ECache instance to a Duplo SDK object.
+func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance {
+	return &duplosdk.DuploEcacheInstance{
+		Name:                d.Get("name").(string),
+		Identifier:          d.Get("identifier").(string),
+		Arn:                 d.Get("arn").(string),
+		Endpoint:            d.Get("endpoint").(string),
+		CacheType:           d.Get("cache_type").(int),
+		Size:                d.Get("size").(string),
+		Replicas:            d.Get("replicas").(int),
+		EncryptionAtRest:    d.Get("encryption_at_rest").(bool),
+		EncryptionInTransit: d.Get("encryption_in_transit").(bool),
+		InstanceStatus:      d.Get("instance_status").(string),
+	}
 }
 
-// ecacheInstanceToState converts a Duplo SDK object respresenting an ECache instance to terraform resource data.
-func ecacheInstanceToState(duploObject *duplosdk.DuploEcacheInstance, d *schema.ResourceData) map[string]interface{} {
-	if duploObject == nil {
-		return nil
-	}
-	jsonData, _ := json.Marshal(duploObject)
-	log.Printf("[TRACE] duplo-EcacheInstanceToState ******** 1: INPUT <= %s ", jsonData)
-
-	jo := make(map[string]interface{})
-
-	// First, convert things into simple scalars
-	jo["tenant_id"] = duploObject.TenantID
-	jo["name"] = duploObject.Name
-	jo["identifier"] = duploObject.Identifier
-	jo["arn"] = duploObject.Arn
-	jo["endpoint"] = duploObject.Endpoint
-	if duploObject.Endpoint != "" {
-		uriParts := strings.SplitN(duploObject.Endpoint, ":", 2)
-		jo["host"] = uriParts[0]
+// flattenEcacheInstance converts a Duplo SDK object respresenting an ECache instance to terraform resource data.
+func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.ResourceData) {
+	d.Set("tenant_id", duplo.TenantID)
+	d.Set("name", duplo.Name)
+	d.Set("identifier", duplo.Identifier)
+	d.Set("arn", duplo.Arn)
+	d.Set("endpoint", duplo.Endpoint)
+	if duplo.Endpoint != "" {
+		uriParts := strings.SplitN(duplo.Endpoint, ":", 2)
+		d.Set("host", uriParts[0])
 		if len(uriParts) == 2 {
-			jo["port"], _ = strconv.Atoi(uriParts[1])
+			port, _ := strconv.Atoi(uriParts[1])
+			d.Set("port", port)
 		}
 	}
-	jo["cache_type"] = duploObject.CacheType
-	jo["size"] = duploObject.Size
-	jo["replicas"] = duploObject.Replicas
-	jo["encryption_at_rest"] = duploObject.EncryptionAtRest
-	jo["encryption_in_transit"] = duploObject.EncryptionInTransit
-	jo["instance_status"] = duploObject.InstanceStatus
-
-	jsonData2, _ := json.Marshal(jo)
-	log.Printf("[TRACE] duplo-EcacheInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
-
-	return jo
+	d.Set("cache_type", duplo.CacheType)
+	d.Set("size", duplo.Size)
+	d.Set("replicas", duplo.Replicas)
+	d.Set("encryption_at_rest", duplo.EncryptionAtRest)
+	d.Set("encryption_in_transit", duplo.EncryptionInTransit)
+	d.Set("instance_status", duplo.InstanceStatus)
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
 //
 // It should be usable both post-creation and post-modification.
-func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, id string) error {
+func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, tenantID, name string) error {
 	stateConf := &resource.StateChangeConf{
 		Pending:      []string{"processing", "creating", "modifying", "rebooting cluster nodes", "snapshotting"},
 		Target:       []string{"available"},
@@ -260,7 +266,7 @@ func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, i
 		PollInterval: 30 * time.Second,
 		Timeout:      20 * time.Minute,
 		Refresh: func() (interface{}, string, error) {
-			resp, err := c.EcacheInstanceGet(id)
+			resp, err := c.EcacheInstanceGet(tenantID, name)
 			if err != nil {
 				return 0, "", err
 			}
@@ -270,7 +276,17 @@ func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, i
 			return resp, resp.InstanceStatus, nil
 		},
 	}
-	log.Printf("[DEBUG] EcacheInstanceWaitUntilAvailable (%s)", id)
+	log.Printf("[DEBUG] EcacheInstanceWaitUntilAvailable (%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func parseECacheInstanceIdParts(id string) (tenantID, name string, err error) {
+	idParts := strings.SplitN(id, "/", 5)
+	if len(idParts) == 5 {
+		tenantID, name = idParts[2], idParts[4]
+	} else {
+		err = fmt.Errorf("invalid resource ID: %s", id)
+	}
+	return
 }

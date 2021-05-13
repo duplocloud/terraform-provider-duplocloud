@@ -2,7 +2,6 @@ package duplosdk
 
 import (
 	"fmt"
-	"strings"
 )
 
 // DuploEcacheInstance is a Duplo SDK object that represents an ECache instance
@@ -63,42 +62,28 @@ func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *Dupl
 }
 
 // EcacheInstanceDelete deletes an ECache instance via the Duplo API.
-func (c *Client) EcacheInstanceDelete(id string) (*DuploEcacheInstance, error) {
-	idParts := strings.SplitN(id, "/", 5)
-	tenantID := idParts[2]
-	name := idParts[4]
-
-	// Call the API.
-	err := c.deleteAPI(
+func (c *Client) EcacheInstanceDelete(tenantID, name string) error {
+	return c.deleteAPI(
 		fmt.Sprintf("EcacheInstanceDelete(%s, duplo-%s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/duplo-%s", tenantID, name),
 		nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Return a placeholder - since the API does not return responses.
-	return &DuploEcacheInstance{TenantID: tenantID, Name: name}, nil
 }
 
 // EcacheInstanceGet retrieves an ECache instance via the Duplo API.
-func (c *Client) EcacheInstanceGet(id string) (*DuploEcacheInstance, error) {
-	idParts := strings.SplitN(id, "/", 5)
-	tenantID := idParts[2]
-	name := idParts[4]
+func (c *Client) EcacheInstanceGet(tenantID, name string) (*DuploEcacheInstance, error) {
 
 	// Call the API.
-	duploObject := DuploEcacheInstance{}
+	rp := DuploEcacheInstance{}
 	err := c.getAPI(
 		fmt.Sprintf("EcacheInstanceGet(%s, duplo-%s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/duplo-%s", tenantID, name),
-		&duploObject)
-	if err != nil || duploObject.Identifier == "" {
+		&rp)
+	if err != nil || rp.Identifier == "" {
 		return nil, err
 	}
 
 	// Fill in the tenant ID and the name and return the object
-	duploObject.TenantID = tenantID
-	duploObject.Name = name
-	return &duploObject, nil
+	rp.TenantID = tenantID
+	rp.Name = name
+	return &rp, nil
 }
