@@ -289,6 +289,13 @@ func (c *Client) TenantGetInternalSubnets(tenantID string) ([]string, ClientErro
 	return list, err
 }
 
+// TenantGetExternalSubnets retrieves a list of the internal subnets for a tenant via the Duplo API.
+func (c *Client) TenantGetExternalSubnets(tenantID string) ([]string, ClientError) {
+	list := []string{}
+	err := c.getAPI(fmt.Sprintf("TenantGetExternalSubnets(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetExternalSubnets", tenantID), &list)
+	return list, err
+}
+
 // TenantGetAwsAccountID retrieves the AWS account ID via the Duplo API.
 func (c *Client) TenantGetAwsAccountID(tenantID string) (string, ClientError) {
 	awsAccountID := ""

@@ -12,21 +12,32 @@ type DuploLambdaFunction struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`
 
+	Code          DuploLambdaCode          `json:"Code"`
+	Configuration DuploLambdaConfiguration `json:"Configuration"`
+}
+
+// DuploLambdaConfiguration is a Duplo SDK object that represents a lambda function's configuration.
+type DuploLambdaConfiguration struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	// NOTE: The Name field does not come from the backend - we synthesize it
+	Name string `json:"Name"`
+
 	CodeSha256    string                    `json:"CodeSha256"`
 	CodeSize      int                       `json:"CodeSize"`
-	Code          *DuploLambdaCode          `json:"Code"`
 	Description   string                    `json:"Description,omitempty"`
 	Environment   *DuploLambdaEnvironment   `json:"Environment,omitempty"`
 	FunctionArn   string                    `json:"FunctionArn,omitempty"`
 	FunctionName  string                    `json:"FunctionName,omitempty"`
 	Handler       string                    `json:"Handler,omitempty"`
 	LastModified  string                    `json:"LastModified,omitempty"`
-	Role          string                    `json:"Role,omitempty"`
 	MemorySize    int                       `json:"MemorySize"`
+	Role          string                    `json:"Role,omitempty"`
 	Runtime       *DuploStringValue         `json:"Runtime,omitempty"`
 	Timeout       int                       `json:"Timeout,omitempty"`
-	Version       string                    `json:"Version,omitempty"`
 	TracingConfig *DuploLambdaTracingConfig `json:"TracingConfig,omitempty"`
+	Version       string                    `json:"Version,omitempty"`
 	VpcConfig     *DuploLambdaVpcConfig     `json:"VpcConfig,omitempty"`
 }
 
@@ -53,6 +64,18 @@ type DuploLambdaVpcConfig struct {
 	VpcID            string   `json:"VpcId,omitempty"`
 }
 
+// DuploLambdaCreateRequest is a Duplo SDK object that represents a request to create a lambda function.
+type DuploLambdaCreateRequest struct {
+	FunctionName string                  `json:"FunctionName"`
+	Code         DuploLambdaCode         `json:"Code"`
+	Handler      string                  `json:"Handler,omitempty"`
+	Description  string                  `json:"Description,omitempty"`
+	Timeout      int                     `json:"Timeout,omitempty"`
+	MemorySize   int                     `json:"MemorySize"`
+	Runtime      *DuploStringValue       `json:"Runtime,omitempty"`
+	Environment  *DuploLambdaEnvironment `json:"Environment,omitempty"`
+}
+
 // DuploLambdaUpdateRequest is a Duplo SDK object that represents a request to update a lambda function's code.
 type DuploLambdaUpdateRequest struct {
 	FunctionName string `json:"FunctionName,omitempty"`
@@ -76,17 +99,22 @@ type DuploLambdaConfigurationRequest struct {
  */
 
 // LambdaFunctionCreate creates a lambda function via the Duplo API.
-func (c *Client) LambdaFunctionCreate(tenantID string, rq *DuploLambdaFunction) error {
-	return c.postAPI(
-		fmt.Sprintf("LambdaFunctionCreate(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("subscriptions/%s/CreateLambdaFunction", tenantID),
+func (c *Client) LambdaFunctionCreate(tenantID string, rq *DuploLambdaCreateRequest) (*DuploLambdaConfiguration, ClientError) {
+	rp := DuploLambdaConfiguration{}
+	err := c.postAPI(
+		fmt.Sprintf("LambdaFunctionCreate(%s, %s)", tenantID, rq.FunctionName),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda", tenantID),
 		&rq,
-		nil,
+		&rp,
 	)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, err
 }
 
 // LambdaFunctionUpdate updates a lambda function via the Duplo API.
-func (c *Client) LambdaFunctionUpdate(tenantID string, rq *DuploLambdaUpdateRequest) error {
+func (c *Client) LambdaFunctionUpdate(tenantID string, rq *DuploLambdaUpdateRequest) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("LambdaFunctionUpdate(%s, %s)", tenantID, rq.FunctionName),
 		fmt.Sprintf("subscriptions/%s/UpdateLambdaFunction", tenantID),
@@ -96,7 +124,7 @@ func (c *Client) LambdaFunctionUpdate(tenantID string, rq *DuploLambdaUpdateRequ
 }
 
 // LambdaFunctionUpdateConfiguration updates a lambda function's configuration via the Duplo API.
-func (c *Client) LambdaFunctionUpdateConfiguration(tenantID string, rq *DuploLambdaConfigurationRequest) error {
+func (c *Client) LambdaFunctionUpdateConfiguration(tenantID string, rq *DuploLambdaConfigurationRequest) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("LambdaFunctionUpdateConfigurationg(%s, %s)", tenantID, rq.FunctionName),
 		fmt.Sprintf("subscriptions/%s/UpdateLambdaFunctionConfiguration", tenantID),
@@ -106,16 +134,15 @@ func (c *Client) LambdaFunctionUpdateConfiguration(tenantID string, rq *DuploLam
 }
 
 // LambdaFunctionDelete deletes a lambda function via the Duplo API.
-func (c *Client) LambdaFunctionDelete(tenantID, identifier string) error {
-	return c.postAPI(
-		fmt.Sprintf("LambdaFunctionDelete(%s, %s)", tenantID, identifier),
-		fmt.Sprintf("subscriptions/%s/DeleteLambdaFunction/%s", tenantID, identifier),
-		nil,
+func (c *Client) LambdaFunctionDelete(tenantID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("LambdaFunctionDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s", tenantID, name),
 		nil)
 }
 
 // LambdaFunctionGetList gets a list of lambda functions via the Duplo API.
-func (c *Client) LambdaFunctionGetList(tenantID string) (*[]DuploLambdaFunction, error) {
+func (c *Client) LambdaFunctionGetList(tenantID string) (*[]DuploLambdaConfiguration, ClientError) {
 	prefix, err := c.GetDuploServicesPrefix(tenantID)
 	if err != nil {
 		return nil, err
@@ -126,7 +153,7 @@ func (c *Client) LambdaFunctionGetList(tenantID string) (*[]DuploLambdaFunction,
 	}
 
 	// Get the list from Duplo
-	list := []DuploLambdaFunction{}
+	list := []DuploLambdaConfiguration{}
 	err = c.getAPI(
 		fmt.Sprintf("LambdaFunctionGetList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetLambdaFunctions", tenantID),
@@ -144,21 +171,17 @@ func (c *Client) LambdaFunctionGetList(tenantID string) (*[]DuploLambdaFunction,
 }
 
 // LambdaFunctionGet gets a lambda function via the Duplo API.
-func (c *Client) LambdaFunctionGet(tenantID string, name string) (*DuploLambdaFunction, error) {
+func (c *Client) LambdaFunctionGet(tenantID string, name string) (*DuploLambdaFunction, ClientError) {
 
 	// Get the list from Duplo
-	list, err := c.LambdaFunctionGetList(tenantID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Return the matching object
-	for _, item := range *list {
-		if item.Name == name {
-			return &item, nil
-		}
-	}
-
-	// Nothing was found
-	return nil, nil
+	rp := DuploLambdaFunction{}
+	err := c.getAPI(
+		fmt.Sprintf("LambdaFunctionGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s", tenantID, name),
+		&rp)
+	rp.TenantID = tenantID
+	rp.Name = name
+	rp.Configuration.TenantID = tenantID
+	rp.Configuration.Name = name
+	return &rp, err
 }

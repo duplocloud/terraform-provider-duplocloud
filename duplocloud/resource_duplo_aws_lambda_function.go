@@ -152,36 +152,20 @@ func resourceAwsLambdaFunctionRead(ctx context.Context, d *schema.ResourceData, 
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.LambdaFunctionGet(tenantID, name)
-	if duplo == nil {
-		d.SetId("") // object missing
-		return nil
-	}
-	if err != nil {
-		return diag.Errorf("Unable to retrieve tenant %s lambda function '%s': %s", tenantID, name, err)
+	duplo, clientErr := c.LambdaFunctionGet(tenantID, name)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			d.SetId("") // object missing
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve tenant %s lambda function '%s': %s", tenantID, name, clientErr)
 	}
 
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
-	d.Set("fullname", duplo.FunctionName)
-	d.Set("arn", duplo.FunctionArn)
-	d.Set("role", duplo.Role)
-	d.Set("description", duplo.Description)
-	d.Set("last_modified", duplo.LastModified)
-	d.Set("source_code_hash", duplo.CodeSha256)
-	d.Set("source_code_size", duplo.CodeSize)
-	d.Set("memory_size", duplo.MemorySize)
-	d.Set("timeout", duplo.Timeout)
-	d.Set("handler", duplo.Handler)
-	d.Set("version", duplo.Version)
-	if duplo.Runtime != nil {
-		d.Set("runtime", duplo.Runtime.Value)
-	}
-	if duplo.Code != nil {
-		d.Set("s3_bucket", duplo.Code.S3Bucket)
-		d.Set("s3_key", duplo.Code.S3Key)
-	}
-	d.Set("environment", flattenAwsLambdaEnvironment(duplo.Environment))
+	flattenAwsLambdaConfiguration(d, &duplo.Configuration)
+	// d.Set("s3_bucket", duplo.Code.S3Bucket)
+	// d.Set("s3_key", duplo.Code.S3Key)
 
 	log.Printf("[TRACE] resourceAwsLambdaFunctionRead(%s, %s): end", tenantID, name)
 	return nil
@@ -195,13 +179,13 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	log.Printf("[TRACE] resourceAwsLambdaFunctionCreate(%s, %s): start", tenantID, name)
 
 	// Create the request object.
-	rq := duplosdk.DuploLambdaFunction{
+	rq := duplosdk.DuploLambdaCreateRequest{
 		FunctionName: name,
 		Handler:      d.Get("handler").(string),
 		Description:  d.Get("description").(string),
 		Timeout:      d.Get("timeout").(int),
 		MemorySize:   d.Get("memory_size").(int),
-		Code: &duplosdk.DuploLambdaCode{
+		Code: duplosdk.DuploLambdaCode{
 			S3Bucket: d.Get("s3_bucket").(string),
 			S3Key:    d.Get("s3_key").(string),
 		},
@@ -218,14 +202,14 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	c := m.(*duplosdk.Client)
 
 	// Post the object to Duplo
-	err = c.LambdaFunctionCreate(tenantID, &rq)
+	_, err = c.LambdaFunctionCreate(tenantID, &rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s lambda function '%s': %s", tenantID, name, err)
 	}
 
 	// Wait for Duplo to be able to return the cluster's details.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "lambda function", id, func() (interface{}, error) {
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "lambda function", id, func() (interface{}, duplosdk.ClientError) {
 		return c.LambdaFunctionGet(tenantID, name)
 	})
 	if diags != nil {
@@ -286,31 +270,23 @@ func resourceAwsLambdaFunctionDelete(ctx context.Context, d *schema.ResourceData
 	}
 	log.Printf("[TRACE] resourceAwsLambdaFunctionDelete(%s, %s): start", tenantID, name)
 
-	// See if the object still exists in Duplo.
+	// Delete the function.
 	c := m.(*duplosdk.Client)
-	duplo, err := c.LambdaFunctionGet(tenantID, name)
-	if err != nil {
-		return diag.Errorf("Unable to get lambda function '%s': %s", id, err)
-	}
-	if duplo != nil {
-
-		// Delete the function.
-		err := c.LambdaFunctionDelete(tenantID, duplo.FunctionName)
-		if err != nil {
-			return diag.Errorf("Error deleting lambda function '%s': %s", id, err)
+	clientErr := c.LambdaFunctionDelete(tenantID, name)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			return nil
 		}
-
-		// Wait up to 60 seconds for Duplo to delete the cluster.
-		diag := waitForResourceToBeMissingAfterDelete(ctx, d, "AWS lambda function", id, func() (interface{}, error) {
-			return c.LambdaFunctionGet(tenantID, name)
-		})
-		if diag != nil {
-			return diag
-		}
+		return diag.Errorf("Unable to delete tenant %s lambda function '%s': %s", tenantID, name, clientErr)
 	}
 
-	// Wait 10 more seconds to deal with consistency issues.
-	time.Sleep(10 * time.Second)
+	// Wait up to 60 seconds for Duplo to delete the function.
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "lambda function", id, func() (interface{}, duplosdk.ClientError) {
+		return c.LambdaFunctionGet(tenantID, name)
+	})
+	if diag != nil {
+		return diag
+	}
 
 	log.Printf("[TRACE] resourceAwsLambdaFunctionDelete(%s, %s): end", tenantID, name)
 	return nil
@@ -324,6 +300,24 @@ func parseAwsLambdaFunctionIdParts(id string) (tenantID, name string, err error)
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
 	return
+}
+
+func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.DuploLambdaConfiguration) {
+	d.Set("fullname", duplo.FunctionName)
+	d.Set("arn", duplo.FunctionArn)
+	d.Set("role", duplo.Role)
+	d.Set("description", duplo.Description)
+	d.Set("last_modified", duplo.LastModified)
+	d.Set("source_code_hash", duplo.CodeSha256)
+	d.Set("source_code_size", duplo.CodeSize)
+	d.Set("memory_size", duplo.MemorySize)
+	d.Set("timeout", duplo.Timeout)
+	d.Set("handler", duplo.Handler)
+	d.Set("version", duplo.Version)
+	if duplo.Runtime != nil {
+		d.Set("runtime", duplo.Runtime.Value)
+	}
+	d.Set("environment", flattenAwsLambdaEnvironment(duplo.Environment))
 }
 
 func flattenAwsLambdaEnvironment(environment *duplosdk.DuploLambdaEnvironment) []interface{} {
