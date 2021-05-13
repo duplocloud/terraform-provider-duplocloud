@@ -217,6 +217,7 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 
 /// CREATE resource
 func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
 	log.Printf("[TRACE] resourceKafkaClusterCreate ******** start")
 
 	// Create the request object.
@@ -244,17 +245,16 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	err := c.TenantCreateKafkaCluster(tenantID, rq)
+	err = c.TenantCreateKafkaCluster(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s kafka cluster '%s': %s", tenantID, rq.Name, err)
 	}
 
 	// Wait for Duplo to be able to return the cluster's details.
 	var rp *duplosdk.DuploKafkaCluster
-	var errget error
 	id := fmt.Sprintf("%s/%s", tenantID, rq.Name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "kafka cluster", id, func() (interface{}, error) {
-		rp, errget = c.TenantGetKafkaCluster(tenantID, rq.Name)
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "kafka cluster", id, func() (interface{}, duplosdk.ClientError) {
+		rp, errget := c.TenantGetKafkaCluster(tenantID, rq.Name)
 		if rp != nil && rp.Arn != "" {
 			return rp, errget
 		}
@@ -304,7 +304,7 @@ func resourceKafkaClusterDelete(ctx context.Context, d *schema.ResourceData, m i
 		}
 
 		// Wait up to 60 seconds for Duplo to delete the cluster.
-		diag := waitForResourceToBeMissingAfterDelete(ctx, d, "kafka cluster", id, func() (interface{}, error) {
+		diag := waitForResourceToBeMissingAfterDelete(ctx, d, "kafka cluster", id, func() (interface{}, duplosdk.ClientError) {
 			return c.TenantGetKafkaCluster(tenantID, name)
 		})
 		if diag != nil {

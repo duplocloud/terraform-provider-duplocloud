@@ -90,6 +90,8 @@ func resourceDuploServiceParams() *schema.Resource {
 
 /// READ resource
 func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
 	id := d.Id()
 	log.Printf("[TRACE] resourceDuploServiceParamsRead(%s): start", id)
 
@@ -137,6 +139,8 @@ func resourceDuploServiceParamsUpdate(ctx context.Context, d *schema.ResourceDat
 }
 
 func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, isUpdate bool) diag.Diagnostics {
+	var err error
+
 	tenantID := d.Get("tenant_id").(string)
 
 	// Create the request object.
@@ -158,7 +162,7 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 
 	// Create the service paramaters.
 	c := m.(*duplosdk.Client)
-	_, err := c.DuploServiceParamsCreateOrUpdate(tenantID, &duplo, isUpdate)
+	_, err = c.DuploServiceParamsCreateOrUpdate(tenantID, &duplo, isUpdate)
 	if err != nil {
 		return diag.Errorf("Error applying Duplo service params '%s': %s", id, err)
 	}
@@ -225,7 +229,7 @@ func readDuploServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 	return nil
 }
 
-func updateDuploServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
+func updateDuploServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) duplosdk.ClientError {
 
 	// Get any load balancer settings from the user.
 	settings := duplosdk.DuploAwsLbSettingsUpdateRequest{}

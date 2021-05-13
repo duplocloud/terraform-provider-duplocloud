@@ -18,7 +18,7 @@ type DuploAwsKmsKey struct {
 }
 
 // TenantGetPlanKmsKeys retrieves a list of the AWS KMS keys for a tenant via the Duplo API.
-func (c *Client) TenantGetPlanKmsKeys(tenantID string) (*[]DuploAwsKmsKey, error) {
+func (c *Client) TenantGetPlanKmsKeys(tenantID string) (*[]DuploAwsKmsKey, ClientError) {
 	apiName := fmt.Sprintf("TenantGetPlanKmsKeys(%s)", tenantID)
 	list := []DuploAwsKmsKey{}
 
@@ -39,7 +39,7 @@ func (c *Client) TenantGetPlanKmsKeys(tenantID string) (*[]DuploAwsKmsKey, error
 }
 
 // TenantGetTenantKmsKey retrieves a tenant specific AWS KMS keys via the Duplo API.
-func (c *Client) TenantGetTenantKmsKey(tenantID string) (*DuploAwsKmsKey, error) {
+func (c *Client) TenantGetTenantKmsKey(tenantID string) (*DuploAwsKmsKey, ClientError) {
 	kms := DuploAwsKmsKey{}
 
 	// Get the list from Duplo
@@ -57,7 +57,7 @@ func (c *Client) TenantGetTenantKmsKey(tenantID string) (*DuploAwsKmsKey, error)
 }
 
 // TenantGetAllKmsKeys retrieves a list of all AWS KMS keys usable by a tenant via the Duplo API.
-func (c *Client) TenantGetAllKmsKeys(tenantID string) ([]DuploAwsKmsKey, error) {
+func (c *Client) TenantGetAllKmsKeys(tenantID string) ([]DuploAwsKmsKey, ClientError) {
 
 	// Tenant specific key
 	tenantKey, err := c.TenantGetTenantKmsKey(tenantID)
@@ -84,7 +84,7 @@ func (c *Client) TenantGetAllKmsKeys(tenantID string) ([]DuploAwsKmsKey, error) 
 }
 
 // TenantGetKmsKeyByName retrieves a KMS key with a specific name, that is usable by a tenant via the Duplo API.
-func (c *Client) TenantGetKmsKeyByName(tenantID string, keyName string) (*DuploAwsKmsKey, error) {
+func (c *Client) TenantGetKmsKeyByName(tenantID string, keyName string) (*DuploAwsKmsKey, ClientError) {
 
 	// Get all keys.
 	allKeys, err := c.TenantGetAllKmsKeys(tenantID)
@@ -104,7 +104,7 @@ func (c *Client) TenantGetKmsKeyByName(tenantID string, keyName string) (*DuploA
 }
 
 // TenantGetKmsKeyByID retrieves a KMS key with a specific ID, that is usable by a tenant via the Duplo API.
-func (c *Client) TenantGetKmsKeyByID(tenantID string, keyID string) (*DuploAwsKmsKey, error) {
+func (c *Client) TenantGetKmsKeyByID(tenantID string, keyID string) (*DuploAwsKmsKey, ClientError) {
 
 	// Get all keys.
 	allKeys, err := c.TenantGetAllKmsKeys(tenantID)

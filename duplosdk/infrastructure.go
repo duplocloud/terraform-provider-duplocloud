@@ -70,7 +70,7 @@ type DuploInfrastructureConfig struct {
 }
 
 // InfrastructureGetList retrieves a list of infrastructures via the Duplo API.
-func (c *Client) InfrastructureGetList() (*[]DuploInfrastructure, error) {
+func (c *Client) InfrastructureGetList() (*[]DuploInfrastructure, ClientError) {
 	list := []DuploInfrastructure{}
 	err := c.getAPI("InfrastructureGetList()", "v2/admin/InfrastructureV2", &list)
 	if err != nil {
@@ -80,7 +80,7 @@ func (c *Client) InfrastructureGetList() (*[]DuploInfrastructure, error) {
 }
 
 // InfrastructureGet retrieves an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureGet(name string) (*DuploInfrastructure, error) {
+func (c *Client) InfrastructureGet(name string) (*DuploInfrastructure, ClientError) {
 	rp := DuploInfrastructure{}
 	err := c.getAPI(fmt.Sprintf("InfrastructureGet(%s)", name), fmt.Sprintf("v2/admin/InfrastructureV2/%s", name), &rp)
 	if err != nil || rp.Name == "" {
@@ -90,7 +90,7 @@ func (c *Client) InfrastructureGet(name string) (*DuploInfrastructure, error) {
 }
 
 // InfrastructureGetConfig retrieves extended infrastructure configuration by name via the Duplo API.
-func (c *Client) InfrastructureGetConfig(name string) (*DuploInfrastructureConfig, error) {
+func (c *Client) InfrastructureGetConfig(name string) (*DuploInfrastructureConfig, ClientError) {
 	rp := DuploInfrastructureConfig{}
 	err := c.getAPI(fmt.Sprintf("InfrastructureGetConfig(%s)", name), fmt.Sprintf("adminproxy/GetInfrastructureConfig/%s", name), &rp)
 	if err != nil || rp.Name == "" {
@@ -100,7 +100,7 @@ func (c *Client) InfrastructureGetConfig(name string) (*DuploInfrastructureConfi
 }
 
 // InfrastructureGetSubnet retrieves a specific infrastructure subnet via the Duplo API.
-func (c *Client) InfrastructureGetSubnet(infraName string, subnetName string, subnetCidr string) (*DuploInfrastructureVnetSubnet, error) {
+func (c *Client) InfrastructureGetSubnet(infraName string, subnetName string, subnetCidr string) (*DuploInfrastructureVnetSubnet, ClientError) {
 
 	// Get the entire infra config, since there is no limited API to call.
 	config, err := c.InfrastructureGetConfig(infraName)
@@ -130,7 +130,7 @@ func (c *Client) InfrastructureGetSubnet(infraName string, subnetName string, su
 }
 
 // InfrastructureCreateOrUpdateSubnet creates or updates an infrastructure subnet via the Duplo API.
-func (c *Client) InfrastructureCreateOrUpdateSubnet(rq DuploInfrastructureVnetSubnet) error {
+func (c *Client) InfrastructureCreateOrUpdateSubnet(rq DuploInfrastructureVnetSubnet) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("InfrastructureCreateOrUpdateSubnet(%s, %s)", rq.InfrastructureName, rq.Name),
 		"adminproxy/UpdateInfrastructureSubnet",
@@ -139,7 +139,7 @@ func (c *Client) InfrastructureCreateOrUpdateSubnet(rq DuploInfrastructureVnetSu
 }
 
 // InfrastructureDeleteSubnet deletes an infrastructure subnet via the Duplo API.
-func (c *Client) InfrastructureDeleteSubnet(infraName, subnetName, subnetCidr string) error {
+func (c *Client) InfrastructureDeleteSubnet(infraName, subnetName, subnetCidr string) ClientError {
 	rq := DuploInfrastructureVnetSubnet{
 		State:              "delete",
 		InfrastructureName: infraName,
@@ -154,17 +154,17 @@ func (c *Client) InfrastructureDeleteSubnet(infraName, subnetName, subnetCidr st
 }
 
 // InfrastructureCreate creates an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureCreate(rq DuploInfrastructure) (*DuploInfrastructure, error) {
+func (c *Client) InfrastructureCreate(rq DuploInfrastructure) (*DuploInfrastructure, ClientError) {
 	return c.InfrastructureCreateOrUpdate(rq, false)
 }
 
 // InfrastructureUpdate updates an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureUpdate(rq DuploInfrastructure) (*DuploInfrastructure, error) {
+func (c *Client) InfrastructureUpdate(rq DuploInfrastructure) (*DuploInfrastructure, ClientError) {
 	return c.InfrastructureCreateOrUpdate(rq, true)
 }
 
 // InfrastructureCreateOrUpdate creates or updates an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureCreateOrUpdate(rq DuploInfrastructure, updating bool) (*DuploInfrastructure, error) {
+func (c *Client) InfrastructureCreateOrUpdate(rq DuploInfrastructure, updating bool) (*DuploInfrastructure, ClientError) {
 
 	// Build the request
 	verb := "POST"
@@ -182,12 +182,12 @@ func (c *Client) InfrastructureCreateOrUpdate(rq DuploInfrastructure, updating b
 }
 
 // InfrastructureDelete deletes an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureDelete(name string) error {
+func (c *Client) InfrastructureDelete(name string) ClientError {
 	return c.deleteAPI(fmt.Sprintf("InfrastructureDelete(%s)", name), fmt.Sprintf("v2/admin/InfrastructureV2/%s", name), nil)
 }
 
 // GetEksCredentials retrieves just-in-time EKS credentials via the Duplo API.
-func (c *Client) GetEksCredentials(planID string) (*DuploEksCredentials, error) {
+func (c *Client) GetEksCredentials(planID string) (*DuploEksCredentials, ClientError) {
 	creds := DuploEksCredentials{}
 	err := c.getAPI(fmt.Sprintf("GetEksCredentials(%s)", planID), fmt.Sprintf("adminproxy/%s/GetEksClusterByInfra", planID), &creds)
 	if err != nil {

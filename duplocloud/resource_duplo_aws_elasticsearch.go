@@ -442,7 +442,7 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the domain's details.
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ElasticSearch domain", id, func() (interface{}, error) {
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ElasticSearch domain", id, func() (interface{}, duplosdk.ClientError) {
 		return c.TenantGetElasticSearchDomain(tenantID, duploObject.Name, false)
 	})
 	if diags != nil {
@@ -463,6 +463,8 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 
 /// UPDATE jresource
 func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
 	log.Printf("[TRACE] resourceDuploAwsElasticSearchUpdate ******** start")
 
 	// Set simple fields first.
@@ -478,7 +480,7 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
 
 	// Post the object to Duplo
-	err := c.TenantUpdateElasticSearchDomain(tenantID, &duploObject)
+	err = c.TenantUpdateElasticSearchDomain(tenantID, &duploObject)
 	if err != nil {
 		return diag.Errorf("Error updating ElasticSearch domain '%s': %s", id, err)
 	}
@@ -503,6 +505,8 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 
 /// DELETE resource
 func resourceDuploAwsElasticSearchDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
 	log.Printf("[TRACE] resourceDuploAwsElasticSearchDelete ******** start")
 
 	// Delete the object with Duplo
@@ -511,7 +515,7 @@ func resourceDuploAwsElasticSearchDelete(ctx context.Context, d *schema.Resource
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
 	domainName := d.Get("domain_name").(string)
-	err := c.TenantDeleteElasticSearchDomain(tenantID, domainName)
+	err = c.TenantDeleteElasticSearchDomain(tenantID, domainName)
 	if err != nil {
 		return diag.Errorf("Error deleting ElasticSearch domain '%s': %s", id, err)
 	}

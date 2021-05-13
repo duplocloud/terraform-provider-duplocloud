@@ -204,7 +204,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	d.SetId(id)
 
 	// Wait up to 60 seconds for Duplo to be able to return the instance details.
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "RDS DB instance", id, func() (interface{}, error) {
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "RDS DB instance", id, func() (interface{}, duplosdk.ClientError) {
 		return c.RdsInstanceGet(id)
 	})
 	if diags != nil {
@@ -224,13 +224,15 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 
 /// UPDATE resource
 func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** start")
 
 	// Request the password change in Duplo
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 	id := d.Id()
-	err := c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
+	err = c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
 		Identifier:     d.Get("identifier").(string),
 		MasterPassword: d.Get("master_password").(string),
 		StorePassword:  true,
@@ -267,7 +269,7 @@ func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB instance", id, func() (interface{}, error) {
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB instance", id, func() (interface{}, duplosdk.ClientError) {
 		return c.RdsInstanceGet(id)
 	})
 

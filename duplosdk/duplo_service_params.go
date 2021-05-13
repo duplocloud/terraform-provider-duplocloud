@@ -13,7 +13,7 @@ type DuploServiceParams struct {
 }
 
 // DuploServiceParamsGetList retrieves a list of service load balancers via the Duplo API.
-func (c *Client) DuploServiceParamsGetList(tenantID string) (*[]DuploServiceParams, error) {
+func (c *Client) DuploServiceParamsGetList(tenantID string) (*[]DuploServiceParams, ClientError) {
 
 	// Retrieve the objects.
 	list := []DuploServiceParams{}
@@ -33,7 +33,7 @@ func (c *Client) DuploServiceParamsGetList(tenantID string) (*[]DuploServicePara
 }
 
 // DuploServiceParamsGet retrieves a service's load balancer via the Duplo API.
-func (c *Client) DuploServiceParamsGet(tenantID string, name string) (*DuploServiceParams, error) {
+func (c *Client) DuploServiceParamsGet(tenantID string, name string) (*DuploServiceParams, ClientError) {
 	// Retrieve the object.
 	duploObject := DuploServiceParams{}
 	err := c.getAPI(
@@ -50,17 +50,17 @@ func (c *Client) DuploServiceParamsGet(tenantID string, name string) (*DuploServ
 }
 
 // DuploServiceParamsCreate creates a service's load balancer via the Duplo API.
-func (c *Client) DuploServiceParamsCreate(tenantID string, rq *DuploServiceParams) (*DuploServiceParams, error) {
+func (c *Client) DuploServiceParamsCreate(tenantID string, rq *DuploServiceParams) (*DuploServiceParams, ClientError) {
 	return c.DuploServiceParamsCreateOrUpdate(tenantID, rq, false)
 }
 
 // DuploServiceParamsUpdate updates an service's load balancer via the Duplo API.
-func (c *Client) DuploServiceParamsUpdate(tenantID string, rq *DuploServiceParams) (*DuploServiceParams, error) {
+func (c *Client) DuploServiceParamsUpdate(tenantID string, rq *DuploServiceParams) (*DuploServiceParams, ClientError) {
 	return c.DuploServiceParamsCreateOrUpdate(tenantID, rq, true)
 }
 
 // DuploServiceParamsCreateOrUpdate creates or updates an service's load balancer via the Duplo API.
-func (c *Client) DuploServiceParamsCreateOrUpdate(tenantID string, rq *DuploServiceParams, updating bool) (*DuploServiceParams, error) {
+func (c *Client) DuploServiceParamsCreateOrUpdate(tenantID string, rq *DuploServiceParams, updating bool) (*DuploServiceParams, ClientError) {
 
 	// Build the request
 	verb := "POST"
@@ -84,7 +84,7 @@ func (c *Client) DuploServiceParamsCreateOrUpdate(tenantID string, rq *DuploServ
 }
 
 // DuploServiceParamsDelete deletes a service's load balancer via the Duplo API.
-func (c *Client) DuploServiceParamsDelete(tenantID string, name string) error {
+func (c *Client) DuploServiceParamsDelete(tenantID string, name string) ClientError {
 	// Delete the service parameters
 	return c.deleteAPI(
 		fmt.Sprintf("DuploServiceParamsDelete(%s, %s)", tenantID, name),

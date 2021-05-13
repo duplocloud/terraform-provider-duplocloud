@@ -182,6 +182,8 @@ func resourceDuploServiceLBConfigsUpdate(ctx context.Context, d *schema.Resource
 }
 
 func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, updating bool) diag.Diagnostics {
+	var err error
+
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsCreateOrUpdate: start")
 
 	// Start the build the reqeust.
@@ -224,7 +226,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 	// Post the object to Duplo
 	id := fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2/%s", tenantID, name)
 	c := m.(*duplosdk.Client)
-	_, err := c.DuploServiceLBConfigsCreateOrUpdate(tenantID, &rq, updating)
+	_, err = c.DuploServiceLBConfigsCreateOrUpdate(tenantID, &rq, updating)
 	if err != nil {
 		return diag.Errorf("Error applying Duplo service '%s' load balancer configs: %s", id, err)
 	}
@@ -263,7 +265,7 @@ func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.Resource
 	}
 
 	// Wait for it to be deleted
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service load balancer configs", id, func() (interface{}, error) {
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service load balancer configs", id, func() (interface{}, duplosdk.ClientError) {
 		rp, errget := c.DuploServiceLBConfigsGet(tenantID, name)
 		if errget == nil && (rp == nil || rp.LBConfigs == nil || len(*rp.LBConfigs) == 0) {
 			rp = nil

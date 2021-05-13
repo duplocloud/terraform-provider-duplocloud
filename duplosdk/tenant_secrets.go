@@ -29,7 +29,7 @@ type DuploTenantSecretRequest struct {
 }
 
 // TenantListSecrets retrieves a list of managed secrets via the Duplo API
-func (c *Client) TenantListSecrets(tenantID string) (*[]DuploTenantSecret, error) {
+func (c *Client) TenantListSecrets(tenantID string) (*[]DuploTenantSecret, ClientError) {
 	apiName := fmt.Sprintf("TenantListSecrets(%s)", tenantID)
 	list := []DuploTenantSecret{}
 
@@ -48,7 +48,7 @@ func (c *Client) TenantListSecrets(tenantID string) (*[]DuploTenantSecret, error
 }
 
 // TenantGetSecretByName retrieves a managed secret via the Duplo API
-func (c *Client) TenantGetSecretByName(tenantID string, name string) (*DuploTenantSecret, error) {
+func (c *Client) TenantGetSecretByName(tenantID string, name string) (*DuploTenantSecret, ClientError) {
 	allSecrets, err := c.TenantListSecrets(tenantID)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (c *Client) TenantGetSecretByName(tenantID string, name string) (*DuploTena
 }
 
 // TenantGetSecretByNameSuffix retrieves a managed secret via the Duplo API
-func (c *Client) TenantGetSecretByNameSuffix(tenantID string, nameSuffix string) (*DuploTenantSecret, error) {
+func (c *Client) TenantGetSecretByNameSuffix(tenantID string, nameSuffix string) (*DuploTenantSecret, ClientError) {
 	name, err := c.GetDuploServicesName(tenantID, nameSuffix)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (c *Client) TenantGetSecretByNameSuffix(tenantID string, nameSuffix string)
 }
 
 // TenantCreateSecret creates a tenant secret via Duplo.
-func (c *Client) TenantCreateSecret(tenantID string, duplo *DuploTenantSecretRequest) error {
+func (c *Client) TenantCreateSecret(tenantID string, duplo *DuploTenantSecretRequest) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("TenantCreateSecret(%s, %s)", tenantID, duplo.Name),
 		fmt.Sprintf("subscriptions/%s/CreateTenantSecret", tenantID),

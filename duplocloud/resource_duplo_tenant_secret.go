@@ -123,6 +123,8 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 
 /// CREATE resource
 func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
 	duploObject := duplosdk.DuploTenantSecretRequest{
 		Name:         d.Get("name_suffix").(string),
 		SecretString: d.Get("data").(string),
@@ -134,14 +136,14 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	err := c.TenantCreateSecret(tenantID, &duploObject)
+	err = c.TenantCreateSecret(tenantID, &duploObject)
 	if err != nil {
 		return diag.Errorf("error creating tenant %s secret '%s': %s", tenantID, duploObject.Name, err)
 	}
 	tempID := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
 
 	// Wait for Duplo to be able to return the secret's details.
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "tenant secret", tempID, func() (interface{}, error) {
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "tenant secret", tempID, func() (interface{}, duplosdk.ClientError) {
 		rp, errget := c.TenantGetSecretByNameSuffix(tenantID, duploObject.Name)
 		if errget == nil && rp != nil {
 			d.SetId(fmt.Sprintf("%s/%s", tenantID, rp.Name))
@@ -173,7 +175,7 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 	}
 
 	// Wait for Duplo to delete the secret.
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "tenant secret", id, func() (interface{}, error) {
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "tenant secret", id, func() (interface{}, duplosdk.ClientError) {
 		return c.TenantGetSecretByName(tenantID, name)
 	})
 

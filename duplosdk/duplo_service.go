@@ -23,7 +23,7 @@ type DuploService struct {
 }
 
 // DuploServiceGetList retrieves a list of services via the Duplo API.
-func (c *Client) DuploServiceList(tenantID string) (*[]DuploService, error) {
+func (c *Client) DuploServiceList(tenantID string) (*[]DuploService, ClientError) {
 	rp := []DuploService{}
 	err := c.getAPI(fmt.Sprintf("DuploServiceList(%s)", tenantID),
 		fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2", tenantID),
@@ -35,7 +35,7 @@ func (c *Client) DuploServiceList(tenantID string) (*[]DuploService, error) {
 }
 
 // DuploServiceGet retrieves a service's load balancer via the Duplo API.
-func (c *Client) DuploServiceGet(tenantID string, name string) (*DuploService, error) {
+func (c *Client) DuploServiceGet(tenantID string, name string) (*DuploService, ClientError) {
 	rp := DuploService{}
 	err := c.getAPI(fmt.Sprintf("DuploServiceGet(%s, %s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2/%s", tenantID, name),
@@ -47,17 +47,17 @@ func (c *Client) DuploServiceGet(tenantID string, name string) (*DuploService, e
 }
 
 // DuploServiceCreate creates a service via the Duplo API.
-func (c *Client) DuploServiceCreate(tenantID string, rq *DuploService) (*DuploService, error) {
+func (c *Client) DuploServiceCreate(tenantID string, rq *DuploService) (*DuploService, ClientError) {
 	return c.DuploServiceCreateOrUpdate(tenantID, rq, false)
 }
 
 // DuploServiceUpdate updates a service via the Duplo API.
-func (c *Client) DuploServiceUpdate(tenantID string, rq *DuploService) (*DuploService, error) {
+func (c *Client) DuploServiceUpdate(tenantID string, rq *DuploService) (*DuploService, ClientError) {
 	return c.DuploServiceCreateOrUpdate(tenantID, rq, true)
 }
 
 // DuploServiceCreateOrUpdate creates or updates a service via the Duplo API.
-func (c *Client) DuploServiceCreateOrUpdate(tenantID string, rq *DuploService, updating bool) (*DuploService, error) {
+func (c *Client) DuploServiceCreateOrUpdate(tenantID string, rq *DuploService, updating bool) (*DuploService, ClientError) {
 
 	// Build the request
 	verb := "POST"
@@ -81,7 +81,7 @@ func (c *Client) DuploServiceCreateOrUpdate(tenantID string, rq *DuploService, u
 }
 
 // DuploServiceDelete deletes a service via the Duplo API.
-func (c *Client) DuploServiceDelete(tenantID, name string) error {
+func (c *Client) DuploServiceDelete(tenantID, name string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("DuploServiceDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2/%s", tenantID, name),

@@ -155,20 +155,22 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 
 /// CREATE resource
 func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
 	rq := duploInfrastructureFromState(d)
 
 	log.Printf("[TRACE] resourceInfrastructureCreate(%s): start", rq.Name)
 
 	// Post the object to Duplo.
 	c := m.(*duplosdk.Client)
-	_, err := c.InfrastructureCreate(rq)
+	_, err = c.InfrastructureCreate(rq)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the infrastructure details.
 	id := fmt.Sprintf("v2/admin/InfrastructureV2/%s", rq.Name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, error) {
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, duplosdk.ClientError) {
 		return c.InfrastructureGet(rq.Name)
 	})
 	if diags != nil {
@@ -189,13 +191,15 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 
 /// UPDATE resource
 func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
 	rq := duploInfrastructureFromState(d)
 
 	log.Printf("[TRACE] resourceInfrastructureUpdate(%s): start", rq.Name)
 
 	// Put the object to Duplo.
 	c := m.(*duplosdk.Client)
-	_, err := c.InfrastructureUpdate(rq)
+	_, err = c.InfrastructureUpdate(rq)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -3,12 +3,12 @@
 page_title: "duplocloud_ecache_instance Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_ecache_instance manages an ElastiCache instance in Duplo.
 ---
 
 # duplocloud_ecache_instance (Resource)
 
-
+`duplocloud_ecache_instance` manages an ElastiCache instance in Duplo.
 
 
 
@@ -17,27 +17,33 @@ description: |-
 
 ### Required
 
-- **name** (String)
-- **size** (String)
-- **tenant_id** (String)
+- **name** (String) The short name of the elasticache instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
+- **size** (String) The instance type of the elasticache instance.
+See AWS documentation for the [available instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CacheNodes.SupportedTypes.html).
+- **tenant_id** (String) The GUID of the tenant that the elasticache instance will be created in.
 
 ### Optional
 
-- **cache_type** (Number) Defaults to `0`.
-- **encryption_at_rest** (Boolean) Defaults to `false`.
-- **encryption_in_transit** (Boolean) Defaults to `false`.
-- **replicas** (Number) Defaults to `1`.
+- **cache_type** (Number) The numerical index of elasticache instance type.
+Should be one of:
+
+   - `0` : Redis
+   - `1` : Memcache
+ Defaults to `0`.
+- **encryption_at_rest** (Boolean) Enables encryption-at-rest. Defaults to `false`.
+- **encryption_in_transit** (Boolean) Enables encryption-in-transit. Defaults to `false`.
+- **replicas** (Number) The number of replicas to create. Defaults to `1`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String)
-- **endpoint** (String)
-- **host** (String)
+- **arn** (String) The ARN of the elasticache instance.
+- **endpoint** (String) The endpoint of the elasticache instance.
+- **host** (String) The DNS hostname of the elasticache instance.
 - **id** (String) The ID of this resource.
-- **identifier** (String)
-- **instance_status** (String)
-- **port** (Number)
+- **identifier** (String) The full name of the elasticache instance.
+- **instance_status** (String) The status of the elasticache instance.
+- **port** (Number) The listening port of the elasticache instance.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

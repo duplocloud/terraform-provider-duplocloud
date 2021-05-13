@@ -10,6 +10,9 @@ const (
 	// ResourceTypeS3Bucket represents an S3 bucket
 	ResourceTypeS3Bucket int = 1
 
+	// ResourceTypeDynamoDBTable represents an DynamoDB table
+	ResourceTypeDynamoDBTable int = 2
+
 	// ResourceTypeKafkaCluster represents a Kafka cluster
 	ResourceTypeKafkaCluster int = 14
 
@@ -311,7 +314,7 @@ type DuploKafkaBootstrapBrokers struct {
 }
 
 // TenantListAwsCloudResources retrieves a list of the generic AWS cloud resources for a tenant via the Duplo API.
-func (c *Client) TenantListAwsCloudResources(tenantID string) (*[]DuploAwsCloudResource, error) {
+func (c *Client) TenantListAwsCloudResources(tenantID string) (*[]DuploAwsCloudResource, ClientError) {
 	apiName := fmt.Sprintf("TenantListAwsCloudResources(%s)", tenantID)
 	list := []DuploAwsCloudResource{}
 
@@ -330,7 +333,7 @@ func (c *Client) TenantListAwsCloudResources(tenantID string) (*[]DuploAwsCloudR
 }
 
 // TenantGetAwsCloudResource retrieves a cloud resource by type and name
-func (c *Client) TenantGetAwsCloudResource(tenantID string, resourceType int, name string) (*DuploAwsCloudResource, error) {
+func (c *Client) TenantGetAwsCloudResource(tenantID string, resourceType int, name string) (*DuploAwsCloudResource, ClientError) {
 	allResources, err := c.TenantListAwsCloudResources(tenantID)
 	if err != nil {
 		return nil, err
@@ -347,53 +350,15 @@ func (c *Client) TenantGetAwsCloudResource(tenantID string, resourceType int, na
 	return nil, nil
 }
 
-// TenantGetKafkaClusterFullName retrieves the full name of a managed kafka cluster.
-func (c *Client) TenantGetKafkaClusterFullName(tenantID string, name string) (string, error) {
-
-	// Figure out the full resource name.
-	tenant, err := c.GetTenantForUser(tenantID)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("duploservices-%s-%s", tenant.AccountName, name), nil
-}
-
-// TenantGetS3BucketFullName retrieves the full name of a managed S3 bucket.
-func (c *Client) TenantGetS3BucketFullName(tenantID string, name string) (string, error) {
-
-	// Figure out the full resource name.
-	accountID, err := c.TenantGetAwsAccountID(tenantID)
-	if err != nil {
-		return "", err
-	}
-	tenant, err := c.GetTenantForUser(tenantID)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("duploservices-%s-%s-%s", tenant.AccountName, name, accountID), nil
-}
-
 // TenantGetApplicationLbFullName retrieves the full name of a pass-thru AWS application load balancer.
-func (c *Client) TenantGetApplicationLbFullName(tenantID string, name string) (string, error) {
-
-	// Figure out the full resource name.
-	tenant, err := c.GetTenantForUser(tenantID)
-	if err != nil {
-		return "", err
-	}
-	if tenant == nil || tenant.AccountName == "" {
-		return "", fmt.Errorf("tenant: %s: not found", tenantID)
-	}
-
-	return fmt.Sprintf("duplo3-%s-%s", tenant.AccountName, name), nil
+func (c *Client) TenantGetApplicationLbFullName(tenantID string, name string) (string, ClientError) {
+	return c.GetResourceName("duplo3", tenantID, name, false)
 }
 
 // TenantGetS3Bucket retrieves a managed S3 bucket via the Duplo API
-func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket, error) {
+func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket, ClientError) {
 	// Figure out the full resource name.
-	fullName, err := c.TenantGetS3BucketFullName(tenantID, name)
+	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
 	if err != nil {
 		return nil, err
 	}
@@ -419,9 +384,9 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 }
 
 // TenantGetKafkaCluster retrieves a managed Kafka Cluster via the Duplo API
-func (c *Client) TenantGetKafkaCluster(tenantID string, name string) (*DuploKafkaCluster, error) {
+func (c *Client) TenantGetKafkaCluster(tenantID string, name string) (*DuploKafkaCluster, ClientError) {
 	// Figure out the full resource name.
-	fullName, err := c.TenantGetKafkaClusterFullName(tenantID, name)
+	fullName, err := c.GetDuploServicesName(tenantID, name)
 	if err != nil {
 		return nil, err
 	}
@@ -440,7 +405,8 @@ func (c *Client) TenantGetKafkaCluster(tenantID string, name string) (*DuploKafk
 }
 
 // TenantGetApplicationLB retrieves an application load balancer via the Duplo API
-func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApplicationLB, error) { // Figure out the full resource name.
+func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApplicationLB, ClientError) {
+	// Figure out the full resource name.
 	fullName, err := c.TenantGetApplicationLbFullName(tenantID, name)
 	if err != nil {
 		return nil, err
@@ -464,7 +430,7 @@ func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApp
 }
 
 // TenantCreateS3Bucket creates an S3 bucket resource via Duplo.
-func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketRequest) error {
+func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketRequest) ClientError {
 	duplo.Type = ResourceTypeS3Bucket
 
 	// Create the bucket via Duplo.
@@ -476,10 +442,10 @@ func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketReques
 }
 
 // TenantDeleteS3Bucket deletes an S3 bucket resource via Duplo.
-func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) error {
+func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError {
 
 	// Get the full name of the S3 bucket
-	fullName, err := c.TenantGetS3BucketFullName(tenantID, name)
+	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
 	if err != nil {
 		return err
 	}
@@ -493,7 +459,7 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) error {
 }
 
 // TenantGetS3BucketSettings gets a non-cached view of the  S3 buckets's settings via Duplo.
-func (c *Client) TenantGetS3BucketSettings(tenantID string, name string) (*DuploS3Bucket, error) {
+func (c *Client) TenantGetS3BucketSettings(tenantID string, name string) (*DuploS3Bucket, ClientError) {
 	rp := DuploS3Bucket{}
 
 	err := c.getAPI(fmt.Sprintf("TenantGetS3BucketSettings(%s, %s)", tenantID, name),
@@ -506,11 +472,11 @@ func (c *Client) TenantGetS3BucketSettings(tenantID string, name string) (*Duplo
 }
 
 // TenantApplyS3BucketSettings applies settings to an S3 bucket resource via Duplo.
-func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, error) {
+func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
 	apiName := fmt.Sprintf("TenantApplyS3BucketSettings(%s, %s)", tenantID, duplo.Name)
 
 	// Figure out the full resource name.
-	fullName, err := c.TenantGetS3BucketFullName(tenantID, duplo.Name)
+	fullName, err := c.GetDuploServicesNameWithAws(tenantID, duplo.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -525,9 +491,9 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 
 	// Deal with a missing response.
 	if rp.Name == "" {
-		err := fmt.Errorf("%s: unexpected missing response from backend", apiName)
-		log.Printf("[TRACE] %s", err)
-		return nil, err
+		message := fmt.Sprintf("%s: unexpected missing response from backend", apiName)
+		log.Printf("[TRACE] %s", message)
+		return nil, newClientError(message)
 	}
 
 	// Return the response.
@@ -536,7 +502,7 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 }
 
 // TenantCreateKafkaCluster creates a kafka cluster resource via Duplo.
-func (c *Client) TenantCreateKafkaCluster(tenantID string, duplo DuploKafkaClusterRequest) error {
+func (c *Client) TenantCreateKafkaCluster(tenantID string, duplo DuploKafkaClusterRequest) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("TenantCreateKafkaCluster(%s, %s)", tenantID, duplo.Name),
 		fmt.Sprintf("subscriptions/%s/KafkaClusterUpdate", tenantID),
@@ -545,7 +511,7 @@ func (c *Client) TenantCreateKafkaCluster(tenantID string, duplo DuploKafkaClust
 }
 
 // TenantDeleteKafkaCluster deletes a kafka cluster resource via Duplo.
-func (c *Client) TenantDeleteKafkaCluster(tenantID, arn string) error {
+func (c *Client) TenantDeleteKafkaCluster(tenantID, arn string) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("TenantDeleteKafkaCluster(%s, %s)", tenantID, arn),
 		fmt.Sprintf("subscriptions/%s/KafkaClusterUpdate", tenantID),
@@ -554,7 +520,7 @@ func (c *Client) TenantDeleteKafkaCluster(tenantID, arn string) error {
 }
 
 // TenantGetKafkaClusterInfo gets a non-cached view of the kafka cluster's info via Duplo.
-func (c *Client) TenantGetKafkaClusterInfo(tenantID string, arn string) (*DuploKafkaClusterInfo, error) {
+func (c *Client) TenantGetKafkaClusterInfo(tenantID string, arn string) (*DuploKafkaClusterInfo, ClientError) {
 	rp := DuploKafkaClusterInfo{}
 
 	err := c.postAPI(fmt.Sprintf("TenantGetKafkaClusterInfo(%s, %s)", tenantID, arn),
@@ -568,7 +534,7 @@ func (c *Client) TenantGetKafkaClusterInfo(tenantID string, arn string) (*DuploK
 }
 
 // TenantGetKafkaClusterBootstrapBrokers gets a non-cached view of the kafka cluster's info via Duplo.
-func (c *Client) TenantGetKafkaClusterBootstrapBrokers(tenantID string, arn string) (*DuploKafkaBootstrapBrokers, error) {
+func (c *Client) TenantGetKafkaClusterBootstrapBrokers(tenantID string, arn string) (*DuploKafkaBootstrapBrokers, ClientError) {
 	rp := DuploKafkaBootstrapBrokers{}
 
 	err := c.postAPI(fmt.Sprintf("TenantGetKafkaClusterBootstrapBrokers(%s, %s)", tenantID, arn),
@@ -582,7 +548,7 @@ func (c *Client) TenantGetKafkaClusterBootstrapBrokers(tenantID string, arn stri
 }
 
 // TenantUpdateApplicationLbSettings updates an application LB resource's settings via Duplo.
-func (c *Client) TenantUpdateApplicationLbSettings(tenantID string, duplo DuploAwsLbSettingsUpdateRequest) error {
+func (c *Client) TenantUpdateApplicationLbSettings(tenantID string, duplo DuploAwsLbSettingsUpdateRequest) ClientError {
 	return c.postAPI("TenantUpdateApplicationLbSettings",
 		fmt.Sprintf("subscriptions/%s/UpdateLbSettings", tenantID),
 		&duplo,
@@ -590,7 +556,7 @@ func (c *Client) TenantUpdateApplicationLbSettings(tenantID string, duplo DuploA
 }
 
 // TenantGetApplicationLbSettings updates an application LB resource's WAF association via Duplo.
-func (c *Client) TenantGetApplicationLbSettings(tenantID string, loadBalancerArn string) (*DuploAwsLbSettings, error) {
+func (c *Client) TenantGetApplicationLbSettings(tenantID string, loadBalancerArn string) (*DuploAwsLbSettings, ClientError) {
 	rp := DuploAwsLbSettings{}
 
 	err := c.postAPI("TenantGetApplicationLbSettings",
@@ -602,7 +568,7 @@ func (c *Client) TenantGetApplicationLbSettings(tenantID string, loadBalancerArn
 }
 
 // TenantGetLbDetailsInService retrieves load balancer details via a Duplo service.
-func (c *Client) TenantGetLbDetailsInService(tenantID string, name string) (*DuploAwsLbDetailsInService, error) {
+func (c *Client) TenantGetLbDetailsInService(tenantID string, name string) (*DuploAwsLbDetailsInService, ClientError) {
 	apiName := fmt.Sprintf("TenantGetLbDetailsInService(%s, %s)", tenantID, name)
 	details := DuploAwsLbDetailsInService{}
 
@@ -616,7 +582,7 @@ func (c *Client) TenantGetLbDetailsInService(tenantID string, name string) (*Dup
 }
 
 // TenantCreateApplicationLB creates an application LB resource via Duplo.
-func (c *Client) TenantCreateApplicationLB(tenantID string, duplo DuploAwsLBConfiguration) error {
+func (c *Client) TenantCreateApplicationLB(tenantID string, duplo DuploAwsLBConfiguration) ClientError {
 	return c.postAPI("TenantCreateApplicationLB",
 		fmt.Sprintf("subscriptions/%s/ApplicationLbUpdate", tenantID),
 		&duplo,
@@ -624,7 +590,7 @@ func (c *Client) TenantCreateApplicationLB(tenantID string, duplo DuploAwsLBConf
 }
 
 // TenantDeleteApplicationLB deletes an AWS application LB resource via Duplo.
-func (c *Client) TenantDeleteApplicationLB(tenantID string, name string) error {
+func (c *Client) TenantDeleteApplicationLB(tenantID string, name string) ClientError {
 	// Get the full name of the ALB.
 	fullName, err := c.TenantGetApplicationLbFullName(tenantID, name)
 	if err != nil {
@@ -639,7 +605,7 @@ func (c *Client) TenantDeleteApplicationLB(tenantID string, name string) error {
 }
 
 // TenantListApplicationLbTargetGroups retrieves a list of AWS LB target groups
-func (c *Client) TenantListApplicationLbTargetGroups(tenantID string) (*[]DuploAwsLbTargetGroup, error) {
+func (c *Client) TenantListApplicationLbTargetGroups(tenantID string) (*[]DuploAwsLbTargetGroup, ClientError) {
 	rp := []DuploAwsLbTargetGroup{}
 
 	err := c.getAPI("TenantListApplicationLbTargetGroups",
@@ -650,7 +616,7 @@ func (c *Client) TenantListApplicationLbTargetGroups(tenantID string) (*[]DuploA
 }
 
 // TenantListApplicationLbListeners retrieves a list of AWS LB listeners
-func (c *Client) TenantListApplicationLbListeners(tenantID string, name string) (*[]DuploAwsLbListener, error) {
+func (c *Client) TenantListApplicationLbListeners(tenantID string, name string) (*[]DuploAwsLbListener, ClientError) {
 	// Get the full name of the ALB.
 	fullName, err := c.TenantGetApplicationLbFullName(tenantID, name)
 	if err != nil {

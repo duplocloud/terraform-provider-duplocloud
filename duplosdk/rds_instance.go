@@ -41,17 +41,17 @@ type DuploRdsInstancePasswordChange struct {
  */
 
 // RdsInstanceCreate creates an ECS service via the Duplo API.
-func (c *Client) RdsInstanceCreate(tenantID string, duploObject *DuploRdsInstance) (*DuploRdsInstance, error) {
+func (c *Client) RdsInstanceCreate(tenantID string, duploObject *DuploRdsInstance) (*DuploRdsInstance, ClientError) {
 	return c.RdsInstanceCreateOrUpdate(tenantID, duploObject, false)
 }
 
 // RdsInstanceUpdate updates an ECS service via the Duplo API.
-func (c *Client) RdsInstanceUpdate(tenantID string, duploObject *DuploRdsInstance) (*DuploRdsInstance, error) {
+func (c *Client) RdsInstanceUpdate(tenantID string, duploObject *DuploRdsInstance) (*DuploRdsInstance, ClientError) {
 	return c.RdsInstanceCreateOrUpdate(tenantID, duploObject, true)
 }
 
 // RdsInstanceCreateOrUpdate creates or updates an RDS instance via the Duplo API.
-func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRdsInstance, updating bool) (*DuploRdsInstance, error) {
+func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRdsInstance, updating bool) (*DuploRdsInstance, ClientError) {
 
 	// Build the request
 	verb := "POST"
@@ -75,7 +75,7 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 }
 
 // RdsInstanceDelete deletes an RDS instance via the Duplo API.
-func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, error) {
+func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, ClientError) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]
@@ -94,7 +94,7 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, error) {
 }
 
 // RdsInstanceGet retrieves an RDS instance via the Duplo API.
-func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
+func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]
@@ -116,7 +116,7 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, error) {
 }
 
 // RdsInstanceChangePassword creates or updates an RDS instance via the Duplo API.
-func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRdsInstancePasswordChange) error {
+func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRdsInstancePasswordChange) ClientError {
 	// Call the API.
 	return c.postAPI(
 		fmt.Sprintf("RdsInstanceChangePassword(%s, %s)", tenantID, duploObject.Identifier),

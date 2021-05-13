@@ -296,6 +296,7 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
 
 	// Build a request.
 	rq := expandNativeHost(d)
@@ -313,7 +314,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 	// Wait up to 60 seconds for Duplo to be able to return the host details.
 	id := fmt.Sprintf("v2/subscriptions/%s/NativeHostV2/%s", rp.TenantID, rp.InstanceID)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "AWS host", id, func() (interface{}, error) {
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "AWS host", id, func() (interface{}, duplosdk.ClientError) {
 		return c.NativeHostGet(rp.TenantID, rp.InstanceID)
 	})
 	if diags != nil {
@@ -382,7 +383,7 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 		}
 
 		// Wait for the host to be missing
-		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "AWS host", id, func() (interface{}, error) {
+		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "AWS host", id, func() (interface{}, duplosdk.ClientError) {
 			if rp, err := c.NativeHostExists(tenantID, instanceID); rp || err != nil {
 				return rp, err
 			}

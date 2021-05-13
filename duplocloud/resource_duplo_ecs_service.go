@@ -180,6 +180,8 @@ func resourceDuploEcsService() *schema.Resource {
 
 /// READ resource
 func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** start")
 
 	// Get the object from Duplo, detecting a missing object
@@ -230,6 +232,8 @@ func resourceDuploEcsServiceUpdate(ctx context.Context, d *schema.ResourceData, 
 }
 
 func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, updating bool) diag.Diagnostics {
+	var err error
+
 	tenantID := d.Get("tenant_id").(string)
 
 	// Create the request object.
@@ -381,6 +385,8 @@ func readEcsServiceAwsLbSettings(tenantID string, name string, lb map[string]int
 }
 
 func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
+	var err error
+
 	state, err := getOptionalBlockAsMap(d, "load_balancer")
 	if err != nil || state == nil {
 		return err
@@ -404,7 +410,8 @@ func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 
 	// If we have load balancer settings, apply them.
 	if haveSettings {
-		details, err := c.TenantGetLbDetailsInService(tenantID, name)
+		var details *duplosdk.DuploAwsLbDetailsInService
+		details, err = c.TenantGetLbDetailsInService(tenantID, name)
 		if err != nil {
 			return err
 		}

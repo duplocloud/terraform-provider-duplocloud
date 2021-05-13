@@ -98,7 +98,7 @@ type DuploTenantExtConnSecurityGroupRule struct {
 }
 
 // TenantGet retrieves a tenant via the Duplo API.
-func (c *Client) TenantGet(tenantID string) (*DuploTenant, error) {
+func (c *Client) TenantGet(tenantID string) (*DuploTenant, ClientError) {
 	apiName := fmt.Sprintf("TenantGet(%s)", tenantID)
 	rp := DuploTenant{}
 
@@ -111,7 +111,7 @@ func (c *Client) TenantGet(tenantID string) (*DuploTenant, error) {
 }
 
 // TenantCreate creates a tenant via the Duplo API.
-func (c *Client) TenantCreate(rq DuploTenant) (*DuploTenant, error) {
+func (c *Client) TenantCreate(rq DuploTenant) (*DuploTenant, ClientError) {
 	rp := DuploTenant{}
 	err := c.postAPI(fmt.Sprintf("TenantCreate(%s, %s)", rq.AccountName, rq.PlanID), "v2/admin/TenantV2", &rq, &rp)
 	if err != nil {
@@ -121,19 +121,19 @@ func (c *Client) TenantCreate(rq DuploTenant) (*DuploTenant, error) {
 }
 
 // TenantUpdate updates a tenant via the Duplo API.
-func (c *Client) TenantUpdate(rq DuploTenant) (*DuploTenant, error) {
+func (c *Client) TenantUpdate(rq DuploTenant) (*DuploTenant, ClientError) {
 	// No-op
 	return nil, nil
 }
 
 // TenantDelete deletes an AWS host via the Duplo API.
-func (c *Client) TenantDelete(tenantID string) (*DuploTenant, error) {
+func (c *Client) TenantDelete(tenantID string) (*DuploTenant, ClientError) {
 	// No-op
 	return nil, nil
 }
 
 // ListTenantsForUser retrieves a list of tenants for the current user via the Duplo API.
-func (c *Client) ListTenantsForUser() (*[]DuploTenant, error) {
+func (c *Client) ListTenantsForUser() (*[]DuploTenant, ClientError) {
 	list := []DuploTenant{}
 	err := c.getAPI("ListTenantsForUser()", "admin/GetTenantsForUser", &list)
 	if err != nil {
@@ -144,7 +144,7 @@ func (c *Client) ListTenantsForUser() (*[]DuploTenant, error) {
 
 // ListTenantsForUserByPlan retrieves a list of tenants with the given plan for the current user via the Duplo API.
 // If the planID is an empty string, returns all
-func (c *Client) ListTenantsForUserByPlan(planID string) (*[]DuploTenant, error) {
+func (c *Client) ListTenantsForUserByPlan(planID string) (*[]DuploTenant, ClientError) {
 	// Get all tenants.
 	allTenants, err := c.ListTenantsForUser()
 	if err != nil {
@@ -167,7 +167,7 @@ func (c *Client) ListTenantsForUserByPlan(planID string) (*[]DuploTenant, error)
 }
 
 // GetTenantByNameForUser retrieves a single tenant by name for the current user via the Duplo API.
-func (c *Client) GetTenantByNameForUser(name string) (*DuploTenant, error) {
+func (c *Client) GetTenantByNameForUser(name string) (*DuploTenant, ClientError) {
 	// Get all tenants.
 	allTenants, err := c.ListTenantsForUser()
 	if err != nil {
@@ -186,7 +186,7 @@ func (c *Client) GetTenantByNameForUser(name string) (*DuploTenant, error) {
 }
 
 // GetTenantForUser retrieves a single tenant by ID for the current user via the Duplo API.
-func (c *Client) GetTenantForUser(tenantID string) (*DuploTenant, error) {
+func (c *Client) GetTenantForUser(tenantID string) (*DuploTenant, ClientError) {
 	// Get all tenants.
 	allTenants, err := c.ListTenantsForUser()
 	if err != nil {
@@ -205,7 +205,7 @@ func (c *Client) GetTenantForUser(tenantID string) (*DuploTenant, error) {
 }
 
 // TenantGetConfig retrieves tenant configuration metadata via the Duplo API.
-func (c *Client) TenantGetConfig(tenantID string) (*DuploTenantConfig, error) {
+func (c *Client) TenantGetConfig(tenantID string) (*DuploTenantConfig, ClientError) {
 	list := []DuploKeyStringValue{}
 	err := c.getAPI(fmt.Sprintf("TenantGetConfig(%s)", tenantID), fmt.Sprintf("adminproxy/GetTenantMetadata/%s", tenantID), &list)
 	if err != nil {
@@ -225,7 +225,7 @@ func (c *Client) TenantReplaceConfig(config DuploTenantConfig) error {
 
 // TenantReplaceConfig changes tenant configuration metadata via the Duplo API, using the supplied
 // oldConfig and newConfig, for the given tenantID.
-func (c *Client) TenantChangeConfig(tenantID string, oldConfig, newConfig *[]DuploKeyStringValue) error {
+func (c *Client) TenantChangeConfig(tenantID string, oldConfig, newConfig *[]DuploKeyStringValue) ClientError {
 
 	// Next, update all keys that are present, keeping a record of each one that is present
 	present := map[string]struct{}{}
@@ -253,26 +253,26 @@ func (c *Client) TenantChangeConfig(tenantID string, oldConfig, newConfig *[]Dup
 }
 
 // TenantDeleteConfigKey deletes a specific configuration key for a tenant via the Duplo API.
-func (c *Client) TenantDeleteConfigKey(tenantID, key string) error {
+func (c *Client) TenantDeleteConfigKey(tenantID, key string) ClientError {
 	rq := DuploTenantConfigUpdateRequest{TenantID: tenantID, State: "delete", Key: key}
 	return c.postAPI(fmt.Sprintf("TenantDeleteConfigKey(%s, %s)", tenantID, key), "adminproxy/TenantMetadataUpdate", &rq, nil)
 }
 
 // TenantSetConfigKey set a specific configuration key for a tenant via the Duplo API.
-func (c *Client) TenantSetConfigKey(tenantID, key, value string) error {
+func (c *Client) TenantSetConfigKey(tenantID, key, value string) ClientError {
 	rq := DuploTenantConfigUpdateRequest{TenantID: tenantID, Key: key, Value: value}
 	return c.postAPI(fmt.Sprintf("TenantSetConfigKey(%s, %s)", tenantID, key), "adminproxy/TenantMetadataUpdate", &rq, nil)
 }
 
 // TenantGetAwsRegion retrieves a tenant's AWS region via the Duplo API.
-func (c *Client) TenantGetAwsRegion(tenantID string) (string, error) {
+func (c *Client) TenantGetAwsRegion(tenantID string) (string, ClientError) {
 	awsRegion := ""
 	err := c.getAPI(fmt.Sprintf("TenantGetAwsRegion(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetAwsRegionId", tenantID), &awsRegion)
 	return awsRegion, err
 }
 
 // TenantGetAwsCredentials retrieves just-in-time AWS credentials for a tenant via the Duplo API.
-func (c *Client) TenantGetAwsCredentials(tenantID string) (*DuploTenantAwsCredentials, error) {
+func (c *Client) TenantGetAwsCredentials(tenantID string) (*DuploTenantAwsCredentials, ClientError) {
 	creds := DuploTenantAwsCredentials{}
 	err := c.getAPI(fmt.Sprintf("TenantGetAwsCredentials(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetAwsConsoleTokenUrl", tenantID), &creds)
 	if err != nil {
@@ -283,21 +283,28 @@ func (c *Client) TenantGetAwsCredentials(tenantID string) (*DuploTenantAwsCreden
 }
 
 // TenantGetInternalSubnets retrieves a list of the internal subnets for a tenant via the Duplo API.
-func (c *Client) TenantGetInternalSubnets(tenantID string) ([]string, error) {
+func (c *Client) TenantGetInternalSubnets(tenantID string) ([]string, ClientError) {
 	list := []string{}
 	err := c.getAPI(fmt.Sprintf("TenantGetInternalSubnets(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetInternalSubnets", tenantID), &list)
 	return list, err
 }
 
+// TenantGetExternalSubnets retrieves a list of the internal subnets for a tenant via the Duplo API.
+func (c *Client) TenantGetExternalSubnets(tenantID string) ([]string, ClientError) {
+	list := []string{}
+	err := c.getAPI(fmt.Sprintf("TenantGetExternalSubnets(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetExternalSubnets", tenantID), &list)
+	return list, err
+}
+
 // TenantGetAwsAccountID retrieves the AWS account ID via the Duplo API.
-func (c *Client) TenantGetAwsAccountID(tenantID string) (string, error) {
+func (c *Client) TenantGetAwsAccountID(tenantID string) (string, ClientError) {
 	awsAccountID := ""
 	err := c.getAPI(fmt.Sprintf("TenantGetAwsAccountID(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetTenantAwsAccountId", tenantID), &awsAccountID)
 	return awsAccountID, err
 }
 
 // GetTenantK8sCredentials retrieves just-in-time K8S cluster credentials via the Duplo API..
-func (c *Client) GetTenantK8sCredentials(tenantID string) (*DuploTenantK8sCredentials, error) {
+func (c *Client) GetTenantK8sCredentials(tenantID string) (*DuploTenantK8sCredentials, ClientError) {
 	creds := DuploTenantK8sCredentials{}
 	err := c.getAPI(fmt.Sprintf("GetTenantEksCredentials(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetK8ClusterConfigByTenant", tenantID), &creds)
 	if err != nil {
@@ -308,7 +315,7 @@ func (c *Client) GetTenantK8sCredentials(tenantID string) (*DuploTenantK8sCreden
 }
 
 // GetEksCredentials retrieves just-in-time EKS credentials via the Duplo API.
-func (c *Client) GetTenantEksSecret(tenantID string) (*DuploTenantEksSecret, error) {
+func (c *Client) GetTenantEksSecret(tenantID string) (*DuploTenantEksSecret, ClientError) {
 	creds := DuploTenantEksSecret{}
 	err := c.getAPI(fmt.Sprintf("GetTenantEksSecret(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetEksSecret", tenantID), &creds)
 	if err != nil {
@@ -319,7 +326,7 @@ func (c *Client) GetTenantEksSecret(tenantID string) (*DuploTenantEksSecret, err
 }
 
 // TenantGetExtConnSecurityGroupRules retrieves a list of the external connection security group rules for a Duplo tenant.
-func (c *Client) TenantGetExtConnSecurityGroupRules(tenantID string) (*[]DuploTenantExtConnSecurityGroupRule, error) {
+func (c *Client) TenantGetExtConnSecurityGroupRules(tenantID string) (*[]DuploTenantExtConnSecurityGroupRule, ClientError) {
 	list := []DuploTenantExtConnSecurityGroupRule{}
 	err := c.postAPI(fmt.Sprintf("TenantGetExtConnSecurityGroups(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetAllTenantExtConnSgRules", tenantID),
@@ -332,7 +339,7 @@ func (c *Client) TenantGetExtConnSecurityGroupRules(tenantID string) (*[]DuploTe
 }
 
 // TenantGetExtConnSecurityGroupRule retrieves an external connection security group rule for a Duplo tenant.
-func (c *Client) TenantGetExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurityGroupRule) (*DuploTenantExtConnSecurityGroupRule, error) {
+func (c *Client) TenantGetExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurityGroupRule) (*DuploTenantExtConnSecurityGroupRule, ClientError) {
 	list, err := c.TenantGetExtConnSecurityGroupRules(rq.TenantID)
 	if err != nil {
 		return nil, err
@@ -341,7 +348,7 @@ func (c *Client) TenantGetExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurit
 	for _, rule := range *list {
 		if rule.Type == rq.Type && rule.Protocol == rq.Protocol && rule.FromPort == rq.FromPort && rule.ToPort == rq.ToPort && rule.Sources != nil && len(*rule.Sources) > 0 {
 			if len(*rule.Sources) != 1 {
-				return nil, fmt.Errorf("found a rule with %d sources, no idea how process it", len(*rule.Sources))
+				return nil, newClientError(fmt.Sprintf("found a rule with %d sources, no idea how process it", len(*rule.Sources)))
 			}
 			if rq.Sources == nil || len(*rq.Sources) == 0 || ((*rule.Sources)[0].Type == rq.Type && (*rule.Sources)[0].Value == (*rq.Sources)[0].Value) {
 				return &rule, nil
@@ -353,7 +360,7 @@ func (c *Client) TenantGetExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurit
 }
 
 // TenantUpdateExtConnSecurityGroupRule creates or updates an external connection security group rule for a Duplo tenant.
-func (c *Client) TenantUpdateExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurityGroupRule) error {
+func (c *Client) TenantUpdateExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurityGroupRule) ClientError {
 	rq.State = ""
 	return c.postAPI(fmt.Sprintf("TenantUpdateExtConnSecurityGroupRule(%s, %v)", rq.TenantID, rq.Sources),
 		fmt.Sprintf("subscriptions/%s/TenantExtConnSgRuleUpdate", rq.TenantID),
@@ -362,7 +369,7 @@ func (c *Client) TenantUpdateExtConnSecurityGroupRule(rq *DuploTenantExtConnSecu
 }
 
 // TenantDeleteExtConnSecurityGroupRule deletes an external connection security group rule for a Duplo tenant.
-func (c *Client) TenantDeleteExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurityGroupRule) error {
+func (c *Client) TenantDeleteExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurityGroupRule) ClientError {
 	rq.State = "delete"
 	return c.postAPI(fmt.Sprintf("TenantDeleteExtConnSecurityGroupRule(%s, %v)", rq.TenantID, rq.Sources),
 		fmt.Sprintf("subscriptions/%s/TenantExtConnSgRuleUpdate", rq.TenantID),
