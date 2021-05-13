@@ -9,10 +9,23 @@ type DuploDynamoDBTable struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
 
-	Name           string `json:"Name"`
-	PrimaryKeyName string `json:"PrimaryKeyName"`
-	AttributeType  string `json:"AttributeType"`
-	KeyType        string `json:"KeyType"`
+	Name                 string                            `json:"Name"`
+	Arn                  string                            `json:"Arn"`
+	Status               string                            `json:"TableStatus,omitempty"`
+	KeySchema            *[]DuploDynamoDBKeySchema         `json:"KeySchema,omitempty"`
+	AttributeDefinitions *[]DuploDynamoDBAttributeDefinion `json:"AttributeDefinitions,omitempty"`
+}
+
+// DuploDynamoDBKeySchema is a Duplo SDK object that represents a dynamodb key schema
+type DuploDynamoDBKeySchema struct {
+	AttributeName string            `json:"AttributeName"`
+	KeyType       *DuploStringValue `json:"KeyType,omitempty"`
+}
+
+// DuploDynamoDBAttributeDefinition is a Duplo SDK object that represents a dynamodb attribute definition
+type DuploDynamoDBAttributeDefinion struct {
+	AttributeName string            `json:"AttributeName"`
+	AttributeType *DuploStringValue `json:"AttributeType,omitempty"`
 }
 
 // DuploDynamoDBTableRequest is a Duplo SDK object that represents a request to create a dynamodb table
@@ -30,41 +43,33 @@ type DuploDynamoDBTableRequest struct {
  */
 
 // DynamoDBTableCreate creates a dynamodb table via the Duplo API.
-func (c *Client) DynamoDBTableCreate(tenantID string, rq *DuploDynamoDBTableRequest) error {
-	rq.ResourceType = ResourceTypeDynamoDBTable
-
-	return c.postAPI(
+func (c *Client) DynamoDBTableCreate(tenantID string, rq *DuploDynamoDBTableRequest) (*DuploDynamoDBTable, ClientError) {
+	rp := DuploDynamoDBTable{}
+	err := c.postAPI(
 		fmt.Sprintf("DynamoDBTableCreate(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("subscriptions/%s/DynamoDBTableUpdate", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTable", tenantID),
 		&rq,
-		nil,
+		&rp,
 	)
+	rp.TenantID = tenantID
+	return &rp, err
 }
 
 // DynamoDBTableDelete deletes a dynamodb table via the Duplo API.
-func (c *Client) DynamoDBTableDelete(tenantID, name string) error {
-	rq := &DuploDynamoDBTableRequest{State: "delete", Name: name}
-
-	return c.postAPI(
+func (c *Client) DynamoDBTableDelete(tenantID, name string) ClientError {
+	return c.deleteAPI(
 		fmt.Sprintf("DynamoDBTableDelete(%s, %s)", tenantID, name),
-		fmt.Sprintf("subscriptions/%s/DynamoDBTableUpdate", tenantID),
-		&rq,
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTable/%s", tenantID, name),
 		nil)
 }
 
 // DynamoDBTableGet retrieves a dynamodb table via the Duplo API
-func (c *Client) DynamoDBTableGet(tenantID string, name string) (*DuploDynamoDBTable, error) {
-	// Figure out the full resource name.
-	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the resource from Duplo.
-	resource, err := c.TenantGetAwsCloudResource(tenantID, ResourceTypeDynamoDBTable, fullName)
-	if err != nil || resource == nil {
-		return nil, err
-	}
-
-	return &DuploDynamoDBTable{TenantID: tenantID, Name: fullName}, nil
+func (c *Client) DynamoDBTableGet(tenantID string, name string) (*DuploDynamoDBTable, ClientError) {
+	rp := DuploDynamoDBTable{}
+	err := c.getAPI(
+		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTable/%s", tenantID, name),
+		&rp)
+	rp.TenantID = tenantID
+	return &rp, err
 }
