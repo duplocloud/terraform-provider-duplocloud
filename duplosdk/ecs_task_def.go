@@ -54,7 +54,7 @@ type DuploEcsTaskDef struct {
  */
 
 // EcsTaskDefinitionCreate creates an ECS task definition via the Duplo API.
-func (c *Client) EcsTaskDefinitionCreate(tenantID string, rq *DuploEcsTaskDef) (string, error) {
+func (c *Client) EcsTaskDefinitionCreate(tenantID string, rq *DuploEcsTaskDef) (string, ClientError) {
 	var arn string
 
 	err := c.postAPI(
@@ -64,13 +64,13 @@ func (c *Client) EcsTaskDefinitionCreate(tenantID string, rq *DuploEcsTaskDef) (
 		&arn,
 	)
 	if err == nil && arn == "" {
-		return "", fmt.Errorf("failed to create ECS task def: %s", rq.Family)
+		return "", newClientError(fmt.Sprintf("failed to create ECS task def: %s", rq.Family))
 	}
 	return arn, err
 }
 
 // EcsTaskDefinitionGet retrieves an ECS task definition via the Duplo API.
-func (c *Client) EcsTaskDefinitionGet(tenantID, arn string) (*DuploEcsTaskDef, error) {
+func (c *Client) EcsTaskDefinitionGet(tenantID, arn string) (*DuploEcsTaskDef, ClientError) {
 	rq := map[string]interface{}{"Arn": arn}
 	rp := DuploEcsTaskDef{}
 

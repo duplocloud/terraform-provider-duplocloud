@@ -17,7 +17,7 @@ type DuploK8sConfigMap struct {
 }
 
 // K8ConfigMapGetList retrieves a list of k8s config maps via the Duplo API.
-func (c *Client) K8ConfigMapGetList(tenantID string) (*[]DuploK8sConfigMap, error) {
+func (c *Client) K8ConfigMapGetList(tenantID string) (*[]DuploK8sConfigMap, ClientError) {
 	rp := []DuploK8sConfigMap{}
 	err := c.getAPI(
 		fmt.Sprintf("K8ConfigMapGetList(%s)", tenantID),
@@ -37,7 +37,7 @@ func (c *Client) K8ConfigMapGetList(tenantID string) (*[]DuploK8sConfigMap, erro
 }
 
 // K8ConfigMapGet retrieves a k8s config map via the Duplo API.
-func (c *Client) K8ConfigMapGet(tenantID, name string) (*DuploK8sConfigMap, error) {
+func (c *Client) K8ConfigMapGet(tenantID, name string) (*DuploK8sConfigMap, ClientError) {
 	rp := DuploK8sConfigMap{}
 	err := c.getAPI(
 		fmt.Sprintf("K8ConfigMapGet(%s, %s)", tenantID, name),
@@ -55,17 +55,17 @@ func (c *Client) K8ConfigMapGet(tenantID, name string) (*DuploK8sConfigMap, erro
 }
 
 // K8ConfigMapCreate creates a k8s configmap via the Duplo API.
-func (c *Client) K8ConfigMapCreate(tenantID string, rq *DuploK8sConfigMap) (*DuploK8sConfigMap, error) {
+func (c *Client) K8ConfigMapCreate(tenantID string, rq *DuploK8sConfigMap) (*DuploK8sConfigMap, ClientError) {
 	return c.K8ConfigMapCreateOrUpdate(tenantID, rq, false)
 }
 
 // K8ConfigMapUpdate updates a k8s configmap via the Duplo API.
-func (c *Client) K8ConfigMapUpdate(tenantID string, rq *DuploK8sConfigMap) (*DuploK8sConfigMap, error) {
+func (c *Client) K8ConfigMapUpdate(tenantID string, rq *DuploK8sConfigMap) (*DuploK8sConfigMap, ClientError) {
 	return c.K8ConfigMapCreateOrUpdate(tenantID, rq, true)
 }
 
 // K8ConfigMapCreateOrUpdate creates or updates a k8s configmap via the Duplo API.
-func (c *Client) K8ConfigMapCreateOrUpdate(tenantID string, rq *DuploK8sConfigMap, updating bool) (*DuploK8sConfigMap, error) {
+func (c *Client) K8ConfigMapCreateOrUpdate(tenantID string, rq *DuploK8sConfigMap, updating bool) (*DuploK8sConfigMap, ClientError) {
 
 	// Build the request
 	verb := "POST"
@@ -89,7 +89,7 @@ func (c *Client) K8ConfigMapCreateOrUpdate(tenantID string, rq *DuploK8sConfigMa
 }
 
 // K8ConfigMapDelete deletes a k8s configmap via the Duplo API.
-func (c *Client) K8ConfigMapDelete(tenantID, name string) error {
+func (c *Client) K8ConfigMapDelete(tenantID, name string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("K8ConfigMapDelete(%s, duplo-%s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/K8ConfigMapApiV2/%s", tenantID, name),

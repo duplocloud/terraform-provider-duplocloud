@@ -97,6 +97,7 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 }
 
 func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
 
 	// Parse the identifying attributes
 	tenantID := d.Get("tenant_id").(string)

@@ -92,7 +92,7 @@ type DuploElasticSearchDomainRequest struct {
 }
 
 // TenantListElasticSearchDomains retrieves a list of AWS ElasticSearch domains.
-func (c *Client) TenantListElasticSearchDomains(tenantID string) (*[]DuploElasticSearchDomain, error) {
+func (c *Client) TenantListElasticSearchDomains(tenantID string) (*[]DuploElasticSearchDomain, ClientError) {
 	prefix, err := c.GetDuploServicesPrefix(tenantID)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (c *Client) TenantListElasticSearchDomains(tenantID string) (*[]DuploElasti
 }
 
 // TenantGetElasticSearchDomain retrieves a single AWS ElasticSearch domains from the list returned by Duplo.
-func (c *Client) TenantGetElasticSearchDomain(tenantID string, name string, deleted bool) (*DuploElasticSearchDomain, error) {
+func (c *Client) TenantGetElasticSearchDomain(tenantID string, name string, deleted bool) (*DuploElasticSearchDomain, ClientError) {
 	log.Printf("[TRACE] duplo-TenantGetElasticSearchDomain 1 ********")
 
 	// Get the list from Duplo
@@ -140,7 +140,7 @@ func (c *Client) TenantGetElasticSearchDomain(tenantID string, name string, dele
 }
 
 // TenantUpdateElasticSearchDomain creates a single AWS ElasticSearch domain via Duplo.
-func (c *Client) TenantUpdateElasticSearchDomain(tenantID string, duplo *DuploElasticSearchDomainRequest) error {
+func (c *Client) TenantUpdateElasticSearchDomain(tenantID string, duplo *DuploElasticSearchDomainRequest) ClientError {
 	// Create the ES domain via Duplo.
 	return c.postAPI(
 		fmt.Sprintf("TenantUpdateElasticSearchDomain(%s, %s)", tenantID, duplo.Name),
@@ -150,7 +150,7 @@ func (c *Client) TenantUpdateElasticSearchDomain(tenantID string, duplo *DuploEl
 }
 
 // TenantDeleteElasticSearchDomain deletes a single AWS ElasticSearch domain via Duplo.
-func (c *Client) TenantDeleteElasticSearchDomain(tenantID string, domainName string) error {
+func (c *Client) TenantDeleteElasticSearchDomain(tenantID string, domainName string) ClientError {
 	// Delete the ES domain via Duplo.
 	return c.postAPI(
 		fmt.Sprintf("TenantDeleteElasticSearchDomain(%s, %s)", tenantID, domainName),

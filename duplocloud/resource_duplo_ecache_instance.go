@@ -151,6 +151,8 @@ func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData
 
 /// CREATE resource
 func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
 	tenantID := d.Get("tenant_id").(string)
 
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s): start", tenantID)
@@ -161,14 +163,14 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	_, err := c.EcacheInstanceCreate(tenantID, duplo)
+	_, err = c.EcacheInstanceCreate(tenantID, duplo)
 	if err != nil {
 		return diag.Errorf("Error updating ECache instance '%s': %s", id, err)
 	}
 	d.SetId(id)
 
 	// Wait up to 60 seconds for Duplo to be able to return the instance details.
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ECache instance", id, func() (interface{}, error) {
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ECache instance", id, func() (interface{}, duplosdk.ClientError) {
 		return c.EcacheInstanceGet(tenantID, duplo.Name)
 	})
 	if diags != nil {
@@ -205,7 +207,7 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Wait up to 60 seconds for Duplo to show the object as deleted.
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "ECache instance", id, func() (interface{}, error) {
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "ECache instance", id, func() (interface{}, duplosdk.ClientError) {
 		return c.EcacheInstanceGet(tenantID, name)
 	})
 	log.Printf("[TRACE] resourceDuploEcacheInstanceDelete(%s, %s): end", tenantID, name)

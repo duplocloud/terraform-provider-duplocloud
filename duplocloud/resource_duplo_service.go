@@ -250,7 +250,7 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 	}
 
 	// Wait for it to be deleted
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service", id, func() (interface{}, error) {
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service", id, func() (interface{}, duplosdk.ClientError) {
 		return c.DuploServiceGet(tenantID, name)
 	})
 

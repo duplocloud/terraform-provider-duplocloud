@@ -38,17 +38,17 @@ type DuploEcsService struct {
  */
 
 // EcsServiceCreate creates an ECS service via the Duplo API.
-func (c *Client) EcsServiceCreate(tenantID string, duploObject *DuploEcsService) (*DuploEcsService, error) {
+func (c *Client) EcsServiceCreate(tenantID string, duploObject *DuploEcsService) (*DuploEcsService, ClientError) {
 	return c.EcsServiceCreateOrUpdate(tenantID, duploObject, false)
 }
 
 // EcsServiceUpdate updates an ECS service via the Duplo API.
-func (c *Client) EcsServiceUpdate(tenantID string, duploObject *DuploEcsService) (*DuploEcsService, error) {
+func (c *Client) EcsServiceUpdate(tenantID string, duploObject *DuploEcsService) (*DuploEcsService, ClientError) {
 	return c.EcsServiceCreateOrUpdate(tenantID, duploObject, true)
 }
 
 // EcsServiceCreateOrUpdate creates or updates an ECS service via the Duplo API.
-func (c *Client) EcsServiceCreateOrUpdate(tenantID string, rq *DuploEcsService, updating bool) (*DuploEcsService, error) {
+func (c *Client) EcsServiceCreateOrUpdate(tenantID string, rq *DuploEcsService, updating bool) (*DuploEcsService, ClientError) {
 
 	// Build the request
 	verb := "POST"
@@ -73,7 +73,7 @@ func (c *Client) EcsServiceCreateOrUpdate(tenantID string, rq *DuploEcsService, 
 }
 
 // EcsServiceDelete deletes an ECS service via the Duplo API.
-func (c *Client) EcsServiceDelete(id string) error {
+func (c *Client) EcsServiceDelete(id string) ClientError {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]
@@ -86,7 +86,7 @@ func (c *Client) EcsServiceDelete(id string) error {
 }
 
 // EcsServiceGet retrieves an ECS service via the Duplo API.
-func (c *Client) EcsServiceGet(id string) (*DuploEcsService, error) {
+func (c *Client) EcsServiceGet(id string) (*DuploEcsService, ClientError) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]

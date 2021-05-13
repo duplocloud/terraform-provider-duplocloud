@@ -180,16 +180,16 @@ func (c *Client) K8SecretGetList(d *schema.ResourceData, m interface{}) (*[]map[
 	log.Printf("[TRACE] duplo-K8SecretGetList 2 %s  ********: %s", api, url)
 	//
 	req2, _ := http.NewRequest("GET", url, nil)
-	body, err := c.doRequest(req2)
-	if err != nil {
-		log.Printf("[TRACE] duplo-K8SecretGetList 3 %s   ********: %s", api, err.Error())
-		return nil, err
+	body, httpErr := c.doRequest(req2)
+	if httpErr != nil {
+		log.Printf("[TRACE] duplo-K8SecretGetList 3 %s   ********: %s", api, httpErr.Error())
+		return nil, httpErr
 	}
 	bodyString := string(body)
 	log.Printf("[TRACE] duplo-K8SecretGetList 4 %s   ********: %s", api, bodyString)
 
 	duploObjects := make([]map[string]interface{}, 0)
-	err = json.Unmarshal(body, &duploObjects)
+	err := json.Unmarshal(body, &duploObjects)
 	if err != nil {
 		return nil, err
 	}
@@ -209,16 +209,16 @@ func (c *Client) K8SecretGet(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] duplo-K8SecretGet 1  %s ********: %s", api, url)
 	//
 	req2, _ := http.NewRequest("GET", url, nil)
-	body, err := c.doRequest(req2)
-	if err != nil {
-		log.Printf("[TRACE] duplo-K8SecretGet 2 %s ********: %s", api, err.Error())
-		return err
+	body, httpErr := c.doRequest(req2)
+	if httpErr != nil {
+		log.Printf("[TRACE] duplo-K8SecretGet 2 %s ********: %s", api, httpErr.Error())
+		return httpErr
 	}
 	bodyString := string(body)
 	log.Printf("[TRACE] duplo-K8SecretGet 3 %s ********: bodyString %s", api, bodyString)
 
 	duploObject := make(map[string]interface{})
-	err = json.Unmarshal(body, &duploObject)
+	err := json.Unmarshal(body, &duploObject)
 	if err != nil {
 		log.Printf("[TRACE] duplo-K8SecretGet 4 %s ********:  error:%s", api, err.Error())
 		return err

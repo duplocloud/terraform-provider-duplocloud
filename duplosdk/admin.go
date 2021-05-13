@@ -10,14 +10,14 @@ type DuploAdminAwsCredentials struct {
 }
 
 // GetAwsAccountID retrieves the AWS account ID via the Duplo API.
-func (c *Client) GetAwsAccountID() (string, error) {
+func (c *Client) GetAwsAccountID() (string, ClientError) {
 	awsAccount := ""
 	err := c.getAPI("GetAwsAccountID()", "adminproxy/GetAwsAccountId", &awsAccount)
 	return awsAccount, err
 }
 
 // AdminGetAwsCredentials retrieves just-in-time admin AWS credentials via the Duplo API.
-func (c *Client) AdminGetAwsCredentials() (*DuploAdminAwsCredentials, error) {
+func (c *Client) AdminGetAwsCredentials() (*DuploAdminAwsCredentials, ClientError) {
 	creds := DuploAdminAwsCredentials{}
 	err := c.getAPI("AdminGetAwsCredentials()", "adminproxy/GetJITAwsConsoleAccessUrl", &creds)
 	if err != nil {

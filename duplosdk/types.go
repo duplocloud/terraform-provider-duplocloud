@@ -1,9 +1,5 @@
 package duplosdk
 
-import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-)
-
 // DuploEnabled is a generic flag holder
 type DuploEnabled struct {
 	Enabled bool `json:"Enabled,omitempty"`
@@ -29,19 +25,4 @@ type DuploKeyStringValue struct {
 type DuploNameStringValue struct {
 	Name  string `json:"Name"`
 	Value string `json:"Value,omitempty"`
-}
-
-func duploKeyValueSchema() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"key": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"value": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
-	}
 }

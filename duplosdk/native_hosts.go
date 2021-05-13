@@ -50,7 +50,7 @@ type DuploNativeHostVolume struct {
 }
 
 // NativeHostGetList retrieves a list of native hosts via the Duplo API.
-func (c *Client) NativeHostGetList(tenantID string) (*[]DuploNativeHost, error) {
+func (c *Client) NativeHostGetList(tenantID string) (*[]DuploNativeHost, ClientError) {
 	rp := []DuploNativeHost{}
 	err := c.getAPI(fmt.Sprintf("NativeHostGetList(%s)", tenantID),
 		fmt.Sprintf("v2/subscriptions/%s/NativeHostV2", tenantID),
@@ -59,7 +59,7 @@ func (c *Client) NativeHostGetList(tenantID string) (*[]DuploNativeHost, error) 
 }
 
 // NativeHostExists checks if a native host exists via the Duplo API.
-func (c *Client) NativeHostExists(tenantID, instanceID string) (bool, error) {
+func (c *Client) NativeHostExists(tenantID, instanceID string) (bool, ClientError) {
 
 	// Get the list of hosts
 	// TODO: change the backend error to a 404
@@ -80,7 +80,7 @@ func (c *Client) NativeHostExists(tenantID, instanceID string) (bool, error) {
 }
 
 // NativeHostGet retrieves an native host via the Duplo API.
-func (c *Client) NativeHostGet(tenantID, instanceID string) (*DuploNativeHost, error) {
+func (c *Client) NativeHostGet(tenantID, instanceID string) (*DuploNativeHost, ClientError) {
 	rp := DuploNativeHost{}
 	err := c.getAPI(fmt.Sprintf("NativeHostGet(%s, %s)", tenantID, instanceID),
 		fmt.Sprintf("v2/subscriptions/%s/NativeHostV2/%s", tenantID, instanceID),
@@ -89,17 +89,17 @@ func (c *Client) NativeHostGet(tenantID, instanceID string) (*DuploNativeHost, e
 }
 
 // NativeHostCreate creates an native host via the Duplo API.
-func (c *Client) NativeHostCreate(rq *DuploNativeHost) (*DuploNativeHost, error) {
+func (c *Client) NativeHostCreate(rq *DuploNativeHost) (*DuploNativeHost, ClientError) {
 	return c.NativeHostCreateOrUpdate(rq, false)
 }
 
 // NativeHostUpdate updates an native host via the Duplo API.
-func (c *Client) NativeHostUpdate(rq *DuploNativeHost) (*DuploNativeHost, error) {
+func (c *Client) NativeHostUpdate(rq *DuploNativeHost) (*DuploNativeHost, ClientError) {
 	return c.NativeHostCreateOrUpdate(rq, true)
 }
 
 // NativeHostCreateOrUpdate creates or updates a native host via the Duplo API.
-func (c *Client) NativeHostCreateOrUpdate(rq *DuploNativeHost, updating bool) (*DuploNativeHost, error) {
+func (c *Client) NativeHostCreateOrUpdate(rq *DuploNativeHost, updating bool) (*DuploNativeHost, ClientError) {
 
 	// Build the request
 	var verb, msg, api string
@@ -124,7 +124,7 @@ func (c *Client) NativeHostCreateOrUpdate(rq *DuploNativeHost, updating bool) (*
 }
 
 // NativeHostDelete deletes a native host via the Duplo API.
-func (c *Client) NativeHostDelete(tenantID, instanceID string) error {
+func (c *Client) NativeHostDelete(tenantID, instanceID string) ClientError {
 	return c.deleteAPI(fmt.Sprintf("NativeHostDelete(%s, %s)", tenantID, instanceID),
 		fmt.Sprintf("v2/subscriptions/%s/NativeHostV2/%s", tenantID, instanceID),
 		nil)

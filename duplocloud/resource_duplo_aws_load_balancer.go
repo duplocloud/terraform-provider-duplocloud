@@ -137,10 +137,8 @@ func resourceAwsLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, 
 	// Wait up to 60 seconds for Duplo to be able to return the load balancer's details.
 	var resource *duplosdk.DuploApplicationLB
 	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "load balancer", id, func() (interface{}, error) {
-		var errget error
-		resource, errget = c.TenantGetApplicationLB(tenantID, duploObject.Name)
-		return resource, errget
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "load balancer", id, func() (interface{}, duplosdk.ClientError) {
+		return c.TenantGetApplicationLB(tenantID, duploObject.Name)
 	})
 	if diags != nil {
 		return diags
@@ -204,7 +202,7 @@ func resourceAwsLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the load balancer.
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "load balancer", id, func() (interface{}, error) {
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "load balancer", id, func() (interface{}, duplosdk.ClientError) {
 		return c.TenantGetApplicationLB(idParts[0], idParts[1])
 	})
 	if diag != nil {

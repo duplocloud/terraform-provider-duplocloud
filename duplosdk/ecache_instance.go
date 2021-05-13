@@ -28,17 +28,17 @@ type DuploEcacheInstance struct {
  */
 
 // EcacheInstanceCreate creates an ECache instance via the Duplo API.
-func (c *Client) EcacheInstanceCreate(tenantID string, duploObject *DuploEcacheInstance) (*DuploEcacheInstance, error) {
+func (c *Client) EcacheInstanceCreate(tenantID string, duploObject *DuploEcacheInstance) (*DuploEcacheInstance, ClientError) {
 	return c.EcacheInstanceCreateOrUpdate(tenantID, duploObject, false)
 }
 
 // EcacheInstanceUpdate updates an ECache instance via the Duplo API.
-func (c *Client) EcacheInstanceUpdate(tenantID string, duploObject *DuploEcacheInstance) (*DuploEcacheInstance, error) {
+func (c *Client) EcacheInstanceUpdate(tenantID string, duploObject *DuploEcacheInstance) (*DuploEcacheInstance, ClientError) {
 	return c.EcacheInstanceCreateOrUpdate(tenantID, duploObject, true)
 }
 
 // EcacheInstanceCreateOrUpdate creates or updates an ECache instance via the Duplo API.
-func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *DuploEcacheInstance, updating bool) (*DuploEcacheInstance, error) {
+func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *DuploEcacheInstance, updating bool) (*DuploEcacheInstance, ClientError) {
 
 	// Build the request
 	verb := "POST"
@@ -62,7 +62,7 @@ func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *Dupl
 }
 
 // EcacheInstanceDelete deletes an ECache instance via the Duplo API.
-func (c *Client) EcacheInstanceDelete(tenantID, name string) error {
+func (c *Client) EcacheInstanceDelete(tenantID, name string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("EcacheInstanceDelete(%s, duplo-%s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/duplo-%s", tenantID, name),
@@ -70,7 +70,7 @@ func (c *Client) EcacheInstanceDelete(tenantID, name string) error {
 }
 
 // EcacheInstanceGet retrieves an ECache instance via the Duplo API.
-func (c *Client) EcacheInstanceGet(tenantID, name string) (*DuploEcacheInstance, error) {
+func (c *Client) EcacheInstanceGet(tenantID, name string) (*DuploEcacheInstance, ClientError) {
 
 	// Call the API.
 	rp := DuploEcacheInstance{}

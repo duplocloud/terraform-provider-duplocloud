@@ -10,6 +10,103 @@ import (
 	"time"
 )
 
+type clientError struct {
+	message  string
+	status   int
+	url      string
+	response map[string]interface{}
+}
+
+func (e clientError) Error() string {
+	return e.message
+}
+
+func (e clientError) Status() int {
+	return e.status
+}
+
+func (e clientError) URL() string {
+	return e.url
+}
+
+func (e clientError) Response() map[string]interface{} {
+	return e.response
+}
+
+type ClientError interface {
+	Error() string
+	Status() int
+	URL() string
+	Response() map[string]interface{}
+}
+
+func newHttpError(req *http.Request, status int, message string) ClientError {
+	response := map[string]interface{}{"Message": message}
+	return clientError{status: status, url: req.URL.String(), message: message, response: response}
+}
+
+// An error encountered before we could build the request.
+func requestHttpError(url string, message string) ClientError {
+	response := map[string]interface{}{"Message": message}
+	return clientError{status: -1, url: url, message: message, response: response}
+}
+
+// An error encountered before we could parse the response.
+func ioHttpError(req *http.Request, err error) ClientError {
+	return newHttpError(req, -1, err.Error())
+}
+
+// An application logic error encountered in spite of a semantically correct response.
+func appHttpError(req *http.Request, message string) ClientError {
+	return newHttpError(req, -1, message)
+}
+
+// An application logic error encountered in spite of a semantically correct response.
+func newClientError(message string) ClientError {
+	response := map[string]interface{}{"Message": message}
+	return clientError{status: -1, url: "", message: message, response: response}
+}
+
+// An error encountered in the HTTP response.
+func responseHttpError(req *http.Request, res *http.Response) ClientError {
+	status := res.StatusCode
+	url := req.URL.String()
+	response := map[string]interface{}{}
+
+	// Read the body, but tolerate a failure.
+	defer res.Body.Close()
+	bytes, err := ioutil.ReadAll(res.Body)
+	message := "(read of body failed)"
+	if err == nil {
+		message = string(bytes)
+	}
+
+	// Older APIs do not always return helpful errors to API clients.
+	if !strings.HasPrefix(req.URL.Path, "/v3/") && (status == 400 || status == 404) {
+		message = fmt.Sprintf("%s. Please verify object exists in duplocloud.", message)
+	}
+
+	// Handle APIs that return proper JSON
+	mime := strings.SplitN(res.Header.Get("content-type"), ";", 2)[0]
+	if mime == "application/json" {
+		err = json.Unmarshal(bytes, &response)
+		if err != nil {
+			log.Printf("[TRACE] duplo-responseHttpError: failed to parse error response JSON: %s, %s", err, string(bytes))
+		}
+	}
+
+	// Build the final error message.
+	message = fmt.Sprintf("url: %s, status: %d, message: %s", url, status, message)
+	log.Printf("[TRACE] duplo-responseHttpError: %s", message)
+
+	// Handle responses that are missing a message - or a JSON parse failure
+	if _, ok := response["Message"]; !ok {
+		response["Message"] = message
+	}
+
+	return clientError{status: res.StatusCode, url: url, message: message, response: response}
+}
+
 // Client is a Duplo API client
 type Client struct {
 	HTTPClient *http.Client
@@ -19,7 +116,7 @@ type Client struct {
 
 // NewClient creates a new Duplo API client
 func NewClient(host, token string) (*Client, error) {
-	if (host != "") && (token != "") {
+	if host != "" && token != "" {
 		tokenBearer := fmt.Sprintf("Bearer %s", token)
 		c := Client{
 			HTTPClient: &http.Client{Timeout: 20 * time.Second},
@@ -31,110 +128,49 @@ func NewClient(host, token string) (*Client, error) {
 	return nil, fmt.Errorf("missing provider config for 'duplo_token' 'duplo_host'. Not defined in environment var / main.tf")
 }
 
-func (c *Client) doRequest(req *http.Request) ([]byte, error) {
+func (c *Client) doRequestWithStatus(req *http.Request, expectedStatus int) ([]byte, ClientError) {
 	req.Header.Set("Authorization", c.Token)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
 	res, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
 
+	// Handle I/O errors
+	if err != nil {
+		return nil, ioHttpError(req, err)
+	}
+
+	// Pass through HTTP errors, unexpected redirects, or unexpected status codes.
+	if res.StatusCode > 300 || (expectedStatus > 0 && expectedStatus != res.StatusCode) {
+		return nil, responseHttpError(req, res)
+	}
+
+	// Othterwise, we have a response that needs reading.
+	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Printf("[TRACE] duplo-doRequest ********: %s", err.Error())
-		return nil, err
+		log.Printf("[TRACE] duplo-doRequest: %s", err)
+		return nil, ioHttpError(req, err)
 	}
 
-	//allow 204
-	if res.StatusCode == 200 || res.StatusCode == 204 {
-		return body, err
-	}
-
-	//special case for 400/404 .. when object is deleted in backend
-	if res.StatusCode == 400 {
-		errMsg := fmt.Errorf("status: %d, body: %s. Please verify object exists in duplocloud. %s", res.StatusCode, body, req.URL.String())
-		log.Printf("[TRACE] duplo-doRequest ********: %s", errMsg)
-		return nil, errMsg
-	}
-	if res.StatusCode == 404 {
-		errMsg := fmt.Errorf("status: %d, body: %s. Please verify object exists in duplocloud. %s", res.StatusCode, body, req.URL.String())
-		log.Printf("[TRACE] duplo-doRequest ********: %s", errMsg)
-		return nil, errMsg
-	}
-	//everything other than 200
-	if res.StatusCode != http.StatusOK {
-		errMsg := fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
-		log.Printf("[TRACE] duplo-doRequest ********: %s", errMsg)
-		return nil, errMsg
-	}
-
-	return body, err
+	return body, nil
 }
 
-func (c *Client) doRequestWithStatus(req *http.Request, statusCode int) ([]byte, error) {
-	req.Header.Set("Authorization", c.Token)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-
-	res, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Printf("[TRACE] duplo-doRequestWithStatus ********: %s", err.Error())
-		return nil, err
-	}
-
-	if res.StatusCode != statusCode {
-		errMsg := fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
-		log.Printf("[TRACE] duplo-doRequestWithStatus ********: %s", errMsg)
-		return nil, errMsg
-	}
-
-	return body, err
-}
-
-func (c *Client) doRequestWithBody(req *http.Request, caller string) ([]byte, error) {
-	req.Header.Set("Authorization", c.Token)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-
-	res, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Printf("[TRACE] duplo-doPostRequest ********: %s %s", caller, err.Error())
-		return nil, err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		errMsg := fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
-		log.Printf("[TRACE] duplo-doPostRequest ********: %s %s", caller, errMsg)
-		return nil, errMsg
-	}
-
-	return body, err
+func (c *Client) doRequest(req *http.Request) ([]byte, ClientError) {
+	return c.doRequestWithStatus(req, 0)
 }
 
 // Utility method to call an API with a GET request, handling logging, etc.
-func (c *Client) getAPI(apiName string, apiPath string, rp interface{}) error {
+func (c *Client) getAPI(apiName string, apiPath string, rp interface{}) ClientError {
 	return c.doAPI("GET", apiName, apiPath, rp)
 }
 
 // Utility method to call an API with a DELETE request, handling logging, etc.
-func (c *Client) deleteAPI(apiName string, apiPath string, rp interface{}) error {
+func (c *Client) deleteAPI(apiName string, apiPath string, rp interface{}) ClientError {
 	return c.doAPI("DELETE", apiName, apiPath, rp)
 }
 
 // Utility method to call an API without a request body, handling logging, etc.
-func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface{}) error {
+func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface{}) ClientError {
 	apiName = fmt.Sprintf("%sAPI %s", strings.ToLower(verb), apiName)
 
 	// Build the request
@@ -147,10 +183,10 @@ func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface
 	}
 
 	// Call the API and get the response.
-	body, err := c.doRequest(req)
-	if err != nil {
-		log.Printf("[TRACE] %s: failed: %s", apiName, err.Error())
-		return err
+	body, httpErr := c.doRequest(req)
+	if httpErr != nil {
+		log.Printf("[TRACE] %s: failed: %s", apiName, httpErr.Error())
+		return httpErr
 	}
 	bodyString := string(body)
 	log.Printf("[TRACE] %s: received response: %s", apiName, bodyString)
@@ -161,31 +197,33 @@ func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface
 		if bodyString == "null" || bodyString == "" {
 			return nil
 		}
-		err = fmt.Errorf("%s: received unexpected response: %s", apiName, bodyString)
-		log.Printf("[TRACE] %s", err)
-		return err
+		message := fmt.Sprintf("%s: received unexpected response: %s", apiName, bodyString)
+		log.Printf("[TRACE] %s", message)
+		return appHttpError(req, message)
 	}
 
 	// Otherwise, interpret it as an object.
 	err = json.Unmarshal(body, rp)
 	if err != nil {
-		log.Printf("[TRACE] %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
-		return err
+		message := fmt.Sprintf("%s: cannot unmarshal response from JSON: %s", apiName, err.Error())
+		log.Printf("[TRACE] %s", message)
+		return newHttpError(req, -1, message)
 	}
 	return nil
 }
 
 // Utility method to call an API with a request, handling logging, etc.
-func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath string, rq interface{}, rp interface{}) error {
+func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath string, rq interface{}, rp interface{}) ClientError {
 	apiName = fmt.Sprintf("%sAPI %s", strings.ToLower(verb), apiName)
+	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
 
 	// Build the request
 	rqBody, err := json.Marshal(rq)
 	if err != nil {
-		log.Printf("[TRACE] %s: cannot marshal request to JSON: %s", apiName, err.Error())
-		return err
+		message := fmt.Sprintf("%s: cannot marshal request to JSON: %s", apiName, err.Error())
+		log.Printf("[TRACE] %s", message)
+		return requestHttpError(url, message)
 	}
-	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
 	log.Printf("[TRACE] %s: prepared request: %s <= (%s)", apiName, url, rqBody)
 	req, err := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
 	if err != nil {
@@ -194,10 +232,10 @@ func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath strin
 	}
 
 	// Call the API and get the response
-	body, err := c.doRequestWithBody(req, apiName)
-	if err != nil {
-		log.Printf("[TRACE] %s: failed: %s", apiName, err.Error())
-		return err
+	body, httpErr := c.doRequest(req)
+	if httpErr != nil {
+		log.Printf("[TRACE] %s: failed: %s", apiName, httpErr.Error())
+		return httpErr
 	}
 	bodyString := string(body)
 	log.Printf("[TRACE] %s: received response: %s", apiName, bodyString)
@@ -208,26 +246,27 @@ func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath strin
 		if bodyString == "null" || bodyString == "" {
 			return nil
 		}
-		err = fmt.Errorf("%s: received unexpected response: %s", apiName, bodyString)
-		log.Printf("[TRACE] %s", err)
-		return err
+		message := fmt.Sprintf("%s: received unexpected response: %s", apiName, bodyString)
+		log.Printf("[TRACE] %s", message)
+		return appHttpError(req, message)
 	}
 
 	// Otherwise, interpret it as an object.
 	err = json.Unmarshal(body, rp)
 	if err != nil {
-		log.Printf("[TRACE] %s: cannot unmarshal response from JSON: %s", apiName, err.Error())
-		return err
+		message := fmt.Sprintf("%s: cannot unmarshal response from JSON: %s", apiName, err.Error())
+		log.Printf("[TRACE] %s", message)
+		return appHttpError(req, message)
 	}
 	return nil
 }
 
 // Utility method to call an API with a PUT request, handling logging, etc.
-func (c *Client) putAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
+func (c *Client) putAPI(apiName string, apiPath string, rq interface{}, rp interface{}) ClientError {
 	return c.doAPIWithRequestBody("PUT", apiName, apiPath, rq, rp)
 }
 
 // Utility method to call an API with a POST request, handling logging, etc.
-func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) error {
+func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) ClientError {
 	return c.doAPIWithRequestBody("POST", apiName, apiPath, rq, rp)
 }

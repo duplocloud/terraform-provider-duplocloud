@@ -28,7 +28,7 @@ type DuploLBConfiguration struct {
 }
 
 // DuploServiceLBConfigsGetList retrieves a list of services via the Duplo API.
-func (c *Client) DuploServiceLBConfigsGetList(tenantID string) (*[]DuploServiceLBConfigs, error) {
+func (c *Client) DuploServiceLBConfigsGetList(tenantID string) (*[]DuploServiceLBConfigs, ClientError) {
 	rp := []DuploServiceLBConfigs{}
 	err := c.getAPI(fmt.Sprintf("DuploServiceLBConfigsGetList(%s)", tenantID),
 		fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2", tenantID),
@@ -40,7 +40,7 @@ func (c *Client) DuploServiceLBConfigsGetList(tenantID string) (*[]DuploServiceL
 }
 
 // DuploServiceLBConfigsGet retrieves a service's load balancer configs via the Duplo API.
-func (c *Client) DuploServiceLBConfigsGet(tenantID string, name string) (*DuploServiceLBConfigs, error) {
+func (c *Client) DuploServiceLBConfigsGet(tenantID string, name string) (*DuploServiceLBConfigs, ClientError) {
 	rp := DuploServiceLBConfigs{}
 	err := c.getAPI(fmt.Sprintf("DuploServiceLBConfigsGet(%s, %s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2/%s", tenantID, name),
@@ -53,17 +53,17 @@ func (c *Client) DuploServiceLBConfigsGet(tenantID string, name string) (*DuploS
 }
 
 // DuploServiceLBConfigsCreate creates a service's load balancer via the Duplo API.
-func (c *Client) DuploServiceLBConfigsCreate(tenantID string, rq *DuploServiceLBConfigs) (*DuploServiceLBConfigs, error) {
+func (c *Client) DuploServiceLBConfigsCreate(tenantID string, rq *DuploServiceLBConfigs) (*DuploServiceLBConfigs, ClientError) {
 	return c.DuploServiceLBConfigsCreateOrUpdate(tenantID, rq, false)
 }
 
 // DuploServiceLBConfigsUpdate updates an service's load balancer via the Duplo API.
-func (c *Client) DuploServiceLBConfigsUpdate(tenantID string, rq *DuploServiceLBConfigs) (*DuploServiceLBConfigs, error) {
+func (c *Client) DuploServiceLBConfigsUpdate(tenantID string, rq *DuploServiceLBConfigs) (*DuploServiceLBConfigs, ClientError) {
 	return c.DuploServiceLBConfigsCreateOrUpdate(tenantID, rq, true)
 }
 
 // DuploServiceLBConfigsCreateOrUpdate updates an service's load balancer  via the Duplo API.
-func (c *Client) DuploServiceLBConfigsCreateOrUpdate(tenantID string, rq *DuploServiceLBConfigs, updating bool) (*DuploServiceLBConfigs, error) {
+func (c *Client) DuploServiceLBConfigsCreateOrUpdate(tenantID string, rq *DuploServiceLBConfigs, updating bool) (*DuploServiceLBConfigs, ClientError) {
 
 	// Build the request
 	verb := "POST"
@@ -87,7 +87,7 @@ func (c *Client) DuploServiceLBConfigsCreateOrUpdate(tenantID string, rq *DuploS
 }
 
 // DuploServiceLBConfigsDelete deletes a service's load balancer via the Duplo API.
-func (c *Client) DuploServiceLBConfigsDelete(tenantID, name string) error {
+func (c *Client) DuploServiceLBConfigsDelete(tenantID, name string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("DuploServiceLBConfigsDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2/%s", tenantID, name),

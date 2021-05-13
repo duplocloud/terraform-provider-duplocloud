@@ -323,11 +323,15 @@ func getStringArray(data map[string]interface{}, key string) (*[]string, bool) {
 	return &result, ok
 }
 
-func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, error)) diag.Diagnostics {
+func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
 	err := resource.RetryContext(ctx, d.Timeout("delete"), func() *resource.RetryError {
 		resp, errget := get()
 
 		if errget != nil {
+			if errget.Status() == 404 {
+				return nil
+			}
+
 			return resource.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
 		}
 
@@ -343,11 +347,15 @@ func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, error)) diag.Diagnostics {
+func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
 	err := resource.RetryContext(ctx, d.Timeout("create"), func() *resource.RetryError {
 		resp, errget := get()
 
 		if errget != nil {
+			if errget.Status() == 404 {
+				return resource.RetryableError(fmt.Errorf("expected %s '%s' to be retrieved, but got a 404", kind, id))
+			}
+
 			return resource.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
 		}
 

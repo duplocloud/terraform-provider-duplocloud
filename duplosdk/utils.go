@@ -12,17 +12,17 @@ func isInterfaceNil(v interface{}) bool {
 }
 
 // GetDuploServicesNameWithAws builds a duplo resource name, given a tenant ID. The name that includes the AWS account ID suffix.
-func (c *Client) GetDuploServicesNameWithAws(tenantID, name string) (string, error) {
+func (c *Client) GetDuploServicesNameWithAws(tenantID, name string) (string, ClientError) {
 	return c.GetResourceName("duploservices", tenantID, name, true)
 }
 
 // GetDuploServicesName builds a duplo resource name, given a tenant ID.
-func (c *Client) GetDuploServicesName(tenantID, name string) (string, error) {
+func (c *Client) GetDuploServicesName(tenantID, name string) (string, ClientError) {
 	return c.GetResourceName("duploservices", tenantID, name, false)
 }
 
 // GetResourceName builds a duplo resource name, given a tenant ID.  It can optionally include the AWS account ID suffix.
-func (c *Client) GetResourceName(prefix, tenantID, name string, withAccountSuffix bool) (string, error) {
+func (c *Client) GetResourceName(prefix, tenantID, name string, withAccountSuffix bool) (string, ClientError) {
 	tenant, err := c.GetTenantForUser(tenantID)
 	if err != nil {
 		return "", err
@@ -38,12 +38,12 @@ func (c *Client) GetResourceName(prefix, tenantID, name string, withAccountSuffi
 }
 
 // GetDuploServicesPrefix builds a duplo resource name, given a tenant ID.
-func (c *Client) GetDuploServicesPrefix(tenantID string) (string, error) {
+func (c *Client) GetDuploServicesPrefix(tenantID string) (string, ClientError) {
 	return c.GetResourcePrefix("duploservices", tenantID)
 }
 
 // GetResourcePrefix builds a duplo resource prefix, given a tenant ID.
-func (c *Client) GetResourcePrefix(prefix, tenantID string) (string, error) {
+func (c *Client) GetResourcePrefix(prefix, tenantID string) (string, ClientError) {
 	tenant, err := c.GetTenantForUser(tenantID)
 	if err != nil {
 		return "", err
