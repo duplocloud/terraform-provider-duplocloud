@@ -312,10 +312,12 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 
 				// Skip it unless it's a duplo managed subnet.
 				isDuploSubnet := false
-				for _, tag := range *vnetSubnet.Tags {
-					if tag.Key == "aws:cloudformation:stack-name" && strings.HasPrefix(tag.Value, "duplo") {
-						isDuploSubnet = true
-						break
+				if vnetSubnet.Tags != nil {
+					for _, tag := range *vnetSubnet.Tags {
+						if tag.Key == "aws:cloudformation:stack-name" && strings.HasPrefix(tag.Value, "duplo") {
+							isDuploSubnet = true
+							break
+						}
 					}
 				}
 				if !isDuploSubnet {
