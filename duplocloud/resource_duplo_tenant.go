@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -78,8 +79,13 @@ func resourceTenant() *schema.Resource {
 
 /// READ resource
 func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	tenantID := d.Get("tenant_id").(string)
+	id := d.Id()
 
+	// Parse the identifying attributes
+	tenantID := parseDuploTenantIdParts(id)
+	if tenantID == "" {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
 	log.Printf("[TRACE] resourceTenantRead(%s): start", tenantID)
 
 	// Get the object from Duplo, detecting a missing object
@@ -143,8 +149,13 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 
 /// DELETE resource
 func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	tenantID := d.Get("tenant_id").(string)
+	id := d.Id()
 
+	// Parse the identifying attributes
+	tenantID := parseDuploTenantIdParts(id)
+	if tenantID == "" {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
 	log.Printf("[TRACE] resourceTenantDelete(%s): start", tenantID)
 
 	// Delete the object with Duplo
@@ -156,4 +167,12 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 
 	log.Printf("[TRACE] resourceTenantDelete(%s): end", tenantID)
 	return nil
+}
+
+func parseDuploTenantIdParts(id string) (tenantID string) {
+	idParts := strings.SplitN(id, "/", 4)
+	if len(idParts) == 4 {
+		tenantID = idParts[3]
+	}
+	return
 }
