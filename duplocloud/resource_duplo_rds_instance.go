@@ -146,9 +146,9 @@ func resourceDuploRdsInstance() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(15 * time.Minute),
-			Update: schema.DefaultTimeout(15 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Create: schema.DefaultTimeout(45 * time.Minute),
+			Update: schema.DefaultTimeout(20 * time.Minute),
+			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema: rdsInstanceSchema(),
 	}
@@ -212,7 +212,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// Wait for the instance to become available.
-	err = rdsInstanceWaitUntilAvailable(ctx, c, id)
+	err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("create"))
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
@@ -242,13 +242,13 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// Wait for the instance to become unavailable.
-	err = rdsInstanceWaitUntilUnavailable(ctx, c, id)
+	err = rdsInstanceWaitUntilUnavailable(ctx, c, id, 2*time.Minute)
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
 	}
 
 	// Wait for the instance to become available.
-	err = rdsInstanceWaitUntilAvailable(ctx, c, id)
+	err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
@@ -285,7 +285,7 @@ func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData,
 // RdsInstanceWaitUntilAvailable waits until an RDS instance is available.
 //
 // It should be usable both post-creation and post-modification.
-func rdsInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, id string) error {
+func rdsInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, id string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{
 			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
@@ -295,7 +295,7 @@ func rdsInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, id s
 		Target:       []string{"available"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
+		Timeout:      timeout,
 		Refresh: func() (interface{}, string, error) {
 			resp, err := c.RdsInstanceGet(id)
 			if err != nil {
@@ -315,7 +315,7 @@ func rdsInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, id s
 // RdsInstanceWaitUntilUnavailable waits until an RDS instance is unavailable.
 //
 // It should be usable post-modification.
-func rdsInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, id string) error {
+func rdsInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, id string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Target: []string{
 			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
@@ -325,7 +325,7 @@ func rdsInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, id
 		Pending:      []string{"available"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
+		Timeout:      timeout,
 		Refresh: func() (interface{}, string, error) {
 			resp, err := c.RdsInstanceGet(id)
 			if err != nil {
