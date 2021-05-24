@@ -27,7 +27,7 @@ func resourceTenant() *schema.Resource {
 		},
 
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"account_name": {
@@ -35,7 +35,7 @@ func resourceTenant() *schema.Resource {
 				Type:         schema.TypeString,
 				ForceNew:     true, // Change tenant name
 				Required:     true,
-				ValidateFunc: validation.StringLenBetween(1, 11),
+				ValidateFunc: validation.StringLenBetween(1, 12),
 			},
 			"plan_id": {
 				Description: "The name of the plan under which the tenant will be created.",
