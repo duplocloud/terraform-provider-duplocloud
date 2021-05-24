@@ -252,9 +252,10 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 
 	// Wait for Duplo to be able to return the cluster's details.
 	var rp *duplosdk.DuploKafkaCluster
+	var errget duplosdk.ClientError
 	id := fmt.Sprintf("%s/%s", tenantID, rq.Name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "kafka cluster", id, func() (interface{}, duplosdk.ClientError) {
-		rp, errget := c.TenantGetKafkaCluster(tenantID, rq.Name)
+		rp, errget = c.TenantGetKafkaCluster(tenantID, rq.Name)
 		if rp != nil && rp.Arn != "" {
 			return rp, errget
 		}
