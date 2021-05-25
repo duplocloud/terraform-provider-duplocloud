@@ -30,7 +30,7 @@ resource "duplocloud_infrastructure" "myinfra" {
 ### Required
 
 - **address_prefix** (String) The CIDR to use for the VPC or VNet.
-- **azcount** (Number) The number of availability zones.  Must be one of: 2, 3, or 4.
+- **azcount** (Number) The number of availability zones.  Must be one of: `2`, `3`, or `4`.
 - **enable_k8_cluster** (Boolean) Whether or not to provision a kubernetes cluster.
 - **infra_name** (String) The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.
 - **region** (String) The cloud provider region.  The Duplo portal must have already been configured to support this region.

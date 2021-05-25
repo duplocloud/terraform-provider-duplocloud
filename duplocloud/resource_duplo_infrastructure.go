@@ -98,7 +98,7 @@ func resourceInfrastructure() *schema.Resource {
 				Required:    true,
 			},
 			"azcount": {
-				Description: "The number of availability zones.  Must be one of: 2, 3, or 4.",
+				Description: "The number of availability zones.  Must be one of: `2`, `3`, or `4`.",
 				Type:        schema.TypeInt,
 				ForceNew:    true,
 				Required:    true,

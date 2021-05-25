@@ -15,73 +15,91 @@ import (
 func infrastructureSchemaComputed(single bool) map[string]*schema.Schema {
 	result := map[string]*schema.Schema{
 		"account_id": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The cloud account ID.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"cloud": {
+			Description: "The numerical index of cloud provider to use for the infrastructure.\n" +
+				"Will be one of:\n\n" +
+				"   - `0` : AWS\n" +
+				"   - `2` : Azure\n",
 			Type:     schema.TypeInt,
 			Computed: true,
 		},
 		"region": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The cloud provider region.  The Duplo portal must have already been configured to support this region.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"azcount": {
-			Type:     schema.TypeInt,
-			Computed: true,
+			Description: "The number of availability zones.  Will be one of: `2`, `3`, or `4`.",
+			Type:        schema.TypeInt,
+			Computed:    true,
 		},
 		"enable_k8_cluster": {
-			Type:     schema.TypeBool,
-			Computed: true,
+			Description: "Whether or not a kubernetes cluster is provisioned.",
+			Type:        schema.TypeBool,
+			Computed:    true,
 		},
 		"address_prefix": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The CIDR for the VPC or VNet.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"subnet_cidr": {
-			Type:     schema.TypeInt,
-			Computed: true,
+			Description: "The CIDR subnet size (in bits) of the automatically created subnets.",
+			Type:        schema.TypeInt,
+			Computed:    true,
 		},
 		"status": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The status of the infrastructure.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 	}
 
 	if single {
 		result["tenant_id"] = &schema.Schema{
+			Description:  "The ID of the tenant to look up the infrastructure for. Must be specified if `infra_name` is blank.",
 			Type:         schema.TypeString,
 			Optional:     true,
 			ExactlyOneOf: []string{"infra_name", "tenant_id"},
 		}
 		result["infra_name"] = &schema.Schema{
+			Description:  "The name of the infrastructure to look up. Must be specified if `tenant_id` is blank.",
 			Type:         schema.TypeString,
 			Optional:     true,
 			Computed:     true,
 			ExactlyOneOf: []string{"infra_name", "tenant_id"},
 		}
 		result["vpc_id"] = &schema.Schema{
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The VPC or VNet ID.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		}
 		result["vpc_name"] = &schema.Schema{
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The VPC or VNet name.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		}
 		result["private_subnets"] = &schema.Schema{
-			Type:     schema.TypeSet,
-			Computed: true,
-			Elem:     infrastructureVnetSubnetSchema(),
+			Description: "The private subnets for the VPC or VNet.",
+			Type:        schema.TypeSet,
+			Computed:    true,
+			Elem:        infrastructureVnetSubnetSchema(),
 		}
 		result["public_subnets"] = &schema.Schema{
-			Type:     schema.TypeSet,
-			Computed: true,
-			Elem:     infrastructureVnetSubnetSchema(),
+			Description: "The public subnets for the VPC or VNet.",
+			Type:        schema.TypeSet,
+			Computed:    true,
+			Elem:        infrastructureVnetSubnetSchema(),
 		}
 	} else {
 		result["infra_name"] = &schema.Schema{
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The name of the infrastructure.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		}
 	}
 
@@ -90,6 +108,8 @@ func infrastructureSchemaComputed(single bool) map[string]*schema.Schema {
 
 func dataSourceInfrastructures() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_infrastructures` retrieves a list of infrastructures in Duplo.",
+
 		ReadContext: dataSourceInfrastructuresRead,
 		Schema: map[string]*schema.Schema{
 			"data": {
@@ -105,6 +125,8 @@ func dataSourceInfrastructures() *schema.Resource {
 
 func dataSourceInfrastructure() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_infrastructure` retrieves details of an infrastructure in Duplo.",
+
 		ReadContext: dataSourceInfrastructureRead,
 		Schema:      infrastructureSchemaComputed(true),
 	}
