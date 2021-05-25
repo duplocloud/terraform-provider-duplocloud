@@ -18,29 +18,35 @@ func infrastructureVnetSubnetSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The subnet ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The subnet name.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"cidr_block": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The subnet CIDR block.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"type": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The type of subnet.  Will be one of: `\"public\"` or `\"private\"`.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"zone": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The Duplo zone that the subnet resides in.  Will be one of:  `\"A\"`, `\"B\"`, `\"C\"`, or `\"D\"`",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"tags": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     KeyValueSchema(),
+				Description: "The subnet's tags.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        KeyValueSchema(),
 			},
 		},
 	}
@@ -49,12 +55,14 @@ func infrastructureVnetSubnetSchema() *schema.Resource {
 // SCHEMA for resource crud
 func resourceInfrastructure() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_infrastructure` manages a tenant in Duplo.",
+
 		ReadContext:   resourceInfrastructureRead,
 		CreateContext: resourceInfrastructureCreate,
 		UpdateContext: resourceInfrastructureUpdate,
 		DeleteContext: resourceInfrastructureDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
@@ -63,65 +71,81 @@ func resourceInfrastructure() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"infra_name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"account_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The cloud account ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"cloud": {
+				Description: "The numerical index of cloud provider to use for the infrastructure.\n" +
+					"Should be one of:\n\n" +
+					"   - `0` : AWS\n" +
+					"   - `2` : Azure\n",
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
 				Default:  0,
 			},
 			"region": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Required: true,
+				Description: "The cloud provider region.  The Duplo portal must have already been configured to support this region.",
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Required:    true,
 			},
 			"azcount": {
-				Type:     schema.TypeInt,
-				ForceNew: true,
-				Required: true,
+				Description: "The number of availability zones.  Must be one of: 2, 3, or 4.",
+				Type:        schema.TypeInt,
+				ForceNew:    true,
+				Required:    true,
 			},
 			"enable_k8_cluster": {
-				Type:     schema.TypeBool,
-				Required: true,
+				Description: "Whether or not to provision a kubernetes cluster.",
+				Type:        schema.TypeBool,
+				Required:    true,
 			},
 			"address_prefix": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Required: true,
+				Description: "The CIDR to use for the VPC or VNet.",
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Required:    true,
 			},
 			"subnet_cidr": {
-				Type:     schema.TypeInt,
-				ForceNew: true,
-				Required: true,
+				Description: "The CIDR subnet size (in bits) for the automatically created subnets.",
+				Type:        schema.TypeInt,
+				ForceNew:    true,
+				Required:    true,
 			},
 			"status": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The status of the infrastructure.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"vpc_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The VPC or VNet ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"vpc_name": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The VPC or VNet name.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"private_subnets": {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Elem:     infrastructureVnetSubnetSchema(),
+				Description: "The private subnets for the VPC or VNet.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        infrastructureVnetSubnetSchema(),
 			},
 			"public_subnets": {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Elem:     infrastructureVnetSubnetSchema(),
+				Description: "The public subnets for the VPC or VNet.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        infrastructureVnetSubnetSchema(),
 			},
 		},
 	}
