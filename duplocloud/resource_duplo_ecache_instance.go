@@ -58,7 +58,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "The numerical index of elasticache instance type.\n" +
 				"Should be one of:\n\n" +
 				"   - `0` : Redis\n" +
-				"   - `1` : Memcache\n",
+				"   - `1` : Memcache\n\n",
 			Type:     schema.TypeInt,
 			Optional: true,
 			ForceNew: true,
