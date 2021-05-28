@@ -18,13 +18,12 @@ type DuploEmrClusterRequest struct {
 	ResourceType int    `json:"ResourceType,omitempty"`
 	CustomAmiId  string `json:"CustomAmiId,omitempty"`
 
-	EbsRootVolumeSize    int    `json:"EbsRootVolumeSize,omitempty"`
-	StepConcurrencyLevel int    `json:"StepConcurrencyLevel,omitempty"`
-	ScaleDownBehavior    string `json:"JobFlowInstancesConfig,omitempty"`
-	//MasterPublicDns       	string        	 `json:"MasterPublicDns,omitempty"`
-	TerminationProtection       bool `json:"TerminationProtection,omitempty"`
-	KeepJobFlowAliveWhenNoSteps bool `json:"KeepJobFlowAliveWhenNoSteps,omitempty"`
-	VisibleToAllUsers           bool `json:"VisibleToAllUsers,omitempty"`
+	EbsRootVolumeSize           int    `json:"EbsRootVolumeSize,omitempty"`
+	StepConcurrencyLevel        int    `json:"StepConcurrencyLevel,omitempty"`
+	ScaleDownBehavior           string `json:"ScaleDownBehavior,omitempty"`
+	TerminationProtection       bool   `json:"TerminationProtection,omitempty"`
+	KeepJobFlowAliveWhenNoSteps bool   `json:"KeepJobFlowAliveWhenNoSteps,omitempty"`
+	VisibleToAllUsers           bool   `json:"VisibleToAllUsers,omitempty"`
 
 	//ec2
 	MasterInstanceType string `json:"MasterInstanceType,omitempty"`
@@ -100,7 +99,7 @@ func (c *Client) DuploEmrClusterGetList(tenantID string) (*[]DuploEmrClusterSumm
 	// todo: not tested data
 	rp := []DuploEmrClusterSummary{}
 	err := c.getAPI(
-		fmt.Sprintf("DuploEmrClusterGet(%s, %s)", tenantID),
+		fmt.Sprintf("DuploEmrClusterGet(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/aws/emrCluster", tenantID),
 		&rp)
 	return &rp, err
