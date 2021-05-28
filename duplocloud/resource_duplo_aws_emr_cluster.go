@@ -13,6 +13,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const (
+	// ScaleDownBehaviorTerminateAtInstanceHour is a ScaleDownBehavior enum value
+	ScaleDownBehaviorTerminateAtInstanceHour = "TERMINATE_AT_INSTANCE_HOUR"
+
+	// ScaleDownBehaviorTerminateAtTaskCompletion is a ScaleDownBehavior enum value
+	ScaleDownBehaviorTerminateAtTaskCompletion = "TERMINATE_AT_TASK_COMPLETION"
+)
+
 // Resource for managing an AWS emrCluster
 func resourceAwsEmrCluster() *schema.Resource {
 	return &schema.Resource{
@@ -31,14 +39,6 @@ func resourceAwsEmrCluster() *schema.Resource {
 		Schema: awsEmrClusterSchema(),
 	}
 }
-
-const (
-	// ScaleDownBehaviorTerminateAtInstanceHour is a ScaleDownBehavior enum value
-	ScaleDownBehaviorTerminateAtInstanceHour = "TERMINATE_AT_INSTANCE_HOUR"
-
-	// ScaleDownBehaviorTerminateAtTaskCompletion is a ScaleDownBehavior enum value
-	ScaleDownBehaviorTerminateAtTaskCompletion = "TERMINATE_AT_TASK_COMPLETION"
-)
 
 func awsEmrClusterSchema() map[string]*schema.Schema {
 	// todo:
