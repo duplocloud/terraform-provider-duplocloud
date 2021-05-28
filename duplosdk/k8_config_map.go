@@ -7,10 +7,10 @@ import (
 // DuploK8sConfigMap represents a kubernetes config map in a Duplo tenant
 type DuploK8sConfigMap struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-,omitempty"` //nolint:govet
 
 	// NOTE: The Name field does not come from the backend - we synthesize it
-	Name string `json:"-,omitempty"`
+	Name string `json:"-,omitempty"` //nolint:govet
 
 	Data     map[string]interface{} `json:"data,omitempty"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
