@@ -23,7 +23,7 @@ func resourceTenantSecurityRule() *schema.Resource {
 		CreateContext: resourceTenantNetworkSecurityRuleCreate,
 		DeleteContext: resourceTenantNetworkSecurityRuleDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(2 * time.Minute),

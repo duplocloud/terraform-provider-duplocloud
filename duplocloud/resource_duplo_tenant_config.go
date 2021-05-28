@@ -22,7 +22,7 @@ func resourceTenantConfig() *schema.Resource {
 		UpdateContext: resourceTenantConfigCreateOrUpdate,
 		DeleteContext: resourceTenantConfigDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(2 * time.Minute),

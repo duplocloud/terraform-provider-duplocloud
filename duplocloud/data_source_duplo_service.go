@@ -140,7 +140,9 @@ func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m 
 			})
 		}
 	}
-	d.Set("services", services)
+	if err := d.Set("services", services); err != nil {
+		return diag.FromErr(err)
+	}
 
 	log.Printf("[TRACE] dataSourceDuploServicesRead: end")
 	return nil

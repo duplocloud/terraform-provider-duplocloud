@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+//nolint:deadcode,unused // utility function
 func suppressEquivalentTypeStringBoolean(k, old, new string, d *schema.ResourceData) bool {
 	if old == "false" && new == "0" {
 		return true
@@ -23,6 +24,7 @@ func suppressEquivalentTypeStringBoolean(k, old, new string, d *schema.ResourceD
 	return false
 }
 
+//nolint:deadcode,unused // utility function
 func suppressEquivalentJSONDiffs(k, old, new string, d *schema.ResourceData) bool {
 	ob := bytes.NewBufferString("")
 	if err := json.Compact(ob, []byte(old)); err != nil {
@@ -37,6 +39,7 @@ func suppressEquivalentJSONDiffs(k, old, new string, d *schema.ResourceData) boo
 	return jsonBytesEqual(ob.Bytes(), nb.Bytes())
 }
 
+//nolint:deadcode,unused // utility function
 func base64Encode(data []byte) string {
 	if isBase64Encoded(data) {
 		return string(data)
@@ -44,15 +47,18 @@ func base64Encode(data []byte) string {
 	return base64.StdEncoding.EncodeToString(data)
 }
 
+//nolint:deadcode,unused // utility function
 func isBase64Encoded(data []byte) bool {
 	_, err := base64.StdEncoding.DecodeString(string(data))
 	return err == nil
 }
 
+//nolint:deadcode,unused // utility function
 func looksLikeJSONString(s interface{}) bool {
 	return regexp.MustCompile(`^\s*{`).MatchString(s.(string))
 }
 
+//nolint:deadcode,unused // utility function
 func jsonBytesEqual(b1, b2 []byte) bool {
 	var o1 interface{}
 	if err := json.Unmarshal(b1, &o1); err != nil {
@@ -67,6 +73,7 @@ func jsonBytesEqual(b1, b2 []byte) bool {
 	return reflect.DeepEqual(o1, o2)
 }
 
+//nolint:deadcode,unused // utility function
 func suppressMissingOptionalConfigurationBlock(k, old, new string, d *schema.ResourceData) bool {
 	return old == "1" && new == "0"
 }
@@ -77,11 +84,13 @@ func diffSuppressWhenNotCreating(k, old, new string, d *schema.ResourceData) boo
 }
 
 // suppresses a diff when a resource is brand new
+//nolint:deadcode,unused // utility function
 func diffSuppressWhenNew(k, old, new string, d *schema.ResourceData) bool {
 	return d.IsNewResource()
 }
 
 // suppresses a diff when a resource exists
+//nolint:deadcode,unused // utility function
 func diffSuppressWhenExisting(k, old, new string, d *schema.ResourceData) bool {
 	return !d.IsNewResource()
 }
@@ -92,32 +101,20 @@ func diffSuppressFuncIgnore(k, old, new string, d *schema.ResourceData) bool {
 }
 
 //func diffIgnoreIfAlreadySet(k, old, new string, d *schema.ResourceData) bool {
-//
-//	if new !="" || old !="" {
-//		return true
-//	}
-//
-//	return false
+//	return new !="" || old !=""
 //}
 
 func diffIgnoreIfAlreadySet(k, old, new string, d *schema.ResourceData) bool {
-
-	if old != "" {
-		return true
-	}
-
-	return false
+	return old != ""
 }
 
+//nolint:deadcode,unused // utility function
 func diffIgnoreIfSameHash(k, old, new string, d *schema.ResourceData) bool {
 	if old == "" {
 		return false
 	}
 	newHash := hashForData(new)
-	if old == newHash {
-		return true
-	}
-	return false
+	return old == newHash
 }
 
 func hashForData(s string) string {
@@ -127,6 +124,7 @@ func hashForData(s string) string {
 	return apiStr
 }
 
+//nolint:deadcode,unused // utility function
 func stringHash(s string) int {
 	v := int(crc32.ChecksumIEEE([]byte(s)))
 	if v >= 0 {
@@ -139,9 +137,7 @@ func stringHash(s string) int {
 	return 0
 }
 
-func ptrString(v string) *string {
-	return &v
-}
+//nolint:deadcode,unused // utility function
 func ptrStringValue(v *string) string {
 	if v != nil {
 		return *v
@@ -152,11 +148,13 @@ func ptrStringValue(v *string) string {
 // diffStringMaps returns the set of keys and values that must be created,
 // and the set of keys and values that must be destroyed.
 // Equivalent to 'diffTagsGeneric'.
+//nolint:deadcode,unused // utility function
 func diffStringMaps(oldMap, newMap map[string]interface{}) (map[string]*string, map[string]*string) {
 	// First, we're creating everything we have
 	create := map[string]*string{}
 	for k, v := range newMap {
-		create[k] = ptrString(v.(string))
+		str := v.(string)
+		create[k] = &str
 	}
 
 	// Build the map of what to remove
@@ -165,7 +163,8 @@ func diffStringMaps(oldMap, newMap map[string]interface{}) (map[string]*string, 
 		old, ok := create[k]
 		if !ok || ptrStringValue(old) != v.(string) {
 			// Delete it!
-			remove[k] = ptrString(v.(string))
+			str := v.(string)
+			remove[k] = &str
 		} else if ok {
 			// already present so remove from new
 			delete(create, k)

@@ -248,10 +248,9 @@ func resourceAwsHost() *schema.Resource {
 
 		ReadContext:   resourceAwsHostRead,
 		CreateContext: resourceAwsHostCreate,
-		//UpdateContext: resourceAwsHostUpdate,
 		DeleteContext: resourceAwsHostDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
@@ -337,6 +336,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 /// UPDATE resource
+/*
 func resourceAwsHostUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Build a request.
@@ -355,6 +355,7 @@ func resourceAwsHostUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	log.Printf("[TRACE] resourceAwsHostCreate(%s, %s): end", rq.TenantID, rq.FriendlyName)
 	return diags
 }
+*/
 
 /// DELETE resource
 func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

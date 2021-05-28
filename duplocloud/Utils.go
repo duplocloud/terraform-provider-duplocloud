@@ -28,10 +28,15 @@ func toJsonStringField(field string, from interface{}, to map[string]interface{}
 
 // Utility function to convert the `from` interface to a JSON encoded string `field`.
 func toJsonStringState(field string, from interface{}, to *schema.ResourceData) {
-	if json, err := json.Marshal(from); err == nil {
-		to.Set(field, string(json))
-	} else {
-		log.Printf("[DEBUG] mapToJsonStringState: failed to serialize %s to JSON: %s", field, err)
+	var err error
+	var encoded []byte
+
+	if encoded, err = json.Marshal(from); err == nil {
+		err = to.Set(field, string(encoded))
+	}
+
+	if err != nil {
+		log.Printf("[DEBUG] toJsonStringState: failed to serialize %s to JSON: %s", field, err)
 	}
 }
 
@@ -61,6 +66,7 @@ func tagsSchema() *schema.Schema {
 	}
 }
 
+//nolint:deadcode,unused // utility function
 func tagsSchemaForceNew() *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeMap,
@@ -285,6 +291,7 @@ func selectKeyValues(metadata *[]duplosdk.DuploKeyStringValue, keys []string) *[
 }
 
 // Internal function used to re-order key value pairs
+//nolint:deadcode,unused // utility function
 func reorderKeyValues(pairs []interface{}) {
 
 	// Re-order environment variables to a canonical order.

@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"fmt"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -102,14 +103,17 @@ func dataSourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.Resource
 	// Parse the identifying attributes
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
+	var id string
 
 	// Get the object from Duplo, detecting a missing object
 	var list *[]duplosdk.DuploServiceLBConfigs = nil
 	var err error
 	c := m.(*duplosdk.Client)
 	if name == "" {
+		id = tenantID
 		list, err = c.DuploServiceLBConfigsGetList(tenantID)
 	} else {
+		id = fmt.Sprintf("%s/%s", tenantID, name)
 		var service *duplosdk.DuploServiceLBConfigs
 		service, err = c.DuploServiceLBConfigsGet(tenantID, name)
 		if service != nil {
@@ -119,7 +123,7 @@ func dataSourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.Resource
 	if err != nil {
 		return diag.Errorf("Unable to list tenant %s load balancer configs: %s", tenantID, err)
 	}
-	d.SetId(tenantID)
+	d.SetId(id)
 
 	// Apply the Terraform state for each service, or an empty list
 	services := []interface{}{}
@@ -134,8 +138,10 @@ func dataSourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.Resource
 			})
 		}
 	}
-	d.Set("services", services)
+	if err = d.Set("services", services); err != nil {
+		return diag.FromErr(err)
+	}
 
-	log.Printf("[TRACE] dataSourceDuploServiceLBConfigsRead: start")
+	log.Printf("[TRACE] dataSourceDuploServiceLBConfigsRead: end")
 	return nil
 }

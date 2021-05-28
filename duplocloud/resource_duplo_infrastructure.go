@@ -203,7 +203,7 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 	d.SetId(id)
 
 	// Then, wait until the infrastructure is completely ready.
-	err = duploInfrastructureWaitUntilReady(c, rq.Name, d.Timeout("create"))
+	err = duploInfrastructureWaitUntilReady(ctx, c, rq.Name, d.Timeout("create"))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -232,7 +232,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 	time.Sleep(time.Minute)
 
 	// Then, wait until the infrastructure is completely ready.
-	err = duploInfrastructureWaitUntilReady(c, rq.Name, d.Timeout("update"))
+	err = duploInfrastructureWaitUntilReady(ctx, c, rq.Name, d.Timeout("update"))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -278,7 +278,7 @@ func duploInfrastructureFromState(d *schema.ResourceData) duplosdk.DuploInfrastr
 	}
 }
 
-func duploInfrastructureWaitUntilReady(c *duplosdk.Client, name string, timeout time.Duration) error {
+func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, name string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -295,7 +295,7 @@ func duploInfrastructureWaitUntilReady(c *duplosdk.Client, name string, timeout 
 		Timeout:      timeout,
 	}
 	log.Printf("[DEBUG] duploInfrastructureWaitUntilReady(%s)", name)
-	_, err := stateConf.WaitForState()
+	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
 

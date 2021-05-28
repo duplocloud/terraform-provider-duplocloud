@@ -21,7 +21,7 @@ func resourceTenantSecret() *schema.Resource {
 		CreateContext: resourceTenantSecretCreate,
 		DeleteContext: resourceTenantSecretDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
