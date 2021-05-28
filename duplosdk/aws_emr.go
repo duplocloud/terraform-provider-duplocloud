@@ -7,22 +7,6 @@ import (
 // DuploEmrClusterRequest is a Duplo SDK object that represents a emr cluster
 type DuploEmrClusterRequest struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-<<<<<<< HEAD
-	TenantID 			 		string 			 `json:"-,omitempty"`
-	Arn                  		string        	 `json:"Arn,omitempty"`
-	Name                 		string      	 `json:"Name,omitempty"`
-	ReleaseLabel         		string         	 `json:"ReleaseLabel,omitempty"`
-	Status               		string        	 `json:"Status,omitempty"`
-	LogUri       				string        	 `json:"LogUri,omitempty"`
-
-	JobFlowId         			string         	 `json:"JobFlowId,omitempty"`
-	ResourceType				int				 `json:"ResourceType,omitempty"`
-	CustomAmiId          		string     		 `json:"CustomAmiId,omitempty"`
-
-	EbsRootVolumeSize    	    int         	 `json:"EbsRootVolumeSize,omitempty"`
-	StepConcurrencyLevel    	int         	 `json:"StepConcurrencyLevel,omitempty"`
-	ScaleDownBehavior           string         	 `json:"ScaleDownBehavior,omitempty"`
-=======
 	TenantID     string `json:"-,omitempty"`
 	Arn          string `json:"Arn,omitempty"`
 	Name         string `json:"Name,omitempty"`
@@ -37,7 +21,6 @@ type DuploEmrClusterRequest struct {
 	EbsRootVolumeSize    int    `json:"EbsRootVolumeSize,omitempty"`
 	StepConcurrencyLevel int    `json:"StepConcurrencyLevel,omitempty"`
 	ScaleDownBehavior    string `json:"JobFlowInstancesConfig,omitempty"`
->>>>>>> 5ac00a04b6ea1567e9feb29922049b4358a6c41c
 	//MasterPublicDns       	string        	 `json:"MasterPublicDns,omitempty"`
 	TerminationProtection       bool `json:"TerminationProtection,omitempty"`
 	KeepJobFlowAliveWhenNoSteps bool `json:"KeepJobFlowAliveWhenNoSteps,omitempty"`
@@ -114,9 +97,10 @@ func (c *Client) DuploEmrClusterGet(tenantID string, name string) (*DuploEmrClus
 
 // DuploEmrClusterGetList retrieves a emr cluster via the Duplo API
 func (c *Client) DuploEmrClusterGetList(tenantID string) (*[]DuploEmrClusterSummary, ClientError) {
+	// todo: not tested data
 	rp := []DuploEmrClusterSummary{}
 	err := c.getAPI(
-		fmt.Sprintf("DuploEmrClusterGet(%s)", tenantID),
+		fmt.Sprintf("DuploEmrClusterGet(%s, %s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/aws/emrCluster", tenantID),
 		&rp)
 	return &rp, err
