@@ -3,13 +3,14 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // Resource for managing an AWS emrCluster
@@ -30,6 +31,14 @@ func resourceAwsEmrCluster() *schema.Resource {
 		Schema: awsEmrClusterSchema(),
 	}
 }
+
+const (
+	// ScaleDownBehaviorTerminateAtInstanceHour is a ScaleDownBehavior enum value
+	ScaleDownBehaviorTerminateAtInstanceHour = "TERMINATE_AT_INSTANCE_HOUR"
+
+	// ScaleDownBehaviorTerminateAtTaskCompletion is a ScaleDownBehavior enum value
+	ScaleDownBehaviorTerminateAtTaskCompletion = "TERMINATE_AT_TASK_COMPLETION"
+)
 
 func awsEmrClusterSchema() map[string]*schema.Schema {
 	// todo:
@@ -130,7 +139,7 @@ func awsEmrClusterSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IntBetween(1, 256),
 		},
 
-		//ec2 attributes  hide and use these custom unitl new awsdk-api
+		//ec2 attributes  hide and use these custom until new awsdk-api
 		//ConflictsWith "instance_groups", "instance_fleets"
 		"master_instance_type": {
 			Description:   "Emr MasterInstanceType. Supported InstanceTypes e.g. m4.large",
@@ -360,7 +369,7 @@ func resourceAwsEmrClusterCreate(ctx context.Context, d *schema.ResourceData, m 
 		return diag.Errorf("Error creating tenant %s emrCluster '%s': %s", tenantID, name, err)
 	}
 
-	// Wait for Duplo to be able to return the emr's details.
+	// Wait for Duplo to be able to return the emr cluster details.
 	jobFlowId := resp.JobFlowId
 	id := fmt.Sprintf("%s/%s", tenantID, resp.JobFlowId)
 
@@ -439,7 +448,7 @@ func parseAwsEmrClusterIdParts(id string) (tenantID, jobFlowId string, err error
 func checkEmrStartStatus(statusStr string) bool {
 	//STARTING | BOOTSTRAPPING | RUNNING | WAITING | TERMINATING | TERMINATED | TERMINATED_WITH_ERRORS
 	// ok   => BOOTSTRAPPING | RUNNING | WAITING  and  also TERMINATING | TERMINATED | TERMINATED_WITH_ERRORS
-	//jsut wait for to move out of STARTING?
+	//just wait for to move out of STARTING?
 	status := strings.ToLower(statusStr)
 	log.Printf("[TRACE] checkEMRStatus create?  %t %s ", status != "starting" && strings.Contains(status, "termin"), status)
 	return status == "running" || status == "waiting" || status == "bootstrapping" || strings.Contains(status, "wait") || strings.Contains(status, "termin")
@@ -450,46 +459,45 @@ func checkEmrTerminateStatus(statusStr string) bool {
 	return strings.Contains(strings.ToLower(statusStr), "termin")
 }
 
-
 func diffIgnoreForEmrSteps(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("steps", d)
+	return diffIgnoreForJsonNonLocalChanges("steps", d)
 }
 
 func diffIgnoreForEmrBootstrap(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("bootstrap_actions", d)
+	return diffIgnoreForJsonNonLocalChanges("bootstrap_actions", d)
 }
 
 func diffIgnoreForEmrApplications(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("applications", d)
+	return diffIgnoreForJsonNonLocalChanges("applications", d)
 }
 
 func diffIgnoreForEmrConfigurations(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("configurations",  d)
+	return diffIgnoreForJsonNonLocalChanges("configurations", d)
 }
 
 func diffIgnoreForEmrAdditionalInfo(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("additional_info",  d)
+	return diffIgnoreForJsonNonLocalChanges("additional_info", d)
 }
 
 func diffIgnoreForEmrManagedScalingPolicy(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("managed_scaling_policy",   d)
+	return diffIgnoreForJsonNonLocalChanges("managed_scaling_policy", d)
 }
 
 func diffIgnoreForEmrInstanceFleets(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("instance_fleets",  d)
+	return diffIgnoreForJsonNonLocalChanges("instance_fleets", d)
 }
 
 func diffIgnoreForEmrInstanceGroups(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("instance_groups", d)
+	return diffIgnoreForJsonNonLocalChanges("instance_groups", d)
 }
 
-func diffIgnoreForSecretMapFor(key  string, d *schema.ResourceData) bool {
+func diffIgnoreForJsonNonLocalChanges(key string, d *schema.ResourceData) bool {
 	mapFieldName := fmt.Sprintf("%s_hash", key)
 	hashFieldName := key
 	_, dataNew := d.GetChange(hashFieldName)
 	hashOld := d.Get(mapFieldName).(string)
 	hashNew := hashForData(dataNew.(string))
-	log.Printf("[TRACE] diffIgnoreForSecretMapFor emr-cluster  %s  ******** 1: hash old vs new %s=%s %t?", key, hashOld, hashNew, hashOld == hashNew )
+	log.Printf("[TRACE] diffIgnoreForJsonNonLocalChanges emr-cluster  %s  ******** 1: hash old vs new %s=%s %t?", key, hashOld, hashNew, hashOld == hashNew)
 	return hashOld == hashNew
 }
 
@@ -502,14 +510,6 @@ func setEmrHashForKey(key string, d *schema.ResourceData) {
 		hash := hashForData(value)
 		d.Set(keyHash, hash)
 	}
-	log.Printf("[TRACE] diffIgnoreForSecretMapFor emr-cluster  %s  ******** 1: hash %s", keyHash, value)
+	log.Printf("[TRACE] diffIgnoreForJsonNonLocalChanges emr-cluster  %s  ******** 1: hash %s", keyHash, value)
 
 }
-
-const (
-	// ScaleDownBehaviorTerminateAtInstanceHour is a ScaleDownBehavior enum value
-	ScaleDownBehaviorTerminateAtInstanceHour = "TERMINATE_AT_INSTANCE_HOUR"
-
-	// ScaleDownBehaviorTerminateAtTaskCompletion is a ScaleDownBehavior enum value
-	ScaleDownBehaviorTerminateAtTaskCompletion = "TERMINATE_AT_TASK_COMPLETION"
-)
