@@ -1,5 +1,6 @@
-name: Lint
+name: Lint and Format
 on:
+  pull_request:
   push:
     branches-ignore:
       - master
