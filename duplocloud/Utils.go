@@ -420,7 +420,7 @@ func makeMapUpperCamelCase(m map[string]interface{}) {
 	}
 }
 
-func waitForResourceWithStatusDone(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() ( bool,  duplosdk.ClientError)) diag.Diagnostics {
+func waitForResourceWithStatusDone(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (bool, duplosdk.ClientError)) diag.Diagnostics {
 	err := resource.RetryContext(ctx, d.Timeout(kind), func() *resource.RetryError {
 		status, errget := get()
 
