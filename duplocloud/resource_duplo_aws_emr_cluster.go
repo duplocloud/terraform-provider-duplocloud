@@ -3,22 +3,13 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-)
-
-const (
-	// ScaleDownBehaviorTerminateAtInstanceHour is a ScaleDownBehavior enum value
-	ScaleDownBehaviorTerminateAtInstanceHour = "TERMINATE_AT_INSTANCE_HOUR"
-
-	// ScaleDownBehaviorTerminateAtTaskCompletion is a ScaleDownBehavior enum value
-	ScaleDownBehaviorTerminateAtTaskCompletion = "TERMINATE_AT_TASK_COMPLETION"
 )
 
 // Resource for managing an AWS emrCluster
@@ -41,6 +32,7 @@ func resourceAwsEmrCluster() *schema.Resource {
 }
 
 func awsEmrClusterSchema() map[string]*schema.Schema {
+	// todo:
 	return map[string]*schema.Schema{
 
 		//local only
@@ -138,7 +130,7 @@ func awsEmrClusterSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IntBetween(1, 256),
 		},
 
-		//ec2 attributes  hide and use these custom until new awsdk-api
+		//ec2 attributes  hide and use these custom unitl new awsdk-api
 		//ConflictsWith "instance_groups", "instance_fleets"
 		"master_instance_type": {
 			Description:   "Emr MasterInstanceType. Supported InstanceTypes e.g. m4.large",
@@ -176,8 +168,8 @@ func awsEmrClusterSchema() map[string]*schema.Schema {
 		//jsonstr: Not using nested attrbutes as they are absolete for new apis
 		// == wait until to creating nested attribute until we move to new AWSSDK.EMR apis to 3.7
 		// == 1- the cluster create api does not have update equivalent in current c# client api
-		// == 2- any updates needs to handled by sub-api.
-		// == 3- As the nested attributes are way different in new api from older api AWSSDK.EMR and current official aws TF provider
+		// == 2- any updates needs to handled by sub-api..
+		// == 3- As the nested attributes are way different in new api from older api AWSSDK.EMR and official emr tf
 		"applications": {
 			Description:      "Emr - list of applications to be installed.",
 			Type:             schema.TypeString,
@@ -207,22 +199,14 @@ func awsEmrClusterSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: diffIgnoreForEmrConfigurations,
 		},
 		"additional_info": {
-<<<<<<< HEAD
-			Description:      "Emr - additional info.",
-=======
 			Description:      "Emr - additional_info.",
->>>>>>> 5ac00a04b6ea1567e9feb29922049b4358a6c41c
 			Type:             schema.TypeString,
 			Optional:         true,
 			ForceNew:         true,
 			DiffSuppressFunc: diffIgnoreForEmrAdditionalInfo,
 		},
 		"managed_scaling_policy": {
-<<<<<<< HEAD
-			Description:      "Emr - managed scaling policy.",
-=======
 			Description:      "Emr - managed_scaling_policy.",
->>>>>>> 5ac00a04b6ea1567e9feb29922049b4358a6c41c
 			Type:             schema.TypeString,
 			Optional:         true,
 			ForceNew:         true,
@@ -230,18 +214,13 @@ func awsEmrClusterSchema() map[string]*schema.Schema {
 			ConflictsWith:    []string{"instance_fleets"},
 		},
 		"instance_fleets": {
-<<<<<<< HEAD
-			Description:      "Emr - instance fleets. Use this for spot instances.",
-=======
 			Description:      "Emr - instance_fleets.",
->>>>>>> 5ac00a04b6ea1567e9feb29922049b4358a6c41c
 			Type:             schema.TypeString,
 			Optional:         true,
 			ForceNew:         true,
 			DiffSuppressFunc: diffIgnoreForEmrInstanceFleets,
 			ConflictsWith:    []string{"instance_count", "instance_groups", "managed_scaling_policy"},
 		},
-		//not tested this
 		"instance_groups": {
 			Description:      "Emr - instance_groups.",
 			Type:             schema.TypeString,
@@ -288,7 +267,7 @@ func awsEmrClusterSchema() map[string]*schema.Schema {
 }
 
 /// READ resource
-func resourceAwsEmrClusterRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAwsEmrClusterRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// Parse the identifying attributes
 	id := d.Id()
 	name := d.Get("name").(string)
@@ -352,10 +331,6 @@ func resourceAwsEmrClusterCreate(ctx context.Context, d *schema.ResourceData, m 
 		TerminationProtection:       d.Get("termination_protection").(bool),
 		EbsRootVolumeSize:           d.Get("ebs_root_volume_size").(int),
 		StepConcurrencyLevel:        d.Get("step_concurrency_level").(int),
-<<<<<<< HEAD
-		//some of the new untested avoided
-=======
->>>>>>> 5ac00a04b6ea1567e9feb29922049b4358a6c41c
 
 		//jsonstr
 		Applications:         d.Get("applications").(string),
@@ -431,11 +406,7 @@ func resourceAwsEmrClusterDelete(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the cluster.
-<<<<<<< HEAD
 	diagDiagnostics := waitForResourceWithStatusDone(ctx, d, "emrCluster-delete", id, func() (bool, duplosdk.ClientError) {
-=======
-	diag := waitForResourceWithStatusDone(ctx, d, "emrCluster-delete", id, func() (bool, duplosdk.ClientError) {
->>>>>>> 5ac00a04b6ea1567e9feb29922049b4358a6c41c
 		rp, errget := c.DuploEmrClusterGet(tenantID, jobFlowId)
 		if rp != nil && rp.Arn != "" && rp.Status != "" {
 			if checkEmrTerminateStatus(rp.Status) {
@@ -468,11 +439,7 @@ func parseAwsEmrClusterIdParts(id string) (tenantID, jobFlowId string, err error
 func checkEmrStartStatus(statusStr string) bool {
 	//STARTING | BOOTSTRAPPING | RUNNING | WAITING | TERMINATING | TERMINATED | TERMINATED_WITH_ERRORS
 	// ok   => BOOTSTRAPPING | RUNNING | WAITING  and  also TERMINATING | TERMINATED | TERMINATED_WITH_ERRORS
-<<<<<<< HEAD
-	// some are not in older duplo-current-c# api  e.g. BOOTSTRAPPING. How aws manages multiple older api .. !
-=======
 	//jsut wait for to move out of STARTING?
->>>>>>> 5ac00a04b6ea1567e9feb29922049b4358a6c41c
 	status := strings.ToLower(statusStr)
 	log.Printf("[TRACE] checkEMRStatus create?  %t %s ", status != "starting" && strings.Contains(status, "termin"), status)
 	return status == "running" || status == "waiting" || status == "bootstrapping" || strings.Contains(status, "wait") || strings.Contains(status, "termin")
@@ -482,7 +449,7 @@ func checkEmrTerminateStatus(statusStr string) bool {
 	log.Printf("[TRACE] checkEMRStatus delete?  %t %s ", strings.Contains(strings.ToLower(statusStr), "termin"), statusStr)
 	return strings.Contains(strings.ToLower(statusStr), "termin")
 }
-<<<<<<< HEAD
+
 
 func diffIgnoreForEmrSteps(_, _, _ string, d *schema.ResourceData) bool {
 	return diffIgnoreForSecretMapFor("steps", d)
@@ -497,69 +464,32 @@ func diffIgnoreForEmrApplications(_, _, _ string, d *schema.ResourceData) bool {
 }
 
 func diffIgnoreForEmrConfigurations(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("configurations", d)
+	return diffIgnoreForSecretMapFor("configurations",  d)
 }
 
 func diffIgnoreForEmrAdditionalInfo(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("additional_info", d)
+	return diffIgnoreForSecretMapFor("additional_info",  d)
 }
 
 func diffIgnoreForEmrManagedScalingPolicy(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("managed_scaling_policy", d)
+	return diffIgnoreForSecretMapFor("managed_scaling_policy",   d)
 }
 
 func diffIgnoreForEmrInstanceFleets(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("instance_fleets", d)
+	return diffIgnoreForSecretMapFor("instance_fleets",  d)
 }
 
 func diffIgnoreForEmrInstanceGroups(_, _, _ string, d *schema.ResourceData) bool {
 	return diffIgnoreForSecretMapFor("instance_groups", d)
-=======
-func diffSuppressFuncIgnoreIfHash(k, old, new string, d *schema.ResourceData) bool {
-	return true //strings.Index(k, "hash") == -1
 }
 
-func diffIgnoreForEmrSteps(k, old, new string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("steps", k, old, new, d)
-}
-
-func diffIgnoreForEmrBootstrap(k, old, new string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("bootstrap_actions", k, old, new, d)
-}
-
-func diffIgnoreForEmrApplications(k, old, new string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("applications", k, old, new, d)
-}
-
-func diffIgnoreForEmrConfigurations(k, old, new string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("configurations", k, old, new, d)
-}
-
-func diffIgnoreForEmrAdditionalInfo(k, old, new string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("additional_info", k, old, new, d)
-}
-
-func diffIgnoreForEmrManagedScalingPolicy(k, old, new string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("managed_scaling_policy", k, old, new, d)
-}
-
-func diffIgnoreForEmrInstanceFleets(k, old, new string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("instance_fleets", k, old, new, d)
-}
-
-func diffIgnoreForEmrInstanceGroups(k, old, new string, d *schema.ResourceData) bool {
-	return diffIgnoreForSecretMapFor("instance_groups", k, old, new, d)
->>>>>>> 5ac00a04b6ea1567e9feb29922049b4358a6c41c
-}
-
-func diffIgnoreForSecretMapFor(key string, d *schema.ResourceData) bool {
+func diffIgnoreForSecretMapFor(key  string, d *schema.ResourceData) bool {
 	mapFieldName := fmt.Sprintf("%s_hash", key)
 	hashFieldName := key
 	_, dataNew := d.GetChange(hashFieldName)
 	hashOld := d.Get(mapFieldName).(string)
 	hashNew := hashForData(dataNew.(string))
-<<<<<<< HEAD
-	log.Printf("[TRACE] diffIgnoreForSecretMapFor emr-cluster  %s  ******** 1: hash old vs new %s=%s %t?", key, hashOld, hashNew, hashOld == hashNew)
+	log.Printf("[TRACE] diffIgnoreForSecretMapFor emr-cluster  %s  ******** 1: hash old vs new %s=%s %t?", key, hashOld, hashNew, hashOld == hashNew )
 	return hashOld == hashNew
 }
 
@@ -575,42 +505,6 @@ func setEmrHashForKey(key string, d *schema.ResourceData) {
 	log.Printf("[TRACE] diffIgnoreForSecretMapFor emr-cluster  %s  ******** 1: hash %s", keyHash, value)
 
 }
-=======
-	log.Printf("[TRACE] diffIgnoreForSecretMapFor emr-cluster  %s  ******** 1: hash old vs new %s=%s %t?", key, hashOld, hashNew, (hashOld == hashNew))
-	return hashOld == hashNew
-}
-
-func diffIgnoreForSecretMapFor2(key, k, old, new string, d *schema.ResourceData) bool {
-	key_hash := fmt.Sprintf("%s_hash", key)
-	log.Printf("[TRACE] diffIgnoreForSecretMapFor emr-cluster  %s = %s ", key_hash, key)
-
-	dataOld, dataNew := d.GetChange(key)
-	hashOld := d.Get(key_hash).(string)
-	if dataOld.(string) == "" {
-		return true
-	}
-	hashNew := hashForData(dataNew.(string))
-	log.Printf("[TRACE] diffIgnoreForSecretMapFor emr-cluster  %s  ******** 1: hash old vs new %s=%s %t?", key, hashOld, hashNew, (hashOld == hashNew))
-	return hashOld == hashNew
-}
-func setHashIntoState(key string, d *schema.ResourceData) {
-	key_hash := fmt.Sprintf("%s_hash", key)
-	before := d.Get(key_hash).(string)
-	d.Set(key_hash, d.Get(key_hash).(string))
-	log.Printf("[TRACE] setHashIntoState before%s  ******** after %s", before, d.Get(key_hash).(string))
-}
-func setEmrHashForKey(key string, d *schema.ResourceData) {
-	key_hash := fmt.Sprintf("%s_hash", key)
-	value := d.Get(key).(string)
-	if value == "" {
-		d.Set(key_hash, "0")
-	} else {
-		hash := hashForData(value)
-		d.Set(key_hash, hash)
-	}
-	log.Printf("[TRACE] diffIgnoreForSecretMapFor emr-cluster  %s  ******** 1: hash %s", key_hash, value)
-
-}
 
 const (
 	// ScaleDownBehaviorTerminateAtInstanceHour is a ScaleDownBehavior enum value
@@ -619,4 +513,3 @@ const (
 	// ScaleDownBehaviorTerminateAtTaskCompletion is a ScaleDownBehavior enum value
 	ScaleDownBehaviorTerminateAtTaskCompletion = "TERMINATE_AT_TASK_COMPLETION"
 )
->>>>>>> 5ac00a04b6ea1567e9feb29922049b4358a6c41c

@@ -28,7 +28,7 @@ func dataSourceEmrClusters() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
-							Description: "The name of the emrCluster.  ",
+							Description: "The  name of the emrCluster.",
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
@@ -60,7 +60,7 @@ func dataSourceEmrClusters() *schema.Resource {
 }
 
 /// READ/SEARCH resources
-func dataSourceEmrClusterRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceEmrClusterRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 
 	log.Printf("[TRACE] dataSourceEmrClusterRead(%s): start", tenantID)
