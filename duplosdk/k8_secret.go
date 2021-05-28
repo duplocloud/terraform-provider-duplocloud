@@ -18,11 +18,9 @@ func (c *Client) K8SecretToState(pduploObject *map[string]interface{}, d *schema
 		log.Printf("[TRACE] duplo-K8SecretToState ******** 1: from-CLOUD %s ", jsonData)
 		///--- set
 		cObj := make(map[string]interface{})
-		var data = make(map[string]interface{})
-		var dataNew = make(map[string]interface{})
+		dataNew := map[string]interface{}{}
 		if duploObject["SecretData"] != nil {
-			data = duploObject["SecretData"].(map[string]interface{})
-			dataNew = make(map[string]interface{})
+			data := duploObject["SecretData"].(map[string]interface{})
 			for key, value := range data {
 				fmt.Println("Key:", key, "=>", "value:", value)
 				dataNew[key] = ""
@@ -124,7 +122,7 @@ func (c *Client) K8SecretGetTenantID(d *schema.ResourceData) string {
 			if s == "subscriptions" {
 				j := i + 1
 				if idArray[j] != "" {
-					d.Set("tenant_id", idArray[j])
+					_ = d.Set("tenant_id", idArray[j])
 				}
 				return idArray[j]
 			}
@@ -137,7 +135,7 @@ func (c *Client) K8SecretGetTenantID(d *schema.ResourceData) string {
 // K8SecretsFlatten converts a list of Duplo SDK objects into Terraform resource data
 func (c *Client) K8SecretsFlatten(duploObjects *[]map[string]interface{}, d *schema.ResourceData) []interface{} {
 	if duploObjects != nil {
-		ois := make([]interface{}, len(*duploObjects), len(*duploObjects))
+		ois := make([]interface{}, len(*duploObjects))
 		for i, duploObject := range *duploObjects {
 			ois[i] = c.K8SecretToState(&duploObject, d)
 		}
@@ -225,7 +223,7 @@ func (c *Client) K8SecretGet(d *schema.ResourceData, m interface{}) error {
 	}
 	log.Printf("[TRACE] duplo-K8SecretGet 5 %s ******** ", api)
 	if duploObject["SecretData"] != nil {
-		c.K8SecretFillGet(&duploObject, d)
+		_ = c.K8SecretFillGet(&duploObject, d)
 		log.Printf("[TRACE] duplo-K8SecretGet 6 %s FOUND *****", api)
 		return nil
 	}
@@ -307,14 +305,10 @@ func (c *Client) K8SecretDelete(d *schema.ResourceData, m interface{}) (*map[str
 		return nil, err
 	}
 
-	body, err := c.doRequestWithStatus(req, 204)
+	_, err = c.doRequestWithStatus(req, 204)
 	if err != nil {
 		log.Printf("[TRACE] duplo-K8SecretDelete %s 3 ********: %s", api, err.Error())
 		return nil, err
-	}
-
-	if body != nil {
-		//nothing ?
 	}
 
 	log.Printf("[TRACE] DONE duplo-K8SecretDelete %s 4 ********", api)

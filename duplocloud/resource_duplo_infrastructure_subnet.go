@@ -21,7 +21,7 @@ func resourceInfrastructureSubnet() *schema.Resource {
 		UpdateContext: resourceInfrastructureSubnetUpdate,
 		DeleteContext: resourceInfrastructureSubnetDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(2 * time.Minute),

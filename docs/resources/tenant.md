@@ -24,7 +24,7 @@ resource "duplocloud_tenant" "myapp" {
 
 ### Required
 
-- **account_name** (String) The name of the tenant.  Tenant names are globally unique, less than 11 characters, and cannot be a prefix of any other tenant name.
+- **account_name** (String) The name of the tenant.  Tenant names are globally unique, less than 13 characters, and cannot be a prefix of any other tenant name.
 - **plan_id** (String) The name of the plan under which the tenant will be created.
 
 ### Optional

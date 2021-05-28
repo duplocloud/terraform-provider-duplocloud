@@ -69,7 +69,7 @@ func resourceAwsLoadBalancer() *schema.Resource {
 		UpdateContext: resourceAwsLoadBalancerUpdate,
 		DeleteContext: resourceAwsLoadBalancerDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(3 * time.Minute),

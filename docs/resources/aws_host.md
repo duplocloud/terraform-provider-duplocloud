@@ -25,9 +25,9 @@ resource "duplocloud_aws_host" "native" {
 
   image_id       = "ami-abcd1234" # <== put the AWS duplo docker AMI ID here
   capacity       = "t3a.medium"
-  agent_platform = 0          # Duplo native container agent
-  zone           = 0          # Zone A
-  user_account   = "ec2-user" # default username for Amazon Linux
+  agent_platform = 0 # Duplo native container agent
+  zone           = 0 # Zone A
+  user_account   = duplocloud_tenant.myapp.account_name
 }
 
 # Simple Example 2:  Deploy a host to be used with EKS
@@ -37,9 +37,9 @@ resource "duplocloud_aws_host" "eks" {
 
   image_id       = "ami-12345678" # <== put the AWS EKS 1.18 AMI ID here
   capacity       = "t3a.medium"
-  agent_platform = 7          # Duplo EKS agent
-  zone           = 0          # Zone A
-  user_account   = "ec2-user" # default username for Amazon Linux
+  agent_platform = 7 # Duplo EKS agent
+  zone           = 0 # Zone A
+  user_account   = duplocloud_tenant.myapp.account_name
 }
 ```
 

@@ -55,7 +55,7 @@ func resourceK8Secret() *schema.Resource {
 		UpdateContext: resourceK8SecretUpdate,
 		DeleteContext: resourceK8SecretDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
