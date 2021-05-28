@@ -419,3 +419,27 @@ func makeMapUpperCamelCase(m map[string]interface{}) {
 		}
 	}
 }
+
+func waitForResourceWithStatusDone(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (bool, duplosdk.ClientError)) diag.Diagnostics {
+	err := resource.RetryContext(ctx, d.Timeout(kind), func() *resource.RetryError {
+		status, errget := get()
+
+		if errget != nil {
+			if errget.Status() == 404 {
+				return nil
+			}
+
+			return resource.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
+		}
+		// return nil if want to complete wait
+		if !status {
+			return resource.RetryableError(fmt.Errorf("expected %s '%s' to be missing, but it still exists", kind, id))
+		}
+
+		return nil
+	})
+	if err != nil {
+		return diag.Errorf("error deleting %s '%s': %s", kind, id, err)
+	}
+	return nil
+}
