@@ -194,6 +194,7 @@ func dataSourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m
 	if missing {
 		return diag.Errorf("No infrastructure named '%s' was found", name)
 	}
+	d.SetId("-")
 
 	log.Printf("[TRACE] dataSourceInfrastructureRead(): end")
 	return nil
