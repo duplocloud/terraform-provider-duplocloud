@@ -91,6 +91,8 @@ func Provider() *schema.Provider {
 			"duplocloud_k8_config_maps":          dataSourceK8ConfigMaps(),
 			"duplocloud_k8_secret":               dataSourceK8Secret(),
 			"duplocloud_native_hosts":            dataSourceNativeHosts(),
+			"duplocloud_plan":                    dataSourcePlan(),
+			"duplocloud_plans":                   dataSourcePlans(),
 			"duplocloud_tenant":                  dataSourceTenant(),
 			"duplocloud_tenants":                 dataSourceTenants(),
 			"duplocloud_tenant_aws_region":       dataSourceTenantAwsRegion(),
