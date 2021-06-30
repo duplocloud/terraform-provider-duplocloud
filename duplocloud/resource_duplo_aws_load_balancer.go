@@ -15,48 +15,57 @@ import (
 func awsLoadBalancerSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The GUID of the tenant that the load balancer will be created in.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The short name of the load balancer.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"fullname": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The full name of the load balancer.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"arn": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The ARN of the load balancer.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"is_internal": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
-			ForceNew: true,
+			Description: "Whether or not the load balancer is internal (non internet-facing).",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true,
 		},
 		"enable_access_logs": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
+			Description: "Whether or not access logs should be enabled.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"drop_invalid_headers": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
+			Description: "Whether or not the load balancer should drop invalid HTTP headers.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"web_acl_id": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Description: "The ARN of a WAF to attach to the load balancer.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
 		},
 		"tags": {
-			Type:     schema.TypeList,
-			Computed: true,
-			Elem:     KeyValueSchema(),
+			Description: "The tags assigned to this load balancer.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        KeyValueSchema(),
 		},
 	}
 }
@@ -64,6 +73,8 @@ func awsLoadBalancerSchema() map[string]*schema.Schema {
 // Resource for managing an AWS ElasticSearch instance
 func resourceAwsLoadBalancer() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_aws_load_balancer` manages an AWS application load balancer in Duplo.",
+
 		ReadContext:   resourceAwsLoadBalancerRead,
 		CreateContext: resourceAwsLoadBalancerCreate,
 		UpdateContext: resourceAwsLoadBalancerUpdate,
