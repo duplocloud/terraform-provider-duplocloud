@@ -92,6 +92,12 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			Default:     false,
 		},
+		"auth_token": {
+			Description: "Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+		},
 		"instance_status": {
 			Description: "The status of the elasticache instance.",
 			Type:        schema.TypeString,
@@ -230,6 +236,7 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 		Replicas:            d.Get("replicas").(int),
 		EncryptionAtRest:    d.Get("encryption_at_rest").(bool),
 		EncryptionInTransit: d.Get("encryption_in_transit").(bool),
+		AuthToken:           d.Get("auth_token").(string),
 		InstanceStatus:      d.Get("instance_status").(string),
 	}
 }
@@ -254,6 +261,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("replicas", duplo.Replicas)
 	d.Set("encryption_at_rest", duplo.EncryptionAtRest)
 	d.Set("encryption_in_transit", duplo.EncryptionInTransit)
+	d.Set("auth_token", duplo.AuthToken)
 	d.Set("instance_status", duplo.InstanceStatus)
 }
 
