@@ -39,6 +39,7 @@ See AWS documentation for the [available instance types](https://docs.aws.amazon
 
 ### Optional
 
+- **auth_token** (String) Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.
 - **cache_type** (Number) The numerical index of elasticache instance type.
 Should be one of:
 

@@ -20,6 +20,8 @@ type DuploEcacheInstance struct {
 	Replicas            int    `json:"Replicas,omitempty"`
 	EncryptionAtRest    bool   `json:"EnableEncryptionAtRest,omitempty"`
 	EncryptionInTransit bool   `json:"EnableEncryptionAtTransit,omitempty"`
+	KMSKeyID            string `json:"KmsKeyId,omitempty"`
+	AuthToken           string `json:"AuthToken,omitempty"`
 	InstanceStatus      string `json:"InstanceStatus,omitempty"`
 }
 
