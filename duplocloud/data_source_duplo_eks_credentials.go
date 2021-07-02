@@ -1,6 +1,7 @@
 package duplocloud
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -50,19 +51,33 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	// Get the data from Duplo.
 	planID := d.Get("plan_id").(string)
 	c := m.(*duplosdk.Client)
-	eksCredentials, err := c.GetEksCredentials(planID)
-	if err != nil {
-		return fmt.Errorf("failed to read EKS credentials: %s", err)
+
+	// First, try the newer method of obtaining a JIT access token.
+	k8sConfig, err := c.GetPlanK8sJitAccess(planID)
+	if err != nil && !err.PossibleMissingAPI() {
+		return fmt.Errorf("failed to get plan %s kubernetes JIT access: %s", planID, err)
 	}
-	d.SetId(eksCredentials.Name)
+
+	// If it failed, try the fallback method.
+	if k8sConfig == nil {
+		k8sConfig, err = c.GetEksCredentials(planID)
+		if err != nil {
+			return fmt.Errorf("failed to read EKS credentials: %s", err)
+		}
+	}
+	d.SetId(planID)
 
 	// Set the Terraform resource data
 	d.Set("plan_id", planID)
-	d.Set("name", eksCredentials.Name)
-	d.Set("endpoint", eksCredentials.APIServer)
-	d.Set("token", eksCredentials.Token)
-	d.Set("region", eksCredentials.AwsRegion)
-	d.Set("ca_certificate_data", eksCredentials.CertificateAuthorityDataBase64)
+	d.Set("name", k8sConfig.Name)
+	d.Set("endpoint", k8sConfig.APIServer)
+	d.Set("token", k8sConfig.Token)
+	d.Set("region", k8sConfig.AwsRegion)
+
+	bytes, err64 := base64.StdEncoding.DecodeString(k8sConfig.CertificateAuthorityDataBase64)
+	if err64 == nil {
+		d.Set("ca_certificate_data", string(bytes))
+	}
 
 	log.Printf("[TRACE] dataSourceEksCredentialsRead ******** end")
 	return nil
