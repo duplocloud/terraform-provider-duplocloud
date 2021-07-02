@@ -311,11 +311,13 @@ func reduceOtherDockerConfig(defn map[string]interface{}) error {
 	for _, pk := range probes {
 		if pv, ok := defn[pk]; ok {
 			if probe, ok := pv.(map[string]interface{}); ok {
+				makeMapUpperCamelCase(probe)
 
 				// Reduce HTTP Get keys
 				if hg, ok := probe["HttpGet"]; ok {
 					if hgv, ok := hg.(map[string]interface{}); ok {
 						reduceNilOrEmptyMapEntries(hgv)
+						makeMapUpperCamelCase(hgv)
 					}
 				}
 
@@ -334,11 +336,13 @@ func reduceOtherDockerConfig(defn map[string]interface{}) error {
 					// Reduce ValueFrom keys.
 					if ev, ok := entry["ValueFrom"]; ok {
 						if vf, ok := ev.(map[string]interface{}); ok {
+							makeMapUpperCamelCase(vf)
 
 							// Reduce SecretKeyRef keys.
 							if skr, ok := vf["SecretKeyRef"]; ok {
 								if skrv, ok := skr.(map[string]interface{}); ok {
 									reduceNilOrEmptyMapEntries(skrv)
+									makeMapUpperCamelCase(skrv)
 								}
 							}
 
@@ -346,6 +350,7 @@ func reduceOtherDockerConfig(defn map[string]interface{}) error {
 							if skr, ok := vf["ConfigMapKeyRef"]; ok {
 								if skrv, ok := skr.(map[string]interface{}); ok {
 									reduceNilOrEmptyMapEntries(skrv)
+									makeMapUpperCamelCase(skrv)
 								}
 							}
 
