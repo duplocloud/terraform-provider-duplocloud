@@ -21,6 +21,7 @@ description: |-
 
 ### Read-Only
 
+- **ca_certificate_data** (String)
 - **endpoint** (String)
 - **id** (String) The ID of this resource.
 - **name** (String)

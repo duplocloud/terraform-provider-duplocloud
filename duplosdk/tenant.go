@@ -59,11 +59,13 @@ type DuploTenantK8sCredentials struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-,omitempty"`
 
-	Name        string `json:"Name"`
-	APIServer   string `json:"ApiServer"`
-	Token       string `json:"Token"`
-	AwsRegion   string `json:"AwsRegion"`
-	K8sProvider int    `json:"K8Provider,omitempty"`
+	Name                           string `json:"Name"`
+	APIServer                      string `json:"ApiServer"`
+	Token                          string `json:"Token"`
+	AwsRegion                      string `json:"AwsRegion"`
+	K8sProvider                    int    `json:"K8Provider,omitempty"`
+	CertificateAuthorityDataBase64 string `json:"CertificateAuthorityDataBase64,omitempty"`
+	DefaultNamespace               string `json:"DefaultNamespace,omitempty"`
 }
 
 // DuploTenantEksSecret represents just-in-time EKS credentials in Duplo
@@ -314,7 +316,18 @@ func (c *Client) GetTenantK8sCredentials(tenantID string) (*DuploTenantK8sCreden
 	return &creds, nil
 }
 
-// GetEksCredentials retrieves just-in-time EKS credentials via the Duplo API.
+// GetTenantK8sServiceAccountToken retrieves just-in-time EKS credentials via the Duplo API.
+func (c *Client) GetTenantK8sJitAccess(tenantID string) (*DuploTenantK8sCredentials, ClientError) {
+	creds := DuploTenantK8sCredentials{}
+	err := c.getAPI(fmt.Sprintf("GetTenantK8sJitAccess(%s)", tenantID), fmt.Sprintf("v3/subscriptions/%s/k8s/jitAccess", tenantID), &creds)
+	if err != nil {
+		return nil, err
+	}
+	creds.TenantID = tenantID
+	return &creds, nil
+}
+
+// GetTenantEksSecret retrieves just-in-time EKS credentials via the Duplo API.
 func (c *Client) GetTenantEksSecret(tenantID string) (*DuploTenantEksSecret, ClientError) {
 	creds := DuploTenantEksSecret{}
 	err := c.getAPI(fmt.Sprintf("GetTenantEksSecret(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetEksSecret", tenantID), &creds)

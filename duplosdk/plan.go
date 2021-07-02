@@ -1,5 +1,7 @@
 package duplosdk
 
+import "fmt"
+
 type DuploPlan struct {
 	Name              string                      `json:"Name"`
 	NwProvider        int                         `json:"NwProvider,omitempty"` // FIXME: put a proper enum here.
@@ -81,4 +83,15 @@ func (c *Client) PlanGet(name string) (*DuploPlan, ClientError) {
 	}
 
 	return nil, nil
+}
+
+// GetK8sCredentials retrieves just-in-time kubernetes credentials via the Duplo API.
+func (c *Client) GetPlanK8sJitAccess(planID string) (*DuploEksCredentials, ClientError) {
+	creds := DuploEksCredentials{}
+	err := c.getAPI(fmt.Sprintf("GetK8sCredentials(%s)", planID), fmt.Sprintf("v3/admin/plans/%s/k8sConfig", planID), &creds)
+	if err != nil {
+		return nil, err
+	}
+	creds.PlanID = planID
+	return &creds, nil
 }

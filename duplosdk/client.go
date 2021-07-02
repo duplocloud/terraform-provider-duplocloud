@@ -25,6 +25,10 @@ func (e clientError) Status() int {
 	return e.status
 }
 
+func (e clientError) PossibleMissingAPI() bool {
+	return e.status == 500 || e.status == 404
+}
+
 func (e clientError) URL() string {
 	return e.url
 }
@@ -36,6 +40,7 @@ func (e clientError) Response() map[string]interface{} {
 type ClientError interface {
 	Error() string
 	Status() int
+	PossibleMissingAPI() bool
 	URL() string
 	Response() map[string]interface{}
 }
