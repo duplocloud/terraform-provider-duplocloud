@@ -121,7 +121,9 @@ func resourceTenantNetworkSecurityRuleRead(ctx context.Context, d *schema.Resour
 		d.Set("source_address", (*duplo.Sources)[0].Value)
 		d.Set("source_tenant", nil)
 	}
-	d.Set("description", (*duplo.Sources)[0].Description)
+	if (*duplo.Sources)[0].Description != "" {
+		d.Set("description", (*duplo.Sources)[0].Description)
+	}
 
 	log.Printf("[TRACE] resourceTenantNetworkSecurityRuleRead(%s): end", id)
 	return nil

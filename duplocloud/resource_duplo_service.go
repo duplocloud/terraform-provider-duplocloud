@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"log"
@@ -45,6 +46,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 				// but they still show in the plan if some other property changes).
 				log.Printf("[TRACE] duplocloud_duplo_service.other_docker_config.StateFunc: <= %v", v)
 				defn, _ := expandOtherDockerConfig(v.(string))
+				reorderOtherDockerConfigsEnvironmentVariables(defn)
 				json, err := jcs.Format(defn)
 				log.Printf("[TRACE] duplocloud_duplo_service.other_docker_config.StateFunc: => %s (error: %s)", json, err)
 				return json
@@ -264,7 +266,7 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 }
 
 // Internal function to expand other_docker_config JSON into a structure.
-func expandOtherDockerConfig(encoded string) (defn interface{}, err error) {
+func expandOtherDockerConfig(encoded string) (defn map[string]interface{}, err error) {
 	err = json.Unmarshal([]byte(encoded), &defn)
 	log.Printf("[DEBUG] Expanded duplocloud_duplo_service.other_docker_config: %v", defn)
 	return
@@ -279,16 +281,91 @@ func canonicalizeOtherDockerConfigJson(encoded string) (string, error) {
 	if err != nil {
 		return encoded, err
 	}
-	// err = reduceOtherDockerConfig(defn.(map[string]interface{}))
-	// if err != nil {
-	// 	return encoded, err
-	// }
+	err = reduceOtherDockerConfig(defn.(map[string]interface{}))
+	if err != nil {
+		return encoded, err
+	}
 	canonical, err := jcs.Format(defn)
 	if err != nil {
 		return encoded, err
 	}
 
 	return canonical, nil
+}
+
+func reduceOtherDockerConfig(defn map[string]interface{}) error {
+
+	// Ensure we are using upper-camel case.
+	makeMapUpperCamelCase(defn)
+
+	// Reorder the environment variables.
+	reorderOtherDockerConfigsEnvironmentVariables(defn)
+
+	// Handle fields that have defaults.
+	if v, ok := defn["HostNetwork"]; !ok || isInterfaceNil(v) {
+		defn["HostNetwork"] = false
+	}
+
+	// Handle probe entries.
+	probes := []string{"LivenessProbe", "ReadinessProbe"}
+	for _, pk := range probes {
+		if pv, ok := defn[pk]; ok {
+			if probe, ok := pv.(map[string]interface{}); ok {
+				makeMapUpperCamelCase(probe)
+
+				// Reduce HTTP Get keys
+				if hg, ok := probe["HttpGet"]; ok {
+					if hgv, ok := hg.(map[string]interface{}); ok {
+						reduceNilOrEmptyMapEntries(hgv)
+						makeMapUpperCamelCase(hgv)
+					}
+				}
+
+				reduceNilOrEmptyMapEntries(probe)
+			}
+		}
+	}
+
+	// Handle env entries.
+	if v, ok := defn["Env"]; ok {
+		if list, ok := v.([]interface{}); ok {
+			for _, item := range list {
+				if entry, ok := item.(map[string]interface{}); ok {
+					reduceNilOrEmptyMapEntries(entry)
+
+					// Reduce ValueFrom keys.
+					if ev, ok := entry["ValueFrom"]; ok {
+						if vf, ok := ev.(map[string]interface{}); ok {
+							makeMapUpperCamelCase(vf)
+
+							// Reduce SecretKeyRef keys.
+							if skr, ok := vf["SecretKeyRef"]; ok {
+								if skrv, ok := skr.(map[string]interface{}); ok {
+									reduceNilOrEmptyMapEntries(skrv)
+									makeMapUpperCamelCase(skrv)
+								}
+							}
+
+							// Reduce ConfigMapKeyRef keys.
+							if skr, ok := vf["ConfigMapKeyRef"]; ok {
+								if skrv, ok := skr.(map[string]interface{}); ok {
+									reduceNilOrEmptyMapEntries(skrv)
+									makeMapUpperCamelCase(skrv)
+								}
+							}
+
+							reduceNilOrEmptyMapEntries(vf)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Handle fields that have nil entries.
+	reduceNilOrEmptyMapEntries(defn)
+
+	return nil
 }
 
 // An internal function that compares two other_docker_config values to see if they are equivalent.
@@ -309,6 +386,37 @@ func otherDockerConfigsAreEquivalent(old, new string) (bool, error) {
 		log.Printf("[DEBUG] Canonical definitions are not equal.\nFirst: %s\nSecond: %s\n", oldCanonical, newCanonical)
 	}
 	return equal, nil
+}
+
+// Internal function used to re-order environment variables for an ECS task definition.
+func reorderOtherDockerConfigsEnvironmentVariables(defn map[string]interface{}) {
+
+	// Re-order environment variables to a canonical order.
+	if v, ok := defn["Env"]; ok && v != nil {
+		if env, ok := v.([]interface{}); ok && env != nil {
+			sort.Slice(env, func(i, j int) bool {
+
+				// Get both maps, ensure we are using upper camel-case.
+				mi := env[i].(map[string]interface{})
+				mj := env[j].(map[string]interface{})
+				makeMapUpperCamelCase(mi)
+				makeMapUpperCamelCase(mj)
+
+				// Get both name keys, fall back on an empty string.
+				si := ""
+				sj := ""
+				if v, ok = mi["Name"]; ok && !isInterfaceNil(v) {
+					si = v.(string)
+				}
+				if v, ok = mj["Name"]; ok && !isInterfaceNil(v) {
+					sj = v.(string)
+				}
+
+				// Compare the two.
+				return si < sj
+			})
+		}
+	}
 }
 
 func parseDuploServiceIdParts(id string) (tenantID, name string) {

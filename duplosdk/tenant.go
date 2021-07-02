@@ -347,11 +347,22 @@ func (c *Client) TenantGetExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurit
 
 	for _, rule := range *list {
 		if rule.Type == rq.Type && rule.Protocol == rq.Protocol && rule.FromPort == rq.FromPort && rule.ToPort == rq.ToPort && rule.Sources != nil && len(*rule.Sources) > 0 {
-			if len(*rule.Sources) != 1 {
-				return nil, newClientError(fmt.Sprintf("found a rule with %d sources, no idea how process it", len(*rule.Sources)))
-			}
-			if rq.Sources == nil || len(*rq.Sources) == 0 || ((*rule.Sources)[0].Type == rq.Type && (*rule.Sources)[0].Value == (*rq.Sources)[0].Value) {
-				return &rule, nil
+			for _, source := range *rq.Sources {
+				if source.Type == rq.Type && source.Value == (*rq.Sources)[0].Value {
+					matched := DuploTenantExtConnSecurityGroupRule{
+						TenantID: rq.TenantID,
+						Protocol: rq.Protocol,
+						Type:     rq.Type,
+						FromPort: rq.FromPort,
+						ToPort:   rq.ToPort,
+						Sources: &[]DuploTenantExtConnSecurityGroupSource{{
+							Description: source.Description,
+							Type:        source.Type,
+							Value:       source.Value,
+						}},
+					}
+					return &matched, nil
+				}
 			}
 		}
 	}
