@@ -15,19 +15,22 @@ import (
 func k8sSecretSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"secret_name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The name of the secret.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"secret_type": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The type of the secret.  Usually `\"Opaque\"`.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "The GUID of the tenant that the secret will be created in.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"client_secret_version": {
 			Type:     schema.TypeString,
@@ -38,6 +41,8 @@ func k8sSecretSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"secret_data": {
+			Description: "A JSON encoded string representing the secret metadata. " +
+				"You can use the `jsonencode()` function to convert map or object data, if needed.",
 			Type:      schema.TypeString,
 			Optional:  true,
 			Sensitive: true,
@@ -50,6 +55,8 @@ func k8sSecretSchema() map[string]*schema.Schema {
 // SCHEMA for resource crud
 func resourceK8Secret() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_k8_secret` manages a kubernetes secret in a Duplo tenant.",
+
 		ReadContext:   resourceK8SecretRead,
 		CreateContext: resourceK8SecretCreate,
 		UpdateContext: resourceK8SecretUpdate,
