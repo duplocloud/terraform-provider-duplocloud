@@ -7,34 +7,14 @@ type DuploPlan struct {
 	Images            *[]DuploPlanImage           `json:"Images,omitempty"`
 	AwsConfig         map[string]interface{}      `json:"AwsConfig,omitempty"`
 	UnrestrictedExtLB bool                        `json:"UnrestrictedExtLB,omitempty"`
-	Capabilities      *DuploPlanCapabilities      `json:"Capabilities,omitempty"`
+	Capabilities      map[string]interface{}      `json:"Capabilities,omitempty"`
 	Certificates      *[]DuploPlanCertificate     `json:"Certificates,omitempty"`
 	KmsKeyInfos       *[]DuploPlanKmsKeyInfo      `json:"KmsKeyInfos,omitempty"`
 	MetaData          *[]DuploKeyStringValue      `json:"MetaData,omitempty"`
 	PlanConfigData    *[]DuploCustomDataEx        `json:"PlanConfigData,omitempty"`
 	WafInfos          *[]DuploPlanWafInfo         `json:"WafInfos,omitempty"`
 	K8ClusterConfigs  *[]DuploPlanK8ClusterConfig `json:"K8ClusterConfigs,omitempty"`
-
-	/*
-	  Quotas:              any[];  // FIXME: put a proper type here.
-	  CloudPlatforms:      any[];  // FIXME: put a proper type here.
-	  PreferredSpotPrices: any[];  // FIXME: put a proper type here.
-	  WorkspaceConfig:     PlanWorkspaceConfig;
-	*/
-}
-
-type DuploPlanCapabilities struct {
-	DisableNativeApps          bool `json:"DisableNativeApps"`
-	DisablePublicEps           bool `json:"DisablePublicEps"`
-	DisablePrivateElb          bool `json:"DisablePrivateElb"`
-	AssignInstanceElasticIp    bool `json:"AssignInstanceElasticIp"`
-	BlockEbsOptimization       bool `json:"BlockEbsOptimization"`
-	DisableSumoIntegration     bool `json:"DisableSumoIntegration"`
-	DisableSignalFxIntegration bool `json:"DisableSignalFxIntegration"`
-	EnableTenantExpiry         bool `json:"EnableTenantExpiry"`
-	BlockAsg                   bool `json:"BlockAsg"`
-	RestrictedInternalLB       bool `json:"RestrictedInteralLB"`
-	DisableVpcLambda           bool `json:"DisableVpcLambda"`
+	CloudPlatforms    *[]DuploPlanCloudPlatform   `json:"CloudPlatforms,omitempty"`
 }
 
 type DuploPlanImage struct {
@@ -57,11 +37,12 @@ type DuploPlanKmsKeyInfo struct {
 }
 
 type DuploPlanK8ClusterConfig struct {
-	Name       string `json:"Name,omitempty"`
-	ApiServer  string `json:"ApiServer,omitempty"`
-	Token      string `json:"Token,omitempty"`
-	K8Provider int    `json:"K8Provider,omitempty"`
-	AwsRegion  string `json:"AwsRegion,omitempty"`
+	Name                           string `json:"Name,omitempty"`
+	ApiServer                      string `json:"ApiServer,omitempty"`
+	Token                          string `json:"Token,omitempty"`
+	K8Provider                     int    `json:"K8Provider,omitempty"`
+	AwsRegion                      string `json:"AwsRegion,omitempty"`
+	CertificateAuthorityDataBase64 string `json:"CertificateAuthorityDataBase64,omitempty"`
 }
 
 type DuploPlanWafInfo struct {
@@ -69,10 +50,17 @@ type DuploPlanWafInfo struct {
 	WebAclId   string `json:"WebAclId,omitempty"`
 }
 
+type DuploPlanCloudPlatform struct {
+	Platform     int                    `json:"Cloud"`
+	Images       *[]DuploPlanImage      `json:"Images,omitempty"`
+	AzureConfig  map[string]interface{} `json:"PlanAzureConfig,omitempty"`
+	GoogleConfig map[string]interface{} `json:"PlanGoogleConfig,omitempty"`
+}
+
 // PlanGetList retrieves a list of plans via the Duplo API.
 func (c *Client) PlanGetList() (*[]DuploPlan, ClientError) {
 	list := []DuploPlan{}
-	err := c.getAPI("PlanGetList()", "v2/admin/GetPlans", &list)
+	err := c.getAPI("PlanGetList()", "adminproxy/GetPlans", &list)
 	if err != nil {
 		return nil, err
 	}

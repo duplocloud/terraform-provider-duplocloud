@@ -19,12 +19,18 @@ func planSchema(single bool) map[string]*schema.Schema {
 			Description: "The numerical index of the cloud provider for this plan" +
 				"Will be one of:\n\n" +
 				"   - `0` : AWS\n" +
-				"   - `2` : Azure\n",
+				"   - `2` : Azure\n" +
+				"   - `3` : GCP\n",
 			Type:     schema.TypeInt,
 			Computed: true,
 		},
 		"region": {
 			Description: "The cloud provider region.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"account_id": {
+			Description: "The cloud account ID.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -44,6 +50,153 @@ func planSchema(single bool) map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		"waf_infos": {
+			Description: "Plan web application firewalls that can be attached to load balancers",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"id": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+			},
+		},
+		"kms_keys": {
+			Description: "Plan KMS keys that can be used for cloud-based encryption",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"id": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"arn": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+			},
+		},
+		"certificates": {
+			Description: "Plan certificates that can be attached to load balancers",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"id": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"arn": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+			},
+		},
+		"images": {
+			Description: "Plan images that can be used to launch native hosts",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"image_id": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"os": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"username": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"tags": {
+						Type:     schema.TypeList,
+						Computed: true,
+						Elem:     KeyValueSchema(),
+					},
+				},
+			},
+		},
+		"metadata": {
+			Description: "Plan metadata",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        KeyValueSchema(),
+		},
+		"config": {
+			Description: "Plan configuration data",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        CustomDataExSchema(),
+		},
+		"capabilities": {
+			Description: "Map of capability flags",
+			Type:        schema.TypeMap,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeBool},
+		},
+		"cloud_config": {
+			Description: "Cloud-specific plan configuration data",
+			Type:        schema.TypeMap,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		"kubernetes_config": {
+			Description: "Kubernetes-specific plan configuration data",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"api_server": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"token": {
+						Type:      schema.TypeString,
+						Computed:  true,
+						Sensitive: true,
+					},
+					"provider": {
+						Type:     schema.TypeInt,
+						Computed: true,
+					},
+					"region": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"certificate_authority_data": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+			},
 		},
 	}
 
@@ -125,35 +278,50 @@ func dataSourcePlanRead(ctx context.Context, d *schema.ResourceData, m interface
 	log.Printf("[TRACE] dataSourcePlanRead(): start")
 
 	c := m.(*duplosdk.Client)
-	var name string
-
-	// Look up by tenant ID, if requested.
-	if v, ok := d.GetOk("tenant_id"); ok && v != nil && v.(string) != "" {
-		tenant, err := c.TenantGet(v.(string))
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		name = tenant.PlanID // plan ID always matches infra name
-	} else {
-		name = d.Get("infra_name").(string)
-	}
+	planId := d.Get("plan_id").(string)
 
 	// Get the object from Duplo, detecting a missing object
-	missing, err := infrastructureRead(c, d, name)
+	plan, err := c.PlanGet(planId)
 	if err != nil {
-		return diag.Errorf("Unable to retrieve infrastructure '%s': %s", name, err)
+		return diag.Errorf("Unable to retrieve plan '%s': %s", planId, err)
 	}
-	if missing {
-		return diag.Errorf("No infrastructure named '%s' was found", name)
+	if plan == nil {
+		return diag.Errorf("No plan named '%s' was found", planId)
 	}
-	d.SetId("-")
+	d.SetId(planId)
+
+	attrs := map[string]interface{}{}
+	flattenPlanCloudConfig(attrs, plan)
+	for k, v := range attrs {
+		d.Set(k, v)
+	}
 
 	log.Printf("[TRACE] dataSourcePlanRead(): end")
 	return nil
 }
 
 func flattenPlanCloudConfig(plan map[string]interface{}, duplo *duplosdk.DuploPlan) {
-	if duplo.AwsConfig != nil && len(duplo.AwsConfig) > 0 {
+
+	if duplo.CloudPlatforms != nil && len(*duplo.CloudPlatforms) > 0 {
+		cp := (*duplo.CloudPlatforms)[0]
+		plan["cloud"] = cp.Platform
+
+		if cp.Platform == 2 {
+			plan["cloud_config"] = cp.AzureConfig
+			plan["account_id"] = cp.AzureConfig["SubscriptionId"]
+			plan["vpc_id"] = cp.AzureConfig["VnetId"]
+			plan["region"] = cp.AzureConfig["Region"]
+		} else if cp.Platform == 3 {
+			plan["cloud_config"] = cp.GoogleConfig
+			plan["account_id"] = cp.GoogleConfig["GcpProjectId"]
+			plan["vpc_id"] = cp.GoogleConfig["VnetId"]
+			plan["region"] = cp.GoogleConfig["GcpRegion"]
+		}
+
+	} else if duplo.AwsConfig != nil && len(duplo.AwsConfig) > 0 {
+		plan["cloud"] = 0
+		plan["cloud_config"] = duplo.AwsConfig
+		plan["account_id"] = duplo.AwsConfig["AwsAccountId"]
 		plan["vpc_id"] = duplo.AwsConfig["VpcId"]
 		plan["region"] = duplo.AwsConfig["AwsRegion"]
 		if duplo.AwsConfig["AwsElbSubnet"] != nil {
@@ -163,4 +331,98 @@ func flattenPlanCloudConfig(plan map[string]interface{}, duplo *duplosdk.DuploPl
 			plan["private_subnet_ids"] = strings.Split(duplo.AwsConfig["AwsInternalElbSubnet"].(string), ";")
 		}
 	}
+
+	plan["metadata"] = keyValueToState("metadata", duplo.MetaData)
+	plan["config"] = customDataExToState("config", duplo.PlanConfigData)
+	plan["capabilities"] = duplo.Capabilities
+
+	if duplo.Images != nil && len(*duplo.Images) > 0 {
+		plan["images"] = flattenPlanImages(duplo.Images)
+	}
+
+	if duplo.Certificates != nil && len(*duplo.Certificates) > 0 {
+		plan["certificates"] = flattenPlanCertificates(duplo.Certificates)
+	}
+
+	if duplo.WafInfos != nil && len(*duplo.WafInfos) > 0 {
+		plan["waf_infos"] = flattenPlanWafs(duplo.WafInfos)
+	}
+
+	if duplo.KmsKeyInfos != nil && len(*duplo.KmsKeyInfos) > 0 {
+		plan["kms_keys"] = flattenPlanKmsKeys(duplo.KmsKeyInfos)
+	}
+
+	if duplo.K8ClusterConfigs != nil && len(*duplo.K8ClusterConfigs) > 0 {
+		plan["kubernetes_config"] = flattenKubernetesConfig(duplo.K8ClusterConfigs)
+	}
+}
+
+func flattenPlanImages(list *[]duplosdk.DuploPlanImage) []interface{} {
+	result := make([]interface{}, 0, len(*list))
+
+	for _, image := range *list {
+		result = append(result, map[string]interface{}{
+			"name":     image.Name,
+			"image_id": image.ImageId,
+			"os":       image.OS,
+			"username": image.Username,
+			"tags":     keyValueToState("images[].tags", image.Tags),
+		})
+	}
+
+	return result
+}
+
+func flattenPlanCertificates(list *[]duplosdk.DuploPlanCertificate) []interface{} {
+	result := make([]interface{}, 0, len(*list))
+
+	for _, cert := range *list {
+		result = append(result, map[string]interface{}{
+			"name": cert.CertificateName,
+			"id":   cert.CertificateArn,
+			"arn":  cert.CertificateArn,
+		})
+	}
+
+	return result
+}
+
+func flattenPlanWafs(list *[]duplosdk.DuploPlanWafInfo) []interface{} {
+	result := make([]interface{}, 0, len(*list))
+
+	for _, waf := range *list {
+		result = append(result, map[string]interface{}{
+			"name": waf.WebAclName,
+			"id":   waf.WebAclId,
+		})
+	}
+
+	return result
+}
+
+func flattenPlanKmsKeys(list *[]duplosdk.DuploPlanKmsKeyInfo) []interface{} {
+	result := make([]interface{}, 0, len(*list))
+
+	for _, kms := range *list {
+		result = append(result, map[string]interface{}{
+			"name": kms.KeyName,
+			"id":   kms.KeyId,
+			"arn":  kms.KeyArn,
+		})
+	}
+
+	return result
+}
+
+func flattenKubernetesConfig(list *[]duplosdk.DuploPlanK8ClusterConfig) []interface{} {
+	kc := (*list)[0]
+
+	return []interface{}{map[string]interface{}{
+		"name":                       kc.Name,
+		"api_server":                 kc.ApiServer,
+		"token":                      kc.Token,
+		"provider":                   kc.K8Provider,
+		"region":                     kc.AwsRegion,
+		"certificate_authority_data": kc.CertificateAuthorityDataBase64,
+	}}
 }
