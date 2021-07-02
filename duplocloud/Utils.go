@@ -438,6 +438,7 @@ func isInterfaceEmptySlice(v interface{}) bool {
 	return slice.Kind() == reflect.Slice && slice.IsValid() && !slice.IsNil() && slice.Len() == 0
 }
 
+//nolint:deadcode,unused // utility function
 func isInterfaceEmptyMap(v interface{}) bool {
 	emap := reflect.ValueOf(v)
 	return emap.Kind() == reflect.Map && emap.IsValid() && !emap.IsNil() && emap.Len() == 0
