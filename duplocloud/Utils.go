@@ -382,10 +382,32 @@ func isInterfaceNil(v interface{}) bool {
 	return v == nil || (reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil())
 }
 
+func isInterfaceNilOrEmptySlice(v interface{}) bool {
+	if isInterfaceNil(v) {
+		return true
+	}
+
+	slice := reflect.ValueOf(v)
+	return slice.Kind() == reflect.Slice && slice.IsValid() && (slice.IsNil() || slice.Len() == 0)
+}
+
 func isInterfaceEmptySlice(v interface{}) bool {
 	slice := reflect.ValueOf(v)
-
 	return slice.Kind() == reflect.Slice && slice.IsValid() && !slice.IsNil() && slice.Len() == 0
+}
+
+func isInterfaceEmptyMap(v interface{}) bool {
+	emap := reflect.ValueOf(v)
+	return emap.Kind() == reflect.Map && emap.IsValid() && !emap.IsNil() && emap.Len() == 0
+}
+
+func isInterfaceNilOrEmptyMap(v interface{}) bool {
+	if isInterfaceNil(v) {
+		return true
+	}
+
+	emap := reflect.ValueOf(v)
+	return emap.Kind() == reflect.Map && emap.IsValid() && (emap.IsNil() || emap.Len() == 0)
 }
 
 // Internal function to check if a given encoded JSON value represents a valid JSON object array.
@@ -415,6 +437,15 @@ func makeMapUpperCamelCase(m map[string]interface{}) {
 			}
 
 			// Remove the lower camel-case entry.
+			delete(m, k)
+		}
+	}
+}
+
+// Internal function to reduce empty or nil map entries.
+func reduceNilOrEmptyMapEntries(m map[string]interface{}) {
+	for k, v := range m {
+		if isInterfaceNil(v) || isInterfaceNilOrEmptyMap(v) || isInterfaceNilOrEmptySlice(v) {
 			delete(m, k)
 		}
 	}
