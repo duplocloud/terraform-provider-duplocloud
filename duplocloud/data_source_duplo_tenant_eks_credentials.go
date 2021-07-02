@@ -1,6 +1,7 @@
 package duplocloud
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -54,24 +55,43 @@ func dataSourceTenantEksCredentialsRead(d *schema.ResourceData, m interface{}) e
 	// Get the data from Duplo.
 	tenantID := d.Get("tenant_id").(string)
 	c := m.(*duplosdk.Client)
-	k8sCredentials, err := c.GetTenantK8sCredentials(tenantID)
-	if err != nil {
-		return fmt.Errorf("failed to read tenant %s kubernetes credentials: %s", tenantID, err)
+	caCertificateData := ""
+
+	// First, try the newer method of obtaining a JIT access token.
+	k8sConfig, err := c.GetTenantK8sJitAccess(tenantID)
+	if err != nil && !err.PossibleMissingAPI() {
+		return fmt.Errorf("failed to get tenant %s kubernetes JIT access: %s", tenantID, err)
 	}
-	eksSecret, err := c.GetTenantEksSecret(tenantID)
-	if err != nil {
-		return fmt.Errorf("failed to read tenant %s EKS CA certificate data: %s", tenantID, err)
+	if k8sConfig != nil {
+		bytes, err := base64.StdEncoding.DecodeString(k8sConfig.CertificateAuthorityDataBase64)
+		if err == nil {
+			caCertificateData = string(bytes)
+		}
+
+		// If it failed, try the fallback method.
+	} else {
+		k8sConfig, err = c.GetTenantK8sCredentials(tenantID)
+		if err != nil {
+			return fmt.Errorf("failed to read tenant %s kubernetes config: %s", tenantID, err)
+		}
+		k8sSecret, err := c.GetTenantEksSecret(tenantID)
+		if err != nil {
+			return fmt.Errorf("failed to read tenant %s EKS service account token: %s", tenantID, err)
+		}
+
+		k8sConfig.Token = k8sSecret.Data["token"]
+		k8sConfig.DefaultNamespace = k8sSecret.Data["namespace"]
 	}
 	d.SetId(tenantID)
 
 	// Set the Terraform resource data
 	d.Set("tenant_id", tenantID)
-	d.Set("name", k8sCredentials.Name)
-	d.Set("endpoint", k8sCredentials.APIServer)
-	d.Set("token", k8sCredentials.Token)
-	d.Set("region", k8sCredentials.AwsRegion)
-	d.Set("ca_certificate_data", eksSecret.Data["ca.crt"])
-	d.Set("namespace", eksSecret.Data["namespace"])
+	d.Set("name", k8sConfig.Name)
+	d.Set("endpoint", k8sConfig.APIServer)
+	d.Set("region", k8sConfig.AwsRegion)
+	d.Set("token", k8sConfig.Token)
+	d.Set("ca_certificate_data", caCertificateData)
+	d.Set("namespace", k8sConfig.DefaultNamespace)
 
 	log.Printf("[TRACE] dataSourceTenantEksCredentialsRead ******** end")
 	return nil

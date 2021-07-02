@@ -10,11 +10,13 @@ type DuploEksCredentials struct {
 	// NOTE: The PlanID field does not come from the backend - we synthesize it
 	PlanID string `json:"-,omitempty"`
 
-	Name        string `json:"Name"`
-	APIServer   string `json:"ApiServer"`
-	Token       string `json:"Token"`
-	AwsRegion   string `json:"AwsRegion"`
-	K8sProvider int    `json:"K8Provider,omitempty"`
+	Name                           string `json:"Name"`
+	APIServer                      string `json:"ApiServer"`
+	Token                          string `json:"Token"`
+	AwsRegion                      string `json:"AwsRegion"`
+	K8sProvider                    int    `json:"K8Provider,omitempty"`
+	CertificateAuthorityDataBase64 string `json:"CertificateAuthorityDataBase64,omitempty"`
+	DefaultNamespace               string `json:"DefaultNamespace,omitempty"`
 }
 
 // DuploInfrastructure represents a Duplo infrastructure

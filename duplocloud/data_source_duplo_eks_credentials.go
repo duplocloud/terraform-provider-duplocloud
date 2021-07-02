@@ -35,6 +35,10 @@ func dataSourceEksCredentials() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"ca_certificate_data": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -53,11 +57,12 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(eksCredentials.Name)
 
 	// Set the Terraform resource data
-	_ = d.Set("plan_id", planID)
-	_ = d.Set("name", eksCredentials.Name)
-	_ = d.Set("endpoint", eksCredentials.APIServer)
-	_ = d.Set("token", eksCredentials.Token)
-	_ = d.Set("region", eksCredentials.AwsRegion)
+	d.Set("plan_id", planID)
+	d.Set("name", eksCredentials.Name)
+	d.Set("endpoint", eksCredentials.APIServer)
+	d.Set("token", eksCredentials.Token)
+	d.Set("region", eksCredentials.AwsRegion)
+	d.Set("ca_certificate_data", eksCredentials.CertificateAuthorityDataBase64)
 
 	log.Printf("[TRACE] dataSourceEksCredentialsRead ******** end")
 	return nil
