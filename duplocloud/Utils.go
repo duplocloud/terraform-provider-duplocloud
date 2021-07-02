@@ -100,6 +100,26 @@ func KeyValueSchema() *schema.Resource {
 	}
 }
 
+// CustomDataExSchema returns a Terraform schema to represent a key value pair with a type
+func CustomDataExSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"type": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"value": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+	}
+}
+
 func keyValueToState(fieldName string, duploObjects *[]duplosdk.DuploKeyStringValue) []interface{} {
 	if duploObjects != nil {
 		input, _ := json.Marshal(&duploObjects)
@@ -138,6 +158,28 @@ func keyValueFromState(fieldName string, d *schema.ResourceData) *[]duplosdk.Dup
 	}
 
 	return &ary
+}
+
+func customDataExToState(fieldName string, duploObjects *[]duplosdk.DuploCustomDataEx) []interface{} {
+	if duploObjects != nil {
+		input, _ := json.Marshal(&duploObjects)
+		log.Printf("[TRACE] customDataExToState[%s] ******** INPUT <= %s", fieldName, input)
+
+		output := make([]interface{}, len(*duploObjects))
+		for i, duploObject := range *duploObjects {
+			jo := make(map[string]interface{})
+			jo["key"] = duploObject.Key
+			jo["type"] = duploObject.Type
+			jo["value"] = duploObject.Value
+			output[i] = jo
+		}
+		dump, _ := json.Marshal(output)
+		log.Printf("[TRACE] customDataExToState[%s] ******** OUTPUT => %s", fieldName, dump)
+		return output
+	}
+
+	log.Printf("[TRACE] customDataExToState[%s] ******** EMPTY INPUT", fieldName)
+	return make([]interface{}, 0)
 }
 
 func keyValueToMap(list *[]duplosdk.DuploKeyStringValue) map[string]interface{} {

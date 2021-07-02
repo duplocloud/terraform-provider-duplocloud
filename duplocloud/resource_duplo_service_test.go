@@ -117,6 +117,11 @@ func TestReduceOtherDockerConfig(t *testing.T) {
 				"serviceAnnotations": nil,
 				"serviceLabels":      nil,
 				"command":            nil,
+				"readinessProbe": map[string]interface{}{
+					"httpGet": map[string]interface{}{
+						"path": "/",
+					},
+				},
 				"env": []interface{}{
 					map[string]interface{}{"name": "foo", "value": "bar"},
 					map[string]interface{}{"name": "bar", "value": "foo"},
@@ -124,6 +129,11 @@ func TestReduceOtherDockerConfig(t *testing.T) {
 			},
 			expected: map[string]interface{}{
 				"HostNetwork": false,
+				"ReadinessProbe": map[string]interface{}{
+					"HttpGet": map[string]interface{}{
+						"Path": "/",
+					},
+				},
 				"Env": []interface{}{
 					map[string]interface{}{"Name": "bar", "Value": "foo"},
 					map[string]interface{}{"Name": "foo", "Value": "bar"},

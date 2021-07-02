@@ -26,3 +26,10 @@ type DuploNameStringValue struct {
 	Name  string `json:"Name"`
 	Value string `json:"Value,omitempty"`
 }
+
+// DuploCustomDataEx
+type DuploCustomDataEx struct {
+	Key   string `json:"Key"`
+	Type  string `json:"Type,omitempty"`
+	Value string `json:"Value,omitempty"`
+}
