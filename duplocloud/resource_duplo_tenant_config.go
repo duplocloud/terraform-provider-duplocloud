@@ -153,7 +153,6 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 		return diag.Errorf("Error deleting tenant config for '%s': %s", tenantID, err)
 	}
 
-	diags := resourceTenantConfigRead(ctx, d, m)
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): end", tenantID)
-	return diags
+	return nil
 }
