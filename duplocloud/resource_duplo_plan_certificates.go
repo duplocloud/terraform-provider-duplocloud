@@ -57,7 +57,7 @@ func resourcePlanCertificates() *schema.Resource {
 				ForceNew:    true,
 			},
 			"certificate": {
-				Description: "A list of certificates to manage, expressed as key / value pairs.",
+				Description: "A list of certificates to manage.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        PlanCertificateSchema(),

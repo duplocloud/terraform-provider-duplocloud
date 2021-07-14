@@ -161,3 +161,69 @@ func (c *Client) PlanSetCertificate(planID string, cert DuploPlanCertificate) Cl
 		&cert,
 		&rp)
 }
+
+// PlanGetImageList retrieves a list of plan images via the Duplo API.
+func (c *Client) PlanImageGetList(planID string) (*[]DuploPlanImage, ClientError) {
+	list := []DuploPlanImage{}
+	err := c.getAPI("PlanImageGetList()", fmt.Sprintf("v3/admin/plans/%s/images", planID), &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+// TenantReplaceConfig replaces plan certificates via the Duplo API.
+func (c *Client) PlanReplaceImages(planID string, newImages *[]DuploPlanImage) ClientError {
+	existing, err := c.PlanImageGetList(planID)
+	if err != nil {
+		return err
+	}
+	return c.PlanChangeImages(planID, existing, newImages)
+}
+
+// PlanChangeImages changes plan certificates via the Duplo API, using the supplied
+// oldConfig and newConfig, for the given planID.
+func (c *Client) PlanChangeImages(planID string, oldImages, newImages *[]DuploPlanImage) ClientError {
+
+	// Next, update all certs that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if newImages != nil {
+		for _, pc := range *newImages {
+			if err := c.PlanSetImage(planID, pc); err != nil {
+				return err
+			}
+			present[pc.Name] = struct{}{}
+		}
+	}
+
+	// Finally, delete any certs that are no longer present.
+	if oldImages != nil {
+		for _, pc := range *oldImages {
+			if _, ok := present[pc.Name]; !ok {
+				if err := c.PlanDeleteImage(planID, pc.Name); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// PlanDeleteImage deletes a specific certificate for a plan via the Duplo API.
+func (c *Client) PlanDeleteImage(planID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("PlanDeleteImage(%s, %s)", planID, name),
+		fmt.Sprintf("v3/admin/plans/%s/images/%s", planID, name),
+		nil)
+}
+
+// PlanSetImage set a specific configuration key for a tenant via the Duplo API.
+func (c *Client) PlanSetImage(planID string, cert DuploPlanImage) ClientError {
+	var rp DuploPlanImage
+	return c.postAPI(
+		fmt.Sprintf("PlanSetImage(%s, %s)", planID, cert.Name),
+		fmt.Sprintf("v3/admin/plans/%s/images", planID),
+		&cert,
+		&rp)
+}

@@ -61,6 +61,13 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"wait_until_ready": {
+			Description:      "Whether or not to wait until Duplo considers all of the load balancers ready",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
 		"lbconfigs": {
 			Type:     schema.TypeList,
 			Required: true,
@@ -234,10 +241,12 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 		d.SetId(id)
 	}
 
-	// Wait for the load balancers to be ready.
-	err = duploServiceLBConfigsWaitUntilReady(ctx, c, tenantID, name)
-	if err != nil {
-		return diag.Errorf("Error waiting for Duplo service '%s' load balancer configs to be ready: %s", id, err)
+	// Optionally wait for the load balancers to be ready.
+	if d.Get("wait_until_ready").(bool) {
+		err = duploServiceLBConfigsWaitUntilReady(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for Duplo service '%s' load balancer configs to be ready: %s", id, err)
+		}
 	}
 
 	// Read the latest status from Duplo
