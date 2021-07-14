@@ -227,3 +227,69 @@ func (c *Client) PlanSetImage(planID string, cert DuploPlanImage) ClientError {
 		&cert,
 		&rp)
 }
+
+// PlanGetConfigList retrieves a list of plan configs via the Duplo API.
+func (c *Client) PlanConfigGetList(planID string) (*[]DuploCustomDataEx, ClientError) {
+	list := []DuploCustomDataEx{}
+	err := c.getAPI("PlanConfigGetList()", fmt.Sprintf("v3/admin/plans/%s/configs", planID), &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+// TenantReplaceConfig replaces plan configs via the Duplo API.
+func (c *Client) PlanReplaceConfigs(planID string, newConfigs *[]DuploCustomDataEx) ClientError {
+	existing, err := c.PlanConfigGetList(planID)
+	if err != nil {
+		return err
+	}
+	return c.PlanChangeConfigs(planID, existing, newConfigs)
+}
+
+// PlanChangeConfigs changes plan configs via the Duplo API, using the supplied
+// oldConfigs and newConfigs, for the given planID.
+func (c *Client) PlanChangeConfigs(planID string, oldConfigs, newConfigs *[]DuploCustomDataEx) ClientError {
+
+	// Next, update all certs that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if newConfigs != nil {
+		for _, pc := range *newConfigs {
+			if err := c.PlanSetConfig(planID, pc); err != nil {
+				return err
+			}
+			present[pc.Key] = struct{}{}
+		}
+	}
+
+	// Finally, delete any certs that are no longer present.
+	if oldConfigs != nil {
+		for _, pc := range *oldConfigs {
+			if _, ok := present[pc.Key]; !ok {
+				if err := c.PlanDeleteConfig(planID, pc.Key); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// PlanDeleteConfig deletes a specific configuration key for a plan via the Duplo API.
+func (c *Client) PlanDeleteConfig(planID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("PlanDeleteConfig(%s, %s)", planID, name),
+		fmt.Sprintf("v3/admin/plans/%s/configs/%s", planID, name),
+		nil)
+}
+
+// PlanSetConfig set a specific configuration key for a tenant via the Duplo API.
+func (c *Client) PlanSetConfig(planID string, item DuploCustomDataEx) ClientError {
+	var rp DuploCustomDataEx
+	return c.postAPI(
+		fmt.Sprintf("PlanSetConfig(%s, %s)", planID, item.Key),
+		fmt.Sprintf("v3/admin/plans/%s/configs", planID),
+		&item,
+		&rp)
+}
