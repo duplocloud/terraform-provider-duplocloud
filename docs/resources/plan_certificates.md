@@ -40,7 +40,7 @@ resource "duplocloud_plan_certificates" "myplan" {
 
 ### Optional
 
-- **certificate** (Block List) A list of certificates to manage, expressed as key / value pairs. (see [below for nested schema](#nestedblock--certificate))
+- **certificate** (Block List) A list of certificates to manage. (see [below for nested schema](#nestedblock--certificate))
 - **delete_unspecified_certificates** (Boolean) Whether or not this resource should delete any certificates not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
