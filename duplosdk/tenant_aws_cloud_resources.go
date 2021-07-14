@@ -573,7 +573,7 @@ func (c *Client) TenantGetLbDetailsInService(tenantID string, name string) (*Dup
 	details := DuploAwsLbDetailsInService{}
 
 	// Get the list from Duplo
-	err := c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetLbDetailsInSErvice/%s", tenantID, name), &details)
+	err := c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetLbDetailsInService/%s", tenantID, name), &details)
 	if err != nil {
 		return nil, err
 	}

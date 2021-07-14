@@ -95,3 +95,69 @@ func (c *Client) GetPlanK8sJitAccess(planID string) (*DuploEksCredentials, Clien
 	creds.PlanID = planID
 	return &creds, nil
 }
+
+// PlanGetCertificateList retrieves a list of plan certificates via the Duplo API.
+func (c *Client) PlanCertificateGetList(planID string) (*[]DuploPlanCertificate, ClientError) {
+	list := []DuploPlanCertificate{}
+	err := c.getAPI("PlanCertificateGetList()", fmt.Sprintf("v3/admin/plans/%s/certificates", planID), &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+// TenantReplaceConfig replaces plan certificates via the Duplo API.
+func (c *Client) PlanReplaceCertificates(planID string, newCerts *[]DuploPlanCertificate) ClientError {
+	existing, err := c.PlanCertificateGetList(planID)
+	if err != nil {
+		return err
+	}
+	return c.PlanChangeCertificates(planID, existing, newCerts)
+}
+
+// PlanChangeCertificates changes plan certificates via the Duplo API, using the supplied
+// oldConfig and newConfig, for the given planID.
+func (c *Client) PlanChangeCertificates(planID string, oldCerts, newCerts *[]DuploPlanCertificate) ClientError {
+
+	// Next, update all certs that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if newCerts != nil {
+		for _, pc := range *newCerts {
+			if err := c.PlanSetCertificate(planID, pc); err != nil {
+				return err
+			}
+			present[pc.CertificateName] = struct{}{}
+		}
+	}
+
+	// Finally, delete any certs that are no longer present.
+	if oldCerts != nil {
+		for _, pc := range *oldCerts {
+			if _, ok := present[pc.CertificateName]; !ok {
+				if err := c.PlanDeleteCertificate(planID, pc.CertificateName); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// PlanDeleteCertificate deletes a specific certificate for a plan via the Duplo API.
+func (c *Client) PlanDeleteCertificate(planID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("PlanDeleteCertificate(%s, %s)", planID, name),
+		fmt.Sprintf("v3/admin/plans/%s/certificates/%s", planID, name),
+		nil)
+}
+
+// PlanSetCertificate set a specific configuration key for a tenant via the Duplo API.
+func (c *Client) PlanSetCertificate(planID string, cert DuploPlanCertificate) ClientError {
+	var rp DuploPlanCertificate
+	return c.postAPI(
+		fmt.Sprintf("PlanSetCertificate(%s, %s)", planID, cert.CertificateName),
+		fmt.Sprintf("v3/admin/plans/%s/certificates", planID),
+		&cert,
+		&rp)
+}

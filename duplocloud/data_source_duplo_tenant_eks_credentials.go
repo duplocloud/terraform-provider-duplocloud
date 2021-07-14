@@ -81,6 +81,7 @@ func dataSourceTenantEksCredentialsRead(d *schema.ResourceData, m interface{}) e
 
 		k8sConfig.Token = k8sSecret.Data["token"]
 		k8sConfig.DefaultNamespace = k8sSecret.Data["namespace"]
+		caCertificateData = k8sSecret.Data["ca.crt"]
 	}
 	d.SetId(tenantID)
 

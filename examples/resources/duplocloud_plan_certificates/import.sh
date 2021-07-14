@@ -1,0 +1,1 @@
+terraform import duplocloud_plan_certificates.myplan PLAN_ID
