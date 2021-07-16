@@ -12,7 +12,7 @@ func isInterfaceNil(v interface{}) bool {
 	return v == nil || (reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil())
 }
 
-// GetDuploServicesNameWithAws builds a duplo resource name, given a tenant ID. The name that includes the AWS account ID suffix.
+// GetDuploServicesNameWithAws builds a duplo resource name, given a tenant ID. The name includes the AWS account ID suffix.
 func (c *Client) GetDuploServicesNameWithAws(tenantID, name string) (string, ClientError) {
 	return c.GetResourceName("duploservices", tenantID, name, true)
 }
@@ -36,6 +36,25 @@ func (c *Client) GetResourceName(prefix, tenantID, name string, withAccountSuffi
 		return strings.Join([]string{prefix, tenant.AccountName, name, accountID}, "-"), nil
 	}
 	return strings.Join([]string{prefix, tenant.AccountName, name}, "-"), nil
+}
+
+// GetDuploServicesNameWithGcp builds a duplo resource name, given a tenant ID. The name includes the Gcp project ID suffix.
+func (c *Client) GetDuploServicesNameWithGcp(tenantID, name string) (string, ClientError) {
+	return c.GetResourceNameWithGcp("duploservices", tenantID, name)
+}
+
+// GetDuploServicesNameWithGcp builds a duplo resource name, given a tenant ID. The name includes the Gcp project ID suffix.
+func (c *Client) GetResourceNameWithGcp(prefix, tenantID, name string) (string, ClientError) {
+	tenant, err := c.GetTenantForUser(tenantID)
+	if err != nil {
+		return "", err
+	}
+	projectID, err := c.TenantGetGcpProjectID(tenantID)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Join([]string{prefix, tenant.AccountName, name, projectID}, "-"), nil
 }
 
 // GetDuploServicesPrefix builds a duplo resource name, given a tenant ID.

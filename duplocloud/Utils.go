@@ -518,27 +518,30 @@ func waitForResourceWithStatusDone(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-func flattenGcpLabels(d *schema.ResourceData, duplo map[string]string) {
-	labels := map[string]interface{}{}
+func flattenStringMap(duplo map[string]string) map[string]interface{} {
+	m := map[string]interface{}{}
 	for k, v := range duplo {
-		labels[k] = v
+		m[k] = v
 	}
-
-	d.Set("labels", labels)
+	return m
 }
 
-func expandGcpLabels(fieldName string, d *schema.ResourceData) map[string]string {
-	labels := map[string]string{}
+func flattenGcpLabels(d *schema.ResourceData, duplo map[string]string) {
+	d.Set("labels", flattenStringMap(duplo))
+}
+
+func expandStringMap(fieldName string, d *schema.ResourceData) map[string]string {
+	m := map[string]string{}
 
 	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.(map[string]interface{})) > 0 {
 		for k, v := range v.(map[string]interface{}) {
 			if v == nil {
-				labels[k] = ""
+				m[k] = ""
 			} else {
-				labels[k] = v.(string)
+				m[k] = v.(string)
 			}
 		}
 	}
 
-	return labels
+	return m
 }
