@@ -16,6 +16,21 @@ type DuploGcpPubsubTopic struct {
 	Labels   map[string]string `json:"Labels,omitempty"`
 }
 
+// DuploGcpStorageBucket represents a GCP pubsub topic resource for a Duplo tenant
+type DuploGcpStorageBucket struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	// NOTE: The ShortName field does not come from the backend - we synthesize it
+	ShortName string `json:"-,omitempty"`
+
+	Name             string            `json:"Name,omitempty"`
+	SelfLink         string            `json:"SelfLink,omitempty"`
+	Status           string            `json:"Status,omitempty"`
+	EnableVersioning bool              `json:"EnableVersioning,omitempty"`
+	Labels           map[string]string `json:"Labels,omitempty"`
+}
+
 // GcpPubsubTopicCreate creates a pubsub topic via the Duplo API.
 func (c *Client) GcpPubsubTopicCreate(tenantID string, rq *DuploGcpPubsubTopic) (*DuploGcpPubsubTopic, ClientError) {
 	rp := DuploGcpPubsubTopic{}
@@ -87,6 +102,87 @@ func (c *Client) GcpPubsubTopicGet(tenantID string, name string) (*DuploGcpPubsu
 	err := c.getAPI(
 		fmt.Sprintf("GcpPubsubTopicGet(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/google/topic/%s", tenantID, name),
+		&rp)
+	rp.TenantID = tenantID
+	rp.ShortName = name
+	return &rp, err
+}
+
+// GcpStorageBucketCreate creates a storage bucket via the Duplo API.
+func (c *Client) GcpStorageBucketCreate(tenantID string, rq *DuploGcpStorageBucket) (*DuploGcpStorageBucket, ClientError) {
+	rp := DuploGcpStorageBucket{}
+	err := c.postAPI(
+		fmt.Sprintf("GcpStorageBucketCreate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket", tenantID),
+		&rq,
+		&rp,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, err
+}
+
+// GcpStorageBucketUpdate updates a storage bucket via the Duplo API.
+func (c *Client) GcpStorageBucketUpdate(tenantID string, rq *DuploGcpStorageBucket) (*DuploGcpStorageBucket, ClientError) {
+	rp := DuploGcpStorageBucket{}
+	err := c.postAPI(
+		fmt.Sprintf("GcpStorageBucketUpdate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket", tenantID),
+		&rq,
+		&rp,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, err
+}
+
+// GcpStorageBucketDelete deletes a storage bucket via the Duplo API.
+func (c *Client) GcpStorageBucketDelete(tenantID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("GcpStorageBucketDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, name),
+		nil)
+}
+
+// GcpStorageBucketGetList gets a list of storage buckets via the Duplo API.
+func (c *Client) GcpStorageBucketGetList(tenantID string) (*[]DuploGcpStorageBucket, ClientError) {
+	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	projectID, err := c.TenantGetGcpProjectID(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the list from Duplo
+	list := []DuploGcpStorageBucket{}
+	err = c.getAPI(
+		fmt.Sprintf("GcpStorageBucketGetList(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket", tenantID),
+		&list)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add the tenant ID and name to each element and return the list.
+	for i := range list {
+		list[i].TenantID = tenantID
+		list[i].ShortName, _ = UnwrapName(prefix, projectID, list[i].Name)
+	}
+	return &list, nil
+}
+
+// GcpStorageBucketGet gets a storage bucket via the Duplo API.
+func (c *Client) GcpStorageBucketGet(tenantID string, name string) (*DuploGcpStorageBucket, ClientError) {
+
+	// Get the list from Duplo
+	rp := DuploGcpStorageBucket{}
+	err := c.getAPI(
+		fmt.Sprintf("GcpStorageBucketGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, name),
 		&rp)
 	rp.TenantID = tenantID
 	rp.ShortName = name

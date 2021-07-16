@@ -305,6 +305,30 @@ func (c *Client) TenantGetAwsAccountID(tenantID string) (string, ClientError) {
 	return awsAccountID, err
 }
 
+// TenantGetGcpProjectID retrieves the GCP project ID via the Duplo API.
+func (c *Client) TenantGetGcpProjectID(tenantID string) (string, ClientError) {
+	plan, err := c.GetTenantPlan(tenantID)
+	if err != nil {
+		return "", err
+	}
+
+	var gcpConfig map[string]interface{}
+	if plan.CloudPlatforms != nil && len(*plan.CloudPlatforms) > 0 {
+		for _, cp := range *plan.CloudPlatforms {
+			if len(cp.GoogleConfig) > 0 {
+				gcpConfig = cp.GoogleConfig
+				break
+			}
+		}
+	}
+
+	if projectID, ok := gcpConfig["GcpProjectId"]; ok && projectID != nil && projectID.(string) != "" {
+		return projectID.(string), nil
+	}
+
+	return "", clientError{message: "No such GCP project"}
+}
+
 // GetTenantK8sCredentials retrieves just-in-time K8S cluster credentials via the Duplo API..
 func (c *Client) GetTenantK8sCredentials(tenantID string) (*DuploTenantK8sCredentials, ClientError) {
 	creds := DuploTenantK8sCredentials{}
@@ -399,4 +423,14 @@ func (c *Client) TenantDeleteExtConnSecurityGroupRule(rq *DuploTenantExtConnSecu
 		fmt.Sprintf("subscriptions/%s/TenantExtConnSgRuleUpdate", rq.TenantID),
 		rq,
 		nil)
+}
+
+// GetTenantPlan retrieves non-admin plan details via the Duplo API.
+func (c *Client) GetTenantPlan(tenantID string) (*DuploPlan, ClientError) {
+	plan := DuploPlan{}
+	err := c.getAPI(fmt.Sprintf("GetTenantPlan(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetTenantPlan", tenantID), &plan)
+	if err != nil {
+		return nil, err
+	}
+	return &plan, nil
 }

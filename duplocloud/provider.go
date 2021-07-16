@@ -64,6 +64,7 @@ func Provider() *schema.Provider {
 			"duplocloud_ecs_task_definition":          resourceDuploEcsTaskDefinition(),
 			"duplocloud_ecs_service":                  resourceDuploEcsService(),
 			"duplocloud_gcp_pubsub_topic":             resourceGcpPubsubTopic(),
+			"duplocloud_gcp_storage_bucket":           resourceGcpStorageBucket(),
 			"duplocloud_k8_config_map":                resourceK8ConfigMap(),
 			"duplocloud_k8_secret":                    resourceK8Secret(),
 			"duplocloud_infrastructure":               resourceInfrastructure(),
