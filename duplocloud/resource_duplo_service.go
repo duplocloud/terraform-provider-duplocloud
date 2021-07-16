@@ -48,6 +48,9 @@ func duploServiceSchema() map[string]*schema.Schema {
 				defn, _ := expandOtherDockerConfig(v.(string))
 				reorderOtherDockerConfigsEnvironmentVariables(defn)
 				json, err := jcs.Format(defn)
+				if json == "{}" {
+					json = ""
+				}
 				log.Printf("[TRACE] duplocloud_duplo_service.other_docker_config.StateFunc: => %s (error: %s)", json, err)
 				return json
 			},
@@ -288,6 +291,9 @@ func canonicalizeOtherDockerConfigJson(encoded string) (string, error) {
 	canonical, err := jcs.Format(defn)
 	if err != nil {
 		return encoded, err
+	}
+	if canonical == "{}" {
+		canonical = ""
 	}
 
 	return canonical, nil
