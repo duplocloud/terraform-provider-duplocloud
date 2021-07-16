@@ -3,12 +3,12 @@
 page_title: "duplocloud_gcp_storage_bucket Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_gcp_pubsub_topic manages a GCP storage bucket in Duplo.
+  duplocloud_gcp_storage_bucket manages a GCP storage bucket in Duplo.
 ---
 
 # duplocloud_gcp_storage_bucket (Resource)
 
-`duplocloud_gcp_pubsub_topic` manages a GCP storage bucket in Duplo.
+`duplocloud_gcp_storage_bucket` manages a GCP storage bucket in Duplo.
 
 ## Example Usage
 

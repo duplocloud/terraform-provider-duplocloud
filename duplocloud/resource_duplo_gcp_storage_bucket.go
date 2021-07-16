@@ -55,7 +55,7 @@ func gcpStorageBucketSchema() map[string]*schema.Schema {
 // Resource for managing a GCP storage bucket
 func resourceGcpStorageBucket() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_gcp_pubsub_topic` manages a GCP storage bucket in Duplo.",
+		Description: "`duplocloud_gcp_storage_bucket` manages a GCP storage bucket in Duplo.",
 
 		ReadContext:   resourceGcpStorageBucketRead,
 		CreateContext: resourceGcpStorageBucketCreate,
@@ -110,7 +110,7 @@ func resourceGcpStorageBucketCreate(ctx context.Context, d *schema.ResourceData,
 	// Create the request object.
 	rq := duplosdk.DuploGcpStorageBucket{
 		Name:             d.Get("name").(string),
-		Labels:           expandGcpLabels("labels", d),
+		Labels:           expandStringMap("labels", d),
 		EnableVersioning: d.Get("enable_versioning").(bool),
 	}
 
@@ -152,8 +152,8 @@ func resourceGcpStorageBucketUpdate(ctx context.Context, d *schema.ResourceData,
 
 	// Create the request object.
 	rq := duplosdk.DuploGcpStorageBucket{
-		Name:             d.Get("name").(string),
-		Labels:           expandGcpLabels("labels", d),
+		Name:             d.Get("fullname").(string),
+		Labels:           expandStringMap("labels", d),
 		EnableVersioning: d.Get("enable_versioning").(bool),
 	}
 
