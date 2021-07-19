@@ -162,17 +162,27 @@ func (c *Client) PlanSetCertificate(planID string, cert DuploPlanCertificate) Cl
 		&rp)
 }
 
-// PlanGetImageList retrieves a list of plan images via the Duplo API.
+// PlanImageGetList retrieves a list of plan images via the Duplo API.
 func (c *Client) PlanImageGetList(planID string) (*[]DuploPlanImage, ClientError) {
 	list := []DuploPlanImage{}
-	err := c.getAPI("PlanImageGetList()", fmt.Sprintf("v3/admin/plans/%s/images", planID), &list)
+	err := c.getAPI(fmt.Sprintf("PlanImageGetList(%s)", planID), fmt.Sprintf("v3/admin/plans/%s/images", planID), &list)
 	if err != nil {
 		return nil, err
 	}
 	return &list, nil
 }
 
-// TenantReplaceConfig replaces plan certificates via the Duplo API.
+// PlanImageGet retrieves a plan images via the Duplo API.
+func (c *Client) PlanImageGet(planID, name string) (*DuploPlanImage, ClientError) {
+	rp := DuploPlanImage{}
+	err := c.getAPI(fmt.Sprintf("PlanImageGet(%s, %s)", planID, name), fmt.Sprintf("v3/admin/plans/%s/images/%s", planID, name), &rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+// PlanReplaceImages replaces plan certificates via the Duplo API.
 func (c *Client) PlanReplaceImages(planID string, newImages *[]DuploPlanImage) ClientError {
 	existing, err := c.PlanImageGetList(planID)
 	if err != nil {

@@ -10,31 +10,29 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// PlanImageSchema returns a Terraform schema to represent a plan image
-func PlanImageSchema() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"image_id": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"os": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"username": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"tags": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     KeyValueSchema(),
-			},
+// planImageSchema returns a Terraform schema to represent a plan image
+func planImageSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"image_id": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"os": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"username": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"tags": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem:     KeyValueSchema(),
 		},
 	}
 }
@@ -69,7 +67,9 @@ func resourcePlanImages() *schema.Resource {
 				Description: "A list of images to manage.",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        PlanImageSchema(),
+				Elem: &schema.Resource{
+					Schema: planImageSchema(),
+				},
 			},
 			"delete_unspecified_images": {
 				Description: "Whether or not this resource should delete any images not specified by this resource. " +
@@ -82,7 +82,9 @@ func resourcePlanImages() *schema.Resource {
 				Description: "A complete list of images for this plan, even ones not being managed by this resource.",
 				Type:        schema.TypeList,
 				Computed:    true,
-				Elem:        PlanImageSchema(),
+				Elem: &schema.Resource{
+					Schema: planImageSchema(),
+				},
 			},
 			"specified_images": {
 				Description: "A list of image names being managed by this resource.",
