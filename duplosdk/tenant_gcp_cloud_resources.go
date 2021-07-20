@@ -2,6 +2,26 @@ package duplosdk
 
 import "fmt"
 
+const (
+	GcpSchedulerJob_TargetType_None                int = 0
+	GcpSchedulerJob_TargetType_PubsubTarget        int = 4
+	GcpSchedulerJob_TargetType_AppEngineHttpTarget int = 5
+	GcpSchedulerJob_TargetType_HttpTarget          int = 6
+
+	GcpSchedulerJob_HttpMethod_Unspecified int = 0 // per Google, defaults to POST
+	GcpSchedulerJob_HttpMethod_Post        int = 1
+	GcpSchedulerJob_HttpMethod_Get         int = 2
+	GcpSchedulerJob_HttpMethod_Head        int = 3
+	GcpSchedulerJob_HttpMethod_Put         int = 4
+	GcpSchedulerJob_HttpMethod_Delete      int = 5
+	GcpSchedulerJob_HttpMethod_Patch       int = 6
+	GcpSchedulerJob_HttpMethod_Options     int = 7
+
+	GcpSchedulerJob_AuthorizationHeader_None       int = 0
+	GcpSchedulerJob_AuthorizationHeader_OauthToken int = 5
+	GcpSchedulerJob_AuthorizationHeader_OidcToken  int = 6
+)
+
 // DuploGcpPubsubTopic represents a GCP pubsub topic resource for a Duplo tenant
 type DuploGcpPubsubTopic struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
@@ -70,6 +90,74 @@ type DuploGcpCloudFunctionEventTrigger struct {
 	EventType string `json:"EventType,omitempty"`
 	Resource  string `json:"Resource,omitempty"`
 	Service   string `json:"Service,omitempty"`
+}
+
+// DuploGcpSchedulerJob represents a GCP scheduler job resource for a Duplo tenant
+type DuploGcpSchedulerJob struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-,omitempty"`
+
+	// NOTE: The ShortName field does not come from the backend - we synthesize it
+	ShortName string `json:"-,omitempty"`
+
+	Name            string                               `json:"Name,omitempty"`
+	SelfLink        string                               `json:"SelfLink,omitempty"`
+	Status          string                               `json:"Status,omitempty"`
+	Description     string                               `json:"Description,omitempty"`
+	Schedule        string                               `json:"Schedule,omitempty"`
+	TimeZone        string                               `json:"TimeZone,omitempty"`
+	AttemptDeadline string                               `json:"AttemptDeadline,omitempty"`
+	TargetType      int                                  `json:"TargetType,omitempty"`
+	PubsubTarget    *DuploGcpSchedulerJobPubsubTarget    `json:"PubSubTarget,omitempty"`
+	HTTPTarget      *DuploGcpSchedulerJobHTTPTarget      `json:"HttpTarget,omitempty"`
+	AppEngineTarget *DuploGcpSchedulerJobAppEngineTarget `json:"AppEngineTarget,omitempty"`
+}
+
+// DuploGcpSchedulerJobPubsubTarget represents a GCP scheduler job pubsub target for a Duplo tenant
+type DuploGcpSchedulerJobPubsubTarget struct {
+	Data       []string          `json:"Data"`
+	TopicName  string            `json:"TopicName,omitempty"`
+	Attributes map[string]string `json:"Attributes,omitempty"`
+}
+
+// DuploGcpSchedulerJobHTTPTarget represents a GCP scheduler job http target for a Duplo tenant
+type DuploGcpSchedulerJobHTTPTarget struct {
+	HTTPMethod              int                             `json:"HttpMethod,omitempty"`
+	Headers                 map[string]string               `json:"Headers,omitempty"`
+	Body                    []string                        `json:"Body"`
+	Uri                     string                          `json:"Uri,omitempty"`
+	OidcToken               *DuploGcpSchedulerJobOidcToken  `json:"OidcToken,omitempty"`
+	OAuthToken              *DuploGcpSchedulerJobOAuthToken `json:"OAuthToken,omitempty"`
+	AuthorizationHeaderCase int                             `json:"AuthorizationHeaderCase,omitempty"`
+}
+
+// DuploGcpSchedulerJobAppEngineTarget represents a GCP scheduler job app engine target for a Duplo tenant
+type DuploGcpSchedulerJobAppEngineTarget struct {
+	HTTPMethod       int                                   `json:"HttpMethod,omitempty"`
+	Headers          map[string]string                     `json:"Headers,omitempty"`
+	Body             []string                              `json:"Body"`
+	RelativeUri      string                                `json:"RelativeUri,omitempty"`
+	AppEngineRouting *DuploGcpSchedulerJobAppEngineRouting `json:"AppEngineRouting,omitempty"`
+}
+
+// DuploGcpSchedulerJobOidcToken represents a GCP scheduler job OIDC token for a Duplo tenant
+type DuploGcpSchedulerJobOidcToken struct {
+	Audience            string `json:"Audience,omitempty"`
+	ServiceAccountEmail string `json:"ServiceAccountEmail,omitempty"`
+}
+
+// DuploGcpSchedulerJobOAuthToken represents a GCP scheduler job OAuth token for a Duplo tenant
+type DuploGcpSchedulerJobOAuthToken struct {
+	Scope               string `json:"Scope,omitempty"`
+	ServiceAccountEmail string `json:"ServiceAccountEmail,omitempty"`
+}
+
+// DuploGcpSchedulerJobAppEngineRouting represents a GCP scheduler job app engine routing for a Duplo tenant
+type DuploGcpSchedulerJobAppEngineRouting struct {
+	Host     string `json:"Host,omitempty"`
+	Instance string `json:"Instance,omitempty"`
+	Service  string `json:"Service,omitempty"`
+	Version  string `json:"Version,omitempty"`
 }
 
 // GcpPubsubTopicCreate creates a pubsub topic via the Duplo API.
@@ -301,6 +389,83 @@ func (c *Client) GcpCloudFunctionGet(tenantID string, name string) (*DuploGcpClo
 	err := c.getAPI(
 		fmt.Sprintf("GcpCloudFunctionGet(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/google/function/%s", tenantID, name),
+		&rp)
+	rp.TenantID = tenantID
+	rp.ShortName = name
+	return &rp, err
+}
+
+// GcpSchedulerJobCreate creates a scheduler job via the Duplo API.
+func (c *Client) GcpSchedulerJobCreate(tenantID string, rq *DuploGcpSchedulerJob) (*DuploGcpSchedulerJob, ClientError) {
+	rp := DuploGcpSchedulerJob{}
+	err := c.postAPI(
+		fmt.Sprintf("GcpSchedulerJobCreate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/google/schedulerJob", tenantID),
+		&rq,
+		&rp,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, err
+}
+
+// GcpSchedulerJobUpdate updates a scheduler job via the Duplo API.
+func (c *Client) GcpSchedulerJobUpdate(tenantID string, rq *DuploGcpSchedulerJob) (*DuploGcpSchedulerJob, ClientError) {
+	rp := DuploGcpSchedulerJob{}
+	err := c.putAPI(
+		fmt.Sprintf("GcpSchedulerJobUpdate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/google/schedulerJob/%s", tenantID, rq.Name),
+		&rq,
+		&rp,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, err
+}
+
+// GcpSchedulerJobDelete deletes a scheduler job via the Duplo API.
+func (c *Client) GcpSchedulerJobDelete(tenantID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("GcpSchedulerJobDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/schedulerJob/%s", tenantID, name),
+		nil)
+}
+
+// GcpSchedulerJobGetList gets a list of scheduler jobs via the Duplo API.
+func (c *Client) GcpSchedulerJobGetList(tenantID string) (*[]DuploGcpSchedulerJob, ClientError) {
+	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the list from Duplo
+	list := []DuploGcpSchedulerJob{}
+	err = c.getAPI(
+		fmt.Sprintf("GcpSchedulerJobGetList(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/google/schedulerJob", tenantID),
+		&list)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add the tenant ID and name to each element and return the list.
+	for i := range list {
+		list[i].TenantID = tenantID
+		list[i].ShortName, _ = UnprefixName(prefix, list[i].Name)
+	}
+	return &list, nil
+}
+
+// GcpSchedulerJobGet gets a scheduler job via the Duplo API.
+func (c *Client) GcpSchedulerJobGet(tenantID string, name string) (*DuploGcpSchedulerJob, ClientError) {
+
+	// Get the list from Duplo
+	rp := DuploGcpSchedulerJob{}
+	err := c.getAPI(
+		fmt.Sprintf("GcpSchedulerJobGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/schedulerJob/%s", tenantID, name),
 		&rp)
 	rp.TenantID = tenantID
 	rp.ShortName = name
