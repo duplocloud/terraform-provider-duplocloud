@@ -3,12 +3,12 @@
 page_title: "duplocloud_gcp_cloud_function Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_gcp_pubsub_topic manages a GCP cloud function in Duplo.
+  duplocloud_gcp_cloud_function manages a GCP cloud function in Duplo.
 ---
 
 # duplocloud_gcp_cloud_function (Resource)
 
-`duplocloud_gcp_pubsub_topic` manages a GCP cloud function in Duplo.
+`duplocloud_gcp_cloud_function` manages a GCP cloud function in Duplo.
 
 ## Example Usage
 

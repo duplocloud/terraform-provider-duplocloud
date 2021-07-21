@@ -218,7 +218,7 @@ func planSchema(single bool) map[string]*schema.Schema {
 
 func dataSourcePlans() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_plans` retrieves a list of infrastructures in Duplo.",
+		Description: "`duplocloud_plans` retrieves a list of plans from Duplo.",
 
 		ReadContext: dataSourcePlansRead,
 		Schema: map[string]*schema.Schema{

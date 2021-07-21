@@ -190,7 +190,7 @@ func gcpCloudFunctionSchema() map[string]*schema.Schema {
 // Resource for managing a GCP cloud function
 func resourceGcpCloudFunction() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_gcp_pubsub_topic` manages a GCP cloud function in Duplo.",
+		Description: "`duplocloud_gcp_cloud_function` manages a GCP cloud function in Duplo.",
 
 		ReadContext:   resourceGcpCloudFunctionRead,
 		CreateContext: resourceGcpCloudFunctionCreate,
@@ -364,13 +364,13 @@ func resourceGcpCloudFunctionSetData(d *schema.ResourceData, tenantID string, na
 func expandGcpCloudFunction(d *schema.ResourceData) *duplosdk.DuploGcpCloudFunction {
 	duplo := duplosdk.DuploGcpCloudFunction{
 		Name:                      d.Get("name").(string),
-		Labels:                    expandStringMap("labels", d),
+		Labels:                    expandAsStringMap("labels", d),
 		EntryPoint:                d.Get("entrypoint").(string),
 		Runtime:                   d.Get("runtime").(string),
 		Description:               d.Get("description").(string),
 		AvailableMemoryMb:         d.Get("available_memory_mb").(int),
-		BuildEnvironmentVariables: expandStringMap("build_environment_variables", d),
-		EnvironmentVariables:      expandStringMap("environment_variables", d),
+		BuildEnvironmentVariables: expandAsStringMap("build_environment_variables", d),
+		EnvironmentVariables:      expandAsStringMap("environment_variables", d),
 		Timeout:                   d.Get("timeout").(int),
 		SourceArchiveUrl:          d.Get("source_archive_url").(string),
 		IngressType:               d.Get("ingress_type").(int),

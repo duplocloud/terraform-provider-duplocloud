@@ -3,12 +3,12 @@
 page_title: "duplocloud_plans Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_plans retrieves a list of infrastructures in Duplo.
+  duplocloud_plans retrieves a list of plans from Duplo.
 ---
 
 # duplocloud_plans (Data Source)
 
-`duplocloud_plans` retrieves a list of infrastructures in Duplo.
+`duplocloud_plans` retrieves a list of plans from Duplo.
 
 
 

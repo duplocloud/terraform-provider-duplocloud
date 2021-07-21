@@ -104,7 +104,7 @@ func resourceGcpPubsubTopicCreate(ctx context.Context, d *schema.ResourceData, m
 	// Create the request object.
 	rq := duplosdk.DuploGcpPubsubTopic{
 		Name:   d.Get("name").(string),
-		Labels: expandStringMap("labels", d),
+		Labels: expandAsStringMap("labels", d),
 	}
 
 	c := m.(*duplosdk.Client)
@@ -146,7 +146,7 @@ func resourceGcpPubsubTopicUpdate(ctx context.Context, d *schema.ResourceData, m
 	// Create the request object.
 	rq := duplosdk.DuploGcpPubsubTopic{
 		Name:   d.Get("fullname").(string),
-		Labels: expandStringMap("labels", d),
+		Labels: expandAsStringMap("labels", d),
 	}
 
 	c := m.(*duplosdk.Client)

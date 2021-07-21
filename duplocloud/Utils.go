@@ -530,10 +530,26 @@ func flattenGcpLabels(d *schema.ResourceData, duplo map[string]string) {
 	d.Set("labels", flattenStringMap(duplo))
 }
 
-func expandStringMap(fieldName string, d *schema.ResourceData) map[string]string {
+func expandAsStringMap(fieldName string, d *schema.ResourceData) map[string]string {
 	m := map[string]string{}
 
 	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.(map[string]interface{})) > 0 {
+		for k, v := range v.(map[string]interface{}) {
+			if v == nil {
+				m[k] = ""
+			} else {
+				m[k] = v.(string)
+			}
+		}
+	}
+
+	return m
+}
+
+func expandStringMap(fieldName string, d map[string]interface{}) map[string]string {
+	m := map[string]string{}
+
+	if v, ok := d[fieldName]; ok && v != nil && len(v.(map[string]interface{})) > 0 {
 		for k, v := range v.(map[string]interface{}) {
 			if v == nil {
 				m[k] = ""

@@ -110,7 +110,7 @@ func resourceGcpStorageBucketCreate(ctx context.Context, d *schema.ResourceData,
 	// Create the request object.
 	rq := duplosdk.DuploGcpStorageBucket{
 		Name:             d.Get("name").(string),
-		Labels:           expandStringMap("labels", d),
+		Labels:           expandAsStringMap("labels", d),
 		EnableVersioning: d.Get("enable_versioning").(bool),
 	}
 
@@ -153,7 +153,7 @@ func resourceGcpStorageBucketUpdate(ctx context.Context, d *schema.ResourceData,
 	// Create the request object.
 	rq := duplosdk.DuploGcpStorageBucket{
 		Name:             d.Get("fullname").(string),
-		Labels:           expandStringMap("labels", d),
+		Labels:           expandAsStringMap("labels", d),
 		EnableVersioning: d.Get("enable_versioning").(bool),
 	}
 
