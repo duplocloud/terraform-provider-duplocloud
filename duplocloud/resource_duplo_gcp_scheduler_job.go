@@ -51,6 +51,7 @@ func gcpSchedulerJobSchema() map[string]*schema.Schema {
 			Description: "The attempt deadline for the scheduler job.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 		},
 		"description": {
 			Description: "The description of the scheduler job.",
@@ -72,9 +73,9 @@ func gcpSchedulerJobSchema() map[string]*schema.Schema {
 					},
 					"data": {
 						Description: "The data to send to the pubsub topic.",
-						Type:        schema.TypeList,
+						Type:        schema.TypeString,
 						Optional:    true,
-						Elem:        &schema.Schema{Type: schema.TypeString},
+						Computed:    true,
 						//AtLeastOneOf: []string{"data", "attributes"},
 					},
 					"attributes": {
@@ -105,13 +106,14 @@ func gcpSchedulerJobSchema() map[string]*schema.Schema {
 						Description: "The HTTP headers to send.",
 						Type:        schema.TypeMap,
 						Optional:    true,
+						Computed:    true,
 						Elem:        &schema.Schema{Type: schema.TypeString},
 					},
 					"body": {
 						Description: "The HTTP request body to send.",
-						Type:        schema.TypeList,
+						Type:        schema.TypeString,
 						Optional:    true,
-						Elem:        &schema.Schema{Type: schema.TypeString},
+						Computed:    true,
 					},
 					"uri": {
 						Description: "The request URI.",
@@ -125,15 +127,21 @@ func gcpSchedulerJobSchema() map[string]*schema.Schema {
 						MaxItems:    1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
+								"enabled": {
+									Description: "Must be set to `true`.",
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     true,
+								},
 								"audience": {
 									Description: "The OIDC token audience.",
 									Type:        schema.TypeString,
-									Required:    true,
+									Optional:    true,
+									Computed:    true,
 								},
 								"service_account_email": {
 									Description: "The OIDC token service account email.",
 									Type:        schema.TypeString,
-									Optional:    true,
 									Computed:    true,
 								},
 							},
@@ -147,15 +155,21 @@ func gcpSchedulerJobSchema() map[string]*schema.Schema {
 						MaxItems:    1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
+								"enabled": {
+									Description: "Must be set to `true`.",
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     true,
+								},
 								"scope": {
 									Description: "The OAuth token scope.",
 									Type:        schema.TypeString,
-									Required:    true,
+									Optional:    true,
+									Computed:    true,
 								},
 								"service_account_email": {
 									Description: "The OAuth token service account email.",
 									Type:        schema.TypeString,
-									Optional:    true,
 									Computed:    true,
 								},
 							},
@@ -183,13 +197,14 @@ func gcpSchedulerJobSchema() map[string]*schema.Schema {
 						Description: "The HTTP headers to send.",
 						Type:        schema.TypeMap,
 						Optional:    true,
+						Computed:    true,
 						Elem:        &schema.Schema{Type: schema.TypeString},
 					},
 					"body": {
 						Description: "The HTTP request body to send.",
-						Type:        schema.TypeList,
+						Type:        schema.TypeString,
 						Optional:    true,
-						Elem:        &schema.Schema{Type: schema.TypeString},
+						Computed:    true,
 					},
 					"relative_uri": {
 						Description: "The relative URI.",
@@ -389,7 +404,7 @@ func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, nam
 		d.Set("pubsub_target", []interface{}{
 			map[string]interface{}{
 				"topic_name": duplo.PubsubTarget.TopicName,
-				"data":       duplo.PubsubTarget.Data,
+				"data":       duplo.PubsubTargetData,
 				"attributes": flattenStringMap(duplo.PubsubTarget.Attributes),
 			},
 		})
@@ -397,13 +412,14 @@ func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, nam
 		m := map[string]interface{}{
 			"method":  flattenGcpSchedulerJobHttpMethod(duplo.HTTPTarget.HTTPMethod),
 			"headers": flattenStringMap(duplo.HTTPTarget.Headers),
-			"body":    duplo.HTTPTarget.Body,
+			"body":    duplo.AnyHTTPTargetBody,
 			"uri":     duplo.HTTPTarget.Uri,
 		}
 
 		if duplo.HTTPTarget.AuthorizationHeaderCase == duplosdk.GcpSchedulerJob_AuthorizationHeader_OauthToken {
 			m["oauth_token"] = []interface{}{
 				map[string]interface{}{
+					"enabled":               true,
 					"scope":                 duplo.HTTPTarget.OAuthToken.Scope,
 					"service_account_email": duplo.HTTPTarget.OAuthToken.ServiceAccountEmail,
 				},
@@ -411,6 +427,7 @@ func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, nam
 		} else if duplo.HTTPTarget.AuthorizationHeaderCase == duplosdk.GcpSchedulerJob_AuthorizationHeader_OidcToken {
 			m["oidc_token"] = []interface{}{
 				map[string]interface{}{
+					"enabled":               true,
 					"audience":              duplo.HTTPTarget.OidcToken.Audience,
 					"service_account_email": duplo.HTTPTarget.OidcToken.ServiceAccountEmail,
 				},
@@ -424,7 +441,7 @@ func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, nam
 		m := map[string]interface{}{
 			"method":       flattenGcpSchedulerJobHttpMethod(duplo.HTTPTarget.HTTPMethod),
 			"headers":      flattenStringMap(duplo.HTTPTarget.Headers),
-			"body":         duplo.HTTPTarget.Body,
+			"body":         duplo.AnyHTTPTargetBody,
 			"relative_uri": duplo.AppEngineTarget.RelativeUri,
 		}
 
@@ -446,11 +463,11 @@ func expandGcpSchedulerJob(d *schema.ResourceData) *duplosdk.DuploGcpSchedulerJo
 	if pubsub, err := getOptionalBlockAsMap(d, "pubsub_target"); err == nil && len(pubsub) > 0 {
 		duplo.PubsubTarget = &duplosdk.DuploGcpSchedulerJobPubsubTarget{TopicName: pubsub["topic_name"].(string)}
 
-		if v, ok := getStringArray(pubsub, "data"); ok && len(*v) > 0 {
-			duplo.PubsubTarget.Data = *v
+		if v, ok := pubsub["data"]; ok && v != nil && v.(string) != "" {
+			duplo.PubsubTargetData = v.(string)
 		}
 		if v := expandStringMap("attributes", pubsub); len(v) > 0 {
-			duplo.PubsubTarget.Attributes = v
+			duplo.PubsubTargetAttributes = v
 		}
 
 	} else if http, err := getOptionalBlockAsMap(d, "http_target"); err == nil && len(http) > 0 {
@@ -459,22 +476,26 @@ func expandGcpSchedulerJob(d *schema.ResourceData) *duplosdk.DuploGcpSchedulerJo
 			Uri:        http["uri"].(string),
 		}
 
-		if v, ok := getStringArray(http, "body"); ok && len(*v) > 0 {
-			duplo.HTTPTarget.Body = *v
+		if v, ok := http["body"]; ok && v != nil && v.(string) != "" {
+			duplo.AnyHTTPTargetBody = v.(string)
 		}
 		if v := expandStringMap("headers", http); len(v) > 0 {
-			duplo.HTTPTarget.Headers = v
+			duplo.AnyHTTPTargetHeaders = v
 		}
 
-		if oidc, err := getOptionalBlockAsMap(d, "oidc_token"); err == nil && len(oidc) > 0 {
-			duplo.HTTPTarget.OidcToken = &duplosdk.DuploGcpSchedulerJobOidcToken{Audience: oidc["audience"].(string)}
-			if v, ok := oidc["service_account_email"]; ok && v != nil && v.(string) != "" {
-				duplo.HTTPTarget.OidcToken.ServiceAccountEmail = v.(string)
+		if oidc, err := getOptionalNestedBlockAsMap(http, "oidc_token"); err == nil && len(oidc) > 0 {
+			duplo.HTTPTarget.OidcToken = &duplosdk.DuploGcpSchedulerJobOidcToken{}
+			if v, ok := oidc["audience"]; ok && v != nil && v.(string) != "" {
+				duplo.HTTPTarget.OidcToken.Audience = v.(string)
+			} else {
+				duplo.HTTPTarget.OidcToken.Audience = duplo.HTTPTarget.Uri
 			}
-		} else if oauth, err := getOptionalBlockAsMap(d, "oauth_token"); err == nil && len(oauth) > 0 {
-			duplo.HTTPTarget.OAuthToken = &duplosdk.DuploGcpSchedulerJobOAuthToken{Scope: oidc["scope"].(string)}
-			if v, ok := oauth["service_account_email"]; ok && v != nil && v.(string) != "" {
-				duplo.HTTPTarget.OAuthToken.ServiceAccountEmail = v.(string)
+		} else if oauth, err := getOptionalNestedBlockAsMap(http, "oauth_token"); err == nil && len(oauth) > 0 {
+			duplo.HTTPTarget.OAuthToken = &duplosdk.DuploGcpSchedulerJobOAuthToken{}
+			if v, ok := oauth["scope"]; ok && v != nil && v.(string) != "" {
+				duplo.HTTPTarget.OAuthToken.Scope = v.(string)
+			} else {
+				duplo.HTTPTarget.OAuthToken.Scope = "https://www.googleapis.com/auth/cloud-platform"
 			}
 		}
 
@@ -484,14 +505,14 @@ func expandGcpSchedulerJob(d *schema.ResourceData) *duplosdk.DuploGcpSchedulerJo
 			RelativeUri: appeng["relative_uri"].(string),
 		}
 
-		if v, ok := getStringArray(appeng, "body"); ok && len(*v) > 0 {
-			duplo.AppEngineTarget.Body = *v
+		if v, ok := appeng["body"]; ok && v != nil && v.(string) != "" {
+			duplo.AnyHTTPTargetBody = v.(string)
 		}
 		if v := expandStringMap("headers", appeng); len(v) > 0 {
-			duplo.AppEngineTarget.Headers = v
+			duplo.AnyHTTPTargetHeaders = v
 		}
 
-		if routing, err := getOptionalBlockAsMap(d, "routing"); err == nil && len(routing) > 0 {
+		if routing, err := getOptionalNestedBlockAsMap(appeng, "routing"); err == nil && len(routing) > 0 {
 			duplo.AppEngineTarget.AppEngineRouting = &duplosdk.DuploGcpSchedulerJobAppEngineRouting{}
 
 			if v, ok := routing["service"]; ok && v != nil && v.(string) != "" {
