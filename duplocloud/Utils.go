@@ -294,6 +294,33 @@ func getOptionalBlockAsMap(data *schema.ResourceData, key string) (map[string]in
 	return (*block).(map[string]interface{}), nil
 }
 
+// Utility function to return a pointer to a single valid (but optional) resource data block.
+func getOptionalNestedBlock(d map[string]interface{}, key string) (*interface{}, error) {
+	var value *interface{}
+
+	if v, ok := d[key]; ok {
+		x := v.([]interface{})
+
+		if len(x) == 1 {
+			if x[0] == nil {
+				return nil, fmt.Errorf("at least one field is expected inside %s", key)
+			}
+			value = &x[0]
+		}
+	}
+
+	return value, nil
+}
+
+// Utility function to return a pointer to a single valid (but optional) resource data block as a map.
+func getOptionalNestedBlockAsMap(d map[string]interface{}, key string) (map[string]interface{}, error) {
+	block, err := getOptionalNestedBlock(d, key)
+	if block == nil || err != nil {
+		return nil, err
+	}
+	return (*block).(map[string]interface{}), nil
+}
+
 func getAsStringArray(data *schema.ResourceData, key string) (*[]string, bool) {
 	var ok bool
 	var result []string

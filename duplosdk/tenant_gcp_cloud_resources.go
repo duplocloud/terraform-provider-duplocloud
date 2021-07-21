@@ -100,22 +100,27 @@ type DuploGcpSchedulerJob struct {
 	// NOTE: The ShortName field does not come from the backend - we synthesize it
 	ShortName string `json:"-,omitempty"`
 
-	Name            string                               `json:"Name,omitempty"`
-	SelfLink        string                               `json:"SelfLink,omitempty"`
-	Status          string                               `json:"Status,omitempty"`
-	Description     string                               `json:"Description,omitempty"`
-	Schedule        string                               `json:"Schedule,omitempty"`
-	TimeZone        string                               `json:"TimeZone,omitempty"`
-	AttemptDeadline string                               `json:"AttemptDeadline,omitempty"`
-	TargetType      int                                  `json:"TargetType,omitempty"`
-	PubsubTarget    *DuploGcpSchedulerJobPubsubTarget    `json:"PubSubTarget,omitempty"`
-	HTTPTarget      *DuploGcpSchedulerJobHTTPTarget      `json:"HttpTarget,omitempty"`
-	AppEngineTarget *DuploGcpSchedulerJobAppEngineTarget `json:"AppEngineTarget,omitempty"`
+	Name              string                               `json:"Name,omitempty"`
+	SelfLink          string                               `json:"SelfLink,omitempty"`
+	Status            string                               `json:"Status,omitempty"`
+	Description       string                               `json:"Description,omitempty"`
+	Schedule          string                               `json:"Schedule,omitempty"`
+	TimeZone          string                               `json:"TimeZone,omitempty"`
+	AttemptDeadline   string                               `json:"AttemptDeadline,omitempty"`
+	TargetType        int                                  `json:"TargetType,omitempty"`
+	PubsubTarget      *DuploGcpSchedulerJobPubsubTarget    `json:"PubSubTarget,omitempty"`
+	PubsubTargetData  string                               `json:"PubSubTargetData"`
+	HTTPTarget        *DuploGcpSchedulerJobHTTPTarget      `json:"HttpTarget,omitempty"`
+	AppEngineTarget   *DuploGcpSchedulerJobAppEngineTarget `json:"AppEngineTarget,omitempty"`
+	AnyHTTPTargetBody string                               `json:"AnyHttpTargetBody"`
+
+	// Only used for create/update request body.
+	PubsubTargetAttributes map[string]string `json:"PubSubTargetAttributes"`
+	AnyHTTPTargetHeaders   map[string]string `json:"AnyHttpTargetHeaders"`
 }
 
 // DuploGcpSchedulerJobPubsubTarget represents a GCP scheduler job pubsub target for a Duplo tenant
 type DuploGcpSchedulerJobPubsubTarget struct {
-	Data       []string          `json:"Data"`
 	TopicName  string            `json:"TopicName,omitempty"`
 	Attributes map[string]string `json:"Attributes,omitempty"`
 }
@@ -124,10 +129,9 @@ type DuploGcpSchedulerJobPubsubTarget struct {
 type DuploGcpSchedulerJobHTTPTarget struct {
 	HTTPMethod              int                             `json:"HttpMethod,omitempty"`
 	Headers                 map[string]string               `json:"Headers,omitempty"`
-	Body                    []string                        `json:"Body"`
 	Uri                     string                          `json:"Uri,omitempty"`
-	OidcToken               *DuploGcpSchedulerJobOidcToken  `json:"OidcToken,omitempty"`
-	OAuthToken              *DuploGcpSchedulerJobOAuthToken `json:"OAuthToken,omitempty"`
+	OidcToken               *DuploGcpSchedulerJobOidcToken  `json:"OidcToken"`
+	OAuthToken              *DuploGcpSchedulerJobOAuthToken `json:"OAuthToken"`
 	AuthorizationHeaderCase int                             `json:"AuthorizationHeaderCase,omitempty"`
 }
 
@@ -135,20 +139,19 @@ type DuploGcpSchedulerJobHTTPTarget struct {
 type DuploGcpSchedulerJobAppEngineTarget struct {
 	HTTPMethod       int                                   `json:"HttpMethod,omitempty"`
 	Headers          map[string]string                     `json:"Headers,omitempty"`
-	Body             []string                              `json:"Body"`
 	RelativeUri      string                                `json:"RelativeUri,omitempty"`
 	AppEngineRouting *DuploGcpSchedulerJobAppEngineRouting `json:"AppEngineRouting,omitempty"`
 }
 
 // DuploGcpSchedulerJobOidcToken represents a GCP scheduler job OIDC token for a Duplo tenant
 type DuploGcpSchedulerJobOidcToken struct {
-	Audience            string `json:"Audience,omitempty"`
+	Audience            string `json:"Audience"`
 	ServiceAccountEmail string `json:"ServiceAccountEmail,omitempty"`
 }
 
 // DuploGcpSchedulerJobOAuthToken represents a GCP scheduler job OAuth token for a Duplo tenant
 type DuploGcpSchedulerJobOAuthToken struct {
-	Scope               string `json:"Scope,omitempty"`
+	Scope               string `json:"Scope"`
 	ServiceAccountEmail string `json:"ServiceAccountEmail,omitempty"`
 }
 
