@@ -69,7 +69,7 @@ Required:
 
 Optional:
 
-- **body** (List of String) The HTTP request body to send.
+- **body** (String) The HTTP request body to send.
 - **headers** (Map of String) The HTTP headers to send.
 - **routing** (Block List, Max: 1) Specifies App Engine routing. (see [below for nested schema](#nestedblock--app_engine_target--routing))
 
@@ -95,7 +95,7 @@ Required:
 
 Optional:
 
-- **body** (List of String) The HTTP request body to send.
+- **body** (String) The HTTP request body to send.
 - **headers** (Map of String) The HTTP headers to send.
 - **oauth_token** (Block List, Max: 1) Specifies OAuth authentication. (see [below for nested schema](#nestedblock--http_target--oauth_token))
 - **oidc_token** (Block List, Max: 1) Specifies OIDC authentication. (see [below for nested schema](#nestedblock--http_target--oidc_token))
@@ -103,11 +103,12 @@ Optional:
 <a id="nestedblock--http_target--oauth_token"></a>
 ### Nested Schema for `http_target.oauth_token`
 
-Required:
+Optional:
 
+- **enabled** (Boolean) Must be set to `true`. Defaults to `true`.
 - **scope** (String) The OAuth token scope.
 
-Optional:
+Read-Only:
 
 - **service_account_email** (String) The OAuth token service account email.
 
@@ -115,11 +116,12 @@ Optional:
 <a id="nestedblock--http_target--oidc_token"></a>
 ### Nested Schema for `http_target.oidc_token`
 
-Required:
+Optional:
 
 - **audience** (String) The OIDC token audience.
+- **enabled** (Boolean) Must be set to `true`. Defaults to `true`.
 
-Optional:
+Read-Only:
 
 - **service_account_email** (String) The OIDC token service account email.
 
@@ -135,7 +137,7 @@ Required:
 Optional:
 
 - **attributes** (Map of String) The attributes to send to the pubsub target.
-- **data** (List of String) The data to send to the pubsub topic.
+- **data** (String) The data to send to the pubsub topic.
 
 
 <a id="nestedblock--timeouts"></a>
