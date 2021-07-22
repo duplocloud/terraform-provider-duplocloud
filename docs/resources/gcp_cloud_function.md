@@ -86,6 +86,13 @@ Should be one of:
 - **labels** (Map of String) The labels assigned to this cloud function.
 - **timeout** (Number) The execution time limit for the cloud function. Defaults to `60`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **vpc_networking_type** (Number) The numerical index of the VPC networking type to use for this cloud function.
+Should be one of:
+
+   - `0` : All traffic through the VPC
+   - `1` : Only private traffic through the VPC
+   - `2` : No VPC networking
+ Defaults to `0`.
 
 ### Read-Only
 

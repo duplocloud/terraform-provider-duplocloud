@@ -68,12 +68,13 @@ type DuploGcpCloudFunction struct {
 	EntryPoint                string                             `json:"EntryPoint,omitempty"`
 	Runtime                   string                             `json:"Runtime,omitempty"`
 	Description               string                             `json:"Description,omitempty"`
-	AvailableMemoryMb         int                                `json:"AvailableMemoryMb,omitempty"`
+	AvailableMemoryMB         int                                `json:"AvailableMemoryMb,omitempty"`
 	BuildEnvironmentVariables map[string]string                  `json:"BuildEnvironmentVariables,omitempty"`
 	EnvironmentVariables      map[string]string                  `json:"EnvironmentVariables,omitempty"`
 	Timeout                   int                                `json:"Timeout,omitempty"`
-	SourceArchiveUrl          string                             `json:"SourceArchiveUrl,omitempty"`
+	SourceArchiveURL          string                             `json:"SourceArchiveUrl,omitempty"`
 	IngressType               int                                `json:"IngressType,omitempty"`
+	VPCNetworkingType         int                                `json:"VpcNetworkingType,omitempty"`
 	TriggerType               int                                `json:"TriggerType,omitempty"`
 	HTTPSTrigger              *DuploGcpCloudFunctionHTTPSTrigger `json:"HttpsTrigger,omitempty"`
 	EventTrigger              *DuploGcpCloudFunctionEventTrigger `json:"EventTrigger,omitempty"`
@@ -82,7 +83,7 @@ type DuploGcpCloudFunction struct {
 // DuploGcpCloudFunctionHTTPSTrigger represents a GCP cloud function resource for a Duplo tenant
 type DuploGcpCloudFunctionHTTPSTrigger struct {
 	SecurityLevel string `json:"SecurityLevel,omitempty"`
-	Url           string `json:"Url,omitempty"`
+	URL           string `json:"Url,omitempty"`
 }
 
 // DuploGcpCloudFunctionEventTrigger represents a GCP cloud function resource for a Duplo tenant
@@ -129,7 +130,7 @@ type DuploGcpSchedulerJobPubsubTarget struct {
 type DuploGcpSchedulerJobHTTPTarget struct {
 	HTTPMethod              int                             `json:"HttpMethod,omitempty"`
 	Headers                 map[string]string               `json:"Headers,omitempty"`
-	Uri                     string                          `json:"Uri,omitempty"`
+	URI                     string                          `json:"Uri,omitempty"`
 	OidcToken               *DuploGcpSchedulerJobOidcToken  `json:"OidcToken"`
 	OAuthToken              *DuploGcpSchedulerJobOAuthToken `json:"OAuthToken"`
 	AuthorizationHeaderCase int                             `json:"AuthorizationHeaderCase,omitempty"`
@@ -139,7 +140,7 @@ type DuploGcpSchedulerJobHTTPTarget struct {
 type DuploGcpSchedulerJobAppEngineTarget struct {
 	HTTPMethod       int                                   `json:"HttpMethod,omitempty"`
 	Headers          map[string]string                     `json:"Headers,omitempty"`
-	RelativeUri      string                                `json:"RelativeUri,omitempty"`
+	RelativeURI      string                                `json:"RelativeUri,omitempty"`
 	AppEngineRouting *DuploGcpSchedulerJobAppEngineRouting `json:"AppEngineRouting,omitempty"`
 }
 

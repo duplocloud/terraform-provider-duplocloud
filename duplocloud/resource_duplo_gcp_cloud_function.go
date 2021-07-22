@@ -109,6 +109,17 @@ func gcpCloudFunctionSchema() map[string]*schema.Schema {
 			Default:      1,
 			ValidateFunc: validation.IntBetween(1, 3),
 		},
+		"vpc_networking_type": {
+			Description: "The numerical index of the VPC networking type to use for this cloud function.\n" +
+				"Should be one of:\n\n" +
+				"   - `0` : All traffic through the VPC\n" +
+				"   - `1` : Only private traffic through the VPC\n" +
+				"   - `2` : No VPC networking\n",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Default:      0,
+			ValidateFunc: validation.IntBetween(0, 2),
+		},
 		"timeout": {
 			Description:  "The execution time limit for the cloud function.",
 			Type:         schema.TypeInt,
@@ -333,10 +344,11 @@ func resourceGcpCloudFunctionSetData(d *schema.ResourceData, tenantID string, na
 	d.Set("entrypoint", duplo.EntryPoint)
 	d.Set("runtime", duplo.Runtime)
 	d.Set("description", duplo.Description)
-	d.Set("available_memory_mb", duplo.AvailableMemoryMb)
+	d.Set("available_memory_mb", duplo.AvailableMemoryMB)
 	d.Set("timeout", duplo.Timeout)
-	d.Set("source_archive_url", duplo.SourceArchiveUrl)
+	d.Set("source_archive_url", duplo.SourceArchiveURL)
 	d.Set("ingress_type", duplo.IngressType)
+	d.Set("vpc_networking_type", duplo.VPCNetworkingType)
 
 	flattenGcpLabels(d, duplo.Labels)
 	d.Set("build_environment_variables", flattenStringMap(duplo.BuildEnvironmentVariables))
@@ -347,7 +359,7 @@ func resourceGcpCloudFunctionSetData(d *schema.ResourceData, tenantID string, na
 			map[string]interface{}{
 				"enabled":        true,
 				"security_level": duplo.HTTPSTrigger.SecurityLevel,
-				"url":            duplo.HTTPSTrigger.Url,
+				"url":            duplo.HTTPSTrigger.URL,
 			},
 		})
 	} else if duplo.TriggerType == 2 {
@@ -368,12 +380,13 @@ func expandGcpCloudFunction(d *schema.ResourceData) *duplosdk.DuploGcpCloudFunct
 		EntryPoint:                d.Get("entrypoint").(string),
 		Runtime:                   d.Get("runtime").(string),
 		Description:               d.Get("description").(string),
-		AvailableMemoryMb:         d.Get("available_memory_mb").(int),
+		AvailableMemoryMB:         d.Get("available_memory_mb").(int),
 		BuildEnvironmentVariables: expandAsStringMap("build_environment_variables", d),
 		EnvironmentVariables:      expandAsStringMap("environment_variables", d),
 		Timeout:                   d.Get("timeout").(int),
-		SourceArchiveUrl:          d.Get("source_archive_url").(string),
+		SourceArchiveURL:          d.Get("source_archive_url").(string),
 		IngressType:               d.Get("ingress_type").(int),
+		VPCNetworkingType:         d.Get("vpc_networking_type").(int),
 	}
 
 	if event, err := getOptionalBlockAsMap(d, "event_trigger"); err == nil && len(event) > 0 {
