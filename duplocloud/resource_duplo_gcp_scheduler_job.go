@@ -413,7 +413,7 @@ func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, nam
 			"method":  flattenGcpSchedulerJobHttpMethod(duplo.HTTPTarget.HTTPMethod),
 			"headers": flattenStringMap(duplo.HTTPTarget.Headers),
 			"body":    duplo.AnyHTTPTargetBody,
-			"uri":     duplo.HTTPTarget.Uri,
+			"uri":     duplo.HTTPTarget.URI,
 		}
 
 		if duplo.HTTPTarget.AuthorizationHeaderCase == duplosdk.GcpSchedulerJob_AuthorizationHeader_OauthToken {
@@ -442,7 +442,7 @@ func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, nam
 			"method":       flattenGcpSchedulerJobHttpMethod(duplo.HTTPTarget.HTTPMethod),
 			"headers":      flattenStringMap(duplo.HTTPTarget.Headers),
 			"body":         duplo.AnyHTTPTargetBody,
-			"relative_uri": duplo.AppEngineTarget.RelativeUri,
+			"relative_uri": duplo.AppEngineTarget.RelativeURI,
 		}
 
 		d.Set("pubsub_target", []interface{}{})
@@ -473,7 +473,7 @@ func expandGcpSchedulerJob(d *schema.ResourceData) *duplosdk.DuploGcpSchedulerJo
 	} else if http, err := getOptionalBlockAsMap(d, "http_target"); err == nil && len(http) > 0 {
 		duplo.HTTPTarget = &duplosdk.DuploGcpSchedulerJobHTTPTarget{
 			HTTPMethod: expandGcpSchedulerJobHttpMethod(http["method"].(string)),
-			Uri:        http["uri"].(string),
+			URI:        http["uri"].(string),
 		}
 
 		if v, ok := http["body"]; ok && v != nil && v.(string) != "" {
@@ -488,7 +488,7 @@ func expandGcpSchedulerJob(d *schema.ResourceData) *duplosdk.DuploGcpSchedulerJo
 			if v, ok := oidc["audience"]; ok && v != nil && v.(string) != "" {
 				duplo.HTTPTarget.OidcToken.Audience = v.(string)
 			} else {
-				duplo.HTTPTarget.OidcToken.Audience = duplo.HTTPTarget.Uri
+				duplo.HTTPTarget.OidcToken.Audience = duplo.HTTPTarget.URI
 			}
 		} else if oauth, err := getOptionalNestedBlockAsMap(http, "oauth_token"); err == nil && len(oauth) > 0 {
 			duplo.HTTPTarget.OAuthToken = &duplosdk.DuploGcpSchedulerJobOAuthToken{}
@@ -502,7 +502,7 @@ func expandGcpSchedulerJob(d *schema.ResourceData) *duplosdk.DuploGcpSchedulerJo
 	} else if appeng, err := getOptionalBlockAsMap(d, "app_engine_target"); err == nil && len(appeng) > 0 {
 		duplo.AppEngineTarget = &duplosdk.DuploGcpSchedulerJobAppEngineTarget{
 			HTTPMethod:  expandGcpSchedulerJobHttpMethod(appeng["method"].(string)),
-			RelativeUri: appeng["relative_uri"].(string),
+			RelativeURI: appeng["relative_uri"].(string),
 		}
 
 		if v, ok := appeng["body"]; ok && v != nil && v.(string) != "" {
