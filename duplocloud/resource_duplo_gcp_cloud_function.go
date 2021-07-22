@@ -98,6 +98,18 @@ func gcpCloudFunctionSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"require_https": {
+			Description: "Whether or not to require HTTPS.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     true,
+		},
+		"allow_unauthenticated": {
+			Description: "Whether or not to allow unauthenticated invocations.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		"ingress_type": {
 			Description: "The numerical index of ingress type to use for this cloud function.\n" +
 				"Should be one of:\n\n" +
@@ -347,6 +359,8 @@ func resourceGcpCloudFunctionSetData(d *schema.ResourceData, tenantID string, na
 	d.Set("available_memory_mb", duplo.AvailableMemoryMB)
 	d.Set("timeout", duplo.Timeout)
 	d.Set("source_archive_url", duplo.SourceArchiveURL)
+	d.Set("allow_unauthenticated", duplo.AllowUnauthenticated)
+	d.Set("require_https", duplo.RequireHTTPS)
 	d.Set("ingress_type", duplo.IngressType)
 	d.Set("vpc_networking_type", duplo.VPCNetworkingType)
 
@@ -385,6 +399,8 @@ func expandGcpCloudFunction(d *schema.ResourceData) *duplosdk.DuploGcpCloudFunct
 		EnvironmentVariables:      expandAsStringMap("environment_variables", d),
 		Timeout:                   d.Get("timeout").(int),
 		SourceArchiveURL:          d.Get("source_archive_url").(string),
+		AllowUnauthenticated:      d.Get("allow_unauthenticated").(bool),
+		RequireHTTPS:              d.Get("require_https").(bool),
 		IngressType:               d.Get("ingress_type").(int),
 		VPCNetworkingType:         d.Get("vpc_networking_type").(int),
 	}

@@ -73,6 +73,8 @@ type DuploGcpCloudFunction struct {
 	EnvironmentVariables      map[string]string                  `json:"EnvironmentVariables,omitempty"`
 	Timeout                   int                                `json:"Timeout,omitempty"`
 	SourceArchiveURL          string                             `json:"SourceArchiveUrl,omitempty"`
+	AllowUnauthenticated      bool                               `json:"AllowUnauthenticated"`
+	RequireHTTPS              bool                               `json:"RequireHttps"`
 	IngressType               int                                `json:"IngressType,omitempty"`
 	VPCNetworkingType         int                                `json:"VpcNetworkingType,omitempty"`
 	TriggerType               int                                `json:"TriggerType,omitempty"`

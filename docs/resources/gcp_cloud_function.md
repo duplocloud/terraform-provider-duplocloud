@@ -70,6 +70,7 @@ Should be one of:
 
 ### Optional
 
+- **allow_unauthenticated** (Boolean) Whether or not to allow unauthenticated invocations. Defaults to `false`.
 - **available_memory_mb** (Number) The amount of memory available to the cloud function. Defaults to `256`.
 - **build_environment_variables** (Map of String) The build environment variables for this cloud function.
 - **description** (String) The description of the cloud function.
@@ -84,6 +85,7 @@ Should be one of:
    - `3` : Allow internal traffic and GCP load balancing
  Defaults to `1`.
 - **labels** (Map of String) The labels assigned to this cloud function.
+- **require_https** (Boolean) Whether or not to require HTTPS. Defaults to `true`.
 - **timeout** (Number) The execution time limit for the cloud function. Defaults to `60`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **vpc_networking_type** (Number) The numerical index of the VPC networking type to use for this cloud function.
