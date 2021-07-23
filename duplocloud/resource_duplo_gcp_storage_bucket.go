@@ -42,6 +42,12 @@ func gcpStorageBucketSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"allow_public_access": {
+			Description: "Whether or not public access might be allowed for the storage bucket.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		"labels": {
 			Description: "The labels assigned to this storage bucket.",
 			Type:        schema.TypeMap,
@@ -152,9 +158,10 @@ func resourceGcpStorageBucketUpdate(ctx context.Context, d *schema.ResourceData,
 
 	// Create the request object.
 	rq := duplosdk.DuploGcpStorageBucket{
-		Name:             d.Get("fullname").(string),
-		Labels:           expandAsStringMap("labels", d),
-		EnableVersioning: d.Get("enable_versioning").(bool),
+		Name:              d.Get("fullname").(string),
+		Labels:            expandAsStringMap("labels", d),
+		EnableVersioning:  d.Get("enable_versioning").(bool),
+		AllowPublicAccess: d.Get("allow_public_access").(bool),
 	}
 
 	c := m.(*duplosdk.Client)
@@ -201,6 +208,7 @@ func resourceGcpStorageBucketSetData(d *schema.ResourceData, tenantID string, na
 	d.Set("fullname", duplo.Name)
 	d.Set("self_link", duplo.SelfLink)
 	d.Set("enable_versioning", duplo.EnableVersioning)
+	d.Set("allow_public_access", duplo.AllowPublicAccess)
 
 	flattenGcpLabels(d, duplo.Labels)
 }
