@@ -44,11 +44,12 @@ type DuploGcpStorageBucket struct {
 	// NOTE: The ShortName field does not come from the backend - we synthesize it
 	ShortName string `json:"-,omitempty"`
 
-	Name             string            `json:"Name,omitempty"`
-	SelfLink         string            `json:"SelfLink,omitempty"`
-	Status           string            `json:"Status,omitempty"`
-	EnableVersioning bool              `json:"EnableVersioning,omitempty"`
-	Labels           map[string]string `json:"Labels,omitempty"`
+	Name              string            `json:"Name,omitempty"`
+	SelfLink          string            `json:"SelfLink,omitempty"`
+	Status            string            `json:"Status,omitempty"`
+	EnableVersioning  bool              `json:"EnableVersioning,omitempty"`
+	AllowPublicAccess bool              `json:"AllowPublicAccess,omitempty"`
+	Labels            map[string]string `json:"Labels,omitempty"`
 }
 
 // DuploGcpCloudFunction represents a GCP cloud function resource for a Duplo tenant

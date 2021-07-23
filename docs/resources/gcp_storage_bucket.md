@@ -36,6 +36,7 @@ resource "duplocloud_gcp_storage_bucket" "mybucket" {
 
 ### Optional
 
+- **allow_public_access** (Boolean) Whether or not public access might be allowed for the storage bucket. Defaults to `false`.
 - **enable_versioning** (Boolean) Whether or not versioning is enabled for the storage bucket. Defaults to `false`.
 - **labels** (Map of String) The labels assigned to this storage bucket.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
