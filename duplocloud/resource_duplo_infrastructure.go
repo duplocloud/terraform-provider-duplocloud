@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func infrastructureVnetSubnetSchema() *schema.Resource {
@@ -71,10 +72,11 @@ func resourceInfrastructure() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"infra_name": {
-				Description: "The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description:  "The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringLenBetween(2, 12),
 			},
 			"account_id": {
 				Description: "The cloud account ID.",
