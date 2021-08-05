@@ -18,6 +18,7 @@ func resourceTenant() *schema.Resource {
 		Description:   "`duplocloud_tenant` manages a tenant in Duplo.",
 		ReadContext:   resourceTenantRead,
 		CreateContext: resourceTenantCreate,
+		UpdateContext: resourceTenantRead, // NO-OP
 		DeleteContext: resourceTenantDelete,
 
 		Timeouts: &schema.ResourceTimeout{
@@ -75,18 +76,22 @@ func resourceTenant() *schema.Resource {
 				Elem:     KeyValueSchema(),
 			},
 			"wait_until_created": {
-				Description:      "Whether or not to wait until Duplo has created the tenant.",
-				Type:             schema.TypeBool,
-				Optional:         true,
-				Default:          true,
-				DiffSuppressFunc: diffSuppressFuncIgnore,
+				Description: "Whether or not to wait until Duplo has created the tenant.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+			"allow_deletion": {
+				Description: "Whether or not to even try and delete the tenant. *NOTE: This only works if you have disabled deletion protection for the tenant.*",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"wait_until_deleted": {
-				Description:      "Whether or not to wait until Duplo has destroyed the tenant.",
-				Type:             schema.TypeBool,
-				Optional:         true,
-				Default:          false,
-				DiffSuppressFunc: diffSuppressFuncIgnore,
+				Description: "Whether or not to wait until Duplo has destroyed the tenant.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 		},
 	}
@@ -146,23 +151,33 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	rp, err := c.TenantCreate(rq)
+	_, err := c.TenantCreate(rq)
 	if err != nil {
 		return diag.Errorf("Unable to create tenant '%s': %s", rq.AccountName, err)
+	}
+
+	// Wait up to 60 seconds for Duplo to be able to return the tenant.
+	var rp *duplosdk.DuploTenant
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "tenant", rq.AccountName, func() (interface{}, duplosdk.ClientError) {
+		rp, err = c.GetTenantByNameForUser(rq.AccountName)
+		return rp, err
+	})
+	if diags != nil {
+		return diags
 	}
 
 	d.SetId(fmt.Sprintf("v2/admin/TenantV2/%s", rp.TenantID))
 	d.Set("tenant_id", rp.TenantID)
 
-	diags := resourceTenantRead(ctx, d, m)
+	diags = resourceTenantRead(ctx, d, m)
 	if diags != nil {
 		return diags
 	}
 
 	// Wait for 3 minutes to allow tenant creation.
 	if d.Get("wait_until_created").(bool) {
-		log.Printf("[TRACE] resourceTenantCreate(%s): waiting for 3 minutes because 'wait_until_created' is 'true'", rq.AccountName)
-		time.Sleep(time.Duration(3) * time.Minute)
+		log.Printf("[TRACE] resourceTenantCreate(%s): waiting for 2 minutes because 'wait_until_created' is 'true'", rq.AccountName)
+		time.Sleep(time.Duration(2) * time.Minute)
 	}
 
 	log.Printf("[TRACE] resourceTenantCreate(%s): end", rq.AccountName)
@@ -180,17 +195,22 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 	log.Printf("[TRACE] resourceTenantDelete(%s): start", tenantID)
 
-	// Delete the object with Duplo
-	c := m.(*duplosdk.Client)
-	_, err := c.TenantDelete(tenantID)
-	if err != nil {
-		return diag.Errorf("Error deleting tenant '%s': %s", tenantID, err)
-	}
+	if d.Get("allow_deletion").(bool) {
 
-	// Wait for 1 minute to allow tenant deletion.
-	if d.Get("wait_until_deleted").(bool) {
-		log.Printf("[TRACE] resourceTenantDelete(%s): waiting for 1 minute because 'wait_until_deleted' is 'true'", tenantID)
-		time.Sleep(time.Duration(1) * time.Minute)
+		// Delete the object with Duplo
+		c := m.(*duplosdk.Client)
+		err := c.TenantDelete(tenantID)
+		if err != nil {
+			return diag.Errorf("Error deleting tenant '%s': %s", tenantID, err)
+		}
+
+		// Wait for 1 minute to allow tenant deletion.
+		if d.Get("wait_until_deleted").(bool) {
+			log.Printf("[TRACE] resourceTenantDelete(%s): waiting for 1 minute because 'wait_until_deleted' is 'true'", tenantID)
+			time.Sleep(time.Duration(1) * time.Minute)
+		}
+	} else {
+		log.Printf("[WARN] resourceTenantDelete(%s): will NOT delete the tenant - because 'allow_deletion' is 'false'", tenantID)
 	}
 
 	log.Printf("[TRACE] resourceTenantDelete(%s): end", tenantID)
