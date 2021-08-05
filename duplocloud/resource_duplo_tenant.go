@@ -75,14 +75,14 @@ func resourceTenant() *schema.Resource {
 				Elem:     KeyValueSchema(),
 			},
 			"wait_until_created": {
-				Description:      "Whether or not to wait until Duplo has created the tenant",
+				Description:      "Whether or not to wait until Duplo has created the tenant.",
 				Type:             schema.TypeBool,
 				Optional:         true,
 				Default:          true,
 				DiffSuppressFunc: diffSuppressFuncIgnore,
 			},
 			"wait_until_deleted": {
-				Description:      "Whether or not to wait until Duplo has destroyed the tenant",
+				Description:      "Whether or not to wait until Duplo has destroyed the tenant.",
 				Type:             schema.TypeBool,
 				Optional:         true,
 				Default:          false,

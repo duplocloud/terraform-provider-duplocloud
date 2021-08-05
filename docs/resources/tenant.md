@@ -30,6 +30,8 @@ resource "duplocloud_tenant" "myapp" {
 ### Optional
 
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **wait_until_created** (Boolean) Whether or not to wait until Duplo has created the tenant. Defaults to `true`.
+- **wait_until_deleted** (Boolean) Whether or not to wait until Duplo has destroyed the tenant. Defaults to `false`.
 
 ### Read-Only
 

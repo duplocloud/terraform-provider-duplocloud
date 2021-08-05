@@ -150,7 +150,7 @@ func resourceInfrastructure() *schema.Resource {
 				Elem:        infrastructureVnetSubnetSchema(),
 			},
 			"wait_until_deleted": {
-				Description:      "Whether or not to wait until Duplo has destroyed the Infrastructure",
+				Description:      "Whether or not to wait until Duplo has destroyed the infrastructure.",
 				Type:             schema.TypeBool,
 				Optional:         true,
 				Default:          false,
