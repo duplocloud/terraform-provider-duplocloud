@@ -7,7 +7,7 @@ import (
 // DuploDynamoDBTable is a Duplo SDK object that represents a dynamodb table
 type DuploDynamoDBTable struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Name                 string                            `json:"Name"`
 	Arn                  string                            `json:"Arn"`

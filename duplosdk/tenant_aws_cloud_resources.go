@@ -23,7 +23,7 @@ const (
 // DuploAwsCloudResource represents a generic AWS cloud resource for a Duplo tenant
 type DuploAwsCloudResource struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Type     int    `json:"ResourceType,omitempty"`
 	Name     string `json:"Name,omitempty"`
@@ -48,7 +48,7 @@ type DuploAwsCloudResource struct {
 // DuploS3Bucket represents an S3 bucket resource for a Duplo tenant
 type DuploS3Bucket struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Name              string                 `json:"Name,omitempty"`
 	Arn               string                 `json:"Arn,omitempty"`
@@ -64,7 +64,7 @@ type DuploS3Bucket struct {
 // DuploApplicationLB represents an AWS application load balancer resource for a Duplo tenant
 type DuploApplicationLB struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Name             string                 `json:"Name,omitempty"`
 	Arn              string                 `json:"Arn,omitempty"`
@@ -275,7 +275,7 @@ type DuploKafkaClusterRequest struct {
 // DuploKafkaCluster represents an AWS kafka cluster resource for a Duplo tenant
 type DuploKafkaCluster struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Name string `json:"Name,omitempty"`
 	Arn  string `json:"Arn,omitempty"`
@@ -284,7 +284,7 @@ type DuploKafkaCluster struct {
 // DuploKafkaClusterInfo represents a non-cached view of an AWS kafka cluster for a Duplo tenant
 type DuploKafkaClusterInfo struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Name                      string                           `json:"ClusterName,omitempty"`
 	Arn                       string                           `json:"ClusterArn,omitempty"`
@@ -304,7 +304,7 @@ type DuploKafkaClusterInfo struct {
 // DuploKafkaBootstrapBrokers represents a non-cached view of an AWS kafka cluster's bootstrap brokers for a Duplo tenant
 type DuploKafkaBootstrapBrokers struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name,omitempty"`

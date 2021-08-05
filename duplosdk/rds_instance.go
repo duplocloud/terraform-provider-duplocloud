@@ -8,7 +8,7 @@ import (
 // DuploRdsInstance is a Duplo SDK object that represents an RDS instance
 type DuploRdsInstance struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`

@@ -7,7 +7,7 @@ import (
 // DuploLambdaFunction is a Duplo SDK object that represents a lambda function.
 type DuploLambdaFunction struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`
@@ -19,7 +19,7 @@ type DuploLambdaFunction struct {
 // DuploLambdaConfiguration is a Duplo SDK object that represents a lambda function's configuration.
 type DuploLambdaConfiguration struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`

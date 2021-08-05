@@ -8,7 +8,7 @@ import (
 // DuploTenantSecret represents a managed secret for a Duplo tenant
 type DuploTenantSecret struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Arn                    string                 `json:"ARN"`
 	Name                   string                 `json:"Name"`

@@ -21,7 +21,7 @@ type DuploEcsServiceLbConfig struct {
 // DuploEcsService is a Duplo SDK object that represents an ECS service
 type DuploEcsService struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Name                          string                     `json:"Name"`
 	TaskDefinition                string                     `json:"TaskDefinition,omitempty"`
