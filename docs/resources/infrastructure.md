@@ -45,6 +45,7 @@ Should be one of:
    - `2` : Azure
  Defaults to `0`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **wait_until_deleted** (Boolean) Whether or not to wait until Duplo has destroyed the infrastructure. Defaults to `false`.
 
 ### Read-Only
 

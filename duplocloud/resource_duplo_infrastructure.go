@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func infrastructureVnetSubnetSchema() *schema.Resource {
@@ -71,10 +72,11 @@ func resourceInfrastructure() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"infra_name": {
-				Description: "The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description:  "The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringLenBetween(2, 12),
 			},
 			"account_id": {
 				Description: "The cloud account ID.",
@@ -147,6 +149,13 @@ func resourceInfrastructure() *schema.Resource {
 				Computed:    true,
 				Elem:        infrastructureVnetSubnetSchema(),
 			},
+			"wait_until_deleted": {
+				Description:      "Whether or not to wait until Duplo has destroyed the infrastructure.",
+				Type:             schema.TypeBool,
+				Optional:         true,
+				Default:          false,
+				DiffSuppressFunc: diffSuppressFuncIgnore,
+			},
 		},
 	}
 }
@@ -208,9 +217,9 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	resourceInfrastructureRead(ctx, d, m)
+	diags = resourceInfrastructureRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureCreate(%s): end", rq.Name)
-	return nil
+	return diags
 }
 
 /// UPDATE resource
@@ -237,9 +246,9 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	resourceInfrastructureRead(ctx, d, m)
+	diags := resourceInfrastructureRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureUpdate(%s): end", rq.Name)
-	return nil
+	return diags
 }
 
 /// DELETE resource
@@ -259,7 +268,12 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	// TODO: wait for it completely deleted (is there an API that will actually show the status?)
+	// Wait for 20 minutes to allow infrastructure deletion.
+	// TODO: wait for it completely deleted (add an API that will actually show the status)
+	if d.Get("wait_until_deleted").(bool) {
+		log.Printf("[TRACE] resourceInfrastructureDelete(%s): waiting for 20 minutes because 'wait_until_deleted' is 'true'", name)
+		time.Sleep(time.Duration(20) * time.Minute)
+	}
 
 	log.Printf("[TRACE] resourceInfrastructureDelete(%s): end", name)
 	return nil
