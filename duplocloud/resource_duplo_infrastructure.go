@@ -149,6 +149,13 @@ func resourceInfrastructure() *schema.Resource {
 				Computed:    true,
 				Elem:        infrastructureVnetSubnetSchema(),
 			},
+			"wait_until_deleted": {
+				Description:      "Whether or not to wait until Duplo has destroyed the Infrastructure",
+				Type:             schema.TypeBool,
+				Optional:         true,
+				Default:          false,
+				DiffSuppressFunc: diffSuppressFuncIgnore,
+			},
 		},
 	}
 }
@@ -210,9 +217,9 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	resourceInfrastructureRead(ctx, d, m)
+	diags = resourceInfrastructureRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureCreate(%s): end", rq.Name)
-	return nil
+	return diags
 }
 
 /// UPDATE resource
@@ -239,9 +246,9 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	resourceInfrastructureRead(ctx, d, m)
+	diags := resourceInfrastructureRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureUpdate(%s): end", rq.Name)
-	return nil
+	return diags
 }
 
 /// DELETE resource
@@ -261,7 +268,12 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	// TODO: wait for it completely deleted (is there an API that will actually show the status?)
+	// Wait for 20 minutes to allow infrastructure deletion.
+	// TODO: wait for it completely deleted (add an API that will actually show the status)
+	if d.Get("wait_until_deleted").(bool) {
+		log.Printf("[TRACE] resourceInfrastructureDelete(%s): waiting for 20 minutes because 'wait_until_deleted' is 'true'", name)
+		time.Sleep(time.Duration(20) * time.Minute)
+	}
 
 	log.Printf("[TRACE] resourceInfrastructureDelete(%s): end", name)
 	return nil

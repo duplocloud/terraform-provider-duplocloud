@@ -74,6 +74,20 @@ func resourceTenant() *schema.Resource {
 				Computed: true,
 				Elem:     KeyValueSchema(),
 			},
+			"wait_until_created": {
+				Description:      "Whether or not to wait until Duplo has created the tenant",
+				Type:             schema.TypeBool,
+				Optional:         true,
+				Default:          true,
+				DiffSuppressFunc: diffSuppressFuncIgnore,
+			},
+			"wait_until_deleted": {
+				Description:      "Whether or not to wait until Duplo has destroyed the tenant",
+				Type:             schema.TypeBool,
+				Optional:         true,
+				Default:          false,
+				DiffSuppressFunc: diffSuppressFuncIgnore,
+			},
 		},
 	}
 }
@@ -140,12 +154,19 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	d.SetId(fmt.Sprintf("v2/admin/TenantV2/%s", rp.TenantID))
 	d.Set("tenant_id", rp.TenantID)
 
-	// Wait for 3 minutes to allow infrastructure creation.
-	time.Sleep(time.Duration(3) * time.Minute)
-
 	diags := resourceTenantRead(ctx, d, m)
+	if diags != nil {
+		return diags
+	}
+
+	// Wait for 3 minutes to allow tenant creation.
+	if d.Get("wait_until_created").(bool) {
+		log.Printf("[TRACE] resourceTenantCreate(%s): waiting for 3 minutes because 'wait_until_created' is 'true'", rq.AccountName)
+		time.Sleep(time.Duration(3) * time.Minute)
+	}
+
 	log.Printf("[TRACE] resourceTenantCreate(%s): end", rq.AccountName)
-	return diags
+	return nil
 }
 
 /// DELETE resource
@@ -164,6 +185,12 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	_, err := c.TenantDelete(tenantID)
 	if err != nil {
 		return diag.Errorf("Error deleting tenant '%s': %s", tenantID, err)
+	}
+
+	// Wait for 1 minute to allow tenant deletion.
+	if d.Get("wait_until_deleted").(bool) {
+		log.Printf("[TRACE] resourceTenantDelete(%s): waiting for 1 minute because 'wait_until_deleted' is 'true'", tenantID)
+		time.Sleep(time.Duration(1) * time.Minute)
 	}
 
 	log.Printf("[TRACE] resourceTenantDelete(%s): end", tenantID)
