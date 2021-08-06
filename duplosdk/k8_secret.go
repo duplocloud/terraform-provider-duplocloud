@@ -10,6 +10,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// DuploK8sSecret represents a kubernetes secret in a Duplo tenant
+type DuploK8sSecret struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-"` //nolint:govet
+
+	SecretName        string                 `json:"SecretName"`
+	SecretType        string                 `json:"SecretType"`
+	SecretData        map[string]interface{} `json:"SecretData,omitempty"`
+	SecretAnnotations map[string]string      `json:"SecretAnnotations,omitempty"`
+}
+
 // K8SecretToState converts a Duplo SDK object respresenting a k8s secret to terraform resource data.
 func (c *Client) K8SecretToState(pduploObject *map[string]interface{}, d *schema.ResourceData) map[string]interface{} {
 	duploObject := *pduploObject
@@ -168,67 +179,40 @@ func (c *Client) K8SecretFillGet(duploObject *map[string]interface{}, d *schema.
 }
 
 // K8SecretGetList retrieves a list of k8s secrets via the Duplo API.
-func (c *Client) K8SecretGetList(d *schema.ResourceData, m interface{}) (*[]map[string]interface{}, error) {
-	//todo: filter other than tenant
-	filters, filtersOk := d.GetOk("filter")
-	log.Printf("[TRACE] K8SecretGetList filters 1 ********* : %s  %v", filters, filtersOk)
-	//
-	api := c.K8SecretListURL(d)
-	url := api
-	log.Printf("[TRACE] duplo-K8SecretGetList 2 %s  ********: %s", api, url)
-	//
-	req2, _ := http.NewRequest("GET", url, nil)
-	body, httpErr := c.doRequest(req2)
-	if httpErr != nil {
-		log.Printf("[TRACE] duplo-K8SecretGetList 3 %s   ********: %s", api, httpErr.Error())
-		return nil, httpErr
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] duplo-K8SecretGetList 4 %s   ********: %s", api, bodyString)
+func (c *Client) K8SecretGetList(tenantID string) (*[]DuploK8sSecret, ClientError) {
+	rp := []DuploK8sSecret{}
+	err := c.getAPI(
+		fmt.Sprintf("K8SecretGetList(%s)", tenantID),
+		fmt.Sprintf("subscriptions/%s/GetAllK8Secrets", tenantID),
+		&rp)
 
-	duploObjects := make([]map[string]interface{}, 0)
-	err := json.Unmarshal(body, &duploObjects)
-	if err != nil {
-		return nil, err
+	// Add the tenant ID, then return the result.
+	if err == nil {
+		for i := range rp {
+			rp[i].TenantID = tenantID
+		}
 	}
-	log.Printf("[TRACE] duplo-K8SecretGetList 5 %s  ********: %d", api, len(duploObjects))
 
-	return &duploObjects, nil
+	return &rp, err
 }
 
-/////////   list DONE //////////
-
-/////////  API Item //////////
-
 // K8SecretGet retrieves a k8s secret via the Duplo API.
-func (c *Client) K8SecretGet(d *schema.ResourceData, m interface{}) error {
-	var api = d.Id()
-	url := c.K8SecretURL(d)
-	log.Printf("[TRACE] duplo-K8SecretGet 1  %s ********: %s", api, url)
-	//
-	req2, _ := http.NewRequest("GET", url, nil)
-	body, httpErr := c.doRequest(req2)
-	if httpErr != nil {
-		log.Printf("[TRACE] duplo-K8SecretGet 2 %s ********: %s", api, httpErr.Error())
-		return httpErr
-	}
-	bodyString := string(body)
-	log.Printf("[TRACE] duplo-K8SecretGet 3 %s ********: bodyString %s", api, bodyString)
+func (c *Client) K8SecretGet(tenantID, secretName string) (*DuploK8sSecret, ClientError) {
 
-	duploObject := make(map[string]interface{})
-	err := json.Unmarshal(body, &duploObject)
-	if err != nil {
-		log.Printf("[TRACE] duplo-K8SecretGet 4 %s ********:  error:%s", api, err.Error())
-		return err
+	// Retrieve the list of secrets
+	list, err := c.K8SecretGetList(tenantID)
+	if err != nil || list == nil {
+		return nil, err
 	}
-	log.Printf("[TRACE] duplo-K8SecretGet 5 %s ******** ", api)
-	if duploObject["SecretData"] != nil {
-		_ = c.K8SecretFillGet(&duploObject, d)
-		log.Printf("[TRACE] duplo-K8SecretGet 6 %s FOUND *****", api)
-		return nil
+
+	// Return the secret, if it exists.
+	for i := range *list {
+		if (*list)[i].SecretName == secretName {
+			return &(*list)[i], nil
+		}
 	}
-	errMsg := fmt.Errorf("K8Secret not found  : %s body:%s", api, bodyString)
-	return errMsg
+
+	return nil, nil
 }
 
 /////////  API Item //////////
