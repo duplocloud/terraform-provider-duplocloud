@@ -29,7 +29,7 @@ func k8sSecretSchemaComputed() map[string]*schema.Schema {
 // SCHEMA for resource data/search
 func dataSourceK8Secret() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceK8SecretsRead,
+		ReadContext: dataSourceK8SecretRead,
 		Schema:      k8sSecretSchemaComputed(),
 	}
 }

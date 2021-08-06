@@ -242,6 +242,7 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 			return nil, err
 		}
 	}
+	d.Set("client_secret_version", hashForData(data))
 	if duplo.SecretData == nil {
 		duplo.SecretData = map[string]interface{}{}
 	}
