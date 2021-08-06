@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -108,56 +109,81 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 /// CREATE resource
 func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceK8SecretCreate ******** start")
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("secret_name").(string)
 
-	c := m.(*duplosdk.Client)
+	log.Printf("[TRACE] resourceK8SecretCreate(%s, %s): start", tenantID, name)
 
-	var diags diag.Diagnostics
-	_, err := c.K8SecretCreate(d, m)
+	// Convert the Terraform resource data into a Duplo object
+	rq, err := expandK8sSecret(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	c.K8SecretSetID(d)
-	resourceK8SecretRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceK8SecretCreate ******** end")
+	// Post the object to Duplo
+	c := m.(*duplosdk.Client)
+	cerr := c.K8SecretCreate(tenantID, rq)
+	if cerr != nil {
+		return diag.FromErr(cerr)
+	}
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/K8SecretApiV2/%s", tenantID, name))
+
+	diags := resourceK8SecretRead(ctx, d, m)
+	log.Printf("[TRACE] resourceK8ConfigMapCreate(%s, %s): end", tenantID, name)
 	return diags
 }
 
 /// UPDATE resource
 func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceK8SecretUpdate ******** start")
-
-	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.K8SecretUpdate(d, m)
+	tenantID, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	c.K8SecretSetID(d)
-	resourceK8SecretRead(ctx, d, m)
-	log.Printf("[TRACE] duplo-resourceK8SecretUpdate ******** end")
+	log.Printf("[TRACE] resourceK8SecretUpdate(%s, %s): start", tenantID, name)
 
+	// Convert the Terraform resource data into a Duplo object
+	rq, err := expandK8sSecret(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Post the object to Duplo
+	c := m.(*duplosdk.Client)
+	cerr := c.K8SecretUpdate(tenantID, rq)
+	if cerr != nil {
+		return diag.FromErr(cerr)
+	}
+
+	diags := resourceK8SecretRead(ctx, d, m)
+	log.Printf("[TRACE] resourceK8ConfigMapUpdate(%s, %s): end", tenantID, name)
 	return diags
 }
 
 /// DELETE resource
 func resourceK8SecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] duplo-resourceK8SecretDelete ******** start")
-
-	c := m.(*duplosdk.Client)
-
-	var diags diag.Diagnostics
-	_, err := c.K8SecretDelete(d, m)
+	tenantID, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	//todo: wait for it completely deleted
-	log.Printf("[TRACE] duplo-resourceK8SecretDelete ******** end")
 
-	return diags
+	log.Printf("[TRACE] resourceK8SecretDelete(%s, %s): start", tenantID, name)
+
+	// Get the object from Duplo, detecting a missing object
+	c := m.(*duplosdk.Client)
+	rp, err := c.K8SecretGet(tenantID, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if rp != nil && rp.SecretName != "" {
+		err := c.K8SecretDelete(tenantID, name)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	log.Printf("[TRACE] resourceK8SecretDelete(%s, %s): end", tenantID, name)
+	return nil
 }
 
 func diffIgnoreForSecretMap(k, old, new string, d *schema.ResourceData) bool {
@@ -185,10 +211,40 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret) {
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("secret_name", duplo.SecretName)
 	d.Set("secret_type", duplo.SecretType)
+	d.Set("secret_version", duplo.SecretVersion)
 
 	// Next, set the JSON encoded strings.
 	toJsonStringState("secret_data", duplo.SecretData, d)
 
 	// Finally, set the map
 	d.Set("secret_annotations", duplo.SecretAnnotations)
+}
+
+func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
+	duplo := duplosdk.DuploK8sSecret{
+		SecretName: d.Get("secret_name").(string),
+		SecretType: d.Get("secret_type").(string),
+	}
+
+	// The annotations must be converted to a map of strings.
+	if v, ok := d.GetOk("secret_annotations"); ok && !isInterfaceNil(v) {
+		duplo.SecretAnnotations = map[string]string{}
+		for key, value := range v.(map[string]interface{}) {
+			duplo.SecretAnnotations[key] = value.(string)
+		}
+	}
+
+	// The data must be decoded as JSON.
+	data := d.Get("secret_data").(string)
+	if data != "" {
+		err := json.Unmarshal([]byte(data), &duplo.SecretData)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if duplo.SecretData == nil {
+		duplo.SecretData = map[string]interface{}{}
+	}
+
+	return &duplo, nil
 }

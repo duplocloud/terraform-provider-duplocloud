@@ -91,7 +91,7 @@ func (c *Client) K8ConfigMapCreateOrUpdate(tenantID string, rq *DuploK8sConfigMa
 // K8ConfigMapDelete deletes a k8s configmap via the Duplo API.
 func (c *Client) K8ConfigMapDelete(tenantID, name string) ClientError {
 	return c.deleteAPI(
-		fmt.Sprintf("K8ConfigMapDelete(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("K8ConfigMapDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/K8ConfigMapApiV2/%s", tenantID, name),
 		nil)
 }

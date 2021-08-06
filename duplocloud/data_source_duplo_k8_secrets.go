@@ -23,7 +23,7 @@ func dataSourceK8Secrets() *schema.Resource {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: k8sSecretSchema(),
+					Schema: k8sSecretSchemaComputed(),
 				},
 			},
 		},
@@ -47,9 +47,10 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 
 		// First, set the simple fields.
 		sc := map[string]interface{}{
-			"tenant_id":   duplo.TenantID,
-			"secret_name": duplo.SecretName,
-			"secret_type": duplo.SecretType,
+			"tenant_id":      duplo.TenantID,
+			"secret_name":    duplo.SecretName,
+			"secret_type":    duplo.SecretType,
+			"secret_version": duplo.SecretVersion,
 		}
 
 		// Next, set the JSON encoded strings.
