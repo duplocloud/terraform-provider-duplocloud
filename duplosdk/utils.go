@@ -1,8 +1,6 @@
 package duplosdk
 
 import (
-	"fmt"
-	"hash/fnv"
 	"reflect"
 	"strings"
 )
@@ -94,11 +92,4 @@ func UnwrapName(prefix, accountID, name string) (string, bool) {
 	}
 
 	return part[len(prefix)+1:], true
-}
-
-func hashForData(s string) string {
-	h := fnv.New32a()
-	h.Write([]byte(s))
-	var apiStr = fmt.Sprintf("%d==", h.Sum32())
-	return apiStr
 }

@@ -19,6 +19,9 @@ jobs:
         with:
           go-version: 1.16
       -
+        name: Run tests
+        run: make test
+      -
         name: Import GPG key
         id: import_gpg
         uses: hashicorp/ghaction-import-gpg@v2.1.0
@@ -34,21 +37,21 @@ jobs:
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - 
+        name: Get draft release ID
+        id: get_release
+        uses: agners/get-draft-release@v0.1.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       -
         name: Publish the release
         uses: actions/github-script@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const tag = '${{ github.ref }}'.replace('refs/tags/', '');
-            const response = await github.repos.getReleaseByTag({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag: tag
-            });
             github.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              release_id: response.data.id,
+              release_id: '${{ steps.get_release.outputs.id }}',
               draft: false
             });
