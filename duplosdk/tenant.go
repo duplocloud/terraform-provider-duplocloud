@@ -45,7 +45,7 @@ type DuploTenantConfigUpdateRequest struct {
 // DuploTenantAwsCredentials represents AWS credentials for a Duplo tenant
 type DuploTenantAwsCredentials struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	ConsoleURL      string `json:"ConsoleUrl,omitempty"`
 	AccessKeyID     string `json:"AccessKeyId"`
@@ -57,7 +57,7 @@ type DuploTenantAwsCredentials struct {
 // DuploTenantEksCredentials represents just-in-time EKS credentials in Duplo
 type DuploTenantK8sCredentials struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Name                           string `json:"Name"`
 	APIServer                      string `json:"ApiServer"`
@@ -71,7 +71,7 @@ type DuploTenantK8sCredentials struct {
 // DuploTenantEksSecret represents just-in-time EKS credentials in Duplo
 type DuploTenantEksSecret struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Name        string            `json:"SecretName"`
 	Type        string            `json:"SecretType"`
@@ -89,7 +89,7 @@ type DuploTenantExtConnSecurityGroupSource struct {
 // DuploTenantExtConnSecurityGroupRule represents just-in-time EKS credentials in Duplo
 type DuploTenantExtConnSecurityGroupRule struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	State    string                                   `json:"State,omitempty"`
 	Protocol string                                   `json:"ServiceProtocol,omitempty"`

@@ -25,10 +25,10 @@ const (
 // DuploGcpPubsubTopic represents a GCP pubsub topic resource for a Duplo tenant
 type DuploGcpPubsubTopic struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	// NOTE: The ShortName field does not come from the backend - we synthesize it
-	ShortName string `json:"-,omitempty"`
+	ShortName string `json:"-"`
 
 	Name     string            `json:"Name,omitempty"`
 	SelfLink string            `json:"SelfLink,omitempty"`
@@ -39,10 +39,10 @@ type DuploGcpPubsubTopic struct {
 // DuploGcpStorageBucket represents a GCP pubsub topic resource for a Duplo tenant
 type DuploGcpStorageBucket struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	// NOTE: The ShortName field does not come from the backend - we synthesize it
-	ShortName string `json:"-,omitempty"`
+	ShortName string `json:"-"`
 
 	Name              string            `json:"Name,omitempty"`
 	SelfLink          string            `json:"SelfLink,omitempty"`
@@ -55,10 +55,10 @@ type DuploGcpStorageBucket struct {
 // DuploGcpCloudFunction represents a GCP cloud function resource for a Duplo tenant
 type DuploGcpCloudFunction struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	// NOTE: The ShortName field does not come from the backend - we synthesize it
-	ShortName string `json:"-,omitempty"`
+	ShortName string `json:"-"`
 
 	Name                      string                             `json:"Name,omitempty"`
 	SelfLink                  string                             `json:"SelfLink,omitempty"`
@@ -99,10 +99,10 @@ type DuploGcpCloudFunctionEventTrigger struct {
 // DuploGcpSchedulerJob represents a GCP scheduler job resource for a Duplo tenant
 type DuploGcpSchedulerJob struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	// NOTE: The ShortName field does not come from the backend - we synthesize it
-	ShortName string `json:"-,omitempty"`
+	ShortName string `json:"-"`
 
 	Name              string                               `json:"Name,omitempty"`
 	SelfLink          string                               `json:"SelfLink,omitempty"`

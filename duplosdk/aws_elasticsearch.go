@@ -50,7 +50,7 @@ type DuploElasticSearchDomainSnapshotOptions struct {
 // DuploElasticSearchDomain represents an AWS ElasticSearch domain for a Duplo tenant
 type DuploElasticSearchDomain struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Name       string `json:"Name,omitempty"` // synthesized on retrieval
 	Arn        string `json:"ARN,omitempty"`

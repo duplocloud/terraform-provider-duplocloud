@@ -7,7 +7,7 @@ import (
 // DuploEmrClusterRequest is a Duplo SDK object that represents a emr cluster
 type DuploEmrClusterRequest struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID     string `json:"-,omitempty"`
+	TenantID     string `json:"-"`
 	Arn          string `json:"Arn,omitempty"`
 	Name         string `json:"Name,omitempty"`
 	ReleaseLabel string `json:"ReleaseLabel,omitempty"`
@@ -51,7 +51,7 @@ type DuploEmrClusterRequest struct {
 
 type DuploEmrClusterSummary struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID  string `json:"-,omitempty"`
+	TenantID  string `json:"-"`
 	Name      string `json:"Name,omitempty"`
 	Arn       string `json:"Arn,omitempty"`
 	Status    string `json:"Status,omitempty"`

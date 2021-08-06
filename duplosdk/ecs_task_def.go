@@ -26,7 +26,7 @@ type DuploEcsTaskDefInferenceAccelerator struct {
 // DuploEcsTaskDef represents an ECS task definition in the Duplo SDK
 type DuploEcsTaskDef struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Family                  string                                 `json:"Family"`
 	Revision                int                                    `json:"Revision,omitempty"`

@@ -7,10 +7,10 @@ import (
 // DuploK8sConfigMap represents a kubernetes config map in a Duplo tenant
 type DuploK8sConfigMap struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"` //nolint:govet
+	TenantID string `json:"-"` //nolint:govet
 
 	// NOTE: The Name field does not come from the backend - we synthesize it
-	Name string `json:"-,omitempty"` //nolint:govet
+	Name string `json:"-"` //nolint:govet
 
 	Data     map[string]interface{} `json:"data,omitempty"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
@@ -91,7 +91,7 @@ func (c *Client) K8ConfigMapCreateOrUpdate(tenantID string, rq *DuploK8sConfigMa
 // K8ConfigMapDelete deletes a k8s configmap via the Duplo API.
 func (c *Client) K8ConfigMapDelete(tenantID, name string) ClientError {
 	return c.deleteAPI(
-		fmt.Sprintf("K8ConfigMapDelete(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("K8ConfigMapDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/K8ConfigMapApiV2/%s", tenantID, name),
 		nil)
 }

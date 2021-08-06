@@ -8,7 +8,7 @@ import (
 // DuploAwsKmsKey represents an AWS KMS key for a Duplo tenant
 type DuploAwsKmsKey struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-,omitempty"`
+	TenantID string `json:"-"`
 
 	Arn         string `json:"Arn,omitempty"`
 	KeyName     string `json:"KeyName,omitempty"`

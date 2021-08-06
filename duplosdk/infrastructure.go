@@ -8,7 +8,7 @@ import (
 // DuploEksCredentials represents just-in-time EKS credentials in Duplo
 type DuploEksCredentials struct {
 	// NOTE: The PlanID field does not come from the backend - we synthesize it
-	PlanID string `json:"-,omitempty"`
+	PlanID string `json:"-"`
 
 	Name                           string `json:"Name"`
 	APIServer                      string `json:"ApiServer"`
