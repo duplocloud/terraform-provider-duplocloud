@@ -20,6 +20,7 @@ func k8sSecretSchemaComputed() map[string]*schema.Schema {
 			v.Computed = true
 			v.Optional = false
 			v.Required = false
+			v.DiffSuppressFunc = nil
 		}
 	}
 
