@@ -490,7 +490,7 @@ func validateRdsInstance(duplo *duplosdk.DuploRdsInstance) (errors []error) {
 		if duplo.MasterUsername != "" {
 			first, _ := utf8.DecodeRuneInString(duplo.MasterUsername)
 			if !unicode.IsLetter(first) {
-				errors = append(errors, fmt.Errorf("first character of 'master_password' must be a letter for MSSQL engines"))
+				errors = append(errors, fmt.Errorf("first character of 'master_password' must be a letter for this RDS engine"))
 			}
 		}
 	}
