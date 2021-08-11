@@ -103,7 +103,7 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Computed: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
-		"tags": awsTagsKeyValueSchema(),
+		"tags": awsTagsKeyValueSchemaComputed(),
 	}
 }
 
