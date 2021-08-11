@@ -117,8 +117,8 @@ resource "duplocloud_ecache_instance" "test" {
 }
 
 resource "duplocloud_s3_bucket" "test" {
-  tenant_id       = var.tenant_id
-  name            = "joetestjoetestjoetestjoetestjoetestjoetestjoetestjoetestjoetest"
+  tenant_id = var.tenant_id
+  name      = "joetestjoetestjoetestjoetestjoetestjoetestjoetestjoetestjoetest"
 }
 
 resource "duplocloud_rds_instance" "test" {
