@@ -19,6 +19,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const (
+	MAX_DUPLOSERVICES_LENGTH = len("duploservices-1234567890ab")
+)
+
 // Utility function to convert the `from` interface to a JSON encoded string `field` in the `to` map.
 func toJsonStringField(field string, from interface{}, to map[string]interface{}) {
 	if json, err := json.Marshal(from); err == nil {
