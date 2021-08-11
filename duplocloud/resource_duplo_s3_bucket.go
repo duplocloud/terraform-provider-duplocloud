@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -27,6 +28,19 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(3, 63-MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH),
+				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9._-]*$`), "Invalid S3 bucket name"),
+
+				// NOTE: some validations are moot, because Duplo provides a prefix and suffix for the name:
+				//
+				// - Bucket names must begin and end with a letter or number.
+				// - Bucket names must not be formatted as an IP address (for example, 192.168.5.4).
+				// - Bucket names must not start with the prefix xn--.
+				// - Bucket names must not end with the suffix -s3alias.
+				//
+				// Because Duplo automatically prefixes and suffixes bucket names, it is impossible to break any of the rules in the above bulleted list.
+			),
 		},
 		"fullname": {
 			Description: "The full name of the S3 bucket.",
@@ -45,7 +59,7 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"enable_access_logs": {
-			Description: "Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan",
+			Description: "Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -84,16 +98,13 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Description: "Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:\n\n" +
 				" - `\"ssl\"`: Require SSL / HTTPS when accessing the bucket.\n" +
 				" - `\"ignore\"`: If this key is present, Duplo will not manage your bucket policy.\n",
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			Elem:     &schema.Schema{Type: schema.TypeString},
+			Type:         schema.TypeList,
+			Optional:     true,
+			Computed:     true,
+			Elem:         &schema.Schema{Type: schema.TypeString},
+			ValidateFunc: ValidateListElementsInSlice([]string{"ssl", "ignore"}, false),
 		},
-		"tags": {
-			Type:     schema.TypeList,
-			Computed: true,
-			Elem:     KeyValueSchema(),
-		},
+		"tags": awsTagsKeyValueSchema(),
 	}
 }
 

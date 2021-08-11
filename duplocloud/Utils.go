@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	MAX_DUPLOSERVICES_LENGTH = len("duploservices-1234567890ab")
+	MAX_DUPLOSERVICES_LENGTH            = len("duploservices-1234567890ab")
+	MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH = len("duploservices-1234567890ab-1234567890ab")
 )
 
 // Utility function to convert the `from` interface to a JSON encoded string `field` in the `to` map.
@@ -43,6 +44,25 @@ func toJsonStringState(field string, from interface{}, to *schema.ResourceData) 
 
 	if err != nil {
 		log.Printf("[DEBUG] toJsonStringState: failed to serialize %s to JSON: %s", field, err)
+	}
+}
+
+// Many kubernetes resources require a name to be a valid DNS subdomain, as defined in RFC 1123.
+func ValidateListElementsInSlice(slice []string, ignoreCase bool) schema.SchemaValidateFunc {
+	return func(v interface{}, k string) (ws []string, errors []error) {
+		list := v.([]interface{})
+
+		for idx, item := range list {
+			itemK := fmt.Sprintf("%s.%d", k, idx)
+
+			itemWs, itemErrors := validation.StringInSlice(slice, ignoreCase)(item, itemK)
+			ws = append(ws, itemWs...)
+			if len(itemErrors) > 0 {
+				errors = append(errors, itemErrors...)
+			}
+		}
+
+		return
 	}
 }
 
@@ -116,6 +136,29 @@ func tagsSchemaComputed() *schema.Schema {
 		Type:     schema.TypeMap,
 		Computed: true,
 		Elem:     &schema.Schema{Type: schema.TypeString},
+	}
+}
+
+// awsTagsKeyValueSchema returns a Terraform schema to represent list of AWS tags.
+func awsTagsKeyValueSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeList,
+		Computed: true,
+		MaxItems: 50,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"key": {
+					Type:         schema.TypeString,
+					Required:     true,
+					ValidateFunc: validation.StringLenBetween(1, 128),
+				},
+				"value": {
+					Type:         schema.TypeString,
+					Required:     true,
+					ValidateFunc: validation.StringLenBetween(0, 256),
+				},
+			},
+		},
 	}
 }
 
