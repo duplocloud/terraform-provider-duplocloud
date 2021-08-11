@@ -98,11 +98,10 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Description: "Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:\n\n" +
 				" - `\"ssl\"`: Require SSL / HTTPS when accessing the bucket.\n" +
 				" - `\"ignore\"`: If this key is present, Duplo will not manage your bucket policy.\n",
-			Type:         schema.TypeList,
-			Optional:     true,
-			Computed:     true,
-			Elem:         &schema.Schema{Type: schema.TypeString},
-			ValidateFunc: ValidateListElementsInSlice([]string{"ssl", "ignore"}, false),
+			Type:     schema.TypeList,
+			Optional: true,
+			Computed: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		"tags": awsTagsKeyValueSchema(),
 	}

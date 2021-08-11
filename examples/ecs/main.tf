@@ -118,9 +118,10 @@ resource "duplocloud_ecache_instance" "test" {
 
 resource "duplocloud_rds_instance" "test" {
   tenant_id       = var.tenant_id
-  name            = "joetest"
+  name            = "joetest2"
+  engine          = 0
   master_username = "joe"
-  master_password = "test12345!"
+  master_password = "test12345@"
   size            = "db.t2.small"
 }
 

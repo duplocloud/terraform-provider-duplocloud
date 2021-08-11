@@ -50,25 +50,7 @@ func toJsonStringState(field string, from interface{}, to *schema.ResourceData) 
 }
 
 // Many kubernetes resources require a name to be a valid DNS subdomain, as defined in RFC 1123.
-func ValidateListElementsInSlice(slice []string, ignoreCase bool) schema.SchemaValidateFunc {
-	return func(v interface{}, k string) (ws []string, errors []error) {
-		list := v.([]interface{})
-
-		for idx, item := range list {
-			itemK := fmt.Sprintf("%s.%d", k, idx)
-
-			itemWs, itemErrors := validation.StringInSlice(slice, ignoreCase)(item, itemK)
-			ws = append(ws, itemWs...)
-			if len(itemErrors) > 0 {
-				errors = append(errors, itemErrors...)
-			}
-		}
-
-		return
-	}
-}
-
-// Many kubernetes resources require a name to be a valid DNS subdomain, as defined in RFC 1123.
+//nolint:staticcheck // TF needs to provide newer versions of these functions.
 func ValidateDnsSubdomainRFC1123() schema.SchemaValidateFunc {
 	return validation.All(
 		validation.StringLenBetween(1, 253),
@@ -142,10 +124,32 @@ func tagsSchemaComputed() *schema.Schema {
 }
 
 // awsTagsKeyValueSchema returns a Terraform schema to represent list of AWS tags.
-func awsTagsKeyValueSchema() *schema.Schema {
+//nolint:deadcode,unused // utility function
+func awsTagsKeyValueSchemaComputed() *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeList,
 		Computed: true,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"key": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				"value": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+		},
+	}
+}
+
+// awsTagsKeyValueSchema returns a Terraform schema to represent list of AWS tags.
+//nolint:deadcode,unused // utility function
+func awsTagsKeyValueSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeList,
+		Optional: true,
 		MaxItems: 50,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
