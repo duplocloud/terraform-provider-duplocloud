@@ -18,10 +18,11 @@ import (
 func k8sConfigMapSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"name": {
-			Description: "The name of the configmap.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:  "The name of the configmap.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: ValidateDnsSubdomainRFC1123(),
 		},
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the configmap will be created in.",
@@ -33,9 +34,10 @@ func k8sConfigMapSchema() map[string]*schema.Schema {
 		"data": {
 			Description: "A JSON encoded string representing the configmap data. " +
 				"You can use the `jsonencode()` function to build this from JSON.",
-			Type:     schema.TypeString,
-			Optional: false,
-			Required: true,
+			Type:         schema.TypeString,
+			Optional:     false,
+			Required:     true,
+			ValidateFunc: validation.StringIsJSON,
 		},
 		"metadata": {
 			Description: "A JSON encoded string representing the configmap metadata. " +

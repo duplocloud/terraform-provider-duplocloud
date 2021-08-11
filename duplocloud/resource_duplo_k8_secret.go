@@ -25,10 +25,11 @@ func k8sSecretSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"secret_name": {
-			Description: "The name of the secret.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:  "The name of the secret.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: ValidateDnsSubdomainRFC1123(),
 		},
 		"secret_type": {
 			Description: "The type of the secret.  Usually `\"Opaque\"`.",
@@ -47,11 +48,12 @@ func k8sSecretSchema() map[string]*schema.Schema {
 		"secret_data": {
 			Description: "A JSON encoded string representing the secret metadata. " +
 				"You can use the `jsonencode()` function to convert map or object data, if needed.",
-			Type:      schema.TypeString,
-			Optional:  true,
-			Sensitive: true,
-			//DiffSuppressFunc: diffIgnoreIfSameHash,
+			Type:             schema.TypeString,
+			Optional:         true,
+			Sensitive:        true,
+			ValidateFunc:     validation.StringIsJSON,
 			DiffSuppressFunc: diffIgnoreForSecretMap,
+			//DiffSuppressFunc: diffIgnoreIfSameHash,
 		},
 		"secret_annotations": {
 			Description: "Annotations for the secret",

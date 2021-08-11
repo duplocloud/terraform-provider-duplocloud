@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // Utility function to convert the `from` interface to a JSON encoded string `field` in the `to` map.
@@ -38,6 +40,17 @@ func toJsonStringState(field string, from interface{}, to *schema.ResourceData) 
 	if err != nil {
 		log.Printf("[DEBUG] toJsonStringState: failed to serialize %s to JSON: %s", field, err)
 	}
+}
+
+// Many kubernetes resources require a name to be a valid DNS subdomain, as defined in RFC 1123.
+func ValidateDnsSubdomainRFC1123() schema.SchemaValidateFunc {
+	return validation.All(
+		validation.StringLenBetween(1, 253),
+		validation.StringMatch(regexp.MustCompile(`^[a-z0-9.-]*$`), "Invalid Kubernetes configmap name"),
+		validation.StringMatch(regexp.MustCompile(`^[a-z0-9]`), "Invalid Kubernetes configmap name"),
+		validation.StringMatch(regexp.MustCompile(`[a-z0-9]$`), "Invalid Kubernetes configmap name"),
+		validation.StringNotInSlice([]string{".."}, true),
+	)
 }
 
 // ValidateJSONString performs validation of a string that is supposed to be JSON.
