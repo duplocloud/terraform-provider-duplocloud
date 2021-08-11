@@ -21,6 +21,9 @@ func k8sSecretSchemaComputed() map[string]*schema.Schema {
 			v.Optional = false
 			v.Required = false
 			v.DiffSuppressFunc = nil
+			v.ValidateDiagFunc = nil
+
+			//nolint:staticcheck // even though it is deprecated, we still must nil it
 			v.ValidateFunc = nil
 		}
 	}
