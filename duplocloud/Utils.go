@@ -53,16 +53,34 @@ func ValidateDnsSubdomainRFC1123() schema.SchemaValidateFunc {
 	)
 }
 
-// ValidateJSONString performs validation of a string that is supposed to be JSON.
-func ValidateJSONString(v interface{}, k string) (ws []string, errors []error) {
+// ValidateJSONObjectString performs validation of a string that is supposed to be a JSON object.
+func ValidateJSONArrayString(v interface{}, k string) (ws []string, errors []error) {
 	// IAM Policy documents need to be valid JSON, and pass legacy parsing
 	value := v.(string)
 	if len(value) < 1 {
-		errors = append(errors, fmt.Errorf("%q contains an invalid JSON policy", k))
+		errors = append(errors, fmt.Errorf("%q contains invalid JSON", k))
+		return
+	}
+	if value[:1] != "[" {
+		errors = append(errors, fmt.Errorf("%q contains invalid JSON", k))
+		return
+	}
+	if _, err := structure.NormalizeJsonString(v); err != nil {
+		errors = append(errors, fmt.Errorf("%q contains an invalid JSON: %s", k, err))
+	}
+	return
+}
+
+// ValidateJSONObjectString performs validation of a string that is supposed to be a JSON object.
+func ValidateJSONObjectString(v interface{}, k string) (ws []string, errors []error) {
+	// IAM Policy documents need to be valid JSON, and pass legacy parsing
+	value := v.(string)
+	if len(value) < 1 {
+		errors = append(errors, fmt.Errorf("%q contains invalid JSON", k))
 		return
 	}
 	if value[:1] != "{" {
-		errors = append(errors, fmt.Errorf("%q contains an invalid JSON policy", k))
+		errors = append(errors, fmt.Errorf("%q contains invalid JSON", k))
 		return
 	}
 	if _, err := structure.NormalizeJsonString(v); err != nil {

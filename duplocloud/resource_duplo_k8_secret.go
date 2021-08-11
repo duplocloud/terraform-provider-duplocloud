@@ -51,7 +51,7 @@ func k8sSecretSchema() map[string]*schema.Schema {
 			Type:             schema.TypeString,
 			Optional:         true,
 			Sensitive:        true,
-			ValidateFunc:     validation.StringIsJSON,
+			ValidateFunc:     ValidateJSONObjectString,
 			DiffSuppressFunc: diffIgnoreForSecretMap,
 			//DiffSuppressFunc: diffIgnoreIfSameHash,
 		},

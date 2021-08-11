@@ -37,7 +37,7 @@ func k8sConfigMapSchema() map[string]*schema.Schema {
 			Type:         schema.TypeString,
 			Optional:     false,
 			Required:     true,
-			ValidateFunc: validation.StringIsJSON,
+			ValidateFunc: ValidateJSONObjectString,
 		},
 		"metadata": {
 			Description: "A JSON encoded string representing the configmap metadata. " +
