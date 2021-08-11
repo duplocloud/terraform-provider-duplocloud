@@ -20,11 +20,12 @@ import (
 func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description: "The GUID of the tenant that the task definition will be created in.",
-			Type:        schema.TypeString,
-			Optional:    false,
-			Required:    true,
-			ForceNew:    true, //switch tenant
+			Description:  "The GUID of the tenant that the task definition will be created in.",
+			Type:         schema.TypeString,
+			Optional:     false,
+			Required:     true,
+			ForceNew:     true, //switch tenant
+			ValidateFunc: validation.IsUUID,
 		},
 		"family": {
 			Description: "The name of the task definition to create.",

@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // Resource for managing an AWS ElasticSearch instance
@@ -32,10 +33,11 @@ func resourceTenantConfig() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Description: "The GUID of the tenant to configure.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description:  "The GUID of the tenant to configure.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IsUUID,
 			},
 			"setting": {
 				Description: "A list of configuration settings to manage, expressed as key / value pairs.",

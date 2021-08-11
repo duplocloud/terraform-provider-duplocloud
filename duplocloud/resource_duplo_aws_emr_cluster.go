@@ -46,10 +46,11 @@ func awsEmrClusterSchema() map[string]*schema.Schema {
 
 		//local only
 		"tenant_id": {
-			Description: "The GUID of the tenant that the emrCluster will be created in.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:  "The GUID of the tenant that the emrCluster will be created in.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
 			Description: "The short name of the emrCluster.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",

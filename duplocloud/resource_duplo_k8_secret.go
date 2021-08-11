@@ -12,10 +12,18 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func k8sSecretSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
+		"tenant_id": {
+			Description:  "The GUID of the tenant that the secret will be created in.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IsUUID,
+		},
 		"secret_name": {
 			Description: "The name of the secret.",
 			Type:        schema.TypeString,
@@ -24,12 +32,6 @@ func k8sSecretSchema() map[string]*schema.Schema {
 		},
 		"secret_type": {
 			Description: "The type of the secret.  Usually `\"Opaque\"`.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
-		},
-		"tenant_id": {
-			Description: "The GUID of the tenant that the secret will be created in.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,

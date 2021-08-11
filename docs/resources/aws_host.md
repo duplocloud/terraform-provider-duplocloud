@@ -67,13 +67,7 @@ resource "duplocloud_aws_host" "eks" {
 - **network_interface** (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
 - **tags** (Block List) (see [below for nested schema](#nestedblock--tags))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **user_account** (String) The default username for the host.
-
-Windows example: `Administrator`.
-
-Amazon Linux example: `ec2-user`.
-
-Ubuntu Linux example: `ubuntu`.
+- **user_account** (String) The name of the tenant that the host will be created in.
 - **volume** (Block List) (see [below for nested schema](#nestedblock--volume))
 - **wait_until_connected** (Boolean) Whether or not to wait until Duplo can connect to the host, after creation. Defaults to `true`.
 - **zone** (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.

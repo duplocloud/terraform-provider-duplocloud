@@ -12,6 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func k8sConfigMapSchema() map[string]*schema.Schema {
@@ -23,10 +24,11 @@ func k8sConfigMapSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"tenant_id": {
-			Description: "The GUID of the tenant that the configmap will be created in.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:  "The GUID of the tenant that the configmap will be created in.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IsUUID,
 		},
 		"data": {
 			Description: "A JSON encoded string representing the configmap data. " +
