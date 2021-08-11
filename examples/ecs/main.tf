@@ -125,7 +125,7 @@ resource "duplocloud_rds_instance" "test" {
   tenant_id       = var.tenant_id
   name            = "joetest2"
   engine          = 0
-  master_username = "1joe"
+  master_username = "joe"
   master_password = "test12345"
   size            = "db.t2.small"
 }
