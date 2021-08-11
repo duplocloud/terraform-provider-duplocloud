@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
@@ -12,22 +13,30 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func ecacheInstanceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description: "The GUID of the tenant that the elasticache instance will be created in.",
-			Type:        schema.TypeString,
-			Optional:    false,
-			Required:    true,
-			ForceNew:    true, //switch tenant
+			Description:  "The GUID of the tenant that the elasticache instance will be created in.",
+			Type:         schema.TypeString,
+			Optional:     false,
+			Required:     true,
+			ForceNew:     true, //switch tenant
+			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
 			Description: "The short name of the elasticache instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(1, 44),
+				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9-]*$`), "Invalid AWS Elasticache cluster name"),
+				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "AWS Elasticache cluster names cannot end with a hyphen"),
+				validation.StringNotInSlice([]string{"--"}, true),
+			),
 		},
 		"identifier": {
 			Description: "The full name of the elasticache instance.",
@@ -59,24 +68,27 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				"Should be one of:\n\n" +
 				"   - `0` : Redis\n" +
 				"   - `1` : Memcache\n\n",
-			Type:     schema.TypeInt,
-			Optional: true,
-			ForceNew: true,
-			Default:  0,
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ForceNew:     true,
+			Default:      0,
+			ValidateFunc: validation.IntBetween(0, 1),
 		},
 		"size": {
 			Description: "The instance type of the elasticache instance.\n" +
 				"See AWS documentation for the [available instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CacheNodes.SupportedTypes.html).",
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^cache\.`), "Elasticache instance types must start with 'cache.'"),
 		},
 		"replicas": {
-			Description: "The number of replicas to create.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			ForceNew:    true,
-			Default:     1,
+			Description:  "The number of replicas to create.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ForceNew:     true,
+			Default:      1,
+			ValidateFunc: validation.IntBetween(1, 40),
 		},
 		"encryption_at_rest": {
 			Description: "Enables encryption-at-rest.",
@@ -93,10 +105,15 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"auth_token": {
-			Description: "Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			ForceNew:    true,
+			Description: "Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.\n\n" +
+				"See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.",
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(16, 128),
+				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9!&#$<>^-]*$`), "Invalid AWS Elasticache Redis password"),
+			),
 		},
 		"instance_status": {
 			Description: "The status of the elasticache instance.",
@@ -166,6 +183,17 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	duplo := expandEcacheInstance(d)
 	duplo.Identifier = duplo.Name
 	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duplo.Name)
+
+	// Perform additional validation.
+	if duplo.EncryptionInTransit {
+		if duplo.AuthToken == "" {
+			return diag.Errorf("Invalid ECache instance '%s': an 'auth_token' is required when 'encryption_in_transit' is true", id)
+		}
+	} else {
+		if duplo.AuthToken != "" {
+			return diag.Errorf("Invalid ECache instance '%s': an 'auth_token' must not be specified when 'encryption_in_transit' is false", id)
+		}
+	}
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
