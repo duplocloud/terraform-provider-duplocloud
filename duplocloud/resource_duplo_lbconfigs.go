@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // SCHEMA for resource crud
@@ -39,17 +40,18 @@ func resourceDuploServiceLBConfigs() *schema.Resource {
 // DuploServiceLBConfigsSchema returns a Terraform resource schema for a service's load balancer
 func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
+		"tenant_id": {
+			Description:  "The GUID of the tenant that hosts the duplo service.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true, //switch tenant
+			ValidateFunc: validation.IsUUID,
+		},
 		"replication_controller_name": {
 			Description: "The name of the duplo service.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
-		},
-		"tenant_id": {
-			Description: "The GUID of the tenant that hosts the duplo service.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true, //switch tenant
 		},
 		"arn": {
 			Description: "The load balancer ARN.",

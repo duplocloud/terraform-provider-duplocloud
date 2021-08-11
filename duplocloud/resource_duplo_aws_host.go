@@ -11,30 +11,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func nativeHostSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"instance_id": {
-			Description: "The AWS EC2 instance ID of the host.",
-			Type:        schema.TypeString,
-			Computed:    true,
+		"tenant_id": {
+			Description:  "The GUID of the tenant that the host will be created in.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true, //switch tenant
+			ValidateFunc: validation.IsUUID,
 		},
 		"user_account": {
-			Description: "The default username for the host.\n\n" +
-				"Windows example: `Administrator`.\n\n" +
-				"Amazon Linux example: `ec2-user`.\n\n" +
-				"Ubuntu Linux example: `ubuntu`.\n\n",
+			Description:      "The name of the tenant that the host will be created in.",
 			Type:             schema.TypeString,
 			Optional:         true,
 			Computed:         true,
 			DiffSuppressFunc: diffSuppressFuncIgnore,
-		},
-		"tenant_id": {
-			Description: "The GUID of the tenant that the host will be created in.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true, //switch tenant
 		},
 		"friendly_name": {
 			Description:      "The short name of the host.",
@@ -43,6 +37,11 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Required:         true,
 			ForceNew:         true, // relaunch instance
 			DiffSuppressFunc: diffIgnoreIfAlreadySet,
+		},
+		"instance_id": {
+			Description: "The AWS EC2 instance ID of the host.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"capacity": {
 			Description: "The AWS EC2 instance type.",

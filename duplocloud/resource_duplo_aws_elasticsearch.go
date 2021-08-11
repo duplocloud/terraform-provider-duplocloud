@@ -26,11 +26,12 @@ const (
 func awsElasticSearchSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description: "The GUID of the tenant that the ElasticSearch instance will be created in.",
-			Type:        schema.TypeString,
-			Optional:    false,
-			Required:    true,
-			ForceNew:    true, //switch tenant
+			Description:  "The GUID of the tenant that the ElasticSearch instance will be created in.",
+			Type:         schema.TypeString,
+			Optional:     false,
+			Required:     true,
+			ForceNew:     true, //switch tenant
+			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
 			Description: "The short name of the ElasticSearch instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `domain_name` attribute.",

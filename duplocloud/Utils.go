@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
@@ -15,6 +16,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+)
+
+const (
+	MAX_DUPLO_NO_HYPHEN_LENGTH          = len("duplo")
+	MAX_DUPLO_LENGTH                    = len("duplo-")
+	MAX_DUPLOSERVICES_LENGTH            = len("duploservices-1234567890ab-")
+	MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH = len("duploservices-1234567890ab--1234567890ab")
 )
 
 // Utility function to convert the `from` interface to a JSON encoded string `field` in the `to` map.
@@ -40,16 +49,46 @@ func toJsonStringState(field string, from interface{}, to *schema.ResourceData) 
 	}
 }
 
-// ValidateJSONString performs validation of a string that is supposed to be JSON.
-func ValidateJSONString(v interface{}, k string) (ws []string, errors []error) {
+// Many kubernetes resources require a name to be a valid DNS subdomain, as defined in RFC 1123.
+//nolint:staticcheck // TF needs to provide newer versions of these functions.
+func ValidateDnsSubdomainRFC1123() schema.SchemaValidateFunc {
+	return validation.All(
+		validation.StringLenBetween(1, 253),
+		validation.StringMatch(regexp.MustCompile(`^[a-z0-9.-]*$`), "Invalid Kubernetes configmap name"),
+		validation.StringMatch(regexp.MustCompile(`^[a-z0-9]`), "Invalid Kubernetes configmap name"),
+		validation.StringMatch(regexp.MustCompile(`[a-z0-9]$`), "Invalid Kubernetes configmap name"),
+		validation.StringNotInSlice([]string{".."}, true),
+	)
+}
+
+// ValidateJSONObjectString performs validation of a string that is supposed to be a JSON object.
+func ValidateJSONArrayString(v interface{}, k string) (ws []string, errors []error) {
 	// IAM Policy documents need to be valid JSON, and pass legacy parsing
 	value := v.(string)
 	if len(value) < 1 {
-		errors = append(errors, fmt.Errorf("%q contains an invalid JSON policy", k))
+		errors = append(errors, fmt.Errorf("%q contains invalid JSON", k))
+		return
+	}
+	if value[:1] != "[" {
+		errors = append(errors, fmt.Errorf("%q contains invalid JSON", k))
+		return
+	}
+	if _, err := structure.NormalizeJsonString(v); err != nil {
+		errors = append(errors, fmt.Errorf("%q contains an invalid JSON: %s", k, err))
+	}
+	return
+}
+
+// ValidateJSONObjectString performs validation of a string that is supposed to be a JSON object.
+func ValidateJSONObjectString(v interface{}, k string) (ws []string, errors []error) {
+	// IAM Policy documents need to be valid JSON, and pass legacy parsing
+	value := v.(string)
+	if len(value) < 1 {
+		errors = append(errors, fmt.Errorf("%q contains invalid JSON", k))
 		return
 	}
 	if value[:1] != "{" {
-		errors = append(errors, fmt.Errorf("%q contains an invalid JSON policy", k))
+		errors = append(errors, fmt.Errorf("%q contains invalid JSON", k))
 		return
 	}
 	if _, err := structure.NormalizeJsonString(v); err != nil {
@@ -81,6 +120,51 @@ func tagsSchemaComputed() *schema.Schema {
 		Type:     schema.TypeMap,
 		Computed: true,
 		Elem:     &schema.Schema{Type: schema.TypeString},
+	}
+}
+
+// awsTagsKeyValueSchema returns a Terraform schema to represent list of AWS tags.
+//nolint:deadcode,unused // utility function
+func awsTagsKeyValueSchemaComputed() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeList,
+		Computed: true,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"key": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				"value": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+		},
+	}
+}
+
+// awsTagsKeyValueSchema returns a Terraform schema to represent list of AWS tags.
+//nolint:deadcode,unused // utility function
+func awsTagsKeyValueSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeList,
+		Optional: true,
+		MaxItems: 50,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"key": {
+					Type:         schema.TypeString,
+					Required:     true,
+					ValidateFunc: validation.StringLenBetween(1, 128),
+				},
+				"value": {
+					Type:         schema.TypeString,
+					Required:     true,
+					ValidateFunc: validation.StringLenBetween(0, 256),
+				},
+			},
+		},
 	}
 }
 
@@ -587,4 +671,19 @@ func expandStringMap(fieldName string, d map[string]interface{}) map[string]stri
 	}
 
 	return m
+}
+
+func errorsToDiagnostics(prefix string, errors []error) diag.Diagnostics {
+	if len(errors) == 0 {
+		return nil
+	}
+
+	diags := make(diag.Diagnostics, 0, len(errors))
+	for i := range errors {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("%s%s", prefix, errors[i]),
+		})
+	}
+	return diags
 }

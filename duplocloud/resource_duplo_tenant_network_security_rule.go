@@ -33,10 +33,11 @@ func resourceTenantSecurityRule() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Description: "The GUID of the tenant that the network security rule will be created in.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description:  "The GUID of the tenant that the network security rule will be created in.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IsUUID,
 			},
 			"protocol": {
 				Description:  "The network protocol.  Must be one of:  `tcp`, `udp`, `icmp`",

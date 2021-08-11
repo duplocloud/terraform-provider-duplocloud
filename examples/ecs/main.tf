@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.6.13" # RELEASE VERSION
+      version = "0.6.14" # RELEASE VERSION
       source  = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -116,11 +116,17 @@ resource "duplocloud_ecache_instance" "test" {
   size       = "cache.t2.small"
 }
 
+resource "duplocloud_s3_bucket" "test" {
+  tenant_id = var.tenant_id
+  name      = "joetestjoetestjoetestjoetestjoetestjoetestjoetestjoetestjoetest"
+}
+
 resource "duplocloud_rds_instance" "test" {
   tenant_id       = var.tenant_id
-  name            = "joetest"
+  name            = "joetest2"
+  engine          = 0
   master_username = "joe"
-  master_password = "test12345!"
+  master_password = "test12345"
   size            = "db.t2.small"
 }
 

@@ -4,32 +4,40 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func awsLambdaFunctionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description: "The GUID of the tenant that the lambda function will be created in.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:  "The GUID of the tenant that the lambda function will be created in.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
 			Description: "The short name of the lambda function cluster.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(1, 64-MAX_DUPLOSERVICES_LENGTH),
+				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9-_]*$`), "Invalid AWS lambda function name"),
+			),
 		},
 		"description": {
-			Description: "A description of the lambda function.",
-			Type:        schema.TypeString,
-			Optional:    true,
+			Description:  "A description of the lambda function.",
+			Type:         schema.TypeString,
+			Optional:     true,
+			ValidateFunc: validation.StringLenBetween(0, 256),
 		},
 		"fullname": {
 			Description: "The full name of the lambda function.",
@@ -52,26 +60,34 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"timeout": {
-			Description: "The execution time limit for the lambda function.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Default:     3,
+			Description:  "The execution time limit for the lambda function.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Default:      3,
+			ValidateFunc: validation.IntBetween(1, 900),
 		},
 		"memory_size": {
-			Description: "The maximum amount of memory, in MB, that your lambda function is allowed to use at runtime.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Default:     3,
+			Description:  "The maximum amount of memory, in MB, that your lambda function is allowed to use at runtime.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Default:      128,
+			ValidateFunc: validation.IntBetween(128, 10240),
 		},
 		"s3_bucket": {
 			Description: "The S3 bucket where the lambda function package is located.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(3, 63),
+				validation.StringMatch(regexp.MustCompile(`^[a-z0-9._-]*$`), "Invalid S3 bucket name"),
+				validation.StringDoesNotMatch(regexp.MustCompile(`\.$`), "S3 bucket names cannot end with a dot"),
+			),
 		},
 		"s3_key": {
-			Description: "The S3 key in the S3 bucket where the lambda function package is located.",
-			Type:        schema.TypeString,
-			Required:    true,
+			Description:  "The S3 key in the S3 bucket where the lambda function package is located.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringLenBetween(1, 1024),
 		},
 		"environment": {
 			Description: "Allow customization of the lambda execution environment.",
@@ -81,10 +97,11 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"variables": {
-						Description: "Map of environment variables that are accessible from the function code during execution.",
-						Type:        schema.TypeMap,
-						Optional:    true,
-						Elem:        &schema.Schema{Type: schema.TypeString},
+						Description:      "Map of environment variables that are accessible from the function code during execution.",
+						Type:             schema.TypeMap,
+						Optional:         true,
+						Elem:             &schema.Schema{Type: schema.TypeString},
+						ValidateDiagFunc: validation.MapKeyMatch(regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9_])+$`), "Invalid environment variable name."),
 					},
 				},
 			},
@@ -94,12 +111,26 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"nodejs", "nodejs4.3", "nodejs6.10", "nodejs8.10", "nodejs10.x", "nodejs12.x", "nodejs14.x",
+				"java8", "java8.al2", "java11",
+				"python2.7", "python3.6", "python3.7", "python3.8",
+				"dotnetcore1.0", "dotnetcore2.0", "dotnetcore2.1", "dotnetcore3.1",
+				"nodejs4.3-edge",
+				"go1.x",
+				"ruby2.5", "ruby2.7",
+				"provided", "provided.al2",
+			}, false),
 		},
 		"handler": {
 			Description: "The [entrypoint](https://docs.aws.amazon.com/lambda/latest/dg/walkthrough-custom-events-create-test-function.html) of the lambda function in your code.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(1, 128),
+				validation.StringMatch(regexp.MustCompile(`^[^\s]*$`), "Invalid lambda function handler"),
+			),
 		},
 		"last_modified": {
 			Description: "A timestamp string of lambda's last modification time.",

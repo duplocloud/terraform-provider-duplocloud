@@ -13,23 +13,25 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/ucarion/jcs"
 )
 
 // DuploServiceSchema returns a Terraform resource schema for a service's parameters
 func duploServiceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
+		"tenant_id": {
+			Description:  "The GUID of the tenant that the service will be created in.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true, //switch tenant
+			ValidateFunc: validation.IsUUID,
+		},
 		"name": {
 			Description: "The name of the service to create.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
-		},
-		"tenant_id": {
-			Description: "The GUID of the tenant that the service will be created in.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true, //switch tenant
 		},
 		"other_docker_host_config": {
 			Type:     schema.TypeString,

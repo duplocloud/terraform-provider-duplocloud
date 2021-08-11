@@ -32,7 +32,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 			ValidateFunc: validation.All(
-				validation.StringLenBetween(1, 44),
+				validation.StringLenBetween(1, 50-MAX_DUPLO_LENGTH),
 				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9-]*$`), "Invalid AWS Elasticache cluster name"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "AWS Elasticache cluster names cannot end with a hyphen"),
 				validation.StringNotInSlice([]string{"--"}, true),

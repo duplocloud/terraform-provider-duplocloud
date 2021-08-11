@@ -16,10 +16,11 @@ import (
 func gcpSchedulerJobSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description: "The GUID of the tenant that the scheduler job will be created in.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:  "The GUID of the tenant that the scheduler job will be created in.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
 			Description: "The short name of the scheduler job.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
