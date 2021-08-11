@@ -20,8 +20,10 @@ import (
 )
 
 const (
-	MAX_DUPLOSERVICES_LENGTH            = len("duploservices-1234567890ab")
-	MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH = len("duploservices-1234567890ab-1234567890ab")
+	MAX_DUPLO_NO_HYPHEN_LENGTH          = len("duplo")
+	MAX_DUPLO_LENGTH                    = len("duplo-")
+	MAX_DUPLOSERVICES_LENGTH            = len("duploservices-1234567890ab-")
+	MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH = len("duploservices-1234567890ab--1234567890ab")
 )
 
 // Utility function to convert the `from` interface to a JSON encoded string `field` in the `to` map.
@@ -665,4 +667,19 @@ func expandStringMap(fieldName string, d map[string]interface{}) map[string]stri
 	}
 
 	return m
+}
+
+func errorsToDiagnostics(prefix string, errors []error) diag.Diagnostics {
+	if len(errors) == 0 {
+		return nil
+	}
+
+	diags := make(diag.Diagnostics, 0, len(errors))
+	for i := range errors {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("%s%s", prefix, errors[i]),
+		})
+	}
+	return diags
 }

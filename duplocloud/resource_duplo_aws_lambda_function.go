@@ -79,7 +79,7 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Required:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(3, 63),
-				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9._-]*$`), "Invalid S3 bucket name"),
+				validation.StringMatch(regexp.MustCompile(`^[a-z0-9._-]*$`), "Invalid S3 bucket name"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`\.$`), "S3 bucket names cannot end with a dot"),
 			),
 		},

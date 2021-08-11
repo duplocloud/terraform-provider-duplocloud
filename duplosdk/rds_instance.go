@@ -5,6 +5,19 @@ import (
 	"strings"
 )
 
+const (
+	DUPLO_RDS_ENGINE_MYSQL                        = 0
+	DUPLO_RDS_ENGINE_POSTGRESQL                   = 1
+	DUPLO_RDS_ENGINE_MSSQL_EXPRESS                = 2
+	DUPLO_RDS_ENGINE_MSSQL_STANDARD               = 3
+	DUPLO_RDS_ENGINE_AURORA_MYSQL                 = 8
+	DUPLO_RDS_ENGINE_AURORA_POSTGRESQL            = 9
+	DUPLO_RDS_ENGINE_MSSQL_WEB                    = 10
+	DUPLO_RDS_ENGINE_AURORA_SERVERLESS_MYSQL      = 11
+	DUPLO_RDS_ENGINE_AURORA_SERVERLESS_POSTGRESQL = 12
+	DUPLO_RDS_ENGINE_DOCUMENTDB                   = 13
+)
+
 // DuploRdsInstance is a Duplo SDK object that represents an RDS instance
 type DuploRdsInstance struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
@@ -124,4 +137,17 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 		&duploObject,
 		nil,
 	)
+}
+
+func RdsIsAurora(engine int) bool {
+	return engine == DUPLO_RDS_ENGINE_AURORA_MYSQL ||
+		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL ||
+		engine == DUPLO_RDS_ENGINE_AURORA_SERVERLESS_MYSQL ||
+		engine == DUPLO_RDS_ENGINE_AURORA_SERVERLESS_POSTGRESQL
+}
+
+func RdsIsMsSQL(engine int) bool {
+	return engine == DUPLO_RDS_ENGINE_MSSQL_EXPRESS ||
+		engine == DUPLO_RDS_ENGINE_MSSQL_STANDARD ||
+		engine == DUPLO_RDS_ENGINE_MSSQL_WEB
 }

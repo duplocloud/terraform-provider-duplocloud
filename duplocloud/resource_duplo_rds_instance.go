@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -31,6 +34,18 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(1, 63-MAX_DUPLO_NO_HYPHEN_LENGTH),
+				validation.StringMatch(regexp.MustCompile(`^[a-z0-9-]*$`), "Invalid RDS instance name"),
+				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "RDS instance name cannot end with a hyphen"),
+				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "RDS instance name cannot contain two hyphens"),
+
+				// NOTE: some validations are moot, because Duplo provides a prefix and suffix for the name:
+				//
+				// - First character must be a letter
+				//
+				// Because Duplo automatically prefixes names, it is impossible to break any of the rules in the above bulleted list.
+			),
 		},
 		"identifier": {
 			Description: "The full name of the RDS instance.",
@@ -58,17 +73,23 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"master_username": {
-			Description: "The master username of the RDS instance.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-			ForceNew:    true,
+			Description:  "The master username of the RDS instance.",
+			Type:         schema.TypeString,
+			Optional:     true,
+			Computed:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringLenBetween(1, 128), // NOTE: further restrictions must wait until creation time
 		},
 		"master_password": {
 			Description: "The master password of the RDS instance.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Sensitive:   true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(8, 128), // NOTE: further restrictions must wait until creation time
+				validation.StringMatch(regexp.MustCompile(`[ -~]`), "RDS passwords must only include printable ASCII characters"),
+				validation.StringDoesNotMatch(regexp.MustCompile(`[/"@]`), "RDS passwords must not include '/', '\"', or '@'"),
+			),
 		},
 		"engine": {
 			Description: "The numerical index of database engine to use the for the RDS instance.\n" +
@@ -83,9 +104,10 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				"   - `11` : Aurora-Serverless-MySql\n" +
 				"   - `12` : Aurora-Serverless-PostgreSql\n" +
 				"   - `13` : DocumentDB\n",
-			Type:     schema.TypeInt,
-			Required: true,
-			ForceNew: true,
+			Type:         schema.TypeInt,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 8, 9, 10, 11, 12, 13}),
 		},
 		"engine_version": {
 			Description: "The database engine version to use the for the RDS instance.\n" +
@@ -107,6 +129,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(1, 255),
+				validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9-]*$`), "Invalid DB parameter group name"),
+				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
+				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
+			),
 		},
 		"store_details_in_secret_manager": {
 			Description: "Whether or not to store RDS details in the AWS secrets manager.",
@@ -117,9 +145,10 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 		"size": {
 			Description: "The instance type of the RDS instance.\n" +
 				"See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).",
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
 		"encrypt_storage": {
 			Description: "Whether or not to encrypt the RDS instance storage.",
@@ -187,19 +216,25 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** start")
 
 	// Convert the Terraform resource data into a Duplo object
-	duploObject, err := rdsInstanceFromState(d)
+	duplo, err := rdsInstanceFromState(d)
 	if err != nil {
 		return diag.Errorf("Internal error: %s", err)
 	}
 
 	// Populate the identifier field, and determine some other fields
-	duploObject.Identifier = duploObject.Name
+	duplo.Identifier = duplo.Name
 	tenantID := d.Get("tenant_id").(string)
-	id := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, duploObject.Name)
+	id := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, duplo.Name)
+
+	// Validate the RDS instance.
+	errors := validateRdsInstance(duplo)
+	if len(errors) > 0 {
+		return errorsToDiagnostics(fmt.Sprintf("Cannot create RDS DB instance: %s: ", id), errors)
+	}
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	_, err = c.RdsInstanceCreate(tenantID, duploObject)
+	_, err = c.RdsInstanceCreate(tenantID, duplo)
 	if err != nil {
 		return diag.Errorf("Error creating RDS DB instance '%s': %s", id, err)
 	}
@@ -408,4 +443,57 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
 
 	return jo
+}
+
+func validateRdsInstance(duplo *duplosdk.DuploRdsInstance) (errors []error) {
+	if duplosdk.RdsIsAurora(duplo.Engine) {
+
+		// Aurora does not support specifying the master username / password
+		if duplo.MasterUsername != "" {
+			errors = append(errors, fmt.Errorf("Aurora does not allow setting the 'master_username'"))
+		}
+		if duplo.MasterPassword != "" {
+			errors = append(errors, fmt.Errorf("Aurora does not allow setting the 'master_password'"))
+		}
+
+	} else if duplo.Engine == duplosdk.DUPLO_RDS_ENGINE_POSTGRESQL {
+
+		// PostgreSQL requires shorter usernames.
+		if duplo.MasterUsername != "" {
+			length := utf8.RuneCountInString(duplo.MasterUsername)
+			if length < 1 || length > 63 {
+				errors = append(errors, fmt.Errorf("PostgreSQL requires the 'master_username' to be between 1 and 63 characters"))
+			}
+		}
+
+	} else if duplo.Engine == duplosdk.DUPLO_RDS_ENGINE_MYSQL {
+
+		// MySQL requires shorter usernames and passwords.
+		if duplo.MasterUsername != "" {
+			length := utf8.RuneCountInString(duplo.MasterUsername)
+			if length < 1 || length > 16 {
+				errors = append(errors, fmt.Errorf("MySQL requires the 'master_username' to be between 1 and 16 characters"))
+			}
+		}
+		if duplo.MasterPassword != "" {
+			length := utf8.RuneCountInString(duplo.MasterPassword)
+			if length < 1 || length > 41 {
+				errors = append(errors, fmt.Errorf("MySQL requires the 'master_password' to be between 1 and 41 characters"))
+			}
+		}
+	}
+
+	// Multiple databases require the first username character to be a letter.
+	if duplosdk.RdsIsMsSQL(duplo.Engine) ||
+		duplo.Engine == duplosdk.DUPLO_RDS_ENGINE_MYSQL ||
+		duplo.Engine == duplosdk.DUPLO_RDS_ENGINE_POSTGRESQL {
+		if duplo.MasterUsername != "" {
+			first, _ := utf8.DecodeRuneInString(duplo.MasterUsername)
+			if !unicode.IsLetter(first) {
+				errors = append(errors, fmt.Errorf("first character of 'master_password' must be a letter for MSSQL engines"))
+			}
+		}
+	}
+
+	return
 }

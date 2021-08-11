@@ -30,7 +30,7 @@ func s3BucketSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(3, 63-MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH),
-				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9._-]*$`), "Invalid S3 bucket name"),
+				validation.StringMatch(regexp.MustCompile(`^[a-z0-9._-]*$`), "Invalid S3 bucket name"),
 
 				// NOTE: some validations are moot, because Duplo provides a prefix and suffix for the name:
 				//
