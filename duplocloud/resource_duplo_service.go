@@ -89,11 +89,14 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Default:     0,
 		},
 		"agent_platform": {
-			Description: "The numeric ID of the container agent to use for deployment.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Required:    false,
-			Default:     0,
+			Description: "The numeric ID of the container agent to use for deployment.\n" +
+				"Should be one of:\n\n" +
+				"   - `0` : Duplo Native container agent\n" +
+				"   - `7` : EKS linux container agent\n",
+			Type:     schema.TypeInt,
+			Optional: true,
+			Required: false,
+			Default:  0,
 		},
 		"replicas": {
 			Description: "The number of container replicas to deploy.",
