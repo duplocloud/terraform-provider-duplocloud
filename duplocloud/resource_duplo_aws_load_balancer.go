@@ -151,7 +151,8 @@ func resourceAwsLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, 
 	var resource *duplosdk.DuploApplicationLB
 	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "load balancer", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenantGetApplicationLB(tenantID, duploObject.Name)
+		resource, err = c.TenantGetApplicationLB(tenantID, duploObject.Name)
+		return resource, err
 	})
 	if diags != nil {
 		return diags
