@@ -92,7 +92,12 @@ resource "duplocloud_duplo_service" "myservice" {
 
 ### Optional
 
-- **agent_platform** (Number) The numeric ID of the container agent to use for deployment. Defaults to `0`.
+- **agent_platform** (Number) The numeric ID of the container agent to use for deployment.
+Should be one of:
+
+   - `0` : Duplo Native container agent
+   - `7` : EKS linux container agent
+ Defaults to `0`.
 - **allocation_tags** (String)
 - **cloud** (Number) The numeric ID of the cloud provider to launch the service in. Defaults to `0`.
 - **commands** (String)
