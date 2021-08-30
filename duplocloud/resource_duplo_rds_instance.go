@@ -103,11 +103,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				"   - `10` : MsftSQL-Web\n" +
 				"   - `11` : Aurora-Serverless-MySql\n" +
 				"   - `12` : Aurora-Serverless-PostgreSql\n" +
-				"   - `13` : DocumentDB\n",
+				"   - `13` : DocumentDB\n" +
+				"   - `14` : MariaDB\n",
 			Type:         schema.TypeInt,
 			Required:     true,
 			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 8, 9, 10, 11, 12, 13}),
+			ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14}),
 		},
 		"engine_version": {
 			Description: "The database engine version to use the for the RDS instance.\n" +
