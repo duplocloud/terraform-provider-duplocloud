@@ -2,12 +2,13 @@
 
 ## Quick List of Steps
 
-There are four steps, one of them is done automatically.
+There are four manual steps, one automatic step.
 
   - Run: `scripts/release.sh start`
   - Run: `scripts/release.sh finish`
-  - Automatically Done: publishing to github and hashicorp
+  - Automatically Done: testing, building, archiving, publishing draft release.
   - Run: `scripts/release.sh next MY.NEXT.VERSION`
+  - From Github UI:  Go to the release, and change from a draft to a published releasee.
 
 
 ## Detailed List of Steps
