@@ -54,7 +54,7 @@ func planImageDataSourceSchema(single bool) map[string]*schema.Schema {
 
 func dataSourcePlanImages() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_plan_imagess` retrieves a list of images for a given plan.",
+		Description: "`duplocloud_plan_images` retrieves a list of images for a given plan.",
 
 		ReadContext: dataSourcePlanImagesRead,
 		Schema:      planImageDataSourceSchema(false),
@@ -88,7 +88,7 @@ func dataSourcePlanImagesRead(ctx context.Context, d *schema.ResourceData, m int
 
 	d.SetId(planID)
 
-	log.Printf("[TRACE] dataSourcePlanImagesRead(%s): start", planID)
+	log.Printf("[TRACE] dataSourcePlanImagesRead(%s): end", planID)
 	return nil
 }
 

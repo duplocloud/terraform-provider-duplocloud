@@ -96,6 +96,16 @@ func (c *Client) GetPlanK8sJitAccess(planID string) (*DuploEksCredentials, Clien
 	return &creds, nil
 }
 
+// PlanGetCertificate retrieves a certificate of plan via the Duplo API.
+func (c *Client) PlanCertificateGet(planID string, name string) (*DuploPlanCertificate, ClientError) {
+	cert := DuploPlanCertificate{}
+	err := c.getAPI("PlanCertificateGet()", fmt.Sprintf("v3/admin/plans/%s/certificates/%s", planID, name), &cert)
+	if err != nil {
+		return nil, err
+	}
+	return &cert, nil
+}
+
 // PlanGetCertificateList retrieves a list of plan certificates via the Duplo API.
 func (c *Client) PlanCertificateGetList(planID string) (*[]DuploPlanCertificate, ClientError) {
 	list := []DuploPlanCertificate{}
