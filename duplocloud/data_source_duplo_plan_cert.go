@@ -2,7 +2,6 @@ package duplocloud
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"terraform-provider-duplocloud/duplosdk"
@@ -104,7 +103,7 @@ func dataSourcePlanCertRead(ctx context.Context, d *schema.ResourceData, m inter
 	if diags != nil {
 		return diags
 	}
-	d.SetId(fmt.Sprintf("%s", cert.CertificateArn))
+	d.SetId(cert.CertificateArn)
 	d.Set("name", cert.CertificateName)
 	d.Set("arn", cert.CertificateArn)
 
