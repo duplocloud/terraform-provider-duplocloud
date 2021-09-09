@@ -10,11 +10,11 @@ data "duplocloud_infrastructure" "myinfra2" {
 
 // Example 3 - look up list of certificates by plan ID.
 data "duplocloud_plan_certificates" "cert_list" {
-   plan_id = "default"
+  plan_id = "default"
 }
 
 // Example 3 - look up plan certificates by plan ID and certificate name.
 data "duplocloud_plan_certificate" "single_cert" {
-   plan_id = "default"
-   name    = "poc.duplocloud.net"
+  plan_id = "default"
+  name    = "poc.duplocloud.net"
 }

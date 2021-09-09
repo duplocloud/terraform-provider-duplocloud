@@ -164,12 +164,14 @@ func getPlanCerts(c *duplosdk.Client, planID string) (*[]duplosdk.DuploPlanCerti
 func planCertSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"name": {
-			Type:     schema.TypeString,
-			Required: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			Description: "A domain name for which the certificate should be issued",
 		},
 		"arn": {
-			Type:     schema.TypeString,
-			Required: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			Description: "The ARN of the certificate",
 		},
 	}
 }
