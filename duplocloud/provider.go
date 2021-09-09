@@ -116,6 +116,8 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant_secret":           dataSourceTenantSecret(),
 			"duplocloud_tenant_secrets":          dataSourceTenantSecrets(),
 			"duplocloud_emr_cluster":             dataSourceEmrClusters(),
+			"duplocloud_plan_certificate":        dataSourcePlanCert(),
+			"duplocloud_plan_certificates":       dataSourcePlanCerts(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
