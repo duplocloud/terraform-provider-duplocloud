@@ -81,6 +81,7 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant_secret":                resourceTenantSecret(),
 			"duplocloud_tenant_network_security_rule": resourceTenantSecurityRule(),
 			"duplocloud_emr_cluster":                  resourceAwsEmrCluster(),
+			"duplocloud_asg_profile":                  resourceAwsASG(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
@@ -118,6 +119,7 @@ func Provider() *schema.Provider {
 			"duplocloud_emr_cluster":             dataSourceEmrClusters(),
 			"duplocloud_plan_certificate":        dataSourcePlanCert(),
 			"duplocloud_plan_certificates":       dataSourcePlanCerts(),
+			"duplocloud_asg_profiles":            dataSourceAsgProfiles(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
