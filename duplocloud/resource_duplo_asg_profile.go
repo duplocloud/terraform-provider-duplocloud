@@ -23,18 +23,21 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 	awsASGSchema["instance_count"] = &schema.Schema{
 		Description: "The number of instances that should be running in the group.",
 		Type:        schema.TypeInt,
+		Optional:    true,
 		Computed:    true,
 	}
 
 	awsASGSchema["min_instance_count"] = &schema.Schema{
 		Description: "The minimum size of the Auto Scaling Group.",
 		Type:        schema.TypeInt,
+		Optional:    true,
 		Computed:    true,
 	}
 
 	awsASGSchema["max_instance_count"] = &schema.Schema{
 		Description: "The maximum size of the Auto Scaling Group.",
 		Type:        schema.TypeInt,
+		Optional:    true,
 		Computed:    true,
 	}
 
@@ -68,7 +71,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Build a request.
 	rq := expandAsgProfile(d)
-	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): start", rq.TenantID, rq.FriendlyName)
+	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): start", rq.TenantId, rq.FriendlyName)
 
 	// Create the ASG Prfoile in Duplo.
 	c := m.(*duplosdk.Client)
@@ -76,14 +79,15 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.Errorf("Error creating ASG profile '%s': %s", rq.FriendlyName, err)
 	}
-	if rp.FriendlyName == "" {
+	if rp == "" {
 		return diag.Errorf("Error creating ASG profile '%s': no friendly name was received", rq.FriendlyName)
 	}
 
-	// Wait up to 60 seconds for Duplo to be able to return the ASG details.
-	id := fmt.Sprintf("%s/%s", rq.TenantID, rq.FriendlyName)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "AWS host", id, func() (interface{}, duplosdk.ClientError) {
-		return c.AsgProfileGet(rq.TenantID, rp.FriendlyName)
+	id := fmt.Sprintf("%s/%s", rq.TenantId, rq.FriendlyName)
+
+	//Wait up to 60 seconds for Duplo to be able to return the ASG details.
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ASG Profile", id, func() (interface{}, duplosdk.ClientError) {
+		return c.AsgProfileGet(rq.TenantId, rq.FriendlyName)
 	})
 	if diags != nil {
 		return diags
@@ -99,9 +103,8 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	// 	}
 	// }
 
-	// Read the host from the backend again.
-	//diags = resourceAwsHostRead(ctx, d, m)
-	//log.Printf("[TRACE] resourceAwsHostCreate(%s, %s): end", rq.TenantID, rq.FriendlyName)
+	diags = resourceAwsASGRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): end", rq.TenantId, rq.FriendlyName)
 	return diags
 }
 
@@ -119,7 +122,6 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 	c := m.(*duplosdk.Client)
 	profile, err := c.AsgProfileGet(tenantID, friendlyName)
 	if err != nil {
-
 		// backend may return a 400 instead of a 404
 		exists, err2 := c.AsgProfileExists(tenantID, friendlyName)
 		if exists || err2 != nil {
@@ -190,7 +192,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("instance_count", duplo.DesiredCapacity)
 	d.Set("min_instance_count", duplo.MinSize)
 	d.Set("max_instance_count", duplo.MaxSize)
-	d.Set("tenant_id", duplo.TenantID)
+	d.Set("tenant_id", duplo.TenantId)
 	d.Set("friendly_name", duplo.FriendlyName)
 	d.Set("capacity", duplo.Capacity)
 	d.Set("is_minion", duplo.IsMinion)
@@ -216,7 +218,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 
 func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 	return &duplosdk.DuploAsgProfile{
-		TenantID:          d.Get("tenant_id").(string),
+		TenantId:          d.Get("tenant_id").(string),
 		AccountName:       d.Get("user_account").(string),
 		FriendlyName:      d.Get("friendly_name").(string),
 		Capacity:          d.Get("capacity").(string),

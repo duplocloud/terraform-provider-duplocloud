@@ -71,7 +71,7 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		"min_instance_count":  duplo.MinSize,
 		"max_instance_count":  duplo.MaxSize,
 		"user_account":        duplo.AccountName,
-		"tenant_id":           duplo.TenantID,
+		"tenant_id":           duplo.TenantId,
 		"friendly_name":       duplo.FriendlyName,
 		"capacity":            duplo.Capacity,
 		"zone":                duplo.Zone,
