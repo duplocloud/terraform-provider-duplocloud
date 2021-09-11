@@ -1,6 +1,9 @@
 package duplosdk
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 type DuploAsgProfile struct {
 	MinSize           int                                `json:"MinSize"`
@@ -34,6 +37,7 @@ type DuploAsgProfileDeleteReq struct {
 
 // AsgProfileGetList retrieves a list of ASG profiles via the Duplo API.
 func (c *Client) AsgProfileGetList(tenantID string) (*[]DuploAsgProfile, ClientError) {
+	log.Printf("[DEBUG] Duplo API - Get ASG Profile List(TenantId-%s)", tenantID)
 	rp := []DuploAsgProfile{}
 	err := c.getAPI(fmt.Sprintf("AsgProfileGetList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetTenantAsgProfiles", tenantID),
@@ -43,6 +47,7 @@ func (c *Client) AsgProfileGetList(tenantID string) (*[]DuploAsgProfile, ClientE
 
 // AsgProfileGet retrieves an ASG profile via the Duplo API.
 func (c *Client) AsgProfileGet(tenantID, friendlyName string) (*DuploAsgProfile, ClientError) {
+	log.Printf("[DEBUG] Duplo API - Get ASG Profile(TenantId-%s,FriendlyName-%s)", tenantID, friendlyName)
 	list, err := c.AsgProfileGetList(tenantID)
 	for _, profile := range *list {
 		if profile.FriendlyName == friendlyName {
@@ -110,8 +115,9 @@ func (c *Client) AsgProfileCreateOrUpdate(rq *DuploAsgProfile, updating bool) (s
 
 // AsgProfileDelete deletes a ASG profile via the Duplo API.
 func (c *Client) AsgProfileDelete(tenantID, friendlyName string) ClientError {
+	var rp = ""
 	req := DuploAsgProfileDeleteReq{FriendlyName: friendlyName, State: "delete"}
 	return c.postAPI(fmt.Sprintf("AsgProfileDelete(%s, %s)", tenantID, friendlyName),
 		fmt.Sprintf("subscriptions/%s/UpdateTenantAsgProfile", tenantID), req,
-		nil)
+		&rp)
 }

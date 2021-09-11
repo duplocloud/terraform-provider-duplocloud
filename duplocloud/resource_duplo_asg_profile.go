@@ -83,11 +83,12 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.Errorf("Error creating ASG profile '%s': no friendly name was received", rq.FriendlyName)
 	}
 
-	id := fmt.Sprintf("%s/%s", rq.TenantId, rq.FriendlyName)
+	id := fmt.Sprintf("%s/%s", rq.TenantId, rp)
+	log.Printf("[DEBUG] ASG Profile Resource ID- (%s)", id)
 
 	//Wait up to 60 seconds for Duplo to be able to return the ASG details.
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ASG Profile", id, func() (interface{}, duplosdk.ClientError) {
-		return c.AsgProfileGet(rq.TenantId, rq.FriendlyName)
+		return c.AsgProfileGet(rq.TenantId, rp)
 	})
 	if diags != nil {
 		return diags
