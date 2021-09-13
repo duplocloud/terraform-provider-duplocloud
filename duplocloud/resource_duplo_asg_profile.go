@@ -261,21 +261,17 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 			status := "pending"
 			if err == nil {
 				var asgTag *[]duplosdk.DuploKeyStringValue
-				hosts := make([]duplosdk.DuploNativeHost, 0, len(*rp))
 				for _, host := range *rp {
 					asgTag = selectKeyValues(host.Tags, asgTagKey)
 					if asgTag != nil {
-						log.Printf("[DEBUG] ASG found with name-(%s), status-(%s)", asgFriendlyName, status)
-						hosts = append(hosts, host)
+						log.Printf("[DEBUG] ASG profile found, Name-(%s)", asgFriendlyName)
+						if host.Status == "running" {
+							status = "ready"
+						} else {
+							status = "pending"
+						}
+						log.Printf("[DEBUG] Instance %s is in %s state.", host.InstanceID, host.Status)
 					}
-				}
-				for _, h := range hosts {
-					if err == nil && h.Status == "running" {
-						status = "ready"
-					} else {
-						status = "pending"
-					}
-					log.Printf("[DEBUG] ASG found with name-(%s), status-(%s)", asgFriendlyName, status)
 				}
 			}
 
