@@ -321,7 +321,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId(id)
 
 	// By default, wait until the host is completely ready.
-	if v, ok := d.GetOk("wait_until_connected"); !ok || v == nil || v.(bool) {
+	if v, ok := d.GetOkExists("wait_until_connected"); !ok || v == nil || v.(bool) {
 		err = nativeHostWaitUntilReady(ctx, c, rp.TenantID, rp.InstanceID, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
