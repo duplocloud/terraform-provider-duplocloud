@@ -268,6 +268,7 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 							status = "ready"
 						} else {
 							status = "pending"
+							break
 						}
 						log.Printf("[DEBUG] Instance %s is in %s state.", host.InstanceID, host.Status)
 					}
