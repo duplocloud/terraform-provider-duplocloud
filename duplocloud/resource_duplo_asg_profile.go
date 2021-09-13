@@ -102,9 +102,8 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diags
 	}
 	d.SetId(id)
-
 	//By default, wait until the ASG instances to be healthy.
-	if v, ok := d.GetOk("wait_for_capacity"); !ok || v == nil || v.(bool) {
+	if v, ok := d.GetOkExists("wait_for_capacity"); !ok || v == nil || v.(bool) {
 		err = asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
