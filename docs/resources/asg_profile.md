@@ -41,6 +41,7 @@ description: |-
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **user_account** (String) The name of the tenant that the host will be created in.
 - **volumes** (Block List) (see [below for nested schema](#nestedblock--volumes))
+- **wait_for_capacity** (Boolean) Whether or not to wait until ASG instances to be healthy, after creation. Defaults to `true`.
 - **zone** (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.
 
 ### Read-Only

@@ -49,6 +49,7 @@ Read-Only:
 - **tenant_id** (String)
 - **user_account** (String)
 - **volumes** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--volumes))
+- **wait_for_capacity** (Boolean)
 - **zone** (Number)
 
 <a id="nestedobjatt--asg_profiles--metadata"></a>
