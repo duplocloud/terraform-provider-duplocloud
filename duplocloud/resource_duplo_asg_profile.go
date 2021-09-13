@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -41,7 +42,14 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 		Computed:    true,
 	}
 
-	//TODO "wait_for_capacity_timeout" to be implemented
+	awsASGSchema["wait_for_capacity"] = &schema.Schema{
+		Description:      "Whether or not to wait until ASG instances to be healthy, after creation.",
+		Type:             schema.TypeBool,
+		Optional:         true,
+		ForceNew:         true,
+		Default:          true,
+		DiffSuppressFunc: diffSuppressWhenNotCreating,
+	}
 
 	return awsASGSchema
 }
@@ -95,14 +103,13 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 	d.SetId(id)
 
-	// TODO- Implmenet API for wait for ASG Capacity
-	// By default, wait until the host is completely ready.
-	// if v, ok := d.GetOk("wait_until_connected"); !ok || v == nil || v.(bool) {
-	// 	err = nativeHostWaitUntilReady(ctx, c, rp.TenantID, rp.FriendlyName, d.Timeout("create"))
-	// 	if err != nil {
-	// 		return diag.FromErr(err)
-	// 	}
-	// }
+	//By default, wait until the ASG instances to be healthy.
+	if v, ok := d.GetOk("wait_for_capacity"); !ok || v == nil || v.(bool) {
+		err = asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
 	diags = resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): end", rq.TenantId, rq.FriendlyName)
@@ -241,4 +248,44 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		MinSize:           d.Get("min_instance_count").(int),
 		MaxSize:           d.Get("max_instance_count").(int),
 	}
+}
+
+func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantID, asgFriendlyName string, timeout time.Duration) error {
+	stateConf := &resource.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			asgTagKey := []string{"aws:autoscaling:groupName"}
+			log.Printf("[DEBUG] Fetching native hosts for Tenant-(%s)", tenantID)
+			rp, err := c.NativeHostGetList(tenantID)
+			status := "pending"
+			if err == nil {
+				var asgTag *[]duplosdk.DuploKeyStringValue
+				hosts := make([]duplosdk.DuploNativeHost, 0, len(*rp))
+				for _, host := range *rp {
+					asgTag = selectKeyValues(host.Tags, asgTagKey)
+					if asgTag != nil {
+						log.Printf("[DEBUG] ASG found with name-(%s), status-(%s)", asgFriendlyName, status)
+						hosts = append(hosts, host)
+					}
+				}
+				for _, h := range hosts {
+					if err == nil && h.Status == "running" {
+						status = "ready"
+					} else {
+						status = "pending"
+					}
+					log.Printf("[DEBUG] ASG found with name-(%s), status-(%s)", asgFriendlyName, status)
+				}
+			}
+
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] asgtWaitUntilCapacityReady(%s, %s)", tenantID, asgFriendlyName)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
