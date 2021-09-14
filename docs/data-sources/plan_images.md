@@ -3,12 +3,12 @@
 page_title: "duplocloud_plan_images Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_plan_imagess retrieves a list of images for a given plan.
+  duplocloud_plan_images retrieves a list of images for a given plan.
 ---
 
 # duplocloud_plan_images (Data Source)
 
-`duplocloud_plan_imagess` retrieves a list of images for a given plan.
+`duplocloud_plan_images` retrieves a list of images for a given plan.
 
 
 

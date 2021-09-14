@@ -146,7 +146,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew: true, // relaunch instance
 			Elem:     KeyValueSchema(),
 		},
-		"volume": {
+		"volumes": {
 			Type:     schema.TypeList,
 			Optional: true,
 			ForceNew: true, // relaunch instance
@@ -180,7 +180,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"network_interface": {
+		"network_interfaces": {
 			Description: "An optional list of custom network interface configurations to use when creating the host.",
 			Type:        schema.TypeList,
 			Optional:    true,
@@ -321,7 +321,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId(id)
 
 	// By default, wait until the host is completely ready.
-	if v, ok := d.GetOk("wait_until_connected"); !ok || v == nil || v.(bool) {
+	if d.Get("wait_until_connected") == nil || d.Get("wait_until_connected").(bool) {
 		err = nativeHostWaitUntilReady(ctx, c, rp.TenantID, rp.InstanceID, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
@@ -414,8 +414,8 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		MetaData:          keyValueFromState("metadata", d),
 		Tags:              keyValueFromState("tag", d),
 		MinionTags:        keyValueFromState("minion_tags", d),
-		Volumes:           expandNativeHostVolumes("volume", d),
-		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
+		Volumes:           expandNativeHostVolumes("volumes", d),
+		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interfaces", d),
 	}
 }
 
@@ -507,15 +507,15 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
 
 	// If a network interface was customized, certain fields are not returned by the backend.
-	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
+	if v, ok := d.GetOk("network_interfaces"); !ok || v == nil || len(v.([]interface{})) == 0 {
 		d.Set("zone", duplo.Zone)
 		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
 	}
 
 	// TODO:  The backend doesn't return these yet.
 	// d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
-	// d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
-	// d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	// d.Set("volumes", flattenNativeHostVolumes(duplo.Volumes))
+	// d.Set("network_interfaces", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 }
 
 func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []map[string]interface{} {
