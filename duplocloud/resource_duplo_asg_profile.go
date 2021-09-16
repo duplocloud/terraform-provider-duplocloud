@@ -92,7 +92,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	// Update minion tags once ASG is created
-	fullName, err := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
+	fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
 
 	for _, raw := range *rq.MinionTags {
 		err = c.TenantUpdateCustomData(rq.TenantId, duplosdk.CustomDataUpdate{
