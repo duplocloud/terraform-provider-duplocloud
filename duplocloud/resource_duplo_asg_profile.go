@@ -103,7 +103,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		})
 
 		if err != nil {
-			return diag.Errorf("Error updating custom data using minio tags '%s': %s", fullName, err)
+			return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
 		}
 	}
 
