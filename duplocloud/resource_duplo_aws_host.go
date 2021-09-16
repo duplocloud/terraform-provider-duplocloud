@@ -140,11 +140,12 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Elem:     KeyValueSchema(),
 		},
 		"minion_tags": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			ForceNew: true, // relaunch instance
-			Elem:     KeyValueSchema(),
+			Description: "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true, // relaunch instance
+			Elem:        KeyValueSchema(),
 		},
 		"volumes": {
 			Type:     schema.TypeList,
