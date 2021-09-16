@@ -20,6 +20,24 @@ const (
 	ResourceTypeApplicationLB int = 16
 )
 
+type CustomComponentType int
+
+const (
+	NETWORK CustomComponentType = iota
+	REPLICATIONCONTROLLER
+	MINION
+	ASG
+	AGENTPOOL
+)
+
+type CustomDataUpdate struct {
+	ComponentId   string              `json:"ComponentId,omitempty"`
+	ComponentType CustomComponentType `json:"ComponentType,omitempty"`
+	State         string              `json:"State,omitempty"`
+	Key           string              `json:"Key,omitempty"`
+	Value         string              `json:"Value,omitempty"`
+}
+
 // DuploAwsCloudResource represents a generic AWS cloud resource for a Duplo tenant
 type DuploAwsCloudResource struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
@@ -630,4 +648,11 @@ func (c *Client) TenantListApplicationLbListeners(tenantID string, name string) 
 		&rp)
 
 	return &rp, err
+}
+
+func (c *Client) TenantUpdateCustomData(tenantID string, customeData CustomDataUpdate) ClientError {
+	return c.postAPI("TenantUpdateCustomData",
+		fmt.Sprintf("subscriptions/%s/UpdateCustomData", tenantID),
+		customeData,
+		nil)
 }

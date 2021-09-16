@@ -91,6 +91,22 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.Errorf("Error creating ASG profile '%s': no friendly name was received", rq.FriendlyName)
 	}
 
+	// Update minion tags once ASG is created
+	fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
+
+	for _, raw := range *rq.MinionTags {
+		err = c.TenantUpdateCustomData(rq.TenantId, duplosdk.CustomDataUpdate{
+			ComponentId:   fullName,
+			ComponentType: duplosdk.ASG,
+			Key:           raw.Key,
+			Value:         raw.Value,
+		})
+
+		if err != nil {
+			return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
+		}
+	}
+
 	id := fmt.Sprintf("%s/%s", rq.TenantId, rp)
 	log.Printf("[DEBUG] ASG Profile Resource ID- (%s)", id)
 
@@ -101,6 +117,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	if diags != nil {
 		return diags
 	}
+
 	d.SetId(id)
 	//By default, wait until the ASG instances to be healthy.
 	if d.Get("wait_for_capacity") == nil || d.Get("wait_for_capacity").(bool) {
