@@ -53,6 +53,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 - **network_mode** (String) Defaults to `awsvpc`.
 - **pid_mode** (String)
 - **placement_constraints** (Block Set, Max: 10) (see [below for nested schema](#nestedblock--placement_constraints))
+- **prevent_tf_destroy** (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`. Defaults to `true`.
 - **proxy_configuration** (Block List, Max: 1) (see [below for nested schema](#nestedblock--proxy_configuration))
 - **requires_attributes** (Block Set) (see [below for nested schema](#nestedblock--requires_attributes))
 - **requires_compatibilities** (Set of String)
