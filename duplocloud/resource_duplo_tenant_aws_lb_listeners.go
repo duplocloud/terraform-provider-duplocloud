@@ -139,6 +139,9 @@ func resourceAwsLoadBalancerListenerRead(ctx context.Context, d *schema.Resource
 
 	// Get all listeners from duplo
 	duplo, err := c.TenantListApplicationLbListeners(tenantID, lbName)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	lbFullName, err := c.TenantGetApplicationLbFullName(tenantID, lbName)
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -174,13 +177,16 @@ func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.Resour
 	lbName := d.Get("load_balancer_name").(string)
 	lbFullName, err := c.TenantGetApplicationLbFullName(tenantID, lbShortName)
 
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	// Post the object to Duplo
 	err = c.TenantCreateApplicationLbListener(tenantID, lbFullName, rq)
 	if err != nil {
 		return diag.Errorf("Error while creating listener rule for tenant %s load balancer '%s': %s", tenantID, lbName, err)
 	}
-	listener := &duplosdk.DuploAwsLbListener{}
-	listener, err = c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn)
+	listener, err := c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn)
 
 	id := fmt.Sprintf("%s/%s", tenantID, listener.ListenerArn)
 
@@ -200,9 +206,9 @@ func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.Resour
 }
 
 /// UPDATE resource
-func resourceAwsLoadBalancerListenerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
-}
+// func resourceAwsLoadBalancerListenerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+// 	return nil
+// }
 
 /// DELETE resource
 func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

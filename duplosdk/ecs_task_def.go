@@ -120,11 +120,9 @@ func (c *Client) EcsTaskDefinitionExists(tenantID, arn string) (bool, ClientErro
 		return false, err
 	}
 	// Check if the host exists
-	if rp != nil {
-		for _, taskArn := range rp {
-			if taskArn == arn {
-				return true, nil
-			}
+	for _, taskArn := range rp {
+		if taskArn == arn {
+			return true, nil
 		}
 	}
 	return false, nil

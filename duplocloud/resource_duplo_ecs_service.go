@@ -282,6 +282,10 @@ func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.Resour
 		return diag.Errorf("Error applying ECS load balancer settings '%s': %s", d.Id(), err)
 	}
 	ecsResource, err := c.GetResourceName("duplo2", tenantID, rpObject.Name, false)
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	// By default, wait until the host is completely ready.
 	if d.Get("wait_until_targets_ready") == nil || d.Get("wait_until_targets_ready").(bool) {
 		err = ecsServiceWaitUntilTargetGroupsReady(d, ctx, c, tenantID, ecsResource, rpObject.LBConfigurations, d.Timeout("create"))
@@ -468,17 +472,14 @@ func ecsServiceWaitUntilTargetGroupsReady(d *schema.ResourceData, ctx context.Co
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
-			status := "pending"
+			status := "ready"
 			if lbcs == nil {
-				return nil, "ready", nil
+				return nil, status, nil
 			}
-
 			rp, err, targetGroupArns := c.EcsServiceRequiredTargetGroupsCreated(tenantId, ecsResourceName, lbcs)
 			if err == nil && rp {
-				log.Printf("[TRACE] 2. Tagret Group Arns %v.", targetGroupArns)
 				status = "ready"
 				d.Set("target_group_arns", targetGroupArns)
-
 			} else {
 				status = "pending"
 			}

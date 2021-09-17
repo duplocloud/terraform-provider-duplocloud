@@ -309,7 +309,9 @@ func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.Resourc
 
 	c := m.(*duplosdk.Client)
 	err = c.EcsTaskDefinitionDelete(tenantID, arn, preventDestroy)
-
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	// Wait for the task definition to be missing
 	if !preventDestroy {
 		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "ECS Task Defnition", id, func() (interface{}, duplosdk.ClientError) {
