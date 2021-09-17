@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -55,10 +56,24 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			Optional: true,
 			Default:  false,
 		},
+		"target_group_arns": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Computed: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
 		"dns_prfx": {
 			Description: "The DNS prefix to assign to this service's load balancer.",
 			Type:        schema.TypeString,
 			Optional:    true,
+		},
+		"wait_until_targets_ready": {
+			Description:      "Whether or not to wait until all target groups are created for ecs service, after creation.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			ForceNew:         true,
+			Default:          true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"load_balancer": {
 			Description: "Zero or more load balancer configurations to associate with this service.",
@@ -256,14 +271,23 @@ func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.Resour
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	id := fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantID, rpObject.Name)
 	if !updating {
-		d.SetId(fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantID, rpObject.Name))
+		d.SetId(id)
 	}
 
 	// Next, we need to apply load balancer settings.
 	err = updateEcsServiceAwsLbSettings(tenantID, rpObject.Name, d, c)
 	if err != nil {
 		return diag.Errorf("Error applying ECS load balancer settings '%s': %s", d.Id(), err)
+	}
+	ecsResource, err := c.GetResourceName("duplo2", tenantID, rpObject.Name, false)
+	// By default, wait until the host is completely ready.
+	if d.Get("wait_until_targets_ready") == nil || d.Get("wait_until_targets_ready").(bool) {
+		err = ecsServiceWaitUntilTargetGroupsReady(d, ctx, c, tenantID, ecsResource, rpObject.LBConfigurations, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	diags := resourceDuploEcsServiceRead(ctx, d, m)
@@ -437,4 +461,34 @@ func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 	}
 
 	return nil
+}
+
+func ecsServiceWaitUntilTargetGroupsReady(d *schema.ResourceData, ctx context.Context, c *duplosdk.Client, tenantId string, ecsResourceName string, lbcs *[]duplosdk.DuploEcsServiceLbConfig, timeout time.Duration) error {
+	stateConf := &resource.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			status := "pending"
+			if lbcs == nil {
+				return nil, "ready", nil
+			}
+
+			rp, err, targetGroupArns := c.EcsServiceRequiredTargetGroupsCreated(tenantId, ecsResourceName, lbcs)
+			if err == nil && rp {
+				log.Printf("[TRACE] 2. Tagret Group Arns %v.", targetGroupArns)
+				status = "ready"
+				d.Set("target_group_arns", targetGroupArns)
+
+			} else {
+				status = "pending"
+			}
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] ecsServiceWaitUntilTargetGroupsReady(%s, %s)", tenantId, ecsResourceName)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }

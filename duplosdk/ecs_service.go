@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -105,4 +106,40 @@ func (c *Client) EcsServiceGet(id string) (*DuploEcsService, ClientError) {
 	// Fill in the tenant ID and return the object
 	duploObject.TenantID = tenantID
 	return &duploObject, nil
+}
+
+// EcsServiceGetTargetGroups retrieves an ECS service via the Duplo API.
+func (c *Client) EcsServiceRequiredTargetGroupsCreated(tenantID string, ecsResourceName string, lbcs *[]DuploEcsServiceLbConfig) (bool, ClientError, []string) {
+	log.Printf("[TRACE] EcsServiceRequiredTargetGroupsCreated ******** start")
+	targetGrpCount := 0
+	// Prepare taget group names
+	tagetGrpNames := []string{}
+	for _, lbc := range *lbcs {
+		targetGrpCount = lbc.TgCount + targetGrpCount
+		tagetGrpNames = append(tagetGrpNames, strings.Join([]string{ecsResourceName, lbc.Protocol + lbc.Port}, "-"))
+	}
+	targetGroupArns := make([]string, 0, targetGrpCount)
+	log.Printf("[TRACE] Total %v target groups to be created for ESC service %s.", targetGrpCount, ecsResourceName)
+	targetGroups, err := c.TenantListApplicationLbTargetGroups(tenantID)
+
+	if err != nil {
+		return false, err, targetGroupArns
+	}
+	counter := 0
+	if targetGroups != nil && tagetGrpNames != nil {
+		for _, tg := range *targetGroups {
+			for _, t := range tagetGrpNames {
+				if strings.Contains(strings.ToLower(tg.TargetGroupName), strings.ToLower(t)) {
+					counter++
+					targetGroupArns = append(targetGroupArns, tg.TargetGroupArn)
+				}
+			}
+		}
+		if counter == targetGrpCount {
+			log.Printf("[TRACE] Total %v target groups are created for ESC service %s.", targetGrpCount, ecsResourceName)
+			return true, nil, targetGroupArns
+		}
+	}
+	log.Printf("[TRACE] EcsServiceRequiredTargetGroupsCreated ******** end")
+	return false, nil, targetGroupArns
 }

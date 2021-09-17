@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -167,25 +166,26 @@ func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.Resour
 	// Create the request object.
 	targetArn := d.Get("target_group_arn").(string)
 	lbShortName := d.Get("load_balancer_name").(string)
-
+	log.Printf("[TRACE] lbShortName - %s", lbShortName)
 	rq := expandAwsLoadBalancerListener(d)
 
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 	lbName := d.Get("load_balancer_name").(string)
+	lbFullName, err := c.TenantGetApplicationLbFullName(tenantID, lbShortName)
 
 	// Post the object to Duplo
-	err := c.TenantCreateApplicationLbListener(tenantID, lbName, rq)
+	err = c.TenantCreateApplicationLbListener(tenantID, lbFullName, rq)
 	if err != nil {
 		return diag.Errorf("Error while creating listener rule for tenant %s load balancer '%s': %s", tenantID, lbName, err)
 	}
 	listener := &duplosdk.DuploAwsLbListener{}
-	listener, err = c.TenanttApplicationLbListenersByTargetGrpArn(tenantID, lbShortName, targetArn)
+	listener, err = c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn)
 
-	id := fmt.Sprintf("%s/%s/%s", tenantID, lbName, listener.ListenerArn)
+	id := fmt.Sprintf("%s/%s", tenantID, listener.ListenerArn)
 
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "load balancer listener", id, func() (interface{}, duplosdk.ClientError) {
-		listener, err = c.TenanttApplicationLbListenersByTargetGrpArn(tenantID, lbShortName, targetArn)
+		listener, err = c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn)
 		return listener, err
 	})
 	if diags != nil {
@@ -210,22 +210,21 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
-	id := d.Id()
-	targetArn := d.Get("target_group_arn").(string)
-	idParts := strings.SplitN(id, "/", 3)
-	lbFullName, err := c.TenantGetApplicationLbFullName(idParts[0], idParts[1])
-	if err != nil {
-		return diag.Errorf("Unable to retrieve load balancer fullname for tenant %s load balancer '%s': %s", idParts[0], lbFullName, err)
-	}
 
-	err = c.TenantDeleteApplicationLbListener(idParts[0], lbFullName, idParts[2])
+	targetArn := d.Get("target_group_arn").(string)
+	tenantId := d.Get("tenant_id").(string)
+	lbFullName := d.Get("load_balancer_fullname").(string)
+	listenerArn := d.Get("arn").(string)
+	id := d.Id()
+
+	err := c.TenantDeleteApplicationLbListener(tenantId, lbFullName, listenerArn)
 	if err != nil {
 		return diag.Errorf("Error deleting load balancer listener '%s': %s", id, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the load balancer listener.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "load balancer listener", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenanttApplicationLbListenersByTargetGrpArn(idParts[0], idParts[1], targetArn)
+		return c.TenantApplicationLbListenersByTargetGrpArn(tenantId, lbFullName, targetArn)
 	})
 	if diag != nil {
 		return diag
@@ -235,25 +234,36 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func expandAwsLoadBalancerListener(d *schema.ResourceData) duplosdk.DuploAwsLbListener {
+func expandAwsLoadBalancerListener(d *schema.ResourceData) duplosdk.DuploAwsLbListenerCreate {
+	log.Printf("[TRACE] expandAwsLoadBalancerListener - start")
 	targetArn := d.Get("target_group_arn").(string)
 	cert := duplosdk.DuploAwsLbListenerCertificate{
 		CertificateArn: d.Get("certificate_arn").(string),
+		IsDefault:      false,
 	}
 	certs := []duplosdk.DuploAwsLbListenerCertificate{cert}
-	forwardType := duplosdk.DuploStringValue{Value: "Forward"}
-	action := duplosdk.DuploAwsLbListenerAction{
+	log.Printf("[TRACE]  Certs : %+v -", certs)
+	action := duplosdk.DuploAwsLbListenerActionCreate{
 		TargetGroupArn: targetArn,
-		Type:           &forwardType,
+		Type:           "Forward",
 	}
-	protocol := duplosdk.DuploStringValue{Value: d.Get("protocol").(string)}
-	actions := []duplosdk.DuploAwsLbListenerAction{action}
-	duploObject := duplosdk.DuploAwsLbListener{
+	log.Printf("[TRACE] action- %+v", action)
+	protocol := d.Get("protocol").(string)
+	actions := []duplosdk.DuploAwsLbListenerActionCreate{action}
+	log.Printf("[TRACE] actions- %+v", actions)
+	duploObject := duplosdk.DuploAwsLbListenerCreate{
 		Port:           d.Get("port").(int),
-		Protocol:       &protocol,
+		Protocol:       protocol,
 		Certificates:   certs,
 		DefaultActions: actions,
 	}
+	// data, err := json.Marshal(duploObject)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//fmt.Printf("%s\n", data)
+	log.Printf("[TRACE] duploObject %+v - ", duploObject)
+	log.Printf("[TRACE] expandAwsLoadBalancerListener - end")
 	return duploObject
 }
 
