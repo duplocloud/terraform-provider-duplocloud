@@ -48,6 +48,13 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"prevent_tf_destroy": {
+			Description: "Prevent this resource to be deleted from terraform destroy. Default value is `true`.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     true,
+			ForceNew:    true,
+		},
 		"container_definitions": {
 			Type:     schema.TypeString,
 			Required: true,
@@ -290,9 +297,33 @@ func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.Resourc
 /// DELETE resource
 func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** start")
-	// FIXME: NO-OP
+	var diags diag.Diagnostics
+	id := d.Id()
+	tenantID, arn, err := parseEcsTaskDefIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	preventDestroy := d.Get("prevent_tf_destroy").(bool)
+	log.Printf("[TRACE] Prevent destroy is %t", preventDestroy)
+
+	c := m.(*duplosdk.Client)
+	err = c.EcsTaskDefinitionDelete(tenantID, arn, preventDestroy)
+
+	// Wait for the task definition to be missing
+	if !preventDestroy {
+		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "ECS Task Defnition", id, func() (interface{}, duplosdk.ClientError) {
+			if rp, err := c.EcsTaskDefinitionExists(tenantID, arn); rp || err != nil {
+				return rp, err
+			}
+			return nil, nil
+		})
+	} else {
+		log.Printf("[WARN] resourceDuploEcsTaskDefinitionDelete(%s): will NOT delete the task definition - because 'prevent_tf_destroy' is 'true'", arn)
+	}
+
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** end")
-	return nil
+	return diags
 }
 
 func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef, error) {

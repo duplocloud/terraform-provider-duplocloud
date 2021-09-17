@@ -16,6 +16,7 @@ type DuploEcsServiceLbConfig struct {
 	HealthCheckURL            string `json:"HealthCheckUrl,omitempty"`
 	CertificateArn            string `json:"CertificateArn,omitempty"`
 	LbType                    int    `json:"LbType,omitempty"`
+	TgCount                   int    `json:"TgCount,omitempty"`
 }
 
 // DuploEcsService is a Duplo SDK object that represents an ECS service

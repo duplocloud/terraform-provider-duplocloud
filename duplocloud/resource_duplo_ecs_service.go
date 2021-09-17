@@ -100,6 +100,13 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Optional:    false,
 						Required:    true,
 					},
+					"target_group_count": {
+						Description: "Number of Load Balancer target group to associate with the service.",
+						Type:        schema.TypeInt,
+						Optional:    false,
+						Required:    true,
+					},
+
 					"backend_protocol": {
 						Description: "The backend protocol associated with this load balancer configuration.",
 						Type:        schema.TypeString,
@@ -314,6 +321,7 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 		jo["lb_type"] = lbc.LbType
 		jo["port"] = lbc.Port
 		jo["protocol"] = lbc.Protocol
+		jo["target_group_count"] = lbc.TgCount
 		jo["backend_protocol"] = lbc.BackendProtocol
 		if jo["backend_protocol"] == "" {
 			jo["backend_protocol"] = "HTTP"
@@ -353,6 +361,7 @@ func ecsLoadBalancersFromState(d *schema.ResourceData) *[]duplosdk.DuploEcsServi
 		IsInternal:                lb["is_internal"].(bool),
 		HealthCheckURL:            lb["health_check_url"].(string),
 		CertificateArn:            lb["certificate_arn"].(string),
+		TgCount:                   lb["target_group_count"].(int),
 	})
 
 	return &ary
