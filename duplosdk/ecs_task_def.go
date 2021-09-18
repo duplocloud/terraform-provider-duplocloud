@@ -2,7 +2,6 @@ package duplosdk
 
 import (
 	"fmt"
-	"log"
 )
 
 // DuploEcsTaskDefPlacementConstraint represents an ECS placement constraint in the Duplo SDK
@@ -88,23 +87,17 @@ func (c *Client) EcsTaskDefinitionGet(tenantID, arn string) (*DuploEcsTaskDef, C
 }
 
 // EcsTaskDefinitionDelete deletes an ECS task definition via the Duplo API.
-func (c *Client) EcsTaskDefinitionDelete(tenantID, arn string, preventDestroy bool) ClientError {
+func (c *Client) EcsTaskDefinitionDelete(tenantID, arn string) ClientError {
 	rq := map[string]interface{}{"Arn": arn}
 	rp := DuploEcsTaskDef{}
 
-	if !preventDestroy {
-		log.Printf("[DEBUG] EcsTaskDefinitionDelete - Prevent destroy is %t", preventDestroy)
-
-		err := c.postAPI(
-			fmt.Sprintf("EcsTaskDefinitionDelete(%s, %s)", tenantID, arn),
-			fmt.Sprintf("subscriptions/%s/RemoveEcsTaskDefinition", tenantID),
-			rq,
-			&rp,
-		)
-		return err
-	}
-
-	return nil
+	err := c.postAPI(
+		fmt.Sprintf("EcsTaskDefinitionDelete(%s, %s)", tenantID, arn),
+		fmt.Sprintf("subscriptions/%s/RemoveEcsTaskDefinition", tenantID),
+		rq,
+		&rp,
+	)
+	return err
 }
 
 // EcsTaskDefinitionExists checks if an ECS task definition is exists via the Duplo API.

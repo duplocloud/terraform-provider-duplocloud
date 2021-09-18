@@ -58,7 +58,6 @@ func ecsServiceSchema() map[string]*schema.Schema {
 		},
 		"target_group_arns": {
 			Type:     schema.TypeSet,
-			Optional: true,
 			Computed: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
@@ -71,7 +70,6 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			Description:      "Whether or not to wait until all target groups are created for ecs service, after creation.",
 			Type:             schema.TypeBool,
 			Optional:         true,
-			ForceNew:         true,
 			Default:          true,
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},

@@ -53,7 +53,6 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     true,
-			ForceNew:    true,
 		},
 		"container_definitions": {
 			Type:     schema.TypeString,
@@ -231,6 +230,7 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 		ReadContext:   resourceDuploEcsTaskDefinitionRead,
 		CreateContext: resourceDuploEcsTaskDefinitionCreate,
 		DeleteContext: resourceDuploEcsTaskDefinitionDelete,
+		UpdateContext: resourceDuploEcsTaskDefinitionUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -294,6 +294,11 @@ func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.Resourc
 	return diags
 }
 
+// Update resource
+func resourceDuploEcsTaskDefinitionUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	return nil
+}
+
 /// DELETE resource
 func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** start")
@@ -306,14 +311,13 @@ func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.Resourc
 
 	preventDestroy := d.Get("prevent_tf_destroy").(bool)
 	log.Printf("[TRACE] Prevent destroy is %t", preventDestroy)
-
-	c := m.(*duplosdk.Client)
-	err = c.EcsTaskDefinitionDelete(tenantID, arn, preventDestroy)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	// Wait for the task definition to be missing
 	if !preventDestroy {
+		c := m.(*duplosdk.Client)
+		err = c.EcsTaskDefinitionDelete(tenantID, arn)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		// Wait for the task definition to be missing
 		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "ECS Task Defnition", id, func() (interface{}, duplosdk.ClientError) {
 			if rp, err := c.EcsTaskDefinitionExists(tenantID, arn); rp || err != nil {
 				return rp, err
