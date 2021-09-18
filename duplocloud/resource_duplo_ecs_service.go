@@ -284,7 +284,7 @@ func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.Resour
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	// By default, wait until the host is completely ready.
+
 	if d.Get("wait_until_targets_ready") == nil || d.Get("wait_until_targets_ready").(bool) {
 		err = ecsServiceWaitUntilTargetGroupsReady(d, ctx, c, tenantID, ecsResource, rpObject.LBConfigurations, d.Timeout("create"))
 		if err != nil {
