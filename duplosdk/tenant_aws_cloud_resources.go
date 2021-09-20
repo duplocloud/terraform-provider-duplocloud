@@ -139,6 +139,15 @@ type DuploAwsLbListenerAction struct {
 	Type           *DuploStringValue `json:"Type,omitempty"`
 }
 
+type DuploAwsLbListenerActionCreate struct {
+	TargetGroupArn string `json:"TargetGroupArn"`
+	Type           string `json:"Type,omitempty"`
+}
+
+type DuploAwsLbListenerDeleteRequest struct {
+	ListenerArn string `json:"ListenerArn"`
+}
+
 // DuploAwsLbSettings represents an AWS application load balancer's settings
 type DuploAwsLbSettings struct {
 	LoadBalancerArn    string `json:"LoadBalancerArn"`
@@ -156,6 +165,13 @@ type DuploAwsLbListener struct {
 	Port            int                             `json:"Port"`
 	Protocol        *DuploStringValue               `json:"Protocol,omitempty"`
 	DefaultActions  []DuploAwsLbListenerAction      `json:"DefaultActions"`
+}
+
+type DuploAwsLbListenerCreate struct {
+	Certificates   []DuploAwsLbListenerCertificate  `json:"Certificates"`
+	Port           int                              `json:"Port"`
+	Protocol       string                           `json:"Protocol,omitempty"`
+	DefaultActions []DuploAwsLbListenerActionCreate `json:"DefaultActions"`
 }
 
 // DuploAwsTargetGroupMatcher represents an AWS lb target group matcher
@@ -654,5 +670,38 @@ func (c *Client) TenantUpdateCustomData(tenantID string, customeData CustomDataU
 	return c.postAPI("TenantUpdateCustomData",
 		fmt.Sprintf("subscriptions/%s/UpdateCustomData", tenantID),
 		customeData,
+		nil)
+}
+
+func (c *Client) TenantApplicationLbListenersByTargetGrpArn(tenantID string, fullName string, targetGrpArn string) (*DuploAwsLbListener, ClientError) {
+	rp := []DuploAwsLbListener{}
+
+	err := c.getAPI("TenantListApplicationLbListeners",
+		fmt.Sprintf("subscriptions/%s/ListApplicationLbListerner/%s", tenantID, fullName),
+		&rp)
+	for _, item := range rp {
+		for _, action := range item.DefaultActions {
+			if action.TargetGroupArn == targetGrpArn {
+				return &item, nil
+			}
+		}
+	}
+	return nil, err
+}
+
+// TenantCreateApplicationLbListener creates a AWS LB listener
+func (c *Client) TenantCreateApplicationLbListener(tenantID string, fullName string, duplo DuploAwsLbListenerCreate) ClientError {
+	return c.postAPI("TenantCreateApplicationLB",
+		fmt.Sprintf("subscriptions/%s/CreateApplicationLbListerner/%s", tenantID, fullName),
+		&duplo,
+		nil)
+}
+
+// TenantDeleteApplicationLbListener deletes an AWS application LB listener via Duplo.
+func (c *Client) TenantDeleteApplicationLbListener(tenantID string, fullName string, listenerArn string) ClientError {
+	// Call the API.
+	return c.postAPI("TenantDeleteApplicationLB",
+		fmt.Sprintf("subscriptions/%s/DeleteApplicationLbListerner/%s", tenantID, fullName),
+		&DuploAwsLbListenerDeleteRequest{ListenerArn: listenerArn},
 		nil)
 }
