@@ -95,9 +95,9 @@ func (c *Client) AsgProfileCreateOrUpdate(rq *DuploAsgProfile, updating bool) (s
 	var verb, msg, api string
 
 	if updating {
-		verb = "PUT"
+		verb = "POST"
 		msg = fmt.Sprintf("AsgProfileCreateOrUpdate(%s, %s)", rq.TenantId, rq.FriendlyName)
-		api = fmt.Sprintf("subscriptions/%s/UpdateTenantAsgProfile/%s", rq.TenantId, rq.FriendlyName)
+		api = fmt.Sprintf("subscriptions/%s/UpdateTenantAsgProfile", rq.TenantId)
 	} else {
 		verb = "POST"
 		msg = fmt.Sprintf("AsgProfileCreateOrUpdate(%s, %s)", rq.TenantId, rq.FriendlyName)

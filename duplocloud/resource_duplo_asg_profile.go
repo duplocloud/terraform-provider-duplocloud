@@ -62,6 +62,7 @@ func resourceAwsASG() *schema.Resource {
 		ReadContext:   resourceAwsASGRead,
 		CreateContext: resourceAwsASGCreate,
 		DeleteContext: resourceAwsASGDelete,
+		UpdateContext: resourceAwsASGUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -121,7 +122,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	d.SetId(id)
 	//By default, wait until the ASG instances to be healthy.
 	if d.Get("wait_for_capacity") == nil || d.Get("wait_for_capacity").(bool) {
-		err = asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
+		err = asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rq.MinSize, rp, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -129,6 +130,63 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 
 	diags = resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): end", rq.TenantId, rq.FriendlyName)
+	return diags
+}
+
+func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	id := d.Id()
+	tenantID, friendlyName, err := asgProfileIdParts(id)
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Check if the ASG Profile exists
+	c := m.(*duplosdk.Client)
+	exists, err := c.AsgProfileExists(tenantID, friendlyName)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if !exists {
+		d.SetId("")
+		return diag.Errorf("ASG profile does not exist with name '%s': %s", friendlyName, err)
+	}
+
+	needsUpdate := needsResourceAwsASGUpdate(d)
+	if needsUpdate {
+		// Build a request.
+		rq := expandAsgProfile(d)
+		log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): start", rq.TenantId, rq.FriendlyName)
+
+		// Update the ASG Prfoile in Duplo.
+		rp, err := c.AsgProfileUpdate(rq)
+		if err != nil {
+			return diag.Errorf("Error updating ASG profile '%s': %s", rq.FriendlyName, err)
+		}
+		if rp == "" {
+			return diag.Errorf("Error updating ASG profile '%s': no friendly name was received", rq.FriendlyName)
+		}
+
+		//Wait up to 60 seconds for Duplo to be able to return the ASG details.
+		diags := waitForResourceToBePresentAfterCreate(ctx, d, "ASG Profile", id, func() (interface{}, duplosdk.ClientError) {
+			return c.AsgProfileGet(rq.TenantId, rp)
+		})
+		if diags != nil {
+			return diags
+		}
+
+		//By default, wait until the ASG instances to be healthy.
+		if d.Get("wait_for_capacity") == nil || d.Get("wait_for_capacity").(bool) {
+			err := asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rq.MinSize, rp, d.Timeout("create"))
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
+	diags := resourceAwsASGRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): end", tenantID, friendlyName)
 	return diags
 }
 
@@ -266,7 +324,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 	}
 }
 
-func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantID, asgFriendlyName string, timeout time.Duration) error {
+func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantID string, minInstanceCount int, asgFriendlyName string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -275,13 +333,15 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 			log.Printf("[DEBUG] Fetching native hosts for Tenant-(%s)", tenantID)
 			rp, err := c.NativeHostGetList(tenantID)
 			status := "pending"
+			count := 0
 			if err == nil {
 				var asgTag *[]duplosdk.DuploKeyStringValue
 				for _, host := range *rp {
 					asgTag = selectKeyValues(host.Tags, asgTagKey)
 					if asgTag != nil {
+						count++
 						log.Printf("[DEBUG] ASG profile found, Name-(%s)", asgFriendlyName)
-						if host.Status == "running" {
+						if minInstanceCount == 0 || host.Status == "running" {
 							status = "ready"
 						} else {
 							status = "pending"
@@ -289,6 +349,12 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 						}
 						log.Printf("[DEBUG] Instance %s is in %s state.", host.InstanceID, host.Status)
 					}
+				}
+
+				if minInstanceCount == 0 || (status == "ready" && count == minInstanceCount) {
+					status = "ready"
+				} else {
+					status = "pending"
 				}
 			}
 
@@ -301,4 +367,10 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 	log.Printf("[DEBUG] asgtWaitUntilCapacityReady(%s, %s)", tenantID, asgFriendlyName)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
+	return d.HasChange("instance_count") ||
+		d.HasChange("min_instance_count") ||
+		d.HasChange("max_instance_count")
 }
