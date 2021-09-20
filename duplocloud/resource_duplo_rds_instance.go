@@ -167,6 +167,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				"The database can't be deleted when this value is set to `true`. The default is `false`.",
 			Type:     schema.TypeBool,
 			Optional: true,
+			Default:  false,
 		},
 	}
 }
@@ -264,7 +265,8 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	diags = resourceDuploRdsInstanceRead(ctx, d, m)
 
 	identifier := d.Get("identifier").(string)
-	deleteProtection := d.Get("deletion_protection").(bool)
+	deleteProtection := new(bool)
+	*deleteProtection = d.Get("deletion_protection").(bool)
 	// Update delete protection settings.
 	log.Printf("[DEBUG] Updating delete protection settings to '%v' for db instance '%s'.", deleteProtection, identifier)
 	err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
@@ -314,9 +316,12 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
 	if d.HasChange("deletion_protection") {
+		log.Printf("[DEBUG] Updating delete protection settings to '%v' for db instance '%s'.", d.Get("deletion_protection").(bool), d.Get("identifier").(string))
+		deleteProtection := new(bool)
+		*deleteProtection = d.Get("deletion_protection").(bool)
 		err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
 			DBInstanceIdentifier: d.Get("identifier").(string),
-			DeletionProtection:   d.Get("deletion_protection").(bool),
+			DeletionProtection:   deleteProtection,
 		})
 
 		if err != nil {

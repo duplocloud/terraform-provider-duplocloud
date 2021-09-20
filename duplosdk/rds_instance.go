@@ -51,7 +51,7 @@ type DuploRdsInstancePasswordChange struct {
 
 type DuploRdsInstanceDeleteProtection struct {
 	DBInstanceIdentifier string `json:"DBInstanceIdentifier"`
-	DeletionProtection   bool   `json:"DeletionProtection,omitempty"`
+	DeletionProtection   *bool  `json:"DeletionProtection,omitempty"`
 }
 
 /*************************************************
