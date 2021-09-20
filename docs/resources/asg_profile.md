@@ -35,7 +35,7 @@ description: |-
 - **max_instance_count** (Number) The maximum size of the Auto Scaling Group.
 - **metadata** (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
 - **min_instance_count** (Number) The minimum size of the Auto Scaling Group.
-- **minion_tags** (Block List) (see [below for nested schema](#nestedblock--minion_tags))
+- **minion_tags** (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - **network_interfaces** (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interfaces))
 - **tags** (Block List) (see [below for nested schema](#nestedblock--tags))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))

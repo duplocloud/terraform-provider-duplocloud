@@ -85,3 +85,37 @@ func (c *Client) EcsTaskDefinitionGet(tenantID, arn string) (*DuploEcsTaskDef, C
 	rp.TenantID = tenantID
 	return &rp, err
 }
+
+// EcsTaskDefinitionDelete deletes an ECS task definition via the Duplo API.
+func (c *Client) EcsTaskDefinitionDelete(tenantID, arn string) ClientError {
+	rq := map[string]interface{}{"Arn": arn}
+	rp := DuploEcsTaskDef{}
+
+	err := c.postAPI(
+		fmt.Sprintf("EcsTaskDefinitionDelete(%s, %s)", tenantID, arn),
+		fmt.Sprintf("subscriptions/%s/RemoveEcsTaskDefinition", tenantID),
+		rq,
+		&rp,
+	)
+	return err
+}
+
+// EcsTaskDefinitionExists checks if an ECS task definition is exists via the Duplo API.
+func (c *Client) EcsTaskDefinitionExists(tenantID, arn string) (bool, ClientError) {
+	rp := []string{}
+
+	err := c.getAPI(
+		fmt.Sprintf("EcsTaskDefinitionExists(%s, %s)", tenantID, arn),
+		fmt.Sprintf("subscriptions/%s/GetEcsTaskDefinitionArns", tenantID),
+		&rp,
+	)
+	if err != nil {
+		return false, err
+	}
+	for _, taskArn := range rp {
+		if taskArn == arn {
+			return true, nil
+		}
+	}
+	return false, nil
+}
