@@ -427,3 +427,19 @@ func (c *Client) GetTenantPlan(tenantID string) (*DuploPlan, ClientError) {
 	}
 	return &plan, nil
 }
+
+func (c *Client) TenantGetDockerCredentials(tenantId string) (map[string]interface{}, ClientError) {
+	rp := map[string]interface{}{}
+	err := c.getAPI(fmt.Sprintf("TenantGetDockerCredentials(%s)", tenantId), fmt.Sprintf("subscriptions/%s/GetDockerCredentialsAnonymized", tenantId), &rp)
+	if err != nil {
+		return nil, err
+	}
+	return rp, nil
+}
+
+func (c *Client) TenantUpdateDockerCredentials(tenantId string, data map[string]interface{}) ClientError {
+	return c.postAPI(fmt.Sprintf("TenantUpdateDockerCredentials(%s)", tenantId),
+		fmt.Sprintf("subscriptions/%s/UpdateDockerCredentials", tenantId),
+		data,
+		nil)
+}
