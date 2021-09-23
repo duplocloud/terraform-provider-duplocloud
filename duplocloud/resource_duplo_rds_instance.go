@@ -164,7 +164,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 		},
 		"deletion_protection": {
 			Description: "If the DB instance should have deletion protection enabled." +
-				"The database can't be deleted when this value is set to `true`. The default is `false`.",
+				"The database can't be deleted when this value is set to `true`.",
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  false,
