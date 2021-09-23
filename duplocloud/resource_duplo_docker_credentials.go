@@ -23,22 +23,20 @@ func dockerCredsSchema() map[string]*schema.Schema {
 		"user_name": {
 			Type:     schema.TypeString,
 			Required: true,
-			ForceNew: true,
 		},
 		"password": {
 			Type:      schema.TypeString,
 			Required:  true,
 			Sensitive: true,
-			ForceNew:  true,
 		},
 		"email": {
 			Type:     schema.TypeString,
 			Required: true,
-			ForceNew: true,
 		},
 		"registry": {
 			Type:     schema.TypeString,
 			Optional: true,
+			Computed: true,
 		},
 	}
 }
