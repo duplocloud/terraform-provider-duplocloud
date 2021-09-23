@@ -51,6 +51,12 @@ func planSchema(single bool) map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"availability_zones": {
+			Description: "A list of the Availability Zones available to the plan.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 		"waf_infos": {
 			Description: "Plan web application firewalls that can be attached to load balancers",
 			Type:        schema.TypeList,
@@ -319,16 +325,23 @@ func flattenPlanCloudConfig(plan map[string]interface{}, duplo *duplosdk.DuploPl
 		}
 
 	} else if duplo.AwsConfig != nil && len(duplo.AwsConfig) > 0 {
+		region := duplo.AwsConfig["AwsRegion"]
 		plan["cloud"] = 0
 		plan["cloud_config"] = duplo.AwsConfig
 		plan["account_id"] = duplo.AwsConfig["AwsAccountId"]
 		plan["vpc_id"] = duplo.AwsConfig["VpcId"]
-		plan["region"] = duplo.AwsConfig["AwsRegion"]
+		plan["region"] = region
 		if duplo.AwsConfig["AwsElbSubnet"] != nil {
 			plan["public_subnet_ids"] = strings.Split(duplo.AwsConfig["AwsElbSubnet"].(string), ";")
 		}
 		if duplo.AwsConfig["AwsInternalElbSubnet"] != nil {
-			plan["private_subnet_ids"] = strings.Split(duplo.AwsConfig["AwsInternalElbSubnet"].(string), ";")
+			ids := strings.Split(duplo.AwsConfig["AwsInternalElbSubnet"].(string), ";")
+			plan["private_subnet_ids"] = ids
+			az := make([]string, 0, len(ids))
+			for i := 97; i < 97+len(ids); i++ {
+				az = append(az, region.(string)+string(rune(i)))
+			}
+			plan["availability_zones"] = az
 		}
 	}
 
