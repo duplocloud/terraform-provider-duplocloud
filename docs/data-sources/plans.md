@@ -26,6 +26,7 @@ description: |-
 Read-Only:
 
 - **account_id** (String)
+- **availability_zones** (List of String)
 - **capabilities** (Map of Boolean)
 - **certificates** (List of Object) (see [below for nested schema](#nestedobjatt--data--certificates))
 - **cloud** (Number)

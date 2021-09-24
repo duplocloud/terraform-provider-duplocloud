@@ -49,6 +49,11 @@ type DuploRdsInstancePasswordChange struct {
 	StorePassword  bool   `json:"StorePassword,omitempty"`
 }
 
+type DuploRdsInstanceDeleteProtection struct {
+	DBInstanceIdentifier string `json:"DBInstanceIdentifier"`
+	DeletionProtection   *bool  `json:"DeletionProtection,omitempty"`
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -134,6 +139,15 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 	return c.postAPI(
 		fmt.Sprintf("RdsInstanceChangePassword(%s, %s)", tenantID, duploObject.Identifier),
 		fmt.Sprintf("subscriptions/%s/RDSInstancePasswordChange", tenantID),
+		&duploObject,
+		nil,
+	)
+}
+
+func (c *Client) RdsInstanceChangeDeleteProtection(tenantID string, duploObject DuploRdsInstanceDeleteProtection) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("RdsInstanceChangeDeleteProtection(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("subscriptions/%s/ModifyRDSDBInstance", tenantID),
 		&duploObject,
 		nil,
 	)

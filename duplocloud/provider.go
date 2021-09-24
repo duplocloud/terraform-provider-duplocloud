@@ -55,6 +55,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_elasticsearch":            resourceDuploAwsElasticSearch(),
 			"duplocloud_aws_host":                     resourceAwsHost(),
 			"duplocloud_aws_load_balancer":            resourceAwsLoadBalancer(),
+			"duplocloud_aws_load_balancer_listener":   resourceAwsLoadBalancerListener(),
 			"duplocloud_aws_kafka_cluster":            resourceAwsKafkaCluster(),
 			"duplocloud_aws_lambda_function":          resourceAwsLambdaFunction(),
 			"duplocloud_duplo_service":                resourceDuploService(),
@@ -81,6 +82,8 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant_secret":                resourceTenantSecret(),
 			"duplocloud_tenant_network_security_rule": resourceTenantSecurityRule(),
 			"duplocloud_emr_cluster":                  resourceAwsEmrCluster(),
+			"duplocloud_asg_profile":                  resourceAwsASG(),
+			"duplocloud_docker_credentials":           resourceDockerCreds(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
@@ -116,6 +119,9 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant_secret":           dataSourceTenantSecret(),
 			"duplocloud_tenant_secrets":          dataSourceTenantSecrets(),
 			"duplocloud_emr_cluster":             dataSourceEmrClusters(),
+			"duplocloud_plan_certificate":        dataSourcePlanCert(),
+			"duplocloud_plan_certificates":       dataSourcePlanCerts(),
+			"duplocloud_asg_profiles":            dataSourceAsgProfiles(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
