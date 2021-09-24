@@ -22,6 +22,7 @@ description: |-
 ### Read-Only
 
 - **account_id** (String) The cloud account ID.
+- **availability_zones** (List of String) A list of the Availability Zones available to the plan.
 - **capabilities** (Map of Boolean) Map of capability flags
 - **certificates** (List of Object) Plan certificates that can be attached to load balancers (see [below for nested schema](#nestedatt--certificates))
 - **cloud** (Number) The numerical index of the cloud provider for this planWill be one of:
