@@ -147,7 +147,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew:    true, // relaunch instance
 			Elem:        KeyValueSchema(),
 		},
-		"volumes": {
+		"volume": {
 			Type:     schema.TypeList,
 			Optional: true,
 			ForceNew: true, // relaunch instance
@@ -181,7 +181,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"network_interfaces": {
+		"network_interface": {
 			Description: "An optional list of custom network interface configurations to use when creating the host.",
 			Type:        schema.TypeList,
 			Optional:    true,
@@ -415,8 +415,8 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		MetaData:          keyValueFromState("metadata", d),
 		Tags:              keyValueFromState("tag", d),
 		MinionTags:        keyValueFromState("minion_tags", d),
-		Volumes:           expandNativeHostVolumes("volumes", d),
-		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interfaces", d),
+		Volumes:           expandNativeHostVolumes("volume", d),
+		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
 	}
 }
 
@@ -508,7 +508,7 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
 
 	// If a network interface was customized, certain fields are not returned by the backend.
-	if v, ok := d.GetOk("network_interfaces"); !ok || v == nil || len(v.([]interface{})) == 0 {
+	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
 		d.Set("zone", duplo.Zone)
 		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
 	}

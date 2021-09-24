@@ -288,14 +288,14 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
 
 	// If a network interface was customized, certain fields are not returned by the backend.
-	if v, ok := d.GetOk("network_interfaces"); !ok || v == nil || len(v.([]interface{})) == 0 {
+	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
 		d.Set("zone", duplo.Zone)
 		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
 	}
 
 	d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
-	d.Set("volumes", flattenNativeHostVolumes(duplo.Volumes))
-	d.Set("network_interfaces", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
+	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 }
 
 func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
