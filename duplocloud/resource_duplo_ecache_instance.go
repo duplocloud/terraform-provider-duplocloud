@@ -244,6 +244,12 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "ECache instance", id, func() (interface{}, duplosdk.ClientError) {
 		return c.EcacheInstanceGet(tenantID, name)
 	})
+
+	// Wait for some time to deal with consistency issues.
+	if diag == nil {
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+
 	log.Printf("[TRACE] resourceDuploEcacheInstanceDelete(%s, %s): end", tenantID, name)
 	return diag
 }

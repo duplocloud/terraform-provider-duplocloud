@@ -46,6 +46,7 @@ resource "duplocloud_aws_load_balancer" "myapp" {
 ### Read-Only
 
 - **arn** (String) The ARN of the load balancer.
+- **dns_name** (String) The DNS name of the load balancer.
 - **fullname** (String) The full name of the load balancer.
 - **id** (String) The ID of this resource.
 - **tags** (List of Object) The tags assigned to this load balancer. (see [below for nested schema](#nestedatt--tags))

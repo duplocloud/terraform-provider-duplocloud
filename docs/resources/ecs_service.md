@@ -56,13 +56,13 @@ resource "duplocloud_ecs_service" "myservice" {
 - **is_target_group_only** (Boolean) Defaults to `false`.
 - **load_balancer** (Block List, Max: 1) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedblock--load_balancer))
 - **old_task_definition_buffer_size** (Number) The number of older task definitions to retain in AWS. Defaults to `10`.
-- **target_group_arns** (Set of String)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_targets_ready** (Boolean) Whether or not to wait until all target groups are created for ecs service, after creation. Defaults to `true`.
 
 ### Read-Only
 
 - **id** (String) The ID of this resource.
+- **target_group_arns** (Set of String)
 
 <a id="nestedblock--load_balancer"></a>
 ### Nested Schema for `load_balancer`

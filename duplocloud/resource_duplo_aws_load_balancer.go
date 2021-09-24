@@ -69,6 +69,11 @@ func awsLoadBalancerSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        KeyValueSchema(),
 		},
+		"dns_name": {
+			Description: "The DNS name of the load balancer.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
@@ -237,4 +242,5 @@ func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, nam
 	d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
 	d.Set("web_acl_id", settings.WebACLID)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
+	d.Set("dns_name", duplo.DNSName)
 }
