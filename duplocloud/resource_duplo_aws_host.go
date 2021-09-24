@@ -515,8 +515,8 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 
 	// TODO:  The backend doesn't return these yet.
 	// d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
-	// d.Set("volumes", flattenNativeHostVolumes(duplo.Volumes))
-	// d.Set("network_interfaces", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	// d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
+	// d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 }
 
 func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []map[string]interface{} {
