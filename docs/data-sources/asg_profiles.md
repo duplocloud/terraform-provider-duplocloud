@@ -44,11 +44,11 @@ Read-Only:
 - **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--metadata))
 - **min_instance_count** (Number)
 - **minion_tags** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--minion_tags))
-- **network_interfaces** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interfaces))
+- **network_interface** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interface))
 - **tags** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--tags))
 - **tenant_id** (String)
 - **user_account** (String)
-- **volumes** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--volumes))
+- **volume** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--volume))
 - **wait_for_capacity** (Boolean)
 - **zone** (Number)
 
@@ -70,20 +70,20 @@ Read-Only:
 - **value** (String)
 
 
-<a id="nestedobjatt--asg_profiles--network_interfaces"></a>
-### Nested Schema for `asg_profiles.network_interfaces`
+<a id="nestedobjatt--asg_profiles--network_interface"></a>
+### Nested Schema for `asg_profiles.network_interface`
 
 Read-Only:
 
 - **associate_public_ip** (Boolean)
 - **device_index** (Number)
 - **groups** (List of String)
-- **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interfaces--metadata))
+- **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interface--metadata))
 - **network_interface_id** (String)
 - **subnet_id** (String)
 
-<a id="nestedobjatt--asg_profiles--network_interfaces--metadata"></a>
-### Nested Schema for `asg_profiles.network_interfaces.metadata`
+<a id="nestedobjatt--asg_profiles--network_interface--metadata"></a>
+### Nested Schema for `asg_profiles.network_interface.metadata`
 
 Read-Only:
 
@@ -101,8 +101,8 @@ Read-Only:
 - **value** (String)
 
 
-<a id="nestedobjatt--asg_profiles--volumes"></a>
-### Nested Schema for `asg_profiles.volumes`
+<a id="nestedobjatt--asg_profiles--volume"></a>
+### Nested Schema for `asg_profiles.volume`
 
 Read-Only:
 

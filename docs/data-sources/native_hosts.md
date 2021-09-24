@@ -43,13 +43,13 @@ Read-Only:
 - **is_minion** (Boolean)
 - **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--metadata))
 - **minion_tags** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--minion_tags))
-- **network_interfaces** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--network_interfaces))
+- **network_interface** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--network_interface))
 - **private_ip_address** (String)
 - **status** (String)
 - **tags** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--tags))
 - **tenant_id** (String)
 - **user_account** (String)
-- **volumes** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--volumes))
+- **volume** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--volume))
 - **zone** (Number)
 
 <a id="nestedobjatt--hosts--metadata"></a>
@@ -70,20 +70,20 @@ Read-Only:
 - **value** (String)
 
 
-<a id="nestedobjatt--hosts--network_interfaces"></a>
-### Nested Schema for `hosts.network_interfaces`
+<a id="nestedobjatt--hosts--network_interface"></a>
+### Nested Schema for `hosts.network_interface`
 
 Read-Only:
 
 - **associate_public_ip** (Boolean)
 - **device_index** (Number)
 - **groups** (List of String)
-- **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--network_interfaces--metadata))
+- **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--network_interface--metadata))
 - **network_interface_id** (String)
 - **subnet_id** (String)
 
-<a id="nestedobjatt--hosts--network_interfaces--metadata"></a>
-### Nested Schema for `hosts.network_interfaces.metadata`
+<a id="nestedobjatt--hosts--network_interface--metadata"></a>
+### Nested Schema for `hosts.network_interface.metadata`
 
 Read-Only:
 
@@ -101,8 +101,8 @@ Read-Only:
 - **value** (String)
 
 
-<a id="nestedobjatt--hosts--volumes"></a>
-### Nested Schema for `hosts.volumes`
+<a id="nestedobjatt--hosts--volume"></a>
+### Nested Schema for `hosts.volume`
 
 Read-Only:
 

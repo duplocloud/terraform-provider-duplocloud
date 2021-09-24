@@ -36,11 +36,11 @@ description: |-
 - **metadata** (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
 - **min_instance_count** (Number) The minimum size of the Auto Scaling Group.
 - **minion_tags** (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
-- **network_interfaces** (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interfaces))
+- **network_interface** (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
 - **tags** (Block List) (see [below for nested schema](#nestedblock--tags))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **user_account** (String) The name of the tenant that the host will be created in.
-- **volumes** (Block List) (see [below for nested schema](#nestedblock--volumes))
+- **volume** (Block List) (see [below for nested schema](#nestedblock--volume))
 - **wait_for_capacity** (Boolean) Whether or not to wait until ASG instances to be healthy, after creation. Defaults to `true`.
 - **zone** (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.
 
@@ -66,20 +66,20 @@ Required:
 - **value** (String)
 
 
-<a id="nestedblock--network_interfaces"></a>
-### Nested Schema for `network_interfaces`
+<a id="nestedblock--network_interface"></a>
+### Nested Schema for `network_interface`
 
 Optional:
 
 - **associate_public_ip** (Boolean) Whether or not to associate a public IP with the newly created ENI.  Cannot be specified if `network_interface_id` is specified.
 - **device_index** (Number) The device index to pass to AWS for attaching the ENI.  Starts at zero.
 - **groups** (List of String)
-- **metadata** (Block List) (see [below for nested schema](#nestedblock--network_interfaces--metadata))
+- **metadata** (Block List) (see [below for nested schema](#nestedblock--network_interface--metadata))
 - **network_interface_id** (String) The ID of an ENI to attach to this host.  Cannot be specified if `subnet_id` or `associate_public_ip` is specified.
 - **subnet_id** (String) The ID of a subnet in which to create a new ENI.  Cannot be specified if `network_interface_id` is specified.
 
-<a id="nestedblock--network_interfaces--metadata"></a>
-### Nested Schema for `network_interfaces.metadata`
+<a id="nestedblock--network_interface--metadata"></a>
+### Nested Schema for `network_interface.metadata`
 
 Required:
 
@@ -107,8 +107,8 @@ Optional:
 - **update** (String)
 
 
-<a id="nestedblock--volumes"></a>
-### Nested Schema for `volumes`
+<a id="nestedblock--volume"></a>
+### Nested Schema for `volume`
 
 Optional:
 
