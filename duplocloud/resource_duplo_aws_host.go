@@ -413,7 +413,7 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		Cloud:             d.Get("cloud").(int),
 		EncryptDisk:       d.Get("encrypt_disk").(bool),
 		MetaData:          keyValueFromState("metadata", d),
-		Tags:              keyValueFromState("tag", d),
+		Tags:              keyValueFromState("tags", d),
 		MinionTags:        keyValueFromState("minion_tags", d),
 		Volumes:           expandNativeHostVolumes("volume", d),
 		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),

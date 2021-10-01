@@ -16,6 +16,11 @@ type DuploLambdaFunction struct {
 	Configuration DuploLambdaConfiguration `json:"Configuration"`
 }
 
+type DuploLambdaLayerGet struct {
+	Arn      string `json:"ARN"`
+	CodeSize int64  `json:"CodeSize"`
+}
+
 // DuploLambdaConfiguration is a Duplo SDK object that represents a lambda function's configuration.
 type DuploLambdaConfiguration struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
@@ -39,6 +44,8 @@ type DuploLambdaConfiguration struct {
 	TracingConfig *DuploLambdaTracingConfig `json:"TracingConfig,omitempty"`
 	Version       string                    `json:"Version,omitempty"`
 	VpcConfig     *DuploLambdaVpcConfig     `json:"VpcConfig,omitempty"`
+	Tags          *[]DuploKeyStringValue    `json:"Tags,omitempty"`
+	Layers        *[]DuploLambdaLayerGet    `json:"Layers,omitempty"`
 }
 
 // DuploLambdaCode is a Duplo SDK object that represents a lambda function's code.
@@ -74,6 +81,8 @@ type DuploLambdaCreateRequest struct {
 	MemorySize   int                     `json:"MemorySize"`
 	Runtime      *DuploStringValue       `json:"Runtime,omitempty"`
 	Environment  *DuploLambdaEnvironment `json:"Environment,omitempty"`
+	Tags         *[]DuploKeyStringValue  `json:"Tags,omitempty"`
+	Layers       *[]string               `json:"Layers,omitempty"`
 }
 
 // DuploLambdaUpdateRequest is a Duplo SDK object that represents a request to update a lambda function's code.
@@ -92,6 +101,8 @@ type DuploLambdaConfigurationRequest struct {
 	Timeout      int                     `json:"Timeout,omitempty"`
 	MemorySize   int                     `json:"MemorySize"`
 	Environment  *DuploLambdaEnvironment `json:"Environment,omitempty"`
+	Tags         *[]DuploKeyStringValue  `json:"Tags,omitempty"`
+	Layers       *[]string               `json:"Layers,omitempty"`
 }
 
 /*************************************************
