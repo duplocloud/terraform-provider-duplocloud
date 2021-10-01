@@ -109,12 +109,12 @@ func resourceTenantNetworkSecurityRuleRead(ctx context.Context, d *schema.Resour
 		d.SetId("") // object missing
 		return nil
 	}
-
 	// Set the simple fields first.
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("from_port", duplo.FromPort)
 	d.Set("to_port", duplo.ToPort)
 	d.Set("protocol", duplo.Protocol)
+
 	if rq.Type == duplosdk.SGSourceTypeTenant {
 		d.Set("source_address", nil)
 		d.Set("source_tenant", (*duplo.Sources)[0].Value)
@@ -143,19 +143,22 @@ func resourceTenantNetworkSecurityRuleCreate(ctx context.Context, d *schema.Reso
 	}
 	sourceTenant := d.Get("source_tenant").(string)
 	sourceAddress := d.Get("source_address").(string)
+	sourceTypeVal := ""
 	if sourceTenant != "" {
 		source[0].Type = duplosdk.SGSourceTypeTenant
 		source[0].Value = sourceTenant
+		sourceTypeVal = sourceTenant
 	} else if sourceAddress != "" {
 		source[0].Type = duplosdk.SGSourceTypeIPAddress
 		source[0].Value = sourceAddress
+		sourceTypeVal = strings.Replace(sourceAddress, "/", "-", -1)
 	} else {
 		return diag.Errorf("Must specify one of: source_tenant, source_address")
 	}
-	rq.Type = source[0].Type
+	rq.Type = duplosdk.TENANT
 
 	// Build the ID
-	id := fmt.Sprintf("%s/%d/%s/%s/%d/%d", rq.TenantID, rq.Type, source[0].Value, rq.Protocol, rq.FromPort, rq.ToPort)
+	id := fmt.Sprintf("%s/%d/%s/%s/%d/%d", rq.TenantID, source[0].Type, sourceTypeVal, rq.Protocol, rq.FromPort, rq.ToPort)
 	log.Printf("[TRACE] resourceTenantNetworkSecurityRuleCreate(%s): start", id)
 
 	// Create the rule in Duplo.
@@ -175,13 +178,14 @@ func resourceTenantNetworkSecurityRuleDelete(ctx context.Context, d *schema.Reso
 
 	// Parse the identifying attributes
 	id := d.Id()
-	log.Printf("[TRACE] resourceTenantNetworkSecurityRuleRead(%s): start", id)
+	log.Printf("[TRACE] resourceTenantNetworkSecurityRuleDelete(%s): start", id)
 	rq, err := duploTenantNetworkSecurityRuleFromId(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	// Delete the rule with Duplo
 	c := m.(*duplosdk.Client)
+	rq.Type = duplosdk.TENANT
 	err = c.TenantDeleteExtConnSecurityGroupRule(rq)
 	if err != nil {
 		return diag.Errorf("Error deleting tenant network security rule '%s': %s", id, err)
@@ -209,11 +213,14 @@ func duploTenantNetworkSecurityRuleFromId(id string) (*duplosdk.DuploTenantExtCo
 	if err != nil {
 		return nil, fmt.Errorf("invalid resource ID: %s: toPort: %s", id, err)
 	}
-
+	sourceTypeVal := idParts[2]
+	if ruleType == duplosdk.SGSourceTypeIPAddress {
+		sourceTypeVal = strings.Replace(idParts[2], "-", "/", -1)
+	}
 	return &duplosdk.DuploTenantExtConnSecurityGroupRule{
 		TenantID: idParts[0],
 		Type:     ruleType,
-		Sources:  &[]duplosdk.DuploTenantExtConnSecurityGroupSource{{Type: ruleType, Value: idParts[2]}},
+		Sources:  &[]duplosdk.DuploTenantExtConnSecurityGroupSource{{Type: ruleType, Value: sourceTypeVal}},
 		Protocol: idParts[3],
 		FromPort: fromPort,
 		ToPort:   toPort,
