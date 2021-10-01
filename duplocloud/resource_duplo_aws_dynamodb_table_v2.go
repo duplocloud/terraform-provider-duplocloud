@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -215,16 +214,6 @@ func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceDat
 
 	log.Printf("[TRACE] resourceAwsDynamoDBTableDeleteV2(%s, %s): end", tenantID, name)
 	return nil
-}
-
-func parseAwsDynamoDBTableIdPartsV2(id string) (tenantID, name string, err error) {
-	idParts := strings.SplitN(id, "/", 2)
-	if len(idParts) == 2 {
-		tenantID, name = idParts[0], idParts[1]
-	} else {
-		err = fmt.Errorf("invalid resource ID: %s", id)
-	}
-	return
 }
 
 func expandDynamoDBTable(d *schema.ResourceData) *duplosdk.DuploDynamoDBTableRequestV2 {
