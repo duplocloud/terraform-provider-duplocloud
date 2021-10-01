@@ -108,7 +108,7 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 
 func resourceAwsDynamoDBTableV2() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_aws_lambda_function_v2` manages an AWS dynamodb table in Duplo.",
+		Description: "`duplocloud_aws_dynamodb_table_v2` manages an AWS dynamodb table in Duplo.",
 
 		ReadContext:   resourceAwsDynamoDBTableReadV2,
 		CreateContext: resourceAwsDynamoDBTableCreateV2,
