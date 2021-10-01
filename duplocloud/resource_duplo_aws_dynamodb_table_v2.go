@@ -160,9 +160,16 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateV2(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
+	rq := expandDynamoDBTable(d)
+	if d.Get("billing_mode") == "PROVISIONED" {
+		rq.ProvisionedThroughput =
+			&duplosdk.DuploDynamoDBProvisionedThroughput{
+				ReadCapacityUnits:  d.Get("read_capacity").(int),
+				WriteCapacityUnits: d.Get("write_capacity").(int),
+			}
+	}
 
-	// Post the object to Duplo
-	_, err = c.DynamoDBTableCreateV2(tenantID, expandDynamoDBTable(d))
+	_, err = c.DynamoDBTableCreateV2(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s dynamodb table '%s': %s", tenantID, name, err)
 	}
