@@ -149,10 +149,10 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 		},
 		"tags": {
 			Description: "Map of tags to assign to the object.",
-			Type:        schema.TypeList,
+			Type:        schema.TypeMap,
 			Optional:    true,
 			Computed:    true,
-			Elem:        KeyValueSchema(),
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"layers": {
 			Description: "List of Lambda Layer Version ARNs (maximum of 5) to attach to your Lambda Function.",
@@ -209,6 +209,7 @@ func resourceAwsLambdaFunctionRead(ctx context.Context, d *schema.ResourceData, 
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	flattenAwsLambdaConfiguration(d, &duplo.Configuration)
+	d.Set("tags", duplo.Tags)
 	// d.Set("s3_bucket", duplo.Code.S3Bucket)
 	// d.Set("s3_key", duplo.Code.S3Key)
 
@@ -234,7 +235,7 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 			S3Bucket: d.Get("s3_bucket").(string),
 			S3Key:    d.Get("s3_key").(string),
 		},
-		Tags: keyValueFromState("tags", d),
+		Tags: expandAwsLambdaTags(d),
 	}
 	if v, ok := getAsStringArray(d, "layers"); ok && v != nil {
 		rq.Layers = v
@@ -364,7 +365,6 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 	d.Set("timeout", duplo.Timeout)
 	d.Set("handler", duplo.Handler)
 	d.Set("version", duplo.Version)
-	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("layers", duplo.Layers)
 	if duplo.Runtime != nil {
 		d.Set("runtime", duplo.Runtime.Value)
@@ -405,6 +405,20 @@ func expandAwsLambdaEnvironment(environment map[string]interface{}) *duplosdk.Du
 	return env
 }
 
+func expandAwsLambdaTags(d *schema.ResourceData) map[string]string {
+	tags := map[string]string{}
+	if v, ok := d.GetOk("tags"); ok && v != nil && len(v.(map[string]interface{})) > 0 {
+		for k, v := range v.(map[string]interface{}) {
+			if v == nil {
+				tags[k] = ""
+			} else {
+				tags[k] = v.(string)
+			}
+		}
+	}
+	return tags
+}
+
 func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData, c *duplosdk.Client) error {
 	rq := duplosdk.DuploLambdaConfigurationRequest{
 		FunctionName: name,
@@ -412,7 +426,7 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 		Description:  d.Get("description").(string),
 		Timeout:      d.Get("timeout").(int),
 		MemorySize:   d.Get("memory_size").(int),
-		Tags:         keyValueFromState("tags", d),
+		Tags:         expandAwsLambdaTags(d),
 	}
 
 	if v, ok := getAsStringArray(d, "layers"); ok && v != nil {

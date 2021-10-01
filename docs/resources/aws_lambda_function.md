@@ -58,7 +58,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 - **layers** (List of String) List of Lambda Layer Version ARNs (maximum of 5) to attach to your Lambda Function.
 - **memory_size** (Number) The maximum amount of memory, in MB, that your lambda function is allowed to use at runtime. Defaults to `128`.
 - **runtime** (String) The [runtime](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) that the lambda function needs.
-- **tags** (Block List) Map of tags to assign to the object. (see [below for nested schema](#nestedblock--tags))
+- **tags** (Map of String) Map of tags to assign to the object.
 - **timeout** (Number) The execution time limit for the lambda function. Defaults to `3`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
@@ -79,15 +79,6 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 Optional:
 
 - **variables** (Map of String) Map of environment variables that are accessible from the function code during execution.
-
-
-<a id="nestedblock--tags"></a>
-### Nested Schema for `tags`
-
-Required:
-
-- **key** (String)
-- **value** (String)
 
 
 <a id="nestedblock--timeouts"></a>

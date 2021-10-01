@@ -14,6 +14,7 @@ type DuploLambdaFunction struct {
 
 	Code          DuploLambdaCode          `json:"Code"`
 	Configuration DuploLambdaConfiguration `json:"Configuration"`
+	Tags          map[string]string        `json:"Tags,omitempty"`
 }
 
 type DuploLambdaLayerGet struct {
@@ -44,7 +45,6 @@ type DuploLambdaConfiguration struct {
 	TracingConfig *DuploLambdaTracingConfig `json:"TracingConfig,omitempty"`
 	Version       string                    `json:"Version,omitempty"`
 	VpcConfig     *DuploLambdaVpcConfig     `json:"VpcConfig,omitempty"`
-	Tags          *[]DuploKeyStringValue    `json:"Tags,omitempty"`
 	Layers        *[]DuploLambdaLayerGet    `json:"Layers,omitempty"`
 }
 
@@ -81,7 +81,7 @@ type DuploLambdaCreateRequest struct {
 	MemorySize   int                     `json:"MemorySize"`
 	Runtime      *DuploStringValue       `json:"Runtime,omitempty"`
 	Environment  *DuploLambdaEnvironment `json:"Environment,omitempty"`
-	Tags         *[]DuploKeyStringValue  `json:"Tags,omitempty"`
+	Tags         map[string]string       `json:"Tags,omitempty"`
 	Layers       *[]string               `json:"Layers,omitempty"`
 }
 
@@ -101,7 +101,7 @@ type DuploLambdaConfigurationRequest struct {
 	Timeout      int                     `json:"Timeout,omitempty"`
 	MemorySize   int                     `json:"MemorySize"`
 	Environment  *DuploLambdaEnvironment `json:"Environment,omitempty"`
-	Tags         *[]DuploKeyStringValue  `json:"Tags,omitempty"`
+	Tags         map[string]string       `json:"Tags,omitempty"`
 	Layers       *[]string               `json:"Layers,omitempty"`
 }
 
