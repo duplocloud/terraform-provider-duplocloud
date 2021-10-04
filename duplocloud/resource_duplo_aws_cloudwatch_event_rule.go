@@ -158,6 +158,37 @@ func resourceAwsCloudWatchEventRuleCreate(ctx context.Context, d *schema.Resourc
 }
 
 func resourceAwsCloudWatchEventRuleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("name").(string)
+	c := m.(*duplosdk.Client)
+	fullName, _ := c.GetDuploServicesName(tenantID, name)
+
+	log.Printf("[TRACE] resourceAwsCloudWatchEventRuleUpdate(%s, %s): start", tenantID, fullName)
+
+	needsUpdate := needsAwsCloudWatchEventRuleUpdate(d)
+
+	if needsUpdate {
+		c := m.(*duplosdk.Client)
+		rq := expandCloudWatchEventRule(d)
+
+		_, err = c.DuploCloudWatchEventRuleCreate(tenantID, rq)
+		if err != nil {
+			return diag.Errorf("Error updating tenant %s cloudwatch event rule '%s': %s", tenantID, name, err)
+		}
+
+		id := fmt.Sprintf("%s/%s", tenantID, fullName)
+		diags := waitForResourceToBePresentAfterCreate(ctx, d, "cloudwatch event rule", id, func() (interface{}, duplosdk.ClientError) {
+			return c.DuploCloudWatchEventRuleGet(tenantID, fullName)
+		})
+		if diags != nil {
+			return diags
+		}
+		diags = resourceAwsCloudWatchEventRuleRead(ctx, d, m)
+		log.Printf("[TRACE] resourceAwsCloudWatchEventRuleUpdate(%s, %s): end", tenantID, name)
+		return diags
+	}
 	return nil
 }
 
@@ -209,4 +240,13 @@ func parseAwsCloudWatchEventRuleIdParts(id string) (tenantID, name string, err e
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
 	return
+}
+
+func needsAwsCloudWatchEventRuleUpdate(d *schema.ResourceData) bool {
+	return d.HasChange("schedule_expression") ||
+		d.HasChange("description") ||
+		d.HasChange("role_arn") ||
+		d.HasChange("event_bus_name") ||
+		d.HasChange("state") ||
+		d.HasChange("tag")
 }
