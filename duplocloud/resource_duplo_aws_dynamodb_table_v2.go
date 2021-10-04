@@ -43,7 +43,7 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     "PROVISIONED",
 			ValidateFunc: validation.StringInSlice([]string{
-				"PROVISIONED ",
+				"PROVISIONED",
 				"PAY_PER_REQUEST",
 			}, false),
 		},
@@ -96,7 +96,7 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 						Required:    true,
 					},
 					"key_type": {
-						Description: "Attribute type, which must be a scalar type: `S`, `N`, or `B` for (S)tring, (N)umber or (B)inary data",
+						Description: "Applicable key types are `HASH` or `RANGE`.",
 						Type:        schema.TypeString,
 						Required:    true,
 					},
