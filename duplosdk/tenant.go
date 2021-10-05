@@ -12,6 +12,12 @@ const (
 	SGSourceTypeIPAddress int = 1
 )
 
+const (
+	TENANT int = 0
+	LB     int = 1
+	RDS    int = 2
+)
+
 // DuploTenant represents a Duplo tenant
 type DuploTenant struct {
 	TenantID     string                 `json:"TenantId,omitempty"`
@@ -376,7 +382,7 @@ func (c *Client) TenantGetExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurit
 	}
 
 	for _, rule := range *list {
-		if rule.Type == rq.Type && rule.Protocol == rq.Protocol && rule.FromPort == rq.FromPort && rule.ToPort == rq.ToPort && rule.Sources != nil && len(*rule.Sources) > 0 {
+		if rule.Protocol == rq.Protocol && rule.FromPort == rq.FromPort && rule.ToPort == rq.ToPort && rule.Sources != nil && len(*rule.Sources) > 0 {
 			for _, source := range *rq.Sources {
 				if source.Type == rq.Type && source.Value == (*rq.Sources)[0].Value {
 					matched := DuploTenantExtConnSecurityGroupRule{
