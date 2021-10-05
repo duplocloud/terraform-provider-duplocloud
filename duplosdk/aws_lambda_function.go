@@ -107,7 +107,7 @@ type DuploLambdaConfigurationRequest struct {
 
 type DuploLambdaPermissionStatement struct {
 	Sid       string                         `json:"Sid,omitempty"`
-	Effect    string                         `json:"Effect ,omitempty"`
+	Effect    string                         `json:"Effect,omitempty"`
 	Principal DuploLambdaPermissionPrincipal `json:"Principal,omitempty"`
 	Action    string                         `json:"Action,omitempty"`
 	Resource  string                         `json:"Resource,omitempty"`
@@ -119,7 +119,7 @@ type DuploLambdaPermissionPrincipal struct {
 
 type DuploLambdaPermissionRequest struct {
 	Action           string `json:"Action,omitempty"`
-	FunctionName     string `json:"FunctionName ,omitempty"`
+	FunctionName     string `json:"FunctionName,omitempty"`
 	Principal        string `json:"Principal,omitempty"`
 	EventSourceToken string `json:"EventSourceToken,omitempty"`
 	Qualifier        string `json:"Qualifier,omitempty"`

@@ -170,7 +170,7 @@ func resourceAwsLambdaPermissionDelete(ctx context.Context, d *schema.ResourceDa
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "lambda permission", id, func() (interface{}, duplosdk.ClientError) {
-		return c.LambdaFunctionGet(tenantID, functionName)
+		return c.LambdaPermissionGet(tenantID, functionName)
 	})
 	if diag != nil {
 		return diag
