@@ -105,6 +105,30 @@ type DuploLambdaConfigurationRequest struct {
 	Layers       *[]string               `json:"Layers,omitempty"`
 }
 
+type DuploLambdaPermissionStatement struct {
+	Sid       string                         `json:"Sid,omitempty"`
+	Effect    string                         `json:"Effect ,omitempty"`
+	Principal DuploLambdaPermissionPrincipal `json:"Principal,omitempty"`
+	Action    string                         `json:"Action,omitempty"`
+	Resource  string                         `json:"Resource,omitempty"`
+}
+
+type DuploLambdaPermissionPrincipal struct {
+	Service string `json:"Service,omitempty"`
+}
+
+type DuploLambdaPermissionRequest struct {
+	Action           string `json:"Action,omitempty"`
+	FunctionName     string `json:"FunctionName ,omitempty"`
+	Principal        string `json:"Principal,omitempty"`
+	EventSourceToken string `json:"EventSourceToken,omitempty"`
+	Qualifier        string `json:"Qualifier,omitempty"`
+	SourceAccount    string `json:"SourceAccount,omitempty"`
+	SourceArn        string `json:"SourceArn,omitempty"`
+	StatementId      string `json:"StatementId,omitempty"`
+	RevisionId       string `json:"RevisionId,omitempty"`
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -194,5 +218,34 @@ func (c *Client) LambdaFunctionGet(tenantID string, name string) (*DuploLambdaFu
 	rp.Name = name
 	rp.Configuration.TenantID = tenantID
 	rp.Configuration.Name = name
+	return &rp, err
+}
+
+func (c *Client) LambdaPermissionCreate(tenantID string, rq *DuploLambdaPermissionRequest) (*DuploLambdaPermissionRequest, ClientError) {
+	rp := DuploLambdaPermissionRequest{}
+	err := c.postAPI(
+		fmt.Sprintf("LambdaPermissionCreate(%s, %s)", tenantID, rq.FunctionName),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambdapermission", tenantID),
+		&rq,
+		&rp,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, err
+}
+
+func (c *Client) LambdaPermissionDelete(tenantID, functionName, statementId string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("LambdaPermissionDelete(%s, %s, %s)", tenantID, functionName, statementId),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambdapermission/%s/%s", tenantID, functionName, statementId), nil)
+}
+
+func (c *Client) LambdaPermissionGet(tenantID string, functionName string) (*[]DuploLambdaPermissionStatement, ClientError) {
+	rp := []DuploLambdaPermissionStatement{}
+	err := c.getAPI(
+		fmt.Sprintf("LambdaPermissionGet(%s, %s)", tenantID, functionName),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambdapermission/%s", tenantID, functionName),
+		&rp)
 	return &rp, err
 }

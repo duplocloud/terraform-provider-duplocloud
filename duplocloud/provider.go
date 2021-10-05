@@ -87,6 +87,7 @@ func Provider() *schema.Provider {
 			"duplocloud_docker_credentials":           resourceDockerCreds(),
 			"duplocloud_aws_cloudwatch_event_rule":    resourceAwsCloudWatchEventRule(),
 			"duplocloud_aws_cloudwatch_event_target":  resourceAwsCloudWatchEventTarget(),
+			"duplocloud_aws_lambda_permission":        resourceAwsLambdaPermission(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
