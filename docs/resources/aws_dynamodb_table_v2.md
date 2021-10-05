@@ -95,7 +95,7 @@ Required:
 Required:
 
 - **attribute_name** (String) The name of the attribute
-- **key_type** (String) Attribute type, which must be a scalar type: `S`, `N`, or `B` for (S)tring, (N)umber or (B)inary data
+- **key_type** (String) Applicable key types are `HASH` or `RANGE`.
 
 
 <a id="nestedblock--tag"></a>
