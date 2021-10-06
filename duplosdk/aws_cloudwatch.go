@@ -37,6 +37,7 @@ type DuploCloudWatchEventTarget struct {
 	Arn     string `json:"Arn"`
 	Id      string `json:"Id,omitempty"`
 	RoleArn string `json:"RoleArn,omitempty"`
+	Input   string `json:"Input,omitempty"`
 }
 
 type DuploCloudWatchRunCommandTarget struct {
