@@ -44,6 +44,21 @@ type DuploCloudWatchRunCommandTarget struct {
 	Values []string `json:"Values,omitempty"`
 }
 
+type DuploCloudWatchMetricAlarm struct {
+	Statistic          string                  `json:"Statistic,omitempty"`
+	MetricName         string                  `json:"MetricName,omitempty"`
+	ComparisonOperator string                  `json:"ComparisonOperator,omitempty"`
+	Threshold          float64                 `json:"Threshold,omitempty"`
+	Period             int                     `json:"Period,omitempty"`
+	EvaluationPeriods  int                     `json:"EvaluationPeriods,omitempty"`
+	TenantId           string                  `json:"TenantId,omitempty"`
+	Namespace          string                  `json:"Namespace,omitempty"`
+	State              string                  `json:"State,omitempty"`
+	Dimensions         *[]DuploNameStringValue `json:"Dimensions,omitempty"`
+	AccountName        string                  `json:"AccountName,omitempty"`
+	Name               string                  `json:"Name,omitempty"`
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -145,4 +160,43 @@ func (c *Client) DuploCloudWatchEventTargetGet(tenantID, ruleName, targetId stri
 		}
 	}
 	return nil, err
+}
+
+func (c *Client) DuploCloudWatchMetricAlarmCreate(rq *DuploCloudWatchMetricAlarm) ClientError {
+	var rp = ""
+	err := c.postAPI(
+		fmt.Sprintf("DuploCloudWatchMetricAlarmCreate(%s, %s)", rq.TenantId, rq.MetricName),
+		fmt.Sprintf("subscriptions/%s/CreateOrUpdateAlarm", rq.TenantId),
+		&rq,
+		&rp,
+	)
+	return err
+}
+
+func (c *Client) DuploCloudWatchMetricAlarmGet(tenantID, resourceId string) (*DuploCloudWatchMetricAlarm, ClientError) {
+	rp := []DuploCloudWatchMetricAlarm{}
+	err := c.getAPI(
+		fmt.Sprintf("DuploCloudWatchMetricAlarmList(%s, %s)", tenantID, resourceId),
+		fmt.Sprintf("subscriptions/%s/%s/GetAlarms", tenantID, resourceId),
+		&rp,
+	)
+	if len(rp) == 0 {
+		return nil, err
+	}
+	return &rp[0], err
+}
+
+func (c *Client) DuploCloudWatchMetricAlarmDelete(tenantId, fullName string) ClientError {
+	var rp = ""
+	rq := DuploCloudWatchMetricAlarm{
+		Name:  fullName,
+		State: "Delete",
+	}
+	err := c.postAPI(
+		fmt.Sprintf("DuploCloudWatchMetricAlarmCreate(%s, %s)", tenantId, rq.MetricName),
+		fmt.Sprintf("subscriptions/%s/CreateOrUpdateAlarm", tenantId),
+		&rq,
+		&rp,
+	)
+	return err
 }

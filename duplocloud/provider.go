@@ -88,6 +88,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_cloudwatch_event_rule":    resourceAwsCloudWatchEventRule(),
 			"duplocloud_aws_cloudwatch_event_target":  resourceAwsCloudWatchEventTarget(),
 			"duplocloud_aws_lambda_permission":        resourceAwsLambdaPermission(),
+			"duplocloud_aws_cloudwatch_metric_alarm":  resourceAwsCloudWatchMetricAlarm(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
