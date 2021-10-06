@@ -64,6 +64,7 @@ resource "duplocloud_aws_cloudwatch_event_target" "cw_etarget2" {
 ### Optional
 
 - **event_bus_name** (String) The event bus to associate with the rule. If you omit this, the default event bus is used.
+- **input** (String) Valid JSON text passed to the target.
 - **role_arn** (String) The Amazon Resource Name (ARN) associated with the role that is used for target invocation.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
