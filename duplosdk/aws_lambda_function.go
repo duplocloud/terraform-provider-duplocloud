@@ -247,7 +247,7 @@ func (c *Client) LambdaPermissionGet(tenantID string, functionName string) (*[]D
 		fmt.Sprintf("LambdaPermissionGet(%s, %s)", tenantID, functionName),
 		fmt.Sprintf("v3/subscriptions/%s/serverless/lambdapermission/%s", tenantID, functionName),
 		&rp)
-	if rp == nil || len(rp) == 0 {
+	if len(rp) == 0 {
 		return nil, err
 	}
 	return &rp, err
