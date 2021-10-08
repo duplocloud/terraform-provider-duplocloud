@@ -64,6 +64,7 @@ resource "duplocloud_aws_cloudwatch_event_target" "cw_etarget2" {
 ### Optional
 
 - **event_bus_name** (String) The event bus to associate with the rule. If you omit this, the default event bus is used.
+- **input** (String) Valid JSON text passed to the target.
 - **role_arn** (String) The Amazon Resource Name (ARN) associated with the role that is used for target invocation.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
@@ -84,7 +85,7 @@ Optional:
 Import is supported using the following syntax:
 
 ```shell
-# Example: Importing an existing AWS ASG
+# Example: Importing an existing AWS cloudwatch event target
 #  - *TENANT_ID* is the tenant GUID
 #  - *FRIENDLY_NAME* is the duploservices-<account_name>-<name_of_event_rule>
 #  - *TARGET_ID* The unique target assignment ID.
