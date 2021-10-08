@@ -51,6 +51,12 @@ func awsCloudWatchEventTargetSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"input": {
+			Description: "Valid JSON text passed to the target. ",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -168,8 +174,9 @@ func resourceAwsCloudWatchEventTargetDelete(ctx context.Context, d *schema.Resou
 
 func expandCloudWatchEventTarget(d *schema.ResourceData) *duplosdk.DuploCloudWatchEventTarget {
 	return &duplosdk.DuploCloudWatchEventTarget{
-		Id:  d.Get("target_id").(string),
-		Arn: d.Get("target_arn").(string),
+		Id:    d.Get("target_id").(string),
+		Arn:   d.Get("target_arn").(string),
+		Input: d.Get("input").(string),
 	}
 }
 
