@@ -61,7 +61,7 @@ type DuploPlanCloudPlatform struct {
 	GoogleConfig map[string]interface{} `json:"PlanGoogleConfig,omitempty"`
 }
 
-type DuploPlanNgwAddresses struct {
+type DuploPlanNgwAddress struct {
 	AllocationId       string `json:"AllocationId"`
 	NetworkInterfaceId string `json:"NetworkInterfaceId"`
 	PrivateIP          string `json:"PrivateIp"`
@@ -69,12 +69,12 @@ type DuploPlanNgwAddresses struct {
 }
 
 type DuploPlanNgw struct {
-	NatGatewayId        string                   `json:"NatGatewayId,omitempty"`
-	State               *DuploStringValue        `json:"State,omitempty"`
-	SubnetId            string                   `json:"SubnetId"`
-	VpcId               string                   `json:"VpcId"`
-	Tags                *[]DuploKeyStringValue   `json:"Tags,omitempty"`
-	NatGatewayAddresses *[]DuploPlanNgwAddresses `json:"NatGatewayAddresses,omitempty"`
+	NatGatewayId        string                 `json:"NatGatewayId,omitempty"`
+	State               *DuploStringValue      `json:"State,omitempty"`
+	SubnetId            string                 `json:"SubnetId"`
+	VpcId               string                 `json:"VpcId"`
+	Tags                *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	NatGatewayAddresses *[]DuploPlanNgwAddress `json:"NatGatewayAddresses,omitempty"`
 }
 
 // PlanGetList retrieves a list of plans via the Duplo API.

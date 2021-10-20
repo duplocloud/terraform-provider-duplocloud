@@ -36,13 +36,12 @@ func planNgwSchema() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
-			ForceNew: true,
 			Elem:     KeyValueSchema(),
 		},
 		"addresses": {
 			Type:     schema.TypeList,
 			Optional: true,
-			ForceNew: true,
+			Computed: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"allocation_id": {
@@ -128,19 +127,19 @@ func flattenPlanNgws(list *[]duplosdk.DuploPlanNgw) []interface{} {
 			"state":     ngw.State.Value,
 			"vpc_id":    ngw.VpcId,
 			"subnet_id": ngw.SubnetId,
-			"addresses": flattenPlanNgwsAddresses(ngw.NatGatewayAddresses),
+			"addresses": flattenPlanNgwAddresses(ngw.NatGatewayAddresses),
 			"tags":      keyValueToState("tags", ngw.Tags),
 		})
 	}
 	return result
 }
 
-func flattenPlanNgwsAddresses(duplo *[]duplosdk.DuploPlanNgwAddresses) []map[string]interface{} {
+func flattenPlanNgwAddresses(duplo *[]duplosdk.DuploPlanNgwAddress) []map[string]interface{} {
 	if duplo == nil {
 		return []map[string]interface{}{}
 	}
 
-	list := make([]map[string]interface{}, len(*duplo))
+	list := []map[string]interface{}{}
 	for _, item := range *duplo {
 		list = append(list, map[string]interface{}{
 			"allocation_id":        item.AllocationId,
