@@ -127,6 +127,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_certificate":        dataSourcePlanCert(),
 			"duplocloud_plan_certificates":       dataSourcePlanCerts(),
 			"duplocloud_asg_profiles":            dataSourceAsgProfiles(),
+			"duplocloud_plan_nat_gateways":       dataSourcePlanNgws(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

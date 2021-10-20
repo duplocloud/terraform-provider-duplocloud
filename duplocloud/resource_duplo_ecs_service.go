@@ -459,6 +459,9 @@ func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 			if err != nil {
 				return err
 			}
+
+			// Wait for some time to deal with consistency issues.
+			time.Sleep(time.Duration(60) * time.Second)
 		}
 	}
 
