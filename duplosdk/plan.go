@@ -1,6 +1,8 @@
 package duplosdk
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type DuploPlan struct {
 	Name              string                      `json:"Name"`
@@ -57,6 +59,22 @@ type DuploPlanCloudPlatform struct {
 	Images       *[]DuploPlanImage      `json:"Images,omitempty"`
 	AzureConfig  map[string]interface{} `json:"PlanAzureConfig,omitempty"`
 	GoogleConfig map[string]interface{} `json:"PlanGoogleConfig,omitempty"`
+}
+
+type DuploPlanNgwAddress struct {
+	AllocationId       string `json:"AllocationId"`
+	NetworkInterfaceId string `json:"NetworkInterfaceId"`
+	PrivateIP          string `json:"PrivateIp"`
+	PublicIP           string `json:"PublicIp"`
+}
+
+type DuploPlanNgw struct {
+	NatGatewayId        string                 `json:"NatGatewayId,omitempty"`
+	State               *DuploStringValue      `json:"State,omitempty"`
+	SubnetId            string                 `json:"SubnetId"`
+	VpcId               string                 `json:"VpcId"`
+	Tags                *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	NatGatewayAddresses *[]DuploPlanNgwAddress `json:"NatGatewayAddresses,omitempty"`
 }
 
 // PlanGetList retrieves a list of plans via the Duplo API.
@@ -312,4 +330,13 @@ func (c *Client) PlanSetConfig(planID string, item DuploCustomDataEx) ClientErro
 		fmt.Sprintf("v3/admin/plans/%s/configs", planID),
 		&item,
 		&rp)
+}
+
+func (c *Client) PlanNgwGetList(planID string) (*[]DuploPlanNgw, ClientError) {
+	list := []DuploPlanNgw{}
+	err := c.getAPI("PlanNgwGetList()", fmt.Sprintf("v3/admin/plans/%s/nat-gateways", planID), &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
 }
