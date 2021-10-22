@@ -20,6 +20,7 @@ type DuploService struct {
 	AgentPlatform           int                    `json:"AgentPlatform"`
 	Cloud                   int                    `json:"Cloud"`
 	Tags                    *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	IsLBSyncedDeployment    bool                   `json:"IsLBSyncedDeployment,omitempty"`
 }
 
 // DuploServiceGetList retrieves a list of services via the Duplo API.

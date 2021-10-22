@@ -120,6 +120,12 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Computed: true,
 			Elem:     KeyValueSchema(),
 		},
+
+		"lb_synced_deployment": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  false,
+		},
 	}
 }
 
@@ -181,6 +187,7 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("cloud", duplo.Cloud)
+	d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 
 	log.Printf("[TRACE] resourceDuploServiceRead ******** start")
@@ -222,6 +229,7 @@ func resourceDuploServiceCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 		ReplicasMatchingAsgName: d.Get("replicas_matching_asg_name").(string),
 		Cloud:                   d.Get("cloud").(int),
 		Replicas:                d.Get("replicas").(int),
+		IsLBSyncedDeployment:    d.Get("lb_synced_deployment").(bool),
 	}
 
 	// Post the object to Duplo
