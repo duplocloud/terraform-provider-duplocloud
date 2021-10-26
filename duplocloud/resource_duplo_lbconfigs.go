@@ -82,7 +82,8 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 							"   - `1` : ALB (Application Load Balancer)\n" +
 							"   - `2` : Health-check Only (No Load Balancer)\n" +
 							"   - `3` : K8S Service w/ Cluster IP (No Load Balancer)\n" +
-							"   - `4` : K8S Service w/ Node Port (No Load Balancer)\n",
+							"   - `4` : K8S Service w/ Node Port (No Load Balancer)\n" +
+							"   - `5` : NLB (Network Load Balancer)\n",
 						Type:     schema.TypeInt,
 						Required: true,
 						ForceNew: true,

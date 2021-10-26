@@ -79,6 +79,7 @@ Should be one of:
    - `2` : Health-check Only (No Load Balancer)
    - `3` : K8S Service w/ Cluster IP (No Load Balancer)
    - `4` : K8S Service w/ Node Port (No Load Balancer)
+   - `5` : NLB (Network Load Balancer)
 - **port** (String) The backend port associated with this load balancer configuration.
 - **protocol** (String) The frontend protocol associated with this load balancer configuration.
 
