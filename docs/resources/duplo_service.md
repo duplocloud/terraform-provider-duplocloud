@@ -102,6 +102,7 @@ Should be one of:
 - **cloud** (Number) The numeric ID of the cloud provider to launch the service in. Defaults to `0`.
 - **commands** (String)
 - **extra_config** (String)
+- **lb_synced_deployment** (Boolean) Defaults to `false`.
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
 - **replicas_matching_asg_name** (String)
