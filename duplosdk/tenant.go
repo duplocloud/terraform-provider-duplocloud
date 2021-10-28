@@ -238,10 +238,10 @@ func (c *Client) TenantChangeConfig(tenantID string, oldConfig, newConfig *[]Dup
 		}
 	}
 
-	// Finally, delete any keys that are present in new config.
+	// Finally, delete any keys that are no longer present.
 	if oldConfig != nil {
 		for _, kv := range *oldConfig {
-			if _, ok := present[kv.Key]; ok {
+			if _, ok := present[kv.Key]; !ok {
 				if err := c.TenantDeleteConfigKey(tenantID, kv.Key); err != nil {
 					return err
 				}

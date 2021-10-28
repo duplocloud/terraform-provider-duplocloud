@@ -143,19 +143,44 @@ func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 }
 
 func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-
+	var err error
 	// Parse the identifying attributes
 	tenantID := d.Id()
 	settings := keyValueFromState("setting", d)
+	existingConfigMetadata := keyValueFromState("metadata", d)
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): start", tenantID)
-
+	existingSettings := removeSpecifiedSettingsFromMetadata(existingConfigMetadata, settings)
+	log.Printf("[TRACE] resourceTenantConfigDelete(%s): end", tenantID)
 	// Delete the configuration with Duplo
 	c := m.(*duplosdk.Client)
-	err := c.TenantReplaceConfig(duplosdk.DuploTenantConfig{TenantID: tenantID, Metadata: settings})
+	if d.Get("delete_unspecified_settings").(bool) {
+		err = c.TenantReplaceConfig(duplosdk.DuploTenantConfig{TenantID: tenantID})
+	} else {
+		err = c.TenantChangeConfig(tenantID, settings, existingSettings)
+	}
+
 	if err != nil {
 		return diag.Errorf("Error deleting tenant config for '%s': %s", tenantID, err)
 	}
 
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): end", tenantID)
 	return nil
+}
+
+func removeSpecifiedSettingsFromMetadata(metadata, specifiedSettings *[]duplosdk.DuploKeyStringValue) *[]duplosdk.DuploKeyStringValue {
+	var found = false
+	originalSettings := make([]duplosdk.DuploKeyStringValue, 0, len(*metadata)-len(*specifiedSettings))
+	for _, kv1 := range *metadata {
+		for _, kv2 := range *specifiedSettings {
+			if kv2.Key == kv1.Key {
+				found = true
+				break
+			}
+		}
+		if !found {
+			originalSettings = append(originalSettings, kv1)
+		}
+		found = false
+	}
+	return &originalSettings
 }
