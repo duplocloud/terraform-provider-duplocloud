@@ -227,7 +227,6 @@ func (c *Client) TenantReplaceConfig(config DuploTenantConfig) error {
 // TenantReplaceConfig changes tenant configuration metadata via the Duplo API, using the supplied
 // oldConfig and newConfig, for the given tenantID.
 func (c *Client) TenantChangeConfig(tenantID string, oldConfig, newConfig *[]DuploKeyStringValue) ClientError {
-
 	// Next, update all keys that are present, keeping a record of each one that is present
 	present := map[string]struct{}{}
 	if newConfig != nil {
@@ -239,10 +238,10 @@ func (c *Client) TenantChangeConfig(tenantID string, oldConfig, newConfig *[]Dup
 		}
 	}
 
-	// Finally, delete any keys that are no longer present.
+	// Finally, delete any keys that are present in new config.
 	if oldConfig != nil {
 		for _, kv := range *oldConfig {
-			if _, ok := present[kv.Key]; !ok {
+			if _, ok := present[kv.Key]; ok {
 				if err := c.TenantDeleteConfigKey(tenantID, kv.Key); err != nil {
 					return err
 				}

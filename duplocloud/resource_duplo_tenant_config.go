@@ -146,11 +146,12 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	// Parse the identifying attributes
 	tenantID := d.Id()
+	settings := keyValueFromState("setting", d)
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): start", tenantID)
 
 	// Delete the configuration with Duplo
 	c := m.(*duplosdk.Client)
-	err := c.TenantReplaceConfig(duplosdk.DuploTenantConfig{TenantID: tenantID})
+	err := c.TenantReplaceConfig(duplosdk.DuploTenantConfig{TenantID: tenantID, Metadata: settings})
 	if err != nil {
 		return diag.Errorf("Error deleting tenant config for '%s': %s", tenantID, err)
 	}
