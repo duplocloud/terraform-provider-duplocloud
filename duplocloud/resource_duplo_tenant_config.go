@@ -150,7 +150,6 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 	existingConfigMetadata := keyValueFromState("metadata", d)
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): start", tenantID)
 	existingSettings := removeSpecifiedSettingsFromMetadata(existingConfigMetadata, settings)
-	log.Printf("[TRACE] resourceTenantConfigDelete(%s): end", tenantID)
 	// Delete the configuration with Duplo
 	c := m.(*duplosdk.Client)
 	if d.Get("delete_unspecified_settings").(bool) {

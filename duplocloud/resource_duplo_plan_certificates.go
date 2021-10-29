@@ -160,6 +160,8 @@ func resourcePlanCertificatesDelete(ctx context.Context, d *schema.ResourceData,
 
 	// Parse the identifying attributes
 	planID := d.Id()
+	specifiedCerts := expandPlanCertificates("certificate", d)
+	allCerts := expandPlanCertificates("certificates", d)
 	log.Printf("[TRACE] resourcePlanCertificatesDelete(%s): start", planID)
 
 	// Get all of the plan certificates from duplo.
@@ -172,13 +174,13 @@ func resourcePlanCertificatesDelete(ctx context.Context, d *schema.ResourceData,
 	// Get the previous and desired plan certificates
 	previous, _ := getPlanCertificatesChange(all, d)
 	desired := &[]duplosdk.DuploPlanCertificate{}
-
+	existingCerts := removeSpecifiedCertsFromAllCerts(allCerts, specifiedCerts)
 	// Apply the changes via Duplo
 	var err duplosdk.ClientError
 	if d.Get("delete_unspecified_certificates").(bool) {
 		err = c.PlanReplaceCertificates(planID, desired)
 	} else {
-		err = c.PlanChangeCertificates(planID, previous, desired)
+		err = c.PlanChangeCertificates(planID, previous, existingCerts)
 	}
 	if err != nil {
 		return diag.Errorf("Error updating plan certificates for '%s': %s", planID, err)
@@ -271,4 +273,22 @@ func getPlanCertificatesChange(all *[]duplosdk.DuploPlanCertificate, d *schema.R
 	d.Set("specified_certificates", specified)
 
 	return
+}
+
+func removeSpecifiedCertsFromAllCerts(allCerts, specifiedCerts *[]duplosdk.DuploPlanCertificate) *[]duplosdk.DuploPlanCertificate {
+	var found = false
+	originalCers := make([]duplosdk.DuploPlanCertificate, 0, len(*allCerts)-len(*specifiedCerts))
+	for _, kv1 := range *allCerts {
+		for _, kv2 := range *specifiedCerts {
+			if kv2.CertificateArn == kv1.CertificateArn {
+				found = true
+				break
+			}
+		}
+		if !found {
+			originalCers = append(originalCers, kv1)
+		}
+		found = false
+	}
+	return &originalCers
 }
