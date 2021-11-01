@@ -260,6 +260,8 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 
 /// DELETE resource
 func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsDelete: start")
 
 	// Parse the identifying attributes
@@ -271,23 +273,29 @@ func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.Resource
 
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
-	err := c.DuploServiceLBConfigsDelete(tenantID, name)
-	if err != nil {
-		return diag.Errorf("Error deleting Duplo service '%s' load balancer configs: %s", id, err)
-	}
 
-	// Wait for it to be deleted
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service load balancer configs", id, func() (interface{}, duplosdk.ClientError) {
-		rp, errget := c.DuploServiceLBConfigsGet(tenantID, name)
-		if errget == nil && (rp == nil || rp.LBConfigs == nil || len(*rp.LBConfigs) == 0) {
-			rp = nil
+	// Check if service is exists.
+	exists := c.DuploServiceLBConfigsExists(tenantID, name)
+
+	if exists {
+		err := c.DuploServiceLBConfigsDelete(tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error deleting Duplo service '%s' load balancer configs: %s", id, err)
 		}
-		return rp, errget
-	})
 
-	// Wait 40 more seconds to deal with consistency issues.
-	if diags == nil {
-		time.Sleep(40 * time.Second)
+		// Wait for it to be deleted
+		diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service load balancer configs", id, func() (interface{}, duplosdk.ClientError) {
+			rp, errget := c.DuploServiceLBConfigsGet(tenantID, name)
+			if errget == nil && (rp == nil || rp.LBConfigs == nil || len(*rp.LBConfigs) == 0) {
+				rp = nil
+			}
+			return rp, errget
+		})
+
+		// Wait 40 more seconds to deal with consistency issues.
+		if diags == nil {
+			time.Sleep(40 * time.Second)
+		}
 	}
 
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsDelete: end")

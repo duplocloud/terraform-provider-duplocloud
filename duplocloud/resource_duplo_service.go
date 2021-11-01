@@ -262,19 +262,25 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
-	err := c.DuploServiceDelete(tenantID, name)
-	if err != nil {
-		return diag.Errorf("Error deleting Duplo service '%s': %s", id, err)
-	}
 
-	// Wait for it to be deleted
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DuploServiceGet(tenantID, name)
-	})
+	// Check if service is exists.
+	exists := c.DuploServiceExist(tenantID, name)
 
-	// Wait 40 more seconds to deal with consistency issues.
-	if diags == nil {
-		time.Sleep(40 * time.Second)
+	if exists {
+		err := c.DuploServiceDelete(tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error deleting Duplo service '%s': %s", id, err)
+		}
+
+		// Wait for it to be deleted
+		diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service", id, func() (interface{}, duplosdk.ClientError) {
+			return c.DuploServiceGet(tenantID, name)
+		})
+
+		// Wait 40 more seconds to deal with consistency issues.
+		if diags == nil {
+			time.Sleep(40 * time.Second)
+		}
 	}
 
 	log.Printf("[TRACE] resourceDuploServiceDelete ******** end")
