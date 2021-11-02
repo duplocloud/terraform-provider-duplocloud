@@ -47,6 +47,17 @@ func (c *Client) DuploServiceGet(tenantID string, name string) (*DuploService, C
 	return &rp, err
 }
 
+func (c *Client) DuploServiceExist(tenantID string, name string) bool {
+	rp := DuploService{}
+	err := c.getAPI(fmt.Sprintf("DuploServiceGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2/%s", tenantID, name),
+		&rp)
+	if err != nil || rp.Name == "" {
+		return false
+	}
+	return true
+}
+
 // DuploServiceCreate creates a service via the Duplo API.
 func (c *Client) DuploServiceCreate(tenantID string, rq *DuploService) (*DuploService, ClientError) {
 	return c.DuploServiceCreateOrUpdate(tenantID, rq, false)

@@ -52,6 +52,17 @@ func (c *Client) DuploServiceLBConfigsGet(tenantID string, name string) (*DuploS
 	return &rp, err
 }
 
+func (c *Client) DuploServiceLBConfigsExists(tenantID string, name string) bool {
+	rp := DuploServiceLBConfigs{}
+	err := c.getAPI(fmt.Sprintf("DuploServiceLBConfigsGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2/%s", tenantID, name),
+		&rp)
+	if err == nil && (rp.LBConfigs == nil || len(*rp.LBConfigs) == 0) {
+		return false
+	}
+	return true
+}
+
 // DuploServiceLBConfigsCreate creates a service's load balancer via the Duplo API.
 func (c *Client) DuploServiceLBConfigsCreate(tenantID string, rq *DuploServiceLBConfigs) (*DuploServiceLBConfigs, ClientError) {
 	return c.DuploServiceLBConfigsCreateOrUpdate(tenantID, rq, false)
