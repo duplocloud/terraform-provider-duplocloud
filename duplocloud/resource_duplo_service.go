@@ -103,11 +103,13 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Optional:    false,
 			Required:    true,
+			ConflictsWith: []string{"replicas_matching_asg_name"},
 		},
 		"replicas_matching_asg_name": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
+			ConflictsWith: []string{"replicas"},
 		},
 		"docker_image": {
 			Description: "The docker image to use for the launched container(s).",
