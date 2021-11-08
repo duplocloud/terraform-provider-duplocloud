@@ -46,6 +46,7 @@ description: |-
 
 ### Read-Only
 
+- **fullname** (String) The full name of the ASG profile.
 - **id** (String) The ID of this resource.
 
 <a id="nestedblock--metadata"></a>

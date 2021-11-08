@@ -51,6 +51,12 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 		DiffSuppressFunc: diffSuppressWhenNotCreating,
 	}
 
+	awsASGSchema["fullname"] = &schema.Schema{
+		Description: "The full name of the ASG profile.",
+		Type:        schema.TypeString,
+		Computed:    true,
+	}
+
 	return awsASGSchema
 }
 
@@ -275,7 +281,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("min_instance_count", duplo.MinSize)
 	d.Set("max_instance_count", duplo.MaxSize)
 	d.Set("tenant_id", duplo.TenantId)
-	d.Set("friendly_name", duplo.FriendlyName)
+	d.Set("fullname", duplo.FriendlyName)
 	d.Set("capacity", duplo.Capacity)
 	d.Set("is_minion", duplo.IsMinion)
 	d.Set("image_id", duplo.ImageID)
