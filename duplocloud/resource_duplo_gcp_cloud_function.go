@@ -273,7 +273,7 @@ func resourceGcpCloudFunctionCreate(ctx context.Context, d *schema.ResourceData,
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	rp, err := c.GcpCloudFunctionCreate(tenantID, rq)
+	_, err := c.GcpCloudFunctionCreate(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s cloud function '%s': %s", tenantID, rq.Name, err)
 	}
@@ -288,7 +288,7 @@ func resourceGcpCloudFunctionCreate(ctx context.Context, d *schema.ResourceData,
 	}
 	d.SetId(id)
 
-	resourceGcpCloudFunctionSetData(d, tenantID, rq.Name, rp)
+	resourceGcpCloudFunctionRead(ctx, d, m)
 	log.Printf("[TRACE] resourceGcpCloudFunctionCreate ******** end")
 	return diags
 }
@@ -303,7 +303,7 @@ func resourceGcpCloudFunctionUpdate(ctx context.Context, d *schema.ResourceData,
 	if len(idParts) < 2 {
 		return diag.Errorf("Invalid resource ID: %s", id)
 	}
-	tenantID, name := idParts[0], idParts[1]
+	tenantID, _ := idParts[0], idParts[1]
 
 	// Create the request object.
 	rq := expandGcpCloudFunction(d)
@@ -312,11 +312,11 @@ func resourceGcpCloudFunctionUpdate(ctx context.Context, d *schema.ResourceData,
 	c := m.(*duplosdk.Client)
 
 	// Post the object to Duplo
-	rp, err := c.GcpCloudFunctionUpdate(tenantID, rq)
+	_, err := c.GcpCloudFunctionUpdate(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error updating tenant %s cloud function '%s': %s", tenantID, rq.Name, err)
 	}
-	resourceGcpCloudFunctionSetData(d, tenantID, name, rp)
+	resourceGcpCloudFunctionRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceGcpCloudFunctionUpdate ******** end")
 	return nil

@@ -85,8 +85,8 @@ type DuploGcpCloudFunction struct {
 
 // DuploGcpCloudFunctionHTTPSTrigger represents a GCP cloud function resource for a Duplo tenant
 type DuploGcpCloudFunctionHTTPSTrigger struct {
-	SecurityLevel string `json:"SecurityLevel,omitempty"`
-	URL           string `json:"Url,omitempty"`
+	SecurityLevel string `json:"securityLevel,omitempty"`
+	URL           string `json:"url,omitempty"`
 }
 
 // DuploGcpCloudFunctionEventTrigger represents a GCP cloud function resource for a Duplo tenant
