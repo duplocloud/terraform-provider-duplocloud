@@ -87,7 +87,6 @@ resource "duplocloud_duplo_service" "myservice" {
 
 - **docker_image** (String) The docker image to use for the launched container(s).
 - **name** (String) The name of the service to create.
-- **replicas** (Number) The number of container replicas to deploy.
 - **tenant_id** (String) The GUID of the tenant that the service will be created in.
 
 ### Optional
@@ -105,6 +104,7 @@ Should be one of:
 - **lb_synced_deployment** (Boolean) Defaults to `false`.
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
+- **replicas** (Number) The number of container replicas to deploy. Defaults to `1`.
 - **replicas_matching_asg_name** (String)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **volumes** (String)

@@ -101,14 +101,13 @@ func duploServiceSchema() map[string]*schema.Schema {
 		"replicas": {
 			Description:   "The number of container replicas to deploy.",
 			Type:          schema.TypeInt,
-			Optional:      false,
-			Required:      true,
+			Optional:      true,
+			Default:       1,
 			ConflictsWith: []string{"replicas_matching_asg_name"},
 		},
 		"replicas_matching_asg_name": {
 			Type:          schema.TypeString,
 			Optional:      true,
-			Required:      false,
 			ConflictsWith: []string{"replicas"},
 		},
 		"docker_image": {
