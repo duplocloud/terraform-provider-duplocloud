@@ -91,6 +91,8 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_cloudwatch_metric_alarm":  resourceAwsCloudWatchMetricAlarm(),
 			"duplocloud_azure_key_vault_secret":       resourceAzureKeyVaultSecret(),
 			"duplocloud_azure_storage_account":        resourceAzureStorageAccount(),
+			"duplocloud_azure_mysql_database":         resourceAzureMysqlDatabase(),
+			"duplocloud_azure_redis_cache":            resourceAzureRedisCache(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),

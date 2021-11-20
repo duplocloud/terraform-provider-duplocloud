@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -50,6 +51,12 @@ func duploAzureStorageAccountSchema() map[string]*schema.Schema {
 		},
 		"enable_https_traffic_only": {
 			Description: "Boolean flag which forces HTTPS if enabled.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     true,
+		},
+		"wait_until_ready": {
+			Description: "Whether or not to wait until azure storage account to be ready, after creation.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     true,
@@ -123,6 +130,14 @@ func resourceAzureStorageAccountCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	d.SetId(id)
 
+	//By default, wait until the storage account to be ready.
+	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
+		err = storageAccountWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	diags = resourceAzureStorageAccountRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzureStorageAccountCreate(%s, %s): end", tenantID, name)
 	return diags
@@ -182,4 +197,31 @@ func flattenAzureStorageAccount(d *schema.ResourceData, duplo *duplosdk.DuploAzu
 	d.Set("account_tier", duplo.Sku.Tier)
 	d.Set("access_tier", duplo.PropertiesAccessTier)
 	d.Set("enable_https_traffic_only", duplo.PropertiesSupportsHTTPSTrafficOnly)
+}
+
+func storageAccountWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &resource.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.StorageAccountGet(tenantID, name)
+			log.Printf("[TRACE] Storage account provisioning state is (%s).", rp.PropertiesProvisioningState)
+			status := "pending"
+			if err == nil {
+				if rp.PropertiesProvisioningState == "Succeeded" {
+					status = "ready"
+				} else {
+					status = "pending"
+				}
+			}
+
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] storageAccountWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
