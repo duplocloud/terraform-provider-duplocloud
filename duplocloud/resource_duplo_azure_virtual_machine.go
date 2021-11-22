@@ -298,8 +298,8 @@ func resourceAzureVirtualMachineDelete(ctx context.Context, d *schema.ResourceDa
 }
 
 func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost {
-	diskSizeKV, usernameKV, passwordKV, joinDomainKV, logAnalyticKV := duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{},
-		duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{}
+	diskSizeKV, usernameKV, passwordKV := duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{},
+		duplosdk.DuploKeyStringValue{}
 
 	if v, ok := d.GetOk("disk_size_gb"); ok {
 		diskSizeKV = duplosdk.DuploKeyStringValue{
@@ -319,11 +319,11 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 			Value: v.(string),
 		}
 	}
-	joinDomainKV = duplosdk.DuploKeyStringValue{
+	joinDomainKV := duplosdk.DuploKeyStringValue{
 		Key:   "JoinDomain",
 		Value: strconv.FormatBool(d.Get("join_domain").(bool)),
 	}
-	logAnalyticKV = duplosdk.DuploKeyStringValue{
+	logAnalyticKV := duplosdk.DuploKeyStringValue{
 		Key:   "JoinLogAnalytics",
 		Value: strconv.FormatBool(d.Get("enable_log_analytics").(bool)),
 	}
