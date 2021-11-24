@@ -21,6 +21,7 @@ type DuploService struct {
 	Cloud                   int                    `json:"Cloud"`
 	Tags                    *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	IsLBSyncedDeployment    bool                   `json:"IsLBSyncedDeployment,omitempty"`
+	IsAnyHostAllowed        bool                   `json:"IsAnyHostAllowed,omitempty"`
 }
 
 // DuploServiceGetList retrieves a list of services via the Duplo API.

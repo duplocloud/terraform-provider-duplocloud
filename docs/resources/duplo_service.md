@@ -98,6 +98,7 @@ Should be one of:
    - `7` : EKS linux container agent
  Defaults to `0`.
 - **allocation_tags** (String)
+- **any_host_allowed** (Boolean) Whether or not the service can run on hosts in other tenants (within the the same plan as the current tenant). Defaults to `false`.
 - **cloud** (Number) The numeric ID of the cloud provider to launch the service in. Defaults to `0`.
 - **commands** (String)
 - **extra_config** (String)
