@@ -54,6 +54,7 @@ resource "duplocloud_azure_mysql_database" "mydb" {
 
 - **fqdn** (String) The FQDN of the MySQL Server.
 - **id** (String) The ID of this resource.
+- **tags** (Map of String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

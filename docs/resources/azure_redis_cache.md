@@ -57,6 +57,7 @@ resource "duplocloud_azure_redis_cache" "myCache" {
 - **id** (String) The ID of this resource.
 - **port** (Number)
 - **ssl_port** (Number)
+- **tags** (Map of String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
