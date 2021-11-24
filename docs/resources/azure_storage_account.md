@@ -38,6 +38,7 @@ resource "duplocloud_azure_storage_account" "myapp" {
 - **account_tier** (String)
 - **enable_https_traffic_only** (Boolean) Boolean flag which forces HTTPS if enabled. Defaults to `true`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **wait_until_ready** (Boolean) Whether or not to wait until azure storage account to be ready, after creation. Defaults to `true`.
 
 ### Read-Only
 

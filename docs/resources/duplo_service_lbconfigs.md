@@ -79,7 +79,8 @@ Should be one of:
    - `2` : Health-check Only (No Load Balancer)
    - `3` : K8S Service w/ Cluster IP (No Load Balancer)
    - `4` : K8S Service w/ Node Port (No Load Balancer)
-   - `5` : NLB (Network Load Balancer)
+   - `5` : Azure Shared Application Gateway
+   - `6` : NLB (Network Load Balancer)
 - **port** (String) The backend port associated with this load balancer configuration.
 - **protocol** (String) The frontend protocol associated with this load balancer configuration.
 
@@ -88,6 +89,7 @@ Optional:
 - **certificate_arn** (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - **external_traffic_policy** (String) Only for K8S Node Port (`lb_type = 4`).  Set the kubernetes service `externalTrafficPolicy` attribute.
 - **health_check_url** (String) The health check URL to associate with this load balancer configuration.
+- **host_name** (String) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).
 - **is_internal** (Boolean) Whether or not to create an internal load balancer.
 - **is_native** (Boolean)
 - **replication_controller_name** (String, Deprecated) Set the replication_controller_name field instead of lbconfigs.replication_controller_name

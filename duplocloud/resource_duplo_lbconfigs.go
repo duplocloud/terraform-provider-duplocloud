@@ -83,7 +83,8 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 							"   - `2` : Health-check Only (No Load Balancer)\n" +
 							"   - `3` : K8S Service w/ Cluster IP (No Load Balancer)\n" +
 							"   - `4` : K8S Service w/ Node Port (No Load Balancer)\n" +
-							"   - `5` : NLB (Network Load Balancer)\n",
+							"   - `5` : Azure Shared Application Gateway\n" +
+							"   - `6` : NLB (Network Load Balancer)\n",
 						Type:     schema.TypeInt,
 						Required: true,
 						ForceNew: true,
@@ -137,6 +138,12 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 						Type:        schema.TypeBool,
 						Computed:    true,
 						Optional:    true,
+					},
+					"host_name": {
+						Description: "Set only if Azure Shared Application Gateway is used (`lb_type = 5`).",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -226,6 +233,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					IsNative:                  lbc["is_native"].(bool),
 					IsInternal:                lbc["is_internal"].(bool),
 					ExternalTrafficPolicy:     lbc["external_traffic_policy"].(string),
+					HostNames:                 &[]string{lbc["host_name"].(string)},
 				})
 			}
 
