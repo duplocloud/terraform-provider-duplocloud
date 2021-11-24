@@ -50,7 +50,7 @@ type DuploNativeHostVolume struct {
 	VolumeType string `json:"VolumeType,omitempty"`
 }
 
-type DuploAzureVitualMachine struct {
+type DuploAzureVirtualMachine struct {
 	PropertiesHardwareProfile struct {
 		VMSize string `json:"vmSize"`
 	} `json:"properties.hardwareProfile"`
@@ -105,18 +105,11 @@ type DuploAzureVitualMachine struct {
 			} `json:"/subscriptions/0c84b91e-95f5-409e-9cff-6c2e60affbb3/resourcegroups/duploservices-base01/providers/Microsoft.ManagedIdentity/userAssignedIdentities/duploservices-base01"`
 		} `json:"userAssignedIdentities"`
 	} `json:"identity"`
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Location string `json:"location"`
-	Tags     struct {
-		TENANTNAME        string `json:"TENANT_NAME"`
-		TENANTID          string `json:"TENANT_ID"`
-		DuploProject      string `json:"duplo-project"`
-		Owner             string `json:"owner"`
-		DuploCreationTime string `json:"duplo_creation_time"`
-		DuploSyncVM       string `json:"duplo_sync_vm"`
-	} `json:"tags"`
+	ID       string                 `json:"id"`
+	Name     string                 `json:"name"`
+	Type     string                 `json:"type"`
+	Location string                 `json:"location"`
+	Tags     map[string]interface{} `json:"tags"`
 }
 
 // NativeHostGetList retrieves a list of native hosts via the Duplo API.
@@ -200,15 +193,15 @@ func (c *Client) NativeHostDelete(tenantID, instanceID string) ClientError {
 		nil)
 }
 
-func (c *Client) AzureVitualMachineList(tenantID string) (*[]DuploAzureVitualMachine, ClientError) {
-	rp := []DuploAzureVitualMachine{}
+func (c *Client) AzureVitualMachineList(tenantID string) (*[]DuploAzureVirtualMachine, ClientError) {
+	rp := []DuploAzureVirtualMachine{}
 	err := c.getAPI(fmt.Sprintf("AzureVitualMachineList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetAzureVirtualMachinesEx", tenantID),
 		&rp)
 	return &rp, err
 }
 
-func (c *Client) AzureVitualMachineGet(tenantID, name string) (*DuploAzureVitualMachine, ClientError) {
+func (c *Client) AzureVitualMachineGet(tenantID, name string) (*DuploAzureVirtualMachine, ClientError) {
 	list, err := c.AzureVitualMachineList(tenantID)
 	if err != nil {
 		return nil, err

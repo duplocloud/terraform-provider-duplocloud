@@ -97,6 +97,11 @@ func duploAzureRedisCacheSchema() map[string]*schema.Schema {
 			Type:     schema.TypeInt,
 			Computed: true,
 		},
+		"tags": {
+			Type:     schema.TypeMap,
+			Computed: true,
+			Elem:     schema.TypeString,
+		},
 		"redis_version": {
 			Description:  "Redis version. Only major version needed. Valid values: `4`, `6`.",
 			Type:         schema.TypeString,
@@ -262,6 +267,7 @@ func flattenAzureRedisCache(d *schema.ResourceData, duplo *duplosdk.DuploAzureRe
 	d.Set("port", duplo.PropertiesPort)
 	d.Set("ssl_port", duplo.PropertiesSslPort)
 	d.Set("redis_version", duplo.PropertiesRedisVersion)
+	d.Set("tags", duplo.Tags)
 }
 
 func redisCacheWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {

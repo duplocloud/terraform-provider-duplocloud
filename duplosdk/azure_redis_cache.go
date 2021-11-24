@@ -49,12 +49,11 @@ type DuploAzureRedisCache struct {
 		ShardID    int  `json:"shardId"`
 		IsMaster   bool `json:"isMaster"`
 	} `json:"properties.instances"`
-	Tags struct {
-	} `json:"tags"`
-	Location string `json:"location"`
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Type     string `json:"type"`
+	Tags     map[string]interface{} `json:"tags"`
+	Location string                 `json:"location"`
+	ID       string                 `json:"id"`
+	Name     string                 `json:"name"`
+	Type     string                 `json:"type"`
 }
 
 func (c *Client) RedisCacheCreate(tenantID string, name string, rq *DuploAzureRedisCacheRequest) ClientError {

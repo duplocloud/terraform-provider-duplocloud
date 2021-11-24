@@ -38,16 +38,15 @@ type DuploAzureMySqlServer struct {
 		StorageMB           int    `json:"storageMB"`
 		StorageAutogrow     string `json:"storageAutogrow"`
 	} `json:"properties.storageProfile"`
-	PropertiesReplicationRole            string        `json:"properties.replicationRole"`
-	PropertiesMasterServerID             string        `json:"properties.masterServerId"`
-	PropertiesPublicNetworkAccess        string        `json:"properties.publicNetworkAccess"`
-	PropertiesPrivateEndpointConnections []interface{} `json:"properties.privateEndpointConnections"`
-	Tags                                 struct {
-	} `json:"tags"`
-	Location string `json:"location"`
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Type     string `json:"type"`
+	PropertiesReplicationRole            string                 `json:"properties.replicationRole"`
+	PropertiesMasterServerID             string                 `json:"properties.masterServerId"`
+	PropertiesPublicNetworkAccess        string                 `json:"properties.publicNetworkAccess"`
+	PropertiesPrivateEndpointConnections []interface{}          `json:"properties.privateEndpointConnections"`
+	Tags                                 map[string]interface{} `json:"tags"`
+	Location                             string                 `json:"location"`
+	ID                                   string                 `json:"id"`
+	Name                                 string                 `json:"name"`
+	Type                                 string                 `json:"type"`
 }
 
 type DuploAzureMySqlDatabase struct {

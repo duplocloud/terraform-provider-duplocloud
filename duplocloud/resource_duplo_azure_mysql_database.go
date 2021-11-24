@@ -128,6 +128,11 @@ func duploAzureMysqlDatabaseSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"tags": {
+			Type:     schema.TypeMap,
+			Computed: true,
+			Elem:     schema.TypeString,
+		},
 	}
 }
 
@@ -277,6 +282,8 @@ func flattenAzureMysqlDatabase(d *schema.ResourceData, duplo *duplosdk.DuploAzur
 	d.Set("geo_redundant_backup", duplo.PropertiesStorageProfile.GeoRedundantBackup)
 	d.Set("ssl_enforcement", duplo.PropertiesSslEnforcement)
 	d.Set("fqdn", duplo.PropertiesFullyQualifiedDomainName)
+	d.Set("tags", duplo.Tags)
+
 }
 
 func mysqlSeverWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
