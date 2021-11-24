@@ -193,16 +193,16 @@ func (c *Client) NativeHostDelete(tenantID, instanceID string) ClientError {
 		nil)
 }
 
-func (c *Client) AzureVitualMachineList(tenantID string) (*[]DuploAzureVirtualMachine, ClientError) {
+func (c *Client) AzureVirtualMachineList(tenantID string) (*[]DuploAzureVirtualMachine, ClientError) {
 	rp := []DuploAzureVirtualMachine{}
-	err := c.getAPI(fmt.Sprintf("AzureVitualMachineList(%s)", tenantID),
+	err := c.getAPI(fmt.Sprintf("AzureVirtualMachineList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetAzureVirtualMachinesEx", tenantID),
 		&rp)
 	return &rp, err
 }
 
-func (c *Client) AzureVitualMachineGet(tenantID, name string) (*DuploAzureVirtualMachine, ClientError) {
-	list, err := c.AzureVitualMachineList(tenantID)
+func (c *Client) AzureVirtualMachineGet(tenantID, name string) (*DuploAzureVirtualMachine, ClientError) {
+	list, err := c.AzureVirtualMachineList(tenantID)
 	if err != nil {
 		return nil, err
 	}
