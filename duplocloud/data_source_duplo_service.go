@@ -65,6 +65,14 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"lb_synced_deployment": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
+		"any_host_allowed": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
 		"tags": {
 			Type:     schema.TypeList,
 			Computed: true,
@@ -132,6 +140,8 @@ func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m 
 				"commands":                   duplo.Commands,
 				"volumes":                    duplo.Volumes,
 				"docker_image":               duplo.DockerImage,
+				"any_host_allowed":           duplo.IsAnyHostAllowed,
+				"lb_synced_deployment":       duplo.IsLBSyncedDeployment,
 				"agent_platform":             duplo.AgentPlatform,
 				"replicas_matching_asg_name": duplo.ReplicasMatchingAsgName,
 				"replicas":                   duplo.Replicas,
@@ -172,6 +182,8 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 		d.Set("commands", duplo.Commands)
 		d.Set("volumes", duplo.Volumes)
 		d.Set("docker_image", duplo.DockerImage)
+		d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
+		d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
 		d.Set("agent_platform", duplo.AgentPlatform)
 		d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 		d.Set("replicas", duplo.Replicas)
