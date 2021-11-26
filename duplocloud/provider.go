@@ -94,6 +94,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_mysql_database":         resourceAzureMysqlDatabase(),
 			"duplocloud_azure_redis_cache":            resourceAzureRedisCache(),
 			"duplocloud_azure_virtual_machine":        resourceAzureVirtualMachine(),
+			"duplocloud_azure_sql_managed_database":   resourceAzureSqlManagedDatabase(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
