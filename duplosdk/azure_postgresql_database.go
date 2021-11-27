@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type DuploAzureMySqlRequest struct {
+type DuploAzurePostgresqlRequest struct {
 	BackupRetentionDays int    `json:"BackupRetentionDays"`
 	GeoRedundantBackup  string `json:"GeoRedundantBackup"`
 	Version             string `json:"Version"`
@@ -16,7 +16,7 @@ type DuploAzureMySqlRequest struct {
 	Size                string `json:"Size"`
 }
 
-type DuploAzureMySqlServer struct {
+type DuploAzurePostgresqlServer struct {
 	Sku struct {
 		Name     string `json:"name"`
 		Tier     string `json:"tier"`
@@ -49,7 +49,7 @@ type DuploAzureMySqlServer struct {
 	Type                                 string                 `json:"type"`
 }
 
-type DuploAzureMySqlDatabase struct {
+type DuploAzurePostgresqlDatabase struct {
 	PropertiesCharset   string `json:"properties.charset"`
 	PropertiesCollation string `json:"properties.collation"`
 	ID                  string `json:"id"`
@@ -57,17 +57,17 @@ type DuploAzureMySqlDatabase struct {
 	Type                string `json:"type"`
 }
 
-func (c *Client) MySqlDatabaseCreate(tenantID string, rq *DuploAzureMySqlRequest) ClientError {
+func (c *Client) PostgresqlDatabaseCreate(tenantID string, rq *DuploAzurePostgresqlRequest) ClientError {
 	return c.postAPI(
-		fmt.Sprintf("MySqlDatabaseCreate(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("subscriptions/%s/CreateMySql", tenantID),
+		fmt.Sprintf("PostgresqlDatabaseCreate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("subscriptions/%s/CreatePgSql", tenantID),
 		&rq,
 		nil,
 	)
 }
 
-func (c *Client) MySqlServerGet(tenantID string, name string) (*DuploAzureMySqlServer, ClientError) {
-	list, err := c.MySqlServerList(tenantID)
+func (c *Client) PostgresqlServerGet(tenantID string, name string) (*DuploAzurePostgresqlServer, ClientError) {
+	list, err := c.PostgresqlServerList(tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -82,28 +82,28 @@ func (c *Client) MySqlServerGet(tenantID string, name string) (*DuploAzureMySqlS
 	return nil, nil
 }
 
-func (c *Client) MySqlServerList(tenantID string) (*[]DuploAzureMySqlServer, ClientError) {
-	rp := []DuploAzureMySqlServer{}
+func (c *Client) PostgresqlServerList(tenantID string) (*[]DuploAzurePostgresqlServer, ClientError) {
+	rp := []DuploAzurePostgresqlServer{}
 	err := c.getAPI(
-		fmt.Sprintf("MySqlServerList(%s)", tenantID),
-		fmt.Sprintf("subscriptions/%s/ListMySqls", tenantID),
+		fmt.Sprintf("PostgresqlServerList(%s)", tenantID),
+		fmt.Sprintf("subscriptions/%s/ListPgSqls", tenantID),
 		&rp,
 	)
 	return &rp, err
 }
 
-func (c *Client) MySqlDatabaseList(tenantID, name string) (*[]DuploAzureMySqlDatabase, ClientError) {
-	rp := []DuploAzureMySqlDatabase{}
+func (c *Client) PostgresqlDatabaseList(tenantID, name string) (*[]DuploAzurePostgresqlDatabase, ClientError) {
+	rp := []DuploAzurePostgresqlDatabase{}
 	err := c.getAPI(
-		fmt.Sprintf("MySqlDatabaseList(%s)", tenantID),
-		fmt.Sprintf("subscriptions/%s/ListMySqlDatabases/%s", tenantID, name),
+		fmt.Sprintf("PostgresqlDatabaseList(%s)", tenantID),
+		fmt.Sprintf("subscriptions/%s/ListSqlDatabases/%s", tenantID, name),
 		&rp,
 	)
 	return &rp, err
 }
 
-func (c *Client) MySqlServerExists(tenantID, name string) (bool, ClientError) {
-	list, err := c.MySqlServerList(tenantID)
+func (c *Client) PostgresqlServerExists(tenantID, name string) (bool, ClientError) {
+	list, err := c.PostgresqlServerList(tenantID)
 	if err != nil {
 		return false, err
 	}
@@ -118,10 +118,10 @@ func (c *Client) MySqlServerExists(tenantID, name string) (bool, ClientError) {
 	return false, nil
 }
 
-func (c *Client) MySqlDatabaseDelete(tenantID string, name string) ClientError {
+func (c *Client) PostgresqlDatabaseDelete(tenantID string, name string) ClientError {
 	return c.postAPI(
-		fmt.Sprintf("MySqlDatabaseDelete(%s, %s)", tenantID, name),
-		fmt.Sprintf("subscriptions/%s/DeleteMySql/%s", tenantID, name),
+		fmt.Sprintf("PostgresqlDatabaseDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/DeletePgSql/%s", tenantID, name),
 		nil,
 		nil,
 	)
