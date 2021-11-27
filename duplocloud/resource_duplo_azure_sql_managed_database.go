@@ -254,6 +254,12 @@ func parseAzureSqlManagedDatabaseIdParts(id string) (tenantID, name string, err 
 }
 
 func flattenAzureSqlManagedDatabase(d *schema.ResourceData, duplo *duplosdk.DuploAzureSqlManagedDatabaseInstance) {
+	d.Set("name", duplo.Name)
+	d.Set("storage_size_in_gb", duplo.PropertiesStorageSizeInGB)
+	d.Set("subnet_id", duplo.PropertiesSubnetID)
+	d.Set("sku_name", duplo.Sku.Name)
+	d.Set("vcores", duplo.PropertiesVCores)
+	d.Set("administrator_login", duplo.PropertiesAdministratorLogin)
 	d.Set("tags", duplo.Tags)
 	d.Set("fqdn", duplo.PropertiesFullyQualifiedDomainName)
 	d.Set("collation", duplo.PropertiesCollation)
