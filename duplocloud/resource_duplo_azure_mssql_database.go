@@ -227,6 +227,11 @@ func parseAzureMssqlDatabaseIdParts(id string) (tenantID, name string, err error
 }
 
 func flattenAzureMssqlDatabase(d *schema.ResourceData, duplo *duplosdk.DuploAzureMsSqlServer) {
+	d.Set("name", duplo.Name)
+	d.Set("administrator_login", duplo.PropertiesAdministratorLogin)
+	d.Set("public_network_access", duplo.PropertiesPublicNetworkAccess)
+	d.Set("minimum_tls_version", duplo.PropertiesMinimalTLSVersion)
+	d.Set("version", duplo.PropertiesVersion)
 	d.Set("fqdn", duplo.PropertiesFullyQualifiedDomainName)
 	d.Set("tags", duplo.Tags)
 }

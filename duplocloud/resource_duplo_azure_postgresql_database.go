@@ -280,6 +280,8 @@ func parseAzurePostgresqlDatabaseIdParts(id string) (tenantID, name string, err 
 }
 
 func flattenAzurePostgresqlDatabase(d *schema.ResourceData, duplo *duplosdk.DuploAzurePostgresqlServer) {
+	d.Set("name", duplo.Name)
+	d.Set("sku_name", duplo.Sku.Name)
 	d.Set("administrator_login", duplo.PropertiesAdministratorLogin)
 	d.Set("storage_mb", duplo.PropertiesStorageProfile.StorageMB)
 	d.Set("version", duplo.PropertiesVersion)
