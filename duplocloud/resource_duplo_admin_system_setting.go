@@ -67,7 +67,7 @@ func resourceAdminSystemSettingRead(ctx context.Context, d *schema.ResourceData,
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve admin system setting %s : %s", keyType, key, clientErr)
+		return diag.Errorf("Unable to retrieve admin system setting %s of type %s : %s", key, keyType, clientErr)
 	}
 
 	flattenAdminSystemSetting(d, duplo)
@@ -87,7 +87,7 @@ func resourceAdminSystemSettingCreate(ctx context.Context, d *schema.ResourceDat
 	rq := expandAdminSystemSetting(d)
 	err = c.SystemSettingCreate(rq)
 	if err != nil {
-		return diag.Errorf("Error creating admin system setting '%s': %s", keyType, key, err)
+		return diag.Errorf("Error creating key type %s admin system setting '%s': %s", keyType, key, err)
 	}
 
 	id := fmt.Sprintf("%s/%s", keyType, key)
@@ -122,7 +122,7 @@ func resourceAdminSystemSettingDelete(ctx context.Context, d *schema.ResourceDat
 		if clientErr.Status() == 404 {
 			return nil
 		}
-		return diag.Errorf("Unable to delete tenant %s admin system setting '%s': %s", keyType, key, clientErr)
+		return diag.Errorf("Unable to delete key type %s admin system setting '%s': %s", keyType, key, clientErr)
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "admin system setting", id, func() (interface{}, duplosdk.ClientError) {

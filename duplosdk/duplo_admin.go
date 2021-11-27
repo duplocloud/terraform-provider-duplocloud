@@ -6,7 +6,7 @@ func (c *Client) SystemSettingCreate(rq *DuploCustomDataEx) ClientError {
 	rp := DuploCustomDataEx{}
 	return c.postAPI(
 		fmt.Sprintf("SystemSettingCreate(%s)", rq.Key),
-		fmt.Sprintf("v3/admin/systemSettings/config"),
+		"v3/admin/systemSettings/config",
 		&rq,
 		&rp,
 	)
@@ -34,8 +34,8 @@ func (c *Client) SystemSettingGet(key string) (*DuploCustomDataEx, ClientError) 
 func (c *Client) SystemSettingList() (*[]DuploCustomDataEx, ClientError) {
 	rp := []DuploCustomDataEx{}
 	err := c.getAPI(
-		fmt.Sprintf("SystemSettingList"),
-		fmt.Sprintf("v3/admin/systemSettings/config"),
+		"SystemSettingList",
+		"v3/admin/systemSettings/config",
 		&rp,
 	)
 	return &rp, err
