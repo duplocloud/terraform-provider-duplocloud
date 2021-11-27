@@ -18,6 +18,9 @@ const (
 
 	// ResourceTypeApplicationLB represents an AWS application LB
 	ResourceTypeApplicationLB int = 16
+
+	// ResourceTypeApiGatewayRestAPI represents an AWS Api gateway REST API
+	ResourceTypeApiGatewayRestAPI int = 8
 )
 
 type CustomComponentType int
@@ -345,6 +348,18 @@ type DuploKafkaBootstrapBrokers struct {
 
 	BootstrapBrokerString    string `json:"BootstrapBrokerString,omitempty"`
 	BootstrapBrokerStringTls string `json:"BootstrapBrokerStringTls,omitempty"`
+}
+
+type DuploApiGatewayRequest struct {
+	Name           string `json:"Name"`
+	LambdaFunction string `json:"LambdaFunction,omitempty"`
+	State          string `json:"State,omitempty"`
+}
+
+type DuploApiGatewayResource struct {
+	Name         string `json:"Name"`
+	MetaData     string `json:"MetaData,omitempty"`
+	ResourceType int    `json:"ResourceType,omitempty"`
 }
 
 // TenantListAwsCloudResources retrieves a list of the generic AWS cloud resources for a tenant via the Duplo API.
@@ -704,4 +719,31 @@ func (c *Client) TenantDeleteApplicationLbListener(tenantID string, fullName str
 		fmt.Sprintf("subscriptions/%s/DeleteApplicationLbListerner/%s", tenantID, fullName),
 		&DuploAwsLbListenerDeleteRequest{ListenerArn: listenerArn},
 		nil)
+}
+
+func (c *Client) TenantCreateAPIGateway(tenantID string, duplo DuploApiGatewayRequest) ClientError {
+	return c.postAPI("TenantCreateAPIGateway",
+		fmt.Sprintf("subscriptions/%s/ApiGatewayRestApiUpdate", tenantID),
+		&duplo,
+		nil)
+}
+
+func (c *Client) TenantDeleteAPIGateway(tenantID, name string) ClientError {
+	return c.postAPI("TenantCreateAPIGateway",
+		fmt.Sprintf("subscriptions/%s/ApiGatewayRestApiUpdate", tenantID),
+		&DuploApiGatewayRequest{Name: name, State: "delete"},
+		nil)
+}
+
+func (c *Client) TenantGetAPIGateway(tenantID string, fullName string) (*DuploApiGatewayResource, ClientError) {
+	resource, err := c.TenantGetAwsCloudResource(tenantID, ResourceTypeApiGatewayRestAPI, fullName)
+	if err != nil || resource == nil {
+		return nil, err
+	}
+
+	return &DuploApiGatewayResource{
+		Name:         resource.Name,
+		MetaData:     resource.MetaData,
+		ResourceType: resource.Type,
+	}, nil
 }
