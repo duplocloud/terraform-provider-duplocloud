@@ -65,6 +65,18 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"lb_synced_deployment": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
+		"any_host_allowed": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
+		"cloud_creds_from_k8s_service_account": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
 		"tags": {
 			Type:     schema.TypeList,
 			Computed: true,
@@ -123,20 +135,23 @@ func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m 
 	if itemCount > 0 {
 		for _, duplo := range *list {
 			services = append(services, map[string]interface{}{
-				"name":                       duplo.Name,
-				"tenant_id":                  duplo.TenantID,
-				"other_docker_host_config":   duplo.OtherDockerHostConfig,
-				"other_docker_config":        duplo.OtherDockerConfig,
-				"allocation_tags":            duplo.AllocationTags,
-				"extra_config":               duplo.ExtraConfig,
-				"commands":                   duplo.Commands,
-				"volumes":                    duplo.Volumes,
-				"docker_image":               duplo.DockerImage,
-				"agent_platform":             duplo.AgentPlatform,
-				"replicas_matching_asg_name": duplo.ReplicasMatchingAsgName,
-				"replicas":                   duplo.Replicas,
-				"cloud":                      duplo.Cloud,
-				"tags":                       keyValueToState("tags", duplo.Tags),
+				"name":                                 duplo.Name,
+				"tenant_id":                            duplo.TenantID,
+				"other_docker_host_config":             duplo.OtherDockerHostConfig,
+				"other_docker_config":                  duplo.OtherDockerConfig,
+				"allocation_tags":                      duplo.AllocationTags,
+				"extra_config":                         duplo.ExtraConfig,
+				"commands":                             duplo.Commands,
+				"volumes":                              duplo.Volumes,
+				"docker_image":                         duplo.DockerImage,
+				"any_host_allowed":                     duplo.IsAnyHostAllowed,
+				"cloud_creds_from_k8s_service_account": duplo.IsCloudCredsFromK8sServiceAccount,
+				"lb_synced_deployment":                 duplo.IsLBSyncedDeployment,
+				"agent_platform":                       duplo.AgentPlatform,
+				"replicas_matching_asg_name":           duplo.ReplicasMatchingAsgName,
+				"replicas":                             duplo.Replicas,
+				"cloud":                                duplo.Cloud,
+				"tags":                                 keyValueToState("tags", duplo.Tags),
 			})
 		}
 	}
@@ -172,6 +187,9 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 		d.Set("commands", duplo.Commands)
 		d.Set("volumes", duplo.Volumes)
 		d.Set("docker_image", duplo.DockerImage)
+		d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
+		d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
+		d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
 		d.Set("agent_platform", duplo.AgentPlatform)
 		d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 		d.Set("replicas", duplo.Replicas)

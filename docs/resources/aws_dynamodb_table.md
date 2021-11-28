@@ -3,12 +3,12 @@
 page_title: "duplocloud_aws_dynamodb_table Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_aws_lambda_function manages an AWS dynamodb table in Duplo.
+  duplocloud_aws_dynamodb_table manages an AWS dynamodb table in Duplo.
 ---
 
 # duplocloud_aws_dynamodb_table (Resource)
 
-`duplocloud_aws_lambda_function` manages an AWS dynamodb table in Duplo.
+`duplocloud_aws_dynamodb_table` manages an AWS dynamodb table in Duplo.
 
 
 

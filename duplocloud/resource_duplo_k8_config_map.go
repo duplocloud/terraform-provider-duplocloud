@@ -38,6 +38,9 @@ func k8sConfigMapSchema() map[string]*schema.Schema {
 			Optional:     false,
 			Required:     true,
 			ValidateFunc: ValidateJSONObjectString,
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				return d.Id() != "" && ((old == "null" && new == "{}") || (old == "{}" && new == "null") || old == new)
+			},
 		},
 		"metadata": {
 			Description: "A JSON encoded string representing the configmap metadata. " +

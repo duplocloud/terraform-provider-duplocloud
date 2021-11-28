@@ -143,18 +143,92 @@ func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 }
 
 func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-
+	var err error
 	// Parse the identifying attributes
 	tenantID := d.Id()
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): start", tenantID)
 
 	// Delete the configuration with Duplo
 	c := m.(*duplosdk.Client)
-	err := c.TenantReplaceConfig(duplosdk.DuploTenantConfig{TenantID: tenantID})
+	all, err := c.TenantGetConfig(tenantID)
+
+	if err != nil {
+		return diag.Errorf("Error fetching tenant config for '%s': %s", tenantID, err)
+	}
+
+	// Get the previous and desired tenant configs
+	previous, _ := getTenantConfigChange(all.Metadata, d)
+	desired := &[]duplosdk.DuploKeyStringValue{}
+	if d.Get("delete_unspecified_settings").(bool) {
+		err = c.TenantReplaceConfig(duplosdk.DuploTenantConfig{TenantID: tenantID})
+	} else {
+		err = c.TenantChangeConfig(tenantID, previous, desired)
+	}
+
 	if err != nil {
 		return diag.Errorf("Error deleting tenant config for '%s': %s", tenantID, err)
 	}
 
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): end", tenantID)
 	return nil
+}
+
+func getTenantConfigChange(all *[]duplosdk.DuploKeyStringValue, d *schema.ResourceData) (previous, desired *[]duplosdk.DuploKeyStringValue) {
+	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
+		previous = selectTenantConfigs(all, *v)
+	} else {
+		previous = &[]duplosdk.DuploKeyStringValue{}
+	}
+
+	// Collect the desired state of settings specified by the user.
+	desired = expandTenantConfig("setting", d)
+	specified := make([]string, len(*desired))
+	for i, pc := range *desired {
+		specified[i] = pc.Key
+	}
+
+	// Track the change
+	d.Set("specified_settings", specified)
+
+	return
+}
+
+func expandTenantConfig(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploKeyStringValue {
+	var ary []duplosdk.DuploKeyStringValue
+
+	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
+		kvs := v.([]interface{})
+		log.Printf("[TRACE] expandTenantConfig ********: found %s", fieldName)
+		ary = make([]duplosdk.DuploKeyStringValue, 0, len(kvs))
+		for _, raw := range kvs {
+			kv := raw.(map[string]interface{})
+			ary = append(ary, duplosdk.DuploKeyStringValue{
+				Key:   kv["key"].(string),
+				Value: kv["value"].(string),
+			})
+		}
+	}
+
+	return &ary
+}
+
+// Utiliy function to return a filtered list of tenant metadata, given the selected keys.
+func selectTenantConfigs(all *[]duplosdk.DuploKeyStringValue, keys []string) *[]duplosdk.DuploKeyStringValue {
+	specified := map[string]interface{}{}
+	for _, k := range keys {
+		specified[k] = struct{}{}
+	}
+
+	return selectTenantConfigsFromMap(all, specified)
+}
+
+func selectTenantConfigsFromMap(all *[]duplosdk.DuploKeyStringValue, keys map[string]interface{}) *[]duplosdk.DuploKeyStringValue {
+	settings := make([]duplosdk.DuploKeyStringValue, 0, len(keys))
+	for _, pc := range *all {
+		if _, ok := keys[pc.Key]; ok {
+			settings = append(settings, pc)
+		}
+	}
+
+	return &settings
 }

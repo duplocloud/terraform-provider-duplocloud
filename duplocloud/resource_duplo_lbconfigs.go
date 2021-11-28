@@ -82,7 +82,9 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 							"   - `1` : ALB (Application Load Balancer)\n" +
 							"   - `2` : Health-check Only (No Load Balancer)\n" +
 							"   - `3` : K8S Service w/ Cluster IP (No Load Balancer)\n" +
-							"   - `4` : K8S Service w/ Node Port (No Load Balancer)\n",
+							"   - `4` : K8S Service w/ Node Port (No Load Balancer)\n" +
+							"   - `5` : Azure Shared Application Gateway\n" +
+							"   - `6` : NLB (Network Load Balancer)\n",
 						Type:     schema.TypeInt,
 						Required: true,
 						ForceNew: true,
@@ -136,6 +138,12 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 						Type:        schema.TypeBool,
 						Computed:    true,
 						Optional:    true,
+					},
+					"host_name": {
+						Description: "Set only if Azure Shared Application Gateway is used (`lb_type = 5`).",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -225,6 +233,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					IsNative:                  lbc["is_native"].(bool),
 					IsInternal:                lbc["is_internal"].(bool),
 					ExternalTrafficPolicy:     lbc["external_traffic_policy"].(string),
+					HostNames:                 &[]string{lbc["host_name"].(string)},
 				})
 			}
 
@@ -259,6 +268,8 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 
 /// DELETE resource
 func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsDelete: start")
 
 	// Parse the identifying attributes
@@ -270,23 +281,29 @@ func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.Resource
 
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
-	err := c.DuploServiceLBConfigsDelete(tenantID, name)
-	if err != nil {
-		return diag.Errorf("Error deleting Duplo service '%s' load balancer configs: %s", id, err)
-	}
 
-	// Wait for it to be deleted
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service load balancer configs", id, func() (interface{}, duplosdk.ClientError) {
-		rp, errget := c.DuploServiceLBConfigsGet(tenantID, name)
-		if errget == nil && (rp == nil || rp.LBConfigs == nil || len(*rp.LBConfigs) == 0) {
-			rp = nil
+	// Check if service is exists.
+	exists := c.DuploServiceLBConfigsExists(tenantID, name)
+
+	if exists {
+		err := c.DuploServiceLBConfigsDelete(tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error deleting Duplo service '%s' load balancer configs: %s", id, err)
 		}
-		return rp, errget
-	})
 
-	// Wait 40 more seconds to deal with consistency issues.
-	if diags == nil {
-		time.Sleep(40 * time.Second)
+		// Wait for it to be deleted
+		diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service load balancer configs", id, func() (interface{}, duplosdk.ClientError) {
+			rp, errget := c.DuploServiceLBConfigsGet(tenantID, name)
+			if errget == nil && (rp == nil || rp.LBConfigs == nil || len(*rp.LBConfigs) == 0) {
+				rp = nil
+			}
+			return rp, errget
+		})
+
+		// Wait 40 more seconds to deal with consistency issues.
+		if diags == nil {
+			time.Sleep(40 * time.Second)
+		}
 	}
 
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsDelete: end")

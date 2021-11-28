@@ -15,16 +15,17 @@ type DuploServiceLBConfigs struct {
 
 // DuploLBConfiguration represents an load balancer's configuration in the Duplo SDK
 type DuploLBConfiguration struct {
-	LBType                    int    `json:"LBType,omitempty"`
-	Protocol                  string `json:"Protocol,omitempty"`
-	Port                      string `json:"Port,omitempty"`
-	ExternalPort              int    `json:"ExternalPort,omitempty"`
-	HealthCheckURL            string `json:"HealthCheckUrl,omitempty"`
-	CertificateArn            string `json:"CertificateArn,omitempty"`
-	ReplicationControllerName string `json:"ReplicationControllerName"`
-	IsNative                  bool   `json:"IsNative"`
-	IsInternal                bool   `json:"IsInternal"`
-	ExternalTrafficPolicy     string `json:"ExternalTrafficPolicy"`
+	LBType                    int       `json:"LBType,omitempty"`
+	Protocol                  string    `json:"Protocol,omitempty"`
+	Port                      string    `json:"Port,omitempty"`
+	ExternalPort              int       `json:"ExternalPort,omitempty"`
+	HealthCheckURL            string    `json:"HealthCheckUrl,omitempty"`
+	CertificateArn            string    `json:"CertificateArn,omitempty"`
+	ReplicationControllerName string    `json:"ReplicationControllerName"`
+	IsNative                  bool      `json:"IsNative"`
+	IsInternal                bool      `json:"IsInternal"`
+	ExternalTrafficPolicy     string    `json:"ExternalTrafficPolicy"`
+	HostNames                 *[]string `json:"HostNames"`
 }
 
 // DuploServiceLBConfigsGetList retrieves a list of services via the Duplo API.
@@ -50,6 +51,17 @@ func (c *Client) DuploServiceLBConfigsGet(tenantID string, name string) (*DuploS
 	}
 	rp.TenantID = tenantID
 	return &rp, err
+}
+
+func (c *Client) DuploServiceLBConfigsExists(tenantID string, name string) bool {
+	rp := DuploServiceLBConfigs{}
+	err := c.getAPI(fmt.Sprintf("DuploServiceLBConfigsGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2/%s", tenantID, name),
+		&rp)
+	if err == nil && (rp.LBConfigs == nil || len(*rp.LBConfigs) == 0) {
+		return false
+	}
+	return true
 }
 
 // DuploServiceLBConfigsCreate creates a service's load balancer via the Duplo API.

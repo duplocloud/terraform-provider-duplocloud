@@ -51,6 +51,7 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
+			"duplocloud_admin_system_setting":         resourceAdminSystemSetting(),
 			"duplocloud_aws_dynamodb_table":           resourceAwsDynamoDBTable(),
 			"duplocloud_aws_dynamodb_table_v2":        resourceAwsDynamoDBTableV2(),
 			"duplocloud_aws_elasticsearch":            resourceDuploAwsElasticSearch(),
@@ -89,6 +90,14 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_cloudwatch_event_target":  resourceAwsCloudWatchEventTarget(),
 			"duplocloud_aws_lambda_permission":        resourceAwsLambdaPermission(),
 			"duplocloud_aws_cloudwatch_metric_alarm":  resourceAwsCloudWatchMetricAlarm(),
+			"duplocloud_aws_api_gateway_integration":  resourceAwsApiGatewayIntegration(),
+			"duplocloud_azure_key_vault_secret":       resourceAzureKeyVaultSecret(),
+			"duplocloud_azure_storage_account":        resourceAzureStorageAccount(),
+			"duplocloud_azure_mysql_database":         resourceAzureMysqlDatabase(),
+			"duplocloud_azure_redis_cache":            resourceAzureRedisCache(),
+			"duplocloud_azure_virtual_machine":        resourceAzureVirtualMachine(),
+			"duplocloud_azure_postgresql_database":    resourceAzurePostgresqlDatabase(),
+			"duplocloud_azure_mssql_database":         resourceAzureMssqlDatabase(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
@@ -127,6 +136,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_certificate":        dataSourcePlanCert(),
 			"duplocloud_plan_certificates":       dataSourcePlanCerts(),
 			"duplocloud_asg_profiles":            dataSourceAsgProfiles(),
+			"duplocloud_plan_nat_gateways":       dataSourcePlanNgws(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

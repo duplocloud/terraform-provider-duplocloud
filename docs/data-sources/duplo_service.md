@@ -24,11 +24,14 @@ description: |-
 
 - **agent_platform** (Number)
 - **allocation_tags** (String)
+- **any_host_allowed** (Boolean)
 - **cloud** (Number)
+- **cloud_creds_from_k8s_service_account** (Boolean)
 - **commands** (String)
 - **docker_image** (String)
 - **extra_config** (String)
 - **id** (String) The ID of this resource.
+- **lb_synced_deployment** (Boolean)
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
 - **replicas** (Number)

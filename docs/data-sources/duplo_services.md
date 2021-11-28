@@ -31,10 +31,13 @@ Read-Only:
 
 - **agent_platform** (Number)
 - **allocation_tags** (String)
+- **any_host_allowed** (Boolean)
 - **cloud** (Number)
+- **cloud_creds_from_k8s_service_account** (Boolean)
 - **commands** (String)
 - **docker_image** (String)
 - **extra_config** (String)
+- **lb_synced_deployment** (Boolean)
 - **name** (String)
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)

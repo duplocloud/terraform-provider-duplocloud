@@ -36,6 +36,7 @@ Read-Only:
 - **cloud** (Number)
 - **encrypt_disk** (Boolean)
 - **friendly_name** (String)
+- **fullname** (String)
 - **image_id** (String)
 - **instance_count** (Number)
 - **is_ebs_optimized** (Boolean)
