@@ -6,22 +6,23 @@ import (
 
 // DuploService represents a service in the Duplo SDK
 type DuploService struct {
-	Name                    string                 `json:"Name"`
-	TenantID                string                 `json:"TenantId,omitempty"`
-	OtherDockerHostConfig   string                 `json:"OtherDockerHostConfig,omitempty"`
-	OtherDockerConfig       string                 `json:"OtherDockerConfig,omitempty"`
-	AllocationTags          string                 `json:"AllocationTags,omitempty"`
-	ExtraConfig             string                 `json:"ExtraConfig,omitempty"`
-	Commands                string                 `json:"Commands,omitempty"`
-	Volumes                 string                 `json:"Volumes,omitempty"`
-	DockerImage             string                 `json:"DockerImage"`
-	ReplicasMatchingAsgName string                 `json:"ReplicasMatchingAsgName,omitempty"`
-	Replicas                int                    `json:"Replicas"`
-	AgentPlatform           int                    `json:"AgentPlatform"`
-	Cloud                   int                    `json:"Cloud"`
-	Tags                    *[]DuploKeyStringValue `json:"Tags,omitempty"`
-	IsLBSyncedDeployment    bool                   `json:"IsLBSyncedDeployment,omitempty"`
-	IsAnyHostAllowed        bool                   `json:"IsAnyHostAllowed,omitempty"`
+	Name                              string                 `json:"Name"`
+	TenantID                          string                 `json:"TenantId,omitempty"`
+	OtherDockerHostConfig             string                 `json:"OtherDockerHostConfig,omitempty"`
+	OtherDockerConfig                 string                 `json:"OtherDockerConfig,omitempty"`
+	AllocationTags                    string                 `json:"AllocationTags,omitempty"`
+	ExtraConfig                       string                 `json:"ExtraConfig,omitempty"`
+	Commands                          string                 `json:"Commands,omitempty"`
+	Volumes                           string                 `json:"Volumes,omitempty"`
+	DockerImage                       string                 `json:"DockerImage"`
+	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
+	Replicas                          int                    `json:"Replicas"`
+	AgentPlatform                     int                    `json:"AgentPlatform"`
+	Cloud                             int                    `json:"Cloud"`
+	Tags                              *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment,omitempty"`
+	IsAnyHostAllowed                  bool                   `json:"IsAnyHostAllowed,omitempty"`
+	IsCloudCredsFromK8sServiceAccount bool                   `json:"IsCloudCredsFromK8sServiceAccount,omitempty"`
 }
 
 // DuploServiceGetList retrieves a list of services via the Duplo API.
