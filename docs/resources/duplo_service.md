@@ -100,6 +100,7 @@ Should be one of:
 - **allocation_tags** (String)
 - **any_host_allowed** (Boolean) Whether or not the service can run on hosts in other tenants (within the the same plan as the current tenant). Defaults to `false`.
 - **cloud** (Number) The numeric ID of the cloud provider to launch the service in. Defaults to `0`.
+- **cloud_creds_from_k8s_service_account** (Boolean) Whether or not the service gets it's cloud credentials from Kubernetes service account. Defaults to `false`.
 - **commands** (String)
 - **extra_config** (String)
 - **lb_synced_deployment** (Boolean) Defaults to `false`.
