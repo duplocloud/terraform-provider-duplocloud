@@ -125,12 +125,11 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"metadata": {
-			Description:      "Configuration metadata used when creating the host.",
-			Type:             schema.TypeList,
-			Optional:         true,
-			Computed:         true,
-			Elem:             KeyValueSchema(),
-			DiffSuppressFunc: diffIgnoreIfAlreadySet,
+			Description: "Configuration metadata used when creating the host.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			Elem:        KeyValueSchema(),
 		},
 		"tags": {
 			Type:     schema.TypeList,
