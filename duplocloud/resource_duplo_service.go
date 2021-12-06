@@ -132,6 +132,12 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"cloud_creds_from_k8s_service_account": {
+			Description: "Whether or not the service gets it's cloud credentials from Kubernetes service account.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 	}
 }
 
@@ -195,6 +201,7 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("cloud", duplo.Cloud)
 	d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
 	d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
+	d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 
 	log.Printf("[TRACE] resourceDuploServiceRead ******** start")
@@ -224,20 +231,21 @@ func resourceDuploServiceCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
 	rq := duplosdk.DuploService{
-		Name:                    name,
-		OtherDockerHostConfig:   d.Get("other_docker_host_config").(string),
-		OtherDockerConfig:       d.Get("other_docker_config").(string),
-		AllocationTags:          d.Get("allocation_tags").(string),
-		ExtraConfig:             d.Get("extra_config").(string),
-		Commands:                d.Get("commands").(string),
-		Volumes:                 d.Get("volumes").(string),
-		AgentPlatform:           d.Get("agent_platform").(int),
-		DockerImage:             d.Get("docker_image").(string),
-		ReplicasMatchingAsgName: d.Get("replicas_matching_asg_name").(string),
-		Cloud:                   d.Get("cloud").(int),
-		Replicas:                d.Get("replicas").(int),
-		IsLBSyncedDeployment:    d.Get("lb_synced_deployment").(bool),
-		IsAnyHostAllowed:        d.Get("any_host_allowed").(bool),
+		Name:                              name,
+		OtherDockerHostConfig:             d.Get("other_docker_host_config").(string),
+		OtherDockerConfig:                 d.Get("other_docker_config").(string),
+		AllocationTags:                    d.Get("allocation_tags").(string),
+		ExtraConfig:                       d.Get("extra_config").(string),
+		Commands:                          d.Get("commands").(string),
+		Volumes:                           d.Get("volumes").(string),
+		AgentPlatform:                     d.Get("agent_platform").(int),
+		DockerImage:                       d.Get("docker_image").(string),
+		ReplicasMatchingAsgName:           d.Get("replicas_matching_asg_name").(string),
+		Cloud:                             d.Get("cloud").(int),
+		Replicas:                          d.Get("replicas").(int),
+		IsLBSyncedDeployment:              d.Get("lb_synced_deployment").(bool),
+		IsAnyHostAllowed:                  d.Get("any_host_allowed").(bool),
+		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
 
 	// Post the object to Duplo
