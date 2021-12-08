@@ -269,7 +269,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		deleteProtection := new(bool)
 		*deleteProtection = d.Get("deletion_protection").(bool)
 		// Update delete protection settings.
-		log.Printf("[DEBUG] Updating delete protection settings to '%v' for db instance '%s'.", deleteProtection, identifier)
+		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), identifier)
 		err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
 			DBInstanceIdentifier: identifier,
 			DeletionProtection:   deleteProtection,
@@ -318,7 +318,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
 	if isDeleteProtectionSupported(d) && d.HasChange("deletion_protection") {
-		log.Printf("[DEBUG] Updating delete protection settings to '%v' for db instance '%s'.", d.Get("deletion_protection").(bool), d.Get("identifier").(string))
+		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), d.Get("identifier").(string))
 		deleteProtection := new(bool)
 		*deleteProtection = d.Get("deletion_protection").(bool)
 		err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
@@ -540,5 +540,5 @@ func validateRdsInstance(duplo *duplosdk.DuploRdsInstance) (errors []error) {
 
 func isDeleteProtectionSupported(d *schema.ResourceData) bool {
 	// Avoid setting delete protection for document DB
-	return d.Get("deletion_protection").(bool) && d.Get("engine").(int) != 13
+	return d.Get("engine").(int) != 13
 }
