@@ -145,5 +145,8 @@ func getPlanImage(c *duplosdk.Client, planID, name string) (*duplosdk.DuploPlanI
 		}
 	}
 
+	if duplo == nil {
+		return nil, diag.Errorf("failed to retrieve plan image for '%s/%s': %s", planID, name, err)
+	}
 	return duplo, nil
 }
