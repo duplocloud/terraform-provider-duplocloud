@@ -60,6 +60,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_load_balancer_listener":   resourceAwsLoadBalancerListener(),
 			"duplocloud_aws_kafka_cluster":            resourceAwsKafkaCluster(),
 			"duplocloud_aws_lambda_function":          resourceAwsLambdaFunction(),
+			"duplocloud_aws_ssm_parameter":            resourceAwsSsmParameter(),
 			"duplocloud_duplo_service":                resourceDuploService(),
 			"duplocloud_duplo_service_lbconfigs":      resourceDuploServiceLBConfigs(),
 			"duplocloud_duplo_service_params":         resourceDuploServiceParams(),

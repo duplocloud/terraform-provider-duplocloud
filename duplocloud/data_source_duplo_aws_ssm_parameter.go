@@ -75,7 +75,6 @@ func dataSourceSsmParameterRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.SetId(id)
-	d.Set("tenant_id", tenantID)
 	d.Set("type", ssmParam.Type)
 	d.Set("value", ssmParam.Value)
 	d.Set("key_id", ssmParam.KeyId)

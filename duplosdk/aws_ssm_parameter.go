@@ -21,9 +21,12 @@ type DuploSsmParameter struct {
 
 // DuploSsmParameterRequest is a Duplo SDK object that represents a request to create or update an SSM parameter.
 type DuploSsmParameterRequest struct {
-	Name        string `json:"Name"`
-	Value       string `json:"Value"`
-	Description string `json:"Description"`
+	Name           string `json:"Name"`
+	Type           string `json:"Type"`
+	Value          string `json:"Value"`
+	Description    string `json:"Description"`
+	AllowedPattern string `json:"AllowedPattern,omitempty"`
+	KeyId          string `json:"KeyId,omitempty"`
 }
 
 // SsmParameterCreate creates an SSM parameter via the Duplo API.
