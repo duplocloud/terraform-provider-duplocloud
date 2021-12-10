@@ -47,7 +47,7 @@ func (c *Client) SsmParameterUpdate(tenantID string, rq *DuploSsmParameterReques
 	rp := DuploSsmParameter{}
 	err := c.putAPI(
 		fmt.Sprintf("SsmParameterCreate(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/ssmParameter/%s", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ssmParameter/%s", tenantID, EncodePathParam(rq.Name)),
 		&rq,
 		&rp,
 	)
@@ -59,7 +59,7 @@ func (c *Client) SsmParameterUpdate(tenantID string, rq *DuploSsmParameterReques
 func (c *Client) SsmParameterDelete(tenantID, name string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("SsmParameterDelete(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/ssmParameter/%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ssmParameter/%s", tenantID, EncodePathParam(name)),
 		nil)
 }
 
@@ -68,7 +68,7 @@ func (c *Client) SsmParameterGet(tenantID string, name string) (*DuploSsmParamet
 	rp := DuploSsmParameter{}
 	err := c.getAPI(
 		fmt.Sprintf("SsmParameterGet(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/ssmParameter/%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ssmParameter/%s", tenantID, EncodePathParam(name)),
 		&rp)
 	if rp.Name == "" {
 		return nil, err
