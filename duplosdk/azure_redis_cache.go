@@ -11,14 +11,14 @@ type DuploAzureRedisCacheSku struct {
 }
 
 type DuploAzureRedisCacheProperties struct {
-	ShardCount       int                     `json:"shardCount"`
+	ShardCount       int                     `json:"shardCount,omitempty"`
 	Sku              DuploAzureRedisCacheSku `json:"sku"`
 	EnableNonSslPort bool                    `json:"enableNonSslPort"`
-	SubnetID         string                  `json:"subnetId"`
+	SubnetID         string                  `json:"subnetId,omitempty"`
 }
 
 type DuploAzureRedisCacheRequest struct {
-	Properties DuploAzureRedisCacheProperties `json:"properties"`
+	Properties DuploAzureRedisCacheProperties `json:"properties,omitempty"`
 }
 
 type DuploAzureRedisCache struct {
