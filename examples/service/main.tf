@@ -21,6 +21,7 @@ variable "tenant_id" {
   type = string
 }
 
+/*
 resource "duplocloud_duplo_service" "test" {
   tenant_id = var.tenant_id
 
@@ -65,4 +66,13 @@ resource "duplocloud_duplo_service_params" "test" {
   dns_prfx                    = "joedemo-svc"
   drop_invalid_headers        = true
   enable_access_logs          = true
+}
+*/
+
+data "duplocloud_duplo_services" "all" {
+  tenant_id = var.tenant_id
+}
+
+output "all_services" {
+  value = data.duplocloud_duplo_services.all
 }
