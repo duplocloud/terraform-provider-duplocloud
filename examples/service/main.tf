@@ -69,10 +69,11 @@ resource "duplocloud_duplo_service_params" "test" {
 }
 */
 
-data "duplocloud_duplo_services" "all" {
+data "duplocloud_duplo_service" "this" {
   tenant_id = var.tenant_id
+  name = "invoice-web"
 }
 
-output "all_services" {
-  value = data.duplocloud_duplo_services.all
+output "this_service" {
+  value = data.duplocloud_duplo_service.this
 }
