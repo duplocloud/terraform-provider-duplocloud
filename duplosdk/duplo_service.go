@@ -25,18 +25,6 @@ type DuploService struct {
 	IsCloudCredsFromK8sServiceAccount bool                   `json:"IsCloudCredsFromK8sServiceAccount,omitempty"`
 }
 
-// DuploServiceGetList retrieves a list of services via the Duplo API.
-func (c *Client) DuploServiceList(tenantID string) (*[]DuploService, ClientError) {
-	rp := []DuploService{}
-	err := c.getAPI(fmt.Sprintf("DuploServiceList(%s)", tenantID),
-		fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2", tenantID),
-		&rp)
-	if err != nil {
-		return nil, err
-	}
-	return &rp, nil
-}
-
 // DuploServiceGet retrieves a service's load balancer via the Duplo API.
 func (c *Client) DuploServiceGet(tenantID string, name string) (*DuploService, ClientError) {
 	rp := DuploService{}

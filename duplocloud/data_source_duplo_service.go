@@ -111,19 +111,30 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 	}
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
 
+	// Read the object into state
+	flattenDuploService(d, duplo)
+
+	log.Printf("[TRACE] dataSourceDuploServiceRead: end")
+	return nil
+
+}
+
+func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicationController) {
+
 	// Apply TF state
+	d.Set("name", duplo.Name)
 	d.Set("volumes", duplo.Volumes)
 	d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
 	d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
 	d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
-	d.Set("agent_platform", duplo.AgentPlatform)
 	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 	d.Set("replicas", duplo.Replicas)
-	d.Set("cloud", duplo.Cloud)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 
 	// If we have a pod template, read data from it
 	if duplo.Template != nil {
+		d.Set("agent_platform", duplo.Template.AgentPlatform)
+		d.Set("cloud", duplo.Template.Cloud)
 		d.Set("other_docker_host_config", duplo.Template.OtherDockerHostConfig)
 		d.Set("other_docker_config", duplo.Template.OtherDockerConfig)
 		d.Set("allocation_tags", duplo.Template.AllocationTags)
@@ -135,7 +146,4 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 			d.Set("docker_image", (*duplo.Template.Containers)[0].Image)
 		}
 	}
-
-	log.Printf("[TRACE] dataSourceDuploServiceRead: end")
-	return nil
 }

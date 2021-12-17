@@ -26,11 +26,10 @@ resource "duplocloud_duplo_service" "test" {
   tenant_id = var.tenant_id
 
   name           = "joedemo"
-  agent_platform = 0
+  agent_platform = 7
   docker_image   = "nginx:latest"
   replicas       = 1
 
-  other_docker_host_config = jsonencode({ NetworkMode = "host", CapAdd = ["NET_ADMIN"] })
   other_docker_config = jsonencode({
     Env = [
       { Name = "NGINX_HOST", Value = "foo" },
@@ -68,12 +67,3 @@ resource "duplocloud_duplo_service_params" "test" {
   enable_access_logs          = true
 }
 */
-
-data "duplocloud_duplo_service" "this" {
-  tenant_id = var.tenant_id
-  name = "invoice-web"
-}
-
-output "this_service" {
-  value = data.duplocloud_duplo_service.this
-}

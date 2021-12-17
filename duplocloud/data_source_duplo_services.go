@@ -56,15 +56,13 @@ func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m 
 			// Get the base information from the replication controller.
 			rpc := map[string]interface{}{
 				"name":                                 duplo.Name,
-				"tenant_id":                            duplo.TenantId,
+				"tenant_id":                            tenantID,
 				"volumes":                              duplo.Volumes,
 				"any_host_allowed":                     duplo.IsAnyHostAllowed,
 				"cloud_creds_from_k8s_service_account": duplo.IsCloudCredsFromK8sServiceAccount,
 				"lb_synced_deployment":                 duplo.IsLBSyncedDeployment,
-				"agent_platform":                       duplo.AgentPlatform,
 				"replicas_matching_asg_name":           duplo.ReplicasMatchingAsgName,
 				"replicas":                             duplo.Replicas,
-				"cloud":                                duplo.Cloud,
 				"tags":                                 keyValueToState("tags", duplo.Tags),
 			}
 

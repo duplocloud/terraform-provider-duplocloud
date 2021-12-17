@@ -6,13 +6,10 @@ import (
 
 // DuploReplicationController represents a service in the Duplo SDK
 type DuploReplicationController struct {
-	TenantId                          string                 `json:"TenantId"`
 	Name                              string                 `json:"Name"`
 	Replicas                          int                    `json:"Replicas"`
 	ReplicasPrev                      int                    `json:"ReplicasPrev,omitempty"`
 	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
-	AgentPlatform                     int                    `json:"AgentPlatform"`
-	Cloud                             int                    `json:"Cloud"`
 	DnsPrfx                           string                 `json:"DnsPrfx"`
 	ElbDnsName                        string                 `json:"ElbDnsName"`
 	Fqdn                              string                 `json:"Fqdn"`
@@ -30,7 +27,6 @@ type DuploReplicationController struct {
 
 // DuploPodTemplate represents a pod template in the Duplo SDK
 type DuploPodTemplate struct {
-	TenantId              string                           `json:"TenantId"`
 	Name                  string                           `json:"Name"`
 	Containers            *[]DuploPodContainer             `json:"Containers,omitempty"`
 	Interfaces            *[]DuploPodInterface             `json:"Interfaces,omitempty"`
@@ -55,7 +51,6 @@ type DuploPodTemplate struct {
 
 // DuploPodContainer represents a container within a pod template in the Duplo SDK
 type DuploPodContainer struct {
-	TenantId   string `json:"TenantId"`
 	Name       string `json:"Name"`
 	Image      string `json:"Image"`
 	InstanceId string `json:"InstanceId,omitempty"`
@@ -64,7 +59,6 @@ type DuploPodContainer struct {
 
 // DuploPodContainer represents a network interface within a pod template in the Duplo SDK
 type DuploPodInterface struct {
-	TenantId        string `json:"TenantId"`
 	NetworkId       string `json:"NetworkId"`
 	IpAddress       string `json:"IpAddress,omitempty"`
 	ExternalAddress string `json:"ExternalAddress,omitempty"`
@@ -105,6 +99,60 @@ type DuploLbHealthCheckConfig struct {
 	GrpcSuccessCode                 string `json:"GrpcSuccessCode,omitempty"`
 }
 
+type DuploReplicationControllerCreateRequest struct {
+	TenantId                          string                 `json:"TenantId"`
+	Name                              string                 `json:"Name"`
+	Image                             string                 `json:"DockerImage"`
+	NetworkId                         string                 `json:"NetworkId"`
+	Cloud                             int                    `json:"Cloud"`
+	AgentPlatform                     int                    `json:"AgentPlatform"`
+	Replicas                          int                    `json:"Replicas,omitempty"`
+	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
+	IsDaemonset                       bool                   `json:"IsDaemonset"`
+	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment"`
+	IsReplicaCollocationAllowed       bool                   `json:"IsReplicaCollocationAllowed"`
+	IsAnyHostAllowed                  bool                   `json:"IsAnyHostAllowed"`
+	IsCloudCredsFromK8sServiceAccount bool                   `json:"IsCloudCredsFromK8sServiceAccount"`
+	AllocationTags                    string                 `json:"AllocationTags,omitempty"`
+	Volumes                           string                 `json:"Volumes,omitempty"`
+	ExtraConfig                       string                 `json:"ExtraConfig,omitempty"`
+	OtherDockerConfig                 string                 `json:"OtherDockerConfig,omitempty"`
+	OtherDockerHostConfig             string                 `json:"OtherDockerHostConfig,omitempty"`
+	Tags                              *[]DuploKeyStringValue `json:"Tags,omitempty"`
+
+	// TODO: Test this field
+	Commands string `json:"Commands,omitempty"`
+
+	// TODO: DeviceIds
+}
+
+type DuploReplicationControllerUpdateRequest struct {
+	Name                              string `json:"Name"`
+	Image                             string `json:"Image"`
+	AgentPlatform                     int    `json:"AgentPlatform"`
+	Replicas                          int    `json:"Replicas,omitempty"`
+	ReplicasMatchingAsgName           string `json:"ReplicasMatchingAsgName,omitempty"`
+	IsDaemonset                       bool   `json:"IsDaemonset"`
+	IsLBSyncedDeployment              bool   `json:"IsLBSyncedDeployment"`
+	IsReplicaCollocationAllowed       bool   `json:"IsReplicaCollocationAllowed"`
+	IsAnyHostAllowed                  bool   `json:"IsAnyHostAllowed"`
+	IsCloudCredsFromK8sServiceAccount bool   `json:"IsCloudCredsFromK8sServiceAccount"`
+	AllocationTags                    string `json:"AllocationTags,omitempty"`
+	Volumes                           string `json:"Volumes,omitempty"`
+	ExtraConfig                       string `json:"ExtraConfig,omitempty"`
+	OtherDockerConfig                 string `json:"OtherDockerConfig,omitempty"`
+	OtherDockerHostConfig             string `json:"OtherDockerHostConfig,omitempty"`
+}
+
+type DuploReplicationControllerDeleteRequest struct {
+	TenantId      string `json:"TenantId,omitempty"`
+	Name          string `json:"Name"`
+	NetworkId     string `json:"NetworkId,omitempty"`
+	AgentPlatform int    `json:"AgentPlatform,omitempty"`
+	Image         string `json:"DockerImage,omitempty"`
+	State         string `json:"State"`
+}
+
 // ReplicationControllerList retrieves a list of replication controllers via the Duplo API.
 func (c *Client) ReplicationControllerList(tenantID string) (*[]DuploReplicationController, ClientError) {
 	rp := []DuploReplicationController{}
@@ -133,4 +181,43 @@ func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicat
 
 	// No resource was found.
 	return nil, nil
+}
+
+// ReplicationControllerCreate creates a replication controller via the Duplo API.
+func (c *Client) ReplicationControllerCreate(tenantID string, rq *DuploReplicationControllerCreateRequest) ClientError {
+	if rq.NetworkId == "" {
+		rq.NetworkId = "default"
+	}
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerCreate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("subscriptions/%s/ReplicationControllerUpdate", tenantID),
+		&rq,
+		nil,
+	)
+}
+
+// ReplicationControllerUpdate creates a replication controller via the Duplo API.
+func (c *Client) ReplicationControllerUpdate(tenantID string, rq *DuploReplicationControllerUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerUpdate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("subscriptions/%s/ReplicationControllerChangeAll", tenantID),
+		&rq,
+		nil,
+	)
+}
+
+// ReplicationControllerDelete deletes a replication controller via the Duplo API.
+func (c *Client) ReplicationControllerDelete(tenantID string, rq *DuploReplicationControllerDeleteRequest) ClientError {
+	rq.TenantId = tenantID
+	rq.State = "delete"
+	if rq.NetworkId == "" {
+		rq.NetworkId = "default"
+	}
+
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerDelete(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("subscriptions/%s/ReplicationControllerUpdate", tenantID),
+		&rq,
+		nil,
+	)
 }
