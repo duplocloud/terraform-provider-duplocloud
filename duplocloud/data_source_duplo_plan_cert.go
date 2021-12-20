@@ -136,6 +136,9 @@ func getPlanCert(c *duplosdk.Client, planID, name string) (*duplosdk.DuploPlanCe
 		}
 	}
 
+	if rsp == nil {
+		return nil, diag.Errorf("failed to retrieve plan certificate for '%s/%s': %s", planID, name, err)
+	}
 	return rsp, nil
 }
 

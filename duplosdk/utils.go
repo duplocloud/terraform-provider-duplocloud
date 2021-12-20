@@ -1,9 +1,15 @@
 package duplosdk
 
 import (
+	"net/url"
 	"reflect"
 	"strings"
 )
+
+// handle path parameter encoding when it might contain slashes
+func EncodePathParam(param string) string {
+	return url.PathEscape(url.PathEscape(param))
+}
 
 //nolint:deadcode,unused // utility function
 func isInterfaceNil(v interface{}) bool {
