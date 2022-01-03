@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -131,12 +132,15 @@ func resourceAwsLoadBalancerListener() *schema.Resource {
 /// READ resource
 func resourceAwsLoadBalancerListenerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerListenerRead - start")
-
-	tenantID := d.Get("tenant_id").(string)
-	lbName := d.Get("load_balancer_name").(string)
-	arn := d.Get("arn").(string)
+	id := d.Id()
+	idParts := strings.SplitN(id, "/", 3)
+	if len(idParts) < 3 {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
+	tenantID := idParts[0]
+	lbName := idParts[1]
+	arn := idParts[2]
 	c := m.(*duplosdk.Client)
-
 	// Get all listeners from duplo
 	duplo, err := c.TenantListApplicationLbListeners(tenantID, lbName)
 	if err != nil {
@@ -157,7 +161,7 @@ func resourceAwsLoadBalancerListenerRead(ctx context.Context, d *schema.Resource
 			break
 		}
 	}
-	d.SetId(fmt.Sprintf("%s/%s", tenantID, arn))
+	d.SetId(fmt.Sprintf("%s/%s/%s", tenantID, lbName, arn))
 
 	log.Printf("[TRACE] dataSourceTenantAwsLbListenersRead - end")
 	return nil
@@ -188,7 +192,7 @@ func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.Resour
 	}
 	listener, err := c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn)
 
-	id := fmt.Sprintf("%s/%s", tenantID, listener.ListenerArn)
+	id := fmt.Sprintf("%s/%s/%s", tenantID, lbName, listener.ListenerArn)
 
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "load balancer listener", id, func() (interface{}, duplosdk.ClientError) {
 		listener, err = c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn)
