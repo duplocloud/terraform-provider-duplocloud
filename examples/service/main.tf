@@ -21,6 +21,14 @@ variable "tenant_id" {
   type = string
 }
 
+data "duplocloud_duplo_service_lbconfigs" "test" {
+  tenant_id = var.tenant_id
+}
+
+output "test" {
+  value = data.duplocloud_duplo_service_lbconfigs.test
+}
+
 /*
 resource "duplocloud_duplo_service" "test" {
   tenant_id = var.tenant_id

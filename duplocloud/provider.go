@@ -111,7 +111,7 @@ func Provider() *schema.Provider {
 			"duplocloud_eks_credentials":         dataSourceEksCredentials(),
 			"duplocloud_duplo_service":           dataSourceDuploService(),
 			"duplocloud_duplo_services":          dataSourceDuploServices(),
-			"duplocloud_duplo_service_lbconfigs": dataSourceDuploServiceLBConfigs(),
+			"duplocloud_duplo_service_lbconfigs": dataSourceDuploServiceLbConfigs(),
 			"duplocloud_duplo_service_params":    dataSourceDuploServiceParams(),
 			"duplocloud_infrastructure":          dataSourceInfrastructure(),
 			"duplocloud_infrastructures":         dataSourceInfrastructures(),

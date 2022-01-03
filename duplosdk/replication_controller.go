@@ -78,10 +78,10 @@ type DuploLbConfiguration struct {
 	DnsName                   string                    `json:"DnsName,omitempty"`
 	CertificateArn            string                    `json:"CertificateArn,omitempty"`
 	CloudName                 string                    `json:"CloudName,omitempty"`
-	HealthCheckUrl            string                    `json:"HealthCheckUrl,omitempty"`
+	HealthCheckURL            string                    `json:"HealthCheckUrl,omitempty"`
 	ExternalTrafficPolicy     string                    `json:"ExternalTrafficPolicy,omitempty"`
 	BeProtocolVersion         string                    `json:"BeProtocolVersion,omitempty"`
-	FrontendIp                string                    `json:"FrontendIp,omitempty"`
+	FrontendIP                string                    `json:"FrontendIp,omitempty"`
 	IsInternal                bool                      `json:"IsInternal,omitempty"`
 	ForHealthCheck            bool                      `json:"ForHealthCheck,omitempty"`
 	IsNative                  bool                      `json:"IsNative,omitempty"`
@@ -220,4 +220,34 @@ func (c *Client) ReplicationControllerDelete(tenantID string, rq *DuploReplicati
 		&rq,
 		nil,
 	)
+}
+
+// LbConfigurationList retrieves a list of LB configurations for all replication controllers in the given tenant.
+func (c *Client) LbConfigurationList(tenantID string) (*[]DuploLbConfiguration, ClientError) {
+	rp := []DuploLbConfiguration{}
+	err := c.getAPI(fmt.Sprintf("LbConfigurationList(%s)", tenantID),
+		fmt.Sprintf("subscriptions/%s/GetLBConfigurations", tenantID),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+// LbConfigurationList retrieves a list of LB configurations for a specific replication controller in the given tenant.
+func (c *Client) ReplicationControllerLbConfigurationList(tenantID string, name string) (*[]DuploLbConfiguration, ClientError) {
+	allLbs, err := c.LbConfigurationList(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find and return the matching LBs.
+	rpcLbs := make([]DuploLbConfiguration, 0, len(*allLbs))
+	for _, lb := range *allLbs {
+		if lb.ReplicationControllerName == name {
+			rpcLbs = append(rpcLbs, lb)
+		}
+	}
+
+	return &rpcLbs, nil
 }

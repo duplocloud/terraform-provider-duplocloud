@@ -368,3 +368,25 @@ func duploServiceLBConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
+
+func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[string]interface{} {
+	return map[string]interface{}{
+		"name":                        lb.ReplicationControllerName,
+		"replication_controller_name": lb.ReplicationControllerName,
+		"lb_type":                     lb.LbType,
+		"protocol":                    lb.Protocol,
+		"port":                        lb.Port,
+		"host_port":                   lb.HostPort,
+		"external_port":               lb.ExternalPort,
+		"is_infra_deployment":         lb.IsInfraDeployment,
+		"dns_name":                    lb.DnsName,
+		"certificate_arn":             lb.CertificateArn,
+		"cloud_name":                  lb.CloudName,
+		"health_check_url":            lb.HealthCheckURL,
+		"external_traffic_policy":     lb.ExternalTrafficPolicy,
+		"backend_protocol_version":    lb.BeProtocolVersion,
+		"frontend_ip":                 lb.FrontendIP,
+		"is_native":                   lb.IsNative,
+		"is_internal":                 lb.IsInternal,
+	}
+}
