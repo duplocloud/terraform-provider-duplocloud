@@ -251,3 +251,14 @@ func (c *Client) ReplicationControllerLbConfigurationList(tenantID string, name 
 
 	return &rpcLbs, nil
 }
+
+// ReplicationControllerLbConfigurationUpdate creates or updates a replication controller LB via the Duplo API.
+func (c *Client) ReplicationControllerLbConfigurationUpdate(tenantID, name string, rq *DuploLbConfiguration) ClientError {
+	rq.ReplicationControllerName = name
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerLbConfigurationUpdate(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/LBConfigurationUpdate", tenantID),
+		&rq,
+		nil,
+	)
+}

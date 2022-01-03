@@ -21,15 +21,6 @@ variable "tenant_id" {
   type = string
 }
 
-data "duplocloud_duplo_service_lbconfigs" "test" {
-  tenant_id = var.tenant_id
-}
-
-output "test" {
-  value = data.duplocloud_duplo_service_lbconfigs.test
-}
-
-/*
 resource "duplocloud_duplo_service" "test" {
   tenant_id = var.tenant_id
 
@@ -57,7 +48,6 @@ resource "duplocloud_duplo_service_lbconfigs" "test" {
     lb_type                     = 1
     port                        = "80"
     protocol                    = "http"
-    replication_controller_name = duplocloud_duplo_service.test.name
   }
 
   # Workaround for AWS:  Even after the ALB is available, there is some short duration where a V2 WAF cannot be attached.
@@ -66,6 +56,11 @@ resource "duplocloud_duplo_service_lbconfigs" "test" {
   }
 }
 
+output "test" {
+  value = duplocloud_duplo_service_lbconfigs.test
+}
+
+/*
 resource "duplocloud_duplo_service_params" "test" {
   tenant_id = var.tenant_id
 

@@ -15,13 +15,119 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+func duploLbConfigSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"replication_controller_name": {
+			Description: "The name of the duplo service.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"name": {
+			Description: "The name of the duplo service.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"lb_type": {
+			Description: "The numerical index of the type of load balancer configuration to create.\n" +
+				"Should be one of:\n\n" +
+				"   - `0` : ELB (Classic Load Balancer)\n" +
+				"   - `1` : ALB (Application Load Balancer)\n" +
+				"   - `2` : Health-check Only (No Load Balancer)\n" +
+				"   - `3` : K8S Service w/ Cluster IP (No Load Balancer)\n" +
+				"   - `4` : K8S Service w/ Node Port (No Load Balancer)\n" +
+				"   - `5` : Azure Shared Application Gateway\n" +
+				"   - `6` : NLB (Network Load Balancer)\n",
+			Type:     schema.TypeInt,
+			Required: true,
+			ForceNew: true,
+		},
+		"protocol": {
+			Description: "The frontend protocol associated with this load balancer configuration.",
+			Type:        schema.TypeString,
+			Required:    true,
+		},
+		"port": {
+			Description: "The backend port associated with this load balancer configuration.",
+			Type:        schema.TypeString,
+			Required:    true,
+		},
+		"host_port": {
+			Description: "The automatically assigned host port.",
+			Type:        schema.TypeInt,
+			Computed:    true,
+		},
+		"external_port": {
+			Description: "The frontend port associated with this load balancer configuration.",
+			Type:        schema.TypeInt,
+			Required:    true,
+		},
+		"is_infra_deployment": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
+		"dns_name": {
+			Description: "The DNS name of the cloud load balancer (if applicable).",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"certificate_arn": {
+			Description: "The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+		},
+		"cloud_name": {
+			Description: "The name of the cloud load balancer (if applicable).",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"health_check_url": {
+			Description: "The health check URL to associate with this load balancer configuration.",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+		},
+		"external_traffic_policy": {
+			Description: "Only for K8S Node Port (`lb_type = 4`).  Set the kubernetes service `externalTrafficPolicy` attribute.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+		"backend_protocol_version": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"frontend_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"is_internal": {
+			Description: "Whether or not to create an internal load balancer.",
+			Type:        schema.TypeBool,
+			Computed:    true,
+			Optional:    true,
+		},
+		"is_native": {
+			Type:     schema.TypeBool,
+			Computed: true,
+			Optional: true,
+		},
+		"host_name": {
+			Description: "(Azure Only) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+	}
+}
+
 // SCHEMA for resource crud
-func resourceDuploServiceLBConfigs() *schema.Resource {
+func resourceDuploServiceLbConfigs() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_duplo_service_lbconfigs` manages load balancer configuration(s) for a container-based service in Duplo.\n\n" +
 			"NOTE: For Amazon ECS services, see the `duplocloud_ecs_service` resource.",
 
-		ReadContext:   resourceDuploServiceLBConfigsRead,
+		ReadContext:   resourceDuploServiceLbConfigsRead,
 		CreateContext: resourceDuploServiceLBConfigsCreate,
 		UpdateContext: resourceDuploServiceLBConfigsUpdate,
 		DeleteContext: resourceDuploServiceLBConfigsDelete,
@@ -33,12 +139,12 @@ func resourceDuploServiceLBConfigs() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploServiceLBConfigsSchema(),
+		Schema: duploServiceLbConfigsSchema(),
 	}
 }
 
 // DuploServiceLBConfigsSchema returns a Terraform resource schema for a service's load balancer
-func duploServiceLBConfigsSchema() map[string]*schema.Schema {
+func duploServiceLbConfigsSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
 			Description:  "The GUID of the tenant that hosts the duplo service.",
@@ -74,97 +180,27 @@ func duploServiceLBConfigsSchema() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Required: true,
 			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"lb_type": {
-						Description: "The numerical index of the type of load balancer configuration to create.\n" +
-							"Should be one of:\n\n" +
-							"   - `0` : ELB (Classic Load Balancer)\n" +
-							"   - `1` : ALB (Application Load Balancer)\n" +
-							"   - `2` : Health-check Only (No Load Balancer)\n" +
-							"   - `3` : K8S Service w/ Cluster IP (No Load Balancer)\n" +
-							"   - `4` : K8S Service w/ Node Port (No Load Balancer)\n" +
-							"   - `5` : Azure Shared Application Gateway\n" +
-							"   - `6` : NLB (Network Load Balancer)\n",
-						Type:     schema.TypeInt,
-						Required: true,
-						ForceNew: true,
-					},
-					"protocol": {
-						Description: "The frontend protocol associated with this load balancer configuration.",
-						Type:        schema.TypeString,
-						Required:    true,
-					},
-					"port": {
-						Description: "The backend port associated with this load balancer configuration.",
-						Type:        schema.TypeString,
-						Required:    true,
-					},
-					"external_port": {
-						Description: "The frontend port associated with this load balancer configuration.",
-						Type:        schema.TypeInt,
-						Required:    true,
-					},
-					"health_check_url": {
-						Description: "The health check URL to associate with this load balancer configuration.",
-						Type:        schema.TypeString,
-						Computed:    true,
-						Optional:    true,
-					},
-					"certificate_arn": {
-						Description: "The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.",
-						Type:        schema.TypeString,
-						Computed:    true,
-						Optional:    true,
-					},
-					"replication_controller_name": {
-						Type:       schema.TypeString,
-						Computed:   true,
-						Optional:   true,
-						Deprecated: "Set the replication_controller_name field instead of lbconfigs.replication_controller_name",
-					},
-					"is_native": {
-						Type:     schema.TypeBool,
-						Computed: true,
-						Optional: true,
-					},
-					"external_traffic_policy": {
-						Description: "Only for K8S Node Port (`lb_type = 4`).  Set the kubernetes service `externalTrafficPolicy` attribute.",
-						Type:        schema.TypeString,
-						Optional:    true,
-						Computed:    true,
-					},
-					"is_internal": {
-						Description: "Whether or not to create an internal load balancer.",
-						Type:        schema.TypeBool,
-						Computed:    true,
-						Optional:    true,
-					},
-					"host_name": {
-						Description: "Set only if Azure Shared Application Gateway is used (`lb_type = 5`).",
-						Type:        schema.TypeString,
-						Optional:    true,
-						Computed:    true,
-					},
-				},
+				Schema: duploLbConfigSchema(),
 			},
 		},
 	}
 }
 
 /// READ resource
-func resourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsRead: start")
 
 	// Parse the identifying attributes
-	tenantID, name := parseDuploServiceLBConfigsIdParts(d.Id())
+	tenantID, name := parseDuploServiceLbConfigsIdParts(d.Id())
 	if tenantID == "" || name == "" {
 		return diag.Errorf("Invalid resource ID: %s", d.Id())
 	}
 
 	// Get the object from Duplo, detecting a missing object
+	var err error
 	c := m.(*duplosdk.Client)
-	duplo, err := c.DuploServiceLBConfigsGet(tenantID, name)
-	if duplo == nil || duplo.LBConfigs == nil || len(*duplo.LBConfigs) == 0 {
+	list, err := c.ReplicationControllerLbConfigurationList(tenantID, name)
+	if list == nil || len(*list) == 0 {
 		d.SetId("") // object missing
 		return nil
 	}
@@ -173,11 +209,37 @@ func resourceDuploServiceLBConfigsRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Apply the TF state
-	d.Set("tenant_id", duplo.TenantID)
-	d.Set("replication_controller_name", duplo.ReplicationControllerName)
-	d.Set("arn", duplo.Arn)
-	d.Set("status", duplo.Status)
-	d.Set("lbconfigs", flattenDuploServiceLBConfigurations(duplo.LBConfigs))
+	d.Set("tenant_id", tenantID)
+	d.Set("name", name)
+	d.Set("replication_controller_name", name)
+
+	// Handle each LB config
+	lbconfigs := make([]interface{}, 0, len(*list))
+	isCloudLb := false
+	for _, lb := range *list {
+		if lb.LbType != 2 && lb.LbType != 3 && lb.LbType != 4 {
+			isCloudLb = true
+		}
+		lbconfigs = append(lbconfigs, flattenDuploServiceLbConfiguration(&lb))
+	}
+	if err = d.Set("lbconfigs", lbconfigs); err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Handle a cloud load balancer.
+	if isCloudLb {
+		lbdetails, lberr := c.TenantGetLbDetailsInService(tenantID, name)
+		if lberr != nil && lberr.Status() != 404 {
+			return diag.FromErr(err)
+		}
+
+		if lbdetails != nil {
+			d.Set("arn", lbdetails.LoadBalancerArn)
+			if lbdetails.State != nil && lbdetails.State.Code != nil {
+				d.Set("status", lbdetails.State.Code.Value)
+			}
+		}
+	}
 
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsRead: end")
 	return nil
@@ -209,8 +271,6 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 	rq := duplosdk.DuploServiceLBConfigs{
 		ReplicationControllerName: name,
 		TenantID:                  tenantID,
-		Arn:                       d.Get("arn").(string),
-		Status:                    d.Get("status").(string),
 	}
 
 	// Append all load balancer configs to the request.
@@ -261,7 +321,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 	}
 
 	// Read the latest status from Duplo
-	diags := resourceDuploServiceLBConfigsRead(ctx, d, m)
+	diags := resourceDuploServiceLbConfigsRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsCreateOrUpdate: end")
 	return diags
 }
@@ -274,7 +334,7 @@ func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.Resource
 
 	// Parse the identifying attributes
 	id := d.Id()
-	tenantID, name := parseDuploServiceLBConfigsIdParts(id)
+	tenantID, name := parseDuploServiceLbConfigsIdParts(id)
 	if tenantID == "" || name == "" {
 		return diag.Errorf("Invalid resource ID: %s", id)
 	}
@@ -310,32 +370,7 @@ func resourceDuploServiceLBConfigsDelete(ctx context.Context, d *schema.Resource
 	return diags
 }
 
-func flattenDuploServiceLBConfigurations(list *[]duplosdk.DuploLBConfiguration) []interface{} {
-	if list == nil {
-		return []interface{}{}
-	}
-
-	lbconfigs := make([]interface{}, 0, len(*list))
-
-	for _, lbc := range *list {
-		lbconfigs = append(lbconfigs, map[string]interface{}{
-			"lb_type":                     lbc.LBType,
-			"protocol":                    lbc.Protocol,
-			"port":                        lbc.Port,
-			"external_port":               lbc.ExternalPort,
-			"health_check_url":            lbc.HealthCheckURL,
-			"certificate_arn":             lbc.CertificateArn,
-			"replication_controller_name": lbc.ReplicationControllerName,
-			"is_native":                   lbc.IsNative,
-			"is_internal":                 lbc.IsInternal,
-			"external_traffic_policy":     lbc.ExternalTrafficPolicy,
-		})
-	}
-
-	return lbconfigs
-}
-
-func parseDuploServiceLBConfigsIdParts(id string) (tenantID, name string) {
+func parseDuploServiceLbConfigsIdParts(id string) (tenantID, name string) {
 	idParts := strings.SplitN(id, "/", 5)
 	if len(idParts) == 5 {
 		tenantID, name = idParts[2], idParts[4]

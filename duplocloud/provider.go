@@ -62,7 +62,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_lambda_function":          resourceAwsLambdaFunction(),
 			"duplocloud_aws_ssm_parameter":            resourceAwsSsmParameter(),
 			"duplocloud_duplo_service":                resourceDuploService(),
-			"duplocloud_duplo_service_lbconfigs":      resourceDuploServiceLBConfigs(),
+			"duplocloud_duplo_service_lbconfigs":      resourceDuploServiceLbConfigs(),
 			"duplocloud_duplo_service_params":         resourceDuploServiceParams(),
 			"duplocloud_ecache_instance":              resourceDuploEcacheInstance(),
 			"duplocloud_ecs_task_definition":          resourceDuploEcsTaskDefinition(),

@@ -9,20 +9,38 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
+
+func duploLbConfigSchemaComputed() map[string]*schema.Schema {
+	x := duploLbConfigSchema()
+	for _, v := range x {
+		v.Computed = true
+		v.Required = false
+		v.Optional = false
+		v.ForceNew = false
+	}
+	return x
+}
 
 // SCHEMA for resource search/data
 func dataSourceDuploServiceLbConfigs() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_duplo_service_lbconfigs` retrieves load balancer configuration(s) for container-based service(s) in Duplo.\n\n" +
+			"NOTE: For Amazon ECS services, see the `duplocloud_ecs_services` data source.",
+
 		ReadContext: dataSourceDuploServiceLbConfigsRead,
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description:  "The GUID of the tenant that hosts the duplo service.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.IsUUID,
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "The name of the duplo service.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			"services": {
 				Type:     schema.TypeList,
@@ -30,95 +48,30 @@ func dataSourceDuploServiceLbConfigs() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The name of the duplo service.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 						"replication_controller_name": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The name of the duplo service.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 						"arn": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The ARN (or ID) of the cloud load balancer (if applicable).",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 						"status": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The status of the cloud load balancer (if applicable).",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 						"lbconfigs": {
 							Type:     schema.TypeList,
 							Computed: true,
 							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"replication_controller_name": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"name": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"lb_type": {
-										Type:     schema.TypeInt,
-										Computed: true,
-									},
-									"protocol": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"port": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"host_port": {
-										Type:     schema.TypeInt,
-										Computed: true,
-									},
-									"external_port": {
-										Type:     schema.TypeInt,
-										Computed: true,
-									},
-									"is_infra_deployment": {
-										Type:     schema.TypeBool,
-										Computed: true,
-									},
-									"dns_name": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"certificate_arn": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"cloud_name": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"health_check_url": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"external_traffic_policy": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"backend_protocol_version": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"frontend_ip": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"is_internal": {
-										Type:     schema.TypeBool,
-										Computed: true,
-									},
-									"is_native": {
-										Type:     schema.TypeBool,
-										Computed: true,
-									},
-								},
+								Schema: duploLbConfigSchemaComputed(),
 							},
 						},
 					},
@@ -189,8 +142,12 @@ func dataSourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.Resource
 					return diag.FromErr(err)
 				}
 
-				svc["arn"] = lbdetails.LoadBalancerArn
-				svc["status"] = lbdetails.State.Code.Value
+				if lbdetails != nil {
+					svc["arn"] = lbdetails.LoadBalancerArn
+					if lbdetails.State != nil && lbdetails.State.Code != nil {
+						svc["status"] = lbdetails.State.Code.Value
+					}
+				}
 			}
 
 			// Add this LB to the service's list of LB configs.
