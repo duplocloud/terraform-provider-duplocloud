@@ -64,7 +64,7 @@ type DuploPodInterface struct {
 	ExternalAddress string `json:"ExternalAddress,omitempty"`
 }
 
-// DuploPodLbConfiguration represents an LB configuration within a pod template in the Duplo SDK
+// DuploPodLbConfiguration represents an LB configuration in the Duplo SDK
 type DuploLbConfiguration struct {
 	TenantId                  string                    `json:"TenantId"`
 	ReplicationControllerName string                    `json:"ReplicationControllerName"`
@@ -88,6 +88,14 @@ type DuploLbConfiguration struct {
 	HealthCheckConfig         *DuploLbHealthCheckConfig `json:"HealthCheckConfig,omitempty"`
 
 	// TODO: DIPAddresses
+}
+
+// DuploPodLbConfiguration represents an LB configuration deletion request.
+type DuploLbConfigurationDeleteRequest struct {
+	ReplicationControllerName string `json:"ReplicationControllerName"`
+	State                     string `json:"State"`
+	Protocol                  string `json:"Protocol"`
+	Port                      string `json:"Port"`
 }
 
 type DuploLbHealthCheckConfig struct {
@@ -261,4 +269,35 @@ func (c *Client) ReplicationControllerLbConfigurationUpdate(tenantID, name strin
 		&rq,
 		nil,
 	)
+}
+
+// ReplicationControllerLbConfigurationDelete deletes a replication controller LB via the Duplo API.
+func (c *Client) ReplicationControllerLbConfigurationDelete(tenantID, name string, rq *DuploLbConfigurationDeleteRequest) ClientError {
+	rq.State = "delete'"
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerLbConfigurationUpdate(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/LBConfigurationUpdate", tenantID),
+		&rq,
+		nil,
+	)
+}
+
+// ReplicationControllerLbConfigurationUpdate deletes all LB configurations for a replication controller.
+func (c *Client) ReplicationControllerLbConfigurationDeleteAll(tenantID, name string) ClientError {
+	lbs, err := c.ReplicationControllerLbConfigurationList(tenantID, name)
+	if err != nil {
+		return err
+	}
+
+	for _, lb := range *lbs {
+		err = c.ReplicationControllerLbConfigurationDelete(tenantID, lb.ReplicationControllerName, &DuploLbConfigurationDeleteRequest{
+			Protocol: lb.Protocol,
+			Port:     lb.Port,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
