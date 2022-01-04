@@ -40,6 +40,17 @@ signs:
       - "--detach-sign"
       - "${artifact}"
 changelog:
-  skip: true
+  skip: false
+  filters:
+    exclude:
+      - '^\[release\] '
+      - '^\[cicd\] '
+      - '^Merge tag '
+      - '^Merge branch '
+      - '^bump '
+announce:
+  slack:
+    enabled: true
+    channel: '#duplo-devs'
 release:
   draft: true

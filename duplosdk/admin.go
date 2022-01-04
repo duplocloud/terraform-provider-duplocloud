@@ -7,6 +7,7 @@ type DuploAdminAwsCredentials struct {
 	SecretAccessKey string `json:"SecretAccessKey"`
 	Region          string `json:"Region"`
 	SessionToken    string `json:"SessionToken,omitempty"`
+	Validity        int    `json:"Validity,omitempty"`
 }
 
 // GetAwsAccountID retrieves the AWS account ID via the Duplo API.
