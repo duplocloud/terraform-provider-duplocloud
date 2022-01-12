@@ -95,6 +95,12 @@ func infrastructureSchemaComputed(single bool) map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        infrastructureVnetSubnetSchema(),
 		}
+		result["security_groups"] = &schema.Schema{
+			Description: "The security groups for the VPC or VNet.",
+			Type:        schema.TypeSet,
+			Computed:    true,
+			Elem:        infrastructureVnetSecurityGroupsSchema(),
+		}
 	} else {
 		result["infra_name"] = &schema.Schema{
 			Description: "The name of the infrastructure.",

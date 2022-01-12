@@ -49,14 +49,34 @@ type DuploInfrastructureVnetSubnet struct {
 	Tags          *[]DuploKeyStringValue `json:"Tags"`
 }
 
+type DuploInfrastructureVnetSecurityGroups struct {
+	SystemId string                           `json:"SystemId,omitempty"`
+	ReadOnly bool                             `json:"ReadOnly"`
+	SgType   string                           `json:"SgType"`
+	Name     string                           `json:"Name"`
+	Rules    *[]DuploInfrastructureVnetSGRule `json:"Rules"`
+}
+
+type DuploInfrastructureVnetSGRule struct {
+	SrcRuleType      int    `json:"SrcRuleType"`
+	SrcAddressPrefix string `json:"SrcAddressPrefix"`
+	SourcePortRange  string `json:"SourcePortRange"`
+	Protocol         string `json:"Protocol"`
+	Direction        string `json:"Direction"`
+	RuleAction       string `json:"RuleAction"`
+	Priority         int    `json:"Priority"`
+	DstRuleType      int    `json:"DstRuleType"`
+}
+
 // DuploInfrastructureVnet represents a Duplo infrastructure VNET
 type DuploInfrastructureVnet struct {
-	ID                 string                           `json:"Id"`
-	Name               string                           `json:"Name"`
-	AddressPrefix      string                           `json:"AddressPrefix"`
-	SubnetCidr         int                              `json:"SubnetCidr"`
-	Subnets            *[]DuploInfrastructureVnetSubnet `json:"Subnets,omitempty"`
-	ProvisioningStatus string                           `json:"ProvisioningStatus"`
+	ID                 string                                   `json:"Id"`
+	Name               string                                   `json:"Name"`
+	AddressPrefix      string                                   `json:"AddressPrefix"`
+	SubnetCidr         int                                      `json:"SubnetCidr"`
+	Subnets            *[]DuploInfrastructureVnetSubnet         `json:"Subnets,omitempty"`
+	ProvisioningStatus string                                   `json:"ProvisioningStatus"`
+	SecurityGroups     *[]DuploInfrastructureVnetSecurityGroups `json:"SecurityGroups"`
 }
 
 // DuploInfrastructure represents extended information about a Duplo infrastructure
