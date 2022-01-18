@@ -49,9 +49,6 @@ resource "duplocloud_aws_cloudfront_distribution" "cfd" {
     origin_id           = "duploservices-dev01-abc-app-1234567890.s3.us-west-2.amazonaws.com"
     connection_attempts = 3
     connection_timeout  = 10
-    s3_origin_config {
-      origin_access_identity = "origin-access-identity/cloudfront/E1XFV28H4MX4Q3"
-    }
   }
 
 
@@ -153,6 +150,8 @@ Optional:
 - **default_ttl** (Number)
 - **field_level_encryption_id** (String)
 - **forwarded_values** (Block List, Max: 1) (see [below for nested schema](#nestedblock--default_cache_behavior--forwarded_values))
+- **function_association** (Block Set, Max: 2) (see [below for nested schema](#nestedblock--default_cache_behavior--function_association))
+- **lambda_function_association** (Block Set, Max: 4) (see [below for nested schema](#nestedblock--default_cache_behavior--lambda_function_association))
 - **max_ttl** (Number)
 - **min_ttl** (Number) Defaults to `0`.
 - **origin_request_policy_id** (String)
@@ -186,6 +185,28 @@ Optional:
 
 - **whitelisted_names** (Set of String)
 
+
+
+<a id="nestedblock--default_cache_behavior--function_association"></a>
+### Nested Schema for `default_cache_behavior.function_association`
+
+Required:
+
+- **event_type** (String)
+- **function_arn** (String)
+
+
+<a id="nestedblock--default_cache_behavior--lambda_function_association"></a>
+### Nested Schema for `default_cache_behavior.lambda_function_association`
+
+Required:
+
+- **event_type** (String)
+- **lambda_arn** (String)
+
+Optional:
+
+- **include_body** (Boolean) Defaults to `false`.
 
 
 
@@ -307,6 +328,8 @@ Optional:
 - **default_ttl** (Number)
 - **field_level_encryption_id** (String)
 - **forwarded_values** (Block List, Max: 1) (see [below for nested schema](#nestedblock--ordered_cache_behavior--forwarded_values))
+- **function_association** (Block Set, Max: 2) (see [below for nested schema](#nestedblock--ordered_cache_behavior--function_association))
+- **lambda_function_association** (Block Set, Max: 4) (see [below for nested schema](#nestedblock--ordered_cache_behavior--lambda_function_association))
 - **max_ttl** (Number)
 - **min_ttl** (Number) Defaults to `0`.
 - **origin_request_policy_id** (String)
@@ -340,6 +363,28 @@ Optional:
 
 - **whitelisted_names** (Set of String)
 
+
+
+<a id="nestedblock--ordered_cache_behavior--function_association"></a>
+### Nested Schema for `ordered_cache_behavior.function_association`
+
+Required:
+
+- **event_type** (String)
+- **function_arn** (String)
+
+
+<a id="nestedblock--ordered_cache_behavior--lambda_function_association"></a>
+### Nested Schema for `ordered_cache_behavior.lambda_function_association`
+
+Required:
+
+- **event_type** (String)
+- **lambda_arn** (String)
+
+Optional:
+
+- **include_body** (Boolean) Defaults to `false`.
 
 
 

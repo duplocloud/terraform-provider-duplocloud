@@ -487,6 +487,55 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 							},
 						},
 					},
+					"lambda_function_association": {
+						Type:     schema.TypeSet,
+						Optional: true,
+						MaxItems: 4,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"event_type": {
+									Type:     schema.TypeString,
+									Required: true,
+									ValidateFunc: validation.StringInSlice([]string{
+										"viewer-request",
+										"origin-request",
+										"viewer-response",
+										"origin-response",
+									}, false),
+								},
+								"lambda_arn": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"include_body": {
+									Type:     schema.TypeBool,
+									Optional: true,
+									Default:  false,
+								},
+							},
+						},
+					},
+					"function_association": {
+						Type:     schema.TypeSet,
+						Optional: true,
+						MaxItems: 2,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"event_type": {
+									Type:     schema.TypeString,
+									Required: true,
+									ValidateFunc: validation.StringInSlice([]string{
+										"viewer-request",
+										"viewer-response",
+									}, false),
+								},
+								"function_arn": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+							},
+						},
+					},
 					"max_ttl": {
 						Type:     schema.TypeInt,
 						Optional: true,
@@ -625,6 +674,55 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 									Optional: true,
 									Computed: true,
 									Elem:     &schema.Schema{Type: schema.TypeString},
+								},
+							},
+						},
+					},
+					"lambda_function_association": {
+						Type:     schema.TypeSet,
+						Optional: true,
+						MaxItems: 4,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"event_type": {
+									Type:     schema.TypeString,
+									Required: true,
+									ValidateFunc: validation.StringInSlice([]string{
+										"viewer-request",
+										"origin-request",
+										"viewer-response",
+										"origin-response",
+									}, false),
+								},
+								"lambda_arn": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"include_body": {
+									Type:     schema.TypeBool,
+									Optional: true,
+									Default:  false,
+								},
+							},
+						},
+					},
+					"function_association": {
+						Type:     schema.TypeSet,
+						Optional: true,
+						MaxItems: 2,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"event_type": {
+									Type:     schema.TypeString,
+									Required: true,
+									ValidateFunc: validation.StringInSlice([]string{
+										"viewer-request",
+										"viewer-response",
+									}, false),
+								},
+								"function_arn": {
+									Type:     schema.TypeString,
+									Required: true,
 								},
 							},
 						},
@@ -939,7 +1037,11 @@ func expandAwsCloudfrontDistributionDefaultCacheBehavior(m map[string]interface{
 		dcb.TrustedSigners = expandTrustedSigners([]interface{}{})
 	}
 
-	// TODO Support for "lambda_function_association" and "function_association"
+	// TODO Support for "function_association"
+
+	if v, ok := m["lambda_function_association"]; ok {
+		dcb.LambdaFunctionAssociations = expandLambdaFunctionAssociations(v.(*schema.Set).List())
+	}
 
 	if v, ok := m["smooth_streaming"]; ok {
 		dcb.SmoothStreaming = v.(bool)
@@ -986,7 +1088,10 @@ func expandAwsCloudfrontDistributionCacheBehavior(m map[string]interface{}) dupl
 		cb.TrustedSigners = expandTrustedSigners([]interface{}{})
 	}
 
-	// TODO Support for "lambda_function_association" and "function_association"
+	// TODO Support for "function_association"
+	if v, ok := m["lambda_function_association"]; ok {
+		cb.LambdaFunctionAssociations = expandLambdaFunctionAssociations(v.(*schema.Set).List())
+	}
 
 	if v, ok := m["smooth_streaming"]; ok {
 		cb.SmoothStreaming = v.(bool)
@@ -1363,6 +1468,39 @@ func expandCustomErrorResponse(m map[string]interface{}) duplosdk.DuploAwsCloudf
 	return er
 }
 
+func expandLambdaFunctionAssociations(v interface{}) *duplosdk.DuploAwsCloudfrontLambdaFunctionAssociations {
+	if v == nil {
+		return &duplosdk.DuploAwsCloudfrontLambdaFunctionAssociations{
+			Quantity: 0,
+		}
+	}
+	s := v.([]interface{})
+	qty := 0
+	items := make([]duplosdk.DuploAwsCloudfrontLambdaFunctionAssociation, 0, len(s))
+	for _, i := range s {
+		items = append(items, expandLambdaFunctionAssociation(i.(map[string]interface{})))
+		qty++
+	}
+	return &duplosdk.DuploAwsCloudfrontLambdaFunctionAssociations{
+		Quantity: qty,
+		Items:    &items,
+	}
+}
+
+func expandLambdaFunctionAssociation(lf map[string]interface{}) duplosdk.DuploAwsCloudfrontLambdaFunctionAssociation {
+	var lfa duplosdk.DuploAwsCloudfrontLambdaFunctionAssociation
+	if v, ok := lf["event_type"]; ok {
+		lfa.EventType = v.(string)
+	}
+	if v, ok := lf["lambda_arn"]; ok {
+		lfa.LambdaFunctionARN = v.(string)
+	}
+	if v, ok := lf["include_body"]; ok {
+		lfa.IncludeBody = v.(bool)
+	}
+	return lfa
+}
+
 func expandStringList(configured []interface{}) []string {
 	vs := make([]string, 0, len(configured))
 	for _, v := range configured {
@@ -1462,6 +1600,10 @@ func flattenCloudFrontDefaultCacheBehavior(dcb *duplosdk.DuploAwsCloudfrontDefau
 	}
 	if dcb.AllowedMethods.CachedMethods != nil {
 		m["cached_methods"] = flattenCachedMethods(dcb.AllowedMethods.CachedMethods)
+	}
+	lfaItems := dcb.LambdaFunctionAssociations.Items
+	if dcb.LambdaFunctionAssociations != nil && len(*lfaItems) > 0 {
+		m["lambda_function_association"] = flattenLambdaFunctionAssociations(dcb.LambdaFunctionAssociations)
 	}
 
 	return m
@@ -1607,7 +1749,10 @@ func flattenCacheBehavior(cb duplosdk.DuploAwsCloudfrontCacheBehavior) map[strin
 	if cb.AllowedMethods.CachedMethods != nil {
 		m["cached_methods"] = flattenCachedMethods(cb.AllowedMethods.CachedMethods)
 	}
-
+	lfaItems := cb.LambdaFunctionAssociations.Items
+	if cb.LambdaFunctionAssociations != nil && len(*lfaItems) > 0 {
+		m["lambda_function_association"] = flattenLambdaFunctionAssociations(cb.LambdaFunctionAssociations)
+	}
 	return m
 }
 
@@ -1754,6 +1899,22 @@ func flattenOriginGroupMembers(ogm *duplosdk.DuploAwsCloudfrontDistributionOrigi
 		s = append(s, m)
 	}
 	return s
+}
+
+func flattenLambdaFunctionAssociations(lfa *duplosdk.DuploAwsCloudfrontLambdaFunctionAssociations) []map[string]interface{} {
+	s := []map[string]interface{}{}
+	for _, v := range *lfa.Items {
+		s = append(s, flattenLambdaFunctionAssociation(v))
+	}
+	return s
+}
+
+func flattenLambdaFunctionAssociation(lfa duplosdk.DuploAwsCloudfrontLambdaFunctionAssociation) map[string]interface{} {
+	m := map[string]interface{}{}
+	m["event_type"] = lfa.EventType
+	m["lambda_arn"] = lfa.LambdaFunctionARN
+	m["include_body"] = lfa.IncludeBody
+	return m
 }
 
 func flattenStringList(list []string) []interface{} {

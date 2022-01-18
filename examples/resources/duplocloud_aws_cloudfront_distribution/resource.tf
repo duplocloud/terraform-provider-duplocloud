@@ -34,9 +34,6 @@ resource "duplocloud_aws_cloudfront_distribution" "cfd" {
     origin_id           = "duploservices-dev01-abc-app-1234567890.s3.us-west-2.amazonaws.com"
     connection_attempts = 3
     connection_timeout  = 10
-    s3_origin_config {
-      origin_access_identity = "origin-access-identity/cloudfront/E1XFV28H4MX4Q3"
-    }
   }
 
 
