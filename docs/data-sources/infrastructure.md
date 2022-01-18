@@ -58,6 +58,7 @@ Will be one of:
 - **private_subnets** (Set of Object) The private subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--private_subnets))
 - **public_subnets** (Set of Object) The public subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--public_subnets))
 - **region** (String) The cloud provider region.  The Duplo portal must have already been configured to support this region.
+- **security_groups** (Set of Object) The security groups for the VPC or VNet. (see [below for nested schema](#nestedatt--security_groups))
 - **status** (String) The status of the infrastructure.
 - **subnet_cidr** (Number) The CIDR subnet size (in bits) of the automatically created subnets.
 - **vpc_id** (String) The VPC or VNet ID.
@@ -104,5 +105,32 @@ Read-Only:
 
 - **key** (String)
 - **value** (String)
+
+
+
+<a id="nestedatt--security_groups"></a>
+### Nested Schema for `security_groups`
+
+Read-Only:
+
+- **id** (String)
+- **name** (String)
+- **read_only** (Boolean)
+- **rules** (Set of Object) (see [below for nested schema](#nestedobjatt--security_groups--rules))
+- **type** (String)
+
+<a id="nestedobjatt--security_groups--rules"></a>
+### Nested Schema for `security_groups.rules`
+
+Read-Only:
+
+- **action** (String)
+- **destination_rule_type** (Number)
+- **direction** (String)
+- **priority** (Number)
+- **protocol** (String)
+- **source_address_prefix** (String)
+- **source_port_range** (String)
+- **source_rule_type** (Number)
 
 
