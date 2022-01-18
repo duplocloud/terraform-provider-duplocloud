@@ -766,7 +766,6 @@ func resourceAwsCloudfrontDistributionCreate(ctx context.Context, d *schema.Reso
 	}
 	d.SetId(id)
 
-	//By default, wait until the storage account to be ready.
 	if d.Get("wait_for_deployment") == nil || d.Get("wait_for_deployment").(bool) {
 		err = cloudfrontDistributionWaitUntilReady(ctx, c, tenantID, resp.Id, d.Timeout("create"))
 		if err != nil {
@@ -780,7 +779,44 @@ func resourceAwsCloudfrontDistributionCreate(ctx context.Context, d *schema.Reso
 }
 
 func resourceAwsCloudfrontDistributionUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	id := d.Id()
+	log.Printf("[TRACE] resourceAwsCloudfrontDistributionUpdate(%s): start", id)
+	tenantID, cfdId, err := parseAwsCloudfrontDistributionIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	c := m.(*duplosdk.Client)
+
+	rq := expandAwsCloudfrontDistributionConfig(d)
+	resp, err := c.AwsCloudfrontDistributionUpdate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
+		Id:                 cfdId,
+		DistributionConfig: rq,
+		IfMatch:            d.Get("etag").(string),
+	})
+	if err != nil {
+		return diag.Errorf("Error creating tenant %s aws cloudfront distribution.: %s", tenantID, err)
+	}
+
+	if d.Get("wait_for_deployment") == nil || d.Get("wait_for_deployment").(bool) {
+		err = cloudfrontDistributionWaitUntilReady(ctx, c, tenantID, resp.Id, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "aws cloudfront distribution", id, func() (interface{}, duplosdk.ClientError) {
+		return c.AwsCloudfrontDistributionGet(tenantID, resp.Id)
+	})
+
+	if diags != nil {
+		return diags
+	}
+	d.SetId(id)
+
+	diags = resourceAwsCloudfrontDistributionRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsCloudfrontDistributionUpdate(%s, %s): end", tenantID, resp.Id)
+	return diags
 }
 
 func resourceAwsCloudfrontDistributionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

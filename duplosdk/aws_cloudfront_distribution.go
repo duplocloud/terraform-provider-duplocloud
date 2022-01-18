@@ -7,7 +7,7 @@ import (
 
 type DuploAwsCloudfrontDefaultCacheBehavior struct {
 	AllowedMethods             *DuploCFDAllowedMethods `json:"AllowedMethods,omitempty"`
-	CachePolicyId              string                  `json:"CachePolicyId,omitempty"`
+	CachePolicyId              string                  `json:"CachePolicyId"`
 	Compress                   bool                    `json:"Compress"`
 	DefaultTTL                 int                     `json:"DefaultTTL,omitempty"`
 	FieldLevelEncryptionId     string                  `json:"FieldLevelEncryptionId,omitempty"`
@@ -106,7 +106,7 @@ type DuploAwsCloudfrontOriginCustomHeader struct {
 }
 
 type DuploAwsCloudfrontOriginS3Config struct {
-	OriginAccessIdentity string `json:"OriginAccessIdentity,omitempty"`
+	OriginAccessIdentity string `json:"OriginAccessIdentity"`
 }
 
 type DuploAwsCloudfrontCustomOriginConfig struct {
@@ -179,13 +179,14 @@ type DuploAwsCloudfrontDistributionCustomErrorResponses struct {
 type DuploAwsCloudfrontDistributionCustomErrorResponse struct {
 	ErrorCachingMinTTL int    `json:"ErrorCachingMinTTL,omitempty"`
 	ErrorCode          int    `json:"ErrorCode,omitempty"`
-	ResponseCode       string `json:"ResponseCode,omitempty"`
+	ResponseCode       string `json:"ResponseCode"`
 	ResponsePagePath   string `json:"ResponsePagePath,omitempty"`
 }
 
 type DuploAwsCloudfrontDistributionCreate struct {
 	DistributionConfig *DuploAwsCloudfrontDistributionConfig `json:"DistributionConfig,omitempty"`
 	Id                 string                                `json:"Id,omitempty"`
+	IfMatch            string                                `json:"IfMatch,omitempty"`
 }
 
 type DuploAwsCloudfrontDistribution struct {
@@ -216,8 +217,8 @@ type DuploAwsCloudfrontDistributionConfig struct {
 	} `json:"AliasICPRecordals,omitempty"`
 	ARN                  string                                              `json:"ARN,omitempty"`
 	CacheBehaviors       *DuploAwsCloudfrontCacheBehaviors                   `json:"CacheBehaviors,omitempty"`
-	Comment              string                                              `json:"Comment,omitempty"`
-	DefaultRootObject    string                                              `json:"DefaultRootObject,omitempty"`
+	Comment              string                                              `json:"Comment"`
+	DefaultRootObject    string                                              `json:"DefaultRootObject"`
 	CustomErrorResponses *DuploAwsCloudfrontDistributionCustomErrorResponses `json:"CustomErrorResponses,omitempty"`
 	DefaultCacheBehavior *DuploAwsCloudfrontDefaultCacheBehavior             `json:"DefaultCacheBehavior,omitempty"`
 	DomainName           string                                              `json:"DomainName,omitempty"`
@@ -233,7 +234,7 @@ type DuploAwsCloudfrontDistributionConfig struct {
 	Status               string                                              `json:"Status,omitempty"`
 	ViewerCertificate    *DuploAwsCloudfrontDistributionViewerCertificate    `json:"ViewerCertificate,omitempty"`
 	Logging              *DuploAwsCloudfrontDistributionLoggingConfig        `json:"Logging,omitempty"`
-	WebACLId             string                                              `json:"WebACLId,omitempty"`
+	WebACLId             string                                              `json:"WebACLId"`
 }
 
 func (c *Client) AwsCloudfrontDistributionCreate(tenantID string, rq *DuploAwsCloudfrontDistributionCreate) (*DuploAwsCloudfrontDistribution, ClientError) {
@@ -247,13 +248,15 @@ func (c *Client) AwsCloudfrontDistributionCreate(tenantID string, rq *DuploAwsCl
 	return &resp, err
 }
 
-func (c *Client) AwsCloudfrontDistributionUpdate(tenantID string, rq *DuploAwsCloudfrontDistributionCreate) ClientError {
-	return c.putAPI(
+func (c *Client) AwsCloudfrontDistributionUpdate(tenantID string, rq *DuploAwsCloudfrontDistributionCreate) (*DuploAwsCloudfrontDistribution, ClientError) {
+	resp := DuploAwsCloudfrontDistribution{}
+	err := c.putAPI(
 		fmt.Sprintf("AwsCloudfrontDistributionUpdate(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFrontDistribution", tenantID),
 		&rq,
-		nil,
+		&resp,
 	)
+	return &resp, err
 }
 
 func (c *Client) AwsCloudfrontDistributionGet(tenantID string, cfdId string) (*DuploAwsCloudfrontDistributionGetResponse, ClientError) {
