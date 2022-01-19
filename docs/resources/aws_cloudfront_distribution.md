@@ -77,7 +77,7 @@ resource "duplocloud_aws_cloudfront_distribution" "cfd" {
 
   viewer_certificate {
     acm_certificate_arn      = "arn:aws:acm:us-east-1:1234567890:certificate/49c7a151-14b1-486e-801f-cf6bc9a43804"
-    minimum_protocol_version = "TLSv1.1_2016"
+    minimum_protocol_version = "TLSv1.2_2019"
     ssl_support_method       = "sni-only"
   }
 
@@ -121,6 +121,7 @@ resource "duplocloud_aws_cloudfront_distribution" "cfd" {
 - **price_class** (String) The price class for this distribution. One of `PriceClass_All`, `PriceClass_200`, `PriceClass_100` Defaults to `PriceClass_All`.
 - **restrictions** (Block List, Max: 1) (see [below for nested schema](#nestedblock--restrictions))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **use_origin_access_identity** (Boolean) Defaults to `true`.
 - **wait_for_deployment** (Boolean) Defaults to `true`.
 - **web_acl_id** (String) A unique identifier that specifies the AWS WAF web ACL, if any, to associate with this distribution.
 
@@ -279,8 +280,8 @@ Optional:
 - **acm_certificate_arn** (String)
 - **cloudfront_default_certificate** (Boolean)
 - **iam_certificate_id** (String)
-- **minimum_protocol_version** (String) Defaults to `TLSv1`.
-- **ssl_support_method** (String)
+- **minimum_protocol_version** (String) Defaults to `TLSv1.2_2019`.
+- **ssl_support_method** (String) Defaults to `sni-only`.
 
 
 <a id="nestedblock--custom_error_response"></a>
