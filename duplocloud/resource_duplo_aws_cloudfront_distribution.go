@@ -107,6 +107,11 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			Optional: true,
 			Default:  true,
 		},
+		"use_origin_access_identity": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  true,
+		},
 		"custom_error_response": {
 			Type:     schema.TypeSet,
 			Optional: true,
@@ -158,12 +163,12 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 					"minimum_protocol_version": {
 						Type:     schema.TypeString,
 						Optional: true,
-						Default:  "TLSv1",
+						Default:  "TLSv1.2_2019",
 					},
 					"ssl_support_method": {
 						Type:     schema.TypeString,
 						Optional: true,
-						Computed: true,
+						Default:  "sni-only",
 						ValidateFunc: validation.StringInSlice([]string{
 							"vip",
 							"sni-only",
@@ -326,7 +331,8 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 									Type:     schema.TypeSet,
 									Required: true,
 									Elem: &schema.Schema{
-										Type: schema.TypeString,
+										Type:    schema.TypeString,
+										Default: "TLSv1.2",
 										ValidateFunc: validation.StringInSlice([]string{
 											"SSLv3",
 											"TLSv1",
@@ -849,7 +855,7 @@ func resourceAwsCloudfrontDistributionCreate(ctx context.Context, d *schema.Reso
 	c := m.(*duplosdk.Client)
 
 	rq := expandAwsCloudfrontDistributionConfig(d)
-	resp, err := c.AwsCloudfrontDistributionCreate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{DistributionConfig: rq})
+	resp, err := c.AwsCloudfrontDistributionCreate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{DistributionConfig: rq, UseOAIIdentity: d.Get("use_origin_access_identity").(bool)})
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s aws cloudfront distribution.: %s", tenantID, err)
 	}
@@ -1560,7 +1566,7 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 	}
 
 	if duplo.Origins.Quantity > 0 {
-		d.Set("origin", flattenOrigins(duplo.Origins))
+		d.Set("origin", flattenOrigins(duplo.Origins, d.Get("use_origin_access_identity").(bool)))
 	}
 
 	if duplo.OriginGroups.Quantity > 0 {
@@ -1791,15 +1797,15 @@ func flattenAliases(aliases *duplosdk.DuploCFDStringItems) *schema.Set {
 	return nil
 }
 
-func flattenOrigins(ors *duplosdk.DuploAwsCloudfrontOrigins) []map[string]interface{} {
+func flattenOrigins(ors *duplosdk.DuploAwsCloudfrontOrigins, useOAI bool) []map[string]interface{} {
 	s := []map[string]interface{}{}
 	for _, v := range *ors.Items {
-		s = append(s, flattenOrigin(v))
+		s = append(s, flattenOrigin(v, useOAI))
 	}
 	return s
 }
 
-func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin) map[string]interface{} {
+func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin, useOAI bool) map[string]interface{} {
 	m := make(map[string]interface{})
 	m["origin_id"] = or.Id
 	m["domain_name"] = or.DomainName
@@ -1813,7 +1819,7 @@ func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin) map[string]interface{} 
 		m["custom_origin_config"] = []interface{}{flattenCustomOriginConfig(or.CustomOriginConfig)}
 	}
 
-	if or.S3OriginConfig != nil && or.S3OriginConfig.OriginAccessIdentity != "" {
+	if !useOAI && or.S3OriginConfig != nil && or.S3OriginConfig.OriginAccessIdentity != "" {
 		m["s3_origin_config"] = []interface{}{flattenS3OriginConfig(or.S3OriginConfig)}
 	}
 	return m

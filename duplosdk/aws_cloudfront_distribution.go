@@ -192,6 +192,7 @@ type DuploAwsCloudfrontDistributionCreate struct {
 	DistributionConfig *DuploAwsCloudfrontDistributionConfig `json:"DistributionConfig,omitempty"`
 	Id                 string                                `json:"Id,omitempty"`
 	IfMatch            string                                `json:"IfMatch,omitempty"`
+	UseOAIIdentity     bool                                  `json:"UseOAIIdentity,omitempty"`
 }
 
 type DuploAwsCloudfrontDistribution struct {
