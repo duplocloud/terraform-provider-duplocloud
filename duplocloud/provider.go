@@ -52,6 +52,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_system_setting":         resourceAdminSystemSetting(),
+			"duplocloud_aws_cloudfront_distribution":  resourceAwsCloudfrontDistribution(),
 			"duplocloud_aws_dynamodb_table":           resourceAwsDynamoDBTable(),
 			"duplocloud_aws_dynamodb_table_v2":        resourceAwsDynamoDBTableV2(),
 			"duplocloud_aws_elasticsearch":            resourceDuploAwsElasticSearch(),
