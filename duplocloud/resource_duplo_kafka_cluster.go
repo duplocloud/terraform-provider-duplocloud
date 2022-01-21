@@ -118,6 +118,11 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"number_of_broker_nodes": {
+			Description: "The desired total number of broker nodes in the kafka cluster.",
+			Type:        schema.TypeInt,
+			Computed:    true,
+		},
 		"tags": {
 			Type:     schema.TypeMap,
 			Computed: true,
@@ -190,6 +195,7 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 			d.Set("storage_size", info.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize)
 			d.Set("plaintext_zookeeper_connect_string", info.ZookeeperConnectString)
 			d.Set("tls_zookeeper_connect_string", info.ZookeeperConnectStringTls)
+			d.Set("number_of_broker_nodes", info.NumberOfBrokerNodes)
 			if info.BrokerNodeGroup.AZDistribution != nil {
 				d.Set("az_distribution", info.BrokerNodeGroup.AZDistribution.Value)
 			}
