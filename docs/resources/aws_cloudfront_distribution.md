@@ -225,7 +225,7 @@ Optional:
 - **connection_timeout** (Number) Defaults to `10`.
 - **custom_header** (Block Set) (see [below for nested schema](#nestedblock--origin--custom_header))
 - **custom_origin_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--origin--custom_origin_config))
-- **origin_path** (String)
+- **origin_path** (String) Defaults to ``.
 - **origin_shield** (Block List, Max: 1) (see [below for nested schema](#nestedblock--origin--origin_shield))
 - **s3_origin_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--origin--s3_origin_config))
 
@@ -243,13 +243,13 @@ Required:
 
 Required:
 
-- **http_port** (Number)
-- **https_port** (Number)
 - **origin_protocol_policy** (String)
 - **origin_ssl_protocols** (Set of String)
 
 Optional:
 
+- **http_port** (Number) Defaults to `80`.
+- **https_port** (Number) Defaults to `443`.
 - **origin_keepalive_timeout** (Number) Defaults to `5`.
 - **origin_read_timeout** (Number) Defaults to `30`.
 
@@ -266,7 +266,7 @@ Required:
 <a id="nestedblock--origin--s3_origin_config"></a>
 ### Nested Schema for `origin.s3_origin_config`
 
-Required:
+Optional:
 
 - **origin_access_identity** (String)
 
@@ -280,7 +280,7 @@ Optional:
 - **acm_certificate_arn** (String)
 - **cloudfront_default_certificate** (Boolean)
 - **iam_certificate_id** (String)
-- **minimum_protocol_version** (String) Defaults to `TLSv1.2_2019`.
+- **minimum_protocol_version** (String) Defaults to `TLSv1.2_2021`.
 - **ssl_support_method** (String) Defaults to `sni-only`.
 
 
