@@ -52,6 +52,7 @@ See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguid
 - **az_distribution** (String) The availability zone distribution used by the cluster.
 - **fullname** (String) The full name of the Kakfa cluster.
 - **id** (String) The ID of this resource.
+- **number_of_broker_nodes** (Number) The desired total number of broker nodes in the kafka cluster.
 - **plaintext_bootstrap_broker_string** (String) The bootstrap broker connect string for plaintext (unencrypted) connections.
 - **plaintext_zookeeper_connect_string** (String) The Zookeeper connect string for plaintext (unencrypted) connections.
 - **security_groups** (List of String) The list of security groups used by the cluster.
