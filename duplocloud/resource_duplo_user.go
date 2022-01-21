@@ -68,6 +68,10 @@ func resourceUser() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+			"current_session_token": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -100,6 +104,7 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	d.Set("vpn_static_ip", duplo.VpnStaticIp)
 	d.Set("is_vpn_config_created", duplo.IsVpnConfigCreated)
 	d.Set("is_confirmation_email_sent", duplo.IsConfirmationEmailSent)
+	d.Set("current_session_token", duplo.CurrentSessionToken)
 
 	log.Printf("[TRACE] resourceUserRead(%s): end", id)
 	return nil
@@ -139,7 +144,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, m interface
 	d.Set("vpn_static_ip", resp.VpnStaticIp)
 	d.Set("is_vpn_config_created", resp.IsVpnConfigCreated)
 	d.Set("is_confirmation_email_sent", resp.IsConfirmationEmailSent)
-
+	d.Set("current_session_token", resp.CurrentSessionToken)
 	diags = resourceUserRead(ctx, d, m)
 	if diags != nil {
 		return diags
