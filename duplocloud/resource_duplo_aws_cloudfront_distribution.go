@@ -163,7 +163,7 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 					"minimum_protocol_version": {
 						Type:     schema.TypeString,
 						Optional: true,
-						Default:  "TLSv1.2_2019",
+						Default:  "TLSv1.2_2021",
 					},
 					"ssl_support_method": {
 						Type:     schema.TypeString,
@@ -300,11 +300,13 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 							Schema: map[string]*schema.Schema{
 								"http_port": {
 									Type:     schema.TypeInt,
-									Required: true,
+									Optional: true,
+									Default:  80,
 								},
 								"https_port": {
 									Type:     schema.TypeInt,
-									Required: true,
+									Optional: true,
+									Default:  443,
 								},
 								"origin_keepalive_timeout": {
 									Type:         schema.TypeInt,
@@ -373,7 +375,7 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 					"origin_path": {
 						Type:     schema.TypeString,
 						Optional: true,
-						Computed: true,
+						Default:  "",
 					},
 					"origin_shield": {
 						Type:     schema.TypeList,
@@ -395,12 +397,14 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 					"s3_origin_config": {
 						Type:     schema.TypeList,
 						Optional: true,
+						Computed: true,
 						MaxItems: 1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
 								"origin_access_identity": {
 									Type:     schema.TypeString,
-									Required: true,
+									Optional: true,
+									Computed: true,
 								},
 							},
 						},
