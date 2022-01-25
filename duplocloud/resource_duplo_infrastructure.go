@@ -15,6 +15,73 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+func infrastructureVnetSecurityGroupsSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The security group ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"name": {
+				Description: "The security group name.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"read_only": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+			"type": {
+				Description: "The type of security group.  Will be one of: `\"host\"` or `\"lb\"`.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"rules": {
+				Description: "Security group rules",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"priority": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"action": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"direction": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"protocol": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"source_port_range": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"source_address_prefix": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"source_rule_type": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"destination_rule_type": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func infrastructureVnetSubnetSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -148,6 +215,12 @@ func resourceInfrastructure() *schema.Resource {
 				Type:        schema.TypeSet,
 				Computed:    true,
 				Elem:        infrastructureVnetSubnetSchema(),
+			},
+			"security_groups": {
+				Description: "The security groups for the VPC or VNet.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        infrastructureVnetSecurityGroupsSchema(),
 			},
 			"wait_until_deleted": {
 				Description:      "Whether or not to wait until Duplo has destroyed the infrastructure.",
@@ -394,6 +467,36 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 
 			d.Set("private_subnets", privateSubnets)
 			d.Set("public_subnets", publicSubnets)
+		}
+
+		if config.Vnet.SecurityGroups != nil {
+			securityGroups := make([]map[string]interface{}, 0, len(*config.Vnet.SecurityGroups))
+
+			for _, vnetSG := range *config.Vnet.SecurityGroups {
+				sg := map[string]interface{}{
+					"id":        vnetSG.SystemId,
+					"name":      vnetSG.Name,
+					"read_only": vnetSG.ReadOnly,
+					"type":      vnetSG.SgType,
+				}
+				sgRules := make([]map[string]interface{}, 0, len(*vnetSG.Rules))
+				for _, rule := range *vnetSG.Rules {
+					r := map[string]interface{}{
+						"priority":              rule.Priority,
+						"action":                rule.RuleAction,
+						"direction":             rule.Direction,
+						"protocol":              rule.Protocol,
+						"source_port_range":     rule.SourcePortRange,
+						"source_address_prefix": rule.SrcAddressPrefix,
+						"source_rule_type":      rule.SrcRuleType,
+						"destination_rule_type": rule.DstRuleType,
+					}
+					sgRules = append(sgRules, r)
+				}
+				sg["rules"] = sgRules
+				securityGroups = append(securityGroups, sg)
+			}
+			d.Set("security_groups", securityGroups)
 		}
 	}
 

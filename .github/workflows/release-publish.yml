@@ -36,18 +36,19 @@ jobs:
           args: release --parallelism 2 --rm-dist
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DUPLO_GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       - 
         name: Get draft release ID
         id: get_release
         uses: agners/get-draft-release@v1.2.2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DUPLO_GITHUB_TOKEN }}
       -
         name: Publish the release
-        uses: actions/github-script@v2
+        uses: actions/github-script@v5
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
           script: |
             github.repos.updateRelease({
               owner: context.repo.owner,
