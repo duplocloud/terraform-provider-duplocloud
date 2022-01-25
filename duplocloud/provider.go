@@ -82,6 +82,7 @@ func Provider() *schema.Provider {
 			"duplocloud_rds_instance":                 resourceDuploRdsInstance(),
 			"duplocloud_s3_bucket":                    resourceS3Bucket(),
 			"duplocloud_tenant":                       resourceTenant(),
+			"duplocloud_user":                         resourceUser(),
 			"duplocloud_tenant_config":                resourceTenantConfig(),
 			"duplocloud_tenant_secret":                resourceTenantSecret(),
 			"duplocloud_tenant_network_security_rule": resourceTenantSecurityRule(),
