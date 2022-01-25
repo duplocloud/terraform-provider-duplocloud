@@ -295,6 +295,7 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 					"custom_origin_config": {
 						Type:     schema.TypeList,
 						Optional: true,
+						Computed: true,
 						MaxItems: 1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
@@ -380,6 +381,7 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 					"origin_shield": {
 						Type:     schema.TypeList,
 						Optional: true,
+						Computed: true,
 						MaxItems: 1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
