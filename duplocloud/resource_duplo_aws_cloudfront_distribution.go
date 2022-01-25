@@ -905,7 +905,7 @@ func resourceAwsCloudfrontDistributionUpdate(ctx context.Context, d *schema.Reso
 		IfMatch:            d.Get("etag").(string),
 	})
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s aws cloudfront distribution.: %s", tenantID, err)
+		return diag.Errorf("Error updating tenant %s aws cloudfront distribution.: %s", tenantID, err)
 	}
 
 	if d.Get("wait_for_deployment") == nil || d.Get("wait_for_deployment").(bool) {
@@ -1261,6 +1261,8 @@ func expandAwsCloudfrontDistributionOrigin(m map[string]interface{}) duplosdk.Du
 	}
 	if v, ok := m["origin_path"]; ok {
 		origin.OriginPath = v.(string)
+	} else {
+		origin.OriginPath = ""
 	}
 
 	if v, ok := m["s3_origin_config"]; ok {
@@ -1823,10 +1825,14 @@ func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin, useOAI bool) map[string
 	}
 	if or.CustomOriginConfig != nil {
 		m["custom_origin_config"] = []interface{}{flattenCustomOriginConfig(or.CustomOriginConfig)}
+	} else {
+		m["custom_origin_config"] = []interface{}{}
 	}
 
 	if !useOAI && or.S3OriginConfig != nil && or.S3OriginConfig.OriginAccessIdentity != "" {
 		m["s3_origin_config"] = []interface{}{flattenS3OriginConfig(or.S3OriginConfig)}
+	} else {
+		m["s3_origin_config"] = []interface{}{}
 	}
 	return m
 }
