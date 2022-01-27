@@ -28,7 +28,9 @@ func dataSourceNativeHosts() *schema.Resource {
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: nativeHostSchema(),
+					//flattenNativeHost: returns volumes and network_interfaces
+					//renamed volume => volumes, network_interface => network_interfaces
+					Schema: nativeHostSchemaComputed(),
 				},
 			},
 		},

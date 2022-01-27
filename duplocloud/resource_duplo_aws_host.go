@@ -228,6 +228,213 @@ func nativeHostSchema() map[string]*schema.Schema {
 		},
 	}
 }
+func nativeHostSchemaComputed() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"tenant_id": {
+			Description:  "The GUID of the tenant that the host will be created in.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true, //switch tenant
+			ValidateFunc: validation.IsUUID,
+		},
+		"user_account": {
+			Description:      "The name of the tenant that the host will be created in.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
+		},
+		"friendly_name": {
+			Description:      "The short name of the host.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffIgnoreIfAlreadySet,
+		},
+		"instance_id": {
+			Description: "The AWS EC2 instance ID of the host.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"capacity": {
+			Description: "The AWS EC2 instance type.",
+			Type:        schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+		},
+		"zone": {
+			Description: "The availability zone to launch the host in, expressed as a number and starting at 0.",
+			Type:        schema.TypeInt,
+			Optional:         true,
+			Computed:         true,
+		},
+		"is_minion": {
+			Type:     schema.TypeBool,
+			Optional:         true,
+			Computed:         true,
+		},
+		"image_id": {
+			Description: "The AMI ID to use.",
+			Type:        schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+		},
+		"base64_user_data": {
+			Description: "Base64 encoded EC2 user data to associated with the host.",
+			Type:        schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+		},
+		"agent_platform": {
+			Description: "The numeric ID of the container agent pool that this host is added to.",
+			Type:        schema.TypeInt,
+			Optional:         true,
+			Computed:         true,
+		},
+		"is_ebs_optimized": {
+			Type:     schema.TypeBool,
+			Optional:         true,
+			Computed:         true,
+		},
+		"allocated_public_ip": {
+			Description: "Whether or not to allocate a public IP.",
+			Type:        schema.TypeBool,
+			Optional:         true,
+			Computed:         true,
+		},
+		"cloud": {
+			Description: "The numeric ID of the cloud provider to launch the host in.",
+			Type:        schema.TypeInt,
+			Optional:         true,
+			Computed:         true,
+		},
+		"encrypt_disk": {
+			Type:     schema.TypeBool,
+			Optional:         true,
+			Computed:         true,
+		},
+		"status": {
+			Description: "The current status of the host.",
+			Type:        schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+		},
+		"identity_role": {
+			Description: "The name of the IAM role associated with this host.",
+			Type:        schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+		},
+		"private_ip_address": {
+			Description: "The primary private IP address assigned to the host.",
+			Type:        schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+		},
+		"metadata": {
+			Description: "Configuration metadata used when creating the host.",
+			Type:        schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem:        KeyValueSchema(),
+		},
+		"tags": {
+			Type:     schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem:     KeyValueSchema(),
+		},
+		"minion_tags": {
+			Description: "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.",
+			Type:        schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem:        KeyValueSchema(),
+		},
+		// renamed volume to volumes
+		"volumes": {
+			Type:     schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"iops": {
+						Type:     schema.TypeInt,
+						Optional: true,
+						Computed: true,
+					},
+					"name": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Computed: true,
+					},
+					"size": {
+						Type:     schema.TypeInt,
+						Optional: true,
+						Computed: true,
+					},
+					"volume_id": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Computed: true,
+					},
+					"volume_type": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Computed: true,
+					},
+				},
+			},
+		},
+		// renamed network_interface to network_interfaces
+		"network_interfaces": {
+			Description: "An optional list of custom network interface configurations to use when creating the host.",
+			Type:        schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"network_interface_id": {
+						Description: "The ID of an ENI to attach to this host.  Cannot be specified if `subnet_id` or `associate_public_ip` is specified.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
+					},
+					"subnet_id": {
+						Description: "The ID of a subnet in which to create a new ENI.  Cannot be specified if `network_interface_id` is specified.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
+					},
+					"device_index": {
+						Description: "The device index to pass to AWS for attaching the ENI.  Starts at zero.",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+					},
+					"associate_public_ip": {
+						Description: "Whether or not to associate a public IP with the newly created ENI.  Cannot be specified if `network_interface_id` is specified.",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Computed:    true,
+					},
+					"groups": {
+						Type:     schema.TypeList,
+						Optional: true,
+						Computed: true,
+						Elem:     &schema.Schema{Type: schema.TypeString},
+					},
+					"metadata": {
+						Type:     schema.TypeList,
+						Optional: true,
+						Computed: true,
+						Elem:     KeyValueSchema(),
+					},
+				},
+			},
+		},
+	}
+}
 
 // SCHEMA for resource crud
 func resourceAwsHost() *schema.Resource {

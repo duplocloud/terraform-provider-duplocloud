@@ -24,3 +24,5 @@ terraform-provider-*
 backend.tf
 .terraform.lock.hcl  # <== normally do NOT ignore this - but we are testing the provider
 dist/
+tfelisity/
+testtf*/
