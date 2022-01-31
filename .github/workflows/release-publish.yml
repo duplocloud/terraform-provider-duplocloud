@@ -55,5 +55,5 @@ jobs:
 
             // Publish the draft release.
             github.rest.repos.updateRelease({ owner: context.repo.owner, repo: context.repo.repo,
-                                              release_id: '${{ draftRelease.id }}', draft: false });
+                                              release_id: '${ draftRelease.id }', draft: false });
             console.log(`Published draft release: ${draftRelease.tag_name} (${draftRelease.id})`);
