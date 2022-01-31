@@ -268,22 +268,20 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 	// Start the build the reqeust.
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("replication_controller_name").(string)
-	rq := duplosdk.DuploServiceLBConfigs{
-		ReplicationControllerName: name,
-		TenantID:                  tenantID,
-	}
+	var list []duplosdk.DuploLbConfiguration
 
 	// Append all load balancer configs to the request.
 	if v, ok := d.GetOk("lbconfigs"); ok {
 		lbconfigs := v.([]interface{})
 
 		if len(lbconfigs) > 0 {
-			var lbcs []duplosdk.DuploLBConfiguration
+			list = make([]duplosdk.DuploLbConfiguration, 0, len(lbconfigs))
 
 			for _, vLbc := range lbconfigs {
 				lbc := vLbc.(map[string]interface{})
-				lbcs = append(lbcs, duplosdk.DuploLBConfiguration{
-					LBType:                    lbc["lb_type"].(int),
+
+				item := duplosdk.DuploLbConfiguration{
+					LbType:                    lbc["lb_type"].(int),
 					Protocol:                  lbc["protocol"].(string),
 					Port:                      lbc["port"].(string),
 					ExternalPort:              lbc["external_port"].(int),
@@ -293,18 +291,20 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					IsNative:                  lbc["is_native"].(bool),
 					IsInternal:                lbc["is_internal"].(bool),
 					ExternalTrafficPolicy:     lbc["external_traffic_policy"].(string),
-					HostNames:                 &[]string{lbc["host_name"].(string)},
-				})
-			}
+				}
+				if item.LbType == 5 {
+					item.HostNames = &[]string{lbc["host_name"].(string)}
+				}
 
-			rq.LBConfigs = &lbcs
+				list = append(list, item)
+			}
 		}
 	}
 
 	// Post the object to Duplo
 	id := fmt.Sprintf("v2/subscriptions/%s/ServiceLBConfigsV2/%s", tenantID, name)
 	c := m.(*duplosdk.Client)
-	_, err = c.DuploServiceLBConfigsCreateOrUpdate(tenantID, &rq, updating)
+	err = c.ReplicationControllerLbConfigurationBulkUpdate(tenantID, name, &list)
 	if err != nil {
 		return diag.Errorf("Error applying Duplo service '%s' load balancer configs: %s", id, err)
 	}

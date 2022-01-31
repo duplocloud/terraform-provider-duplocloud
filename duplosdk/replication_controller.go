@@ -87,6 +87,9 @@ type DuploLbConfiguration struct {
 	IsNative                  bool                      `json:"IsNative,omitempty"`
 	HealthCheckConfig         *DuploLbHealthCheckConfig `json:"HealthCheckConfig,omitempty"`
 
+	// Only for Azure and Lbtype 5
+	HostNames *[]string `json:"HostNames,omitempty"`
+
 	// TODO: DIPAddresses
 }
 
@@ -105,6 +108,12 @@ type DuploLbHealthCheckConfig struct {
 	LbHealthCheckIntervalSecondsype int    `json:"HealthCheckIntervalSeconds"`
 	HttpSuccessCode                 string `json:"HttpSuccessCode,omitempty"`
 	GrpcSuccessCode                 string `json:"GrpcSuccessCode,omitempty"`
+}
+
+type DuploLbConfigurationBulkUpdateRequest struct {
+	TenantId         string                  `json:"TenantId"`
+	Name             string                  `json:"Name"`
+	LBConfigurations *[]DuploLbConfiguration `json:"LBConfigurations,omitempty"`
 }
 
 type DuploReplicationControllerCreateRequest struct {
@@ -258,6 +267,21 @@ func (c *Client) ReplicationControllerLbConfigurationList(tenantID string, name 
 	}
 
 	return &rpcLbs, nil
+}
+
+// ReplicationControllerLbConfigurationBulkUpdate bulk updates a replication controller's lb configuration via the Duplo API.
+func (c *Client) ReplicationControllerLbConfigurationBulkUpdate(tenantID, name string, list *[]DuploLbConfiguration) ClientError {
+	rq := DuploLbConfigurationBulkUpdateRequest{
+		TenantId:         tenantID,
+		Name:             name,
+		LBConfigurations: list,
+	}
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerLbConfigurationBulkUpdate(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/LBconfigurationBulkUpdate", tenantID),
+		&rq,
+		nil,
+	)
 }
 
 // ReplicationControllerLbConfigurationUpdate creates or updates a replication controller LB via the Duplo API.
