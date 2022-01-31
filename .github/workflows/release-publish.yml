@@ -38,21 +38,22 @@ jobs:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.DUPLO_GITHUB_TOKEN }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-      - 
-        name: Get draft release ID
-        id: get_release
-        uses: agners/get-draft-release@v1.2.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.DUPLO_GITHUB_TOKEN }}
       -
         name: Publish the release
         uses: actions/github-script@v5
         with:
           github-token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
           script: |
-            github.repos.updateRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: '${{ steps.get_release.outputs.id }}',
-              draft: false
-            });
+            // List all releases.
+            let releases = await github.rest.repos.listReleases({ owner: context.repo.owner, repo: context.repo.repo });
+            console.log(`Found ${releases.length} releases`);
+
+            // Identity the draft release.
+            const draftRelease = releases.find((r) => r.draft && r.tag_name == '${{ env.GITHUB_REF_NAME }}');
+            if (draftRelease)
+              console.log(`Found draft release: ${draftRelease.tag_name} (${draftRelease.id})`);
+
+            // Publish the draft release.
+            github.rest.repos.updateRelease({ owner: context.repo.owner, repo: context.repo.repo,
+                                              release_id: '${{ draftRelease.id }}', draft: false });
+            console.log(`Published draft release: ${draftRelease.tag_name} (${draftRelease.id})`);
