@@ -38,6 +38,11 @@ jobs:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.DUPLO_GITHUB_TOKEN }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+  publish-release:
+    runs-on: ubuntu-latest
+    needs:
+      - goreleaser
+    steps:
       -
         name: Publish the release
         uses: actions/github-script@v5
@@ -46,14 +51,20 @@ jobs:
           script: |
             // List all releases.
             let releases = await github.rest.repos.listReleases({ owner: context.repo.owner, repo: context.repo.repo });
-            console.log(`Found ${releases.length} releases`);
+            console.log(`Found ${releases.data.length} releases:`);
 
             // Identity the draft release.
-            const draftRelease = releases.find((r) => r.draft && r.tag_name == '${{ env.GITHUB_REF_NAME }}');
-            if (draftRelease)
-              console.log(`Found draft release: ${draftRelease.tag_name} (${draftRelease.id})`);
+            const draftRelease = releases.data.find((r) => r.draft && r.tag_name == '${{ env.GITHUB_REF_NAME }}');
+            if (! draftRelease) {
+              const msg = `No draft release found: ${{ env.GITHUB_REF_NAME }}`;
+              console.log(msg);
+              core.setFailed(msg);
+            } 
 
             // Publish the draft release.
-            github.rest.repos.updateRelease({ owner: context.repo.owner, repo: context.repo.repo,
-                                              release_id: '${ draftRelease.id }', draft: false });
-            console.log(`Published draft release: ${draftRelease.tag_name} (${draftRelease.id})`);
+            else {
+              console.log(`Found draft release: ${draftRelease.tag_name} (${draftRelease.id})`);
+              github.rest.repos.updateRelease({ owner: context.repo.owner, repo: context.repo.repo,
+                                                release_id: '${ draftRelease.id }', draft: false });
+              console.log(`Published draft release: ${draftRelease.tag_name} (${draftRelease.id})`);
+            }
