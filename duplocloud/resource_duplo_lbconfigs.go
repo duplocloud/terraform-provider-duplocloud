@@ -314,8 +314,8 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 	}
 
 	// Optionally wait for the load balancers to be ready.
-	if d.Get("wait_until_ready").(bool) {
-		err = duploServiceLBConfigsWaitUntilReady(ctx, c, tenantID, name)
+	if d.Get("wait_until_ready").(bool) && len(list) > 0 {
+		err = duploServiceLbConfigsWaitUntilReady(ctx, c, tenantID, name)
 		if err != nil {
 			return diag.Errorf("Error waiting for Duplo service '%s' load balancer configs to be ready: %s", id, err)
 		}
@@ -373,21 +373,39 @@ func parseDuploServiceLbConfigsIdParts(id string) (tenantID, name string) {
 }
 
 // DuploServiceLBConfigsWaitForCreation waits for creation of an service's load balancer by the Duplo API
-func duploServiceLBConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID, name string) error {
+func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID, name string) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"missing", "pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
-			rp, err := c.DuploServiceLBConfigsGet(tenantID, name)
-			if err != nil || rp == nil {
+
+			// Get the list of load balancers.
+			list, err := c.ReplicationControllerLbConfigurationList(tenantID, name)
+			if err != nil || list == nil || len(*list) == 0 {
 				return nil, "missing", err
 			}
 
-			status := "pending"
-			if rp.Status == "Ready" {
-				status = "ready"
+			// Find a cloud load balancer, and get it's status.
+			isCloudLb := false
+			for _, lb := range *list {
+				if lb.LbType != 2 && lb.LbType != 3 && lb.LbType != 4 {
+					isCloudLb = true
+				}
 			}
-			return rp, status, nil
+			if isCloudLb {
+				lbdetails, lberr := c.TenantGetLbDetailsInService(tenantID, name)
+				if lberr != nil && lberr.Status() != 404 {
+					return nil, "error", lberr
+				}
+
+				// Detect a not-ready cloud load balancer.
+				if lbdetails == nil || lbdetails.State == nil || lbdetails.State.Code == nil || lbdetails.State.Code.Value != "Ready" {
+					return name, "pending", nil
+				}
+			}
+
+			// If we got this far, we either have no cloud LB, or it's ready.
+			return name, "ready", nil
 		},
 		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
 		PollInterval: 30 * time.Second,
