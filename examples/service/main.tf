@@ -42,12 +42,12 @@ resource "duplocloud_duplo_service_lbconfigs" "test" {
   replication_controller_name = duplocloud_duplo_service.test.name
 
   lbconfigs {
-    external_port               = 80
-    health_check_url            = "/"
-    is_native                   = false
-    lb_type                     = 1
-    port                        = "80"
-    protocol                    = "http"
+    external_port    = 80
+    health_check_url = "/"
+    is_native        = false
+    lb_type          = 1
+    port             = "80"
+    protocol         = "http"
   }
 
   # Workaround for AWS:  Even after the ALB is available, there is some short duration where a V2 WAF cannot be attached.
