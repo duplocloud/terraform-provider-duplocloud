@@ -46,7 +46,7 @@ jobs:
           script: |
             // List all releases.
             let releases = await github.rest.repos.listReleases({ owner: context.repo.owner, repo: context.repo.repo });
-            console.log(`Found ${releases.length} releases`);
+            console.log(`Found ${releases.length} releases:`, releases);
 
             // Identity the draft release.
             const draftRelease = releases.find((r) => r.draft && r.tag_name == '${{ env.GITHUB_REF_NAME }}');
