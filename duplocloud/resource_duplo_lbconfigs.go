@@ -399,7 +399,7 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 				}
 
 				// Detect a not-ready cloud load balancer.
-				if lbdetails == nil || lbdetails.State == nil || lbdetails.State.Code == nil || lbdetails.State.Code.Value != "Ready" {
+				if lbdetails == nil || lbdetails.State == nil || lbdetails.State.Code == nil || lbdetails.State.Code.Value != "active" {
 					return name, "pending", nil
 				}
 			}
@@ -408,8 +408,8 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 			return name, "ready", nil
 		},
 		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
-		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
+		PollInterval: 10 * time.Second,
+		Timeout:      10 * time.Minute,
 	}
 	log.Printf("[DEBUG] duploServiceLBConfigsWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
