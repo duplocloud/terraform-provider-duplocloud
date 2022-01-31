@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.6.29" # RELEASE VERSION
+      version = "0.7.0" # RELEASE VERSION
       source  = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -25,11 +25,10 @@ resource "duplocloud_duplo_service" "test" {
   tenant_id = var.tenant_id
 
   name           = "joedemo"
-  agent_platform = 0
+  agent_platform = 7
   docker_image   = "nginx:latest"
   replicas       = 1
 
-  other_docker_host_config = jsonencode({ NetworkMode = "host", CapAdd = ["NET_ADMIN"] })
   other_docker_config = jsonencode({
     Env = [
       { Name = "NGINX_HOST", Value = "foo" },
@@ -43,13 +42,12 @@ resource "duplocloud_duplo_service_lbconfigs" "test" {
   replication_controller_name = duplocloud_duplo_service.test.name
 
   lbconfigs {
-    external_port               = 80
-    health_check_url            = "/"
-    is_native                   = false
-    lb_type                     = 1
-    port                        = "80"
-    protocol                    = "http"
-    replication_controller_name = duplocloud_duplo_service.test.name
+    external_port    = 80
+    health_check_url = "/"
+    is_native        = false
+    lb_type          = 1
+    port             = "80"
+    protocol         = "http"
   }
 
   # Workaround for AWS:  Even after the ALB is available, there is some short duration where a V2 WAF cannot be attached.
@@ -58,6 +56,11 @@ resource "duplocloud_duplo_service_lbconfigs" "test" {
   }
 }
 
+output "test" {
+  value = duplocloud_duplo_service_lbconfigs.test
+}
+
+/*
 resource "duplocloud_duplo_service_params" "test" {
   tenant_id = var.tenant_id
 
@@ -66,3 +69,4 @@ resource "duplocloud_duplo_service_params" "test" {
   drop_invalid_headers        = true
   enable_access_logs          = true
 }
+*/

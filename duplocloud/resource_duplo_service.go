@@ -164,73 +164,39 @@ func resourceDuploService() *schema.Resource {
 	}
 }
 
-/// READ resource
 func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploServiceRead ******** start")
 
 	// Parse the identifying attributes
 	tenantID, name := parseDuploServiceIdParts(d.Id())
 	if tenantID == "" || name == "" {
 		return diag.Errorf("Invalid resource ID: %s", d.Id())
 	}
+	log.Printf("[TRACE] resourceDuploServiceRead(%s, %s): start", tenantID, name)
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.DuploServiceGet(tenantID, name)
+	duplo, err := c.ReplicationControllerGet(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
+	}
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
 	}
-	if err != nil {
-		return diag.Errorf("Unable to retrieve tenant %s service '%s': %s", tenantID, name, err)
-	}
 
-	// Record the state of the object.
-	d.Set("name", duplo.Name)
-	d.Set("tenant_id", duplo.TenantID)
-	d.Set("other_docker_host_config", duplo.OtherDockerHostConfig)
-	d.Set("other_docker_config", duplo.OtherDockerConfig)
-	d.Set("allocation_tags", duplo.AllocationTags)
-	d.Set("extra_config", duplo.ExtraConfig)
-	d.Set("commands", duplo.Commands)
-	d.Set("volumes", duplo.Volumes)
-	d.Set("docker_image", duplo.DockerImage)
-	d.Set("agent_platform", duplo.AgentPlatform)
-	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
-	d.Set("replicas", duplo.Replicas)
-	d.Set("cloud", duplo.Cloud)
-	d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
-	d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
-	d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
-	d.Set("tags", keyValueToState("tags", duplo.Tags))
+	// Read the object into state
+	flattenDuploService(d, duplo)
 
-	log.Printf("[TRACE] resourceDuploServiceRead ******** start")
+	log.Printf("[TRACE] resourceDuploServiceRead(%s, %s): end", tenantID, name)
 	return nil
 }
 
-/// CREATE resource
 func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploServiceCreate ******** start")
-	diags := resourceDuploServiceCreateOrUpdate(ctx, d, m, false)
-	log.Printf("[TRACE] resourceDuploServiceCreate ******** end")
-	return diags
-}
-
-/// UPDATE resource
-func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploServiceUpdate ******** start")
-	diags := resourceDuploServiceCreateOrUpdate(ctx, d, m, true)
-	log.Printf("[TRACE] resourceDuploServiceUpdate ******** end")
-	return diags
-}
-
-func resourceDuploServiceCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, updating bool) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploServiceCreateOrUpdate ******** start")
-
-	// Build the request.
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
-	rq := duplosdk.DuploService{
+
+	log.Printf("[TRACE] resourceDuploServiceCreate(%s, %s): start", tenantID, name)
+	rq := duplosdk.DuploReplicationControllerCreateRequest{
 		Name:                              name,
 		OtherDockerHostConfig:             d.Get("other_docker_host_config").(string),
 		OtherDockerConfig:                 d.Get("other_docker_config").(string),
@@ -239,7 +205,7 @@ func resourceDuploServiceCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 		Commands:                          d.Get("commands").(string),
 		Volumes:                           d.Get("volumes").(string),
 		AgentPlatform:                     d.Get("agent_platform").(int),
-		DockerImage:                       d.Get("docker_image").(string),
+		Image:                             d.Get("docker_image").(string),
 		ReplicasMatchingAsgName:           d.Get("replicas_matching_asg_name").(string),
 		Cloud:                             d.Get("cloud").(int),
 		Replicas:                          d.Get("replicas").(int),
@@ -251,46 +217,93 @@ func resourceDuploServiceCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	// Post the object to Duplo
 	id := fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2/%s", tenantID, name)
 	c := m.(*duplosdk.Client)
-	_, err := c.DuploServiceCreateOrUpdate(tenantID, &rq, updating)
+	err := c.ReplicationControllerCreate(tenantID, &rq)
 	if err != nil {
 		return diag.Errorf("Error applying Duplo service '%s': %s", id, err)
 	}
-	if !updating {
-		d.SetId(id)
+	d.SetId(id)
+
+	// Read the latest status from Duplo
+	diags := resourceDuploServiceRead(ctx, d, m)
+
+	log.Printf("[TRACE] resourceDuploServiceCreate(%s, %s): end", tenantID, name)
+	return diags
+}
+
+func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+
+	// Parse the identifying attributes
+	tenantID, name := parseDuploServiceIdParts(d.Id())
+	if tenantID == "" || name == "" {
+		return diag.Errorf("Invalid resource ID: %s", d.Id())
+	}
+
+	log.Printf("[TRACE] resourceDuploServiceUpdate(%s, %s): start", tenantID, name)
+	rq := duplosdk.DuploReplicationControllerUpdateRequest{
+		Name:                              name,
+		OtherDockerHostConfig:             d.Get("other_docker_host_config").(string),
+		OtherDockerConfig:                 d.Get("other_docker_config").(string),
+		AllocationTags:                    d.Get("allocation_tags").(string),
+		ExtraConfig:                       d.Get("extra_config").(string),
+		Volumes:                           d.Get("volumes").(string),
+		AgentPlatform:                     d.Get("agent_platform").(int),
+		Image:                             d.Get("docker_image").(string),
+		ReplicasMatchingAsgName:           d.Get("replicas_matching_asg_name").(string),
+		Replicas:                          d.Get("replicas").(int),
+		IsLBSyncedDeployment:              d.Get("lb_synced_deployment").(bool),
+		IsAnyHostAllowed:                  d.Get("any_host_allowed").(bool),
+		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
+	}
+
+	// Put the object to Duplo
+	c := m.(*duplosdk.Client)
+	err := c.ReplicationControllerUpdate(tenantID, &rq)
+	if err != nil {
+		return diag.Errorf("Error applying Duplo service '%s': %s", d.Id(), err)
 	}
 
 	// Read the latest status from Duplo
 	diags := resourceDuploServiceRead(ctx, d, m)
-	log.Printf("[TRACE] resourceDuploServiceCreateOrUpdate ******** end")
+
+	log.Printf("[TRACE] resourceDuploServiceUpdate(%s, %s): end", tenantID, name)
 	return diags
 }
 
-/// DELETE resource
 func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceDuploServiceDelete ******** start")
 
 	// Parse the identifying attributes
-	id := d.Id()
-	tenantID, name := parseDuploServiceIdParts(id)
+	tenantID, name := parseDuploServiceIdParts(d.Id())
 	if tenantID == "" || name == "" {
-		return diag.Errorf("Invalid resource ID: %s", id)
+		return diag.Errorf("Invalid resource ID: %s", d.Id())
 	}
 
-	// Delete the object from Duplo
+	// Get the object from Duplo, detecting a missing object
+	log.Printf("[TRACE] resourceDuploServiceDelete(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
+	duplo, err := c.ReplicationControllerGet(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
+	}
 
-	// Check if service is exists.
-	exists := c.DuploServiceExist(tenantID, name)
+	// Object is not missing, so we need to delete it.
+	if duplo != nil {
 
-	if exists {
-		err := c.DuploServiceDelete(tenantID, name)
+		rq := duplosdk.DuploReplicationControllerDeleteRequest{
+			Name:          name,
+			AgentPlatform: d.Get("agent_platform").(int),
+			Image:         d.Get("docker_image").(string),
+		}
+
+		// Delete the object from Duplo
+		c := m.(*duplosdk.Client)
+		err := c.ReplicationControllerDelete(tenantID, &rq)
 		if err != nil {
-			return diag.Errorf("Error deleting Duplo service '%s': %s", id, err)
+			return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
 		}
 
 		// Wait for it to be deleted
-		diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service", id, func() (interface{}, duplosdk.ClientError) {
-			return c.DuploServiceGet(tenantID, name)
+		diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service", d.Id(), func() (interface{}, duplosdk.ClientError) {
+			return c.ReplicationControllerGet(tenantID, name)
 		})
 
 		// Wait 40 more seconds to deal with consistency issues.
@@ -299,7 +312,7 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 		}
 	}
 
-	log.Printf("[TRACE] resourceDuploServiceDelete ******** end")
+	log.Printf("[TRACE] resourceDuploServiceDelete(%s, %s): end", tenantID, name)
 	return nil
 }
 

@@ -89,10 +89,20 @@ Optional:
 - **certificate_arn** (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - **external_traffic_policy** (String) Only for K8S Node Port (`lb_type = 4`).  Set the kubernetes service `externalTrafficPolicy` attribute.
 - **health_check_url** (String) The health check URL to associate with this load balancer configuration.
-- **host_name** (String) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).
+- **host_name** (String) (Azure Only) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).
 - **is_internal** (Boolean) Whether or not to create an internal load balancer.
 - **is_native** (Boolean)
-- **replication_controller_name** (String, Deprecated) Set the replication_controller_name field instead of lbconfigs.replication_controller_name
+
+Read-Only:
+
+- **backend_protocol_version** (String)
+- **cloud_name** (String) The name of the cloud load balancer (if applicable).
+- **dns_name** (String) The DNS name of the cloud load balancer (if applicable).
+- **frontend_ip** (String)
+- **host_port** (Number) The automatically assigned host port.
+- **is_infra_deployment** (Boolean)
+- **name** (String) The name of the duplo service.
+- **replication_controller_name** (String) The name of the duplo service.
 
 
 <a id="nestedblock--timeouts"></a>
