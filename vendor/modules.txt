@@ -135,7 +135,7 @@ github.com/hashicorp/terraform-plugin-docs/internal/mdplain
 github.com/hashicorp/terraform-plugin-docs/internal/provider
 github.com/hashicorp/terraform-plugin-docs/internal/tmplfuncs
 github.com/hashicorp/terraform-plugin-docs/schemamd
-# github.com/hashicorp/terraform-plugin-sdk/v2 v2.0.4
+# github.com/hashicorp/terraform-plugin-sdk/v2 v2.1.0
 ## explicit
 github.com/hashicorp/terraform-plugin-sdk/v2/diag
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging
