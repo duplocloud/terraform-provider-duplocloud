@@ -3,12 +3,15 @@
 page_title: "duplocloud_duplo_service_lbconfigs Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_duplo_service_lbconfigs retrieves load balancer configuration(s) for container-based service(s) in Duplo.
+  NOTE: For Amazon ECS services, see the duplocloud_ecs_services data source.
 ---
 
 # duplocloud_duplo_service_lbconfigs (Data Source)
 
+`duplocloud_duplo_service_lbconfigs` retrieves load balancer configuration(s) for container-based service(s) in Duplo.
 
+NOTE: For Amazon ECS services, see the `duplocloud_ecs_services` data source.
 
 
 
@@ -17,11 +20,11 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
+- **tenant_id** (String) The GUID of the tenant that hosts the duplo service.
 
 ### Optional
 
-- **name** (String)
+- **name** (String) The name of the duplo service.
 
 ### Read-Only
 
@@ -35,6 +38,7 @@ Read-Only:
 
 - **arn** (String)
 - **lbconfigs** (List of Object) (see [below for nested schema](#nestedobjatt--services--lbconfigs))
+- **name** (String)
 - **replication_controller_name** (String)
 - **status** (String)
 
@@ -43,9 +47,17 @@ Read-Only:
 
 Read-Only:
 
+- **backend_protocol_version** (String)
 - **certificate_arn** (String)
+- **cloud_name** (String)
+- **dns_name** (String)
 - **external_port** (Number)
+- **external_traffic_policy** (String)
+- **frontend_ip** (String)
 - **health_check_url** (String)
+- **host_name** (String)
+- **host_port** (Number)
+- **is_infra_deployment** (Boolean)
 - **is_internal** (Boolean)
 - **is_native** (Boolean)
 - **lb_type** (Number)
