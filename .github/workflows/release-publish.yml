@@ -54,9 +54,9 @@ jobs:
             console.log(`Found ${releases.data.length} releases:`);
 
             // Identity the draft release.
-            const draftRelease = releases.data.find((r) => r.draft && r.tag_name == '${{ env.GITHUB_REF_NAME }}');
+            const draftRelease = releases.data.find((r) => r.draft && r.tag_name == '${{ github.ref_name }}');
             if (! draftRelease) {
-              const msg = `No draft release found: ${{ env.GITHUB_REF_NAME }}`;
+              const msg = `No draft release found: ${{ github.ref_name }}`;
               console.log(msg);
               core.setFailed(msg);
             } 
