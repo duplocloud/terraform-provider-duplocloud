@@ -281,13 +281,14 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 				lbc := vLbc.(map[string]interface{})
 
 				item := duplosdk.DuploLbConfiguration{
+					TenantId:                  tenantID,
+					ReplicationControllerName: name,
 					LbType:                    lbc["lb_type"].(int),
 					Protocol:                  lbc["protocol"].(string),
 					Port:                      lbc["port"].(string),
 					ExternalPort:              lbc["external_port"].(int),
 					HealthCheckURL:            lbc["health_check_url"].(string),
 					CertificateArn:            lbc["certificate_arn"].(string),
-					ReplicationControllerName: name,
 					IsNative:                  lbc["is_native"].(bool),
 					IsInternal:                lbc["is_internal"].(bool),
 					ExternalTrafficPolicy:     lbc["external_traffic_policy"].(string),
@@ -340,7 +341,7 @@ func resourceDuploServiceLbConfigsDelete(ctx context.Context, d *schema.Resource
 
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
-	err := c.ReplicationControllerLbConfigurationDeleteAll(tenantID, name)
+	err := c.ReplicationControllerLbConfigurationBulkUpdate(tenantID, name, &[]duplosdk.DuploLbConfiguration{})
 	if err != nil {
 		return diag.Errorf("Error deleting Duplo service '%s' load balancer configs: %s", id, err)
 	}
