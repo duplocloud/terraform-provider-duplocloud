@@ -448,7 +448,7 @@ func selectKeyValues(metadata *[]duplosdk.DuploKeyStringValue, keys []string) *[
 func reorderKeyValues(pairs []interface{}) {
 
 	// Re-order environment variables to a canonical order.
-	sort.Slice(pairs, func(i, j int) bool {
+	sort.SliceStable(pairs, func(i, j int) bool {
 		mi := pairs[i].(map[string]interface{})
 		mj := pairs[j].(map[string]interface{})
 
