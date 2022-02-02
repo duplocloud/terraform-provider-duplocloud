@@ -42,8 +42,9 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"commands": {
-			Type:     schema.TypeString,
+			Type:     schema.TypeList,
 			Computed: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		"cloud": {
 			Type:     schema.TypeInt,
@@ -85,82 +86,11 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 	}
 }
 
-// SCHEMA for resource data/search
-func dataSourceDuploServices() *schema.Resource {
-	return &schema.Resource{
-		ReadContext: dataSourceDuploServicesRead,
-		Schema: map[string]*schema.Schema{
-			"tenant_id": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"services": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: duploServiceComputedSchema(),
-				},
-			},
-		},
-	}
-}
-
 func dataSourceDuploService() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceDuploServiceRead,
 		Schema:      duploServiceComputedSchema(),
 	}
-}
-
-func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] dataSourceDuploServicesRead: start")
-
-	// Parse the identifying attributes
-	tenantID := d.Get("tenant_id").(string)
-
-	// Get the object from Duplo, detecting a missing object
-	c := m.(*duplosdk.Client)
-	list, err := c.DuploServiceList(tenantID)
-	if err != nil {
-		return diag.Errorf("Unable to list tenant %s services: %s", tenantID, err)
-	}
-	d.SetId(tenantID)
-
-	// Build the list for TF state
-	itemCount := 0
-	if list != nil {
-		itemCount = len(*list)
-	}
-	services := make([]map[string]interface{}, 0, itemCount)
-	if itemCount > 0 {
-		for _, duplo := range *list {
-			services = append(services, map[string]interface{}{
-				"name":                                 duplo.Name,
-				"tenant_id":                            duplo.TenantID,
-				"other_docker_host_config":             duplo.OtherDockerHostConfig,
-				"other_docker_config":                  duplo.OtherDockerConfig,
-				"allocation_tags":                      duplo.AllocationTags,
-				"extra_config":                         duplo.ExtraConfig,
-				"commands":                             duplo.Commands,
-				"volumes":                              duplo.Volumes,
-				"docker_image":                         duplo.DockerImage,
-				"any_host_allowed":                     duplo.IsAnyHostAllowed,
-				"cloud_creds_from_k8s_service_account": duplo.IsCloudCredsFromK8sServiceAccount,
-				"lb_synced_deployment":                 duplo.IsLBSyncedDeployment,
-				"agent_platform":                       duplo.AgentPlatform,
-				"replicas_matching_asg_name":           duplo.ReplicasMatchingAsgName,
-				"replicas":                             duplo.Replicas,
-				"cloud":                                duplo.Cloud,
-				"tags":                                 keyValueToState("tags", duplo.Tags),
-			})
-		}
-	}
-	if err := d.Set("services", services); err != nil {
-		return diag.FromErr(err)
-	}
-
-	log.Printf("[TRACE] dataSourceDuploServicesRead: end")
-	return nil
 }
 
 func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -172,31 +102,48 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.DuploServiceGet(tenantID, name)
+	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
 		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
 	}
+	if duplo == nil {
+		return diag.Errorf("Unable to read tenant %s service '%s': not found", tenantID, name)
+	}
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
 
-	// Apply TF state
-	if duplo.Name != "" {
-		d.Set("other_docker_host_config", duplo.OtherDockerHostConfig)
-		d.Set("other_docker_config", duplo.OtherDockerConfig)
-		d.Set("allocation_tags", duplo.AllocationTags)
-		d.Set("extra_config", duplo.ExtraConfig)
-		d.Set("commands", duplo.Commands)
-		d.Set("volumes", duplo.Volumes)
-		d.Set("docker_image", duplo.DockerImage)
-		d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
-		d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
-		d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
-		d.Set("agent_platform", duplo.AgentPlatform)
-		d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
-		d.Set("replicas", duplo.Replicas)
-		d.Set("cloud", duplo.Cloud)
-		d.Set("tags", keyValueToState("tags", duplo.Tags))
-	}
+	// Read the object into state
+	flattenDuploService(d, duplo)
 
 	log.Printf("[TRACE] dataSourceDuploServiceRead: end")
 	return nil
+
+}
+
+func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicationController) {
+
+	// Apply TF state
+	d.Set("name", duplo.Name)
+	d.Set("volumes", duplo.Volumes)
+	d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
+	d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
+	d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
+	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
+	d.Set("replicas", duplo.Replicas)
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
+
+	// If we have a pod template, read data from it
+	if duplo.Template != nil {
+		d.Set("agent_platform", duplo.Template.AgentPlatform)
+		d.Set("cloud", duplo.Template.Cloud)
+		d.Set("other_docker_host_config", duplo.Template.OtherDockerHostConfig)
+		d.Set("other_docker_config", duplo.Template.OtherDockerConfig)
+		d.Set("allocation_tags", duplo.Template.AllocationTags)
+		d.Set("extra_config", duplo.Template.ExtraConfig)
+		d.Set("commands", duplo.Template.Commands)
+
+		// If there is at least one container, get the first docker image from it.
+		if duplo.Template.Containers != nil && len(*duplo.Template.Containers) > 0 {
+			d.Set("docker_image", (*duplo.Template.Containers)[0].Image)
+		}
+	}
 }

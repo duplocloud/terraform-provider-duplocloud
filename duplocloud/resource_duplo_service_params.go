@@ -205,17 +205,17 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 func readDuploServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
 
 	// First, figure out what cloud this is.
-	svc, err := c.DuploServiceGet(tenantID, name)
+	rpc, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
 		return err
 	}
-	if svc == nil {
+	if rpc == nil {
 		d.SetId("") // object missing
 		return nil
 	}
 
 	// If we are not AWS, just return for now.
-	if svc.Cloud != 0 {
+	if rpc.Template == nil || rpc.Template.Cloud != 0 {
 		return nil
 	}
 
