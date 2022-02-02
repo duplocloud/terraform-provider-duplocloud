@@ -71,11 +71,11 @@ func awsCloudWatchMetricAlarmSchema() map[string]*schema.Schema {
 			Type:        schema.TypeFloat,
 			Optional:    true,
 		},
-		"dimensions": {
+		"dimension": {
 			Description: "The dimensions for the alarm's associated metric. For the list of available dimensions see the AWS documentation.",
-			Type:        schema.TypeMap,
+			Type:        schema.TypeList,
 			Optional:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
+			Elem:        KeyValueSchema(),
 		},
 		"statistic": {
 			Description: "The statistic to apply to the alarm's associated metric. Either of the following is supported: `SampleCount`, `Average`, `Sum`, `Minimum`, `Maximum`",
@@ -126,7 +126,12 @@ func resourceAwsCloudWatchMetricAlarmRead(ctx context.Context, d *schema.Resourc
 		return diag.Errorf("Unable to retrieve tenant %s cloudwatch metric alarm'%s': %s", tenantID, fullName, clientErr)
 	}
 
-	d.Set("fullname", duplo.Name)
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
+	d.Set("tenant_id", tenantID)
+	flattenCloudWatchMetricAlarm(d, duplo)
 
 	log.Printf("[TRACE] resourceAwsCloudWatchMetricAlarmRead(%s, %s): end", tenantID, fullName)
 	return nil
@@ -146,7 +151,7 @@ func resourceAwsCloudWatchMetricAlarmCreate(ctx context.Context, d *schema.Resou
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s cloudwatch metric alarm '%s': %s", tenantID, metricName, err)
 	}
-	resourceIds := expandAwsCloudWatchMetricAlarmDimensionsResourceIds(d.Get("dimensions").(map[string]interface{}))
+	resourceIds := expandAwsCloudWatchMetricAlarmDimensionsResourceIds(keyValueFromState("dimension", d))
 	resourceId := strings.Join(resourceIds, "-")
 	id := fmt.Sprintf("%s/%s", tenantID, resourceId+"-"+rq.MetricName)
 	log.Printf("[TRACE] Get alarm request(%s, %s): start", tenantID, id)
@@ -228,6 +233,7 @@ func resourceAwsCloudWatchMetricAlarmDelete(ctx context.Context, d *schema.Resou
 }
 
 func expandCloudWatchMetricAlarm(d *schema.ResourceData) *duplosdk.DuploCloudWatchMetricAlarm {
+	dimension := keyValueFromState("dimension", d)
 	return &duplosdk.DuploCloudWatchMetricAlarm{
 		MetricName:         d.Get("metric_name").(string),
 		Statistic:          d.Get("statistic").(string),
@@ -237,25 +243,50 @@ func expandCloudWatchMetricAlarm(d *schema.ResourceData) *duplosdk.DuploCloudWat
 		EvaluationPeriods:  d.Get("evaluation_periods").(int),
 		TenantId:           d.Get("tenant_id").(string),
 		Namespace:          d.Get("namespace").(string),
-		Dimensions:         expandAwsCloudWatchMetricAlarmDimensions(d.Get("dimensions").(map[string]interface{})),
+		Dimensions:         expandAwsCloudWatchMetricAlarmDimensions(dimension),
 	}
 }
 
-func expandAwsCloudWatchMetricAlarmDimensions(dims map[string]interface{}) *[]duplosdk.DuploNameStringValue {
+func flattenCloudWatchMetricAlarm(d *schema.ResourceData, duplo *duplosdk.DuploCloudWatchMetricAlarm) {
+	d.Set("metric_name", duplo.MetricName)
+	d.Set("statistic", duplo.Statistic)
+	d.Set("comparison_operator", duplo.ComparisonOperator)
+	d.Set("period", duplo.Period)
+	d.Set("evaluation_periods", duplo.EvaluationPeriods)
+	d.Set("namespace", duplo.Namespace)
+	d.Set("fullname", duplo.Name)
+	d.Set("threshold", duplo.Threshold)
+	d.Set("dimension", flattenCloudWatchDimensions(duplo.Dimensions))
+}
+
+func flattenCloudWatchDimensions(duploObjects *[]duplosdk.DuploNameStringValue) []interface{} {
+	if duploObjects != nil {
+		output := make([]interface{}, len(*duploObjects))
+		for i, duploObject := range *duploObjects {
+			jo := make(map[string]interface{})
+			jo["key"] = duploObject.Name
+			jo["value"] = duploObject.Value
+			output[i] = jo
+		}
+		return output
+	}
+	return make([]interface{}, 0)
+}
+func expandAwsCloudWatchMetricAlarmDimensions(dims *[]duplosdk.DuploKeyStringValue) *[]duplosdk.DuploNameStringValue {
 	var dimensions []duplosdk.DuploNameStringValue
-	for k, v := range dims {
+	for _, kv := range *dims {
 		dimensions = append(dimensions, duplosdk.DuploNameStringValue{
-			Name:  k,
-			Value: v.(string),
+			Name:  kv.Key,
+			Value: kv.Value,
 		})
 	}
 	return &dimensions
 }
 
-func expandAwsCloudWatchMetricAlarmDimensionsResourceIds(dims map[string]interface{}) []string {
+func expandAwsCloudWatchMetricAlarmDimensionsResourceIds(dims *[]duplosdk.DuploKeyStringValue) []string {
 	var dimensionsResourceIds []string
-	for _, v := range dims {
-		dimensionsResourceIds = append(dimensionsResourceIds, v.(string))
+	for _, kv := range *dims {
+		dimensionsResourceIds = append(dimensionsResourceIds, kv.Value)
 	}
 	return dimensionsResourceIds
 }
@@ -277,6 +308,6 @@ func needsAwsCloudWatchMetricAlarmUpdate(d *schema.ResourceData) bool {
 		d.HasChange("namespace") ||
 		d.HasChange("period") ||
 		d.HasChange("threshold") ||
-		d.HasChange("dimensions") ||
+		d.HasChange("dimension") ||
 		d.HasChange("statistic")
 }
