@@ -27,8 +27,10 @@ resource "duplocloud_aws_cloudwatch_metric_alarm" "mAlarm" {
   period              = 300
   threshold           = 80
   statistic           = "Average"
-  dimensions = {
-    InstanceId = "i-020aaa3cecaded547"
+
+  dimension {
+    key   = "InstanceId"
+    value = "i-1234567abcdefghj"
   }
 }
 ```
@@ -45,7 +47,7 @@ resource "duplocloud_aws_cloudwatch_metric_alarm" "mAlarm" {
 
 ### Optional
 
-- **dimensions** (Map of String) The dimensions for the alarm's associated metric. For the list of available dimensions see the AWS documentation.
+- **dimension** (Block List) The dimensions for the alarm's associated metric. For the list of available dimensions see the AWS documentation. (see [below for nested schema](#nestedblock--dimension))
 - **namespace** (String) The namespace for the alarm's associated metric.
 - **period** (Number) The period in seconds over which the specified `statistic` is applied.
 - **statistic** (String) The statistic to apply to the alarm's associated metric. Either of the following is supported: `SampleCount`, `Average`, `Sum`, `Minimum`, `Maximum`
@@ -56,6 +58,15 @@ resource "duplocloud_aws_cloudwatch_metric_alarm" "mAlarm" {
 
 - **fullname** (String) Duplo will generate name of the metric alarm.
 - **id** (String) The ID of this resource.
+
+<a id="nestedblock--dimension"></a>
+### Nested Schema for `dimension`
+
+Required:
+
+- **key** (String)
+- **value** (String)
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
