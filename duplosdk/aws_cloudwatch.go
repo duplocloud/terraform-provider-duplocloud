@@ -178,7 +178,7 @@ func (c *Client) DuploCloudWatchMetricAlarmGet(tenantID, resourceId string) (*Du
 	rp := []DuploCloudWatchMetricAlarm{}
 	err := c.getAPI(
 		fmt.Sprintf("DuploCloudWatchMetricAlarmList(%s, %s)", tenantID, resourceId),
-		fmt.Sprintf("subscriptions/%s/%s/GetAlarms", tenantID, resourceId),
+		fmt.Sprintf("subscriptions/%s/%s/GetAlarms", tenantID, EncodePathParam(resourceId)),
 		&rp,
 	)
 	if len(rp) == 0 {

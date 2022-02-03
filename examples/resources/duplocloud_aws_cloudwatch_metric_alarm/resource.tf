@@ -12,7 +12,9 @@ resource "duplocloud_aws_cloudwatch_metric_alarm" "mAlarm" {
   period              = 300
   threshold           = 80
   statistic           = "Average"
-  dimensions = {
-    InstanceId = "i-020aaa3cecaded547"
+
+  dimension {
+    key   = "InstanceId"
+    value = "i-1234567abcdefghj"
   }
 }
