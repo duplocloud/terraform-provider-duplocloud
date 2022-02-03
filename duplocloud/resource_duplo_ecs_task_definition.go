@@ -464,7 +464,7 @@ func reorderEcsEnvironmentVariables(defn map[string]interface{}) {
 	// Re-order environment variables to a canonical order.
 	if v, ok := defn["Environment"]; ok && v != nil {
 		if env, ok := v.([]interface{}); ok && env != nil {
-			sort.Slice(env, func(i, j int) bool {
+			sort.SliceStable(env, func(i, j int) bool {
 
 				// Get both maps, ensure we are using upper camel-case.
 				mi := env[i].(map[string]interface{})
