@@ -138,7 +138,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
-		"is_daemonSet": {
+		"is_daemonset": {
 			Description: "This is applicable only if `agent_platform=7`. A DaemonSet is a controller that ensures that the pod runs on all the nodes of the cluster.",
 			Type:        schema.TypeBool,
 			Optional:    true,
@@ -217,7 +217,7 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		Replicas:                          d.Get("replicas").(int),
 		IsLBSyncedDeployment:              d.Get("lb_synced_deployment").(bool),
 		IsAnyHostAllowed:                  d.Get("any_host_allowed").(bool),
-		IsDaemonset:                       d.Get("is_daemonSet").(bool),
+		IsDaemonset:                       d.Get("is_daemonset").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
 
@@ -259,7 +259,7 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 		Replicas:                          d.Get("replicas").(int),
 		IsLBSyncedDeployment:              d.Get("lb_synced_deployment").(bool),
 		IsAnyHostAllowed:                  d.Get("any_host_allowed").(bool),
-		IsDaemonset:                       d.Get("is_daemonSet").(bool),
+		IsDaemonset:                       d.Get("is_daemonset").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
 

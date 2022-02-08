@@ -103,7 +103,7 @@ Should be one of:
 - **cloud_creds_from_k8s_service_account** (Boolean) Whether or not the service gets it's cloud credentials from Kubernetes service account. Defaults to `false`.
 - **commands** (String)
 - **extra_config** (String)
-- **is_daemonSet** (Boolean) This is applicable only if `agent_platform=7`. A DaemonSet is a controller that ensures that the pod runs on all the nodes of the cluster. Defaults to `false`.
+- **is_daemonset** (Boolean) This is applicable only if `agent_platform=7`. A DaemonSet is a controller that ensures that the pod runs on all the nodes of the cluster. Defaults to `false`.
 - **lb_synced_deployment** (Boolean) Defaults to `false`.
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
