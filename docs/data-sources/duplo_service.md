@@ -31,6 +31,7 @@ description: |-
 - **docker_image** (String)
 - **extra_config** (String)
 - **id** (String) The ID of this resource.
+- **is_daemonset** (Boolean)
 - **lb_synced_deployment** (Boolean)
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
