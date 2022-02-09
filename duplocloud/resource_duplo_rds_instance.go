@@ -157,6 +157,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			ForceNew:    true,
 		},
+		"enable_logging": {
+			Description: "Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		"instance_status": {
 			Description: "The current status of the RDS instance.",
 			Type:        schema.TypeString,
@@ -441,6 +447,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.Cloud = 0 // AWS
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.EncryptStorage = d.Get("encrypt_storage").(bool)
+	duploObject.EnableLogging = d.Get("enable_logging").(bool)
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
 
 	return duploObject, nil
@@ -477,6 +484,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["parameter_group_name"] = duploObject.DBParameterGroupName
 	jo["size"] = duploObject.SizeEx
 	jo["encrypt_storage"] = duploObject.EncryptStorage
+	jo["enable_logging"] = duploObject.EnableLogging
 	jo["instance_status"] = duploObject.InstanceStatus
 
 	jsonData2, _ := json.Marshal(jo)
