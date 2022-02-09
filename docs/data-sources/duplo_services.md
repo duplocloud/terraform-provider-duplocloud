@@ -37,6 +37,7 @@ Read-Only:
 - **commands** (List of String)
 - **docker_image** (String)
 - **extra_config** (String)
+- **is_daemonset** (Boolean)
 - **lb_synced_deployment** (Boolean)
 - **name** (String)
 - **other_docker_config** (String)
