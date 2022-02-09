@@ -311,6 +311,9 @@ func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, 
 		}
 	}
 
+	// Wait for 40 seconds to avoid race condition.
+	time.Sleep(time.Duration(40) * time.Second)
+
 	log.Printf("[TRACE] resourceDuploEcsServiceDelete ******** end")
 	return nil
 }

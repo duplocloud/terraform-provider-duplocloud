@@ -174,10 +174,10 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diags
 	}
 
-	// Wait for 3 minutes to allow tenant creation.
+	// Wait for 2 minutes to allow tenant creation.
 	if d.Get("wait_until_created").(bool) {
 		log.Printf("[TRACE] resourceTenantCreate(%s): waiting for 2 minutes because 'wait_until_created' is 'true'", rq.AccountName)
-		time.Sleep(time.Duration(45) * time.Second)
+		time.Sleep(time.Duration(120) * time.Second)
 	}
 
 	log.Printf("[TRACE] resourceTenantCreate(%s): end", rq.AccountName)
