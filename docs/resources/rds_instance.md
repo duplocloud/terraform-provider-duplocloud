@@ -73,6 +73,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 If you don't know the available engine versions for your RDS instance, you can use the [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-engine-versions.html) to retrieve a list.
 - **master_password** (String, Sensitive) The master password of the RDS instance.
 - **master_username** (String) The master username of the RDS instance.
+- **multi_az** (Boolean) Specifies if the RDS instance is multi-AZ. Defaults to `false`.
 - **parameter_group_name** (String) A RDS parameter group name to apply to the RDS instance.
 - **snapshot_id** (String) A database snapshot to initialize the RDS instance from, at launch.
 - **store_details_in_secret_manager** (Boolean) Whether or not to store RDS details in the AWS secrets manager.
