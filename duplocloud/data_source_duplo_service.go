@@ -78,6 +78,10 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Computed: true,
 		},
+		"is_daemonset": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
 		"tags": {
 			Type:     schema.TypeList,
 			Computed: true,
@@ -127,6 +131,7 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 	d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
 	d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
 	d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
+	d.Set("is_daemonset", duplo.IsDaemonset)
 	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
