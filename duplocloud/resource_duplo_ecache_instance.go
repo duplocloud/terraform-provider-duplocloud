@@ -120,6 +120,12 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"kms_key_id": {
+			Description: "The globally unique identifier for the key.",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+		},
 	}
 }
 
@@ -272,6 +278,7 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 		EncryptionInTransit: d.Get("encryption_in_transit").(bool),
 		AuthToken:           d.Get("auth_token").(string),
 		InstanceStatus:      d.Get("instance_status").(string),
+		KMSKeyID:            d.Get("kms_key_id").(string),
 	}
 }
 
@@ -297,6 +304,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("encryption_in_transit", duplo.EncryptionInTransit)
 	d.Set("auth_token", duplo.AuthToken)
 	d.Set("instance_status", duplo.InstanceStatus)
+	d.Set("kms_key_id", duplo.KMSKeyID)
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
