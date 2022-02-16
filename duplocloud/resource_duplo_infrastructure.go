@@ -177,6 +177,12 @@ func resourceInfrastructure() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    true,
 			},
+			"custom_data": {
+				Description: "Custom configuration options for the infrastructure.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        KeyValueSchema(),
+			},
 			"address_prefix": {
 				Description: "The CIDR to use for the VPC or VNet.",
 				Type:        schema.TypeString,
@@ -362,6 +368,7 @@ func duploInfrastructureFromState(d *schema.ResourceData) duplosdk.DuploInfrastr
 		EnableK8Cluster: d.Get("enable_k8_cluster").(bool),
 		AddressPrefix:   d.Get("address_prefix").(string),
 		SubnetCidr:      d.Get("subnet_cidr").(int),
+		CustomData:      keyValueFromState("custom_data", d),
 	}
 }
 
@@ -409,6 +416,7 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	d.Set("address_prefix", infra.AddressPrefix)
 	d.Set("subnet_cidr", infra.SubnetCidr)
 	d.Set("status", infra.ProvisioningStatus)
+	d.Set("custom_data", keyValueToState("custom_data", infra.CustomData))
 
 	// Set extended infrastructure information.
 	if config.Vnet != nil {

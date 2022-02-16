@@ -22,15 +22,16 @@ type DuploEksCredentials struct {
 
 // DuploInfrastructure represents a Duplo infrastructure
 type DuploInfrastructure struct {
-	Name               string `json:"Name"`
-	AccountId          string `json:"AccountId"`
-	Cloud              int    `json:"Cloud"`
-	Region             string `json:"Region"`
-	AzCount            int    `json:"AzCount"`
-	EnableK8Cluster    bool   `json:"EnableK8Cluster"`
-	AddressPrefix      string `json:"AddressPrefix"`
-	SubnetCidr         int    `json:"SubnetCidr"`
-	ProvisioningStatus string `json:"ProvisioningStatus"`
+	Name               string                 `json:"Name"`
+	AccountId          string                 `json:"AccountId"`
+	Cloud              int                    `json:"Cloud"`
+	Region             string                 `json:"Region"`
+	AzCount            int                    `json:"AzCount"`
+	EnableK8Cluster    bool                   `json:"EnableK8Cluster"`
+	AddressPrefix      string                 `json:"AddressPrefix"`
+	SubnetCidr         int                    `json:"SubnetCidr"`
+	ProvisioningStatus string                 `json:"ProvisioningStatus"`
+	CustomData         *[]DuploKeyStringValue `json:"CustomData,omitempty"`
 }
 
 // DuploInfrastructureVnet represents a Duplo infrastructure VNET subnet
