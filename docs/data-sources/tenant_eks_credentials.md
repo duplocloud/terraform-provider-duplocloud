@@ -28,5 +28,6 @@ description: |-
 - **namespace** (String)
 - **region** (String)
 - **token** (String, Sensitive)
+- **version** (String)
 
 

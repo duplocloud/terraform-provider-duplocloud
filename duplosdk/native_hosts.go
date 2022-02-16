@@ -112,6 +112,25 @@ type DuploAzureVirtualMachine struct {
 	Tags     map[string]interface{} `json:"tags"`
 }
 
+type DuploNativeHostImage struct {
+	Name       string                 `json:"Name"`
+	ImageId    string                 `json:"ImageId,omitempty"`
+	OS         string                 `json:"OS,omitempty"`
+	Tags       *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	Username   string                 `json:"Username,omitempty"`
+	Region     string                 `json:"Region,omitempty"`
+	K8sVersion string                 `json:"K8sVersion,omitempty"`
+}
+
+// NativeHostImageGetList retrieves a list of native host images via the Duplo API.
+func (c *Client) NativeHostImageGetList(tenantID string) (*[]DuploNativeHostImage, ClientError) {
+	rp := []DuploNativeHostImage{}
+	err := c.getAPI(fmt.Sprintf("NativeHostImageGetList(%s)", tenantID),
+		fmt.Sprintf("subscriptions/%s/GetNativeHostImages", tenantID),
+		&rp)
+	return &rp, err
+}
+
 // NativeHostGetList retrieves a list of native hosts via the Duplo API.
 func (c *Client) NativeHostGetList(tenantID string) (*[]DuploNativeHost, ClientError) {
 	rp := []DuploNativeHost{}

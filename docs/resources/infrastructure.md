@@ -44,6 +44,7 @@ Should be one of:
    - `0` : AWS
    - `2` : Azure
  Defaults to `0`.
+- **custom_data** (Block List) Custom configuration options for the infrastructure. (see [below for nested schema](#nestedblock--custom_data))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_deleted** (Boolean) Whether or not to wait until Duplo has destroyed the infrastructure. Defaults to `false`.
 
@@ -57,6 +58,15 @@ Should be one of:
 - **status** (String) The status of the infrastructure.
 - **vpc_id** (String) The VPC or VNet ID.
 - **vpc_name** (String) The VPC or VNet name.
+
+<a id="nestedblock--custom_data"></a>
+### Nested Schema for `custom_data`
+
+Required:
+
+- **key** (String)
+- **value** (String)
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

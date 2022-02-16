@@ -46,6 +46,7 @@ type DuploPlanK8ClusterConfig struct {
 	Token                          string `json:"Token,omitempty"`
 	K8Provider                     int    `json:"K8Provider,omitempty"`
 	AwsRegion                      string `json:"AwsRegion,omitempty"`
+	K8sVersion                     string `json:"K8sVersion,omitempty"`
 	CertificateAuthorityDataBase64 string `json:"CertificateAuthorityDataBase64,omitempty"`
 }
 

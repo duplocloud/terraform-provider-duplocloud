@@ -105,6 +105,7 @@ Read-Only:
 - **provider** (Number)
 - **region** (String)
 - **token** (String)
+- **version** (String)
 
 
 <a id="nestedobjatt--data--metadata"></a>
