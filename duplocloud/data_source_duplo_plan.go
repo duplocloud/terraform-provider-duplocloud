@@ -197,6 +197,10 @@ func planSchema(single bool) map[string]*schema.Schema {
 						Type:     schema.TypeString,
 						Computed: true,
 					},
+					"version": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
 					"certificate_authority_data": {
 						Type:     schema.TypeString,
 						Computed: true,
@@ -436,6 +440,7 @@ func flattenKubernetesConfig(list *[]duplosdk.DuploPlanK8ClusterConfig) []interf
 		"token":                      kc.Token,
 		"provider":                   kc.K8Provider,
 		"region":                     kc.AwsRegion,
+		"version":                    kc.K8sVersion,
 		"certificate_authority_data": kc.CertificateAuthorityDataBase64,
 	}}
 }

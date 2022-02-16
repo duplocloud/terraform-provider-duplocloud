@@ -40,6 +40,10 @@ func dataSourceTenantEksCredentials() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"version": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"namespace": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -90,6 +94,7 @@ func dataSourceTenantEksCredentialsRead(d *schema.ResourceData, m interface{}) e
 	d.Set("name", k8sConfig.Name)
 	d.Set("endpoint", k8sConfig.APIServer)
 	d.Set("region", k8sConfig.AwsRegion)
+	d.Set("version", k8sConfig.K8sVersion)
 	d.Set("token", k8sConfig.Token)
 	d.Set("ca_certificate_data", caCertificateData)
 	d.Set("namespace", k8sConfig.DefaultNamespace)

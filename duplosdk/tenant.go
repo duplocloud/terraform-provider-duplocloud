@@ -68,8 +68,9 @@ type DuploTenantK8sCredentials struct {
 	Name                           string `json:"Name"`
 	APIServer                      string `json:"ApiServer"`
 	Token                          string `json:"Token"`
-	AwsRegion                      string `json:"AwsRegion"`
+	AwsRegion                      string `json:"AwsRegion,omitempty"`
 	K8sProvider                    int    `json:"K8Provider,omitempty"`
+	K8sVersion                     string `json:"K8sVersion,omitempty"`
 	CertificateAuthorityDataBase64 string `json:"CertificateAuthorityDataBase64,omitempty"`
 	DefaultNamespace               string `json:"DefaultNamespace,omitempty"`
 }

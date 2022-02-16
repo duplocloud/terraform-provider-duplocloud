@@ -15,6 +15,7 @@ type DuploEksCredentials struct {
 	Token                          string `json:"Token"`
 	AwsRegion                      string `json:"AwsRegion"`
 	K8sProvider                    int    `json:"K8Provider,omitempty"`
+	K8sVersion                     string `json:"K8sVersion,omitempty"`
 	CertificateAuthorityDataBase64 string `json:"CertificateAuthorityDataBase64,omitempty"`
 	DefaultNamespace               string `json:"DefaultNamespace,omitempty"`
 }

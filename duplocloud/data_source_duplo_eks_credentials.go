@@ -36,6 +36,10 @@ func dataSourceEksCredentials() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"version": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"ca_certificate_data": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -73,6 +77,7 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("endpoint", k8sConfig.APIServer)
 	d.Set("token", k8sConfig.Token)
 	d.Set("region", k8sConfig.AwsRegion)
+	d.Set("version", k8sConfig.K8sVersion)
 
 	bytes, err64 := base64.StdEncoding.DecodeString(k8sConfig.CertificateAuthorityDataBase64)
 	if err64 == nil {
