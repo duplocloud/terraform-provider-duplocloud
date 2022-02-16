@@ -22,7 +22,7 @@ variable "tenant_id" {
 }
 
 data "duplocloud_native_host_image" "test" {
-  tenant_id = var.tenant_id
+  tenant_id     = var.tenant_id
   is_kubernetes = true
 }
 
