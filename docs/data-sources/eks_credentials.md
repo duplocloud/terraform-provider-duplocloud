@@ -27,5 +27,6 @@ description: |-
 - **name** (String)
 - **region** (String)
 - **token** (String, Sensitive)
+- **version** (String)
 
 
