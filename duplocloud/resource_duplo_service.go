@@ -139,7 +139,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"is_daemonset": {
-			Description: "This is applicable only if `agent_platform=7`. A DaemonSet is a controller that ensures that the pod runs on all the nodes of the cluster.",
+			Description: "Whether or not to enable DaemonSet.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,

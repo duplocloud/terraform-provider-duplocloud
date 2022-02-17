@@ -94,6 +94,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_lambda_permission":        resourceAwsLambdaPermission(),
 			"duplocloud_aws_cloudwatch_metric_alarm":  resourceAwsCloudWatchMetricAlarm(),
 			"duplocloud_aws_api_gateway_integration":  resourceAwsApiGatewayIntegration(),
+			"duplocloud_aws_ecr_repository":           resourceAwsEcrRepository(),
 			"duplocloud_azure_key_vault_secret":       resourceAzureKeyVaultSecret(),
 			"duplocloud_azure_storage_account":        resourceAzureStorageAccount(),
 			"duplocloud_azure_mysql_database":         resourceAzureMysqlDatabase(),
@@ -145,6 +146,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_certificates":       dataSourcePlanCerts(),
 			"duplocloud_asg_profiles":            dataSourceAsgProfiles(),
 			"duplocloud_plan_nat_gateways":       dataSourcePlanNgws(),
+			"duplocloud_ecr_repository":          dataSourceEcrRepository(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
