@@ -280,6 +280,78 @@ func duploOciNodePoolSchema() map[string]*schema.Schema {
 			Computed: true,
 			Elem:     schema.TypeString,
 		},
+		"nodes": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					// Required
+
+					// Optional
+
+					// Computed
+					"availability_domain": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"defined_tags": {
+						Type:     schema.TypeMap,
+						Computed: true,
+						Elem:     schema.TypeString,
+					},
+					"fault_domain": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"freeform_tags": {
+						Type:     schema.TypeMap,
+						Computed: true,
+						Elem:     schema.TypeString,
+					},
+					"id": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"kubernetes_version": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"lifecycle_details": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"name": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"node_pool_id": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"private_ip": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"public_ip": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"state": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"subnet_id": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"system_tags": {
+						Type:     schema.TypeMap,
+						Computed: true,
+						Elem:     schema.TypeString,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -319,8 +391,11 @@ func resourceOciNodePoolRead(ctx context.Context, d *schema.ResourceData, m inte
 		}
 		return diag.Errorf("Unable to retrieve tenant %s oci node pool %s : %s", tenantID, name, clientErr)
 	}
-
-	flattenOciNodePool(d, duplo)
+	duploWithNodes, err := c.OciNodePoolGetWithNodes(tenantID, duplo.Id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	flattenOciNodePool(d, duploWithNodes.NodePool)
 	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceOciNodePoolRead(%s, %s): end", tenantID, name)
 	return nil
@@ -597,6 +672,16 @@ func flattenOciNodePool(d *schema.ResourceData, duplo *duplosdk.DuploOciNodePool
 	if duplo.SystemTags != nil && len(duplo.SystemTags) > 0 {
 		d.Set("system_tags", systemTagsToMap(duplo.SystemTags))
 	}
+
+	nodes := []interface{}{}
+	for _, item := range *duplo.Nodes {
+		nodes = append(nodes, nodeToMap(item))
+	}
+
+	if len(nodes) > 0 {
+		d.Set("nodes", nodes)
+	}
+
 }
 
 func definedTagsToMap(definedTags map[string]map[string]interface{}) map[string]interface{} {
@@ -826,6 +911,64 @@ func nodePoolkeyValueToMap(duplo duplosdk.DuploOciNodePoolKeyValue) map[string]i
 
 	if len(duplo.Value) > 0 {
 		result["value"] = duplo.Value
+	}
+
+	return result
+}
+
+func nodeToMap(duplo duplosdk.Node) map[string]interface{} {
+	result := map[string]interface{}{}
+
+	if len(duplo.AvailabilityDomain) > 0 {
+		result["availability_domain"] = duplo.AvailabilityDomain
+
+	}
+	if duplo.DefinedTags != nil && len(duplo.DefinedTags) > 0 {
+		result["defined_tags"] = definedTagsToMap(duplo.DefinedTags)
+	}
+
+	if len(duplo.FaultDomain) > 0 {
+		result["fault_domain"] = duplo.FaultDomain
+	}
+	if duplo.FreeformTags != nil && len(duplo.FreeformTags) > 0 {
+		result["freeform_tags"] = duplo.FreeformTags
+	}
+	if len(duplo.Id) > 0 {
+		result["id"] = duplo.Id
+	}
+
+	if len(duplo.KubernetesVersion) > 0 {
+		result["kubernetes_version"] = duplo.KubernetesVersion
+	}
+
+	if len(duplo.LifecycleDetails) > 0 {
+		result["lifecycle_details"] = duplo.LifecycleDetails
+	}
+
+	if len(duplo.Name) > 0 {
+		result["name"] = duplo.Name
+	}
+
+	if len(duplo.NodePoolId) > 0 {
+		result["node_pool_id"] = duplo.NodePoolId
+	}
+
+	if len(duplo.PrivateIp) > 0 {
+		result["private_ip"] = duplo.PrivateIp
+	}
+
+	if len(duplo.PublicIp) > 0 {
+		result["public_ip"] = duplo.PublicIp
+	}
+
+	result["state"] = duplo.LifecycleState
+
+	if len(duplo.SubnetId) > 0 {
+		result["subnet_id"] = duplo.SubnetId
+	}
+
+	if duplo.SystemTags != nil && len(duplo.SystemTags) > 0 {
+		result["system_tags"] = systemTagsToMap(duplo.SystemTags)
 	}
 
 	return result
