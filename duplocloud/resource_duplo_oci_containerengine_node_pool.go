@@ -408,14 +408,6 @@ func resourceOciNodePoolDelete(ctx context.Context, d *schema.ResourceData, m in
 func expandOciNodePool(d *schema.ResourceData) (*duplosdk.DuploOciNodePoolDetailsCreateReq, error) {
 	request := duplosdk.DuploOciNodePoolDetailsCreateReq{}
 
-	// if clusterId, ok := d.GetOk("cluster_id"); ok {
-	// 	request.ClusterId = clusterId.(string)
-	// }
-
-	// if compartmentId, ok := d.GetOk("compartment_id"); ok {
-	// 	request.CompartmentId = compartmentId.(string)
-	// }
-
 	if definedTags, ok := d.GetOk("defined_tags"); ok {
 		convertedDefinedTags, err := mapToDefinedTags(definedTags.(map[string]interface{}))
 		if err != nil {
@@ -580,16 +572,6 @@ func flattenOciNodePool(d *schema.ResourceData, duplo *duplosdk.DuploOciNodePool
 		d.Set("node_shape_config", nil)
 	}
 
-	// if duplo.NodeSource != nil {
-	// 	nodeSourceArray := []interface{}{}
-	// 	if nodeSourceMap := nodeSourceOptionToMap(duplo.NodeSource); nodeSourceMap != nil {
-	// 		nodeSourceArray = append(nodeSourceArray, nodeSourceMap)
-	// 	}
-	// 	d.Set("node_source", nodeSourceArray)
-	// } else {
-	// 	d.Set("node_source", nil)
-	// }
-
 	if duplo.NodeSourceDetails != nil {
 		nodeSourceDetailsArray := []interface{}{}
 		if nodeSourceDetailsMap := nodeSourceDetailsToMap(duplo.NodeSourceDetails); nodeSourceDetailsMap != nil {
@@ -599,12 +581,6 @@ func flattenOciNodePool(d *schema.ResourceData, duplo *duplosdk.DuploOciNodePool
 	} else {
 		d.Set("node_source_details", nil)
 	}
-
-	// nodes := []interface{}{}
-	// for _, item := range duplo.Nodes {
-	// 	nodes = append(nodes, NodeToMap(item))
-	// }
-	// d.Set("nodes", nodes)
 
 	d.Set("quantity_per_subnet", duplo.QuantityPerSubnet)
 
@@ -693,21 +669,6 @@ func nodeShapeConfigToMap(duplo *duplosdk.NodeShapeConfig) map[string]interface{
 	result["ocpus"] = duplo.Ocpus
 	return result
 }
-
-// func nodeSourceOptionToMap(duplo *duplosdk.NodeSource) map[string]interface{} {
-// 	result := map[string]interface{}{}
-// 	if len(duplo.SourceType) > 0 {
-// 		result["source_type"] = duplo.SourceType
-// 	}
-// 	if len(duplo.ImageId) > 0 {
-// 		result["image_id"] = duplo.ImageId
-// 	}
-// 	if len(duplo.SourceName) > 0 {
-// 		result["source_name"] = duplo.SourceName
-// 	}
-
-// 	return result
-// }
 
 func nodeSourceDetailsToMap(duplo *duplosdk.NodeSourceDetails) map[string]interface{} {
 	result := map[string]interface{}{}
