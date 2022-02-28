@@ -9,6 +9,10 @@ resource "duplocloud_oci_containerengine_node_pool" "myOciNodePool" {
   node_shape    = "VM.Standard2.1"
   node_image_id = "ocid1.image.oc1.ap-mumbai-1.aaaaaaaagosxifkwha6a6pi2fxx4idf3te3icdsf7z6jar2sxls6xycnehna"
 
+  initial_node_labels {
+    key   = "allocationtags"
+    value = "test"
+  }
   node_config_details {
     size = 1
 

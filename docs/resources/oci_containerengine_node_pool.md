@@ -24,6 +24,10 @@ resource "duplocloud_oci_containerengine_node_pool" "myOciNodePool" {
   node_shape    = "VM.Standard2.1"
   node_image_id = "ocid1.image.oc1.ap-mumbai-1.aaaaaaaagosxifkwha6a6pi2fxx4idf3te3icdsf7z6jar2sxls6xycnehna"
 
+  initial_node_labels {
+    key   = "allocationtags"
+    value = "test"
+  }
   node_config_details {
     size = 1
 
@@ -73,6 +77,7 @@ resource "duplocloud_oci_containerengine_node_pool" "myOciNodePool" {
 - **compartment_id** (String) The OCID of the compartment in which the node pool exists.
 - **id** (String) The ID of this resource.
 - **node_pool_id** (String) The OCID of the node pool.
+- **nodes** (List of Object) (see [below for nested schema](#nestedatt--nodes))
 - **system_tags** (Map of String)
 
 <a id="nestedblock--initial_node_labels"></a>
@@ -143,6 +148,27 @@ Optional:
 
 - **create** (String)
 - **delete** (String)
+
+
+<a id="nestedatt--nodes"></a>
+### Nested Schema for `nodes`
+
+Read-Only:
+
+- **availability_domain** (String)
+- **defined_tags** (Map of String)
+- **fault_domain** (String)
+- **freeform_tags** (Map of String)
+- **id** (String)
+- **kubernetes_version** (String)
+- **lifecycle_details** (String)
+- **name** (String)
+- **node_pool_id** (String)
+- **private_ip** (String)
+- **public_ip** (String)
+- **state** (String)
+- **subnet_id** (String)
+- **system_tags** (Map of String)
 
 ## Import
 
