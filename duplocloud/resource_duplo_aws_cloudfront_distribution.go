@@ -1515,21 +1515,6 @@ func expandLambdaFunctionAssociation(lf map[string]interface{}) duplosdk.DuploAw
 	return lfa
 }
 
-func expandStringList(configured []interface{}) []string {
-	vs := make([]string, 0, len(configured))
-	for _, v := range configured {
-		val, ok := v.(string)
-		if ok && val != "" {
-			vs = append(vs, v.(string))
-		}
-	}
-	return vs
-}
-
-func expandStringSet(configured *schema.Set) []string {
-	return expandStringList(configured.List())
-}
-
 func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.DuploAwsCloudfrontDistributionConfig) {
 	d.Set("enabled", duplo.Enabled)
 	d.Set("is_ipv6_enabled", duplo.IsIPV6Enabled)
@@ -1933,18 +1918,6 @@ func flattenLambdaFunctionAssociation(lfa duplosdk.DuploAwsCloudfrontLambdaFunct
 	m["lambda_arn"] = lfa.LambdaFunctionARN
 	m["include_body"] = lfa.IncludeBody
 	return m
-}
-
-func flattenStringList(list []string) []interface{} {
-	vs := make([]interface{}, 0, len(list))
-	for _, v := range list {
-		vs = append(vs, v)
-	}
-	return vs
-}
-
-func flattenStringSet(list []string) *schema.Set {
-	return schema.NewSet(schema.HashString, flattenStringList(list))
 }
 
 func cloudfrontDistributionWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, cfdId string, timeout time.Duration) error {
