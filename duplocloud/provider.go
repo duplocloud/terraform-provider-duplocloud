@@ -94,7 +94,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_cloudwatch_event_target":   resourceAwsCloudWatchEventTarget(),
 			"duplocloud_aws_lambda_permission":         resourceAwsLambdaPermission(),
 			"duplocloud_aws_cloudwatch_metric_alarm":   resourceAwsCloudWatchMetricAlarm(),
-      "duplocloud_aws_ecr_repository":            resourceAwsEcrRepository(),
+			"duplocloud_aws_ecr_repository":            resourceAwsEcrRepository(),
 			"duplocloud_aws_api_gateway_integration":   resourceAwsApiGatewayIntegration(),
 			"duplocloud_azure_key_vault_secret":        resourceAzureKeyVaultSecret(),
 			"duplocloud_azure_storage_account":         resourceAzureStorageAccount(),
@@ -104,7 +104,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_sql_managed_database":    resourceAzureSqlManagedDatabase(),
 			"duplocloud_azure_postgresql_database":     resourceAzurePostgresqlDatabase(),
 			"duplocloud_azure_mssql_database":          resourceAzureMssqlDatabase(),
-      "duplocloud_other_agents":                  resourceOtherAgents(),
+			"duplocloud_other_agents":                  resourceOtherAgents(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
