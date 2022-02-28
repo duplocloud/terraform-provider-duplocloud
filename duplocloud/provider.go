@@ -103,6 +103,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_sql_managed_database":   resourceAzureSqlManagedDatabase(),
 			"duplocloud_azure_postgresql_database":    resourceAzurePostgresqlDatabase(),
 			"duplocloud_azure_mssql_database":         resourceAzureMssqlDatabase(),
+			"duplocloud_other_agents":                 resourceOtherAgents(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":   dataSourceAdminAwsCredentials(),
