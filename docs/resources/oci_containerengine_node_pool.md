@@ -33,7 +33,7 @@ resource "duplocloud_oci_containerengine_node_pool" "myOciNodePool" {
     }
 
     freeform_tags = {
-      test = "123"
+      CreatedBy = "duplo"
     }
   }
 
