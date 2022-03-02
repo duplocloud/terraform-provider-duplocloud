@@ -295,7 +295,6 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 					"custom_origin_config": {
 						Type:     schema.TypeList,
 						Optional: true,
-						Computed: true,
 						MaxItems: 1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
@@ -381,7 +380,6 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 					"origin_shield": {
 						Type:     schema.TypeList,
 						Optional: true,
-						Computed: true,
 						MaxItems: 1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
@@ -848,6 +846,7 @@ func resourceAwsCloudfrontDistributionRead(ctx context.Context, d *schema.Resour
 	d.Set("etag", duplo.ETag)
 	d.Set("arn", duplo.Distribution.ARN)
 	d.Set("tenant_id", tenantID)
+	d.Set("hosted_zone_id", duplosdk.CloudFrontRoute53ZoneID)
 
 	log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end", tenantID, cfdId)
 	return nil
@@ -898,11 +897,24 @@ func resourceAwsCloudfrontDistributionUpdate(ctx context.Context, d *schema.Reso
 
 	c := m.(*duplosdk.Client)
 
+	duplo, clientErr := c.AwsCloudfrontDistributionGet(tenantID, cfdId)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve tenant %s aws cloudfront distribution%s : %s", tenantID, cfdId, clientErr)
+	}
+
 	rq := expandAwsCloudfrontDistributionConfig(d)
+	// Update OAI which is generated at backend
+	updateS3OAI(duplo.Distribution.DistributionConfig, rq)
+
 	resp, err := c.AwsCloudfrontDistributionUpdate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
 		Id:                 cfdId,
 		DistributionConfig: rq,
 		IfMatch:            d.Get("etag").(string),
+		UseOAIIdentity:     d.Get("use_origin_access_identity").(bool),
 	})
 	if err != nil {
 		return diag.Errorf("Error updating tenant %s aws cloudfront distribution.: %s", tenantID, err)
@@ -1268,6 +1280,12 @@ func expandAwsCloudfrontDistributionOrigin(m map[string]interface{}) duplosdk.Du
 	if v, ok := m["s3_origin_config"]; ok {
 		if s := v.([]interface{}); len(s) > 0 {
 			origin.S3OriginConfig = expandS3OriginConfig(s[0].(map[string]interface{}))
+		}
+	}
+
+	if v, ok := m["origin_shield"]; ok {
+		if s := v.([]interface{}); len(s) > 0 {
+			origin.OriginShield = expandOriginShield(s[0].(map[string]interface{}))
 		}
 	}
 
@@ -1810,15 +1828,15 @@ func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin, useOAI bool) map[string
 	}
 	if or.CustomOriginConfig != nil {
 		m["custom_origin_config"] = []interface{}{flattenCustomOriginConfig(or.CustomOriginConfig)}
-	} else {
-		m["custom_origin_config"] = []interface{}{}
 	}
 
-	if !useOAI && or.S3OriginConfig != nil && or.S3OriginConfig.OriginAccessIdentity != "" {
+	if or.S3OriginConfig != nil && or.S3OriginConfig.OriginAccessIdentity != "" {
 		m["s3_origin_config"] = []interface{}{flattenS3OriginConfig(or.S3OriginConfig)}
-	} else {
-		m["s3_origin_config"] = []interface{}{}
 	}
+	if or.OriginShield != nil && or.OriginShield.Enabled {
+		m["origin_shield"] = []interface{}{flattenOriginShield(or.OriginShield)}
+	}
+
 	return m
 }
 
@@ -1920,6 +1938,20 @@ func flattenLambdaFunctionAssociation(lfa duplosdk.DuploAwsCloudfrontLambdaFunct
 	return m
 }
 
+func expandOriginShield(m map[string]interface{}) *duplosdk.DuploAwsCloudfrontOriginShield {
+	return &duplosdk.DuploAwsCloudfrontOriginShield{
+		Enabled:            m["enabled"].(bool),
+		OriginShieldRegion: m["origin_shield_region"].(string),
+	}
+}
+
+func flattenOriginShield(o *duplosdk.DuploAwsCloudfrontOriginShield) map[string]interface{} {
+	return map[string]interface{}{
+		"origin_shield_region": o.OriginShieldRegion,
+		"enabled":              o.Enabled,
+	}
+}
+
 func cloudfrontDistributionWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, cfdId string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"pending"},
@@ -1972,4 +2004,15 @@ func cloudfrontDistributionWaitUntilDisabled(ctx context.Context, c *duplosdk.Cl
 	log.Printf("[DEBUG] cloudfrontDistributionWaitUntilDisabled(%s, %s)", tenantID, cfdId)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func updateS3OAI(existingCfd, updatedCfd *duplosdk.DuploAwsCloudfrontDistributionConfig) {
+	for _, eo := range *existingCfd.Origins.Items {
+		for _, uo := range *updatedCfd.Origins.Items {
+			if eo.Id == uo.Id {
+				uo.S3OriginConfig.OriginAccessIdentity = eo.S3OriginConfig.OriginAccessIdentity
+				break
+			}
+		}
+	}
 }
