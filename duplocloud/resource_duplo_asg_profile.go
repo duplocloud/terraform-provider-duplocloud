@@ -341,22 +341,31 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 			status := "pending"
 			count := 0
 			if err == nil {
-				var asgTag *[]duplosdk.DuploKeyStringValue
 				for _, host := range *rp {
-					asgTag = selectKeyValues(host.Tags, asgTagKey)
+					log.Printf("[DEBUG] Duplo Host : %s", host.InstanceID)
+					asgTag := selectKeyValues(host.Tags, asgTagKey)
 					if asgTag != nil {
-						count++
-						log.Printf("[DEBUG] ASG profile found, Name-(%s)", asgFriendlyName)
-						if minInstanceCount == 0 || host.Status == "running" {
-							status = "ready"
-						} else {
-							status = "pending"
-							break
+						asgHost := false
+						for _, tag := range *asgTag {
+							log.Printf("[DEBUG] Asg Host Tag : (%s)-(%s)-(%s).", host.InstanceID, tag.Key, tag.Value)
+							if tag.Value == asgFriendlyName {
+								asgHost = true
+							}
 						}
-						log.Printf("[DEBUG] Instance %s is in %s state.", host.InstanceID, host.Status)
+						if asgHost {
+							count++
+							log.Printf("[DEBUG] ASG profile found, Name-(%s)", asgFriendlyName)
+							log.Printf("[DEBUG] Instance %s is in %s state.", host.InstanceID, host.Status)
+							if minInstanceCount == 0 || host.Status == "running" {
+								status = "ready"
+							} else {
+								status = "pending"
+								break
+							}
+						}
 					}
 				}
-
+				log.Printf("[DEBUG] Count, MinCount (%v-%v)", count, minInstanceCount)
 				if minInstanceCount == 0 || (status == "ready" && count == minInstanceCount) {
 					status = "ready"
 				} else {
