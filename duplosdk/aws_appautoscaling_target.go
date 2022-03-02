@@ -16,6 +16,12 @@ type DuploDuploAwsAutoscalingTargetGetReq struct {
 	ResourceIds       []string `json:"ResourceIds,omitempty"`
 }
 
+type DuploDuploAwsAutoscalingTargetDeleteReq struct {
+	ServiceNamespace  string `json:"ServiceNamespace,omitempty"`
+	ScalableDimension string `json:"ScalableDimension,omitempty"`
+	ResourceId        string `json:"ResourceId,omitempty"`
+}
+
 type DuploDuploAwsAutoscalingTarget struct {
 	MaxCapacity       int                                     `json:"MaxCapacity,omitempty"`
 	MinCapacity       int                                     `json:"MinCapacity,omitempty"`
@@ -43,7 +49,10 @@ func (c *Client) DuploAwsAutoscalingTargetGet(tenantID string, rq DuploDuploAwsA
 		&rq,
 		&rp,
 	)
-	return &rp[0], err
+	if len(rp) > 0 {
+		return &rp[0], err
+	}
+	return nil, err
 }
 
 func (c *Client) DuploAwsAutoscalingTargetList(tenantID string, rq DuploDuploAwsAutoscalingTargetGetReq) (*[]DuploDuploAwsAutoscalingTarget, ClientError) {
@@ -73,9 +82,9 @@ func (c *Client) DuploAwsAutoscalingTargetExists(tenantID string, rq DuploDuploA
 	return false, nil
 }
 
-func (c *Client) DuploAwsAutoscalingTargetDelete(tenantID string, rq DuploDuploAwsAutoscalingTargetGetReq) ClientError {
+func (c *Client) DuploAwsAutoscalingTargetDelete(tenantID string, rq DuploDuploAwsAutoscalingTargetDeleteReq) ClientError {
 	return c.postAPI(
-		fmt.Sprintf("DuploAwsAutoscalingTargetDelete(%s, %s)", tenantID, rq.ResourceIds[0]),
+		fmt.Sprintf("DuploAwsAutoscalingTargetDelete(%s, %s)", tenantID, rq.ResourceId),
 		fmt.Sprintf("subscriptions/%s/DeleteScalableTarget", tenantID),
 		&rq,
 		nil,
