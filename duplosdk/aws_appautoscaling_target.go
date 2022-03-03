@@ -4,35 +4,35 @@ import (
 	"fmt"
 )
 
-type DuploDuploAwsAutoscalingSuspendedState struct {
+type DuploAwsAutoscalingSuspendedState struct {
 	DynamicScalingInSuspended  bool `json:"DynamicScalingInSuspended,omitempty"`
 	DynamicScalingOutSuspended bool `json:"DynamicScalingOutSuspended,omitempty"`
 	ScheduledScalingSuspended  bool `json:"ScheduledScalingSuspended,omitempty"`
 }
 
-type DuploDuploAwsAutoscalingTargetGetReq struct {
+type DuploAwsAutoscalingTargetGetReq struct {
 	ServiceNamespace  string   `json:"ServiceNamespace,omitempty"`
 	ScalableDimension string   `json:"ScalableDimension,omitempty"`
 	ResourceIds       []string `json:"ResourceIds,omitempty"`
 }
 
-type DuploDuploAwsAutoscalingTargetDeleteReq struct {
+type DuploAwsAutoscalingTargetDeleteReq struct {
 	ServiceNamespace  string `json:"ServiceNamespace,omitempty"`
 	ScalableDimension string `json:"ScalableDimension,omitempty"`
 	ResourceId        string `json:"ResourceId,omitempty"`
 }
 
-type DuploDuploAwsAutoscalingTarget struct {
-	MaxCapacity       int                                     `json:"MaxCapacity,omitempty"`
-	MinCapacity       int                                     `json:"MinCapacity,omitempty"`
-	ResourceId        string                                  `json:"ResourceId,omitempty"`
-	RoleARN           string                                  `json:"RoleARN,omitempty"`
-	ScalableDimension *DuploStringValue                       `json:"ScalableDimension,omitempty"`
-	ServiceNamespace  *DuploStringValue                       `json:"ServiceNamespace,omitempty"`
-	SuspendedState    *DuploDuploAwsAutoscalingSuspendedState `json:"SuspendedState,omitempty"`
+type DuploAwsAutoscalingTarget struct {
+	MaxCapacity       int                                `json:"MaxCapacity,omitempty"`
+	MinCapacity       int                                `json:"MinCapacity,omitempty"`
+	ResourceId        string                             `json:"ResourceId,omitempty"`
+	RoleARN           string                             `json:"RoleARN,omitempty"`
+	ScalableDimension *DuploStringValue                  `json:"ScalableDimension,omitempty"`
+	ServiceNamespace  *DuploStringValue                  `json:"ServiceNamespace,omitempty"`
+	SuspendedState    *DuploAwsAutoscalingSuspendedState `json:"SuspendedState,omitempty"`
 }
 
-func (c *Client) DuploAwsAutoscalingTargetCreate(tenantID string, rq *DuploDuploAwsAutoscalingTarget) ClientError {
+func (c *Client) DuploAwsAutoscalingTargetCreate(tenantID string, rq *DuploAwsAutoscalingTarget) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("DuploAwsAutoscalingTargetCreate(%s, %s)", tenantID, rq.ResourceId),
 		fmt.Sprintf("subscriptions/%s/CreateOrUpdateScalableTarget", tenantID),
@@ -41,8 +41,8 @@ func (c *Client) DuploAwsAutoscalingTargetCreate(tenantID string, rq *DuploDuplo
 	)
 }
 
-func (c *Client) DuploAwsAutoscalingTargetGet(tenantID string, rq DuploDuploAwsAutoscalingTargetGetReq) (*DuploDuploAwsAutoscalingTarget, ClientError) {
-	rp := []DuploDuploAwsAutoscalingTarget{}
+func (c *Client) DuploAwsAutoscalingTargetGet(tenantID string, rq DuploAwsAutoscalingTargetGetReq) (*DuploAwsAutoscalingTarget, ClientError) {
+	rp := []DuploAwsAutoscalingTarget{}
 	err := c.postAPI(
 		fmt.Sprintf("DuploAwsAutoscalingTargetList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetScalableTargets", tenantID),
@@ -55,8 +55,8 @@ func (c *Client) DuploAwsAutoscalingTargetGet(tenantID string, rq DuploDuploAwsA
 	return nil, err
 }
 
-func (c *Client) DuploAwsAutoscalingTargetList(tenantID string, rq DuploDuploAwsAutoscalingTargetGetReq) (*[]DuploDuploAwsAutoscalingTarget, ClientError) {
-	rp := []DuploDuploAwsAutoscalingTarget{}
+func (c *Client) DuploAwsAutoscalingTargetList(tenantID string, rq DuploAwsAutoscalingTargetGetReq) (*[]DuploAwsAutoscalingTarget, ClientError) {
+	rp := []DuploAwsAutoscalingTarget{}
 	err := c.postAPI(
 		fmt.Sprintf("DuploAwsAutoscalingTargetList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetScalableTargets", tenantID),
@@ -66,7 +66,7 @@ func (c *Client) DuploAwsAutoscalingTargetList(tenantID string, rq DuploDuploAws
 	return &rp, err
 }
 
-func (c *Client) DuploAwsAutoscalingTargetExists(tenantID string, rq DuploDuploAwsAutoscalingTargetGetReq) (bool, ClientError) {
+func (c *Client) DuploAwsAutoscalingTargetExists(tenantID string, rq DuploAwsAutoscalingTargetGetReq) (bool, ClientError) {
 	list, err := c.DuploAwsAutoscalingTargetList(tenantID, rq)
 	if err != nil {
 		return false, err
@@ -82,7 +82,7 @@ func (c *Client) DuploAwsAutoscalingTargetExists(tenantID string, rq DuploDuploA
 	return false, nil
 }
 
-func (c *Client) DuploAwsAutoscalingTargetDelete(tenantID string, rq DuploDuploAwsAutoscalingTargetDeleteReq) ClientError {
+func (c *Client) DuploAwsAutoscalingTargetDelete(tenantID string, rq DuploAwsAutoscalingTargetDeleteReq) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("DuploAwsAutoscalingTargetDelete(%s, %s)", tenantID, rq.ResourceId),
 		fmt.Sprintf("subscriptions/%s/DeleteScalableTarget", tenantID),

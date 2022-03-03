@@ -92,7 +92,7 @@ func resourceAwsAppautoscalingTargetRead(ctx context.Context, d *schema.Resource
 	log.Printf("[TRACE] resourceAwsAppautoscalingTargetRead(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	duplo, clientErr := c.DuploAwsAutoscalingTargetGet(tenantID, duplosdk.DuploDuploAwsAutoscalingTargetGetReq{
+	duplo, clientErr := c.DuploAwsAutoscalingTargetGet(tenantID, duplosdk.DuploAwsAutoscalingTargetGetReq{
 		ServiceNamespace:  namespace,
 		ScalableDimension: dimension,
 		ResourceIds:       []string{name},
@@ -127,7 +127,7 @@ func resourceAwsAppautoscalingTargetCreate(ctx context.Context, d *schema.Resour
 
 	id := fmt.Sprintf("%s/%s/%s/%s", tenantID, rq.ServiceNamespace.Value, rq.ScalableDimension.Value, rq.ResourceId)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "aws autoscaling target", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DuploAwsAutoscalingTargetGet(tenantID, duplosdk.DuploDuploAwsAutoscalingTargetGetReq{
+		return c.DuploAwsAutoscalingTargetGet(tenantID, duplosdk.DuploAwsAutoscalingTargetGetReq{
 			ServiceNamespace:  rq.ServiceNamespace.Value,
 			ScalableDimension: rq.ScalableDimension.Value,
 			ResourceIds:       []string{rq.ResourceId},
@@ -154,13 +154,13 @@ func resourceAwsAppautoscalingTargetDelete(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 	log.Printf("[TRACE] resourceAwsAppautoscalingTargetDelete(%s, %s): start", tenantID, name)
-	getRq := duplosdk.DuploDuploAwsAutoscalingTargetGetReq{
+	getRq := duplosdk.DuploAwsAutoscalingTargetGetReq{
 		ServiceNamespace:  namespace,
 		ScalableDimension: dimension,
 		ResourceIds:       []string{d.Get("resource_id").(string)},
 	}
 	c := m.(*duplosdk.Client)
-	clientErr := c.DuploAwsAutoscalingTargetDelete(tenantID, duplosdk.DuploDuploAwsAutoscalingTargetDeleteReq{
+	clientErr := c.DuploAwsAutoscalingTargetDelete(tenantID, duplosdk.DuploAwsAutoscalingTargetDeleteReq{
 		ServiceNamespace:  namespace,
 		ScalableDimension: dimension,
 		ResourceId:        name,
@@ -183,8 +183,8 @@ func resourceAwsAppautoscalingTargetDelete(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func expandAwsAppautoscalingTarget(d *schema.ResourceData) *duplosdk.DuploDuploAwsAutoscalingTarget {
-	return &duplosdk.DuploDuploAwsAutoscalingTarget{
+func expandAwsAppautoscalingTarget(d *schema.ResourceData) *duplosdk.DuploAwsAutoscalingTarget {
+	return &duplosdk.DuploAwsAutoscalingTarget{
 		MaxCapacity: d.Get("max_capacity").(int),
 		MinCapacity: d.Get("min_capacity").(int),
 		ResourceId:  d.Get("resource_id").(string),
@@ -208,7 +208,7 @@ func parseAwsAppautoscalingTargetIdParts(id string) (tenantID, namespace, dimens
 	return
 }
 
-func flattenAwsAppautoscalingTarget(d *schema.ResourceData, duplo *duplosdk.DuploDuploAwsAutoscalingTarget) {
+func flattenAwsAppautoscalingTarget(d *schema.ResourceData, duplo *duplosdk.DuploAwsAutoscalingTarget) {
 	d.Set("max_capacity", duplo.MaxCapacity)
 	d.Set("min_capacity", duplo.MinCapacity)
 	d.Set("full_resource_id", duplo.ResourceId)
