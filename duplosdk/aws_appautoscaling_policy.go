@@ -32,23 +32,23 @@ type DuploCustomizedMetricSpecification struct {
 }
 
 type DuploTargetTrackingScalingPolicyConfiguration struct {
-	DisableScaleIn                bool                                `json:"DisableScaleIn,omitempty"`
+	DisableScaleIn                bool                                `json:"DisableScaleIn"`
 	CustomizedMetricSpecification *DuploCustomizedMetricSpecification `json:"CustomizedMetricSpecification,omitempty"`
 	PredefinedMetricSpecification *DuploPredefinedMetricSpecification `json:"PredefinedMetricSpecification,omitempty"`
-	ScaleInCooldown               int                                 `json:"ScaleInCooldown,omitempty"`
-	ScaleOutCooldown              int                                 `json:"ScaleOutCooldown,omitempty"`
-	TargetValue                   float64                             `json:"TargetValue,omitempty"`
+	ScaleInCooldown               int                                 `json:"ScaleInCooldown"`
+	ScaleOutCooldown              int                                 `json:"ScaleOutCooldown"`
+	TargetValue                   float64                             `json:"TargetValue"`
 }
 
 type DuploStepAdjustment struct {
 	MetricIntervalLowerBound float64 `json:"MetricIntervalLowerBound,omitempty"`
-	MetricIntervalUpperBound float64 `json:"MetricIntervalUpperBound,omitempty"`
-	ScalingAdjustment        int     `json:"ScalingAdjustment,omitempty"`
+	MetricIntervalUpperBound float64 `json:"MetricIntervalUpperBound"`
+	ScalingAdjustment        int     `json:"ScalingAdjustment"`
 }
 
 type DuploStepScalingPolicyConfiguration struct {
 	AdjustmentType         *DuploStringValue      `json:"AdjustmentType,omitempty"`
-	Cooldown               int                    `json:"Cooldown,omitempty"`
+	Cooldown               int                    `json:"Cooldown"`
 	MetricAggregationType  *DuploStringValue      `json:"MetricAggregationType,omitempty"`
 	MinAdjustmentMagnitude int                    `json:"MinAdjustmentMagnitude,omitempty"`
 	StepAdjustments        *[]DuploStepAdjustment `json:"StepAdjustments,omitempty"`

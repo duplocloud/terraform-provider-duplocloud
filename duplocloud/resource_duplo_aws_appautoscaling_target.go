@@ -160,6 +160,10 @@ func resourceAwsAppautoscalingTargetDelete(ctx context.Context, d *schema.Resour
 		ResourceIds:       []string{d.Get("resource_id").(string)},
 	}
 	c := m.(*duplosdk.Client)
+	exist, _ := c.DuploAwsAutoscalingTargetExists(tenantID, getRq)
+	if !exist {
+		return nil
+	}
 	clientErr := c.DuploAwsAutoscalingTargetDelete(tenantID, duplosdk.DuploAwsAutoscalingTargetDeleteReq{
 		ServiceNamespace:  namespace,
 		ScalableDimension: dimension,

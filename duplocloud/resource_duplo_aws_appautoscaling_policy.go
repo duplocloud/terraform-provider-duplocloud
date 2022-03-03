@@ -46,6 +46,11 @@ func duploAwsAppautoscalingPolicySchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"full_resource_id": {
+			Description: "The resource type and unique identifier string for the resource associated with the scaling policy.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"scalable_dimension": {
 			Description: "The scalable dimension of the scalable target.",
 			Type:        schema.TypeString,
@@ -311,7 +316,7 @@ func resourceAwsAppautoscalingPolicyCreate(ctx context.Context, d *schema.Resour
 }
 
 func resourceAwsAppautoscalingPolicyUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	return resourceAwsAppautoscalingPolicyCreate(ctx, d, m)
 }
 
 func resourceAwsAppautoscalingPolicyDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -328,6 +333,10 @@ func resourceAwsAppautoscalingPolicyDelete(ctx context.Context, d *schema.Resour
 		ScalableDimension: dimension,
 		ResourceId:        resourceId,
 		PolicyNames:       []string{name},
+	}
+	exist, _ := c.DuploAwsAutoscalingPolicyExists(tenantID, getRq)
+	if !exist {
+		return nil
 	}
 
 	clientErr := c.DuploAwsAutoscalingPolicyDelete(tenantID, duplosdk.DuploAwsAutoscalingPolicyDeleteReq{
@@ -414,7 +423,7 @@ func expandAwsAppautoscalingPolicy(d *schema.ResourceData) (*duplosdk.DuploAwsAu
 
 func parseAwsAppautoscalingPolicyIdParts(id string) (tenantID, namespace, dimension, resourceId, name string, err error) {
 	idParts := strings.SplitN(id, "/", 5)
-	if len(idParts) == 4 {
+	if len(idParts) == 5 {
 		tenantID, namespace, dimension, resourceId, name = idParts[0], idParts[1], idParts[2], idParts[3], idParts[4]
 	} else {
 		err = fmt.Errorf("invalid resource ID: %s", id)
@@ -425,8 +434,9 @@ func parseAwsAppautoscalingPolicyIdParts(id string) (tenantID, namespace, dimens
 func flattenAwsAppautoscalingPolicy(d *schema.ResourceData, duplo *duplosdk.DuploAwsAutoscalingPolicy) error {
 	d.Set("arn", duplo.PolicyARN)
 	d.Set("name", duplo.PolicyName)
-	d.Set("policy_type", duplo.PolicyType)
-	d.Set("resource_id", duplo.ResourceId)
+	d.Set("policy_type", duplo.PolicyType.Value)
+	//d.Set("resource_id", duplo.ResourceId)
+	d.Set("full_resource_id", duplo.ResourceId)
 	d.Set("scalable_dimension", duplo.ScalableDimension.Value)
 	d.Set("service_namespace", duplo.ServiceNamespace.Value)
 
@@ -448,13 +458,16 @@ func flattenStepScalingPolicyConfiguration(cfg *duplosdk.DuploStepScalingPolicyC
 	m := make(map[string]interface{})
 
 	if len(cfg.AdjustmentType.Value) > 0 {
-		m["adjustment_type"] = cfg.AdjustmentType
+		m["adjustment_type"] = cfg.AdjustmentType.Value
 	}
 	m["cooldown"] = cfg.Cooldown
 	if len(cfg.MetricAggregationType.Value) > 0 {
-		m["metric_aggregation_type"] = cfg.MetricAggregationType
+		m["metric_aggregation_type"] = cfg.MetricAggregationType.Value
 	}
-	m["min_adjustment_magnitude"] = cfg.MinAdjustmentMagnitude
+	if cfg.MinAdjustmentMagnitude > 0 {
+		m["min_adjustment_magnitude"] = cfg.MinAdjustmentMagnitude
+	}
+
 	if cfg.StepAdjustments != nil {
 		stepAdjustmentsResource := &schema.Resource{
 			Schema: map[string]*schema.Schema{
@@ -636,6 +649,7 @@ func expandAppautoscalingStepAdjustments(configured []interface{}) (*[]duplosdk.
 			bound := data["metric_interval_lower_bound"]
 			switch bound := bound.(type) {
 			case string:
+				log.Printf("[TRACE] expandAppautoscalingStepAdjustments(%v): start", data)
 				f, err := strconv.ParseFloat(bound, 64)
 				if err != nil {
 					return nil, fmt.Errorf(
