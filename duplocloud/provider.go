@@ -90,6 +90,8 @@ func Provider() *schema.Provider {
 			"duplocloud_emr_cluster":                   resourceAwsEmrCluster(),
 			"duplocloud_asg_profile":                   resourceAwsASG(),
 			"duplocloud_docker_credentials":            resourceDockerCreds(),
+			"duplocloud_aws_appautoscaling_target":     resourceAwsAppautoscalingTarget(),
+			"duplocloud_aws_appautoscaling_policy":     resourceAwsAppautoscalingPolicy(),
 			"duplocloud_aws_cloudwatch_event_rule":     resourceAwsCloudWatchEventRule(),
 			"duplocloud_aws_cloudwatch_event_target":   resourceAwsCloudWatchEventTarget(),
 			"duplocloud_aws_lambda_permission":         resourceAwsLambdaPermission(),
