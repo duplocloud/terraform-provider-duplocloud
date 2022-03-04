@@ -78,7 +78,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			ForceNew:    true,
-			MaxItems:    1,
+			// MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"replication_controller_name": {
@@ -366,21 +366,24 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 }
 
 func ecsLoadBalancersFromState(d *schema.ResourceData) *[]duplosdk.DuploEcsServiceLbConfig {
-	var ary []duplosdk.DuploEcsServiceLbConfig
-
-	lb, err := getOptionalBlockAsMap(d, "load_balancer")
-	if err != nil || lb == nil {
-		return &ary
+	lbList := d.Get("load_balancer").([]interface{})
+	ary := make([]duplosdk.DuploEcsServiceLbConfig, 0, len(lbList))
+	for _, v := range lbList {
+		ary = append(ary, ecsLoadBalancerFromState(d, v.(map[string]interface{})))
 	}
 
+	log.Printf("[TRACE] ecsLoadBalancersFromState ********: have data")
+	return &ary
+}
+
+func ecsLoadBalancerFromState(d *schema.ResourceData, lb map[string]interface{}) duplosdk.DuploEcsServiceLbConfig {
+	log.Printf("[TRACE] ecsLoadBalancerFromState ********: have data")
 	name := lb["replication_controller_name"].(string)
 	if name == "" {
 		name = d.Get("name").(string)
 	}
 
-	log.Printf("[TRACE] ecsLoadBalancersFromState ********: have data")
-
-	ary = append(ary, duplosdk.DuploEcsServiceLbConfig{
+	lbConfig := duplosdk.DuploEcsServiceLbConfig{
 		ReplicationControllerName: name,
 		LbType:                    lb["lb_type"].(int),
 		Port:                      lb["port"].(string),
@@ -391,9 +394,8 @@ func ecsLoadBalancersFromState(d *schema.ResourceData) *[]duplosdk.DuploEcsServi
 		HealthCheckURL:            lb["health_check_url"].(string),
 		CertificateArn:            lb["certificate_arn"].(string),
 		TgCount:                   lb["target_group_count"].(int),
-	})
-
-	return &ary
+	}
+	return lbConfig
 }
 
 func readEcsServiceAwsLbSettings(tenantID string, name string, lb map[string]interface{}, c *duplosdk.Client) error {
