@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const CloudFrontRoute53ZoneID = "Z2FDTNDATAQYW2"
+
 type DuploAwsCloudfrontDefaultCacheBehavior struct {
 	AllowedMethods             *DuploCFDAllowedMethods                       `json:"AllowedMethods,omitempty"`
 	CachePolicyId              string                                        `json:"CachePolicyId,omitempty"`
@@ -89,6 +91,11 @@ type DuploAwsCloudfrontOrigins struct {
 	Quantity int                         `json:"Quantity"`
 }
 
+type DuploAwsCloudfrontOriginShield struct {
+	Enabled            bool   `json:"Enabled,omitempty"`
+	OriginShieldRegion string `json:"OriginShieldRegion,omitempty"`
+}
+
 type DuploAwsCloudfrontOrigin struct {
 	ConnectionAttempts int                                    `json:"ConnectionAttempts,omitempty"`
 	ConnectionTimeout  int                                    `json:"ConnectionTimeout,omitempty"`
@@ -98,6 +105,7 @@ type DuploAwsCloudfrontOrigin struct {
 	OriginPath         string                                 `json:"OriginPath"`
 	S3OriginConfig     *DuploAwsCloudfrontOriginS3Config      `json:"S3OriginConfig,omitempty"`
 	CustomOriginConfig *DuploAwsCloudfrontCustomOriginConfig  `json:"CustomOriginConfig,omitempty"`
+	OriginShield       *DuploAwsCloudfrontOriginShield        `json:"OriginShield,omitempty"`
 }
 
 type DuploAwsCloudfrontOriginCustomHeaders struct {
