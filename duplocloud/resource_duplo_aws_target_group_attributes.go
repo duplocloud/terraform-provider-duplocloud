@@ -146,7 +146,7 @@ func resourceAwsTargetGroupAttributesRead(ctx context.Context, d *schema.Resourc
 		d.Set("is_ecs_lb", getReq.IsEcsLB)
 		d.Set("is_passthrough_lb", getReq.IsPassThruLB)
 	}
-	d.Set("attribute", duplo)
+	d.Set("attribute", flattenAwsTargetGroupKeyValueAttributes(duplo))
 
 	log.Printf("[TRACE] resourceAwsTargetGroupAttributesRead(%s): end", tenantID)
 	return nil
