@@ -8,16 +8,26 @@ import (
 
 // DuploEcsServiceLbConfig is a Duplo SDK object that represents load balancer configuration for an ECS service
 type DuploEcsServiceLbConfig struct {
-	ReplicationControllerName string `json:"ReplicationControllerName"`
-	Port                      string `json:"Port,omitempty"`
-	BackendProtocol           string `json:"BeProtocolVersion,omitempty"`
-	ExternalPort              int    `json:"ExternalPort,omitempty"`
-	Protocol                  string `json:"Protocol,omitempty"`
-	IsInternal                bool   `json:"IsInternal,omitempty"`
-	HealthCheckURL            string `json:"HealthCheckUrl,omitempty"`
-	CertificateArn            string `json:"CertificateArn,omitempty"`
-	LbType                    int    `json:"LbType,omitempty"`
-	TgCount                   int    `json:"TgCount,omitempty"`
+	ReplicationControllerName string                              `json:"ReplicationControllerName"`
+	Port                      string                              `json:"Port,omitempty"`
+	BackendProtocol           string                              `json:"BeProtocolVersion,omitempty"`
+	ExternalPort              int                                 `json:"ExternalPort,omitempty"`
+	Protocol                  string                              `json:"Protocol,omitempty"`
+	IsInternal                bool                                `json:"IsInternal,omitempty"`
+	HealthCheckURL            string                              `json:"HealthCheckUrl,omitempty"`
+	CertificateArn            string                              `json:"CertificateArn,omitempty"`
+	LbType                    int                                 `json:"LbType,omitempty"`
+	TgCount                   int                                 `json:"TgCount,omitempty"`
+	HealthCheckConfig         *DuploEcsServiceLbHealthCheckConfig `json:"HealthCheckConfig,omitempty"`
+}
+
+type DuploEcsServiceLbHealthCheckConfig struct {
+	HealthyThresholdCount      int    `json:"HealthyThresholdCount,omitempty"`
+	UnhealthyThresholdCount    int    `json:"UnhealthyThresholdCount,omitempty"`
+	HealthCheckTimeoutSeconds  int    `json:"HealthCheckTimeoutSeconds,omitempty"`
+	HealthCheckIntervalSeconds int    `json:"HealthCheckIntervalSeconds,omitempty"`
+	HttpSuccessCode            string `json:"HttpSuccessCode,omitempty"`
+	GrpcSuccessCode            string `json:"GrpcSuccessCode,omitempty"`
 }
 
 // DuploEcsService is a Duplo SDK object that represents an ECS service
@@ -51,7 +61,7 @@ func (c *Client) EcsServiceUpdate(tenantID string, duploObject *DuploEcsService)
 
 // EcsServiceCreateOrUpdate creates or updates an ECS service via the Duplo API.
 func (c *Client) EcsServiceCreateOrUpdate(tenantID string, rq *DuploEcsService, updating bool) (*DuploEcsService, ClientError) {
-
+	var err ClientError
 	// Build the request
 	verb := "POST"
 	if updating {
@@ -60,13 +70,24 @@ func (c *Client) EcsServiceCreateOrUpdate(tenantID string, rq *DuploEcsService, 
 
 	// Call the API.
 	rp := DuploEcsService{}
-	err := c.doAPIWithRequestBody(
-		verb,
-		fmt.Sprintf("EcsServiceCreateOrUpdate(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2", tenantID),
-		&rq,
-		&rp,
-	)
+	if updating {
+		err = c.doAPIWithRequestBody(
+			verb,
+			fmt.Sprintf("EcsServiceUpdate(%s, %s)", tenantID, rq.Name),
+			fmt.Sprintf("v3/subscriptions/%s/aws/ecsService", tenantID),
+			&rq,
+			&rp,
+		)
+	} else {
+		err = c.doAPIWithRequestBody(
+			verb,
+			fmt.Sprintf("EcsServiceCreate(%s, %s)", tenantID, rq.Name),
+			fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2", tenantID),
+			&rq,
+			&rp,
+		)
+	}
+
 	if err != nil {
 		return nil, err
 	}

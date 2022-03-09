@@ -86,6 +86,7 @@ Optional:
 - **certificate_arn** (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - **drop_invalid_headers** (Boolean) Whether or not to drop invalid HTTP headers received by the load balancer.
 - **enable_access_logs** (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan
+- **health_check_config** (Block List, Max: 1) Health check configuration for this load balancer. (see [below for nested schema](#nestedblock--load_balancer--health_check_config))
 - **health_check_url** (String) The health check URL to associate with this load balancer configuration.
 - **is_internal** (Boolean) Whether or not to create an internal load balancer. Defaults to `false`.
 - **webaclid** (String) The ARN of a web application firewall to associate this load balancer.
@@ -95,6 +96,19 @@ Read-Only:
 - **load_balancer_arn** (String) The load balancer ARN.
 - **load_balancer_name** (String) The load balancer name.
 - **replication_controller_name** (String)
+
+<a id="nestedblock--load_balancer--health_check_config"></a>
+### Nested Schema for `load_balancer.health_check_config`
+
+Optional:
+
+- **grpc_success_code** (String)
+- **health_check_interval_seconds** (Number)
+- **health_check_timeout_seconds** (Number)
+- **healthy_threshold_count** (Number)
+- **http_success_code** (String)
+- **unhealthy_threshold_count** (Number)
+
 
 
 <a id="nestedblock--timeouts"></a>
