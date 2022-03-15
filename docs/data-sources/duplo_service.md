@@ -20,6 +20,10 @@ description: |-
 - **name** (String)
 - **tenant_id** (String)
 
+### Optional
+
+- **hpa_specs** (String)
+
 ### Read-Only
 
 - **agent_platform** (Number)
