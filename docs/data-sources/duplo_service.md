@@ -20,10 +20,6 @@ description: |-
 - **name** (String)
 - **tenant_id** (String)
 
-### Optional
-
-- **hpa_specs** (String)
-
 ### Read-Only
 
 - **agent_platform** (Number)
@@ -34,6 +30,7 @@ description: |-
 - **commands** (List of String)
 - **docker_image** (String)
 - **extra_config** (String)
+- **hpa_specs** (String)
 - **id** (String) The ID of this resource.
 - **is_daemonset** (Boolean)
 - **lb_synced_deployment** (Boolean)
