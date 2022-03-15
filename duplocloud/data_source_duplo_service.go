@@ -140,7 +140,9 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	flattenHPASpecs("hpa_specs", duplo.HPASpecs, d)
+	if len(duplo.HPASpecs) > 0 {
+		flattenHPASpecs("hpa_specs", duplo.HPASpecs, d)
+	}
 
 	// If we have a pod template, read data from it
 	if duplo.Template != nil {
