@@ -192,7 +192,7 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Read the object into state
 	flattenDuploService(d, duplo)
-
+	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceDuploServiceRead(%s, %s): end", tenantID, name)
 	return nil
 }

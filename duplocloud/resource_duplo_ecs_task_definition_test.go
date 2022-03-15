@@ -251,7 +251,7 @@ func TestReduceContaineDefinition(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		err := reduceContainerDefinition(c.given, c.isAWSVPC)
+		err := reduceContainerDefinition(c.given, c.isAWSVPC, false)
 		if err != nil {
 			t.Fatalf("Unexpected error from reduceContainerDefinition: %s", err)
 		}
