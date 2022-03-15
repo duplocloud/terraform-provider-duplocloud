@@ -552,9 +552,7 @@ func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC, isLogConfi
 
 	// Handle computed fields
 	if !isLogConfigProvided {
-		if _, ok := defn["LogConfiguration"]; ok {
-			delete(defn, "LogConfiguration")
-		}
+		delete(defn, "LogConfiguration")
 	}
 
 	// Set all empty slices to nil.
