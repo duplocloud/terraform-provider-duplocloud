@@ -408,7 +408,6 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 
 		ary = append(ary, jo)
 	}
-	log.Printf("[TRACE] ### %v", ary)
 	log.Printf("[TRACE] ecsLoadBalancersToState ******** end")
 	return ary
 }
