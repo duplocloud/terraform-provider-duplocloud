@@ -37,10 +37,10 @@ type DuploAzureVirtualMachineScaleSetIdentityValue struct {
 }
 
 type DuploAzureVirtualMachineScaleSetIdentity struct {
-	PrincipalId            string                                         `json:"principalId,omitempty"`
-	TenantId               string                                         `json:"tenantId,omitempty"`
-	Type                   string                                         `json:"type,omitempty"`
-	UserAssignedIdentities *DuploAzureVirtualMachineScaleSetIdentityValue `json:"userAssignedIdentities,omitempty"`
+	PrincipalId            string                                                    `json:"principalId,omitempty"`
+	TenantId               string                                                    `json:"tenantId,omitempty"`
+	Type                   string                                                    `json:"type,omitempty"`
+	UserAssignedIdentities map[string]*DuploAzureVirtualMachineScaleSetIdentityValue `json:"userAssignedIdentities,omitempty"`
 }
 
 type DuploOSProfileWinRMListener struct {
@@ -73,7 +73,7 @@ type DuploSshPublicKey struct {
 }
 
 type DuploOSProfileSshConfiguration struct {
-	PublicKeys *[]DuploSshPublicKey
+	PublicKeys *[]DuploSshPublicKey `json:"publicKeys,omitempty"`
 }
 
 type DuploOSProfileLinuxConfiguration struct {
@@ -182,25 +182,25 @@ type DuploVirtualMachineScaleSetPublicIPAddressConfiguration struct {
 }
 
 type DuploVirtualMachineScaleSetIPConfiguration struct {
-	Name                                  string
-	Subnet                                *DuploApiEntityReference
-	Primary                               bool
-	PublicIPAddressConfiguration          *DuploVirtualMachineScaleSetPublicIPAddressConfiguration
-	PrivateIPAddressVersion               string
-	ApplicationGatewayBackendAddressPools *[]DuploSubResource
-	ApplicationSecurityGroups             *[]DuploSubResource
-	LoadBalancerBackendAddressPools       *[]DuploSubResource
-	LoadBalancerInboundNatPools           *[]DuploSubResource
+	Name                                  string                                                   `json:"name,omitempty"`
+	Subnet                                *DuploApiEntityReference                                 `json:"properties.subnet,omitempty"`
+	Primary                               bool                                                     `json:"properties.primary,omitempty"`
+	PublicIPAddressConfiguration          *DuploVirtualMachineScaleSetPublicIPAddressConfiguration `json:"properties.publicIPAddressConfiguration,omitempty"`
+	PrivateIPAddressVersion               string                                                   `json:"properties.privateIPAddressVersion,omitempty"`
+	ApplicationGatewayBackendAddressPools *[]DuploSubResource                                      `json:"properties.applicationGatewayBackendAddressPools,omitempty"`
+	ApplicationSecurityGroups             *[]DuploSubResource                                      `json:"properties.applicationSecurityGroups,omitempty"`
+	LoadBalancerBackendAddressPools       *[]DuploSubResource                                      `json:"properties.loadBalancerBackendAddressPools,omitempty"`
+	LoadBalancerInboundNatPools           *[]DuploSubResource                                      `json:"properties.loadBalancerInboundNatPools,omitempty"`
 }
 
 type DuploVirtualMachineScaleSetNetworkConfiguration struct {
 	Name                        string                                                      `json:"name,omitempty"`
-	Primary                     bool                                                        `json:"primary,omitempty"`
-	EnableAcceleratedNetworking bool                                                        `json:"enableAcceleratedNetworking,omitempty"`
-	NetworkSecurityGroup        *DuploSubResource                                           `json:"networkSecurityGroup,omitempty"`
-	DnsSettings                 *DuploVirtualMachineScaleSetNetworkConfigurationDnsSettings `json:"dnsSettings,omitempty"`
-	IpConfigurations            *[]DuploVirtualMachineScaleSetIPConfiguration               `json:"ipConfigurations,omitempty"`
-	EnableIPForwarding          bool                                                        `json:"enableIPForwarding,omitempty"`
+	Primary                     bool                                                        `json:"properties.primary,omitempty"`
+	EnableAcceleratedNetworking bool                                                        `json:"properties.enableAcceleratedNetworking,omitempty"`
+	NetworkSecurityGroup        *DuploSubResource                                           `json:"properties.networkSecurityGroup,omitempty"`
+	DnsSettings                 *DuploVirtualMachineScaleSetNetworkConfigurationDnsSettings `json:"properties.dnsSettings,omitempty"`
+	IpConfigurations            *[]DuploVirtualMachineScaleSetIPConfiguration               `json:"properties.ipConfigurations,omitempty"`
+	EnableIPForwarding          bool                                                        `json:"properties.enableIPForwarding,omitempty"`
 }
 
 type DuploVirtualMachineScaleSetNetworkProfile struct {
@@ -234,40 +234,77 @@ type DuploScheduledEventsProfile struct {
 	TerminateNotificationProfile *DuploTerminateNotificationProfile `json:"terminateNotificationProfile,omitempty"`
 }
 
+type DuploVirtualMachineScaleSetExtensionProfile struct {
+	Extensions           *[]DuploVirtualMachineScaleSetExtension `json:"extensions,omitempty"`
+	ExtensionsTimeBudget string                                  `json:"extensionsTimeBudget,omitempty"`
+}
+
+type DuploVirtualMachineScaleSetExtension struct {
+	Id                       string                 `json:"id,omitempty"`
+	Name                     string                 `json:"name,omitempty"`
+	Type                     string                 `json:"type,omitempty"`
+	ForceUpdateTag           string                 `json:"properties.forceUpdateTag,omitempty"`
+	Publisher                string                 `json:"properties.publisher,omitempty"`
+	Type1                    string                 `json:"properties.type1,omitempty"`
+	TypeHandlerVersion       string                 `json:"properties.typeHandlerVersion,omitempty"`
+	AutoUpgradeMinorVersion  bool                   `json:"properties.autoUpgradeMinorVersion,omitempty"`
+	EnableAutomaticUpgrade   bool                   `json:"properties.enableAutomaticUpgrade,omitempty"`
+	Settings                 map[string]interface{} `json:"properties.settings,omitempty"`
+	ProtectedSettings        map[string]interface{} `json:"properties.protectedSettings,omitempty"`
+	ProvisioningState        string                 `json:"properties.provisioningState,omitempty"`
+	ProvisionAfterExtensions []string               `json:"properties.provisionAfterExtensions,omitempty"`
+}
+
 type DuploAzureScaleSetVirtualMachineProfile struct {
-	OsProfile              *DuploVirtualMachineScaleSetOSProfile      `json:"osProfile,omitempty"`
-	StorageProfile         *DuploVirtualMachineScaleSetStorageProfile `json:"storageProfile,omitempty"`
-	NetworkProfile         *DuploVirtualMachineScaleSetNetworkProfile `json:"networkProfile,omitempty"`
-	SecurityProfile        *DuploSecurityProfile                      `json:"securityProfile,omitempty"`
-	DiagnosticsProfile     *DuploDiagnosticsProfile                   `json:"diagnosticsProfile,omitempty"`
-	LicenseType            string                                     `json:"licenseType,omitempty"`
-	Priority               string                                     `json:"priority,omitempty"`
-	EvictionPolicy         string                                     `json:"evictionPolicy,omitempty"`
-	BillingProfile         *DuploBillingProfile                       `json:"billingProfile,omitempty"`
-	ScheduledEventsProfile *DuploScheduledEventsProfile               `json:"scheduledEventsProfile,omitempty"`
+	OsProfile              *DuploVirtualMachineScaleSetOSProfile        `json:"osProfile,omitempty"`
+	StorageProfile         *DuploVirtualMachineScaleSetStorageProfile   `json:"storageProfile,omitempty"`
+	NetworkProfile         *DuploVirtualMachineScaleSetNetworkProfile   `json:"networkProfile,omitempty"`
+	SecurityProfile        *DuploSecurityProfile                        `json:"securityProfile,omitempty"`
+	DiagnosticsProfile     *DuploDiagnosticsProfile                     `json:"diagnosticsProfile,omitempty"`
+	ExtensionProfile       *DuploVirtualMachineScaleSetExtensionProfile `json:"extensionProfile,omitempty"`
+	LicenseType            string                                       `json:"licenseType,omitempty"`
+	Priority               string                                       `json:"priority,omitempty"`
+	EvictionPolicy         string                                       `json:"evictionPolicy,omitempty"`
+	BillingProfile         *DuploBillingProfile                         `json:"billingProfile,omitempty"`
+	ScheduledEventsProfile *DuploScheduledEventsProfile                 `json:"scheduledEventsProfile,omitempty"`
+}
+
+type DuploScaleInPolicy struct {
+	Rules []string `json:"rules,omitempty"`
+}
+
+type DuploAzureVirtualMachineScaleSetPlan struct {
+	Name          string `json:"name,omitempty"`
+	Publisher     string `json:"publisher,omitempty"`
+	Product       string `json:"product,omitempty"`
+	PromotionCode string `json:"promotionCode,omitempty"`
 }
 
 type DuploAzureVirtualMachineScaleSet struct {
-	ID                                     string                                                    `json:"id,omitempty"`
-	Type                                   string                                                    `json:"type,omitempty"`
-	Location                               string                                                    `json:"location,omitempty"`
-	Name                                   string                                                    `json:"name,omitempty"`
-	Sku                                    *DuploAzureVirtualMachineScaleSetSku                      `json:"sku,omitempty"`
-	UpgradePolicy                          *DuploAzureVirtualMachineScaleSetAutomaticOSUpgradePolicy `json:"properties.upgradePolicy,omitempty"`
-	DoNotRunExtensionsOnOverprovisionedVMs bool                                                      `json:"properties.doNotRunExtensionsOnOverprovisionedVMs,omitempty"`
-	Overprovision                          bool                                                      `json:"properties.overprovision,omitempty"`
-	ProvisioningState                      string                                                    `json:"properties.provisioningState,omitempty"`
-	SinglePlacementGroup                   bool                                                      `json:"properties.singlePlacementGroup,omitempty"`
-	UniqueId                               string                                                    `json:"properties.uniqueId,omitempty"`
-	ZoneBalance                            bool                                                      `json:"properties.zoneBalance,omitempty"`
-	PlatformFaultDomainCount               int                                                       `json:"properties.platformFaultDomainCount,omitempty"`
-	Zones                                  []string                                                  `json:"zones,omitempty"`
-	Identity                               *DuploAzureVirtualMachineScaleSetIdentity                 `json:"identity,omitempty"`
-	VirtualMachineProfile                  *DuploAzureScaleSetVirtualMachineProfile                  `json:"virtualMachineProfile,omitempty"`
-	NameEx                                 string                                                    `json:"NameEx,omitempty"`
-	IsMinion                               bool                                                      `json:"IsMinion"`
-	AgentPlatform                          int                                                       `json:"AgentPlatform"`
-	AllocationTags                         string                                                    `json:"AllocationTags,omitempty"`
+	ID                                     string                                         `json:"id,omitempty"`
+	Type                                   string                                         `json:"type,omitempty"`
+	Location                               string                                         `json:"location,omitempty"`
+	Name                                   string                                         `json:"name,omitempty"`
+	Sku                                    *DuploAzureVirtualMachineScaleSetSku           `json:"sku,omitempty"`
+	Plan                                   *DuploAzureVirtualMachineScaleSetPlan          `json:"plan,omitempty"`
+	UpgradePolicy                          *DuploAzureVirtualMachineScaleSetUpgradePolicy `json:"properties.upgradePolicy,omitempty"`
+	DoNotRunExtensionsOnOverprovisionedVMs bool                                           `json:"properties.doNotRunExtensionsOnOverprovisionedVMs,omitempty"`
+	Overprovision                          bool                                           `json:"properties.overprovision,omitempty"`
+	ProvisioningState                      string                                         `json:"properties.provisioningState,omitempty"`
+	SinglePlacementGroup                   bool                                           `json:"properties.singlePlacementGroup,omitempty"`
+	UniqueId                               string                                         `json:"properties.uniqueId,omitempty"`
+	ZoneBalance                            bool                                           `json:"properties.zoneBalance,omitempty"`
+	PlatformFaultDomainCount               int                                            `json:"properties.platformFaultDomainCount,omitempty"`
+	ProximityPlacementGroup                *DuploSubResource                              `json:"properties.proximityPlacementGroup,omitempty"`
+	HostGroup                              *DuploSubResource                              `json:"properties.hostGroup,omitempty"`
+	ScaleInPolicy                          *DuploScaleInPolicy                            `json:"properties.scaleInPolicy,omitempty"`
+	Zones                                  []string                                       `json:"zones,omitempty"`
+	Identity                               *DuploAzureVirtualMachineScaleSetIdentity      `json:"identity,omitempty"`
+	VirtualMachineProfile                  *DuploAzureScaleSetVirtualMachineProfile       `json:"virtualMachineProfile,omitempty"`
+	NameEx                                 string                                         `json:"NameEx,omitempty"`
+	IsMinion                               bool                                           `json:"IsMinion"`
+	AgentPlatform                          int                                            `json:"AgentPlatform"`
+	AllocationTags                         string                                         `json:"AllocationTags,omitempty"`
 }
 
 func (c *Client) AzureVirtualMachineScaleSetCreate(tenantID string, rq *DuploAzureVirtualMachineScaleSet) ClientError {
