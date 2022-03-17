@@ -526,7 +526,7 @@ func duploAzureVirtualMachineScaleSetSchema() map[string]*schema.Schema {
 								"primary": {
 									Description: "Specifies if this ip_configuration is the primary one.",
 									Type:        schema.TypeBool,
-									Required:    true,
+									Optional:    true,
 								},
 
 								"public_ip_address_configuration": {
