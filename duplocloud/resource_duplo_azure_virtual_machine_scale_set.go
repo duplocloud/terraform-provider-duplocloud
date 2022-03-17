@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -52,7 +53,12 @@ func duploAzureVirtualMachineScaleSetSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-
+		"wait_until_ready": {
+			Description: "Whether or not to wait until virtual machine scale set to be ready, after creation.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     true,
+		},
 		"zones": {
 			Type:     schema.TypeList,
 			Optional: true,
@@ -309,6 +315,7 @@ func duploAzureVirtualMachineScaleSetSchema() map[string]*schema.Schema {
 		"os_profile_windows_config": {
 			Type:     schema.TypeSet,
 			Optional: true,
+			Computed: true,
 			MaxItems: 1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -316,11 +323,13 @@ func duploAzureVirtualMachineScaleSetSchema() map[string]*schema.Schema {
 						Description: "Indicates whether virtual machine agent should be provisioned on the virtual machines in the scale set.",
 						Type:        schema.TypeBool,
 						Optional:    true,
+						Computed:    true,
 					},
 					"enable_automatic_upgrades": {
 						Description: "Indicates whether virtual machines in the scale set are enabled for automatic updates.",
 						Type:        schema.TypeBool,
 						Optional:    true,
+						Computed:    true,
 					},
 					"winrm": {
 						Type:     schema.TypeList,
@@ -587,7 +596,8 @@ func duploAzureVirtualMachineScaleSetSchema() map[string]*schema.Schema {
 		},
 		"storage_profile_os_disk": {
 			Type:     schema.TypeSet,
-			Required: true,
+			Optional: true,
+			Computed: true,
 			MaxItems: 1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -595,18 +605,21 @@ func duploAzureVirtualMachineScaleSetSchema() map[string]*schema.Schema {
 						Description: "Specifies the disk name. Must be specified when using unmanaged disk ('managed_disk_type' property not set).",
 						Type:        schema.TypeString,
 						Optional:    true,
+						Computed:    true,
 					},
 
 					"image": {
 						Description: "Specifies the blob uri for user image. A virtual machine scale set creates an os disk in the same container as the user image.",
 						Type:        schema.TypeString,
 						Optional:    true,
+						Computed:    true,
 					},
 
 					"vhd_containers": {
 						Description: "Specifies the vhd uri. Cannot be used when `image` or `managed_disk_type` is specified.",
 						Type:        schema.TypeSet,
 						Optional:    true,
+						Computed:    true,
 						Elem:        &schema.Schema{Type: schema.TypeString},
 						Set:         schema.HashString,
 					},
@@ -634,12 +647,14 @@ func duploAzureVirtualMachineScaleSetSchema() map[string]*schema.Schema {
 						Description: "Specifies the operating system Type, valid values are `windows`, `linux`.",
 						Type:        schema.TypeString,
 						Optional:    true,
+						Computed:    true,
 					},
 
 					"create_option": {
 						Description: "Specifies how the virtual machine should be created. The only possible option is `FromImage`.",
 						Type:        schema.TypeString,
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -873,6 +888,13 @@ func resourceAzureVirtualMachineScaleSetRead(ctx context.Context, d *schema.Reso
 
 	d.Set("name", name)
 	d.Set("tenant_id", tenantID)
+	// TODO - Backend does not return agent_platform, is_minion
+	if _, ok := d.GetOk("agent_platform"); !ok {
+		d.Set("agent_platform", 0)
+	}
+	if _, ok := d.GetOk("is_minion"); !ok {
+		d.Set("is_minion", false)
+	}
 
 	err = flattenAzureVirtualMachineScaleSet(d, duplo)
 	if err != nil {
@@ -894,7 +916,7 @@ func resourceAzureVirtualMachineScaleSetCreate(ctx context.Context, d *schema.Re
 	}
 	clientErr := c.AzureVirtualMachineScaleSetCreate(tenantID, rq)
 	if clientErr != nil {
-		return diag.Errorf("Error creating tenant %s azure virtual machine scale set '%s': %s", tenantID, name, err)
+		return diag.Errorf("Error creating tenant %s azure virtual machine scale set '%s': %s", tenantID, name, clientErr)
 	}
 
 	id := fmt.Sprintf("%s/%s", tenantID, name)
@@ -907,12 +929,20 @@ func resourceAzureVirtualMachineScaleSetCreate(ctx context.Context, d *schema.Re
 	}
 	d.SetId(id)
 
+	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
+		err = virtualMachineScaleSetWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	diags = resourceAzureVirtualMachineScaleSetRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzureVirtualMachineScaleSetCreate(%s, %s): end", tenantID, name)
 	return diags
 }
 
 func resourceAzureVirtualMachineScaleSetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	// TODO - backend does not support update yet.
 	return nil
 }
 
@@ -1388,64 +1418,65 @@ func expandVirtualMachineScaleSetSku(d *schema.ResourceData) *duplosdk.DuploAzur
 
 func expandAzureRMVirtualMachineScaleSetsStorageProfileOsDisk(d *schema.ResourceData) (*duplosdk.DuploVirtualMachineScaleSetOSDisk, error) {
 	osDiskConfigs := d.Get("storage_profile_os_disk").(*schema.Set).List()
+	if len(osDiskConfigs) > 0 {
+		osDiskConfig := osDiskConfigs[0].(map[string]interface{})
+		name := osDiskConfig["name"].(string)
+		image := osDiskConfig["image"].(string)
+		vhd_containers := osDiskConfig["vhd_containers"].(*schema.Set).List()
+		caching := osDiskConfig["caching"].(string)
+		osType := osDiskConfig["os_type"].(string)
+		createOption := osDiskConfig["create_option"].(string)
+		managedDiskType := osDiskConfig["managed_disk_type"].(string)
 
-	osDiskConfig := osDiskConfigs[0].(map[string]interface{})
-	name := osDiskConfig["name"].(string)
-	image := osDiskConfig["image"].(string)
-	vhd_containers := osDiskConfig["vhd_containers"].(*schema.Set).List()
-	caching := osDiskConfig["caching"].(string)
-	osType := osDiskConfig["os_type"].(string)
-	createOption := osDiskConfig["create_option"].(string)
-	managedDiskType := osDiskConfig["managed_disk_type"].(string)
-
-	if managedDiskType == "" && name == "" {
-		return nil, fmt.Errorf("[ERROR] `name` must be set in `storage_profile_os_disk` for unmanaged disk")
-	}
-
-	osDisk := &duplosdk.DuploVirtualMachineScaleSetOSDisk{
-		Name:         name,
-		Caching:      caching,
-		OsType:       osType,
-		CreateOption: createOption,
-	}
-
-	if image != "" {
-		osDisk.Image = &duplosdk.DuploVirtualHardDisk{
-			Uri: image,
-		}
-	}
-
-	if len(vhd_containers) > 0 {
-		var vhdContainers []string
-		for _, v := range vhd_containers {
-			str := v.(string)
-			vhdContainers = append(vhdContainers, str)
-		}
-		osDisk.VhdContainers = vhdContainers
-	}
-
-	managedDisk := &duplosdk.DuploVirtualMachineScaleSetManagedDiskParameters{}
-
-	if managedDiskType != "" {
-		if name != "" {
-			return nil, fmt.Errorf("[ERROR] Conflict between `name` and `managed_disk_type` on `storage_profile_os_disk` (please remove name or set it to blank)")
+		if managedDiskType == "" && name == "" {
+			return nil, fmt.Errorf("[ERROR] `name` must be set in `storage_profile_os_disk` for unmanaged disk")
 		}
 
-		managedDisk.StorageAccountType = managedDiskType
-		osDisk.ManagedDisk = managedDisk
+		osDisk := &duplosdk.DuploVirtualMachineScaleSetOSDisk{
+			Name:         name,
+			Caching:      caching,
+			OsType:       osType,
+			CreateOption: createOption,
+		}
+
+		if image != "" {
+			osDisk.Image = &duplosdk.DuploVirtualHardDisk{
+				Uri: image,
+			}
+		}
+
+		if len(vhd_containers) > 0 {
+			var vhdContainers []string
+			for _, v := range vhd_containers {
+				str := v.(string)
+				vhdContainers = append(vhdContainers, str)
+			}
+			osDisk.VhdContainers = vhdContainers
+		}
+
+		managedDisk := &duplosdk.DuploVirtualMachineScaleSetManagedDiskParameters{}
+
+		if managedDiskType != "" {
+			if name != "" {
+				return nil, fmt.Errorf("[ERROR] Conflict between `name` and `managed_disk_type` on `storage_profile_os_disk` (please remove name or set it to blank)")
+			}
+
+			managedDisk.StorageAccountType = managedDiskType
+			osDisk.ManagedDisk = managedDisk
+		}
+
+		// BEGIN: code to be removed after GH-13016 is merged
+		if image != "" && managedDiskType != "" {
+			return nil, fmt.Errorf("[ERROR] Conflict between `image` and `managed_disk_type` on `storage_profile_os_disk` (only one or the other can be used)")
+		}
+
+		if len(vhd_containers) > 0 && managedDiskType != "" {
+			return nil, fmt.Errorf("[ERROR] Conflict between `vhd_containers` and `managed_disk_type` on `storage_profile_os_disk` (only one or the other can be used)")
+		}
+		return osDisk, nil
 	}
 
-	// BEGIN: code to be removed after GH-13016 is merged
-	if image != "" && managedDiskType != "" {
-		return nil, fmt.Errorf("[ERROR] Conflict between `image` and `managed_disk_type` on `storage_profile_os_disk` (only one or the other can be used)")
-	}
-
-	if len(vhd_containers) > 0 && managedDiskType != "" {
-		return nil, fmt.Errorf("[ERROR] Conflict between `vhd_containers` and `managed_disk_type` on `storage_profile_os_disk` (only one or the other can be used)")
-	}
-	// END: code to be removed after GH-13016 is merged
-
-	return osDisk, nil
+	return nil, nil
 }
 
 func expandAzureRMVirtualMachineScaleSetsStorageProfileDataDisk(d *schema.ResourceData) *[]duplosdk.DuploVirtualMachineScaleSetDataDisk {
@@ -1604,12 +1635,12 @@ func expandAzureRmVirtualMachineScaleSetOsProfileWindowsConfig(d *schema.Resourc
 
 	if v := osProfileConfig["provision_vm_agent"]; v != nil {
 		provision := v.(bool)
-		config.ProvisionVMAgent = provision
+		config.ProvisionVMAgent = &provision
 	}
 
 	if v := osProfileConfig["enable_automatic_upgrades"]; v != nil {
 		update := v.(bool)
-		config.EnableAutomaticUpdates = update
+		config.EnableAutomaticUpdates = &update
 	}
 
 	if v := osProfileConfig["winrm"]; v != nil {
@@ -2085,8 +2116,11 @@ func flattenAzureRmVirtualMachineScaleSetOsProfileLinuxConfig(config *duplosdk.D
 func flattenAzureRmVirtualMachineScaleSetOsProfileWindowsConfig(config *duplosdk.DuploOSProfileWindowsConfiguration) []interface{} {
 	result := make(map[string]interface{})
 
-	result["provision_vm_agent"] = config.ProvisionVMAgent
-	result["enable_automatic_upgrades"] = config.EnableAutomaticUpdates
+	result["provision_vm_agent"] = *config.ProvisionVMAgent
+	result["enable_automatic_upgrades"] = *config.EnableAutomaticUpdates
+
+	// result["provision_vm_agent"] = config.ProvisionVMAgent
+	// result["enable_automatic_upgrades"] = config.EnableAutomaticUpdates
 
 	if config.WinRM != nil {
 		listeners := make([]map[string]interface{}, 0, len(*config.WinRM.Listeners))
@@ -2387,4 +2421,31 @@ func flattenAzureRmVirtualMachineScaleSetPlan(plan *duplosdk.DuploAzureVirtualMa
 	result["product"] = plan.Product
 
 	return []interface{}{result}
+}
+
+func virtualMachineScaleSetWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &resource.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.AzureVirtualMachineScaleSetGet(tenantID, name)
+			log.Printf("[TRACE] Virtual machine scale set provisioning state is (%s, %s).", rp.NameEx, rp.ProvisioningState)
+			status := "pending"
+			if err == nil {
+				if rp.ProvisioningState == "Succeeded" {
+					status = "ready"
+				} else {
+					status = "pending"
+				}
+			}
+
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] virtualMachineScaleSetWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }

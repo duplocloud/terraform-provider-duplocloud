@@ -67,8 +67,8 @@ type DuploWinConfigAdditionalUnattendContent struct {
 }
 
 type DuploOSProfileWindowsConfiguration struct {
-	ProvisionVMAgent          bool                                       `json:"provisionVMAgent,omitempty"`
-	EnableAutomaticUpdates    bool                                       `json:"enableAutomaticUpdates,omitempty"`
+	ProvisionVMAgent          *bool                                      `json:"provisionVMAgent,omitempty"`
+	EnableAutomaticUpdates    *bool                                      `json:"enableAutomaticUpdates,omitempty"`
 	TimeZone                  string                                     `json:"timeZone,omitempty"`
 	WinRM                     *DuploOSProfileWinRMConfiguration          `json:"winRM,omitempty"`
 	AdditionalUnattendContent *[]DuploWinConfigAdditionalUnattendContent `json:"additionalUnattendContent,omitempty"`
@@ -307,7 +307,7 @@ type DuploAzureVirtualMachineScaleSet struct {
 	ScaleInPolicy                          *DuploScaleInPolicy                            `json:"properties.scaleInPolicy,omitempty"`
 	Zones                                  []string                                       `json:"zones,omitempty"`
 	Identity                               *DuploAzureVirtualMachineScaleSetIdentity      `json:"identity,omitempty"`
-	VirtualMachineProfile                  *DuploAzureScaleSetVirtualMachineProfile       `json:"virtualMachineProfile,omitempty"`
+	VirtualMachineProfile                  *DuploAzureScaleSetVirtualMachineProfile       `json:"properties.virtualMachineProfile,omitempty"`
 	NameEx                                 string                                         `json:"NameEx,omitempty"`
 	IsMinion                               bool                                           `json:"IsMinion"`
 	AgentPlatform                          int                                            `json:"AgentPlatform"`
