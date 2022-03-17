@@ -48,6 +48,10 @@ func duploAzureVirtualMachineScaleSetSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Optional: true,
 		},
+		"location": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 
 		"zones": {
 			Type:     schema.TypeList,
@@ -870,8 +874,10 @@ func resourceAzureVirtualMachineScaleSetRead(ctx context.Context, d *schema.Reso
 	d.Set("name", name)
 	d.Set("tenant_id", tenantID)
 
-	flattenAzureVirtualMachineScaleSet(d, duplo)
-
+	err = flattenAzureVirtualMachineScaleSet(d, duplo)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	log.Printf("[TRACE] resourceAzureVirtualMachineScaleSetRead(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -1046,22 +1052,140 @@ func parseAzureVirtualMachineScaleSetIdParts(id string) (tenantID, name string, 
 	return
 }
 
-func flattenAzureVirtualMachineScaleSet(d *schema.ResourceData, duplo *duplosdk.DuploAzureVirtualMachineScaleSet) {
-	// d.Set("tenant_id", tenantID)
-	// d.Set("Schema_attr", duplo.name)
-	// d.Set("Schema_attr", duplo.type)
-	// d.Set("Schema_attr", duplo.properties.upgradePolicy)
-	// d.Set("Schema_attr", duplo.properties.doNotRunExtensionsOnOverprovisionedVMs)
-	// d.Set("Schema_attr", duplo.id)
-	// d.Set("Schema_attr", duplo.properties.overprovision)
-	// d.Set("Schema_attr", duplo.properties.uniqueId)
-	// d.Set("Schema_attr", duplo.properties.singlePlacementGroup)
-	// d.Set("Schema_attr", duplo.location)
-	// d.Set("Schema_attr", duplo.tags)
-	// d.Set("Schema_attr", duplo.sku)
-	// d.Set("Schema_attr", duplo.properties.virtualMachineProfile)
-	// d.Set("Schema_attr", duplo.properties.provisioningState)
+func flattenAzureVirtualMachineScaleSet(d *schema.ResourceData, duplo *duplosdk.DuploAzureVirtualMachineScaleSet) error {
+	d.Set("location", duplo.Location)
+	d.Set("zones", duplo.Zones)
 
+	if err := d.Set("sku", flattenAzureRmVirtualMachineScaleSetSku(duplo.Sku)); err != nil {
+		return fmt.Errorf("[DEBUG] setting `sku`: %#v", err)
+	}
+
+	flattenedIdentity, err := flattenAzureRmVirtualMachineScaleSetIdentity(duplo.Identity)
+	if err != nil {
+		return err
+	}
+	if err := d.Set("identity", flattenedIdentity); err != nil {
+		return fmt.Errorf("[DEBUG] setting `identity`: %+v", err)
+	}
+
+	if upgradePolicy := duplo.UpgradePolicy; upgradePolicy != nil {
+		d.Set("upgrade_policy_mode", upgradePolicy.Mode)
+		if policy := upgradePolicy.AutomaticOSUpgradePolicy; policy != nil {
+			d.Set("automatic_os_upgrade", policy.EnableAutomaticOSUpgrade)
+		}
+
+		if rollingUpgradePolicy := upgradePolicy.RollingUpgradePolicy; rollingUpgradePolicy != nil {
+			if err := d.Set("rolling_upgrade_policy", flattenAzureRmVirtualMachineScaleSetRollingUpgradePolicy(rollingUpgradePolicy)); err != nil {
+				return fmt.Errorf("[DEBUG] setting Virtual Machine Scale Set Rolling Upgrade Policy error: %#v", err)
+			}
+		}
+
+		if proximityPlacementGroup := duplo.ProximityPlacementGroup; proximityPlacementGroup != nil {
+			d.Set("proximity_placement_group_id", proximityPlacementGroup.Id)
+		}
+	}
+
+	d.Set("overprovision", duplo.Overprovision)
+	d.Set("single_placement_group", duplo.SinglePlacementGroup)
+
+	if profile := duplo.VirtualMachineProfile; profile != nil {
+		d.Set("license_type", profile.LicenseType)
+		d.Set("priority", profile.Priority)
+		d.Set("eviction_policy", profile.EvictionPolicy)
+
+		osProfile := flattenAzureRMVirtualMachineScaleSetOsProfile(d, profile.OsProfile)
+		if err := d.Set("os_profile", osProfile); err != nil {
+			return fmt.Errorf("[DEBUG] setting `os_profile`: %#v", err)
+		}
+
+		if osProfile := profile.OsProfile; osProfile != nil {
+			if linuxConfiguration := osProfile.LinuxConfiguration; linuxConfiguration != nil {
+				flattenedLinuxConfiguration := flattenAzureRmVirtualMachineScaleSetOsProfileLinuxConfig(linuxConfiguration)
+				if err := d.Set("os_profile_linux_config", flattenedLinuxConfiguration); err != nil {
+					return fmt.Errorf("[DEBUG] setting `os_profile_linux_config`: %#v", err)
+				}
+			}
+
+			if secrets := osProfile.Secrets; secrets != nil {
+				flattenedSecrets := flattenAzureRmVirtualMachineScaleSetOsProfileSecrets(secrets)
+				if err := d.Set("os_profile_secrets", flattenedSecrets); err != nil {
+					return fmt.Errorf("[DEBUG] setting `os_profile_secrets`: %#v", err)
+				}
+			}
+
+			if windowsConfiguration := osProfile.WindowsConfiguration; windowsConfiguration != nil {
+				flattenedWindowsConfiguration := flattenAzureRmVirtualMachineScaleSetOsProfileWindowsConfig(windowsConfiguration)
+				if err := d.Set("os_profile_windows_config", flattenedWindowsConfiguration); err != nil {
+					return fmt.Errorf("[DEBUG] setting `os_profile_windows_config`: %#v", err)
+				}
+			}
+		}
+
+		if diagnosticsProfile := profile.DiagnosticsProfile; diagnosticsProfile != nil {
+			if bootDiagnostics := diagnosticsProfile.BootDiagnostics; bootDiagnostics != nil {
+				flattenedDiagnostics := flattenAzureRmVirtualMachineScaleSetBootDiagnostics(bootDiagnostics)
+				// TODO: rename this field to `diagnostics_profile`
+				if err := d.Set("boot_diagnostics", flattenedDiagnostics); err != nil {
+					return fmt.Errorf("[DEBUG] setting `boot_diagnostics`: %#v", err)
+				}
+			}
+		}
+
+		if networkProfile := profile.NetworkProfile; networkProfile != nil {
+			if hp := networkProfile.HealthProbe; hp != nil {
+				if id := hp.Id; len(id) > 0 {
+					d.Set("health_probe_id", id)
+				}
+			}
+
+			flattenedNetworkProfile := flattenAzureRmVirtualMachineScaleSetNetworkProfile(networkProfile)
+			if err := d.Set("network_profile", flattenedNetworkProfile); err != nil {
+				return fmt.Errorf("[DEBUG] setting `network_profile`: %#v", err)
+			}
+		}
+
+		if storageProfile := profile.StorageProfile; storageProfile != nil {
+			if dataDisks := duplo.VirtualMachineProfile.StorageProfile.DataDisks; dataDisks != nil {
+				flattenedDataDisks := flattenAzureRmVirtualMachineScaleSetStorageProfileDataDisk(dataDisks)
+				if err := d.Set("storage_profile_data_disk", flattenedDataDisks); err != nil {
+					return fmt.Errorf("[DEBUG] setting `storage_profile_data_disk`: %#v", err)
+				}
+			}
+
+			if imageRef := storageProfile.ImageReference; imageRef != nil {
+				flattenedImageRef := flattenAzureRmVirtualMachineScaleSetStorageProfileImageReference(imageRef)
+				if err := d.Set("storage_profile_image_reference", flattenedImageRef); err != nil {
+					return fmt.Errorf("[DEBUG] setting `storage_profile_image_reference`: %#v", err)
+				}
+			}
+
+			if osDisk := storageProfile.OsDisk; osDisk != nil {
+				flattenedOSDisk := flattenAzureRmVirtualMachineScaleSetStorageProfileOSDisk(osDisk)
+				if err := d.Set("storage_profile_os_disk", flattenedOSDisk); err != nil {
+					return fmt.Errorf("[DEBUG] setting `storage_profile_os_disk`: %#v", err)
+				}
+			}
+		}
+
+		if extensionProfile := duplo.VirtualMachineProfile.ExtensionProfile; extensionProfile != nil {
+			extension, err := flattenAzureRmVirtualMachineScaleSetExtensionProfile(extensionProfile)
+			if err != nil {
+				return fmt.Errorf("[DEBUG] setting Virtual Machine Scale Set Extension Profile error: %#v", err)
+			}
+			if err := d.Set("extension", extension); err != nil {
+				return fmt.Errorf("[DEBUG] setting `extension`: %#v", err)
+			}
+		}
+	}
+
+	if plan := duplo.Plan; plan != nil {
+		flattenedPlan := flattenAzureRmVirtualMachineScaleSetPlan(plan)
+		if err := d.Set("plan", flattenedPlan); err != nil {
+			return fmt.Errorf("[DEBUG] setting `plan`: %#v", err)
+		}
+	}
+
+	return nil
 }
 
 // When upgrade_policy_mode is not Rolling, we will just ignore rolling_upgrade_policy (returns true).
@@ -1858,4 +1982,409 @@ func expandAzureRmVirtualMachineScaleSetPlan(d *schema.ResourceData) *duplosdk.D
 		Name:      name,
 		Product:   product,
 	}
+}
+
+func flattenAzureRmVirtualMachineScaleSetSku(sku *duplosdk.DuploAzureVirtualMachineScaleSetSku) []interface{} {
+	result := make(map[string]interface{})
+	result["name"] = sku.Name
+	result["capacity"] = sku.Capacity
+
+	if sku.Tier != "" {
+		result["tier"] = sku.Tier
+	}
+
+	return []interface{}{result}
+}
+
+func flattenAzureRmVirtualMachineScaleSetIdentity(identity *duplosdk.DuploAzureVirtualMachineScaleSetIdentity) ([]interface{}, error) {
+	if identity == nil {
+		return make([]interface{}, 0), nil
+	}
+
+	result := make(map[string]interface{})
+	result["type"] = string(identity.Type)
+	if len(identity.PrincipalId) > 0 {
+		result["principal_id"] = identity.PrincipalId
+	}
+
+	identityIds := make([]string, 0)
+	if identity.UserAssignedIdentities != nil {
+		for key := range identity.UserAssignedIdentities {
+			identityIds = append(identityIds, key)
+		}
+	}
+	result["identity_ids"] = identityIds
+
+	return []interface{}{result}, nil
+}
+
+func flattenAzureRmVirtualMachineScaleSetRollingUpgradePolicy(rollingUpgradePolicy *duplosdk.DuploAzureVirtualMachineScaleSetRollingUpgradePolicy) []interface{} {
+	b := make(map[string]interface{})
+
+	b["max_batch_instance_percent"] = rollingUpgradePolicy.MaxBatchInstancePercent
+	b["max_unhealthy_instance_percent"] = rollingUpgradePolicy.MaxUnhealthyInstancePercent
+	b["max_unhealthy_upgraded_instance_percent"] = rollingUpgradePolicy.MaxUnhealthyUpgradedInstancePercent
+	if len(rollingUpgradePolicy.PauseTimeBetweenBatches) > 0 {
+		b["pause_time_between_batches"] = rollingUpgradePolicy.PauseTimeBetweenBatches
+	}
+
+	return []interface{}{b}
+}
+
+func flattenAzureRMVirtualMachineScaleSetOsProfile(d *schema.ResourceData, profile *duplosdk.DuploVirtualMachineScaleSetOSProfile) []interface{} {
+	result := make(map[string]interface{})
+
+	result["computer_name_prefix"] = profile.ComputerNamePrefix
+	result["admin_username"] = profile.AdminUsername
+
+	// admin password isn't returned, so let's look it up
+	if v, ok := d.GetOk("os_profile.0.admin_password"); ok {
+		password := v.(string)
+		result["admin_password"] = password
+	}
+
+	if len(profile.CustomData) > 0 {
+		result["custom_data"] = profile.CustomData
+	} else {
+		// look up the current custom data
+		result["custom_data"] = Base64EncodeIfNot(d.Get("os_profile.0.custom_data").(string))
+	}
+
+	return []interface{}{result}
+}
+
+func flattenAzureRmVirtualMachineScaleSetOsProfileLinuxConfig(config *duplosdk.DuploOSProfileLinuxConfiguration) []interface{} {
+	result := make(map[string]interface{})
+
+	result["disable_password_authentication"] = config.DisablePasswordAuthentication
+
+	if ssh := config.Ssh; ssh != nil {
+		if keys := ssh.PublicKeys; keys != nil {
+			ssh_keys := make([]map[string]interface{}, 0, len(*keys))
+			for _, i := range *keys {
+				key := make(map[string]interface{})
+
+				if len(i.Path) > 0 {
+					key["path"] = i.Path
+				}
+
+				if len(i.KeyData) > 0 {
+					key["key_data"] = i.KeyData
+				}
+
+				ssh_keys = append(ssh_keys, key)
+			}
+
+			result["ssh_keys"] = ssh_keys
+		}
+	}
+
+	return []interface{}{result}
+}
+
+func flattenAzureRmVirtualMachineScaleSetOsProfileWindowsConfig(config *duplosdk.DuploOSProfileWindowsConfiguration) []interface{} {
+	result := make(map[string]interface{})
+
+	result["provision_vm_agent"] = config.ProvisionVMAgent
+	result["enable_automatic_upgrades"] = config.EnableAutomaticUpdates
+
+	if config.WinRM != nil {
+		listeners := make([]map[string]interface{}, 0, len(*config.WinRM.Listeners))
+		for _, i := range *config.WinRM.Listeners {
+			listener := make(map[string]interface{})
+			listener["protocol"] = i.Protocol
+
+			if len(i.CertificateUrl) > 0 {
+				listener["certificate_url"] = i.CertificateUrl
+			}
+
+			listeners = append(listeners, listener)
+		}
+
+		result["winrm"] = listeners
+	}
+
+	if config.AdditionalUnattendContent != nil {
+		content := make([]map[string]interface{}, 0, len(*config.AdditionalUnattendContent))
+		for _, i := range *config.AdditionalUnattendContent {
+			c := make(map[string]interface{})
+			c["pass"] = i.PassName
+			c["component"] = i.ComponentName
+			c["setting_name"] = i.SettingName
+
+			if len(i.Content) > 0 {
+				c["content"] = i.Content
+			}
+
+			content = append(content, c)
+		}
+
+		result["additional_unattend_config"] = content
+	}
+
+	return []interface{}{result}
+}
+
+func flattenAzureRmVirtualMachineScaleSetOsProfileSecrets(secrets *[]duplosdk.DuploVaultSecretGroup) []map[string]interface{} {
+	result := make([]map[string]interface{}, 0, len(*secrets))
+	for _, secret := range *secrets {
+		s := map[string]interface{}{
+			"source_vault_id": secret.SourceVault.Id,
+		}
+
+		if secret.VaultCertificates != nil {
+			certs := make([]map[string]interface{}, 0, len(*secret.VaultCertificates))
+			for _, cert := range *secret.VaultCertificates {
+				vaultCert := make(map[string]interface{})
+				vaultCert["certificate_url"] = cert.CertificateUrl
+
+				if len(cert.CertificateStore) > 0 {
+					vaultCert["certificate_store"] = cert.CertificateStore
+				}
+
+				certs = append(certs, vaultCert)
+			}
+
+			s["vault_certificates"] = certs
+		}
+
+		result = append(result, s)
+	}
+	return result
+}
+
+func flattenAzureRmVirtualMachineScaleSetBootDiagnostics(bootDiagnostic *duplosdk.DuploBootDiagnostics) []interface{} {
+	b := make(map[string]interface{})
+	b["enabled"] = bootDiagnostic.Enabled
+
+	if len(bootDiagnostic.StorageUri) > 0 {
+		b["storage_uri"] = bootDiagnostic.StorageUri
+	}
+
+	return []interface{}{b}
+}
+
+func flattenAzureRmVirtualMachineScaleSetNetworkProfile(profile *duplosdk.DuploVirtualMachineScaleSetNetworkProfile) []map[string]interface{} {
+	networkConfigurations := profile.NetworkInterfaceConfigurations
+	result := make([]map[string]interface{}, 0, len(*networkConfigurations))
+	for _, netConfig := range *networkConfigurations {
+		s := map[string]interface{}{
+			"name":    netConfig.Name,
+			"primary": netConfig.Primary,
+		}
+		s["accelerated_networking"] = netConfig.EnableAcceleratedNetworking
+		s["ip_forwarding"] = netConfig.EnableIPForwarding
+
+		if v := netConfig.NetworkSecurityGroup; v != nil {
+			s["network_security_group_id"] = v.Id
+		}
+
+		if dnsSettings := netConfig.DnsSettings; dnsSettings != nil {
+			dnsServers := make([]string, 0)
+			if s := dnsSettings.DnsServers; s != nil {
+				dnsServers = s
+			}
+
+			s["dns_settings"] = []interface{}{map[string]interface{}{
+				"dns_servers": dnsServers,
+			}}
+		}
+
+		if netConfig.IpConfigurations != nil {
+			ipConfigs := make([]map[string]interface{}, 0, len(*netConfig.IpConfigurations))
+			for _, ipConfig := range *netConfig.IpConfigurations {
+				config := make(map[string]interface{})
+				config["name"] = ipConfig.Name
+
+				if ipConfig.Subnet != nil {
+					config["subnet_id"] = ipConfig.Subnet.Id
+				}
+
+				addressPools := make([]interface{}, 0)
+				if ipConfig.ApplicationGatewayBackendAddressPools != nil {
+					for _, pool := range *ipConfig.ApplicationGatewayBackendAddressPools {
+						if v := pool.Id; len(v) > 0 {
+							addressPools = append(addressPools, v)
+						}
+					}
+				}
+				config["application_gateway_backend_address_pool_ids"] = schema.NewSet(schema.HashString, addressPools)
+
+				applicationSecurityGroups := make([]interface{}, 0)
+				if ipConfig.ApplicationSecurityGroups != nil {
+					for _, asg := range *ipConfig.ApplicationSecurityGroups {
+						if v := asg.Id; len(v) > 0 {
+							applicationSecurityGroups = append(applicationSecurityGroups, v)
+						}
+					}
+				}
+				config["application_security_group_ids"] = schema.NewSet(schema.HashString, applicationSecurityGroups)
+
+				if ipConfig.LoadBalancerBackendAddressPools != nil {
+					addressPools := make([]interface{}, 0, len(*ipConfig.LoadBalancerBackendAddressPools))
+					for _, pool := range *ipConfig.LoadBalancerBackendAddressPools {
+						if v := pool.Id; len(v) > 0 {
+							addressPools = append(addressPools, v)
+						}
+					}
+					config["load_balancer_backend_address_pool_ids"] = schema.NewSet(schema.HashString, addressPools)
+				}
+
+				if ipConfig.LoadBalancerInboundNatPools != nil {
+					inboundNatPools := make([]interface{}, 0, len(*ipConfig.LoadBalancerInboundNatPools))
+					for _, rule := range *ipConfig.LoadBalancerInboundNatPools {
+						if v := rule.Id; len(v) > 0 {
+							inboundNatPools = append(inboundNatPools, v)
+						}
+					}
+					config["load_balancer_inbound_nat_rules_ids"] = schema.NewSet(schema.HashString, inboundNatPools)
+				}
+
+				config["primary"] = ipConfig.Primary
+
+				if publicIpInfo := ipConfig.PublicIPAddressConfiguration; publicIpInfo != nil {
+					publicIpConfigs := make([]map[string]interface{}, 0, 1)
+					publicIpConfig := make(map[string]interface{})
+					if publicIpName := publicIpInfo.Name; len(publicIpName) > 0 {
+						publicIpConfig["name"] = publicIpName
+					}
+					if dns := publicIpInfo.DnsSettings; dns != nil {
+						publicIpConfig["domain_name_label"] = dns.DomainNameLabel
+					}
+					if timeout := publicIpInfo.IdleTimeoutInMinutes; timeout > 0 {
+						publicIpConfig["idle_timeout"] = timeout
+					}
+					publicIpConfigs = append(publicIpConfigs, publicIpConfig)
+					config["public_ip_address_configuration"] = publicIpConfigs
+				}
+
+				ipConfigs = append(ipConfigs, config)
+			}
+
+			s["ip_configuration"] = ipConfigs
+		}
+
+		result = append(result, s)
+	}
+
+	return result
+}
+
+func flattenAzureRmVirtualMachineScaleSetStorageProfileDataDisk(disks *[]duplosdk.DuploVirtualMachineScaleSetDataDisk) interface{} {
+	result := make([]interface{}, len(*disks))
+	for i, disk := range *disks {
+		l := make(map[string]interface{})
+		if disk.ManagedDisk != nil {
+			l["managed_disk_type"] = string(disk.ManagedDisk.StorageAccountType)
+		}
+
+		l["create_option"] = disk.CreateOption
+		l["caching"] = string(disk.Caching)
+		if disk.DiskSizeGB > 0 {
+			l["disk_size_gb"] = disk.DiskSizeGB
+		}
+		if v := disk.Lun; v > 0 {
+			l["lun"] = v
+		}
+
+		result[i] = l
+	}
+	return result
+}
+
+func flattenAzureRmVirtualMachineScaleSetStorageProfileImageReference(image *duplosdk.DuploStorageProfileImageReference) []interface{} {
+	result := make(map[string]interface{})
+	if len(image.Publisher) > 0 {
+		result["publisher"] = image.Publisher
+	}
+	if len(image.Offer) > 0 {
+		result["offer"] = image.Offer
+	}
+	if len(image.Sku) > 0 {
+		result["sku"] = image.Sku
+	}
+	if len(image.Version) > 0 {
+		result["version"] = image.Version
+	}
+	if len(image.Id) > 0 {
+		result["id"] = image.Id
+	}
+
+	return []interface{}{result}
+}
+
+func flattenAzureRmVirtualMachineScaleSetStorageProfileOSDisk(profile *duplosdk.DuploVirtualMachineScaleSetOSDisk) []interface{} {
+	result := make(map[string]interface{})
+
+	if len(profile.Name) > 0 {
+		result["name"] = profile.Name
+	}
+
+	if profile.Image != nil {
+		result["image"] = profile.Image.Uri
+	}
+
+	containers := make([]interface{}, 0)
+	if profile.VhdContainers != nil {
+		for _, container := range profile.VhdContainers {
+			containers = append(containers, container)
+		}
+	}
+	result["vhd_containers"] = schema.NewSet(schema.HashString, containers)
+
+	if profile.ManagedDisk != nil {
+		result["managed_disk_type"] = string(profile.ManagedDisk.StorageAccountType)
+	}
+
+	result["caching"] = profile.Caching
+	result["create_option"] = profile.CreateOption
+	result["os_type"] = profile.OsType
+
+	return []interface{}{result}
+}
+
+func flattenAzureRmVirtualMachineScaleSetExtensionProfile(profile *duplosdk.DuploVirtualMachineScaleSetExtensionProfile) ([]map[string]interface{}, error) {
+	if profile.Extensions == nil {
+		return nil, nil
+	}
+
+	result := make([]map[string]interface{}, 0, len(*profile.Extensions))
+	for _, extension := range *profile.Extensions {
+		e := make(map[string]interface{})
+		e["name"] = extension.Name
+		e["publisher"] = extension.Publisher
+		e["type"] = extension.Type
+		e["type_handler_version"] = extension.TypeHandlerVersion
+		e["auto_upgrade_minor_version"] = extension.AutoUpgradeMinorVersion
+
+		provisionAfterExtensions := make([]interface{}, 0)
+		if extension.ProvisionAfterExtensions != nil {
+			for _, provisionAfterExtension := range extension.ProvisionAfterExtensions {
+				provisionAfterExtensions = append(provisionAfterExtensions, provisionAfterExtension)
+			}
+		}
+		e["provision_after_extensions"] = schema.NewSet(schema.HashString, provisionAfterExtensions)
+
+		if settings := extension.Settings; settings != nil {
+			settingsJson, err := structure.FlattenJsonToString(settings)
+			if err != nil {
+				return nil, err
+			}
+			e["settings"] = settingsJson
+		}
+
+		result = append(result, e)
+	}
+
+	return result, nil
+}
+
+func flattenAzureRmVirtualMachineScaleSetPlan(plan *duplosdk.DuploAzureVirtualMachineScaleSetPlan) []interface{} {
+	result := make(map[string]interface{})
+
+	result["name"] = plan.Name
+	result["publisher"] = plan.Publisher
+	result["product"] = plan.Product
+
+	return []interface{}{result}
 }

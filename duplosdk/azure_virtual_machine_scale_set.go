@@ -7,6 +7,13 @@ import (
 type DuploSubResource struct {
 	Id string `json:"id,omitempty"`
 }
+
+type DuploUserAssignedIdentitiesId struct {
+	SubscriptionId    string
+	ResourceGroupName string
+	ResourceName      string
+}
+
 type DuploAzureVirtualMachineScaleSetSku struct {
 	Capacity int    `json:"capacity,omitempty"`
 	Tier     string `json:"tier,omitempty"`
