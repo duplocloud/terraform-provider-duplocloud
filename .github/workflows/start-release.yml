@@ -1,0 +1,62 @@
+name: Start Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Override Version'
+        required: false
+        default: '' # default to current version
+env:
+  git_user: duplo-bot
+  git_email: joe+github-bot@duplocloud.net
+jobs:
+  start-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: develop                # Always release from develop
+          fetch-depth: 0
+          persist-credentials: false  # Needed so we can push with different credentials.
+                                      # NOTE: Pushing with different credentials allows admins to push protected branches.
+                                      # NOTE: Pushing with different credentials allow workflows to trigger from the push.
+
+      # GET THE RELEASE VERSION
+      - name: Get release version
+        id: version
+        run: |
+          # Fail on errors
+          set -euo pipefail
+
+          # Use the current version if it is not being overridden
+          if [ -z "${{ github.event.inputs.version }}" ]; then
+            echo "::set-output name=release::$(sed -ne 's/^VERSION=\([0-9\.]*\).*$/\1/p' <Makefile)"
+
+          # Otherwise, the use the overridden version.
+          else
+            echo "::set-output name=release::${{ github.event.inputs.version }}"
+          fi
+
+      # START THE RELEASE
+      - name: Initialize mandatory git config
+        run: |
+          git config --global user.name $git_user &&
+          git config --global user.email $git_email
+      - name: Start gitflow release
+        uses: duplocloud/ghactions-start-gitflow-release@master
+        with:
+          github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
+          version: "${{ steps.version.outputs.release }}"
+          precommit_run: |
+            # Fail on errors
+            set -euo pipefail
+
+            if [ -z "${{ github.event.inputs.version }}" ]; then
+              version="${{ steps.version.outputs.release }}"
+
+              # Replace the version number in all affected files
+              sed -e 's/^\(VERSION=\)[0-9\.]*/\1'"$version"'/g' -i Makefile
+              find examples -name main.tf -exec \
+                sed -e 's/\(version = "\)[0-9\.]*\(".*# RELEASE VERSION\)/\1'"$version"'\2/g' -i~ \{\} \;
+            fi

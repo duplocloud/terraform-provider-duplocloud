@@ -1,0 +1,72 @@
+name: Finish Release
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
+env:
+  git_user: duplo-bot
+  git_email: joe+github-bot@duplocloud.net
+jobs:
+  finish-release:
+    if: github.event.pull_request.merged == true && (startsWith(github.head_ref, 'refs/heads/release/') || startsWith(github.head_ref, 'release/'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: master                 # Always finish releases from the "merged to" master
+          fetch-depth: 0
+          persist-credentials: false  # Needed so we can push with different credentials.
+                                      # NOTE: Pushing with different credentials allows admins to push protected branches.
+                                      # NOTE: Pushing with different credentials allow workflows to trigger from the push.
+
+      # FINISH THE RELEASE
+      - name: Initialize mandatory git config
+        run: |
+          git config --global user.name $git_user &&
+          git config --global user.email $git_email
+      - name: Finish gitflow release
+        id: finish-release
+        uses: duplocloud/ghactions-finish-gitflow-release@master
+        with:
+          github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
+
+  version-bump:
+    runs-on: ubuntu-latest
+    needs:
+      - finish-release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: develop
+
+      # BUMP THE DEVELOPMENT VERSION
+      - name: Initialize mandatory git config
+        run: |
+          git config --global user.name $git_user &&
+          git config --global user.email $git_email
+      - name: Version bump
+        run: |
+          set -euo pipefail
+
+          # Determine the new version
+          current="$(sed -ne 's/^VERSION=\([0-9\.]*\).*$/\1/p' <Makefile)"
+          bump="$(( ${current##*.} + 1))"
+          prefix="${current%.*}"
+          version="${prefix}.${bump}"
+
+          # Replace the version number in all affected files
+          sed -e 's/^\(VERSION=\)[0-9\.]*/\1'"$version"'/g' -i Makefile
+          find examples -name main.tf -exec \
+            sed -e 's/\(version = "\)[0-9\.]*\(".*# RELEASE VERSION\)/\1'"$version"'\2/g' -i~ \{\} \;
+
+          # Commit
+          git commit -m 'version bump' Makefile
+      - name: Push develop
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
+          branch: develop
