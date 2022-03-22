@@ -172,6 +172,20 @@ type DuploReplicationControllerDeleteRequest struct {
 	State         string `json:"State"`
 }
 
+type DuploLbDnsRequest struct {
+	ReplicationControllerName string `json:"ReplicationControllerName"`
+	DnsPrfx                   string `json:"Name"`
+	State                     string `json:"State,omitempty"`
+}
+
+type DuploLbWafUpdateRequest struct {
+	ReplicationControllerName string `json:"RoleName"`
+	WebAclId                  string `json:"WebACLId"`
+	State                     string `json:"State,omitempty"`
+	IsEcsLB                   bool   `json:"IsEcsLB"`
+	IsPassThruLB              bool   `json:"IsPassThruLB"`
+}
+
 // ReplicationControllerList retrieves a list of replication controllers via the Duplo API.
 func (c *Client) ReplicationControllerList(tenantID string) (*[]DuploReplicationController, ClientError) {
 	rp := []DuploReplicationController{}
@@ -326,4 +340,63 @@ func (c *Client) ReplicationControllerLbConfigurationDeleteAll(tenantID, name st
 	}
 
 	return nil
+}
+
+// ReplicationControllerLbWafGet gets a replication controller LB's WAF ACL ID via the Duplo API.
+func (c *Client) ReplicationControllerLbWafGet(tenantID, name string) (string, ClientError) {
+	wafAclId := ""
+	err := c.getAPI(
+		fmt.Sprintf("ReplicationControllerLbGetWaf(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/GetWafInLb/%s", tenantID, name),
+		&wafAclId,
+	)
+	return wafAclId, err
+}
+
+// ReplicationControllerLbWafUpdate creates or updates a replication controller LB's WAF ACL ID via the Duplo API.
+func (c *Client) ReplicationControllerLbWafUpdate(tenantID, name string, rq *DuploLbWafUpdateRequest) ClientError {
+	rq.ReplicationControllerName = name
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerLbWafUpdate(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/UpdateWafInLb", tenantID),
+		&rq,
+		nil,
+	)
+}
+
+// ReplicationControllerLbWafDelete deletes a replication controller LB's WAF ACL ID via the Duplo API.
+func (c *Client) ReplicationControllerLbWafDelete(tenantID, name string, rq *DuploLbWafUpdateRequest) ClientError {
+	rq.State = "delete"
+	rq.ReplicationControllerName = name
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerLbWafDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/UpdateWafInLb", tenantID),
+		&rq,
+		nil,
+	)
+}
+
+// ReplicationControllerLbDnsUpdate creates or updates a replication controller LB's DNS prefix via the Duplo API.
+func (c *Client) ReplicationControllerLbDnsUpdate(tenantID, name string, rq *DuploLbDnsRequest) ClientError {
+	rq.ReplicationControllerName = name
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerLbDnsUpdate(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/DnsNameUpdate", tenantID),
+		&rq,
+		nil,
+	)
+}
+
+// ReplicationControllerLbDnsDelete deletes a replication controller LB's DNS prefix via the Duplo API.
+func (c *Client) ReplicationControllerLbDnsDelete(tenantID, name string) ClientError {
+	rq := &DuploLbDnsRequest{
+		ReplicationControllerName: name,
+		State:                     "delete",
+	}
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerLbDnsUpdate(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/DnsNameUpdate", tenantID),
+		&rq,
+		nil,
+	)
 }
