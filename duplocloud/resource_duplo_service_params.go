@@ -219,19 +219,55 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 
 /// DELETE resource
 func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	id := d.Id()
-	log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s): start", id)
+	// Parse the identifying attributes
+	tenantID, name := parseDuploServiceParamsIdParts(d.Id())
+	if tenantID == "" || name == "" {
+		return diag.Errorf("Invalid resource ID: %s", d.Id())
+	}
+	log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s, %s): start", tenantID, name)
 
-	// Delete the object from Duplo
-	tenantID := d.Get("tenant_id").(string)
-	name := d.Get("replication_controller_name").(string)
+	// Get the service from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	err := c.DuploServiceParamsDelete(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	duplo, derr := getReplicationControllerIfHasAlb(c, tenantID, name)
+	if derr != nil {
+		return derr
 	}
 
-	log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s): end", id)
+	// We have an ALB.
+	if duplo != nil {
+		details, err := getDuploServiceAwsLbSettings(tenantID, duplo, c)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// The ALB is active.
+		if details != nil && details.State != nil || details.State.Code != nil && strings.ToLower(details.State.Code.Value) == "active" {
+			c := m.(*duplosdk.Client)
+
+			// Delete the DNS settings.
+			if duplo.DnsPrfx != "" {
+				err := c.ReplicationControllerLbDnsDelete(tenantID, name)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+			}
+
+			// Delete the WAF settings.
+			wafRq := duplosdk.DuploLbWafUpdateRequest{
+				IsEcsLB:      false,
+				IsPassThruLB: false,
+			}
+			wafRq.WebAclId, err = c.ReplicationControllerLbWafGet(tenantID, name)
+			if err == nil && wafRq.WebAclId != "" {
+				err = c.ReplicationControllerLbWafDelete(tenantID, name, &wafRq)
+			}
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
+	log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s, %s): start", tenantID, name)
 
 	return nil
 }
