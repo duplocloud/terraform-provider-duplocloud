@@ -58,5 +58,5 @@ jobs:
               # Replace the version number in all affected files
               sed -e 's/^\(VERSION=\)[0-9\.]*/\1'"$version"'/g' -i Makefile
               find examples -name main.tf -exec \
-                sed -e 's/\(version = "\)[0-9\.]*\(".*# RELEASE VERSION\)/\1'"$version"'\2/g' -i~ \{\} \;
+                sed -e 's/\(version = "\)[0-9\.]*\(".*# RELEASE VERSION\)/\1'"$version"'\2/g' -i \{\} \;
             fi
