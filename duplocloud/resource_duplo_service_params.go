@@ -94,39 +94,43 @@ func resourceDuploServiceParams() *schema.Resource {
 func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
-	id := d.Id()
-	log.Printf("[TRACE] resourceDuploServiceParamsRead(%s): start", id)
-
-	// Get the object from Duplo, handling a missing object
-	idParts := strings.SplitN(id, "/", 5)
-	if len(idParts) < 5 {
-		return diag.Errorf("Invalid resource ID: %s", id)
+	// Parse the identifying attributes
+	tenantID, name := parseDuploServiceParamsIdParts(d.Id())
+	if tenantID == "" || name == "" {
+		return diag.Errorf("Invalid resource ID: %s", d.Id())
 	}
-	tenantID := idParts[2]
-	name := idParts[4]
+	log.Printf("[TRACE] resourceDuploServiceParamsRead(%s, %s): start", tenantID, name)
+
+	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.DuploServiceParamsGet(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	duplo, derr := getReplicationControllerIfHasAlb(c, tenantID, name)
+	if derr != nil {
+		return derr
 	}
 	if duplo == nil {
-		d.SetId("")
+		d.SetId("") // object missing
 		return nil
 	}
 
-	// Convert the object into Terraform resource data
-	d.Set("replication_controller_name", duplo.ReplicationControllerName)
-	d.Set("webaclid", duplo.WebACLId)
-	d.Set("tenant_id", duplo.TenantID)
-	d.Set("dns_prfx", duplo.DNSPrfx)
-
-	// Next, look for load balancer settings.
-	err = readDuploServiceAwsLbSettings(tenantID, name, d, c)
+	// Get the WAF information.
+	webAclId, err := c.ReplicationControllerLbWafGet(tenantID, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[TRACE] resourceDuploServiceParamsRead(%s): end", id)
+	// Convert the object into Terraform resource data
+	d.Set("replication_controller_name", duplo.Name)
+	d.Set("tenant_id", tenantID)
+	d.Set("dns_prfx", duplo.DnsPrfx)
+	d.Set("webaclid", webAclId)
+
+	// Next, look for load balancer settings.
+	err = readDuploServiceAwsLbSettings(tenantID, duplo, d, c)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	log.Printf("[TRACE] resourceDuploServiceParamsRead(%s, %s): end", tenantID, name)
 	return nil
 }
 
@@ -202,17 +206,7 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func readDuploServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
-
-	// First, figure out what cloud this is.
-	rpc, err := c.ReplicationControllerGet(tenantID, name)
-	if err != nil {
-		return err
-	}
-	if rpc == nil {
-		d.SetId("") // object missing
-		return nil
-	}
+func readDuploServiceAwsLbSettings(tenantID string, rpc *duplosdk.DuploReplicationController, d *schema.ResourceData, c *duplosdk.Client) error {
 
 	// If we are not AWS, just return for now.
 	if rpc.Template == nil || rpc.Template.Cloud != 0 {
@@ -220,7 +214,7 @@ func readDuploServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 	}
 
 	// Next, look for load balancer settings.
-	details, err := c.TenantGetLbDetailsInService(tenantID, name)
+	details, err := c.TenantGetLbDetailsInService(tenantID, rpc.Name)
 	if err != nil {
 		return err
 	}
@@ -281,4 +275,33 @@ func updateDuploServiceAwsLbSettings(tenantID string, name string, d *schema.Res
 	}
 
 	return nil
+}
+
+func parseDuploServiceParamsIdParts(id string) (tenantID, name string) {
+	idParts := strings.SplitN(id, "/", 5)
+	if len(idParts) == 5 {
+		tenantID, name = idParts[2], idParts[4]
+	}
+	return
+}
+
+func getReplicationControllerIfHasAlb(client *duplosdk.Client, tenantID, name string) (*duplosdk.DuploReplicationController, diag.Diagnostics) {
+
+	// Get the object from Duplo.
+	duplo, err := client.ReplicationControllerGet(tenantID, name)
+	if err != nil {
+		return nil, diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
+	}
+
+	// Check for an application load balancer
+	if duplo != nil && duplo.Template != nil {
+		for _, lb := range duplo.Template.LBConfigurations {
+			if lb.LbType == 2 {
+				return duplo, nil
+			}
+		}
+	}
+
+	// Not found.
+	return nil, nil
 }
