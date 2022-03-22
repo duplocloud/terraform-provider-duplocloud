@@ -31,12 +31,3 @@ func (c *Client) DuploServiceParamsGetList(tenantID string) (*[]DuploServicePara
 	}
 	return &list, nil
 }
-
-// DuploServiceParamsDelete deletes a service's load balancer via the Duplo API.
-func (c *Client) DuploServiceParamsDelete(tenantID string, name string) ClientError {
-	// Delete the service parameters
-	return c.deleteAPI(
-		fmt.Sprintf("DuploServiceParamsDelete(%s, %s)", tenantID, name),
-		fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerParamsV2/%s", tenantID, name),
-		nil)
-}
