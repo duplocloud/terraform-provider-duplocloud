@@ -32,23 +32,6 @@ func (c *Client) DuploServiceParamsGetList(tenantID string) (*[]DuploServicePara
 	return &list, nil
 }
 
-// DuploServiceParamsGet retrieves a service's load balancer via the Duplo API.
-func (c *Client) DuploServiceParamsGet(tenantID string, name string) (*DuploServiceParams, ClientError) {
-	// Retrieve the object.
-	duploObject := DuploServiceParams{}
-	err := c.getAPI(
-		fmt.Sprintf("DuploServiceParamsGet(%s, %s)", tenantID, name),
-		fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerParamsV2/%s", tenantID, name),
-		&duploObject)
-	if err != nil || duploObject.ReplicationControllerName == "" {
-		return nil, err
-	}
-
-	// Fill in the tenant ID and return the object
-	duploObject.TenantID = tenantID
-	return &duploObject, nil
-}
-
 // DuploServiceParamsCreate creates a service's load balancer via the Duplo API.
 func (c *Client) DuploServiceParamsCreate(tenantID string, rq *DuploServiceParams) (*DuploServiceParams, ClientError) {
 	return c.DuploServiceParamsCreateOrUpdate(tenantID, rq, false)
