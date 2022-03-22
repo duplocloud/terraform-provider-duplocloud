@@ -66,6 +66,10 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional: true,
 			Required: false,
 		},
+		"hpa_specs": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
 		"allocation_tags": {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -220,7 +224,8 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		IsDaemonset:                       d.Get("is_daemonset").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
-
+	hpaSpec, _ := expandHPASpecs(d.Get("hpa_specs").(string))
+	rq.HPASpecs = hpaSpec
 	// Post the object to Duplo
 	id := fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerApiV2/%s", tenantID, name)
 	c := m.(*duplosdk.Client)
@@ -486,5 +491,11 @@ func parseDuploServiceIdParts(id string) (tenantID, name string) {
 	if len(idParts) == 5 {
 		tenantID, name = idParts[2], idParts[4]
 	}
+	return
+}
+
+func expandHPASpecs(specs string) (hpaSpec map[string]interface{}, err error) {
+	err = json.Unmarshal([]byte(specs), &hpaSpec)
+	log.Printf("[DEBUG] Expanded duplocloud_duplo_service.hpa_specs: %v", hpaSpec)
 	return
 }

@@ -23,6 +23,7 @@ type DuploReplicationController struct {
 	Volumes                           string                 `json:"Volumes,omitempty"`
 	Template                          *DuploPodTemplate      `json:"Template,omitempty"`
 	Tags                              *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
 }
 
 // DuploPodTemplate represents a pod template in the Duplo SDK
@@ -136,7 +137,7 @@ type DuploReplicationControllerCreateRequest struct {
 	OtherDockerConfig                 string                 `json:"OtherDockerConfig,omitempty"`
 	OtherDockerHostConfig             string                 `json:"OtherDockerHostConfig,omitempty"`
 	Tags                              *[]DuploKeyStringValue `json:"Tags,omitempty"`
-
+	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
 	// TODO: Test this field
 	Commands string `json:"Commands,omitempty"`
 
@@ -144,21 +145,22 @@ type DuploReplicationControllerCreateRequest struct {
 }
 
 type DuploReplicationControllerUpdateRequest struct {
-	Name                              string `json:"Name"`
-	Image                             string `json:"Image"`
-	AgentPlatform                     int    `json:"AgentPlatform"`
-	Replicas                          int    `json:"Replicas,omitempty"`
-	ReplicasMatchingAsgName           string `json:"ReplicasMatchingAsgName,omitempty"`
-	IsDaemonset                       bool   `json:"IsDaemonset"`
-	IsLBSyncedDeployment              bool   `json:"IsLBSyncedDeployment"`
-	IsReplicaCollocationAllowed       bool   `json:"IsReplicaCollocationAllowed"`
-	IsAnyHostAllowed                  bool   `json:"IsAnyHostAllowed"`
-	IsCloudCredsFromK8sServiceAccount bool   `json:"IsCloudCredsFromK8sServiceAccount"`
-	AllocationTags                    string `json:"AllocationTags,omitempty"`
-	Volumes                           string `json:"Volumes,omitempty"`
-	ExtraConfig                       string `json:"ExtraConfig,omitempty"`
-	OtherDockerConfig                 string `json:"OtherDockerConfig,omitempty"`
-	OtherDockerHostConfig             string `json:"OtherDockerHostConfig,omitempty"`
+	Name                              string                 `json:"Name"`
+	Image                             string                 `json:"Image"`
+	AgentPlatform                     int                    `json:"AgentPlatform"`
+	Replicas                          int                    `json:"Replicas,omitempty"`
+	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
+	IsDaemonset                       bool                   `json:"IsDaemonset"`
+	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment"`
+	IsReplicaCollocationAllowed       bool                   `json:"IsReplicaCollocationAllowed"`
+	IsAnyHostAllowed                  bool                   `json:"IsAnyHostAllowed"`
+	IsCloudCredsFromK8sServiceAccount bool                   `json:"IsCloudCredsFromK8sServiceAccount"`
+	AllocationTags                    string                 `json:"AllocationTags,omitempty"`
+	Volumes                           string                 `json:"Volumes,omitempty"`
+	ExtraConfig                       string                 `json:"ExtraConfig,omitempty"`
+	OtherDockerConfig                 string                 `json:"OtherDockerConfig,omitempty"`
+	OtherDockerHostConfig             string                 `json:"OtherDockerHostConfig,omitempty"`
+	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
 }
 
 type DuploReplicationControllerDeleteRequest struct {
