@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"log"
@@ -30,6 +31,10 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"extra_config": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"hpa_specs": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
@@ -135,6 +140,9 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
+	if len(duplo.HPASpecs) > 0 {
+		flattenHPASpecs("hpa_specs", duplo.HPASpecs, d)
+	}
 
 	// If we have a pod template, read data from it
 	if duplo.Template != nil {
@@ -150,5 +158,18 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 		if duplo.Template.Containers != nil && len(*duplo.Template.Containers) > 0 {
 			d.Set("docker_image", (*duplo.Template.Containers)[0].Image)
 		}
+	}
+}
+
+func flattenHPASpecs(field string, from interface{}, to *schema.ResourceData) {
+	var err error
+	var encoded []byte
+
+	if encoded, err = json.Marshal(from); err == nil {
+		err = to.Set(field, string(encoded))
+	}
+
+	if err != nil {
+		log.Printf("[DEBUG] flattenHPASpecs: failed to serialize %s to JSON: %s", field, err)
 	}
 }
