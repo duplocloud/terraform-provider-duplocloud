@@ -103,7 +103,7 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, derr := getReplicationControllerIfHasAlb(c, tenantID, name)
+	duplo, derr := getReplicationControllerIfHasCloudLb(c, tenantID, name)
 	if derr != nil {
 		return derr
 	}
@@ -153,7 +153,7 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 
 	// Get the service from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, derr := getReplicationControllerIfHasAlb(c, tenantID, name)
+	duplo, derr := getReplicationControllerIfHasCloudLb(c, tenantID, name)
 	if derr != nil {
 		return derr
 	}
@@ -228,7 +228,7 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 
 	// Get the service from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, derr := getReplicationControllerIfHasAlb(c, tenantID, name)
+	duplo, derr := getReplicationControllerIfHasCloudLb(c, tenantID, name)
 	if derr != nil {
 		return derr
 	}
@@ -353,7 +353,7 @@ func parseDuploServiceParamsIdParts(id string) (tenantID, name string) {
 	return
 }
 
-func getReplicationControllerIfHasAlb(client *duplosdk.Client, tenantID, name string) (*duplosdk.DuploReplicationController, diag.Diagnostics) {
+func getReplicationControllerIfHasCloudLb(client *duplosdk.Client, tenantID, name string) (*duplosdk.DuploReplicationController, diag.Diagnostics) {
 
 	// Get the object from Duplo.
 	duplo, err := client.ReplicationControllerGet(tenantID, name)
@@ -364,7 +364,7 @@ func getReplicationControllerIfHasAlb(client *duplosdk.Client, tenantID, name st
 	// Check for an application load balancer
 	if duplo != nil && duplo.Template != nil {
 		for _, lb := range duplo.Template.LBConfigurations {
-			if lb.LbType == 2 {
+			if lb.LbType == 1 || lb.LbType == 2 {
 				return duplo, nil
 			}
 		}
