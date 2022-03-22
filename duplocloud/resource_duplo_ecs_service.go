@@ -173,6 +173,46 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Optional:    true,
 						Computed:    true,
 					},
+					"health_check_config": {
+						Description: "Health check configuration for this load balancer.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						MaxItems:    1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"healthy_threshold_count": {
+									Type:     schema.TypeInt,
+									Optional: true,
+									Computed: true,
+								},
+								"unhealthy_threshold_count": {
+									Type:     schema.TypeInt,
+									Optional: true,
+									Computed: true,
+								},
+								"health_check_timeout_seconds": {
+									Type:     schema.TypeInt,
+									Optional: true,
+									Computed: true,
+								},
+								"health_check_interval_seconds": {
+									Type:     schema.TypeInt,
+									Optional: true,
+									Computed: true,
+								},
+								"http_success_code": {
+									Type:     schema.TypeString,
+									Optional: true,
+									Computed: true,
+								},
+								"grpc_success_code": {
+									Type:     schema.TypeString,
+									Optional: true,
+									Computed: true,
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -232,13 +272,14 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 
 	// Retrieve the load balancer settings.
 	if len(loadBalancers) > 0 {
-		err = readEcsServiceAwsLbSettings(duplo.TenantID, duplo.Name, loadBalancers[0], c)
-		if err != nil {
-			return diag.FromErr(err)
+		for _, lbc := range loadBalancers {
+			err = readEcsServiceAwsLbSettings(duplo.TenantID, duplo.Name, lbc, c)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 	d.Set("load_balancer", loadBalancers)
-
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** end")
 	return nil
 }
@@ -338,6 +379,7 @@ func ecsServiceFromState(d *schema.ResourceData) duplosdk.DuploEcsService {
 }
 
 func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConfig) []map[string]interface{} {
+	log.Printf("[TRACE] ecsLoadBalancersToState ******** start")
 	if lbcs == nil {
 		return nil
 	}
@@ -359,12 +401,56 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 		jo["is_internal"] = lbc.IsInternal
 		jo["health_check_url"] = lbc.HealthCheckURL
 		jo["certificate_arn"] = lbc.CertificateArn
+		hcConfig := ecsLoadBalancersHealthCheckConfigToState(lbc.HealthCheckConfig)
+		if hcConfig != nil {
+			jo["health_check_config"] = []interface{}{hcConfig}
+		}
+
 		ary = append(ary, jo)
 	}
-
+	log.Printf("[TRACE] ecsLoadBalancersToState ******** end")
 	return ary
 }
 
+func ecsLoadBalancersHealthCheckConfigToState(hcc *duplosdk.DuploEcsServiceLbHealthCheckConfig) map[string]interface{} {
+	log.Printf("[TRACE] ecsLoadBalancersHealthCheckConfigToState ******** start")
+	if hcc == nil {
+		return nil
+	}
+	configPresent := false
+	config := make(map[string]interface{})
+	if hcc.HealthyThresholdCount != 0 {
+		config["healthy_threshold_count"] = hcc.HealthyThresholdCount
+		configPresent = true
+	}
+	if hcc.UnhealthyThresholdCount != 0 {
+		config["unhealthy_threshold_count"] = hcc.UnhealthyThresholdCount
+		configPresent = true
+	}
+
+	if hcc.HealthCheckTimeoutSeconds != 0 {
+		config["health_check_timeout_seconds"] = hcc.HealthCheckTimeoutSeconds
+		configPresent = true
+	}
+	if hcc.HealthCheckIntervalSeconds != 0 {
+		config["health_check_interval_seconds"] = hcc.HealthCheckIntervalSeconds
+		configPresent = true
+	}
+	if len(hcc.HttpSuccessCode) > 0 {
+		config["http_success_code"] = hcc.HttpSuccessCode
+		configPresent = true
+	}
+	if len(hcc.GrpcSuccessCode) > 0 {
+		config["grpc_success_code"] = hcc.GrpcSuccessCode
+		configPresent = true
+	}
+	if !configPresent {
+		return nil
+	}
+	log.Printf("[TRACE] ecsLoadBalancersHealthCheckConfigToState ******** end")
+
+	return config
+}
 func ecsLoadBalancersFromState(d *schema.ResourceData) *[]duplosdk.DuploEcsServiceLbConfig {
 	lbList := d.Get("load_balancer").([]interface{})
 	ary := make([]duplosdk.DuploEcsServiceLbConfig, 0, len(lbList))
@@ -395,7 +481,27 @@ func ecsLoadBalancerFromState(d *schema.ResourceData, lb map[string]interface{})
 		CertificateArn:            lb["certificate_arn"].(string),
 		TgCount:                   lb["target_group_count"].(int),
 	}
+
+	if lb["health_check_config"] != nil {
+		hcc := lb["health_check_config"].([]interface{})
+		if len(hcc) > 0 && hcc[0].(map[string]interface{}) != nil {
+			lbConfig.HealthCheckConfig = ecsLoadBalancerHealthCheckConfigFromState(d, hcc[0].(map[string]interface{}))
+		}
+	}
 	return lbConfig
+}
+
+func ecsLoadBalancerHealthCheckConfigFromState(d *schema.ResourceData, lbHealthConfig map[string]interface{}) *duplosdk.DuploEcsServiceLbHealthCheckConfig {
+	log.Printf("[TRACE] ecsLoadBalancerHealthCheckConfigFromState ********: have data")
+	hcc := duplosdk.DuploEcsServiceLbHealthCheckConfig{
+		HealthyThresholdCount:      lbHealthConfig["healthy_threshold_count"].(int),
+		UnhealthyThresholdCount:    lbHealthConfig["unhealthy_threshold_count"].(int),
+		HealthCheckTimeoutSeconds:  lbHealthConfig["health_check_timeout_seconds"].(int),
+		HealthCheckIntervalSeconds: lbHealthConfig["health_check_interval_seconds"].(int),
+		HttpSuccessCode:            lbHealthConfig["http_success_code"].(string),
+		GrpcSuccessCode:            lbHealthConfig["grpc_success_code"].(string),
+	}
+	return &hcc
 }
 
 func readEcsServiceAwsLbSettings(tenantID string, name string, lb map[string]interface{}, c *duplosdk.Client) error {

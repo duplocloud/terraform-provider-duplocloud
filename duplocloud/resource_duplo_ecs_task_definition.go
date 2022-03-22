@@ -74,7 +74,9 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 				networkMode, ok := d.GetOk("network_mode")
 				isAWSVPC := ok && networkMode.(string) == "awsvpc"
-				equal, _ := ecsContainerDefinitionsAreEquivalent(old, new, isAWSVPC)
+				isLogConfigProvided := isLogConfigProvided(d)
+				log.Printf("[TRACE] Log configuration provided: => %v", isLogConfigProvided)
+				equal, _ := ecsContainerDefinitionsAreEquivalent(old, new, isAWSVPC, isLogConfigProvided)
 				return equal
 			},
 			ValidateFunc: func(v interface{}, k string) ([]string, []error) {
@@ -409,14 +411,14 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
-func ecsContainerDefinitionsAreEquivalent(old, new string, isAWSVPC bool) (bool, error) {
+func ecsContainerDefinitionsAreEquivalent(old, new string, isAWSVPC, isLogConfigProvided bool) (bool, error) {
 
-	oldCanonical, err := canonicalizeEcsContainerDefinitionsJson(old, isAWSVPC)
+	oldCanonical, err := canonicalizeEcsContainerDefinitionsJson(old, isAWSVPC, isLogConfigProvided)
 	if err != nil {
 		return false, err
 	}
 
-	newCanonical, err := canonicalizeEcsContainerDefinitionsJson(new, isAWSVPC)
+	newCanonical, err := canonicalizeEcsContainerDefinitionsJson(new, isAWSVPC, isLogConfigProvided)
 	if err != nil {
 		return false, err
 	}
@@ -436,7 +438,7 @@ func expandEcsContainerDefinitions(encoded string) (defn []interface{}, err erro
 }
 
 // Internal function to unmarshal, reduce, then canonicalize container definitions JSON.
-func canonicalizeEcsContainerDefinitionsJson(encoded string, isAWSVPC bool) (string, error) {
+func canonicalizeEcsContainerDefinitionsJson(encoded string, isAWSVPC, isLogConfigProvided bool) (string, error) {
 	var defns []interface{}
 
 	// Unmarshall, reduce, then canonicalize.
@@ -445,7 +447,7 @@ func canonicalizeEcsContainerDefinitionsJson(encoded string, isAWSVPC bool) (str
 		return encoded, err
 	}
 	for i := range defns {
-		err = reduceContainerDefinition(defns[i].(map[string]interface{}), isAWSVPC)
+		err = reduceContainerDefinition(defns[i].(map[string]interface{}), isAWSVPC, isLogConfigProvided)
 		if err != nil {
 			return encoded, err
 		}
@@ -492,7 +494,7 @@ func reorderEcsEnvironmentVariables(defn map[string]interface{}) {
 // Internal function used to reduce a container definition down to a partially "canoncalized" form.
 //
 // See: https://github.com/hashicorp/terraform-provider-aws/blob/7141d1c315dc0c221979f0a4f8855a13b545dbaf/aws/ecs_task_definition_equivalency.go#L58
-func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC bool) error {
+func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC, isLogConfigProvided bool) error {
 
 	// Ensure we are using upper-camel case.
 	makeMapUpperCamelCase(defn)
@@ -546,6 +548,11 @@ func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC bool) error
 				}
 			}
 		}
+	}
+
+	// Handle computed fields
+	if !isLogConfigProvided {
+		delete(defn, "LogConfiguration")
 	}
 
 	// Set all empty slices to nil.
@@ -711,4 +718,9 @@ func parseEcsTaskDefIdParts(id string) (tenantID, arn string, err error) {
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
 	return
+}
+
+func isLogConfigProvided(d *schema.ResourceData) bool {
+	condefs := d.Get("container_definitions").(string)
+	return strings.Contains(condefs, "LogConfiguration")
 }

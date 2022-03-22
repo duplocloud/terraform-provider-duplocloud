@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -728,4 +729,22 @@ func expandStringList(configured []interface{}) []string {
 
 func expandStringSet(configured *schema.Set) []string {
 	return expandStringList(configured.List())
+}
+
+func CaseDifference(_, old, new string, _ *schema.ResourceData) bool {
+	return strings.EqualFold(old, new)
+}
+
+func Base64EncodeIfNot(data string) string {
+	// Check whether the data is already Base64 encoded; don't double-encode
+	if base64IsEncoded(data) {
+		return data
+	}
+	// data has not been encoded encode and return
+	return base64.StdEncoding.EncodeToString([]byte(data))
+}
+
+func base64IsEncoded(data string) bool {
+	_, err := base64.StdEncoding.DecodeString(data)
+	return err == nil
 }
