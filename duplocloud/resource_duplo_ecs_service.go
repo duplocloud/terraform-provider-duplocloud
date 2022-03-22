@@ -272,13 +272,14 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 
 	// Retrieve the load balancer settings.
 	if len(loadBalancers) > 0 {
-		err = readEcsServiceAwsLbSettings(duplo.TenantID, duplo.Name, loadBalancers[0], c)
-		if err != nil {
-			return diag.FromErr(err)
+		for _, lbc := range loadBalancers {
+			err = readEcsServiceAwsLbSettings(duplo.TenantID, duplo.Name, lbc, c)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 	d.Set("load_balancer", loadBalancers)
-
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** end")
 	return nil
 }
@@ -378,6 +379,7 @@ func ecsServiceFromState(d *schema.ResourceData) duplosdk.DuploEcsService {
 }
 
 func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConfig) []map[string]interface{} {
+	log.Printf("[TRACE] ecsLoadBalancersToState ******** start")
 	if lbcs == nil {
 		return nil
 	}
@@ -399,26 +401,53 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 		jo["is_internal"] = lbc.IsInternal
 		jo["health_check_url"] = lbc.HealthCheckURL
 		jo["certificate_arn"] = lbc.CertificateArn
-		jo["health_check_config"] = []interface{}{ecsLoadBalancersHealthCheckConfigToState(lbc.HealthCheckConfig)}
+		hcConfig := ecsLoadBalancersHealthCheckConfigToState(lbc.HealthCheckConfig)
+		if hcConfig != nil {
+			jo["health_check_config"] = []interface{}{hcConfig}
+		}
+
 		ary = append(ary, jo)
 	}
-
+	log.Printf("[TRACE] ecsLoadBalancersToState ******** end")
 	return ary
 }
 
 func ecsLoadBalancersHealthCheckConfigToState(hcc *duplosdk.DuploEcsServiceLbHealthCheckConfig) map[string]interface{} {
+	log.Printf("[TRACE] ecsLoadBalancersHealthCheckConfigToState ******** start")
 	if hcc == nil {
 		return nil
 	}
-
+	configPresent := false
 	config := make(map[string]interface{})
+	if hcc.HealthyThresholdCount != 0 {
+		config["healthy_threshold_count"] = hcc.HealthyThresholdCount
+		configPresent = true
+	}
+	if hcc.UnhealthyThresholdCount != 0 {
+		config["unhealthy_threshold_count"] = hcc.UnhealthyThresholdCount
+		configPresent = true
+	}
 
-	config["healthy_Threshold_count"] = hcc.HealthyThresholdCount
-	config["unhealthy_threshold_count"] = hcc.UnhealthyThresholdCount
-	config["health_check_timeout_seconds"] = hcc.HealthCheckTimeoutSeconds
-	config["health_check_interval_seconds"] = hcc.HealthCheckIntervalSeconds
-	config["http_success_code"] = hcc.HttpSuccessCode
-	config["grpc_success_code"] = hcc.GrpcSuccessCode
+	if hcc.HealthCheckTimeoutSeconds != 0 {
+		config["health_check_timeout_seconds"] = hcc.HealthCheckTimeoutSeconds
+		configPresent = true
+	}
+	if hcc.HealthCheckIntervalSeconds != 0 {
+		config["health_check_interval_seconds"] = hcc.HealthCheckIntervalSeconds
+		configPresent = true
+	}
+	if len(hcc.HttpSuccessCode) > 0 {
+		config["http_success_code"] = hcc.HttpSuccessCode
+		configPresent = true
+	}
+	if len(hcc.GrpcSuccessCode) > 0 {
+		config["grpc_success_code"] = hcc.GrpcSuccessCode
+		configPresent = true
+	}
+	if !configPresent {
+		return nil
+	}
+	log.Printf("[TRACE] ecsLoadBalancersHealthCheckConfigToState ******** end")
 
 	return config
 }
