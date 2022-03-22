@@ -223,7 +223,7 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	// Apply the data
 	asgProfileToState(d, profile)
-
+	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceAwsASGRead(%s): end", id)
 	return nil
 }
@@ -280,7 +280,6 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("instance_count", duplo.DesiredCapacity)
 	d.Set("min_instance_count", duplo.MinSize)
 	d.Set("max_instance_count", duplo.MaxSize)
-	d.Set("tenant_id", duplo.TenantId)
 	d.Set("fullname", duplo.FriendlyName)
 	d.Set("capacity", duplo.Capacity)
 	d.Set("is_minion", duplo.IsMinion)
