@@ -88,10 +88,17 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Optional:    true,
 		},
 		"external_traffic_policy": {
-			Description: "Only for K8S Node Port (`lb_type = 4`).  Set the kubernetes service `externalTrafficPolicy` attribute.",
+			Description: "Only for K8S Node Port (`lb_type = 4`) or load balancers in Kubernetes.  Set the kubernetes service `externalTrafficPolicy` attribute.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
+		},
+		"extra_selector_label": {
+			Description: "Only for K8S services or load balancers in Kubernetes.  Sets an additional selector label to narrow which pods can receive traffic.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			Elem:        KeyValueSchema(),
 		},
 		"backend_protocol_version": {
 			Type:     schema.TypeString,
@@ -292,6 +299,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					IsNative:                  lbc["is_native"].(bool),
 					IsInternal:                lbc["is_internal"].(bool),
 					ExternalTrafficPolicy:     lbc["external_traffic_policy"].(string),
+					ExtraSelectorLabels:       keyValueFromState("extra_selector_label", d),
 				}
 				if item.LbType == 5 {
 					item.HostNames = &[]string{lbc["host_name"].(string)}
@@ -435,5 +443,6 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"frontend_ip":                 lb.FrontendIP,
 		"is_native":                   lb.IsNative,
 		"is_internal":                 lb.IsInternal,
+		"extra_selector_label":        keyValueToState("extra_selector_label", lb.ExtraSelectorLabels),
 	}
 }

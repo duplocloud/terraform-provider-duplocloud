@@ -88,6 +88,9 @@ type DuploLbConfiguration struct {
 	IsNative                  bool                      `json:"IsNative,omitempty"`
 	HealthCheckConfig         *DuploLbHealthCheckConfig `json:"HealthCheckConfig,omitempty"`
 
+	// Only for K8s services
+	ExtraSelectorLabels *[]DuploKeyStringValue `json:"ExtraSelectorLabels,omitempty"`
+
 	// Only for Azure and Lbtype 5
 	HostNames *[]string `json:"HostNames,omitempty"`
 
