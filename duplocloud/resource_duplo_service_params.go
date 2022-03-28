@@ -371,7 +371,7 @@ func getReplicationControllerIfHasCloudLb(client *duplosdk.Client, tenantID, nam
 	// Check for an application load balancer
 	if duplo != nil && duplo.Template != nil {
 		for _, lb := range duplo.Template.LBConfigurations {
-			if lb.LbType == 1 || lb.LbType == 2 || lb.LbType == 6 {
+			if lb.LbType == 1 || lb.LbType == 2 || lb.LbType == 6 { // ALB, Healthcheck only, or NLB
 				return duplo, nil
 			}
 		}
@@ -384,7 +384,7 @@ func getReplicationControllerIfHasCloudLb(client *duplosdk.Client, tenantID, nam
 func doesReplicationControllerHaveAlb(duplo *duplosdk.DuploReplicationController) bool {
 	if duplo != nil && duplo.Template != nil {
 		for _, lb := range duplo.Template.LBConfigurations {
-			if lb.LbType == 1 || lb.LbType == 2 {
+			if lb.LbType == 1 || lb.LbType == 2 { // ALB or Healthcheck only
 				return true
 			}
 		}
