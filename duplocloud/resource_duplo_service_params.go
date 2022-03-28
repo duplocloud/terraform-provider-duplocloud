@@ -113,9 +113,12 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// Get the WAF information.
-	webAclId, err := c.ReplicationControllerLbWafGet(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	webAclId := ""
+	if doesReplicationControllerHaveAlb(duplo) {
+		webAclId, err = c.ReplicationControllerLbWafGet(tenantID, name)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// Convert the object into Terraform resource data
@@ -172,29 +175,11 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 
 	// Update the DNS.
 	dns := d.Get("dns_prfx").(string)
-	if dns != "" {
+	if dns != "" && dns != duplo.DnsPrfx {
 		dnsRq := duplosdk.DuploLbDnsRequest{DnsPrfx: dns}
 		err = c.ReplicationControllerLbDnsUpdate(tenantID, name, &dnsRq)
-	} else {
+	} else if dns == "" && duplo.DnsPrfx != "" {
 		err = c.ReplicationControllerLbDnsDelete(tenantID, name)
-	}
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Update the WAF.
-	wafRq := duplosdk.DuploLbWafUpdateRequest{
-		WebAclId:     d.Get("webaclid").(string),
-		IsEcsLB:      false,
-		IsPassThruLB: false,
-	}
-	if wafRq.WebAclId != "" {
-		err = c.ReplicationControllerLbWafUpdate(tenantID, name, &wafRq)
-	} else {
-		wafRq.WebAclId, err = c.ReplicationControllerLbWafGet(tenantID, name)
-		if err == nil && wafRq.WebAclId != "" {
-			err = c.ReplicationControllerLbWafDelete(tenantID, name, &wafRq)
-		}
 	}
 	if err != nil {
 		return diag.FromErr(err)
@@ -205,10 +190,30 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 		d.SetId(fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerParamsV2/%s", tenantID, name))
 	}
 
-	// Next, we need to apply load balancer settings.
-	err = updateDuploServiceAwsLbSettings(tenantID, details, d, c)
-	if err != nil {
-		return diag.Errorf("Error applying LB settings for tenant %s service '%s': %s", tenantID, name, err)
+	// Update the WAF.
+	if doesReplicationControllerHaveAlb(duplo) {
+		wafRq := duplosdk.DuploLbWafUpdateRequest{
+			WebAclId:     d.Get("webaclid").(string),
+			IsEcsLB:      false,
+			IsPassThruLB: false,
+		}
+		if wafRq.WebAclId != "" {
+			err = c.ReplicationControllerLbWafUpdate(tenantID, name, &wafRq)
+		} else {
+			wafRq.WebAclId, err = c.ReplicationControllerLbWafGet(tenantID, name)
+			if err == nil && wafRq.WebAclId != "" {
+				err = c.ReplicationControllerLbWafDelete(tenantID, name, &wafRq)
+			}
+		}
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Next, we need to apply load balancer settings.
+		err = updateDuploServiceAwsLbSettings(tenantID, details, d, c)
+		if err != nil {
+			return diag.Errorf("Error applying LB settings for tenant %s service '%s': %s", tenantID, name, err)
+		}
 	}
 
 	// Finally, we read the information back.
@@ -233,7 +238,7 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 		return derr
 	}
 
-	// We have an ALB.
+	// We have a cloud LB.
 	if duplo != nil {
 		details, err := getDuploServiceAwsLbSettings(tenantID, duplo, c)
 		if err != nil {
@@ -253,16 +258,18 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 			}
 
 			// Delete the WAF settings.
-			wafRq := duplosdk.DuploLbWafUpdateRequest{
-				IsEcsLB:      false,
-				IsPassThruLB: false,
-			}
-			wafRq.WebAclId, err = c.ReplicationControllerLbWafGet(tenantID, name)
-			if err == nil && wafRq.WebAclId != "" {
-				err = c.ReplicationControllerLbWafDelete(tenantID, name, &wafRq)
-			}
-			if err != nil {
-				return diag.FromErr(err)
+			if doesReplicationControllerHaveAlb(duplo) {
+				wafRq := duplosdk.DuploLbWafUpdateRequest{
+					IsEcsLB:      false,
+					IsPassThruLB: false,
+				}
+				wafRq.WebAclId, err = c.ReplicationControllerLbWafGet(tenantID, name)
+				if err == nil && wafRq.WebAclId != "" {
+					err = c.ReplicationControllerLbWafDelete(tenantID, name, &wafRq)
+				}
+				if err != nil {
+					return diag.FromErr(err)
+				}
 			}
 		}
 	}
@@ -364,7 +371,7 @@ func getReplicationControllerIfHasCloudLb(client *duplosdk.Client, tenantID, nam
 	// Check for an application load balancer
 	if duplo != nil && duplo.Template != nil {
 		for _, lb := range duplo.Template.LBConfigurations {
-			if lb.LbType == 1 || lb.LbType == 2 {
+			if lb.LbType == 1 || lb.LbType == 2 || lb.LbType == 6 {
 				return duplo, nil
 			}
 		}
@@ -372,4 +379,15 @@ func getReplicationControllerIfHasCloudLb(client *duplosdk.Client, tenantID, nam
 
 	// Not found.
 	return nil, nil
+}
+
+func doesReplicationControllerHaveAlb(duplo *duplosdk.DuploReplicationController) bool {
+	if duplo != nil && duplo.Template != nil {
+		for _, lb := range duplo.Template.LBConfigurations {
+			if lb.LbType == 1 || lb.LbType == 2 {
+				return true
+			}
+		}
+	}
+	return false
 }

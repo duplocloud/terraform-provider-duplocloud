@@ -299,7 +299,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					IsNative:                  lbc["is_native"].(bool),
 					IsInternal:                lbc["is_internal"].(bool),
 					ExternalTrafficPolicy:     lbc["external_traffic_policy"].(string),
-					ExtraSelectorLabels:       keyValueFromState("extra_selector_label", d),
+					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
 				}
 				if item.LbType == 5 {
 					item.HostNames = &[]string{lbc["host_name"].(string)}
