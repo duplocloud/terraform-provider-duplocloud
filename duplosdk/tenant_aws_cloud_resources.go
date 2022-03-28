@@ -616,6 +616,20 @@ func (c *Client) TenantGetApplicationLbSettings(tenantID string, loadBalancerArn
 	return &rp, err
 }
 
+// TenantGetLbDetailsInService retrieves application load balancer details via a Duplo service.
+func (c *Client) TenantGetAlbDetailsInService(tenantID string, name string) (*DuploAwsLbDetailsInService, ClientError) {
+	apiName := fmt.Sprintf("TenantGetAlbDetailsInService(%s, %s)", tenantID, name)
+	details := DuploAwsLbDetailsInService{}
+
+	// Get the list from Duplo
+	err := c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetALbDetailsInService/%s", tenantID, name), &details)
+	if err != nil {
+		return nil, err
+	}
+
+	return &details, nil
+}
+
 // TenantGetLbDetailsInService retrieves load balancer details via a Duplo service.
 func (c *Client) TenantGetLbDetailsInService(tenantID string, name string) (*DuploAwsLbDetailsInService, ClientError) {
 	apiName := fmt.Sprintf("TenantGetLbDetailsInService(%s, %s)", tenantID, name)
