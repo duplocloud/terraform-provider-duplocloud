@@ -33,7 +33,7 @@ resource "duplocloud_duplo_service" "test" {
   agent_platform = 0
   docker_image   = "nginx:latest"
   replicas       = 1
-/*
+  /*
   other_docker_config = jsonencode({
     Env = [
       { Name = "NGINX_HOST", Value = "foo" },

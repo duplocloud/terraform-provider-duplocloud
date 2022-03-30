@@ -53,6 +53,7 @@ Read-Only:
 - **dns_name** (String)
 - **external_port** (Number)
 - **external_traffic_policy** (String)
+- **extra_selector_label** (List of Object) (see [below for nested schema](#nestedobjatt--services--lbconfigs--extra_selector_label))
 - **frontend_ip** (String)
 - **health_check_url** (String)
 - **host_name** (String)
@@ -65,5 +66,13 @@ Read-Only:
 - **port** (String)
 - **protocol** (String)
 - **replication_controller_name** (String)
+
+<a id="nestedobjatt--services--lbconfigs--extra_selector_label"></a>
+### Nested Schema for `services.lbconfigs.extra_selector_label`
+
+Read-Only:
+
+- **key** (String)
+- **value** (String)
 
 
