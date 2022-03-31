@@ -396,7 +396,7 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 			// Find a cloud load balancer, and get it's status.
 			isCloudLb := false
 			for _, lb := range *list {
-				if lb.LbType != 2 && lb.LbType != 3 && lb.LbType != 4 {
+				if lb.LbType != 0 && lb.LbType != 2 && lb.LbType != 3 && lb.LbType != 4 {
 					isCloudLb = true
 				}
 			}
