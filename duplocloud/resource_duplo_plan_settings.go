@@ -77,21 +77,13 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 	c := m.(*duplosdk.Client)
 
 	duplo, err := c.PlanGet(planID)
-	if err != nil && !err.PossibleMissingAPI() {
+	if duplo == nil {
+		return diag.Errorf("Plan could not be found. '%s': %s", planID, err)
+	}
+	if err != nil {
 		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
 	}
 
-	if duplo == nil {
-		plan, err := c.PlanGet(planID)
-		if err != nil {
-			return diag.Errorf("failed to read plan configs: %s", err)
-		}
-		if plan == nil {
-			return diag.Errorf("failed to read plan: %s", planID)
-		}
-
-		duplo = plan
-	}
 	flattenPlanSettings(d, duplo)
 	log.Printf("[TRACE] resourcePlanSettingsRead(%s): end", planID)
 	return nil
@@ -104,7 +96,10 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	c := m.(*duplosdk.Client)
 
 	duplo, err := c.PlanGet(planID)
-	if err != nil && !err.PossibleMissingAPI() {
+	if duplo == nil {
+		return diag.Errorf("Plan could not be found. '%s': %s", planID, err)
+	}
+	if err != nil {
 		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
 	}
 	if v, ok := d.GetOk("unrestricted_ext_lb"); ok {
@@ -131,7 +126,10 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 
 	duplo, err := c.PlanGet(planID)
-	if err != nil && !err.PossibleMissingAPI() {
+	if duplo == nil {
+		return diag.Errorf("Plan could not be found. '%s': %s", planID, err)
+	}
+	if err != nil {
 		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
 	}
 	if _, ok := d.GetOk("unrestricted_ext_lb"); ok {
