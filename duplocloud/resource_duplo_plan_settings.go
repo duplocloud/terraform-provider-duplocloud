@@ -78,7 +78,7 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 
 	duplo, err := c.PlanGet(planID)
 	if duplo == nil {
-		return diag.Errorf("Plan could not be found. '%s': %s", planID, err)
+		return diag.Errorf("Plan could not be found. '%s'", planID)
 	}
 	if err != nil {
 		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
@@ -97,7 +97,7 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 
 	duplo, err := c.PlanGet(planID)
 	if duplo == nil {
-		return diag.Errorf("Plan could not be found. '%s': %s", planID, err)
+		return diag.Errorf("Plan could not be found. '%s'", planID)
 	}
 	if err != nil {
 		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
@@ -127,7 +127,7 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	duplo, err := c.PlanGet(planID)
 	if duplo == nil {
-		return diag.Errorf("Plan could not be found. '%s': %s", planID, err)
+		return diag.Errorf("Plan could not be found. '%s", planID)
 	}
 	if err != nil {
 		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
