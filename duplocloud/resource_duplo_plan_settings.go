@@ -126,8 +126,9 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 
 	duplo, err := c.PlanGet(planID)
+	// Skip if plan does not exist.
 	if duplo == nil {
-		return diag.Errorf("Plan could not be found. '%s", planID)
+		return nil
 	}
 	if err != nil {
 		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
