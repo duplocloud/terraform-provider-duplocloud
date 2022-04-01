@@ -78,6 +78,24 @@ func (c *Client) EcsServiceCreateOrUpdate(tenantID string, rq *DuploEcsService, 
 			&rq,
 			&rp,
 		)
+		if err != nil && err.PossibleMissingAPI() {
+
+			// There is no "full" fallback for this API being missing - but older Duplos could at least update other service parameters.
+			log.Printf(
+				"[WARN] Remote duplo (%s) does not support updating LB configs for ECS.  Please contact your Duplo Administrator. (tenant=%s, name=%s)",
+				c.HostURL,
+				tenantID,
+				rq.Name,
+			)
+
+			err = c.doAPIWithRequestBody(
+				verb,
+				fmt.Sprintf("EcsServiceUpdate(%s, %s)", tenantID, rq.Name),
+				fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2", tenantID),
+				&rq,
+				&rp,
+			)
+		}
 	} else {
 		err = c.doAPIWithRequestBody(
 			verb,
