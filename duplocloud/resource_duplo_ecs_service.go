@@ -314,31 +314,35 @@ func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.Resour
 		d.SetId(id)
 	}
 
-	// Next, we need to apply load balancer settings.
-	err = updateEcsServiceAwsLbSettings(tenantID, duplo.Name, d, c)
-	if err != nil {
-		return diag.Errorf("Error applying ECS load balancer settings '%s': %s", d.Id(), err)
-	}
-	ecsResource, err := c.GetResourceName("duplo2", tenantID, duplo.Name, false)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	// The rest of this logic only applies if we have load balancer configurations.
+	if len(*duplo.LBConfigurations) > 0 {
 
-	// Workaround for broken v3 backend - reread the LB configs from duplo
-	if rpObject.Name == "" {
-		rpObject, err = c.EcsServiceGet(id)
-		if rpObject == nil {
-			return diag.Errorf("Error reading ECS load balancers '%s': %s", d.Id(), err)
+		// Next, we need to apply load balancer settings.
+		err = updateEcsServiceAwsLbSettings(tenantID, duplo.Name, d, c)
+		if err != nil {
+			return diag.Errorf("Error applying ECS load balancer settings '%s': %s", d.Id(), err)
 		}
+		ecsResource, err := c.GetResourceName("duplo2", tenantID, duplo.Name, false)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-	}
 
-	if d.Get("wait_until_targets_ready") == nil || d.Get("wait_until_targets_ready").(bool) {
-		err = ecsServiceWaitUntilTargetGroupsReady(d, ctx, c, tenantID, ecsResource, rpObject.LBConfigurations, d.Timeout("create"))
-		if err != nil {
-			return diag.FromErr(err)
+		// Workaround for broken v3 backend - reread the LB configs from duplo
+		if rpObject.Name == "" {
+			rpObject, err = c.EcsServiceGet(id)
+			if rpObject == nil {
+				return diag.Errorf("Error reading ECS load balancers '%s': %s", d.Id(), err)
+			}
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+
+		if d.Get("wait_until_targets_ready") == nil || d.Get("wait_until_targets_ready").(bool) {
+			tgErr := ecsServiceWaitUntilTargetGroupsReady(d, ctx, c, tenantID, ecsResource, rpObject.LBConfigurations, d.Timeout("create"))
+			if tgErr != nil {
+				return diag.FromErr(tgErr)
+			}
 		}
 	}
 
@@ -410,6 +414,11 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 		hcConfig := ecsLoadBalancersHealthCheckConfigToState(lbc.HealthCheckConfig)
 		if hcConfig != nil {
 			jo["health_check_config"] = []interface{}{hcConfig}
+		}
+
+		// Workaround for missing default value
+		if lbc.BackendProtocol == "" && (lbc.Protocol == "HTTP" || lbc.Protocol == "HTTPS") {
+			jo["backend_protocol"] = "HTTP1"
 		}
 
 		ary = append(ary, jo)
