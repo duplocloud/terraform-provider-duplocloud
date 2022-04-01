@@ -77,11 +77,11 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 	c := m.(*duplosdk.Client)
 
 	duplo, err := c.PlanGet(planID)
-	if duplo == nil {
-		return diag.Errorf("Plan could not be found. '%s'", planID)
-	}
 	if err != nil {
 		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
+	}
+	if duplo == nil {
+		return diag.Errorf("Plan could not be found. '%s'", planID)
 	}
 
 	flattenPlanSettings(d, duplo)
@@ -96,11 +96,11 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	c := m.(*duplosdk.Client)
 
 	duplo, err := c.PlanGet(planID)
-	if duplo == nil {
-		return diag.Errorf("Plan could not be found. '%s'", planID)
-	}
 	if err != nil {
 		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
+	}
+	if duplo == nil {
+		return diag.Errorf("Plan could not be found. '%s'", planID)
 	}
 	if v, ok := d.GetOk("unrestricted_ext_lb"); ok {
 		duplo.UnrestrictedExtLB = v.(bool)
@@ -126,12 +126,13 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 
 	duplo, err := c.PlanGet(planID)
+	if err != nil {
+		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
+	}
+
 	// Skip if plan does not exist.
 	if duplo == nil {
 		return nil
-	}
-	if err != nil {
-		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
 	}
 	if _, ok := d.GetOk("unrestricted_ext_lb"); ok {
 		duplo.UnrestrictedExtLB = false
