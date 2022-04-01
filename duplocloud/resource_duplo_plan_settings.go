@@ -173,13 +173,13 @@ func expandDnsSetting(existingPlan *duplosdk.DuploPlan, m map[string]interface{}
 	if existingPlan.DnsConfig == nil {
 		existingPlan.DnsConfig = &duplosdk.DuploPlanDnsConfig{}
 	}
-	if v, ok := m["domain_id"]; ok && v != "" {
+	if v, ok := m["domain_id"]; ok {
 		existingPlan.DnsConfig.DomainId = v.(string)
 	}
-	if v, ok := m["internal_dns_suffix"]; ok && v != "" {
+	if v, ok := m["internal_dns_suffix"]; ok {
 		existingPlan.DnsConfig.InternalDnsSuffix = v.(string)
 	}
-	if v, ok := m["external_dns_suffix"]; ok && v != "" {
+	if v, ok := m["external_dns_suffix"]; ok {
 		existingPlan.DnsConfig.ExternalDnsSuffix = v.(string)
 	}
 }
