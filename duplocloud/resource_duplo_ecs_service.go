@@ -119,7 +119,6 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Optional:    false,
 						Required:    true,
 					},
-
 					"backend_protocol": {
 						Description: "The backend protocol associated with this load balancer configuration.",
 						Type:        schema.TypeString,
@@ -306,30 +305,44 @@ func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.Resour
 
 	// Create the ECS service.
 	c := m.(*duplosdk.Client)
-	rpObject, err := c.EcsServiceCreateOrUpdate(tenantID, &duplo, updating)
+	rpObject, err := c.EcsServiceCreateOrUpdate(tenantID, duplo, updating)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	id := fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantID, rpObject.Name)
+	id := fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2/%s", tenantID, duplo.Name)
 	if !updating {
 		d.SetId(id)
 	}
 
-	// Next, we need to apply load balancer settings.
-	err = updateEcsServiceAwsLbSettings(tenantID, rpObject.Name, d, c)
-	if err != nil {
-		return diag.Errorf("Error applying ECS load balancer settings '%s': %s", d.Id(), err)
-	}
-	ecsResource, err := c.GetResourceName("duplo2", tenantID, rpObject.Name, false)
+	// The rest of this logic only applies if we have load balancer configurations.
+	if len(*duplo.LBConfigurations) > 0 {
 
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if d.Get("wait_until_targets_ready") == nil || d.Get("wait_until_targets_ready").(bool) {
-		err = ecsServiceWaitUntilTargetGroupsReady(d, ctx, c, tenantID, ecsResource, rpObject.LBConfigurations, d.Timeout("create"))
+		// Next, we need to apply load balancer settings.
+		err = updateEcsServiceAwsLbSettings(tenantID, duplo.Name, d, c)
+		if err != nil {
+			return diag.Errorf("Error applying ECS load balancer settings '%s': %s", d.Id(), err)
+		}
+		ecsResource, err := c.GetResourceName("duplo2", tenantID, duplo.Name, false)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+
+		// Workaround for broken v3 backend - reread the LB configs from duplo
+		if rpObject.Name == "" {
+			rpObject, err = c.EcsServiceGet(id)
+			if rpObject == nil {
+				return diag.Errorf("Error reading ECS load balancers '%s': %s", d.Id(), err)
+			}
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+
+		if d.Get("wait_until_targets_ready") == nil || d.Get("wait_until_targets_ready").(bool) {
+			tgErr := ecsServiceWaitUntilTargetGroupsReady(d, ctx, c, tenantID, ecsResource, rpObject.LBConfigurations, d.Timeout("create"))
+			if tgErr != nil {
+				return diag.FromErr(tgErr)
+			}
 		}
 	}
 
@@ -360,7 +373,7 @@ func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, 
 }
 
 // EcsServiceFromState converts resource data respresenting an ECS Service to a Duplo SDK object.
-func ecsServiceFromState(d *schema.ResourceData) duplosdk.DuploEcsService {
+func ecsServiceFromState(d *schema.ResourceData) *duplosdk.DuploEcsService {
 	duploObject := duplosdk.DuploEcsService{}
 
 	// First, convert things into simple scalars
@@ -375,7 +388,7 @@ func ecsServiceFromState(d *schema.ResourceData) duplosdk.DuploEcsService {
 	// Next, convert things into structured data.
 	duploObject.LBConfigurations = ecsLoadBalancersFromState(d)
 
-	return duploObject
+	return &duploObject
 }
 
 func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConfig) []map[string]interface{} {
@@ -394,9 +407,6 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 		jo["protocol"] = lbc.Protocol
 		jo["target_group_count"] = lbc.TgCount
 		jo["backend_protocol"] = lbc.BackendProtocol
-		if jo["backend_protocol"] == "" {
-			jo["backend_protocol"] = "HTTP"
-		}
 		jo["external_port"] = lbc.ExternalPort
 		jo["is_internal"] = lbc.IsInternal
 		jo["health_check_url"] = lbc.HealthCheckURL
@@ -404,6 +414,11 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 		hcConfig := ecsLoadBalancersHealthCheckConfigToState(lbc.HealthCheckConfig)
 		if hcConfig != nil {
 			jo["health_check_config"] = []interface{}{hcConfig}
+		}
+
+		// Workaround for missing default value
+		if lbc.BackendProtocol == "" && (lbc.Protocol == "HTTP" || lbc.Protocol == "HTTPS") {
+			jo["backend_protocol"] = "HTTP1"
 		}
 
 		ary = append(ary, jo)
@@ -585,7 +600,7 @@ func ecsServiceWaitUntilTargetGroupsReady(d *schema.ResourceData, ctx context.Co
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			status := "ready"
-			if lbcs == nil {
+			if lbcs == nil || len(*lbcs) == 0 {
 				return nil, status, nil
 			}
 			rp, err, targetGroupArns := c.EcsServiceRequiredTargetGroupsCreated(tenantId, ecsResourceName, lbcs)
