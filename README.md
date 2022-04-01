@@ -2,11 +2,9 @@
 
 ## Releasing new versions
 
-This repo now uses the `git flow` tool to perform releases.
+This repo now the Duplo Github Actions to perform releases.
 
-There is a `scripts/release.sh` tool to automate the process.
-
-You can learn more about this in the [README-release-process.md](README-release-process.md) doc.
+There is a `Start Release` workflow to kick off the process.
 
 ## Development
 
