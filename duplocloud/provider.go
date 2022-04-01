@@ -79,6 +79,7 @@ func Provider() *schema.Provider {
 			"duplocloud_infrastructure_subnet":           resourceInfrastructureSubnet(),
 			"duplocloud_plan_certificates":               resourcePlanCertificates(),
 			"duplocloud_plan_configs":                    resourcePlanConfigs(),
+			"duplocloud_plan_settings":                   resourcePlanSettings(),
 			"duplocloud_plan_images":                     resourcePlanImages(),
 			"duplocloud_rds_instance":                    resourceDuploRdsInstance(),
 			"duplocloud_s3_bucket":                       resourceS3Bucket(),

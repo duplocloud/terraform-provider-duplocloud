@@ -19,6 +19,13 @@ type DuploPlan struct {
 	WafInfos          *[]DuploPlanWafInfo         `json:"WafInfos,omitempty"`
 	K8ClusterConfigs  *[]DuploPlanK8ClusterConfig `json:"K8ClusterConfigs,omitempty"`
 	CloudPlatforms    *[]DuploPlanCloudPlatform   `json:"CloudPlatforms,omitempty"`
+	DnsConfig         *DuploPlanDnsConfig         `json:"DnsConfig,omitempty"`
+}
+
+type DuploPlanDnsConfig struct {
+	DomainId          string `json:"DomainId,omitempty"`
+	InternalDnsSuffix string `json:"InternalDnsSuffix,omitempty"`
+	ExternalDnsSuffix string `json:"ExternalDnsSuffix,omitempty"`
 }
 
 type DuploPlanImage struct {
@@ -76,6 +83,14 @@ type DuploPlanNgw struct {
 	VpcId               string                 `json:"VpcId"`
 	Tags                *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	NatGatewayAddresses *[]DuploPlanNgwAddress `json:"NatGatewayAddresses,omitempty"`
+}
+
+func (c *Client) PlanUpdate(rq *DuploPlan) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("PlanUpdate(%s)", rq.Name),
+		"adminproxy/UpdatePlan",
+		&rq,
+		nil)
 }
 
 // PlanGetList retrieves a list of plans via the Duplo API.

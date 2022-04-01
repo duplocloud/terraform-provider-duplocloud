@@ -87,7 +87,8 @@ Should be one of:
 Optional:
 
 - **certificate_arn** (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
-- **external_traffic_policy** (String) Only for K8S Node Port (`lb_type = 4`).  Set the kubernetes service `externalTrafficPolicy` attribute.
+- **external_traffic_policy** (String) Only for K8S Node Port (`lb_type = 4`) or load balancers in Kubernetes.  Set the kubernetes service `externalTrafficPolicy` attribute.
+- **extra_selector_label** (Block List) Only for K8S services or load balancers in Kubernetes.  Sets an additional selector label to narrow which pods can receive traffic. (see [below for nested schema](#nestedblock--lbconfigs--extra_selector_label))
 - **health_check_url** (String) The health check URL to associate with this load balancer configuration.
 - **host_name** (String) (Azure Only) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).
 - **is_internal** (Boolean) Whether or not to create an internal load balancer.
@@ -103,6 +104,15 @@ Read-Only:
 - **is_infra_deployment** (Boolean)
 - **name** (String) The name of the duplo service.
 - **replication_controller_name** (String) The name of the duplo service.
+
+<a id="nestedblock--lbconfigs--extra_selector_label"></a>
+### Nested Schema for `lbconfigs.extra_selector_label`
+
+Required:
+
+- **key** (String)
+- **value** (String)
+
 
 
 <a id="nestedblock--timeouts"></a>
