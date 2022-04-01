@@ -8,7 +8,7 @@ NAMESPACE=duplocloud
 
 NAME=duplocloud
 BINARY=terraform-provider-${NAME}
-VERSION=0.7.8
+VERSION=0.7.9
 #mac
 #OS_ARCH=darwin_amd64
 #OS_ARCH=linux_amd64
