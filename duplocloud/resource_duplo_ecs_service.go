@@ -124,6 +124,18 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Type:        schema.TypeString,
 						Optional:    true,
 						Computed:    true,
+						Deprecated:  "Use 'backend_protocol_version' instead.",
+					},
+					"backend_protocol_version": {
+						Description: "The backend protocol version associated with this load balancer configuration.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
+						ValidateFunc: validation.StringInSlice([]string{
+							"HTTP1",
+							"HTTP2",
+							"GRPC",
+						}, false),
 					},
 					"is_internal": {
 						Description: "Whether or not to create an internal load balancer.",
@@ -407,6 +419,7 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 		jo["protocol"] = lbc.Protocol
 		jo["target_group_count"] = lbc.TgCount
 		jo["backend_protocol"] = lbc.BackendProtocol
+		jo["backend_protocol_version"] = lbc.BackendProtocol
 		jo["external_port"] = lbc.ExternalPort
 		jo["is_internal"] = lbc.IsInternal
 		jo["health_check_url"] = lbc.HealthCheckURL
@@ -419,6 +432,7 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 		// Workaround for missing default value
 		if lbc.BackendProtocol == "" && (lbc.Protocol == "HTTP" || lbc.Protocol == "HTTPS") {
 			jo["backend_protocol"] = "HTTP1"
+			jo["backend_protocol_version"] = "HTTP1"
 		}
 
 		ary = append(ary, jo)
@@ -480,16 +494,21 @@ func ecsLoadBalancersFromState(d *schema.ResourceData) *[]duplosdk.DuploEcsServi
 func ecsLoadBalancerFromState(d *schema.ResourceData, lb map[string]interface{}) duplosdk.DuploEcsServiceLbConfig {
 	log.Printf("[TRACE] ecsLoadBalancerFromState ********: have data")
 	name := lb["replication_controller_name"].(string)
+	backendProtocolVersion := ""
 	if name == "" {
 		name = d.Get("name").(string)
 	}
-
+	if v, ok := lb["backend_protocol"]; ok && v != "" {
+		backendProtocolVersion = v.(string)
+	} else if v, ok := lb["backend_protocol_version"]; ok && v != "" {
+		backendProtocolVersion = v.(string)
+	}
 	lbConfig := duplosdk.DuploEcsServiceLbConfig{
 		ReplicationControllerName: name,
 		LbType:                    lb["lb_type"].(int),
 		Port:                      lb["port"].(string),
 		Protocol:                  lb["protocol"].(string),
-		BackendProtocol:           lb["backend_protocol"].(string),
+		BackendProtocol:           backendProtocolVersion,
 		ExternalPort:              lb["external_port"].(int),
 		IsInternal:                lb["is_internal"].(bool),
 		HealthCheckURL:            lb["health_check_url"].(string),
