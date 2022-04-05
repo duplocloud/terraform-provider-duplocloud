@@ -28,7 +28,7 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           only-new-issues: true  # Only show new issues for pull requests.
-        run: go version
+      - run: go version
   format:
     runs-on: ubuntu-latest
     steps:
