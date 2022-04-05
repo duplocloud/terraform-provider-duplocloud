@@ -579,13 +579,11 @@ func validateJsonObjectArray(key string, value string) (ws []string, errors []er
 //  - Adds an upper camel-case entry for each lower camel-case entry, unless the upper exists already.
 //  - Removes any lower camel-case entry.
 //  - Never overwrites any existing upper camel-case keys.
-
 func makeMapUpperCamelCase(m map[string]interface{}) {
 	for k := range m {
 
 		// Only convert lowercase entries.
 		if unicode.IsLower([]rune(k)[0]) {
-			//lint:ignore SA1019 ignore this!
 			upper := strings.Title(k)
 
 			// Add the upper camel-case entry, if it doesn't exist.
