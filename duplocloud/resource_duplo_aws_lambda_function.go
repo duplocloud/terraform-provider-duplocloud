@@ -420,8 +420,9 @@ func expandAwsLambdaTags(d *schema.ResourceData) map[string]string {
 }
 
 func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData, c *duplosdk.Client) error {
+	log.Printf("[TRACE] updateAwsLambdaFunctionConfig(%s): start", name)
 	rq := duplosdk.DuploLambdaConfigurationRequest{
-		FunctionName: name,
+		FunctionName: d.Get("fullname").(string),
 		Handler:      d.Get("handler").(string),
 		Description:  d.Get("description").(string),
 		Timeout:      d.Get("timeout").(int),
@@ -446,20 +447,21 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 	err = c.LambdaFunctionUpdateConfiguration(tenantID, &rq)
 
 	// TODO: Wait for the changes to be applied.
-
+	log.Printf("[TRACE] updateAwsLambdaFunctionConfig(%s): end", name)
 	return err
 }
 
 func updateAwsLambdaFunctionCode(tenantID, name string, d *schema.ResourceData, c *duplosdk.Client) error {
+	log.Printf("[TRACE] updateAwsLambdaFunctionCode(%s): start", name)
 	rq := duplosdk.DuploLambdaUpdateRequest{
-		FunctionName: name,
+		FunctionName: d.Get("fullname").(string),
 		S3Bucket:     d.Get("s3_bucket").(string),
 		S3Key:        d.Get("s3_key").(string),
 	}
 	err := c.LambdaFunctionUpdate(tenantID, &rq)
 
 	// TODO: Wait for the changes to be applied.
-
+	log.Printf("[TRACE] updateAwsLambdaFunctionCode(%s): end", name)
 	return err
 }
 
