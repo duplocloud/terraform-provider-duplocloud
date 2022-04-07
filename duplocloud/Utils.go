@@ -584,6 +584,7 @@ func makeMapUpperCamelCase(m map[string]interface{}) {
 
 		// Only convert lowercase entries.
 		if unicode.IsLower([]rune(k)[0]) {
+			//nolint:staticcheck // SA1019 ignore this!
 			upper := strings.Title(k)
 
 			// Add the upper camel-case entry, if it doesn't exist.
