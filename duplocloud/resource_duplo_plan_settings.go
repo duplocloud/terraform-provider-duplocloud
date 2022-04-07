@@ -48,6 +48,24 @@ func duploPlanSettingsSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"metadata": {
+			Description: "A list of metadata for the plan to manage.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Elem:        KeyValueSchema(),
+		},
+		"all_metadata": {
+			Description: "A complete list of metadata for this plan, even ones not being managed by this resource.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        KeyValueSchema(),
+		},
+		"specified_metadata": {
+			Description: "A list of metadata being managed by this resource.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 	}
 }
 
@@ -108,6 +126,12 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	if v, ok := d.GetOk("dns_setting"); ok {
 		expandDnsSetting(duplo, v.([]interface{})[0].(map[string]interface{}))
 	}
+	if _, ok := d.GetOk("metadata"); ok {
+		log.Printf("[TRACE] Plan metadata from duplo :(%s)", duplo.MetaData)
+		previous, desired := getPlanMetadataChange(duplo.MetaData, d)
+		duplo.MetaData = getDesiredMetadataConfigs(duplo.MetaData, desired, previous)
+		log.Printf("[TRACE] Plan metadata previous :(%s), desired(%s)", previous, desired)
+	}
 
 	err = c.PlanUpdate(duplo)
 	if err != nil {
@@ -140,6 +164,31 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 	if _, ok := d.GetOk("dns_setting"); ok {
 		duplo.DnsConfig = nil
 	}
+	if _, ok := d.GetOk("metadata"); ok {
+		existing := duplo.MetaData
+		specified := []string{}
+		if v, ok := getAsStringArray(d, "specified_metadata"); ok && v != nil {
+			specified = *v
+		}
+		ary := make([]duplosdk.DuploKeyStringValue, 0, len(*existing)-len(specified))
+		log.Printf("[TRACE] existing (%s)", existing)
+		log.Printf("[TRACE] Specified (%s)", specified)
+
+		for _, e := range *existing {
+			present := false
+			for _, s := range specified {
+				if e.Key == s {
+					present = true
+					break
+				}
+			}
+			if !present {
+				ary = append(ary, e)
+			}
+		}
+		log.Printf("[TRACE] New metadata to be updated (%s)", ary)
+		duplo.MetaData = &ary
+	}
 
 	err = c.PlanUpdate(duplo)
 	if err != nil {
@@ -155,6 +204,12 @@ func flattenPlanSettings(d *schema.ResourceData, duplo *duplosdk.DuploPlan) {
 	d.Set("unrestricted_ext_lb", duplo.UnrestrictedExtLB)
 	if duplo.DnsConfig != nil {
 		d.Set("dns_setting", flattenDnsSetting(duplo.DnsConfig))
+	}
+	d.Set("all_metadata", keyValueToState("all_metadata", duplo.MetaData))
+
+	// Build a list of current state, to replace the user-supplied settings.
+	if v, ok := getAsStringArray(d, "specified_metadata"); ok && v != nil {
+		d.Set("metadata", keyValueToState("metadata", selectPlanMetadata(duplo.MetaData, *v)))
 	}
 	log.Printf("[TRACE] flattenPlanSettings(%s): end", duplo.Name)
 }
@@ -182,4 +237,72 @@ func expandDnsSetting(existingPlan *duplosdk.DuploPlan, m map[string]interface{}
 	if v, ok := m["external_dns_suffix"]; ok {
 		existingPlan.DnsConfig.ExternalDnsSuffix = v.(string)
 	}
+}
+
+func getPlanMetadataChange(all *[]duplosdk.DuploKeyStringValue, d *schema.ResourceData) (previous, desired *[]duplosdk.DuploKeyStringValue) {
+	log.Printf("[TRACE] getPlanMetadataChange(%s): start", all)
+	if v, ok := getAsStringArray(d, "specified_metadata"); ok && v != nil {
+		previous = selectPlanMetadata(all, *v)
+	} else {
+		previous = &[]duplosdk.DuploKeyStringValue{}
+	}
+
+	// Collect the desired state of settings specified by the user.
+	desired = keyValueFromState("metadata", d)
+	specified := make([]string, len(*desired))
+	for i, pc := range *desired {
+		specified[i] = pc.Key
+	}
+	log.Printf("[TRACE] specified_metadata - (%s):", specified)
+	// Track the change
+	d.Set("specified_metadata", specified)
+	log.Printf("[TRACE] getPlanMetadataChange(%s): end", all)
+	return
+}
+
+func selectPlanMetadata(all *[]duplosdk.DuploKeyStringValue, keys []string) *[]duplosdk.DuploKeyStringValue {
+	specified := map[string]interface{}{}
+	for _, k := range keys {
+		specified[k] = struct{}{}
+	}
+
+	return selectPlanMetadataFromMap(all, specified)
+}
+
+func selectPlanMetadataFromMap(all *[]duplosdk.DuploKeyStringValue, keys map[string]interface{}) *[]duplosdk.DuploKeyStringValue {
+	mds := make([]duplosdk.DuploKeyStringValue, 0, len(keys))
+	for _, pc := range *all {
+		if _, ok := keys[pc.Key]; ok {
+			mds = append(mds, pc)
+		}
+	}
+
+	return &mds
+}
+
+func getDesiredMetadataConfigs(existing, newMetadata, oldMetadata *[]duplosdk.DuploKeyStringValue) *[]duplosdk.DuploKeyStringValue {
+
+	// Next, update all metada that are present, keeping a record of each one that is present
+	log.Printf("[TRACE] existing-(%s), oldMetadata-(%s), newMetadata-(%s):", existing, oldMetadata, newMetadata)
+	desired := make([]duplosdk.DuploKeyStringValue, 0, len(*existing)-len(*oldMetadata)+len(*newMetadata))
+
+	if len(*oldMetadata) > 0 {
+		for _, emd := range *existing {
+			present := false
+			for _, omd := range *oldMetadata {
+				if emd.Key == omd.Key {
+					present = true
+					break
+				}
+			}
+			if !present {
+				desired = append(desired, emd)
+			}
+		}
+	}
+	if len(*newMetadata) > 0 {
+		desired = append(desired, *newMetadata...)
+	}
+
+	return &desired
 }
