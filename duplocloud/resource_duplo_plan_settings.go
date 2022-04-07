@@ -129,8 +129,8 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	if _, ok := d.GetOk("metadata"); ok {
 		log.Printf("[TRACE] Plan metadata from duplo :(%s)", duplo.MetaData)
 		previous, desired := getPlanMetadataChange(duplo.MetaData, d)
-		duplo.MetaData = getDesiredMetadataConfigs(duplo.MetaData, desired, previous)
 		log.Printf("[TRACE] Plan metadata previous :(%s), desired(%s)", previous, desired)
+		duplo.MetaData = getDesiredMetadataConfigs(duplo.MetaData, desired, previous)
 	}
 
 	err = c.PlanUpdate(duplo)
@@ -286,23 +286,21 @@ func getDesiredMetadataConfigs(existing, newMetadata, oldMetadata *[]duplosdk.Du
 	log.Printf("[TRACE] existing-(%s), oldMetadata-(%s), newMetadata-(%s):", existing, oldMetadata, newMetadata)
 	desired := make([]duplosdk.DuploKeyStringValue, 0, len(*existing)-len(*oldMetadata)+len(*newMetadata))
 
-	if len(*oldMetadata) > 0 {
-		for _, emd := range *existing {
-			present := false
-			for _, omd := range *oldMetadata {
-				if emd.Key == omd.Key {
-					present = true
-					break
-				}
+	for _, emd := range *existing {
+		present := false
+		for _, omd := range *oldMetadata {
+			if emd.Key == omd.Key {
+				present = true
+				break
 			}
-			if !present {
-				desired = append(desired, emd)
-			}
+		}
+		if !present {
+			desired = append(desired, emd)
 		}
 	}
 	if len(*newMetadata) > 0 {
 		desired = append(desired, *newMetadata...)
 	}
-
+	log.Printf("[TRACE] desired-(%s):", desired)
 	return &desired
 }
