@@ -82,7 +82,8 @@ Should be one of:
 
 Optional:
 
-- **backend_protocol** (String) The backend protocol associated with this load balancer configuration.
+- **backend_protocol** (String, Deprecated) The backend protocol associated with this load balancer configuration. Use 'backend_protocol_version' instead.
+- **backend_protocol_version** (String) The backend protocol version associated with this load balancer configuration.
 - **certificate_arn** (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - **drop_invalid_headers** (Boolean) Whether or not to drop invalid HTTP headers received by the load balancer.
 - **enable_access_logs** (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan
