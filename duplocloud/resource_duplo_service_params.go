@@ -103,9 +103,11 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, derr := getReplicationControllerIfHasCloudLb(c, tenantID, name)
-	if derr != nil {
-		return derr
+
+	// Get the object from Duplo.
+	duplo, err := c.ReplicationControllerGet(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -128,9 +130,11 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 	d.Set("webaclid", webAclId)
 
 	// Next, look for load balancer settings.
-	err = readDuploServiceAwsLbSettings(tenantID, duplo, d, c)
-	if err != nil {
-		return diag.FromErr(err)
+	if doesReplicationControllerHaveAlbOrNlb(duplo) {
+		err = readDuploServiceAwsLbSettings(tenantID, duplo, d, c)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	log.Printf("[TRACE] resourceDuploServiceParamsRead(%s, %s): end", tenantID, name)
@@ -156,21 +160,9 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 
 	// Get the service from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, derr := getReplicationControllerIfHasCloudLb(c, tenantID, name)
-	if derr != nil {
-		return derr
-	}
-	if duplo == nil {
-		return diag.Errorf("Unable to find an application load balancer for tenant %s service '%s'", tenantID, name)
-	}
-
-	// Check if the LB is active.
-	details, err := getDuploServiceAwsLbSettings(tenantID, duplo, c)
+	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
-		return diag.FromErr(err)
-	}
-	if details == nil || details.State == nil || details.State.Code == nil || strings.ToLower(details.State.Code.Value) != "active" {
-		return diag.Errorf("Application load balancer for tenant %s service '%s' is not active", tenantID, name)
+		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
 	}
 
 	// Update the DNS.
@@ -178,16 +170,14 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 	if dns != "" && dns != duplo.DnsPrfx {
 		dnsRq := duplosdk.DuploLbDnsRequest{DnsPrfx: dns}
 		err = c.ReplicationControllerLbDnsUpdate(tenantID, name, &dnsRq)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	} else if dns == "" && duplo.DnsPrfx != "" {
 		err = c.ReplicationControllerLbDnsDelete(tenantID, name)
-	}
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Get or generate the ID.
-	if !isUpdate {
-		d.SetId(fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerParamsV2/%s", tenantID, name))
+		if err != nil {
+			log.Printf("[TRACE] resourceDuploServiceParamsCreateOrUpdate(%s, %s): failed to delete DNS Prefix - continuing", tenantID, name)
+		}
 	}
 
 	// Update the WAF.
@@ -208,12 +198,30 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 		if err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	// Update the ALB or NLB settings
+	if doesReplicationControllerHaveAlbOrNlb(duplo) {
+
+		// Check if the LB is active.
+		details, err := getDuploServiceAwsLbSettings(tenantID, duplo, c)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if !isDuploServiceAwsLbActive(details) {
+			return diag.Errorf("Load balancer for tenant %s service '%s' is not active", tenantID, name)
+		}
 
 		// Next, we need to apply load balancer settings.
 		err = updateDuploServiceAwsLbSettings(tenantID, details, d, c)
 		if err != nil {
 			return diag.Errorf("Error applying LB settings for tenant %s service '%s': %s", tenantID, name, err)
 		}
+	}
+
+	// Get or generate the ID.
+	if !isUpdate {
+		d.SetId(fmt.Sprintf("v2/subscriptions/%s/ReplicationControllerParamsV2/%s", tenantID, name))
 	}
 
 	// Finally, we read the information back.
@@ -233,33 +241,33 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 
 	// Get the service from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, derr := getReplicationControllerIfHasCloudLb(c, tenantID, name)
-	if derr != nil {
-		return derr
+	duplo, err := c.ReplicationControllerGet(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
 	}
 
-	// We have a cloud LB.
+	// We have a service.
 	if duplo != nil {
-		details, err := getDuploServiceAwsLbSettings(tenantID, duplo, c)
-		if err != nil {
-			return diag.FromErr(err)
+
+		// Delete the DNS settings.
+		if duplo.DnsPrfx != "" {
+			err := c.ReplicationControllerLbDnsDelete(tenantID, name)
+			if err != nil {
+				log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s, %s): failed to delete DNS Prefix - continuing", tenantID, name)
+			}
 		}
 
-		// The ALB is active.
-		if details != nil && details.State != nil || details.State.Code != nil && strings.ToLower(details.State.Code.Value) == "active" {
-			c := m.(*duplosdk.Client)
-
-			// Delete the DNS settings.
-			if duplo.DnsPrfx != "" {
-				err := c.ReplicationControllerLbDnsDelete(tenantID, name)
-				if err != nil {
-					log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s, %s): failed to delete DNS Prefix - continuing", tenantID, name)
-					// return diag.FromErr(err)
-				}
+		// Detach the WAF.
+		if doesReplicationControllerHaveAlb(duplo) {
+			details, err := getDuploServiceAwsLbSettings(tenantID, duplo, c)
+			if err != nil {
+				return diag.FromErr(err)
 			}
 
-			// Delete the WAF settings.
-			if doesReplicationControllerHaveAlb(duplo) {
+			// The ALB is active.
+			if isDuploServiceAwsLbActive(details) {
+				c := m.(*duplosdk.Client)
+
 				wafRq := duplosdk.DuploLbWafUpdateRequest{
 					IsEcsLB:      false,
 					IsPassThruLB: false,
@@ -296,6 +304,10 @@ func getDuploServiceAwsLbSettings(tenantID string, rpc *duplosdk.DuploReplicatio
 
 	// Nothing found.
 	return nil, nil
+}
+
+func isDuploServiceAwsLbActive(details *duplosdk.DuploAwsLbDetailsInService) bool {
+	return details != nil && details.State != nil && details.State.Code != nil && strings.ToLower(details.State.Code.Value) == "active"
 }
 
 func readDuploServiceAwsLbSettings(tenantID string, rpc *duplosdk.DuploReplicationController, d *schema.ResourceData, c *duplosdk.Client) error {
@@ -361,31 +373,21 @@ func parseDuploServiceParamsIdParts(id string) (tenantID, name string) {
 	return
 }
 
-func getReplicationControllerIfHasCloudLb(client *duplosdk.Client, tenantID, name string) (*duplosdk.DuploReplicationController, diag.Diagnostics) {
-
-	// Get the object from Duplo.
-	duplo, err := client.ReplicationControllerGet(tenantID, name)
-	if err != nil {
-		return nil, diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
-	}
-
-	// Check for an application load balancer
-	if duplo != nil && duplo.Template != nil {
-		for _, lb := range duplo.Template.LBConfigurations {
-			if lb.LbType == 1 || lb.LbType == 2 || lb.LbType == 6 { // ALB, Healthcheck only, or NLB
-				return duplo, nil
-			}
-		}
-	}
-
-	// Not found.
-	return nil, nil
-}
-
 func doesReplicationControllerHaveAlb(duplo *duplosdk.DuploReplicationController) bool {
 	if duplo != nil && duplo.Template != nil {
 		for _, lb := range duplo.Template.LBConfigurations {
 			if lb.LbType == 1 || lb.LbType == 2 { // ALB or Healthcheck only
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func doesReplicationControllerHaveAlbOrNlb(duplo *duplosdk.DuploReplicationController) bool {
+	if duplo != nil && duplo.Template != nil {
+		for _, lb := range duplo.Template.LBConfigurations {
+			if lb.LbType == 1 || lb.LbType == 2 || lb.LbType == 6 { // ALB, Healthcheck only or NLB
 				return true
 			}
 		}
