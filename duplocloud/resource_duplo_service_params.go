@@ -253,7 +253,8 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 			if duplo.DnsPrfx != "" {
 				err := c.ReplicationControllerLbDnsDelete(tenantID, name)
 				if err != nil {
-					return diag.FromErr(err)
+					log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s, %s): failed to delete DNS Prefix - continuing", tenantID, name)
+					// return diag.FromErr(err)
 				}
 			}
 
