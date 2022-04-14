@@ -502,17 +502,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 }
 
 func validateRdsInstance(duplo *duplosdk.DuploRdsInstance) (errors []error) {
-	if duplosdk.RdsIsAurora(duplo.Engine) {
-
-		// Aurora does not support specifying the master username / password
-		if duplo.MasterUsername != "" {
-			errors = append(errors, fmt.Errorf("Aurora does not allow setting the 'master_username'"))
-		}
-		if duplo.MasterPassword != "" {
-			errors = append(errors, fmt.Errorf("Aurora does not allow setting the 'master_password'"))
-		}
-
-	} else if duplo.Engine == duplosdk.DUPLO_RDS_ENGINE_POSTGRESQL {
+	if duplo.Engine == duplosdk.DUPLO_RDS_ENGINE_POSTGRESQL {
 
 		// PostgreSQL requires shorter usernames.
 		if duplo.MasterUsername != "" {
