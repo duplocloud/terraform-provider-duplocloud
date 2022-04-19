@@ -259,7 +259,7 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.EcsServiceGet(d.Id())
+	duplo, err := c.EcsServiceGetV2(d.Id())
 	if duplo == nil {
 		d.SetId("")
 		return nil
@@ -268,31 +268,9 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 		return diag.FromErr(err)
 	}
 
-	// First, convert things into simple scalars
-	d.Set("tenant_id", duplo.TenantID)
-	d.Set("name", duplo.Name)
-	d.Set("task_definition", duplo.TaskDefinition)
-	d.Set("replicas", duplo.Replicas)
-	d.Set("health_check_grace_period_seconds", duplo.HealthCheckGracePeriodSeconds)
-	d.Set("old_task_definition_buffer_size", duplo.OldTaskDefinitionBufferSize)
-	d.Set("is_target_group_only", duplo.IsTargetGroupOnly)
-	d.Set("dns_prfx", duplo.DNSPrfx)
-
-	// Next, convert things into structured data.
-	loadBalancers := ecsLoadBalancersToState(duplo.Name, duplo.LBConfigurations)
-
-	// Retrieve the load balancer settings.
-	if len(loadBalancers) > 0 {
-		for _, lbc := range loadBalancers {
-			err = readEcsServiceAwsLbSettings(duplo.TenantID, duplo.Name, lbc, c)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-		}
-	}
-	d.Set("load_balancer", loadBalancers)
+	diags := flattenDuploEcsService(d, duplo, c)
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** end")
-	return nil
+	return diags
 }
 
 /// CREATE resource
@@ -341,7 +319,7 @@ func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.Resour
 
 		// Workaround for broken v3 backend - reread the LB configs from duplo
 		if rpObject.Name == "" {
-			rpObject, err = c.EcsServiceGet(id)
+			rpObject, err = c.EcsServiceGetV2(id)
 			if rpObject == nil {
 				return diag.Errorf("Error reading ECS load balancers '%s': %s", d.Id(), err)
 			}
@@ -369,7 +347,7 @@ func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, 
 
 	// Check if the object exists before attempting a delete.
 	c := m.(*duplosdk.Client)
-	duplo, err := c.EcsServiceGet(d.Id())
+	duplo, err := c.EcsServiceGetV2(d.Id())
 	if err != nil || duplo != nil {
 		err = c.EcsServiceDelete(d.Id())
 		if err != nil {
@@ -381,6 +359,35 @@ func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, 
 	time.Sleep(time.Duration(40) * time.Second)
 
 	log.Printf("[TRACE] resourceDuploEcsServiceDelete ******** end")
+	return nil
+}
+
+func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsService, c *duplosdk.Client) diag.Diagnostics {
+
+	// First, convert things into simple scalars
+	d.Set("tenant_id", duplo.TenantID)
+	d.Set("name", duplo.Name)
+	d.Set("task_definition", duplo.TaskDefinition)
+	d.Set("replicas", duplo.Replicas)
+	d.Set("health_check_grace_period_seconds", duplo.HealthCheckGracePeriodSeconds)
+	d.Set("old_task_definition_buffer_size", duplo.OldTaskDefinitionBufferSize)
+	d.Set("is_target_group_only", duplo.IsTargetGroupOnly)
+	d.Set("dns_prfx", duplo.DNSPrfx)
+
+	// Next, convert things into structured data.
+	loadBalancers := ecsLoadBalancersToState(duplo.Name, duplo.LBConfigurations)
+
+	// Retrieve the load balancer settings.
+	if len(loadBalancers) > 0 {
+		for _, lbc := range loadBalancers {
+			err := readEcsServiceAwsLbSettings(duplo.TenantID, duplo.Name, lbc, c)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+	d.Set("load_balancer", loadBalancers)
+
 	return nil
 }
 

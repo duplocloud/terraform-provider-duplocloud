@@ -49,6 +49,39 @@ type DuploEcsService struct {
  * API CALLS to duplo
  */
 
+// EcsServiceList lists all ECS services.
+func (c *Client) EcsServiceList(tenantID string) (*[]DuploEcsService, ClientError) {
+	rp := []DuploEcsService{}
+
+	err := c.getAPI(
+		fmt.Sprintf("EcsServiceList(%s)", tenantID),
+		fmt.Sprintf("subscriptions/%s/GetEcsServices", tenantID),
+		&rp,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+// EcsServiceGet retrieves a single ECS service.
+func (c *Client) EcsServiceGet(tenantID, name string) (*DuploEcsService, ClientError) {
+	allResources, err := c.EcsServiceList(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find and return the resource with the specific type and name.
+	for _, resource := range *allResources {
+		if resource.Name == name {
+			return &resource, nil
+		}
+	}
+
+	// No resource was found.
+	return nil, nil
+}
+
 // EcsServiceCreate creates an ECS service via the Duplo API.
 func (c *Client) EcsServiceCreate(tenantID string, duploObject *DuploEcsService) (*DuploEcsService, ClientError) {
 	return c.EcsServiceCreateOrUpdate(tenantID, duploObject, false)
@@ -126,8 +159,8 @@ func (c *Client) EcsServiceDelete(id string) ClientError {
 		nil)
 }
 
-// EcsServiceGet retrieves an ECS service via the Duplo API.
-func (c *Client) EcsServiceGet(id string) (*DuploEcsService, ClientError) {
+// EcsServiceGetV2 retrieves an ECS service via the Duplo API.
+func (c *Client) EcsServiceGetV2(id string) (*DuploEcsService, ClientError) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]
