@@ -374,6 +374,16 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 	d.Set("is_target_group_only", duplo.IsTargetGroupOnly)
 	d.Set("dns_prfx", duplo.DNSPrfx)
 
+	loadBalancers, err := flattenDuploEcsServiceLbs(duplo, c)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	d.Set("load_balancer", loadBalancers)
+
+	return nil
+}
+
+func flattenDuploEcsServiceLbs(duplo *duplosdk.DuploEcsService, c *duplosdk.Client) ([]map[string]interface{}, error) {
 	// Next, convert things into structured data.
 	loadBalancers := ecsLoadBalancersToState(duplo.Name, duplo.LBConfigurations)
 
@@ -382,13 +392,12 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 		for _, lbc := range loadBalancers {
 			err := readEcsServiceAwsLbSettings(duplo.TenantID, duplo.Name, lbc, c)
 			if err != nil {
-				return diag.FromErr(err)
+				return nil, err
 			}
 		}
 	}
-	d.Set("load_balancer", loadBalancers)
 
-	return nil
+	return loadBalancers, nil
 }
 
 // EcsServiceFromState converts resource data respresenting an ECS Service to a Duplo SDK object.
