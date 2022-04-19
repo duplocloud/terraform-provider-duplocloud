@@ -53,6 +53,21 @@ type DuploEcsTaskDef struct {
  * API CALLS to duplo
  */
 
+// EcsTaskDefinitionListArns lists task definition ARNs via the Duplo API
+func (c *Client) EcsTaskDefinitionListArns(tenantID string) (*[]string, ClientError) {
+	rp := []string{}
+
+	err := c.getAPI(
+		fmt.Sprintf("EcsTaskDefinitionListArns(%s)", tenantID),
+		fmt.Sprintf("subscriptions/%s/GetEcsTaskDefinitionArns", tenantID),
+		&rp,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
 // EcsTaskDefinitionCreate creates an ECS task definition via the Duplo API.
 func (c *Client) EcsTaskDefinitionCreate(tenantID string, rq *DuploEcsTaskDef) (string, ClientError) {
 	var arn string
@@ -119,17 +134,11 @@ func (c *Client) EcsTaskDefinitionDelete(tenantID, arn string) ClientError {
 
 // EcsTaskDefinitionExists checks if an ECS task definition is exists via the Duplo API.
 func (c *Client) EcsTaskDefinitionExists(tenantID, arn string) (bool, ClientError) {
-	rp := []string{}
-
-	err := c.getAPI(
-		fmt.Sprintf("EcsTaskDefinitionExists(%s, %s)", tenantID, arn),
-		fmt.Sprintf("subscriptions/%s/GetEcsTaskDefinitionArns", tenantID),
-		&rp,
-	)
+	list, err := c.EcsTaskDefinitionListArns(tenantID)
 	if err != nil {
 		return false, err
 	}
-	for _, taskArn := range rp {
+	for _, taskArn := range *list {
 		if taskArn == arn {
 			return true, nil
 		}
