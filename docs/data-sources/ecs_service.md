@@ -17,8 +17,8 @@ description: |-
 
 ### Required
 
-- **name** (String) The name of the service.
-- **tenant_id** (String) The GUID of the tenant that contains the service.
+- **name** (String) The name of the service to create.
+- **tenant_id** (String) The GUID of the tenant that the service will be created in.
 
 ### Read-Only
 
@@ -31,12 +31,14 @@ description: |-
 - **replicas** (Number) The number of container replicas to create.
 - **target_group_arns** (Set of String)
 - **task_definition** (String) The ARN of the task definition to use.
+- **wait_until_targets_ready** (Boolean) Whether or not to wait until all target groups are created for ecs service, after creation.
 
 <a id="nestedatt--load_balancer"></a>
 ### Nested Schema for `load_balancer`
 
 Read-Only:
 
+- **backend_protocol** (String)
 - **backend_protocol_version** (String)
 - **certificate_arn** (String)
 - **drop_invalid_headers** (Boolean)
