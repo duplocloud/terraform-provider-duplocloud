@@ -36,6 +36,7 @@ func makeSchemaComputed(el *schema.Schema) {
 	el.Optional = false
 	el.ValidateDiagFunc = nil
 	el.ValidateFunc = nil
+	el.DiffSuppressFunc = nil
 	el.Default = nil
 	el.DefaultFunc = nil
 	el.MaxItems = 0
