@@ -8,22 +8,23 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // SCHEMA for resource data/search
 func dataSourceDuploEcsServices() *schema.Resource {
-	itemSchema := duploEcsServiceComputedSchema()
-	itemSchema["tenant_id"].Computed = true
-	itemSchema["tenant_id"].Required = false
-	itemSchema["name"].Computed = true
-	itemSchema["name"].Required = false
+	itemSchema := ecsServiceComputedSchema()
+
+	makeSchemaComputed(itemSchema["tenant_id"])
+	makeSchemaComputed(itemSchema["name"])
 
 	return &schema.Resource{
 		ReadContext: dataSourceDuploEcsServicesRead,
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.IsUUID,
 			},
 			"services": {
 				Type:     schema.TypeList,
