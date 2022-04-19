@@ -256,7 +256,7 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.EcsTaskDefinitionGet(tenantID, arn)
+	rp, err := c.EcsTaskDefinitionGetV2(tenantID, arn)
 	if err != nil {
 		return diag.FromErr(err)
 	}
