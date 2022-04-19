@@ -39,7 +39,6 @@ Read-Only:
 - **target_group_arns** (Set of String)
 - **task_definition** (String)
 - **tenant_id** (String)
-- **wait_until_targets_ready** (Boolean)
 
 <a id="nestedobjatt--services--load_balancer"></a>
 ### Nested Schema for `services.load_balancer`

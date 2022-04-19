@@ -17,6 +17,7 @@ func dataSourceDuploEcsServices() *schema.Resource {
 
 	makeSchemaComputed(itemSchema["tenant_id"])
 	makeSchemaComputed(itemSchema["name"])
+	delete(itemSchema, "wait_until_targets_ready")
 
 	return &schema.Resource{
 		ReadContext: dataSourceDuploEcsServicesRead,
