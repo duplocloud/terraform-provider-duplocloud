@@ -76,6 +76,23 @@ func (c *Client) EcsTaskDefinitionGet(tenantID, arn string) (*DuploEcsTaskDef, C
 
 	err := c.postAPI(
 		fmt.Sprintf("EcsTaskDefinitionGet(%s, %s)", tenantID, arn),
+		fmt.Sprintf("subscriptions/%s/FindEcsTaskDefinition", tenantID),
+		rq,
+		&rp,
+	)
+
+	// Fill in the tenant ID and return the object
+	rp.TenantID = tenantID
+	return &rp, err
+}
+
+// EcsTaskDefinitionGetV2 retrieves an ECS task definition via the Duplo API.
+func (c *Client) EcsTaskDefinitionGetV2(tenantID, arn string) (*DuploEcsTaskDef, ClientError) {
+	rq := map[string]interface{}{"Arn": arn}
+	rp := DuploEcsTaskDef{}
+
+	err := c.postAPI(
+		fmt.Sprintf("EcsTaskDefinitionGet(%s, %s)", tenantID, arn),
 		fmt.Sprintf("v2/subscriptions/%s/FindEcsTaskDefinition", tenantID),
 		rq,
 		&rp,

@@ -124,6 +124,8 @@ func Provider() *schema.Provider {
 			"duplocloud_duplo_service_lbconfigs": dataSourceDuploServiceLbConfigs(),
 			"duplocloud_duplo_service_params":    dataSourceDuploServiceParams(),
 			"duplocloud_ecs_service":             dataSourceDuploEcsService(),
+			"duplocloud_ecs_services":            dataSourceDuploEcsServices(),
+			"duplocloud_ecs_task_definition":     dataSourceDuploEcsTaskDefinition(),
 			"duplocloud_infrastructure":          dataSourceInfrastructure(),
 			"duplocloud_infrastructures":         dataSourceInfrastructures(),
 			"duplocloud_k8_config_map":           dataSourceK8ConfigMap(),
