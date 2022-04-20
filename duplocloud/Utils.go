@@ -27,6 +27,31 @@ const (
 	MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH = len("duploservices-1234567890ab--1234567890ab")
 )
 
+// Utility function to make a single schema element computed.
+// Does not handle nested schema elements.
+func makeSchemaComputed(el *schema.Schema) {
+	el.Computed = true
+	el.Required = false
+	el.ForceNew = false
+	el.Optional = false
+	el.MaxItems = 0
+	el.MinItems = 0
+	el.Default = nil
+	el.ValidateDiagFunc = nil
+	el.ValidateFunc = nil
+	el.DiffSuppressFunc = nil
+	el.StateFunc = nil
+	el.DefaultFunc = nil
+
+	switch el.Elem.(type) {
+	case *schema.Resource:
+		for _, subel := range el.Elem.(*schema.Resource).Schema {
+			makeSchemaComputed(subel)
+		}
+	default:
+	}
+}
+
 // Utility function to convert the `from` interface to a JSON encoded string `field` in the `to` map.
 func toJsonStringField(field string, from interface{}, to map[string]interface{}) {
 	if json, err := json.Marshal(from); err == nil {
