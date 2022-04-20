@@ -42,6 +42,8 @@ type DuploRdsInstance struct {
 	EnableLogging               bool   `json:"EnableLogging,omitempty"`
 	MultiAZ                     bool   `json:"MultiAZ,omitempty"`
 	InstanceStatus              string `json:"InstanceStatus,omitempty"`
+	ClusterIdentifier           string `json:"ClusterIdentifier,omitempty"`
+	Version                     string `json:"Version,omitempty"`
 }
 
 // DuploRdsInstancePasswordChange is a Duplo SDK object that represents an RDS instance password change
@@ -59,6 +61,43 @@ type DuploRdsInstanceDeleteProtection struct {
 /*************************************************
  * API CALLS to duplo
  */
+
+// RdsInstanceGet retrieves an RDS instance via the Duplo API.
+func (c *Client) RdsInstanceList(tenantID string) (*[]DuploRdsInstance, ClientError) {
+	rp := []DuploRdsInstance{}
+	err := c.getAPI(
+		fmt.Sprintf("RdsInstanceList(%s)", tenantID),
+		fmt.Sprintf("subscriptions/%s/GetRDSInstances", tenantID),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fill in the tenant ID and the name.
+	for i := range rp {
+		rp[i].TenantID = tenantID
+		rp[i].Name = strings.TrimPrefix(rp[i].Identifier, "duplo")
+	}
+	return &rp, nil
+}
+
+// RdsInstanceGet retrieves a single RDS instance.
+func (c *Client) RdsInstanceGet(tenantID, name string) (*DuploRdsInstance, ClientError) {
+	allResources, err := c.RdsInstanceList(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find and return the resource with the specific type and name.
+	for _, resource := range *allResources {
+		if resource.Name == name {
+			return &resource, nil
+		}
+	}
+
+	// No resource was found.
+	return nil, nil
+}
 
 // RdsInstanceCreate creates an ECS service via the Duplo API.
 func (c *Client) RdsInstanceCreate(tenantID string, duploObject *DuploRdsInstance) (*DuploRdsInstance, ClientError) {
@@ -113,8 +152,8 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, ClientError) {
 	return &DuploRdsInstance{TenantID: tenantID, Name: name}, nil
 }
 
-// RdsInstanceGet retrieves an RDS instance via the Duplo API.
-func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
+// RdsInstanceGetV2 retrieves an RDS instance via the Duplo API.
+func (c *Client) RdsInstanceGetV2(id string) (*DuploRdsInstance, ClientError) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]

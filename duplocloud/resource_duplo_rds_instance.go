@@ -211,7 +211,7 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.RdsInstanceGet(d.Id())
+	duplo, err := c.RdsInstanceGetV2(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -262,7 +262,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 
 	// Wait up to 60 seconds for Duplo to be able to return the instance details.
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "RDS DB instance", id, func() (interface{}, duplosdk.ClientError) {
-		return c.RdsInstanceGet(id)
+		return c.RdsInstanceGetV2(id)
 	})
 	if diags != nil {
 		return diags
@@ -359,7 +359,7 @@ func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB instance", id, func() (interface{}, duplosdk.ClientError) {
-		return c.RdsInstanceGet(id)
+		return c.RdsInstanceGetV2(id)
 	})
 
 	// Wait 1 more minute to deal with consistency issues.
@@ -386,7 +386,7 @@ func rdsInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, id s
 		PollInterval: 30 * time.Second,
 		Timeout:      timeout,
 		Refresh: func() (interface{}, string, error) {
-			resp, err := c.RdsInstanceGet(id)
+			resp, err := c.RdsInstanceGetV2(id)
 			if err != nil {
 				return 0, "", err
 			}
@@ -416,7 +416,7 @@ func rdsInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, id
 		PollInterval: 30 * time.Second,
 		Timeout:      timeout,
 		Refresh: func() (interface{}, string, error) {
-			resp, err := c.RdsInstanceGet(id)
+			resp, err := c.RdsInstanceGetV2(id)
 			if err != nil {
 				return 0, "", err
 			}
