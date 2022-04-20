@@ -56,12 +56,12 @@ func dataSourceDuploEcsTaskDefinitions() *schema.Resource {
 				ValidateFunc: validation.IsUUID,
 			},
 			"family": {
-				Type:          schema.TypeBool,
+				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"name"},
 			},
 			"name": {
-				Type:          schema.TypeBool,
+				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"family"},
 			},
