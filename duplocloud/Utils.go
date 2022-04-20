@@ -34,13 +34,14 @@ func makeSchemaComputed(el *schema.Schema) {
 	el.Required = false
 	el.ForceNew = false
 	el.Optional = false
+	el.MaxItems = 0
+	el.MinItems = 0
+	el.Default = nil
 	el.ValidateDiagFunc = nil
 	el.ValidateFunc = nil
 	el.DiffSuppressFunc = nil
-	el.Default = nil
+	el.StateFunc = nil
 	el.DefaultFunc = nil
-	el.MaxItems = 0
-	el.MinItems = 0
 
 	switch el.Elem.(type) {
 	case *schema.Resource:

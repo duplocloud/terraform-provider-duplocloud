@@ -61,6 +61,11 @@ func (c *Client) EcsServiceList(tenantID string) (*[]DuploEcsService, ClientErro
 	if err != nil {
 		return nil, err
 	}
+
+	// Fill in the tenant ID.
+	for i := range rp {
+		rp[i].TenantID = tenantID
+	}
 	return &rp, nil
 }
 
