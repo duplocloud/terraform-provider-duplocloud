@@ -39,6 +39,7 @@ type DuploRdsInstance struct {
 	Cloud                       int    `json:"Cloud,omitempty"`
 	SizeEx                      string `json:"SizeEx,omitempty"`
 	EncryptStorage              bool   `json:"EncryptStorage,omitempty"`
+	EncryptionKmsKeyId          string `json:"EncryptionKmsKeyId,omitempty"`
 	EnableLogging               bool   `json:"EnableLogging,omitempty"`
 	MultiAZ                     bool   `json:"MultiAZ,omitempty"`
 	InstanceStatus              string `json:"InstanceStatus,omitempty"`
@@ -54,6 +55,12 @@ type DuploRdsInstancePasswordChange struct {
 type DuploRdsInstanceDeleteProtection struct {
 	DBInstanceIdentifier string `json:"DBInstanceIdentifier"`
 	DeletionProtection   *bool  `json:"DeletionProtection,omitempty"`
+}
+
+type DuploRdsClusterDeleteProtection struct {
+	DBClusterIdentifier string `json:"DBClusterIdentifier"`
+	ApplyImmediately    bool   `json:"ApplyImmediately"`
+	DeletionProtection  *bool  `json:"DeletionProtection,omitempty"`
 }
 
 /*************************************************
@@ -155,6 +162,14 @@ func (c *Client) RdsInstanceChangeDeleteProtection(tenantID string, duploObject 
 	)
 }
 
+func (c *Client) RdsClusterChangeDeleteProtection(tenantID string, duploObject DuploRdsClusterDeleteProtection) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("RdsClusterChangeDeleteProtection(%s, %s)", tenantID, duploObject.DBClusterIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/modifyRdsCluster", tenantID),
+		&duploObject,
+		nil,
+	)
+}
 func RdsIsAurora(engine int) bool {
 	return engine == DUPLO_RDS_ENGINE_AURORA_MYSQL ||
 		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL ||

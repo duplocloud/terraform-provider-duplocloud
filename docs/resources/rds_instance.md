@@ -71,6 +71,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 - **encrypt_storage** (Boolean) Whether or not to encrypt the RDS instance storage.
 - **engine_version** (String) The database engine version to use the for the RDS instance.
 If you don't know the available engine versions for your RDS instance, you can use the [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-engine-versions.html) to retrieve a list.
+- **kms_key_id** (String) The globally unique identifier for the key.
 - **master_password** (String, Sensitive) The master password of the RDS instance.
 - **master_username** (String) The master username of the RDS instance.
 - **multi_az** (Boolean) Specifies if the RDS instance is multi-AZ. Defaults to `false`.

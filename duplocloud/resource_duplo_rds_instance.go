@@ -181,6 +181,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional: true,
 			Default:  false,
 		},
+		"kms_key_id": {
+			Description: "The globally unique identifier for the key.",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+		},
 	}
 }
 
@@ -282,10 +288,18 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		*deleteProtection = d.Get("deletion_protection").(bool)
 		// Update delete protection settings.
 		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), identifier)
-		err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
-			DBInstanceIdentifier: identifier,
-			DeletionProtection:   deleteProtection,
-		})
+		if isAuroraDB(d) {
+			err = c.RdsClusterChangeDeleteProtection(tenantID, duplosdk.DuploRdsClusterDeleteProtection{
+				DBClusterIdentifier: identifier + "-cluster",
+				DeletionProtection:  deleteProtection,
+				ApplyImmediately:    true,
+			})
+		} else {
+			err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
+				DBInstanceIdentifier: identifier,
+				DeletionProtection:   deleteProtection,
+			})
+		}
 
 		if err != nil {
 			return diag.Errorf("Error while setting deletion_protection for RDS DB instance '%s' : %s", id, err)
@@ -333,10 +347,19 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), d.Get("identifier").(string))
 		deleteProtection := new(bool)
 		*deleteProtection = d.Get("deletion_protection").(bool)
-		err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
-			DBInstanceIdentifier: d.Get("identifier").(string),
-			DeletionProtection:   deleteProtection,
-		})
+
+		if isAuroraDB(d) {
+			err = c.RdsClusterChangeDeleteProtection(tenantID, duplosdk.DuploRdsClusterDeleteProtection{
+				DBClusterIdentifier: d.Get("identifier").(string) + "-cluster",
+				DeletionProtection:  deleteProtection,
+				ApplyImmediately:    true,
+			})
+		} else {
+			err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
+				DBInstanceIdentifier: d.Get("identifier").(string),
+				DeletionProtection:   deleteProtection,
+			})
+		}
 
 		if err != nil {
 			return diag.Errorf("Error while setting deletion_protection for RDS DB instance '%s' : %s", id, err)
@@ -453,6 +476,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.Cloud = 0 // AWS
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.EncryptStorage = d.Get("encrypt_storage").(bool)
+	duploObject.EncryptionKmsKeyId = d.Get("kms_key_id").(string)
 	duploObject.EnableLogging = d.Get("enable_logging").(bool)
 	duploObject.MultiAZ = d.Get("multi_az").(bool)
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
@@ -491,6 +515,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["parameter_group_name"] = duploObject.DBParameterGroupName
 	jo["size"] = duploObject.SizeEx
 	jo["encrypt_storage"] = duploObject.EncryptStorage
+	jo["kms_key_id"] = duploObject.EncryptionKmsKeyId
 	jo["enable_logging"] = duploObject.EnableLogging
 	jo["multi_az"] = duploObject.MultiAZ
 	jo["instance_status"] = duploObject.InstanceStatus
@@ -542,6 +567,11 @@ func validateRdsInstance(duplo *duplosdk.DuploRdsInstance) (errors []error) {
 	}
 
 	return
+}
+
+func isAuroraDB(d *schema.ResourceData) bool {
+	return d.Get("engine").(int) == 8 || d.Get("engine").(int) == 9 ||
+		d.Get("engine").(int) == 11 || d.Get("engine").(int) == 12
 }
 
 func isDeleteProtectionSupported(d *schema.ResourceData) bool {
