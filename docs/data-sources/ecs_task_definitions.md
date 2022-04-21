@@ -21,9 +21,9 @@ description: |-
 
 ### Optional
 
-- **family** (Boolean)
+- **family** (String)
 - **latest** (Boolean)
-- **name** (Boolean)
+- **name** (String)
 
 ### Read-Only
 
