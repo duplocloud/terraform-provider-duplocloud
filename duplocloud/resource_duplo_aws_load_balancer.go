@@ -150,9 +150,9 @@ func resourceAwsLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, 
 
 	// Create the request object.
 	duploObject := duplosdk.DuploAwsLBConfiguration{
-		Name:          d.Get("name").(string),
-		IsInternal:    d.Get("is_internal").(bool),
-		LbTypeSyncApi: d.Get("load_balancer_type").(string),
+		Name:            d.Get("name").(string),
+		IsInternal:      d.Get("is_internal").(bool),
+		RequestedLbType: d.Get("load_balancer_type").(string),
 	}
 
 	c := m.(*duplosdk.Client)

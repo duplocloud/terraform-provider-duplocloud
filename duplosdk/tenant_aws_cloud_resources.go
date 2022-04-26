@@ -103,7 +103,7 @@ type DuploAwsLBConfiguration struct {
 	State            string `json:"State,omitempty"`
 	IsInternal       bool   `json:"IsInternal,omitempty"`
 	EnableAccessLogs bool   `json:"EnableAccessLogs,omitempty"`
-	LbTypeSyncApi    string `json:"LbTypeSyncApi,omitempty"`
+	RequestedLbType  string `json:"RequestedLbType,omitempty"`
 }
 
 type DuploAwsLbState struct {
