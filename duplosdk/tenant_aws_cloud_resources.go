@@ -93,6 +93,7 @@ type DuploApplicationLB struct {
 	EnableAccessLogs bool                   `json:"EnableAccessLogs,omitempty"`
 	IsInternal       bool                   `json:"IsInternal,omitempty"`
 	WebACLID         string                 `json:"WebACLID,omitempty"`
+	LbType           *DuploStringValue      `json:"LbType,omitempty"`
 	Tags             *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
 
@@ -102,6 +103,7 @@ type DuploAwsLBConfiguration struct {
 	State            string `json:"State,omitempty"`
 	IsInternal       bool   `json:"IsInternal,omitempty"`
 	EnableAccessLogs bool   `json:"EnableAccessLogs,omitempty"`
+	RequestedLbType  string `json:"RequestedLbType,omitempty"`
 }
 
 type DuploAwsLbState struct {

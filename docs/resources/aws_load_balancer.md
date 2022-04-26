@@ -37,9 +37,10 @@ resource "duplocloud_aws_load_balancer" "myapp" {
 
 ### Optional
 
-- **drop_invalid_headers** (Boolean) Whether or not the load balancer should drop invalid HTTP headers.
+- **drop_invalid_headers** (Boolean) Whether or not the load balancer should drop invalid HTTP headers. Only valid for Load Balancers of type `Application`
 - **enable_access_logs** (Boolean) Whether or not access logs should be enabled.
 - **is_internal** (Boolean) Whether or not the load balancer is internal (non internet-facing).
+- **load_balancer_type** (String) The type of load balancer to create. Possible values are `Application` or `Network`. Defaults to `Application`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **web_acl_id** (String) The ARN of a WAF to attach to the load balancer.
 

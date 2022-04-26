@@ -33,6 +33,16 @@ func awsLoadBalancerSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"load_balancer_type": {
+			Description: "The type of load balancer to create. Possible values are `Application` or `Network`.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Default:     "Application",
+			ValidateFunc: validation.StringInSlice([]string{
+				"Application",
+				"Network",
+			}, true),
+		},
 		"arn": {
 			Description: "The ARN of the load balancer.",
 			Type:        schema.TypeString,
@@ -52,10 +62,11 @@ func awsLoadBalancerSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"drop_invalid_headers": {
-			Description: "Whether or not the load balancer should drop invalid HTTP headers.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Computed:    true,
+			Description:      "Whether or not the load balancer should drop invalid HTTP headers. Only valid for Load Balancers of type `Application`",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: suppressIfLBType("Network"),
 		},
 		"web_acl_id": {
 			Description: "The ARN of a WAF to attach to the load balancer.",
@@ -139,8 +150,9 @@ func resourceAwsLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, 
 
 	// Create the request object.
 	duploObject := duplosdk.DuploAwsLBConfiguration{
-		Name:       d.Get("name").(string),
-		IsInternal: d.Get("is_internal").(bool),
+		Name:            d.Get("name").(string),
+		IsInternal:      d.Get("is_internal").(bool),
+		RequestedLbType: d.Get("load_balancer_type").(string),
 	}
 
 	c := m.(*duplosdk.Client)
@@ -236,6 +248,9 @@ func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, nam
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("fullname", duplo.Name)
+	if duplo.LbType != nil {
+		d.Set("load_balancer_type", duplo.LbType.Value)
+	}
 	d.Set("arn", duplo.Arn)
 	d.Set("is_internal", duplo.IsInternal)
 	d.Set("enable_access_logs", settings.EnableAccessLogs)
@@ -243,4 +258,10 @@ func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, nam
 	d.Set("web_acl_id", settings.WebACLID)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("dns_name", duplo.DNSName)
+}
+
+func suppressIfLBType(t string) schema.SchemaDiffSuppressFunc {
+	return func(k string, old string, new string, d *schema.ResourceData) bool {
+		return strings.EqualFold(d.Get("load_balancer_type").(string), t)
+	}
 }
