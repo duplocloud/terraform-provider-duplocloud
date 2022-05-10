@@ -434,11 +434,15 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 
 func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string) (bool, error) {
 
-	infra, err := c.InfrastructureGetConfig(name)
+	config, err := c.InfrastructureGetConfig(name)
 	if err != nil {
 		return false, err
 	}
-	if infra == nil {
+	infra, err := c.InfrastructureGet(name)
+	if err != nil {
+		return false, err
+	}
+	if config == nil || infra == nil {
 		return true, nil // object missing
 	}
 
@@ -448,21 +452,23 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	d.Set("region", infra.Region)
 	d.Set("azcount", infra.AzCount)
 	d.Set("enable_k8_cluster", infra.EnableK8Cluster)
+	d.Set("enable_ecs_cluster", infra.EnableECSCluster)
+	d.Set("enable_container_insights", infra.EnableContainerInsights)
 	d.Set("address_prefix", infra.Vnet.AddressPrefix)
 	d.Set("subnet_cidr", infra.Vnet.SubnetCidr)
 	d.Set("status", infra.ProvisioningStatus)
-	d.Set("custom_data", keyValueToState("custom_data", infra.CustomData))
+	d.Set("custom_data", keyValueToState("custom_data", config.CustomData))
 
 	// Set extended infrastructure information.
-	if infra.Vnet != nil {
-		d.Set("vpc_id", infra.Vnet.ID)
-		d.Set("vpc_name", infra.Vnet.Name)
+	if config.Vnet != nil {
+		d.Set("vpc_id", config.Vnet.ID)
+		d.Set("vpc_name", config.Vnet.Name)
 
-		if infra.Vnet.Subnets != nil {
-			publicSubnets := make([]map[string]interface{}, 0, len(*infra.Vnet.Subnets))
-			privateSubnets := make([]map[string]interface{}, 0, len(*infra.Vnet.Subnets))
+		if config.Vnet.Subnets != nil {
+			publicSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
+			privateSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
 
-			for _, vnetSubnet := range *infra.Vnet.Subnets {
+			for _, vnetSubnet := range *config.Vnet.Subnets {
 
 				// Skip it unless it's a duplo managed subnet.
 				isDuploSubnet := true // older systems do not return tags
@@ -512,10 +518,10 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 			d.Set("public_subnets", publicSubnets)
 		}
 
-		if infra.Vnet.SecurityGroups != nil {
-			securityGroups := make([]map[string]interface{}, 0, len(*infra.Vnet.SecurityGroups))
+		if config.Vnet.SecurityGroups != nil {
+			securityGroups := make([]map[string]interface{}, 0, len(*config.Vnet.SecurityGroups))
 
-			for _, vnetSG := range *infra.Vnet.SecurityGroups {
+			for _, vnetSG := range *config.Vnet.SecurityGroups {
 				sg := map[string]interface{}{
 					"id":        vnetSG.SystemId,
 					"name":      vnetSG.Name,
