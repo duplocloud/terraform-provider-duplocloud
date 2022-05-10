@@ -148,6 +148,8 @@ func resourceInfrastructure() *schema.Resource {
 			"account_id": {
 				Description: "The cloud account ID.",
 				Type:        schema.TypeString,
+				ForceNew:    true,
+				Optional:    true,
 				Computed:    true,
 			},
 			"cloud": {
@@ -175,12 +177,28 @@ func resourceInfrastructure() *schema.Resource {
 			"enable_k8_cluster": {
 				Description: "Whether or not to provision a kubernetes cluster.",
 				Type:        schema.TypeBool,
+				ForceNew:    true,
 				Required:    true,
+			},
+			"enable_ecs_cluster": {
+				Description: "Whether or not to provision an ECS cluster.",
+				Type:        schema.TypeBool,
+				ForceNew:    true,
+				Optional:    true,
+				Computed:    true,
+			},
+			"enable_container_insights": {
+				Description: "Whether or not to enable container insights for an ECS cluster.",
+				Type:        schema.TypeBool,
+				ForceNew:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 			"custom_data": {
 				Description: "Custom configuration options for the infrastructure.",
 				Type:        schema.TypeList,
 				Optional:    true,
+				Computed:    true,
 				Elem:        KeyValueSchema(),
 			},
 			"address_prefix": {
@@ -269,13 +287,13 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
-	rq := duploInfrastructureFromState(d)
+	rq := duploInfrastructureCreateRequestFromState(d)
 
 	log.Printf("[TRACE] resourceInfrastructureCreate(%s): start", rq.Name)
 
 	// Post the object to Duplo.
 	c := m.(*duplosdk.Client)
-	_, err = c.InfrastructureCreate(rq)
+	err = c.InfrastructureCreate(rq)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -360,15 +378,35 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 
 func duploInfrastructureFromState(d *schema.ResourceData) duplosdk.DuploInfrastructure {
 	return duplosdk.DuploInfrastructure{
-		Name:            d.Get("infra_name").(string),
-		AccountId:       d.Get("account_id").(string),
-		Cloud:           d.Get("cloud").(int),
-		Region:          d.Get("region").(string),
-		AzCount:         d.Get("azcount").(int),
-		EnableK8Cluster: d.Get("enable_k8_cluster").(bool),
-		AddressPrefix:   d.Get("address_prefix").(string),
-		SubnetCidr:      d.Get("subnet_cidr").(int),
-		CustomData:      keyValueFromState("custom_data", d),
+		Name:                    d.Get("infra_name").(string),
+		AccountId:               d.Get("account_id").(string),
+		Cloud:                   d.Get("cloud").(int),
+		Region:                  d.Get("region").(string),
+		AzCount:                 d.Get("azcount").(int),
+		EnableK8Cluster:         d.Get("enable_k8_cluster").(bool),
+		EnableECSCluster:        d.Get("enable_ecs_cluster").(bool),
+		EnableContainerInsights: d.Get("enable_container_insights").(bool),
+		AddressPrefix:           d.Get("address_prefix").(string),
+		SubnetCidr:              d.Get("subnet_cidr").(int),
+		CustomData:              keyValueFromState("custom_data", d),
+	}
+}
+
+func duploInfrastructureCreateRequestFromState(d *schema.ResourceData) duplosdk.DuploInfrastructureCreateRequest {
+	return duplosdk.DuploInfrastructureCreateRequest{
+		Name:                    d.Get("infra_name").(string),
+		AccountId:               d.Get("account_id").(string),
+		Cloud:                   d.Get("cloud").(int),
+		Region:                  d.Get("region").(string),
+		AzCount:                 d.Get("azcount").(int),
+		EnableK8Cluster:         d.Get("enable_k8_cluster").(bool),
+		EnableECSCluster:        d.Get("enable_ecs_cluster").(bool),
+		EnableContainerInsights: d.Get("enable_container_insights").(bool),
+		Vnet: &duplosdk.DuploInfrastructureVnet{
+			AddressPrefix: d.Get("address_prefix").(string),
+			SubnetCidr:    d.Get("subnet_cidr").(int),
+		},
+		CustomData: keyValueFromState("custom_data", d),
 	}
 }
 
