@@ -20,18 +20,34 @@ type DuploEksCredentials struct {
 	DefaultNamespace               string `json:"DefaultNamespace,omitempty"`
 }
 
+// DuploInfrastructureCreateRequest represents a Duplo infrastructure creation request
+type DuploInfrastructureCreateRequest struct {
+	Name                    string                   `json:"Name"`
+	AccountId               string                   `json:"AccountId"`
+	Cloud                   int                      `json:"Cloud"`
+	Region                  string                   `json:"Region"`
+	AzCount                 int                      `json:"AzCount"`
+	EnableK8Cluster         bool                     `json:"EnableK8Cluster"`
+	EnableECSCluster        bool                     `json:"EnableECSCluster"`
+	EnableContainerInsights bool                     `json:"EnableContainerInsights"`
+	Vnet                    *DuploInfrastructureVnet `json:"Vnet"`
+	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
+}
+
 // DuploInfrastructure represents a Duplo infrastructure
 type DuploInfrastructure struct {
-	Name               string                 `json:"Name"`
-	AccountId          string                 `json:"AccountId"`
-	Cloud              int                    `json:"Cloud"`
-	Region             string                 `json:"Region"`
-	AzCount            int                    `json:"AzCount"`
-	EnableK8Cluster    bool                   `json:"EnableK8Cluster"`
-	AddressPrefix      string                 `json:"AddressPrefix"`
-	SubnetCidr         int                    `json:"SubnetCidr"`
-	ProvisioningStatus string                 `json:"ProvisioningStatus"`
-	CustomData         *[]DuploKeyStringValue `json:"CustomData,omitempty"`
+	Name                    string                 `json:"Name"`
+	AccountId               string                 `json:"AccountId"`
+	Cloud                   int                    `json:"Cloud"`
+	Region                  string                 `json:"Region"`
+	AzCount                 int                    `json:"AzCount"`
+	EnableK8Cluster         bool                   `json:"EnableK8Cluster"`
+	EnableECSCluster        bool                   `json:"EnableECSCluster"`
+	EnableContainerInsights bool                   `json:"EnableContainerInsights"`
+	AddressPrefix           string                 `json:"AddressPrefix"`
+	SubnetCidr              int                    `json:"SubnetCidr"`
+	ProvisioningStatus      string                 `json:"ProvisioningStatus"`
+	CustomData              *[]DuploKeyStringValue `json:"CustomData,omitempty"`
 }
 
 // DuploInfrastructureVnet represents a Duplo infrastructure VNET subnet
@@ -72,25 +88,38 @@ type DuploInfrastructureVnetSGRule struct {
 
 // DuploInfrastructureVnet represents a Duplo infrastructure VNET
 type DuploInfrastructureVnet struct {
-	ID                 string                                   `json:"Id"`
-	Name               string                                   `json:"Name"`
+	ID                 string                                   `json:"Id,omitempty"`
+	Name               string                                   `json:"Name,omitempty"`
 	AddressPrefix      string                                   `json:"AddressPrefix"`
 	SubnetCidr         int                                      `json:"SubnetCidr"`
 	Subnets            *[]DuploInfrastructureVnetSubnet         `json:"Subnets,omitempty"`
-	ProvisioningStatus string                                   `json:"ProvisioningStatus"`
-	SecurityGroups     *[]DuploInfrastructureVnetSecurityGroups `json:"SecurityGroups"`
+	ProvisioningStatus string                                   `json:"ProvisioningStatus,omitempty"`
+	SecurityGroups     *[]DuploInfrastructureVnetSecurityGroups `json:"SecurityGroups,omitempty"`
 }
 
-// DuploInfrastructure represents extended information about a Duplo infrastructure
+// DuploInfrastructureConfig represents extended information about a Duplo infrastructure
 type DuploInfrastructureConfig struct {
-	Name               string                   `json:"Name"`
-	AccountId          string                   `json:"AccountId"`
-	Cloud              int                      `json:"Cloud"`
-	Region             string                   `json:"Region"`
-	AzCount            int                      `json:"AzCount"`
-	EnableK8Cluster    bool                     `json:"EnableK8Cluster"`
-	Vnet               *DuploInfrastructureVnet `json:"Vnet"`
-	ProvisioningStatus string                   `json:"ProvisioningStatus"`
+	Name                    string                   `json:"Name"`
+	AccountId               string                   `json:"AccountId"`
+	Cloud                   int                      `json:"Cloud"`
+	Region                  string                   `json:"Region"`
+	AzCount                 int                      `json:"AzCount"`
+	EnableK8Cluster         bool                     `json:"EnableK8Cluster"`
+	EnableECSCluster        bool                     `json:"EnableECSCluster,omitempty"`
+	EnableContainerInsights bool                     `json:"EnableContainerInsights,omitempty"`
+	Vnet                    *DuploInfrastructureVnet `json:"Vnet"`
+	ProvisioningStatus      string                   `json:"ProvisioningStatus"`
+	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
+}
+
+// InfrastructureList retrieves a list of infrastructures via the Duplo API.
+func (c *Client) InfrastructureList() (*[]DuploInfrastructureConfig, ClientError) {
+	list := []DuploInfrastructureConfig{}
+	err := c.getAPI("InfrastructureList()", "adminproxy/GetInfrastructureConfigs", &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
 }
 
 // InfrastructureGetList retrieves a list of infrastructures via the Duplo API.
@@ -104,13 +133,21 @@ func (c *Client) InfrastructureGetList() (*[]DuploInfrastructure, ClientError) {
 }
 
 // InfrastructureGet retrieves an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureGet(name string) (*DuploInfrastructure, ClientError) {
-	rp := DuploInfrastructure{}
-	err := c.getAPI(fmt.Sprintf("InfrastructureGet(%s)", name), fmt.Sprintf("v2/admin/InfrastructureV2/%s", name), &rp)
-	if err != nil || rp.Name == "" {
+func (c *Client) InfrastructureGet(name string) (*DuploInfrastructureConfig, ClientError) {
+	allInfras, err := c.InfrastructureList()
+	if err != nil {
 		return nil, err
 	}
-	return &rp, nil
+
+	// Find and return the secret with the specific type and name.
+	for _, infra := range *allInfras {
+		if infra.Name == name {
+			return &infra, nil
+		}
+	}
+
+	// No resource was found.
+	return nil, nil
 }
 
 // InfrastructureGetConfig retrieves extended infrastructure configuration by name via the Duplo API.
@@ -178,8 +215,12 @@ func (c *Client) InfrastructureDeleteSubnet(infraName, subnetName, subnetCidr st
 }
 
 // InfrastructureCreate creates an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureCreate(rq DuploInfrastructure) (*DuploInfrastructure, ClientError) {
-	return c.InfrastructureCreateOrUpdate(rq, false)
+func (c *Client) InfrastructureCreate(rq DuploInfrastructureConfig) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("InfrastructureCreate(%s)", rq.Name),
+		"adminproxy/CreateInfrastructureConfig",
+		&rq,
+		nil)
 }
 
 // InfrastructureUpdate updates an infrastructure by name via the Duplo API.

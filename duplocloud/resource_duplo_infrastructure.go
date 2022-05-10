@@ -133,7 +133,7 @@ func resourceInfrastructure() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
+			Create: schema.DefaultTimeout(50 * time.Minute),
 			Update: schema.DefaultTimeout(30 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
@@ -148,13 +148,16 @@ func resourceInfrastructure() *schema.Resource {
 			"account_id": {
 				Description: "The cloud account ID.",
 				Type:        schema.TypeString,
+				ForceNew:    true,
+				Optional:    true,
 				Computed:    true,
 			},
 			"cloud": {
 				Description: "The numerical index of cloud provider to use for the infrastructure.\n" +
 					"Should be one of:\n\n" +
 					"   - `0` : AWS\n" +
-					"   - `2` : Azure\n",
+					"   - `2` : Azure\n" +
+					"   - `3` : Google\n",
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
@@ -175,12 +178,28 @@ func resourceInfrastructure() *schema.Resource {
 			"enable_k8_cluster": {
 				Description: "Whether or not to provision a kubernetes cluster.",
 				Type:        schema.TypeBool,
+				ForceNew:    true,
 				Required:    true,
+			},
+			"enable_ecs_cluster": {
+				Description: "Whether or not to provision an ECS cluster.",
+				Type:        schema.TypeBool,
+				ForceNew:    true,
+				Optional:    true,
+				Computed:    true,
+			},
+			"enable_container_insights": {
+				Description: "Whether or not to enable container insights for an ECS cluster.",
+				Type:        schema.TypeBool,
+				ForceNew:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 			"custom_data": {
 				Description: "Custom configuration options for the infrastructure.",
 				Type:        schema.TypeList,
 				Optional:    true,
+				Computed:    true,
 				Elem:        KeyValueSchema(),
 			},
 			"address_prefix": {
@@ -269,13 +288,13 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
-	rq := duploInfrastructureFromState(d)
+	rq := duploInfrastructureConfigFromState(d)
 
 	log.Printf("[TRACE] resourceInfrastructureCreate(%s): start", rq.Name)
 
 	// Post the object to Duplo.
 	c := m.(*duplosdk.Client)
-	_, err = c.InfrastructureCreate(rq)
+	err = c.InfrastructureCreate(rq)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -283,7 +302,7 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 	// Wait up to 60 seconds for Duplo to be able to return the infrastructure details.
 	id := fmt.Sprintf("v2/admin/InfrastructureV2/%s", rq.Name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, duplosdk.ClientError) {
-		return c.InfrastructureGet(rq.Name)
+		return c.InfrastructureGetConfig(rq.Name)
 	})
 	if diags != nil {
 		return diags
@@ -360,15 +379,35 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 
 func duploInfrastructureFromState(d *schema.ResourceData) duplosdk.DuploInfrastructure {
 	return duplosdk.DuploInfrastructure{
-		Name:            d.Get("infra_name").(string),
-		AccountId:       d.Get("account_id").(string),
-		Cloud:           d.Get("cloud").(int),
-		Region:          d.Get("region").(string),
-		AzCount:         d.Get("azcount").(int),
-		EnableK8Cluster: d.Get("enable_k8_cluster").(bool),
-		AddressPrefix:   d.Get("address_prefix").(string),
-		SubnetCidr:      d.Get("subnet_cidr").(int),
-		CustomData:      keyValueFromState("custom_data", d),
+		Name:                    d.Get("infra_name").(string),
+		AccountId:               d.Get("account_id").(string),
+		Cloud:                   d.Get("cloud").(int),
+		Region:                  d.Get("region").(string),
+		AzCount:                 d.Get("azcount").(int),
+		EnableK8Cluster:         d.Get("enable_k8_cluster").(bool),
+		EnableECSCluster:        d.Get("enable_ecs_cluster").(bool),
+		EnableContainerInsights: d.Get("enable_container_insights").(bool),
+		AddressPrefix:           d.Get("address_prefix").(string),
+		SubnetCidr:              d.Get("subnet_cidr").(int),
+		CustomData:              keyValueFromState("custom_data", d),
+	}
+}
+
+func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploInfrastructureConfig {
+	return duplosdk.DuploInfrastructureConfig{
+		Name:                    d.Get("infra_name").(string),
+		AccountId:               d.Get("account_id").(string),
+		Cloud:                   d.Get("cloud").(int),
+		Region:                  d.Get("region").(string),
+		AzCount:                 d.Get("azcount").(int),
+		EnableK8Cluster:         d.Get("enable_k8_cluster").(bool),
+		EnableECSCluster:        d.Get("enable_ecs_cluster").(bool),
+		EnableContainerInsights: d.Get("enable_container_insights").(bool),
+		Vnet: &duplosdk.DuploInfrastructureVnet{
+			AddressPrefix: d.Get("address_prefix").(string),
+			SubnetCidr:    d.Get("subnet_cidr").(int),
+		},
+		CustomData: keyValueFromState("custom_data", d),
 	}
 }
 
@@ -377,7 +416,7 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
-			rp, err := c.InfrastructureGet(name)
+			rp, err := c.InfrastructureGetConfig(name)
 			status := "pending"
 			if err == nil && rp.ProvisioningStatus == "Complete" {
 				status = "ready"
@@ -395,15 +434,15 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 
 func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string) (bool, error) {
 
-	infra, err := c.InfrastructureGet(name)
-	if err != nil {
-		return false, err
-	}
 	config, err := c.InfrastructureGetConfig(name)
 	if err != nil {
 		return false, err
 	}
-	if infra == nil || config == nil {
+	infra, err := c.InfrastructureGet(name)
+	if err != nil {
+		return false, err
+	}
+	if config == nil || infra == nil {
 		return true, nil // object missing
 	}
 
@@ -413,10 +452,12 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	d.Set("region", infra.Region)
 	d.Set("azcount", infra.AzCount)
 	d.Set("enable_k8_cluster", infra.EnableK8Cluster)
-	d.Set("address_prefix", infra.AddressPrefix)
-	d.Set("subnet_cidr", infra.SubnetCidr)
+	d.Set("enable_ecs_cluster", infra.EnableECSCluster)
+	d.Set("enable_container_insights", infra.EnableContainerInsights)
+	d.Set("address_prefix", infra.Vnet.AddressPrefix)
+	d.Set("subnet_cidr", infra.Vnet.SubnetCidr)
 	d.Set("status", infra.ProvisioningStatus)
-	d.Set("custom_data", keyValueToState("custom_data", infra.CustomData))
+	d.Set("custom_data", keyValueToState("custom_data", config.CustomData))
 
 	// Set extended infrastructure information.
 	if config.Vnet != nil {

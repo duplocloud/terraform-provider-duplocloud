@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.7.14" # RELEASE VERSION
+      version = "0.7.15" # RELEASE VERSION
       source  = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -16,15 +16,20 @@ data "duplocloud_plans" "all" {}
 data "duplocloud_plan" "default" { plan_id = "default" }
 
 
-# resource "duplocloud_infrastructure" "test" {
-#   infra_name        = "test2"
-#   cloud             = 0
-#   region            = "us-east-2"
-#   azcount           = 2
-#   enable_k8_cluster = true
-#   address_prefix    = "10.40.0.0/16"
-#   subnet_cidr       = 24
-# }
+resource "duplocloud_infrastructure" "test" {
+  infra_name        = "jk3"
+  cloud             = 0
+  region            = "us-east-2"
+  azcount           = 2
+  enable_k8_cluster = false
+  address_prefix    = "10.43.0.0/16"
+  subnet_cidr       = 24
+
+  custom_data {
+    key = "K8sVersion"
+    value = "1.19"
+  }
+}
 
 # resource "duplocloud_tenant" "test" {
 #   account_name = "t2t1"
