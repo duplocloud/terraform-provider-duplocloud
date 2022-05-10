@@ -133,7 +133,7 @@ func resourceInfrastructure() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
+			Create: schema.DefaultTimeout(50 * time.Minute),
 			Update: schema.DefaultTimeout(30 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
@@ -156,7 +156,8 @@ func resourceInfrastructure() *schema.Resource {
 				Description: "The numerical index of cloud provider to use for the infrastructure.\n" +
 					"Should be one of:\n\n" +
 					"   - `0` : AWS\n" +
-					"   - `2` : Azure\n",
+					"   - `2` : Azure\n" +
+					"   - `3` : Google\n",
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
@@ -287,7 +288,7 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
-	rq := duploInfrastructureCreateRequestFromState(d)
+	rq := duploInfrastructureConfigFromState(d)
 
 	log.Printf("[TRACE] resourceInfrastructureCreate(%s): start", rq.Name)
 
@@ -301,7 +302,7 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 	// Wait up to 60 seconds for Duplo to be able to return the infrastructure details.
 	id := fmt.Sprintf("v2/admin/InfrastructureV2/%s", rq.Name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, duplosdk.ClientError) {
-		return c.InfrastructureGet(rq.Name)
+		return c.InfrastructureGetConfig(rq.Name)
 	})
 	if diags != nil {
 		return diags
@@ -392,8 +393,8 @@ func duploInfrastructureFromState(d *schema.ResourceData) duplosdk.DuploInfrastr
 	}
 }
 
-func duploInfrastructureCreateRequestFromState(d *schema.ResourceData) duplosdk.DuploInfrastructureCreateRequest {
-	return duplosdk.DuploInfrastructureCreateRequest{
+func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploInfrastructureConfig {
+	return duplosdk.DuploInfrastructureConfig{
 		Name:                    d.Get("infra_name").(string),
 		AccountId:               d.Get("account_id").(string),
 		Cloud:                   d.Get("cloud").(int),
@@ -415,7 +416,7 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
-			rp, err := c.InfrastructureGet(name)
+			rp, err := c.InfrastructureGetConfig(name)
 			status := "pending"
 			if err == nil && rp.ProvisioningStatus == "Complete" {
 				status = "ready"
@@ -433,15 +434,11 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 
 func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string) (bool, error) {
 
-	infra, err := c.InfrastructureGet(name)
+	infra, err := c.InfrastructureGetConfig(name)
 	if err != nil {
 		return false, err
 	}
-	config, err := c.InfrastructureGetConfig(name)
-	if err != nil {
-		return false, err
-	}
-	if infra == nil || config == nil {
+	if infra == nil {
 		return true, nil // object missing
 	}
 
@@ -451,21 +448,21 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	d.Set("region", infra.Region)
 	d.Set("azcount", infra.AzCount)
 	d.Set("enable_k8_cluster", infra.EnableK8Cluster)
-	d.Set("address_prefix", infra.AddressPrefix)
-	d.Set("subnet_cidr", infra.SubnetCidr)
+	d.Set("address_prefix", infra.Vnet.AddressPrefix)
+	d.Set("subnet_cidr", infra.Vnet.SubnetCidr)
 	d.Set("status", infra.ProvisioningStatus)
 	d.Set("custom_data", keyValueToState("custom_data", infra.CustomData))
 
 	// Set extended infrastructure information.
-	if config.Vnet != nil {
-		d.Set("vpc_id", config.Vnet.ID)
-		d.Set("vpc_name", config.Vnet.Name)
+	if infra.Vnet != nil {
+		d.Set("vpc_id", infra.Vnet.ID)
+		d.Set("vpc_name", infra.Vnet.Name)
 
-		if config.Vnet.Subnets != nil {
-			publicSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
-			privateSubnets := make([]map[string]interface{}, 0, len(*config.Vnet.Subnets))
+		if infra.Vnet.Subnets != nil {
+			publicSubnets := make([]map[string]interface{}, 0, len(*infra.Vnet.Subnets))
+			privateSubnets := make([]map[string]interface{}, 0, len(*infra.Vnet.Subnets))
 
-			for _, vnetSubnet := range *config.Vnet.Subnets {
+			for _, vnetSubnet := range *infra.Vnet.Subnets {
 
 				// Skip it unless it's a duplo managed subnet.
 				isDuploSubnet := true // older systems do not return tags
@@ -515,10 +512,10 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 			d.Set("public_subnets", publicSubnets)
 		}
 
-		if config.Vnet.SecurityGroups != nil {
-			securityGroups := make([]map[string]interface{}, 0, len(*config.Vnet.SecurityGroups))
+		if infra.Vnet.SecurityGroups != nil {
+			securityGroups := make([]map[string]interface{}, 0, len(*infra.Vnet.SecurityGroups))
 
-			for _, vnetSG := range *config.Vnet.SecurityGroups {
+			for _, vnetSG := range *infra.Vnet.SecurityGroups {
 				sg := map[string]interface{}{
 					"id":        vnetSG.SystemId,
 					"name":      vnetSG.Name,
