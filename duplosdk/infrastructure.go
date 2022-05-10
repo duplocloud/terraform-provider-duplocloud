@@ -97,7 +97,7 @@ type DuploInfrastructureVnet struct {
 	SecurityGroups     *[]DuploInfrastructureVnetSecurityGroups `json:"SecurityGroups,omitempty"`
 }
 
-// DuploInfrastructure represents extended information about a Duplo infrastructure
+// DuploInfrastructureConfig represents extended information about a Duplo infrastructure
 type DuploInfrastructureConfig struct {
 	Name                    string                   `json:"Name"`
 	AccountId               string                   `json:"AccountId"`
@@ -109,6 +109,17 @@ type DuploInfrastructureConfig struct {
 	EnableContainerInsights bool                     `json:"EnableContainerInsights,omitempty"`
 	Vnet                    *DuploInfrastructureVnet `json:"Vnet"`
 	ProvisioningStatus      string                   `json:"ProvisioningStatus"`
+	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
+}
+
+// InfrastructureList retrieves a list of infrastructures via the Duplo API.
+func (c *Client) InfrastructureList() (*[]DuploInfrastructureConfig, ClientError) {
+	list := []DuploInfrastructureConfig{}
+	err := c.getAPI("InfrastructureList()", "adminproxy/GetInfrastructureConfigs", &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
 }
 
 // InfrastructureGetList retrieves a list of infrastructures via the Duplo API.
@@ -196,7 +207,7 @@ func (c *Client) InfrastructureDeleteSubnet(infraName, subnetName, subnetCidr st
 }
 
 // InfrastructureCreate creates an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureCreate(rq DuploInfrastructureCreateRequest) ClientError {
+func (c *Client) InfrastructureCreate(rq DuploInfrastructureConfig) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("InfrastructureCreate(%s)", rq.Name),
 		"adminproxy/CreateInfrastructureConfig",

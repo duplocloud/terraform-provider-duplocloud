@@ -17,12 +17,12 @@ data "duplocloud_plan" "default" { plan_id = "default" }
 
 
 resource "duplocloud_infrastructure" "test" {
-  infra_name        = "jk2"
+  infra_name        = "jk3"
   cloud             = 0
   region            = "us-east-2"
   azcount           = 2
-  enable_k8_cluster = true
-  address_prefix    = "10.40.0.0/16"
+  enable_k8_cluster = false
+  address_prefix    = "10.43.0.0/16"
   subnet_cidr       = 24
 
   custom_data {
