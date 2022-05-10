@@ -133,13 +133,21 @@ func (c *Client) InfrastructureGetList() (*[]DuploInfrastructure, ClientError) {
 }
 
 // InfrastructureGet retrieves an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureGet(name string) (*DuploInfrastructure, ClientError) {
-	rp := DuploInfrastructure{}
-	err := c.getAPI(fmt.Sprintf("InfrastructureGet(%s)", name), fmt.Sprintf("v2/admin/InfrastructureV2/%s", name), &rp)
-	if err != nil || rp.Name == "" {
+func (c *Client) InfrastructureGet(name string) (*DuploInfrastructureConfig, ClientError) {
+	allInfras, err := c.InfrastructureList()
+	if err != nil {
 		return nil, err
 	}
-	return &rp, nil
+
+	// Find and return the secret with the specific type and name.
+	for _, infra := range *allInfras {
+		if infra.Name == name {
+			return &infra, nil
+		}
+	}
+
+	// No resource was found.
+	return nil, nil
 }
 
 // InfrastructureGetConfig retrieves extended infrastructure configuration by name via the Duplo API.
