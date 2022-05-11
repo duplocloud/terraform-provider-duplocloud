@@ -3,11 +3,31 @@ resource "duplocloud_tenant" "myapp" {
   plan_id      = "default"
 }
 
-resource "duplocloud_azure_mssql_database" "mydb" {
-  tenant_id                    = duplocloud_tenant.myapp.tenant_id
-  name                         = "mssql-test"
-  administrator_login          = "testroot"
-  administrator_login_password = "P@ssword12345"
-  version                      = "12.0"
-  minimum_tls_version          = "1.2"
+# Without Elastic Pool
+resource "duplocloud_azure_mssql_database" "mssql_database" {
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
+  name        = "mssql-db"
+  server_name = "mysqlserver"
+  sku {
+    name     = "Free"
+    capacity = 5
+  }
+}
+
+# With Elastic Pool
+resource "duplocloud_azure_mssql_elasticpool" "mssql_elasticpool" {
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
+  name        = "mssql-ep"
+  server_name = "mysqlserver"
+  sku {
+    name     = "StandardPool"
+    capacity = 50
+  }
+}
+
+resource "duplocloud_azure_mssql_database" "mssql_database" {
+  tenant_id       = duplocloud_tenant.myapp.tenant_id
+  name            = "mssql-db"
+  server_name     = "mysqlserver"
+  elastic_pool_id = duplocloud_azure_mssql_elasticpool.mssql_elasticpool.elastic_pool_id
 }

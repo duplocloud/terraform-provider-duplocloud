@@ -18,13 +18,33 @@ resource "duplocloud_tenant" "myapp" {
   plan_id      = "default"
 }
 
-resource "duplocloud_azure_mssql_database" "mydb" {
-  tenant_id                    = duplocloud_tenant.myapp.tenant_id
-  name                         = "mssql-test"
-  administrator_login          = "testroot"
-  administrator_login_password = "P@ssword12345"
-  version                      = "12.0"
-  minimum_tls_version          = "1.2"
+# Without Elastic Pool
+resource "duplocloud_azure_mssql_database" "mssql_database" {
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
+  name        = "mssql-db"
+  server_name = "mysqlserver"
+  sku {
+    name     = "Free"
+    capacity = 5
+  }
+}
+
+# With Elastic Pool
+resource "duplocloud_azure_mssql_elasticpool" "mssql_elasticpool" {
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
+  name        = "mssql-ep"
+  server_name = "mysqlserver"
+  sku {
+    name     = "StandardPool"
+    capacity = 50
+  }
+}
+
+resource "duplocloud_azure_mssql_database" "mssql_database" {
+  tenant_id       = duplocloud_tenant.myapp.tenant_id
+  name            = "mssql-db"
+  server_name     = "mysqlserver"
+  elastic_pool_id = duplocloud_azure_mssql_elasticpool.mssql_elasticpool.elastic_pool_id
 }
 ```
 
@@ -33,24 +53,33 @@ resource "duplocloud_azure_mssql_database" "mydb" {
 
 ### Required
 
-- **name** (String) The name of the Microsoft SQL Server. This needs to be globally unique within Azure.
+- **name** (String) The name of the MS SQL Database.
+- **server_name** (String) The name of the MS SQL Server on which to create the database.
 - **tenant_id** (String) The GUID of the tenant that the azure mssql database will be created in.
-- **version** (String) The version for the new server. Valid values are: `2.0` (for v11 server) and `12.0` (for v12 server).
 
 ### Optional
 
-- **administrator_login** (String) The Administrator Login for the  MS sql Server.
-- **administrator_login_password** (String, Sensitive) The Password associated with the `administrator_login` for the MS sql Server.
-- **minimum_tls_version** (String) The Minimum TLS Version for all SQL Database and SQL Data Warehouse databases associated with the server. Valid values are: `1.0`, `1.1` and `1.2`.
-- **public_network_access** (String) Whether public network access is enabled or disabled for this server.
+- **collation** (String) Specifies the collation of the database.
+- **elastic_pool_id** (String) Specifies the id of the elastic pool containing this database.
+- **sku** (Block List, Max: 1) (see [below for nested schema](#nestedblock--sku))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_ready** (Boolean) Whether or not to wait until PostgreSQL Server instance to be ready, after creation. Defaults to `true`.
 
 ### Read-Only
 
-- **fqdn** (String) The fully qualified domain name of the Azure SQL Server.
 - **id** (String) The ID of this resource.
-- **tags** (Map of String)
+
+<a id="nestedblock--sku"></a>
+### Nested Schema for `sku`
+
+Required:
+
+- **capacity** (Number)
+- **name** (String)
+
+Optional:
+
+- **tier** (String)
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -65,9 +94,9 @@ Optional:
 Import is supported using the following syntax:
 
 ```shell
-# Example: Importing an existing Azure MS SQL Database
+# Example: Importing an existing Azure MS SQL databse
 #  - *TENANT_ID* is the tenant GUID
-#  - *SHORT_NAME* is the short name of the Azure MS SQL Database
-#
-terraform import duplocloud_azure_mssql_database.myMsSqlDatabase *TENANT_ID*/*SHORT_NAME*
+#  - *SERVER_NAME* is the short name of the Azure MS SQL Server
+#  - *DB_NAME* is the short name of the Azure MS SQL Database
+terraform import duplocloud_azure_mssql_database.myMsSqlDb *TENANT_ID*/*SERVER_NAME*/*DB_NAME*
 ```
