@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.7.15" # RELEASE VERSION
+      version = "0.8.1" # RELEASE VERSION
       source  = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -26,7 +26,7 @@ resource "duplocloud_infrastructure" "test" {
   subnet_cidr       = 24
 
   custom_data {
-    key = "K8sVersion"
+    key   = "K8sVersion"
     value = "1.19"
   }
 }
