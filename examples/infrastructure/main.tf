@@ -26,7 +26,7 @@ resource "duplocloud_infrastructure" "test" {
   subnet_cidr       = 24
 
   custom_data {
-    key = "K8sVersion"
+    key   = "K8sVersion"
     value = "1.19"
   }
 }

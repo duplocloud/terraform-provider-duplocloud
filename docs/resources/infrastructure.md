@@ -38,19 +38,22 @@ resource "duplocloud_infrastructure" "myinfra" {
 
 ### Optional
 
+- **account_id** (String) The cloud account ID.
 - **cloud** (Number) The numerical index of cloud provider to use for the infrastructure.
 Should be one of:
 
    - `0` : AWS
    - `2` : Azure
+   - `3` : Google
  Defaults to `0`.
 - **custom_data** (Block List) Custom configuration options for the infrastructure. (see [below for nested schema](#nestedblock--custom_data))
+- **enable_container_insights** (Boolean) Whether or not to enable container insights for an ECS cluster.
+- **enable_ecs_cluster** (Boolean) Whether or not to provision an ECS cluster.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_deleted** (Boolean) Whether or not to wait until Duplo has destroyed the infrastructure. Defaults to `false`.
 
 ### Read-Only
 
-- **account_id** (String) The cloud account ID.
 - **id** (String) The ID of this resource.
 - **private_subnets** (Set of Object) The private subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--private_subnets))
 - **public_subnets** (Set of Object) The public subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--public_subnets))
