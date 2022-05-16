@@ -100,6 +100,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_ecr_repository":              resourceAwsEcrRepository(),
 			"duplocloud_aws_api_gateway_integration":     resourceAwsApiGatewayIntegration(),
 			"duplocloud_aws_target_group_attributes":     resourceAwsTargetGroupAttributes(),
+			"duplocloud_aws_sqs_queue":                   resourceAwsSqsQueue(),
 			"duplocloud_azure_key_vault_secret":          resourceAzureKeyVaultSecret(),
 			"duplocloud_azure_storage_account":           resourceAzureStorageAccount(),
 			"duplocloud_azure_mysql_database":            resourceAzureMysqlDatabase(),
