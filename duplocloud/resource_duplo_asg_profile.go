@@ -51,6 +51,13 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 		DiffSuppressFunc: diffSuppressWhenNotCreating,
 	}
 
+	awsASGSchema["is_cluster_autoscaled"] = &schema.Schema{
+		Description: "Whether or not to enable cluster autoscaler.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	}
+
 	awsASGSchema["fullname"] = &schema.Schema{
 		Description: "The full name of the ASG profile.",
 		Type:        schema.TypeString,
@@ -287,6 +294,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("base64_user_data", duplo.Base64UserData)
 	d.Set("agent_platform", duplo.AgentPlatform)
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
+	d.Set("is_cluster_autoscaled", duplo.IsClusterAutoscaled)
 	d.Set("cloud", duplo.Cloud)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
@@ -305,27 +313,28 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 
 func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 	return &duplosdk.DuploAsgProfile{
-		TenantId:          d.Get("tenant_id").(string),
-		AccountName:       d.Get("user_account").(string),
-		FriendlyName:      d.Get("friendly_name").(string),
-		Capacity:          d.Get("capacity").(string),
-		Zone:              d.Get("zone").(int),
-		IsMinion:          d.Get("is_minion").(bool),
-		ImageID:           d.Get("image_id").(string),
-		Base64UserData:    d.Get("base64_user_data").(string),
-		AgentPlatform:     d.Get("agent_platform").(int),
-		IsEbsOptimized:    d.Get("is_ebs_optimized").(bool),
-		AllocatedPublicIP: d.Get("allocated_public_ip").(bool),
-		Cloud:             d.Get("cloud").(int),
-		EncryptDisk:       d.Get("encrypt_disk").(bool),
-		MetaData:          keyValueFromState("metadata", d),
-		Tags:              keyValueFromState("tags", d),
-		MinionTags:        keyValueFromState("minion_tags", d),
-		Volumes:           expandNativeHostVolumes("volume", d),
-		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
-		DesiredCapacity:   d.Get("instance_count").(int),
-		MinSize:           d.Get("min_instance_count").(int),
-		MaxSize:           d.Get("max_instance_count").(int),
+		TenantId:            d.Get("tenant_id").(string),
+		AccountName:         d.Get("user_account").(string),
+		FriendlyName:        d.Get("friendly_name").(string),
+		Capacity:            d.Get("capacity").(string),
+		Zone:                d.Get("zone").(int),
+		IsMinion:            d.Get("is_minion").(bool),
+		ImageID:             d.Get("image_id").(string),
+		Base64UserData:      d.Get("base64_user_data").(string),
+		AgentPlatform:       d.Get("agent_platform").(int),
+		IsEbsOptimized:      d.Get("is_ebs_optimized").(bool),
+		IsClusterAutoscaled: d.Get("is_cluster_autoscaled").(bool),
+		AllocatedPublicIP:   d.Get("allocated_public_ip").(bool),
+		Cloud:               d.Get("cloud").(int),
+		EncryptDisk:         d.Get("encrypt_disk").(bool),
+		MetaData:            keyValueFromState("metadata", d),
+		Tags:                keyValueFromState("tags", d),
+		MinionTags:          keyValueFromState("minion_tags", d),
+		Volumes:             expandNativeHostVolumes("volume", d),
+		NetworkInterfaces:   expandNativeHostNetworkInterfaces("network_interface", d),
+		DesiredCapacity:     d.Get("instance_count").(int),
+		MinSize:             d.Get("min_instance_count").(int),
+		MaxSize:             d.Get("max_instance_count").(int),
 	}
 }
 
