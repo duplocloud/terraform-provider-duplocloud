@@ -21,6 +21,10 @@ const (
 
 	// ResourceTypeApiGatewayRestAPI represents an AWS Api gateway REST API
 	ResourceTypeApiGatewayRestAPI int = 8
+
+	ResourceTypeSQSQueue int = 3
+
+	ResourceTypeSNSTopic int = 4
 )
 
 type CustomComponentType int
