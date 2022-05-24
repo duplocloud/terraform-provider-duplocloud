@@ -52,6 +52,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - **cloud** (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
 - **encrypt_disk** (Boolean) Defaults to `false`.
 - **instance_count** (Number) The number of instances that should be running in the group.
+- **is_cluster_autoscaled** (Boolean) Whether or not to enable cluster autoscaler.
 - **is_ebs_optimized** (Boolean) Defaults to `false`.
 - **is_minion** (Boolean) Defaults to `true`.
 - **max_instance_count** (Number) The maximum size of the Auto Scaling Group.
