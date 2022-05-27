@@ -108,3 +108,13 @@ func (c *Client) StorageAccountDelete(tenantID string, name string) ClientError 
 		nil,
 	)
 }
+
+func (c *Client) StorageAccountGetKey(tenantID, name string) (*DuploKeyStringValue, ClientError) {
+	rp := DuploKeyStringValue{}
+	err := c.getAPI(
+		fmt.Sprintf("StorageAccountGetKey(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/GetStorageAccountKeys/%s", tenantID, name),
+		&rp,
+	)
+	return &rp, err
+}
