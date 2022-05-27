@@ -268,6 +268,10 @@ func resourceAwsAppautoscalingPolicyRead(ctx context.Context, d *schema.Resource
 		}
 		return diag.Errorf("Unable to retrieve tenant %s aws autoscaling policy %s : %s", tenantID, name, clientErr)
 	}
+	if duplo == nil {
+		d.SetId("") // object missing or deleted
+		return nil
+	}
 
 	err = flattenAwsAppautoscalingPolicy(d, duplo)
 	if err != nil {
