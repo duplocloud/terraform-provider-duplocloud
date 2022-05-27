@@ -113,6 +113,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_mssql_database":            resourceAzureMssqlDatabase(),
 			"duplocloud_azure_mssql_elasticpool":         resourceAzureMssqlElasticPool(),
 			"duplocloud_azure_virtual_machine_scale_set": resourceAzureVirtualMachineScaleSet(),
+			"duplocloud_azure_storage_share_file":        resourceAzureStorageShareFile(),
 			"duplocloud_other_agents":                    resourceOtherAgents(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{

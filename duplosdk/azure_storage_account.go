@@ -55,6 +55,63 @@ type DuploAzureStorageAccount struct {
 	Type     string `json:"type,omitempty"`
 }
 
+type DuploAzureStorageAccountShareFileCreateReq struct {
+	Name string `json:"Name"`
+}
+
+type DuploAzureStorageAccountShareFileGetReq struct {
+	ServiceClient struct {
+		AuthenticationScheme int         `json:"AuthenticationScheme"`
+		BufferManager        interface{} `json:"BufferManager"`
+		Credentials          struct {
+			SASToken     interface{} `json:"SASToken"`
+			AccountName  string      `json:"AccountName"`
+			KeyName      interface{} `json:"KeyName"`
+			IsAnonymous  bool        `json:"IsAnonymous"`
+			IsSAS        bool        `json:"IsSAS"`
+			IsSharedKey  bool        `json:"IsSharedKey"`
+			SASSignature interface{} `json:"SASSignature"`
+		} `json:"Credentials"`
+		BaseURI    string `json:"BaseUri"`
+		StorageURI struct {
+			PrimaryURI   string `json:"PrimaryUri"`
+			SecondaryURI string `json:"SecondaryUri"`
+		} `json:"StorageUri"`
+		DefaultRequestOptions struct {
+			RetryPolicy struct {
+			} `json:"RetryPolicy"`
+			LocationMode                 int         `json:"LocationMode"`
+			RequireEncryption            bool        `json:"RequireEncryption"`
+			ServerTimeout                interface{} `json:"ServerTimeout"`
+			MaximumExecutionTime         interface{} `json:"MaximumExecutionTime"`
+			ParallelOperationThreadCount int         `json:"ParallelOperationThreadCount"`
+			UseTransactionalMD5          interface{} `json:"UseTransactionalMD5"`
+			StoreFileContentMD5          interface{} `json:"StoreFileContentMD5"`
+			DisableContentMD5Validation  interface{} `json:"DisableContentMD5Validation"`
+		} `json:"DefaultRequestOptions"`
+	} `json:"ServiceClient"`
+	URI        string `json:"Uri"`
+	StorageURI struct {
+		PrimaryURI   string `json:"PrimaryUri"`
+		SecondaryURI string `json:"SecondaryUri"`
+	} `json:"StorageUri"`
+	SnapshotTime                interface{} `json:"SnapshotTime"`
+	IsSnapshot                  bool        `json:"IsSnapshot"`
+	SnapshotQualifiedURI        string      `json:"SnapshotQualifiedUri"`
+	SnapshotQualifiedStorageURI struct {
+		PrimaryURI   string `json:"PrimaryUri"`
+		SecondaryURI string `json:"SecondaryUri"`
+	} `json:"SnapshotQualifiedStorageUri"`
+	Name     string `json:"Name"`
+	Metadata struct {
+	} `json:"Metadata"`
+	Properties struct {
+		ETag         string    `json:"ETag"`
+		LastModified time.Time `json:"LastModified"`
+		Quota        int       `json:"Quota"`
+	} `json:"Properties"`
+}
+
 func (c *Client) StorageAccountCreate(tenantID string, name string) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("StorageAccountCreate(%s, %s)", tenantID, name),
@@ -117,4 +174,41 @@ func (c *Client) StorageAccountGetKey(tenantID, name string) (*DuploKeyStringVal
 		&rp,
 	)
 	return &rp, err
+}
+
+func (c *Client) StorageShareFileCreate(tenantID string, storageAccountName string, name string) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("StorageShareFileCreate(%s, %s)", tenantID, storageAccountName),
+		fmt.Sprintf("subscriptions/%s/CreateFileShare/%s", tenantID, storageAccountName),
+		DuploAzureStorageAccountShareFileCreateReq{
+			Name: name,
+		},
+		nil,
+	)
+}
+
+func (c *Client) StorageAccountShareFileList(tenantID, storageAccName string) (*[]DuploAzureStorageAccountShareFileGetReq, ClientError) {
+	rp := []DuploAzureStorageAccountShareFileGetReq{}
+	err := c.getAPI(
+		fmt.Sprintf("StorageAccountShareFileList(%s, %s)", tenantID, storageAccName),
+		fmt.Sprintf("subscriptions/%s/ListFileShares/%s", tenantID, storageAccName),
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) StorageShareFileGet(tenantID, storageAccName, name string) (*DuploAzureStorageAccountShareFileGetReq, ClientError) {
+	list, err := c.StorageAccountShareFileList(tenantID, storageAccName)
+	if err != nil {
+		return nil, err
+	}
+
+	if list != nil {
+		for _, ssf := range *list {
+			if ssf.Name == name {
+				return &ssf, nil
+			}
+		}
+	}
+	return nil, nil
 }
