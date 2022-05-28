@@ -70,6 +70,10 @@ func resourceAzureStorageShareFileRead(ctx context.Context, d *schema.ResourceDa
 
 	c := m.(*duplosdk.Client)
 	duplo, clientErr := c.StorageShareFileGet(tenantID, storageAccountName, name)
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
