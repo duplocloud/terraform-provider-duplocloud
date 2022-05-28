@@ -48,7 +48,10 @@ func dataSourceAzureStorageAccountKeyRead(d *schema.ResourceData, m interface{})
 	if err != nil {
 		return err
 	}
-
+	if keyValue == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, storageAccountName))
 
 	d.Set("key_name", keyValue.Key)
