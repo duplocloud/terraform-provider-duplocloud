@@ -122,6 +122,12 @@ type DuploNativeHostImage struct {
 	K8sVersion string                 `json:"K8sVersion,omitempty"`
 }
 
+type DuploAzureVmFeature struct {
+	ComponentId string `json:"ComponentId"`
+	FeatureName string `json:"FeatureName"`
+	Disable     bool   `json:"Disable"`
+}
+
 // NativeHostImageGetList retrieves a list of native host images via the Duplo API.
 func (c *Client) NativeHostImageGetList(tenantID string) (*[]DuploNativeHostImage, ClientError) {
 	rp := []DuploNativeHostImage{}
@@ -290,4 +296,11 @@ func (c *Client) AzureNativeHostExists(tenantID, name string) (bool, ClientError
 		}
 	}
 	return false, nil
+}
+
+func (c *Client) UpdateAzureVmFeature(tenantID string, rq DuploAzureVmFeature) ClientError {
+	return c.postAPI(fmt.Sprintf("UpdateAzureVmFeature(%s, %s)", tenantID, rq.FeatureName),
+		fmt.Sprintf("subscriptions/%s/UpdateAzureVmFeature", tenantID),
+		rq,
+		nil)
 }
