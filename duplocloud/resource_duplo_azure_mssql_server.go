@@ -122,6 +122,10 @@ func resourceAzureMssqlServerRead(ctx context.Context, d *schema.ResourceData, m
 
 	c := m.(*duplosdk.Client)
 	duplo, clientErr := c.MsSqlServerGet(tenantID, name)
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")

@@ -102,6 +102,10 @@ func resourceAzureKeyVaultSecretRead(ctx context.Context, d *schema.ResourceData
 
 	c := m.(*duplosdk.Client)
 	secretItem, clientErr := c.KeyVaultSecretGet(tenantID, name)
+	if secretItem == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
