@@ -88,16 +88,14 @@ func resourceAzureVmFeatureRead(ctx context.Context, d *schema.ResourceData, m i
 	d.Set("tenant_id", tenantID)
 	d.Set("component_id", vmName)
 	d.Set("feature_name", featureName)
-	if tags != nil {
-		for k, v := range tags {
-			log.Printf("[TRACE] (feature_tag_key, feature_name)(%s, %s)", k, duplosdk.AzureVmFeatures[featureName])
-			if k == duplosdk.AzureVmFeatures[featureName] {
-				val, err := strconv.ParseBool(v.(string))
-				log.Printf("[TRACE] (feature_tag_key, feature_tag_value)(%s, %v)", k, val)
-				if err == nil {
-					d.Set("enabled", val)
-					break
-				}
+	for k, v := range tags {
+		log.Printf("[TRACE] (feature_tag_key, feature_name)(%s, %s)", k, duplosdk.AzureVmFeatures[featureName])
+		if k == duplosdk.AzureVmFeatures[featureName] {
+			val, err := strconv.ParseBool(v.(string))
+			log.Printf("[TRACE] (feature_tag_key, feature_tag_value)(%s, %v)", k, val)
+			if err == nil {
+				d.Set("enabled", val)
+				break
 			}
 		}
 	}
@@ -150,6 +148,9 @@ func resourceAzureVmFeatureDelete(ctx context.Context, d *schema.ResourceData, m
 	id := d.Id()
 	tenantID, vmName, featureName, err := parseAzureVmFeatureIdParts(id)
 	log.Printf("[TRACE] resourceAzureVmFeatureDelete(%s, %s, %s): start", tenantID, vmName, featureName)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	c := m.(*duplosdk.Client)
 
 	err = c.UpdateAzureVmFeature(tenantID, duplosdk.DuploAzureVmFeature{
