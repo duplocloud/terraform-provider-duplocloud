@@ -19,7 +19,7 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 resource "duplocloud_azure_virtual_machine" "az_vm" {
-  tentenant_id  = duplocloud_tenant.myapp.tenant_id
+  tenant_id     = duplocloud_tenant.myapp.tenant_id
   friendly_name = "test-vm"
 
   image_id       = "16.04-LTS;Canonical;UbuntuServer"

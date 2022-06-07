@@ -103,6 +103,10 @@ func resourceOtherAgentsRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	c := m.(*duplosdk.Client)
 	duplo, clientErr := c.DuploOtherAgentGet()
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")

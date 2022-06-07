@@ -39,6 +39,7 @@ Read-Only:
 - **fullname** (String)
 - **image_id** (String)
 - **instance_count** (Number)
+- **is_cluster_autoscaled** (Boolean)
 - **is_ebs_optimized** (Boolean)
 - **is_minion** (Boolean)
 - **max_instance_count** (Number)

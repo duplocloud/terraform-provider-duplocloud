@@ -215,6 +215,10 @@ func resourceAzureVirtualMachineRead(ctx context.Context, d *schema.ResourceData
 
 	c := m.(*duplosdk.Client)
 	duplo, clientErr := c.AzureNativeHostGet(tenantID, name)
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
