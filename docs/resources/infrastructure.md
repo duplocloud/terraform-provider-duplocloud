@@ -49,6 +49,8 @@ Should be one of:
 - **custom_data** (Block List) Custom configuration options for the infrastructure. (see [below for nested schema](#nestedblock--custom_data))
 - **enable_container_insights** (Boolean) Whether or not to enable container insights for an ECS cluster.
 - **enable_ecs_cluster** (Boolean) Whether or not to provision an ECS cluster.
+- **subnet_address_prefix** (String) The address prefixe to use for the subnet.
+- **subnet_name** (String) The name of the subnet. Defaults to `default`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_deleted** (Boolean) Whether or not to wait until Duplo has destroyed the infrastructure. Defaults to `false`.
 

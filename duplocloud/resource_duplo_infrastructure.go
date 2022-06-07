@@ -214,6 +214,18 @@ func resourceInfrastructure() *schema.Resource {
 				ForceNew:    true,
 				Required:    true,
 			},
+			"subnet_name": {
+				Description: "The name of the subnet.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "default",
+			},
+			"subnet_address_prefix": {
+				Description: "The address prefixe to use for the subnet.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"status": {
 				Description: "The status of the infrastructure.",
 				Type:        schema.TypeString,
@@ -394,6 +406,14 @@ func duploInfrastructureFromState(d *schema.ResourceData) duplosdk.DuploInfrastr
 }
 
 func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploInfrastructureConfig {
+	subnet := duplosdk.DuploInfrastructureVnetSubnet{}
+
+	if v, ok := d.GetOk("subnet_name"); ok {
+		subnet.Name = v.(string)
+	}
+	if v, ok := d.GetOk("subnet_address_prefix"); ok {
+		subnet.AddressPrefix = v.(string)
+	}
 	return duplosdk.DuploInfrastructureConfig{
 		Name:                    d.Get("infra_name").(string),
 		AccountId:               d.Get("account_id").(string),
@@ -406,6 +426,9 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 		Vnet: &duplosdk.DuploInfrastructureVnet{
 			AddressPrefix: d.Get("address_prefix").(string),
 			SubnetCidr:    d.Get("subnet_cidr").(int),
+			Subnets: &[]duplosdk.DuploInfrastructureVnetSubnet{
+				subnet,
+			},
 		},
 		CustomData: keyValueFromState("custom_data", d),
 	}
@@ -511,6 +534,8 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 					} else if subnetType == "public" {
 						publicSubnets = append(publicSubnets, subnet)
 					}
+					d.Set("subnet_name", vnetSubnet.Name)
+					d.Set("subnet_address_prefix", vnetSubnet.AddressPrefix)
 				}
 			}
 
