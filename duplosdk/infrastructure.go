@@ -112,6 +112,47 @@ type DuploInfrastructureConfig struct {
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
 }
 
+type DuploAzureLogAnalyticsWorkspace struct {
+	PropertiesProvisioningState string `json:"properties.provisioningState"`
+	PropertiesCustomerID        string `json:"properties.customerId"`
+	PropertiesSku               struct {
+		Name string `json:"name"`
+	} `json:"properties.sku"`
+	PropertiesRetentionInDays                 int    `json:"properties.retentionInDays"`
+	PropertiesPublicNetworkAccessForIngestion string `json:"properties.publicNetworkAccessForIngestion"`
+	PropertiesPublicNetworkAccessForQuery     string `json:"properties.publicNetworkAccessForQuery"`
+	Location                                  string `json:"location"`
+	ID                                        string `json:"id"`
+	Name                                      string `json:"name"`
+	Type                                      string `json:"type"`
+}
+
+type DuploAzureLogAnalyticsWorkspaceRq struct {
+	Name          string `json:"name"`
+	ResourceGroup string `json:"resourceGroup,omitempty"`
+}
+
+type DuploAzureRecoveryServicesVault struct {
+	Properties struct {
+		ProvisioningState                   string `json:"provisioningState"`
+		PrivateEndpointStateForBackup       string `json:"privateEndpointStateForBackup"`
+		PrivateEndpointStateForSiteRecovery string `json:"privateEndpointStateForSiteRecovery"`
+	} `json:"properties"`
+	Sku struct {
+		Name string `json:"name"`
+	} `json:"sku"`
+	Location string `json:"location"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	ETag     string `json:"eTag"`
+}
+
+type DuploAzureRecoveryServicesVaultRq struct {
+	Name          string `json:"name"`
+	ResourceGroup string `json:"resourceGroup,omitempty"`
+}
+
 // InfrastructureList retrieves a list of infrastructures via the Duplo API.
 func (c *Client) InfrastructureList() (*[]DuploInfrastructureConfig, ClientError) {
 	list := []DuploInfrastructureConfig{}
@@ -260,4 +301,44 @@ func (c *Client) GetEksCredentials(planID string) (*DuploEksCredentials, ClientE
 	}
 	creds.PlanID = planID
 	return &creds, nil
+}
+
+func (c *Client) AzureLogAnalyticsWorkspaceCreate(infraName string, rq DuploAzureLogAnalyticsWorkspaceRq) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("AzureLogAnalyticsWorkspaceCreate(%s,%s)", infraName, rq.Name),
+		fmt.Sprintf("adminproxy/SetInfrastructureLogAnalyticsConfig/%s", infraName),
+		&rq,
+		nil)
+}
+
+func (c *Client) AzureLogAnalyticsWorkspaceGet(infraName string) (*DuploAzureLogAnalyticsWorkspace, ClientError) {
+	rp := DuploAzureLogAnalyticsWorkspace{}
+	err := c.getAPI(
+		fmt.Sprintf("AzureLogAnalyticsWorkspaceGet(%s)", infraName),
+		fmt.Sprintf("adminproxy/GetInfrastructureLogAnalyticsWorkspace/%s", infraName),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+func (c *Client) AzureRecoveryServicesVaultCreate(infraName string, rq DuploAzureRecoveryServicesVaultRq) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("AzureRecoveryServicesVaultCreate(%s,%s)", infraName, rq.Name),
+		fmt.Sprintf("adminproxy/SetInfrastructureRecoveryServicesVaultConfig/%s", infraName),
+		&rq,
+		nil)
+}
+
+func (c *Client) AzureRecoveryServicesVaultGet(infraName string) (*DuploAzureRecoveryServicesVault, ClientError) {
+	rp := DuploAzureRecoveryServicesVault{}
+	err := c.getAPI(
+		fmt.Sprintf("AzureRecoveryServicesVaultGet(%s)", infraName),
+		fmt.Sprintf("adminproxy/GetInfrastructureRecoveryServicesVault/%s", infraName),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
 }

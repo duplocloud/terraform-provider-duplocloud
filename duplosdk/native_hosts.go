@@ -4,6 +4,13 @@ import (
 	"fmt"
 )
 
+var AzureVmFeatures = map[string]string{
+	"loganalytics": "duplo_loganalytics",
+	"publicip":     "duplo_enablepublicip",
+	"addsjoin":     "duplo_domainjoin",
+	"aadjoin":      "duplo_aaddomainjoin",
+}
+
 // DuploNativeHost is a Duplo SDK object that represents an nativehost
 type DuploNativeHost struct {
 	InstanceID         string                             `json:"InstanceId"`
@@ -120,6 +127,12 @@ type DuploNativeHostImage struct {
 	Username   string                 `json:"Username,omitempty"`
 	Region     string                 `json:"Region,omitempty"`
 	K8sVersion string                 `json:"K8sVersion,omitempty"`
+}
+
+type DuploAzureVmFeature struct {
+	ComponentId string `json:"ComponentId"`
+	FeatureName string `json:"FeatureName"`
+	Disable     bool   `json:"Disable"`
 }
 
 // NativeHostImageGetList retrieves a list of native host images via the Duplo API.
@@ -285,6 +298,30 @@ func (c *Client) AzureNativeHostExists(tenantID, name string) (bool, ClientError
 	if list != nil {
 		for _, host := range *list {
 			if host.InstanceID == name {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func (c *Client) UpdateAzureVmFeature(tenantID string, rq DuploAzureVmFeature) ClientError {
+	return c.postAPI(fmt.Sprintf("UpdateAzureVmFeature(%s, %s)", tenantID, rq.FeatureName),
+		fmt.Sprintf("subscriptions/%s/UpdateAzureVmFeature", tenantID),
+		rq,
+		nil)
+}
+
+func (c *Client) AzureVirtualMachineTagExists(tenantID, vmName, tagKey string) (bool, ClientError) {
+
+	duplo, err := c.AzureVirtualMachineGet(tenantID, vmName)
+	if err != nil {
+		return false, err
+	}
+
+	if duplo != nil {
+		for k := range duplo.Tags {
+			if k == tagKey {
 				return true, nil
 			}
 		}
