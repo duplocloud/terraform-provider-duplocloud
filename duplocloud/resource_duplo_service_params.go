@@ -93,7 +93,7 @@ func resourceDuploServiceParams() *schema.Resource {
 /// READ resource
 func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
-
+	var clientError duplosdk.ClientError
 	// Parse the identifying attributes
 	tenantID, name := parseDuploServiceParamsIdParts(d.Id())
 	if tenantID == "" || name == "" {
@@ -116,10 +116,14 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 
 	// Get the WAF information.
 	webAclId := ""
-	if doesReplicationControllerHaveAlb(duplo) && duplo.Template.Cloud == 0 {
-		webAclId, err = c.ReplicationControllerLbWafGet(tenantID, name)
-		if err != nil {
-			return diag.FromErr(err)
+	if doesReplicationControllerHaveAlb(duplo) {
+		webAclId, clientError = c.ReplicationControllerLbWafGet(tenantID, name)
+		if clientError != nil {
+			if clientError.Status() == 500 && duplo.Template.Cloud != 0 {
+				log.Printf("[TRACE] Ignoring error %s for non AWS cloud.", clientError)
+			} else {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -153,7 +157,7 @@ func resourceDuploServiceParamsUpdate(ctx context.Context, d *schema.ResourceDat
 
 func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, isUpdate bool) diag.Diagnostics {
 	var err error
-
+	var clientError duplosdk.ClientError
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("replication_controller_name").(string)
 	log.Printf("[TRACE] resourceDuploServiceParamsCreateOrUpdate(%s, %s): start", tenantID, name)
@@ -181,22 +185,26 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 	}
 
 	// Update the WAF.
-	if doesReplicationControllerHaveAlb(duplo) && duplo.Template.Cloud == 0 {
+	if doesReplicationControllerHaveAlb(duplo) {
 		wafRq := duplosdk.DuploLbWafUpdateRequest{
 			WebAclId:     d.Get("webaclid").(string),
 			IsEcsLB:      false,
 			IsPassThruLB: false,
 		}
 		if wafRq.WebAclId != "" {
-			err = c.ReplicationControllerLbWafUpdate(tenantID, name, &wafRq)
+			clientError = c.ReplicationControllerLbWafUpdate(tenantID, name, &wafRq)
 		} else {
-			wafRq.WebAclId, err = c.ReplicationControllerLbWafGet(tenantID, name)
-			if err == nil && wafRq.WebAclId != "" {
-				err = c.ReplicationControllerLbWafDelete(tenantID, name, &wafRq)
+			wafRq.WebAclId, clientError = c.ReplicationControllerLbWafGet(tenantID, name)
+			if clientError == nil && wafRq.WebAclId != "" {
+				clientError = c.ReplicationControllerLbWafDelete(tenantID, name, &wafRq)
 			}
 		}
-		if err != nil {
-			return diag.FromErr(err)
+		if clientError != nil {
+			if clientError.Status() == 500 && duplo.Template.Cloud != 0 {
+				log.Printf("[TRACE] Ignoring error %s for non AWS cloud.", clientError)
+			} else {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -232,6 +240,7 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 
 /// DELETE resource
 func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var clientError duplosdk.ClientError
 	// Parse the identifying attributes
 	tenantID, name := parseDuploServiceParamsIdParts(d.Id())
 	if tenantID == "" || name == "" {
@@ -265,19 +274,23 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 			}
 
 			// The ALB is active.
-			if isDuploServiceAwsLbActive(details) && duplo.Template.Cloud == 0 {
+			if isDuploServiceAwsLbActive(details) {
 				c := m.(*duplosdk.Client)
 
 				wafRq := duplosdk.DuploLbWafUpdateRequest{
 					IsEcsLB:      false,
 					IsPassThruLB: false,
 				}
-				wafRq.WebAclId, err = c.ReplicationControllerLbWafGet(tenantID, name)
-				if err == nil && wafRq.WebAclId != "" {
-					err = c.ReplicationControllerLbWafDelete(tenantID, name, &wafRq)
+				wafRq.WebAclId, clientError = c.ReplicationControllerLbWafGet(tenantID, name)
+				if clientError == nil && wafRq.WebAclId != "" {
+					clientError = c.ReplicationControllerLbWafDelete(tenantID, name, &wafRq)
 				}
-				if err != nil {
-					return diag.FromErr(err)
+				if clientError != nil {
+					if clientError.Status() == 500 && duplo.Template.Cloud != 0 {
+						log.Printf("[TRACE] Ignoring error %s for non AWS cloud.", clientError)
+					} else {
+						return diag.FromErr(err)
+					}
 				}
 			}
 		}
