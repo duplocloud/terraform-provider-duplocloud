@@ -170,10 +170,10 @@ func resourceInfrastructure() *schema.Resource {
 				Required:    true,
 			},
 			"azcount": {
-				Description: "The number of availability zones.  Must be one of: `2`, `3`, or `4`.",
+				Description: "The number of availability zones.  Must be one of: `2`, `3`, or `4`. This is applicable only for AWS.",
 				Type:        schema.TypeInt,
 				ForceNew:    true,
-				Required:    true,
+				Optional:    true,
 			},
 			"enable_k8_cluster": {
 				Description: "Whether or not to provision a kubernetes cluster.",
@@ -209,10 +209,22 @@ func resourceInfrastructure() *schema.Resource {
 				Required:    true,
 			},
 			"subnet_cidr": {
-				Description: "The CIDR subnet size (in bits) for the automatically created subnets.",
+				Description: "The CIDR subnet size (in bits) for the automatically created subnets. This is applicable only for AWS.",
 				Type:        schema.TypeInt,
 				ForceNew:    true,
-				Required:    true,
+				Optional:    true,
+			},
+			"subnet_name": {
+				Description: "The name of the subnet. This is applicable only for Azure.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "default",
+			},
+			"subnet_address_prefix": {
+				Description: "The address prefixe to use for the subnet. This is applicable only for Azure",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			"status": {
 				Description: "The status of the infrastructure.",
@@ -292,6 +304,10 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("[TRACE] resourceInfrastructureCreate(%s): start", rq.Name)
 
+	diags := validateInfraSchema(d)
+	if diags != nil {
+		return diags
+	}
 	// Post the object to Duplo.
 	c := m.(*duplosdk.Client)
 	err = c.InfrastructureCreate(rq)
@@ -301,7 +317,7 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 
 	// Wait up to 60 seconds for Duplo to be able to return the infrastructure details.
 	id := fmt.Sprintf("v2/admin/InfrastructureV2/%s", rq.Name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, duplosdk.ClientError) {
+	diags = waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, duplosdk.ClientError) {
 		return c.InfrastructureGetConfig(rq.Name)
 	})
 	if diags != nil {
@@ -394,6 +410,14 @@ func duploInfrastructureFromState(d *schema.ResourceData) duplosdk.DuploInfrastr
 }
 
 func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploInfrastructureConfig {
+	subnet := duplosdk.DuploInfrastructureVnetSubnet{}
+
+	if v, ok := d.GetOk("subnet_name"); ok {
+		subnet.Name = v.(string)
+	}
+	if v, ok := d.GetOk("subnet_address_prefix"); ok {
+		subnet.AddressPrefix = v.(string)
+	}
 	return duplosdk.DuploInfrastructureConfig{
 		Name:                    d.Get("infra_name").(string),
 		AccountId:               d.Get("account_id").(string),
@@ -406,6 +430,9 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 		Vnet: &duplosdk.DuploInfrastructureVnet{
 			AddressPrefix: d.Get("address_prefix").(string),
 			SubnetCidr:    d.Get("subnet_cidr").(int),
+			Subnets: &[]duplosdk.DuploInfrastructureVnetSubnet{
+				subnet,
+			},
 		},
 		CustomData: keyValueFromState("custom_data", d),
 	}
@@ -511,6 +538,8 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 					} else if subnetType == "public" {
 						publicSubnets = append(publicSubnets, subnet)
 					}
+					d.Set("subnet_name", vnetSubnet.Name)
+					d.Set("subnet_address_prefix", vnetSubnet.AddressPrefix)
 				}
 			}
 
@@ -550,4 +579,27 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	}
 
 	return false, nil
+}
+
+func validateInfraSchema(d *schema.ResourceData) diag.Diagnostics {
+	log.Printf("[TRACE] validateInfraSchema: start")
+	cloud := d.Get("cloud").(int)
+
+	if cloud == 0 {
+		if _, ok := d.GetOk("azcount"); !ok {
+			return diag.Errorf("Attribute 'azcount' is required for aws cloud.")
+		}
+		if _, ok := d.GetOk("subnet_cidr"); !ok {
+			return diag.Errorf("Attribute 'subnet_cidr' is required for aws cloud.")
+		}
+	} else if cloud == 2 {
+		if _, ok := d.GetOk("subnet_address_prefix"); !ok {
+			return diag.Errorf("Attribute 'subnet_address_prefix' is required for azure cloud.")
+		}
+		if _, ok := d.GetOk("account_id"); !ok {
+			return diag.Errorf("Attribute 'account_id' is required for azure cloud.")
+		}
+	}
+	log.Printf("[TRACE] validateInfraSchema: end")
+	return nil
 }
