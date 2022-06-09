@@ -116,7 +116,7 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 
 	// Get the WAF information.
 	webAclId := ""
-	if doesReplicationControllerHaveAlb(duplo) {
+	if doesReplicationControllerHaveAlb(duplo) && duplo.Template.Cloud == 0 {
 		webAclId, err = c.ReplicationControllerLbWafGet(tenantID, name)
 		if err != nil {
 			return diag.FromErr(err)
@@ -181,7 +181,7 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 	}
 
 	// Update the WAF.
-	if doesReplicationControllerHaveAlb(duplo) {
+	if doesReplicationControllerHaveAlb(duplo) && duplo.Template.Cloud == 0 {
 		wafRq := duplosdk.DuploLbWafUpdateRequest{
 			WebAclId:     d.Get("webaclid").(string),
 			IsEcsLB:      false,
@@ -265,7 +265,7 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 			}
 
 			// The ALB is active.
-			if isDuploServiceAwsLbActive(details) {
+			if isDuploServiceAwsLbActive(details) && duplo.Template.Cloud == 0 {
 				c := m.(*duplosdk.Client)
 
 				wafRq := duplosdk.DuploLbWafUpdateRequest{
