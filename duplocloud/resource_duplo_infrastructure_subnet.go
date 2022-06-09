@@ -56,12 +56,23 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"private", "public"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"private", "public", "none", "appgwsubnet", "appgw-internal-subnet", "azurebastionsubnet", "managedinstance", "databrick-workspace"}, false),
 			},
 			"zone": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true,
+			},
+			"isolated_network": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			"service_endpoints": {
+				Description: "The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.AzureActiveDirectory`, `Microsoft.AzureCosmosDB`, `Microsoft.ContainerRegistry`, `Microsoft.EventHub`, `Microsoft.KeyVault`, `Microsoft.ServiceBus`,`Microsoft.Sql`, `Microsoft.Storage` and `Microsoft.Web`",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"tags":     tagsSchema(),
 			"tags_all": tagsSchemaComputed(),
@@ -98,6 +109,10 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 	d.Set("zone", duplo.Zone)
 	d.Set("tags_all", keyValueToMap(duplo.Tags))
 	d.Set("type", duplo.SubnetType)
+	d.Set("isolated_network", duplo.IsolatedNetwork)
+	if len(duplo.ServiceEndpoints) > 0 {
+		d.Set("service_endpoints", duplo.ServiceEndpoints)
+	}
 
 	x := d.Get("tags")
 	log.Printf("[TRACE] infra subnet tags %v", x)
@@ -112,7 +127,10 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 }
 
 func resourceInfrastructureSubnetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-
+	diags := validateSubnetSchema(d, m)
+	if diags != nil {
+		return diags
+	}
 	// Start building the request.
 	rq := duplosdk.DuploInfrastructureVnetSubnet{
 		InfrastructureName: d.Get("infra_name").(string),
@@ -120,9 +138,17 @@ func resourceInfrastructureSubnetCreate(ctx context.Context, d *schema.ResourceD
 		AddressPrefix:      d.Get("cidr_block").(string),
 		Zone:               d.Get("zone").(string),
 		SubnetType:         d.Get("type").(string),
+		IsolatedNetwork:    d.Get("isolated_network").(bool),
 		Tags:               keyValueFromMap(d.Get("tags").(map[string]interface{})),
 	}
-
+	if v, ok := d.GetOk("service_endpoints"); ok {
+		endpoints := v.(*schema.Set)
+		endpointList := make([]string, 0, endpoints.Len())
+		for _, e := range endpoints.List() {
+			endpointList = append(endpointList, e.(string))
+		}
+		rq.ServiceEndpoints = endpointList
+	}
 	// Build the ID - it is okay that the CIDR includes a slash
 	id := fmt.Sprintf("%s/%s/%s", rq.InfrastructureName, rq.Name, rq.AddressPrefix)
 	log.Printf("[TRACE] resourceInfrastructureSubnetCreate(%s): start", id)
@@ -135,7 +161,7 @@ func resourceInfrastructureSubnetCreate(ctx context.Context, d *schema.ResourceD
 	}
 	d.SetId(id)
 
-	diags := resourceInfrastructureSubnetRead(ctx, d, m)
+	diags = resourceInfrastructureSubnetRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureSubnetCreate(%s): end", id)
 	return diags
 }
@@ -177,4 +203,27 @@ func duploInfrastructureSubnetFromId(id string) (*duplosdk.DuploInfrastructureVn
 		Name:               idParts[1],
 		AddressPrefix:      idParts[2] + "/" + idParts[3],
 	}, nil
+}
+
+func validateSubnetSchema(d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	infraName := d.Get("infra_name").(string)
+	log.Printf("[TRACE] validateSubnetSchema: start")
+
+	c := m.(*duplosdk.Client)
+	infraConfig, err := c.InfrastructureGetConfig(infraName)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if infraConfig.Cloud == 0 {
+		if _, ok := d.GetOk("zone"); !ok {
+			return diag.Errorf("Attribute 'zone' is required for aws cloud.")
+		}
+	} else if infraConfig.Cloud == 2 {
+		if _, ok := d.GetOk("service_endpoints"); !ok {
+			return diag.Errorf("Attribute 'service_endpoints' is required for azure cloud.")
+		}
+	}
+	log.Printf("[TRACE] validateSubnetSchema: end")
+	return nil
 }

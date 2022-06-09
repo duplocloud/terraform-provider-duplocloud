@@ -60,11 +60,13 @@ type DuploInfrastructureVnetSubnet struct {
 	ID string `json:"Id"`
 
 	// Used by both read and write APIs
-	AddressPrefix string                 `json:"AddressPrefix"`
-	Name          string                 `json:"NameEx"`
-	Zone          string                 `json:"Zone"`
-	SubnetType    string                 `json:"SubnetType"`
-	Tags          *[]DuploKeyStringValue `json:"Tags"`
+	AddressPrefix    string                 `json:"AddressPrefix"`
+	Name             string                 `json:"NameEx"`
+	Zone             string                 `json:"Zone"`
+	SubnetType       string                 `json:"SubnetType"`
+	ServiceEndpoints []string               `json:"ServiceEndpoints,omitempty"`
+	IsolatedNetwork  bool                   `json:"IsolatedNetwork,omitempty"`
+	Tags             *[]DuploKeyStringValue `json:"Tags"`
 }
 
 type DuploInfrastructureVnetSecurityGroups struct {
