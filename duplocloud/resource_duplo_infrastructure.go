@@ -170,7 +170,7 @@ func resourceInfrastructure() *schema.Resource {
 				Required:    true,
 			},
 			"azcount": {
-				Description: "The number of availability zones.  Must be one of: `2`, `3`, or `4`.",
+				Description: "The number of availability zones.  Must be one of: `2`, `3`, or `4`. This is applicable only for AWS.",
 				Type:        schema.TypeInt,
 				ForceNew:    true,
 				Optional:    true,
@@ -209,19 +209,19 @@ func resourceInfrastructure() *schema.Resource {
 				Required:    true,
 			},
 			"subnet_cidr": {
-				Description: "The CIDR subnet size (in bits) for the automatically created subnets.",
+				Description: "The CIDR subnet size (in bits) for the automatically created subnets. This is applicable only for AWS.",
 				Type:        schema.TypeInt,
 				ForceNew:    true,
 				Optional:    true,
 			},
 			"subnet_name": {
-				Description: "The name of the subnet.",
+				Description: "The name of the subnet. This is applicable only for Azure.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "default",
 			},
 			"subnet_address_prefix": {
-				Description: "The address prefixe to use for the subnet.",
+				Description: "The address prefixe to use for the subnet. This is applicable only for Azure",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

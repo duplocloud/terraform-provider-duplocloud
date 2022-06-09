@@ -37,7 +37,7 @@ resource "duplocloud_infrastructure" "myinfra" {
 ### Optional
 
 - **account_id** (String) The cloud account ID.
-- **azcount** (Number) The number of availability zones.  Must be one of: `2`, `3`, or `4`.
+- **azcount** (Number) The number of availability zones.  Must be one of: `2`, `3`, or `4`. This is applicable only for AWS.
 - **cloud** (Number) The numerical index of cloud provider to use for the infrastructure.
 Should be one of:
 
@@ -48,9 +48,9 @@ Should be one of:
 - **custom_data** (Block List) Custom configuration options for the infrastructure. (see [below for nested schema](#nestedblock--custom_data))
 - **enable_container_insights** (Boolean) Whether or not to enable container insights for an ECS cluster.
 - **enable_ecs_cluster** (Boolean) Whether or not to provision an ECS cluster.
-- **subnet_address_prefix** (String) The address prefixe to use for the subnet.
-- **subnet_cidr** (Number) The CIDR subnet size (in bits) for the automatically created subnets.
-- **subnet_name** (String) The name of the subnet. Defaults to `default`.
+- **subnet_address_prefix** (String) The address prefixe to use for the subnet. This is applicable only for Azure
+- **subnet_cidr** (Number) The CIDR subnet size (in bits) for the automatically created subnets. This is applicable only for AWS.
+- **subnet_name** (String) The name of the subnet. This is applicable only for Azure. Defaults to `default`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_deleted** (Boolean) Whether or not to wait until Duplo has destroyed the infrastructure. Defaults to `false`.
 
