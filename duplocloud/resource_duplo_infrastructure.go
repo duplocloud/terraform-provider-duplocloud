@@ -173,7 +173,7 @@ func resourceInfrastructure() *schema.Resource {
 				Description: "The number of availability zones.  Must be one of: `2`, `3`, or `4`.",
 				Type:        schema.TypeInt,
 				ForceNew:    true,
-				Required:    true,
+				Optional:    true,
 			},
 			"enable_k8_cluster": {
 				Description: "Whether or not to provision a kubernetes cluster.",
@@ -212,7 +212,7 @@ func resourceInfrastructure() *schema.Resource {
 				Description: "The CIDR subnet size (in bits) for the automatically created subnets.",
 				Type:        schema.TypeInt,
 				ForceNew:    true,
-				Required:    true,
+				Optional:    true,
 			},
 			"subnet_name": {
 				Description: "The name of the subnet.",
@@ -304,6 +304,10 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("[TRACE] resourceInfrastructureCreate(%s): start", rq.Name)
 
+	diags := validateInfraSchema(d)
+	if diags != nil {
+		return diags
+	}
 	// Post the object to Duplo.
 	c := m.(*duplosdk.Client)
 	err = c.InfrastructureCreate(rq)
@@ -313,7 +317,7 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 
 	// Wait up to 60 seconds for Duplo to be able to return the infrastructure details.
 	id := fmt.Sprintf("v2/admin/InfrastructureV2/%s", rq.Name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, duplosdk.ClientError) {
+	diags = waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, duplosdk.ClientError) {
 		return c.InfrastructureGetConfig(rq.Name)
 	})
 	if diags != nil {
@@ -575,4 +579,27 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	}
 
 	return false, nil
+}
+
+func validateInfraSchema(d *schema.ResourceData) diag.Diagnostics {
+	log.Printf("[TRACE] validateInfraSchema: start")
+	cloud := d.Get("cloud").(int)
+
+	if cloud == 0 {
+		if _, ok := d.GetOk("azcount"); !ok {
+			return diag.Errorf("Attribute 'azcount' is required for aws cloud.")
+		}
+		if _, ok := d.GetOk("subnet_cidr"); !ok {
+			return diag.Errorf("Attribute 'subnet_cidr' is required for aws cloud.")
+		}
+	} else if cloud == 2 {
+		if _, ok := d.GetOk("subnet_address_prefix"); !ok {
+			return diag.Errorf("Attribute 'subnet_address_prefix' is required for azure cloud.")
+		}
+		if _, ok := d.GetOk("account_id"); !ok {
+			return diag.Errorf("Attribute 'account_id' is required for azure cloud.")
+		}
+	}
+	log.Printf("[TRACE] validateInfraSchema: end")
+	return nil
 }

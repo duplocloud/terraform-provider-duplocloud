@@ -30,15 +30,14 @@ resource "duplocloud_infrastructure" "myinfra" {
 ### Required
 
 - **address_prefix** (String) The CIDR to use for the VPC or VNet.
-- **azcount** (Number) The number of availability zones.  Must be one of: `2`, `3`, or `4`.
 - **enable_k8_cluster** (Boolean) Whether or not to provision a kubernetes cluster.
 - **infra_name** (String) The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.
 - **region** (String) The cloud provider region.  The Duplo portal must have already been configured to support this region.
-- **subnet_cidr** (Number) The CIDR subnet size (in bits) for the automatically created subnets.
 
 ### Optional
 
 - **account_id** (String) The cloud account ID.
+- **azcount** (Number) The number of availability zones.  Must be one of: `2`, `3`, or `4`.
 - **cloud** (Number) The numerical index of cloud provider to use for the infrastructure.
 Should be one of:
 
@@ -50,6 +49,7 @@ Should be one of:
 - **enable_container_insights** (Boolean) Whether or not to enable container insights for an ECS cluster.
 - **enable_ecs_cluster** (Boolean) Whether or not to provision an ECS cluster.
 - **subnet_address_prefix** (String) The address prefixe to use for the subnet.
+- **subnet_cidr** (Number) The CIDR subnet size (in bits) for the automatically created subnets.
 - **subnet_name** (String) The name of the subnet. Defaults to `default`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_deleted** (Boolean) Whether or not to wait until Duplo has destroyed the infrastructure. Defaults to `false`.
