@@ -118,6 +118,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_recovery_services_vault":   resourceAzureRecoveryServicesVault(),
 			"duplocloud_azure_vm_feature":                resourceAzureVmFeature(),
 			"duplocloud_azure_vault_backup_policy":       resourceAzureVaultBackupPolicy(),
+			"duplocloud_azure_network_security_rule":     resourceAzureNetworkSgRule(),
 			"duplocloud_other_agents":                    resourceOtherAgents(),
 			"duplocloud_byoh":                            resourceByoh(),
 		},
