@@ -78,14 +78,17 @@ type DuploInfrastructureVnetSecurityGroups struct {
 }
 
 type DuploInfrastructureVnetSGRule struct {
-	SrcRuleType      int    `json:"SrcRuleType"`
-	SrcAddressPrefix string `json:"SrcAddressPrefix"`
-	SourcePortRange  string `json:"SourcePortRange"`
-	Protocol         string `json:"Protocol"`
-	Direction        string `json:"Direction"`
-	RuleAction       string `json:"RuleAction"`
-	Priority         int    `json:"Priority"`
-	DstRuleType      int    `json:"DstRuleType"`
+	Name                 string `json:"Name"`
+	SrcRuleType          int    `json:"SrcRuleType"`
+	SrcAddressPrefix     string `json:"SrcAddressPrefix"`
+	SourcePortRange      string `json:"SourcePortRange"`
+	Protocol             string `json:"Protocol"`
+	Direction            string `json:"Direction"`
+	RuleAction           string `json:"RuleAction"`
+	Priority             int    `json:"Priority"`
+	DstRuleType          int    `json:"DstRuleType"`
+	DestinationPortRange string `json:"DestinationPortRange,omitempty"`
+	DstAddressPrefix     string `json:"DstAddressPrefix,omitempty"`
 }
 
 // DuploInfrastructureVnet represents a Duplo infrastructure VNET
@@ -153,6 +156,22 @@ type DuploAzureRecoveryServicesVault struct {
 type DuploAzureRecoveryServicesVaultRq struct {
 	Name          string `json:"name"`
 	ResourceGroup string `json:"resourceGroup,omitempty"`
+}
+
+type SgRuleType int
+
+const (
+	IPADDRESS SgRuleType = iota
+	SERVICETAG
+	APP_SG
+)
+
+type InfrastructureSgUpdate struct {
+	Name          string                           `json:"Name"`
+	SgName        string                           `json:"SgName"`
+	RulesToAdd    *[]DuploInfrastructureVnetSGRule `json:"RulesToAdd,omitempty"`
+	RulesToRemove []string                         `json:"RulesToRemove,omitempty"`
+	State         string                           `json:"State,omitempty"`
 }
 
 // InfrastructureList retrieves a list of infrastructures via the Duplo API.
@@ -343,4 +362,32 @@ func (c *Client) AzureRecoveryServicesVaultGet(infraName string) (*DuploAzureRec
 		return nil, err
 	}
 	return &rp, nil
+}
+
+func (c *Client) NetworkSgRuleCreateOrDelete(rq *InfrastructureSgUpdate) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("NetworkSgRuleCreate(%s)", rq.Name),
+		"admin/UpdateInfrastructureSg",
+		&rq,
+		nil,
+	)
+}
+
+func (c *Client) NetworkSgRuleGet(infraName, sgName, ruleName string) (*DuploInfrastructureVnetSGRule, ClientError) {
+	config, err := c.InfrastructureGet(infraName)
+	if err != nil {
+		return nil, err
+	}
+	sgList := config.Vnet.SecurityGroups
+	for _, sg := range *sgList {
+		if sg.Name == sgName {
+			rules := sg.Rules
+			for _, rule := range *rules {
+				if rule.Name == ruleName {
+					return &rule, nil
+				}
+			}
+		}
+	}
+	return nil, nil
 }
