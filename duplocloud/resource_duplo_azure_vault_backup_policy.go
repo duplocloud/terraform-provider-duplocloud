@@ -25,8 +25,8 @@ func duploAzureVaultBackupPolicySchema() map[string]*schema.Schema {
 		"name": {
 			Description: "Specifies the name of the vault backup policy.",
 			Type:        schema.TypeString,
-			ForceNew:    true,
-			Required:    true,
+			//ForceNew:    true,
+			Required: true,
 		},
 		"azure_id": {
 			Description: "Azure id for vault backup policy.",
