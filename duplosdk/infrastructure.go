@@ -367,7 +367,7 @@ func (c *Client) AzureRecoveryServicesVaultGet(infraName string) (*DuploAzureRec
 func (c *Client) NetworkSgRuleCreateOrDelete(rq *InfrastructureSgUpdate) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("NetworkSgRuleCreate(%s)", rq.Name),
-		"admin/UpdateInfrastructureSg",
+		"adminproxy/UpdateInfrastructureSg",
 		&rq,
 		nil,
 	)

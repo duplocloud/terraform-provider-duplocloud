@@ -163,6 +163,7 @@ func resourceAzureNetworkSgRuleCreate(ctx context.Context, d *schema.ResourceDat
 	infraName := d.Get("infra_name").(string)
 	sgName := d.Get("network_security_group_name").(string)
 	ruleName := d.Get("name").(string)
+	ruleFullName := "duploservices-" + ruleName + "-" + sgName
 	log.Printf("[TRACE] resourceAzureNetworkSgRuleCreate(%s, %s, %s): start", infraName, sgName, ruleName)
 	c := m.(*duplosdk.Client)
 
@@ -178,9 +179,9 @@ func resourceAzureNetworkSgRuleCreate(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Error creating security group rule '%s': %s", ruleName, err)
 	}
 
-	id := fmt.Sprintf("%s/%s/%s", infraName, sgName, ruleName)
+	id := fmt.Sprintf("%s/%s/%s", infraName, sgName, ruleFullName)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure security group rule", id, func() (interface{}, duplosdk.ClientError) {
-		return c.NetworkSgRuleGet(infraName, sgName, ruleName)
+		return c.NetworkSgRuleGet(infraName, sgName, ruleFullName)
 	})
 	if diags != nil {
 		return diags
