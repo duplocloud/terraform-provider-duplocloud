@@ -5,154 +5,6 @@ import (
 	"time"
 )
 
-type DayOfWeek int
-
-func DayOfWeekString(e int) string {
-	switch e {
-	case 0:
-		return "Sunday"
-	case 1:
-		return "Monday"
-	case 2:
-		return "Tuesday"
-	case 3:
-		return "Wednesday"
-	case 4:
-		return "Thursday"
-	case 5:
-		return "Friday"
-	case 6:
-		return "Saturday"
-	default:
-		return fmt.Sprintf("%d", int(e))
-	}
-}
-
-func DayOfWeekIndex(e string) int {
-	switch e {
-	case "Sunday":
-		return 0
-	case "Monday":
-		return 1
-	case "Tuesday":
-		return 2
-	case "Wednesday":
-		return 3
-	case "Thursday":
-		return 4
-	case "Friday":
-		return 5
-	case "Saturday":
-		return 6
-	default:
-		return 0
-	}
-}
-
-func WeekOfMonthString(e int) string {
-	switch e {
-	case 0:
-		return "First"
-	case 1:
-		return "Second"
-	case 2:
-		return "Third"
-	case 3:
-		return "Fourth"
-	case 4:
-		return "Last"
-	case 5:
-		return "Invalid"
-	default:
-		return fmt.Sprintf("%d", int(e))
-	}
-}
-
-func WeekOfMonthIndex(e string) int {
-	switch e {
-	case "First":
-		return 0
-	case "Second":
-		return 1
-	case "Third":
-		return 2
-	case "Fourth":
-		return 3
-	case "Last":
-		return 4
-	case "Invalid":
-		return 5
-	default:
-		return 5
-	}
-}
-
-func MonthOfYearString(e int) string {
-	switch e {
-	case 0:
-		return "Invalid"
-	case 1:
-		return "January"
-	case 2:
-		return "February"
-	case 3:
-		return "March"
-	case 4:
-		return "April"
-	case 5:
-		return "May"
-	case 6:
-		return "June"
-	case 7:
-		return "July"
-	case 8:
-		return "August"
-	case 9:
-		return "September"
-	case 10:
-		return "October"
-	case 11:
-		return "November"
-	case 12:
-		return "December"
-	default:
-		return fmt.Sprintf("%d", int(e))
-	}
-}
-
-func MonthOfYearIndex(e string) int {
-	switch e {
-	case "Invalid":
-		return 0
-	case "January":
-		return 1
-	case "February":
-		return 2
-	case "March":
-		return 3
-	case "April":
-		return 4
-	case "May":
-		return 5
-	case "June":
-		return 6
-	case "July":
-		return 7
-	case "August":
-		return 8
-	case "September":
-		return 9
-	case "October":
-		return 10
-	case "November":
-		return 11
-	case "December":
-		return 12
-	default:
-		return 0
-	}
-}
-
 type DuploAzureVaultBackupHourlySchedule struct {
 	Interval                int        `json:"interval,omitempty"`
 	ScheduleWindowDuration  int        `json:"scheduleWindowDuration,omitempty"`
@@ -164,7 +16,7 @@ type DuploAzureVaultBackupSchedulePolicy struct {
 	ScheduleRunFrequency    string                               `json:"scheduleRunFrequency,omitempty"`
 	ScheduleRunTimes        *[]time.Time                         `json:"scheduleRunTimes,omitempty"`
 	ScheduleWeeklyFrequency int                                  `json:"scheduleWeeklyFrequency,omitempty"`
-	ScheduleRunDays         *[]int                               `json:"scheduleRunDays,omitempty"`
+	ScheduleRunDays         *[]string                            `json:"scheduleRunDays,omitempty"`
 	HourlySchedule          *DuploAzureVaultBackupHourlySchedule `json:"hourlySchedule,omitempty"`
 	DailySchedule           *DuploAzureVaultBackupDailySchedule  `json:"dailySchedule,omitempty"`
 	WeeklySchedule          *DuploAzureVaultBackupWeeklySchedule `json:"weeklySchedule,omitempty"`
@@ -205,7 +57,7 @@ type DuploAzureVaultBackupWeeklySchedule struct {
 	DaysOfTheWeek     *[]string                               `json:"daysOfTheWeek,omitempty"`
 	RetentionDuration *DuploAzureVaultBackupRetentionDuration `json:"retentionDuration,omitempty"`
 	RetentionTimes    *[]time.Time                            `json:"retentionTimes,omitempty"`
-	ScheduleRunDays   *[]int                                  `json:"scheduleRunDays,omitempty"`
+	ScheduleRunDays   *[]string                               `json:"scheduleRunDays,omitempty"`
 	ScheduleRunTimes  *[]time.Time                            `json:"scheduleRunTimes,omitempty"`
 }
 type DuploAzureVaultBackupYearlySchedule struct {
@@ -227,7 +79,7 @@ type DuploAzureVaultBackupPolicyProperties struct {
 }
 
 type DuploAzureVaultBackupPolicy struct {
-	Properties *DuploAzureVaultBackupPolicyProperties `json:"properties"`
+	Properties *DuploAzureVaultBackupPolicyProperties `json:"properties,omitempty"`
 	ID         string                                 `json:"id,omitempty"`
 	Name       string                                 `json:"name"`
 	Type       string                                 `json:"type,omitempty"`
@@ -273,7 +125,7 @@ func (c *Client) VaultBackupPolicyList(infraName string) (*[]DuploAzureVaultBack
 func (c *Client) VaultBackupPolicyDelete(infraName string, rq *DuploAzureVaultBackupPolicy) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("VaultBackupPolicyDelete(%s, %s)", infraName, rq.Name),
-		fmt.Sprintf("adminproxy/DeleteVaultBackupPolicy/%s", infraName),
+		fmt.Sprintf("adminproxy/DeleteAzureVaultBackupPolicy/%s", infraName),
 		&rq,
 		nil,
 	)
