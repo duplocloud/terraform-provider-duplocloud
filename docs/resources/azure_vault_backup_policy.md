@@ -14,8 +14,37 @@ description: |-
 
 ```terraform
 resource "duplocloud_azure_vault_backup_policy" "backup_policy" {
-  infra_name = "demo"
-  name       = "test-policy"
+  infra_name = "test-infra"
+  name       = "rt01"
+  timezone   = "UTC"
+
+  backup {
+    frequency = "Daily"
+    time      = "23:00"
+  }
+
+  retention_daily {
+    count = 10
+  }
+
+  retention_weekly {
+    count    = 42
+    weekdays = ["Sunday", "Wednesday", "Friday", "Saturday"]
+  }
+
+  retention_monthly {
+    count    = 7
+    weekdays = ["Sunday", "Wednesday"]
+    weeks    = ["First", "Last"]
+  }
+
+  retention_yearly {
+    count    = 77
+    weekdays = ["Sunday"]
+    weeks    = ["Last"]
+    months   = ["January"]
+  }
+
 }
 ```
 
@@ -24,17 +53,78 @@ resource "duplocloud_azure_vault_backup_policy" "backup_policy" {
 
 ### Required
 
+- **backup** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--backup))
 - **infra_name** (String) The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.
 - **name** (String) Specifies the name of the vault backup policy.
 
 ### Optional
 
+- **instant_restore_retention_days** (Number) Specifies the instant restore retention range in days.
+- **policy_type** (String) Type of the Backup Policy. Defaults to `V1`.
+- **retention_daily** (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_daily))
+- **retention_monthly** (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_monthly))
+- **retention_weekly** (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_weekly))
+- **retention_yearly** (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_yearly))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **timezone** (String) Specifies the timezone. Defaults to `UTC`.
 
 ### Read-Only
 
 - **azure_id** (String) Azure id for vault backup policy.
 - **id** (String) The ID of this resource.
+
+<a id="nestedblock--backup"></a>
+### Nested Schema for `backup`
+
+Required:
+
+- **frequency** (String)
+- **time** (String)
+
+Optional:
+
+- **hour_duration** (Number)
+- **hour_interval** (Number)
+- **weekdays** (Set of String)
+
+
+<a id="nestedblock--retention_daily"></a>
+### Nested Schema for `retention_daily`
+
+Required:
+
+- **count** (Number)
+
+
+<a id="nestedblock--retention_monthly"></a>
+### Nested Schema for `retention_monthly`
+
+Required:
+
+- **count** (Number)
+- **weekdays** (Set of String)
+- **weeks** (Set of String)
+
+
+<a id="nestedblock--retention_weekly"></a>
+### Nested Schema for `retention_weekly`
+
+Required:
+
+- **count** (Number)
+- **weekdays** (Set of String)
+
+
+<a id="nestedblock--retention_yearly"></a>
+### Nested Schema for `retention_yearly`
+
+Required:
+
+- **count** (Number)
+- **months** (Set of String)
+- **weekdays** (Set of String)
+- **weeks** (Set of String)
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
