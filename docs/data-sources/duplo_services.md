@@ -43,6 +43,7 @@ Read-Only:
 - **name** (String)
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
+- **replica_collocation_allowed** (Boolean)
 - **replicas** (Number)
 - **replicas_matching_asg_name** (String)
 - **tags** (List of Object) (see [below for nested schema](#nestedobjatt--services--tags))
