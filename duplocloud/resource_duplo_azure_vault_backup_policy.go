@@ -355,7 +355,7 @@ func resourceAzureVaultBackupPolicyDelete(ctx context.Context, d *schema.Resourc
 		if clientErr.Status() == 404 {
 			return nil
 		}
-		return diag.Errorf("Unable to delete tenant %s azure vault backup policy '%s': %s", infraName, name, clientErr)
+		return diag.Errorf("Unable to delete infra %s azure vault backup policy '%s': %s", infraName, name, clientErr)
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure vault backup policy", id, func() (interface{}, duplosdk.ClientError) {
@@ -525,7 +525,7 @@ func flattenBackupProtectionPolicyVMScheduleV2(schedule *duplosdk.DuploAzureVaul
 		if days := schedule.ScheduleRunDays; days != nil && len(*days) > 0 {
 			weekdays := make([]interface{}, 0)
 			for _, d := range *days {
-				weekdays = append(weekdays, duplosdk.DayOfWeekString(d))
+				weekdays = append(weekdays, d)
 			}
 			block["weekdays"] = schema.NewSet(schema.HashString, weekdays)
 		}
@@ -647,9 +647,9 @@ func expandBackupProtectionPolicyVMSchedule(d *schema.ResourceData, times []time
 			}
 
 			if v, ok := block["weekdays"].(*schema.Set); ok {
-				days := make([]int, 0)
+				days := make([]string, 0)
 				for _, day := range v.List() {
-					days = append(days, duplosdk.DayOfWeekIndex(day.(string)))
+					days = append(days, day.(string))
 				}
 				schedule.ScheduleRunDays = &days
 			}
@@ -693,9 +693,9 @@ func expandBackupProtectionPolicyVMSchedule(d *schema.ResourceData, times []time
 					return nil, fmt.Errorf("`weekdays` must be specified when `backup.0.frequency` is `Weekly`")
 				}
 
-				days := make([]int, 0)
+				days := make([]string, 0)
 				for _, day := range weekDays.List() {
-					days = append(days, duplosdk.DayOfWeekIndex(day.(string)))
+					days = append(days, day.(string))
 				}
 
 				schedule.WeeklySchedule = &duplosdk.DuploAzureVaultBackupWeeklySchedule{
