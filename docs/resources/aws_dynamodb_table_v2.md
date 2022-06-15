@@ -27,7 +27,7 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
   #billing_mode = "PAY_PER_REQUEST"
   tag {
     key   = "CreatedBy"
-    value = "Tahir"
+    value = "Duplo"
   }
 
   tag {
