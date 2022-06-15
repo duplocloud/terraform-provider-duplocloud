@@ -60,7 +60,7 @@ func duploAzureNetworkSgRuleSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			ValidateFunc: validation.StringInSlice([]string{
-				"tcp", "udp", "*",
+				"tcp", "udp", "icmp", "esp", "ah", "*",
 			}, false),
 		},
 		"source_port_range": {
