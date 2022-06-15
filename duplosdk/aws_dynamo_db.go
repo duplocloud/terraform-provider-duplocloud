@@ -99,13 +99,13 @@ type DuploDynamoDBTableV2Projection struct {
 }
 
 type DuploDynamoDBTableV2LocalSecondaryIndex struct {
-	IndexName  string                          `json:"NonKeyAttributes"`
+	IndexName  string                          `json:"IndexName"`
 	Projection *DuploDynamoDBTableV2Projection `json:"Projection,omitempty"`
 	KeySchema  *[]DuploDynamoDBKeySchema       `json:"KeySchema,omitempty"`
 }
 
 type DuploDynamoDBTableV2GlobalSecondaryIndex struct {
-	IndexName             string                              `json:"NonKeyAttributes"`
+	IndexName             string                              `json:"IndexName"`
 	Projection            *DuploDynamoDBTableV2Projection     `json:"Projection,omitempty"`
 	KeySchema             *[]DuploDynamoDBKeySchema           `json:"KeySchema,omitempty"`
 	ProvisionedThroughput *DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput,omitempty"`

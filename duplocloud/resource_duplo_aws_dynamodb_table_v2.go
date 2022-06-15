@@ -67,7 +67,7 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 		},
 
 		"attribute": {
-			Type:     schema.TypeList,
+			Type:     schema.TypeSet,
 			Optional: true,
 			Computed: true,
 			Elem: &schema.Resource{
@@ -422,19 +422,17 @@ func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceDat
 }
 
 func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRequestV2, error) {
-	keySchemaMap := map[string]interface{}{
-		"hash_key": d.Get("hash_key").(string),
-	}
-	if v, ok := d.GetOk("range_key"); ok {
-		keySchemaMap["range_key"] = v.(string)
-	}
 
 	req := &duplosdk.DuploDynamoDBTableRequestV2{
-		TableName:            d.Get("name").(string),
-		BillingMode:          d.Get("billing_mode").(string),
-		Tags:                 keyValueFromState("tag", d),
-		AttributeDefinitions: expandDynamoDBAttributes(d),
-		KeySchema:            expandDynamoDBKeySchema(d),
+		TableName:   d.Get("name").(string),
+		BillingMode: d.Get("billing_mode").(string),
+		Tags:        keyValueFromState("tag", d),
+		KeySchema:   expandDynamoDBKeySchema(d),
+	}
+
+	if v, ok := d.GetOk("attribute"); ok {
+		aSet := v.(*schema.Set)
+		req.AttributeDefinitions = expandAttributes(aSet.List())
 	}
 
 	if v, ok := d.GetOk("stream_enabled"); ok {
@@ -455,7 +453,7 @@ func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRe
 
 	if v, ok := d.GetOk("local_secondary_index"); ok {
 		lsiSet := v.(*schema.Set)
-		req.LocalSecondaryIndexes = expandLocalSecondaryIndexes(lsiSet.List(), keySchemaMap)
+		req.LocalSecondaryIndexes = expandLocalSecondaryIndexes(lsiSet.List())
 	}
 
 	if v, ok := d.GetOk("global_secondary_index"); ok {
@@ -481,21 +479,16 @@ func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRe
 	return req, nil
 }
 
-func expandDynamoDBAttributes(d *schema.ResourceData) *[]duplosdk.DuploDynamoDBAttributeDefinionV2 {
-	var ary []duplosdk.DuploDynamoDBAttributeDefinionV2
-
-	if v, ok := d.GetOk("attribute"); ok && v != nil && len(v.([]interface{})) > 0 {
-		kvs := v.([]interface{})
-		ary = make([]duplosdk.DuploDynamoDBAttributeDefinionV2, 0, len(kvs))
-		for _, raw := range kvs {
-			kv := raw.(map[string]interface{})
-			ary = append(ary, duplosdk.DuploDynamoDBAttributeDefinionV2{
-				AttributeName: kv["name"].(string),
-				AttributeType: kv["type"].(string),
-			})
+func expandAttributes(cfg []interface{}) *[]duplosdk.DuploDynamoDBAttributeDefinionV2 {
+	attributes := make([]duplosdk.DuploDynamoDBAttributeDefinionV2, len(cfg))
+	for i, attribute := range cfg {
+		attr := attribute.(map[string]interface{})
+		attributes[i] = duplosdk.DuploDynamoDBAttributeDefinionV2{
+			AttributeName: attr["name"].(string),
+			AttributeType: attr["type"].(string),
 		}
 	}
-	return &ary
+	return &attributes
 }
 
 func expandDynamoDBKeySchema(d *schema.ResourceData) *[]duplosdk.DuploDynamoDBKeySchemaV2 {
@@ -651,14 +644,11 @@ func flattenTableLocalSecondaryIndex(lsi *[]duplosdk.DuploDynamoDBTableV2LocalSe
 	return output
 }
 
-func expandLocalSecondaryIndexes(cfg []interface{}, keySchemaM map[string]interface{}) *[]duplosdk.DuploDynamoDBTableV2LocalSecondaryIndex {
+func expandLocalSecondaryIndexes(cfg []interface{}) *[]duplosdk.DuploDynamoDBTableV2LocalSecondaryIndex {
 	indexes := make([]duplosdk.DuploDynamoDBTableV2LocalSecondaryIndex, len(cfg))
 	for i, lsi := range cfg {
 		m := lsi.(map[string]interface{})
 		idxName := m["name"].(string)
-		if _, ok := m["hash_key"]; !ok {
-			m["hash_key"] = keySchemaM["hash_key"]
-		}
 		indexes[i] = duplosdk.DuploDynamoDBTableV2LocalSecondaryIndex{
 			IndexName:  idxName,
 			KeySchema:  expandKeySchema(m),
