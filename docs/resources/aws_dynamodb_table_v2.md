@@ -66,7 +66,7 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
 ### Optional
 
-- **attribute** (Block List) (see [below for nested schema](#nestedblock--attribute))
+- **attribute** (Block Set) (see [below for nested schema](#nestedblock--attribute))
 - **billing_mode** (String) Controls how you are charged for read and write throughput and how you manage capacity. The valid values are `PROVISIONED` and `PAY_PER_REQUEST`. Defaults to `PROVISIONED`.
 - **global_secondary_index** (Block Set) Describe a GSI for the table; subject to the normal limits on the number of GSIs, projected attributes, etc. (see [below for nested schema](#nestedblock--global_secondary_index))
 - **key_schema** (Block List) (see [below for nested schema](#nestedblock--key_schema))
