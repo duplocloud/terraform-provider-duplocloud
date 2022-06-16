@@ -137,7 +137,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"replica_collocation_allowed": {
-			Description: "Allow replica collocation for the service.",
+			Description: "Allow replica collocation for the service. If this is set then 2 replicas can be on the same host.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
