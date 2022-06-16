@@ -140,7 +140,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Description: "Allow replica collocation for the service. If this is set then 2 replicas can be on the same host.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Default:     false,
+			Computed:    false,
 		},
 		"cloud_creds_from_k8s_service_account": {
 			Description: "Whether or not the service gets it's cloud credentials from Kubernetes service account.",
