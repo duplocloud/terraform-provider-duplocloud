@@ -108,7 +108,7 @@ Should be one of:
 - **lb_synced_deployment** (Boolean) Defaults to `false`.
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
-- **replica_collocation_allowed** (Boolean) Allow replica collocation for the service. Defaults to `false`.
+- **replica_collocation_allowed** (Boolean) Allow replica collocation for the service. If this is set then 2 replicas can be on the same host. Defaults to `false`.
 - **replicas** (Number) The number of container replicas to deploy. Defaults to `1`.
 - **replicas_matching_asg_name** (String)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
