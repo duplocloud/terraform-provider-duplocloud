@@ -136,6 +136,12 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"replica_collocation_allowed": {
+			Description: "Allow replica collocation for the service. If this is set then 2 replicas can be on the same host.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 		"cloud_creds_from_k8s_service_account": {
 			Description: "Whether or not the service gets it's cloud credentials from Kubernetes service account.",
 			Type:        schema.TypeBool,
@@ -221,6 +227,7 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		Replicas:                          d.Get("replicas").(int),
 		IsLBSyncedDeployment:              d.Get("lb_synced_deployment").(bool),
 		IsAnyHostAllowed:                  d.Get("any_host_allowed").(bool),
+		IsReplicaCollocationAllowed:       d.Get("replica_collocation_allowed").(bool),
 		IsDaemonset:                       d.Get("is_daemonset").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
@@ -264,6 +271,7 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 		Replicas:                          d.Get("replicas").(int),
 		IsLBSyncedDeployment:              d.Get("lb_synced_deployment").(bool),
 		IsAnyHostAllowed:                  d.Get("any_host_allowed").(bool),
+		IsReplicaCollocationAllowed:       d.Get("replica_collocation_allowed").(bool),
 		IsDaemonset:                       d.Get("is_daemonset").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
