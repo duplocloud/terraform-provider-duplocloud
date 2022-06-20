@@ -32,7 +32,7 @@ jobs:
         uses: duplocloud/ghactions-finish-gitflow-release@master
         with:
           validate_merge: false
-          delete_ref: false
+          delete_branch: false
           github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
 
   version-bump:

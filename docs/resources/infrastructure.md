@@ -50,7 +50,7 @@ Should be one of:
 - **enable_ecs_cluster** (Boolean) Whether or not to provision an ECS cluster.
 - **subnet_address_prefix** (String) The address prefixe to use for the subnet. This is applicable only for Azure
 - **subnet_cidr** (Number) The CIDR subnet size (in bits) for the automatically created subnets. This is applicable only for AWS.
-- **subnet_name** (String) The name of the subnet. This is applicable only for Azure. Defaults to `default`.
+- **subnet_name** (String) The name of the subnet. This is applicable only for Azure.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_deleted** (Boolean) Whether or not to wait until Duplo has destroyed the infrastructure. Defaults to `false`.
 
