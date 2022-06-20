@@ -218,7 +218,7 @@ func resourceInfrastructure() *schema.Resource {
 				Description: "The name of the subnet. This is applicable only for Azure.",
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "default",
+				Computed:    true,
 			},
 			"subnet_address_prefix": {
 				Description: "The address prefixe to use for the subnet. This is applicable only for Azure",
