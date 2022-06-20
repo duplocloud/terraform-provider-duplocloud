@@ -511,36 +511,42 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 				if !isDuploSubnet {
 					continue
 				}
-
-				// The server may or may not have the new fields.
-				nameParts := strings.SplitN(vnetSubnet.Name, " ", 2)
 				zone := vnetSubnet.Zone
 				subnetType := vnetSubnet.SubnetType
-				if zone == "" {
-					zone = nameParts[0]
+				// The server may or may not have the new fields.
+				if strings.HasPrefix(vnetSubnet.Name, config.Name) {
+					nameParts := strings.SplitN(vnetSubnet.Name, "-", 3)
+					if zone == "" {
+						zone = nameParts[1]
+					}
+					if subnetType == "" {
+						subnetType = nameParts[2]
+					}
+				} else {
+					nameParts := strings.SplitN(vnetSubnet.Name, " ", 2)
+					if zone == "" {
+						zone = nameParts[0]
+					}
+					if subnetType == "" {
+						subnetType = nameParts[1]
+					}
 				}
-				if subnetType == "" {
-					subnetType = nameParts[1]
+				subnet := map[string]interface{}{
+					"id":         vnetSubnet.ID,
+					"name":       vnetSubnet.Name,
+					"cidr_block": vnetSubnet.AddressPrefix,
+					"type":       subnetType,
+					"zone":       zone,
+					"tags":       keyValueToState("tags", vnetSubnet.Tags),
 				}
 
-				if len(nameParts) == 2 {
-					subnet := map[string]interface{}{
-						"id":         vnetSubnet.ID,
-						"name":       vnetSubnet.Name,
-						"cidr_block": vnetSubnet.AddressPrefix,
-						"type":       subnetType,
-						"zone":       zone,
-						"tags":       keyValueToState("tags", vnetSubnet.Tags),
-					}
-
-					if subnetType == "private" {
-						privateSubnets = append(privateSubnets, subnet)
-					} else if subnetType == "public" {
-						publicSubnets = append(publicSubnets, subnet)
-					}
-					d.Set("subnet_name", vnetSubnet.Name)
-					d.Set("subnet_address_prefix", vnetSubnet.AddressPrefix)
+				if subnetType == "private" {
+					privateSubnets = append(privateSubnets, subnet)
+				} else if subnetType == "public" {
+					publicSubnets = append(publicSubnets, subnet)
 				}
+				d.Set("subnet_name", vnetSubnet.Name)
+				d.Set("subnet_address_prefix", vnetSubnet.AddressPrefix)
 			}
 
 			d.Set("private_subnets", privateSubnets)
