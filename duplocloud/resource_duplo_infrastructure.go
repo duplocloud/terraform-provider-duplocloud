@@ -444,8 +444,9 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			rp, err := c.InfrastructureGetConfig(name)
+			log.Printf("[DEBUG] Infrastructure provisioning status is %s", rp.ProvisioningStatus)
 			status := "pending"
-			if err == nil && rp.ProvisioningStatus == "Complete" {
+			if err == nil && (rp.ProvisioningStatus == "Complete" || strings.Contains(rp.ProvisioningStatus, "Ready")) {
 				status = "ready"
 			}
 			return rp, status, err
@@ -514,37 +515,41 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 				zone := vnetSubnet.Zone
 				subnetType := vnetSubnet.SubnetType
 				// The server may or may not have the new fields.
-				if strings.HasPrefix(vnetSubnet.Name, config.Name) {
-					nameParts := strings.SplitN(vnetSubnet.Name, "-", 3)
-					if zone == "" {
-						zone = nameParts[1]
+				// If cloud is aws
+				if config.Cloud == 0 {
+					if strings.HasPrefix(vnetSubnet.Name, config.Name) {
+						nameParts := strings.SplitN(vnetSubnet.Name, "-", 3)
+						if zone == "" {
+							zone = nameParts[1]
+						}
+						if subnetType == "" {
+							subnetType = nameParts[2]
+						}
+					} else {
+						nameParts := strings.SplitN(vnetSubnet.Name, " ", 2)
+						if zone == "" {
+							zone = nameParts[0]
+						}
+						if subnetType == "" {
+							subnetType = nameParts[1]
+						}
 					}
-					if subnetType == "" {
-						subnetType = nameParts[2]
+					subnet := map[string]interface{}{
+						"id":         vnetSubnet.ID,
+						"name":       vnetSubnet.Name,
+						"cidr_block": vnetSubnet.AddressPrefix,
+						"type":       subnetType,
+						"zone":       zone,
+						"tags":       keyValueToState("tags", vnetSubnet.Tags),
 					}
-				} else {
-					nameParts := strings.SplitN(vnetSubnet.Name, " ", 2)
-					if zone == "" {
-						zone = nameParts[0]
+
+					if subnetType == "private" {
+						privateSubnets = append(privateSubnets, subnet)
+					} else if subnetType == "public" {
+						publicSubnets = append(publicSubnets, subnet)
 					}
-					if subnetType == "" {
-						subnetType = nameParts[1]
-					}
-				}
-				subnet := map[string]interface{}{
-					"id":         vnetSubnet.ID,
-					"name":       vnetSubnet.Name,
-					"cidr_block": vnetSubnet.AddressPrefix,
-					"type":       subnetType,
-					"zone":       zone,
-					"tags":       keyValueToState("tags", vnetSubnet.Tags),
 				}
 
-				if subnetType == "private" {
-					privateSubnets = append(privateSubnets, subnet)
-				} else if subnetType == "public" {
-					publicSubnets = append(publicSubnets, subnet)
-				}
 				d.Set("subnet_name", vnetSubnet.Name)
 				d.Set("subnet_address_prefix", vnetSubnet.AddressPrefix)
 			}
