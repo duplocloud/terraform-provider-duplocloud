@@ -75,6 +75,7 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				Description: "The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.AzureActiveDirectory`, `Microsoft.AzureCosmosDB`, `Microsoft.ContainerRegistry`, `Microsoft.EventHub`, `Microsoft.KeyVault`, `Microsoft.ServiceBus`,`Microsoft.Sql`, `Microsoft.Storage` and `Microsoft.Web`. This is applicable only for Azure subnets.",
 				Type:        schema.TypeSet,
 				Optional:    true,
+				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"tags":     tagsSchema(),
@@ -113,9 +114,7 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 	d.Set("tags_all", keyValueToMap(duplo.Tags))
 	d.Set("type", duplo.SubnetType)
 	d.Set("isolated_network", duplo.IsolatedNetwork)
-	if len(duplo.ServiceEndpoints) > 0 {
-		d.Set("service_endpoints", duplo.ServiceEndpoints)
-	}
+	d.Set("service_endpoints", duplo.ServiceEndpoints)
 
 	x := d.Get("tags")
 	log.Printf("[TRACE] infra subnet tags %v", x)
@@ -221,10 +220,6 @@ func validateSubnetSchema(d *schema.ResourceData, m interface{}) diag.Diagnostic
 	if infraConfig.Cloud == 0 {
 		if _, ok := d.GetOk("zone"); !ok {
 			return diag.Errorf("Attribute 'zone' is required for aws cloud.")
-		}
-	} else if infraConfig.Cloud == 2 {
-		if _, ok := d.GetOk("service_endpoints"); !ok {
-			return diag.Errorf("Attribute 'service_endpoints' is required for azure cloud.")
 		}
 	}
 	log.Printf("[TRACE] validateSubnetSchema: end")
