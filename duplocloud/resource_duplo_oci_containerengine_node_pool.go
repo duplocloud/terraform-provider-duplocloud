@@ -49,36 +49,39 @@ func duploOciNodePoolSchema() map[string]*schema.Schema {
 			Description: "The name of the node pool.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 		},
 		"node_shape": {
 			Description: "The name of the node shape of the nodes in the node pool.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 		},
 		"defined_tags": {
-			Description: "Defined tags for this resource. Each key is predefined and scoped to a namespace.",
-			Type:        schema.TypeMap,
-			Optional:    true,
-			Computed:    true,
-			Elem:        schema.TypeString,
+			Description:      "Defined tags for this resource. Each key is predefined and scoped to a namespace.",
+			Type:             schema.TypeMap,
+			Optional:         true,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
+			Elem:             schema.TypeString,
 		},
 		"freeform_tags": {
-			Description: "Free-form tags for this resource. Each tag is a simple key-value pair with no predefined name, type, or namespace.",
-			Type:        schema.TypeMap,
-			Optional:    true,
-			Computed:    true,
-			Elem:        schema.TypeString,
+			Description:      "Free-form tags for this resource. Each tag is a simple key-value pair with no predefined name, type, or namespace.",
+			Type:             schema.TypeMap,
+			Optional:         true,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
+			Elem:             schema.TypeString,
 		},
 		"wait_until_ready": {
-			Description: "Whether or not to wait until oci node pool to be ready, after creation.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     true,
+			Description:      "Whether or not to wait until oci node pool to be ready, after creation.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          true,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
 		},
 		"initial_node_labels": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
+			Type:             schema.TypeList,
+			Optional:         true,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					// Required
@@ -118,17 +121,20 @@ func duploOciNodePoolSchema() map[string]*schema.Schema {
 								"availability_domain": {
 									Type:     schema.TypeString,
 									Required: true,
+									ForceNew: true,
 								},
 								"subnet_id": {
 									Type:     schema.TypeString,
 									Required: true,
+									ForceNew: true,
 								},
 
 								// Optional
 								"capacity_reservation_id": {
-									Type:     schema.TypeString,
-									Optional: true,
-									Computed: true,
+									Type:             schema.TypeString,
+									Optional:         true,
+									Computed:         true,
+									DiffSuppressFunc: diffSuppressFuncIgnore,
 								},
 
 								// Computed
@@ -142,9 +148,10 @@ func duploOciNodePoolSchema() map[string]*schema.Schema {
 
 					// Optional
 					"is_pv_encryption_in_transit_enabled": {
-						Type:     schema.TypeBool,
-						Optional: true,
-						Computed: true,
+						Type:             schema.TypeBool,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: diffSuppressFuncIgnore,
 					},
 					"kms_key_id": {
 						Type:     schema.TypeString,
@@ -152,21 +159,21 @@ func duploOciNodePoolSchema() map[string]*schema.Schema {
 						Computed: true,
 					},
 					"defined_tags": {
-						Type:     schema.TypeMap,
-						Optional: true,
-						Computed: true,
-						Elem:     schema.TypeString,
+						Type:             schema.TypeMap,
+						Optional:         true,
+						Elem:             schema.TypeString,
+						DiffSuppressFunc: diffSuppressFuncIgnore,
 					},
 					"freeform_tags": {
-						Type:     schema.TypeMap,
-						Optional: true,
-						Computed: true,
-						Elem:     schema.TypeString,
+						Type:             schema.TypeMap,
+						Optional:         true,
+						Elem:             schema.TypeString,
+						DiffSuppressFunc: diffSuppressFuncIgnore,
 					},
 					"nsg_ids": {
-						Type:     schema.TypeSet,
-						Optional: true,
-						Computed: true,
+						Type:             schema.TypeSet,
+						Optional:         true,
+						DiffSuppressFunc: diffSuppressFuncIgnore,
 						Elem: &schema.Schema{
 							Type: schema.TypeString,
 						},
@@ -191,15 +198,14 @@ func duploOciNodePoolSchema() map[string]*schema.Schema {
 			ConflictsWith: []string{"node_image_id", "node_source_details"},
 		},
 		"node_metadata": {
-			Type:     schema.TypeMap,
-			Optional: true,
-			Computed: true,
-			Elem:     schema.TypeString,
+			Type:             schema.TypeMap,
+			Optional:         true,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
+			Elem:             schema.TypeString,
 		},
 		"node_shape_config": {
 			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
+			Required: true,
 			MaxItems: 1,
 			MinItems: 1,
 			Elem: &schema.Resource{
@@ -210,12 +216,12 @@ func duploOciNodePoolSchema() map[string]*schema.Schema {
 					"memory_in_gbs": {
 						Type:     schema.TypeFloat,
 						Optional: true,
-						Computed: true,
+						ForceNew: true,
 					},
 					"ocpus": {
 						Type:     schema.TypeFloat,
 						Optional: true,
-						Computed: true,
+						ForceNew: true,
 					},
 
 					// Computed
@@ -276,13 +282,16 @@ func duploOciNodePoolSchema() map[string]*schema.Schema {
 			},
 		},
 		"system_tags": {
-			Type:     schema.TypeMap,
-			Computed: true,
-			Elem:     schema.TypeString,
+			Type:             schema.TypeMap,
+			Optional:         true,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
+			Elem:             schema.TypeString,
 		},
 		"nodes": {
-			Type:     schema.TypeList,
-			Computed: true,
+			Type:             schema.TypeList,
+			Computed:         true,
+			Optional:         true,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					// Required
@@ -448,8 +457,36 @@ func resourceOciNodePoolCreate(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func resourceOciNodePoolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	// TODO - Support once backend API is added.
-	return nil
+	// ideally for now only size updates are required for OCI nodepool scaling manually....
+	// todo : (BE suports only scaling) handle more fields if required later
+
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("name").(string)
+	log.Printf("[TRACE] resourceOciNodePoolUpdate(%s, %s): start", tenantID, name)
+	c := m.(*duplosdk.Client)
+
+	request := duplosdk.DuploOciNodePoolUpdateReq{}
+	request.NodePoolId = d.Get("node_pool_id").(string)
+	if nodeConfigDetails, ok := d.GetOk("node_config_details"); ok {
+		if tmpList := nodeConfigDetails.([]interface{}); len(tmpList) > 0 {
+			fieldKeyFormat := fmt.Sprintf("%s.%d.%%s", "node_config_details", 0)
+			if size, ok := d.GetOk(fmt.Sprintf(fieldKeyFormat, "size")); ok {
+				request.Size = size.(int)
+			}
+		}
+	}
+
+	msg, clientErr := c.OciNodePoolUpdate(tenantID, request.NodePoolId, &request)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			return nil
+		}
+		log.Printf("[ERROR] resourceOciNodePoolUpdate(%s, %s, %s, %s): end", tenantID, name, msg, clientErr)
+	}
+
+	diags := resourceOciNodePoolRead(ctx, d, m)
+	log.Printf("[TRACE] resourceOciNodePoolUpdate(%s, %s): end", tenantID, name)
+	return diags
 }
 
 func resourceOciNodePoolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
