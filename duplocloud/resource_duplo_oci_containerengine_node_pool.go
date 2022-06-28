@@ -142,8 +142,10 @@ func duploOciNodePoolSchema() map[string]*schema.Schema {
 						},
 					},
 					"size": {
-						Type:     schema.TypeInt,
-						Required: true,
+						Type:         schema.TypeInt,
+						Required:     true,
+						Default:      1,
+						ValidateFunc: validation.IntBetween(1, 500),
 					},
 
 					// Optional
