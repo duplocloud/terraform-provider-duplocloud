@@ -40,6 +40,7 @@ type DuploLambdaConfiguration struct {
 	LastModified  string                    `json:"LastModified,omitempty"`
 	MemorySize    int                       `json:"MemorySize"`
 	Role          string                    `json:"Role,omitempty"`
+	PackageType   *DuploStringValue         `json:"PackageType,omitempty"`
 	Runtime       *DuploStringValue         `json:"Runtime,omitempty"`
 	Timeout       int                       `json:"Timeout,omitempty"`
 	TracingConfig *DuploLambdaTracingConfig `json:"TracingConfig,omitempty"`
@@ -50,6 +51,7 @@ type DuploLambdaConfiguration struct {
 
 // DuploLambdaCode is a Duplo SDK object that represents a lambda function's code.
 type DuploLambdaCode struct {
+	ImageURI string `json:"ImageUri,omitempty"`
 	S3Bucket string `json:"S3Bucket,omitempty"`
 	S3Key    string `json:"S3Key,omitempty"`
 }
@@ -79,6 +81,7 @@ type DuploLambdaCreateRequest struct {
 	Description  string                  `json:"Description,omitempty"`
 	Timeout      int                     `json:"Timeout,omitempty"`
 	MemorySize   int                     `json:"MemorySize"`
+	PackageType  *DuploStringValue       `json:"PackageType,omitempty"`
 	Runtime      *DuploStringValue       `json:"Runtime,omitempty"`
 	Environment  *DuploLambdaEnvironment `json:"Environment,omitempty"`
 	Tags         map[string]string       `json:"Tags,omitempty"`
@@ -88,6 +91,7 @@ type DuploLambdaCreateRequest struct {
 // DuploLambdaUpdateRequest is a Duplo SDK object that represents a request to update a lambda function's code.
 type DuploLambdaUpdateRequest struct {
 	FunctionName string `json:"FunctionName,omitempty"`
+	ImageURI     string `json:"ImageUri,omitempty"`
 	S3Bucket     string `json:"S3Bucket,omitempty"`
 	S3Key        string `json:"S3Key,omitempty"`
 }
