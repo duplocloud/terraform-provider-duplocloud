@@ -216,14 +216,18 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if !isDuploServiceAwsLbActive(details) {
+		if duplo.Template.Cloud == 0 && !isDuploServiceAwsLbActive(details) {
 			return diag.Errorf("Load balancer for tenant %s service '%s' is not active", tenantID, name)
 		}
 
 		// Next, we need to apply load balancer settings.
-		err = updateDuploServiceAwsLbSettings(tenantID, details, d, c)
-		if err != nil {
-			return diag.Errorf("Error applying LB settings for tenant %s service '%s': %s", tenantID, name, err)
+		clientError = updateDuploServiceAwsLbSettings(tenantID, details, d, c)
+		if clientError != nil {
+			if clientError.Status() == 500 && duplo.Template.Cloud != 0 {
+				log.Printf("[TRACE] Ignoring error %s for non AWS cloud.", clientError)
+			} else {
+				return diag.Errorf("Error applying LB settings for tenant %s service '%s': %s", tenantID, name, err)
+			}
 		}
 	}
 
