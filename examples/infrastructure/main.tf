@@ -15,6 +15,13 @@ provider "duplocloud" {
 data "duplocloud_plans" "all" {}
 data "duplocloud_plan" "default" { plan_id = "default" }
 
+# resource "duplocloud_infrastructure_setting" "test" {
+#   infra_name = "nonprod"
+#   setting {
+#     key   = "foox"
+#     value = "barx"
+#   }
+#}
 
 # resource "duplocloud_infrastructure" "test" {
 #   infra_name        = "ecstest"
