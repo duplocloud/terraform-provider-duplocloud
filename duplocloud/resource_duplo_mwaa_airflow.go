@@ -34,19 +34,16 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			Description: "Airflow max_workers.",
 			Type:        schema.TypeInt,
 			Required:    true,
-			ForceNew:    true,
 		},
 		"min_workers": {
 			Description: "Airflow min_workers.",
 			Type:        schema.TypeInt,
 			Required:    true,
-			ForceNew:    true,
 		},
 		"schedulers": {
 			Description: "Airflow schedulers.",
 			Type:        schema.TypeInt,
 			Required:    true,
-			ForceNew:    true,
 		},
 		"airflow_version": {
 			Description: "Airflow Version.",
