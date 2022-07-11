@@ -16,21 +16,21 @@ data "duplocloud_plans" "all" {}
 data "duplocloud_plan" "default" { plan_id = "default" }
 
 
-resource "duplocloud_infrastructure" "test" {
-  infra_name        = "ecstest"
-  cloud             = 0
-  region            = "us-west-2"
-  azcount           = 2
-  enable_k8_cluster = false
-  enable_ecs_cluster = true
-  address_prefix    = "10.122.0.0/16"
-  subnet_cidr       = 22
+# resource "duplocloud_infrastructure" "test" {
+#   infra_name        = "ecstest"
+#   cloud             = 0
+#   region            = "us-west-2"
+#   azcount           = 2
+#   enable_k8_cluster = false
+#   enable_ecs_cluster = true
+#   address_prefix    = "10.122.0.0/16"
+#   subnet_cidr       = 22
 
-  custom_data {
-    key   = "foo"
-    value = "bar"
-  }
-}
+#   custom_data {
+#     key   = "foox"
+#     value = "barx"
+#   }
+# }
 
 # resource "duplocloud_tenant" "test" {
 #   account_name = "t2t1"
