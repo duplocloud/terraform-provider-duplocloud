@@ -17,17 +17,18 @@ data "duplocloud_plan" "default" { plan_id = "default" }
 
 
 resource "duplocloud_infrastructure" "test" {
-  infra_name        = "jk3"
+  infra_name        = "ecstest"
   cloud             = 0
-  region            = "us-east-2"
+  region            = "us-west-2"
   azcount           = 2
   enable_k8_cluster = false
-  address_prefix    = "10.43.0.0/16"
-  subnet_cidr       = 24
+  enable_ecs_cluster = true
+  address_prefix    = "10.122.0.0/16"
+  subnet_cidr       = 22
 
   custom_data {
-    key   = "K8sVersion"
-    value = "1.19"
+    key   = "foo"
+    value = "bar"
   }
 }
 

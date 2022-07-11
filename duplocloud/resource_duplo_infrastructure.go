@@ -186,14 +186,12 @@ func resourceInfrastructure() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
-				Default:     false,
 			},
 			"enable_container_insights": {
 				Description: "Whether or not to enable container insights for an ECS cluster.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
-				Default:     false,
 			},
 			"custom_data": {
 				Description: "A list of configuration settings to manage, expressed as key / value pairs.",
