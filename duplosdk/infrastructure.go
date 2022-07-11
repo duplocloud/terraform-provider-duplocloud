@@ -187,6 +187,12 @@ type DuploInfrastructureSettingUpdateRequest struct {
 	Value string `json:"Value,omitempty"`
 }
 
+// DuploInfrastructureECSConfigUpdate represents a request to update a Duplo infrastructure's ECS cluster
+type DuploInfrastructureECSConfigUpdate struct {
+	EnableECSCluster        bool `json:"EnableECSCluster"`
+	EnableContainerInsights bool `json:"EnableContainerInsights"`
+}
+
 // InfrastructureList retrieves a list of infrastructures via the Duplo API.
 func (c *Client) InfrastructureList() (*[]DuploInfrastructureConfig, ClientError) {
 	list := []DuploInfrastructureConfig{}
@@ -245,7 +251,7 @@ func (c *Client) InfrastructureGetSetting(infraName string) (*DuploInfrastructur
 }
 
 // InfrastructureReplaceSetting replaces tenant configuration metadata via the Duplo API.
-func (c *Client) InfrastructureReplaceSetting(setting DuploInfrastructureSetting) error {
+func (c *Client) InfrastructureReplaceSetting(setting DuploInfrastructureSetting) ClientError {
 	existing, err := c.InfrastructureGetSetting(setting.InfraName)
 	if err != nil {
 		return err
@@ -365,32 +371,22 @@ func (c *Client) InfrastructureCreate(rq DuploInfrastructureConfig) ClientError 
 		nil)
 }
 
-// InfrastructureUpdate updates an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureUpdate(rq DuploInfrastructure) (*DuploInfrastructure, ClientError) {
-	return c.InfrastructureCreateOrUpdate(rq, true)
-}
-
-// InfrastructureCreateOrUpdate creates or updates an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureCreateOrUpdate(rq DuploInfrastructure, updating bool) (*DuploInfrastructure, ClientError) {
-
-	// Build the request
-	verb := "POST"
-	if updating {
-		verb = "PUT"
-	}
-
-	// Call the API.
-	rp := DuploInfrastructure{}
-	err := c.doAPIWithRequestBody(verb, fmt.Sprintf("InfrastructureCreateOrUpdate(%s)", rq.Name), "v2/admin/InfrastructureV2", &rq, &rp)
-	if err != nil {
-		return nil, err
-	}
-	return &rp, err
+// InfrastructureUpdateECSConfig creates or updates an infrastructure's ECS cluster via the Duplo API.
+func (c *Client) InfrastructureUpdateECSConfig(infraName string, rq DuploInfrastructureECSConfigUpdate) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("InfrastructureUpdateECSConfig(%s)", infraName),
+		fmt.Sprintf("adminproxy/UpdateInfrastructureECS/%s", infraName),
+		&rq,
+		nil)
 }
 
 // InfrastructureDelete deletes an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureDelete(name string) ClientError {
-	return c.deleteAPI(fmt.Sprintf("InfrastructureDelete(%s)", name), fmt.Sprintf("v2/admin/InfrastructureV2/%s", name), nil)
+func (c *Client) InfrastructureDelete(infraName string) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("InfrastructureDelete(%s)", infraName),
+		fmt.Sprintf("adminproxy/DeleteInfrastructureConfig/%s", infraName),
+		nil,
+		nil)
 }
 
 // GetEksCredentials retrieves just-in-time EKS credentials via the Duplo API.
