@@ -16,11 +16,6 @@ import (
 
 func duploMwaaAirflowSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"mwaa_airflow_id": {
-			Description: "The id of the MWAA Airflow.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
 
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the MWAA Airflow event target will be created in.",
@@ -35,21 +30,23 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
-
 		"max_workers": {
-			Type:     schema.TypeInt,
-			Required: true,
-			ForceNew: true,
+			Description: "Airflow max_workers.",
+			Type:        schema.TypeInt,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"min_workers": {
-			Type:     schema.TypeInt,
-			Required: true,
-			ForceNew: true,
+			Description: "Airflow min_workers.",
+			Type:        schema.TypeInt,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"schedulers": {
-			Type:     schema.TypeInt,
-			Required: true,
-			ForceNew: true,
+			Description: "Airflow schedulers.",
+			Type:        schema.TypeInt,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"airflow_version": {
 			Description: "Airflow Version.",
@@ -120,7 +117,26 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			Default:     "PUBLIC_ONLY",
 		},
+		"airflow_configuration_options": {
+			Description: "airflow configuration options",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+		},
+		"logging_configuration": {
+			Description:      "Logging Configuration for DagProcessingLogs, SchedulerLogs, WebserverLogs, TaskLogs, WorkerLogs.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			ForceNew:         true,
+			DiffSuppressFunc: diffIgnoreForAirflowLogConfiguration,
+		},
 
+		// Computed
+		"mwaa_airflow_id": {
+			Description: "The id of the MWAA Airflow.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"arn": {
 			Description: "The arn of this Mwaa Airflow.",
 			Type:        schema.TypeString,
@@ -151,19 +167,10 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-
 		"execution_role_arn": {
 			Description: "Execution Role Arn.",
 			Type:        schema.TypeString,
 			Computed:    true,
-		},
-
-		"logging_configuration": {
-			Description:      "Logging Configuration for DagProcessingLogs, SchedulerLogs, WebserverLogs, TaskLogs, WorkerLogs.",
-			Type:             schema.TypeString,
-			Optional:         true,
-			ForceNew:         true,
-			DiffSuppressFunc: diffIgnoreForAirflowLogConfiguration,
 		},
 	}
 }

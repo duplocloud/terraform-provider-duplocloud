@@ -52,6 +52,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"duplocloud_oci_containerengine_node_pool":   resourceOciContainerEngineNodePool(),
+			"duplocloud_aws_mwaa_airflow":                resourceMwaaAirflow(),
 			"duplocloud_admin_system_setting":            resourceAdminSystemSetting(),
 			"duplocloud_aws_cloudfront_distribution":     resourceAwsCloudfrontDistribution(),
 			"duplocloud_aws_dynamodb_table":              resourceAwsDynamoDBTable(),
