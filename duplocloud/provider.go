@@ -121,6 +121,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_network_security_rule":     resourceAzureNetworkSgRule(),
 			"duplocloud_other_agents":                    resourceOtherAgents(),
 			"duplocloud_byoh":                            resourceByoh(),
+			"duplocloud_aws_mwaa_environment":            resourceMwaaAirflow(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":     dataSourceAdminAwsCredentials(),
