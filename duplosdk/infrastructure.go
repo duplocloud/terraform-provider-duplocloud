@@ -60,11 +60,13 @@ type DuploInfrastructureVnetSubnet struct {
 	ID string `json:"Id"`
 
 	// Used by both read and write APIs
-	AddressPrefix string                 `json:"AddressPrefix"`
-	Name          string                 `json:"NameEx"`
-	Zone          string                 `json:"Zone"`
-	SubnetType    string                 `json:"SubnetType"`
-	Tags          *[]DuploKeyStringValue `json:"Tags"`
+	AddressPrefix    string                 `json:"AddressPrefix"`
+	Name             string                 `json:"NameEx"`
+	Zone             string                 `json:"Zone"`
+	SubnetType       string                 `json:"SubnetType"`
+	ServiceEndpoints []string               `json:"ServiceEndpoints,omitempty"`
+	IsolatedNetwork  bool                   `json:"IsolatedNetwork,omitempty"`
+	Tags             *[]DuploKeyStringValue `json:"Tags"`
 }
 
 type DuploInfrastructureVnetSecurityGroups struct {
@@ -76,14 +78,17 @@ type DuploInfrastructureVnetSecurityGroups struct {
 }
 
 type DuploInfrastructureVnetSGRule struct {
-	SrcRuleType      int    `json:"SrcRuleType"`
-	SrcAddressPrefix string `json:"SrcAddressPrefix"`
-	SourcePortRange  string `json:"SourcePortRange"`
-	Protocol         string `json:"Protocol"`
-	Direction        string `json:"Direction"`
-	RuleAction       string `json:"RuleAction"`
-	Priority         int    `json:"Priority"`
-	DstRuleType      int    `json:"DstRuleType"`
+	Name                 string `json:"Name"`
+	SrcRuleType          int    `json:"SrcRuleType"`
+	SrcAddressPrefix     string `json:"SrcAddressPrefix"`
+	SourcePortRange      string `json:"SourcePortRange"`
+	Protocol             string `json:"Protocol"`
+	Direction            string `json:"Direction"`
+	RuleAction           string `json:"RuleAction"`
+	Priority             int    `json:"Priority"`
+	DstRuleType          int    `json:"DstRuleType"`
+	DestinationPortRange string `json:"DestinationPortRange,omitempty"`
+	DstAddressPrefix     string `json:"DstAddressPrefix,omitempty"`
 }
 
 // DuploInfrastructureVnet represents a Duplo infrastructure VNET
@@ -110,6 +115,82 @@ type DuploInfrastructureConfig struct {
 	Vnet                    *DuploInfrastructureVnet `json:"Vnet"`
 	ProvisioningStatus      string                   `json:"ProvisioningStatus"`
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
+}
+
+type DuploAzureLogAnalyticsWorkspace struct {
+	PropertiesProvisioningState string `json:"properties.provisioningState"`
+	PropertiesCustomerID        string `json:"properties.customerId"`
+	PropertiesSku               struct {
+		Name string `json:"name"`
+	} `json:"properties.sku"`
+	PropertiesRetentionInDays                 int    `json:"properties.retentionInDays"`
+	PropertiesPublicNetworkAccessForIngestion string `json:"properties.publicNetworkAccessForIngestion"`
+	PropertiesPublicNetworkAccessForQuery     string `json:"properties.publicNetworkAccessForQuery"`
+	Location                                  string `json:"location"`
+	ID                                        string `json:"id"`
+	Name                                      string `json:"name"`
+	Type                                      string `json:"type"`
+}
+
+type DuploAzureLogAnalyticsWorkspaceRq struct {
+	Name          string `json:"name"`
+	ResourceGroup string `json:"resourceGroup,omitempty"`
+}
+
+type DuploAzureRecoveryServicesVault struct {
+	Properties struct {
+		ProvisioningState                   string `json:"provisioningState"`
+		PrivateEndpointStateForBackup       string `json:"privateEndpointStateForBackup"`
+		PrivateEndpointStateForSiteRecovery string `json:"privateEndpointStateForSiteRecovery"`
+	} `json:"properties"`
+	Sku struct {
+		Name string `json:"name"`
+	} `json:"sku"`
+	Location string `json:"location"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	ETag     string `json:"eTag"`
+}
+
+type DuploAzureRecoveryServicesVaultRq struct {
+	Name          string `json:"name"`
+	ResourceGroup string `json:"resourceGroup,omitempty"`
+}
+
+type SgRuleType int
+
+const (
+	IPADDRESS SgRuleType = iota
+	SERVICETAG
+	APP_SG
+)
+
+type InfrastructureSgUpdate struct {
+	Name          string                           `json:"Name"`
+	SgName        string                           `json:"SgName"`
+	RulesToAdd    *[]DuploInfrastructureVnetSGRule `json:"RulesToAdd,omitempty"`
+	RulesToRemove []string                         `json:"RulesToRemove,omitempty"`
+	State         string                           `json:"State,omitempty"`
+}
+
+// DuploInfrastructureSetting represents a Duplo infrastruture's settings
+type DuploInfrastructureSetting struct {
+	InfraName  string                 `json:"InfraName,omitempty"`
+	CustomData *[]DuploKeyStringValue `json:"CustomData,omitempty"`
+}
+
+// DuploTenantConfigUpdateRequest represents a request to update a Duplo tenant's configuration
+type DuploInfrastructureSettingUpdateRequest struct {
+	Key   string `json:"Key,omitempty"`
+	State string `json:"State,omitempty"`
+	Value string `json:"Value,omitempty"`
+}
+
+// DuploInfrastructureECSConfigUpdate represents a request to update a Duplo infrastructure's ECS cluster
+type DuploInfrastructureECSConfigUpdate struct {
+	EnableECSCluster        bool `json:"EnableECSCluster"`
+	EnableContainerInsights bool `json:"EnableContainerInsights"`
 }
 
 // InfrastructureList retrieves a list of infrastructures via the Duplo API.
@@ -158,6 +239,73 @@ func (c *Client) InfrastructureGetConfig(name string) (*DuploInfrastructureConfi
 		return nil, err
 	}
 	return &rp, nil
+}
+
+// InfrastructureGetSetting retrieves tenant configuration metadata via the Duplo API.
+func (c *Client) InfrastructureGetSetting(infraName string) (*DuploInfrastructureSetting, ClientError) {
+	config, err := c.InfrastructureGetConfig(infraName)
+	if err != nil {
+		return nil, err
+	}
+	return &DuploInfrastructureSetting{InfraName: config.Name, CustomData: config.CustomData}, nil
+}
+
+// InfrastructureReplaceSetting replaces tenant configuration metadata via the Duplo API.
+func (c *Client) InfrastructureReplaceSetting(setting DuploInfrastructureSetting) ClientError {
+	existing, err := c.InfrastructureGetSetting(setting.InfraName)
+	if err != nil {
+		return err
+	}
+	return c.InfrastructureChangeSetting(setting.InfraName, existing.CustomData, setting.CustomData)
+}
+
+// InfrastructureChangeSetting changes tenant configuration metadata via the Duplo API, using the supplied
+// oldConfig and newConfig, for the given tenantID.
+func (c *Client) InfrastructureChangeSetting(infraName string, oldSetting, newSetting *[]DuploKeyStringValue) ClientError {
+
+	// Next, update all keys that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if newSetting != nil {
+		for _, kv := range *newSetting {
+			if err := c.InfrastructureSetSettingKey(infraName, kv.Key, kv.Value); err != nil {
+				return err
+			}
+			present[kv.Key] = struct{}{}
+		}
+	}
+
+	// Finally, delete any keys that are no longer present.
+	if oldSetting != nil {
+		for _, kv := range *oldSetting {
+			if _, ok := present[kv.Key]; !ok {
+				if err := c.InfrastructureDeleteSettingKey(infraName, kv.Key); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// InfrastructureDeleteSettingKey deletes a specific configuration key for a tenant via the Duplo API.
+func (c *Client) InfrastructureDeleteSettingKey(infraName, key string) ClientError {
+	rq := DuploInfrastructureSettingUpdateRequest{State: "delete", Key: key}
+	return c.postAPI(
+		fmt.Sprintf("InfrastructureDeleteSettingKey(%s, %s)", infraName, key),
+		fmt.Sprintf("adminproxy/UpdateInfrastructureCustomData/%s", infraName),
+		&rq,
+		nil)
+}
+
+// InfrastructureSetSettingKey set a specific configuration key for a tenant via the Duplo API.
+func (c *Client) InfrastructureSetSettingKey(infraName, key, value string) ClientError {
+	rq := DuploInfrastructureSettingUpdateRequest{Key: key, Value: value}
+	return c.postAPI(
+		fmt.Sprintf("InfrastructureSetSettingKey(%s, %s)", infraName, key),
+		fmt.Sprintf("adminproxy/UpdateInfrastructureCustomData/%s", infraName),
+		&rq,
+		nil)
 }
 
 // InfrastructureGetSubnet retrieves a specific infrastructure subnet via the Duplo API.
@@ -223,32 +371,22 @@ func (c *Client) InfrastructureCreate(rq DuploInfrastructureConfig) ClientError 
 		nil)
 }
 
-// InfrastructureUpdate updates an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureUpdate(rq DuploInfrastructure) (*DuploInfrastructure, ClientError) {
-	return c.InfrastructureCreateOrUpdate(rq, true)
-}
-
-// InfrastructureCreateOrUpdate creates or updates an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureCreateOrUpdate(rq DuploInfrastructure, updating bool) (*DuploInfrastructure, ClientError) {
-
-	// Build the request
-	verb := "POST"
-	if updating {
-		verb = "PUT"
-	}
-
-	// Call the API.
-	rp := DuploInfrastructure{}
-	err := c.doAPIWithRequestBody(verb, fmt.Sprintf("InfrastructureCreateOrUpdate(%s)", rq.Name), "v2/admin/InfrastructureV2", &rq, &rp)
-	if err != nil {
-		return nil, err
-	}
-	return &rp, err
+// InfrastructureUpdateECSConfig creates or updates an infrastructure's ECS cluster via the Duplo API.
+func (c *Client) InfrastructureUpdateECSConfig(infraName string, rq DuploInfrastructureECSConfigUpdate) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("InfrastructureUpdateECSConfig(%s)", infraName),
+		fmt.Sprintf("adminproxy/UpdateInfrastructureECS/%s", infraName),
+		&rq,
+		nil)
 }
 
 // InfrastructureDelete deletes an infrastructure by name via the Duplo API.
-func (c *Client) InfrastructureDelete(name string) ClientError {
-	return c.deleteAPI(fmt.Sprintf("InfrastructureDelete(%s)", name), fmt.Sprintf("v2/admin/InfrastructureV2/%s", name), nil)
+func (c *Client) InfrastructureDelete(infraName string) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("InfrastructureDelete(%s)", infraName),
+		fmt.Sprintf("adminproxy/DeleteInfrastructureConfig/%s", infraName),
+		nil,
+		nil)
 }
 
 // GetEksCredentials retrieves just-in-time EKS credentials via the Duplo API.
@@ -260,4 +398,72 @@ func (c *Client) GetEksCredentials(planID string) (*DuploEksCredentials, ClientE
 	}
 	creds.PlanID = planID
 	return &creds, nil
+}
+
+func (c *Client) AzureLogAnalyticsWorkspaceCreate(infraName string, rq DuploAzureLogAnalyticsWorkspaceRq) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("AzureLogAnalyticsWorkspaceCreate(%s,%s)", infraName, rq.Name),
+		fmt.Sprintf("adminproxy/SetInfrastructureLogAnalyticsConfig/%s", infraName),
+		&rq,
+		nil)
+}
+
+func (c *Client) AzureLogAnalyticsWorkspaceGet(infraName string) (*DuploAzureLogAnalyticsWorkspace, ClientError) {
+	rp := DuploAzureLogAnalyticsWorkspace{}
+	err := c.getAPI(
+		fmt.Sprintf("AzureLogAnalyticsWorkspaceGet(%s)", infraName),
+		fmt.Sprintf("adminproxy/GetInfrastructureLogAnalyticsWorkspace/%s", infraName),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+func (c *Client) AzureRecoveryServicesVaultCreate(infraName string, rq DuploAzureRecoveryServicesVaultRq) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("AzureRecoveryServicesVaultCreate(%s,%s)", infraName, rq.Name),
+		fmt.Sprintf("adminproxy/SetInfrastructureRecoveryServicesVaultConfig/%s", infraName),
+		&rq,
+		nil)
+}
+
+func (c *Client) AzureRecoveryServicesVaultGet(infraName string) (*DuploAzureRecoveryServicesVault, ClientError) {
+	rp := DuploAzureRecoveryServicesVault{}
+	err := c.getAPI(
+		fmt.Sprintf("AzureRecoveryServicesVaultGet(%s)", infraName),
+		fmt.Sprintf("adminproxy/GetInfrastructureRecoveryServicesVault/%s", infraName),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+func (c *Client) NetworkSgRuleCreateOrDelete(rq *InfrastructureSgUpdate) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("NetworkSgRuleCreate(%s)", rq.Name),
+		"adminproxy/UpdateInfrastructureSg",
+		&rq,
+		nil,
+	)
+}
+
+func (c *Client) NetworkSgRuleGet(infraName, sgName, ruleName string) (*DuploInfrastructureVnetSGRule, ClientError) {
+	config, err := c.InfrastructureGet(infraName)
+	if err != nil {
+		return nil, err
+	}
+	sgList := config.Vnet.SecurityGroups
+	for _, sg := range *sgList {
+		if sg.Name == sgName {
+			rules := sg.Rules
+			for _, rule := range *rules {
+				if rule.Name == ruleName {
+					return &rule, nil
+				}
+			}
+		}
+	}
+	return nil, nil
 }

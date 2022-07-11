@@ -24,71 +24,55 @@ func duploAzureMssqlDatabaseSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "The name of the Microsoft SQL Server. This needs to be globally unique within Azure.",
+			Description: "The name of the MS SQL Database.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
 		},
-		"version": {
-			Description: "The version for the new server. Valid values are: `2.0` (for v11 server) and `12.0` (for v12 server).",
+		"server_name": {
+			Description: "The name of the MS SQL Server on which to create the database.",
 			Type:        schema.TypeString,
 			Required:    true,
-			ValidateFunc: validation.StringInSlice([]string{
-				"2.0",
-				"12.0",
-			}, true),
-			ForceNew: true,
+			ForceNew:    true,
 		},
-		"administrator_login": {
-			Description: "The Administrator Login for the  MS sql Server.",
+		"elastic_pool_id": {
+			Description:   "Specifies the id of the elastic pool containing this database.",
+			Type:          schema.TypeString,
+			Optional:      true,
+			ConflictsWith: []string{"sku"},
+		},
+		"collation": {
+			Description: "Specifies the collation of the database.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 			ForceNew:    true,
 		},
-
-		"administrator_login_password": {
-			Description: "The Password associated with the `administrator_login` for the MS sql Server.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Sensitive:   true,
-		},
-		"public_network_access": {
-			Description: "Whether public network access is enabled or disabled for this server.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-			ValidateFunc: validation.StringInSlice([]string{
-				"Enabled",
-				"Disabled",
-			}, true),
-		},
-		"minimum_tls_version": {
-			Description: "The Minimum TLS Version for all SQL Database and SQL Data Warehouse databases associated with the server. Valid values are: `1.0`, `1.1` and `1.2`.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-			ValidateFunc: validation.StringInSlice([]string{
-				"1.0",
-				"1.1",
-				"1.2",
-			}, false),
-		},
-		"fqdn": {
-			Description: "The fully qualified domain name of the Azure SQL Server.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"wait_until_ready": {
-			Description: "Whether or not to wait until PostgreSQL Server instance to be ready, after creation.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     true,
-		},
-		"tags": {
-			Type:     schema.TypeMap,
-			Computed: true,
-			Elem:     schema.TypeString,
+		"sku": {
+			Type:          schema.TypeList,
+			Optional:      true,
+			MaxItems:      1,
+			ConflictsWith: []string{"elastic_pool_id"},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					"tier": {
+						Type:             schema.TypeString,
+						DiffSuppressFunc: CaseDifference,
+						Optional:         true,
+						Computed:         true,
+					},
+					"capacity": {
+						Type:         schema.TypeInt,
+						Required:     true,
+						ValidateFunc: validation.IntAtLeast(0),
+					},
+				},
+			},
 		},
 	}
 }
@@ -114,26 +98,34 @@ func resourceAzureMssqlDatabase() *schema.Resource {
 
 func resourceAzureMssqlDatabaseRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, name, err := parseAzureMssqlDatabaseIdParts(id)
+	tenantID, serverName, dbName, err := parseAzureMssqlDatabaseIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAzureMssqlDatabaseRead(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceAzureMssqlDatabaseRead(%s, %s, %s): start", tenantID, serverName, dbName)
 
 	c := m.(*duplosdk.Client)
-	duplo, clientErr := c.MsSqlServerGet(tenantID, name)
+	duplo, clientErr := c.MsSqlDatabaseGet(tenantID, serverName, dbName)
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve tenant %s azure mssql database %s : %s", tenantID, name, clientErr)
+		return diag.Errorf("Unable to retrieve tenant %s azure mssql database %s : %s", tenantID, dbName, clientErr)
 	}
 
-	// TODO Set ccomputed attributes from duplo object to tf state.
-	flattenAzureMssqlDatabase(d, duplo)
-
-	log.Printf("[TRACE] resourceAzureMssqlDatabaseRead(%s, %s): end", tenantID, name)
+	err = flattenAzureMssqlDatabase(d, duplo)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	d.Set("tenant_id", tenantID)
+	d.Set("name", dbName)
+	d.Set("server_name", serverName)
+	log.Printf("[TRACE] resourceAzureMssqlDatabaseRead(%s, %s): end", tenantID, dbName)
 	return nil
 }
 
@@ -141,35 +133,35 @@ func resourceAzureMssqlDatabaseCreate(ctx context.Context, d *schema.ResourceDat
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
-	name := d.Get("name").(string)
-	log.Printf("[TRACE] resourceAzureMssqlDatabaseCreate(%s, %s): start", tenantID, name)
+	dbName := d.Get("name").(string)
+	serverName := d.Get("server_name").(string)
+	log.Printf("[TRACE] resourceAzureMssqlDatabaseCreate(%s, %s): start", tenantID, dbName)
 	c := m.(*duplosdk.Client)
 
 	rq := expandAzureMssqlDatabase(d)
-	err = c.MsSqlDatabaseCreate(tenantID, rq)
+	err = c.MsSqlDatabaseCreate(tenantID, serverName, rq)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure mssql database '%s': %s", tenantID, name, err)
+		return diag.Errorf("Error creating tenant %s azure mssql database '%s': %s", tenantID, dbName, err)
 	}
 
-	id := fmt.Sprintf("%s/%s", tenantID, name)
+	id := fmt.Sprintf("%s/%s/%s", tenantID, serverName, dbName)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure mssql database", id, func() (interface{}, duplosdk.ClientError) {
-		return c.MsSqlServerGet(tenantID, name)
+		return c.MsSqlDatabaseGet(tenantID, serverName, dbName)
 	})
 	if diags != nil {
 		return diags
 	}
 	d.SetId(id)
 
-	//By default, wait until the mssql server instances to be healthy.
 	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-		err = mssqlSeverWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		err = mssqlDatabaseWaitUntilReady(ctx, c, tenantID, serverName, dbName, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	diags = resourceAzureMssqlDatabaseRead(ctx, d, m)
-	log.Printf("[TRACE] resourceAzureMssqlDatabaseCreate(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceAzureMssqlDatabaseCreate(%s, %s): end", tenantID, dbName)
 	return diags
 }
 
@@ -179,73 +171,106 @@ func resourceAzureMssqlDatabaseUpdate(ctx context.Context, d *schema.ResourceDat
 
 func resourceAzureMssqlDatabaseDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, name, err := parseAzureMssqlDatabaseIdParts(id)
+	tenantID, serverName, dbName, err := parseAzureMssqlDatabaseIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAzureMssqlDatabaseDelete(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceAzureMssqlDatabaseDelete(%s, %s, %s): start", tenantID, serverName, dbName)
 
 	c := m.(*duplosdk.Client)
-	clientErr := c.MsSqlDatabaseDelete(tenantID, name)
+	clientErr := c.MsSqlDatabaseDelete(tenantID, serverName, dbName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil
 		}
-		return diag.Errorf("Unable to delete tenant %s azure mssql database '%s': %s", tenantID, name, clientErr)
+		return diag.Errorf("Unable to delete tenant %s azure mssql database '%s': %s", tenantID, dbName, clientErr)
 	}
 
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure mssql database", id, func() (interface{}, duplosdk.ClientError) {
-		return c.MsSqlServerGet(tenantID, name)
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure mssql Server", id, func() (interface{}, duplosdk.ClientError) {
+		return c.MsSqlDatabaseGet(tenantID, serverName, dbName)
 	})
 	if diag != nil {
 		return diag
 	}
 
-	log.Printf("[TRACE] resourceAzureMssqlDatabaseDelete(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceAzureMssqlDatabaseDelete(%s, %s, %s): end", tenantID, serverName, dbName)
 	return nil
 }
 
-func expandAzureMssqlDatabase(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlRequest {
-	return &duplosdk.DuploAzureMsSqlRequest{
-		Name:                                 d.Get("name").(string),
-		PropertiesVersion:                    d.Get("version").(string),
-		PropertiesAdministratorLogin:         d.Get("administrator_login").(string),
-		PropertiesAdministratorLoginPassword: d.Get("administrator_login_password").(string),
-		PropertiesPublicNetworkAccess:        d.Get("public_network_access").(string),
-		PropertiesMinimalTLSVersion:          d.Get("minimum_tls_version").(string),
+func expandAzureMssqlDatabase(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlDatabaseRequest {
+	return &duplosdk.DuploAzureMsSqlDatabaseRequest{
+		Name:                    d.Get("name").(string),
+		PropertiesCollation:     d.Get("collation").(string),
+		PropertiesElasticPoolId: d.Get("elastic_pool_id").(string),
+		Sku:                     expandAzureMssqlDatabaseSku(d),
 	}
 }
 
-func parseAzureMssqlDatabaseIdParts(id string) (tenantID, name string, err error) {
-	idParts := strings.SplitN(id, "/", 2)
-	if len(idParts) == 2 {
-		tenantID, name = idParts[0], idParts[1]
+func expandAzureMssqlDatabaseSku(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlDatabaseSku {
+	skuConfig := d.Get("sku").([]interface{})
+	if len(skuConfig) == 0 {
+		return nil
+	}
+
+	config := skuConfig[0].(map[string]interface{})
+
+	sku := &duplosdk.DuploAzureMsSqlDatabaseSku{
+		Name:     config["name"].(string),
+		Capacity: config["capacity"].(int),
+	}
+
+	if tier, ok := config["tier"].(string); ok && tier != "" {
+		sku.Tier = tier
+	}
+
+	return sku
+}
+
+func parseAzureMssqlDatabaseIdParts(id string) (tenantID, serverName, dbName string, err error) {
+	idParts := strings.SplitN(id, "/", 3)
+	if len(idParts) == 3 {
+		tenantID, serverName, dbName = idParts[0], idParts[1], idParts[2]
 	} else {
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
 	return
 }
 
-func flattenAzureMssqlDatabase(d *schema.ResourceData, duplo *duplosdk.DuploAzureMsSqlServer) {
+func flattenAzureMssqlDatabase(d *schema.ResourceData, duplo *duplosdk.DuploAzureMsSqlDatabase) error {
 	d.Set("name", duplo.Name)
-	d.Set("administrator_login", duplo.PropertiesAdministratorLogin)
-	d.Set("public_network_access", duplo.PropertiesPublicNetworkAccess)
-	d.Set("minimum_tls_version", duplo.PropertiesMinimalTLSVersion)
-	d.Set("version", duplo.PropertiesVersion)
-	d.Set("fqdn", duplo.PropertiesFullyQualifiedDomainName)
-	d.Set("tags", duplo.Tags)
+	d.Set("collation", duplo.PropertiesCollation)
+	if len(duplo.PropertiesElasticPoolId) > 0 {
+		d.Set("elastic_pool_id", duplo.PropertiesElasticPoolId)
+	} else {
+		if err := d.Set("sku", flattenAzureMssqlDatabaseSku(duplo.PropertiesCurrentSku)); err != nil {
+			return fmt.Errorf("[DEBUG] setting `sku`: %#v", err)
+		}
+	}
+	return nil
 }
 
-func mssqlSeverWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+func flattenAzureMssqlDatabaseSku(sku *duplosdk.DuploAzureMsSqlDatabaseSku) []interface{} {
+	result := make(map[string]interface{})
+	result["name"] = sku.Name
+	result["capacity"] = sku.Capacity
+
+	if sku.Tier != "" {
+		result["tier"] = sku.Tier
+	}
+
+	return []interface{}{result}
+}
+
+func mssqlDatabaseWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, serverName string, dbName string, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
-			rp, err := c.MsSqlServerGet(tenantID, name)
-			log.Printf("[TRACE] MS Sql server state is (%s).", rp.PropertiesState)
+			rp, err := c.MsSqlDatabaseGet(tenantID, serverName, dbName)
+			log.Printf("[TRACE] MS Sql database status is (%s).", rp.PropertiesStatus)
 			status := "pending"
 			if err == nil {
-				if rp.PropertiesState == "Ready" {
+				if rp.PropertiesStatus == "Online" {
 					status = "ready"
 				} else {
 					status = "pending"
@@ -258,7 +283,7 @@ func mssqlSeverWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID 
 		PollInterval: 30 * time.Second,
 		Timeout:      timeout,
 	}
-	log.Printf("[DEBUG] mssqlSeverWaitUntilReady(%s, %s)", tenantID, name)
+	log.Printf("[DEBUG] mssqlDatabaseWaitUntilReady(%s, %s)", tenantID, dbName)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }

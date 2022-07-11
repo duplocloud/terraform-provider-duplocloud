@@ -761,6 +761,10 @@ func CaseDifference(_, old, new string, _ *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
 }
 
+func HashStringIgnoreCase(v interface{}) int {
+	return schema.HashString(strings.ToLower(v.(string)))
+}
+
 func Base64EncodeIfNot(data string) string {
 	// Check whether the data is already Base64 encoded; don't double-encode
 	if base64IsEncoded(data) {

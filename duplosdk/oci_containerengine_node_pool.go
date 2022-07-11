@@ -22,6 +22,11 @@ type DuploOciNodePoolKeyValue struct {
 	Value string `json:"value,omitempty"`
 }
 
+type DuploOciNodePoolUpdateReq struct {
+	NodePoolId string `json:"NodePoolId,omitempty"`
+	Size       int    `json:"Size,omitempty"`
+}
+
 type DuploOciNodePoolDetailsCreateReq struct {
 	CompartmentId     string                            `json:"compartmentId,omitempty"`
 	ClusterId         string                            `json:"clusterId,omitempty"`
@@ -195,4 +200,17 @@ func (c *Client) OciNodePoolDelete(tenantID string, id string) ClientError {
 		fmt.Sprintf("v3/subscriptions/%s/oracle/nodepool/%s", tenantID, id),
 		nil,
 	)
+}
+
+func (c *Client) OciNodePoolUpdate(tenantID string, id string, rq *DuploOciNodePoolUpdateReq) (string, ClientError) {
+	verb := "POST"
+	msg := fmt.Sprintf("OciNodePoolScale(%s, %s)", tenantID, id)
+	api := fmt.Sprintf("v3/subscriptions/%s/oracle/nodepoolscale", tenantID)
+
+	rp := ""
+	err := c.doAPIWithRequestBody(verb, msg, api, &rq, &rp)
+	if err != nil {
+		return rp, err
+	}
+	return rp, nil
 }

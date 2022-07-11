@@ -6,28 +6,29 @@ import (
 )
 
 type DuploAsgProfile struct {
-	MinSize           int                                `json:"MinSize"`
-	MaxSize           int                                `json:"MaxSize"`
-	DesiredCapacity   int                                `json:"DesiredCapacity"`
-	AccountName       string                             `json:"AccountName,omitempty"`
-	TenantId          string                             `json:"TenantId,omitempty"`
-	FriendlyName      string                             `json:"FriendlyName,omitempty"`
-	Capacity          string                             `json:"Capacity,omitempty"`
-	Zone              int                                `json:"Zone"`
-	IsMinion          bool                               `json:"IsMinion"`
-	ImageID           string                             `json:"ImageId,omitempty"`
-	Base64UserData    string                             `json:"Base64UserData,omitempty"`
-	AgentPlatform     int                                `json:"AgentPlatform"`
-	IsEbsOptimized    bool                               `json:"IsEbsOptimized"`
-	AllocatedPublicIP bool                               `json:"AllocatedPublicIp,omitempty"`
-	Cloud             int                                `json:"Cloud"`
-	EncryptDisk       bool                               `json:"EncryptDisk,omitempty"`
-	Status            string                             `json:"Status,omitempty"`
-	NetworkInterfaces *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
-	Volumes           *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
-	MetaData          *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
-	Tags              *[]DuploKeyStringValue             `json:"Tags,omitempty"`
-	MinionTags        *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
+	MinSize             int                                `json:"MinSize"`
+	MaxSize             int                                `json:"MaxSize"`
+	DesiredCapacity     int                                `json:"DesiredCapacity"`
+	AccountName         string                             `json:"AccountName,omitempty"`
+	TenantId            string                             `json:"TenantId,omitempty"`
+	FriendlyName        string                             `json:"FriendlyName,omitempty"`
+	Capacity            string                             `json:"Capacity,omitempty"`
+	Zone                int                                `json:"Zone"`
+	IsMinion            bool                               `json:"IsMinion"`
+	ImageID             string                             `json:"ImageId,omitempty"`
+	Base64UserData      string                             `json:"Base64UserData,omitempty"`
+	AgentPlatform       int                                `json:"AgentPlatform"`
+	IsEbsOptimized      bool                               `json:"IsEbsOptimized"`
+	AllocatedPublicIP   bool                               `json:"AllocatedPublicIp,omitempty"`
+	Cloud               int                                `json:"Cloud"`
+	IsClusterAutoscaled bool                               `json:"IsClusterAutoscaled,omitempty"`
+	EncryptDisk         bool                               `json:"EncryptDisk,omitempty"`
+	Status              string                             `json:"Status,omitempty"`
+	NetworkInterfaces   *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
+	Volumes             *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
+	MetaData            *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
+	Tags                *[]DuploKeyStringValue             `json:"Tags,omitempty"`
+	MinionTags          *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
 }
 
 type DuploAsgProfileDeleteReq struct {

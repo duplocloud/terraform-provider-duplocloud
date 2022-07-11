@@ -33,6 +33,13 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9-_]*$`), "Invalid AWS lambda function name"),
 			),
 		},
+		"package_type": {
+			Description:  "The type of lambda package.  Must be `Zip` or `Image`.  Defaults to `Zip`.",
+			Type:         schema.TypeString,
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.StringInSlice([]string{"Zip", "Image"}, false),
+		},
 		"description": {
 			Description:  "A description of the lambda function.",
 			Type:         schema.TypeString,
@@ -74,9 +81,9 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IntBetween(128, 10240),
 		},
 		"s3_bucket": {
-			Description: "The S3 bucket where the lambda function package is located.",
+			Description: "The S3 bucket where the lambda function package is located. Used (and required) only when `package_type` is `\"Zip\"`.",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(3, 63),
 				validation.StringMatch(regexp.MustCompile(`^[a-z0-9._-]*$`), "Invalid S3 bucket name"),
@@ -84,9 +91,15 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			),
 		},
 		"s3_key": {
-			Description:  "The S3 key in the S3 bucket where the lambda function package is located.",
+			Description:  "The S3 key in the S3 bucket where the lambda function package is located. Used (and required) only when `package_type` is `\"Zip\"`.",
 			Type:         schema.TypeString,
-			Required:     true,
+			Optional:     true,
+			ValidateFunc: validation.StringLenBetween(1, 1024),
+		},
+		"image_uri": {
+			Description:  "The docker image that holds the lambda function's code. Used (and required) only when `package_type` is `\"Image\"`.",
+			Type:         schema.TypeString,
+			Optional:     true,
 			ValidateFunc: validation.StringLenBetween(1, 1024),
 		},
 		"environment": {
@@ -112,7 +125,7 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice([]string{
-				"nodejs", "nodejs4.3", "nodejs6.10", "nodejs8.10", "nodejs10.x", "nodejs12.x", "nodejs14.x",
+				"nodejs", "nodejs4.3", "nodejs6.10", "nodejs8.10", "nodejs10.x", "nodejs12.x", "nodejs14.x", "nodejs16.x",
 				"java8", "java8.al2", "java11",
 				"python2.7", "python3.6", "python3.7", "python3.8",
 				"dotnetcore1.0", "dotnetcore2.0", "dotnetcore2.1", "dotnetcore3.1",
@@ -227,23 +240,31 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	// Create the request object.
 	rq := duplosdk.DuploLambdaCreateRequest{
 		FunctionName: name,
-		Handler:      d.Get("handler").(string),
-		Description:  d.Get("description").(string),
-		Timeout:      d.Get("timeout").(int),
-		MemorySize:   d.Get("memory_size").(int),
-		Code: duplosdk.DuploLambdaCode{
-			S3Bucket: d.Get("s3_bucket").(string),
-			S3Key:    d.Get("s3_key").(string),
+		PackageType: &duplosdk.DuploStringValue{
+			Value: getPackageType(d),
 		},
-		Tags: expandAwsLambdaTags(d),
+		Description: d.Get("description").(string),
+		Timeout:     d.Get("timeout").(int),
+		MemorySize:  d.Get("memory_size").(int),
+		Code:        duplosdk.DuploLambdaCode{}, // initial assumption
+		Tags:        expandAwsLambdaTags(d),
 	}
 	if v, ok := getAsStringArray(d, "layers"); ok && v != nil {
 		rq.Layers = v
 	}
 
-	if v, ok := d.GetOk("runtime"); ok && v != nil && v.(string) != "" {
-		rq.Runtime = &duplosdk.DuploStringValue{Value: v.(string)}
+	// Handle the package type
+	if rq.PackageType.Value == "Zip" {
+		rq.Handler = d.Get("handler").(string)
+		rq.Code.S3Bucket = d.Get("s3_bucket").(string)
+		rq.Code.S3Key = d.Get("s3_key").(string)
+		if v, ok := d.GetOk("runtime"); ok && v != nil && v.(string) != "" {
+			rq.Runtime = &duplosdk.DuploStringValue{Value: v.(string)}
+		}
+	} else if rq.PackageType.Value == "Image" {
+		rq.Code.ImageURI = d.Get("image_uri").(string)
 	}
+
 	environment, err := getOptionalBlockAsMap(d, "environment")
 	if err != nil {
 		return diag.FromErr(err)
@@ -369,6 +390,9 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 	if duplo.Runtime != nil {
 		d.Set("runtime", duplo.Runtime.Value)
 	}
+	if duplo.PackageType != nil {
+		d.Set("package_type", duplo.PackageType.Value)
+	}
 	d.Set("environment", flattenAwsLambdaEnvironment(duplo.Environment))
 }
 
@@ -434,8 +458,12 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 		rq.Layers = v
 	}
 
-	if v, ok := d.GetOk("runtime"); ok && v != nil && v.(string) != "" {
-		rq.Runtime = &duplosdk.DuploStringValue{Value: v.(string)}
+	// Handle the package type
+	if getPackageType(d) == "Zip" {
+		rq.Handler = d.Get("handler").(string)
+		if v, ok := d.GetOk("runtime"); ok && v != nil && v.(string) != "" {
+			rq.Runtime = &duplosdk.DuploStringValue{Value: v.(string)}
+		}
 	}
 
 	environment, err := getOptionalBlockAsMap(d, "environment")
@@ -455,8 +483,15 @@ func updateAwsLambdaFunctionCode(tenantID, name string, d *schema.ResourceData, 
 	log.Printf("[TRACE] updateAwsLambdaFunctionCode(%s): start", name)
 	rq := duplosdk.DuploLambdaUpdateRequest{
 		FunctionName: d.Get("fullname").(string),
-		S3Bucket:     d.Get("s3_bucket").(string),
-		S3Key:        d.Get("s3_key").(string),
+	}
+
+	// Handle the package type
+	packageType := getPackageType(d)
+	if packageType == "Zip" {
+		rq.S3Bucket = d.Get("s3_bucket").(string)
+		rq.S3Key = d.Get("s3_key").(string)
+	} else if packageType == "Image" {
+		rq.ImageURI = d.Get("image_uri").(string)
 	}
 	err := c.LambdaFunctionUpdate(tenantID, &rq)
 
@@ -465,9 +500,18 @@ func updateAwsLambdaFunctionCode(tenantID, name string, d *schema.ResourceData, 
 	return err
 }
 
+func getPackageType(d *schema.ResourceData) (packageType string) {
+	packageType = "Zip"
+	if v, ok := d.GetOk("package_type"); ok && v != nil && v.(string) != "" {
+		packageType = v.(string)
+	}
+	return
+}
+
 func needsAwsLambdaFunctionCodeUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("s3_bucket") ||
-		d.HasChange("s3_key")
+		d.HasChange("s3_key") ||
+		d.HasChange("image_uri")
 }
 
 func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {

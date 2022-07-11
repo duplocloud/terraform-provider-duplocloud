@@ -21,6 +21,10 @@ const (
 
 	// ResourceTypeApiGatewayRestAPI represents an AWS Api gateway REST API
 	ResourceTypeApiGatewayRestAPI int = 8
+
+	ResourceTypeSQSQueue int = 3
+
+	ResourceTypeSNSTopic int = 4
 )
 
 type CustomComponentType int
@@ -362,6 +366,41 @@ type DuploApiGatewayResource struct {
 	Name         string `json:"Name"`
 	MetaData     string `json:"MetaData,omitempty"`
 	ResourceType int    `json:"ResourceType,omitempty"`
+}
+
+type DuploMinion struct {
+	Name             string                 `json:"Name"`
+	ConnectionURL    string                 `json:"ConnectionUrl"`
+	NetworkAgentURL  string                 `json:"NetworkAgentUrl,omitempty"`
+	ConnectionStatus string                 `json:"ConnectionStatus,omitempty"`
+	Subnet           string                 `json:"Subnet,omitempty"`
+	DirectAddress    string                 `json:"DirectAddress"`
+	Tags             *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	ExternalAddress  string                 `json:"ExternalAddress,omitempty"`
+	Tier             string                 `json:"Tier"`
+	UserAccount      string                 `json:"UserAccount,omitempty"`
+	Tunnel           int                    `json:"Tunnel"`
+	AgentPlatform    int                    `json:"AgentPlatform"`
+	Cloud            int                    `json:"Cloud"`
+}
+
+type DuploMinionDeleteReq struct {
+	Name          string `json:"Name"`
+	DirectAddress string `json:"DirectAddress"`
+	State         string `json:"State"`
+}
+
+type DuploHostOOBData struct {
+	IPAddress   string                 `json:"IpAddress"`
+	InstanceId  string                 `json:"InstanceId"`
+	Cloud       int                    `json:"Cloud"`
+	Credentials *[]DuploHostCredential `json:"Credentials"`
+}
+
+type DuploHostCredential struct {
+	Username   string `json:"Username"`
+	Password   string `json:"Password,omitempty"`
+	Privatekey string `json:"Privatekey,omitempty"`
 }
 
 // TenantListAwsCloudResources retrieves a list of the generic AWS cloud resources for a tenant via the Duplo API.
@@ -762,4 +801,61 @@ func (c *Client) TenantGetAPIGateway(tenantID string, fullName string) (*DuploAp
 		MetaData:     resource.MetaData,
 		ResourceType: resource.Type,
 	}, nil
+}
+
+func (c *Client) TenantMinionUpdate(tenantID string, duplo DuploMinion) ClientError {
+	return c.postAPI("TenantMinionUpdate",
+		fmt.Sprintf("subscriptions/%s/MinionUpdate", tenantID),
+		&duplo,
+		nil)
+}
+
+func (c *Client) TenantMinionDelete(tenantID string, duplo DuploMinionDeleteReq) ClientError {
+	return c.postAPI("TenantMinionDelete",
+		fmt.Sprintf("subscriptions/%s/MinionUpdate", tenantID),
+		&duplo,
+		nil)
+}
+
+func (c *Client) TenantListMinions(tenantID string) (*[]DuploMinion, ClientError) {
+	apiName := fmt.Sprintf("TenantListMinions(%s)", tenantID)
+	list := []DuploMinion{}
+
+	err := c.getAPI(apiName, fmt.Sprintf("subscriptions/%s/GetMinions", tenantID), &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+func (c *Client) TenantGetByoh(tenantID, byohName string) (*DuploMinion, ClientError) {
+	list, err := c.TenantListMinions(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	for _, minion := range *list {
+		if minion.Cloud == 4 && byohName == minion.Name {
+			return &minion, nil
+		}
+	}
+	return nil, nil
+}
+
+func (c *Client) TenantHostCredentialsUpdate(tenantID string, duplo DuploHostOOBData) ClientError {
+	return c.postAPI("TenantHostCredentialsUpdate",
+		fmt.Sprintf("subscriptions/%s/UpdateHostCredentialsInOOBData", tenantID),
+		&duplo,
+		nil)
+}
+
+func (c *Client) TenantHostCredentialsGet(tenantID string, duplo DuploHostOOBData) (*DuploHostCredential, ClientError) {
+	resp := DuploHostCredential{}
+	err := c.postAPI("TenantHostCredentialsGet",
+		fmt.Sprintf("subscriptions/%s/FindHostCredentialsFromOOBData", tenantID),
+		&duplo,
+		&resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, err
 }

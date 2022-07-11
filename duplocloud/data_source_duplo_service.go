@@ -79,6 +79,10 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Computed: true,
 		},
+		"replica_collocation_allowed": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
 		"cloud_creds_from_k8s_service_account": {
 			Type:     schema.TypeBool,
 			Computed: true,
@@ -135,6 +139,7 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 	d.Set("volumes", duplo.Volumes)
 	d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
 	d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
+	d.Set("replica_collocation_allowed", duplo.IsReplicaCollocationAllowed)
 	d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
 	d.Set("is_daemonset", duplo.IsDaemonset)
 	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)

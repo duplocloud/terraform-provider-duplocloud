@@ -170,6 +170,10 @@ func resourceAzurePostgresqlDatabaseRead(ctx context.Context, d *schema.Resource
 
 	c := m.(*duplosdk.Client)
 	duplo, clientErr := c.PostgresqlServerGet(tenantID, name)
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")

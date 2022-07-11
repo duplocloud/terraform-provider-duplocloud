@@ -104,6 +104,10 @@ func resourceAwsAppautoscalingTargetRead(ctx context.Context, d *schema.Resource
 		}
 		return diag.Errorf("Unable to retrieve tenant %s aws autoscaling target %s : %s", tenantID, name, clientErr)
 	}
+	if duplo == nil {
+		d.SetId("") // object missing or deleted
+		return nil
+	}
 
 	flattenAwsAppautoscalingTarget(d, duplo)
 	d.Set("tenant_id", tenantID)
