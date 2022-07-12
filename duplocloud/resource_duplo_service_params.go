@@ -65,6 +65,12 @@ func duploServiceParamsSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"http_to_https_redirect": {
+			Description: "Whether or not to enable http to https redirection.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -347,6 +353,7 @@ func readDuploServiceAwsLbSettings(tenantID string, rpc *duplosdk.DuploReplicati
 		d.Set("webaclid", settings.WebACLID)
 		d.Set("enable_access_logs", settings.EnableAccessLogs)
 		d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
+		d.Set("http_to_https_redirect", settings.HttpToHttpsRedirect)
 	}
 
 	return nil
@@ -363,6 +370,10 @@ func updateDuploServiceAwsLbSettings(tenantID string, details *duplosdk.DuploAws
 	}
 	if v, ok := d.GetOk("drop_invalid_headers"); ok && v != nil {
 		settings.DropInvalidHeaders = v.(bool)
+		haveSettings = true
+	}
+	if v, ok := d.GetOk("http_to_https_redirect"); ok && v != nil {
+		settings.HttpToHttpsRedirect = v.(bool)
 		haveSettings = true
 	}
 	if v, ok := d.GetOk("webaclid"); ok && v != nil {
