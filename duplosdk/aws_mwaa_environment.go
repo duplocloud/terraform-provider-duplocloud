@@ -139,21 +139,6 @@ func (c *Client) MwaaAirflowList(tenantID string) (*[]DuploMwaaAirflowSummary, C
 	return &rp, err
 }
 
-func (c *Client) MwaaAirflowExists(tenantID, name string) (bool, ClientError) {
-	list, err := c.MwaaAirflowList(tenantID)
-	if err != nil {
-		return false, err
-	}
-	if list != nil {
-		for _, duploMwaaAirflowSummary := range *list {
-			if duploMwaaAirflowSummary.Name == name {
-				return true, nil
-			}
-		}
-	}
-	return false, nil
-}
-
 func (c *Client) MwaaAirflowDelete(tenantID string, id string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("MwaaAirflowDelete(%s, %s)", tenantID, id),
@@ -165,7 +150,7 @@ func (c *Client) MwaaAirflowDelete(tenantID string, id string) ClientError {
 func (c *Client) MwaaAirflowUpdate(tenantID string, id string, rq *DuploMwaaAirflowCreateRequest) ClientError {
 	verb := "PUT"
 	msg := fmt.Sprintf("MwaaAirflowScale(%s, %s)", tenantID, id)
-	api := fmt.Sprintf("v3/subscriptions/%s/aws/mwaaairflow", tenantID)
+	api := fmt.Sprintf("v3/subscriptions/%s/aws/mwaaairflow/%s", tenantID, id)
 	rp := DuploMwaaAirflowCreateResponse{}
 	err := c.doAPIWithRequestBody(verb, msg, api, &rq, &rp)
 	if err != nil {

@@ -377,9 +377,12 @@ func resourceMwaaAirflowUpdate(ctx context.Context, d *schema.ResourceData, m in
 	fullname := d.Get("fullname").(string)
 	log.Printf("[TRACE] resourceMwaaAirflowUpdate(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
-
-	input := duplosdk.DuploMwaaAirflowCreateRequest{}
+	updated := false
+	input := duplosdk.DuploMwaaAirflowCreateRequest{
+		Name: fullname,
+	}
 	if d.HasChange("airflow_configuration_options") {
+		updated = true
 		options, ok := d.GetOk("airflow_configuration_options")
 		if !ok {
 			options = map[string]interface{}{}
@@ -389,63 +392,80 @@ func resourceMwaaAirflowUpdate(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	if d.HasChange("airflow_version") {
+		updated = true
 		input.AirflowVersion = d.Get("airflow_version").(string)
 	}
 
 	if d.HasChange("dag_s3_path") {
+		updated = true
 		input.DagS3Path = d.Get("dag_s3_path").(string)
 	}
 
 	if d.HasChange("environment_class") {
+		updated = true
 		input.EnvironmentClass = d.Get("environment_class").(string)
 	}
 
 	if d.HasChange("logging_configuration") {
+		updated = true
 		input.LoggingConfiguration = expandEnvironmentLoggingConfiguration(d.Get("logging_configuration").([]interface{}))
 	}
 
 	if d.HasChange("max_workers") {
+		updated = true
 		input.MaxWorkers = d.Get("max_workers").(int)
 	}
 
 	if d.HasChange("min_workers") {
+		updated = true
 		input.MinWorkers = d.Get("min_workers").(int)
 	}
 
 	if d.HasChange("plugins_s3_object_version") {
+		updated = true
 		input.PluginsS3ObjectVersion = d.Get("plugins_s3_object_version").(string)
 	}
 
 	if d.HasChange("plugins_s3_path") {
+		updated = true
 		input.PluginsS3Path = d.Get("plugins_s3_path").(string)
 	}
 
 	if d.HasChange("requirements_s3_object_version") {
+		updated = true
 		input.RequirementsS3ObjectVersion = d.Get("requirements_s3_object_version").(string)
 	}
 
 	if d.HasChange("requirements_s3_path") {
+		updated = true
 		input.RequirementsS3Path = d.Get("requirements_s3_path").(string)
 	}
 
 	if d.HasChange("schedulers") {
+		updated = true
 		input.Schedulers = d.Get("schedulers").(int)
 	}
 
 	if d.HasChange("source_bucket_arn") {
+		updated = true
 		input.SourceBucketArn = d.Get("source_bucket_arn").(string)
 	}
 
 	if d.HasChange("webserver_access_mode") {
+		updated = true
 		input.WebserverAccessMode = &duplosdk.DuploStringValue{
 			Value: d.Get("webserver_access_mode").(string),
 		}
 	}
 
 	if d.HasChange("weekly_maintenance_window_start") {
+		updated = true
 		input.WeeklyMaintenanceWindowStart = d.Get("weekly_maintenance_window_start").(string)
 	}
 
+	if !updated {
+		return nil
+	}
 	err = c.MwaaAirflowUpdate(tenantID, fullname, &input)
 	if err != nil {
 		return diag.Errorf("Error updating tenant %s mwaa airflow detail '%s': %s", tenantID, name, err)
@@ -482,10 +502,7 @@ func resourceMwaaAirflowDelete(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "mwaa airflow detail", id, func() (interface{}, duplosdk.ClientError) {
-		if rp, err := c.MwaaAirflowExists(tenantID, fullname); rp || err != nil {
-			return rp, err
-		}
-		return nil, nil
+		return c.MwaaAirflowGet(tenantID, fullname)
 	})
 	if diag != nil {
 		return diag
