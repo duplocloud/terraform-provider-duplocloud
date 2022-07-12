@@ -50,7 +50,7 @@ func (c *Client) TenantGetSQSQueue(tenantID string, url string) (*DuploSQSQueueR
 }
 
 func (c *Client) TenantGetSqsQueueByName(tenantID, name string) (*DuploAwsCloudResource, ClientError) {
-	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
+	fullName, err := c.GetDuploServicesName(tenantID, name)
 	if err != nil {
 		return nil, err
 	}
@@ -62,8 +62,14 @@ func (c *Client) TenantGetSqsQueueByName(tenantID, name string) (*DuploAwsCloudR
 
 	if allResources != nil {
 		for _, resource := range *allResources {
-			if resource.Type == ResourceTypeSQSQueue && strings.Contains(resource.Name, fullName) {
-				return &resource, nil
+			if resource.Type == ResourceTypeSQSQueue {
+				resourceFullname, err := c.ExtractSqsFullname(tenantID, resource.Name)
+				if err != nil {
+					return nil, err
+				}
+				if resourceFullname == fullName {
+					return &resource, nil
+				}
 			}
 		}
 	}
@@ -85,4 +91,13 @@ func (c *Client) TenantGetAwsSqsQueueCloudResource(tenantID string, name string)
 
 	// No resource was found.
 	return nil, nil
+}
+
+func (c *Client) ExtractSqsFullname(tenantID string, sqsUrl string) (string, ClientError) {
+	accountID, err := c.TenantGetAwsAccountID(tenantID)
+	if err != nil {
+		return "", err
+	}
+	parts := strings.Split(sqsUrl, "/"+accountID+"/")
+	return parts[1], nil
 }
