@@ -66,6 +66,7 @@ resource "duplocloud_duplo_service_params" "myservice" {
 - **dns_prfx** (String) The DNS prefix to assign to this service's load balancer.
 - **drop_invalid_headers** (Boolean) Whether or not to drop invalid HTTP headers received by the load balancer.
 - **enable_access_logs** (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan
+- **http_to_https_redirect** (Boolean) Whether or not to enable http to https redirection.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **webaclid** (String) The ARN of a web application firewall to associate this load balancer.
 
