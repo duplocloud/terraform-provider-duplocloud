@@ -51,6 +51,7 @@ resource "duplocloud_oci_containerengine_node_pool" "myOciNodePool" {
 
 - **name** (String) The name of the node pool.
 - **node_shape** (String) The name of the node shape of the nodes in the node pool.
+- **node_shape_config** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--node_shape_config))
 - **tenant_id** (String) The GUID of the tenant that the cloudwatch event target will be created in.
 
 ### Optional
@@ -63,11 +64,11 @@ resource "duplocloud_oci_containerengine_node_pool" "myOciNodePool" {
 - **node_image_id** (String)
 - **node_image_name** (String)
 - **node_metadata** (Map of String)
-- **node_shape_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--node_shape_config))
 - **node_source_details** (Block List, Max: 1) (see [below for nested schema](#nestedblock--node_source_details))
 - **quantity_per_subnet** (Number)
 - **ssh_public_key** (String)
 - **subnet_ids** (Set of String)
+- **system_tags** (Map of String)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_ready** (Boolean) Whether or not to wait until oci node pool to be ready, after creation. Defaults to `true`.
 
@@ -77,8 +78,16 @@ resource "duplocloud_oci_containerengine_node_pool" "myOciNodePool" {
 - **compartment_id** (String) The OCID of the compartment in which the node pool exists.
 - **id** (String) The ID of this resource.
 - **node_pool_id** (String) The OCID of the node pool.
-- **nodes** (List of Object) (see [below for nested schema](#nestedatt--nodes))
-- **system_tags** (Map of String)
+- **nodes** (Block List) (see [below for nested schema](#nestedblock--nodes))
+
+<a id="nestedblock--node_shape_config"></a>
+### Nested Schema for `node_shape_config`
+
+Optional:
+
+- **memory_in_gbs** (Number)
+- **ocpus** (Number)
+
 
 <a id="nestedblock--initial_node_labels"></a>
 ### Nested Schema for `initial_node_labels`
@@ -119,15 +128,6 @@ Optional:
 
 
 
-<a id="nestedblock--node_shape_config"></a>
-### Nested Schema for `node_shape_config`
-
-Optional:
-
-- **memory_in_gbs** (Number)
-- **ocpus** (Number)
-
-
 <a id="nestedblock--node_source_details"></a>
 ### Nested Schema for `node_source_details`
 
@@ -150,7 +150,7 @@ Optional:
 - **delete** (String)
 
 
-<a id="nestedatt--nodes"></a>
+<a id="nestedblock--nodes"></a>
 ### Nested Schema for `nodes`
 
 Read-Only:
@@ -159,7 +159,7 @@ Read-Only:
 - **defined_tags** (Map of String)
 - **fault_domain** (String)
 - **freeform_tags** (Map of String)
-- **id** (String)
+- **id** (String) The ID of this resource.
 - **kubernetes_version** (String)
 - **lifecycle_details** (String)
 - **name** (String)
