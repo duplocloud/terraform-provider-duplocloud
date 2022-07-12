@@ -73,7 +73,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	c := m.(*duplosdk.Client)
 
-	accountID, err := c.TenantGetAwsAccountID(tenantID)
+	fullname, err := c.ExtractSqsFullname(tenantID, url)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -95,10 +95,8 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	d.Set("tenant_id", tenantID)
 	d.Set("url", queue.Name)
-	parts := strings.Split(queue.Name, "/"+accountID+"/")
-	fullname := parts[1]
 	d.Set("fullname", fullname)
-	name, _ := duplosdk.UnwrapName(prefix, accountID, fullname)
+	name, _ := duplosdk.UnprefixName(prefix, fullname)
 	d.Set("name", name)
 	// d.Set("fifo_queue", false) // TODO - Backend is not persisting this value.
 	log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): end", tenantID, name)
