@@ -194,25 +194,34 @@ func resourceInfrastructure() *schema.Resource {
 				Computed:    true,
 			},
 			"custom_data": {
-				Description: "A list of configuration settings to manage, expressed as key / value pairs.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        KeyValueSchema(),
+				Description:   "A list of configuration settings to apply on creation, expressed as key / value pairs.",
+				Type:          schema.TypeList,
+				Optional:      true,
+				Elem:          KeyValueSchema(),
+				Deprecated:    "The custom_data argument is only applied on creation, and is deprecated in favor of the settings argument.",
+				ConflictsWith: []string{"setting"},
 			},
-			"delete_unspecified_custom_data": {
+			"setting": {
+				Description:   "A list of configuration settings to manage, expressed as key / value pairs.",
+				Type:          schema.TypeList,
+				Optional:      true,
+				Elem:          KeyValueSchema(),
+				ConflictsWith: []string{"custom_data"},
+			},
+			"delete_unspecified_settings": {
 				Description: "Whether or not this resource should delete any settings not specified by this resource. " +
 					"**WARNING:**  It is not recommended to change the default value of `false`.",
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
-			"all_custom_data": {
+			"all_settings": {
 				Description: "A complete list of configuration settings for this infrastructure, even ones not being managed by this resource.",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem:        KeyValueSchema(),
 			},
-			"specified_custom_data": {
+			"specified_settings": {
 				Description: "A list of configuration setting key being managed by this resource.",
 				Type:        schema.TypeList,
 				Computed:    true,
@@ -381,24 +390,24 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 	if err != nil {
 		return diag.Errorf("Error retrieving infrastructure settings for '%s': %s", infraName, err)
 	}
-	if d.HasChange("custom_data") {
+	if d.HasChange("setting") {
 		var existing *[]duplosdk.DuploKeyStringValue
-		if v, ok := getAsStringArray(d, "specified_custom_data"); ok && v != nil {
+		if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
 			existing = selectKeyValues(config.CustomData, *v)
 		} else {
 			existing = &[]duplosdk.DuploKeyStringValue{}
 		}
 
 		// Collect the desired state of settings specified by the user.
-		settings := keyValueFromState("custom_data", d)
+		settings := keyValueFromState("setting", d)
 		specified := make([]string, len(*settings))
 		for i, kv := range *settings {
 			specified[i] = kv.Key
 		}
-		d.Set("specified_custom_data", specified)
+		d.Set("specified_settings", specified)
 
 		// Apply the changes via Duplo
-		if d.Get("delete_unspecified_custom_data").(bool) {
+		if d.Get("delete_unspecified_settings").(bool) {
 			err = c.InfrastructureReplaceSetting(duplosdk.DuploInfrastructureSetting{InfraName: infraName, CustomData: settings})
 		} else {
 			err = c.InfrastructureChangeSetting(infraName, existing, settings)
@@ -467,7 +476,7 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 	if v, ok := d.GetOk("subnet_address_prefix"); ok {
 		subnet.AddressPrefix = v.(string)
 	}
-	return duplosdk.DuploInfrastructureConfig{
+	config := duplosdk.DuploInfrastructureConfig{
 		Name:                    d.Get("infra_name").(string),
 		AccountId:               d.Get("account_id").(string),
 		Cloud:                   d.Get("cloud").(int),
@@ -483,8 +492,15 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 				subnet,
 			},
 		},
-		CustomData: keyValueFromState("custom_data", d),
 	}
+
+	if d.HasChange("custom_data") {
+		config.CustomData = keyValueFromState("custom_data", d)
+	} else if d.HasChange("setting") {
+		config.CustomData = keyValueFromState("setting", d)
+	}
+
+	return config
 }
 
 func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, name string, timeout time.Duration) error {
@@ -535,11 +551,12 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	d.Set("subnet_cidr", infra.Vnet.SubnetCidr)
 	d.Set("status", infra.ProvisioningStatus)
 
-	d.Set("all_custom_data", keyValueToState("all_custom_data", config.CustomData))
+	d.Set("custom_data", keyValueToState("custom_data", config.CustomData))
+	d.Set("all_settings", keyValueToState("all_settings", config.CustomData))
 
 	// Build a list of current state, to replace the user-supplied settings.
-	if v, ok := getAsStringArray(d, "specified_custom_data"); ok && v != nil {
-		d.Set("custom_data", keyValueToState("custom_data", selectKeyValues(config.CustomData, *v)))
+	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
+		d.Set("setting", keyValueToState("setting", selectKeyValues(config.CustomData, *v)))
 	}
 
 	// Set extended infrastructure information.

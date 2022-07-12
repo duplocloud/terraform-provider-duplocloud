@@ -45,9 +45,11 @@ Should be one of:
    - `2` : Azure
    - `3` : Google
  Defaults to `0`.
-- **custom_data** (Block List) Custom configuration options for the infrastructure. (see [below for nested schema](#nestedblock--custom_data))
+- **custom_data** (Block List, Deprecated) A list of configuration settings to apply on creation, expressed as key / value pairs. The custom_data argument is only applied on creation, and is deprecated in favor of the settings argument. (see [below for nested schema](#nestedblock--custom_data))
+- **delete_unspecified_settings** (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
 - **enable_container_insights** (Boolean) Whether or not to enable container insights for an ECS cluster.
 - **enable_ecs_cluster** (Boolean) Whether or not to provision an ECS cluster.
+- **setting** (Block List) A list of configuration settings to manage, expressed as key / value pairs. (see [below for nested schema](#nestedblock--setting))
 - **subnet_address_prefix** (String) The address prefixe to use for the subnet. This is applicable only for Azure
 - **subnet_cidr** (Number) The CIDR subnet size (in bits) for the automatically created subnets. This is applicable only for AWS.
 - **subnet_name** (String) The name of the subnet. This is applicable only for Azure.
@@ -56,16 +58,27 @@ Should be one of:
 
 ### Read-Only
 
+- **all_settings** (List of Object) A complete list of configuration settings for this infrastructure, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_settings))
 - **id** (String) The ID of this resource.
 - **private_subnets** (Set of Object) The private subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--private_subnets))
 - **public_subnets** (Set of Object) The public subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--public_subnets))
 - **security_groups** (Set of Object) The security groups for the VPC or VNet. (see [below for nested schema](#nestedatt--security_groups))
+- **specified_settings** (List of String) A list of configuration setting key being managed by this resource.
 - **status** (String) The status of the infrastructure.
 - **vpc_id** (String) The VPC or VNet ID.
 - **vpc_name** (String) The VPC or VNet name.
 
 <a id="nestedblock--custom_data"></a>
 ### Nested Schema for `custom_data`
+
+Required:
+
+- **key** (String)
+- **value** (String)
+
+
+<a id="nestedblock--setting"></a>
+### Nested Schema for `setting`
 
 Required:
 
@@ -81,6 +94,15 @@ Optional:
 - **create** (String)
 - **delete** (String)
 - **update** (String)
+
+
+<a id="nestedatt--all_settings"></a>
+### Nested Schema for `all_settings`
+
+Read-Only:
+
+- **key** (String)
+- **value** (String)
 
 
 <a id="nestedatt--private_subnets"></a>
