@@ -46,8 +46,6 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 ### Required
 
 - **name** (String) The short name of the lambda function cluster.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **s3_bucket** (String) The S3 bucket where the lambda function package is located.
-- **s3_key** (String) The S3 key in the S3 bucket where the lambda function package is located.
 - **tenant_id** (String) The GUID of the tenant that the lambda function will be created in.
 
 ### Optional
@@ -55,9 +53,13 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 - **description** (String) A description of the lambda function.
 - **environment** (Block List, Max: 1) Allow customization of the lambda execution environment. (see [below for nested schema](#nestedblock--environment))
 - **handler** (String) The [entrypoint](https://docs.aws.amazon.com/lambda/latest/dg/walkthrough-custom-events-create-test-function.html) of the lambda function in your code.
+- **image_uri** (String) The docker image that holds the lambda function's code. Used (and required) only when `package_type` is `"Image"`.
 - **layers** (List of String) List of Lambda Layer Version ARNs (maximum of 5) to attach to your Lambda Function.
 - **memory_size** (Number) The maximum amount of memory, in MB, that your lambda function is allowed to use at runtime. Defaults to `128`.
+- **package_type** (String) The type of lambda package.  Must be `Zip` or `Image`.  Defaults to `Zip`.
 - **runtime** (String) The [runtime](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) that the lambda function needs.
+- **s3_bucket** (String) The S3 bucket where the lambda function package is located. Used (and required) only when `package_type` is `"Zip"`.
+- **s3_key** (String) The S3 key in the S3 bucket where the lambda function package is located. Used (and required) only when `package_type` is `"Zip"`.
 - **tags** (Map of String) Map of tags to assign to the object.
 - **timeout** (Number) The execution time limit for the lambda function. Defaults to `3`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
