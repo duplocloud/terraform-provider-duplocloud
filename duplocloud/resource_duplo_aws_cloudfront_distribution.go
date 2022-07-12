@@ -846,7 +846,6 @@ func resourceAwsCloudfrontDistributionRead(ctx context.Context, d *schema.Resour
 	}
 
 	flattenAwsCloudfrontDistribution(d, duplo.Distribution.DistributionConfig)
-	// d.Set("cors_allowed_host_names", flattenStringList("No Data From Backend"))
 	d.Set("status", duplo.Distribution.Status)
 	d.Set("domain_name", duplo.Distribution.DomainName)
 	d.Set("etag", duplo.ETag)
