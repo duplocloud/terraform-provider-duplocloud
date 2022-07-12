@@ -184,23 +184,48 @@ func resourceInfrastructure() *schema.Resource {
 			"enable_ecs_cluster": {
 				Description: "Whether or not to provision an ECS cluster.",
 				Type:        schema.TypeBool,
-				ForceNew:    true,
 				Optional:    true,
 				Computed:    true,
 			},
 			"enable_container_insights": {
 				Description: "Whether or not to enable container insights for an ECS cluster.",
 				Type:        schema.TypeBool,
-				ForceNew:    true,
 				Optional:    true,
 				Computed:    true,
 			},
 			"custom_data": {
-				Description: "Custom configuration options for the infrastructure.",
+				Description:   "A list of configuration settings to apply on creation, expressed as key / value pairs.",
+				Type:          schema.TypeList,
+				Optional:      true,
+				Elem:          KeyValueSchema(),
+				Deprecated:    "The custom_data argument is only applied on creation, and is deprecated in favor of the settings argument.",
+				ConflictsWith: []string{"setting"},
+			},
+			"setting": {
+				Description:   "A list of configuration settings to manage, expressed as key / value pairs.",
+				Type:          schema.TypeList,
+				Optional:      true,
+				Elem:          KeyValueSchema(),
+				ConflictsWith: []string{"custom_data"},
+			},
+			"delete_unspecified_settings": {
+				Description: "Whether or not this resource should delete any settings not specified by this resource. " +
+					"**WARNING:**  It is not recommended to change the default value of `false`.",
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			"all_settings": {
+				Description: "A complete list of configuration settings for this infrastructure, even ones not being managed by this resource.",
 				Type:        schema.TypeList,
-				Optional:    true,
 				Computed:    true,
 				Elem:        KeyValueSchema(),
+			},
+			"specified_settings": {
+				Description: "A list of configuration setting key being managed by this resource.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"address_prefix": {
 				Description: "The CIDR to use for the VPC or VNet.",
@@ -217,12 +242,14 @@ func resourceInfrastructure() *schema.Resource {
 			"subnet_name": {
 				Description: "The name of the subnet. This is applicable only for Azure.",
 				Type:        schema.TypeString,
+				ForceNew:    true,
 				Optional:    true,
 				Computed:    true,
 			},
 			"subnet_address_prefix": {
 				Description: "The address prefixe to use for the subnet. This is applicable only for Azure",
 				Type:        schema.TypeString,
+				ForceNew:    true,
 				Optional:    true,
 				Computed:    true,
 			},
@@ -338,46 +365,83 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 
 /// UPDATE resource
 func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var err error
+	infraName, diags := parseInfrastructureId(d)
+	if diags != nil {
+		return diags
+	}
 
-	rq := duploInfrastructureFromState(d)
-
-	log.Printf("[TRACE] resourceInfrastructureUpdate(%s): start", rq.Name)
-
-	// Put the object to Duplo.
+	log.Printf("[TRACE] resourceInfrastructureUpdate(%s): start", infraName)
 	c := m.(*duplosdk.Client)
-	_, err = c.InfrastructureUpdate(rq)
+
+	// Apply any ECS changes.
+	if d.HasChanges("enable_ecs_cluster", "enable_container_insights") {
+		rq := duplosdk.DuploInfrastructureECSConfigUpdate{
+			EnableECSCluster:        d.Get("enable_ecs_cluster").(bool),
+			EnableContainerInsights: d.Get("enable_container_insights").(bool),
+		}
+		err := c.InfrastructureUpdateECSConfig(infraName, rq)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// Apply any settings changes.
+	config, err := c.InfrastructureGetSetting(infraName)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Error retrieving infrastructure settings for '%s': %s", infraName, err)
+	}
+	if d.HasChange("setting") {
+		var existing *[]duplosdk.DuploKeyStringValue
+		if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
+			existing = selectKeyValues(config.CustomData, *v)
+		} else {
+			existing = &[]duplosdk.DuploKeyStringValue{}
+		}
+
+		// Collect the desired state of settings specified by the user.
+		settings := keyValueFromState("setting", d)
+		specified := make([]string, len(*settings))
+		for i, kv := range *settings {
+			specified[i] = kv.Key
+		}
+		d.Set("specified_settings", specified)
+
+		// Apply the changes via Duplo
+		if d.Get("delete_unspecified_settings").(bool) {
+			err = c.InfrastructureReplaceSetting(duplosdk.DuploInfrastructureSetting{InfraName: infraName, CustomData: settings})
+		} else {
+			err = c.InfrastructureChangeSetting(infraName, existing, settings)
+		}
+		if err != nil {
+			return diag.Errorf("Error updating infrastructure settings for '%s': %s", infraName, err)
+		}
 	}
 
 	// Wait for 60 seconds, at first.
 	time.Sleep(time.Minute)
 
 	// Then, wait until the infrastructure is completely ready.
-	err = duploInfrastructureWaitUntilReady(ctx, c, rq.Name, d.Timeout("update"))
-	if err != nil {
-		return diag.FromErr(err)
+	waitErr := duploInfrastructureWaitUntilReady(ctx, c, infraName, d.Timeout("update"))
+	if waitErr != nil {
+		return diag.FromErr(waitErr)
 	}
 
-	diags := resourceInfrastructureRead(ctx, d, m)
-	log.Printf("[TRACE] resourceInfrastructureUpdate(%s): end", rq.Name)
+	diags = resourceInfrastructureRead(ctx, d, m)
+	log.Printf("[TRACE] resourceInfrastructureUpdate(%s): end", infraName)
 	return diags
 }
 
 /// DELETE resource
 func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	id := d.Id()
-	idParts := strings.SplitN(id, "/", 4)
-	if len(idParts) < 4 {
-		return diag.Errorf("Invalid resource ID: %s", id)
+	infraName, diags := parseInfrastructureId(d)
+	if diags != nil {
+		return diags
 	}
-	name := idParts[3]
 
-	log.Printf("[TRACE] resourceInfrastructureDelete(%s): start", name)
+	log.Printf("[TRACE] resourceInfrastructureDelete(%s): start", infraName)
 
 	c := m.(*duplosdk.Client)
-	err := c.InfrastructureDelete(name)
+	err := c.InfrastructureDelete(infraName)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -385,28 +449,22 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 	// Wait for 20 minutes to allow infrastructure deletion.
 	// TODO: wait for it completely deleted (add an API that will actually show the status)
 	if d.Get("wait_until_deleted").(bool) {
-		log.Printf("[TRACE] resourceInfrastructureDelete(%s): waiting for 20 minutes because 'wait_until_deleted' is 'true'", name)
+		log.Printf("[TRACE] resourceInfrastructureDelete(%s): waiting for 20 minutes because 'wait_until_deleted' is 'true'", infraName)
 		time.Sleep(time.Duration(20) * time.Minute)
 	}
 
-	log.Printf("[TRACE] resourceInfrastructureDelete(%s): end", name)
+	log.Printf("[TRACE] resourceInfrastructureDelete(%s): end", infraName)
 	return nil
 }
 
-func duploInfrastructureFromState(d *schema.ResourceData) duplosdk.DuploInfrastructure {
-	return duplosdk.DuploInfrastructure{
-		Name:                    d.Get("infra_name").(string),
-		AccountId:               d.Get("account_id").(string),
-		Cloud:                   d.Get("cloud").(int),
-		Region:                  d.Get("region").(string),
-		AzCount:                 d.Get("azcount").(int),
-		EnableK8Cluster:         d.Get("enable_k8_cluster").(bool),
-		EnableECSCluster:        d.Get("enable_ecs_cluster").(bool),
-		EnableContainerInsights: d.Get("enable_container_insights").(bool),
-		AddressPrefix:           d.Get("address_prefix").(string),
-		SubnetCidr:              d.Get("subnet_cidr").(int),
-		CustomData:              keyValueFromState("custom_data", d),
+func parseInfrastructureId(d *schema.ResourceData) (string, diag.Diagnostics) {
+	id := d.Id()
+	idParts := strings.SplitN(id, "/", 4)
+	if len(idParts) < 4 {
+		return "", diag.Errorf("Invalid resource ID: %s", id)
 	}
+	name := idParts[3]
+	return name, nil
 }
 
 func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploInfrastructureConfig {
@@ -418,7 +476,7 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 	if v, ok := d.GetOk("subnet_address_prefix"); ok {
 		subnet.AddressPrefix = v.(string)
 	}
-	return duplosdk.DuploInfrastructureConfig{
+	config := duplosdk.DuploInfrastructureConfig{
 		Name:                    d.Get("infra_name").(string),
 		AccountId:               d.Get("account_id").(string),
 		Cloud:                   d.Get("cloud").(int),
@@ -434,8 +492,15 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 				subnet,
 			},
 		},
-		CustomData: keyValueFromState("custom_data", d),
 	}
+
+	if d.HasChange("custom_data") {
+		config.CustomData = keyValueFromState("custom_data", d)
+	} else if d.HasChange("setting") {
+		config.CustomData = keyValueFromState("setting", d)
+	}
+
+	return config
 }
 
 func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, name string, timeout time.Duration) error {
@@ -485,7 +550,14 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	d.Set("address_prefix", infra.Vnet.AddressPrefix)
 	d.Set("subnet_cidr", infra.Vnet.SubnetCidr)
 	d.Set("status", infra.ProvisioningStatus)
+
 	d.Set("custom_data", keyValueToState("custom_data", config.CustomData))
+	d.Set("all_settings", keyValueToState("all_settings", config.CustomData))
+
+	// Build a list of current state, to replace the user-supplied settings.
+	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
+		d.Set("setting", keyValueToState("setting", selectKeyValues(config.CustomData, *v)))
+	}
 
 	// Set extended infrastructure information.
 	if config.Vnet != nil {
