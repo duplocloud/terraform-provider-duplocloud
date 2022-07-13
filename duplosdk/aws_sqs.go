@@ -99,5 +99,9 @@ func (c *Client) ExtractSqsFullname(tenantID string, sqsUrl string) (string, Cli
 		return "", err
 	}
 	parts := strings.Split(sqsUrl, "/"+accountID+"/")
-	return parts[1], nil
+	fullname := parts[1]
+	if strings.HasSuffix(fullname, ".fifo") {
+		fullname = strings.TrimSuffix(fullname, ".fifo")
+	}
+	return fullname, nil
 }

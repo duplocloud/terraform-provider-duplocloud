@@ -96,6 +96,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 	d.Set("tenant_id", tenantID)
 	d.Set("url", queue.Name)
 	d.Set("fullname", fullname)
+	d.Set("fifo_queue", strings.HasSuffix(queue.Name, ".fifo"))
 	name, _ := duplosdk.UnprefixName(prefix, fullname)
 	d.Set("name", name)
 	// d.Set("fifo_queue", false) // TODO - Backend is not persisting this value.
