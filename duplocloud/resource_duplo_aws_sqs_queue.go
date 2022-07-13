@@ -80,6 +80,10 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 	log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): start", tenantID, url)
 
 	queue, clientErr := c.TenantGetSQSQueue(tenantID, url)
+	if queue == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
