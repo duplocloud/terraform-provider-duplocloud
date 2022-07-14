@@ -52,6 +52,7 @@ Should be one of:
 - **encryption_at_rest** (Boolean) Enables encryption-at-rest. Defaults to `false`.
 - **encryption_in_transit** (Boolean) Enables encryption-in-transit. Defaults to `false`.
 - **kms_key_id** (String) The globally unique identifier for the key.
+- **parameter_group_name** (String) The REDIS parameter group to supply.
 - **replicas** (Number) The number of replicas to create. Defaults to `1`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

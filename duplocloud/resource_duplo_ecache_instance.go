@@ -125,6 +125,14 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 			Optional:    true,
+			ForceNew:    true,
+		},
+		"parameter_group_name": {
+			Description: "The REDIS parameter group to supply.",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+			ForceNew:    true,
 		},
 	}
 }
@@ -279,6 +287,7 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 		AuthToken:           d.Get("auth_token").(string),
 		InstanceStatus:      d.Get("instance_status").(string),
 		KMSKeyID:            d.Get("kms_key_id").(string),
+		ParameterGroupName:  d.Get("parameter_group_name").(string),
 	}
 }
 
@@ -305,6 +314,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("auth_token", duplo.AuthToken)
 	d.Set("instance_status", duplo.InstanceStatus)
 	d.Set("kms_key_id", duplo.KMSKeyID)
+	d.Set("parameter_group_name", duplo.ParameterGroupName)
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.

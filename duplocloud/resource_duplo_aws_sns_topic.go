@@ -82,6 +82,10 @@ func resourceAwsSnsTopicRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 
 	topic, clientErr := c.TenantGetSnsTopic(tenantID, arn)
+	if topic == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")

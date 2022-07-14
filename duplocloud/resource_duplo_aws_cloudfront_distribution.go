@@ -112,6 +112,12 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			Optional: true,
 			Default:  true,
 		},
+		"cors_allowed_host_names": {
+			Type:     schema.TypeList,
+			Optional: true,
+			Computed: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
 		"custom_error_response": {
 			Type:     schema.TypeSet,
 			Optional: true,
@@ -840,7 +846,6 @@ func resourceAwsCloudfrontDistributionRead(ctx context.Context, d *schema.Resour
 	}
 
 	flattenAwsCloudfrontDistribution(d, duplo.Distribution.DistributionConfig)
-
 	d.Set("status", duplo.Distribution.Status)
 	d.Set("domain_name", duplo.Distribution.DomainName)
 	d.Set("etag", duplo.ETag)
@@ -860,7 +865,11 @@ func resourceAwsCloudfrontDistributionCreate(ctx context.Context, d *schema.Reso
 	c := m.(*duplosdk.Client)
 
 	rq := expandAwsCloudfrontDistributionConfig(d)
-	resp, err := c.AwsCloudfrontDistributionCreate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{DistributionConfig: rq, UseOAIIdentity: d.Get("use_origin_access_identity").(bool)})
+	resp, err := c.AwsCloudfrontDistributionCreate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
+		DistributionConfig:   rq,
+		UseOAIIdentity:       d.Get("use_origin_access_identity").(bool),
+		CorsAllowedHostNames: expandStringList(d.Get("cors_allowed_host_names").([]interface{})),
+	})
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s aws cloudfront distribution.: %s", tenantID, err)
 	}
@@ -911,10 +920,11 @@ func resourceAwsCloudfrontDistributionUpdate(ctx context.Context, d *schema.Reso
 	updateS3OAI(duplo.Distribution.DistributionConfig, rq)
 
 	resp, err := c.AwsCloudfrontDistributionUpdate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
-		Id:                 cfdId,
-		DistributionConfig: rq,
-		IfMatch:            d.Get("etag").(string),
-		UseOAIIdentity:     d.Get("use_origin_access_identity").(bool),
+		Id:                   cfdId,
+		DistributionConfig:   rq,
+		IfMatch:              d.Get("etag").(string),
+		UseOAIIdentity:       d.Get("use_origin_access_identity").(bool),
+		CorsAllowedHostNames: expandStringList(d.Get("cors_allowed_host_names").([]interface{})),
 	})
 	if err != nil {
 		return diag.Errorf("Error updating tenant %s aws cloudfront distribution.: %s", tenantID, err)
@@ -1583,6 +1593,7 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 	if duplo.OriginGroups.Quantity > 0 {
 		d.Set("origin_group", flattenOriginGroups(duplo.OriginGroups))
 	}
+
 }
 
 func flattenDefaultCacheBehavior(dcb *duplosdk.DuploAwsCloudfrontDefaultCacheBehavior) []interface{} {

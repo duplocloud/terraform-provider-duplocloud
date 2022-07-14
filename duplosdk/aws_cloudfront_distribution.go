@@ -197,10 +197,11 @@ type DuploAwsCloudfrontDistributionCustomErrorResponse struct {
 }
 
 type DuploAwsCloudfrontDistributionCreate struct {
-	DistributionConfig *DuploAwsCloudfrontDistributionConfig `json:"DistributionConfig,omitempty"`
-	Id                 string                                `json:"Id,omitempty"`
-	IfMatch            string                                `json:"IfMatch,omitempty"`
-	UseOAIIdentity     bool                                  `json:"UseOAIIdentity,omitempty"`
+	DistributionConfig   *DuploAwsCloudfrontDistributionConfig `json:"DistributionConfig,omitempty"`
+	Id                   string                                `json:"Id,omitempty"`
+	IfMatch              string                                `json:"IfMatch,omitempty"`
+	UseOAIIdentity       bool                                  `json:"UseOAIIdentity,omitempty"`
+	CorsAllowedHostNames []string                              `json:"CorsAllowedHostNames,omitempty"`
 }
 
 type DuploAwsCloudfrontDistribution struct {

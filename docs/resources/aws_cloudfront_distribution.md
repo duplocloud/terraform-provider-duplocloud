@@ -111,6 +111,7 @@ resource "duplocloud_aws_cloudfront_distribution" "cfd" {
 
 - **aliases** (Set of String) Extra CNAMEs (alternate domain names), if any, for this distribution.
 - **comment** (String) Any comments you want to include about the distribution.
+- **cors_allowed_host_names** (List of String)
 - **custom_error_response** (Block Set) (see [below for nested schema](#nestedblock--custom_error_response))
 - **default_root_object** (String) The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.
 - **http_version** (String) The maximum HTTP version to support on the distribution. Allowed values are `http1.1` and `http2` Defaults to `http2`.
