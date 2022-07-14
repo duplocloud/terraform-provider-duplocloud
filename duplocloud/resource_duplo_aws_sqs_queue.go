@@ -80,6 +80,10 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 	log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): start", tenantID, url)
 
 	queue, clientErr := c.TenantGetSQSQueue(tenantID, url)
+	if queue == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
@@ -96,6 +100,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 	d.Set("tenant_id", tenantID)
 	d.Set("url", queue.Name)
 	d.Set("fullname", fullname)
+	d.Set("fifo_queue", strings.HasSuffix(queue.Name, ".fifo"))
 	name, _ := duplosdk.UnprefixName(prefix, fullname)
 	d.Set("name", name)
 	// d.Set("fifo_queue", false) // TODO - Backend is not persisting this value.
