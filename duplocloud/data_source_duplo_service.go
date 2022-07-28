@@ -136,7 +136,7 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 
 	// Apply TF state
 	d.Set("name", duplo.Name)
-	d.Set("volumes", duplo.Volumes)
+	d.Set("volumes", duplo.Template.Volumes)
 	d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
 	d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
 	d.Set("replica_collocation_allowed", duplo.IsReplicaCollocationAllowed)

@@ -214,12 +214,9 @@ func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceDa
 	if err != nil {
 		return diag.Errorf("Unable to retrieve tenant %s service '%s' load balancer configs: %s", tenantID, name, err)
 	}
-
 	// Apply the TF state
 	d.Set("tenant_id", tenantID)
-	d.Set("name", name)
 	d.Set("replication_controller_name", name)
-
 	// Handle each LB config
 	lbconfigs := make([]interface{}, 0, len(*list))
 	isCloudLb := false
@@ -232,7 +229,6 @@ func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceDa
 	if err = d.Set("lbconfigs", lbconfigs); err != nil {
 		return diag.FromErr(err)
 	}
-
 	// Handle a cloud load balancer.
 	if isCloudLb {
 		lbdetails, lberr := c.TenantGetLbDetailsInService(tenantID, name)
