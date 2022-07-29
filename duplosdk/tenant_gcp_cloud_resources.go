@@ -306,7 +306,7 @@ func (c *Client) GcpStorageBucketGetList(tenantID string) (*[]DuploGcpStorageBuc
 	// Add the tenant ID and name to each element and return the list.
 	for i := range list {
 		list[i].TenantID = tenantID
-		list[i].ShortName, _ = UnwrapName(prefix, projectID, list[i].Name)
+		list[i].ShortName, _ = UnwrapName(prefix, projectID, list[i].Name, false)
 	}
 	return &list, nil
 }

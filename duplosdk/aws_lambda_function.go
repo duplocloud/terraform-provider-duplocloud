@@ -204,7 +204,7 @@ func (c *Client) LambdaFunctionGetList(tenantID string) (*[]DuploLambdaConfigura
 	// Add the tenant ID and name to each element and return the list.
 	for i := range list {
 		list[i].TenantID = tenantID
-		list[i].Name, _ = UnwrapName(prefix, accountID, list[i].FunctionName)
+		list[i].Name, _ = UnwrapName(prefix, accountID, list[i].FunctionName, true)
 	}
 	return &list, nil
 }

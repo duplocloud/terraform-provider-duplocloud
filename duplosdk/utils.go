@@ -85,14 +85,20 @@ func UnprefixName(prefix, name string) (string, bool) {
 }
 
 // UnwrapName removes a duplo resource prefix and AWS account ID suffix from a name.
-func UnwrapName(prefix, accountID, name string) (string, bool) {
+func UnwrapName(prefix, accountID, name string, optionalAccountID bool) (string, bool) {
 	suffix := "-" + accountID
 
+	var part string
 	if !strings.HasSuffix(name, suffix) {
-		return name, false
+		if !optionalAccountID {
+			return name, false
+		} else {
+			part = name
+		}
+	} else {
+		part = name[0 : len(name)-len(suffix)]
 	}
 
-	part := name[0 : len(name)-len(suffix)]
 	if !strings.HasPrefix(part, prefix) {
 		return name, false
 	}
