@@ -104,7 +104,7 @@ func resourceAwsSnsTopicRead(ctx context.Context, d *schema.ResourceData, m inte
 	parts := strings.Split(topic.Name, ":"+accountID+":")
 	fullname := parts[1]
 	d.Set("fullname", fullname)
-	name, _ := duplosdk.UnwrapName(prefix, fullname, accountID, true)
+	name, _ := duplosdk.UnwrapName(prefix, accountID, fullname, true)
 	d.Set("name", name)
 	// d.Set("kms_key_id", "") // TODO - Backend is not persisting this value.
 	log.Printf("[TRACE] resourceAwsSnsTopicRead(%s, %s): end", tenantID, arn)
