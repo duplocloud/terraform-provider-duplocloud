@@ -22,9 +22,9 @@ func resourceTenant() *schema.Resource {
 		DeleteContext: resourceTenantDelete,
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(120 * time.Minute),
-			Update: schema.DefaultTimeout(120 * time.Minute),
-			Delete: schema.DefaultTimeout(120 * time.Minute),
+			Create: schema.DefaultTimeout(3 * time.Minute),
+			Update: schema.DefaultTimeout(3 * time.Minute),
+			Delete: schema.DefaultTimeout(3 * time.Minute),
 		},
 
 		Importer: &schema.ResourceImporter{
@@ -169,17 +169,24 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	d.SetId(fmt.Sprintf("v2/admin/TenantV2/%s", rp.TenantID))
 	d.Set("tenant_id", rp.TenantID)
 
-	diags = resourceTenantRead(ctx, d, m)
-	if diags != nil {
-		return diags
-	}
-
 	// Wait for 2 minutes to allow tenant creation.
 	if d.Get("wait_until_created").(bool) {
 		log.Printf("[TRACE] resourceTenantCreate(%s): waiting for 2 minutes because 'wait_until_created' is 'true'", rq.AccountName)
 		time.Sleep(time.Duration(120) * time.Second)
 	}
 
+	diags = waitForResourceToBePresentAfterCreate(ctx, d, "tenant", rq.AccountName, func() (interface{}, duplosdk.ClientError) {
+		rp, err = c.GetTenantByNameForUser(rq.AccountName)
+		return rp, err
+	})
+	if diags != nil {
+		return diags
+	}
+
+	diags = resourceTenantRead(ctx, d, m)
+	if diags != nil {
+		return diags
+	}
 	log.Printf("[TRACE] resourceTenantCreate(%s): end", rq.AccountName)
 	return nil
 }
