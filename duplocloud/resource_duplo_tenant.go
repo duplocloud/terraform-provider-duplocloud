@@ -32,7 +32,7 @@ func resourceTenant() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"account_name": {
-				Description: "The name of the tenant.  Tenant names are globally unique, less than 13 characters, and cannot be a prefix of any other tenant name.",
+				Description: "The name of the tenant. Tenant names are globally unique, and cannot be a prefix of any other tenant name.",
 				Type:        schema.TypeString,
 				ForceNew:    true, // Change tenant name
 				Required:    true,
