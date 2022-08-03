@@ -1,5 +1,29 @@
 package duplosdk
 
+type DuploSystemFeatures struct {
+	IsKatkitEnabled      bool     `json:"IsKatkitEnabled"`
+	IsSignupEnabled      bool     `json:"IsSignupEnabled"`
+	IsComplianceEnabled  bool     `json:"IsComplianceEnabled"`
+	IsBillingEnabled     bool     `json:"IsBillingEnabled"`
+	IsSiemEnabled        bool     `json:"IsSiemEnabled"`
+	IsAwsCloudEnabled    bool     `json:"IsAwsCloudEnabled"`
+	AwsRegions           []string `json:"AwsRegions"`
+	DefaultAwsAccount    string   `json:"DefaultAwsAccount"`
+	DefaultAwsRegion     string   `json:"DefaultAwsRegion"`
+	IsAzureCloudEnabled  bool     `json:"IsAzureCloudEnabled"`
+	AzureRegions         []string `json:"AzureRegions"`
+	IsGoogleCloudEnabled bool     `json:"IsGoogleCloudEnabled"`
+	EksVersions          struct {
+		DefaultVersion    string   `json:"DefaultVersion"`
+		SupportedVersions []string `json:"SupportedVersions"`
+	} `json:"EksVersions"`
+	IsOtpNeeded           bool   `json:"IsOtpNeeded"`
+	IsAwsAdminJITEnabled  bool   `json:"IsAwsAdminJITEnabled"`
+	IsDuploOpsEnabled     bool   `json:"IsDuploOpsEnabled"`
+	DevopsManagerHostname string `json:"DevopsManagerHostname"`
+	TenantNameMaxLength   int    `json:"TenantNameMaxLength"`
+}
+
 // DuploAdminAwsCredentials represents just-in-time admin AWS credentials from Duplo
 type DuploAdminAwsCredentials struct {
 	ConsoleURL      string `json:"ConsoleUrl,omitempty"`
@@ -25,4 +49,13 @@ func (c *Client) AdminGetAwsCredentials() (*DuploAdminAwsCredentials, ClientErro
 		return nil, err
 	}
 	return &creds, nil
+}
+
+func (c *Client) AdminGetSystemFeatures() (*DuploSystemFeatures, ClientError) {
+	features := DuploSystemFeatures{}
+	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
+	if err != nil {
+		return nil, err
+	}
+	return &features, nil
 }
