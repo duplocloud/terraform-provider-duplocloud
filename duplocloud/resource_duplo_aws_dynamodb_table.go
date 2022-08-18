@@ -176,7 +176,7 @@ func resourceAwsDynamoDBTableDelete(ctx context.Context, d *schema.ResourceData,
 
 	// Delete the function.
 	c := m.(*duplosdk.Client)
-	clientErr := c.DynamoDBTableDelete(tenantID, name)
+	clientErr := c.DynamoDBTableDelete(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil
