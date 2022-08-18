@@ -96,7 +96,11 @@ func resourceAwsDynamoDBTableRead(ctx context.Context, d *schema.ResourceData, m
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, clientErr := c.DynamoDBTableGet(tenantID, name)
+	fullname, err := c.GetDuploServicesName(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Error creating fullname %s dynamodb table '%s': %s", tenantID, name, err)
+	}
+	duplo, clientErr := c.DynamoDBTableGet(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("") // object missing
@@ -133,7 +137,10 @@ func resourceAwsDynamoDBTableCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	c := m.(*duplosdk.Client)
-
+	fullname, err := c.GetDuploServicesName(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Error creating fullname %s dynamodb table '%s': %s", tenantID, name, err)
+	}
 	// Post the object to Duplo
 	_, err = c.DynamoDBTableCreate(tenantID, &rq)
 	if err != nil {
@@ -143,7 +150,7 @@ func resourceAwsDynamoDBTableCreate(ctx context.Context, d *schema.ResourceData,
 	// Wait for Duplo to be able to return the table's details.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DynamoDBTableGet(tenantID, name)
+		return c.DynamoDBTableGet(tenantID, fullname)
 	})
 	if diags != nil {
 		return diags
@@ -161,6 +168,7 @@ func resourceAwsDynamoDBTableDelete(ctx context.Context, d *schema.ResourceData,
 	// Parse the identifying attributes
 	id := d.Id()
 	tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
+	fullname := d.Get("fullname").(string)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -178,7 +186,7 @@ func resourceAwsDynamoDBTableDelete(ctx context.Context, d *schema.ResourceData,
 
 	// Wait up to 60 seconds for Duplo to delete the cluster.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DynamoDBTableGet(tenantID, name)
+		return c.DynamoDBTableGet(tenantID, fullname)
 	})
 	if diag != nil {
 		return diag
