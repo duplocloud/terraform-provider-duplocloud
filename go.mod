@@ -3,6 +3,7 @@ module terraform-provider-duplocloud
 go 1.16
 
 require (
+	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/hashicorp/go-getter v1.6.1 // indirect
 	github.com/hashicorp/terraform-plugin-docs v0.4.0
@@ -17,3 +18,5 @@ replace github.com/hashicorp/terraform-plugin-docs v0.4.0 => github.com/nmuesch/
 replace github.com/hashicorp/go-getter v1.4.0 => github.com/hashicorp/go-getter v1.6.1
 
 replace github.com/hashicorp/go-getter v1.5.0 => github.com/hashicorp/go-getter v1.6.1
+
+replace github.com/Masterminds/goutils v1.1.0 => github.com/Masterminds/goutils v1.1.1
