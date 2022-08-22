@@ -59,7 +59,7 @@ type DuploEmrClusterSummary struct {
 	JobFlowId string `json:"JobFlowId,omitempty"`
 }
 
-type DuploEmrClusterGetRequest struct {
+type DuploEmrClusterGetResponse struct {
 	TenantID       string `json:"-"`
 	InstanceGroups []struct {
 		Configurations        []interface{} `json:"Configurations"`
@@ -205,8 +205,8 @@ func (c *Client) DuploEmrClusterDelete(tenantID, name string) ClientError {
 }
 
 // DuploEmrClusterGet retrieves an emr cluster via the Duplo API
-func (c *Client) DuploEmrClusterGet(tenantID string, name string) (*DuploEmrClusterGetRequest, ClientError) {
-	rp := DuploEmrClusterGetRequest{}
+func (c *Client) DuploEmrClusterGet(tenantID string, name string) (*DuploEmrClusterGetResponse, ClientError) {
+	rp := DuploEmrClusterGetResponse{}
 	err := c.getAPI(
 		fmt.Sprintf("DuploEmrClusterGet(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/emrCluster/%s", tenantID, name),
