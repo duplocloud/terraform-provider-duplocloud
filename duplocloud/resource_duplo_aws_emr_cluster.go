@@ -300,7 +300,7 @@ func resourceAwsEmrClusterRead(_ context.Context, d *schema.ResourceData, m inte
 
 	d.Set("tenant_id", tenantID)
 	d.Set("full_name", duplo.Name)
-	d.Set("job_flow_id", duplo.JobFlowId)
+	d.Set("job_flow_id", duplo.JobFlowID)
 	d.Set("arn", duplo.Arn)
 	d.Set("status", duplo.Status)
 	d.Set("release_label", duplo.ReleaseLabel)
