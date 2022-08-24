@@ -36,20 +36,22 @@ type DuploK8sIngressRule struct {
 }
 
 func (c *Client) DuploK8sIngressCreate(tenantID string, rq *DuploK8sIngress) ClientError {
+	rp := DuploK8sIngress{}
 	return c.postAPI(
 		fmt.Sprintf("DuploK8sIngressCreate(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("v3/subscriptions/%s/k8s/ingress", tenantID),
 		&rq,
-		nil,
+		&rp,
 	)
 }
 
 func (c *Client) DuploK8sIngressUpdate(tenantID, name string, rq *DuploK8sIngress) ClientError {
+	rp := DuploK8sIngress{}
 	return c.putAPI(
 		fmt.Sprintf("DuploK8sIngressUpdate(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/k8s/ingress/%s", tenantID, name),
 		&rq,
-		nil,
+		&rp,
 	)
 }
 func (c *Client) DuploK8sIngressGet(tenantID, name string) (*DuploK8sIngress, ClientError) {
@@ -63,9 +65,10 @@ func (c *Client) DuploK8sIngressGet(tenantID, name string) (*DuploK8sIngress, Cl
 }
 
 func (c *Client) DuploK8sIngressDelete(tenantID string, name string) ClientError {
+	rp := DuploK8sIngress{}
 	return c.deleteAPI(
 		fmt.Sprintf("DuploK8sIngressDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/k8s/ingress/%s", tenantID, name),
-		nil,
+		&rp,
 	)
 }

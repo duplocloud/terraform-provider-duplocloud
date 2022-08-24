@@ -51,7 +51,7 @@ func k8sIngressSchema() map[string]*schema.Schema {
 					"dns_prefix": {
 						Description: "The DNS prefix to expose services using Route53 domain.",
 						Type:        schema.TypeString,
-						Computed:    true,
+						Required:    true,
 					},
 					"certificate_arn": {
 						Description: "The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.",
@@ -98,7 +98,7 @@ func k8sIngressSchema() map[string]*schema.Schema {
 				Schema: map[string]*schema.Schema{
 					"path": {
 						Description: "Specify the path (for e.g. /api /v1/api/) to do a path base routing. If host is specified then both path and host should be match for the incoming request.",
-						Type:        schema.TypeBool,
+						Type:        schema.TypeString,
 						Required:    true,
 					},
 					"path_type": {
@@ -356,12 +356,12 @@ func expandK8sIngressLBConfig(m map[string]interface{}) *duplosdk.DuploK8sLbConf
 		CertArn:   m["certificate_arn"].(string),
 	}
 	l := duplosdk.DuploK8sIngressListeners{}
-	if v, ok := m["http_port"]; ok {
+	if v, ok := m["http_port"]; ok && v.(int) > 0 {
 		l.Http = []int{
 			v.(int),
 		}
 	}
-	if v, ok := m["https_port"]; ok {
+	if v, ok := m["https_port"]; ok && v.(int) > 0 {
 		l.Https = []int{
 			v.(int),
 		}
