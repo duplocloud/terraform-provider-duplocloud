@@ -163,9 +163,13 @@ func resourceK8IngressRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.DuploK8sIngressGet(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, clientErr := c.DuploK8sIngressGet(tenantID, name)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve tenant %s k8s ingress %s : %s", tenantID, name, clientErr)
 	}
 	if rp == nil || rp.Name == "" {
 		d.SetId("")
@@ -241,14 +245,22 @@ func resourceK8IngressDelete(ctx context.Context, d *schema.ResourceData, m inte
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.DuploK8sIngressGet(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, clientErr := c.DuploK8sIngressGet(tenantID, name)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve tenant %s k8s ingress %s : %s", tenantID, name, clientErr)
 	}
 	if rp != nil && rp.Name != "" {
-		err := c.DuploK8sIngressDelete(tenantID, name)
-		if err != nil {
-			return diag.FromErr(err)
+		clientErr := c.DuploK8sIngressDelete(tenantID, name)
+		if clientErr != nil {
+			if clientErr.Status() == 404 {
+				d.SetId("")
+				return nil
+			}
+			return diag.Errorf("Unable to delete tenant %s k8s ingress %s : %s", tenantID, name, clientErr)
 		}
 	}
 
@@ -276,7 +288,7 @@ func flattenK8sIngress(tenantId string, d *schema.ResourceData, duplo *duplosdk.
 	d.Set("lbconfig", []interface{}{flattenK8sIngressLBConfig(duplo.LbConfig)})
 
 	// Set Rules
-	d.Set("rule", []interface{}{flattenK8sIngressRules(duplo.Rules)})
+	d.Set("rule", flattenK8sIngressRules(duplo.Rules))
 
 	// Finally, set the map
 	d.Set("annotations", duplo.Annotations)
