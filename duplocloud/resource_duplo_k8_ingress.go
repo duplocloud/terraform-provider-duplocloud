@@ -199,7 +199,7 @@ func resourceK8IngressCreate(ctx context.Context, d *schema.ResourceData, m inte
 	d.SetId(fmt.Sprintf("v3/subscriptions/%s/k8s/ingress/%s", tenantID, name))
 
 	diags := resourceK8IngressRead(ctx, d, m)
-	log.Printf("[TRACE] resourceK8ConfigMapCreate(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceK8IngressCreate(%s, %s): end", tenantID, name)
 	return diags
 }
 
