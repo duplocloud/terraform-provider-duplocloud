@@ -133,7 +133,7 @@ func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m inter
 	d.SetId(fmt.Sprintf("v2/subscriptions/%s/K8SecretApiV2/%s", tenantID, name))
 
 	diags := resourceK8SecretRead(ctx, d, m)
-	log.Printf("[TRACE] resourceK8ConfigMapCreate(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceK8SecretCreate(%s, %s): end", tenantID, name)
 	return diags
 }
 
@@ -160,7 +160,7 @@ func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	diags := resourceK8SecretRead(ctx, d, m)
-	log.Printf("[TRACE] resourceK8ConfigMapUpdate(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceK8SecretUpdate(%s, %s): end", tenantID, name)
 	return diags
 }
 
