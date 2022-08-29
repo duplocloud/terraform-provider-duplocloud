@@ -3,6 +3,7 @@ package duplosdk
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -19,6 +20,7 @@ type DuploEcsServiceLbConfig struct {
 	LbType                    int                                 `json:"LbType,omitempty"`
 	TgCount                   int                                 `json:"TgCount,omitempty"`
 	HealthCheckConfig         *DuploEcsServiceLbHealthCheckConfig `json:"HealthCheckConfig,omitempty"`
+	LbIndex                   int                                 `json:"LbIndex"`
 }
 
 type DuploEcsServiceLbHealthCheckConfig struct {
@@ -43,6 +45,8 @@ type DuploEcsService struct {
 	IsTargetGroupOnly             bool                       `json:"IsTargetGroupOnly,omitempty"`
 	DNSPrfx                       string                     `json:"DnsPrfx,omitempty"`
 	LBConfigurations              *[]DuploEcsServiceLbConfig `json:"LBConfigurations,omitempty"`
+	UseIndexForLb                 bool                       `json:"UseIndexForLb"`
+	Index                         int                        `json:"Index"`
 }
 
 /*************************************************
@@ -186,34 +190,62 @@ func (c *Client) EcsServiceGetV2(id string) (*DuploEcsService, ClientError) {
 }
 
 // EcsServiceGetTargetGroups retrieves an ECS service via the Duplo API.
-func (c *Client) EcsServiceRequiredTargetGroupsCreated(tenantID string, ecsResourceName string, lbcs *[]DuploEcsServiceLbConfig) (bool, ClientError, []string) {
+func (c *Client) EcsServiceRequiredTargetGroupsCreated(tenantID string, ecs *DuploEcsService) (bool, ClientError, []string) {
 	log.Printf("[TRACE] EcsServiceRequiredTargetGroupsCreated ******** start")
 	targetGrpCount := 0
-	// Prepare taget group names
-	tagetGrpNames := []string{}
-	for _, lbc := range *lbcs {
-		targetGrpCount = lbc.TgCount + targetGrpCount
-		tagetGrpNames = append(tagetGrpNames, strings.Join([]string{ecsResourceName, lbc.Protocol + lbc.Port}, "-"))
+	tenant, err := c.TenantGet(tenantID)
+	if err != nil {
+		return false, err, nil
 	}
+	tenantFeatures, err := c.TenantFeaturesGet(tenantID)
+	if err != nil {
+		return false, err, nil
+	}
+	// Prepare taget group names
+	isShortTargetGrpNames := tenantFeatures.UseLbIndex || ecs.UseIndexForLb
+	tagetGrpNames := []string{}
+	for _, lbc := range *ecs.LBConfigurations {
+		targetGrpCount = lbc.TgCount + targetGrpCount
+		for tg := 1; tg <= lbc.TgCount; tg++ {
+			if isShortTargetGrpNames {
+				if tg > 1 {
+					tagetGrpNames = append(tagetGrpNames, strings.Join([]string{"duplo2", tenant.AccountName, strconv.Itoa(ecs.Index), strconv.Itoa(lbc.LbIndex), strconv.Itoa(tg)}, "-"))
+				} else {
+					tagetGrpNames = append(tagetGrpNames, strings.Join([]string{"duplo2", tenant.AccountName, strconv.Itoa(ecs.Index), strconv.Itoa(lbc.LbIndex)}, "-"))
+				}
+			} else {
+				if tg > 1 {
+					tagetGrpNames = append(tagetGrpNames, strings.Join([]string{"duplo2", tenant.AccountName, ecs.Name, lbc.Protocol + lbc.Port, strconv.Itoa(tg)}, "-"))
+				} else {
+					tagetGrpNames = append(tagetGrpNames, strings.Join([]string{"duplo2", tenant.AccountName, ecs.Name, lbc.Protocol + lbc.Port}, "-"))
+				}
+			}
+		}
+	}
+	log.Printf("[TRACE] Total %v target groups to be created for ECS service %s.", targetGrpCount, ecs.Name)
+	log.Printf("[TRACE] Target groups names : %s.", tagetGrpNames)
+
 	targetGroupArns := make([]string, 0, targetGrpCount)
-	log.Printf("[TRACE] Total %v target groups to be created for ESC service %s.", targetGrpCount, ecsResourceName)
 	targetGroups, err := c.TenantListApplicationLbTargetGroups(tenantID)
 
 	if err != nil {
-		return false, err, targetGroupArns
+		return false, err, nil
 	}
+	// Check if all required target groups are created.
 	counter := 0
 	if targetGroups != nil && tagetGrpNames != nil {
 		for _, tg := range *targetGroups {
 			for _, t := range tagetGrpNames {
-				if strings.Contains(strings.ToLower(tg.TargetGroupName), strings.ToLower(t)) {
+				if strings.EqualFold(tg.TargetGroupName, t) {
 					counter++
 					targetGroupArns = append(targetGroupArns, tg.TargetGroupArn)
 				}
 			}
 		}
+		log.Printf("[TRACE] Currently %v target groups are created for ECS service %s.", counter, ecs.Name)
 		if counter == targetGrpCount {
-			log.Printf("[TRACE] Total %v target groups are created for ESC service %s.", targetGrpCount, ecsResourceName)
+			log.Printf("[TRACE] Total %v target groups are created for ECS service %s.", targetGrpCount, ecs.Name)
+			log.Printf("[TRACE] EcsServiceRequiredTargetGroupsCreated ******** end")
 			return true, nil, targetGroupArns
 		}
 	}

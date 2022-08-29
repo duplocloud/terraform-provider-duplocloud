@@ -106,6 +106,13 @@ type DuploTenantExtConnSecurityGroupRule struct {
 	ToPort   int                                      `json:"ToPort,omitempty"`
 }
 
+type DuploTenantFeatures struct {
+	Cloud               int    `json:"Cloud"`
+	Region              string `json:"Region"`
+	IsKubernetesEnabled bool   `json:"IsKubernetesEnabled"`
+	UseLbIndex          bool   `json:"UseLbIndex"`
+}
+
 // TenantGet retrieves a tenant via the Duplo API.
 func (c *Client) TenantGet(tenantID string) (*DuploTenant, ClientError) {
 	apiName := fmt.Sprintf("TenantGet(%s)", tenantID)
@@ -449,4 +456,13 @@ func (c *Client) TenantUpdateDockerCredentials(tenantId string, data map[string]
 		fmt.Sprintf("subscriptions/%s/UpdateDockerCredentials", tenantId),
 		data,
 		nil)
+}
+
+func (c *Client) TenantFeaturesGet(tenantId string) (*DuploTenantFeatures, ClientError) {
+	rp := DuploTenantFeatures{}
+	err := c.getAPI(fmt.Sprintf("TenantFeaturesGet(%s)", tenantId), fmt.Sprintf("v3/features/tenant/%s", tenantId), &rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
 }
