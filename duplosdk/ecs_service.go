@@ -202,6 +202,7 @@ func (c *Client) EcsServiceRequiredTargetGroupsCreated(tenantID string, ecs *Dup
 		return false, err, nil
 	}
 	// Prepare taget group names
+	log.Printf("[TRACE] Tenant(UseLbIndex) : %v, ECS(UseIndexForLb) : %v.", tenantFeatures.UseLbIndex, ecs.UseIndexForLb)
 	isShortTargetGrpNames := tenantFeatures.UseLbIndex || ecs.UseIndexForLb
 	tagetGrpNames := []string{}
 	for _, lbc := range *ecs.LBConfigurations {
