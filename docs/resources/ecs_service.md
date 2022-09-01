@@ -53,6 +53,7 @@ resource "duplocloud_ecs_service" "myservice" {
 
 - **dns_prfx** (String) The DNS prefix to assign to this service's load balancer.
 - **health_check_grace_period_seconds** (Number) Defaults to `0`.
+- **index** (Number) The index of the ecs service.
 - **is_target_group_only** (Boolean) Defaults to `false`.
 - **load_balancer** (Block List) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedblock--load_balancer))
 - **old_task_definition_buffer_size** (Number) The number of older task definitions to retain in AWS. Defaults to `10`.
@@ -94,6 +95,7 @@ Optional:
 
 Read-Only:
 
+- **index** (Number) The load balancer Index.
 - **load_balancer_arn** (String) The load balancer ARN.
 - **load_balancer_name** (String) The load balancer name.
 - **replication_controller_name** (String)

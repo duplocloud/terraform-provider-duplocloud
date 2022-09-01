@@ -25,6 +25,7 @@ description: |-
 - **dns_prfx** (String) The DNS prefix to assign to this service's load balancer.
 - **health_check_grace_period_seconds** (Number)
 - **id** (String) The ID of this resource.
+- **index** (Number) The index of the ecs service.
 - **is_target_group_only** (Boolean)
 - **load_balancer** (List of Object) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedatt--load_balancer))
 - **old_task_definition_buffer_size** (Number) The number of older task definitions to retain in AWS.
@@ -46,6 +47,7 @@ Read-Only:
 - **external_port** (Number)
 - **health_check_config** (List of Object) (see [below for nested schema](#nestedobjatt--load_balancer--health_check_config))
 - **health_check_url** (String)
+- **index** (Number)
 - **is_internal** (Boolean)
 - **lb_type** (Number)
 - **load_balancer_arn** (String)
