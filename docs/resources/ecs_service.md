@@ -62,6 +62,7 @@ resource "duplocloud_ecs_service" "myservice" {
 ### Read-Only
 
 - **id** (String) The ID of this resource.
+- **index** (Number) The index of the ecs service.
 - **target_group_arns** (Set of String)
 
 <a id="nestedblock--load_balancer"></a>
@@ -94,6 +95,7 @@ Optional:
 
 Read-Only:
 
+- **index** (Number) The load balancer Index.
 - **load_balancer_arn** (String) The load balancer ARN.
 - **load_balancer_name** (String) The load balancer name.
 - **replication_controller_name** (String)

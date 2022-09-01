@@ -61,6 +61,11 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			Computed: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
+		"index": {
+			Description: "The index of the ecs service.",
+			Type:        schema.TypeInt,
+			Computed:    true,
+		},
 		"dns_prfx": {
 			Description: "The DNS prefix to assign to this service's load balancer.",
 			Type:        schema.TypeString,
@@ -164,6 +169,11 @@ func ecsServiceSchema() map[string]*schema.Schema {
 					"load_balancer_arn": {
 						Description: "The load balancer ARN.",
 						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"index": {
+						Description: "The load balancer Index.",
+						Type:        schema.TypeInt,
 						Computed:    true,
 					},
 					"enable_access_logs": {
@@ -369,6 +379,7 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 	d.Set("old_task_definition_buffer_size", duplo.OldTaskDefinitionBufferSize)
 	d.Set("is_target_group_only", duplo.IsTargetGroupOnly)
 	d.Set("dns_prfx", duplo.DNSPrfx)
+	d.Set("index", duplo.Index)
 
 	loadBalancers, err := flattenDuploEcsServiceLbs(duplo, c)
 	if err != nil {
@@ -436,6 +447,7 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 		jo["is_internal"] = lbc.IsInternal
 		jo["health_check_url"] = lbc.HealthCheckURL
 		jo["certificate_arn"] = lbc.CertificateArn
+		jo["index"] = lbc.LbIndex
 		hcConfig := ecsLoadBalancersHealthCheckConfigToState(lbc.HealthCheckConfig)
 		if hcConfig != nil {
 			jo["health_check_config"] = []interface{}{hcConfig}
