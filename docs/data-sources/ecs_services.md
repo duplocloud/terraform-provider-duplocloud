@@ -31,6 +31,7 @@ Read-Only:
 
 - **dns_prfx** (String)
 - **health_check_grace_period_seconds** (Number)
+- **index** (Number)
 - **is_target_group_only** (Boolean)
 - **load_balancer** (List of Object) (see [below for nested schema](#nestedobjatt--services--load_balancer))
 - **name** (String)
@@ -53,6 +54,7 @@ Read-Only:
 - **external_port** (Number)
 - **health_check_config** (List of Object) (see [below for nested schema](#nestedobjatt--services--load_balancer--health_check_config))
 - **health_check_url** (String)
+- **index** (Number)
 - **is_internal** (Boolean)
 - **lb_type** (Number)
 - **load_balancer_arn** (String)
