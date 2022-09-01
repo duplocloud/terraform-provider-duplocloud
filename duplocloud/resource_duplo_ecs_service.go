@@ -312,10 +312,6 @@ func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.Resour
 		if err != nil {
 			return diag.Errorf("Error applying ECS load balancer settings '%s': %s", d.Id(), err)
 		}
-		ecsResource, err := c.GetResourceName("duplo2", tenantID, duplo.Name, false)
-		if err != nil {
-			return diag.FromErr(err)
-		}
 
 		// Workaround for broken v3 backend - reread the LB configs from duplo
 		if rpObject.Name == "" {
@@ -329,7 +325,7 @@ func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.Resour
 		}
 
 		if d.Get("wait_until_targets_ready") == nil || d.Get("wait_until_targets_ready").(bool) {
-			tgErr := ecsServiceWaitUntilTargetGroupsReady(d, ctx, c, tenantID, ecsResource, rpObject.LBConfigurations, d.Timeout("create"))
+			tgErr := ecsServiceWaitUntilTargetGroupsReady(d, ctx, c, tenantID, rpObject, d.Timeout("create"))
 			if tgErr != nil {
 				return diag.FromErr(tgErr)
 			}
@@ -629,16 +625,16 @@ func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 	return nil
 }
 
-func ecsServiceWaitUntilTargetGroupsReady(d *schema.ResourceData, ctx context.Context, c *duplosdk.Client, tenantId string, ecsResourceName string, lbcs *[]duplosdk.DuploEcsServiceLbConfig, timeout time.Duration) error {
+func ecsServiceWaitUntilTargetGroupsReady(d *schema.ResourceData, ctx context.Context, c *duplosdk.Client, tenantId string, ecs *duplosdk.DuploEcsService, timeout time.Duration) error {
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			status := "ready"
-			if lbcs == nil || len(*lbcs) == 0 {
+			if ecs.LBConfigurations == nil || len(*ecs.LBConfigurations) == 0 {
 				return nil, status, nil
 			}
-			rp, err, targetGroupArns := c.EcsServiceRequiredTargetGroupsCreated(tenantId, ecsResourceName, lbcs)
+			rp, err, targetGroupArns := c.EcsServiceRequiredTargetGroupsCreated(tenantId, ecs)
 			if err == nil && rp {
 				status = "ready"
 				d.Set("target_group_arns", targetGroupArns)
@@ -651,7 +647,7 @@ func ecsServiceWaitUntilTargetGroupsReady(d *schema.ResourceData, ctx context.Co
 		PollInterval: 30 * time.Second,
 		Timeout:      timeout,
 	}
-	log.Printf("[DEBUG] ecsServiceWaitUntilTargetGroupsReady(%s, %s)", tenantId, ecsResourceName)
+	log.Printf("[DEBUG] ecsServiceWaitUntilTargetGroupsReady(%s, %s)", tenantId, ecs.Name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
