@@ -309,12 +309,13 @@ type DuploKafkaConfigurationInfo struct {
 
 // DuploKafkaClusterRequest represents a request to create a Kafka Cluster
 type DuploKafkaClusterRequest struct {
-	Name              string                         `json:"ClusterName,omitempty"`
-	Arn               string                         `json:"ClusterArn,omitempty"`
-	KafkaVersion      string                         `json:"KafkaVersion,omitempty"`
-	BrokerNodeGroup   *DuploKafkaBrokerNodeGroupInfo `json:"BrokerNodeGroupInfo,omitempty"`
-	ConfigurationInfo *DuploKafkaConfigurationInfo   `json:"ConfigurationInfo,omitempty"`
-	State             string                         `json:"State,omitempty"`
+	Name              string                           `json:"ClusterName,omitempty"`
+	Arn               string                           `json:"ClusterArn,omitempty"`
+	KafkaVersion      string                           `json:"KafkaVersion,omitempty"`
+	BrokerNodeGroup   *DuploKafkaBrokerNodeGroupInfo   `json:"BrokerNodeGroupInfo,omitempty"`
+	ConfigurationInfo *DuploKafkaConfigurationInfo     `json:"ConfigurationInfo,omitempty"`
+	State             string                           `json:"State,omitempty"`
+	EncryptionInfo    *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
 }
 
 // DuploKafkaCluster represents an AWS kafka cluster resource for a Duplo tenant
@@ -344,6 +345,7 @@ type DuploKafkaClusterInfo struct {
 	Tags                      map[string]interface{}           `json:"Tags,omitempty"`
 	ZookeeperConnectString    string                           `json:"ZookeeperConnectString,omitempty"`
 	ZookeeperConnectStringTls string                           `json:"ZookeeperConnectStringTls,omitempty"`
+	EncryptionInfo            *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
 }
 
 // DuploKafkaBootstrapBrokers represents a non-cached view of an AWS kafka cluster's bootstrap brokers for a Duplo tenant

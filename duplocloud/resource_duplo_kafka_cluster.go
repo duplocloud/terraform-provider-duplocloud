@@ -74,6 +74,17 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"encryption_in_transit": {
+			Description: "Encryption setting for data in transit between clients and brokers. Valid values: `TLS`, `TLS_PLAINTEXT`, and `PLAINTEXT`",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"TLS",
+				"TLS_PLAINTEXT",
+				"PLAINTEXT",
+			}, false),
+		},
 		"az_distribution": {
 			Description: "The availability zone distribution used by the cluster.",
 			Type:        schema.TypeString,
@@ -211,6 +222,9 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 			d.Set("configuration_arn", info.CurrentSoftware.ConfigurationArn)
 			d.Set("configuration_revision", info.CurrentSoftware.ConfigurationRevision)
 		}
+		if info.EncryptionInfo != nil && info.EncryptionInfo.InTransit != nil && info.EncryptionInfo.InTransit.ClientBroker != nil {
+			d.Set("encryption_in_transit", info.EncryptionInfo.InTransit.ClientBroker.Value)
+		}
 	}
 	if bootstrap != nil {
 		d.Set("plaintext_bootstrap_broker_string", bootstrap.BootstrapBrokerString)
@@ -246,6 +260,17 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 		rq.ConfigurationInfo = &duplosdk.DuploKafkaConfigurationInfo{
 			Arn:      v.(string),
 			Revision: int64(d.Get("configuration_revision").(int)),
+		}
+	}
+
+	// Apply Encryption settings.
+	if v, ok := d.GetOk("encryption_in_transit"); ok {
+		rq.EncryptionInfo = &duplosdk.DuploKafkaClusterEncryptionInfo{
+			InTransit: &duplosdk.DuploKafkaClusterEncryptionInTransit{
+				ClientBroker: &duplosdk.DuploStringValue{
+					Value: v.(string),
+				},
+			},
 		}
 	}
 
