@@ -76,7 +76,7 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 		},
 		"encryption_in_transit": {
 			Description: "Encryption setting for data in transit between clients and brokers. Valid values: `TLS`, `TLS_PLAINTEXT`, and `PLAINTEXT`",
-			Type:        schema.TypeInt,
+			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice([]string{
