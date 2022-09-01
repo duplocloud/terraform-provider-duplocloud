@@ -64,7 +64,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 		"index": {
 			Description: "The index of the ecs service.",
 			Type:        schema.TypeInt,
-			Optional:    true,
+			Computed:    true,
 		},
 		"dns_prfx": {
 			Description: "The DNS prefix to assign to this service's load balancer.",
