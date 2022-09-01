@@ -43,6 +43,7 @@ See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguid
 
 - **configuration_arn** (String) An ARN of a Kafka configuration to apply to the cluster.
 - **configuration_revision** (Number) An revision of a Kafka configuration to apply to the cluster.
+- **encryption_in_transit** (Number) Encryption setting for data in transit between clients and brokers. Valid values: `TLS`, `TLS_PLAINTEXT`, and `PLAINTEXT`
 - **subnets** (List of String) The list of subnets that the cluster will be launched in.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
