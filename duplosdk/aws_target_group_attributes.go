@@ -38,7 +38,14 @@ func (c *Client) DuploAwsTargetGroupAttributesGet(tenantID string, rq DuploTarge
 		&rq,
 		&rp,
 	)
-	return &rp, err
+	filtered := []DuploKeyStringValue{}
+
+	for _, v := range rp {
+		if len(v.Key) > 0 && len(v.Value) > 0 {
+			filtered = append(filtered, v)
+		}
+	}
+	return &filtered, err
 }
 
 func (c *Client) DuploAwsTargetGroupAttributesExists(tenantID string, rq DuploTargetGroupAttributesGetReq) (bool, ClientError) {
