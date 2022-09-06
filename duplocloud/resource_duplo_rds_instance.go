@@ -104,11 +104,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				"   - `11` : Aurora-Serverless-MySql\n" +
 				"   - `12` : Aurora-Serverless-PostgreSql\n" +
 				"   - `13` : DocumentDB\n" +
-				"   - `14` : MariaDB\n",
+				"   - `14` : MariaDB\n" +
+				"   - `16` : Aurora\n",
 			Type:         schema.TypeInt,
 			Required:     true,
 			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14}),
+			ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 16}),
 		},
 		"engine_version": {
 			Description: "The database engine version to use the for the RDS instance.\n" +
@@ -571,7 +572,7 @@ func validateRdsInstance(duplo *duplosdk.DuploRdsInstance) (errors []error) {
 
 func isAuroraDB(d *schema.ResourceData) bool {
 	return d.Get("engine").(int) == 8 || d.Get("engine").(int) == 9 ||
-		d.Get("engine").(int) == 11 || d.Get("engine").(int) == 12
+		d.Get("engine").(int) == 11 || d.Get("engine").(int) == 12 || d.Get("engine").(int) == 16
 }
 
 func isDeleteProtectionSupported(d *schema.ResourceData) bool {
