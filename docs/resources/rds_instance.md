@@ -59,6 +59,7 @@ Should be one of:
    - `12` : Aurora-Serverless-PostgreSql
    - `13` : DocumentDB
    - `14` : MariaDB
+   - `16` : Aurora
 - **name** (String) The short name of the RDS instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
 - **size** (String) The instance type of the RDS instance.
 See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).
