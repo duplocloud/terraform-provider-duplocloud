@@ -33,20 +33,27 @@ type DuploEcsServiceLbHealthCheckConfig struct {
 }
 
 // DuploEcsService is a Duplo SDK object that represents an ECS service
+type DuploEcsServiceCapacityProviderStrategy struct {
+	CapacityProvider string `json:"CapacityProvider,omitempty"`
+	Weight           int    `json:"Weight"`
+	Base             int    `json:"Base"`
+}
+
 type DuploEcsService struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-"`
 
-	Name                          string                     `json:"Name"`
-	TaskDefinition                string                     `json:"TaskDefinition,omitempty"`
-	Replicas                      int                        `json:"Replicas,omitempty"`
-	HealthCheckGracePeriodSeconds int                        `json:"HealthCheckGracePeriodSeconds,omitempty"`
-	OldTaskDefinitionBufferSize   int                        `json:"OldTaskDefinitionBufferSize,omitempty"`
-	IsTargetGroupOnly             bool                       `json:"IsTargetGroupOnly,omitempty"`
-	DNSPrfx                       string                     `json:"DnsPrfx,omitempty"`
-	LBConfigurations              *[]DuploEcsServiceLbConfig `json:"LBConfigurations,omitempty"`
-	UseIndexForLb                 bool                       `json:"UseIndexForLb"`
-	Index                         int                        `json:"Index"`
+	Name                          string                                     `json:"Name"`
+	TaskDefinition                string                                     `json:"TaskDefinition,omitempty"`
+	Replicas                      int                                        `json:"Replicas,omitempty"`
+	HealthCheckGracePeriodSeconds int                                        `json:"HealthCheckGracePeriodSeconds,omitempty"`
+	OldTaskDefinitionBufferSize   int                                        `json:"OldTaskDefinitionBufferSize,omitempty"`
+	IsTargetGroupOnly             bool                                       `json:"IsTargetGroupOnly,omitempty"`
+	DNSPrfx                       string                                     `json:"DnsPrfx,omitempty"`
+	LBConfigurations              *[]DuploEcsServiceLbConfig                 `json:"LBConfigurations,omitempty"`
+	UseIndexForLb                 bool                                       `json:"UseIndexForLb"`
+	Index                         int                                        `json:"Index"`
+	CapacityProviderStrategy      *[]DuploEcsServiceCapacityProviderStrategy `json:"CapacityProviderStrategy,omitempty"`
 }
 
 /*************************************************
