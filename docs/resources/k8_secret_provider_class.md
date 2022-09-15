@@ -14,8 +14,8 @@ description: |-
 
 ```terraform
 locals {
-  tenant_id = "72916492-b69f-492e-8f64-957ad211aca1"
-  cert_arn  = "arn:aws:acm:us-west-2:708951311304:certificate/829b32dc-d106-4229-a96d-123456789"
+  tenant_id = "3a0b2ea5-7403-4765-ad6e-8771ca8fa0fd"
+  cert_arn  = "arn:aws:acm:us-west-2:957282632678:certificate/2e882320-5aa5-4b8d-881f-998050178205"
 }
 
 resource "duplocloud_k8_secret_provider_class" "spc" {
@@ -49,30 +49,27 @@ resource "duplocloud_k8_secret_provider_class" "spc" {
   }
 
   parameters = yamlencode(
-    {
-      "objects" : [
-        {
-          "objectName" : "duploservices-dev02-secret",
-          "objectType" : "secretsmanager",
-          "jmesPath" : [
-            {
-              "path" : "ADP_CONSUMER_APPLICATION_ID",
-              "objectAlias" : "ADP_CONSUMER_APPLICATION_ID"
-            },
-            {
-              "path" : "ADP_CONSUMER_KEY",
-              "objectAlias" : "ADP_CONSUMER_KEY"
-            },
-            {
-              "path" : "ADP_CONSUMER_SECRET",
-              "objectAlias" : "ADP_CONSUMER_SECRET"
-            }
-          ]
-        }
-      ]
-    }
+    [
+      {
+        "objectName" : "duploservices-dev02-secret",
+        "objectType" : "secretsmanager",
+        "jmesPath" : [
+          {
+            "path" : "ADP_CONSUMER_APPLICATION_ID",
+            "objectAlias" : "ADP_CONSUMER_APPLICATION_ID"
+          },
+          {
+            "path" : "ADP_CONSUMER_KEY",
+            "objectAlias" : "ADP_CONSUMER_KEY"
+          },
+          {
+            "path" : "ADP_CONSUMER_SECRET",
+            "objectAlias" : "ADP_CONSUMER_SECRET"
+          }
+        ]
+      }
+    ]
   )
-
 }
 ```
 
