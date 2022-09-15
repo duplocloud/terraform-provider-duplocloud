@@ -1,6 +1,5 @@
 locals {
   tenant_id = "3a0b2ea5-7403-4765-ad6e-8771ca8fa0fd"
-  cert_arn  = "arn:aws:acm:us-west-2:957282632678:certificate/2e882320-5aa5-4b8d-881f-998050178205"
 }
 
 resource "duplocloud_k8_secret_provider_class" "spc" {
