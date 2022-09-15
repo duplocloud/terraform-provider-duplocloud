@@ -29,6 +29,7 @@ description: |-
 
 Read-Only:
 
+- **capacity_provider_strategy** (List of Object) (see [below for nested schema](#nestedobjatt--services--capacity_provider_strategy))
 - **dns_prfx** (String)
 - **health_check_grace_period_seconds** (Number)
 - **index** (Number)
@@ -40,6 +41,16 @@ Read-Only:
 - **target_group_arns** (Set of String)
 - **task_definition** (String)
 - **tenant_id** (String)
+
+<a id="nestedobjatt--services--capacity_provider_strategy"></a>
+### Nested Schema for `services.capacity_provider_strategy`
+
+Read-Only:
+
+- **base** (Number)
+- **capacity_provider** (String)
+- **weight** (Number)
+
 
 <a id="nestedobjatt--services--load_balancer"></a>
 ### Nested Schema for `services.load_balancer`
