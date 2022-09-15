@@ -237,6 +237,36 @@ func ecsServiceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"capacity_provider_strategy": {
+			Type:     schema.TypeList,
+			Optional: true,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"base": {
+						Description: "The number of tasks, at a minimum, to run on the specified capacity provider.",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+					},
+					"weight": {
+						Description: "The relative percentage of the total number of launched tasks that should use the specified capacity provider.",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+					},
+					"capacity_provider": {
+						Description: "Name of the capacity provider.",
+						Type:        schema.TypeString,
+						Required:    true,
+						ValidateFunc: validation.StringInSlice([]string{
+							"FARGATE",
+							"FARGATE_SPOT",
+						}, false),
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -386,7 +416,9 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 		return diag.FromErr(err)
 	}
 	d.Set("load_balancer", loadBalancers)
-
+	if len(*duplo.CapacityProviderStrategy) > 0 {
+		d.Set("capacity_provider_strategy", flattenCapacityProviderStrategies(duplo.CapacityProviderStrategy))
+	}
 	return nil
 }
 
@@ -422,6 +454,7 @@ func ecsServiceFromState(d *schema.ResourceData) *duplosdk.DuploEcsService {
 
 	// Next, convert things into structured data.
 	duploObject.LBConfigurations = ecsLoadBalancersFromState(d)
+	duploObject.CapacityProviderStrategy = expandCapacityProviderStrategies(d.Get("capacity_provider_strategy").([]interface{}))
 
 	return &duploObject
 }
@@ -662,4 +695,36 @@ func ecsServiceWaitUntilTargetGroupsReady(d *schema.ResourceData, ctx context.Co
 	log.Printf("[DEBUG] ecsServiceWaitUntilTargetGroupsReady(%s, %s)", tenantId, ecs.Name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func flattenCapacityProviderStrategies(duplo *[]duplosdk.DuploEcsServiceCapacityProviderStrategy) []map[string]interface{} {
+	s := []map[string]interface{}{}
+	for _, v := range *duplo {
+		s = append(s, flattenCapacityProviderStrategy(v))
+	}
+	return s
+}
+
+func flattenCapacityProviderStrategy(duplo duplosdk.DuploEcsServiceCapacityProviderStrategy) map[string]interface{} {
+	m := make(map[string]interface{})
+	m["base"] = duplo.Base
+	m["weight"] = duplo.Weight
+	m["capacity_provider"] = duplo.CapacityProvider
+	return m
+}
+
+func expandCapacityProviderStrategies(lst []interface{}) *[]duplosdk.DuploEcsServiceCapacityProviderStrategy {
+	items := make([]duplosdk.DuploEcsServiceCapacityProviderStrategy, 0, len(lst))
+	for _, v := range lst {
+		items = append(items, expandCapacityProviderStrategy(v.(map[string]interface{})))
+	}
+	return &items
+}
+
+func expandCapacityProviderStrategy(m map[string]interface{}) duplosdk.DuploEcsServiceCapacityProviderStrategy {
+	return duplosdk.DuploEcsServiceCapacityProviderStrategy{
+		Base:             m["base"].(int),
+		Weight:           m["weight"].(int),
+		CapacityProvider: m["capacity_provider"].(string),
+	}
 }

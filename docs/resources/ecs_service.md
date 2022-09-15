@@ -51,6 +51,7 @@ resource "duplocloud_ecs_service" "myservice" {
 
 ### Optional
 
+- **capacity_provider_strategy** (Block List) (see [below for nested schema](#nestedblock--capacity_provider_strategy))
 - **dns_prfx** (String) The DNS prefix to assign to this service's load balancer.
 - **health_check_grace_period_seconds** (Number) Defaults to `0`.
 - **is_target_group_only** (Boolean) Defaults to `false`.
@@ -64,6 +65,19 @@ resource "duplocloud_ecs_service" "myservice" {
 - **id** (String) The ID of this resource.
 - **index** (Number) The index of the ecs service.
 - **target_group_arns** (Set of String)
+
+<a id="nestedblock--capacity_provider_strategy"></a>
+### Nested Schema for `capacity_provider_strategy`
+
+Required:
+
+- **capacity_provider** (String) Name of the capacity provider.
+
+Optional:
+
+- **base** (Number) The number of tasks, at a minimum, to run on the specified capacity provider.
+- **weight** (Number) The relative percentage of the total number of launched tasks that should use the specified capacity provider.
+
 
 <a id="nestedblock--load_balancer"></a>
 ### Nested Schema for `load_balancer`

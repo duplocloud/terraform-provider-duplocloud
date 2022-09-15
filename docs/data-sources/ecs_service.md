@@ -22,6 +22,7 @@ description: |-
 
 ### Read-Only
 
+- **capacity_provider_strategy** (List of Object) (see [below for nested schema](#nestedatt--capacity_provider_strategy))
 - **dns_prfx** (String) The DNS prefix to assign to this service's load balancer.
 - **health_check_grace_period_seconds** (Number)
 - **id** (String) The ID of this resource.
@@ -33,6 +34,16 @@ description: |-
 - **target_group_arns** (Set of String)
 - **task_definition** (String) The ARN of the task definition to use.
 - **wait_until_targets_ready** (Boolean) Whether or not to wait until all target groups are created for ecs service, after creation.
+
+<a id="nestedatt--capacity_provider_strategy"></a>
+### Nested Schema for `capacity_provider_strategy`
+
+Read-Only:
+
+- **base** (Number)
+- **capacity_provider** (String)
+- **weight** (Number)
+
 
 <a id="nestedatt--load_balancer"></a>
 ### Nested Schema for `load_balancer`
