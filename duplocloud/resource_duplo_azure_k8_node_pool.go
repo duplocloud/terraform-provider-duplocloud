@@ -64,7 +64,7 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 		},
 		"allocation_tag": {
 			Description: "Allocation tags for this node pool.",
-			Type:        schema.TypeBool,
+			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -196,20 +196,25 @@ func resourceAgentK8NodePoolDelete(ctx context.Context, d *schema.ResourceData, 
 }
 
 func expandAgentK8NodePool(d *schema.ResourceData) *duplosdk.DuploAzureK8NodePoolRequest {
-	return &duplosdk.DuploAzureK8NodePoolRequest{
+	nodePool := &duplosdk.DuploAzureK8NodePoolRequest{
 		MinSize:           d.Get("min_capacity").(int),
 		MaxSize:           d.Get("max_capacity").(int),
 		DesiredCapacity:   d.Get("desired_capacity").(int),
 		EnableAutoScaling: d.Get("enable_auto_scaling").(bool),
 		FriendlyName:      strconv.Itoa(d.Get("identifier").(int)),
 		Capacity:          d.Get("vm_size").(string),
-		CustomDataTags: &[]duplosdk.DuploKeyStringValue{
+	}
+
+	if v, ok := d.GetOk("allocation_tag"); ok {
+		nodePool.CustomDataTags = &[]duplosdk.DuploKeyStringValue{
 			{
 				Key:   "AllocationTags",
-				Value: d.Get("allocation_tag").(string),
+				Value: v.(string),
 			},
-		},
+		}
 	}
+
+	return nodePool
 }
 
 func parseAgentK8NodePoolIdParts(id string) (tenantID, name string, err error) {

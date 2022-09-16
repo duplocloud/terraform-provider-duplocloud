@@ -49,7 +49,7 @@ type DuploAzureK8NodePool struct {
 func (c *Client) AzureK8NodePoolCreate(tenantID string, rq *DuploAzureK8NodePoolRequest) (*string, ClientError) {
 	resp := ""
 	err := c.postAPI(
-		fmt.Sprintf("K8NodePoolCreate(%s)", tenantID),
+		fmt.Sprintf("AzureK8NodePoolCreate(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/UpdateAzureAgentPool", tenantID),
 		&rq,
 		&resp,
@@ -76,7 +76,7 @@ func (c *Client) AzureK8NodePoolGet(tenantID string, name string) (*DuploAzureK8
 func (c *Client) AzureK8NodePoolList(tenantID string) (*[]DuploAzureK8NodePool, ClientError) {
 	rp := []DuploAzureK8NodePool{}
 	err := c.getAPI(
-		fmt.Sprintf("K8NodePoolList(%s)", tenantID),
+		fmt.Sprintf("AzureK8NodePoolList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetAzureAgentPoolDetails", tenantID),
 		&rp,
 	)
@@ -100,13 +100,14 @@ func (c *Client) AzureK8NodePoolExists(tenantID, name string) (bool, ClientError
 }
 
 func (c *Client) AzureK8NodePoolDelete(tenantID string, name string) ClientError {
+	resp := ""
 	return c.postAPI(
-		fmt.Sprintf("K8NodePoolDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("AzureK8NodePoolDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("subscriptions/%s/UpdateAzureAgentPool", tenantID),
 		&DuploAzureK8NodePoolDeleteRequest{
 			FriendlyName: name,
 			State:        "delete",
 		},
-		nil,
+		&resp,
 	)
 }
