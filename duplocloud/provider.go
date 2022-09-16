@@ -76,6 +76,7 @@ func Provider() *schema.Provider {
 			"duplocloud_k8_config_map":                   resourceK8ConfigMap(),
 			"duplocloud_k8_secret":                       resourceK8Secret(),
 			"duplocloud_k8_ingress":                      resourceK8Ingress(),
+			"duplocloud_k8_secret_provider_class":        resourceK8SecretProviderClass(),
 			"duplocloud_infrastructure":                  resourceInfrastructure(),
 			"duplocloud_infrastructure_setting":          resourceInfrastructureSetting(),
 			"duplocloud_infrastructure_subnet":           resourceInfrastructureSubnet(),
