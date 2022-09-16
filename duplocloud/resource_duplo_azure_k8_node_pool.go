@@ -61,11 +61,6 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			Description: "The SKU which should be used for the Virtual Machines used in this Node Pool. Changing this forces a new resource to be created.",
 			Type:        schema.TypeString,
 			Required:    true,
-			ValidateFunc: validation.StringInSlice([]string{
-				"Basic",
-				"Standard",
-				"Premium",
-			}, true),
 		},
 		"allocation_tag": {
 			Description: "Allocation tags for this node pool.",
