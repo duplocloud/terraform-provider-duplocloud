@@ -267,6 +267,8 @@ func resourceAwsASGDelete(ctx context.Context, d *schema.ResourceData, m interfa
 			}
 			return nil, nil
 		})
+
+		time.Sleep(time.Duration(180) * time.Second)
 	}
 
 	log.Printf("[TRACE] resourceAwsASGDelete(%s): end", id)
