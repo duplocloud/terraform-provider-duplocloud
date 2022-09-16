@@ -122,6 +122,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_vm_feature":                resourceAzureVmFeature(),
 			"duplocloud_azure_vault_backup_policy":       resourceAzureVaultBackupPolicy(),
 			"duplocloud_azure_network_security_rule":     resourceAzureNetworkSgRule(),
+			"duplocloud_azure_k8_node_pool":              resourceAzureK8NodePool(),
 			"duplocloud_other_agents":                    resourceOtherAgents(),
 			"duplocloud_byoh":                            resourceByoh(),
 			"duplocloud_aws_mwaa_environment":            resourceMwaaAirflow(),
