@@ -102,7 +102,7 @@ func resourceAwsApiGatewayIntegrationCreate(ctx context.Context, d *schema.Resou
 		return diag.Errorf("Error creating tenant %s aws api gateway integration '%s': %s", tenantID, name, err)
 	}
 
-	fullname, err := c.GetDuploServicesNameWithAws(tenantID, name)
+	fullname, err := c.GetDuploServicesName(tenantID, name)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s aws api gateway integration '%s': %s", tenantID, name, err)
 	}
