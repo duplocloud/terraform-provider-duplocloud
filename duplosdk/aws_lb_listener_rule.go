@@ -124,7 +124,7 @@ func (c *Client) DuploAwsLbListenerRuleUpdate(tenantID, listenerArn string, rq *
 	rp := DuploAwsLbListenerRule{}
 	err := c.putAPI(
 		fmt.Sprintf("DuploAwsLbListenerRuleUpdate(%s, %s)", tenantID, listenerArn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/lbListenerRule/%s", tenantID, EncodePathParam(listenerArn)),
+		fmt.Sprintf("v3/subscriptions/%s/aws/lbListenerRule/%s", tenantID, QueryEscape(listenerArn)),
 		&rq,
 		&rp,
 	)
@@ -133,8 +133,8 @@ func (c *Client) DuploAwsLbListenerRuleUpdate(tenantID, listenerArn string, rq *
 func (c *Client) DuploAwsLbListenerRuleList(tenantID, listenerArn string) (*[]DuploAwsLbListenerRule, ClientError) {
 	rp := []DuploAwsLbListenerRule{}
 	err := c.getAPI(
-		fmt.Sprintf("DuploAwsLbListenerRuleGet(%s, %s)", tenantID, listenerArn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/lbListenerRule/%s", tenantID, EncodePathParam(listenerArn)),
+		fmt.Sprintf("DuploAwsLbListenerRuleList(%s, %s)", tenantID, listenerArn),
+		fmt.Sprintf("v3/subscriptions/%s/aws/lbListenerRule/%s", tenantID, QueryEscape(listenerArn)),
 		&rp,
 	)
 	return &rp, err
@@ -160,7 +160,7 @@ func (c *Client) DuploAwsLbListenerRuleDelete(tenantID string, listenerArn strin
 	rp := DuploAwsLbListenerRule{}
 	return c.deleteAPI(
 		fmt.Sprintf("DuploAwsLbListenerRuleDelete(%s, %s, %s)", tenantID, listenerArn, ruleArn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/lbListenerRule/%s/%s", tenantID, EncodePathParam(listenerArn), EncodePathParam(ruleArn)),
+		fmt.Sprintf("v3/subscriptions/%s/aws/lbListenerRule/%s/%s", tenantID, QueryEscape(listenerArn), QueryEscape(ruleArn)),
 		&rp,
 	)
 }

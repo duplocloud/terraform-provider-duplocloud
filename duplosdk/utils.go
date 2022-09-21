@@ -11,6 +11,10 @@ func EncodePathParam(param string) string {
 	return url.PathEscape(url.PathEscape(param))
 }
 
+func QueryEscape(param string) string {
+	return url.QueryEscape(url.QueryEscape(param))
+}
+
 //nolint:deadcode,unused // utility function
 func isInterfaceNil(v interface{}) bool {
 	return v == nil || (reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil())

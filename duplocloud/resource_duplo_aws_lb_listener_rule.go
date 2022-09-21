@@ -551,7 +551,8 @@ func resourceAwsLbListenerRuleRead(ctx context.Context, d *schema.ResourceData, 
 
 	// Parse the identifying attributes
 	id := d.Id()
-	tenantID, listenerArn, ruleArn, err := parseAwsLbListenerRuleIdParts(id)
+	tenantID, ruleArn, err := parseAwsLbListenerRuleIdParts(id)
+	listenerArn := getListenerArn(ruleArn)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -569,6 +570,7 @@ func resourceAwsLbListenerRuleRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	d.Set("tenant_id", tenantID)
+	d.Set("listener_arn", listenerArn)
 	flattenAwsLbListenerRule(d, duplo)
 
 	log.Printf("[TRACE] resourceAwsLbListenerRuleRead(%s, %s, %s): end", tenantID, listenerArn, ruleArn)
@@ -610,7 +612,8 @@ func resourceAwsLbListenerRuleCreate(ctx context.Context, d *schema.ResourceData
 	}
 
 	// Wait for Duplo to be able to return the cluster's details.
-	id := fmt.Sprintf("%s/%s/%s", tenantID, listenerArn, resp.RuleArn)
+	id := fmt.Sprintf("%s/%s", tenantID, resp.RuleArn)
+	log.Printf("[TRACE] Resource-Id : (%s)", id)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "listener rule", id, func() (interface{}, duplosdk.ClientError) {
 		return c.DuploAwsLbListenerRuleGet(tenantID, listenerArn, resp.RuleArn)
 	})
@@ -628,7 +631,8 @@ func resourceAwsLbListenerRuleUpdate(ctx context.Context, d *schema.ResourceData
 
 	// Parse the identifying attributes
 	id := d.Id()
-	tenantID, listenerArn, ruleArn, err := parseAwsLbListenerRuleIdParts(id)
+	tenantID, ruleArn, err := parseAwsLbListenerRuleIdParts(id)
+	listenerArn := getListenerArn(ruleArn)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -676,7 +680,8 @@ func resourceAwsLbListenerRuleDelete(ctx context.Context, d *schema.ResourceData
 
 	// Parse the identifying attributes
 	id := d.Id()
-	tenantID, listenerArn, ruleArn, err := parseAwsLbListenerRuleIdParts(id)
+	tenantID, ruleArn, err := parseAwsLbListenerRuleIdParts(id)
+	listenerArn := getListenerArn(ruleArn)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -703,10 +708,13 @@ func resourceAwsLbListenerRuleDelete(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
-func parseAwsLbListenerRuleIdParts(id string) (tenantID, listenerArn, ruleArn string, err error) {
-	idParts := strings.SplitN(id, "/", 3)
-	if len(idParts) == 3 {
-		tenantID, listenerArn, ruleArn = idParts[0], idParts[1], idParts[2]
+func parseAwsLbListenerRuleIdParts(id string) (tenantID, ruleArn string, err error) {
+	idParts := strings.SplitN(id, "/", 6)
+	log.Printf("[TRACE] idParts(%s)", idParts)
+	if len(idParts) == 6 {
+		tenantID = idParts[0]
+		ruleArn = strings.Join([]string{idParts[1], idParts[2], idParts[3], idParts[4], idParts[5]}, "/")
+		log.Printf("[TRACE] ruleArn(%s)", ruleArn)
 	} else {
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
@@ -715,7 +723,6 @@ func parseAwsLbListenerRuleIdParts(id string) (tenantID, listenerArn, ruleArn st
 
 func flattenAwsLbListenerRule(d *schema.ResourceData, duplo *duplosdk.DuploAwsLbListenerRule) {
 	d.Set("arn", duplo.RuleArn)
-	d.Set("listener_arn", duplo.ListenerArn)
 	if len(duplo.Priority) > 0 {
 		p, _ := strconv.Atoi(duplo.Priority)
 		d.Set("priority", p)
@@ -1249,4 +1256,11 @@ func suppressIfActionTypeNot(t string) schema.SchemaDiffSuppressFunc {
 		at := k[:i+1] + "type"
 		return d.Get(at).(string) != t
 	}
+}
+
+func getListenerArn(ruleArn string) string {
+	listenerArn := strings.Replace(ruleArn, "listener-rule", "listener", -1)
+	parts := strings.Split(listenerArn, "/")
+	parts = parts[:len(parts)-1]
+	return strings.Join(parts, "/")
 }
