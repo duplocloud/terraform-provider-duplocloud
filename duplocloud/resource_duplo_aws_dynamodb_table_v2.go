@@ -364,6 +364,8 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Error creating tenant %s dynamodb table '%s': %s", tenantID, name, err)
 	}
 
+	time.Sleep(time.Duration(10) * time.Second)
+
 	// Wait for Duplo to be able to return the table's details.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {

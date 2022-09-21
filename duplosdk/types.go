@@ -10,6 +10,10 @@ type DuploStringValue struct {
 	Value string `json:"Value,omitempty"`
 }
 
+type DuploStringValues struct {
+	Values []string `json:"Values,omitempty"`
+}
+
 // DuploName is a generic name holder
 type DuploName struct {
 	Name string `json:"Name,omitempty"`
