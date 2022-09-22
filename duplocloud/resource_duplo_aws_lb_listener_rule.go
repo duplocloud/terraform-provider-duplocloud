@@ -58,7 +58,6 @@ func awsLbListenerRuleSchema() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
-			ForceNew: true, // relaunch instance
 			Elem:     KeyValueSchema(),
 		},
 		"action": {
