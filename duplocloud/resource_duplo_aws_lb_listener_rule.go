@@ -663,7 +663,7 @@ func resourceAwsLbListenerRuleUpdate(ctx context.Context, d *schema.ResourceData
 
 	if requestUpdate {
 		c := m.(*duplosdk.Client)
-		_, err := c.DuploAwsLbListenerRuleUpdate(tenantID, listenerArn, params)
+		_, err := c.DuploAwsLbListenerRuleUpdate(tenantID, params)
 		if err != nil {
 			return diag.Errorf("Error updating tenant %s listener rule '%s': %s", tenantID, ruleArn, err)
 		}

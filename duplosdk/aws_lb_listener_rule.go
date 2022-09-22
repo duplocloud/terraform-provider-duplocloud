@@ -100,6 +100,15 @@ type DuploAwsLbListenerRule struct {
 	RuleArn     string                             `json:"RuleArn,omitempty"`
 }
 
+type DuploAwsLbListenerRuleGetReq struct {
+	ListenerArn string `json:"ListenerArn,omitempty"`
+}
+
+type DuploAwsLbListenerRuleDeleteReq struct {
+	ListenerArn string `json:"ListenerArn,omitempty"`
+	RuleArn     string `json:"RuleArn,omitempty"`
+}
+
 type DuploAwsLbListenerRuleCreateReq struct {
 	Actions     *[]DuploAwsLbListenerRuleAction    `json:"Actions,omitempty"`
 	Conditions  *[]DuploAwsLbListenerRuleCondition `json:"Conditions,omitempty"`
@@ -113,18 +122,18 @@ func (c *Client) DuploAwsLbListenerRuleCreate(tenantID string, rq *DuploAwsLbLis
 	rp := DuploAwsLbListenerRule{}
 	err := c.postAPI(
 		fmt.Sprintf("DuploAwsLbListenerRuleCreate(%s, %s)", tenantID, rq.ListenerArn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/lbListenerRule", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/createLbListenerRule", tenantID),
 		&rq,
 		&rp,
 	)
 	return &rp, err
 }
 
-func (c *Client) DuploAwsLbListenerRuleUpdate(tenantID, listenerArn string, rq *DuploAwsLbListenerRule) (*DuploAwsLbListenerRule, ClientError) {
+func (c *Client) DuploAwsLbListenerRuleUpdate(tenantID string, rq *DuploAwsLbListenerRule) (*DuploAwsLbListenerRule, ClientError) {
 	rp := DuploAwsLbListenerRule{}
 	err := c.putAPI(
-		fmt.Sprintf("DuploAwsLbListenerRuleUpdate(%s, %s)", tenantID, listenerArn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/lbListenerRule/%s", tenantID, QueryEscape(listenerArn)),
+		fmt.Sprintf("DuploAwsLbListenerRuleUpdate(%s, %s)", tenantID, rq.ListenerArn),
+		fmt.Sprintf("v3/subscriptions/%s/aws/modifyLbListenerRule", tenantID),
 		&rq,
 		&rp,
 	)
@@ -132,9 +141,12 @@ func (c *Client) DuploAwsLbListenerRuleUpdate(tenantID, listenerArn string, rq *
 }
 func (c *Client) DuploAwsLbListenerRuleList(tenantID, listenerArn string) (*[]DuploAwsLbListenerRule, ClientError) {
 	rp := []DuploAwsLbListenerRule{}
-	err := c.getAPI(
+	err := c.postAPI(
 		fmt.Sprintf("DuploAwsLbListenerRuleList(%s, %s)", tenantID, listenerArn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/lbListenerRule/%s", tenantID, QueryEscape(listenerArn)),
+		fmt.Sprintf("v3/subscriptions/%s/aws/listLbListenerRules", tenantID),
+		&DuploAwsLbListenerRuleGetReq{
+			ListenerArn: listenerArn,
+		},
 		&rp,
 	)
 	return &rp, err
@@ -158,9 +170,13 @@ func (c *Client) DuploAwsLbListenerRuleGet(tenantID string, listenerArn string, 
 
 func (c *Client) DuploAwsLbListenerRuleDelete(tenantID string, listenerArn string, ruleArn string) ClientError {
 	rp := DuploAwsLbListenerRule{}
-	return c.deleteAPI(
+	return c.postAPI(
 		fmt.Sprintf("DuploAwsLbListenerRuleDelete(%s, %s, %s)", tenantID, listenerArn, ruleArn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/lbListenerRule/%s/%s", tenantID, QueryEscape(listenerArn), QueryEscape(ruleArn)),
+		fmt.Sprintf("v3/subscriptions/%s/aws/deleteLbListenerRule", tenantID),
+		&DuploAwsLbListenerRuleDeleteReq{
+			ListenerArn: listenerArn,
+			RuleArn:     ruleArn,
+		},
 		&rp,
 	)
 }
