@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const DEFAULT_INFRA = "default"
+
 func infrastructureVnetSecurityGroupsSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -526,17 +528,21 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 }
 
 func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string) (bool, error) {
-
+	var infra *duplosdk.DuploInfrastructureConfig
 	config, err := c.InfrastructureGetConfig(name)
 	if err != nil {
 		return false, err
 	}
-	infra, err := c.InfrastructureGet(name)
-	if err != nil {
-		return false, err
-	}
-	if config == nil || infra == nil {
-		return true, nil // object missing
+	if DEFAULT_INFRA == name {
+		infra = config
+	} else {
+		infra, err := c.InfrastructureGet(name)
+		if err != nil {
+			return false, err
+		}
+		if config == nil || infra == nil {
+			return true, nil // object missing
+		}
 	}
 
 	d.Set("infra_name", infra.Name)
