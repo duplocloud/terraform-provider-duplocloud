@@ -533,10 +533,11 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	if err != nil {
 		return false, err
 	}
+	// Once backend API is fixed for default infra, Remove this.
 	if DEFAULT_INFRA == name {
 		infra = config
 	} else {
-		infra, err := c.InfrastructureGet(name)
+		infra, err = c.InfrastructureGet(name)
 		if err != nil {
 			return false, err
 		}
