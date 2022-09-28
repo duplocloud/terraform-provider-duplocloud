@@ -15,6 +15,7 @@ type DuploAwsCloudfrontDefaultCacheBehavior struct {
 	FieldLevelEncryptionId     string                                        `json:"FieldLevelEncryptionId"`
 	OriginRequestPolicyId      string                                        `json:"OriginRequestPolicyId,omitempty"`
 	LambdaFunctionAssociations *DuploAwsCloudfrontLambdaFunctionAssociations `json:"LambdaFunctionAssociations"`
+	FunctionAssociations       *DuploAwsCloudfrontFunctionAssociations       `json:"FunctionAssociations"`
 	MaxTTL                     int                                           `json:"MaxTTL,omitempty"`
 	MinTTL                     int                                           `json:"MinTTL,omitempty"`
 	SmoothStreaming            bool                                          `json:"SmoothStreaming"`
@@ -32,6 +33,7 @@ type DuploAwsCloudfrontCacheBehavior struct {
 	FieldLevelEncryptionId     string                                        `json:"FieldLevelEncryptionId"`
 	OriginRequestPolicyId      string                                        `json:"OriginRequestPolicyId,omitempty"`
 	LambdaFunctionAssociations *DuploAwsCloudfrontLambdaFunctionAssociations `json:"LambdaFunctionAssociations"`
+	FunctionAssociations       *DuploAwsCloudfrontFunctionAssociations       `json:"FunctionAssociations"`
 	MaxTTL                     int                                           `json:"MaxTTL,omitempty"`
 	MinTTL                     int                                           `json:"MinTTL,omitempty"`
 	SmoothStreaming            bool                                          `json:"SmoothStreaming"`
@@ -47,10 +49,20 @@ type DuploAwsCloudfrontLambdaFunctionAssociations struct {
 	Quantity int                                            `json:"Quantity"`
 }
 
+type DuploAwsCloudfrontFunctionAssociations struct {
+	Items    *[]DuploAwsCloudfrontFunctionAssociation `json:"Items"`
+	Quantity int                                      `json:"Quantity"`
+}
+
+type DuploAwsCloudfrontFunctionAssociation struct {
+	EventType   *DuploStringValue `json:"EventType"`
+	FunctionARN string            `json:"FunctionARN"`
+}
+
 type DuploAwsCloudfrontLambdaFunctionAssociation struct {
-	EventType         string `json:"EventType"`
-	LambdaFunctionARN string `json:"LambdaFunctionARN"`
-	IncludeBody       bool   `json:"IncludeBody"`
+	EventType         *DuploStringValue `json:"EventType"`
+	LambdaFunctionARN string            `json:"LambdaFunctionARN"`
+	IncludeBody       bool              `json:"IncludeBody"`
 }
 
 type DuploAwsCloudfrontCacheBehaviors struct {

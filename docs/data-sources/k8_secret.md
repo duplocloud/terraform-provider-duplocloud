@@ -24,7 +24,7 @@ description: |-
 
 - **id** (String) The ID of this resource.
 - **secret_annotations** (Map of String) Annotations for the secret
-- **secret_data** (String, Sensitive) A JSON encoded string representing the secret metadata. You can use the `jsonencode()` function to convert map or object data, if needed.
+- **secret_data** (String, Sensitive) A JSON encoded string representing the secret metadata. You can use the `jsonencode()` function to convert map or object data, if needed. You can use the `jsondecode()` function to read data.
 - **secret_type** (String) The type of the secret.  Usually `"Opaque"`.
 - **secret_version** (String)
 

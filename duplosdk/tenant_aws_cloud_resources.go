@@ -25,6 +25,10 @@ const (
 	ResourceTypeSQSQueue int = 3
 
 	ResourceTypeSNSTopic int = 4
+
+	ResourceTypeLambdaFunction int = 7
+
+	ResourceTypeElasticSearch int = 24
 )
 
 type CustomComponentType int
