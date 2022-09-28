@@ -47,7 +47,7 @@ func k8sSecretSchema() map[string]*schema.Schema {
 		},
 		"secret_data": {
 			Description: "A JSON encoded string representing the secret metadata. " +
-				"You can use the `jsonencode()` function to convert map or object data, if needed.",
+				"You can use the `jsonencode()` function to convert map or object data, if needed. You can use the `jsondecode()` function to read data.",
 			Type:             schema.TypeString,
 			Optional:         true,
 			Sensitive:        true,
