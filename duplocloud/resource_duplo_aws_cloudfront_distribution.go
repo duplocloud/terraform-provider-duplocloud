@@ -1044,13 +1044,13 @@ func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData) *duplosdk.Dup
 
 func expandAwsCloudfrontDistributionDefaultCacheBehavior(m map[string]interface{}) *duplosdk.DuploAwsCloudfrontDefaultCacheBehavior {
 	dcb := &duplosdk.DuploAwsCloudfrontDefaultCacheBehavior{
-		CachePolicyId:          m["cache_policy_id"].(string),
-		Compress:               m["compress"].(bool),
-		FieldLevelEncryptionId: m["field_level_encryption_id"].(string),
-		OriginRequestPolicyId:  m["origin_request_policy_id"].(string),
-		//TODO Handle response_headers_policy_id
-		TargetOriginId:       m["target_origin_id"].(string),
-		ViewerProtocolPolicy: &duplosdk.DuploStringValue{Value: m["viewer_protocol_policy"].(string)},
+		CachePolicyId:           m["cache_policy_id"].(string),
+		Compress:                m["compress"].(bool),
+		FieldLevelEncryptionId:  m["field_level_encryption_id"].(string),
+		OriginRequestPolicyId:   m["origin_request_policy_id"].(string),
+		ResponseHeadersPolicyId: m["response_headers_policy_id"].(string),
+		TargetOriginId:          m["target_origin_id"].(string),
+		ViewerProtocolPolicy:    &duplosdk.DuploStringValue{Value: m["viewer_protocol_policy"].(string)},
 	}
 
 	if forwardedValuesFlat, ok := m["forwarded_values"].([]interface{}); ok && len(forwardedValuesFlat) == 1 {
@@ -1091,19 +1091,22 @@ func expandAwsCloudfrontDistributionDefaultCacheBehavior(m map[string]interface{
 		dcb.AllowedMethods.CachedMethods = expandCachedMethods(v.(*schema.Set))
 	}
 
-	// TODO Handle realtime_log_config_arn
+	if v, ok := m["realtime_log_config_arn"]; ok && v.(string) != "" {
+		dcb.RealtimeLogConfigArn = v.(string)
+	}
+
 	return dcb
 }
 
 func expandAwsCloudfrontDistributionCacheBehavior(m map[string]interface{}) duplosdk.DuploAwsCloudfrontCacheBehavior {
 	cb := duplosdk.DuploAwsCloudfrontCacheBehavior{
-		CachePolicyId:          m["cache_policy_id"].(string),
-		Compress:               m["compress"].(bool),
-		FieldLevelEncryptionId: m["field_level_encryption_id"].(string),
-		OriginRequestPolicyId:  m["origin_request_policy_id"].(string),
-		//TODO Handle response_headers_policy_id
-		TargetOriginId:       m["target_origin_id"].(string),
-		ViewerProtocolPolicy: &duplosdk.DuploStringValue{Value: m["viewer_protocol_policy"].(string)},
+		CachePolicyId:           m["cache_policy_id"].(string),
+		Compress:                m["compress"].(bool),
+		FieldLevelEncryptionId:  m["field_level_encryption_id"].(string),
+		OriginRequestPolicyId:   m["origin_request_policy_id"].(string),
+		ResponseHeadersPolicyId: m["response_headers_policy_id"].(string),
+		TargetOriginId:          m["target_origin_id"].(string),
+		ViewerProtocolPolicy:    &duplosdk.DuploStringValue{Value: m["viewer_protocol_policy"].(string)},
 	}
 
 	if forwardedValuesFlat, ok := m["forwarded_values"].([]interface{}); ok && len(forwardedValuesFlat) == 1 {
@@ -1146,6 +1149,9 @@ func expandAwsCloudfrontDistributionCacheBehavior(m map[string]interface{}) dupl
 
 	if v, ok := m["path_pattern"]; ok {
 		cb.PathPattern = v.(string)
+	}
+	if v, ok := m["realtime_log_config_arn"]; ok && v.(string) != "" {
+		cb.RealtimeLogConfigArn = v.(string)
 	}
 	return cb
 }
@@ -1637,18 +1643,18 @@ func flattenDefaultCacheBehavior(dcb *duplosdk.DuploAwsCloudfrontDefaultCacheBeh
 
 func flattenCloudFrontDefaultCacheBehavior(dcb *duplosdk.DuploAwsCloudfrontDefaultCacheBehavior) map[string]interface{} {
 	m := map[string]interface{}{
-		"cache_policy_id":           dcb.CachePolicyId,
-		"compress":                  dcb.Compress,
-		"field_level_encryption_id": dcb.FieldLevelEncryptionId,
-		"viewer_protocol_policy":    dcb.ViewerProtocolPolicy.Value,
-		"target_origin_id":          dcb.TargetOriginId,
-		"min_ttl":                   dcb.MinTTL,
-		"max_ttl":                   dcb.MaxTTL,
-		"default_ttl":               dcb.DefaultTTL,
-		"smooth_streaming":          dcb.SmoothStreaming,
-		"origin_request_policy_id":  dcb.OriginRequestPolicyId,
-		//"realtime_log_config_arn":    dcb.RealtimeLogConfigArn,
-		//"response_headers_policy_id": dcb.ResponseHeadersPolicyId,
+		"cache_policy_id":            dcb.CachePolicyId,
+		"compress":                   dcb.Compress,
+		"field_level_encryption_id":  dcb.FieldLevelEncryptionId,
+		"viewer_protocol_policy":     dcb.ViewerProtocolPolicy.Value,
+		"target_origin_id":           dcb.TargetOriginId,
+		"min_ttl":                    dcb.MinTTL,
+		"max_ttl":                    dcb.MaxTTL,
+		"default_ttl":                dcb.DefaultTTL,
+		"smooth_streaming":           dcb.SmoothStreaming,
+		"origin_request_policy_id":   dcb.OriginRequestPolicyId,
+		"realtime_log_config_arn":    dcb.RealtimeLogConfigArn,
+		"response_headers_policy_id": dcb.ResponseHeadersPolicyId,
 	}
 
 	if dcb.ForwardedValues != nil {
@@ -1788,19 +1794,19 @@ func flattenCacheBehaviors(cbs *duplosdk.DuploAwsCloudfrontCacheBehaviors) []int
 
 func flattenCacheBehavior(cb duplosdk.DuploAwsCloudfrontCacheBehavior) map[string]interface{} {
 	m := map[string]interface{}{
-		"cache_policy_id":           cb.CachePolicyId,
-		"compress":                  cb.Compress,
-		"field_level_encryption_id": cb.FieldLevelEncryptionId,
-		"viewer_protocol_policy":    cb.ViewerProtocolPolicy.Value,
-		"target_origin_id":          cb.TargetOriginId,
-		"min_ttl":                   cb.MinTTL,
-		"max_ttl":                   cb.MaxTTL,
-		"default_ttl":               cb.DefaultTTL,
-		"smooth_streaming":          cb.SmoothStreaming,
-		"origin_request_policy_id":  cb.OriginRequestPolicyId,
-		"path_pattern":              cb.PathPattern,
-		//"realtime_log_config_arn":    dcb.RealtimeLogConfigArn,
-		//"response_headers_policy_id": dcb.ResponseHeadersPolicyId,
+		"cache_policy_id":            cb.CachePolicyId,
+		"compress":                   cb.Compress,
+		"field_level_encryption_id":  cb.FieldLevelEncryptionId,
+		"viewer_protocol_policy":     cb.ViewerProtocolPolicy.Value,
+		"target_origin_id":           cb.TargetOriginId,
+		"min_ttl":                    cb.MinTTL,
+		"max_ttl":                    cb.MaxTTL,
+		"default_ttl":                cb.DefaultTTL,
+		"smooth_streaming":           cb.SmoothStreaming,
+		"origin_request_policy_id":   cb.OriginRequestPolicyId,
+		"path_pattern":               cb.PathPattern,
+		"realtime_log_config_arn":    cb.RealtimeLogConfigArn,
+		"response_headers_policy_id": cb.ResponseHeadersPolicyId,
 	}
 
 	if cb.ForwardedValues != nil {
