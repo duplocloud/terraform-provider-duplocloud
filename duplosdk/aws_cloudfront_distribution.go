@@ -23,6 +23,8 @@ type DuploAwsCloudfrontDefaultCacheBehavior struct {
 	TrustedSigners             *DuploCFDTrustedSigners                       `json:"TrustedSigners,omitempty"`
 	ViewerProtocolPolicy       *DuploStringValue                             `json:"ViewerProtocolPolicy,omitempty"`
 	ForwardedValues            *DuploCFDForwardedValues                      `json:"ForwardedValues,omitempty"`
+	ResponseHeadersPolicyId    string                                        `json:"ResponseHeadersPolicyId,omitempty"`
+	RealtimeLogConfigArn       string                                        `json:"RealtimeLogConfigArn,omitempty"`
 }
 
 type DuploAwsCloudfrontCacheBehavior struct {
@@ -42,6 +44,8 @@ type DuploAwsCloudfrontCacheBehavior struct {
 	ViewerProtocolPolicy       *DuploStringValue                             `json:"ViewerProtocolPolicy,omitempty"`
 	ForwardedValues            *DuploCFDForwardedValues                      `json:"ForwardedValues,omitempty"`
 	PathPattern                string                                        `json:"PathPattern"`
+	ResponseHeadersPolicyId    string                                        `json:"ResponseHeadersPolicyId,omitempty"`
+	RealtimeLogConfigArn       string                                        `json:"RealtimeLogConfigArn,omitempty"`
 }
 
 type DuploAwsCloudfrontLambdaFunctionAssociations struct {
