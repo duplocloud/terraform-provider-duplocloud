@@ -15,6 +15,7 @@ type DuploAwsCloudfrontDefaultCacheBehavior struct {
 	FieldLevelEncryptionId     string                                        `json:"FieldLevelEncryptionId"`
 	OriginRequestPolicyId      string                                        `json:"OriginRequestPolicyId,omitempty"`
 	LambdaFunctionAssociations *DuploAwsCloudfrontLambdaFunctionAssociations `json:"LambdaFunctionAssociations"`
+	FunctionAssociations       *DuploAwsCloudfrontFunctionAssociations       `json:"FunctionAssociations"`
 	MaxTTL                     int                                           `json:"MaxTTL,omitempty"`
 	MinTTL                     int                                           `json:"MinTTL,omitempty"`
 	SmoothStreaming            bool                                          `json:"SmoothStreaming"`
@@ -22,6 +23,8 @@ type DuploAwsCloudfrontDefaultCacheBehavior struct {
 	TrustedSigners             *DuploCFDTrustedSigners                       `json:"TrustedSigners,omitempty"`
 	ViewerProtocolPolicy       *DuploStringValue                             `json:"ViewerProtocolPolicy,omitempty"`
 	ForwardedValues            *DuploCFDForwardedValues                      `json:"ForwardedValues,omitempty"`
+	ResponseHeadersPolicyId    string                                        `json:"ResponseHeadersPolicyId,omitempty"`
+	RealtimeLogConfigArn       string                                        `json:"RealtimeLogConfigArn,omitempty"`
 }
 
 type DuploAwsCloudfrontCacheBehavior struct {
@@ -32,6 +35,7 @@ type DuploAwsCloudfrontCacheBehavior struct {
 	FieldLevelEncryptionId     string                                        `json:"FieldLevelEncryptionId"`
 	OriginRequestPolicyId      string                                        `json:"OriginRequestPolicyId,omitempty"`
 	LambdaFunctionAssociations *DuploAwsCloudfrontLambdaFunctionAssociations `json:"LambdaFunctionAssociations"`
+	FunctionAssociations       *DuploAwsCloudfrontFunctionAssociations       `json:"FunctionAssociations"`
 	MaxTTL                     int                                           `json:"MaxTTL,omitempty"`
 	MinTTL                     int                                           `json:"MinTTL,omitempty"`
 	SmoothStreaming            bool                                          `json:"SmoothStreaming"`
@@ -40,6 +44,8 @@ type DuploAwsCloudfrontCacheBehavior struct {
 	ViewerProtocolPolicy       *DuploStringValue                             `json:"ViewerProtocolPolicy,omitempty"`
 	ForwardedValues            *DuploCFDForwardedValues                      `json:"ForwardedValues,omitempty"`
 	PathPattern                string                                        `json:"PathPattern"`
+	ResponseHeadersPolicyId    string                                        `json:"ResponseHeadersPolicyId,omitempty"`
+	RealtimeLogConfigArn       string                                        `json:"RealtimeLogConfigArn,omitempty"`
 }
 
 type DuploAwsCloudfrontLambdaFunctionAssociations struct {
@@ -47,10 +53,20 @@ type DuploAwsCloudfrontLambdaFunctionAssociations struct {
 	Quantity int                                            `json:"Quantity"`
 }
 
+type DuploAwsCloudfrontFunctionAssociations struct {
+	Items    *[]DuploAwsCloudfrontFunctionAssociation `json:"Items"`
+	Quantity int                                      `json:"Quantity"`
+}
+
+type DuploAwsCloudfrontFunctionAssociation struct {
+	EventType   *DuploStringValue `json:"EventType"`
+	FunctionARN string            `json:"FunctionARN"`
+}
+
 type DuploAwsCloudfrontLambdaFunctionAssociation struct {
-	EventType         string `json:"EventType"`
-	LambdaFunctionARN string `json:"LambdaFunctionARN"`
-	IncludeBody       bool   `json:"IncludeBody"`
+	EventType         *DuploStringValue `json:"EventType"`
+	LambdaFunctionARN string            `json:"LambdaFunctionARN"`
+	IncludeBody       bool              `json:"IncludeBody"`
 }
 
 type DuploAwsCloudfrontCacheBehaviors struct {
