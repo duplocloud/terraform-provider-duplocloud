@@ -12,7 +12,7 @@ resource "random_password" "mypassword" {
 
 // Create an RDS instance.
 resource "duplocloud_rds_instance" "mydb" {
-  tenant_id      = duplocloud_tenant.this.tenant_id
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
   name           = "mydb"
   engine         = 1 // PostgreSQL
   engine_version = "12.5"

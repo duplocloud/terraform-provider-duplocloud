@@ -27,6 +27,7 @@ type DuploRdsInstance struct {
 	Name string `json:"Name"`
 
 	Identifier                  string `json:"Identifier"`
+	ClusterIdentifier           string `json:"ClusterIdentifier,omitempty"`
 	Arn                         string `json:"Arn"`
 	Endpoint                    string `json:"Endpoint,omitempty"`
 	MasterUsername              string `json:"MasterUsername,omitempty"`
@@ -125,6 +126,24 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]
+
+	// Call the API.
+	duploObject := DuploRdsInstance{}
+	err := c.getAPI(
+		fmt.Sprintf("RdsInstanceGet(%s, duplo%s)", tenantID, name),
+		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/duplo%s", tenantID, name),
+		&duploObject)
+	if err != nil || duploObject.Identifier == "" {
+		return nil, err
+	}
+
+	// Fill in the tenant ID and the name and return the object
+	duploObject.TenantID = tenantID
+	duploObject.Name = name
+	return &duploObject, nil
+}
+
+func (c *Client) RdsInstanceGetByName(tenantID, name string) (*DuploRdsInstance, ClientError) {
 
 	// Call the API.
 	duploObject := DuploRdsInstance{}
