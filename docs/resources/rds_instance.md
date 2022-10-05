@@ -27,7 +27,7 @@ resource "random_password" "mypassword" {
 
 // Create an RDS instance.
 resource "duplocloud_rds_instance" "mydb" {
-  tenant_id      = duplocloud_tenant.this.tenant_id
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
   name           = "mydb"
   engine         = 1 // PostgreSQL
   engine_version = "12.5"
@@ -84,6 +84,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 ### Read-Only
 
 - **arn** (String) The ARN of the RDS instance.
+- **cluster_identifier** (String) The RDS Cluster Identifier
 - **endpoint** (String) The endpoint of the RDS instance.
 - **host** (String) The DNS hostname of the RDS instance.
 - **id** (String) The ID of this resource.

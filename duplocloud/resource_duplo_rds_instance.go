@@ -188,6 +188,11 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Optional:    true,
 		},
+		"cluster_identifier": {
+			Description: "The RDS Cluster Identifier",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
@@ -501,6 +506,8 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["identifier"] = duploObject.Identifier
 	jo["arn"] = duploObject.Arn
 	jo["endpoint"] = duploObject.Endpoint
+	jo["cluster_identifier"] = duploObject.ClusterIdentifier
+
 	if duploObject.Endpoint != "" {
 		uriParts := strings.SplitN(duploObject.Endpoint, ":", 2)
 		jo["host"] = uriParts[0]
