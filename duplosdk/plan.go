@@ -65,8 +65,8 @@ type DuploPlanWafInfo struct {
 type DuploPlanCloudPlatform struct {
 	Platform     int                    `json:"Cloud"`
 	Images       *[]DuploPlanImage      `json:"Images,omitempty"`
-	AzureConfig  map[string]interface{} `json:"PlanAzureConfig,omitempty"`
-	GoogleConfig map[string]interface{} `json:"PlanGoogleConfig,omitempty"`
+	AzureConfig  map[string]interface{} `json:"AzureConfig,omitempty"`
+	GoogleConfig map[string]interface{} `json:"GoogleConfig,omitempty"`
 }
 
 type DuploPlanNgwAddress struct {
