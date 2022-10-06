@@ -94,15 +94,40 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 
 	c := m.(*duplosdk.Client)
 
-	duplo, err := c.PlanGet(planID)
+	// Get "special" plan settings.
+	settings, err := c.PlanGetSettings(planID)
 	if err != nil {
-		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
-	}
-	if duplo == nil {
-		return diag.Errorf("Plan could not be found. '%s'", planID)
+		return diag.Errorf("failed to retrieve plan settings for '%s': %s", planID, err)
 	}
 
-	flattenPlanSettings(d, duplo)
+	// Get plan DNS config.  If the config is "global", that means there is no plan DNS config.
+	dns, err := c.PlanGetDnsConfig(planID)
+	if err != nil {
+		return diag.Errorf("failed to retrieve plan DNS config for '%s': %s", planID, err)
+	}
+	if dns != nil && dns.IsGlobalDNS {
+		dns = nil
+	}
+
+	// Get plan metadata.
+	allMetadata, err := c.PlanMetadataGetList(planID)
+	if err != nil {
+		return diag.Errorf("failed to retrieve plan metadata for '%s': %s", planID, err)
+	}
+
+	// Set the simple fields first.
+	d.Set("plan_id", planID)
+	d.Set("all_metadata", keyValueToState("all_metadata", allMetadata))
+	d.Set("unrestricted_ext_lb", settings.UnrestrictedExtLB)
+	if dns != nil {
+		d.Set("dns_setting", flattenDnsSetting(dns))
+	}
+
+	// Build a list of current state, to replace the user-supplied settings.
+	if v, ok := getAsStringArray(d, "specified_metadata"); ok && v != nil {
+		d.Set("metadata", keyValueToState("metadata", selectPlanMetadata(allMetadata, *v)))
+	}
+
 	log.Printf("[TRACE] resourcePlanSettingsRead(%s): end", planID)
 	return nil
 }
@@ -113,30 +138,40 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 
 	c := m.(*duplosdk.Client)
 
-	duplo, err := c.PlanGet(planID)
-	if err != nil {
-		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
-	}
-	if duplo == nil {
-		return diag.Errorf("Plan could not be found. '%s'", planID)
-	}
+	// Apply "special" plan settings.
 	if v, ok := d.GetOk("unrestricted_ext_lb"); ok {
-		duplo.UnrestrictedExtLB = v.(bool)
-	}
-	if v, ok := d.GetOk("dns_setting"); ok {
-		expandDnsSetting(duplo, v.([]interface{})[0].(map[string]interface{}))
-	}
-	if _, ok := d.GetOk("metadata"); ok {
-		log.Printf("[TRACE] Plan metadata from duplo :(%s)", duplo.MetaData)
-		previous, desired := getPlanMetadataChange(duplo.MetaData, d)
-		log.Printf("[TRACE] Plan metadata previous :(%s), desired(%s)", previous, desired)
-		duplo.MetaData = getDesiredMetadataConfigs(duplo.MetaData, desired, previous)
+		settings := duplosdk.DuploPlanSettings{
+			UnrestrictedExtLB: v.(bool),
+		}
+		_, err := c.PlanUpdateSettings(planID, &settings)
+		if err != nil {
+			return diag.Errorf("failed to apply plan settings for '%s': %s", planID, err)
+		}
 	}
 
-	err = c.PlanUpdate(duplo)
-	if err != nil {
-		return diag.Errorf("Error updating plan for '%s': %s", planID, err)
+	// Apply plan DNS settings.
+	if v, ok := d.GetOk("dns_setting"); ok {
+		dns := expandDnsSetting(v.([]interface{})[0].(map[string]interface{}))
+		_, err := c.PlanUpdateDnsConfig(planID, dns)
+		if err != nil {
+			return diag.Errorf("failed to apply plan DNS config for '%s': %s", planID, err)
+		}
 	}
+
+	// Apply plan metadata
+	if _, ok := d.GetOk("metadata"); ok {
+		allMetadata, err := c.PlanMetadataGetList(planID)
+		if err != nil {
+			return diag.Errorf("failed to retrieve plan metadata for '%s': %s", planID, err)
+		}
+
+		previous, desired := getPlanMetadataChange(allMetadata, d)
+		err = c.PlanChangeMetadata(planID, previous, desired)
+		if err != nil {
+			return diag.Errorf("Error updating plan configs for '%s': %s", planID, err)
+		}
+	}
+
 	d.SetId(planID)
 	diags := resourcePlanSettingsRead(ctx, d, m)
 	log.Printf("[TRACE] resourcePlanSettingsCreateOrUpdate(%s): end", planID)
@@ -149,94 +184,79 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	c := m.(*duplosdk.Client)
 
-	duplo, err := c.PlanGet(planID)
-	if err != nil {
-		return diag.Errorf("failed to retrieve plan for '%s': %s", planID, err)
+	// Get "special" plan settings.
+	settings, err := c.PlanGetSettings(planID)
+	if err != nil && err.Status() != 404 {
+		return diag.Errorf("failed to retrieve plan settings for '%s': %s", planID, err)
 	}
 
 	// Skip if plan does not exist.
-	if duplo == nil {
+	if settings == nil {
 		return nil
 	}
+
+	// Undo the plan settings we can control here.
 	if _, ok := d.GetOk("unrestricted_ext_lb"); ok {
-		duplo.UnrestrictedExtLB = false
+		settings.UnrestrictedExtLB = false
+		_, err := c.PlanUpdateSettings(planID, settings)
+		if err != nil {
+			return diag.Errorf("failed to remove plan settings for '%s': %s", planID, err)
+		}
 	}
+
+	// Undo the plan DNS.
 	if _, ok := d.GetOk("dns_setting"); ok {
-		duplo.DnsConfig = nil
+		err := c.PlanDeleteDnsConfig(planID)
+		if err != nil {
+			return diag.Errorf("failed to remove plan DNS config for '%s': %s", planID, err)
+		}
 	}
+
+	// Undo the plan metadata
 	if _, ok := d.GetOk("metadata"); ok {
-		existing := duplo.MetaData
-		specified := []string{}
-		if v, ok := getAsStringArray(d, "specified_metadata"); ok && v != nil {
-			specified = *v
+		allMetadata, err := c.PlanMetadataGetList(planID)
+		if err != nil {
+			return diag.Errorf("failed to retrieve plan metadata for '%s': %s", planID, err)
 		}
-		ary := make([]duplosdk.DuploKeyStringValue, 0, len(*existing)-len(specified))
-		log.Printf("[TRACE] existing (%s)", existing)
-		log.Printf("[TRACE] Specified (%s)", specified)
 
-		for _, e := range *existing {
-			present := false
-			for _, s := range specified {
-				if e.Key == s {
-					present = true
-					break
-				}
-			}
-			if !present {
-				ary = append(ary, e)
-			}
+		// Get the previous and desired plan configs
+		previous, _ := getPlanMetadataChange(allMetadata, d)
+		desired := &[]duplosdk.DuploKeyStringValue{}
+
+		// Apply the changes via Duplo
+		err = c.PlanChangeMetadata(planID, previous, desired)
+		if err != nil {
+			return diag.Errorf("failed to remove plan metadata for '%s': %s", planID, err)
 		}
-		log.Printf("[TRACE] New metadata to be updated (%s)", ary)
-		duplo.MetaData = &ary
 	}
 
-	err = c.PlanUpdate(duplo)
-	if err != nil {
-		return diag.Errorf("Error updating plan for '%s': %s", planID, err)
-	}
 	log.Printf("[TRACE] resourcePlanSettingsDelete(%s): end", planID)
 	return nil
 }
 
-func flattenPlanSettings(d *schema.ResourceData, duplo *duplosdk.DuploPlan) {
-	log.Printf("[TRACE] flattenPlanSettings(%s): start", duplo.Name)
-	d.Set("plan_id", duplo.Name)
-	d.Set("unrestricted_ext_lb", duplo.UnrestrictedExtLB)
-	if duplo.DnsConfig != nil {
-		d.Set("dns_setting", flattenDnsSetting(duplo.DnsConfig))
-	}
-	d.Set("all_metadata", keyValueToState("all_metadata", duplo.MetaData))
-
-	// Build a list of current state, to replace the user-supplied settings.
-	if v, ok := getAsStringArray(d, "specified_metadata"); ok && v != nil {
-		d.Set("metadata", keyValueToState("metadata", selectPlanMetadata(duplo.MetaData, *v)))
-	}
-	log.Printf("[TRACE] flattenPlanSettings(%s): end", duplo.Name)
-}
-
 func flattenDnsSetting(duplo *duplosdk.DuploPlanDnsConfig) []interface{} {
-	log.Printf("[TRACE] flatterDnsSetting: start")
-	m := make(map[string]interface{})
-	m["domain_id"] = duplo.DomainId
-	m["internal_dns_suffix"] = duplo.InternalDnsSuffix
-	m["external_dns_suffix"] = duplo.ExternalDnsSuffix
-	log.Printf("[TRACE] flatterDnsSetting: end")
+	m := map[string]interface{}{
+		"domain_id":           duplo.DomainId,
+		"internal_dns_suffix": duplo.InternalDnsSuffix,
+		"external_dns_suffix": duplo.ExternalDnsSuffix,
+	}
 	return []interface{}{m}
 }
 
-func expandDnsSetting(existingPlan *duplosdk.DuploPlan, m map[string]interface{}) {
-	if existingPlan.DnsConfig == nil {
-		existingPlan.DnsConfig = &duplosdk.DuploPlanDnsConfig{}
-	}
+func expandDnsSetting(m map[string]interface{}) *duplosdk.DuploPlanDnsConfig {
+	dns := duplosdk.DuploPlanDnsConfig{}
+
 	if v, ok := m["domain_id"]; ok {
-		existingPlan.DnsConfig.DomainId = v.(string)
+		dns.DomainId = v.(string)
 	}
 	if v, ok := m["internal_dns_suffix"]; ok {
-		existingPlan.DnsConfig.InternalDnsSuffix = v.(string)
+		dns.InternalDnsSuffix = v.(string)
 	}
 	if v, ok := m["external_dns_suffix"]; ok {
-		existingPlan.DnsConfig.ExternalDnsSuffix = v.(string)
+		dns.ExternalDnsSuffix = v.(string)
 	}
+
+	return &dns
 }
 
 func getPlanMetadataChange(all *[]duplosdk.DuploKeyStringValue, d *schema.ResourceData) (previous, desired *[]duplosdk.DuploKeyStringValue) {
@@ -247,13 +267,14 @@ func getPlanMetadataChange(all *[]duplosdk.DuploKeyStringValue, d *schema.Resour
 		previous = &[]duplosdk.DuploKeyStringValue{}
 	}
 
-	// Collect the desired state of settings specified by the user.
+	// Collect the desired state of metadata specified by the user.
 	desired = keyValueFromState("metadata", d)
 	specified := make([]string, len(*desired))
 	for i, pc := range *desired {
 		specified[i] = pc.Key
 	}
 	log.Printf("[TRACE] specified_metadata - (%s):", specified)
+
 	// Track the change
 	d.Set("specified_metadata", specified)
 	log.Printf("[TRACE] getPlanMetadataChange(%s): end", all)
@@ -278,29 +299,4 @@ func selectPlanMetadataFromMap(all *[]duplosdk.DuploKeyStringValue, keys map[str
 	}
 
 	return &mds
-}
-
-func getDesiredMetadataConfigs(existing, newMetadata, oldMetadata *[]duplosdk.DuploKeyStringValue) *[]duplosdk.DuploKeyStringValue {
-
-	// Next, update all metada that are present, keeping a record of each one that is present
-	log.Printf("[TRACE] existing-(%s), oldMetadata-(%s), newMetadata-(%s):", existing, oldMetadata, newMetadata)
-	desired := make([]duplosdk.DuploKeyStringValue, 0, len(*existing)-len(*oldMetadata)+len(*newMetadata))
-
-	for _, emd := range *existing {
-		present := false
-		for _, omd := range *oldMetadata {
-			if emd.Key == omd.Key {
-				present = true
-				break
-			}
-		}
-		if !present {
-			desired = append(desired, emd)
-		}
-	}
-	if len(*newMetadata) > 0 {
-		desired = append(desired, *newMetadata...)
-	}
-	log.Printf("[TRACE] desired-(%s):", desired)
-	return &desired
 }
