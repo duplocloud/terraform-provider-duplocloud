@@ -45,6 +45,11 @@ func duploPlanSettingsSchema() map[string]*schema.Schema {
 						Optional: true,
 						Computed: true,
 					},
+					"ignore_global_dns": {
+						Type:     schema.TypeBool,
+						Optional: true,
+						Computed: true,
+					},
 				},
 			},
 		},
@@ -239,6 +244,7 @@ func flattenDnsSetting(duplo *duplosdk.DuploPlanDnsConfig) []interface{} {
 		"domain_id":           duplo.DomainId,
 		"internal_dns_suffix": duplo.InternalDnsSuffix,
 		"external_dns_suffix": duplo.ExternalDnsSuffix,
+		"ignore_global_dns":   duplo.IgnoreGlobalDNS,
 	}
 	return []interface{}{m}
 }
@@ -254,6 +260,9 @@ func expandDnsSetting(m map[string]interface{}) *duplosdk.DuploPlanDnsConfig {
 	}
 	if v, ok := m["external_dns_suffix"]; ok {
 		dns.ExternalDnsSuffix = v.(string)
+	}
+	if v, ok := m["ignore_global_dns"]; ok {
+		dns.IgnoreGlobalDNS = v.(bool)
 	}
 
 	return &dns
