@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.8.29" # RELEASE VERSION
+      version = "0.8.30" # RELEASE VERSION
       source  = "registry.terraform.io/duplocloud/duplocloud"
     }
   }
@@ -14,6 +14,24 @@ provider "duplocloud" {
 
 data "duplocloud_plans" "all" {}
 data "duplocloud_plan" "default" { plan_id = "default" }
+
+# resource "duplocloud_plan_settings" "test" {
+#   plan_id = "nonprod"
+
+#   unrestricted_ext_lb = true
+
+#   # metadata {
+#   #   key = "JoeKey2"
+#   #   value = "JoeValue"
+#   # }
+
+#   # dns_setting {
+#   #   domain_id = "Z10475162F3K44CJ9GMCX"
+#   #   external_dns_suffix = ".oneclick-apps-test.duplocloud.net"
+#   #   internal_dns_suffix = ".oneclick-apps-test.duplocloud.net"
+#   #   ignore_global_dns = true
+#   # }
+# }
 
 # resource "duplocloud_infrastructure_setting" "test" {
 #   infra_name = "nonprod"

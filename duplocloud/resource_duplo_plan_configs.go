@@ -75,21 +75,8 @@ func resourcePlanConfigsRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	// First, try the newer method of getting the plan configs.
 	duplo, err := c.PlanConfigGetList(planID)
-	if err != nil && !err.PossibleMissingAPI() {
+	if err != nil {
 		return diag.Errorf("failed to retrieve plan configs for '%s': %s", planID, err)
-	}
-
-	// If it failed, try the fallback method.
-	if duplo == nil {
-		plan, err := c.PlanGet(planID)
-		if err != nil {
-			return diag.Errorf("failed to read plan configs: %s", err)
-		}
-		if plan == nil {
-			return diag.Errorf("failed to read plan: %s", planID)
-		}
-
-		duplo = plan.PlanConfigData
 	}
 
 	// Set the simple fields first.
@@ -211,26 +198,10 @@ func expandPlanConfigs(fieldName string, d *schema.ResourceData) *[]duplosdk.Dup
 }
 
 func getPlanConfigs(c *duplosdk.Client, planID string) (*[]duplosdk.DuploCustomDataEx, diag.Diagnostics) {
-
-	// First, try the newer method of getting the plan configs.
 	duplo, err := c.PlanConfigGetList(planID)
-	if err != nil && !err.PossibleMissingAPI() {
+	if err != nil {
 		return nil, diag.Errorf("failed to retrieve plan configs for '%s': %s", planID, err)
 	}
-
-	// If it failed, try the fallback method.
-	if duplo == nil {
-		plan, err := c.PlanGet(planID)
-		if err != nil {
-			return nil, diag.Errorf("failed to read plan configs: %s", err)
-		}
-		if plan == nil {
-			return nil, diag.Errorf("failed to read plan: %s", planID)
-		}
-
-		duplo = plan.PlanConfigData
-	}
-
 	return duplo, nil
 }
 

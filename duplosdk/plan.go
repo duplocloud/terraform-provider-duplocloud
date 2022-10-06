@@ -26,6 +26,8 @@ type DuploPlanDnsConfig struct {
 	DomainId          string `json:"DomainId,omitempty"`
 	InternalDnsSuffix string `json:"InternalDnsSuffix,omitempty"`
 	ExternalDnsSuffix string `json:"ExternalDnsSuffix,omitempty"`
+	IsGlobalDNS       bool   `json:"IsGlobalDNS,omitempty"`
+	IgnoreGlobalDNS   bool   `json:"IgnoreGlobalDNS,omitempty"`
 }
 
 type DuploPlanImage struct {
@@ -83,6 +85,14 @@ type DuploPlanNgw struct {
 	VpcId               string                 `json:"VpcId"`
 	Tags                *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	NatGatewayAddresses *[]DuploPlanNgwAddress `json:"NatGatewayAddresses,omitempty"`
+}
+
+type DuploPlanSettings struct {
+	NwProvider            int    `json:"NwProvider,omitempty"` // FIXME: put a proper enum here.
+	BlockBYOHosts         bool   `json:"BlockBYOHosts"`
+	UnrestrictedExtLB     bool   `json:"UnrestrictedExtLB,omitempty"`
+	InfraOwner            string `json:"InfraOwner"`
+	DefaultApplicationUrl string `json:"DefaultApplicationUrl"`
 }
 
 func (c *Client) PlanUpdate(rq *DuploPlan) ClientError {
@@ -292,7 +302,7 @@ func (c *Client) PlanConfigGetList(planID string) (*[]DuploCustomDataEx, ClientE
 	return &list, nil
 }
 
-// TenantReplaceConfig replaces plan configs via the Duplo API.
+// PlanReplaceConfigs replaces plan configs via the Duplo API.
 func (c *Client) PlanReplaceConfigs(planID string, newConfigs *[]DuploCustomDataEx) ClientError {
 	existing, err := c.PlanConfigGetList(planID)
 	if err != nil {
@@ -338,7 +348,7 @@ func (c *Client) PlanDeleteConfig(planID, name string) ClientError {
 		nil)
 }
 
-// PlanSetConfig set a specific configuration key for a tenant via the Duplo API.
+// PlanSetConfig set a specific configuration key for a plan via the Duplo API.
 func (c *Client) PlanSetConfig(planID string, item DuploCustomDataEx) ClientError {
 	var rp DuploCustomDataEx
 	return c.postAPI(
@@ -355,4 +365,125 @@ func (c *Client) PlanNgwGetList(planID string) (*[]DuploPlanNgw, ClientError) {
 		return nil, err
 	}
 	return &list, nil
+}
+
+// PlanGetDnsConfig retrieves plan DNS config via the Duplo API.
+func (c *Client) PlanGetDnsConfig(planID string) (*DuploPlanDnsConfig, ClientError) {
+	dns := DuploPlanDnsConfig{}
+	err := c.getAPI(fmt.Sprintf("PlanGetDnsConfig(%s)", planID), fmt.Sprintf("v3/admin/plans/%s/dnsConfig", planID), &dns)
+	if err != nil {
+		return nil, err
+	}
+	return &dns, nil
+}
+
+// PlanCreateDnsConfig creates plan DNS config via the Duplo API.
+func (c *Client) PlanCreateDnsConfig(planID string, dns *DuploPlanDnsConfig) (*DuploPlanDnsConfig, ClientError) {
+	result := DuploPlanDnsConfig{}
+	err := c.postAPI(fmt.Sprintf("PlanCreateDnsConfig(%s)", planID), fmt.Sprintf("v3/admin/plans/%s/dnsConfig", planID), dns, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// PlanCreateDnsConfig updates plan DNS config via the Duplo API.
+func (c *Client) PlanUpdateDnsConfig(planID string, dns *DuploPlanDnsConfig) (*DuploPlanDnsConfig, ClientError) {
+	result := DuploPlanDnsConfig{}
+	err := c.putAPI(fmt.Sprintf("PlanUpdateDnsConfig(%s)", planID), fmt.Sprintf("v3/admin/plans/%s/dnsConfig", planID), dns, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// PlanDeleteDnsConfig deletes plan DNS config via the Duplo API.
+func (c *Client) PlanDeleteDnsConfig(planID string) ClientError {
+	return c.deleteAPI(fmt.Sprintf("PlanDeleteDnsConfig(%s)", planID), fmt.Sprintf("v3/admin/plans/%s/dnsConfig", planID), nil)
+}
+
+// GetPlanGetSettings retrieves plan settings via the Duplo API.
+func (c *Client) PlanGetSettings(planID string) (*DuploPlanSettings, ClientError) {
+	settings := DuploPlanSettings{}
+	err := c.getAPI(fmt.Sprintf("PlanGetSettings(%s)", planID), fmt.Sprintf("v3/admin/plans/%s/settings", planID), &settings)
+	if err != nil {
+		return nil, err
+	}
+	return &settings, nil
+}
+
+// PlanUpdateSettings updates plan settings via the Duplo API.
+func (c *Client) PlanUpdateSettings(planID string, settings *DuploPlanSettings) (*DuploPlanSettings, ClientError) {
+	result := DuploPlanSettings{}
+	err := c.putAPI(fmt.Sprintf("PlanUpdateSettings(%s)", planID), fmt.Sprintf("v3/admin/plans/%s/settings", planID), settings, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// PlanGetMetadataList retrieves a list of plan metadata via the Duplo API.
+func (c *Client) PlanMetadataGetList(planID string) (*[]DuploKeyStringValue, ClientError) {
+	list := []DuploKeyStringValue{}
+	err := c.getAPI("PlanMetadataGetList()", fmt.Sprintf("v3/admin/plans/%s/metadata", planID), &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+// PlanReplaceMetadata replaces plan metadata via the Duplo API.
+func (c *Client) PlanReplaceMetadata(planID string, newmetadata *[]DuploKeyStringValue) ClientError {
+	existing, err := c.PlanMetadataGetList(planID)
+	if err != nil {
+		return err
+	}
+	return c.PlanChangeMetadata(planID, existing, newmetadata)
+}
+
+// PlanChangeMetadata changes plan metadata via the Duplo API, using the supplied
+// oldmetadata and newmetadata, for the given planID.
+func (c *Client) PlanChangeMetadata(planID string, oldmetadata, newmetadata *[]DuploKeyStringValue) ClientError {
+
+	// Next, update all certs that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if newmetadata != nil {
+		for _, pc := range *newmetadata {
+			if err := c.PlanSetMetadata(planID, pc); err != nil {
+				return err
+			}
+			present[pc.Key] = struct{}{}
+		}
+	}
+
+	// Finally, delete any certs that are no longer present.
+	if oldmetadata != nil {
+		for _, pc := range *oldmetadata {
+			if _, ok := present[pc.Key]; !ok {
+				if err := c.PlanDeleteMetadata(planID, pc.Key); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// PlanDeleteMetadata deletes a specific metadata for a plan via the Duplo API.
+func (c *Client) PlanDeleteMetadata(planID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("PlanDeleteMetadata(%s, %s)", planID, name),
+		fmt.Sprintf("v3/admin/plans/%s/metadata/%s", planID, name),
+		nil)
+}
+
+// PlanSetMetadata set a specific metadata for a plan via the Duplo API.
+func (c *Client) PlanSetMetadata(planID string, item DuploKeyStringValue) ClientError {
+	var rp DuploKeyStringValue
+	return c.postAPI(
+		fmt.Sprintf("PlanSetMetadata(%s, %s)", planID, item.Key),
+		fmt.Sprintf("v3/admin/plans/%s/metadata", planID),
+		&item,
+		&rp)
 }
