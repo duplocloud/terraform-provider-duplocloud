@@ -51,6 +51,7 @@ Optional:
 
 - **domain_id** (String)
 - **external_dns_suffix** (String)
+- **ignore_global_dns** (Boolean)
 - **internal_dns_suffix** (String)
 
 
