@@ -164,7 +164,7 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	// Apply plan metadata
-	if _, ok := d.GetOk("metadata"); ok {
+	if _, ok := d.GetOk("metadata"); ok || d.HasChange("metadata") {
 		allMetadata, err := c.PlanMetadataGetList(planID)
 		if err != nil {
 			return diag.Errorf("failed to retrieve plan metadata for '%s': %s", planID, err)
