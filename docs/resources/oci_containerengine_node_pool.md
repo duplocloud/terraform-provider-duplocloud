@@ -52,7 +52,7 @@ resource "duplocloud_oci_containerengine_node_pool" "myOciNodePool" {
 - **name** (String) The name of the node pool.
 - **node_shape** (String) The name of the node shape of the nodes in the node pool.
 - **node_shape_config** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--node_shape_config))
-- **tenant_id** (String) The GUID of the tenant that the cloudwatch event target will be created in.
+- **tenant_id** (String) The GUID of the tenant that the Node Pool resource in Oracle Cloud Infrastructure Container Engine service be created in.
 
 ### Optional
 
