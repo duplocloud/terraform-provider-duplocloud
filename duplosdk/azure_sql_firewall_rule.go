@@ -41,7 +41,7 @@ func (c *Client) AzureSqlServerFirewallRuleList(tenantID, serverName string) (*[
 	rp := []AzureSqlServerFirewallRule{}
 	err := c.getAPI(
 		fmt.Sprintf("AzureSqlServerFirewallRuleList(%s, %s)", tenantID, serverName),
-		fmt.Sprintf("subscriptions/%s/GetSqlServerVirtualNetworkRules/%s", tenantID, serverName),
+		fmt.Sprintf("subscriptions/%s/GetSqlServerFirewallRules/%s", tenantID, serverName),
 		&rp,
 	)
 	return &rp, err

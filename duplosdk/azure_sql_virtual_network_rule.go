@@ -5,11 +5,10 @@ import "fmt"
 type AzureSqlServerVnetRule struct {
 	PropertiesVirtualNetworkSubnetID           string `json:"properties.virtualNetworkSubnetId"`
 	PropertiesIgnoreMissingVnetServiceEndpoint bool   `json:"properties.ignoreMissingVnetServiceEndpoint"`
-	PropertiesState                            string `json:"properties.state"`
+	State                                      string `json:"properties.state"`
 	ID                                         string `json:"id"`
 	Name                                       string `json:"name"`
 	Type                                       string `json:"type"`
-	State                                      string `json:"State"`
 }
 
 func (c *Client) AzureSqlServerVnetRuleCreate(tenantID string, name string, rq *AzureSqlServerVnetRule) ClientError {
