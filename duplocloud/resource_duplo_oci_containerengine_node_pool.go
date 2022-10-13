@@ -18,7 +18,7 @@ import (
 func duploOciNodePoolSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the cloudwatch event target will be created in.",
+			Description:  "The GUID of the tenant that the Node Pool resource in Oracle Cloud Infrastructure Container Engine service be created in.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
