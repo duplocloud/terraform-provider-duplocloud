@@ -39,7 +39,7 @@ resource "duplocloud_azure_redis_cache" "myCache" {
 - **family** (String) The SKU family/pricing group to use. Valid values are `C` (for Basic/Standard SKU family) and `P` (for `Premium`)
 - **name** (String) The name of the Redis instance. Changing this forces a new resource to be created.
 - **sku_name** (String) The SKU of Redis to use. Possible values are `Basic`, `Standard` and `Premium`.
-- **tenant_id** (String) The GUID of the tenant that the cloudwatch event target will be created in.
+- **tenant_id** (String) The GUID of the tenant that the azure redis cache will be created in.
 
 ### Optional
 

@@ -17,7 +17,7 @@ import (
 func duploAzureRedisCacheSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the cloudwatch event target will be created in.",
+			Description:  "The GUID of the tenant that the azure redis cache will be created in.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
