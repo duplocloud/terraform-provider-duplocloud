@@ -50,7 +50,9 @@ func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m inter
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	if rp == nil || rp.SecretName == "" {
+		return diag.Errorf("tenant k8 secret '%s' not found", name)
+	}
 	// Convert the results into TF state.
 	flattenK8sSecret(d, rp)
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
