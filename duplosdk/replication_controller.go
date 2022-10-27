@@ -24,6 +24,7 @@ type DuploReplicationController struct {
 	Template                          *DuploPodTemplate      `json:"Template,omitempty"`
 	Tags                              *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
+	Index                             int                    `json:"Index"`
 }
 
 // DuploPodTemplate represents a pod template in the Duplo SDK
@@ -87,6 +88,7 @@ type DuploLbConfiguration struct {
 	ForHealthCheck            bool                      `json:"ForHealthCheck,omitempty"`
 	IsNative                  bool                      `json:"IsNative,omitempty"`
 	HealthCheckConfig         *DuploLbHealthCheckConfig `json:"HealthCheckConfig,omitempty"`
+	LbIndex                   int                       `json:"LbIndex"`
 
 	// Only for K8s services
 	ExtraSelectorLabels *[]DuploKeyStringValue `json:"ExtraSelectorLabels,omitempty"`

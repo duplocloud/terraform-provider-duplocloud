@@ -66,6 +66,7 @@ Read-Only:
 - **port** (String)
 - **protocol** (String)
 - **replication_controller_name** (String)
+- **target_group_arn** (String)
 
 <a id="nestedobjatt--services--lbconfigs--extra_selector_label"></a>
 ### Nested Schema for `services.lbconfigs.extra_selector_label`
