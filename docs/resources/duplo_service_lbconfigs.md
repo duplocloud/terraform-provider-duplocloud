@@ -81,6 +81,7 @@ Should be one of:
    - `4` : K8S Service w/ Node Port (No Load Balancer)
    - `5` : Azure Shared Application Gateway
    - `6` : NLB (Network Load Balancer)
+   - `7` : Target Group Only
 - **port** (String) The backend port associated with this load balancer configuration.
 - **protocol** (String) The frontend protocol associated with this load balancer configuration.
 
@@ -104,6 +105,7 @@ Read-Only:
 - **is_infra_deployment** (Boolean)
 - **name** (String) The name of the duplo service.
 - **replication_controller_name** (String) The name of the duplo service.
+- **target_group_arn** (String) The ARN of the Target Group to which to route traffic.
 
 <a id="nestedblock--lbconfigs--extra_selector_label"></a>
 ### Nested Schema for `lbconfigs.extra_selector_label`

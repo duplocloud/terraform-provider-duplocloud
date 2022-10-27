@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"log"
@@ -36,7 +37,8 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 				"   - `3` : K8S Service w/ Cluster IP (No Load Balancer)\n" +
 				"   - `4` : K8S Service w/ Node Port (No Load Balancer)\n" +
 				"   - `5` : Azure Shared Application Gateway\n" +
-				"   - `6` : NLB (Network Load Balancer)\n",
+				"   - `6` : NLB (Network Load Balancer)\n" +
+				"   - `7` : Target Group Only\n",
 			Type:     schema.TypeInt,
 			Required: true,
 			ForceNew: true,
@@ -123,6 +125,11 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Description: "(Azure Only) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
+		},
+		"target_group_arn": {
+			Description: "The ARN of the Target Group to which to route traffic.",
+			Type:        schema.TypeString,
 			Computed:    true,
 		},
 	}
@@ -214,6 +221,24 @@ func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceDa
 	if err != nil {
 		return diag.Errorf("Unable to retrieve tenant %s service '%s' load balancer configs: %s", tenantID, name, err)
 	}
+	rc, err := c.ReplicationControllerGet(tenantID, name)
+	if err != nil {
+		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
+	}
+	tenantFeatures, err := c.TenantFeaturesGet(tenantID)
+	if err != nil {
+		return diag.Errorf("Unable to read tenant features %s: %s", tenantID, err)
+	}
+	tenant, err := c.TenantGet(tenantID)
+	if err != nil {
+		return diag.Errorf("Unable to read tenant %s: %s", tenantID, err)
+	}
+
+	targetGroups, err := c.TenantListApplicationLbTargetGroups(tenantID)
+
+	if err != nil {
+		return diag.Errorf("Unable to read target groups for tenant %s: %s", tenantID, err)
+	}
 	// Apply the TF state
 	d.Set("tenant_id", tenantID)
 	d.Set("replication_controller_name", name)
@@ -224,7 +249,12 @@ func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceDa
 		if lb.LbType != 2 && lb.LbType != 3 && lb.LbType != 4 {
 			isCloudLb = true
 		}
-		lbconfigs = append(lbconfigs, flattenDuploServiceLbConfiguration(&lb))
+		lbConfig := flattenDuploServiceLbConfiguration(&lb)
+		if isCloudLb {
+			targetGroupArn := lbConfigGetTargetGroupArn(tenant.AccountName, tenantFeatures, rc.Index, &lb, targetGroups)
+			lbConfig["target_group_arn"] = targetGroupArn
+		}
+		lbconfigs = append(lbconfigs, lbConfig)
 	}
 	if err = d.Set("lbconfigs", lbconfigs); err != nil {
 		return diag.FromErr(err)
@@ -441,4 +471,31 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"is_internal":                 lb.IsInternal,
 		"extra_selector_label":        keyValueToState("extra_selector_label", lb.ExtraSelectorLabels),
 	}
+}
+
+func lbConfigGetTargetGroupArn(tenantName string, tenantFeatures *duplosdk.DuploTenantFeatures, rcIndex int, lb *duplosdk.DuploLbConfiguration, targetGroups *[]duplosdk.DuploAwsLbTargetGroup) string {
+	log.Printf("[TRACE] lbConfigGetTargetGroupArn ******** start")
+	log.Printf("[TRACE] Tenant(UseLbIndex) : %v, LB(Index) : %v.", tenantFeatures.UseLbIndex, lb.LbIndex)
+	tagetGrpName := ""
+	tagetGrpNameArn := ""
+
+	if tenantFeatures.UseLbIndex {
+		tagetGrpName = strings.Join([]string{"duplo2", tenantName, strconv.Itoa(rcIndex), strconv.Itoa(lb.LbIndex)}, "-")
+	} else {
+		if lb.IsNative {
+			tagetGrpName = strings.Join([]string{"duplo2", tenantName, strconv.Itoa(rcIndex), lb.Protocol + lb.Port}, "-")
+		} else {
+			tagetGrpName = strings.Join([]string{"duplo2", tenantName, strconv.Itoa(rcIndex), lb.Protocol + strconv.Itoa(lb.HostPort)}, "-")
+		}
+	}
+	if len(tagetGrpName) > 0 && targetGroups != nil && len(*targetGroups) > 0 {
+		for _, tg := range *targetGroups {
+			if strings.EqualFold(tg.TargetGroupName, tagetGrpName) {
+				tagetGrpNameArn = tg.TargetGroupArn
+				break
+			}
+		}
+	}
+	log.Printf("[TRACE] lbConfigGetTargetGroupArn ******** end")
+	return tagetGrpNameArn
 }
