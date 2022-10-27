@@ -109,6 +109,25 @@ func dataSourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.Resource
 	services := []interface{}{}
 	if list != nil {
 
+		rc, err := c.ReplicationControllerGet(tenantID, name)
+		if err != nil {
+			return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
+		}
+		tenantFeatures, err := c.TenantFeaturesGet(tenantID)
+		if err != nil {
+			return diag.Errorf("Unable to read tenant features %s: %s", tenantID, err)
+		}
+		tenant, err := c.TenantGet(tenantID)
+		if err != nil {
+			return diag.Errorf("Unable to read tenant %s: %s", tenantID, err)
+		}
+
+		targetGroups, err := c.TenantListApplicationLbTargetGroups(tenantID)
+
+		if err != nil {
+			return diag.Errorf("Unable to read target groups for tenant %s: %s", tenantID, err)
+		}
+
 		// Track all of the services we've seen.
 		services = make([]interface{}, 0, len(*list))
 		svcMap := map[string]int{}
@@ -134,7 +153,7 @@ func dataSourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.Resource
 
 			// Get the service element.
 			svc := services[svcIdx].(map[string]interface{})
-
+			targetGroupArn := ""
 			// Handle a cloud load balancer we haven't seen in this loop yet
 			if svc["arn"] == nil && (lb.LbType != 2 && lb.LbType != 3 && lb.LbType != 4) {
 				lbdetails, lberr := c.TenantGetLbDetailsInService(tenantID, svc["name"].(string))
@@ -148,10 +167,12 @@ func dataSourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.Resource
 						svc["status"] = lbdetails.State.Code.Value
 					}
 				}
+				targetGroupArn = lbConfigGetTargetGroupArn(tenant.AccountName, tenantFeatures, rc.Index, &lb, targetGroups)
 			}
-
+			lbConfig := flattenDuploServiceLbConfiguration(&lb)
+			lbConfig["target_group_arn"] = targetGroupArn
 			// Add this LB to the service's list of LB configs.
-			svc["lbconfigs"] = append(svc["lbconfigs"].([]interface{}), flattenDuploServiceLbConfiguration(&lb))
+			svc["lbconfigs"] = append(svc["lbconfigs"].([]interface{}), lbConfig)
 		}
 	}
 	if err = d.Set("services", services); err != nil {
