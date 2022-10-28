@@ -102,6 +102,7 @@ Read-Only:
 - **dns_name** (String) The DNS name of the cloud load balancer (if applicable).
 - **frontend_ip** (String)
 - **host_port** (Number) The automatically assigned host port.
+- **index** (Number) The load balancer Index.
 - **is_infra_deployment** (Boolean)
 - **name** (String) The name of the duplo service.
 - **replication_controller_name** (String) The name of the duplo service.

@@ -154,6 +154,11 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"index": {
+			Description: "The index of the service.",
+			Type:        schema.TypeInt,
+			Computed:    true,
+		},
 	}
 }
 

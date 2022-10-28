@@ -117,6 +117,7 @@ Should be one of:
 ### Read-Only
 
 - **id** (String) The ID of this resource.
+- **index** (Number) The index of the service.
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--timeouts"></a>

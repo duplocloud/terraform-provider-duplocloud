@@ -144,6 +144,7 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 	d.Set("is_daemonset", duplo.IsDaemonset)
 	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 	d.Set("replicas", duplo.Replicas)
+	d.Set("index", duplo.Index)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	if len(duplo.HPASpecs) > 0 {
 		flattenHPASpecs("hpa_specs", duplo.HPASpecs, d)

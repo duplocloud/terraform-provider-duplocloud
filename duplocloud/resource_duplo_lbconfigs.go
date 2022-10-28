@@ -132,6 +132,11 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"index": {
+			Description: "The load balancer Index.",
+			Type:        schema.TypeInt,
+			Computed:    true,
+		},
 	}
 }
 
@@ -422,7 +427,7 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 			// Find a cloud load balancer, and get it's status.
 			isCloudLb := false
 			for _, lb := range *list {
-				if lb.LbType != 0 && lb.LbType != 2 && lb.LbType != 3 && lb.LbType != 4 {
+				if lb.LbType != 0 && lb.LbType != 2 && lb.LbType != 3 && lb.LbType != 4 && lb.LbType != 7 {
 					isCloudLb = true
 				}
 			}
@@ -466,6 +471,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"health_check_url":            lb.HealthCheckURL,
 		"external_traffic_policy":     lb.ExternalTrafficPolicy,
 		"backend_protocol_version":    lb.BeProtocolVersion,
+		"index":                       lb.LbIndex,
 		"frontend_ip":                 lb.FrontendIP,
 		"is_native":                   lb.IsNative,
 		"is_internal":                 lb.IsInternal,
