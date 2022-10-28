@@ -58,6 +58,7 @@ Read-Only:
 - **health_check_url** (String)
 - **host_name** (String)
 - **host_port** (Number)
+- **index** (Number)
 - **is_infra_deployment** (Boolean)
 - **is_internal** (Boolean)
 - **is_native** (Boolean)
