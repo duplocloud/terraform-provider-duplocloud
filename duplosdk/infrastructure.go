@@ -110,8 +110,8 @@ type DuploInfrastructureConfig struct {
 	Region                  string                   `json:"Region"`
 	AzCount                 int                      `json:"AzCount"`
 	EnableK8Cluster         bool                     `json:"EnableK8Cluster"`
-	EnableECSCluster        bool                     `json:"EnableECSCluster,omitempty"`
-	EnableContainerInsights bool                     `json:"EnableContainerInsights,omitempty"`
+	EnableECSCluster        bool                     `json:"EnableECSCluster"`
+	EnableContainerInsights bool                     `json:"EnableContainerInsights"`
 	Vnet                    *DuploInfrastructureVnet `json:"Vnet"`
 	ProvisioningStatus      string                   `json:"ProvisioningStatus"`
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`

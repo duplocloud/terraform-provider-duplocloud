@@ -597,7 +597,9 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 				// If cloud is aws
 				if config.Cloud == 0 {
 					if strings.HasPrefix(vnetSubnet.Name, config.Name) {
-						nameParts := strings.SplitN(vnetSubnet.Name, "-", 3)
+						// Split on infra name first
+						parts := strings.SplitN(vnetSubnet.Name, config.Name, 2)
+						nameParts := strings.SplitN(parts[1], "-", 3)
 						if zone == "" {
 							zone = nameParts[1]
 						}
