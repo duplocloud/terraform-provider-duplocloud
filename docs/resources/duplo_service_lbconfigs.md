@@ -83,7 +83,7 @@ Should be one of:
    - `6` : NLB (Network Load Balancer)
    - `7` : Target Group Only
 - **port** (String) The backend port associated with this load balancer configuration.
-- **protocol** (String) The frontend protocol associated with this load balancer configuration.
+- **protocol** (String) The backend protocol associated with this load balancer configuration.
 
 Optional:
 

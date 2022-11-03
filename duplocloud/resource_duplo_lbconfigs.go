@@ -44,7 +44,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			ForceNew: true,
 		},
 		"protocol": {
-			Description: "The frontend protocol associated with this load balancer configuration.",
+			Description: "The backend protocol associated with this load balancer configuration.",
 			Type:        schema.TypeString,
 			Required:    true,
 		},
