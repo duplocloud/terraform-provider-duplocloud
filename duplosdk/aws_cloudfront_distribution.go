@@ -360,7 +360,7 @@ func (c *Client) AwsCloudfrontDistributionDisable(tenantID string, id string) Cl
 	}
 	return c.putAPI(
 		fmt.Sprintf("AwsCloudfrontDistributionDisable(%s, %s)", tenantID, id),
-		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFrontDistribution/%s", tenantID, id),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFrontDistribution", tenantID),
 		&rq,
 		&rp,
 	)
