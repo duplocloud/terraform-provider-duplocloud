@@ -285,10 +285,14 @@ func flattenK8sIngress(tenantId string, d *schema.ResourceData, duplo *duplosdk.
 	d.Set("ingress_class_name", duplo.IngressClassName)
 
 	// Set LBConfig
-	d.Set("lbconfig", []interface{}{flattenK8sIngressLBConfig(duplo.LbConfig)})
+	if duplo.LbConfig != nil {
+		d.Set("lbconfig", []interface{}{flattenK8sIngressLBConfig(duplo.LbConfig)})
+	}
 
 	// Set Rules
-	d.Set("rule", flattenK8sIngressRules(duplo.Rules))
+	if duplo.Rules != nil && len(*duplo.Rules) > 0 {
+		d.Set("rule", flattenK8sIngressRules(duplo.Rules))
+	}
 
 	// Finally, set the map
 	d.Set("annotations", duplo.Annotations)
@@ -338,10 +342,12 @@ func expandK8sIngress(d *schema.ResourceData) (*duplosdk.DuploK8sIngress, error)
 	duplo := duplosdk.DuploK8sIngress{
 		Name:             d.Get("name").(string),
 		IngressClassName: d.Get("ingress_class_name").(string),
-		LbConfig:         expandK8sIngressLBConfig(d.Get("lbconfig").([]interface{})[0].(map[string]interface{})),
 		Rules:            expandK8sIngressRules(d.Get("rule").([]interface{})),
 	}
 
+	if v, ok := d.GetOk("lbconfig"); ok && !isInterfaceNil(v) && len(v.([]interface{})) == 1 {
+		duplo.LbConfig = expandK8sIngressLBConfig(d.Get("lbconfig").([]interface{})[0].(map[string]interface{}))
+	}
 	// The annotations must be converted to a map of strings.
 	if v, ok := d.GetOk("annotations"); ok && !isInterfaceNil(v) {
 		duplo.Annotations = map[string]string{}
