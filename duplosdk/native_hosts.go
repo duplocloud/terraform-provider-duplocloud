@@ -35,6 +35,7 @@ type DuploNativeHost struct {
 	Volumes            *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
 	MetaData           *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
 	Tags               *[]DuploKeyStringValue             `json:"Tags,omitempty"`
+	TagsEx             *[]DuploKeyStringValue             `json:"TagsEx,omitempty"`
 	MinionTags         *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
 }
 
