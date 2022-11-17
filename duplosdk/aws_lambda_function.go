@@ -63,9 +63,8 @@ type DuploLambdaEnvironment struct {
 
 // DuploLambdaEphemeralStorage is a Duplo SDK object that represents a lambda function's ephemeral storage config.
 type DuploLambdaEphemeralStorage struct {
-	Size int  `json:"Size"`
+	Size int `json:"Size"`
 }
-
 
 // DuploLambdaTracingConfig is a Duplo SDK object that represents a lambda function's tracing config.
 type DuploLambdaTracingConfig struct {
