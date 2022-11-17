@@ -148,6 +148,12 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"force_stateful_set": {
+			Description: "Whether or not to force a StatefulSet to be created.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		"is_daemonset": {
 			Description: "Whether or not to enable DaemonSet.",
 			Type:        schema.TypeBool,
@@ -234,6 +240,7 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		IsAnyHostAllowed:                  d.Get("any_host_allowed").(bool),
 		IsReplicaCollocationAllowed:       d.Get("replica_collocation_allowed").(bool),
 		IsDaemonset:                       d.Get("is_daemonset").(bool),
+		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
 	hpaSpec, _ := expandHPASpecs(d.Get("hpa_specs").(string))
@@ -278,6 +285,7 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 		IsAnyHostAllowed:                  d.Get("any_host_allowed").(bool),
 		IsReplicaCollocationAllowed:       d.Get("replica_collocation_allowed").(bool),
 		IsDaemonset:                       d.Get("is_daemonset").(bool),
+		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
 
