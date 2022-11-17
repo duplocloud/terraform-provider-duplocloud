@@ -56,17 +56,23 @@ type DuploLambdaCode struct {
 	S3Key    string `json:"S3Key,omitempty"`
 }
 
-// DuploLambdaEnvironment is a Duplo SDK object that represents a lambda function's tracing config.
+// DuploLambdaEnvironment is a Duplo SDK object that represents a lambda function's environment config.
 type DuploLambdaEnvironment struct {
 	Variables map[string]string `json:"Variables,omitempty"`
 }
+
+// DuploLambdaEphemeralStorage is a Duplo SDK object that represents a lambda function's ephemeral storage config.
+type DuploLambdaEphemeralStorage struct {
+	Size int  `json:"Size"`
+}
+
 
 // DuploLambdaTracingConfig is a Duplo SDK object that represents a lambda function's tracing config.
 type DuploLambdaTracingConfig struct {
 	Mode DuploStringValue `json:"Mode,omitempty"`
 }
 
-// DuploLambdaVpcConfig is a Duplo SDK object that represents a lambda function's tracing config.
+// DuploLambdaVpcConfig is a Duplo SDK object that represents a lambda function's vpn config.
 type DuploLambdaVpcConfig struct {
 	SecurityGroupIDs []string `json:"SecurityGroupIds,omitempty"`
 	SubnetIDs        []string `json:"SubnetIds,omitempty"`
@@ -98,15 +104,16 @@ type DuploLambdaUpdateRequest struct {
 
 // DuploLambdaConfigurationRequest is a Duplo SDK object that represents a request to update a lambda function's configuration.
 type DuploLambdaConfigurationRequest struct {
-	FunctionName string                  `json:"FunctionName,omitempty"`
-	Handler      string                  `json:"Handler,omitempty"`
-	Runtime      *DuploStringValue       `json:"Runtime,omitempty"`
-	Description  string                  `json:"Description,omitempty"`
-	Timeout      int                     `json:"Timeout,omitempty"`
-	MemorySize   int                     `json:"MemorySize"`
-	Environment  *DuploLambdaEnvironment `json:"Environment,omitempty"`
-	Tags         map[string]string       `json:"Tags,omitempty"`
-	Layers       *[]string               `json:"Layers,omitempty"`
+	FunctionName     string                       `json:"FunctionName,omitempty"`
+	Handler          string                       `json:"Handler,omitempty"`
+	Runtime          *DuploStringValue            `json:"Runtime,omitempty"`
+	Description      string                       `json:"Description,omitempty"`
+	Timeout          int                          `json:"Timeout,omitempty"`
+	MemorySize       int                          `json:"MemorySize"`
+	Environment      *DuploLambdaEnvironment      `json:"Environment,omitempty"`
+	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
+	Tags             map[string]string            `json:"Tags,omitempty"`
+	Layers           *[]string                    `json:"Layers,omitempty"`
 }
 
 type DuploLambdaPermissionStatement struct {
