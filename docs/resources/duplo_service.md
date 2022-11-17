@@ -103,6 +103,7 @@ Should be one of:
 - **cloud_creds_from_k8s_service_account** (Boolean) Whether or not the service gets it's cloud credentials from Kubernetes service account. Defaults to `false`.
 - **commands** (String)
 - **extra_config** (String)
+- **force_stateful_set** (Boolean) Whether or not to force a StatefulSet to be created. Defaults to `false`.
 - **hpa_specs** (String)
 - **is_daemonset** (Boolean) Whether or not to enable DaemonSet. Defaults to `false`.
 - **lb_synced_deployment** (Boolean) Defaults to `false`.
