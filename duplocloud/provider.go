@@ -131,6 +131,7 @@ func Provider() *schema.Provider {
 			"duplocloud_other_agents":                    resourceOtherAgents(),
 			"duplocloud_byoh":                            resourceByoh(),
 			"duplocloud_aws_mwaa_environment":            resourceMwaaAirflow(),
+			"duplocloud_aws_efs_file_system":             resourceAwsEFS(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":     dataSourceAdminAwsCredentials(),
