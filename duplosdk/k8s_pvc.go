@@ -28,7 +28,7 @@ func (c *Client) K8PvcGetList(tenantID string) (*[]DuploK8sPvc, ClientError) {
 	rp := []DuploK8sPvc{}
 	err := c.getAPI(
 		fmt.Sprintf("K8PvcGetList(%s)", tenantID),
-		fmt.Sprintf("subscriptions/%s/k8s/pvc", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/pvc", tenantID),
 		&rp)
 
 	return &rp, err
@@ -52,26 +52,30 @@ func (c *Client) K8PvcGet(tenantID, PvcFullName string) (*DuploK8sPvc, ClientErr
 	return nil, nil
 }
 
-func (c *Client) K8PvcCreate(tenantID string, rq *DuploK8sPvc) ClientError {
+func (c *Client) K8PvcCreate(tenantID string, rq *DuploK8sPvc) (*DuploK8sPvc, ClientError) {
 	return c.K8PvcCreateOrUpdate(tenantID, rq, false)
 }
 
-func (c *Client) K8PvcUpdate(tenantID string, rq *DuploK8sPvc) ClientError {
+func (c *Client) K8PvcUpdate(tenantID string, rq *DuploK8sPvc) (*DuploK8sPvc, ClientError) {
 	return c.K8PvcCreateOrUpdate(tenantID, rq, true)
 }
 
-func (c *Client) K8PvcCreateOrUpdate(tenantID string, rq *DuploK8sPvc, updating bool) ClientError {
-	return c.postAPI(
+func (c *Client) K8PvcCreateOrUpdate(tenantID string, rq *DuploK8sPvc, updating bool) (*DuploK8sPvc, ClientError) {
+	resp := DuploK8sPvc{}
+	err := c.postAPI(
 		fmt.Sprintf("K8PvcCreateOrUpdate(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("subscriptions/%s/k8s/pvc", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/pvc", tenantID),
 		&rq,
-		nil,
+		&resp,
 	)
+	return &resp, err
 }
 
-func (c *Client) K8PvcDelete(tenantID, PvcFullName string) ClientError {
-	return c.deleteAPI(
+func (c *Client) K8PvcDelete(tenantID, PvcFullName string) (*DuploK8sPvc, ClientError) {
+	resp := DuploK8sPvc{}
+	err := c.deleteAPI(
 		fmt.Sprintf("K8PvcDelete(%s, %s)", tenantID, PvcFullName),
-		fmt.Sprintf("v2/subscriptions/%s/k8s/pvc/%s", tenantID, PvcFullName),
-		nil)
+		fmt.Sprintf("v3/subscriptions/%s/k8s/pvc/%s", tenantID, PvcFullName),
+		&resp)
+	return &resp, err
 }

@@ -188,18 +188,18 @@ func resourceK8sStorageClassCreate(ctx context.Context, d *schema.ResourceData, 
 	}
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	cerr := c.K8StorageClassCreate(tenantID, rq)
+	resp, cerr := c.K8StorageClassCreate(tenantID, rq)
 	if cerr != nil {
 		return diag.FromErr(cerr)
 	}
-	fullname, clientErr := c.GetDuploServicesName(tenantID, name)
-	if clientErr != nil {
-		return diag.FromErr(clientErr)
-	}
-	d.SetId(fmt.Sprintf("v3/subscriptions/%s/k8s/storageclass/%s", tenantID, fullname))
+	// fullname, clientErr := c.GetDuploServicesName(tenantID, name)
+	// if clientErr != nil {
+	// 	return diag.FromErr(clientErr)
+	// }
+	d.SetId(fmt.Sprintf("v3/subscriptions/%s/k8s/storageclass/%s", tenantID, resp.Name))
 
 	diags := resourceK8sStorageClassRead(ctx, d, m)
-	log.Printf("[TRACE] resourceK8sStorageClassCreate(%s, %s): end", tenantID, fullname)
+	log.Printf("[TRACE] resourceK8sStorageClassCreate(%s, %s): end", tenantID, resp.Name)
 	return diags
 }
 
@@ -228,7 +228,7 @@ func resourceK8sStorageClassDelete(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Unable to retrieve tenant %s k8s storage class %s : %s", tenantID, fullname, clientErr)
 	}
 	if rp != nil && rp.Name != "" {
-		clientErr := c.K8StorageClassDelete(tenantID, fullname)
+		_, clientErr := c.K8StorageClassDelete(tenantID, fullname)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
 				d.SetId("")

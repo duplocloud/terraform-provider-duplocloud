@@ -189,7 +189,7 @@ func resourceK8sPVCCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	cerr := c.K8PvcCreate(tenantID, rq)
+	_, cerr := c.K8PvcCreate(tenantID, rq)
 	if cerr != nil {
 		return diag.FromErr(cerr)
 	}
@@ -225,7 +225,7 @@ func resourceK8sPVCDelete(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.Errorf("Unable to retrieve tenant %s k8s persistent volume claim %s : %s", tenantID, name, clientErr)
 	}
 	if rp != nil && rp.Name != "" {
-		clientErr := c.K8PvcDelete(tenantID, name)
+		_, clientErr := c.K8PvcDelete(tenantID, name)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
 				d.SetId("")
@@ -292,7 +292,7 @@ func expandPersistentVolumeClaimSpec(d *schema.ResourceData) (*duplosdk.DuploK8s
 		in := l[0].(map[string]interface{})
 
 		if in["resources"] != nil {
-			resourceRequirements, err := expandResourceRequirements(d)
+			resourceRequirements, err := expandResourceRequirements(in["resources"].([]interface{}))
 			if err != nil {
 				return nil, err
 			}
@@ -315,22 +315,18 @@ func expandPersistentVolumeClaimSpec(d *schema.ResourceData) (*duplosdk.DuploK8s
 	return obj, nil
 }
 
-func expandResourceRequirements(d *schema.ResourceData) (*duplosdk.DuploK8sPvcSpecResources, error) {
+func expandResourceRequirements(l []interface{}) (*duplosdk.DuploK8sPvcSpecResources, error) {
 	obj := &duplosdk.DuploK8sPvcSpecResources{}
-	if v, ok := d.GetOk("resources"); ok && !isInterfaceNil(v) {
-		l := v.([]interface{})
-		if len(l) == 0 || l[0] == nil {
-			return obj, nil
-		}
-		in := l[0].(map[string]interface{})
-		if v, ok := in["limits"].(map[string]interface{}); ok && len(v) > 0 {
-			obj.Limits = expandAsStringMap("limits", d)
-		}
-		if v, ok := in["requests"].(map[string]interface{}); ok && len(v) > 0 {
-			obj.Requests = expandAsStringMap("requests", d)
-		}
+	if len(l) == 0 || l[0] == nil {
+		return obj, nil
 	}
-
+	in := l[0].(map[string]interface{})
+	if v, ok := in["limits"].(map[string]interface{}); ok && len(v) > 0 {
+		obj.Limits = expandStringMap("limits", in)
+	}
+	if v, ok := in["requests"].(map[string]interface{}); ok && len(v) > 0 {
+		obj.Requests = expandStringMap("requests", in)
+	}
 	return obj, nil
 }
 
@@ -356,11 +352,14 @@ func flattenPersistentVolumeClaimSpec(spec *duplosdk.DuploK8sPvcSpec) []interfac
 
 func flattenResourceRequirements(resources *duplosdk.DuploK8sPvcSpecResources) []interface{} {
 	att := make(map[string]interface{})
-	if len(resources.Limits) > 0 {
-		att["limits"] = flattenStringMap(resources.Limits)
+	if resources != nil {
+		if len(resources.Limits) > 0 {
+			att["limits"] = flattenStringMap(resources.Limits)
+		}
+		if len(resources.Requests) > 0 {
+			att["requests"] = flattenStringMap(resources.Requests)
+		}
 	}
-	if len(resources.Requests) > 0 {
-		att["requests"] = flattenStringMap(resources.Requests)
-	}
+
 	return []interface{}{att}
 }

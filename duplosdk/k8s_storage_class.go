@@ -29,7 +29,7 @@ func (c *Client) K8StorageClassGetList(tenantID string) (*[]DuploK8sStorageClass
 	rp := []DuploK8sStorageClass{}
 	err := c.getAPI(
 		fmt.Sprintf("K8StorageClassGetList(%s)", tenantID),
-		fmt.Sprintf("subscriptions/%s/k8s/storageclass", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/storageclass", tenantID),
 		&rp)
 
 	return &rp, err
@@ -54,29 +54,33 @@ func (c *Client) K8StorageClassGet(tenantID, StorageClassFullName string) (*Dupl
 }
 
 // K8StorageClassCreate creates a k8s StorageClass via the Duplo API.
-func (c *Client) K8StorageClassCreate(tenantID string, rq *DuploK8sStorageClass) ClientError {
+func (c *Client) K8StorageClassCreate(tenantID string, rq *DuploK8sStorageClass) (*DuploK8sStorageClass, ClientError) {
 	return c.K8StorageClassCreateOrUpdate(tenantID, rq, false)
 }
 
 // K8StorageClassUpdate updates a k8s StorageClass via the Duplo API.
-func (c *Client) K8StorageClassUpdate(tenantID string, rq *DuploK8sStorageClass) ClientError {
+func (c *Client) K8StorageClassUpdate(tenantID string, rq *DuploK8sStorageClass) (*DuploK8sStorageClass, ClientError) {
 	return c.K8StorageClassCreateOrUpdate(tenantID, rq, true)
 }
 
 // K8StorageClassCreateOrUpdate creates or updates a k8s StorageClass via the Duplo API.
-func (c *Client) K8StorageClassCreateOrUpdate(tenantID string, rq *DuploK8sStorageClass, updating bool) ClientError {
-	return c.postAPI(
+func (c *Client) K8StorageClassCreateOrUpdate(tenantID string, rq *DuploK8sStorageClass, updating bool) (*DuploK8sStorageClass, ClientError) {
+	resp := DuploK8sStorageClass{}
+	err := c.postAPI(
 		fmt.Sprintf("K8StorageClassCreateOrUpdate(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("subscriptions/%s/k8s/storageclass", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/storageclass", tenantID),
 		&rq,
-		nil,
+		&resp,
 	)
+	return &resp, err
 }
 
 // K8StorageClassDelete deletes a k8s StorageClass via the Duplo API.
-func (c *Client) K8StorageClassDelete(tenantID, StorageClassFullName string) ClientError {
-	return c.deleteAPI(
+func (c *Client) K8StorageClassDelete(tenantID, StorageClassFullName string) (*DuploK8sStorageClass, ClientError) {
+	resp := DuploK8sStorageClass{}
+	err := c.deleteAPI(
 		fmt.Sprintf("K8StorageClassDelete(%s, %s)", tenantID, StorageClassFullName),
-		fmt.Sprintf("v2/subscriptions/%s/k8s/storageclass/%s", tenantID, StorageClassFullName),
-		nil)
+		fmt.Sprintf("v3/subscriptions/%s/k8s/storageclass/%s", tenantID, StorageClassFullName),
+		&resp)
+	return &resp, err
 }
