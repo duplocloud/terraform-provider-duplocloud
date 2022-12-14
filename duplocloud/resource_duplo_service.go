@@ -288,7 +288,8 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
-
+	hpaSpec, _ := expandHPASpecs(d.Get("hpa_specs").(string))
+	rq.HPASpecs = hpaSpec
 	// Put the object to Duplo
 	c := m.(*duplosdk.Client)
 	err := c.ReplicationControllerUpdate(tenantID, &rq)
