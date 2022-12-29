@@ -44,6 +44,7 @@ type DuploRdsInstance struct {
 	EnableLogging               bool   `json:"EnableLogging,omitempty"`
 	MultiAZ                     bool   `json:"MultiAZ,omitempty"`
 	InstanceStatus              string `json:"InstanceStatus,omitempty"`
+	DBSubnetGroupName           string `json:"DBSubnetGroupName,omitempty"`
 }
 
 // DuploRdsInstancePasswordChange is a Duplo SDK object that represents an RDS instance password change
