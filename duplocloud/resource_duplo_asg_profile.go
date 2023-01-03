@@ -376,7 +376,7 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 					}
 				}
 				log.Printf("[DEBUG] Count, MinCount (%v-%v)", count, minInstanceCount)
-				if minInstanceCount == 0 || (status == "ready" && count == minInstanceCount) {
+				if minInstanceCount == 0 || (status == "ready" && count >= minInstanceCount) {
 					status = "ready"
 				} else {
 					status = "pending"
