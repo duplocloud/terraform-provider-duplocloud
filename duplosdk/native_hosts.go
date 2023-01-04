@@ -35,6 +35,7 @@ type DuploNativeHost struct {
 	Volumes            *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
 	MetaData           *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
 	Tags               *[]DuploKeyStringValue             `json:"Tags,omitempty"`
+	TagsEx             *[]DuploKeyStringValue             `json:"TagsEx,omitempty"`
 	MinionTags         *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
 }
 
@@ -274,7 +275,7 @@ func (c *Client) AzureNativeHostList(tenantID string) (*[]DuploNativeHost, Clien
 }
 
 func (c *Client) AzureNativeHostCreate(rq *DuploNativeHost) ClientError {
-	rp := ""
+	rp := DuploAzureVirtualMachine{}
 	return c.postAPI(fmt.Sprintf("AzureNativeHostCreate(%s, %s)", rq.TenantID, rq.FriendlyName),
 		fmt.Sprintf("subscriptions/%s/CreateAzureVmSync", rq.TenantID),
 		&rq,

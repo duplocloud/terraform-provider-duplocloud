@@ -132,7 +132,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
-			ForceNew: true, // relaunch instance
 			Elem:     KeyValueSchema(),
 		},
 		"minion_tags": {
@@ -226,7 +225,8 @@ func resourceAzureVirtualMachineRead(ctx context.Context, d *schema.ResourceData
 		}
 		return diag.Errorf("Unable to retrieve tenant %s azure virtual machine %s : %s", tenantID, name, clientErr)
 	}
-
+	d.Set("friendly_name", name)
+	d.Set("tenant_id", tenantID)
 	flattenAzureVirtualMachine(d, duplo)
 
 	log.Printf("[TRACE] resourceAzureVirtualMachineRead(%s, %s): end", tenantID, name)
@@ -270,7 +270,7 @@ func resourceAzureVirtualMachineCreate(ctx context.Context, d *schema.ResourceDa
 }
 
 func resourceAzureVirtualMachineUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	return resourceAzureVirtualMachineCreate(ctx, d, m)
 }
 
 func resourceAzureVirtualMachineDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -346,7 +346,7 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 		MetaData: &[]duplosdk.DuploKeyStringValue{
 			diskSizeKV, usernameKV, passwordKV, joinDomainKV, logAnalyticKV,
 		},
-		Tags:       keyValueFromState("tags", d),
+		TagsEx:     keyValueFromState("tags", d),
 		MinionTags: keyValueFromState("minion_tags", d),
 		Volumes:    expandAzureNativeHostVolumes("volume", d),
 		NetworkInterfaces: &[]duplosdk.DuploNativeHostNetworkInterface{
@@ -400,8 +400,39 @@ func parseAzureVirtualMachineIdParts(id string) (tenantID, name string, err erro
 }
 
 func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) {
+	d.Set("instance_id", duplo.InstanceID)
+	d.Set("capacity", duplo.Capacity)
+	if !duplo.IsMinion {
+		d.Set("is_minion", false)
+	}
+	d.Set("image_id", duplo.ImageID)
+	d.Set("base64_user_data", duplo.Base64UserData)
+	d.Set("agent_platform", duplo.AgentPlatform)
+	d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
+	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("status", duplo.Status)
 	d.Set("user_account", duplo.UserAccount)
+	d.Set("tags", flattenTags(duplo.TagsEx))
+}
+
+func flattenTags(tags *[]duplosdk.DuploKeyStringValue) []interface{} {
+	if tags != nil {
+		managedTags := DuploManagedAzureTags()
+		output := []interface{}{}
+		for _, duploObject := range *tags {
+			if Contains(managedTags, duploObject.Key) {
+				continue
+			}
+
+			jo := make(map[string]interface{})
+			jo["key"] = duploObject.Key
+			jo["value"] = duploObject.Value
+			output = append(output, jo)
+		}
+		return output
+	}
+
+	return make([]interface{}, 0)
 }
 
 func virtualMachineWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
