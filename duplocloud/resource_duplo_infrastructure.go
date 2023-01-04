@@ -145,7 +145,7 @@ func resourceInfrastructure() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.StringLenBetween(2, 12),
+				ValidateFunc: validation.StringLenBetween(2, 30),
 			},
 			"account_id": {
 				Description: "The cloud account ID.",

@@ -30,6 +30,7 @@ description: |-
 - **commands** (List of String)
 - **docker_image** (String)
 - **extra_config** (String)
+- **force_stateful_set** (Boolean)
 - **hpa_specs** (String)
 - **id** (String) The ID of this resource.
 - **is_daemonset** (Boolean)

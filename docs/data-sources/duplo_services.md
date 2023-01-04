@@ -37,6 +37,7 @@ Read-Only:
 - **commands** (List of String)
 - **docker_image** (String)
 - **extra_config** (String)
+- **force_stateful_set** (Boolean)
 - **hpa_specs** (String)
 - **is_daemonset** (Boolean)
 - **lb_synced_deployment** (Boolean)
