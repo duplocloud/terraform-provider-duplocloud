@@ -778,3 +778,16 @@ func base64IsEncoded(data string) bool {
 	_, err := base64.StdEncoding.DecodeString(data)
 	return err == nil
 }
+
+func DuploManagedAzureTags() []string {
+	return []string{"TENANT_NAME", "TENANT_ID", "duplo-project", "duplo_creation_time", "duplo_sync_vm", "owner"}
+}
+
+func Contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}

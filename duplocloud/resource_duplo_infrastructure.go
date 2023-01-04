@@ -564,6 +564,8 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
 		d.Set("setting", keyValueToState("setting", selectKeyValues(config.CustomData, *v)))
+	} else {
+		d.Set("specified_settings", make([]interface{}, 0))
 	}
 
 	// Set extended infrastructure information.
