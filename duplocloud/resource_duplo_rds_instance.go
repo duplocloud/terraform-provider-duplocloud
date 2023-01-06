@@ -126,6 +126,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ForceNew:      true,
 			ConflictsWith: []string{"master_username"},
 		},
+		"db_subnet_group_name": {
+			Description: "Name of DB subnet group. DB instance will be created in the VPC associated with the DB subnet group.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
 		"parameter_group_name": {
 			Description: "A RDS parameter group name to apply to the RDS instance.",
 			Type:        schema.TypeString,
@@ -479,6 +485,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.EngineVersion = d.Get("engine_version").(string)
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
 	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
+	duploObject.DBSubnetGroupName = d.Get("db_subnet_group_name").(string)
 	duploObject.Cloud = 0 // AWS
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.EncryptStorage = d.Get("encrypt_storage").(bool)
@@ -521,6 +528,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["snapshot_id"] = duploObject.SnapshotID
 	jo["parameter_group_name"] = duploObject.DBParameterGroupName
+	jo["db_subnet_group_name"] = duploObject.DBSubnetGroupName
 	jo["size"] = duploObject.SizeEx
 	jo["encrypt_storage"] = duploObject.EncryptStorage
 	jo["kms_key_id"] = duploObject.EncryptionKmsKeyId
