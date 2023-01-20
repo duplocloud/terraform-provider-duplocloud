@@ -47,7 +47,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 		"is_minion": {
 			Type:     schema.TypeBool,
 			Optional: true,
-			ForceNew: true,
 			Default:  true,
 		},
 		"join_domain": {
@@ -228,7 +227,15 @@ func resourceAzureVirtualMachineRead(ctx context.Context, d *schema.ResourceData
 	d.Set("friendly_name", name)
 	d.Set("tenant_id", tenantID)
 	flattenAzureVirtualMachine(d, duplo)
-
+	minion, _ := c.GetMinionForHost(tenantID, name)
+	if minion != nil {
+		log.Printf("[TRACE] Minion found for host (%s).", name)
+		d.Set("is_minion", true)
+		d.Set("agent_platform", minion.AgentPlatform)
+	} else {
+		log.Printf("[TRACE] Minion not found for host (%s).", name)
+		d.Set("is_minion", false)
+	}
 	log.Printf("[TRACE] resourceAzureVirtualMachineRead(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -402,9 +409,6 @@ func parseAzureVirtualMachineIdParts(id string) (tenantID, name string, err erro
 func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) {
 	d.Set("instance_id", duplo.InstanceID)
 	d.Set("capacity", duplo.Capacity)
-	if !duplo.IsMinion {
-		d.Set("is_minion", false)
-	}
 	d.Set("image_id", duplo.ImageID)
 	d.Set("base64_user_data", duplo.Base64UserData)
 	d.Set("agent_platform", duplo.AgentPlatform)
@@ -440,11 +444,11 @@ func virtualMachineWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenan
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
-			rp, err := c.AzureVirtualMachineGet(tenantID, name)
-			log.Printf("[TRACE] Virtual machine provisioning state is (%s).", rp.PropertiesProvisioningState)
+			rp, err := c.AzureNativeHostGet(tenantID, name)
+			log.Printf("[TRACE] Virtual machine provisioning state is (%s).", rp.Status)
 			status := "pending"
 			if err == nil {
-				if rp.PropertiesProvisioningState == "Succeeded" {
+				if rp.Status == "VM running" {
 					status = "ready"
 				} else {
 					status = "pending"
