@@ -444,11 +444,11 @@ func virtualMachineWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenan
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
-			rp, err := c.AzureVirtualMachineGet(tenantID, name)
-			log.Printf("[TRACE] Virtual machine provisioning state is (%s).", rp.PropertiesProvisioningState)
+			rp, err := c.AzureNativeHostGet(tenantID, name)
+			log.Printf("[TRACE] Virtual machine provisioning state is (%s).", rp.Status)
 			status := "pending"
 			if err == nil {
-				if rp.PropertiesProvisioningState == "Succeeded" {
+				if rp.Status == "VM running" {
 					status = "ready"
 				} else {
 					status = "pending"
