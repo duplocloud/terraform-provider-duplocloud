@@ -158,6 +158,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
+		"allocated_storage": {
+			Description: "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
 		"encrypt_storage": {
 			Description: "Whether or not to encrypt the RDS instance storage.",
 			Type:        schema.TypeBool,
@@ -489,6 +495,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.Cloud = 0 // AWS
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.EncryptStorage = d.Get("encrypt_storage").(bool)
+	duploObject.AllocatedStorage = d.Get("allocated_storage").(int)
 	duploObject.EncryptionKmsKeyId = d.Get("kms_key_id").(string)
 	duploObject.EnableLogging = d.Get("enable_logging").(bool)
 	duploObject.MultiAZ = d.Get("multi_az").(bool)
@@ -531,6 +538,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["db_subnet_group_name"] = duploObject.DBSubnetGroupName
 	jo["size"] = duploObject.SizeEx
 	jo["encrypt_storage"] = duploObject.EncryptStorage
+	jo["allocated_storage"] = duploObject.AllocatedStorage
 	jo["kms_key_id"] = duploObject.EncryptionKmsKeyId
 	jo["enable_logging"] = duploObject.EnableLogging
 	jo["multi_az"] = duploObject.MultiAZ
