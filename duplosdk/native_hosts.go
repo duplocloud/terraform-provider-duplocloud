@@ -266,6 +266,22 @@ func (c *Client) AzureNativeHostGet(tenantID, name string) (*DuploNativeHost, Cl
 	return nil, nil
 }
 
+func (c *Client) GetMinionForHost(tenantID, name string) (*DuploMinion, ClientError) {
+	list, err := c.TenantListMinions(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	if list != nil {
+		for _, minion := range *list {
+			if minion.Name == name {
+				return &minion, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
 func (c *Client) AzureNativeHostList(tenantID string) (*[]DuploNativeHost, ClientError) {
 	rp := []DuploNativeHost{}
 	err := c.getAPI(fmt.Sprintf("NativeHostGet(%s)", tenantID),

@@ -432,6 +432,7 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 }
 
 func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[string]interface{} {
+	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... Start")
 	m := map[string]interface{}{
 		"name":                        lb.ReplicationControllerName,
 		"replication_controller_name": lb.ReplicationControllerName,
@@ -453,8 +454,11 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"is_internal":                 lb.IsInternal,
 		"extra_selector_label":        keyValueToState("extra_selector_label", lb.ExtraSelectorLabels),
 	}
+
 	if lb.LbType == 5 && lb.HostNames != nil && len(*lb.HostNames) > 0 {
+		log.Printf("[DEBUG] HostNames... %v", lb.HostNames)
 		m["host_name"] = (*lb.HostNames)[0]
 	}
+	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... End")
 	return m
 }

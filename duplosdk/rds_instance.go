@@ -40,10 +40,12 @@ type DuploRdsInstance struct {
 	Cloud                       int    `json:"Cloud,omitempty"`
 	SizeEx                      string `json:"SizeEx,omitempty"`
 	EncryptStorage              bool   `json:"EncryptStorage,omitempty"`
+	AllocatedStorage            int    `json:"AllocatedStorage,omitempty"`
 	EncryptionKmsKeyId          string `json:"EncryptionKmsKeyId,omitempty"`
 	EnableLogging               bool   `json:"EnableLogging,omitempty"`
 	MultiAZ                     bool   `json:"MultiAZ,omitempty"`
 	InstanceStatus              string `json:"InstanceStatus,omitempty"`
+	DBSubnetGroupName           string `json:"DBSubnetGroupName,omitempty"`
 }
 
 // DuploRdsInstancePasswordChange is a Duplo SDK object that represents an RDS instance password change
