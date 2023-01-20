@@ -159,7 +159,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
 		"allocated_storage": {
-			Description: "(Required unless a `snapshot_id` is provided) The allocated storage in gibibytes.",
+			Description: "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
