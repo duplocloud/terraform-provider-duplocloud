@@ -190,12 +190,12 @@ func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.Resour
 	if err != nil {
 		return diag.Errorf("Error while creating listener rule for tenant %s load balancer '%s': %s", tenantID, lbName, err)
 	}
-	listener, err := c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn)
+	listener, err := c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn, rq.Port)
 
 	id := fmt.Sprintf("%s/%s/%s", tenantID, lbName, listener.ListenerArn)
 
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "load balancer listener", id, func() (interface{}, duplosdk.ClientError) {
-		listener, err = c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn)
+		listener, err = c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn, rq.Port)
 		return listener, err
 	})
 	if diags != nil {
@@ -224,6 +224,7 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 	targetArn := d.Get("target_group_arn").(string)
 	tenantId := d.Get("tenant_id").(string)
 	lbFullName := d.Get("load_balancer_fullname").(string)
+	port := d.Get("port").(int)
 	listenerArn := d.Get("arn").(string)
 	id := d.Id()
 
@@ -234,7 +235,7 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 
 	// Wait up to 60 seconds for Duplo to delete the load balancer listener.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "load balancer listener", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenantApplicationLbListenersByTargetGrpArn(tenantId, lbFullName, targetArn)
+		return c.TenantApplicationLbListenersByTargetGrpArn(tenantId, lbFullName, targetArn, port)
 	})
 	if diag != nil {
 		return diag
