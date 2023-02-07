@@ -453,6 +453,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"is_native":                   lb.IsNative,
 		"is_internal":                 lb.IsInternal,
 		"extra_selector_label":        keyValueToState("extra_selector_label", lb.ExtraSelectorLabels),
+		"target_group_arn":            lb.TgArn,
 	}
 
 	if lb.LbType == 5 && lb.HostNames != nil && len(*lb.HostNames) > 0 {
