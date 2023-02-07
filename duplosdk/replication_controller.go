@@ -90,7 +90,7 @@ type DuploLbConfiguration struct {
 	IsNative                  bool                      `json:"IsNative,omitempty"`
 	HealthCheckConfig         *DuploLbHealthCheckConfig `json:"HealthCheckConfig,omitempty"`
 	LbIndex                   int                       `json:"LbIndex"`
-
+	TgArn                     string                    `json:"TgArn,omitempty"`
 	// Only for K8s services
 	ExtraSelectorLabels *[]DuploKeyStringValue `json:"ExtraSelectorLabels,omitempty"`
 
