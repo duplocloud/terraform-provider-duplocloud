@@ -127,11 +127,18 @@ func resourceAwsBatchSchedulingPolicyRead(ctx context.Context, d *schema.Resourc
 	// Retrieve the objects from duplo.
 	c := m.(*duplosdk.Client)
 	fullName, _ := c.GetDuploServicesName(tenantID, name)
-	policy, err := c.AwsBatchSchedulingPolicyGet(tenantID, fullName)
-	if err != nil {
-		return diag.FromErr(err)
+	policy, clientErr := c.AwsBatchSchedulingPolicyGet(tenantID, fullName)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(clientErr)
 	}
-
+	if policy == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	flattenBatchSchedulingPolicy(d, c, policy, tenantID)
 
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))

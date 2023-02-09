@@ -80,7 +80,7 @@ func (c *Client) AwsBatchSchedulingPolicyDelete(tenantID string, name string) Cl
 
 type DuploAwsBatchComputeEnvironment struct {
 	ComputeResources       *DuploAwsBatchComputeResource `json:"ComputeResources,omitempty"`
-	ComputeEnvironmentName string                        `json:"ComputeEnvironmentName"`
+	ComputeEnvironmentName string                        `json:"ComputeEnvironmentName,omitempty"`
 	Tags                   map[string]string             `json:"Tags,omitempty"`
 	ServiceRole            string                        `json:"ServiceRole,omitempty"`
 	Type                   *DuploStringValue             `json:"Type,omitempty"`
@@ -89,13 +89,14 @@ type DuploAwsBatchComputeEnvironment struct {
 	EcsClusterArn          string                        `json:"EcsClusterArn,omitempty"`
 	Status                 *DuploStringValue             `json:"Status,omitempty"`
 	StatusReason           string                        `json:"StatusReason,omitempty"`
+	ComputeEnvironment     string                        `json:"ComputeEnvironment,omitempty"`
 }
 
 type DuploAwsBatchComputeResource struct {
 	Ec2Configuration   *[]DuploAwsBatchComputeEc2Configuration   `json:"Ec2Configuration,omitempty"`
 	LaunchTemplate     *DuploAwsBatchLaunchTemplateConfiguration `json:"LaunchTemplate,omitempty"`
-	Type               string                                    `json:"Type,omitempty"`
-	AllocationStrategy string                                    `json:"AllocationStrategy,omitempty"`
+	Type               *DuploStringValue                         `json:"Type,omitempty"`
+	AllocationStrategy *DuploStringValue                         `json:"AllocationStrategy,omitempty"`
 	MaxvCpus           int                                       `json:"MaxvCpus,omitempty"`
 	MinvCpus           int                                       `json:"MinvCpus,omitempty"`
 	DesiredvCpus       int                                       `json:"DesiredvCpus,omitempty"`
