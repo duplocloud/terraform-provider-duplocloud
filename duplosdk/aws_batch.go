@@ -205,6 +205,7 @@ type DuploAwsBatchJobQueue struct {
 	Tags                    map[string]string                       `json:"Tags,omitempty"`
 	Status                  *DuploStringValue                       `json:"Status,omitempty"`
 	StatusReason            string                                  `json:"StatusReason,omitempty"`
+	JobQueue                string                                  `json:"JobQueue,omitempty"`
 }
 
 type DuploAwsBatchComputeEnvironmentOrder struct {
