@@ -289,10 +289,26 @@ type DuploAwsBatchJobDefinition struct {
 	RetryStrategy        *DuploAwsBatchJobDefinitionRetryStrategy `json:"RetryStrategy,omitempty"`
 	ContainerProperties  map[string]interface{}                   `json:"ContainerProperties,omitempty"`
 	JobDefinitionName    string                                   `json:"JobDefinitionName,omitempty"`
+	JobDefinitionArn     string                                   `json:"JobDefinitionArn,omitempty"`
 	PlatformCapabilities []string                                 `json:"PlatformCapabilities,omitempty"`
 	Timeout              *DuploAwsBatchJobDefinitionTimeout       `json:"Timeout,omitempty"`
 	Parameters           map[string]string                        `json:"Parameters,omitempty"`
 	Type                 *DuploStringValue                        `json:"Type,omitempty"`
+	Tags                 map[string]string                        `json:"Tags,omitempty"`
+	Revision             int                                      `json:"Revision,omitempty"`
+}
+
+type DuploAwsBatchJobDefinitionResp struct {
+	RetryStrategy        *DuploAwsBatchJobDefinitionRetryStrategy `json:"RetryStrategy,omitempty"`
+	ContainerProperties  map[string]interface{}                   `json:"ContainerProperties,omitempty"`
+	JobDefinitionName    string                                   `json:"JobDefinitionName,omitempty"`
+	JobDefinitionArn     string                                   `json:"JobDefinitionArn,omitempty"`
+	PlatformCapabilities []string                                 `json:"PlatformCapabilities,omitempty"`
+	Timeout              *DuploAwsBatchJobDefinitionTimeout       `json:"Timeout,omitempty"`
+	Parameters           map[string]string                        `json:"Parameters,omitempty"`
+	Type                 string                                   `json:"Type,omitempty"`
+	Tags                 map[string]string                        `json:"Tags,omitempty"`
+	Revision             int                                      `json:"Revision,omitempty"`
 }
 
 type DuploAwsBatchJobDefinitionTimeout struct {
@@ -327,11 +343,11 @@ type DuploAwsBatchJobDefinitionEvaluateOnExit struct {
 // 	ReadonlyRootFilesystem bool   `json:"ReadonlyRootFilesystem,omitempty"`
 // }
 
-func (c *Client) AwsBatchJobDefinitionCreate(tenantID string, rq *DuploAwsBatchJobQueue) ClientError {
+func (c *Client) AwsBatchJobDefinitionCreate(tenantID string, rq *DuploAwsBatchJobDefinition) ClientError {
 	rp := ""
 	return c.postAPI(
-		fmt.Sprintf("AwsBatchJobDefinitionCreate(%s, %s)", tenantID, rq.JobQueueName),
-		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobQueue", tenantID),
+		fmt.Sprintf("AwsBatchJobDefinitionCreate(%s, %s)", tenantID, rq.JobDefinitionName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition", tenantID),
 		&rq,
 		&rp,
 	)
@@ -347,7 +363,7 @@ func (c *Client) AwsBatchJobDefinitionUpdate(tenantID string, rq *DuploAwsBatchJ
 	)
 }
 
-func (c *Client) AwsBatchJobDefinitionGet(tenantID string, name string) (*DuploAwsBatchJobDefinition, ClientError) {
+func (c *Client) AwsBatchJobDefinitionGet(tenantID string, name string) (*DuploAwsBatchJobDefinitionResp, ClientError) {
 	list, err := c.AwsBatchJobDefinitionList(tenantID)
 	if err != nil {
 		return nil, err
@@ -363,8 +379,8 @@ func (c *Client) AwsBatchJobDefinitionGet(tenantID string, name string) (*DuploA
 	return nil, nil
 }
 
-func (c *Client) AwsBatchJobDefinitionList(tenantID string) (*[]DuploAwsBatchJobDefinition, ClientError) {
-	rp := []DuploAwsBatchJobDefinition{}
+func (c *Client) AwsBatchJobDefinitionList(tenantID string) (*[]DuploAwsBatchJobDefinitionResp, ClientError) {
+	rp := []DuploAwsBatchJobDefinitionResp{}
 	err := c.getAPI(
 		fmt.Sprintf("AwsBatchJobDefinitionList(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition", tenantID),
