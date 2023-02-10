@@ -397,3 +397,88 @@ func (c *Client) AwsBatchJobDefinitionDelete(tenantID string, name string) Clien
 		nil,
 	)
 }
+
+//  --------------- Submit Job Request ---------------
+
+type DuploAwsBatchJobRequest struct {
+	JobName                    string                                   `json:"JobName,omitempty"`
+	JobDefinition              string                                   `json:"JobDefinition,omitempty"`
+	JobQueue                   string                                   `json:"JobQueue,omitempty"`
+	JobDefinitionArn           string                                   `json:"JobDefinitionArn,omitempty"`
+	PlatformCapabilities       []string                                 `json:"PlatformCapabilities,omitempty"`
+	Timeout                    *DuploAwsBatchJobDefinitionTimeout       `json:"Timeout,omitempty"`
+	Parameters                 map[string]string                        `json:"Parameters,omitempty"`
+	Type                       *DuploStringValue                        `json:"Type,omitempty"`
+	Tags                       map[string]string                        `json:"Tags,omitempty"`
+	Revision                   int                                      `json:"Revision,omitempty"`
+	SchedulingPriorityOverride int                                      `json:"SchedulingPriorityOverride,omitempty"`
+	RetryStrategy              *DuploAwsBatchJobDefinitionRetryStrategy `json:"RetryStrategy,omitempty"`
+	ContainerOverrides         map[string]interface{}                   `json:"ContainerOverrides,omitempty"`
+	ShareIdentifier            string                                   `json:"ShareIdentifier,omitempty"`
+}
+
+type DuploAwsBatchJobDetails struct {
+	JobArn               string                                   `json:"JobArn,omitempty"`
+	JobId                string                                   `json:"JobId,omitempty"`
+	ShareIdentifier      string                                   `json:"ShareIdentifier,omitempty"`
+	JobName              string                                   `json:"JobName,omitempty"`
+	JobDefinition        string                                   `json:"JobDefinition,omitempty"`
+	JobQueue             string                                   `json:"JobQueue,omitempty"`
+	PlatformCapabilities []string                                 `json:"PlatformCapabilities,omitempty"`
+	Timeout              *DuploAwsBatchJobDefinitionTimeout       `json:"Timeout,omitempty"`
+	Parameters           map[string]string                        `json:"Parameters,omitempty"`
+	Type                 *DuploStringValue                        `json:"Type,omitempty"`
+	Tags                 map[string]string                        `json:"Tags,omitempty"`
+	SchedulingPriority   int                                      `json:"SchedulingPriority,omitempty"`
+	RetryStrategy        *DuploAwsBatchJobDefinitionRetryStrategy `json:"RetryStrategy,omitempty"`
+	StatusReason         string                                   `json:"StatusReason,omitempty"`
+	Status               *DuploStringValue                        `json:"Status,omitempty"`
+	Container            map[string]interface{}                   `json:"Container,omitempty"`
+	IsTerminated         bool                                     `json:"IsTerminated"`
+	IsCancelled          bool                                     `json:"IsCancelled"`
+}
+
+func (c *Client) AwsBatchJobCreate(tenantID string, rq *DuploAwsBatchJobRequest) (string, ClientError) {
+	rp := ""
+	err := c.postAPI(
+		fmt.Sprintf("AwsBatchJobCreate(%s, %s)", tenantID, rq.JobName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobs", tenantID),
+		&rq,
+		&rp,
+	)
+	return rp, err
+}
+
+func (c *Client) AwsBatchJobDescribe(tenantID string, name string) (*DuploAwsBatchJobDetails, ClientError) {
+	rp := DuploAwsBatchJobDetails{}
+	err := c.getAPI(
+		fmt.Sprintf("AwsBatchJobDescribe(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobsDescribe/%s", tenantID, name),
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) AwsBatchJobTerminated(tenantID string, name string) (bool, ClientError) {
+	rp := DuploAwsBatchJobDetails{}
+	err := c.getAPI(
+		fmt.Sprintf("AwsBatchJobDescribe(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobsDescribe/%s", tenantID, name),
+		&rp,
+	)
+	if err != nil {
+		return false, err
+	}
+	if rp.IsCancelled || rp.IsTerminated {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (c *Client) AwsBatchJobDelete(tenantID string, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("AwsBatchJobDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobs/%s", tenantID, name),
+		nil,
+	)
+}
