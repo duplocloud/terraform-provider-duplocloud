@@ -317,8 +317,6 @@ func resourceAwsBatchComputeEnvironmentRead(ctx context.Context, d *schema.Resou
 	}
 	flattenBatchComputeEnvironment(d, c, ce, tenantID)
 
-	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
-
 	log.Printf("[TRACE] resourceAwsBatchComputeEnvironmentRead(%s, %s): end", tenantID, name)
 	return nil
 }

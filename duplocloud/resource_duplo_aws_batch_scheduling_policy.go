@@ -141,8 +141,6 @@ func resourceAwsBatchSchedulingPolicyRead(ctx context.Context, d *schema.Resourc
 	}
 	flattenBatchSchedulingPolicy(d, c, policy, tenantID)
 
-	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
-
 	log.Printf("[TRACE] resourceAwsBatchSchedulingPolicyRead(%s, %s): end", tenantID, name)
 	return nil
 }

@@ -56,7 +56,7 @@ resource "duplocloud_aws_batch_compute_environment" "bce" {
 
 resource "duplocloud_aws_batch_job_queue" "jq" {
   tenant_id = local.tenant_id
-  name      = "tf-test-batch-job-queue"
+  name      = "tf_job_queue"
 
   scheduling_policy_arn = duplocloud_aws_batch_scheduling_policy.bsp.arn
   state                 = "ENABLED"

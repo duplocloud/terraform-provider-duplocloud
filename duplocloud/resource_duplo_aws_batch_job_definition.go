@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
@@ -49,8 +50,9 @@ func duploAwsBatchJobDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 			StateFunc: func(v interface{}) string {
 				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: <= %v", v)
-				defn, _ := expandJobContainerProperties(v.(string))
-				json, err := jcs.Format(defn)
+				props, _ := expandJobContainerProperties(v.(string))
+				reorderJobContainerPropertiesEnvironmentVariables(props)
+				json, err := jcs.Format(props)
 				if json == "{}" {
 					json = ""
 				}
@@ -238,8 +240,6 @@ func resourceAwsBatchJobDefinitionRead(ctx context.Context, d *schema.ResourceDa
 		return nil
 	}
 	flattenBatchJobDefinition(d, c, jq, tenantID)
-
-	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
 
 	log.Printf("[TRACE] resourceAwsBatchJobDefinitionRead(%s, %s): end", tenantID, name)
 	return nil
@@ -588,6 +588,8 @@ func flattenJobTimeout(apiObject *duplosdk.DuploAwsBatchJobDefinitionTimeout) ma
 func reduceJobContainerProperties(props map[string]interface{}) error {
 	makeMapUpperCamelCase(props)
 
+	reorderJobContainerPropertiesEnvironmentVariables(props)
+
 	reduceNilOrEmptyMapEntries(props)
 
 	// Handle fields that have defaults.
@@ -651,4 +653,34 @@ func otherJobContainerPropertiesAreEquivalent(old, new string) (bool, error) {
 		log.Printf("[DEBUG] Canonical container properties are not equal.\nFirst: %s\nSecond: %s\n", oldCanonical, newCanonical)
 	}
 	return equal, nil
+}
+
+func reorderJobContainerPropertiesEnvironmentVariables(defn map[string]interface{}) {
+
+	// Re-order environment variables to a canonical order.
+	if v, ok := defn["Environment"]; ok && v != nil {
+		if env, ok := v.([]interface{}); ok && env != nil {
+			sort.SliceStable(env, func(i, j int) bool {
+
+				// Get both maps, ensure we are using upper camel-case.
+				mi := env[i].(map[string]interface{})
+				mj := env[j].(map[string]interface{})
+				makeMapUpperCamelCase(mi)
+				makeMapUpperCamelCase(mj)
+
+				// Get both name keys, fall back on an empty string.
+				si := ""
+				sj := ""
+				if v, ok = mi["Name"]; ok && !isInterfaceNil(v) {
+					si = v.(string)
+				}
+				if v, ok = mj["Name"]; ok && !isInterfaceNil(v) {
+					sj = v.(string)
+				}
+
+				// Compare the two.
+				return si < sj
+			})
+		}
+	}
 }

@@ -122,8 +122,6 @@ func resourceAwsBatchJobQueueRead(ctx context.Context, d *schema.ResourceData, m
 	}
 	flattenBatchJobQueue(d, c, jq, tenantID)
 
-	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
-
 	log.Printf("[TRACE] resourceAwsBatchJobQueueRead(%s, %s): end", tenantID, name)
 	return nil
 }
