@@ -31,15 +31,15 @@ resource "duplocloud_aws_batch_job_definition" "jd" {
         "Image": "amazonlinux",
         "ResourceRequirements": [
             {
-                "Type": "MEMORY",
+                "Type": { "Value": "MEMORY" },
                 "Value": "2048"
             },
             {
-                "Type": "VCPU",
+                "Type":  { "Value": "VCPU" },
                 "Value": "1"
             },
             {
-                "Type": "GPU",
+                "Type":  { "Value": "GPU" },
                 "Value": "2"
             }
         ]

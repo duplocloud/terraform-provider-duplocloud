@@ -309,6 +309,7 @@ type DuploAwsBatchJobDefinitionResp struct {
 	Type                 string                                   `json:"Type,omitempty"`
 	Tags                 map[string]string                        `json:"Tags,omitempty"`
 	Revision             int                                      `json:"Revision,omitempty"`
+	Status               string                                   `json:"Status,omitempty"`
 }
 
 type DuploAwsBatchJobDefinitionTimeout struct {

@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/ucarion/jcs"
 )
 
 func duploAwsBatchJobDefinitionSchema() map[string]*schema.Schema {
@@ -36,20 +37,30 @@ func duploAwsBatchJobDefinitionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"status": {
+			Description: "The status of the Job Definition.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"container_properties": {
 			Description: "A valid container properties provided as a single valid JSON document. This parameter is required if the type parameter is `container`.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
-			// StateFunc: func(v interface{}) string {
-			// 	json, _ := structure.NormalizeJsonString(v)
-			// 	return json
-			// },
-			// DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-			// 	equal, _ := EquivalentContainerPropertiesJSON(old, new)
-
-			// 	return equal
-			// },
+			StateFunc: func(v interface{}) string {
+				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: <= %v", v)
+				defn, _ := expandJobContainerProperties(v.(string))
+				json, err := jcs.Format(defn)
+				if json == "{}" {
+					json = ""
+				}
+				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: => %s (error: %s)", json, err)
+				return json
+			},
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				equal, _ := otherJobContainerPropertiesAreEquivalent(old, new)
+				return equal
+			},
 			ValidateFunc: validJobContainerProperties,
 		},
 		"parameters": {
@@ -263,6 +274,8 @@ func resourceAwsBatchJobDefinitionCreate(ctx context.Context, d *schema.Resource
 }
 
 func resourceAwsBatchJobDefinitionUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	// return resourceAwsBatchJobDefinitionCreate(ctx, d, m)
+	// TODO Backend API not implemented.
 	return nil
 }
 
@@ -361,6 +374,7 @@ func flattenBatchJobDefinition(d *schema.ResourceData, c *duplosdk.Client, duplo
 	d.Set("name", name)
 	d.Set("arn", duplo.JobDefinitionArn)
 	d.Set("fullname", duplo.JobDefinitionName)
+	d.Set("status", duplo.Status)
 	d.Set("tags", duplo.Tags)
 	d.Set("revision", duplo.Revision)
 	d.Set("type", duplo.Type)
@@ -499,7 +513,7 @@ func flattenContainerProperties(field string, from interface{}, to *schema.Resou
 	}
 
 	if err != nil {
-		log.Printf("[DEBUG] flattenHPASpecs: failed to serialize %s to JSON: %s", field, err)
+		log.Printf("[DEBUG] flattenContainerProperties: failed to serialize %s to JSON: %s", field, err)
 	}
 }
 
@@ -569,4 +583,72 @@ func flattenJobTimeout(apiObject *duplosdk.DuploAwsBatchJobDefinitionTimeout) ma
 	}
 
 	return tfMap
+}
+
+func reduceJobContainerProperties(props map[string]interface{}) error {
+	makeMapUpperCamelCase(props)
+
+	reduceNilOrEmptyMapEntries(props)
+
+	// Handle fields that have defaults.
+	if v, ok := props["ReadonlyRootFilesystem"]; ok || v != nil && !v.(bool) {
+		delete(props, "ReadonlyRootFilesystem")
+	}
+
+	if v, ok := props["Privileged"]; ok || v != nil && !v.(bool) {
+		delete(props, "Privileged")
+	}
+
+	if v, ok := props["Memory"]; ok || v != nil && v.(int) == 0 {
+		delete(props, "Memory")
+	}
+	if v, ok := props["Vcpus"]; ok || v != nil && v.(int) == 0 {
+		delete(props, "Vcpus")
+	}
+	delete(props, "JobRoleArn")
+
+	return nil
+}
+
+func canonicalizeJobContainerPropertiesJson(encoded string) (string, error) {
+	var props interface{}
+
+	// Unmarshall, reduce, then canonicalize.
+	err := json.Unmarshal([]byte(encoded), &props)
+	if err != nil {
+		return encoded, err
+	}
+	err = reduceJobContainerProperties(props.(map[string]interface{}))
+	if err != nil {
+		return encoded, err
+	}
+	canonical, err := jcs.Format(props)
+	if err != nil {
+		return encoded, err
+	}
+	if canonical == "{}" {
+		canonical = ""
+	}
+
+	return canonical, nil
+}
+
+// An internal function that compares two container_properties values to see if they are equivalent.
+func otherJobContainerPropertiesAreEquivalent(old, new string) (bool, error) {
+
+	oldCanonical, err := canonicalizeJobContainerPropertiesJson(old)
+	if err != nil {
+		return false, err
+	}
+	log.Printf("[TRACE] Canonical Old Container Properties: <= %s", oldCanonical)
+	newCanonical, err := canonicalizeJobContainerPropertiesJson(new)
+	if err != nil {
+		return false, err
+	}
+	log.Printf("[TRACE] Canonical New Container Properties: <= %s", newCanonical)
+	equal := oldCanonical == newCanonical
+	if !equal {
+		log.Printf("[DEBUG] Canonical container properties are not equal.\nFirst: %s\nSecond: %s\n", oldCanonical, newCanonical)
+	}
+	return equal, nil
 }
