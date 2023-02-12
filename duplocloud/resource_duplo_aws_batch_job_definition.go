@@ -538,8 +538,8 @@ func flattenRetryStrategy(apiObject *duplosdk.DuploAwsBatchJobDefinitionRetryStr
 func flattenEvaluateOnExit(apiObject duplosdk.DuploAwsBatchJobDefinitionEvaluateOnExit) map[string]interface{} {
 	tfMap := map[string]interface{}{}
 
-	if v := apiObject.Action.Value; v != "" {
-		tfMap["action"] = v
+	if v := apiObject.Action; v != nil && v.Value != "" {
+		tfMap["action"] = v.Value
 	}
 
 	if v := apiObject.OnExitCode; v != "" {

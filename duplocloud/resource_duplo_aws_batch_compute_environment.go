@@ -443,7 +443,7 @@ func resourceAwsBatchComputeEnvironmentDelete(ctx context.Context, d *schema.Res
 		return nil
 	}
 
-	if ce.State.Value == "ENABLED" {
+	if ce.State != nil && ce.State.Value == "ENABLED" {
 		log.Printf("[TRACE] Disable batch compute environment before delete. (%s, %s): start", tenantID, fullName)
 
 		clientErr := c.AwsBatchComputeEnvironmentDisable(tenantID, fullName)
@@ -526,11 +526,16 @@ func flattenBatchComputeEnvironment(d *schema.ResourceData, c *duplosdk.Client, 
 	d.Set("tags", duplo.Tags)
 	d.Set("ecs_cluster_arn", duplo.EcsClusterArn)
 	d.Set("service_role", duplo.ServiceRole)
-	d.Set("state", duplo.State.Value)
-	d.Set("status", duplo.Status.Value)
+	if duplo.State != nil {
+		d.Set("state", duplo.State.Value)
+	}
+	if duplo.Status != nil {
+		d.Set("status", duplo.Status.Value)
+	}
 	d.Set("status_reason", duplo.StatusReason)
-	d.Set("type", duplo.Type.Value)
-
+	if duplo.Type != nil {
+		d.Set("type", duplo.Type.Value)
+	}
 	if duplo.ComputeResources != nil {
 		if err := d.Set("compute_resources", []interface{}{flattenComputeResource(duplo.ComputeResources)}); err != nil {
 			return diag.FromErr(err)
@@ -550,8 +555,8 @@ func flattenComputeResource(apiObject *duplosdk.DuploAwsBatchComputeResource) ma
 
 	tfMap := map[string]interface{}{}
 
-	if v := apiObject.AllocationStrategy.Value; len(v) > 0 {
-		tfMap["allocation_strategy"] = v
+	if v := apiObject.AllocationStrategy; v != nil && len(v.Value) > 0 {
+		tfMap["allocation_strategy"] = v.Value
 	}
 
 	if v := apiObject.BidPercentage; v > 0 {
@@ -610,8 +615,8 @@ func flattenComputeResource(apiObject *duplosdk.DuploAwsBatchComputeResource) ma
 		tfMap["tags"] = v
 	}
 
-	if v := apiObject.Type.Value; len(v) > 0 {
-		tfMap["type"] = v
+	if v := apiObject.Type; v != nil && len(v.Value) > 0 {
+		tfMap["type"] = v.Value
 	}
 	log.Printf("[TRACE]flattenComputeResource... End ")
 	return tfMap
@@ -823,7 +828,7 @@ func batchComputeEnvironmentUntilDisabled(ctx context.Context, c *duplosdk.Clien
 			log.Printf("[TRACE] Batch compute environment state is (%s).", rp.State.Value)
 			status := "pending"
 			if err == nil {
-				if rp.State.Value == "DISABLED" && rp.Status.Value == "VALID" {
+				if rp.State != nil && rp.State.Value == "DISABLED" && rp.Status != nil && rp.Status.Value == "VALID" {
 					status = "ready"
 				} else {
 					status = "pending"
@@ -850,7 +855,7 @@ func batchComputeEnvironmentUntilValid(ctx context.Context, c *duplosdk.Client, 
 			log.Printf("[TRACE] Batch compute environment status is (%s).", rp.Status.Value)
 			status := "pending"
 			if err == nil {
-				if rp.Status.Value == "VALID" {
+				if rp.Status != nil && rp.Status.Value == "VALID" {
 					status = "ready"
 				} else {
 					status = "pending"

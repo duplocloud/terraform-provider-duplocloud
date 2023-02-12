@@ -231,7 +231,7 @@ func resourceAwsBatchJobQueueDelete(ctx context.Context, d *schema.ResourceData,
 		return nil
 	}
 
-	if jq.State.Value == "ENABLED" {
+	if jq.State != nil && jq.State.Value == "ENABLED" {
 		log.Printf("[TRACE] Disable batch Job queue before delete. (%s, %s): start", tenantID, fullName)
 
 		clientErr := c.AwsBatchJobQueueDisable(tenantID, fullName)
@@ -311,8 +311,12 @@ func flattenBatchJobQueue(d *schema.ResourceData, c *duplosdk.Client, duplo *dup
 	d.Set("fullname", duplo.JobQueueName)
 	d.Set("scheduling_policy_arn", duplo.SchedulingPolicyArn)
 	d.Set("tags", duplo.Tags)
-	d.Set("state", duplo.State.Value)
-	d.Set("status", duplo.Status.Value)
+	if duplo.State != nil {
+		d.Set("state", duplo.State.Value)
+	}
+	if duplo.Status != nil {
+		d.Set("status", duplo.Status.Value)
+	}
 	d.Set("status_reason", duplo.StatusReason)
 
 	computeEnvironments := make([]string, 0, len(*duplo.ComputeEnvironmentOrder))
