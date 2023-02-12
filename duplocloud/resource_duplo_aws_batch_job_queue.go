@@ -90,7 +90,7 @@ func resourceAwsBatchJobQueue() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(60 * time.Minute),
+			Create: schema.DefaultTimeout(30 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: duploAwsBatchJobQueueSchema(),
