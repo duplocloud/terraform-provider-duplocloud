@@ -134,6 +134,10 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_efs_file_system":             resourceAwsEFS(),
 			"duplocloud_k8_persistent_volume_claim":      resourceK8PVC(),
 			"duplocloud_k8_storage_class":                resourceK8StorageClass(),
+			"duplocloud_aws_batch_scheduling_policy":     resourceAwsBatchSchedulingPolicy(),
+			"duplocloud_aws_batch_compute_environment":   resourceAwsBatchComputeEnvironment(),
+			"duplocloud_aws_batch_job_queue":             resourceAwsBatchJobQueue(),
+			"duplocloud_aws_batch_job_definition":        resourceAwsBatchJobDefinition(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":     dataSourceAdminAwsCredentials(),
