@@ -60,7 +60,7 @@ resource "duplocloud_aws_batch_compute_environment" "bce" {
 
 - **compute_resources** (Block List, Max: 1) Details of the compute resources managed by the compute environment. This parameter is required for managed compute environments. (see [below for nested schema](#nestedblock--compute_resources))
 - **service_role** (String) The full Amazon Resource Name (ARN) of the IAM role that allows AWS Batch to make calls to other AWS services on your behalf.
-- **state** (String) The state of the compute environment. If the state is `ENABLED`, then the compute environment accepts jobs from a queue and can scale out automatically based on queues. Compute environment must be created in `ENABLED` state. Valid items are `ENABLED` or `DISABLED`. Defaults to `ENABLED` Defaults to `ENABLED`.
+- **state** (String) The state of the compute environment. If the state is `ENABLED`, then the compute environment accepts jobs from a queue and can scale out automatically based on queues. Compute environment must be created in `ENABLED` state. Valid items are `ENABLED` or `DISABLED`. Defaults to `ENABLED`.
 - **tags** (Map of String) Key-value map of resource tags.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_for_deployment** (Boolean) Defaults to `true`.
