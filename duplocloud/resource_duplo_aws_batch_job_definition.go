@@ -274,9 +274,7 @@ func resourceAwsBatchJobDefinitionCreate(ctx context.Context, d *schema.Resource
 }
 
 func resourceAwsBatchJobDefinitionUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	// return resourceAwsBatchJobDefinitionCreate(ctx, d, m)
-	// TODO Backend API not implemented.
-	return nil
+	return resourceAwsBatchJobDefinitionCreate(ctx, d, m)
 }
 
 func resourceAwsBatchJobDefinitionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
