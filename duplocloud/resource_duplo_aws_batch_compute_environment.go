@@ -56,7 +56,7 @@ func duploAwsBatchComputeEnvironmentSchema() map[string]*schema.Schema {
 			Default:  true,
 		},
 		"state": {
-			Description: "The state of the compute environment. If the state is `ENABLED`, then the compute environment accepts jobs from a queue and can scale out automatically based on queues. Compute environment must be created in `ENABLED` state. Valid items are `ENABLED` or `DISABLED`. Defaults to `ENABLED`",
+			Description: "The state of the compute environment. If the state is `ENABLED`, then the compute environment accepts jobs from a queue and can scale out automatically based on queues. Compute environment must be created in `ENABLED` state. Valid items are `ENABLED` or `DISABLED`.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			StateFunc: func(val interface{}) string {
