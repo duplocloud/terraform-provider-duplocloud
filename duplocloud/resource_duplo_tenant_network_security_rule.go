@@ -101,8 +101,12 @@ func resourceTenantNetworkSecurityRuleRead(ctx context.Context, d *schema.Resour
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.TenantGetExtConnSecurityGroupRule(rq)
-	if err != nil {
+	duplo, clientErr := c.TenantGetExtConnSecurityGroupRule(rq)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve tenant security group rule '%s': %s", id, err)
 	}
 	if duplo == nil {
@@ -186,8 +190,11 @@ func resourceTenantNetworkSecurityRuleDelete(ctx context.Context, d *schema.Reso
 	// Delete the rule with Duplo
 	c := m.(*duplosdk.Client)
 	rq.Type = duplosdk.TENANT
-	err = c.TenantDeleteExtConnSecurityGroupRule(rq)
-	if err != nil {
+	clientErr := c.TenantDeleteExtConnSecurityGroupRule(rq)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			return nil
+		}
 		return diag.Errorf("Error deleting tenant network security rule '%s': %s", id, err)
 	}
 

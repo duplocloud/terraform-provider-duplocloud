@@ -37,7 +37,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    false,
 			Required:    true,
-			ForceNew:    true,
 		},
 		"instance_id": {
 			Description: "The Azure Virtual Machine ID of the host.",
