@@ -202,7 +202,6 @@ func resourceAwsTimestreamTableRead(ctx context.Context, d *schema.ResourceData,
 
 func resourceAwsTimestreamTableCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
-
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
 	log.Printf("[TRACE] resourceAwsTimestreamTableCreate(%s, %s): start", tenantID, name)
@@ -210,7 +209,7 @@ func resourceAwsTimestreamTableCreate(ctx context.Context, d *schema.ResourceDat
 	rq := expandAwsTimestreamTable(d)
 	_, clientErr := c.DuploTimestreamDBTableCreate(tenantID, rq)
 	if clientErr != nil {
-		return diag.Errorf("Error creating tenant %s aws timestream Table '%s': %s", tenantID, name, err)
+		return diag.Errorf("Error creating tenant %s aws timestream Table '%s': %s", tenantID, name, clientErr)
 	}
 
 	d.SetId(fmt.Sprintf("%s/%s/%s", tenantID, rq.DatabaseName, name))
