@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -30,7 +29,7 @@ func awsTimestreamDatabaseSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(3, 64),
-				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9_.-]+$`), "must only include alphanumeric, underscore, period, or hyphen characters"),
+				// validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9_.-]+$`), "must only include alphanumeric, underscore, period, or hyphen characters"),
 			),
 		},
 		"fullname": {
