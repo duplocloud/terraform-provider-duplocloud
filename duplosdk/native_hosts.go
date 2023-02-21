@@ -136,6 +136,11 @@ type DuploAzureVmFeature struct {
 	Disable     bool   `json:"Disable"`
 }
 
+type UpdateAzureVirtualMachineSizeReq struct {
+	Capacity     string `json:"Capacity"`
+	FriendlyName string `json:"FriendlyName"`
+}
+
 // NativeHostImageGetList retrieves a list of native host images via the Duplo API.
 func (c *Client) NativeHostImageGetList(tenantID string) (*[]DuploNativeHostImage, ClientError) {
 	rp := []DuploNativeHostImage{}
@@ -325,6 +330,13 @@ func (c *Client) AzureNativeHostExists(tenantID, name string) (bool, ClientError
 func (c *Client) UpdateAzureVmFeature(tenantID string, rq DuploAzureVmFeature) ClientError {
 	return c.postAPI(fmt.Sprintf("UpdateAzureVmFeature(%s, %s)", tenantID, rq.FeatureName),
 		fmt.Sprintf("subscriptions/%s/UpdateAzureVmFeature", tenantID),
+		rq,
+		nil)
+}
+
+func (c *Client) UpdateAzureVirtualMachineSize(tenantID string, rq *UpdateAzureVirtualMachineSizeReq) ClientError {
+	return c.postAPI(fmt.Sprintf("UpdateAzureVirtualMachineSize(%s, %s)", tenantID, rq.FriendlyName),
+		fmt.Sprintf("subscriptions/%s/UpdateAzureVirtualMachineSize", tenantID),
 		rq,
 		nil)
 }
