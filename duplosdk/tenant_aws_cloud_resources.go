@@ -168,6 +168,7 @@ type DuploAwsLbSettings struct {
 	DropInvalidHeaders  bool   `json:"DropInvalidHeaders,omitempty"`
 	WebACLID            string `json:"WebACLId,omitempty"`
 	HttpToHttpsRedirect bool   `json:"HttpToHttpsRedirect,omitempty"`
+	IdleTimeout         int    `json:"IdleTimeout,omitempty"`
 }
 
 // DuploAwsLbListener represents an AWS application load balancer listener
@@ -226,6 +227,7 @@ type DuploAwsLbSettingsUpdateRequest struct {
 	DropInvalidHeaders  bool   `json:"DropInvalidHeaders,omitempty"`
 	WebACLID            string `json:"WebACLId,omitempty"`
 	HttpToHttpsRedirect bool   `json:"HttpToHttpsRedirect,omitempty"`
+	IdleTimeout         int    `json:"IdleTimeout,omitempty"`
 }
 
 // DuploS3BucketRequest represents a request to create an S3 bucket resource
