@@ -71,6 +71,12 @@ func duploServiceParamsSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"idle_timeout": {
+			Description: "The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -354,6 +360,7 @@ func readDuploServiceAwsLbSettings(tenantID string, rpc *duplosdk.DuploReplicati
 		d.Set("enable_access_logs", settings.EnableAccessLogs)
 		d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
 		d.Set("http_to_https_redirect", settings.HttpToHttpsRedirect)
+		d.Set("idle_timeout", settings.IdleTimeout)
 	}
 
 	return nil
@@ -374,6 +381,10 @@ func updateDuploServiceAwsLbSettings(tenantID string, details *duplosdk.DuploAws
 	}
 	if v, ok := d.GetOk("http_to_https_redirect"); ok && v != nil {
 		settings.HttpToHttpsRedirect = v.(bool)
+		haveSettings = true
+	}
+	if v, ok := d.GetOk("idle_timeout"); ok && v != nil {
+		settings.IdleTimeout = v.(int)
 		haveSettings = true
 	}
 	if v, ok := d.GetOk("webaclid"); ok && v != nil {
