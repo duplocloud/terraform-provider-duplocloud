@@ -445,6 +445,9 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 	c := m.(*duplosdk.Client)
 	err := c.InfrastructureDelete(infraName)
 	if err != nil {
+		if err.Status() == 404 {
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 

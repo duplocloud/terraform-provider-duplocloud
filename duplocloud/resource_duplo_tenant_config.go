@@ -76,8 +76,25 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
+
+	tenant, err := c.TenantGet(tenantID)
+	if err != nil {
+		if err.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
+	}
+	if tenant == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	duplo, err := c.TenantGetConfig(tenantID)
 	if err != nil {
+		if err.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve tenant config for '%s': %s", tenantID, err)
 	}
 	if duplo == nil {

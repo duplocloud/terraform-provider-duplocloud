@@ -39,6 +39,7 @@ resource "duplocloud_aws_load_balancer" "myapp" {
 
 - **drop_invalid_headers** (Boolean) Whether or not the load balancer should drop invalid HTTP headers. Only valid for Load Balancers of type `Application`
 - **enable_access_logs** (Boolean) Whether or not access logs should be enabled.
+- **idle_timeout** (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
 - **is_internal** (Boolean) Whether or not the load balancer is internal (non internet-facing).
 - **load_balancer_type** (String) The type of load balancer to create. Possible values are `Application` or `Network`. Defaults to `Application`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
