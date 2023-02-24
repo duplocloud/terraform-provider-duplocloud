@@ -671,7 +671,6 @@ func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 	if haveSettings {
 		log.Printf("[TRACE] LB settings found.")
 		var details *duplosdk.DuploAwsLbDetailsInService
-		time.Sleep(time.Duration(40) * time.Second)
 		details, err := retryFetchLBDetails(6, time.Duration(20)*time.Second, c, tenantID, name)
 		if err != nil {
 			return err
