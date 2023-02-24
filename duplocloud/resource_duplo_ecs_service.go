@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -188,6 +189,12 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Optional:    true,
 						Computed:    true,
 					},
+					"idle_timeout": {
+						Description: "The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+					},
 					"webaclid": {
 						Description: "The ARN of a web application firewall to associate this load balancer.",
 						Type:        schema.TypeString,
@@ -293,19 +300,22 @@ func resourceDuploEcsService() *schema.Resource {
 
 /// READ resource
 func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var err error
-
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** start")
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.EcsServiceGetV2(d.Id())
+	duplo, clientError := c.EcsServiceGetV2(d.Id())
 	if duplo == nil {
 		d.SetId("")
 		return nil
 	}
-	if err != nil {
-		return diag.FromErr(err)
+	if clientError != nil {
+		// TODO - Remove ServiceNotFoundException check once backend returns error code 404, Currenlty its 400.
+		if clientError.Status() == 404 || strings.Contains(clientError.Error(), "ServiceNotFoundException") {
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(clientError)
 	}
 
 	diags := flattenDuploEcsService(d, duplo, c)
@@ -387,6 +397,10 @@ func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, 
 	if err != nil || duplo != nil {
 		err = c.EcsServiceDelete(d.Id())
 		if err != nil {
+			// TODO - Remove ServiceNotFoundException check once backend returns error code 404, Currenlty its 400.
+			if err.Status() == 404 || strings.Contains(err.Error(), "ServiceNotFoundException") {
+				return nil
+			}
 			return diag.FromErr(err)
 		}
 	}
@@ -571,6 +585,7 @@ func ecsLoadBalancerFromState(d *schema.ResourceData, lb map[string]interface{})
 		HealthCheckURL:            lb["health_check_url"].(string),
 		CertificateArn:            lb["certificate_arn"].(string),
 		TgCount:                   lb["target_group_count"].(int),
+		IdleTimeout:               lb["idle_timeout"].(int),
 	}
 
 	if lb["health_check_config"] != nil {
@@ -617,6 +632,7 @@ func readEcsServiceAwsLbSettings(tenantID string, name string, lb map[string]int
 			lb["webaclid"] = settings.WebACLID
 			lb["enable_access_logs"] = settings.EnableAccessLogs
 			lb["drop_invalid_headers"] = settings.DropInvalidHeaders
+			lb["idle_timeout"] = settings.IdleTimeout
 		}
 	}
 
@@ -625,7 +641,7 @@ func readEcsServiceAwsLbSettings(tenantID string, name string, lb map[string]int
 
 func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.ResourceData, c *duplosdk.Client) error {
 	var err error
-
+	log.Printf("[TRACE] updateEcsServiceAwsLbSettings(%s, %s): start", tenantID, name)
 	state, err := getOptionalBlockAsMap(d, "load_balancer")
 	if err != nil || state == nil {
 		return err
@@ -642,6 +658,10 @@ func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 		settings.DropInvalidHeaders = v.(bool)
 		haveSettings = true
 	}
+	if v, ok := state["idle_timeout"]; ok && v != nil {
+		settings.IdleTimeout = v.(int)
+		haveSettings = true
+	}
 	if v, ok := state["webaclid"]; ok && v != nil {
 		settings.WebACLID = v.(string)
 		haveSettings = true
@@ -649,13 +669,16 @@ func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 
 	// If we have load balancer settings, apply them.
 	if haveSettings {
+		log.Printf("[TRACE] LB settings found.")
 		var details *duplosdk.DuploAwsLbDetailsInService
-		details, err = c.TenantGetLbDetailsInService(tenantID, name)
+		time.Sleep(time.Duration(40) * time.Second)
+		details, err := retryFetchLBDetails(6, time.Duration(20)*time.Second, c, tenantID, name)
 		if err != nil {
 			return err
 		}
 
 		if details != nil && details.LoadBalancerArn != "" {
+			log.Printf("[TRACE] LB details found.")
 			settings.LoadBalancerArn = details.LoadBalancerArn
 			err = c.TenantUpdateApplicationLbSettings(tenantID, settings)
 			if err != nil {
@@ -666,7 +689,7 @@ func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 			time.Sleep(time.Duration(60) * time.Second)
 		}
 	}
-
+	log.Printf("[TRACE] updateEcsServiceAwsLbSettings(%s, %s): end", tenantID, name)
 	return nil
 }
 
@@ -727,4 +750,19 @@ func expandCapacityProviderStrategy(m map[string]interface{}) duplosdk.DuploEcsS
 		Weight:           m["weight"].(int),
 		CapacityProvider: m["capacity_provider"].(string),
 	}
+}
+
+func retryFetchLBDetails(attempts int, sleep time.Duration, c *duplosdk.Client, tenantId, name string) (*duplosdk.DuploAwsLbDetailsInService, error) {
+	for i := 1; i <= attempts; i++ {
+		log.Printf("[DEBUG] retryFetchLBDetails(Current Attempt-%v, Total Attempt-%v, Tenant-%s, LB Name-%s)", i, attempts, tenantId, name)
+		details, err := c.TenantGetLbDetailsInService(tenantId, name)
+		if err != nil {
+			return nil, err
+		}
+		if details != nil && details.LoadBalancerArn != "" {
+			return details, nil
+		}
+		time.Sleep(sleep)
+	}
+	return nil, nil
 }
