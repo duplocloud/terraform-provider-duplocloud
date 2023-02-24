@@ -65,6 +65,7 @@ Read-Only:
 - **external_port** (Number)
 - **health_check_config** (List of Object) (see [below for nested schema](#nestedobjatt--services--load_balancer--health_check_config))
 - **health_check_url** (String)
+- **idle_timeout** (Number)
 - **index** (Number)
 - **is_internal** (Boolean)
 - **lb_type** (Number)

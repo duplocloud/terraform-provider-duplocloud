@@ -104,6 +104,7 @@ Optional:
 - **enable_access_logs** (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan
 - **health_check_config** (Block List, Max: 1) Health check configuration for this load balancer. (see [below for nested schema](#nestedblock--load_balancer--health_check_config))
 - **health_check_url** (String) The health check URL to associate with this load balancer configuration.
+- **idle_timeout** (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
 - **is_internal** (Boolean) Whether or not to create an internal load balancer. Defaults to `false`.
 - **webaclid** (String) The ARN of a web application firewall to associate this load balancer.
 
