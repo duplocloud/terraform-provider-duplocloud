@@ -754,7 +754,7 @@ func expandCapacityProviderStrategy(m map[string]interface{}) duplosdk.DuploEcsS
 
 func retryFetchLBDetails(attempts int, sleep time.Duration, c *duplosdk.Client, tenantId, name string) (*duplosdk.DuploAwsLbDetailsInService, error) {
 	for i := 1; i <= attempts; i++ {
-		log.Printf("[DEBUG] retryFetchLBDetails(Current Attempt-%v, Total Attempt-%v, Tenant-%s, LB Name-%s)", i, attempts, tenantId, name)
+		log.Printf("[DEBUG] retryFetchLBDetails(Current Attempt-%v, Total Attempt-%v, Time Interval In Seconds-%v, Tenant-%s, ECS Name-%s)", i, attempts, sleep, tenantId, name)
 		details, err := c.TenantGetLbDetailsInService(tenantId, name)
 		if err != nil {
 			return nil, err
