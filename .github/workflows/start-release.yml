@@ -31,11 +31,11 @@ jobs:
 
           # Use the current version if it is not being overridden
           if [ -z "${{ github.event.inputs.version }}" ]; then
-            echo "::set-output name=release::$(sed -ne 's/^VERSION=\([0-9\.]*\).*$/\1/p' <Makefile)"
+            echo "release=$(sed -ne 's/^VERSION=\([0-9\.]*\).*$/\1/p' <Makefile)" >>$GITHUB_OUTPUT
 
           # Otherwise, the use the overridden version.
           else
-            echo "::set-output name=release::${{ github.event.inputs.version }}"
+            echo "release=${{ github.event.inputs.version }}" >>$GITHUB_OUTPUT
           fi
 
       # START THE RELEASE
