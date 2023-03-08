@@ -35,7 +35,7 @@ func dataSourceNativeHosts() *schema.Resource {
 	}
 }
 
-/// READ/SEARCH resources
+// READ/SEARCH resources
 func dataSourceNativeHostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 
@@ -80,6 +80,7 @@ func flattenNativeHost(duplo *duplosdk.DuploNativeHost) map[string]interface{} {
 		"is_ebs_optimized":    duplo.IsEbsOptimized,
 		"allocated_public_ip": duplo.AllocatedPublicIP,
 		"cloud":               duplo.Cloud,
+		"keypair_type":        duplo.KeyPairType,
 		"encrypt_disk":        duplo.EncryptDisk,
 		"status":              duplo.Status,
 		"identity_role":       duplo.IdentityRole,
