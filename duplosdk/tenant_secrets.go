@@ -121,7 +121,7 @@ func (c *Client) TenantCreateAwsSecret(tenantID string, rq *DuploAwsSecretCreate
 // TenantUpdateAwsSecret updates an AWS secretsmanager secret via Duplo.
 func (c *Client) TenantUpdateAwsSecret(tenantID, name string, rq *DuploAwsSecretUpdateRequest) (*DuploAwsSecretUpdatedResponse, ClientError) {
 	rp := DuploAwsSecretUpdatedResponse{}
-	err := c.postAPI(
+	err := c.putAPI(
 		fmt.Sprintf("TenantCreateAwsSecret(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/secret/%s", tenantID, name),
 		&rq,

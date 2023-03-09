@@ -27,7 +27,7 @@ variable "tenant_id" {
 resource "duplocloud_tenant_secret" "test" {
   tenant_id = var.tenant_id
   name_suffix = "myjson"
-  data = jsonencode({ foo = "baro2" })
+  data = jsonencode({ foo = "fubar", bar = "foo" })
 }
 
 # # AWS information retrieval
