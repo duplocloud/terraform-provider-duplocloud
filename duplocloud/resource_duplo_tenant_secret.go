@@ -20,6 +20,7 @@ func resourceTenantSecret() *schema.Resource {
 
 		ReadContext:   resourceTenantSecretRead,
 		CreateContext: resourceTenantSecretCreate,
+		UpdateContext: resourceTenantSecretUpdate,
 		DeleteContext: resourceTenantSecretDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -53,11 +54,15 @@ func resourceTenantSecret() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"version_id": {
+				Description: "The version ID of the secret.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"data": {
 				Description: "The plaintext secret data. You can use the `jsonencode()` function to store JSON data in this field.",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Sensitive:   true,
 
 				// Supresses diffs for existing resources that were imported, so they have a blank secret data.
@@ -80,7 +85,7 @@ func resourceTenantSecret() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -95,7 +100,7 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.TenantGetSecretByName(tenantID, name)
+	duplo, err := c.TenantGetAwsSecret(tenantID, name)
 	if err != nil {
 		return diag.Errorf("unable to retrieve secret '%s': %s", id, err)
 	}
@@ -119,15 +124,27 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	// Set tags
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 
+	// Get the secret from Duplo
+	value, err := c.TenantGetAwsSecretValue(tenantID, name)
+	if err != nil {
+		return diag.Errorf("unable to retrieve secret '%s': %s", id, err)
+	}
+	if value == nil {
+		d.SetId("") // object missing
+		return nil
+	}
+	d.Set("data", value.SecretString)
+	d.Set("version_id", value.VersionId)
+
 	log.Printf("[TRACE] resourceTenantSecretRead(%s, %s): end", tenantID, name)
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
-	duploObject := duplosdk.DuploTenantSecretRequest{
+	duploObject := duplosdk.DuploAwsSecretCreateRequest{
 		Name:         d.Get("name_suffix").(string),
 		SecretString: d.Get("data").(string),
 	}
@@ -138,7 +155,7 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	err = c.TenantCreateSecret(tenantID, &duploObject)
+	_, err = c.TenantCreateAwsSecret(tenantID, &duploObject)
 	if err != nil {
 		return diag.Errorf("error creating tenant %s secret '%s': %s", tenantID, duploObject.Name, err)
 	}
@@ -146,9 +163,13 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 
 	// Wait for Duplo to be able to return the secret's details.
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "tenant secret", tempID, func() (interface{}, duplosdk.ClientError) {
-		rp, errget := c.TenantGetSecretByNameSuffix(tenantID, duploObject.Name)
-		if errget == nil && rp != nil {
-			d.SetId(fmt.Sprintf("%s/%s", tenantID, rp.Name))
+		var rp *duplosdk.DuploAwsSecret
+		name, errget := c.GetDuploServicesName(tenantID, duploObject.Name)
+		if errget == nil {
+			rp, errget = c.TenantGetAwsSecret(tenantID, name)
+			if errget == nil && rp != nil {
+				d.SetId(fmt.Sprintf("%s/%s", tenantID, rp.Name))
+			}
 		}
 		return rp, errget
 	})
@@ -159,7 +180,32 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 	return diags
 }
 
-/// DELETE resource
+// UPDATE resource
+func resourceTenantSecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+
+	// Parse the identifying attributes
+	id := d.Id()
+	idParts := strings.SplitN(id, "/", 2)
+	tenantID, name := idParts[0], idParts[1]
+
+	log.Printf("[TRACE] resourceTenantSecretUpdate(%s, %s): start", tenantID, name)
+
+	// Update the object with Duplo
+	c := m.(*duplosdk.Client)
+	rq := duplosdk.DuploAwsSecretUpdateRequest{
+		SecretId:     name,
+		SecretString: d.Get("data").(string),
+	}
+	_, err := c.TenantUpdateAwsSecret(tenantID, name, &rq)
+	if err != nil {
+		return diag.Errorf("error updating secret '%s': %s", id, err)
+	}
+
+	log.Printf("[TRACE] resourceTenantSecretUpdate(%s, %s): end", tenantID, name)
+	return resourceTenantSecretRead(ctx, d, m)
+}
+
+// DELETE resource
 func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -171,14 +217,14 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
-	err := c.TenantDeleteSecret(tenantID, name)
+	err := c.TenantDeleteAwsSecret(tenantID, name)
 	if err != nil {
 		return diag.Errorf("error deleting secret '%s': %s", id, err)
 	}
 
 	// Wait for Duplo to delete the secret.
 	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "tenant secret", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenantGetSecretByName(tenantID, name)
+		return c.TenantGetAwsSecret(tenantID, name)
 	})
 
 	// Wait 60 more seconds to deal with consistency issues.
