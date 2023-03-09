@@ -103,6 +103,17 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Default:     0,
 			ForceNew:    true, // relaunch instance
 		},
+		"keypair_type": {
+			Description: "The numeric ID of the keypair type being used." +
+				"Should be one of:\n\n" +
+				"   - `0` : Default (should be ED25519)\n" +
+				"   - `1` : ED25519\n" +
+				"   - `2` : RSA (deprecated - some operating systems no longer support it)\n",
+			Type:     schema.TypeInt,
+			Optional: true,
+			Default:  0,
+			ForceNew: true, // relaunch instance
+		},
 		"encrypt_disk": {
 			Type:     schema.TypeBool,
 			Optional: true,
@@ -334,7 +345,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 /*
 func resourceAwsHostUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
@@ -356,7 +367,7 @@ func resourceAwsHostUpdate(ctx context.Context, d *schema.ResourceData, m interf
 }
 */
 
-/// DELETE resource
+// DELETE resource
 func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -410,6 +421,7 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		IsEbsOptimized:    d.Get("is_ebs_optimized").(bool),
 		AllocatedPublicIP: d.Get("allocated_public_ip").(bool),
 		Cloud:             d.Get("cloud").(int),
+		KeyPairType:       d.Get("keypair_type").(int),
 		EncryptDisk:       d.Get("encrypt_disk").(bool),
 		MetaData:          keyValueFromState("metadata", d),
 		Tags:              keyValueFromState("tags", d),
@@ -499,6 +511,7 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("agent_platform", duplo.AgentPlatform)
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
 	d.Set("cloud", duplo.Cloud)
+	d.Set("keypair_type", duplo.KeyPairType)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("status", duplo.Status)
 	d.Set("identity_role", duplo.IdentityRole)
