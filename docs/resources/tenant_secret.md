@@ -59,6 +59,7 @@ resource "duplocloud_tenant_secret" "mysecret2" {
 - **name** (String) The full name of the secret.
 - **rotation_enabled** (Boolean) Whether or not rotation is enabled for this secret.
 - **tags** (List of Object) A list of tags for this secret. (see [below for nested schema](#nestedatt--tags))
+- **version_id** (String) The version ID of the secret.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
