@@ -298,6 +298,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
 	d.Set("is_cluster_autoscaled", duplo.IsClusterAutoscaled)
 	d.Set("cloud", duplo.Cloud)
+	d.Set("keypair_type", duplo.KeyPairType)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
@@ -328,6 +329,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		IsClusterAutoscaled: d.Get("is_cluster_autoscaled").(bool),
 		AllocatedPublicIP:   d.Get("allocated_public_ip").(bool),
 		Cloud:               d.Get("cloud").(int),
+		KeyPairType:         d.Get("keypair_type").(int),
 		EncryptDisk:         d.Get("encrypt_disk").(bool),
 		MetaData:            keyValueFromState("metadata", d),
 		Tags:                keyValueFromState("tags", d),

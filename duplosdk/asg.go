@@ -21,6 +21,7 @@ type DuploAsgProfile struct {
 	IsEbsOptimized      bool                               `json:"IsEbsOptimized"`
 	AllocatedPublicIP   bool                               `json:"AllocatedPublicIp,omitempty"`
 	Cloud               int                                `json:"Cloud"`
+	KeyPairType         int                                `json:"KeyPairType,omitempty"`
 	IsClusterAutoscaled bool                               `json:"IsClusterAutoscaled,omitempty"`
 	EncryptDisk         bool                               `json:"EncryptDisk,omitempty"`
 	Status              string                             `json:"Status,omitempty"`

@@ -42,6 +42,7 @@ Read-Only:
 - **is_cluster_autoscaled** (Boolean)
 - **is_ebs_optimized** (Boolean)
 - **is_minion** (Boolean)
+- **keypair_type** (Number)
 - **max_instance_count** (Number)
 - **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--metadata))
 - **min_instance_count** (Number)
