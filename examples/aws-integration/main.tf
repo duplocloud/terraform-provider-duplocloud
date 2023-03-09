@@ -5,7 +5,7 @@ terraform {
       source  = "registry.terraform.io/duplocloud/duplocloud"
     }
     aws = {
-      version = "~> 3.29.1"
+      version = "~> 4.35"
     }
   }
 }
@@ -24,44 +24,50 @@ variable "tenant_id" {
   type = string
 }
 
-# AWS information retrieval
-data "duplocloud_aws_account" "test" { tenant_id = var.tenant_id }
-data "duplocloud_tenant_aws_region" "test" { tenant_id = var.tenant_id }
-output "aws_account_id" { value = data.duplocloud_aws_account.test.account_id }
-output "aws_region" { value = data.duplocloud_tenant_aws_region.test.aws_region }
-
-# Use any AWS terraform resource with just-in-time Duplo credentials!
-data "duplocloud_tenant_aws_credentials" "test" { tenant_id = var.tenant_id }
-provider "aws" {
-  # The following credentials are temporary "just in time" credentials created by Duplo.
-  access_key             = data.duplocloud_tenant_aws_credentials.test.access_key_id
-  secret_key             = data.duplocloud_tenant_aws_credentials.test.secret_access_key
-  token                  = data.duplocloud_tenant_aws_credentials.test.session_token
-  region                 = data.duplocloud_tenant_aws_credentials.test.region
-  skip_get_ec2_platforms = true
+resource "duplocloud_tenant_secret" "test" {
+  tenant_id = var.tenant_id
+  name_suffix = "myjson"
+  data = jsonencode({ foo = "baro2" })
 }
 
-# Or, apply additional policy to an S3 bucket created by Duplo.
-resource "duplocloud_s3_bucket" "test" {
-  tenant_id           = var.tenant_id
-  name                = "joetest3"
-  allow_public_access = false
-  enable_versioning   = true
-  enable_access_logs  = true
-  managed_policies    = ["ssl"]
-  default_encryption {
-    method = "Sse"
-  }
-}
+# # AWS information retrieval
+# data "duplocloud_aws_account" "test" { tenant_id = var.tenant_id }
+# data "duplocloud_tenant_aws_region" "test" { tenant_id = var.tenant_id }
+# output "aws_account_id" { value = data.duplocloud_aws_account.test.account_id }
+# output "aws_region" { value = data.duplocloud_tenant_aws_region.test.aws_region }
 
-# Or, get information on one of your KMS keys
-data "duplocloud_tenant_aws_kms_keys" "test" { tenant_id = var.tenant_id }
-output "kms_key_id" { value = data.duplocloud_tenant_aws_kms_keys.test.keys[1].key_id }
-//data "aws_kms_key" "test" { key_id = 
-//output "kms_key_state" { value = data.aws_kms_key.test.key_state }
+# # Use any AWS terraform resource with just-in-time Duplo credentials!
+# data "duplocloud_tenant_aws_credentials" "test" { tenant_id = var.tenant_id }
+# provider "aws" {
+#   # The following credentials are temporary "just in time" credentials created by Duplo.
+#   access_key             = data.duplocloud_tenant_aws_credentials.test.access_key_id
+#   secret_key             = data.duplocloud_tenant_aws_credentials.test.secret_access_key
+#   token                  = data.duplocloud_tenant_aws_credentials.test.session_token
+#   region                 = data.duplocloud_tenant_aws_credentials.test.region
+#   skip_get_ec2_platforms = true
+# }
 
-# Or, get information on your Duplo tenant's KMS key
-data "duplocloud_tenant_aws_kms_key" "test" { tenant_id = var.tenant_id }
-output "kms_key_id2" { value = data.duplocloud_tenant_aws_kms_key.test.key_id }
-//data "aws_kms_key" "test2" { key_id = data.duplocloud_tenant_aws_kms_key.test.key_id }
-//output "kms_key_state2" { value = data.aws_kms_key.test2.key_state }
+# # Or, apply additional policy to an S3 bucket created by Duplo.
+# resource "duplocloud_s3_bucket" "test" {
+#   tenant_id           = var.tenant_id
+#   name                = "joetest3"
+#   allow_public_access = false
+#   enable_versioning   = true
+#   enable_access_logs  = true
+#   managed_policies    = ["ssl"]
+#   default_encryption {
+#     method = "Sse"
+#   }
+# }
+
+# # Or, get information on one of your KMS keys
+# data "duplocloud_tenant_aws_kms_keys" "test" { tenant_id = var.tenant_id }
+# output "kms_key_id" { value = data.duplocloud_tenant_aws_kms_keys.test.keys[1].key_id }
+# //data "aws_kms_key" "test" { key_id = 
+# //output "kms_key_state" { value = data.aws_kms_key.test.key_state }
+
+# # Or, get information on your Duplo tenant's KMS key
+# data "duplocloud_tenant_aws_kms_key" "test" { tenant_id = var.tenant_id }
+# output "kms_key_id2" { value = data.duplocloud_tenant_aws_kms_key.test.key_id }
+# //data "aws_kms_key" "test2" { key_id = data.duplocloud_tenant_aws_kms_key.test.key_id }
+# //output "kms_key_state2" { value = data.aws_kms_key.test2.key_state }

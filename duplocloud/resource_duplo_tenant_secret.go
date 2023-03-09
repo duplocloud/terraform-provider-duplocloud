@@ -80,7 +80,7 @@ func resourceTenantSecret() *schema.Resource {
 	}
 }
 
-/// READ resource
+// / READ resource
 func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -95,7 +95,7 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.TenantGetSecretByName(tenantID, name)
+	duplo, err := c.TenantGetAwsSecret(tenantID, name)
 	if err != nil {
 		return diag.Errorf("unable to retrieve secret '%s': %s", id, err)
 	}
@@ -123,11 +123,11 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	return nil
 }
 
-/// CREATE resource
+// / CREATE resource
 func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
-	duploObject := duplosdk.DuploTenantSecretRequest{
+	duploObject := duplosdk.DuploAwsSecretCreateRequest{
 		Name:         d.Get("name_suffix").(string),
 		SecretString: d.Get("data").(string),
 	}
@@ -138,7 +138,7 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	err = c.TenantCreateSecret(tenantID, &duploObject)
+	_, err = c.TenantCreateAwsSecret(tenantID, &duploObject)
 	if err != nil {
 		return diag.Errorf("error creating tenant %s secret '%s': %s", tenantID, duploObject.Name, err)
 	}
@@ -146,9 +146,13 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 
 	// Wait for Duplo to be able to return the secret's details.
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "tenant secret", tempID, func() (interface{}, duplosdk.ClientError) {
-		rp, errget := c.TenantGetSecretByNameSuffix(tenantID, duploObject.Name)
-		if errget == nil && rp != nil {
-			d.SetId(fmt.Sprintf("%s/%s", tenantID, rp.Name))
+		var rp *duplosdk.DuploAwsSecret
+		name, errget := c.GetDuploServicesName(tenantID, duploObject.Name)
+		if errget == nil {
+			rp, errget = c.TenantGetAwsSecret(tenantID, name)
+			if errget == nil && rp != nil {
+				d.SetId(fmt.Sprintf("%s/%s", tenantID, rp.Name))
+			}
 		}
 		return rp, errget
 	})
@@ -159,7 +163,7 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 	return diags
 }
 
-/// DELETE resource
+// / DELETE resource
 func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -171,14 +175,14 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
-	err := c.TenantDeleteSecret(tenantID, name)
+	err := c.TenantDeleteAwsSecret(tenantID, name)
 	if err != nil {
 		return diag.Errorf("error deleting secret '%s': %s", id, err)
 	}
 
 	// Wait for Duplo to delete the secret.
 	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "tenant secret", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenantGetSecretByName(tenantID, name)
+		return c.TenantGetAwsSecret(tenantID, name)
 	})
 
 	// Wait 60 more seconds to deal with consistency issues.
