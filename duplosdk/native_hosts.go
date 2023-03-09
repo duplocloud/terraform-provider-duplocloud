@@ -4,6 +4,12 @@ import (
 	"fmt"
 )
 
+const (
+	KeyPairType_None    = 0
+	KeyPairType_RSA     = 1
+	KeyPairType_ED25519 = 2
+)
+
 var AzureVmFeatures = map[string]string{
 	"loganalytics": "duplo_loganalytics",
 	"publicip":     "duplo_enablepublicip",
@@ -26,6 +32,7 @@ type DuploNativeHost struct {
 	IsEbsOptimized     bool                               `json:"IsEbsOptimized"`
 	AllocatedPublicIP  bool                               `json:"AllocatedPublicIp,omitempty"`
 	Cloud              int                                `json:"Cloud"`
+	KeyPairType        int                                `json:"KeyPairType,omitempty"`
 	EncryptDisk        bool                               `json:"EncryptDisk,omitempty"`
 	Status             string                             `json:"Status,omitempty"`
 	IdentityRole       string                             `json:"IdentityRole,omitempty"`

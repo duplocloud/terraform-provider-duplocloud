@@ -41,6 +41,7 @@ Read-Only:
 - **instance_id** (String)
 - **is_ebs_optimized** (Boolean)
 - **is_minion** (Boolean)
+- **keypair_type** (Number)
 - **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--metadata))
 - **minion_tags** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--minion_tags))
 - **network_interface** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--network_interface))
