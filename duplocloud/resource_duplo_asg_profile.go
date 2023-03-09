@@ -42,6 +42,13 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 		Computed:    true,
 	}
 
+	awsASGSchema["use_launch_template"] = &schema.Schema{
+		Description: "Whether or not to use launch template.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	}
+
 	awsASGSchema["wait_for_capacity"] = &schema.Schema{
 		Description:      "Whether or not to wait until ASG instances to be healthy, after creation.",
 		Type:             schema.TypeBool,
@@ -289,6 +296,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("instance_count", duplo.DesiredCapacity)
 	d.Set("min_instance_count", duplo.MinSize)
 	d.Set("max_instance_count", duplo.MaxSize)
+	d.Set("use_launch_template", duplo.UseLaunchTemplate)
 	d.Set("fullname", duplo.FriendlyName)
 	d.Set("capacity", duplo.Capacity)
 	d.Set("is_minion", duplo.IsMinion)
@@ -339,6 +347,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		DesiredCapacity:     d.Get("instance_count").(int),
 		MinSize:             d.Get("min_instance_count").(int),
 		MaxSize:             d.Get("max_instance_count").(int),
+		UseLaunchTemplate:   d.Get("use_launch_template").(bool),
 	}
 }
 
