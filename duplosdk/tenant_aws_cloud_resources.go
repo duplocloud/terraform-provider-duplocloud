@@ -161,16 +161,6 @@ type DuploAwsLbListenerDeleteRequest struct {
 	ListenerArn string `json:"ListenerArn"`
 }
 
-// DuploAwsLbSettings represents an AWS application load balancer's settings
-type DuploAwsLbSettings struct {
-	LoadBalancerArn     string `json:"LoadBalancerArn"`
-	EnableAccessLogs    bool   `json:"EnableAccessLogs,omitempty"`
-	DropInvalidHeaders  bool   `json:"DropInvalidHeaders,omitempty"`
-	WebACLID            string `json:"WebACLId,omitempty"`
-	HttpToHttpsRedirect bool   `json:"HttpToHttpsRedirect,omitempty"`
-	IdleTimeout         int    `json:"IdleTimeout,omitempty"`
-}
-
 // DuploAwsLbListener represents an AWS application load balancer listener
 type DuploAwsLbListener struct {
 	LoadBalancerArn string                          `json:"LoadBalancerArn"`
@@ -213,21 +203,6 @@ type DuploAwsLbTargetGroup struct {
 	TargetType                 *DuploStringValue           `json:"TargetType,omitempty"`
 	UnhealthyThreshold         int                         `json:"UnhealthThresholdCount"`
 	VpcID                      string                      `json:"VpcId"`
-}
-
-// DuploAwsLBAccessLogsRequest represents a request to retrieve an AWS application load balancer's settings.
-type DuploAwsLbSettingsRequest struct {
-	LoadBalancerArn string `json:"LoadBalancerArn"`
-}
-
-// DuploAwsLBAccessLogsUpdateRequest represents a request to update an AWS application load balancer's settings.
-type DuploAwsLbSettingsUpdateRequest struct {
-	LoadBalancerArn     string `json:"LoadBalancerArn"`
-	EnableAccessLogs    bool   `json:"EnableAccessLogs,omitempty"`
-	DropInvalidHeaders  bool   `json:"DropInvalidHeaders,omitempty"`
-	WebACLID            string `json:"WebACLId,omitempty"`
-	HttpToHttpsRedirect bool   `json:"HttpToHttpsRedirect,omitempty"`
-	IdleTimeout         int    `json:"IdleTimeout,omitempty"`
 }
 
 // DuploS3BucketRequest represents a request to create an S3 bucket resource
@@ -644,26 +619,6 @@ func (c *Client) TenantGetKafkaClusterBootstrapBrokers(tenantID string, arn stri
 	if err != nil {
 		return nil, err
 	}
-	return &rp, err
-}
-
-// TenantUpdateApplicationLbSettings updates an application LB resource's settings via Duplo.
-func (c *Client) TenantUpdateApplicationLbSettings(tenantID string, duplo DuploAwsLbSettingsUpdateRequest) ClientError {
-	return c.postAPI("TenantUpdateApplicationLbSettings",
-		fmt.Sprintf("subscriptions/%s/UpdateLbSettings", tenantID),
-		&duplo,
-		nil)
-}
-
-// TenantGetApplicationLbSettings updates an application LB resource's WAF association via Duplo.
-func (c *Client) TenantGetApplicationLbSettings(tenantID string, loadBalancerArn string) (*DuploAwsLbSettings, ClientError) {
-	rp := DuploAwsLbSettings{}
-
-	err := c.postAPI("TenantGetApplicationLbSettings",
-		fmt.Sprintf("subscriptions/%s/GetLbSettings", tenantID),
-		&DuploAwsLbSettingsRequest{LoadBalancerArn: loadBalancerArn},
-		&rp)
-
 	return &rp, err
 }
 
