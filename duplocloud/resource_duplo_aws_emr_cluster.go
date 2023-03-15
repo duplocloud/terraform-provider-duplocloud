@@ -276,7 +276,7 @@ func awsEmrClusterSchema() map[string]*schema.Schema {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceAwsEmrClusterRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// Parse the identifying attributes
 	id := d.Id()
@@ -311,7 +311,7 @@ func resourceAwsEmrClusterRead(_ context.Context, d *schema.ResourceData, m inte
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceAwsEmrClusterCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 	var resp *duplosdk.DuploEmrClusterRequest
@@ -394,7 +394,7 @@ func resourceAwsEmrClusterCreate(ctx context.Context, d *schema.ResourceData, m 
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceAwsEmrClusterDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// Parse the identifying attributes
 	id := d.Id()

@@ -12,10 +12,10 @@ import (
 )
 
 func k8sSecretSchemaComputed() map[string]*schema.Schema {
-	schema := k8sSecretSchema()
-	delete(schema, "client_secret_version")
+	sch := k8sSecretSchema()
+	delete(sch, "client_secret_version")
 
-	for k, v := range schema {
+	for k, v := range sch {
 		if k != "secret_name" && k != "tenant_id" {
 			v.Computed = true
 			v.Optional = false
@@ -27,8 +27,13 @@ func k8sSecretSchemaComputed() map[string]*schema.Schema {
 			v.ValidateFunc = nil
 		}
 	}
+	sch["is_duplo_managed"] = &schema.Schema{
+		Type:        schema.TypeBool,
+		Computed:    true,
+		Description: "Whether or not the secret is managed by duplo",
+	}
 
-	return schema
+	return sch
 }
 
 // SCHEMA for resource data/search

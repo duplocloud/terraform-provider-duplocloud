@@ -62,6 +62,13 @@ func k8sSecretSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"secret_labels": {
+			Description: "Labels for the secret",
+			Type:        schema.TypeMap,
+			Optional:    true,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 	}
 }
 
@@ -78,15 +85,15 @@ func resourceK8Secret() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(15 * time.Minute),
-			Update: schema.DefaultTimeout(15 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Create: schema.DefaultTimeout(time.Minute),
+			Update: schema.DefaultTimeout(time.Minute),
+			Delete: schema.DefaultTimeout(time.Minute),
 		},
 		Schema: k8sSecretSchema(),
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
@@ -111,7 +118,7 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("secret_name").(string)
@@ -126,7 +133,7 @@ func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	cerr := c.K8SecretCreate(tenantID, rq)
+	_, cerr := c.K8SecretCreate(tenantID, rq)
 	if cerr != nil {
 		return diag.FromErr(cerr)
 	}
@@ -137,7 +144,7 @@ func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m inter
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
@@ -154,7 +161,7 @@ func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	cerr := c.K8SecretUpdate(tenantID, rq)
+	_, cerr := c.K8SecretUpdate(tenantID, rq)
 	if cerr != nil {
 		return diag.FromErr(cerr)
 	}
@@ -164,7 +171,7 @@ func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceK8SecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
@@ -220,22 +227,17 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret) {
 	// Next, set the JSON encoded strings.
 	toJsonStringState("secret_data", duplo.SecretData, d)
 
-	// Finally, set the map
-	d.Set("secret_annotations", duplo.SecretAnnotations)
+	// Finally, set the maps
+	d.Set("secret_annotations", flattenStringMap(duplo.SecretAnnotations))
+	d.Set("secret_labels", flattenStringMap(duplo.SecretLabels))
 }
 
 func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 	duplo := duplosdk.DuploK8sSecret{
-		SecretName: d.Get("secret_name").(string),
-		SecretType: d.Get("secret_type").(string),
-	}
-
-	// The annotations must be converted to a map of strings.
-	if v, ok := d.GetOk("secret_annotations"); ok && !isInterfaceNil(v) {
-		duplo.SecretAnnotations = map[string]string{}
-		for key, value := range v.(map[string]interface{}) {
-			duplo.SecretAnnotations[key] = value.(string)
-		}
+		SecretName:        d.Get("secret_name").(string),
+		SecretType:        d.Get("secret_type").(string),
+		SecretAnnotations: expandAsStringMap("secret_annotations", d),
+		SecretLabels:      expandAsStringMap("secret_labels", d),
 	}
 
 	// The data must be decoded as JSON.

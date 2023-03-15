@@ -197,7 +197,7 @@ func resourceAwsLambdaFunction() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceAwsLambdaFunctionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -230,7 +230,7 @@ func resourceAwsLambdaFunctionRead(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	tenantID := d.Get("tenant_id").(string)
@@ -331,7 +331,7 @@ func resourceAwsLambdaFunctionUpdate(ctx context.Context, d *schema.ResourceData
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceAwsLambdaFunctionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes

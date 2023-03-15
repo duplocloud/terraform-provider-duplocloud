@@ -32,7 +32,7 @@ func dataSourceK8ConfigMaps() *schema.Resource {
 	}
 }
 
-/// READ/SEARCH resources
+// READ/SEARCH resources
 func dataSourceK8ConfigMapsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 

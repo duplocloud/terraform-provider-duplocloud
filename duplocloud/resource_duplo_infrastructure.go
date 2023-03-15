@@ -299,7 +299,7 @@ func resourceInfrastructure() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 4)
@@ -325,7 +325,7 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -365,7 +365,7 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	infraName, diags := parseInfrastructureId(d)
 	if diags != nil {
@@ -433,7 +433,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	infraName, diags := parseInfrastructureId(d)
 	if diags != nil {

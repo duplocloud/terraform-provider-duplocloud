@@ -174,7 +174,7 @@ func dataSourceInfrastructuresRead(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-/// READ/SEARCH resources
+// READ/SEARCH resources
 func dataSourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] dataSourceInfrastructureRead(): start")
 

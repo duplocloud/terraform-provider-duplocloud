@@ -175,7 +175,7 @@ func resourceK8sPVCRead(ctx context.Context, d *schema.ResourceData, m interface
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceK8sPVCCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
@@ -200,12 +200,12 @@ func resourceK8sPVCCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceK8sPVCUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return resourceK8sPVCCreate(ctx, d, m)
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceK8sPVCDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sPVCIdParts(d.Id())
 	if err != nil {

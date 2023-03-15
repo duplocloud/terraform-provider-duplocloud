@@ -76,6 +76,7 @@ func toJsonStringState(field string, from interface{}, to *schema.ResourceData) 
 }
 
 // Many kubernetes resources require a name to be a valid DNS subdomain, as defined in RFC 1123.
+//
 //nolint:staticcheck // TF needs to provide newer versions of these functions.
 func ValidateDnsSubdomainRFC1123() schema.SchemaValidateFunc {
 	return validation.All(
@@ -150,6 +151,7 @@ func tagsSchemaComputed() *schema.Schema {
 }
 
 // awsTagsKeyValueSchema returns a Terraform schema to represent list of AWS tags.
+//
 //nolint:deadcode,unused // utility function
 func awsTagsKeyValueSchemaComputed() *schema.Schema {
 	return &schema.Schema{
@@ -171,6 +173,7 @@ func awsTagsKeyValueSchemaComputed() *schema.Schema {
 }
 
 // awsTagsKeyValueSchema returns a Terraform schema to represent list of AWS tags.
+//
 //nolint:deadcode,unused // utility function
 func awsTagsKeyValueSchema() *schema.Schema {
 	return &schema.Schema{
@@ -470,6 +473,7 @@ func selectKeyValues(metadata *[]duplosdk.DuploKeyStringValue, keys []string) *[
 }
 
 // Internal function used to re-order key value pairs
+//
 //nolint:deadcode,unused // utility function
 func reorderKeyValues(pairs []interface{}) {
 
@@ -601,9 +605,9 @@ func validateJsonObjectArray(key string, value string) (ws []string, errors []er
 }
 
 // Internal function to convert map keys from lower camel-case to upper camel-case.
-//  - Adds an upper camel-case entry for each lower camel-case entry, unless the upper exists already.
-//  - Removes any lower camel-case entry.
-//  - Never overwrites any existing upper camel-case keys.
+//   - Adds an upper camel-case entry for each lower camel-case entry, unless the upper exists already.
+//   - Removes any lower camel-case entry.
+//   - Never overwrites any existing upper camel-case keys.
 func makeMapUpperCamelCase(m map[string]interface{}) {
 	for k := range m {
 

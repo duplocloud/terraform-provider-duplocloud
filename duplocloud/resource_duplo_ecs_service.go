@@ -298,7 +298,7 @@ func resourceDuploEcsService() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploEcsServiceRead ******** start")
 
@@ -323,12 +323,12 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 	return diags
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploEcsServiceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return resourceDuploEcsServiceCreateOrUpdate(ctx, d, m, false)
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceDuploEcsServiceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return resourceDuploEcsServiceCreateOrUpdate(ctx, d, m, true)
 }
@@ -387,7 +387,7 @@ func resourceDuploEcsServiceCreateOrUpdate(ctx context.Context, d *schema.Resour
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploEcsServiceDelete ******** start")
 
