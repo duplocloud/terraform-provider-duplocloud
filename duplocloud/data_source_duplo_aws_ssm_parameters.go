@@ -62,7 +62,7 @@ func dataSourceAwsSsmParameters() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceSsmParametersRead(d *schema.ResourceData, m interface{}) error {
 	tenantID := d.Get("tenant_id").(string)
 

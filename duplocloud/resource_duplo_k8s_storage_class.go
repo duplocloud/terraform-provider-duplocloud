@@ -174,7 +174,7 @@ func resourceK8sStorageClassRead(ctx context.Context, d *schema.ResourceData, m 
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceK8sStorageClassCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
@@ -203,12 +203,12 @@ func resourceK8sStorageClassCreate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceK8sStorageClassUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return resourceK8sStorageClassCreate(ctx, d, m)
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceK8sStorageClassDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, fullname, err := parseK8sStorageClassIdParts(d.Id())
 	if err != nil {

@@ -283,7 +283,7 @@ func dataSourcePlansRead(ctx context.Context, d *schema.ResourceData, m interfac
 	return nil
 }
 
-/// READ/SEARCH resources
+// READ/SEARCH resources
 func dataSourcePlanRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] dataSourcePlanRead(): start")
 

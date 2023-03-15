@@ -113,7 +113,7 @@ func resourceAwsLambdaPermissionRead(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceAwsLambdaPermissionCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	tenantID := d.Get("tenant_id").(string)
@@ -149,7 +149,7 @@ func resourceAwsLambdaPermissionUpdate(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceAwsLambdaPermissionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes

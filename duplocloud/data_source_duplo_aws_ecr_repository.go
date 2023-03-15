@@ -55,7 +55,7 @@ func dataSourceEcrRepository() *schema.Resource {
 	}
 }
 
-/// READ/SEARCH resources
+// READ/SEARCH resources
 func dataSourceEcrRepositoryRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)

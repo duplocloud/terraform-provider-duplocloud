@@ -114,7 +114,7 @@ func resourceAwsLoadBalancer() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceAwsLoadBalancerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerRead ******** start")
 
@@ -150,7 +150,7 @@ func resourceAwsLoadBalancerRead(ctx context.Context, d *schema.ResourceData, m 
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceAwsLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerCreate ******** start")
 
@@ -188,7 +188,7 @@ func resourceAwsLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** start")
 
@@ -226,7 +226,7 @@ func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceAwsLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerDelete ******** start")
 

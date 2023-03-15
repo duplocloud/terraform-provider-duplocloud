@@ -545,7 +545,7 @@ func resourceAwsLbListenerRule() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceAwsLbListenerRuleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -576,7 +576,7 @@ func resourceAwsLbListenerRuleRead(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceAwsLbListenerRuleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	tenantID := d.Get("tenant_id").(string)
@@ -674,7 +674,7 @@ func resourceAwsLbListenerRuleUpdate(ctx context.Context, d *schema.ResourceData
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceAwsLbListenerRuleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes

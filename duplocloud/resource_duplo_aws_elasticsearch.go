@@ -269,7 +269,7 @@ func resourceDuploAwsElasticSearch() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] rresourceDuploAwsElasticSearchRead ******** start")
 
@@ -344,7 +344,7 @@ func resourceDuploAwsElasticSearchRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploAwsElasticSearchCreate ******** start")
 
@@ -462,7 +462,7 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 	return diags
 }
 
-/// UPDATE jresource
+// UPDATE jresource
 func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -504,7 +504,7 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploAwsElasticSearchDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 

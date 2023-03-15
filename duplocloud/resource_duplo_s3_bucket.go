@@ -125,7 +125,7 @@ func resourceS3Bucket() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketRead ******** start")
 
@@ -155,7 +155,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketCreate ******** start")
 
@@ -189,7 +189,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketUpdate ******** start")
 
@@ -241,7 +241,7 @@ func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketDelete ******** start")
 

@@ -52,7 +52,7 @@ func dataSourceTenantEksCredentials() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceTenantEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceTenantEksCredentialsRead ******** start")
 

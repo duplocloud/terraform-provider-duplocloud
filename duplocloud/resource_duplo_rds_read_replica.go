@@ -141,7 +141,7 @@ func resourceDuploRdsReadReplica() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploRdsReadReplicaRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploRdsReadReplicaRead ******** start")
 
@@ -167,7 +167,7 @@ func resourceDuploRdsReadReplicaRead(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploRdsReadReplicaCreate ******** start")
 	tenantID := d.Get("tenant_id").(string)
@@ -224,12 +224,12 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploRdsReadReplicaDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploRdsReadReplicaDelete ******** start")
 

@@ -102,7 +102,7 @@ func resourceDuploServiceParams() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 	var clientError duplosdk.ClientError
@@ -157,12 +157,12 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploServiceParamsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return resourceDuploServiceParamsCreateOrUpdate(ctx, d, m, false)
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceDuploServiceParamsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return resourceDuploServiceParamsCreateOrUpdate(ctx, d, m, true)
 }
@@ -254,7 +254,7 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var clientError duplosdk.ClientError
 	// Parse the identifying attributes

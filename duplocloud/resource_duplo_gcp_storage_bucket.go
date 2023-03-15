@@ -81,7 +81,7 @@ func resourceGcpStorageBucket() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceGcpStorageBucketRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpStorageBucketRead ******** start")
 
@@ -111,7 +111,7 @@ func resourceGcpStorageBucketRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceGcpStorageBucketCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpStorageBucketCreate ******** start")
 
@@ -146,7 +146,7 @@ func resourceGcpStorageBucketCreate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceGcpStorageBucketUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpStorageBucketUpdate ******** start")
 
@@ -179,7 +179,7 @@ func resourceGcpStorageBucketUpdate(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceGcpStorageBucketDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpStorageBucketDelete ******** start")
 

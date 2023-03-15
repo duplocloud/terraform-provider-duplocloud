@@ -70,7 +70,7 @@ func dataSourceTenant() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceTenantRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceTenantRead(): start")
 

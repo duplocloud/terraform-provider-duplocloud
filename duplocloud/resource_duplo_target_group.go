@@ -244,7 +244,7 @@ func resourceTargetGroupRead(ctx context.Context, d *schema.ResourceData, m inte
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceTargetGroupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
@@ -349,7 +349,7 @@ func resourceTargetGroupCreate(ctx context.Context, d *schema.ResourceData, m in
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceTargetGroupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseTargetGroupIdParts(d.Id())
 	if err != nil {
@@ -412,7 +412,7 @@ func resourceTargetGroupUpdate(ctx context.Context, d *schema.ResourceData, m in
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceTargetGroupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseTargetGroupIdParts(d.Id())
 	if err != nil {

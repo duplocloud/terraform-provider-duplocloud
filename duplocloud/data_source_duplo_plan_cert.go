@@ -89,7 +89,7 @@ func dataSourcePlanCertsRead(ctx context.Context, d *schema.ResourceData, m inte
 	return nil
 }
 
-/// READ/SEARCH resources
+// READ/SEARCH resources
 func dataSourcePlanCertRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes

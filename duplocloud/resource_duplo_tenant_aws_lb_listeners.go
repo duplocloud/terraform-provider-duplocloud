@@ -129,7 +129,7 @@ func resourceAwsLoadBalancerListener() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceAwsLoadBalancerListenerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerListenerRead - start")
 	id := d.Id()
@@ -167,7 +167,7 @@ func resourceAwsLoadBalancerListenerRead(ctx context.Context, d *schema.Resource
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerListenerCreate - start")
 	// Create the request object.
@@ -209,12 +209,12 @@ func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.Resour
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 // func resourceAwsLoadBalancerListenerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 // 	return nil
 // }
 
-/// DELETE resource
+// DELETE resource
 func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerListenerDelete - start")
 
