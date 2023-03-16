@@ -47,17 +47,15 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 
 		// First, set the simple fields.
 		sc := map[string]interface{}{
-			"is_duplo_managed":   duplo.IsDuploManaged,
-			"tenant_id":          duplo.TenantID,
-			"secret_name":        duplo.SecretName,
-			"secret_type":        duplo.SecretType,
-			"secret_version":     duplo.SecretVersion,
-			"secret_annotations": flattenStringMap(duplo.SecretAnnotations),
-			"secret_labels":      flattenStringMap(duplo.SecretLabels),
+			"tenant_id":      duplo.TenantID,
+			"secret_name":    duplo.SecretName,
+			"secret_type":    duplo.SecretType,
+			"secret_version": duplo.SecretVersion,
 		}
 
 		// Next, set the JSON encoded strings.
 		toJsonStringField("secret_data", duplo.SecretData, sc)
+		toJsonStringField("secret_annotations", duplo.SecretAnnotations, sc)
 
 		list = append(list, sc)
 	}
