@@ -91,6 +91,7 @@ type DuploLbConfiguration struct {
 	HealthCheckConfig         *DuploLbHealthCheckConfig `json:"HealthCheckConfig,omitempty"`
 	LbIndex                   int                       `json:"LbIndex"`
 	TgArn                     string                    `json:"TgArn,omitempty"`
+	CustomCidrs               []string                  `json:"CustomCidrs,omitempty"`
 	// Only for K8s services
 	ExtraSelectorLabels *[]DuploKeyStringValue `json:"ExtraSelectorLabels,omitempty"`
 
