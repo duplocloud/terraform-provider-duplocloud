@@ -70,7 +70,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Description: "The numeric ID of the container agent pool that this host is added to.",
 			Type:        schema.TypeInt,
 			Optional:    true,
-			ForceNew:    true,
 			Default:     0,
 		},
 		"subnet_id": {
@@ -102,7 +101,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
-			ForceNew:    true,
 		},
 		"encrypt_disk": {
 			Type:     schema.TypeBool,
@@ -137,7 +135,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
-			ForceNew:    true, // relaunch instance
 			Elem:        KeyValueSchema(),
 		},
 		"volume": {

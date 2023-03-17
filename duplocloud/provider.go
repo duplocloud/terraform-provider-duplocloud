@@ -106,6 +106,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_target_group_attributes":     resourceAwsTargetGroupAttributes(),
 			"duplocloud_aws_lb_target_group":             resourceTargetGroup(),
 			"duplocloud_aws_sqs_queue":                   resourceAwsSqsQueue(),
+			"duplocloud_aws_sqs_queue_v2":                resourceAwsSqsQueueV2(),
 			"duplocloud_aws_sns_topic":                   resourceAwsSnsTopic(),
 			"duplocloud_aws_lb_listener_rule":            resourceAwsLbListenerRule(),
 			"duplocloud_azure_key_vault_secret":          resourceAzureKeyVaultSecret(),
