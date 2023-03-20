@@ -318,8 +318,8 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 				if item.LbType == 5 {
 					item.HostNames = &[]string{lbc["host_name"].(string)}
 				}
-				if v, ok := d.GetOk("custom_cidr"); ok && v != nil && item.LbType == 6 {
-					item.CustomCidrs = expandStringList(d.Get("custom_cidr").([]interface{}))
+				if v, ok := lbc["custom_cidr"]; ok && v != nil && len(v.([]interface{})) > 0 && item.LbType == 6 {
+					item.CustomCidrs = expandStringList(v.([]interface{}))
 				}
 				list = append(list, item)
 			}
