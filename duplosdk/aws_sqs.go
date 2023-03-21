@@ -163,6 +163,6 @@ func (c *Client) ExtractSqsFullname(tenantID string, sqsUrl string) (string, Cli
 	}
 	parts := strings.Split(sqsUrl, "/"+accountID+"/")
 	fullname := parts[1]
-	fullname = strings.TrimSuffix(fullname, ".fifo")
+	// fullname = strings.TrimSuffix(fullname, ".fifo")
 	return fullname, nil
 }
