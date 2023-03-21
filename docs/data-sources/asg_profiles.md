@@ -50,6 +50,7 @@ Read-Only:
 - **network_interface** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interface))
 - **tags** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--tags))
 - **tenant_id** (String)
+- **use_launch_template** (Boolean)
 - **user_account** (String)
 - **volume** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--volume))
 - **wait_for_capacity** (Boolean)

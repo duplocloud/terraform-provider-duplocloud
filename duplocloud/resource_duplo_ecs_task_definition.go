@@ -245,7 +245,7 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, arn, err := parseEcsTaskDefIdParts(d.Id())
 	if err != nil {
@@ -272,7 +272,7 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 
@@ -301,7 +301,7 @@ func resourceDuploEcsTaskDefinitionUpdate(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionDelete ******** start")
 	var diags diag.Diagnostics

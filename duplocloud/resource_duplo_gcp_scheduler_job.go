@@ -274,7 +274,7 @@ func resourceGcpSchedulerJob() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceGcpSchedulerJobRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpSchedulerJobRead ******** start")
 
@@ -304,7 +304,7 @@ func resourceGcpSchedulerJobRead(ctx context.Context, d *schema.ResourceData, m 
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceGcpSchedulerJobCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpSchedulerJobCreate ******** start")
 
@@ -335,7 +335,7 @@ func resourceGcpSchedulerJobCreate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceGcpSchedulerJobUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpSchedulerJobUpdate ******** start")
 
@@ -364,7 +364,7 @@ func resourceGcpSchedulerJobUpdate(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceGcpSchedulerJobDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpSchedulerJobDelete ******** start")
 

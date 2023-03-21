@@ -69,7 +69,7 @@ func resourceGcpPubsubTopic() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceGcpPubsubTopicRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpPubsubTopicRead ******** start")
 
@@ -99,7 +99,7 @@ func resourceGcpPubsubTopicRead(ctx context.Context, d *schema.ResourceData, m i
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceGcpPubsubTopicCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpPubsubTopicCreate ******** start")
 
@@ -133,7 +133,7 @@ func resourceGcpPubsubTopicCreate(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceGcpPubsubTopicUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpPubsubTopicUpdate ******** start")
 
@@ -164,7 +164,7 @@ func resourceGcpPubsubTopicUpdate(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceGcpPubsubTopicDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpPubsubTopicDelete ******** start")
 

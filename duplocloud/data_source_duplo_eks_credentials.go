@@ -48,7 +48,7 @@ func dataSourceEksCredentials() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceEksCredentialsRead ******** start")
 

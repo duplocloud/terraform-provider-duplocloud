@@ -83,7 +83,7 @@ func resourceAwsDynamoDBTable() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceAwsDynamoDBTableRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -120,7 +120,7 @@ func resourceAwsDynamoDBTableRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceAwsDynamoDBTableCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -162,7 +162,7 @@ func resourceAwsDynamoDBTableCreate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceAwsDynamoDBTableDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes

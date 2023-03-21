@@ -96,7 +96,7 @@ func resourceTenant() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 
@@ -143,7 +143,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	rq := duplosdk.DuploTenant{
 		AccountName: d.Get("account_name").(string),
@@ -200,7 +200,7 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 

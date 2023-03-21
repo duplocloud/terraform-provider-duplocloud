@@ -267,6 +267,7 @@ func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath strin
 }
 
 // Utility method to call an API with a PUT request, handling logging, etc.
+//
 //nolint:deadcode,unused // internal API function
 func (c *Client) putAPI(apiName string, apiPath string, rq interface{}, rp interface{}) ClientError {
 	return c.doAPIWithRequestBody("PUT", apiName, apiPath, rq, rp)

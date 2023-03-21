@@ -123,7 +123,7 @@ func dataSourceTenantAwsLbTargetGroups() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceTenantAwsLbTargetGroupsRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceTenantAwsLbTargetGroupsRead ******** 1 start")
 

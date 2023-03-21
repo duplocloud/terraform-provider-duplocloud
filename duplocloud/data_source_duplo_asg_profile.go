@@ -35,7 +35,7 @@ func dataSourceAsgProfiles() *schema.Resource {
 	}
 }
 
-/// READ/SEARCH resources
+// READ/SEARCH resources
 func dataSourceAsgProfilesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 

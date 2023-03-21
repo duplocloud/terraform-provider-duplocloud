@@ -32,7 +32,7 @@ func dataSourceTenantConfig() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceTenantConfigRead(d *schema.ResourceData, m interface{}) error {
 
 	// Parse the identifying attributes

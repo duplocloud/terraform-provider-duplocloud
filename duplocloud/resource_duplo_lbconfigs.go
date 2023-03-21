@@ -211,7 +211,7 @@ func duploServiceLbConfigsSchema() map[string]*schema.Schema {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsRead: start")
 
@@ -266,7 +266,7 @@ func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploServiceLBConfigsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsCreate: start")
 	diags := resourceDuploServiceLBConfigsCreateOrUpdate(ctx, d, m, false)
@@ -274,7 +274,7 @@ func resourceDuploServiceLBConfigsCreate(ctx context.Context, d *schema.Resource
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceDuploServiceLBConfigsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsUpdate: start")
 	diags := resourceDuploServiceLBConfigsCreateOrUpdate(ctx, d, m, true)
@@ -351,7 +351,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploServiceLbConfigsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes

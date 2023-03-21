@@ -35,7 +35,7 @@ func dataSourceTenantAwsKmsKey() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceTenantAwsKmsKeyRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceTenantAwsKmsKeyRead ******** start")
 

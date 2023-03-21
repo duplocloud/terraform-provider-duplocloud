@@ -158,7 +158,7 @@ func resourceK8sSecretProviderClassRead(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceK8sSecretProviderClassCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
@@ -184,7 +184,7 @@ func resourceK8sSecretProviderClassCreate(ctx context.Context, d *schema.Resourc
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceK8sSecretProviderClassUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sSecretProviderClassIdParts(d.Id())
 	if err != nil {
@@ -211,7 +211,7 @@ func resourceK8sSecretProviderClassUpdate(ctx context.Context, d *schema.Resourc
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceK8sSecretProviderClassDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sSecretProviderClassIdParts(d.Id())
 	if err != nil {

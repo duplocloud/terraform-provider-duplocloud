@@ -84,12 +84,14 @@ func diffSuppressWhenNotCreating(k, old, new string, d *schema.ResourceData) boo
 }
 
 // suppresses a diff when a resource is brand new
+//
 //nolint:deadcode,unused // utility function
 func diffSuppressWhenNew(k, old, new string, d *schema.ResourceData) bool {
 	return d.IsNewResource()
 }
 
 // suppresses a diff when a resource exists
+//
 //nolint:deadcode,unused // utility function
 func diffSuppressWhenExisting(k, old, new string, d *schema.ResourceData) bool {
 	return !d.IsNewResource()
@@ -148,6 +150,7 @@ func ptrStringValue(v *string) string {
 // diffStringMaps returns the set of keys and values that must be created,
 // and the set of keys and values that must be destroyed.
 // Equivalent to 'diffTagsGeneric'.
+//
 //nolint:deadcode,unused // utility function
 func diffStringMaps(oldMap, newMap map[string]interface{}) (map[string]*string, map[string]*string) {
 	// First, we're creating everything we have

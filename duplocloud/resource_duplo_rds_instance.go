@@ -229,7 +229,7 @@ func resourceDuploRdsInstance() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploRdsInstanceRead ******** start")
 
@@ -255,7 +255,7 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** start")
 
@@ -328,7 +328,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -388,7 +388,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploRdsInstanceDelete ******** start")
 

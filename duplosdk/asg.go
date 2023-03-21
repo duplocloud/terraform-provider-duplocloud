@@ -30,6 +30,7 @@ type DuploAsgProfile struct {
 	MetaData            *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
 	Tags                *[]DuploKeyStringValue             `json:"Tags,omitempty"`
 	MinionTags          *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
+	UseLaunchTemplate   bool                               `json:"UseLaunchTemplate"`
 }
 
 type DuploAsgProfileDeleteReq struct {
