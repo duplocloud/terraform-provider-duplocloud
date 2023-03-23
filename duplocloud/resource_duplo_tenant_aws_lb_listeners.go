@@ -293,6 +293,7 @@ func flattenAwsLoadBalancerListener(d *schema.ResourceData, tenantID string, lbN
 			"arn":        duplo.Certificates[i].CertificateArn,
 			"is_default": duplo.Certificates[i].IsDefault,
 		})
+		d.Set("certificate_arn", duplo.Certificates[i].CertificateArn)
 	}
 
 	d.Set("certificates", certs)
@@ -307,6 +308,7 @@ func flattenAwsLoadBalancerListener(d *schema.ResourceData, tenantID string, lbN
 			action["type"] = duplo.DefaultActions[i].Type.Value
 		}
 		actions = append(actions, action)
+		d.Set("target_group_arn", duplo.LoadBalancerArn)
 	}
 
 	d.Set("default_actions", actions)
