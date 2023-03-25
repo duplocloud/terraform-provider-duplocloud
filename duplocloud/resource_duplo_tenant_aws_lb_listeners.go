@@ -308,7 +308,7 @@ func flattenAwsLoadBalancerListener(d *schema.ResourceData, tenantID string, lbN
 			action["type"] = duplo.DefaultActions[i].Type.Value
 		}
 		actions = append(actions, action)
-		d.Set("target_group_arn", duplo.LoadBalancerArn)
+		d.Set("target_group_arn", duplo.DefaultActions[i].TargetGroupArn)
 	}
 
 	d.Set("default_actions", actions)
