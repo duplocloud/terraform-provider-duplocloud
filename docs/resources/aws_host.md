@@ -94,6 +94,21 @@ Required:
 - **key** (String)
 - **value** (String)
 
+```
+# Example 1:  Create a host with instance metadata v2 only
+
+ metadata {
+     key   = "MetadataServiceOption"
+     value = "enabled_v2_only"
+   }
+
+# Example 2:  Create a host with instance metadata v1 and v2
+
+ metadata {
+     key   = "MetadataServiceOption"
+     value = "enabled"
+   }
+```
 
 <a id="nestedblock--minion_tags"></a>
 ### Nested Schema for `minion_tags`
