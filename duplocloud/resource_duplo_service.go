@@ -67,9 +67,8 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Required: false,
 		},
 		"hpa_specs": {
-			Description: "Provide Horizontal pod autoscaling configuration.",
-			Type:        schema.TypeString,
-			Optional:    true,
+			Type:     schema.TypeString,
+			Optional: true,
 		},
 		"allocation_tags": {
 			Type:     schema.TypeString,
