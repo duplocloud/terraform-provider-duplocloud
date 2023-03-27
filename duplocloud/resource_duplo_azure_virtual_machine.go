@@ -114,6 +114,20 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"os_disk_type": {
+			Description: "Specifies the type of managed disk to create. Possible values are either `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_ZRS` or `UltraSSD_LRS`.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"Standard_LRS",
+				"StandardSSD_LRS",
+				"Premium_LRS",
+				"PremiumV2_LRS",
+				"StandardSSD_ZRS",
+				"UltraSSD_LRS",
+			}, true),
+		},
 		"status": {
 			Description: "The current status of the host.",
 			Type:        schema.TypeString,
@@ -354,13 +368,19 @@ func resourceAzureVirtualMachineDelete(ctx context.Context, d *schema.ResourceDa
 }
 
 func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost {
-	diskSizeKV, usernameKV, passwordKV := duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{},
-		duplosdk.DuploKeyStringValue{}
+	diskSizeKV, diskTypeKV, usernameKV, passwordKV := duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{},
+		duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{}
 
 	if v, ok := d.GetOk("disk_size_gb"); ok {
 		diskSizeKV = duplosdk.DuploKeyStringValue{
 			Key:   "OsDiskSize",
 			Value: strconv.Itoa(v.(int)),
+		}
+	}
+	if v, ok := d.GetOk("os_disk_type"); ok && v != nil && v.(string) != "" {
+		diskTypeKV = duplosdk.DuploKeyStringValue{
+			Key:   "OsDiskType",
+			Value: v.(string),
 		}
 	}
 	if v, ok := d.GetOk("admin_username"); ok && v != nil && v.(string) != "" {
@@ -396,7 +416,7 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 		Cloud:             2, // For Azure
 		EncryptDisk:       d.Get("encrypt_disk").(bool),
 		MetaData: &[]duplosdk.DuploKeyStringValue{
-			diskSizeKV, usernameKV, passwordKV, joinDomainKV, logAnalyticKV,
+			diskSizeKV, diskTypeKV, usernameKV, passwordKV, joinDomainKV, logAnalyticKV,
 		},
 		TagsEx:     keyValueFromState("tags", d),
 		MinionTags: keyValueFromState("minion_tags", d),
@@ -515,5 +535,6 @@ func needsAzureVMUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("join_domain") ||
 		d.HasChange("enable_log_analytics") ||
 		d.HasChange("disk_size_gb") ||
+		d.HasChange("os_disk_type") ||
 		d.HasChange("volume")
 }
