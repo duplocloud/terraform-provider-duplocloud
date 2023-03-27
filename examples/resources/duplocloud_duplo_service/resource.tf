@@ -60,3 +60,44 @@ resource "duplocloud_duplo_service" "myservice" {
     ]
   })
 }
+
+# Example 5:  Deploy NGINX with resources and horizontal pod autoscaling, using Duplo's EKS agent
+
+resource "duplocloud_duplo_service" "hpa" {
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
+  name           = "hpa"
+  replicas       = 1
+  agent_platform = 7
+  other_docker_config = jsonencode({
+    "resources" : {
+      "limits" : {
+        "cpu" : "500m",
+        "memory" : "1Gi"
+      },
+      "requests" : {
+        "cpu" : "500m",
+        "memory" : "1Gi"
+      }
+    }
+    }
+  )
+  docker_image = "nginx:latest"
+  hpa_specs = jsonencode({
+    "maxReplicas" : 3,
+    "metrics" : [
+      {
+        "resource" : {
+          "name" : "cpu",
+          "target" : {
+            "averageUtilization" : 10,
+            "type" : "Utilization"
+          }
+        },
+        "type" : "Resource"
+      }
+    ],
+    "minReplicas" : 1
+    }
+  )
+}
+
