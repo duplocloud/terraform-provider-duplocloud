@@ -514,12 +514,10 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			rp, err := c.InfrastructureGetConfig(name)
+			log.Printf("[DEBUG] Infrastructure provisioning status is %s", rp.ProvisioningStatus)
 			status := "pending"
-			if rp != nil {
-				log.Printf("[DEBUG] Infrastructure provisioning status is %s", rp.ProvisioningStatus)
-				if err == nil && (rp.ProvisioningStatus == "Complete" || strings.Contains(rp.ProvisioningStatus, "Ready")) {
-					status = "ready"
-				}
+			if err == nil && (rp.ProvisioningStatus == "Complete" || strings.Contains(rp.ProvisioningStatus, "Ready")) {
+				status = "ready"
 			}
 			return rp, status, err
 		},
