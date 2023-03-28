@@ -6,7 +6,6 @@ resource "duplocloud_tenant" "myapp" {
 // Generate a random password.
 resource "random_password" "mypassword" {
   length  = 16
-  number  = true
   special = false
 }
 
