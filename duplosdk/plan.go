@@ -95,14 +95,6 @@ type DuploPlanSettings struct {
 	DefaultApplicationUrl string `json:"DefaultApplicationUrl"`
 }
 
-func (c *Client) PlanUpdate(rq *DuploPlan) ClientError {
-	return c.postAPI(
-		fmt.Sprintf("PlanUpdate(%s)", rq.Name),
-		"adminproxy/UpdatePlan",
-		&rq,
-		nil)
-}
-
 // PlanGetList retrieves a list of plans via the Duplo API.
 func (c *Client) PlanGetList() (*[]DuploPlan, ClientError) {
 	list := []DuploPlan{}

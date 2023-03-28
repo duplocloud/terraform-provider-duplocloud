@@ -68,6 +68,12 @@ func awsLoadBalancerSchema() map[string]*schema.Schema {
 			Computed:         true,
 			DiffSuppressFunc: suppressIfLBType("Network"),
 		},
+		"idle_timeout": {
+			Description: "The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
 		"web_acl_id": {
 			Description: "The ARN of a WAF to attach to the load balancer.",
 			Type:        schema.TypeString,
@@ -108,7 +114,7 @@ func resourceAwsLoadBalancer() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceAwsLoadBalancerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerRead ******** start")
 
@@ -144,7 +150,7 @@ func resourceAwsLoadBalancerRead(ctx context.Context, d *schema.ResourceData, m 
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceAwsLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerCreate ******** start")
 
@@ -182,7 +188,7 @@ func resourceAwsLoadBalancerCreate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** start")
 
@@ -197,6 +203,7 @@ func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, 
 		EnableAccessLogs:   d.Get("enable_access_logs").(bool),
 		DropInvalidHeaders: d.Get("drop_invalid_headers").(bool),
 		WebACLID:           d.Get("web_acl_id").(string),
+		IdleTimeout:        d.Get("idle_timeout").(int),
 	}
 	err := c.TenantUpdateApplicationLbSettings(tenantID, settingsRq)
 	if err != nil {
@@ -219,7 +226,7 @@ func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceAwsLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerDelete ******** start")
 
@@ -255,6 +262,7 @@ func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, nam
 	d.Set("is_internal", duplo.IsInternal)
 	d.Set("enable_access_logs", settings.EnableAccessLogs)
 	d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
+	d.Set("idle_timeout", settings.IdleTimeout)
 	d.Set("web_acl_id", settings.WebACLID)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("dns_name", duplo.DNSName)

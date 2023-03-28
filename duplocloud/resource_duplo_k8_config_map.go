@@ -73,7 +73,7 @@ func resourceK8ConfigMap() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceK8ConfigMapRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sConfigMapIdParts(d.Id())
 	if err != nil {
@@ -98,7 +98,7 @@ func resourceK8ConfigMapRead(ctx context.Context, d *schema.ResourceData, m inte
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceK8ConfigMapCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
@@ -124,7 +124,7 @@ func resourceK8ConfigMapCreate(ctx context.Context, d *schema.ResourceData, m in
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceK8ConfigMapUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sConfigMapIdParts(d.Id())
 	if err != nil {
@@ -151,7 +151,7 @@ func resourceK8ConfigMapUpdate(ctx context.Context, d *schema.ResourceData, m in
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceK8ConfigMapDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sConfigMapIdParts(d.Id())
 	if err != nil {

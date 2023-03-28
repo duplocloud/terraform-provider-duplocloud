@@ -162,7 +162,7 @@ func resourceAwsKafkaCluster() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceKafkaClusterRead ******** start")
 
@@ -237,7 +237,7 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 	log.Printf("[TRACE] resourceKafkaClusterCreate ******** start")
@@ -310,7 +310,7 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceKafkaClusterDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceKafkaClusterDelete ******** start")
 

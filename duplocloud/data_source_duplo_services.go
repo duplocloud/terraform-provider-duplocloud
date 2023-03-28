@@ -61,6 +61,8 @@ func dataSourceDuploServicesRead(ctx context.Context, d *schema.ResourceData, m 
 				"any_host_allowed":                     duplo.IsAnyHostAllowed,
 				"cloud_creds_from_k8s_service_account": duplo.IsCloudCredsFromK8sServiceAccount,
 				"lb_synced_deployment":                 duplo.IsLBSyncedDeployment,
+				"is_daemonset":                         duplo.IsDaemonset,
+				"force_stateful_set":                   duplo.ForceStatefulSet,
 				"replicas_matching_asg_name":           duplo.ReplicasMatchingAsgName,
 				"replicas":                             duplo.Replicas,
 				"tags":                                 keyValueToState("tags", duplo.Tags),

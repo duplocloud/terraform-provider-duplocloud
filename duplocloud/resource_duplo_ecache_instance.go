@@ -74,6 +74,14 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Default:      0,
 			ValidateFunc: validation.IntBetween(0, 1),
 		},
+		"engine_version": {
+			Description: "The engine version of the elastic instance.\n" +
+				"See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) " +
+				"or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).",
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
 		"size": {
 			Description: "The instance type of the elasticache instance.\n" +
 				"See AWS documentation for the [available instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CacheNodes.SupportedTypes.html).",
@@ -157,7 +165,7 @@ func resourceDuploEcacheInstance() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -186,7 +194,7 @@ func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -236,7 +244,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -280,6 +288,7 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 		Arn:                 d.Get("arn").(string),
 		Endpoint:            d.Get("endpoint").(string),
 		CacheType:           d.Get("cache_type").(int),
+		EngineVersion:       d.Get("engine_version").(string),
 		Size:                d.Get("size").(string),
 		Replicas:            d.Get("replicas").(int),
 		EncryptionAtRest:    d.Get("encryption_at_rest").(bool),
@@ -307,6 +316,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 		}
 	}
 	d.Set("cache_type", duplo.CacheType)
+	d.Set("engine_version", duplo.EngineVersion)
 	d.Set("size", duplo.Size)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("encryption_at_rest", duplo.EncryptionAtRest)

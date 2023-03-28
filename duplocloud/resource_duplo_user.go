@@ -76,7 +76,7 @@ func resourceUser() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 
@@ -110,7 +110,7 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceUserCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	userName := d.Get("username").(string)
 	log.Printf("[TRACE] resourceUserCreate(%s): start", userName)
@@ -154,7 +154,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, m interface
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceUserDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 

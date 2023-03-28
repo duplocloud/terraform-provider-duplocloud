@@ -4,6 +4,12 @@ import (
 	"fmt"
 )
 
+const (
+	KeyPairType_None    = 0
+	KeyPairType_RSA     = 1
+	KeyPairType_ED25519 = 2
+)
+
 var AzureVmFeatures = map[string]string{
 	"loganalytics": "duplo_loganalytics",
 	"publicip":     "duplo_enablepublicip",
@@ -26,6 +32,7 @@ type DuploNativeHost struct {
 	IsEbsOptimized     bool                               `json:"IsEbsOptimized"`
 	AllocatedPublicIP  bool                               `json:"AllocatedPublicIp,omitempty"`
 	Cloud              int                                `json:"Cloud"`
+	KeyPairType        int                                `json:"KeyPairType,omitempty"`
 	EncryptDisk        bool                               `json:"EncryptDisk,omitempty"`
 	Status             string                             `json:"Status,omitempty"`
 	IdentityRole       string                             `json:"IdentityRole,omitempty"`
@@ -35,6 +42,7 @@ type DuploNativeHost struct {
 	Volumes            *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
 	MetaData           *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
 	Tags               *[]DuploKeyStringValue             `json:"Tags,omitempty"`
+	TagsEx             *[]DuploKeyStringValue             `json:"TagsEx,omitempty"`
 	MinionTags         *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
 }
 
@@ -133,6 +141,11 @@ type DuploAzureVmFeature struct {
 	ComponentId string `json:"ComponentId"`
 	FeatureName string `json:"FeatureName"`
 	Disable     bool   `json:"Disable"`
+}
+
+type UpdateAzureVirtualMachineSizeReq struct {
+	Capacity     string `json:"Capacity"`
+	FriendlyName string `json:"FriendlyName"`
 }
 
 // NativeHostImageGetList retrieves a list of native host images via the Duplo API.
@@ -265,6 +278,22 @@ func (c *Client) AzureNativeHostGet(tenantID, name string) (*DuploNativeHost, Cl
 	return nil, nil
 }
 
+func (c *Client) GetMinionForHost(tenantID, name string) (*DuploMinion, ClientError) {
+	list, err := c.TenantListMinions(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	if list != nil {
+		for _, minion := range *list {
+			if minion.Name == name {
+				return &minion, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
 func (c *Client) AzureNativeHostList(tenantID string) (*[]DuploNativeHost, ClientError) {
 	rp := []DuploNativeHost{}
 	err := c.getAPI(fmt.Sprintf("NativeHostGet(%s)", tenantID),
@@ -274,7 +303,7 @@ func (c *Client) AzureNativeHostList(tenantID string) (*[]DuploNativeHost, Clien
 }
 
 func (c *Client) AzureNativeHostCreate(rq *DuploNativeHost) ClientError {
-	rp := ""
+	rp := DuploAzureVirtualMachine{}
 	return c.postAPI(fmt.Sprintf("AzureNativeHostCreate(%s, %s)", rq.TenantID, rq.FriendlyName),
 		fmt.Sprintf("subscriptions/%s/CreateAzureVmSync", rq.TenantID),
 		&rq,
@@ -308,6 +337,13 @@ func (c *Client) AzureNativeHostExists(tenantID, name string) (bool, ClientError
 func (c *Client) UpdateAzureVmFeature(tenantID string, rq DuploAzureVmFeature) ClientError {
 	return c.postAPI(fmt.Sprintf("UpdateAzureVmFeature(%s, %s)", tenantID, rq.FeatureName),
 		fmt.Sprintf("subscriptions/%s/UpdateAzureVmFeature", tenantID),
+		rq,
+		nil)
+}
+
+func (c *Client) UpdateAzureVirtualMachineSize(tenantID string, rq *UpdateAzureVirtualMachineSizeReq) ClientError {
+	return c.postAPI(fmt.Sprintf("UpdateAzureVirtualMachineSize(%s, %s)", tenantID, rq.FriendlyName),
+		fmt.Sprintf("subscriptions/%s/UpdateAzureVirtualMachineSize", tenantID),
 		rq,
 		nil)
 }

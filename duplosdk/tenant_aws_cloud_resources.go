@@ -168,6 +168,7 @@ type DuploAwsLbSettings struct {
 	DropInvalidHeaders  bool   `json:"DropInvalidHeaders,omitempty"`
 	WebACLID            string `json:"WebACLId,omitempty"`
 	HttpToHttpsRedirect bool   `json:"HttpToHttpsRedirect,omitempty"`
+	IdleTimeout         int    `json:"IdleTimeout,omitempty"`
 }
 
 // DuploAwsLbListener represents an AWS application load balancer listener
@@ -226,6 +227,7 @@ type DuploAwsLbSettingsUpdateRequest struct {
 	DropInvalidHeaders  bool   `json:"DropInvalidHeaders,omitempty"`
 	WebACLID            string `json:"WebACLId,omitempty"`
 	HttpToHttpsRedirect bool   `json:"HttpToHttpsRedirect,omitempty"`
+	IdleTimeout         int    `json:"IdleTimeout,omitempty"`
 }
 
 // DuploS3BucketRequest represents a request to create an S3 bucket resource
@@ -751,7 +753,7 @@ func (c *Client) TenantUpdateCustomData(tenantID string, customeData CustomDataU
 		nil)
 }
 
-func (c *Client) TenantApplicationLbListenersByTargetGrpArn(tenantID string, fullName string, targetGrpArn string) (*DuploAwsLbListener, ClientError) {
+func (c *Client) TenantApplicationLbListenersByTargetGrpArn(tenantID string, fullName string, targetGrpArn string, port int) (*DuploAwsLbListener, ClientError) {
 	rp := []DuploAwsLbListener{}
 
 	err := c.getAPI("TenantListApplicationLbListeners",
@@ -759,7 +761,7 @@ func (c *Client) TenantApplicationLbListenersByTargetGrpArn(tenantID string, ful
 		&rp)
 	for _, item := range rp {
 		for _, action := range item.DefaultActions {
-			if action.TargetGroupArn == targetGrpArn {
+			if action.TargetGroupArn == targetGrpArn && port == item.Port {
 				return &item, nil
 			}
 		}

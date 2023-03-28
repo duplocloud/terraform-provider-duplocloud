@@ -89,7 +89,7 @@ func resourceAwsSsmParameter() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceAwsSsmParameterRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -125,7 +125,7 @@ func resourceAwsSsmParameterRead(ctx context.Context, d *schema.ResourceData, m 
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceAwsSsmParameterCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -166,7 +166,7 @@ func resourceAwsSsmParameterCreate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceAwsSsmParameterUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -195,7 +195,7 @@ func resourceAwsSsmParameterUpdate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceAwsSsmParameterDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes

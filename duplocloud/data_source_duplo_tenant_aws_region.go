@@ -26,7 +26,7 @@ func dataSourceTenantAwsRegion() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceTenantAwsRegionRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceTenantAwsRegionRead ******** start")
 

@@ -44,7 +44,7 @@ func dataSourceAdminAwsCredentials() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceAdminAwsCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceAdminAwsCredentialsRead ******** start")
 

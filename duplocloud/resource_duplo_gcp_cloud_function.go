@@ -232,7 +232,7 @@ func resourceGcpCloudFunction() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceGcpCloudFunctionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpCloudFunctionRead ******** start")
 
@@ -262,7 +262,7 @@ func resourceGcpCloudFunctionRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceGcpCloudFunctionCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpCloudFunctionCreate ******** start")
 
@@ -293,7 +293,7 @@ func resourceGcpCloudFunctionCreate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceGcpCloudFunctionUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpCloudFunctionUpdate ******** start")
 
@@ -322,7 +322,7 @@ func resourceGcpCloudFunctionUpdate(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceGcpCloudFunctionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpCloudFunctionDelete ******** start")
 

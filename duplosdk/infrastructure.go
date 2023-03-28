@@ -454,13 +454,17 @@ func (c *Client) NetworkSgRuleGet(infraName, sgName, ruleName string) (*DuploInf
 	if err != nil {
 		return nil, err
 	}
-	sgList := config.Vnet.SecurityGroups
-	for _, sg := range *sgList {
-		if sg.Name == sgName {
-			rules := sg.Rules
-			for _, rule := range *rules {
-				if rule.Name == ruleName {
-					return &rule, nil
+	if config != nil && config.Vnet != nil {
+		sgList := config.Vnet.SecurityGroups
+		if sgList != nil {
+			for _, sg := range *sgList {
+				if sg.Name == sgName {
+					rules := sg.Rules
+					for _, rule := range *rules {
+						if rule.Name == ruleName {
+							return &rule, nil
+						}
+					}
 				}
 			}
 		}

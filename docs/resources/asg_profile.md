@@ -55,6 +55,12 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - **is_cluster_autoscaled** (Boolean) Whether or not to enable cluster autoscaler.
 - **is_ebs_optimized** (Boolean) Defaults to `false`.
 - **is_minion** (Boolean) Defaults to `true`.
+- **keypair_type** (Number) The numeric ID of the keypair type being used.Should be one of:
+
+   - `0` : Default (should be ED25519)
+   - `1` : ED25519
+   - `2` : RSA (deprecated - some operating systems no longer support it)
+ Defaults to `0`.
 - **max_instance_count** (Number) The maximum size of the Auto Scaling Group.
 - **metadata** (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
 - **min_instance_count** (Number) The minimum size of the Auto Scaling Group.
@@ -62,6 +68,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - **network_interface** (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
 - **tags** (Block List) (see [below for nested schema](#nestedblock--tags))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **use_launch_template** (Boolean) Whether or not to use launch template.
 - **user_account** (String) The name of the tenant that the host will be created in.
 - **volume** (Block List) (see [below for nested schema](#nestedblock--volume))
 - **wait_for_capacity** (Boolean) Whether or not to wait until ASG instances to be healthy, after creation. Defaults to `true`.

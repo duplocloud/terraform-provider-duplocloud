@@ -103,7 +103,7 @@ func dataSourceTenantAwsLbListeners() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceTenantAwsLbListenersRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceTenantAwsLbListenersRead ******** 1 start")
 

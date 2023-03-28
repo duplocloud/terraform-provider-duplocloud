@@ -21,7 +21,6 @@ resource "duplocloud_tenant" "myapp" {
 // Generate a random password.
 resource "random_password" "mypassword" {
   length  = 16
-  number  = true
   special = false
 }
 
@@ -67,6 +66,8 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 
 ### Optional
 
+- **allocated_storage** (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
+- **db_subnet_group_name** (String) Name of DB subnet group. DB instance will be created in the VPC associated with the DB subnet group.
 - **deletion_protection** (Boolean) If the DB instance should have deletion protection enabled.The database can't be deleted when this value is set to `true`. This setting is not applicable for document db cluster instance. Defaults to `false`.
 - **enable_logging** (Boolean) Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance. Defaults to `false`.
 - **encrypt_storage** (Boolean) Whether or not to encrypt the RDS instance storage.

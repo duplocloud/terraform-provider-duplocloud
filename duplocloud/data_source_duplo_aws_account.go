@@ -28,7 +28,7 @@ func dataSourceAwsAccount() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func dataSourceAwsAccountRead(d *schema.ResourceData, m interface{}) error {
 	var err error
 	var awsAccountID string

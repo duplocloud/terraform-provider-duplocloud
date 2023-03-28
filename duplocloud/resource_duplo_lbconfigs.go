@@ -62,6 +62,13 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Required:    true,
 		},
+		"custom_cidr": {
+			Description: "Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 		"is_infra_deployment": {
 			Type:     schema.TypeBool,
 			Computed: true,
@@ -204,7 +211,7 @@ func duploServiceLbConfigsSchema() map[string]*schema.Schema {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsRead: start")
 
@@ -259,7 +266,7 @@ func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploServiceLBConfigsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsCreate: start")
 	diags := resourceDuploServiceLBConfigsCreateOrUpdate(ctx, d, m, false)
@@ -267,7 +274,7 @@ func resourceDuploServiceLBConfigsCreate(ctx context.Context, d *schema.Resource
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceDuploServiceLBConfigsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsUpdate: start")
 	diags := resourceDuploServiceLBConfigsCreateOrUpdate(ctx, d, m, true)
@@ -311,7 +318,9 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 				if item.LbType == 5 {
 					item.HostNames = &[]string{lbc["host_name"].(string)}
 				}
-
+				if v, ok := lbc["custom_cidr"]; ok && v != nil && len(v.([]interface{})) > 0 && item.LbType == 6 {
+					item.CustomCidrs = expandStringList(v.([]interface{}))
+				}
 				list = append(list, item)
 			}
 		}
@@ -342,7 +351,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploServiceLbConfigsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
@@ -432,7 +441,8 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 }
 
 func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[string]interface{} {
-	return map[string]interface{}{
+	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... Start")
+	m := map[string]interface{}{
 		"name":                        lb.ReplicationControllerName,
 		"replication_controller_name": lb.ReplicationControllerName,
 		"lb_type":                     lb.LbType,
@@ -452,5 +462,15 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"is_native":                   lb.IsNative,
 		"is_internal":                 lb.IsInternal,
 		"extra_selector_label":        keyValueToState("extra_selector_label", lb.ExtraSelectorLabels),
+		"target_group_arn":            lb.TgArn,
+		"custom_cidr":                 lb.CustomCidrs,
 	}
+
+	if lb.LbType == 5 && lb.HostNames != nil && len(*lb.HostNames) > 0 {
+		log.Printf("[DEBUG] HostNames... %v", lb.HostNames)
+		m["host_name"] = (*lb.HostNames)[0]
+	}
+
+	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... End")
+	return m
 }

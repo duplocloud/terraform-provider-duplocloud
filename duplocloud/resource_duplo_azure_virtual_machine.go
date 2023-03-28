@@ -37,7 +37,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    false,
 			Required:    true,
-			ForceNew:    true,
 		},
 		"instance_id": {
 			Description: "The Azure Virtual Machine ID of the host.",
@@ -47,7 +46,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 		"is_minion": {
 			Type:     schema.TypeBool,
 			Optional: true,
-			ForceNew: true,
 			Default:  true,
 		},
 		"join_domain": {
@@ -72,7 +70,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Description: "The numeric ID of the container agent pool that this host is added to.",
 			Type:        schema.TypeInt,
 			Optional:    true,
-			ForceNew:    true,
 			Default:     0,
 		},
 		"subnet_id": {
@@ -104,7 +101,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
-			ForceNew:    true,
 		},
 		"encrypt_disk": {
 			Type:     schema.TypeBool,
@@ -117,6 +113,20 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
+		},
+		"os_disk_type": {
+			Description: "Specifies the type of managed disk to create. Possible values are either `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_ZRS` or `UltraSSD_LRS`.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"Standard_LRS",
+				"StandardSSD_LRS",
+				"Premium_LRS",
+				"PremiumV2_LRS",
+				"StandardSSD_ZRS",
+				"UltraSSD_LRS",
+			}, true),
 		},
 		"status": {
 			Description: "The current status of the host.",
@@ -132,7 +142,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
-			ForceNew: true, // relaunch instance
 			Elem:     KeyValueSchema(),
 		},
 		"minion_tags": {
@@ -140,7 +149,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
-			ForceNew:    true, // relaunch instance
 			Elem:        KeyValueSchema(),
 		},
 		"volume": {
@@ -226,9 +234,18 @@ func resourceAzureVirtualMachineRead(ctx context.Context, d *schema.ResourceData
 		}
 		return diag.Errorf("Unable to retrieve tenant %s azure virtual machine %s : %s", tenantID, name, clientErr)
 	}
-
+	d.Set("friendly_name", name)
+	d.Set("tenant_id", tenantID)
 	flattenAzureVirtualMachine(d, duplo)
-
+	minion, _ := c.GetMinionForHost(tenantID, name)
+	if minion != nil {
+		log.Printf("[TRACE] Minion found for host (%s).", name)
+		d.Set("is_minion", true)
+		d.Set("agent_platform", minion.AgentPlatform)
+	} else {
+		log.Printf("[TRACE] Minion not found for host (%s).", name)
+		d.Set("is_minion", false)
+	}
 	log.Printf("[TRACE] resourceAzureVirtualMachineRead(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -270,6 +287,55 @@ func resourceAzureVirtualMachineCreate(ctx context.Context, d *schema.ResourceDa
 }
 
 func resourceAzureVirtualMachineUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("friendly_name").(string)
+	log.Printf("[TRACE] resourceAzureVirtualMachineUpdate(%s, %s): start", tenantID, name)
+	c := m.(*duplosdk.Client)
+
+	if d.HasChange("capacity") {
+		clientErr := c.UpdateAzureVirtualMachineSize(tenantID, &duplosdk.UpdateAzureVirtualMachineSizeReq{
+			Capacity:     d.Get("capacity").(string),
+			FriendlyName: name,
+		})
+		if clientErr != nil {
+			return diag.Errorf("Error updating tenant %s azure virtual machine capacity '%s': %s", tenantID, name, err)
+		}
+		time.Sleep(time.Duration(40) * time.Second)
+		err = virtualMachineWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if needsAzureVMUpdate(d) {
+		rq := expandAzureVirtualMachine(d)
+		err = c.AzureNativeHostCreate(rq)
+		if err != nil {
+			return diag.Errorf("Error creating tenant %s azure virtual machine '%s': %s", tenantID, name, err)
+		}
+
+		id := fmt.Sprintf("%s/%s", tenantID, name)
+		diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure virtual machine", id, func() (interface{}, duplosdk.ClientError) {
+			return c.AzureNativeHostGet(tenantID, name)
+		})
+		if diags != nil {
+			return diags
+		}
+		d.SetId(id)
+
+		//By default, wait until the virtual machine to be ready.
+		if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
+			err = virtualMachineWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+
+		diags = resourceAzureVirtualMachineRead(ctx, d, m)
+		log.Printf("[TRACE] resourceAzureVirtualMachineUpdate(%s, %s): end", tenantID, name)
+		return diags
+	}
 	return nil
 }
 
@@ -302,13 +368,19 @@ func resourceAzureVirtualMachineDelete(ctx context.Context, d *schema.ResourceDa
 }
 
 func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost {
-	diskSizeKV, usernameKV, passwordKV := duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{},
-		duplosdk.DuploKeyStringValue{}
+	diskSizeKV, diskTypeKV, usernameKV, passwordKV := duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{},
+		duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{}
 
 	if v, ok := d.GetOk("disk_size_gb"); ok {
 		diskSizeKV = duplosdk.DuploKeyStringValue{
 			Key:   "OsDiskSize",
 			Value: strconv.Itoa(v.(int)),
+		}
+	}
+	if v, ok := d.GetOk("os_disk_type"); ok && v != nil && v.(string) != "" {
+		diskTypeKV = duplosdk.DuploKeyStringValue{
+			Key:   "OsDiskType",
+			Value: v.(string),
 		}
 	}
 	if v, ok := d.GetOk("admin_username"); ok && v != nil && v.(string) != "" {
@@ -344,9 +416,9 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 		Cloud:             2, // For Azure
 		EncryptDisk:       d.Get("encrypt_disk").(bool),
 		MetaData: &[]duplosdk.DuploKeyStringValue{
-			diskSizeKV, usernameKV, passwordKV, joinDomainKV, logAnalyticKV,
+			diskSizeKV, diskTypeKV, usernameKV, passwordKV, joinDomainKV, logAnalyticKV,
 		},
-		Tags:       keyValueFromState("tags", d),
+		TagsEx:     keyValueFromState("tags", d),
 		MinionTags: keyValueFromState("minion_tags", d),
 		Volumes:    expandAzureNativeHostVolumes("volume", d),
 		NetworkInterfaces: &[]duplosdk.DuploNativeHostNetworkInterface{
@@ -400,8 +472,36 @@ func parseAzureVirtualMachineIdParts(id string) (tenantID, name string, err erro
 }
 
 func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) {
+	d.Set("instance_id", duplo.InstanceID)
+	d.Set("capacity", duplo.Capacity)
+	d.Set("image_id", duplo.ImageID)
+	d.Set("base64_user_data", duplo.Base64UserData)
+	d.Set("agent_platform", duplo.AgentPlatform)
+	d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
+	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("status", duplo.Status)
 	d.Set("user_account", duplo.UserAccount)
+	d.Set("tags", flattenTags(duplo.TagsEx))
+}
+
+func flattenTags(tags *[]duplosdk.DuploKeyStringValue) []interface{} {
+	if tags != nil {
+		managedTags := DuploManagedAzureTags()
+		output := []interface{}{}
+		for _, duploObject := range *tags {
+			if Contains(managedTags, duploObject.Key) {
+				continue
+			}
+
+			jo := make(map[string]interface{})
+			jo["key"] = duploObject.Key
+			jo["value"] = duploObject.Value
+			output = append(output, jo)
+		}
+		return output
+	}
+
+	return make([]interface{}, 0)
 }
 
 func virtualMachineWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
@@ -409,11 +509,11 @@ func virtualMachineWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenan
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
-			rp, err := c.AzureVirtualMachineGet(tenantID, name)
-			log.Printf("[TRACE] Virtual machine provisioning state is (%s).", rp.PropertiesProvisioningState)
+			rp, err := c.AzureNativeHostGet(tenantID, name)
+			log.Printf("[TRACE] Virtual machine provisioning state is (%s).", rp.Status)
 			status := "pending"
 			if err == nil {
-				if rp.PropertiesProvisioningState == "Succeeded" {
+				if rp.Status == "VM running" {
 					status = "ready"
 				} else {
 					status = "pending"
@@ -429,4 +529,12 @@ func virtualMachineWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenan
 	log.Printf("[DEBUG] virtualMachineWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func needsAzureVMUpdate(d *schema.ResourceData) bool {
+	return d.HasChange("join_domain") ||
+		d.HasChange("enable_log_analytics") ||
+		d.HasChange("disk_size_gb") ||
+		d.HasChange("os_disk_type") ||
+		d.HasChange("volume")
 }

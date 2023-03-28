@@ -22,6 +22,7 @@ description: |-
 ### Optional
 
 - **arn** (String)
+- **first_match** (Boolean) Defaults to `true`.
 - **name** (String)
 - **name_suffix** (String)
 

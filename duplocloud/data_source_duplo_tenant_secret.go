@@ -38,6 +38,11 @@ func dataSourceTenantSecret() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+			"first_match": {
+				Type:     schema.TypeBool,
+				Default:  true,
+				Optional: true,
+			},
 			"tags": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -48,12 +53,16 @@ func dataSourceTenantSecret() *schema.Resource {
 	}
 }
 
-/// READ resource
+// / READ resource
 func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceTenantSecretRead ******** start")
 
 	// Get and validate the retrieval criteria.
+	firstMatch := true
 	var arn, name, nameSuffix, secretID string
+	if v, ok := d.GetOk("first_match"); ok {
+		firstMatch = v.(bool)
+	}
 	tenantID := d.Get("tenant_id").(string)
 	if v, ok := d.GetOk("arn"); ok {
 		arn = v.(string)
@@ -79,7 +88,7 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 
 	// List the secrets from Duplo.
 	c := m.(*duplosdk.Client)
-	duploSecrets, err := c.TenantListSecrets(tenantID)
+	list, err := c.TenantListAwsSecrets(tenantID)
 	if err != nil {
 		return fmt.Errorf("failed to list secrets: %s", err)
 	}
@@ -89,7 +98,8 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Set the Terraform resource data
-	for _, duploSecret := range *duploSecrets {
+	haveMatch := false
+	for _, duploSecret := range *list {
 		objNameSuffix, _ := duplosdk.UnprefixName(prefix, duploSecret.Name)
 
 		if (arn != "" && duploSecret.Arn == arn) || (name != "" && duploSecret.Name == name) || (nameSuffix != "" && objNameSuffix == nameSuffix) {
@@ -100,7 +110,14 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 			d.Set("name_suffix", objNameSuffix)
 			d.Set("rotation_enabled", duploSecret.RotationEnabled)
 			d.Set("tags", keyValueToState("tags", duploSecret.Tags))
-			break
+
+			if firstMatch {
+				break
+			} else if haveMatch {
+				return fmt.Errorf("more than one secret matches")
+			}
+
+			haveMatch = true
 		}
 	}
 

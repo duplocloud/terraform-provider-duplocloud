@@ -21,6 +21,7 @@ type DuploAsgProfile struct {
 	IsEbsOptimized      bool                               `json:"IsEbsOptimized"`
 	AllocatedPublicIP   bool                               `json:"AllocatedPublicIp,omitempty"`
 	Cloud               int                                `json:"Cloud"`
+	KeyPairType         int                                `json:"KeyPairType,omitempty"`
 	IsClusterAutoscaled bool                               `json:"IsClusterAutoscaled,omitempty"`
 	EncryptDisk         bool                               `json:"EncryptDisk,omitempty"`
 	Status              string                             `json:"Status,omitempty"`
@@ -29,6 +30,7 @@ type DuploAsgProfile struct {
 	MetaData            *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
 	Tags                *[]DuploKeyStringValue             `json:"Tags,omitempty"`
 	MinionTags          *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
+	UseLaunchTemplate   bool                               `json:"UseLaunchTemplate"`
 }
 
 type DuploAsgProfileDeleteReq struct {

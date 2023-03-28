@@ -42,6 +42,13 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 		Computed:    true,
 	}
 
+	awsASGSchema["use_launch_template"] = &schema.Schema{
+		Description: "Whether or not to use launch template.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	}
+
 	awsASGSchema["wait_for_capacity"] = &schema.Schema{
 		Description:      "Whether or not to wait until ASG instances to be healthy, after creation.",
 		Type:             schema.TypeBool,
@@ -289,6 +296,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("instance_count", duplo.DesiredCapacity)
 	d.Set("min_instance_count", duplo.MinSize)
 	d.Set("max_instance_count", duplo.MaxSize)
+	d.Set("use_launch_template", duplo.UseLaunchTemplate)
 	d.Set("fullname", duplo.FriendlyName)
 	d.Set("capacity", duplo.Capacity)
 	d.Set("is_minion", duplo.IsMinion)
@@ -298,6 +306,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
 	d.Set("is_cluster_autoscaled", duplo.IsClusterAutoscaled)
 	d.Set("cloud", duplo.Cloud)
+	d.Set("keypair_type", duplo.KeyPairType)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
@@ -328,6 +337,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		IsClusterAutoscaled: d.Get("is_cluster_autoscaled").(bool),
 		AllocatedPublicIP:   d.Get("allocated_public_ip").(bool),
 		Cloud:               d.Get("cloud").(int),
+		KeyPairType:         d.Get("keypair_type").(int),
 		EncryptDisk:         d.Get("encrypt_disk").(bool),
 		MetaData:            keyValueFromState("metadata", d),
 		Tags:                keyValueFromState("tags", d),
@@ -337,6 +347,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		DesiredCapacity:     d.Get("instance_count").(int),
 		MinSize:             d.Get("min_instance_count").(int),
 		MaxSize:             d.Get("max_instance_count").(int),
+		UseLaunchTemplate:   d.Get("use_launch_template").(bool),
 	}
 }
 
@@ -376,7 +387,7 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 					}
 				}
 				log.Printf("[DEBUG] Count, MinCount (%v-%v)", count, minInstanceCount)
-				if minInstanceCount == 0 || (status == "ready" && count == minInstanceCount) {
+				if minInstanceCount == 0 || (status == "ready" && count >= minInstanceCount) {
 					status = "ready"
 				} else {
 					status = "pending"

@@ -126,6 +126,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ForceNew:      true,
 			ConflictsWith: []string{"master_username"},
 		},
+		"db_subnet_group_name": {
+			Description: "Name of DB subnet group. DB instance will be created in the VPC associated with the DB subnet group.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
 		"parameter_group_name": {
 			Description: "A RDS parameter group name to apply to the RDS instance.",
 			Type:        schema.TypeString,
@@ -151,6 +157,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
+		},
+		"allocated_storage": {
+			Description: "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
 		},
 		"encrypt_storage": {
 			Description: "Whether or not to encrypt the RDS instance storage.",
@@ -217,7 +229,7 @@ func resourceDuploRdsInstance() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploRdsInstanceRead ******** start")
 
@@ -243,7 +255,7 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** start")
 
@@ -316,7 +328,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -376,7 +388,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceDuploRdsInstanceDelete ******** start")
 
@@ -479,9 +491,11 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.EngineVersion = d.Get("engine_version").(string)
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
 	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
+	duploObject.DBSubnetGroupName = d.Get("db_subnet_group_name").(string)
 	duploObject.Cloud = 0 // AWS
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.EncryptStorage = d.Get("encrypt_storage").(bool)
+	duploObject.AllocatedStorage = d.Get("allocated_storage").(int)
 	duploObject.EncryptionKmsKeyId = d.Get("kms_key_id").(string)
 	duploObject.EnableLogging = d.Get("enable_logging").(bool)
 	duploObject.MultiAZ = d.Get("multi_az").(bool)
@@ -521,8 +535,10 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["snapshot_id"] = duploObject.SnapshotID
 	jo["parameter_group_name"] = duploObject.DBParameterGroupName
+	jo["db_subnet_group_name"] = duploObject.DBSubnetGroupName
 	jo["size"] = duploObject.SizeEx
 	jo["encrypt_storage"] = duploObject.EncryptStorage
+	jo["allocated_storage"] = duploObject.AllocatedStorage
 	jo["kms_key_id"] = duploObject.EncryptionKmsKeyId
 	jo["enable_logging"] = duploObject.EnableLogging
 	jo["multi_az"] = duploObject.MultiAZ

@@ -71,6 +71,12 @@ func duploServiceParamsSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"idle_timeout": {
+			Description: "The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -96,7 +102,7 @@ func resourceDuploServiceParams() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 	var clientError duplosdk.ClientError
@@ -151,12 +157,12 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceDuploServiceParamsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return resourceDuploServiceParamsCreateOrUpdate(ctx, d, m, false)
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceDuploServiceParamsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return resourceDuploServiceParamsCreateOrUpdate(ctx, d, m, true)
 }
@@ -248,7 +254,7 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var clientError duplosdk.ClientError
 	// Parse the identifying attributes
@@ -354,6 +360,7 @@ func readDuploServiceAwsLbSettings(tenantID string, rpc *duplosdk.DuploReplicati
 		d.Set("enable_access_logs", settings.EnableAccessLogs)
 		d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
 		d.Set("http_to_https_redirect", settings.HttpToHttpsRedirect)
+		d.Set("idle_timeout", settings.IdleTimeout)
 	}
 
 	return nil
@@ -374,6 +381,10 @@ func updateDuploServiceAwsLbSettings(tenantID string, details *duplosdk.DuploAws
 	}
 	if v, ok := d.GetOk("http_to_https_redirect"); ok && v != nil {
 		settings.HttpToHttpsRedirect = v.(bool)
+		haveSettings = true
+	}
+	if v, ok := d.GetOk("idle_timeout"); ok && v != nil {
+		settings.IdleTimeout = v.(int)
 		haveSettings = true
 	}
 	if v, ok := d.GetOk("webaclid"); ok && v != nil {

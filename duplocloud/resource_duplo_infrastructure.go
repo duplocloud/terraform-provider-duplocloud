@@ -145,7 +145,7 @@ func resourceInfrastructure() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.StringLenBetween(2, 12),
+				ValidateFunc: validation.StringLenBetween(2, 30),
 			},
 			"account_id": {
 				Description: "The cloud account ID.",
@@ -299,7 +299,7 @@ func resourceInfrastructure() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 4)
@@ -325,7 +325,7 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -365,7 +365,7 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	infraName, diags := parseInfrastructureId(d)
 	if diags != nil {
@@ -433,7 +433,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	infraName, diags := parseInfrastructureId(d)
 	if diags != nil {
@@ -445,6 +445,9 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 	c := m.(*duplosdk.Client)
 	err := c.InfrastructureDelete(infraName)
 	if err != nil {
+		if err.Status() == 404 {
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 
@@ -564,6 +567,8 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
 		d.Set("setting", keyValueToState("setting", selectKeyValues(config.CustomData, *v)))
+	} else {
+		d.Set("specified_settings", make([]interface{}, 0))
 	}
 
 	// Set extended infrastructure information.

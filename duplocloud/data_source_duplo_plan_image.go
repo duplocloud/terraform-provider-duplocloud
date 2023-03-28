@@ -92,7 +92,7 @@ func dataSourcePlanImagesRead(ctx context.Context, d *schema.ResourceData, m int
 	return nil
 }
 
-/// READ/SEARCH resources
+// READ/SEARCH resources
 func dataSourcePlanImageRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes

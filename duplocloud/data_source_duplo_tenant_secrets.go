@@ -59,7 +59,7 @@ func dataSourceTenantSecrets() *schema.Resource {
 	}
 }
 
-/// READ resource
+// / READ resource
 func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
 	tenantID := d.Get("tenant_id").(string)
 
@@ -67,7 +67,7 @@ func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
 
 	// List the secrets from Duplo.
 	c := m.(*duplosdk.Client)
-	duploSecrets, err := c.TenantListSecrets(tenantID)
+	list, err := c.TenantListAwsSecrets(tenantID)
 	if err != nil {
 		return fmt.Errorf("failed to list secrets: %s", err)
 	}
@@ -78,8 +78,8 @@ func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(tenantID)
 
 	// Set the Terraform resource data
-	secrets := make([]map[string]interface{}, 0, len(*duploSecrets))
-	for _, duploSecret := range *duploSecrets {
+	secrets := make([]map[string]interface{}, 0, len(*list))
+	for _, duploSecret := range *list {
 		nameSuffix, _ := duplosdk.UnprefixName(prefix, duploSecret.Name)
 
 		secrets = append(secrets, map[string]interface{}{

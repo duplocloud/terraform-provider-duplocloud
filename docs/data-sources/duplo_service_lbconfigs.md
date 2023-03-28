@@ -50,6 +50,7 @@ Read-Only:
 - **backend_protocol_version** (String)
 - **certificate_arn** (String)
 - **cloud_name** (String)
+- **custom_cidr** (List of String)
 - **dns_name** (String)
 - **external_port** (Number)
 - **external_traffic_policy** (String)

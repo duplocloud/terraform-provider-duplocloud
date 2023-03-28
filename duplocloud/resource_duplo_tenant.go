@@ -96,7 +96,7 @@ func resourceTenant() *schema.Resource {
 	}
 }
 
-/// READ resource
+// READ resource
 func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 
@@ -111,6 +111,10 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 	c := m.(*duplosdk.Client)
 	duplo, err := c.TenantGet(tenantID)
 	if err != nil {
+		if err.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
 	}
 	if duplo == nil {
@@ -139,7 +143,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	rq := duplosdk.DuploTenant{
 		AccountName: d.Get("account_name").(string),
@@ -196,7 +200,7 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 
@@ -211,8 +215,21 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 
 		// Delete the object with Duplo
 		c := m.(*duplosdk.Client)
-		err := c.TenantDelete(tenantID)
+		duplo, err := c.TenantGet(tenantID)
 		if err != nil {
+			if err.Status() == 404 {
+				return nil
+			}
+			return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
+		}
+		if duplo == nil {
+			return nil
+		}
+		err = c.TenantDelete(tenantID)
+		if err != nil {
+			if err.Status() == 404 {
+				return nil
+			}
 			return diag.Errorf("Error deleting tenant '%s': %s", tenantID, err)
 		}
 

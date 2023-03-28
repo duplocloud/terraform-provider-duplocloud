@@ -15,6 +15,7 @@ type DuploReplicationController struct {
 	Fqdn                              string                 `json:"Fqdn"`
 	ParentDomain                      string                 `json:"ParentDomain"`
 	IsInfraDeployment                 bool                   `json:"IsInfraDeployment,omitempty"`
+	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
 	IsDaemonset                       bool                   `json:"IsDaemonset,omitempty"`
 	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment,omitempty"`
 	IsReplicaCollocationAllowed       bool                   `json:"IsReplicaCollocationAllowed,omitempty"`
@@ -89,7 +90,8 @@ type DuploLbConfiguration struct {
 	IsNative                  bool                      `json:"IsNative,omitempty"`
 	HealthCheckConfig         *DuploLbHealthCheckConfig `json:"HealthCheckConfig,omitempty"`
 	LbIndex                   int                       `json:"LbIndex"`
-
+	TgArn                     string                    `json:"TgArn,omitempty"`
+	CustomCidrs               []string                  `json:"CustomCidrs,omitempty"`
 	// Only for K8s services
 	ExtraSelectorLabels *[]DuploKeyStringValue `json:"ExtraSelectorLabels,omitempty"`
 
@@ -131,6 +133,7 @@ type DuploReplicationControllerCreateRequest struct {
 	AgentPlatform                     int                    `json:"AgentPlatform"`
 	Replicas                          int                    `json:"Replicas,omitempty"`
 	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
+	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
 	IsDaemonset                       bool                   `json:"IsDaemonset"`
 	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment"`
 	IsReplicaCollocationAllowed       bool                   `json:"IsReplicaCollocationAllowed"`
@@ -155,6 +158,7 @@ type DuploReplicationControllerUpdateRequest struct {
 	AgentPlatform                     int                    `json:"AgentPlatform"`
 	Replicas                          int                    `json:"Replicas,omitempty"`
 	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
+	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
 	IsDaemonset                       bool                   `json:"IsDaemonset"`
 	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment"`
 	IsReplicaCollocationAllowed       bool                   `json:"IsReplicaCollocationAllowed"`

@@ -181,7 +181,7 @@ func resourceK8IngressRead(ctx context.Context, d *schema.ResourceData, m interf
 	return nil
 }
 
-/// CREATE resource
+// CREATE resource
 func resourceK8IngressCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
@@ -207,7 +207,7 @@ func resourceK8IngressCreate(ctx context.Context, d *schema.ResourceData, m inte
 	return diags
 }
 
-/// UPDATE resource
+// UPDATE resource
 func resourceK8IngressUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sIngressIdParts(d.Id())
 	if err != nil {
@@ -234,7 +234,7 @@ func resourceK8IngressUpdate(ctx context.Context, d *schema.ResourceData, m inte
 	return diags
 }
 
-/// DELETE resource
+// DELETE resource
 func resourceK8IngressDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sIngressIdParts(d.Id())
 	if err != nil {
