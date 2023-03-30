@@ -349,6 +349,7 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 	log.Printf("[TRACE] resourceDuploAwsElasticSearchCreate ******** start")
 
 	// Set simple fields first.
+	duploVPCOptions := duplosdk.DuploElasticSearchDomainVPCOptions{}
 	duploObject := duplosdk.DuploElasticSearchDomainRequest{
 		Name:                       d.Get("name").(string),
 		Version:                    d.Get("elasticsearch_version").(string),
@@ -358,6 +359,7 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 		EBSOptions: duplosdk.DuploElasticSearchDomainEBSOptions{
 			VolumeSize: d.Get("storage_size").(int),
 		},
+		VPCOptions: duploVPCOptions,
 	}
 
 	c := m.(*duplosdk.Client)
@@ -402,8 +404,11 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 	selectedSubnetIDs, ok := vpcOptions["subnet_ids"]
-	if ok {
-		duploObject.VPCOptions.SubnetIDs = selectedSubnetIDs.([]string)
+	if ok && selectedSubnetIDs != nil {
+		for _, subnetId := range selectedSubnetIDs.([]interface{}) {
+			duploObject.VPCOptions.SubnetIDs = append(duploObject.VPCOptions.SubnetIDs, subnetId.(string))
+		}
+		// duploObject.VPCOptions.SubnetIDs = selectedSubnetIDs.([]string)
 	}
 
 	// Handle subnet selection: either a single zone domain, or explicit subnet IDs
