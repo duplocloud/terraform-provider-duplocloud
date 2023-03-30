@@ -248,12 +248,6 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 func expandAwsLoadBalancerListener(d *schema.ResourceData) duplosdk.DuploAwsLbListenerCreate {
 	log.Printf("[TRACE] expandAwsLoadBalancerListener - start")
 	targetArn := d.Get("target_group_arn").(string)
-	cert := duplosdk.DuploAwsLbListenerCertificate{
-		CertificateArn: d.Get("certificate_arn").(string),
-		IsDefault:      false,
-	}
-	certs := []duplosdk.DuploAwsLbListenerCertificate{cert}
-	log.Printf("[TRACE]  Certs : %+v -", certs)
 	action := duplosdk.DuploAwsLbListenerActionCreate{
 		TargetGroupArn: targetArn,
 		Type:           "Forward",
@@ -265,8 +259,17 @@ func expandAwsLoadBalancerListener(d *schema.ResourceData) duplosdk.DuploAwsLbLi
 	duploObject := duplosdk.DuploAwsLbListenerCreate{
 		Port:           d.Get("port").(int),
 		Protocol:       protocol,
-		Certificates:   certs,
 		DefaultActions: actions,
+	}
+	if v, ok := d.GetOk("certificate_arn"); ok && v != nil {
+		cert := duplosdk.DuploAwsLbListenerCertificate{
+			CertificateArn: v.(string),
+			IsDefault:      false,
+		}
+		certs := []duplosdk.DuploAwsLbListenerCertificate{cert}
+		log.Printf("[TRACE]  Certs : %+v -", certs)
+
+		duploObject.Certificates = certs
 	}
 	// data, err := json.Marshal(duploObject)
 	// if err != nil {
