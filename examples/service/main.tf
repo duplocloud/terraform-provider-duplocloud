@@ -30,7 +30,7 @@ resource "duplocloud_duplo_service" "test" {
   tenant_id = var.tenant_id
 
   name           = "joedemo"
-  agent_platform = 0
+  agent_platform = 7
   docker_image   = "nginx:latest"
   replicas       = 1
   /*
@@ -68,7 +68,7 @@ resource "duplocloud_duplo_service_params" "test" {
   replication_controller_name = duplocloud_duplo_service_lbconfigs.test.replication_controller_name
   dns_prfx                    = "joedemo-svc"
   drop_invalid_headers        = true
-  enable_access_logs          = true
+  enable_access_logs          = false
 }
 
 output "test" {
