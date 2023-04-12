@@ -54,6 +54,16 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"ad_domain_type": {
+			Description: "Specify domain service provided by Microsoft Azure for managing identities and access in the cloud.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"aadjoin",
+				"addsjoin",
+			}, false),
+		},
 		"enable_log_analytics": {
 			Description: "Enable log analytics on virtual machine.",
 			Type:        schema.TypeBool,
@@ -368,8 +378,8 @@ func resourceAzureVirtualMachineDelete(ctx context.Context, d *schema.ResourceDa
 }
 
 func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost {
-	diskSizeKV, diskTypeKV, usernameKV, passwordKV := duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{},
-		duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{}
+	diskSizeKV, diskTypeKV, usernameKV, passwordKV, adDomainType := duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{},
+		duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{}
 
 	if v, ok := d.GetOk("disk_size_gb"); ok {
 		diskSizeKV = duplosdk.DuploKeyStringValue{
@@ -395,6 +405,19 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 			Value: v.(string),
 		}
 	}
+	if v, ok := d.GetOk("ad_domain_type"); ok && v != nil && v.(string) != "" {
+		if v.(string) == "aadjoin" {
+			adDomainType = duplosdk.DuploKeyStringValue{
+				Key:   "JoinAADDomain",
+				Value: "true",
+			}
+		} else {
+			adDomainType = duplosdk.DuploKeyStringValue{
+				Key:   "JoinDomain",
+				Value: "true",
+			}
+		}
+	}
 	joinDomainKV := duplosdk.DuploKeyStringValue{
 		Key:   "JoinDomain",
 		Value: strconv.FormatBool(d.Get("join_domain").(bool)),
@@ -416,7 +439,7 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 		Cloud:             2, // For Azure
 		EncryptDisk:       d.Get("encrypt_disk").(bool),
 		MetaData: &[]duplosdk.DuploKeyStringValue{
-			diskSizeKV, diskTypeKV, usernameKV, passwordKV, joinDomainKV, logAnalyticKV,
+			diskSizeKV, diskTypeKV, usernameKV, passwordKV, joinDomainKV, logAnalyticKV, adDomainType,
 		},
 		TagsEx:     keyValueFromState("tags", d),
 		MinionTags: keyValueFromState("minion_tags", d),
@@ -533,6 +556,7 @@ func virtualMachineWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenan
 
 func needsAzureVMUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("join_domain") ||
+		d.HasChange("ad_domain_type") ||
 		d.HasChange("enable_log_analytics") ||
 		d.HasChange("disk_size_gb") ||
 		d.HasChange("os_disk_type") ||
