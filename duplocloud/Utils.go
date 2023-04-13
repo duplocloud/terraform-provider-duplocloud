@@ -784,7 +784,7 @@ func base64IsEncoded(data string) bool {
 }
 
 func DuploManagedAzureTags() []string {
-	return []string{"TENANT_NAME", "TENANT_ID", "duplo-project", "duplo_creation_time", "duplo_sync_vm", "owner"}
+	return []string{"TENANT_NAME", "TENANT_ID", "duplo-project", "duplo_creation_time", "duplo_sync_vm", "owner", "duplo_aaddomainjoin", "duplo_domainjoin"}
 }
 
 func Contains(s []string, e string) bool {

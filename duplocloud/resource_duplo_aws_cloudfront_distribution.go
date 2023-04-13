@@ -2082,7 +2082,7 @@ func cloudfrontDistributionWaitUntilDisabled(ctx context.Context, c *duplosdk.Cl
 func updateS3OAI(existingCfd, updatedCfd *duplosdk.DuploAwsCloudfrontDistributionConfig) {
 	for _, eo := range *existingCfd.Origins.Items {
 		for _, uo := range *updatedCfd.Origins.Items {
-			if eo.Id == uo.Id {
+			if eo.Id == uo.Id && eo.S3OriginConfig != nil {
 				uo.S3OriginConfig.OriginAccessIdentity = eo.S3OriginConfig.OriginAccessIdentity
 				break
 			}
