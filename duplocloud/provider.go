@@ -90,6 +90,7 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant":                          resourceTenant(),
 			"duplocloud_user":                            resourceUser(),
 			"duplocloud_tenant_config":                   resourceTenantConfig(),
+			"duplocloud_tenant_tag":                      resourceTenantTag(),
 			"duplocloud_tenant_secret":                   resourceTenantSecret(),
 			"duplocloud_tenant_network_security_rule":    resourceTenantSecurityRule(),
 			"duplocloud_emr_cluster":                     resourceAwsEmrCluster(),
