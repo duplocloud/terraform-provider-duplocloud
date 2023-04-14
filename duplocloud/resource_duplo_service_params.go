@@ -367,40 +367,38 @@ func readDuploServiceAwsLbSettings(tenantID string, rpc *duplosdk.DuploReplicati
 }
 
 func updateDuploServiceAwsLbSettings(tenantID string, details *duplosdk.DuploAwsLbDetailsInService, d *schema.ResourceData, c *duplosdk.Client) duplosdk.ClientError {
-
+	log.Printf("[TRACE] updateDuploServiceAwsLbSettings(%s): start", tenantID)
 	// Get any load balancer settings from the user.
 	settings := duplosdk.DuploAwsLbSettingsUpdateRequest{}
-	haveSettings := false
 	if v, ok := d.GetOk("enable_access_logs"); ok && v != nil {
 		settings.EnableAccessLogs = v.(bool)
-		haveSettings = true
+	} else {
+		settings.EnableAccessLogs = false
 	}
 	if v, ok := d.GetOk("drop_invalid_headers"); ok && v != nil {
 		settings.DropInvalidHeaders = v.(bool)
-		haveSettings = true
+	} else {
+		settings.DropInvalidHeaders = false
 	}
 	if v, ok := d.GetOk("http_to_https_redirect"); ok && v != nil {
 		settings.HttpToHttpsRedirect = v.(bool)
-		haveSettings = true
+	} else {
+		settings.HttpToHttpsRedirect = false
 	}
+
 	if v, ok := d.GetOk("idle_timeout"); ok && v != nil {
 		settings.IdleTimeout = v.(int)
-		haveSettings = true
 	}
 	if v, ok := d.GetOk("webaclid"); ok && v != nil {
 		settings.WebACLID = v.(string)
-		haveSettings = true
 	}
-
 	// If we have load balancer settings, apply them.
-	if haveSettings {
-		settings.LoadBalancerArn = details.LoadBalancerArn
-		err := c.TenantUpdateApplicationLbSettings(tenantID, settings)
-		if err != nil {
-			return err
-		}
+	settings.LoadBalancerArn = details.LoadBalancerArn
+	err := c.TenantUpdateApplicationLbSettings(tenantID, settings)
+	if err != nil {
+		return err
 	}
-
+	log.Printf("[TRACE] updateDuploServiceAwsLbSettings(%s): end", tenantID)
 	return nil
 }
 
