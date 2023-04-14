@@ -466,3 +466,40 @@ func (c *Client) TenantFeaturesGet(tenantId string) (*DuploTenantFeatures, Clien
 	}
 	return &rp, nil
 }
+
+func (c *Client) TenantTagsGet(tenantId string) (*[]DuploKeyStringValue, ClientError) {
+	rp := []DuploKeyStringValue{}
+	err := c.getAPI(fmt.Sprintf("TenantTagsGet(%s)", tenantId), fmt.Sprintf("adminproxy/GetTenantTags/%s", tenantId), &rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+func (c *Client) TenantTagsGetByKey(tenantId, key string) (*DuploKeyStringValue, ClientError) {
+	rp := []DuploKeyStringValue{}
+	err := c.getAPI(fmt.Sprintf("TenantTagsGet(%s)", tenantId), fmt.Sprintf("adminproxy/GetTenantTags/%s", tenantId), &rp)
+	if err != nil {
+		return nil, err
+	}
+	for _, tag := range rp {
+		if tag.Key == key {
+			return &tag, nil
+		}
+	}
+	return nil, nil
+}
+
+func (c *Client) TenantTagCreate(req DuploTenantConfigUpdateRequest) ClientError {
+	return c.postAPI(fmt.Sprintf("TenantTagCreate(%s)", req.TenantID),
+		"adminproxy/TenantTagUpdate",
+		req,
+		nil)
+}
+
+func (c *Client) TenantTagDelete(req DuploTenantConfigUpdateRequest) ClientError {
+	return c.postAPI(fmt.Sprintf("TenantTagDelete(%s)", req.TenantID),
+		"adminproxy/TenantTagUpdate",
+		req,
+		nil)
+}
