@@ -32,7 +32,7 @@ func resourceTenantTag() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Description:  "The GUID of the tenant that the secret will be created in.",
+				Description:  "The GUID of the tenant that the tags will be created in.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,

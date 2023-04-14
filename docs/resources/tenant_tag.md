@@ -42,7 +42,7 @@ resource "duplocloud_tenant_tag" "tags" {
 ### Required
 
 - **key** (String) Specify key for tag.
-- **tenant_id** (String) The GUID of the tenant that the secret will be created in.
+- **tenant_id** (String) The GUID of the tenant that the tags will be created in.
 - **value** (String) Specify value for tag.
 
 ### Optional
