@@ -55,7 +55,7 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"ad_domain_type": {
-			Description: "Specify domain service provided by Microsoft Azure for managing identities and access in the cloud.",
+			Description: "Specify domain service provided by Microsoft Azure for managing identities and access in the cloud. Valid values are `aadjoin` or `addsjoin`.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
