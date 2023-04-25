@@ -90,7 +90,7 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 		err := c.doAPIWithRequestBody(
 			"PUT",
 			fmt.Sprintf("RdsInstanceCreateOrUpdate(%s, duplo%s)", tenantID, duploObject.Name),
-			fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s", tenantID, duploObject.Identifier),
+			fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.Identifier),
 			&duploObject,
 			&rp,
 		)
@@ -105,7 +105,7 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 	err := c.doAPIWithRequestBody(
 		"POST",
 		fmt.Sprintf("RdsInstanceCreateOrUpdate(%s, duplo%s)", tenantID, duploObject.Name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance", tenantID),
 		&duploObject,
 		&rp,
 	)
@@ -125,7 +125,7 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, ClientError) {
 	// Call the API.
 	err := c.deleteAPI(
 		fmt.Sprintf("RdsInstanceDelete(%s, duplo%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/duplo%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/duplo%s", tenantID, name),
 		nil)
 	if err != nil {
 		return nil, err
@@ -145,7 +145,7 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
 	duploObject := DuploRdsInstance{}
 	err := c.getAPI(
 		fmt.Sprintf("RdsInstanceGet(%s, duplo%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/duplo%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/duplo%s", tenantID, name),
 		&duploObject)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
@@ -163,7 +163,7 @@ func (c *Client) RdsInstanceGetByName(tenantID, name string) (*DuploRdsInstance,
 	duploObject := DuploRdsInstance{}
 	err := c.getAPI(
 		fmt.Sprintf("RdsInstanceGet(%s, duplo%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/duplo%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/duplo%s", tenantID, name),
 		&duploObject)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
@@ -180,7 +180,7 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 	// Call the API.
 	return c.postAPI(
 		fmt.Sprintf("RdsInstanceChangePassword(%s, %s)", tenantID, duploObject.Identifier),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/changePassword", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/changePassword", tenantID),
 		&duploObject,
 		nil,
 	)
@@ -189,7 +189,7 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 func (c *Client) RdsInstanceChangeDeleteProtection(tenantID string, duploObject DuploRdsInstanceDeleteProtection) ClientError {
 	return c.putAPI(
 		fmt.Sprintf("RdsInstanceChangeDeleteProtection(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
 		&duploObject,
 		nil,
 	)
