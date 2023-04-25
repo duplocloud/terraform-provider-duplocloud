@@ -55,7 +55,11 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - **is_cluster_autoscaled** (Boolean) Whether or not to enable cluster autoscaler.
 - **is_ebs_optimized** (Boolean) Defaults to `false`.
 - **is_minion** (Boolean) Defaults to `true`.
-- **keypair_type** (Number) The numeric ID of the keypair type being used.
+- **keypair_type** (Number) The numeric ID of the keypair type being used.Should be one of:
+
+   - `0` : Default
+   - `1` : ED25519
+   - `2` : RSA (deprecated - some operating systems no longer support it)
 - **max_instance_count** (Number) The maximum size of the Auto Scaling Group.
 - **metadata** (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
 - **min_instance_count** (Number) The minimum size of the Auto Scaling Group.

@@ -104,10 +104,14 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew:    true, // relaunch instance
 		},
 		"keypair_type": {
-			Description: "The numeric ID of the keypair type being used.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Computed:    true,
+			Description: "The numeric ID of the keypair type being used." +
+				"Should be one of:\n\n" +
+				"   - `0` : Default\n" +
+				"   - `1` : ED25519\n" +
+				"   - `2` : RSA (deprecated - some operating systems no longer support it)\n",
+			Type:     schema.TypeInt,
+			Optional: true,
+			Computed: true,
 		},
 		"encrypt_disk": {
 			Type:     schema.TypeBool,

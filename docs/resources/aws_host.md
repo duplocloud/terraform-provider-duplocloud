@@ -62,7 +62,11 @@ resource "duplocloud_aws_host" "eks" {
 - **encrypt_disk** (Boolean) Defaults to `false`.
 - **is_ebs_optimized** (Boolean) Defaults to `false`.
 - **is_minion** (Boolean) Defaults to `true`.
-- **keypair_type** (Number) The numeric ID of the keypair type being used.
+- **keypair_type** (Number) The numeric ID of the keypair type being used.Should be one of:
+
+   - `0` : Default
+   - `1` : ED25519
+   - `2` : RSA (deprecated - some operating systems no longer support it)
 - **metadata** (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
 - **minion_tags** (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - **network_interface** (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
