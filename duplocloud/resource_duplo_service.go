@@ -69,6 +69,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 		"hpa_specs": {
 			Type:     schema.TypeString,
 			Optional: true,
+			Computed: true,
 		},
 		"allocation_tags": {
 			Type:     schema.TypeString,
