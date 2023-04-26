@@ -64,6 +64,12 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 				"addsjoin",
 			}, false),
 		},
+		"timezone": {
+			Description: "Specifies the time zone of the virtual machine, [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/).",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+		},
 		"enable_log_analytics": {
 			Description: "Enable log analytics on virtual machine.",
 			Type:        schema.TypeBool,
@@ -429,6 +435,12 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 			Value: strconv.FormatBool(d.Get("enable_log_analytics").(bool)),
 		})
 	}
+	if v, ok := d.GetOk("timezone"); ok && v != nil && v.(string) != "" {
+		metadata = append(metadata, duplosdk.DuploKeyStringValue{
+			Key:   "Timezone",
+			Value: v.(string),
+		})
+	}
 	return &duplosdk.DuploNativeHost{
 		TenantID:          d.Get("tenant_id").(string),
 		InstanceID:        d.Get("instance_id").(string),
@@ -559,6 +571,7 @@ func needsAzureVMUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("join_domain") ||
 		d.HasChange("ad_domain_type") ||
 		d.HasChange("enable_log_analytics") ||
+		d.HasChange("timezone") ||
 		d.HasChange("disk_size_gb") ||
 		d.HasChange("os_disk_type") ||
 		d.HasChange("volume")
