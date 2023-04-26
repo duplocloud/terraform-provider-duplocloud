@@ -32,7 +32,7 @@ type DuploNativeHost struct {
 	IsEbsOptimized     bool                               `json:"IsEbsOptimized"`
 	AllocatedPublicIP  bool                               `json:"AllocatedPublicIp,omitempty"`
 	Cloud              int                                `json:"Cloud"`
-	KeyPairType        int                                `json:"KeyPairType,omitempty"`
+	KeyPairType        int                                `json:"KeyPairType"`
 	EncryptDisk        bool                               `json:"EncryptDisk,omitempty"`
 	Status             string                             `json:"Status,omitempty"`
 	IdentityRole       string                             `json:"IdentityRole,omitempty"`
