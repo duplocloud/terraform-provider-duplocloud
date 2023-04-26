@@ -76,6 +76,7 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 - **os_disk_type** (String) Specifies the type of managed disk to create. Possible values are either `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_ZRS` or `UltraSSD_LRS`.
 - **tags** (Block List) (see [below for nested schema](#nestedblock--tags))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **timezone** (String) Specifies the time zone of the virtual machine, [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/).
 - **volume** (Block List) (see [below for nested schema](#nestedblock--volume))
 - **wait_until_ready** (Boolean) Whether or not to wait until azure virtual machine to be ready, after creation. Defaults to `true`.
 
