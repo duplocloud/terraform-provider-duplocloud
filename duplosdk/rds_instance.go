@@ -118,9 +118,9 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 
 // RdsInstanceDelete deletes an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, ClientError) {
-	idParts := strings.SplitN(id, "/", 5)
+	idParts := strings.Split(id, "/")
 	tenantID := idParts[2]
-	name := idParts[4]
+	name := idParts[len(idParts)-1]
 
 	// Call the API.
 	err := c.deleteAPI(
@@ -137,9 +137,9 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, ClientError) {
 
 // RdsInstanceGet retrieves an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
-	idParts := strings.SplitN(id, "/", 5)
+	idParts := strings.Split(id, "/")
 	tenantID := idParts[2]
-	name := idParts[4]
+	name := idParts[len(idParts)-1] // use new v3 api ..take last one
 
 	// Call the API.
 	duploObject := DuploRdsInstance{}
@@ -149,6 +149,9 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
 		&duploObject)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
+	}
+	if duploObject.Identifier == "" {
+		duploObject.Identifier = "submitted"
 	}
 
 	// Fill in the tenant ID and the name and return the object
@@ -189,7 +192,7 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 func (c *Client) RdsInstanceChangeDeleteProtection(tenantID string, duploObject DuploRdsInstanceDeleteProtection) ClientError {
 	return c.putAPI(
 		fmt.Sprintf("RdsInstanceChangeDeleteProtection(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
 		&duploObject,
 		nil,
 	)

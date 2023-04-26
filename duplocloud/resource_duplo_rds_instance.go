@@ -420,7 +420,7 @@ func rdsInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, id s
 		Pending: []string{
 			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
 			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
-			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
+			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading", "submitted",
 		},
 		Target:       []string{"available"},
 		MinTimeout:   10 * time.Second,
