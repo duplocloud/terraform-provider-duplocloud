@@ -183,7 +183,7 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 	// Call the API.
 	return c.postAPI(
 		fmt.Sprintf("RdsInstanceChangePassword(%s, %s)", tenantID, duploObject.Identifier),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/changePassword", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/changePassword", tenantID, duploObject.Identifier),
 		&duploObject,
 		nil,
 	)
