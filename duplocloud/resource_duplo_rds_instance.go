@@ -520,7 +520,11 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["identifier"] = duploObject.Identifier
 	jo["arn"] = duploObject.Arn
 	jo["endpoint"] = duploObject.Endpoint
-	jo["cluster_identifier"] = duploObject.ClusterIdentifier
+	clusterIdentifier := duploObject.ClusterIdentifier
+	if len(clusterIdentifier) == 0 {
+		clusterIdentifier = duploObject.Identifier
+	}
+	jo["cluster_identifier"] = clusterIdentifier
 
 	if duploObject.Endpoint != "" {
 		uriParts := strings.SplitN(duploObject.Endpoint, ":", 2)

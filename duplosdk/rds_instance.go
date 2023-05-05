@@ -28,6 +28,7 @@ type DuploRdsInstance struct {
 
 	Identifier                  string `json:"Identifier"`
 	ClusterIdentifier           string `json:"ClusterIdentifier,omitempty"`
+	ReplicationSourceIdentifier string `json:"ReplicationSourceIdentifier,omitempty"`
 	Arn                         string `json:"Arn"`
 	Endpoint                    string `json:"Endpoint,omitempty"`
 	MasterUsername              string `json:"MasterUsername,omitempty"`
