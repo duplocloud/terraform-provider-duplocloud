@@ -150,10 +150,6 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
 	}
-	if duploObject.InstanceStatus == "" {
-		duploObject.InstanceStatus = "submitted"
-	}
-
 	// Fill in the tenant ID and the name and return the object
 	duploObject.TenantID = tenantID
 	duploObject.Name = name
