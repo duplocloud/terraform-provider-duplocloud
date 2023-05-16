@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -500,8 +501,32 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.EnableLogging = d.Get("enable_logging").(bool)
 	duploObject.MultiAZ = d.Get("multi_az").(bool)
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
+	if v, ok := d.GetOk("v2_scaling_configuration"); ok {
+		duploObject.V2ScalingConfiguration = expandV2ScalingConfiguration(v.([]interface{}))
+	}
+	if duploObject.SizeEx == "db.serverless" && duploObject.V2ScalingConfiguration == nil {
+		return nil, errors.New("v2_scaling_configuration: min_capacity and max_capacity must be provided")
+	}
 
 	return duploObject, nil
+}
+
+func expandV2ScalingConfiguration(cfg []interface{}) *duplosdk.V2ScalingConfiguration {
+	if len(cfg) < 1 {
+		return nil
+	}
+	out := &duplosdk.V2ScalingConfiguration{}
+	m := cfg[0].(map[string]interface{})
+	if v, ok := m["min_capacity"]; ok {
+		out.MinCapacity = v.(float64)
+	}
+	if v, ok := m["max_capacity"]; ok {
+		out.MaxCapacity = v.(float64)
+	}
+	if out.MinCapacity == 0 || out.MaxCapacity == 0 {
+		return nil
+	}
+	return out
 }
 
 // RdsInstanceToState converts a Duplo SDK object respresenting an RDS instance to terraform resource data.
@@ -547,6 +572,12 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["enable_logging"] = duploObject.EnableLogging
 	jo["multi_az"] = duploObject.MultiAZ
 	jo["instance_status"] = duploObject.InstanceStatus
+	if duploObject.V2ScalingConfiguration != nil {
+		d.Set("v2_scaling_configuration", []map[string]interface{}{{
+			"min_capacity": duploObject.V2ScalingConfiguration.MinCapacity,
+			"max_capacity": duploObject.V2ScalingConfiguration.MaxCapacity,
+		}})
+	}
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
