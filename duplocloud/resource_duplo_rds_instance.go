@@ -592,7 +592,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["enable_logging"] = duploObject.EnableLogging
 	jo["multi_az"] = duploObject.MultiAZ
 	jo["instance_status"] = duploObject.InstanceStatus
-	if duploObject.V2ScalingConfiguration != nil {
+	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 {
 		d.Set("v2_scaling_configuration", []map[string]interface{}{{
 			"min_capacity": duploObject.V2ScalingConfiguration.MinCapacity,
 			"max_capacity": duploObject.V2ScalingConfiguration.MaxCapacity,
