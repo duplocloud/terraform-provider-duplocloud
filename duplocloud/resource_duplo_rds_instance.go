@@ -359,7 +359,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 	size := d.Get("size").(string)
 	if d.HasChange("v2_scaling_configuration") && size == "db.serverless" {
-		// Request the password change in Duplo
+		// Request Aurora serverless V2 instance-size change
 		if v, ok := d.GetOk("v2_scaling_configuration"); ok {
 			log.Printf("[TRACE] DuploRdsModifyAuroraV2ServerlessInstanceSize ******** start")
 			err = c.RdsModifyAuroraV2ServerlessInstanceSize(tenantID, duplosdk.DuploRdsModifyAuroraV2ServerlessInstanceSize{
@@ -375,7 +375,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			return diag.FromErr(err)
 		}
 
-		// Wait for the instance to become unavailable.
+		// Wait for the instance to become available.
 		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 7*time.Minute)
 		if err != nil {
 			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
