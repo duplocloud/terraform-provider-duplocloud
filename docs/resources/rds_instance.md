@@ -47,10 +47,9 @@ resource "duplocloud_rds_instance" "mydb" {
 
   master_username = "myuser"
   master_password = random_password.mypassword.result
-  v2_scaling_configuration = {
+  v2_scaling_configuration {
     min_capacity = 1
     max_capacity = 1
-    
   }
   encrypt_storage = true
 }
