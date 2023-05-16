@@ -353,12 +353,42 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
-	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** start")
-
-	// Request the password change in Duplo
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 	id := d.Id()
+
+	size := d.Get("size").(string)
+	if d.HasChange("v2_scaling_configuration") && size == "db.serverless" {
+		// Request the password change in Duplo
+		if v, ok := d.GetOk("v2_scaling_configuration"); ok {
+			log.Printf("[TRACE] DuploRdsModifyAuroraV2ServerlessInstanceSize ******** start")
+			err = c.RdsModifyAuroraV2ServerlessInstanceSize(tenantID, duplosdk.DuploRdsModifyAuroraV2ServerlessInstanceSize{
+				Identifier:             d.Get("identifier").(string),
+				ClusterIdentifier:      d.Get("identifier").(string) + "-cluster",
+				SizeEx:                 size,
+				ApplyImmediately:       true,
+				V2ScalingConfiguration: expandV2ScalingConfiguration(v.([]interface{})),
+			})
+		}
+
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Wait for the instance to become unavailable.
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 7*time.Minute)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+		}
+
+		// in-case timed out. check one more time .. aurora cluster takes long time to update and backup
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 3*time.Minute)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+		}
+	}
+
+	// Request the password change in Duplo
 	err = c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
 		Identifier:     d.Get("identifier").(string),
 		MasterPassword: d.Get("master_password").(string),

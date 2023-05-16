@@ -73,6 +73,14 @@ type DuploRdsClusterDeleteProtection struct {
 	DeletionProtection  *bool  `json:"DeletionProtection,omitempty"`
 }
 
+type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
+	Identifier             string                  `json:"Identifier"`
+	ClusterIdentifier      string                  `json:"ClusterIdentifier"`
+	ApplyImmediately       bool                    `json:"ApplyImmediately"`
+	SizeEx                 string                  `json:"SizeEx,omitempty"`
+	V2ScalingConfiguration *V2ScalingConfiguration `json:"V2ScalingConfiguration,omitempty"`
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -198,6 +206,16 @@ func (c *Client) RdsClusterChangeDeleteProtection(tenantID string, duploObject D
 		nil,
 	)
 }
+
+func (c *Client) RdsModifyAuroraV2ServerlessInstanceSize(tenantID string, duploObject DuploRdsModifyAuroraV2ServerlessInstanceSize) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("RdsModifyAuroraV2ServerlessInstanceSize(%s, %s)", tenantID, duploObject.ClusterIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/modifyAuroraToV2Serverless", tenantID),
+		&duploObject,
+		nil,
+	)
+}
+
 func RdsIsAurora(engine int) bool {
 	return engine == DUPLO_RDS_ENGINE_AURORA_MYSQL ||
 		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL ||
