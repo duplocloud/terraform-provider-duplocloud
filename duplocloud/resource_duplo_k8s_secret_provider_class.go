@@ -261,8 +261,12 @@ func flattenK8sSecretProviderClass(tenantId string, d *schema.ResourceData, dupl
 	d.Set("secret_provider", duplo.Provider)
 	d.Set("annotations", duplo.Annotations)
 	d.Set("labels", duplo.Labels)
-	d.Set("secret_object", flattenProvderClassSecretObjects(duplo.SecretObjects))
-	d.Set("parameters", duplo.Parameters.Objects)
+	if duplo.SecretObjects != nil {
+		d.Set("secret_object", flattenProvderClassSecretObjects(duplo.SecretObjects))
+	}
+	if duplo.Parameters != nil {
+		d.Set("parameters", duplo.Parameters.Objects)
+	}
 
 }
 
