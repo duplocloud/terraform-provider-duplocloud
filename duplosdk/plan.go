@@ -345,7 +345,7 @@ func (c *Client) PlanSetConfig(planID string, item DuploCustomDataEx) ClientErro
 	var rp DuploCustomDataEx
 	return c.postAPI(
 		fmt.Sprintf("PlanSetConfig(%s, %s)", planID, item.Key),
-		fmt.Sprintf("v3/admin/plans/%s/configs", planID),
+		fmt.Sprintf("v3/admin/plans/%s/configs/%s", planID, item.Type),
 		&item,
 		&rp)
 }

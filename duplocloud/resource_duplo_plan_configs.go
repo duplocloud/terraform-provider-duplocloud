@@ -40,6 +40,7 @@ func resourcePlanConfigs() *schema.Resource {
 				Description: "A list of configs to manage.",
 				Type:        schema.TypeList,
 				Optional:    true,
+				Computed:    true,
 				Elem:        CustomDataExSchema(),
 			},
 			"delete_unspecified_configs": {
