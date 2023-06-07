@@ -58,18 +58,19 @@ type DuploLambdaCode struct {
 }
 
 // DuploLambdaEnvironment is a Duplo SDK object that represents a lambda function's environment config.
+// DuploLambdaEnvironment is a Duplo SDK object that represents a lambda function's environment config.
 type DuploLambdaEnvironment struct {
 	Variables map[string]string `json:"Variables,omitempty"`
-}
-
-// DuploLambdaTracingConfig is a Duplo SDK object that represents a lambda function's tracing config.
-type DuploLambdaTracingConfig struct {
-	Mode DuploStringValue `json:"Mode,omitempty"`
 }
 
 // DuploLambdaEphemeralStorage is a Duplo SDK object that represents a lambda function's ephemeral storage config.
 type DuploLambdaEphemeralStorage struct {
 	Size int `json:"Size"`
+}
+
+// DuploLambdaTracingConfig is a Duplo SDK object that represents a lambda function's tracing config.
+type DuploLambdaTracingConfig struct {
+	Mode DuploStringValue `json:"Mode,omitempty"`
 }
 
 // DuploLambdaVpcConfig is a Duplo SDK object that represents a lambda function's vpn config.
