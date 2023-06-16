@@ -47,8 +47,19 @@ func awsTimestreamDatabaseSchema() map[string]*schema.Schema {
 			Description: "Tags in key-value format.",
 			Type:        schema.TypeList,
 			Optional:    true,
+			Elem:        KeyValueSchema(),
+		},
+		"all_tags": {
+			Description: "A complete list of tags for this time stream database, even ones not being managed by this resource.",
+			Type:        schema.TypeList,
 			Computed:    true,
 			Elem:        KeyValueSchema(),
+		},
+		"specified_tags": {
+			Description: "A list of tags being managed by this resource.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"arn": {
 			Description: "The ARN that uniquely identifies this database.",
@@ -132,7 +143,40 @@ func resourceAwsTimestreamDatabaseCreate(ctx context.Context, d *schema.Resource
 }
 
 func resourceAwsTimestreamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return resourceAwsTimestreamDatabaseCreate(ctx, d, m)
+	id := d.Id()
+	tenantID, name, err := parseAwsTimestreamDatabaseIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceAwsTimestreamDatabaseUpdate(%s, %s): start", tenantID, name)
+	c := m.(*duplosdk.Client)
+	fullName, _ := c.GetDuploServicesName(tenantID, name)
+
+	rq := &duplosdk.DuploTimestreamDBUpdateRequest{
+		DatabaseName: d.Get("name").(string),
+	}
+
+	// Apply tags
+	if _, ok := d.GetOk("tags"); ok || d.HasChange("tags") {
+		duplo, err := c.DuploTimestreamDBGet(tenantID, fullName)
+		if err != nil {
+			return diag.Errorf("failed to retrieve tags  for '%s': %s", "tags", err)
+		}
+		newTags, deletedKeys := getChangesTimestreamTags(duplo.Tags, d)
+		rq.UpdatedTags = newTags
+		rq.DeletedTags = deletedKeys
+	}
+
+	_, clientErr := c.DuploTimestreamDBUpdate(tenantID, name, rq)
+	if clientErr != nil {
+		return diag.Errorf("Error updating tenant %s aws timestream database '%s': %s", tenantID, fullName, clientErr)
+	}
+
+	d.SetId(id)
+
+	diags := resourceAwsTimestreamDatabaseRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsTimestreamDatabaseUpdate(%s, %s): end", tenantID, fullName)
+	return diags
 }
 
 func resourceAwsTimestreamDatabaseDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -197,6 +241,13 @@ func flattenTimestreamDatabase(d *schema.ResourceData, c *duplosdk.Client, duplo
 	d.Set("fullname", duplo.DatabaseName)
 	d.Set("table_count", duplo.TableCount)
 	d.Set("kms_key_id", duplo.KmsKeyId)
-	d.Set("tags", keyValueToState("tags", duplo.Tags))
+
+	d.Set("all_tags", keyValueToState("all_tags", duplo.Tags))
+	if v, ok := getAsStringArray(d, "specified_tags"); ok && v != nil {
+		d.Set("tags", keyValueToState("tags", selectKeyValues(duplo.Tags, *v)))
+	} else {
+		d.Set("specified_tags", make([]interface{}, 0))
+	}
+
 	return nil
 }

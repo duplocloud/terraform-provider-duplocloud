@@ -141,8 +141,19 @@ func awsTimestreamTableSchema() map[string]*schema.Schema {
 			Description: "Tags in key-value format.",
 			Type:        schema.TypeList,
 			Optional:    true,
+			Elem:        KeyValueSchema(),
+		},
+		"all_tags": {
+			Description: "A complete list of tags for this time stream database, even ones not being managed by this resource.",
+			Type:        schema.TypeList,
 			Computed:    true,
 			Elem:        KeyValueSchema(),
+		},
+		"specified_tags": {
+			Description: "A list of tags being managed by this resource.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"wait_for_deployment": {
 			Type:     schema.TypeBool,
@@ -194,7 +205,6 @@ func resourceAwsTimestreamTableRead(ctx context.Context, d *schema.ResourceData,
 		return nil
 	}
 	flattenTimestreamTable(d, c, table, tenantID)
-
 	log.Printf("[TRACE] resourceAwsTimestreamTableRead(%s, %s, %s): end", tenantID, dbName, name)
 	return nil
 }
@@ -226,7 +236,53 @@ func resourceAwsTimestreamTableCreate(ctx context.Context, d *schema.ResourceDat
 }
 
 func resourceAwsTimestreamTableUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return resourceAwsTimestreamTableCreate(ctx, d, m)
+	id := d.Id()
+	tenantID, dbName, name, err := parseAwsTimestreamTableIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceAwsTimestreamTableUpdate(%s, %s): start", tenantID, name)
+	c := m.(*duplosdk.Client)
+	rq := &duplosdk.DuploTimestreamDBTableUpdateRequest{
+		TableName:    d.Get("name").(string),
+		DatabaseName: d.Get("database_name").(string),
+	}
+
+	if d.HasChange("tags") {
+		duplo, _ := c.DuploTimestreamDBTableGet(tenantID, dbName, name)
+		if err != nil {
+			return diag.Errorf("failed to retrieve tags  for '%s': %s", "tags", err)
+		}
+		newTags, deletedKeys := getChangesTimestreamTags(duplo.Tags, d)
+		rq.UpdatedTags = newTags
+		rq.DeletedTags = deletedKeys
+	}
+
+	if v, ok := d.GetOk("retention_properties"); ok && len(v.([]interface{})) > 0 && v.([]interface{}) != nil {
+		rq.RetentionProperties = expandRetentionProperties(v.([]interface{}))
+	}
+
+	if v, ok := d.GetOk("magnetic_store_write_properties"); ok && len(v.([]interface{})) > 0 && v.([]interface{}) != nil {
+		rq.MagneticStoreWriteProperties = expandMagneticStoreWriteProperties(v.([]interface{}))
+	}
+
+	_, clientErr := c.DuploTimestreamDBTableUpdate(tenantID, dbName, name, rq)
+	if clientErr != nil {
+		return diag.Errorf("Error updating tenant %s aws timestream Table '%s': %s", tenantID, name, clientErr)
+	}
+
+	d.SetId(fmt.Sprintf("%s/%s/%s", tenantID, rq.DatabaseName, name))
+
+	if d.Get("wait_for_deployment") == nil || d.Get("wait_for_deployment").(bool) {
+		err = timestreamTableWaitUntilActive(ctx, c, tenantID, name, rq.DatabaseName, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	diags := resourceAwsTimestreamTableRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsTimestreamTableUpdate(%s, %s): end", tenantID, name)
+	return diags
 }
 
 func resourceAwsTimestreamTableDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -270,6 +326,7 @@ func expandAwsTimestreamTable(d *schema.ResourceData) *duplosdk.DuploTimestreamD
 	if v, ok := d.GetOk("magnetic_store_write_properties"); ok && len(v.([]interface{})) > 0 && v.([]interface{}) != nil {
 		rq.MagneticStoreWriteProperties = expandMagneticStoreWriteProperties(v.([]interface{}))
 	}
+
 	return rq
 }
 
@@ -286,9 +343,16 @@ func parseAwsTimestreamTableIdParts(id string) (tenantID, dbName, name string, e
 func flattenTimestreamTable(d *schema.ResourceData, c *duplosdk.Client, duplo *duplosdk.DuploTimestreamDBTableDetails, tenantId string) diag.Diagnostics {
 	d.Set("tenant_id", tenantId)
 	d.Set("name", duplo.TableName)
-	d.Set("database_name", duplo.DatabaseName)
 	d.Set("arn", duplo.Arn)
-	d.Set("tags", keyValueToState("tags", duplo.Tags))
+
+	d.Set("all_tags", keyValueToState("all_tags", duplo.Tags))
+
+	// Build a list of current state, to replace the user-supplied settings.
+	if v, ok := getAsStringArray(d, "specified_tags"); ok && v != nil {
+		d.Set("tags", keyValueToState("tags", selectKeyValues(duplo.Tags, *v)))
+	} else {
+		d.Set("specified_tags", make([]interface{}, 0))
+	}
 
 	if err := d.Set("retention_properties", flattenRetentionProperties(duplo.RetentionProperties)); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting retention_properties: %w", err))
@@ -479,4 +543,51 @@ func timestreamTableWaitUntilActive(ctx context.Context, c *duplosdk.Client, ten
 	log.Printf("[DEBUG] timestreamTableWaitUntilActive(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func getChangesTimestreamTags(all *[]duplosdk.DuploKeyStringValue, d *schema.ResourceData) (newTags *[]duplosdk.DuploKeyStringValue, deletedKeys []string) {
+	log.Printf("[TRACE]  Tags getChangesTimestreamTags : start")
+	// tracked specified_* - similar to duplo infra setting, config, plan
+	var existing *[]duplosdk.DuploKeyStringValue
+	var existingKeys []string
+	if v, ok := getAsStringArray(d, "specified_tags"); ok && v != nil {
+		existing = selectKeyValues(all, *v)
+		existingKeys = *v
+	} else {
+		existing = &[]duplosdk.DuploKeyStringValue{}
+	}
+
+	newTags = keyValueFromState("tags", d)
+	if newTags != nil {
+		specified := make([]string, len(*newTags))
+		for i, kv := range *newTags {
+			specified[i] = kv.Key
+		}
+		d.Set("specified_tags", specified)
+	} else {
+		d.Set("specified_tags", make([]interface{}, 0))
+	}
+
+	present := map[string]struct{}{}
+	if newTags != nil {
+		for _, kv := range *newTags {
+			present[kv.Key] = struct{}{}
+		}
+	}
+	// Finally, delete any keys that are no longer present.
+	deletedKeys = []string{}
+	if existing != nil {
+		if newTags == nil {
+			deletedKeys = existingKeys
+		} else {
+			for _, kv := range *existing {
+				if _, ok := present[kv.Key]; !ok {
+					deletedKeys = append(deletedKeys, kv.Key)
+				}
+			}
+		}
+	}
+
+	log.Printf("[TRACE]  Tags getChangesTimestreamTags: end")
+	return
 }
