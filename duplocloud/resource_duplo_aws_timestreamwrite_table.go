@@ -344,10 +344,8 @@ func flattenTimestreamTable(d *schema.ResourceData, c *duplosdk.Client, duplo *d
 	d.Set("tenant_id", tenantId)
 	d.Set("name", duplo.TableName)
 	d.Set("arn", duplo.Arn)
-
 	d.Set("all_tags", keyValueToState("all_tags", duplo.Tags))
-
-	// Build a list of current state, to replace the user-supplied settings.
+	// Build a list of current state, to replace the user-supplied tags simmilar to infra settings.
 	if v, ok := getAsStringArray(d, "specified_tags"); ok && v != nil {
 		d.Set("tags", keyValueToState("tags", selectKeyValues(duplo.Tags, *v)))
 	} else {
@@ -547,7 +545,7 @@ func timestreamTableWaitUntilActive(ctx context.Context, c *duplosdk.Client, ten
 
 func getChangesTimestreamTags(all *[]duplosdk.DuploKeyStringValue, d *schema.ResourceData) (newTags *[]duplosdk.DuploKeyStringValue, deletedKeys []string) {
 	log.Printf("[TRACE]  Tags getChangesTimestreamTags : start")
-	// tracked specified_* - similar to duplo infra setting, config, plan
+	// tracked specified_* - similar to duplo infra setting, config, plan, metadata, cert etc
 	var existing *[]duplosdk.DuploKeyStringValue
 	var existingKeys []string
 	if v, ok := getAsStringArray(d, "specified_tags"); ok && v != nil {
@@ -564,8 +562,6 @@ func getChangesTimestreamTags(all *[]duplosdk.DuploKeyStringValue, d *schema.Res
 			specified[i] = kv.Key
 		}
 		d.Set("specified_tags", specified)
-	} else {
-		d.Set("specified_tags", make([]interface{}, 0))
 	}
 
 	present := map[string]struct{}{}
