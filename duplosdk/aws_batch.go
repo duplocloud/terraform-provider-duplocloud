@@ -98,8 +98,8 @@ type DuploAwsBatchComputeResource struct {
 	Type               *DuploStringValue                         `json:"Type,omitempty"`
 	AllocationStrategy *DuploStringValue                         `json:"AllocationStrategy,omitempty"`
 	MaxvCpus           int                                       `json:"MaxvCpus,omitempty"`
-	MinvCpus           int                                       `json:"MinvCpus"`
-	DesiredvCpus       int                                       `json:"DesiredvCpus"`
+	MinvCpus           int                                       `json:"MinvCpus,omitempty"`
+	DesiredvCpus       int                                       `json:"DesiredvCpus,omitempty"`
 	BidPercentage      int                                       `json:"BidPercentage,omitempty"`
 	InstanceTypes      []string                                  `json:"InstanceTypes,omitempty"`
 	Ec2KeyPair         string                                    `json:"Ec2KeyPair,omitempty"`
