@@ -167,7 +167,7 @@ func resourceAwsTimestreamDatabaseUpdate(ctx context.Context, d *schema.Resource
 		rq.DeletedTags = deletedKeys
 	}
 
-	_, clientErr := c.DuploTimestreamDBUpdate(tenantID, name, rq)
+	_, clientErr := c.DuploTimestreamDBUpdate(tenantID, fullName, rq)
 	if clientErr != nil {
 		return diag.Errorf("Error updating tenant %s aws timestream database '%s': %s", tenantID, fullName, clientErr)
 	}

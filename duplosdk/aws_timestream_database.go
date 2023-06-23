@@ -88,7 +88,7 @@ func (c *Client) DuploTimestreamDBUpdate(tenantID string, name string, rq *Duplo
 	rp := DuploTimestreamDBDetails{}
 	err := c.putAPI(
 		fmt.Sprintf("DuploTimestreamDBCreate(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/timeStream/duploservices-%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/timeStream/%s", tenantID, name),
 		&rq,
 		&rp,
 	)
