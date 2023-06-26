@@ -57,6 +57,12 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS read replica types must start with 'db.'"),
 		},
+		"availability_zone": {
+			Description: "The AZ for the RDS instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+		},
 		"identifier": {
 			Description: "The full name of the RDS read replica.",
 			Type:        schema.TypeString,
@@ -295,6 +301,7 @@ func rdsReadReplicaFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance
 	duploObject.Name = d.Get("name").(string)
 	duploObject.Identifier = d.Get("name").(string)
 	duploObject.SizeEx = d.Get("size").(string)
+	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
 	return duploObject, nil
 }
 
@@ -324,6 +331,7 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 	jo["engine"] = duploObject.Engine
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["size"] = duploObject.SizeEx
+	jo["availability_zone"] = duploObject.AvailabilityZone
 	jo["encrypt_storage"] = duploObject.EncryptStorage
 	jo["kms_key_id"] = duploObject.EncryptionKmsKeyId
 	jo["enable_logging"] = duploObject.EnableLogging
