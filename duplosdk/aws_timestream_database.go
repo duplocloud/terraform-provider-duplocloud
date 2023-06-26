@@ -166,6 +166,6 @@ func (c *Client) DuploTimestreamDBTableGet(tenantID string, dbName, name string)
 		return nil, err
 	}
 
-	//rp.TenantID = tenantID
+	rp.TenantID = tenantID
 	return &rp, err
 }
