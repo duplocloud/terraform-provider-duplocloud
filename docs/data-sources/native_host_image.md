@@ -21,6 +21,7 @@ description: |-
 
 ### Optional
 
+- **arch** (String)
 - **is_kubernetes** (Boolean)
 - **name** (String)
 
