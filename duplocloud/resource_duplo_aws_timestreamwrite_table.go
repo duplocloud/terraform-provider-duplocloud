@@ -253,7 +253,7 @@ func resourceAwsTimestreamTableUpdate(ctx context.Context, d *schema.ResourceDat
 		if err != nil {
 			return diag.Errorf("failed to retrieve tags  for '%s': %s", "tags", err)
 		}
-		newTags, deletedKeys := getChangesTimestreamTags(duplo.Tags, d)
+		newTags, deletedKeys := getTfManagedChangesDuploKeyStringValue("tags", duplo.Tags, d)
 		rq.UpdatedTags = newTags
 		rq.DeletedTags = deletedKeys
 	}
@@ -303,7 +303,11 @@ func resourceAwsTimestreamTableDelete(ctx context.Context, d *schema.ResourceDat
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "aws timestream Table", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DuploTimestreamDBTableGet(tenantID, dbName, name)
+		rp, err := c.DuploTimestreamDBTableGet(tenantID, dbName, name)
+		if rp == nil || err.Status() == 404 || err.Status() == 400 || err.Status() == 400 {
+			return nil, nil
+		}
+		return rp, err
 	})
 	if diag != nil {
 		return diag
@@ -344,13 +348,8 @@ func flattenTimestreamTable(d *schema.ResourceData, c *duplosdk.Client, duplo *d
 	d.Set("tenant_id", tenantId)
 	d.Set("name", duplo.TableName)
 	d.Set("arn", duplo.Arn)
-	d.Set("all_tags", keyValueToState("all_tags", duplo.Tags))
-	// Build a list of current state, to replace the user-supplied tags simmilar to infra settings.
-	if v, ok := getAsStringArray(d, "specified_tags"); ok && v != nil {
-		d.Set("tags", keyValueToState("tags", selectKeyValues(duplo.Tags, *v)))
-	} else {
-		d.Set("specified_tags", make([]interface{}, 0))
-	}
+
+	flattenTfManagedDuploKeyStringValues("tags", d, duplo.Tags)
 
 	if err := d.Set("retention_properties", flattenRetentionProperties(duplo.RetentionProperties)); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting retention_properties: %w", err))
@@ -541,49 +540,4 @@ func timestreamTableWaitUntilActive(ctx context.Context, c *duplosdk.Client, ten
 	log.Printf("[DEBUG] timestreamTableWaitUntilActive(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
-}
-
-func getChangesTimestreamTags(all *[]duplosdk.DuploKeyStringValue, d *schema.ResourceData) (newTags *[]duplosdk.DuploKeyStringValue, deletedKeys []string) {
-	log.Printf("[TRACE]  Tags getChangesTimestreamTags : start")
-	// tracked specified_* - similar to duplo infra setting, config, plan, metadata, cert etc
-	var existing *[]duplosdk.DuploKeyStringValue
-	var existingKeys []string
-	if v, ok := getAsStringArray(d, "specified_tags"); ok && v != nil {
-		existing = selectKeyValues(all, *v)
-		existingKeys = *v
-	} else {
-		existing = &[]duplosdk.DuploKeyStringValue{}
-	}
-
-	newTags = keyValueFromState("tags", d)
-	if newTags != nil {
-		specified := make([]string, len(*newTags))
-		for i, kv := range *newTags {
-			specified[i] = kv.Key
-		}
-		d.Set("specified_tags", specified)
-	}
-
-	present := map[string]struct{}{}
-	if newTags != nil {
-		for _, kv := range *newTags {
-			present[kv.Key] = struct{}{}
-		}
-	}
-	// Finally, delete any keys that are no longer present.
-	deletedKeys = []string{}
-	if existing != nil {
-		if newTags == nil {
-			deletedKeys = existingKeys
-		} else {
-			for _, kv := range *existing {
-				if _, ok := present[kv.Key]; !ok {
-					deletedKeys = append(deletedKeys, kv.Key)
-				}
-			}
-		}
-	}
-
-	log.Printf("[TRACE]  Tags getChangesTimestreamTags: end")
-	return
 }

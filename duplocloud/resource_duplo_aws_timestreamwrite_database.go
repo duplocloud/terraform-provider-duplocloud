@@ -162,7 +162,7 @@ func resourceAwsTimestreamDatabaseUpdate(ctx context.Context, d *schema.Resource
 		if err != nil {
 			return diag.Errorf("failed to retrieve tags  for '%s': %s", "tags", err)
 		}
-		newTags, deletedKeys := getChangesTimestreamTags(duplo.Tags, d)
+		newTags, deletedKeys := getTfManagedChangesDuploKeyStringValue("tags", duplo.Tags, d)
 		rq.UpdatedTags = newTags
 		rq.DeletedTags = deletedKeys
 	}
@@ -242,12 +242,7 @@ func flattenTimestreamDatabase(d *schema.ResourceData, c *duplosdk.Client, duplo
 	d.Set("table_count", duplo.TableCount)
 	d.Set("kms_key_id", duplo.KmsKeyId)
 
-	d.Set("all_tags", keyValueToState("all_tags", duplo.Tags))
-	if v, ok := getAsStringArray(d, "specified_tags"); ok && v != nil {
-		d.Set("tags", keyValueToState("tags", selectKeyValues(duplo.Tags, *v)))
-	} else {
-		d.Set("specified_tags", make([]interface{}, 0))
-	}
+	flattenTfManagedDuploKeyStringValues("tags", d, duplo.Tags)
 
 	return nil
 }
