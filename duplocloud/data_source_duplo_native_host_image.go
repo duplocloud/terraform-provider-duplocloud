@@ -2,7 +2,6 @@ package duplocloud
 
 import (
 	"context"
-	"errors"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -37,6 +36,10 @@ func nativeHostImageSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"arch": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 		"is_kubernetes": {
 			Type:     schema.TypeBool,
 			Computed: true,
@@ -57,6 +60,7 @@ func nativeHostImageDataSourceSchema(single bool) map[string]*schema.Schema {
 	if single {
 		result = img
 		result["name"].Optional = true
+		result["arch"].Optional = true
 		result["is_kubernetes"].Optional = true
 
 		// For a list of images, move the list under the result key.
@@ -86,7 +90,7 @@ func nativeHostImageDataSourceSchema(single bool) map[string]*schema.Schema {
 
 func dataSourceNativeHostImages() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_native_host_images retrieves a list of applicable images for a given tenant.",
+		Description: "`duplocloud_native_host_images` retrieves a list of applicable images for a given tenant.",
 
 		ReadContext: dataSourceNativeHostImagesRead,
 		Schema:      nativeHostImageDataSourceSchema(false),
@@ -129,13 +133,14 @@ func dataSourceNativeHostImageRead(ctx context.Context, d *schema.ResourceData, 
 	// Parse the identifying attributes
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
+	arch := d.Get("arch").(string)
 	isKubernetes := d.Get("is_kubernetes").(bool)
 
 	log.Printf("[TRACE] dataSourceNativeHostImageRead(%s): start", tenantID)
 
 	// Get the plan image from Duplo.
 	c := m.(*duplosdk.Client)
-	image, diags := getNativeHostImage(c, tenantID, name, isKubernetes)
+	image, diags := getNativeHostImage(c, tenantID, name, arch, isKubernetes)
 	if diags != nil {
 		return diags
 	}
@@ -148,6 +153,7 @@ func dataSourceNativeHostImageRead(ctx context.Context, d *schema.ResourceData, 
 	d.Set("username", image.Username)
 	d.Set("region", image.Region)
 	d.Set("k8s_version", image.K8sVersion)
+	d.Set("arch", image.Arch)
 	d.Set("is_kubernetes", image.K8sVersion != "")
 	d.Set("tags", keyValueToState("images[].tags", image.Tags))
 
@@ -156,22 +162,34 @@ func dataSourceNativeHostImageRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 func getNativeHostImages(c *duplosdk.Client, tenantID string) (*[]duplosdk.DuploNativeHostImage, diag.Diagnostics) {
-	var err error
+	var err duplosdk.ClientError
 
+	// First, try the newer method of getting the plan images.
 	duplo, err := c.NativeHostImageGetList(tenantID)
-	if duplo == nil && err == nil {
-		err = errors.New("no images were returned")
+	if err != nil && !err.PossibleMissingAPI() {
+		return nil, diag.Errorf("failed to retrieve native host images for '/%s': %s", tenantID, err)
 	}
-	if err != nil {
-		return nil, diag.Errorf("failed to retrieve native host images for '%s': %s", tenantID, err)
+
+	// If it failed, try the fallback method.
+	if duplo == nil {
+		duplo, err := c.LegacyNativeHostImageGetList(tenantID)
+		if duplo == nil && err == nil {
+			return nil, diag.Errorf("no images were returned")
+		}
+		if err != nil {
+			return nil, diag.Errorf("failed to retrieve native host images for '%s': %s", tenantID, err)
+		}
 	}
 
 	return duplo, nil
 }
 
-func getNativeHostImage(c *duplosdk.Client, tenantID, name string, isKubernetes bool) (*duplosdk.DuploNativeHostImage, diag.Diagnostics) {
+func getNativeHostImage(c *duplosdk.Client, tenantID, name, arch string, isKubernetes bool) (*duplosdk.DuploNativeHostImage, diag.Diagnostics) {
 
 	// First, validate parameters.
+	if arch == "" {
+		arch = "amd64"
+	}
 	if name == "" && !isKubernetes {
 		return nil, diag.Errorf("must query by name or is_kubernetes")
 	}
@@ -185,7 +203,7 @@ func getNativeHostImage(c *duplosdk.Client, tenantID, name string, isKubernetes 
 	// Finally, return the matching image.
 	for _, v := range *list {
 		if isKubernetes {
-			if v.K8sVersion != "" {
+			if v.K8sVersion != "" && (v.Arch == "" || v.Arch == arch) {
 				return &v, nil
 			}
 		} else if name == v.Name {
@@ -207,6 +225,7 @@ func flattenNativeHostImages(list *[]duplosdk.DuploNativeHostImage) []interface{
 			"username":      image.Username,
 			"region":        image.Region,
 			"k8s_version":   image.K8sVersion,
+			"arch":          image.Arch,
 			"is_kubernetes": image.K8sVersion != "",
 			"tags":          keyValueToState("images[].tags", image.Tags),
 		})

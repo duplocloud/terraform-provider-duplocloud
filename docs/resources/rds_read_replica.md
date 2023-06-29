@@ -52,6 +52,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 
 ### Optional
 
+- **availability_zone** (String) The AZ for the RDS instance.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
