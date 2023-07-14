@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"strings"
@@ -63,6 +64,13 @@ func awsLoadBalancerSchema() map[string]*schema.Schema {
 		},
 		"drop_invalid_headers": {
 			Description:      "Whether or not the load balancer should drop invalid HTTP headers. Only valid for Load Balancers of type `Application`",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: suppressIfLBType("Network"),
+		},
+		"http_to_https_redirect": {
+			Description:      "Whether or not the load balancer should redirect HTTP to HTTPS. Only valid for Load Balancers of type `Application`",
 			Type:             schema.TypeBool,
 			Optional:         true,
 			Computed:         true,
@@ -138,7 +146,8 @@ func resourceAwsLoadBalancerRead(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	// Next, get the load balancer settings.
-	settings, err := c.TenantGetApplicationLbSettings(tenantID, duplo.Arn)
+	loadBalancerID := base64.URLEncoding.EncodeToString([]byte(duplo.Arn))
+	settings, err := c.TenantGetLbSettings(tenantID, loadBalancerID)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve tenant %s load balancer '%s' WAF: %s", tenantID, name, err)
 	}
@@ -198,16 +207,26 @@ func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	// apply load balancer settings
 	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** update settings: start")
-	settingsRq := duplosdk.DuploAwsLbSettingsUpdateRequest{
-		LoadBalancerArn:    d.Get("arn").(string),
-		EnableAccessLogs:   d.Get("enable_access_logs").(bool),
-		DropInvalidHeaders: d.Get("drop_invalid_headers").(bool),
-		WebACLID:           d.Get("web_acl_id").(string),
-		IdleTimeout:        d.Get("idle_timeout").(int),
+	loadBalancerARN := d.Get("arn").(string)
+	loadBalancerID := base64.URLEncoding.EncodeToString([]byte(loadBalancerARN))
+	securityPolicyId := d.Get("web_acl_id").(string)
+	enableAccessLogs := d.Get("enable_access_logs").(bool)
+	enableHttpToHttpsRedirect := d.Get("http_to_https_redirect").(bool)
+	settingsRq := duplosdk.AgnosticLbSettings{
+		Cloud:                     0,
+		NativeId:                  loadBalancerARN,
+		LoadBalancerId:            loadBalancerID,
+		SecurityPolicyId:          &securityPolicyId,
+		EnableAccessLogs:          &enableAccessLogs,
+		EnableHttpToHttpsRedirect: &enableHttpToHttpsRedirect,
+		Timeout:                   d.Get("idle_timeout").(int),
+		Aws: &duplosdk.AgnosticLbSettingsAws{
+			DropInvalidHeaders: d.Get("drop_invalid_headers").(bool),
+		},
 	}
-	err := c.TenantUpdateApplicationLbSettings(tenantID, settingsRq)
+	_, err := c.TenantUpdateLbSettings(tenantID, loadBalancerID, &settingsRq)
 	if err != nil {
-		return diag.Errorf("Error configuring load balancer %s settings: %s", settingsRq.LoadBalancerArn, err)
+		return diag.Errorf("Error configuring load balancer %s settings: %s", loadBalancerARN, err)
 	}
 	log.Printf("[TRACE] resourceAwsLoadBalancerUpdate ******** update settings: end")
 
@@ -216,9 +235,9 @@ func resourceAwsLoadBalancerUpdate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.Errorf("Error retrieving load balancer '%s/%s': %s", tenantID, name, err)
 	}
-	settings, err := c.TenantGetApplicationLbSettings(tenantID, settingsRq.LoadBalancerArn)
+	settings, err := c.TenantGetLbSettings(tenantID, loadBalancerID)
 	if err != nil {
-		return diag.Errorf("Error retrieving load balancer %s settings: %s", settingsRq.LoadBalancerArn, err)
+		return diag.Errorf("Error retrieving load balancer %s settings: %s", loadBalancerARN, err)
 	}
 	resourceAwsLoadBalancerSetData(d, tenantID, name, resource, settings)
 
@@ -251,7 +270,7 @@ func resourceAwsLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploApplicationLB, settings *duplosdk.DuploAwsLbSettings) {
+func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploApplicationLB, settings *duplosdk.AgnosticLbSettings) {
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("fullname", duplo.Name)
@@ -260,10 +279,27 @@ func resourceAwsLoadBalancerSetData(d *schema.ResourceData, tenantID string, nam
 	}
 	d.Set("arn", duplo.Arn)
 	d.Set("is_internal", duplo.IsInternal)
-	d.Set("enable_access_logs", settings.EnableAccessLogs)
-	d.Set("drop_invalid_headers", settings.DropInvalidHeaders)
-	d.Set("idle_timeout", settings.IdleTimeout)
-	d.Set("web_acl_id", settings.WebACLID)
+	if settings.EnableAccessLogs == nil {
+		d.Set("enable_access_logs", false)
+	} else {
+		d.Set("enable_access_logs", *settings.EnableAccessLogs)
+	}
+	if settings.EnableHttpToHttpsRedirect == nil {
+		d.Set("http_to_https_redirect", false)
+	} else {
+		d.Set("http_to_https_redirect", *settings.EnableHttpToHttpsRedirect)
+	}
+	if settings.Aws == nil {
+		d.Set("drop_invalid_headers", false)
+	} else {
+		d.Set("drop_invalid_headers", settings.Aws.DropInvalidHeaders)
+	}
+	d.Set("idle_timeout", settings.Timeout)
+	if settings.SecurityPolicyId == nil {
+		d.Set("web_acl_id", "")
+	} else {
+		d.Set("web_acl_id", *settings.SecurityPolicyId)
+	}
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("dns_name", duplo.DNSName)
 }
