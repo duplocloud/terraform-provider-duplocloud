@@ -3,12 +3,12 @@
 page_title: "duplocloud_native_host_images Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  `duplocloudnativehost_images retrieves a list of applicable images for a given tenant.
+  duplocloud_native_host_images retrieves a list of applicable images for a given tenant.
 ---
 
 # duplocloud_native_host_images (Data Source)
 
-`duplocloud_native_host_images retrieves a list of applicable images for a given tenant.
+`duplocloud_native_host_images` retrieves a list of applicable images for a given tenant.
 
 
 
@@ -29,6 +29,7 @@ description: |-
 
 Read-Only:
 
+- **arch** (String)
 - **image_id** (String)
 - **is_kubernetes** (Boolean)
 - **k8s_version** (String)

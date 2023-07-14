@@ -385,7 +385,7 @@ func readDuploServiceAwsLbSettings(tenantID string, rpc *duplosdk.DuploReplicati
 }
 
 func updateDuploServiceAwsLbSettings(tenantID string, details *duplosdk.DuploAwsLbDetailsInService, d *schema.ResourceData, c *duplosdk.Client) duplosdk.ClientError {
-
+	log.Printf("[TRACE] updateDuploServiceAwsLbSettings(%s): start", tenantID)
 	// Get any load balancer settings from the user.
 	settings := &duplosdk.AgnosticLbSettings{
 		Aws: &duplosdk.AgnosticLbSettingsAws{},
@@ -405,6 +405,7 @@ func updateDuploServiceAwsLbSettings(tenantID string, details *duplosdk.DuploAws
 		settings.EnableHttpToHttpsRedirect = &enableHttpToHttpsRedirect
 		haveSettings = true
 	}
+
 	if v, ok := d.GetOk("idle_timeout"); ok && v != nil {
 		settings.Timeout = v.(int)
 		haveSettings = true
@@ -414,7 +415,6 @@ func updateDuploServiceAwsLbSettings(tenantID string, details *duplosdk.DuploAws
 		settings.SecurityPolicyId = &securityPolicyID
 		haveSettings = true
 	}
-
 	// If we have load balancer settings, apply them.
 	if haveSettings {
 		loadBalancerID := base64.URLEncoding.EncodeToString([]byte(details.LoadBalancerArn))
@@ -423,7 +423,7 @@ func updateDuploServiceAwsLbSettings(tenantID string, details *duplosdk.DuploAws
 			return err
 		}
 	}
-
+	log.Printf("[TRACE] updateDuploServiceAwsLbSettings(%s): end", tenantID)
 	return nil
 }
 

@@ -57,6 +57,12 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS read replica types must start with 'db.'"),
 		},
+		"availability_zone": {
+			Description: "The AZ for the RDS instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+		},
 		"identifier": {
 			Description: "The full name of the RDS read replica.",
 			Type:        schema.TypeString,
@@ -181,7 +187,8 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	c := m.(*duplosdk.Client)
 
 	// Get RDS writer instance
-	idParts := strings.SplitN(duplo.ClusterIdentifier, "-cluster", 2)
+	identifier := d.Get("cluster_identifier").(string)
+	idParts := strings.SplitN(identifier, "-cluster", 2)
 	name := strings.TrimPrefix(idParts[0], "duplo")
 	duploWriterInstance, err := c.RdsInstanceGetByName(tenantID, name)
 	if err != nil {
@@ -190,6 +197,11 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	duplo.Identifier = duplo.Name
 	duplo.Engine = duploWriterInstance.Engine
 	duplo.Cloud = duploWriterInstance.Cloud
+	if strings.HasSuffix(identifier, "-cluster") {
+		duplo.ClusterIdentifier = identifier
+	} else {
+		duplo.ReplicationSourceIdentifier = identifier
+	}
 	id := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, duplo.Name)
 
 	// Validate the RDS instance.
@@ -289,7 +301,7 @@ func rdsReadReplicaFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance
 	duploObject.Name = d.Get("name").(string)
 	duploObject.Identifier = d.Get("name").(string)
 	duploObject.SizeEx = d.Get("size").(string)
-	duploObject.ClusterIdentifier = d.Get("cluster_identifier").(string)
+	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
 	return duploObject, nil
 }
 
@@ -319,11 +331,17 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 	jo["engine"] = duploObject.Engine
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["size"] = duploObject.SizeEx
+	jo["availability_zone"] = duploObject.AvailabilityZone
 	jo["encrypt_storage"] = duploObject.EncryptStorage
 	jo["kms_key_id"] = duploObject.EncryptionKmsKeyId
 	jo["enable_logging"] = duploObject.EnableLogging
 	jo["multi_az"] = duploObject.MultiAZ
 	jo["replica_status"] = duploObject.InstanceStatus
+	clusterIdentifier := duploObject.ClusterIdentifier
+	if len(clusterIdentifier) == 0 {
+		clusterIdentifier = duploObject.ReplicationSourceIdentifier
+	}
+	jo["cluster_identifier"] = clusterIdentifier
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)

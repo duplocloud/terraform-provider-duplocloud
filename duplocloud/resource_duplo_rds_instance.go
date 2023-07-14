@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -205,6 +206,26 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"v2_scaling_configuration": {
+			Description: "Serverless v2_scaling_configuration min and max scalling capacity.",
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"min_capacity": {
+						Description: "Specifies min scalling capacity.",
+						Type:        schema.TypeFloat,
+						Required:    true,
+					},
+					"max_capacity": {
+						Description: "Specifies max scalling capacity.",
+						Type:        schema.TypeFloat,
+						Required:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -332,12 +353,42 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
-	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** start")
-
-	// Request the password change in Duplo
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 	id := d.Id()
+
+	size := d.Get("size").(string)
+	if d.HasChange("v2_scaling_configuration") && size == "db.serverless" {
+		// Request Aurora serverless V2 instance-size change
+		if v, ok := d.GetOk("v2_scaling_configuration"); ok {
+			log.Printf("[TRACE] DuploRdsModifyAuroraV2ServerlessInstanceSize ******** start")
+			err = c.RdsModifyAuroraV2ServerlessInstanceSize(tenantID, duplosdk.DuploRdsModifyAuroraV2ServerlessInstanceSize{
+				Identifier:             d.Get("identifier").(string),
+				ClusterIdentifier:      d.Get("identifier").(string) + "-cluster",
+				SizeEx:                 size,
+				ApplyImmediately:       true,
+				V2ScalingConfiguration: expandV2ScalingConfiguration(v.([]interface{})),
+			})
+		}
+
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Wait for the instance to become available.
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 7*time.Minute)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+		}
+
+		// in-case timed out. check one more time .. aurora cluster takes long time to update and backup
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 3*time.Minute)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+		}
+	}
+
+	// Request the password change in Duplo
 	err = c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
 		Identifier:     d.Get("identifier").(string),
 		MasterPassword: d.Get("master_password").(string),
@@ -500,8 +551,32 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.EnableLogging = d.Get("enable_logging").(bool)
 	duploObject.MultiAZ = d.Get("multi_az").(bool)
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
+	if v, ok := d.GetOk("v2_scaling_configuration"); ok {
+		duploObject.V2ScalingConfiguration = expandV2ScalingConfiguration(v.([]interface{}))
+	}
+	if duploObject.SizeEx == "db.serverless" && duploObject.V2ScalingConfiguration == nil {
+		return nil, errors.New("v2_scaling_configuration: min_capacity and max_capacity must be provided")
+	}
 
 	return duploObject, nil
+}
+
+func expandV2ScalingConfiguration(cfg []interface{}) *duplosdk.V2ScalingConfiguration {
+	if len(cfg) < 1 {
+		return nil
+	}
+	out := &duplosdk.V2ScalingConfiguration{}
+	m := cfg[0].(map[string]interface{})
+	if v, ok := m["min_capacity"]; ok {
+		out.MinCapacity = v.(float64)
+	}
+	if v, ok := m["max_capacity"]; ok {
+		out.MaxCapacity = v.(float64)
+	}
+	if out.MinCapacity == 0 || out.MaxCapacity == 0 {
+		return nil
+	}
+	return out
 }
 
 // RdsInstanceToState converts a Duplo SDK object respresenting an RDS instance to terraform resource data.
@@ -520,7 +595,11 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["identifier"] = duploObject.Identifier
 	jo["arn"] = duploObject.Arn
 	jo["endpoint"] = duploObject.Endpoint
-	jo["cluster_identifier"] = duploObject.ClusterIdentifier
+	clusterIdentifier := duploObject.ClusterIdentifier
+	if len(clusterIdentifier) == 0 {
+		clusterIdentifier = duploObject.Identifier
+	}
+	jo["cluster_identifier"] = clusterIdentifier
 
 	if duploObject.Endpoint != "" {
 		uriParts := strings.SplitN(duploObject.Endpoint, ":", 2)
@@ -543,6 +622,12 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["enable_logging"] = duploObject.EnableLogging
 	jo["multi_az"] = duploObject.MultiAZ
 	jo["instance_status"] = duploObject.InstanceStatus
+	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 {
+		d.Set("v2_scaling_configuration", []map[string]interface{}{{
+			"min_capacity": duploObject.V2ScalingConfiguration.MinCapacity,
+			"max_capacity": duploObject.V2ScalingConfiguration.MaxCapacity,
+		}})
+	}
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)

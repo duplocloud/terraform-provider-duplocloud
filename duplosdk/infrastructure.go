@@ -244,7 +244,7 @@ func (c *Client) InfrastructureGetConfig(name string) (*DuploInfrastructureConfi
 // InfrastructureGetSetting retrieves tenant configuration metadata via the Duplo API.
 func (c *Client) InfrastructureGetSetting(infraName string) (*DuploInfrastructureSetting, ClientError) {
 	config, err := c.InfrastructureGetConfig(infraName)
-	if err != nil {
+	if config == nil || err != nil {
 		return nil, err
 	}
 	return &DuploInfrastructureSetting{InfraName: config.Name, CustomData: config.CustomData}, nil

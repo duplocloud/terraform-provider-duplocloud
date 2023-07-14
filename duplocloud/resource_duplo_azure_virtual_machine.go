@@ -54,6 +54,22 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"ad_domain_type": {
+			Description: "Specify domain service provided by Microsoft Azure for managing identities and access in the cloud. Valid values are `aadjoin` or `addsjoin`.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"aadjoin",
+				"addsjoin",
+			}, false),
+		},
+		"timezone": {
+			Description: "Specifies the time zone of the virtual machine, [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/).",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+		},
 		"enable_log_analytics": {
 			Description: "Enable log analytics on virtual machine.",
 			Type:        schema.TypeBool,
@@ -70,7 +86,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Description: "The numeric ID of the container agent pool that this host is added to.",
 			Type:        schema.TypeInt,
 			Optional:    true,
-			ForceNew:    true,
 			Default:     0,
 		},
 		"subnet_id": {
@@ -102,7 +117,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
-			ForceNew:    true,
 		},
 		"encrypt_disk": {
 			Type:     schema.TypeBool,
@@ -115,6 +129,20 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
+		},
+		"os_disk_type": {
+			Description: "Specifies the type of managed disk to create. Possible values are either `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_ZRS` or `UltraSSD_LRS`.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"Standard_LRS",
+				"StandardSSD_LRS",
+				"Premium_LRS",
+				"PremiumV2_LRS",
+				"StandardSSD_ZRS",
+				"UltraSSD_LRS",
+			}, true),
 		},
 		"status": {
 			Description: "The current status of the host.",
@@ -137,7 +165,6 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
-			ForceNew:    true, // relaunch instance
 			Elem:        KeyValueSchema(),
 		},
 		"volume": {
@@ -357,34 +384,62 @@ func resourceAzureVirtualMachineDelete(ctx context.Context, d *schema.ResourceDa
 }
 
 func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost {
-	diskSizeKV, usernameKV, passwordKV := duplosdk.DuploKeyStringValue{}, duplosdk.DuploKeyStringValue{},
-		duplosdk.DuploKeyStringValue{}
-
+	metadata := []duplosdk.DuploKeyStringValue{}
 	if v, ok := d.GetOk("disk_size_gb"); ok {
-		diskSizeKV = duplosdk.DuploKeyStringValue{
+		metadata = append(metadata, duplosdk.DuploKeyStringValue{
 			Key:   "OsDiskSize",
 			Value: strconv.Itoa(v.(int)),
-		}
+		})
+	}
+	if v, ok := d.GetOk("os_disk_type"); ok && v != nil && v.(string) != "" {
+		metadata = append(metadata, duplosdk.DuploKeyStringValue{
+			Key:   "OsDiskType",
+			Value: v.(string),
+		})
 	}
 	if v, ok := d.GetOk("admin_username"); ok && v != nil && v.(string) != "" {
-		usernameKV = duplosdk.DuploKeyStringValue{
+		metadata = append(metadata, duplosdk.DuploKeyStringValue{
 			Key:   "Username",
 			Value: v.(string),
-		}
+		})
 	}
 	if v, ok := d.GetOk("admin_password"); ok && v != nil && v.(string) != "" {
-		passwordKV = duplosdk.DuploKeyStringValue{
+		metadata = append(metadata, duplosdk.DuploKeyStringValue{
 			Key:   "Password",
 			Value: v.(string),
+		})
+	}
+	if v, ok := d.GetOk("ad_domain_type"); ok && v != nil && v.(string) != "" {
+		if v.(string) == "aadjoin" {
+			metadata = append(metadata, duplosdk.DuploKeyStringValue{
+				Key:   "JoinAADDomain",
+				Value: "true",
+			})
+		} else {
+			metadata = append(metadata, duplosdk.DuploKeyStringValue{
+				Key:   "JoinDomain",
+				Value: "true",
+			})
 		}
+
 	}
-	joinDomainKV := duplosdk.DuploKeyStringValue{
-		Key:   "JoinDomain",
-		Value: strconv.FormatBool(d.Get("join_domain").(bool)),
+	if v, ok := d.GetOk("join_domain"); ok && v != nil {
+		metadata = append(metadata, duplosdk.DuploKeyStringValue{
+			Key:   "JoinDomain",
+			Value: strconv.FormatBool(d.Get("join_domain").(bool)),
+		})
 	}
-	logAnalyticKV := duplosdk.DuploKeyStringValue{
-		Key:   "JoinLogAnalytics",
-		Value: strconv.FormatBool(d.Get("enable_log_analytics").(bool)),
+	if v, ok := d.GetOk("enable_log_analytics"); ok && v != nil {
+		metadata = append(metadata, duplosdk.DuploKeyStringValue{
+			Key:   "JoinLogAnalytics",
+			Value: strconv.FormatBool(d.Get("enable_log_analytics").(bool)),
+		})
+	}
+	if v, ok := d.GetOk("timezone"); ok && v != nil && v.(string) != "" {
+		metadata = append(metadata, duplosdk.DuploKeyStringValue{
+			Key:   "Timezone",
+			Value: v.(string),
+		})
 	}
 	return &duplosdk.DuploNativeHost{
 		TenantID:          d.Get("tenant_id").(string),
@@ -398,12 +453,10 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 		AllocatedPublicIP: d.Get("allocated_public_ip").(bool),
 		Cloud:             2, // For Azure
 		EncryptDisk:       d.Get("encrypt_disk").(bool),
-		MetaData: &[]duplosdk.DuploKeyStringValue{
-			diskSizeKV, usernameKV, passwordKV, joinDomainKV, logAnalyticKV,
-		},
-		TagsEx:     keyValueFromState("tags", d),
-		MinionTags: keyValueFromState("minion_tags", d),
-		Volumes:    expandAzureNativeHostVolumes("volume", d),
+		MetaData:          &metadata,
+		TagsEx:            keyValueFromState("tags", d),
+		MinionTags:        keyValueFromState("minion_tags", d),
+		Volumes:           expandAzureNativeHostVolumes("volume", d),
 		NetworkInterfaces: &[]duplosdk.DuploNativeHostNetworkInterface{
 			{
 				SubnetID: d.Get("subnet_id").(string),
@@ -418,8 +471,8 @@ func expandAzureNativeHostVolumes(key string, d *schema.ResourceData) *[]duplosd
 	if rawlist, ok := d.GetOk(key); ok && rawlist != nil && len(rawlist.([]interface{})) > 0 {
 		volumes := rawlist.([]interface{})
 
-		result = make([]duplosdk.DuploNativeHostVolume, 0, len(volumes))
 		for _, raw := range volumes {
+			result = make([]duplosdk.DuploNativeHostVolume, 0, len(volumes))
 			volume := raw.(map[string]interface{})
 
 			duplo := duplosdk.DuploNativeHostVolume{}
@@ -516,7 +569,10 @@ func virtualMachineWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenan
 
 func needsAzureVMUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("join_domain") ||
+		d.HasChange("ad_domain_type") ||
 		d.HasChange("enable_log_analytics") ||
+		d.HasChange("timezone") ||
 		d.HasChange("disk_size_gb") ||
+		d.HasChange("os_disk_type") ||
 		d.HasChange("volume")
 }

@@ -62,6 +62,7 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 
 ### Optional
 
+- **ad_domain_type** (String) Specify domain service provided by Microsoft Azure for managing identities and access in the cloud. Valid values are `aadjoin` or `addsjoin`.
 - **admin_password** (String, Sensitive) The password associated with the local administrator account.
 - **agent_platform** (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
 - **allocated_public_ip** (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
@@ -72,8 +73,10 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 - **is_minion** (Boolean) Defaults to `true`.
 - **join_domain** (Boolean) Join a Windows Server virtual machine to an Azure Active Directory Domain Services. Defaults to `false`.
 - **minion_tags** (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
+- **os_disk_type** (String) Specifies the type of managed disk to create. Possible values are either `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_ZRS` or `UltraSSD_LRS`.
 - **tags** (Block List) (see [below for nested schema](#nestedblock--tags))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **timezone** (String) Specifies the time zone of the virtual machine, [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/).
 - **volume** (Block List) (see [below for nested schema](#nestedblock--volume))
 - **wait_until_ready** (Boolean) Whether or not to wait until azure virtual machine to be ready, after creation. Defaults to `true`.
 

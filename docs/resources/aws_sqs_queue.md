@@ -19,9 +19,12 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 resource "duplocloud_aws_sqs_queue" "sqs_queue" {
-  tenant_id  = duplocloud_tenant.myapp.tenant_id
-  name       = "duplo_queue"
-  fifo_queue = true
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
+  name                        = "duplo_queue"
+  fifo_queue                  = true
+  message_retention_seconds   = 345600
+  visibility_timeout_seconds  = 30
+  content_based_deduplication = true
 }
 ```
 
@@ -35,8 +38,13 @@ resource "duplocloud_aws_sqs_queue" "sqs_queue" {
 
 ### Optional
 
+- **content_based_deduplication** (Boolean) Enables content-based deduplication for FIFO queues.
+- **deduplication_scope** (String) Specifies whether message deduplication occurs at the message group or queue level. Valid values are `messageGroup` and `queue`.
 - **fifo_queue** (Boolean) Boolean designating a FIFO queue. If not set, it defaults to `false` making it standard.
+- **fifo_throughput_limit** (String) Specifies whether the FIFO queue throughput quota applies to the entire queue or per message group. Valid values are `perQueue` (default) and `perMessageGroupId`.
+- **message_retention_seconds** (Number) The number of seconds Amazon SQS retains a message. Integer representing seconds, from 60 (1 minute) to 1209600 (14 days).
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **visibility_timeout_seconds** (Number) The visibility timeout for the queue. An integer from 0 to 43200 (12 hours).
 
 ### Read-Only
 

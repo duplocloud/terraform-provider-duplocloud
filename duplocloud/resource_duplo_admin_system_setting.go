@@ -69,6 +69,10 @@ func resourceAdminSystemSettingRead(ctx context.Context, d *schema.ResourceData,
 		}
 		return diag.Errorf("Unable to retrieve admin system setting %s of type %s : %s", key, keyType, clientErr)
 	}
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 
 	flattenAdminSystemSetting(d, duplo)
 

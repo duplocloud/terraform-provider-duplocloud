@@ -21,7 +21,6 @@ resource "duplocloud_tenant" "myapp" {
 // Generate a random password.
 resource "random_password" "mypassword" {
   length  = 16
-  number  = true
   special = false
 }
 
@@ -82,6 +81,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 - **snapshot_id** (String) A database snapshot to initialize the RDS instance from, at launch.
 - **store_details_in_secret_manager** (Boolean) Whether or not to store RDS details in the AWS secrets manager.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **v2_scaling_configuration** (Block List, Max: 1) Serverless v2_scaling_configuration min and max scalling capacity. (see [below for nested schema](#nestedblock--v2_scaling_configuration))
 
 ### Read-Only
 
@@ -102,6 +102,15 @@ Optional:
 - **create** (String)
 - **delete** (String)
 - **update** (String)
+
+
+<a id="nestedblock--v2_scaling_configuration"></a>
+### Nested Schema for `v2_scaling_configuration`
+
+Required:
+
+- **max_capacity** (Number) Specifies max scalling capacity.
+- **min_capacity** (Number) Specifies min scalling capacity.
 
 ## Import
 

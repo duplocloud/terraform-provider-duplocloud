@@ -32,7 +32,7 @@ type DuploNativeHost struct {
 	IsEbsOptimized     bool                               `json:"IsEbsOptimized"`
 	AllocatedPublicIP  bool                               `json:"AllocatedPublicIp,omitempty"`
 	Cloud              int                                `json:"Cloud"`
-	KeyPairType        int                                `json:"KeyPairType,omitempty"`
+	KeyPairType        int                                `json:"KeyPairType"`
 	EncryptDisk        bool                               `json:"EncryptDisk,omitempty"`
 	Status             string                             `json:"Status,omitempty"`
 	IdentityRole       string                             `json:"IdentityRole,omitempty"`
@@ -134,6 +134,7 @@ type DuploNativeHostImage struct {
 	Tags       *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	Username   string                 `json:"Username,omitempty"`
 	Region     string                 `json:"Region,omitempty"`
+	Arch       string                 `json:"Arch,omitempty"`
 	K8sVersion string                 `json:"K8sVersion,omitempty"`
 }
 
@@ -150,6 +151,15 @@ type UpdateAzureVirtualMachineSizeReq struct {
 
 // NativeHostImageGetList retrieves a list of native host images via the Duplo API.
 func (c *Client) NativeHostImageGetList(tenantID string) (*[]DuploNativeHostImage, ClientError) {
+	rp := []DuploNativeHostImage{}
+	err := c.getAPI(fmt.Sprintf("NativeHostImageGetList(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/nativeHostImages", tenantID),
+		&rp)
+	return &rp, err
+}
+
+// LegacyNativeHostImageGetList retrieves a list of native host images via the Duplo API.
+func (c *Client) LegacyNativeHostImageGetList(tenantID string) (*[]DuploNativeHostImage, ClientError) {
 	rp := []DuploNativeHostImage{}
 	err := c.getAPI(fmt.Sprintf("NativeHostImageGetList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetNativeHostImages", tenantID),

@@ -228,7 +228,16 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 	listenerArn := d.Get("arn").(string)
 	id := d.Id()
 
-	err := c.TenantDeleteApplicationLbListener(tenantId, lbFullName, listenerArn)
+	listeners, err := c.TenantListApplicationLbListeners(tenantId, d.Get("load_balancer_name").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if listeners != nil && len(*listeners) == 0 {
+		d.SetId("") // object missing
+		return nil
+	}
+
+	err = c.TenantDeleteApplicationLbListener(tenantId, lbFullName, listenerArn)
 	if err != nil {
 		return diag.Errorf("Error deleting load balancer listener '%s': %s", id, err)
 	}
@@ -248,12 +257,6 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 func expandAwsLoadBalancerListener(d *schema.ResourceData) duplosdk.DuploAwsLbListenerCreate {
 	log.Printf("[TRACE] expandAwsLoadBalancerListener - start")
 	targetArn := d.Get("target_group_arn").(string)
-	cert := duplosdk.DuploAwsLbListenerCertificate{
-		CertificateArn: d.Get("certificate_arn").(string),
-		IsDefault:      false,
-	}
-	certs := []duplosdk.DuploAwsLbListenerCertificate{cert}
-	log.Printf("[TRACE]  Certs : %+v -", certs)
 	action := duplosdk.DuploAwsLbListenerActionCreate{
 		TargetGroupArn: targetArn,
 		Type:           "Forward",
@@ -265,8 +268,17 @@ func expandAwsLoadBalancerListener(d *schema.ResourceData) duplosdk.DuploAwsLbLi
 	duploObject := duplosdk.DuploAwsLbListenerCreate{
 		Port:           d.Get("port").(int),
 		Protocol:       protocol,
-		Certificates:   certs,
 		DefaultActions: actions,
+	}
+	if v, ok := d.GetOk("certificate_arn"); ok && v != nil {
+		cert := duplosdk.DuploAwsLbListenerCertificate{
+			CertificateArn: v.(string),
+			IsDefault:      false,
+		}
+		certs := []duplosdk.DuploAwsLbListenerCertificate{cert}
+		log.Printf("[TRACE]  Certs : %+v -", certs)
+
+		duploObject.Certificates = certs
 	}
 	// data, err := json.Marshal(duploObject)
 	// if err != nil {
@@ -293,6 +305,7 @@ func flattenAwsLoadBalancerListener(d *schema.ResourceData, tenantID string, lbN
 			"arn":        duplo.Certificates[i].CertificateArn,
 			"is_default": duplo.Certificates[i].IsDefault,
 		})
+		d.Set("certificate_arn", duplo.Certificates[i].CertificateArn)
 	}
 
 	d.Set("certificates", certs)
@@ -307,6 +320,7 @@ func flattenAwsLoadBalancerListener(d *schema.ResourceData, tenantID string, lbN
 			action["type"] = duplo.DefaultActions[i].Type.Value
 		}
 		actions = append(actions, action)
+		d.Set("target_group_arn", duplo.DefaultActions[i].TargetGroupArn)
 	}
 
 	d.Set("default_actions", actions)

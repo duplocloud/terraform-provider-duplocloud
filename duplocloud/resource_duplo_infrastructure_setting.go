@@ -107,7 +107,10 @@ func resourceInfrastructureSettingCreateOrUpdate(ctx context.Context, d *schema.
 	c := m.(*duplosdk.Client)
 	config, err := c.InfrastructureGetSetting(infraName)
 	if err != nil {
-		return diag.Errorf("Error retrieving infrastructure settings for '%s': %s", infraName, err)
+		return diag.Errorf("Error retrieving infrastructure settings for '%s': %s.", infraName, err)
+	}
+	if config == nil {
+		return diag.Errorf("Error retrieving infrastructure config for '%s'. Please check if infrastructure exists.", infraName)
 	}
 	var existing *[]duplosdk.DuploKeyStringValue
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
@@ -154,6 +157,10 @@ func resourceInfrastructureSettingDelete(ctx context.Context, d *schema.Resource
 		return diag.Errorf("Error fetching infrastructure settings for '%s': %s", infraName, err)
 	}
 
+	if all == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	// Get the previous and desired infrastructure settingss
 	previous, _ := getInfrastructureSettingChange(all.CustomData, d)
 	desired := &[]duplosdk.DuploKeyStringValue{}

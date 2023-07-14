@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.9.20" # RELEASE VERSION
+      version = "0.9.38" # RELEASE VERSION
       source  = "registry.terraform.io/duplocloud/duplocloud"
     }
     aws = {

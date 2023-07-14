@@ -62,6 +62,13 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Required:    true,
 		},
+		"custom_cidr": {
+			Description: "Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 		"is_infra_deployment": {
 			Type:     schema.TypeBool,
 			Computed: true,
@@ -311,7 +318,9 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 				if item.LbType == 5 {
 					item.HostNames = &[]string{lbc["host_name"].(string)}
 				}
-
+				if v, ok := lbc["custom_cidr"]; ok && v != nil && len(v.([]interface{})) > 0 && item.LbType == 6 {
+					item.CustomCidrs = expandStringList(v.([]interface{}))
+				}
 				list = append(list, item)
 			}
 		}
@@ -403,6 +412,10 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 			// Find a cloud load balancer, and get it's status.
 			isCloudLb := false
 			for _, lb := range *list {
+				if lb.LbType == 7 && len(lb.TgArn) == 0 {
+					return name, "pending", nil
+				}
+
 				if lb.LbType != 0 && lb.LbType != 2 && lb.LbType != 3 && lb.LbType != 4 && lb.LbType != 7 {
 					isCloudLb = true
 				}
@@ -454,12 +467,14 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"is_internal":                 lb.IsInternal,
 		"extra_selector_label":        keyValueToState("extra_selector_label", lb.ExtraSelectorLabels),
 		"target_group_arn":            lb.TgArn,
+		"custom_cidr":                 lb.CustomCidrs,
 	}
 
 	if lb.LbType == 5 && lb.HostNames != nil && len(*lb.HostNames) > 0 {
 		log.Printf("[DEBUG] HostNames... %v", lb.HostNames)
 		m["host_name"] = (*lb.HostNames)[0]
 	}
+
 	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... End")
 	return m
 }
