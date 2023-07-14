@@ -162,17 +162,16 @@ func dataSourceNativeHostImageRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 func getNativeHostImages(c *duplosdk.Client, tenantID string) (*[]duplosdk.DuploNativeHostImage, diag.Diagnostics) {
-	var err duplosdk.ClientError
 
 	// First, try the newer method of getting the plan images.
 	duplo, err := c.NativeHostImageGetList(tenantID)
 	if err != nil && !err.PossibleMissingAPI() {
-		return nil, diag.Errorf("failed to retrieve native host images for '/%s': %s", tenantID, err)
+		return nil, diag.Errorf("failed to retrieve native host images for '%s': %s", tenantID, err)
 	}
 
 	// If it failed, try the fallback method.
-	if duplo == nil {
-		duplo, err := c.LegacyNativeHostImageGetList(tenantID)
+	if duplo == nil || err != nil {
+		duplo, err = c.LegacyNativeHostImageGetList(tenantID)
 		if duplo == nil && err == nil {
 			return nil, diag.Errorf("no images were returned")
 		}
@@ -202,6 +201,7 @@ func getNativeHostImage(c *duplosdk.Client, tenantID, name, arch string, isKuber
 
 	// Finally, return the matching image.
 	for _, v := range *list {
+		v.Arch = ""
 		if isKubernetes {
 			if v.K8sVersion != "" && (v.Arch == "" || v.Arch == arch) {
 				return &v, nil
