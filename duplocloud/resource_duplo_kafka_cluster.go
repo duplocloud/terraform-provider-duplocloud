@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -227,7 +228,12 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 		}
 	}
 	if bootstrap != nil {
-		d.Set("plaintext_bootstrap_broker_string", bootstrap.BootstrapBrokerString)
+		// Sort the brokers so that the order is predictable.
+		brokers := strings.Split(bootstrap.BootstrapBrokerString, ",")
+		sort.Strings(brokers)
+		plaintextBootstrapBrokerString := strings.Join(brokers, ",")
+
+		d.Set("plaintext_bootstrap_broker_string", plaintextBootstrapBrokerString)
 		d.Set("tls_bootstrap_broker_string", bootstrap.BootstrapBrokerStringTls)
 	}
 	d.Set("state", info.State.Value)
