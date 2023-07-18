@@ -202,12 +202,13 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 	// Next, set fields that come from extended information.
 	if info != nil {
 		if info.BrokerNodeGroup != nil {
+			plaintextZookeeperConnectString := sortCommaDelimitedString(info.ZookeeperConnectString)
+			tlsZookeeperConnectString := sortCommaDelimitedString(info.ZookeeperConnectStringTls)
+
 			d.Set("instance_type", info.BrokerNodeGroup.InstanceType)
 			d.Set("storage_size", info.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize)
-
-			plaintextZookeeperConnectString := sortCommaDelimitedString(info.ZookeeperConnectString)
 			d.Set("plaintext_zookeeper_connect_string", plaintextZookeeperConnectString)
-			d.Set("tls_zookeeper_connect_string", info.ZookeeperConnectStringTls)
+			d.Set("tls_zookeeper_connect_string", tlsZookeeperConnectString)
 			d.Set("number_of_broker_nodes", info.NumberOfBrokerNodes)
 			if info.BrokerNodeGroup.AZDistribution != nil {
 				d.Set("az_distribution", info.BrokerNodeGroup.AZDistribution.Value)
