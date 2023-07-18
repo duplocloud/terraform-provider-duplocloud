@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sort"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -205,7 +204,9 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 		if info.BrokerNodeGroup != nil {
 			d.Set("instance_type", info.BrokerNodeGroup.InstanceType)
 			d.Set("storage_size", info.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize)
-			d.Set("plaintext_zookeeper_connect_string", info.ZookeeperConnectString)
+
+			plaintextZookeeperConnectString := sortCommaDelimitedString(info.ZookeeperConnectString)
+			d.Set("plaintext_zookeeper_connect_string", plaintextZookeeperConnectString)
 			d.Set("tls_zookeeper_connect_string", info.ZookeeperConnectStringTls)
 			d.Set("number_of_broker_nodes", info.NumberOfBrokerNodes)
 			if info.BrokerNodeGroup.AZDistribution != nil {
@@ -228,10 +229,7 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 		}
 	}
 	if bootstrap != nil {
-		// Sort the brokers so that the order is predictable.
-		brokers := strings.Split(bootstrap.BootstrapBrokerString, ",")
-		sort.Strings(brokers)
-		plaintextBootstrapBrokerString := strings.Join(brokers, ",")
+		plaintextBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerString)
 
 		d.Set("plaintext_bootstrap_broker_string", plaintextBootstrapBrokerString)
 		d.Set("tls_bootstrap_broker_string", bootstrap.BootstrapBrokerStringTls)
