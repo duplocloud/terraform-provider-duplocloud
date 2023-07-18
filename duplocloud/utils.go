@@ -795,3 +795,11 @@ func Contains(s []string, e string) bool {
 	}
 	return false
 }
+
+// Sorts a list of items in a comma-delimited string
+func sortCommaDelimitedString(commaDelimitedString string) string {
+	items := strings.Split(commaDelimitedString, ",")
+	sort.Strings(items)
+	sortedStringList := strings.Join(items, ",")
+	return sortedStringList
+}
