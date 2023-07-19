@@ -48,7 +48,6 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 		"configuration_arn": {
 			Description:  "An ARN of a Kafka configuration to apply to the cluster.",
 			Type:         schema.TypeString,
-			ForceNew:     true,
 			Optional:     true,
 			Computed:     true,
 			RequiredWith: []string{"configuration_revision"},
@@ -56,7 +55,6 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 		"configuration_revision": {
 			Description:  "An revision of a Kafka configuration to apply to the cluster.",
 			Type:         schema.TypeInt,
-			ForceNew:     true,
 			Optional:     true,
 			Computed:     true,
 			RequiredWith: []string{"configuration_arn"},
