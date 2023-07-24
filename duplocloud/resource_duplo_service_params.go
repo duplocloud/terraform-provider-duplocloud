@@ -239,7 +239,7 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 			if clientError.Status() == 500 && duplo.Template.Cloud != 0 {
 				log.Printf("[TRACE] Ignoring error %s for non AWS cloud.", clientError)
 			} else {
-				return diag.Errorf("Error applying LB settings for tenant %s service '%s': %s", tenantID, name, err)
+				return diag.Errorf("Error applying LB settings for tenant %s service '%s': %s", tenantID, name, clientError)
 			}
 		}
 	}

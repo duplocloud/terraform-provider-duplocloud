@@ -37,7 +37,7 @@ type AgnosticLbSettingsGcp struct {
 // TenantUpdateLbSettings updates a load balancer's settings via Duplo.
 func (c *Client) TenantUpdateLbSettings(tenantID, loadBalancerID string, rq *AgnosticLbSettings) (*AgnosticLbSettings, ClientError) {
 	rp := AgnosticLbSettings{}
-	err := c.postAPI("TenantUpdateLbSettings",
+	err := c.putAPI("TenantUpdateLbSettings",
 		fmt.Sprintf("v3/subscriptions/%s/agnostic/loadBalancer/%s/setting", tenantID, loadBalancerID),
 		&rq,
 		&rp)
