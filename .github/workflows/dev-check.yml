@@ -18,7 +18,7 @@ jobs:
         name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version: 1.20
       - 
         name: Run linting
         uses: golangci/golangci-lint-action@v3
@@ -34,7 +34,7 @@ jobs:
         name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16
+          go-version: 1.20
       - 
         name: Run formatting
         run: gofmt -s -w duplocloud duplosdk
