@@ -86,7 +86,7 @@ func resourceK8Secret() *schema.Resource {
 	}
 }
 
-// / READ resource
+// READ resource
 func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
@@ -111,7 +111,7 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-// / CREATE resource
+// CREATE resource
 func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("secret_name").(string)
@@ -137,7 +137,7 @@ func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m inter
 	return diags
 }
 
-// / UPDATE resource
+// UPDATE resource
 func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
@@ -164,7 +164,7 @@ func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	return diags
 }
 
-// / DELETE resource
+// DELETE resource
 func resourceK8SecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
