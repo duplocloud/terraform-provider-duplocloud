@@ -25,6 +25,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           only-new-issues: true  # Only show new issues for pull requests.
+          args: --timeout=5m
   format:
     runs-on: ubuntu-latest
     steps:
