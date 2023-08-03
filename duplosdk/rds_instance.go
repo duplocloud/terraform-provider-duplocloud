@@ -6,16 +6,16 @@ import (
 )
 
 const (
-	DUPLO_RDS_ENGINE_MYSQL                        = 0
-	DUPLO_RDS_ENGINE_POSTGRESQL                   = 1
-	DUPLO_RDS_ENGINE_MSSQL_EXPRESS                = 2
-	DUPLO_RDS_ENGINE_MSSQL_STANDARD               = 3
-	DUPLO_RDS_ENGINE_AURORA_MYSQL                 = 8
-	DUPLO_RDS_ENGINE_AURORA_POSTGRESQL            = 9
-	DUPLO_RDS_ENGINE_MSSQL_WEB                    = 10
-	DUPLO_RDS_ENGINE_AURORA_SERVERLESS_MYSQL      = 11
-	DUPLO_RDS_ENGINE_AURORA_SERVERLESS_POSTGRESQL = 12
-	DUPLO_RDS_ENGINE_DOCUMENTDB                   = 13
+	DuploRdsEngineMysql                      = 0
+	DuploRdsEnginePostgresSql                = 1
+	DuploRdsEngineMssqlExpress               = 2
+	DuploRdsEngineMssqlStandard              = 3
+	DuploRdsEngineAuroraMysql                = 8
+	DuploRdsEngineAuroraPostgresql           = 9
+	DuploRdsEngineMssqlWeb                   = 10
+	DuploRdsEngineAuroraServerlessMysql      = 11
+	DuploRdsEngineAuroraServerlessPostgresql = 12
+	DuploRdsEngineDocumentdb                 = 13
 )
 
 // DuploRdsInstance is a Duplo SDK object that represents an RDS instance
@@ -218,14 +218,14 @@ func (c *Client) RdsModifyAuroraV2ServerlessInstanceSize(tenantID string, duploO
 }
 
 func RdsIsAurora(engine int) bool {
-	return engine == DUPLO_RDS_ENGINE_AURORA_MYSQL ||
-		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL ||
-		engine == DUPLO_RDS_ENGINE_AURORA_SERVERLESS_MYSQL ||
-		engine == DUPLO_RDS_ENGINE_AURORA_SERVERLESS_POSTGRESQL
+	return engine == DuploRdsEngineAuroraMysql ||
+		engine == DuploRdsEngineAuroraPostgresql ||
+		engine == DuploRdsEngineAuroraServerlessMysql ||
+		engine == DuploRdsEngineAuroraServerlessPostgresql
 }
 
 func RdsIsMsSQL(engine int) bool {
-	return engine == DUPLO_RDS_ENGINE_MSSQL_EXPRESS ||
-		engine == DUPLO_RDS_ENGINE_MSSQL_STANDARD ||
-		engine == DUPLO_RDS_ENGINE_MSSQL_WEB
+	return engine == DuploRdsEngineMssqlExpress ||
+		engine == DuploRdsEngineMssqlStandard ||
+		engine == DuploRdsEngineMssqlWeb
 }

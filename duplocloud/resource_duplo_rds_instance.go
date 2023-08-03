@@ -581,7 +581,7 @@ func expandV2ScalingConfiguration(cfg []interface{}) *duplosdk.V2ScalingConfigur
 	return out
 }
 
-// RdsInstanceToState converts a Duplo SDK object respresenting an RDS instance to terraform resource data.
+// RdsInstanceToState converts a Duplo SDK object representing an RDS instance to terraform resource data.
 func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.ResourceData) map[string]interface{} {
 	if duploObject == nil {
 		return nil
@@ -638,19 +638,15 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 }
 
 func validateRdsInstance(duplo *duplosdk.DuploRdsInstance) (errors []error) {
-	if duplo.Engine == duplosdk.DUPLO_RDS_ENGINE_POSTGRESQL {
-
-		// PostgreSQL requires shorter usernames.
+	switch duplo.Engine {
+	case duplosdk.DuploRdsEnginePostgresSql:
 		if duplo.MasterUsername != "" {
 			length := utf8.RuneCountInString(duplo.MasterUsername)
 			if length < 1 || length > 63 {
 				errors = append(errors, fmt.Errorf("PostgreSQL requires the 'master_username' to be between 1 and 63 characters"))
 			}
 		}
-
-	} else if duplo.Engine == duplosdk.DUPLO_RDS_ENGINE_MYSQL {
-
-		// MySQL requires shorter usernames and passwords.
+	case duplosdk.DuploRdsEngineMysql:
 		if duplo.MasterUsername != "" {
 			length := utf8.RuneCountInString(duplo.MasterUsername)
 			if length < 1 || length > 16 {
@@ -663,19 +659,48 @@ func validateRdsInstance(duplo *duplosdk.DuploRdsInstance) (errors []error) {
 				errors = append(errors, fmt.Errorf("MySQL requires the 'master_password' to be between 1 and 41 characters"))
 			}
 		}
-	}
-
-	// Multiple databases require the first username character to be a letter.
-	if duplosdk.RdsIsMsSQL(duplo.Engine) ||
-		duplo.Engine == duplosdk.DUPLO_RDS_ENGINE_MYSQL ||
-		duplo.Engine == duplosdk.DUPLO_RDS_ENGINE_POSTGRESQL {
-		if duplo.MasterUsername != "" {
-			first, _ := utf8.DecodeRuneInString(duplo.MasterUsername)
-			if !unicode.IsLetter(first) {
-				errors = append(errors, fmt.Errorf("first character of 'master_password' must be a letter for this RDS engine"))
+	default:
+		// Multiple databases require the first username character to be a letter.
+		if duplosdk.RdsIsMsSQL(duplo.Engine) ||
+			duplo.Engine == duplosdk.DuploRdsEngineMysql ||
+			duplo.Engine == duplosdk.DuploRdsEnginePostgresSql {
+			if duplo.MasterUsername != "" {
+				first, _ := utf8.DecodeRuneInString(duplo.MasterUsername)
+				if !unicode.IsLetter(first) {
+					errors = append(errors, fmt.Errorf("first character of 'master_password' must be a letter for this RDS engine"))
+				}
 			}
 		}
 	}
+
+	// duplo.Engine == duplosdk.DuploRdsEngineMysql {
+	//	// MySQL requires shorter usernames and passwords.
+	//	if duplo.MasterUsername != "" {
+	//		length := utf8.RuneCountInString(duplo.MasterUsername)
+	//		if length < 1 || length > 16 {
+	//			errors = append(errors, fmt.Errorf("MySQL requires the 'master_username' to be between 1 and 16 characters"))
+	//		}
+	//	}
+	//	if duplo.MasterPassword != "" {
+	//		length := utf8.RuneCountInString(duplo.MasterPassword)
+	//		if length < 1 || length > 41 {
+	//			errors = append(errors, fmt.Errorf("MySQL requires the 'master_password' to be between 1 and 41 characters"))
+	//		}
+	//	}
+	//}
+	//
+	//// Multiple databases require the first username character to be a letter.
+	//if duplosdk.RdsIsMsSQL(duplo.Engine) ||
+	//	duplo.Engine == duplosdk.DuploRdsEngineMysql ||
+	//	duplo.Engine == duplosdk.DuploRdsEnginePostgresSql {
+	//	if duplo.MasterUsername != "" {
+	//		first, _ := utf8.DecodeRuneInString(duplo.MasterUsername)
+	//		if !unicode.IsLetter(first) {
+	//			errors = append(errors, fmt.Errorf("first character of 'master_password' must be a letter for this RDS engine"))
+	//		}
+	//	}
+	//}
+	duplosdk.RdsIsMsSQL(duplo.Engine)
 
 	return
 }
