@@ -451,6 +451,10 @@ func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRe
 		"read_capacity":  d.Get("read_capacity"),
 	}
 
+	if err := validateCapacityForBillingMode(capacityMap, billingMode); err != nil {
+		return nil, fmt.Errorf("failed to create : %w", err)
+	}
+
 	req.ProvisionedThroughput = expandProvisionedThroughput(capacityMap, billingMode)
 
 	if v, ok := d.GetOk("local_secondary_index"); ok {
@@ -713,9 +717,22 @@ func flattenTableAttributeDefinitions(definitions *[]duplosdk.DuploDynamoDBAttri
 	return attributes
 }
 
-func validateGSIProvisionedThroughput(data map[string]interface{}, billingMode string) error {
-	// if billing mode is PAY_PER_REQUEST, don't need to validate the throughput settings
+func validateCapacityForBillingMode(data map[string]interface{}, billingMode string) error {
 	if billingMode == duplosdk.DynamoDBBillingModePerRequest {
+		writeCapacity, _ := data["write_capacity"].(int)
+		readCapacity, _ := data["read_capacity"].(int)
+		if writeCapacity > 0 || readCapacity > 0 {
+			return fmt.Errorf("write_capacity and read_capacity cannot be set when billing mode is %s", duplosdk.DynamoDBBillingModePerRequest)
+		}
+	}
+	return nil
+}
+
+func validateGSIProvisionedThroughput(data map[string]interface{}, billingMode string) error {
+	if billingMode == duplosdk.DynamoDBBillingModePerRequest {
+		if err := validateCapacityForBillingMode(data, billingMode); err != nil {
+			return fmt.Errorf("failed to create GSI: %w", err)
+		}
 		return nil
 	}
 
