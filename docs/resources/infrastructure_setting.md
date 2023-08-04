@@ -24,15 +24,24 @@ Infrastructure settings are initially populated by Duplo when an infrastructure 
 
 ### Optional
 
+- **custom_data** (Block List, Deprecated) A complete list of configuration settings for this infrastructure, even ones not being managed by this resource. The custom_data argument is only applied on creation, and is deprecated in favor of the settings argument. (see [below for nested schema](#nestedblock--custom_data))
 - **delete_unspecified_settings** (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
 - **setting** (Block List) A list of configuration settings to manage, expressed as key / value pairs. (see [below for nested schema](#nestedblock--setting))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **custom_data** (List of Object) A complete list of configuration settings for this infrastructure, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--custom_data))
 - **id** (String) The ID of this resource.
 - **specified_settings** (List of String) A list of configuration setting key being managed by this resource.
+
+<a id="nestedblock--custom_data"></a>
+### Nested Schema for `custom_data`
+
+Required:
+
+- **key** (String)
+- **value** (String)
+
 
 <a id="nestedblock--setting"></a>
 ### Nested Schema for `setting`
@@ -51,14 +60,5 @@ Optional:
 - **create** (String)
 - **delete** (String)
 - **update** (String)
-
-
-<a id="nestedatt--custom_data"></a>
-### Nested Schema for `custom_data`
-
-Read-Only:
-
-- **key** (String)
-- **value** (String)
 
 

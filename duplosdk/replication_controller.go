@@ -214,15 +214,19 @@ func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicat
 		return nil, err
 	}
 
-	// Find and return the resource with the specific type and name.
-	for _, resource := range *allResources {
+	if allResources == nil {
+		return nil, newClientError("replication controller list is nil")
+	}
+
+	// Return the resource, if it exists.
+	for i, resource := range *allResources {
 		if resource.Name == name {
-			return &resource, nil
+			return &(*allResources)[i], nil
 		}
 	}
 
 	// No resource was found.
-	return nil, nil
+	return nil, newClientError(fmt.Sprintf("replication controller '%s' not found in tentantID: %s", name, tenantID))
 }
 
 // ReplicationControllerCreate creates a replication controller via the Duplo API.

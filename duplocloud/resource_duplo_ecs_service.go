@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"strings"
@@ -179,6 +180,12 @@ func ecsServiceSchema() map[string]*schema.Schema {
 					},
 					"enable_access_logs": {
 						Description: "Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Computed:    true,
+					},
+					"http_to_https_redirect": {
+						Description: "Whether or not the load balancer should redirect HTTP to HTTPS.",
 						Type:        schema.TypeBool,
 						Optional:    true,
 						Computed:    true,
@@ -621,18 +628,36 @@ func readEcsServiceAwsLbSettings(tenantID string, name string, lb map[string]int
 		// Populate load balancer details.
 		lb["load_balancer_arn"] = details.LoadBalancerArn
 		lb["load_balancer_name"] = details.LoadBalancerName
+		loadBalancerID := base64.URLEncoding.EncodeToString([]byte(details.LoadBalancerArn))
 
-		settings, err := c.TenantGetApplicationLbSettings(tenantID, details.LoadBalancerArn)
+		settings, err := c.TenantGetLbSettings(tenantID, loadBalancerID)
 		if err != nil {
 			return err
 		}
-		if settings != nil && settings.LoadBalancerArn != "" {
+		if settings != nil {
 
 			// Populate load balancer settings.
-			lb["webaclid"] = settings.WebACLID
-			lb["enable_access_logs"] = settings.EnableAccessLogs
-			lb["drop_invalid_headers"] = settings.DropInvalidHeaders
-			lb["idle_timeout"] = settings.IdleTimeout
+			if settings.SecurityPolicyId == nil {
+				lb["webaclid"] = ""
+			} else {
+				lb["webaclid"] = *settings.SecurityPolicyId
+			}
+			if settings.EnableAccessLogs == nil {
+				lb["enable_access_logs"] = false
+			} else {
+				lb["enable_access_logs"] = *settings.EnableAccessLogs
+			}
+			if settings.EnableHttpToHttpsRedirect == nil {
+				lb["http_to_https_redirect"] = false
+			} else {
+				lb["http_to_https_redirect"] = *settings.EnableHttpToHttpsRedirect
+			}
+			lb["idle_timeout"] = settings.Timeout
+			if settings.Aws == nil {
+				lb["drop_invalid_headers"] = false
+			} else {
+				lb["drop_invalid_headers"] = settings.Aws.DropInvalidHeaders
+			}
 		}
 	}
 
@@ -648,22 +673,32 @@ func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 	}
 
 	// Get any load balancer settings from the user.
-	settings := duplosdk.DuploAwsLbSettingsUpdateRequest{}
+	settings := &duplosdk.AgnosticLbSettings{
+		Aws: &duplosdk.AgnosticLbSettingsAws{},
+	}
 	haveSettings := false
+
 	if v, ok := state["enable_access_logs"]; ok && v != nil {
-		settings.EnableAccessLogs = v.(bool)
+		enableAccessLogs := v.(bool)
+		settings.EnableAccessLogs = &enableAccessLogs
+		haveSettings = true
+	}
+	if v, ok := state["http_to_https_redirect"]; ok && v != nil {
+		enableHttpToHttpsRedirect := v.(bool)
+		settings.EnableHttpToHttpsRedirect = &enableHttpToHttpsRedirect
 		haveSettings = true
 	}
 	if v, ok := state["drop_invalid_headers"]; ok && v != nil {
-		settings.DropInvalidHeaders = v.(bool)
+		settings.Aws.DropInvalidHeaders = v.(bool)
 		haveSettings = true
 	}
 	if v, ok := state["idle_timeout"]; ok && v != nil {
-		settings.IdleTimeout = v.(int)
+		settings.Timeout = v.(int)
 		haveSettings = true
 	}
 	if v, ok := state["webaclid"]; ok && v != nil {
-		settings.WebACLID = v.(string)
+		securityPolicyID := v.(string)
+		settings.SecurityPolicyId = &securityPolicyID
 		haveSettings = true
 	}
 
@@ -678,8 +713,8 @@ func updateEcsServiceAwsLbSettings(tenantID string, name string, d *schema.Resou
 
 		if details != nil && details.LoadBalancerArn != "" {
 			log.Printf("[TRACE] LB details found.")
-			settings.LoadBalancerArn = details.LoadBalancerArn
-			err = c.TenantUpdateApplicationLbSettings(tenantID, settings)
+			loadBalancerID := base64.URLEncoding.EncodeToString([]byte(details.LoadBalancerArn))
+			_, err = c.TenantUpdateLbSettings(tenantID, loadBalancerID, settings)
 			if err != nil {
 				return err
 			}

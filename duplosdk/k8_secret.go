@@ -36,21 +36,24 @@ func (c *Client) K8SecretGetList(tenantID string) (*[]DuploK8sSecret, ClientErro
 
 // K8SecretGet retrieves a k8s secret via the Duplo API.
 func (c *Client) K8SecretGet(tenantID, secretName string) (*DuploK8sSecret, ClientError) {
-
 	// Retrieve the list of secrets
 	list, err := c.K8SecretGetList(tenantID)
-	if err != nil || list == nil {
-		return nil, err
+	if err != nil {
+		return nil, newClientError(fmt.Sprintf("failed to get secret list: %s", err))
+	}
+
+	if list == nil {
+		return nil, newClientError("secret list is nil")
 	}
 
 	// Return the secret, if it exists.
-	for i := range *list {
-		if (*list)[i].SecretName == secretName {
-			return &(*list)[i], nil
+	for _, secret := range *list {
+		if secret.SecretName == secretName {
+			return &secret, nil
 		}
 	}
 
-	return nil, nil
+	return nil, newClientError(fmt.Sprintf("secret %s not found", secretName))
 }
 
 // K8SecretCreate creates a k8s secret via the Duplo API.

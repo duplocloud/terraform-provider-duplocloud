@@ -389,13 +389,15 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// Request the password change in Duplo
-	err = c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
-		Identifier:     d.Get("identifier").(string),
-		MasterPassword: d.Get("master_password").(string),
-		StorePassword:  true,
-	})
-	if err != nil {
-		return diag.FromErr(err)
+	if d.HasChange("master_password") {
+		err = c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
+			Identifier:     d.Get("identifier").(string),
+			MasterPassword: d.Get("master_password").(string),
+			StorePassword:  true,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// Wait for the instance to become unavailable.
