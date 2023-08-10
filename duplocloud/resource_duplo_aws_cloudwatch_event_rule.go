@@ -39,7 +39,12 @@ func awsCloudWatchEventRuleSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"schedule_expression": {
-			Description: "The scheduling expression. For example, `cron(0 20 * * ? *)` or `rate(5 minutes)`",
+			Description: "The scheduling expression. For example, `cron(0 20 * * ? *)` or `rate(5 minutes)`. At least one of `schedule_expression` or `event_pattern` is required.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"event_pattern": {
+			Description: "The event pattern described a JSON object. At least one of `schedule_expression` or `event_pattern` is required.",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
@@ -122,6 +127,8 @@ func resourceAwsCloudWatchEventRuleRead(ctx context.Context, d *schema.ResourceD
 	d.Set("arn", duplo.Arn)
 	d.Set("event_bus_name", duplo.EventBusName)
 	d.Set("role_arn", duplo.RoleArn)
+	d.Set("schedule_expression", duplo.ScheduleExpression)
+	d.Set("event_pattern", duplo.EventPattern)
 
 	log.Printf("[TRACE] resourceAwsCloudWatchEventRuleRead(%s, %s): end", tenantID, fullName)
 	return nil
@@ -226,6 +233,7 @@ func expandCloudWatchEventRule(d *schema.ResourceData) *duplosdk.DuploCloudWatch
 		Description:        d.Get("description").(string),
 		Tags:               keyValueFromState("tag", d),
 		ScheduleExpression: d.Get("schedule_expression").(string),
+		EventPattern:       d.Get("event_pattern").(string),
 		State:              d.Get("state").(string),
 		RoleArn:            d.Get("role_arn").(string),
 		EventBusName:       d.Get("event_bus_name").(string),
@@ -244,6 +252,7 @@ func parseAwsCloudWatchEventRuleIdParts(id string) (tenantID, name string, err e
 
 func needsAwsCloudWatchEventRuleUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("schedule_expression") ||
+		d.HasChange("event_pattern") ||
 		d.HasChange("description") ||
 		d.HasChange("role_arn") ||
 		d.HasChange("event_bus_name") ||

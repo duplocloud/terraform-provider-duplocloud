@@ -10,6 +10,7 @@ type DuploCloudWatchEventRule struct {
 	Tags               *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	EventBusName       string                 `json:"EventBusName,omitempty"`
 	RoleArn            string                 `json:"RoleArn,omitempty"`
+	EventPattern       string                 `json:"EventPattern,omitempty"`
 }
 
 type DuploCloudWatchEventRuleGetReq struct {
@@ -20,6 +21,7 @@ type DuploCloudWatchEventRuleGetReq struct {
 	RoleArn            string            `json:"RoleArn,omitempty"`
 	Arn                string            `json:"Arn,omitempty"`
 	State              *DuploStringValue `json:"State,omitempty"`
+	EventPattern       string            `json:"EventPattern,omitempty"`
 }
 
 type DuploCloudWatchEventTargets struct {
