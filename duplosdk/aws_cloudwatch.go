@@ -5,7 +5,7 @@ import "fmt"
 type DuploCloudWatchEventRule struct {
 	Name               string                 `json:"Name"`
 	Description        string                 `json:"Description,omitempty"`
-	ScheduleExpression string                 `json:"ScheduleExpression"`
+	ScheduleExpression string                 `json:"ScheduleExpression,omitempty"`
 	State              string                 `json:"State"`
 	Tags               *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	EventBusName       string                 `json:"EventBusName,omitempty"`
