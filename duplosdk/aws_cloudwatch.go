@@ -16,7 +16,7 @@ type DuploCloudWatchEventRule struct {
 type DuploCloudWatchEventRuleGetReq struct {
 	Name               string            `json:"Name"`
 	Description        string            `json:"Description,omitempty"`
-	ScheduleExpression string            `json:"ScheduleExpression"`
+	ScheduleExpression string            `json:"ScheduleExpression,omitempty"`
 	EventBusName       string            `json:"EventBusName,omitempty"`
 	RoleArn            string            `json:"RoleArn,omitempty"`
 	Arn                string            `json:"Arn,omitempty"`
