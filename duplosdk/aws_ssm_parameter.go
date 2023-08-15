@@ -78,9 +78,9 @@ func (c *Client) SsmParameterGet(tenantID string, name string) (*DuploSsmParamet
 	return &rp, err
 }
 
-// SsmParameterGet retrieves a list of SSM parameters via the Duplo API
+// SsmParameterList SsmParameterGet retrieves a list of SSM parameters via the Duplo API
 func (c *Client) SsmParameterList(tenantID string) (*[]DuploSsmParameter, ClientError) {
-	list := []DuploSsmParameter{}
+	var list []DuploSsmParameter
 	err := c.getAPI(
 		fmt.Sprintf("SsmParameterList(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/aws/ssmParameter", tenantID),
