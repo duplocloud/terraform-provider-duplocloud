@@ -22,4 +22,3 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
     value = "100"
   }
 }
-
