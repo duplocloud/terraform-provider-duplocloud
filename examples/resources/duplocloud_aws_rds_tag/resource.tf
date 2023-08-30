@@ -23,10 +23,10 @@ resource "duplocloud_rds_instance" "mydb" {
   encrypt_storage = true
 }
 
-// Create RDS Tag for type "db".
-resource "duplocloud_aws_rds_tag" "tag1" {
+// Create RDS Tag for type "instance".
+resource "duplocloud_aws_rds_tag" "tag" {
   tenant_id     = duplocloud_tenant.myapp.tenant_id
-  resource_type = "db"
+  resource_type = "instance"
   resource_id   = duplocloud_rds_instance.mydb.identifier
   key           = "CreatedBy"
   value         = "DuploCloud"

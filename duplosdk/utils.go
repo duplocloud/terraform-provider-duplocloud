@@ -1,6 +1,7 @@
 package duplosdk
 
 import (
+	"encoding/base64"
 	"net/url"
 	"reflect"
 	"strings"
@@ -104,4 +105,8 @@ func UnwrapName(prefix, accountID, name string, optionalAccountID bool) (string,
 	}
 
 	return part[len(prefix)+1:], true
+}
+
+func urlSafeBase64Encode(data string) string {
+	return strings.Replace(strings.Replace(strings.Replace(base64.StdEncoding.EncodeToString([]byte(data)), "/[=]+$/", "", -1), "+", "-", -1), "/", "_", -1)
 }

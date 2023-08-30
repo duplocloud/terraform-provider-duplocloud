@@ -23,13 +23,13 @@ func duploAwsRdsTagSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"resource_type": {
-			Description: "The type of the RDS resource to manage the tag for. Valid values are `cluster` and `db`.",
+			Description: "The type of the RDS resource to manage the tag for. Valid values are `cluster` and `instance`.",
 			Type:        schema.TypeString,
 			ForceNew:    true,
 			Required:    true,
 			ValidateFunc: validation.StringInSlice([]string{
 				duplosdk.RDS_TYPE_CLUSTER,
-				duplosdk.RDS_TYPE_DB,
+				duplosdk.RDS_TYPE_INSTANCE,
 			}, false),
 		},
 		"resource_id": {

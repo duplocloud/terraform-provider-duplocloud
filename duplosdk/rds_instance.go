@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	RDS_TYPE_CLUSTER string = "cluster"
-	RDS_TYPE_DB      string = "db"
+	RDS_TYPE_CLUSTER  string = "cluster"
+	RDS_TYPE_INSTANCE string = "instance"
 )
 
 const (
@@ -263,7 +263,7 @@ func (c *Client) RdsTagUpdateV3(tenantID string, tag DuploRDSTag) ClientError {
 	resp := &DuploKeyStringValue{}
 	return c.putAPI(
 		fmt.Sprintf("RdsTagUpdateV3(%s, %s)", tenantID, tag.ResourceId),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, tag.Key),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
 		&DuploKeyStringValue{
 			Key:   tag.Key,
 			Value: tag.Value,
@@ -286,7 +286,7 @@ func (c *Client) RdsTagGetV3(tenantID string, tag DuploRDSTag) (*DuploKeyStringV
 	tags := DuploKeyStringValue{}
 	err := c.getAPI(
 		fmt.Sprintf("RdsTagGetV3(%s, %s)", tenantID, tag.ResourceId),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, tag.Key),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
 		&tags,
 	)
 	return &tags, err
@@ -295,7 +295,7 @@ func (c *Client) RdsTagGetV3(tenantID string, tag DuploRDSTag) (*DuploKeyStringV
 func (c *Client) RdsTagDeleteV3(tenantID string, tag DuploRDSTag) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("RdsTagDeleteV3(%s, %s)", tenantID, tag.ResourceId),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, tag.Key),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
 		nil,
 	)
 }
