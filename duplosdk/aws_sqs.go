@@ -7,6 +7,7 @@ import (
 
 type DuploSQSQueue struct {
 	Name                      string `json:"Name"`
+	Arn                       string `json:"Arn,omitempty"`
 	QueueType                 int    `json:"QueueType,omitempty"`
 	State                     string `json:"State,omitempty"`
 	MessageRetentionPeriod    int    `json:"MessageRetentionPeriod,omitempty"`
@@ -55,10 +56,10 @@ func (c *Client) DuploSQSQueueCreateV2(tenantID string, rq *DuploSQSQueue) (*Dup
 	return &resp, err
 }
 
-func (c *Client) DuploSQSQueueUpdateV2(tenantID string, rq *DuploSQSQueue) (*DuploSQSQueue, ClientError) {
+func (c *Client) DuploSQSQueueUpdateV3(tenantID string, rq *DuploSQSQueue) (*DuploSQSQueue, ClientError) {
 	resp := DuploSQSQueue{}
 	err := c.putAPI(
-		fmt.Sprintf("DuploSQSQueueUpdateV2(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("DuploSQSQueueUpdateV3(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/sqs/%s", tenantID, rq.Name),
 		&rq,
 		&resp,
@@ -66,8 +67,8 @@ func (c *Client) DuploSQSQueueUpdateV2(tenantID string, rq *DuploSQSQueue) (*Dup
 	return &resp, err
 }
 
-func (c *Client) DuploSQSQueueGetV2(tenantID string, fullname string) (*DuploSQSQueue, ClientError) {
-	list, err := c.DuploSQSQueueListV2(tenantID, fullname)
+func (c *Client) DuploSQSQueueGetV3(tenantID string, fullname string) (*DuploSQSQueue, ClientError) {
+	list, err := c.DuploSQSQueueListV3(tenantID, fullname)
 	if err != nil {
 		return nil, err
 	}
@@ -82,17 +83,17 @@ func (c *Client) DuploSQSQueueGetV2(tenantID string, fullname string) (*DuploSQS
 	return nil, nil
 }
 
-func (c *Client) DuploSQSQueueListV2(tenantID, fullname string) (*[]DuploSQSQueue, ClientError) {
-	resp := []DuploSQSQueue{}
+func (c *Client) DuploSQSQueueListV3(tenantID, fullname string) (*[]DuploSQSQueue, ClientError) {
+	var resp []DuploSQSQueue
 	err := c.getAPI(
-		fmt.Sprintf("DuploSQSQueueListV2(%s, %s)", tenantID, fullname),
+		fmt.Sprintf("DuploSQSQueueListV3(%s, %s)", tenantID, fullname),
 		fmt.Sprintf("v3/subscriptions/%s/aws/sqs", tenantID),
 		&resp,
 	)
 	return &resp, err
 }
 
-func (c *Client) DuploSQSQueueDeleteV2(tenantID string, fullname string) ClientError {
+func (c *Client) DuploSQSQueueDeleteV3(tenantID string, fullname string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("DuploSQSQueueDelete(%s, %s)", tenantID, fullname),
 		fmt.Sprintf("v3/subscriptions/%s/aws/sqs/%s", tenantID, fullname),
@@ -162,7 +163,9 @@ func (c *Client) ExtractSqsFullname(tenantID string, sqsUrl string) (string, Cli
 		return "", err
 	}
 	parts := strings.Split(sqsUrl, "/"+accountID+"/")
-	fullname := parts[1]
-	// fullname = strings.TrimSuffix(fullname, ".fifo")
-	return fullname, nil
+	if len(parts) < 2 {
+		return "", newClientError("invalid SQS URL format")
+	}
+
+	return parts[1], nil
 }
