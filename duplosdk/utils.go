@@ -108,5 +108,5 @@ func UnwrapName(prefix, accountID, name string, optionalAccountID bool) (string,
 }
 
 func urlSafeBase64Encode(data string) string {
-	return strings.Replace(strings.Replace(strings.Replace(base64.StdEncoding.EncodeToString([]byte(data)), "/[=]+$/", "", -1), "+", "-", -1), "/", "_", -1)
+	return base64.RawURLEncoding.EncodeToString([]byte(data))
 }
