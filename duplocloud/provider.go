@@ -141,6 +141,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_batch_job_definition":        resourceAwsBatchJobDefinition(),
 			"duplocloud_aws_timestreamwrite_database":    resourceAwsTimestreamDatabase(),
 			"duplocloud_aws_timestreamwrite_table":       resourceAwsTimestreamTable(),
+			"duplocloud_aws_rds_tag":                     resourceAwsRdsTag(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":     dataSourceAdminAwsCredentials(),

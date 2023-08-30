@@ -3,12 +3,12 @@
 page_title: "duplocloud_aws_sqs_queue Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_aws_sqs_queue manages a SQS queuet in Duplo.
+  duplocloud_aws_sqs_queue manages a SQS queue in Duplo.
 ---
 
 # duplocloud_aws_sqs_queue (Resource)
 
-`duplocloud_aws_sqs_queue` manages a SQS queuet in Duplo.
+`duplocloud_aws_sqs_queue` manages a SQS queue in Duplo.
 
 ## Example Usage
 
@@ -48,6 +48,7 @@ resource "duplocloud_aws_sqs_queue" "sqs_queue" {
 
 ### Read-Only
 
+- **arn** (String) The ARN of the SQS queue.
 - **fullname** (String) The full name of the SQS queue.
 - **id** (String) The ID of this resource.
 - **url** (String) The URL for the created Amazon SQS queue.
