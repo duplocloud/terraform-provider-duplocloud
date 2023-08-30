@@ -59,7 +59,7 @@ func (c *Client) DuploSQSQueueCreateV3(tenantID string, rq *DuploSQSQueue) (*Dup
 func (c *Client) DuploSQSQueueUpdateV3(tenantID string, rq *DuploSQSQueue) (*DuploSQSQueue, ClientError) {
 	resp := DuploSQSQueue{}
 	err := c.putAPI(
-		fmt.Sprintf("DuploSQSQueueUpdateV3DuploSQSQueueUpdateV3(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("DuploSQSQueueUpdateV3(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/sqs/%s", tenantID, rq.Name),
 		&rq,
 		&resp,
