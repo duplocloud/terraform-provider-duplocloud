@@ -185,7 +185,7 @@ func resourceAwsSqsQueueCreate(ctx context.Context, d *schema.ResourceData, m in
 	c := m.(*duplosdk.Client)
 
 	rq := expandAwsSqsQueue(d)
-	resp, err := c.DuploSQSQueueCreateV2(tenantID, rq)
+	resp, err := c.DuploSQSQueueCreateV3(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s SQS queue '%s': %s", tenantID, name, err)
 	}
@@ -194,6 +194,11 @@ func resourceAwsSqsQueueCreate(ctx context.Context, d *schema.ResourceData, m in
 		return diag.FromErr(err)
 	}
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "SQS Queue", fmt.Sprintf("%s/%s", tenantID, name), func() (interface{}, duplosdk.ClientError) {
+		resp, err = c.DuploSQSQueueGetV3(tenantID, fullname)
+		// wait for an Arn to be available
+		if err == nil && resp != nil && resp.Arn == "" {
+			return nil, nil
+		}
 		return c.DuploSQSQueueGetV3(tenantID, fullname)
 	})
 	if diags != nil {

@@ -45,10 +45,10 @@ func (c *Client) DuploSQSQueueDelete(tenantID string, url string) ClientError {
 	)
 }
 
-func (c *Client) DuploSQSQueueCreateV2(tenantID string, rq *DuploSQSQueue) (*DuploSQSQueue, ClientError) {
+func (c *Client) DuploSQSQueueCreateV3(tenantID string, rq *DuploSQSQueue) (*DuploSQSQueue, ClientError) {
 	resp := DuploSQSQueue{}
 	err := c.postAPI(
-		fmt.Sprintf("DuploSQSQueueCreateV2(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("DuploSQSQueueCreateV3(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/sqs", tenantID),
 		&rq,
 		&resp,
