@@ -3,12 +3,12 @@
 page_title: "duplocloud_aws_rds_tag Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_aws_rds_tag manages a AWS RDS tags in Duplo.
+  duplocloud_aws_rds_tag manages an AWS RDS tag in Duplo.
 ---
 
 # duplocloud_aws_rds_tag (Resource)
 
-`duplocloud_aws_rds_tag` manages a AWS RDS tags in Duplo.
+`duplocloud_aws_rds_tag` manages an AWS RDS tag in Duplo.
 
 ## Example Usage
 

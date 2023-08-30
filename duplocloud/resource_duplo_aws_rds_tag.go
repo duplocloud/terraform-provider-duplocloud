@@ -54,7 +54,7 @@ func duploAwsRdsTagSchema() map[string]*schema.Schema {
 
 func resourceAwsRdsTag() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_aws_rds_tag` manages a AWS RDS tags in Duplo.",
+		Description: "`duplocloud_aws_rds_tag` manages an AWS RDS tag in Duplo.",
 
 		ReadContext:   resourceAwsRdsTagRead,
 		CreateContext: resourceAwsRdsTagCreate,
