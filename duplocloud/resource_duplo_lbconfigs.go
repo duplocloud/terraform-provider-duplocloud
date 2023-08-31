@@ -108,6 +108,11 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        KeyValueSchema(),
 		},
+		"set_ingress_health_check": {
+			Description: "Only for K8S services or load balancers in Kubernetes.  Set to `true` to set health check annotations for ingress.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+		},
 		"backend_protocol_version": {
 			Type:     schema.TypeString,
 			Computed: true,
@@ -313,6 +318,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					IsNative:                  lbc["is_native"].(bool),
 					IsInternal:                lbc["is_internal"].(bool),
 					ExternalTrafficPolicy:     lbc["external_traffic_policy"].(string),
+					SetIngressHealthCheck:     lbc["set_ingress_health_check"].(bool),
 					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
 				}
 				if item.LbType == 5 {
@@ -465,6 +471,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"frontend_ip":                 lb.FrontendIP,
 		"is_native":                   lb.IsNative,
 		"is_internal":                 lb.IsInternal,
+		"set_ingress_health_check":    lb.SetIngressHealthCheck,
 		"extra_selector_label":        keyValueToState("extra_selector_label", lb.ExtraSelectorLabels),
 		"target_group_arn":            lb.TgArn,
 		"custom_cidr":                 lb.CustomCidrs,
