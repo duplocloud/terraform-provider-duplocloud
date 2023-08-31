@@ -421,7 +421,9 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 	d.Set("handler", duplo.Handler)
 	d.Set("version", duplo.Version)
 	d.Set("layers", duplo.Layers)
-	d.Set("ephemeral_storage", duplo.EphemeralStorage.Size)
+	if duplo.EphemeralStorage != nil {
+		d.Set("ephemeral_storage", duplo.EphemeralStorage.Size)
+	}
 	if duplo.Runtime != nil {
 		d.Set("runtime", duplo.Runtime.Value)
 	}
