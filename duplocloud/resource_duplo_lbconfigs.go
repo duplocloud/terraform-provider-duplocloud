@@ -112,6 +112,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Description: "Only for K8S services or load balancers in Kubernetes.  Set to `true` to set health check annotations for ingress.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Computed:    true,
 		},
 		"backend_protocol_version": {
 			Type:     schema.TypeString,
