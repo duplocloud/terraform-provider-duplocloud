@@ -58,7 +58,6 @@ type DuploLambdaCode struct {
 }
 
 // DuploLambdaEnvironment is a Duplo SDK object that represents a lambda function's environment config.
-// DuploLambdaEnvironment is a Duplo SDK object that represents a lambda function's environment config.
 type DuploLambdaEnvironment struct {
 	Variables map[string]string `json:"Variables,omitempty"`
 }
@@ -94,6 +93,7 @@ type DuploLambdaCreateRequest struct {
 	Environment      *DuploLambdaEnvironment      `json:"Environment,omitempty"`
 	Tags             map[string]string            `json:"Tags,omitempty"`
 	Layers           *[]string                    `json:"Layers,omitempty"`
+	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
 }
 
 // DuploLambdaUpdateRequest is a Duplo SDK object that represents a request to update a lambda function's code.
@@ -116,6 +116,7 @@ type DuploLambdaConfigurationRequest struct {
 	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
 	Tags             map[string]string            `json:"Tags,omitempty"`
 	Layers           *[]string                    `json:"Layers,omitempty"`
+	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
 }
 
 type DuploLambdaPermissionStatement struct {

@@ -561,7 +561,7 @@ func resourceAwsLbListenerRuleRead(ctx context.Context, d *schema.ResourceData, 
 	c := m.(*duplosdk.Client)
 	duplo, clientErr := c.DuploAwsLbListenerRuleGet(tenantID, listenerArn, ruleArn)
 	if clientErr != nil {
-		if clientErr.Status() == 404 {
+		if clientErr.Status() == 404 || (clientErr.Status() == 400 && clientErr.Response()["Message"] == "One or more listeners not found") { // TODO : remove second condition after backend API fixes.
 			d.SetId("") // object missing
 			return nil
 		}
@@ -689,7 +689,7 @@ func resourceAwsLbListenerRuleDelete(ctx context.Context, d *schema.ResourceData
 	c := m.(*duplosdk.Client)
 	clientErr := c.DuploAwsLbListenerRuleDelete(tenantID, listenerArn, ruleArn)
 	if clientErr != nil {
-		if clientErr.Status() == 404 {
+		if clientErr.Status() == 404 || (clientErr.Status() == 400 && clientErr.Response()["Message"] == "One or more listeners not found") { // TODO : remove second condition after backend API fixes.
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s listener rule '%s': %s", tenantID, ruleArn, clientErr)

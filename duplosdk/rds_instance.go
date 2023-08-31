@@ -6,6 +6,11 @@ import (
 )
 
 const (
+	RDS_TYPE_CLUSTER  string = "cluster"
+	RDS_TYPE_INSTANCE string = "instance"
+)
+
+const (
 	DUPLO_RDS_ENGINE_MYSQL                        = 0
 	DUPLO_RDS_ENGINE_POSTGRESQL                   = 1
 	DUPLO_RDS_ENGINE_MSSQL_EXPRESS                = 2
@@ -80,6 +85,13 @@ type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
 	ApplyImmediately       bool                    `json:"ApplyImmediately"`
 	SizeEx                 string                  `json:"SizeEx,omitempty"`
 	V2ScalingConfiguration *V2ScalingConfiguration `json:"V2ScalingConfiguration,omitempty"`
+}
+
+type DuploRDSTag struct {
+	ResourceType string `json:"ResourceType"`
+	ResourceId   string `json:"ResourceId"`
+	Key          string `json:"Key"`
+	Value        string `json:"Value"`
 }
 
 /*************************************************
@@ -228,4 +240,62 @@ func RdsIsMsSQL(engine int) bool {
 	return engine == DUPLO_RDS_ENGINE_MSSQL_EXPRESS ||
 		engine == DUPLO_RDS_ENGINE_MSSQL_STANDARD ||
 		engine == DUPLO_RDS_ENGINE_MSSQL_WEB
+}
+
+/*************************************************
+ * API Calls for RDS Tags
+ */
+
+func (c *Client) RdsTagCreateV3(tenantID string, tag DuploRDSTag) ClientError {
+	resp := &DuploKeyStringValue{}
+	return c.postAPI(
+		fmt.Sprintf("RdsTagCreateV3(%s, %s)", tenantID, tag.ResourceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag", tenantID, tag.ResourceType, tag.ResourceId),
+		&DuploKeyStringValue{
+			Key:   tag.Key,
+			Value: tag.Value,
+		},
+		&resp,
+	)
+}
+
+func (c *Client) RdsTagUpdateV3(tenantID string, tag DuploRDSTag) ClientError {
+	resp := &DuploKeyStringValue{}
+	return c.putAPI(
+		fmt.Sprintf("RdsTagUpdateV3(%s, %s)", tenantID, tag.ResourceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
+		&DuploKeyStringValue{
+			Key:   tag.Key,
+			Value: tag.Value,
+		},
+		&resp,
+	)
+}
+
+func (c *Client) RdsTagListV3(tenantID, resourceType, resourceId string) (*[]DuploKeyStringValue, ClientError) {
+	tags := []DuploKeyStringValue{}
+	err := c.getAPI(
+		fmt.Sprintf("RdsTagListV3(%s, %s)", tenantID, resourceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag", tenantID, resourceType, resourceId),
+		&tags,
+	)
+	return &tags, err
+}
+
+func (c *Client) RdsTagGetV3(tenantID string, tag DuploRDSTag) (*DuploKeyStringValue, ClientError) {
+	tags := DuploKeyStringValue{}
+	err := c.getAPI(
+		fmt.Sprintf("RdsTagGetV3(%s, %s)", tenantID, tag.ResourceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
+		&tags,
+	)
+	return &tags, err
+}
+
+func (c *Client) RdsTagDeleteV3(tenantID string, tag DuploRDSTag) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("RdsTagDeleteV3(%s, %s)", tenantID, tag.ResourceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
+		nil,
+	)
 }

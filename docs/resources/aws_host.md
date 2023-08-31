@@ -28,6 +28,11 @@ resource "duplocloud_aws_host" "native" {
   agent_platform = 0 # Duplo native container agent
   zone           = 0 # Zone A
   user_account   = duplocloud_tenant.myapp.account_name
+
+  metadata {
+    key   = "OsDiskSize" # <== This is the size of the OS disk in GB
+    value = "100"
+  }
 }
 
 # Simple Example 2:  Deploy a host to be used with EKS
@@ -40,6 +45,11 @@ resource "duplocloud_aws_host" "eks" {
   agent_platform = 7 # Duplo EKS agent
   zone           = 0 # Zone A
   user_account   = duplocloud_tenant.myapp.account_name
+
+  metadata {
+    key   = "OsDiskSize" # <== This is the size of the OS disk in GB
+    value = "100"
+  }
 }
 ```
 

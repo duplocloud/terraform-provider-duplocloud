@@ -63,6 +63,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 - **tags** (Map of String) Map of tags to assign to the object.
 - **timeout** (Number) The execution time limit for the lambda function. Defaults to `3`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **tracing_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--tracing_config))
 
 ### Read-Only
 
@@ -90,6 +91,14 @@ Optional:
 
 - **create** (String)
 - **delete** (String)
+
+
+<a id="nestedblock--tracing_config"></a>
+### Nested Schema for `tracing_config`
+
+Required:
+
+- **mode** (String) Whether to sample and trace a subset of incoming requests with AWS X-Ray. Valid values are `PassThrough` and `Active`.
 
 ## Import
 

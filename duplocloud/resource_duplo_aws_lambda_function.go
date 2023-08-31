@@ -119,6 +119,22 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"tracing_config": {
+			Type:     schema.TypeList,
+			MaxItems: 1,
+			Optional: true,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"mode": {
+						Description:  "Whether to sample and trace a subset of incoming requests with AWS X-Ray. Valid values are `PassThrough` and `Active`.",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"PassThrough", "Active"}, false),
+					},
+				},
+			},
+		},
 		"runtime": {
 			Description: "The [runtime](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) that the lambda function needs.",
 			Type:        schema.TypeString,
@@ -273,6 +289,13 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		rq.Code.ImageURI = d.Get("image_uri").(string)
 	}
 
+	if v, ok := d.GetOk("tracing_config"); ok && len(v.([]interface{})) > 0 && v.([]interface{})[0] != nil {
+		rq.TracingConfig = &duplosdk.DuploLambdaTracingConfig{
+			Mode: duplosdk.DuploStringValue{Value: v.([]interface{})[0].(map[string]interface{})["mode"].(string)},
+		}
+
+	}
+
 	environment, err := getOptionalBlockAsMap(d, "environment")
 	if err != nil {
 		return diag.FromErr(err)
@@ -406,6 +429,13 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 		d.Set("package_type", duplo.PackageType.Value)
 	}
 	d.Set("environment", flattenAwsLambdaEnvironment(duplo.Environment))
+	if duplo.TracingConfig != nil {
+		d.Set("tracing_config", []interface{}{
+			map[string]interface{}{
+				"mode": string(duplo.TracingConfig.Mode.Value),
+			},
+		})
+	}
 }
 
 func flattenAwsLambdaEnvironment(environment *duplosdk.DuploLambdaEnvironment) []interface{} {
@@ -478,6 +508,12 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 		}
 	}
 
+	if v, ok := d.GetOk("tracing_config"); ok && len(v.([]interface{})) > 0 && v.([]interface{})[0] != nil {
+		rq.TracingConfig = &duplosdk.DuploLambdaTracingConfig{
+			Mode: duplosdk.DuploStringValue{Value: v.([]interface{})[0].(map[string]interface{})["mode"].(string)},
+		}
+
+	}
 	environment, err := getOptionalBlockAsMap(d, "environment")
 	if err != nil {
 		return err
@@ -534,6 +570,5 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 		d.HasChange("memory_size") ||
 		d.HasChange("environment") ||
 		d.HasChange("tags") ||
-		d.HasChange("layers") ||
-		d.HasChange("ephemeral_storage")
+		d.HasChange("layers")
 }

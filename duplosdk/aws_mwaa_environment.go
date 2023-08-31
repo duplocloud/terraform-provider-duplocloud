@@ -66,6 +66,8 @@ type DuploMwaaAirflowDetail struct {
 	PluginsS3Path                string                         `json:"PluginsS3Path,omitempty"`
 	RequirementsS3ObjectVersion  string                         `json:"RequirementsS3ObjectVersion,omitempty"`
 	RequirementsS3Path           string                         `json:"RequirementsS3Path,omitempty"`
+	StartupScriptS3ObjectVersion string                         `json:"StartupScriptS3ObjectVersion,omitempty"`
+	StartupScriptS3Path          string                         `json:"StartupScriptS3Path,omitempty"`
 }
 
 type DuploMwaaAirflowCreateRequest struct {
@@ -87,6 +89,8 @@ type DuploMwaaAirflowCreateRequest struct {
 	PluginsS3Path                string                         `json:"PluginsS3Path,omitempty"`
 	RequirementsS3ObjectVersion  string                         `json:"RequirementsS3ObjectVersion,omitempty"`
 	RequirementsS3Path           string                         `json:"RequirementsS3Path,omitempty"`
+	StartupScriptS3ObjectVersion string                         `json:"StartupScriptS3ObjectVersion,omitempty"`
+	StartupScriptS3Path          string                         `json:"StartupScriptS3Path,omitempty"`
 }
 
 type DuploMwaaAirflowCreateResponse struct {

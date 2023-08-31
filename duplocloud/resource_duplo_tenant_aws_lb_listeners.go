@@ -228,7 +228,16 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 	listenerArn := d.Get("arn").(string)
 	id := d.Id()
 
-	err := c.TenantDeleteApplicationLbListener(tenantId, lbFullName, listenerArn)
+	listeners, err := c.TenantListApplicationLbListeners(tenantId, d.Get("load_balancer_name").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if listeners != nil && len(*listeners) == 0 {
+		d.SetId("") // object missing
+		return nil
+	}
+
+	err = c.TenantDeleteApplicationLbListener(tenantId, lbFullName, listenerArn)
 	if err != nil {
 		return diag.Errorf("Error deleting load balancer listener '%s': %s", id, err)
 	}

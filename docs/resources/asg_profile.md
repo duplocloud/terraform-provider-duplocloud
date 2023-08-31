@@ -31,6 +31,11 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
   agent_platform = 0 # Duplo native container agent
   zone           = 0 # Zone A
   user_account   = duplocloud_tenant.duplo-app.account_name
+
+  metadata {
+    key   = "OsDiskSize" # <== This is the size of the OS disk in GB
+    value = "100"
+  }
 }
 ```
 
