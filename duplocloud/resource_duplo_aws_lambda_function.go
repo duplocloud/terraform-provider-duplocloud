@@ -510,6 +510,10 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 		}
 	}
 
+	if v, ok := d.GetOk("ephemeral_storage"); ok && v != nil && v.(int) != 0 {
+		rq.EphemeralStorage = &duplosdk.DuploLambdaEphemeralStorage{Size: v.(int)}
+	}
+
 	if v, ok := d.GetOk("tracing_config"); ok && len(v.([]interface{})) > 0 && v.([]interface{})[0] != nil {
 		rq.TracingConfig = &duplosdk.DuploLambdaTracingConfig{
 			Mode: duplosdk.DuploStringValue{Value: v.([]interface{})[0].(map[string]interface{})["mode"].(string)},
@@ -572,5 +576,7 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 		d.HasChange("memory_size") ||
 		d.HasChange("environment") ||
 		d.HasChange("tags") ||
-		d.HasChange("layers")
+		d.HasChange("layers") ||
+		d.HasChange("tracing_config") ||
+		d.HasChange("ephemeral_storage")
 }
