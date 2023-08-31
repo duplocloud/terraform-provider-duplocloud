@@ -133,6 +133,18 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"startup_script_s3_path": {
+			Description: "The relative path to the startup script file on your Amazon S3 storage bucket. For example, startup_script.sh.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+		"startup_script_s3_object_version": {
+			Description: "The startup script file version you want to use.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
 		"kms_key": {
 			Description: "The Amazon Resource Name (ARN) of your KMS key that you want to use for encryption. Will be set to the ARN of the managed KMS key aws/airflow by default.",
 			Type:        schema.TypeString,
@@ -441,6 +453,16 @@ func resourceMwaaAirflowUpdate(ctx context.Context, d *schema.ResourceData, m in
 		input.RequirementsS3Path = d.Get("requirements_s3_path").(string)
 	}
 
+	if d.HasChange("startup_script_s3_object_version") {
+		updated = true
+		input.StartupScriptS3ObjectVersion = d.Get("startup_script_s3_object_version").(string)
+	}
+
+	if d.HasChange("startup_script_s3_path") {
+		updated = true
+		input.StartupScriptS3Path = d.Get("startup_script_s3_path").(string)
+	}
+
 	if d.HasChange("schedulers") {
 		updated = true
 		input.Schedulers = d.Get("schedulers").(int)
@@ -556,6 +578,12 @@ func expandMwaaAirflow(d *schema.ResourceData) (*duplosdk.DuploMwaaAirflowCreate
 	if requirementsS3Path, ok := d.GetOk("requirements_s3_path"); ok {
 		request.RequirementsS3Path = requirementsS3Path.(string)
 	}
+	if startupScriptS3ObjectVersion, ok := d.GetOk("startup_script_s3_object_version"); ok {
+		request.StartupScriptS3ObjectVersion = startupScriptS3ObjectVersion.(string)
+	}
+	if startupScriptS3Path, ok := d.GetOk("startup_script_s3_path"); ok {
+		request.StartupScriptS3Path = startupScriptS3Path.(string)
+	}
 	if webserverAccessMode, ok := d.GetOk("webserver_access_mode"); ok {
 		request.WebserverAccessMode = &duplosdk.DuploStringValue{
 			Value: webserverAccessMode.(string),
@@ -610,6 +638,8 @@ func flattenMwaaAirflow(d *schema.ResourceData, duplo *duplosdk.DuploMwaaAirflow
 	d.Set("plugins_s3_object_version", duplo.PluginsS3ObjectVersion)
 	d.Set("requirements_s3_path", duplo.RequirementsS3Path)
 	d.Set("requirements_s3_object_version", duplo.RequirementsS3ObjectVersion)
+	d.Set("startup_script_s3_path", duplo.StartupScriptS3Path)
+	d.Set("startup_script_s3_object_version", duplo.StartupScriptS3ObjectVersion)
 
 	if err := d.Set("last_updated", flattenLastUpdate(duplo.LastUpdate)); err != nil {
 		return fmt.Errorf("error reading MWAA Environment (%s): %w", d.Id(), err)
