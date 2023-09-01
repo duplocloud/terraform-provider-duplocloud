@@ -68,6 +68,7 @@ Read-Only:
 - **port** (String)
 - **protocol** (String)
 - **replication_controller_name** (String)
+- **set_ingress_health_check** (Boolean)
 - **target_group_arn** (String)
 
 <a id="nestedobjatt--services--lbconfigs--extra_selector_label"></a>

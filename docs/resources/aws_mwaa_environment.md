@@ -27,9 +27,6 @@ resource "duplocloud_aws_mwaa_environment" "my-mwaa" {
   name                            = "airflow-test"
   source_bucket_arn               = "arn:aws:s3:::duploservices-demo01-dags-140563923322"
   dag_s3_path                     = "AirflowDags/dag"
-  plugins_s3_path                 = "AirflowDags/plugins.zip"
-  requirements_s3_path            = "AirflowDags/requirements.txt"
-  startup_script_s3_path          = "AirflowDags/startup-script.sh"
   kms_key                         = data.duplocloud_tenant_aws_kms_key.tenant_kms_key.key_arn
   schedulers                      = 2
   max_workers                     = 10
@@ -91,13 +88,13 @@ resource "duplocloud_aws_mwaa_environment" "my-mwaa" {
 - **logging_configuration** (Block List, Max: 1) (see [below for nested schema](#nestedblock--logging_configuration))
 - **max_workers** (Number) The maximum number of workers that can be automatically scaled up. Value need to be between `1` and `25`.
 - **min_workers** (Number) The minimum number of workers that you want to run in your environment.
-- **plugins_s3_object_version** (String, Optional) The plugins.zip file version you want to use.
-- **plugins_s3_path** (String) The relative path to the plugins.zip file on your Amazon S3 storage bucket. For example, plugins.zip. If a relative path is provided in the request, then `plugins_s3_object_version` is optional.
-- **requirements_s3_object_version** (String, Optional) The requirements.txt file version you want to use..
-- **requirements_s3_path** (String) The relative path to the requirements.txt file on your Amazon S3 storage bucket. For example, requirements.txt. If a relative path is provided in the request, then requirements_s3_object_version is optional.
-- **startup_script_s3_object_version** (String, Optional) The startup script file version you want to use.
-- **startup_script_s3_path** (String, Optional) The relative path to the startup script file on your Amazon S3 storage bucket. For example, startup_script.sh.
+- **plugins_s3_object_version** (String) The plugins.zip file version you want to use.
+- **plugins_s3_path** (String) The relative path to the plugins.zip file on your Amazon S3 storage bucket. For example, plugins.zip. If a relative path is provided in the request, then `plugins_s3_object_version` is required.
+- **requirements_s3_object_version** (String) The requirements.txt file version you want to use..
+- **requirements_s3_path** (String) The relative path to the requirements.txt file on your Amazon S3 storage bucket. For example, requirements.txt. If a relative path is provided in the request, then requirements_s3_object_version is required.
 - **schedulers** (Number) The number of schedulers that you want to run in your environment.
+- **startup_script_s3_object_version** (String) The startup script file version you want to use.
+- **startup_script_s3_path** (String) The relative path to the startup script file on your Amazon S3 storage bucket. For example, startup_script.sh.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_ready** (Boolean) Whether or not to wait until Amazon MWAA Environment to be ready, after creation. Defaults to `true`.
 - **webserver_access_mode** (String) Specifies whether the webserver should be accessible over the internet or via your specified VPC.  Defaults to `PUBLIC_ONLY`.
