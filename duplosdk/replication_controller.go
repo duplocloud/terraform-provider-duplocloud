@@ -60,14 +60,14 @@ type DuploPodContainer struct {
 	DockerId   string `json:"DockerId,omitempty"`
 }
 
-// DuploPodContainer represents a network interface within a pod template in the Duplo SDK
+// DuploPodInterface represents a network interface within a pod template in the Duplo SDK
 type DuploPodInterface struct {
 	NetworkId       string `json:"NetworkId"`
 	IpAddress       string `json:"IpAddress,omitempty"`
 	ExternalAddress string `json:"ExternalAddress,omitempty"`
 }
 
-// DuploPodLbConfiguration represents an LB configuration in the Duplo SDK
+// DuploLbConfiguration represents an LB configuration in the Duplo SDK
 type DuploLbConfiguration struct {
 	TenantId                  string                    `json:"TenantId"`
 	ReplicationControllerName string                    `json:"ReplicationControllerName"`
@@ -93,7 +93,8 @@ type DuploLbConfiguration struct {
 	TgArn                     string                    `json:"TgArn,omitempty"`
 	CustomCidrs               []string                  `json:"CustomCidrs,omitempty"`
 	// Only for K8s services
-	ExtraSelectorLabels *[]DuploKeyStringValue `json:"ExtraSelectorLabels,omitempty"`
+	ExtraSelectorLabels   *[]DuploKeyStringValue `json:"ExtraSelectorLabels,omitempty"`
+	SetIngressHealthCheck bool                   `json:"SetIngressHealthCheck,omitempty"`
 
 	// Only for Azure and Lbtype 5
 	HostNames *[]string `json:"HostNames,omitempty"`
@@ -197,7 +198,7 @@ type DuploLbWafUpdateRequest struct {
 
 // ReplicationControllerList retrieves a list of replication controllers via the Duplo API.
 func (c *Client) ReplicationControllerList(tenantID string) (*[]DuploReplicationController, ClientError) {
-	rp := []DuploReplicationController{}
+	var rp []DuploReplicationController
 	err := c.getAPI(fmt.Sprintf("ReplicationControllerList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetReplicationControllers", tenantID),
 		&rp)
@@ -270,7 +271,7 @@ func (c *Client) ReplicationControllerDelete(tenantID string, rq *DuploReplicati
 
 // LbConfigurationList retrieves a list of LB configurations for all replication controllers in the given tenant.
 func (c *Client) LbConfigurationList(tenantID string) (*[]DuploLbConfiguration, ClientError) {
-	rp := []DuploLbConfiguration{}
+	var rp []DuploLbConfiguration
 	err := c.getAPI(fmt.Sprintf("LbConfigurationList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetLBConfigurations", tenantID),
 		&rp)
@@ -280,7 +281,7 @@ func (c *Client) LbConfigurationList(tenantID string) (*[]DuploLbConfiguration, 
 	return &rp, nil
 }
 
-// LbConfigurationList retrieves a list of LB configurations for a specific replication controller in the given tenant.
+// ReplicationControllerLbConfigurationList retrieves a list of LB configurations for a specific replication controller in the given tenant.
 func (c *Client) ReplicationControllerLbConfigurationList(tenantID string, name string) (*[]DuploLbConfiguration, ClientError) {
 	allLbs, err := c.LbConfigurationList(tenantID)
 	if err != nil {
@@ -335,7 +336,7 @@ func (c *Client) ReplicationControllerLbConfigurationDelete(tenantID, name strin
 	)
 }
 
-// ReplicationControllerLbConfigurationUpdate deletes all LB configurations for a replication controller.
+// ReplicationControllerLbConfigurationDeleteAll deletes all LB configurations for a replication controller.
 func (c *Client) ReplicationControllerLbConfigurationDeleteAll(tenantID, name string) ClientError {
 	lbs, err := c.ReplicationControllerLbConfigurationList(tenantID, name)
 	if err != nil {

@@ -93,6 +93,8 @@ resource "duplocloud_aws_mwaa_environment" "my-mwaa" {
 - **requirements_s3_object_version** (String) The requirements.txt file version you want to use..
 - **requirements_s3_path** (String) The relative path to the requirements.txt file on your Amazon S3 storage bucket. For example, requirements.txt. If a relative path is provided in the request, then requirements_s3_object_version is required.
 - **schedulers** (Number) The number of schedulers that you want to run in your environment.
+- **startup_script_s3_object_version** (String) The startup script file version you want to use.
+- **startup_script_s3_path** (String) The relative path to the startup script file on your Amazon S3 storage bucket. For example, startup_script.sh.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_ready** (Boolean) Whether or not to wait until Amazon MWAA Environment to be ready, after creation. Defaults to `true`.
 - **webserver_access_mode** (String) Specifies whether the webserver should be accessible over the internet or via your specified VPC.  Defaults to `PUBLIC_ONLY`.
