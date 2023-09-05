@@ -191,6 +191,12 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			MaxItems:    5,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"ephemeral_storage": {
+			Description:  "The Ephemeral Storage size, in MB, that your lambda function is allowed to use at runtime.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ValidateFunc: validation.IntBetween(512, 10240),
+		},
 	}
 }
 
@@ -260,11 +266,12 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		PackageType: &duplosdk.DuploStringValue{
 			Value: getPackageType(d),
 		},
-		Description: d.Get("description").(string),
-		Timeout:     d.Get("timeout").(int),
-		MemorySize:  d.Get("memory_size").(int),
-		Code:        duplosdk.DuploLambdaCode{}, // initial assumption
-		Tags:        expandAwsLambdaTags(d),
+		Description:      d.Get("description").(string),
+		Timeout:          d.Get("timeout").(int),
+		MemorySize:       d.Get("memory_size").(int),
+		Code:             duplosdk.DuploLambdaCode{}, // initial assumption
+		Tags:             expandAwsLambdaTags(d),
+		EphemeralStorage: &duplosdk.DuploLambdaEphemeralStorage{},
 	}
 	if v, ok := getAsStringArray(d, "layers"); ok && v != nil {
 		rq.Layers = v
@@ -295,6 +302,9 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	}
 	rq.Environment = expandAwsLambdaEnvironment(environment)
 
+	if v, ok := d.GetOk("ephemeral_storage"); ok && v != nil && v.(int) != 0 {
+		rq.EphemeralStorage = &duplosdk.DuploLambdaEphemeralStorage{Size: v.(int)}
+	}
 	c := m.(*duplosdk.Client)
 
 	// Post the object to Duplo
@@ -411,6 +421,9 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 	d.Set("handler", duplo.Handler)
 	d.Set("version", duplo.Version)
 	d.Set("layers", duplo.Layers)
+	if duplo.EphemeralStorage != nil {
+		d.Set("ephemeral_storage", duplo.EphemeralStorage.Size)
+	}
 	if duplo.Runtime != nil {
 		d.Set("runtime", duplo.Runtime.Value)
 	}
@@ -497,6 +510,10 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 		}
 	}
 
+	if v, ok := d.GetOk("ephemeral_storage"); ok && v != nil && v.(int) != 0 {
+		rq.EphemeralStorage = &duplosdk.DuploLambdaEphemeralStorage{Size: v.(int)}
+	}
+
 	if v, ok := d.GetOk("tracing_config"); ok && len(v.([]interface{})) > 0 && v.([]interface{})[0] != nil {
 		rq.TracingConfig = &duplosdk.DuploLambdaTracingConfig{
 			Mode: duplosdk.DuploStringValue{Value: v.([]interface{})[0].(map[string]interface{})["mode"].(string)},
@@ -559,6 +576,7 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 		d.HasChange("memory_size") ||
 		d.HasChange("environment") ||
 		d.HasChange("tags") ||
+		d.HasChange("layers") ||
 		d.HasChange("tracing_config") ||
-		d.HasChange("layers")
+		d.HasChange("ephemeral_storage")
 }

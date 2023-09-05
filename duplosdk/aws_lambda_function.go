@@ -30,23 +30,24 @@ type DuploLambdaConfiguration struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`
 
-	CodeSha256    string                    `json:"CodeSha256"`
-	CodeSize      int                       `json:"CodeSize"`
-	Description   string                    `json:"Description,omitempty"`
-	Environment   *DuploLambdaEnvironment   `json:"Environment,omitempty"`
-	FunctionArn   string                    `json:"FunctionArn,omitempty"`
-	FunctionName  string                    `json:"FunctionName,omitempty"`
-	Handler       string                    `json:"Handler,omitempty"`
-	LastModified  string                    `json:"LastModified,omitempty"`
-	MemorySize    int                       `json:"MemorySize"`
-	Role          string                    `json:"Role,omitempty"`
-	PackageType   *DuploStringValue         `json:"PackageType,omitempty"`
-	Runtime       *DuploStringValue         `json:"Runtime,omitempty"`
-	Timeout       int                       `json:"Timeout,omitempty"`
-	TracingConfig *DuploLambdaTracingConfig `json:"TracingConfig,omitempty"`
-	Version       string                    `json:"Version,omitempty"`
-	VpcConfig     *DuploLambdaVpcConfig     `json:"VpcConfig,omitempty"`
-	Layers        *[]DuploLambdaLayerGet    `json:"Layers,omitempty"`
+	CodeSha256       string                       `json:"CodeSha256"`
+	CodeSize         int                          `json:"CodeSize"`
+	Description      string                       `json:"Description,omitempty"`
+	Environment      *DuploLambdaEnvironment      `json:"Environment,omitempty"`
+	FunctionArn      string                       `json:"FunctionArn,omitempty"`
+	FunctionName     string                       `json:"FunctionName,omitempty"`
+	Handler          string                       `json:"Handler,omitempty"`
+	LastModified     string                       `json:"LastModified,omitempty"`
+	MemorySize       int                          `json:"MemorySize"`
+	Role             string                       `json:"Role,omitempty"`
+	PackageType      *DuploStringValue            `json:"PackageType,omitempty"`
+	Runtime          *DuploStringValue            `json:"Runtime,omitempty"`
+	Timeout          int                          `json:"Timeout,omitempty"`
+	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
+	Version          string                       `json:"Version,omitempty"`
+	VpcConfig        *DuploLambdaVpcConfig        `json:"VpcConfig,omitempty"`
+	Layers           *[]DuploLambdaLayerGet       `json:"Layers,omitempty"`
+	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
 }
 
 // DuploLambdaCode is a Duplo SDK object that represents a lambda function's code.
@@ -56,9 +57,14 @@ type DuploLambdaCode struct {
 	S3Key    string `json:"S3Key,omitempty"`
 }
 
-// DuploLambdaEnvironment is a Duplo SDK object that represents a lambda function's tracing config.
+// DuploLambdaEnvironment is a Duplo SDK object that represents a lambda function's environment config.
 type DuploLambdaEnvironment struct {
 	Variables map[string]string `json:"Variables,omitempty"`
+}
+
+// DuploLambdaEphemeralStorage is a Duplo SDK object that represents a lambda function's ephemeral storage config.
+type DuploLambdaEphemeralStorage struct {
+	Size int `json:"Size"`
 }
 
 // DuploLambdaTracingConfig is a Duplo SDK object that represents a lambda function's tracing config.
@@ -66,7 +72,7 @@ type DuploLambdaTracingConfig struct {
 	Mode DuploStringValue `json:"Mode,omitempty"`
 }
 
-// DuploLambdaVpcConfig is a Duplo SDK object that represents a lambda function's tracing config.
+// DuploLambdaVpcConfig is a Duplo SDK object that represents a lambda function's vpn config.
 type DuploLambdaVpcConfig struct {
 	SecurityGroupIDs []string `json:"SecurityGroupIds,omitempty"`
 	SubnetIDs        []string `json:"SubnetIds,omitempty"`
@@ -75,18 +81,19 @@ type DuploLambdaVpcConfig struct {
 
 // DuploLambdaCreateRequest is a Duplo SDK object that represents a request to create a lambda function.
 type DuploLambdaCreateRequest struct {
-	FunctionName  string                    `json:"FunctionName"`
-	Code          DuploLambdaCode           `json:"Code"`
-	Handler       string                    `json:"Handler,omitempty"`
-	Description   string                    `json:"Description,omitempty"`
-	Timeout       int                       `json:"Timeout,omitempty"`
-	MemorySize    int                       `json:"MemorySize"`
-	PackageType   *DuploStringValue         `json:"PackageType,omitempty"`
-	Runtime       *DuploStringValue         `json:"Runtime,omitempty"`
-	Environment   *DuploLambdaEnvironment   `json:"Environment,omitempty"`
-	Tags          map[string]string         `json:"Tags,omitempty"`
-	Layers        *[]string                 `json:"Layers,omitempty"`
-	TracingConfig *DuploLambdaTracingConfig `json:"TracingConfig,omitempty"`
+	FunctionName     string                       `json:"FunctionName"`
+	Code             DuploLambdaCode              `json:"Code"`
+	Handler          string                       `json:"Handler,omitempty"`
+	Description      string                       `json:"Description,omitempty"`
+	Timeout          int                          `json:"Timeout,omitempty"`
+	MemorySize       int                          `json:"MemorySize"`
+	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
+	PackageType      *DuploStringValue            `json:"PackageType,omitempty"`
+	Runtime          *DuploStringValue            `json:"Runtime,omitempty"`
+	Environment      *DuploLambdaEnvironment      `json:"Environment,omitempty"`
+	Tags             map[string]string            `json:"Tags,omitempty"`
+	Layers           *[]string                    `json:"Layers,omitempty"`
+	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
 }
 
 // DuploLambdaUpdateRequest is a Duplo SDK object that represents a request to update a lambda function's code.
@@ -99,16 +106,17 @@ type DuploLambdaUpdateRequest struct {
 
 // DuploLambdaConfigurationRequest is a Duplo SDK object that represents a request to update a lambda function's configuration.
 type DuploLambdaConfigurationRequest struct {
-	FunctionName  string                    `json:"FunctionName,omitempty"`
-	Handler       string                    `json:"Handler,omitempty"`
-	Runtime       *DuploStringValue         `json:"Runtime,omitempty"`
-	Description   string                    `json:"Description,omitempty"`
-	Timeout       int                       `json:"Timeout,omitempty"`
-	MemorySize    int                       `json:"MemorySize"`
-	Environment   *DuploLambdaEnvironment   `json:"Environment,omitempty"`
-	Tags          map[string]string         `json:"Tags,omitempty"`
-	Layers        *[]string                 `json:"Layers,omitempty"`
-	TracingConfig *DuploLambdaTracingConfig `json:"TracingConfig,omitempty"`
+	FunctionName     string                       `json:"FunctionName,omitempty"`
+	Handler          string                       `json:"Handler,omitempty"`
+	Runtime          *DuploStringValue            `json:"Runtime,omitempty"`
+	Description      string                       `json:"Description,omitempty"`
+	Timeout          int                          `json:"Timeout,omitempty"`
+	MemorySize       int                          `json:"MemorySize"`
+	Environment      *DuploLambdaEnvironment      `json:"Environment,omitempty"`
+	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
+	Tags             map[string]string            `json:"Tags,omitempty"`
+	Layers           *[]string                    `json:"Layers,omitempty"`
+	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
 }
 
 type DuploLambdaPermissionStatement struct {
@@ -167,7 +175,7 @@ func (c *Client) LambdaFunctionUpdate(tenantID string, rq *DuploLambdaUpdateRequ
 // LambdaFunctionUpdateConfiguration updates a lambda function's configuration via the Duplo API.
 func (c *Client) LambdaFunctionUpdateConfiguration(tenantID string, rq *DuploLambdaConfigurationRequest) ClientError {
 	return c.postAPI(
-		fmt.Sprintf("LambdaFunctionUpdateConfigurationg(%s, %s)", tenantID, rq.FunctionName),
+		fmt.Sprintf("LambdaFunctionUpdateConfiguration(%s, %s)", tenantID, rq.FunctionName),
 		fmt.Sprintf("subscriptions/%s/UpdateLambdaFunctionConfiguration", tenantID),
 		&rq,
 		nil,
