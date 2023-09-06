@@ -226,7 +226,7 @@ func (c *Client) InfrastructureGet(name string) (*DuploInfrastructureConfig, Cli
 // InfrastructureGetConfig retrieves extended infrastructure configuration by name via the Duplo API.
 func (c *Client) InfrastructureGetConfig(name string) (*DuploInfrastructureConfig, ClientError) {
 	rp := DuploInfrastructureConfig{}
-	err := c.getAPI(fmt.Sprintf("InfrastructureGetConfig(%s)", name), fmt.Sprintf("v3/admin/infrastructure/%s", name), &rp)
+	err := c.getAPI(fmt.Sprintf("InfrastructureGetConfig(%s)", name), fmt.Sprintf("adminproxy/GetInfrastructureConfig/%s", name), &rp)
 	if err != nil || rp.Name == "" {
 		return nil, err
 	}
