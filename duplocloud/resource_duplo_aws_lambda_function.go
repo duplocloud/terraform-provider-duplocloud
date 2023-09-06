@@ -195,6 +195,7 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Description:  "The Ephemeral Storage size, in MB, that your lambda function is allowed to use at runtime.",
 			Type:         schema.TypeInt,
 			Optional:     true,
+			Computed:     true,
 			ValidateFunc: validation.IntBetween(512, 10240),
 		},
 	}

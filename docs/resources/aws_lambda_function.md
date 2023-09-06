@@ -52,6 +52,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 
 - **description** (String) A description of the lambda function.
 - **environment** (Block List, Max: 1) Allow customization of the lambda execution environment. (see [below for nested schema](#nestedblock--environment))
+- **ephemeral_storage** (Number) The Ephemeral Storage size, in MB, that your lambda function is allowed to use at runtime.
 - **handler** (String) The [entrypoint](https://docs.aws.amazon.com/lambda/latest/dg/walkthrough-custom-events-create-test-function.html) of the lambda function in your code.
 - **image_uri** (String) The docker image that holds the lambda function's code. Used (and required) only when `package_type` is `"Image"`.
 - **layers** (List of String) List of Lambda Layer Version ARNs (maximum of 5) to attach to your Lambda Function.

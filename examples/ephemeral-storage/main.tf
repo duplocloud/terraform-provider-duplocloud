@@ -8,8 +8,8 @@ terraform {
 }
 
 provider "duplocloud" {
-   duplo_host = "https://xxx.duplocloud.net"  # you can also set the duplo_host env var
-   duplo_token = "..."                         # please *ONLY* specify using a duplo_token env var (avoid checking secrets into git)
+  duplo_host  = "https://xxx.duplocloud.net" # you can also set the duplo_host env var
+  duplo_token = "..."                        # please *ONLY* specify using a duplo_token env var (avoid checking secrets into git)
 }
 
 variable "tenant_id" {
@@ -61,6 +61,6 @@ resource "duplocloud_aws_lambda_function" "test" {
   memory_size       = 128
   runtime           = "python3.9"
   handler           = "main"
-  ephemeral_storage = 1024 
+  ephemeral_storage = 1024
 }
 
