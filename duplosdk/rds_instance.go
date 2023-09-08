@@ -118,9 +118,9 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 
 // RdsInstanceDelete deletes an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, ClientError) {
-	idParts := strings.Split(id, "/")
+	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
-	name := idParts[len(idParts)-1]
+	name := idParts[4]
 
 	// Call the API.
 	err := c.deleteAPI(
@@ -137,9 +137,9 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, ClientError) {
 
 // RdsInstanceGet retrieves an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
-	idParts := strings.Split(id, "/")
+	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
-	name := idParts[len(idParts)-1] // use new v3 api ..take last one
+	name := idParts[4]
 
 	// Call the API.
 	duploObject := DuploRdsInstance{}
