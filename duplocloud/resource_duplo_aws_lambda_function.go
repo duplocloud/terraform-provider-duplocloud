@@ -119,19 +119,36 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"tracing_config": {
+			Type:     schema.TypeList,
+			MaxItems: 1,
+			Optional: true,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"mode": {
+						Description:  "Whether to sample and trace a subset of incoming requests with AWS X-Ray. Valid values are `PassThrough` and `Active`.",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"PassThrough", "Active"}, false),
+					},
+				},
+			},
+		},
 		"runtime": {
 			Description: "The [runtime](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) that the lambda function needs.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice([]string{
-				"nodejs", "nodejs4.3", "nodejs6.10", "nodejs8.10", "nodejs10.x", "nodejs12.x", "nodejs14.x", "nodejs16.x",
-				"java8", "java8.al2", "java11",
-				"python2.7", "python3.6", "python3.7", "python3.8", "python3.9",
+				"nodejs", "nodejs4.3", "nodejs6.10", "nodejs8.10", "nodejs10.x", "nodejs12.x", "nodejs14.x", "nodejs16.x", "nodejs18.x",
+				"java8", "java8.al2", "java11", "java17",
+				"python2.7", "python3.6", "python3.7", "python3.8", "python3.9", "python3.10",
 				"dotnetcore1.0", "dotnetcore2.0", "dotnetcore2.1", "dotnetcore3.1",
+				"dotnet6", "dotnet7",
 				"nodejs4.3-edge",
 				"go1.x",
-				"ruby2.5", "ruby2.7",
+				"ruby2.5", "ruby2.7", "ruby3.2",
 				"provided", "provided.al2",
 			}, false),
 		},
@@ -173,6 +190,13 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Optional:    true,
 			MaxItems:    5,
 			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		"ephemeral_storage": {
+			Description:  "The Ephemeral Storage size, in MB, that your lambda function is allowed to use at runtime.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.IntBetween(512, 10240),
 		},
 	}
 }
@@ -243,11 +267,12 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		PackageType: &duplosdk.DuploStringValue{
 			Value: getPackageType(d),
 		},
-		Description: d.Get("description").(string),
-		Timeout:     d.Get("timeout").(int),
-		MemorySize:  d.Get("memory_size").(int),
-		Code:        duplosdk.DuploLambdaCode{}, // initial assumption
-		Tags:        expandAwsLambdaTags(d),
+		Description:      d.Get("description").(string),
+		Timeout:          d.Get("timeout").(int),
+		MemorySize:       d.Get("memory_size").(int),
+		Code:             duplosdk.DuploLambdaCode{}, // initial assumption
+		Tags:             expandAwsLambdaTags(d),
+		EphemeralStorage: &duplosdk.DuploLambdaEphemeralStorage{},
 	}
 	if v, ok := getAsStringArray(d, "layers"); ok && v != nil {
 		rq.Layers = v
@@ -265,12 +290,22 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		rq.Code.ImageURI = d.Get("image_uri").(string)
 	}
 
+	if v, ok := d.GetOk("tracing_config"); ok && len(v.([]interface{})) > 0 && v.([]interface{})[0] != nil {
+		rq.TracingConfig = &duplosdk.DuploLambdaTracingConfig{
+			Mode: duplosdk.DuploStringValue{Value: v.([]interface{})[0].(map[string]interface{})["mode"].(string)},
+		}
+
+	}
+
 	environment, err := getOptionalBlockAsMap(d, "environment")
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	rq.Environment = expandAwsLambdaEnvironment(environment)
 
+	if v, ok := d.GetOk("ephemeral_storage"); ok && v != nil && v.(int) != 0 {
+		rq.EphemeralStorage = &duplosdk.DuploLambdaEphemeralStorage{Size: v.(int)}
+	}
 	c := m.(*duplosdk.Client)
 
 	// Post the object to Duplo
@@ -387,6 +422,9 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 	d.Set("handler", duplo.Handler)
 	d.Set("version", duplo.Version)
 	d.Set("layers", duplo.Layers)
+	if duplo.EphemeralStorage != nil {
+		d.Set("ephemeral_storage", duplo.EphemeralStorage.Size)
+	}
 	if duplo.Runtime != nil {
 		d.Set("runtime", duplo.Runtime.Value)
 	}
@@ -394,6 +432,13 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 		d.Set("package_type", duplo.PackageType.Value)
 	}
 	d.Set("environment", flattenAwsLambdaEnvironment(duplo.Environment))
+	if duplo.TracingConfig != nil {
+		d.Set("tracing_config", []interface{}{
+			map[string]interface{}{
+				"mode": string(duplo.TracingConfig.Mode.Value),
+			},
+		})
+	}
 }
 
 func flattenAwsLambdaEnvironment(environment *duplosdk.DuploLambdaEnvironment) []interface{} {
@@ -466,6 +511,16 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 		}
 	}
 
+	if v, ok := d.GetOk("ephemeral_storage"); ok && v != nil && v.(int) != 0 {
+		rq.EphemeralStorage = &duplosdk.DuploLambdaEphemeralStorage{Size: v.(int)}
+	}
+
+	if v, ok := d.GetOk("tracing_config"); ok && len(v.([]interface{})) > 0 && v.([]interface{})[0] != nil {
+		rq.TracingConfig = &duplosdk.DuploLambdaTracingConfig{
+			Mode: duplosdk.DuploStringValue{Value: v.([]interface{})[0].(map[string]interface{})["mode"].(string)},
+		}
+
+	}
 	environment, err := getOptionalBlockAsMap(d, "environment")
 	if err != nil {
 		return err
@@ -522,5 +577,7 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 		d.HasChange("memory_size") ||
 		d.HasChange("environment") ||
 		d.HasChange("tags") ||
-		d.HasChange("layers")
+		d.HasChange("layers") ||
+		d.HasChange("tracing_config") ||
+		d.HasChange("ephemeral_storage")
 }

@@ -52,6 +52,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 
 - **description** (String) A description of the lambda function.
 - **environment** (Block List, Max: 1) Allow customization of the lambda execution environment. (see [below for nested schema](#nestedblock--environment))
+- **ephemeral_storage** (Number) The Ephemeral Storage size, in MB, that your lambda function is allowed to use at runtime.
 - **handler** (String) The [entrypoint](https://docs.aws.amazon.com/lambda/latest/dg/walkthrough-custom-events-create-test-function.html) of the lambda function in your code.
 - **image_uri** (String) The docker image that holds the lambda function's code. Used (and required) only when `package_type` is `"Image"`.
 - **layers** (List of String) List of Lambda Layer Version ARNs (maximum of 5) to attach to your Lambda Function.
@@ -63,6 +64,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 - **tags** (Map of String) Map of tags to assign to the object.
 - **timeout** (Number) The execution time limit for the lambda function. Defaults to `3`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **tracing_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--tracing_config))
 
 ### Read-Only
 
@@ -90,6 +92,14 @@ Optional:
 
 - **create** (String)
 - **delete** (String)
+
+
+<a id="nestedblock--tracing_config"></a>
+### Nested Schema for `tracing_config`
+
+Required:
+
+- **mode** (String) Whether to sample and trace a subset of incoming requests with AWS X-Ray. Valid values are `PassThrough` and `Active`.
 
 ## Import
 

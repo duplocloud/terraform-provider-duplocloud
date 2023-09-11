@@ -29,11 +29,15 @@ func awsSsmParameterSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"type": {
-			Description:  "The type of the SSM parameter.",
-			Type:         schema.TypeString,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.StringInSlice([]string{"String", "StringList", "SecureString"}, false),
+			Description: "The type of the SSM parameter. Valid values are `String`, `StringList`, and `SecureString`.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"String",
+				"StringList",
+				"SecureString"},
+				false),
 		},
 		"value": {
 			Description: "The value of the SSM parameter.",

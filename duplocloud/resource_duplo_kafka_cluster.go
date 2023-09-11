@@ -48,7 +48,6 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 		"configuration_arn": {
 			Description:  "An ARN of a Kafka configuration to apply to the cluster.",
 			Type:         schema.TypeString,
-			ForceNew:     true,
 			Optional:     true,
 			Computed:     true,
 			RequiredWith: []string{"configuration_revision"},
@@ -56,7 +55,6 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 		"configuration_revision": {
 			Description:  "An revision of a Kafka configuration to apply to the cluster.",
 			Type:         schema.TypeInt,
-			ForceNew:     true,
 			Optional:     true,
 			Computed:     true,
 			RequiredWith: []string{"configuration_arn"},
@@ -202,10 +200,13 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 	// Next, set fields that come from extended information.
 	if info != nil {
 		if info.BrokerNodeGroup != nil {
+			plaintextZookeeperConnectString := sortCommaDelimitedString(info.ZookeeperConnectString)
+			tlsZookeeperConnectString := sortCommaDelimitedString(info.ZookeeperConnectStringTls)
+
 			d.Set("instance_type", info.BrokerNodeGroup.InstanceType)
 			d.Set("storage_size", info.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize)
-			d.Set("plaintext_zookeeper_connect_string", info.ZookeeperConnectString)
-			d.Set("tls_zookeeper_connect_string", info.ZookeeperConnectStringTls)
+			d.Set("plaintext_zookeeper_connect_string", plaintextZookeeperConnectString)
+			d.Set("tls_zookeeper_connect_string", tlsZookeeperConnectString)
 			d.Set("number_of_broker_nodes", info.NumberOfBrokerNodes)
 			if info.BrokerNodeGroup.AZDistribution != nil {
 				d.Set("az_distribution", info.BrokerNodeGroup.AZDistribution.Value)
@@ -227,8 +228,11 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 		}
 	}
 	if bootstrap != nil {
-		d.Set("plaintext_bootstrap_broker_string", bootstrap.BootstrapBrokerString)
-		d.Set("tls_bootstrap_broker_string", bootstrap.BootstrapBrokerStringTls)
+		plaintextBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerString)
+		tlsBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerStringTls)
+
+		d.Set("plaintext_bootstrap_broker_string", plaintextBootstrapBrokerString)
+		d.Set("tls_bootstrap_broker_string", tlsBootstrapBrokerString)
 	}
 	d.Set("state", info.State.Value)
 	d.Set("tags", info.Tags)

@@ -38,10 +38,11 @@ func resourceInfrastructureSetting() *schema.Resource {
 				ForceNew:    true,
 			},
 			"setting": {
-				Description: "A list of configuration settings to manage, expressed as key / value pairs.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        KeyValueSchema(),
+				Description:   "A list of configuration settings to manage, expressed as key / value pairs.",
+				Type:          schema.TypeList,
+				Optional:      true,
+				Elem:          KeyValueSchema(),
+				ConflictsWith: []string{"custom_data"},
 			},
 			"delete_unspecified_settings": {
 				Description: "Whether or not this resource should delete any settings not specified by this resource. " +
@@ -51,10 +52,12 @@ func resourceInfrastructureSetting() *schema.Resource {
 				Default:  false,
 			},
 			"custom_data": {
-				Description: "A complete list of configuration settings for this infrastructure, even ones not being managed by this resource.",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem:        KeyValueSchema(),
+				Description:   "A complete list of configuration settings for this infrastructure, even ones not being managed by this resource.",
+				Type:          schema.TypeList,
+				Optional:      true,
+				Elem:          KeyValueSchema(),
+				Deprecated:    "The custom_data argument is only applied on creation, and is deprecated in favor of the settings argument.",
+				ConflictsWith: []string{"setting"},
 			},
 			"specified_settings": {
 				Description: "A list of configuration setting key being managed by this resource.",
@@ -85,11 +88,10 @@ func resourceInfrastructureSettingRead(ctx context.Context, d *schema.ResourceDa
 
 	// Set the simple fields first.
 	d.Set("infra_name", duplo.InfraName)
-	d.Set("custom_data", keyValueToState("custom_data", duplo.CustomData))
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
-		d.Set("setting", keyValueToState("setting", selectKeyValues(duplo.CustomData, *v)))
+		d.Set("setting", keyValueToState("setting", selectKeyValues(duplo.Setting, *v)))
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureSettingRead(%s): end", infraName)
@@ -107,11 +109,14 @@ func resourceInfrastructureSettingCreateOrUpdate(ctx context.Context, d *schema.
 	c := m.(*duplosdk.Client)
 	config, err := c.InfrastructureGetSetting(infraName)
 	if err != nil {
-		return diag.Errorf("Error retrieving infrastructure settings for '%s': %s", infraName, err)
+		return diag.Errorf("Error retrieving infrastructure settings for '%s': %s.", infraName, err)
+	}
+	if config == nil {
+		return diag.Errorf("Error retrieving infrastructure config for '%s'. Please check if infrastructure exists.", infraName)
 	}
 	var existing *[]duplosdk.DuploKeyStringValue
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
-		existing = selectKeyValues(config.CustomData, *v)
+		existing = selectKeyValues(config.Setting, *v)
 	} else {
 		existing = &[]duplosdk.DuploKeyStringValue{}
 	}
@@ -126,7 +131,7 @@ func resourceInfrastructureSettingCreateOrUpdate(ctx context.Context, d *schema.
 
 	// Apply the changes via Duplo
 	if d.Get("delete_unspecified_settings").(bool) {
-		err = c.InfrastructureReplaceSetting(duplosdk.DuploInfrastructureSetting{InfraName: infraName, CustomData: settings})
+		err = c.InfrastructureReplaceSetting(duplosdk.DuploInfrastructureSetting{InfraName: infraName, Setting: settings})
 	} else {
 		err = c.InfrastructureChangeSetting(infraName, existing, settings)
 	}
@@ -154,8 +159,12 @@ func resourceInfrastructureSettingDelete(ctx context.Context, d *schema.Resource
 		return diag.Errorf("Error fetching infrastructure settings for '%s': %s", infraName, err)
 	}
 
-	// Get the previous and desired infrastructure settingss
-	previous, _ := getInfrastructureSettingChange(all.CustomData, d)
+	if all == nil {
+		d.SetId("") // object missing
+		return nil
+	}
+	// Get the previous and desired infrastructure settings
+	previous, _ := getInfrastructureSettingChange(all.Setting, d)
 	desired := &[]duplosdk.DuploKeyStringValue{}
 	if d.Get("delete_unspecified_settings").(bool) {
 		err = c.InfrastructureReplaceSetting(duplosdk.DuploInfrastructureSetting{InfraName: infraName})
@@ -210,7 +219,7 @@ func expandInfrastructureSetting(fieldName string, d *schema.ResourceData) *[]du
 	return &ary
 }
 
-// Utiliy function to return a filtered list of tenant metadata, given the selected keys.
+// Utility function to return a filtered list of tenant metadata, given the selected keys.
 func selectInfrastructureSettings(all *[]duplosdk.DuploKeyStringValue, keys []string) *[]duplosdk.DuploKeyStringValue {
 	specified := map[string]interface{}{}
 	for _, k := range keys {

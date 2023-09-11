@@ -6,6 +6,11 @@ import (
 )
 
 const (
+	RDS_TYPE_CLUSTER  string = "cluster"
+	RDS_TYPE_INSTANCE string = "instance"
+)
+
+const (
 	DUPLO_RDS_ENGINE_MYSQL                        = 0
 	DUPLO_RDS_ENGINE_POSTGRESQL                   = 1
 	DUPLO_RDS_ENGINE_MSSQL_EXPRESS                = 2
@@ -26,27 +31,34 @@ type DuploRdsInstance struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`
 
-	Identifier                  string `json:"Identifier"`
-	ClusterIdentifier           string `json:"ClusterIdentifier,omitempty"`
-	ReplicationSourceIdentifier string `json:"ReplicationSourceIdentifier,omitempty"`
-	Arn                         string `json:"Arn"`
-	Endpoint                    string `json:"Endpoint,omitempty"`
-	MasterUsername              string `json:"MasterUsername,omitempty"`
-	MasterPassword              string `json:"MasterPassword,omitempty"`
-	Engine                      int    `json:"Engine,omitempty"`
-	EngineVersion               string `json:"EngineVersion,omitempty"`
-	SnapshotID                  string `json:"SnapshotId,omitempty"`
-	DBParameterGroupName        string `json:"DBParameterGroupName,omitempty"`
-	StoreDetailsInSecretManager bool   `json:"StoreDetailsInSecretManager,omitempty"`
-	Cloud                       int    `json:"Cloud,omitempty"`
-	SizeEx                      string `json:"SizeEx,omitempty"`
-	EncryptStorage              bool   `json:"EncryptStorage,omitempty"`
-	AllocatedStorage            int    `json:"AllocatedStorage,omitempty"`
-	EncryptionKmsKeyId          string `json:"EncryptionKmsKeyId,omitempty"`
-	EnableLogging               bool   `json:"EnableLogging,omitempty"`
-	MultiAZ                     bool   `json:"MultiAZ,omitempty"`
-	InstanceStatus              string `json:"InstanceStatus,omitempty"`
-	DBSubnetGroupName           string `json:"DBSubnetGroupName,omitempty"`
+	Identifier                  string                  `json:"Identifier"`
+	ClusterIdentifier           string                  `json:"ClusterIdentifier,omitempty"`
+	ReplicationSourceIdentifier string                  `json:"ReplicationSourceIdentifier,omitempty"`
+	Arn                         string                  `json:"Arn"`
+	Endpoint                    string                  `json:"Endpoint,omitempty"`
+	MasterUsername              string                  `json:"MasterUsername,omitempty"`
+	MasterPassword              string                  `json:"MasterPassword,omitempty"`
+	Engine                      int                     `json:"Engine,omitempty"`
+	EngineVersion               string                  `json:"EngineVersion,omitempty"`
+	SnapshotID                  string                  `json:"SnapshotId,omitempty"`
+	DBParameterGroupName        string                  `json:"DBParameterGroupName,omitempty"`
+	StoreDetailsInSecretManager bool                    `json:"StoreDetailsInSecretManager,omitempty"`
+	Cloud                       int                     `json:"Cloud,omitempty"`
+	SizeEx                      string                  `json:"SizeEx,omitempty"`
+	EncryptStorage              bool                    `json:"EncryptStorage,omitempty"`
+	AllocatedStorage            int                     `json:"AllocatedStorage,omitempty"`
+	EncryptionKmsKeyId          string                  `json:"EncryptionKmsKeyId,omitempty"`
+	EnableLogging               bool                    `json:"EnableLogging,omitempty"`
+	MultiAZ                     bool                    `json:"MultiAZ,omitempty"`
+	InstanceStatus              string                  `json:"InstanceStatus,omitempty"`
+	DBSubnetGroupName           string                  `json:"DBSubnetGroupName,omitempty"`
+	V2ScalingConfiguration      *V2ScalingConfiguration `json:"V2ScalingConfiguration,omitempty"`
+	AvailabilityZone            string                  `json:"AvailabilityZone,omitempty"`
+}
+
+type V2ScalingConfiguration struct {
+	MinCapacity float64 `json:"MinCapacity,omitempty"`
+	MaxCapacity float64 `json:"MaxCapacity,omitempty"`
 }
 
 // DuploRdsInstancePasswordChange is a Duplo SDK object that represents an RDS instance password change
@@ -65,6 +77,21 @@ type DuploRdsClusterDeleteProtection struct {
 	DBClusterIdentifier string `json:"DBClusterIdentifier"`
 	ApplyImmediately    bool   `json:"ApplyImmediately"`
 	DeletionProtection  *bool  `json:"DeletionProtection,omitempty"`
+}
+
+type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
+	Identifier             string                  `json:"Identifier"`
+	ClusterIdentifier      string                  `json:"ClusterIdentifier"`
+	ApplyImmediately       bool                    `json:"ApplyImmediately"`
+	SizeEx                 string                  `json:"SizeEx,omitempty"`
+	V2ScalingConfiguration *V2ScalingConfiguration `json:"V2ScalingConfiguration,omitempty"`
+}
+
+type DuploRDSTag struct {
+	ResourceType string `json:"ResourceType"`
+	ResourceId   string `json:"ResourceId"`
+	Key          string `json:"Key"`
+	Value        string `json:"Value"`
 }
 
 /*************************************************
@@ -202,6 +229,16 @@ func (c *Client) RdsClusterChangeDeleteProtection(tenantID string, duploObject D
 		nil,
 	)
 }
+
+func (c *Client) RdsModifyAuroraV2ServerlessInstanceSize(tenantID string, duploObject DuploRdsModifyAuroraV2ServerlessInstanceSize) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("RdsModifyAuroraV2ServerlessInstanceSize(%s, %s)", tenantID, duploObject.ClusterIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/modifyAuroraToV2Serverless", tenantID),
+		&duploObject,
+		nil,
+	)
+}
+
 func RdsIsAurora(engine int) bool {
 	return engine == DUPLO_RDS_ENGINE_AURORA_MYSQL ||
 		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL ||
@@ -213,4 +250,62 @@ func RdsIsMsSQL(engine int) bool {
 	return engine == DUPLO_RDS_ENGINE_MSSQL_EXPRESS ||
 		engine == DUPLO_RDS_ENGINE_MSSQL_STANDARD ||
 		engine == DUPLO_RDS_ENGINE_MSSQL_WEB
+}
+
+/*************************************************
+ * API Calls for RDS Tags
+ */
+
+func (c *Client) RdsTagCreateV3(tenantID string, tag DuploRDSTag) ClientError {
+	resp := &DuploKeyStringValue{}
+	return c.postAPI(
+		fmt.Sprintf("RdsTagCreateV3(%s, %s)", tenantID, tag.ResourceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag", tenantID, tag.ResourceType, tag.ResourceId),
+		&DuploKeyStringValue{
+			Key:   tag.Key,
+			Value: tag.Value,
+		},
+		&resp,
+	)
+}
+
+func (c *Client) RdsTagUpdateV3(tenantID string, tag DuploRDSTag) ClientError {
+	resp := &DuploKeyStringValue{}
+	return c.putAPI(
+		fmt.Sprintf("RdsTagUpdateV3(%s, %s)", tenantID, tag.ResourceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
+		&DuploKeyStringValue{
+			Key:   tag.Key,
+			Value: tag.Value,
+		},
+		&resp,
+	)
+}
+
+func (c *Client) RdsTagListV3(tenantID, resourceType, resourceId string) (*[]DuploKeyStringValue, ClientError) {
+	tags := []DuploKeyStringValue{}
+	err := c.getAPI(
+		fmt.Sprintf("RdsTagListV3(%s, %s)", tenantID, resourceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag", tenantID, resourceType, resourceId),
+		&tags,
+	)
+	return &tags, err
+}
+
+func (c *Client) RdsTagGetV3(tenantID string, tag DuploRDSTag) (*DuploKeyStringValue, ClientError) {
+	tags := DuploKeyStringValue{}
+	err := c.getAPI(
+		fmt.Sprintf("RdsTagGetV3(%s, %s)", tenantID, tag.ResourceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
+		&tags,
+	)
+	return &tags, err
+}
+
+func (c *Client) RdsTagDeleteV3(tenantID string, tag DuploRDSTag) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("RdsTagDeleteV3(%s, %s)", tenantID, tag.ResourceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
+		nil,
+	)
 }
