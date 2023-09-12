@@ -181,7 +181,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description: "Specifies if the RDS instance is multi-AZ.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Default:     false,
+			Computed:    true,
 		},
 		"instance_status": {
 			Description: "The current status of the RDS instance.",
