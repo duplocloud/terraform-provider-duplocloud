@@ -116,7 +116,7 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"plugins_s3_object_version": {
-			Description: "The plugins.zip file version you want to use.",
+			Description: "The plugins.zip file version you want to use. If not set, latest s3 file version will be used.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
@@ -128,7 +128,7 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"requirements_s3_object_version": {
-			Description: "The requirements.txt file version you want to use..",
+			Description: "The requirements.txt file version you want to use. If not set, latest s3 file version will be used.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
@@ -140,7 +140,7 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"startup_script_s3_object_version": {
-			Description: "The startup script file version you want to use.",
+			Description: "The startup script file version you want to use. If not set, latest s3 file version will be used.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,

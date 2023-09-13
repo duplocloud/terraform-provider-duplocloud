@@ -14,7 +14,7 @@ resource "duplocloud_rds_instance" "mydb" {
   tenant_id      = duplocloud_tenant.myapp.tenant_id
   name           = "mydb"
   engine         = 1 // PostgreSQL
-  engine_version = "12.5"
+  engine_version = "15.2"
   size           = "db.t3.medium"
 
   master_username = "myuser"

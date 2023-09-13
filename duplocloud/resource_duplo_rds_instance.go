@@ -180,7 +180,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description: "Specifies if the RDS instance is multi-AZ.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Default:     false,
+			Computed:    true,
 		},
 		"instance_status": {
 			Description: "The current status of the RDS instance.",
@@ -492,7 +492,7 @@ func rdsInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, id s
 		Pending: []string{
 			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
 			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
-			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
+			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading", "failed", "submitted",
 		},
 		Target:       []string{"available"},
 		MinTimeout:   10 * time.Second,
