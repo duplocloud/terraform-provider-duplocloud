@@ -400,8 +400,9 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	if d.HasChange("enable_logging") {
+		identifier := d.Get("identifier").(string)
 		enableLogging := d.Get("enable_logging").(bool)
-		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, duplosdk.DuploRdsUpdatePayload{
+		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, duplosdk.DuploRdsUpdatePayload{
 			EnableLogging: &enableLogging,
 		})
 		if err != nil {
@@ -410,8 +411,9 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	if d.HasChange("size") {
+		identifier := d.Get("identifier").(string)
 		size := d.Get("size").(string)
-		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, duplosdk.DuploRdsUpdatePayload{
+		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, duplosdk.DuploRdsUpdatePayload{
 			SizeEx: size,
 		})
 		if err != nil {

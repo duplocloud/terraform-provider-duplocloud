@@ -220,10 +220,10 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 
 // RdsInstanceChangeSizeOrEnableLogging changes the size of an RDS instance or enables logging via the Duplo API.
 // DuploRdsUpdatePayload, despite the name, is only used for size and logging changes.
-func (c *Client) RdsInstanceChangeSizeOrEnableLogging(tenantID string, rdsUpdate DuploRdsUpdatePayload) error {
+func (c *Client) RdsInstanceChangeSizeOrEnableLogging(tenantID string, instanceId string, rdsUpdate DuploRdsUpdatePayload) error {
 	return c.postAPI(
-		fmt.Sprintf("RdsInstanceChangeSize(%s, %s)", tenantID, rdsUpdate),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance", tenantID),
+		fmt.Sprintf("RdsInstanceChangeSizeOrEnableLogging(%s, %s, %+v)", tenantID, instanceId, rdsUpdate),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/updatePayload", tenantID, instanceId),
 		&rdsUpdate,
 		nil,
 	)
