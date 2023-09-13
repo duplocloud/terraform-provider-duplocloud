@@ -156,7 +156,6 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				"See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).",
 			Type:         schema.TypeString,
 			Required:     true,
-			ForceNew:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
 		"allocated_storage": {
@@ -394,6 +393,26 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			Identifier:     d.Get("identifier").(string),
 			MasterPassword: d.Get("master_password").(string),
 			StorePassword:  true,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if d.HasChange("enable_logging") {
+		enableLogging := d.Get("enable_logging").(bool)
+		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, duplosdk.DuploRdsUpdatePayload{
+			EnableLogging: &enableLogging,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if d.HasChange("size") {
+		size := d.Get("size").(string)
+		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, duplosdk.DuploRdsUpdatePayload{
+			SizeEx: size,
 		})
 		if err != nil {
 			return diag.FromErr(err)

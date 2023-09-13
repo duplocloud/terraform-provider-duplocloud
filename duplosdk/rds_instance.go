@@ -68,6 +68,12 @@ type DuploRdsInstancePasswordChange struct {
 	StorePassword  bool   `json:"StorePassword,omitempty"`
 }
 
+// DuploRdsUpdatePayload is a Duplo SDK object that represents an update payload for size and enabling/disabling logging
+type DuploRdsUpdatePayload struct {
+	EnableLogging *bool  `json:"EnableLogging,omitempty"`
+	SizeEx        string `json:"SizeEx,omitempty"`
+}
+
 type DuploRdsInstanceDeleteProtection struct {
 	DBInstanceIdentifier string `json:"DBInstanceIdentifier"`
 	DeletionProtection   *bool  `json:"DeletionProtection,omitempty"`
@@ -202,6 +208,17 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 	)
 }
 
+// RdsInstanceChangeSizeOrEnableLogging changes the size of an RDS instance or enables logging via the Duplo API.
+// DuploRdsUpdatePayload, despite the name, is only used for size and logging changes.
+func (c *Client) RdsInstanceChangeSizeOrEnableLogging(tenantID string, rdsUpdate DuploRdsUpdatePayload) error {
+	return c.postAPI(
+		fmt.Sprintf("RdsInstanceChangeSize(%s, %s)", tenantID, rdsUpdate),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance", tenantID),
+		&rdsUpdate,
+		nil,
+	)
+}
+
 func (c *Client) RdsInstanceChangeDeleteProtection(tenantID string, duploObject DuploRdsInstanceDeleteProtection) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("RdsInstanceChangeDeleteProtection(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
@@ -223,7 +240,7 @@ func (c *Client) RdsClusterChangeDeleteProtection(tenantID string, duploObject D
 func (c *Client) RdsModifyAuroraV2ServerlessInstanceSize(tenantID string, duploObject DuploRdsModifyAuroraV2ServerlessInstanceSize) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("RdsModifyAuroraV2ServerlessInstanceSize(%s, %s)", tenantID, duploObject.ClusterIdentifier),
-		fmt.Sprintf("v3/subscriptions/%s/aws/modifyAuroraToV2Serverless", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance", tenantID),
 		&duploObject,
 		nil,
 	)
