@@ -156,7 +156,6 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				"See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).",
 			Type:         schema.TypeString,
 			Required:     true,
-			ForceNew:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
 		"allocated_storage": {
@@ -175,7 +174,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description: "Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Default:     false,
+			Computed:    true,
 		},
 		"multi_az": {
 			Description: "Specifies if the RDS instance is multi-AZ.",
@@ -394,6 +393,31 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			Identifier:     d.Get("identifier").(string),
 			MasterPassword: d.Get("master_password").(string),
 			StorePassword:  true,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if d.HasChange("enable_logging") {
+		identifier := d.Get("identifier").(string)
+		enableLogging := new(bool)
+		*enableLogging = d.Get("enable_logging").(bool)
+		log.Printf("[TRACE] Updating enable_logging to: '%v' for db instance '%s'.", d.Get("enable_logging").(bool), d.Get("identifier").(string))
+		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, duplosdk.DuploRdsUpdatePayload{
+			EnableLogging: enableLogging,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if d.HasChange("size") {
+		identifier := d.Get("identifier").(string)
+		size := d.Get("size").(string)
+		log.Printf("[TRACE] Updating size to: '%s' for db instance '%s'.", d.Get("size").(string), d.Get("identifier").(string))
+		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, duplosdk.DuploRdsUpdatePayload{
+			SizeEx: size,
 		})
 		if err != nil {
 			return diag.FromErr(err)
