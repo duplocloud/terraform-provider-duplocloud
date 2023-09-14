@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"net/http"
 )
 
 type DuploTargetGroupTuple struct {
@@ -140,7 +141,7 @@ func (c *Client) DuploAwsLbListenerRuleUpdate(tenantID string, rq *DuploAwsLbLis
 	return &rp, err
 }
 func (c *Client) DuploAwsLbListenerRuleList(tenantID, listenerArn string) (*[]DuploAwsLbListenerRule, ClientError) {
-	rp := []DuploAwsLbListenerRule{}
+	var rp []DuploAwsLbListenerRule
 	err := c.postAPI(
 		fmt.Sprintf("DuploAwsLbListenerRuleList(%s, %s)", tenantID, listenerArn),
 		fmt.Sprintf("v3/subscriptions/%s/aws/listLbListenerRules", tenantID),
@@ -165,7 +166,7 @@ func (c *Client) DuploAwsLbListenerRuleGet(tenantID string, listenerArn string, 
 			}
 		}
 	}
-	return nil, nil
+	return nil, clientError{status: http.StatusNotFound, message: fmt.Sprintf("no listener rule found for ARN: %s", ruleArn)}
 }
 
 func (c *Client) DuploAwsLbListenerRuleDelete(tenantID string, listenerArn string, ruleArn string) ClientError {
