@@ -250,7 +250,7 @@ func (c *Client) RdsClusterChangeDeleteProtection(tenantID string, duploObject D
 func (c *Client) RdsModifyAuroraV2ServerlessInstanceSize(tenantID string, duploObject DuploRdsModifyAuroraV2ServerlessInstanceSize) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("RdsModifyAuroraV2ServerlessInstanceSize(%s, %s)", tenantID, duploObject.ClusterIdentifier),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/modifyAuroraV2Serverless", tenantID),
 		&duploObject,
 		nil,
 	)
