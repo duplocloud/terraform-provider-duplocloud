@@ -10,6 +10,12 @@ type DuploTimestreamDBCreateRequest struct {
 	Tags         *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
 
+type DuploTimestreamDBUpdateRequest struct {
+	DatabaseName string                 `json:"DatabaseName"`
+	UpdatedTags  *[]DuploKeyStringValue `json:"UpdatedTags,omitempty"`
+	DeletedTags  []string               `json:"DeletedTags,omitempty"`
+}
+
 type DuploTimestreamDBDetails struct {
 	DatabaseName string                 `json:"DatabaseName"`
 	KmsKeyId     string                 `json:"KmsKeyId,omitempty"`
@@ -26,7 +32,17 @@ type DuploTimestreamDBTableCreateRequest struct {
 	Tags                         *[]DuploKeyStringValue                              `json:"Tags,omitempty"`
 }
 
+type DuploTimestreamDBTableUpdateRequest struct {
+	DatabaseName                 string                                              `json:"DatabaseName"`
+	TableName                    string                                              `json:"TableName,omitempty"`
+	RetentionProperties          *DuploTimestreamDBTableRetentionProperties          `json:"RetentionProperties,omitempty"`
+	MagneticStoreWriteProperties *DuploTimestreamDBTableMagneticStoreWriteProperties `json:"MagneticStoreWriteProperties,omitempty"`
+	UpdatedTags                  *[]DuploKeyStringValue                              `json:"UpdatedTags,omitempty"`
+	DeletedTags                  []string                                            `json:"DeletedTags,omitempty"`
+}
+
 type DuploTimestreamDBTableDetails struct {
+	TenantID                     string                                              `json:"TenantID,omitempty"`
 	DatabaseName                 string                                              `json:"DatabaseName"`
 	TableName                    string                                              `json:"TableName,omitempty"`
 	RetentionProperties          *DuploTimestreamDBTableRetentionProperties          `json:"RetentionProperties,omitempty"`
@@ -62,6 +78,17 @@ func (c *Client) DuploTimestreamDBCreate(tenantID string, rq *DuploTimestreamDBC
 	err := c.postAPI(
 		fmt.Sprintf("DuploTimestreamDBCreate(%s, %s)", tenantID, rq.DatabaseName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/timeStream", tenantID),
+		&rq,
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) DuploTimestreamDBUpdate(tenantID string, name string, rq *DuploTimestreamDBUpdateRequest) (*DuploTimestreamDBDetails, ClientError) {
+	rp := DuploTimestreamDBDetails{}
+	err := c.putAPI(
+		fmt.Sprintf("DuploTimestreamDBCreate(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/timeStream/%s", tenantID, name),
 		&rq,
 		&rp,
 	)
@@ -111,6 +138,17 @@ func (c *Client) DuploTimestreamDBTableCreate(tenantID string, rq *DuploTimestre
 	return &rp, err
 }
 
+func (c *Client) DuploTimestreamDBTableUpdate(tenantID string, dbName, name string, rq *DuploTimestreamDBTableUpdateRequest) (*DuploTimestreamDBDetails, ClientError) {
+	rp := DuploTimestreamDBDetails{}
+	err := c.putAPI(
+		fmt.Sprintf("DuploTimestreamDBTableUpdate(%s, %s,  %s)", tenantID, dbName, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/timeStreamtable/%s/%s", tenantID, dbName, name),
+		&rq,
+		&rp,
+	)
+	return &rp, err
+}
+
 func (c *Client) DuploTimestreamDBTableDelete(tenantID, dbName, name string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("DuploTimestreamDBTableDelete(%s, %s,  %s)", tenantID, dbName, name),
@@ -118,27 +156,16 @@ func (c *Client) DuploTimestreamDBTableDelete(tenantID, dbName, name string) Cli
 		nil)
 }
 
-func (c *Client) DuploTimestreamDBTableGet(tenantID string, dbName string, name string) (*DuploTimestreamDBTableDetails, ClientError) {
-	list, err := c.DuploTimestreamDBTableGetList(tenantID, dbName)
-	if err != nil {
+func (c *Client) DuploTimestreamDBTableGet(tenantID string, dbName, name string) (*DuploTimestreamDBTableDetails, ClientError) {
+	rp := DuploTimestreamDBTableDetails{}
+	err := c.getAPI(
+		fmt.Sprintf("DuploTimestreamDBTableGet(%s, %s,  %s)", tenantID, dbName, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/timeStreamtable/%s/%s", tenantID, dbName, name),
+		&rp)
+	if rp.TableName == "" {
 		return nil, err
 	}
 
-	if list != nil {
-		for _, element := range *list {
-			if element.TableName == name {
-				return &element, nil
-			}
-		}
-	}
-	return nil, nil
-}
-
-func (c *Client) DuploTimestreamDBTableGetList(tenantID, dbName string) (*[]DuploTimestreamDBTableDetails, ClientError) {
-	rp := []DuploTimestreamDBTableDetails{}
-	err := c.getAPI(
-		fmt.Sprintf("DuploTimestreamDBTableGetList(%s)", tenantID),
-		fmt.Sprintf("v3/subscriptions/%s/aws/timeStreamtable/%s", tenantID, dbName),
-		&rp)
+	rp.TenantID = tenantID
 	return &rp, err
 }
