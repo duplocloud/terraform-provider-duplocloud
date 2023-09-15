@@ -29,7 +29,7 @@ resource "duplocloud_rds_instance" "mydb" {
   tenant_id      = duplocloud_tenant.myapp.tenant_id
   name           = "mydb"
   engine         = 1 // PostgreSQL
-  engine_version = "12.5"
+  engine_version = "15.2"
   size           = "db.t3.medium"
 
   master_username = "myuser"
@@ -69,14 +69,14 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 - **allocated_storage** (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
 - **db_subnet_group_name** (String) Name of DB subnet group. DB instance will be created in the VPC associated with the DB subnet group.
 - **deletion_protection** (Boolean) If the DB instance should have deletion protection enabled.The database can't be deleted when this value is set to `true`. This setting is not applicable for document db cluster instance. Defaults to `false`.
-- **enable_logging** (Boolean) Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance. Defaults to `false`.
+- **enable_logging** (Boolean) Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance.
 - **encrypt_storage** (Boolean) Whether or not to encrypt the RDS instance storage.
 - **engine_version** (String) The database engine version to use the for the RDS instance.
 If you don't know the available engine versions for your RDS instance, you can use the [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-engine-versions.html) to retrieve a list.
 - **kms_key_id** (String) The globally unique identifier for the key.
 - **master_password** (String, Sensitive) The master password of the RDS instance.
 - **master_username** (String) The master username of the RDS instance.
-- **multi_az** (Boolean) Specifies if the RDS instance is multi-AZ. Defaults to `false`.
+- **multi_az** (Boolean) Specifies if the RDS instance is multi-AZ.
 - **parameter_group_name** (String) A RDS parameter group name to apply to the RDS instance.
 - **snapshot_id** (String) A database snapshot to initialize the RDS instance from, at launch.
 - **store_details_in_secret_manager** (Boolean) Whether or not to store RDS details in the AWS secrets manager.

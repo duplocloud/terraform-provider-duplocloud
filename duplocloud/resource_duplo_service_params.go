@@ -120,7 +120,7 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 	// Get the object from Duplo.
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
+		return diag.FromErr(err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -179,7 +179,7 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 	c := m.(*duplosdk.Client)
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
+		return diag.FromErr(err)
 	}
 
 	// Update the DNS.
@@ -269,7 +269,7 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 	c := m.(*duplosdk.Client)
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
+		return diag.FromErr(err)
 	}
 
 	// We have a service.

@@ -121,7 +121,7 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Unable to read tenant %s service '%s': %s", tenantID, name, err)
+		return diag.FromErr(err)
 	}
 	if duplo == nil {
 		return diag.Errorf("Unable to read tenant %s service '%s': not found", tenantID, name)

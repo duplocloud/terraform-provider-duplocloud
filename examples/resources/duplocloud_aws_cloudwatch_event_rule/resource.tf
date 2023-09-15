@@ -3,6 +3,7 @@ resource "duplocloud_tenant" "duplo-app" {
   plan_id      = "default"
 }
 
+# With Schedule Expression
 resource "duplocloud_aws_cloudwatch_event_rule" "cw_erule" {
   tenant_id           = duplocloud_tenant.duplo-app.tenant_id
   name                = "cw_erule"
@@ -19,4 +20,16 @@ resource "duplocloud_aws_cloudwatch_event_rule" "cw_erule" {
     key   = "CreatedFrom"
     value = "Duplo"
   }
+}
+
+# With Event Pattern
+resource "duplocloud_aws_cloudwatch_event_rule" "cw_erule2" {
+  tenant_id   = duplocloud_tenant.duplo-app.tenant_id
+  name        = "cw_erule2"
+  description = "capture-aws-sign-in."
+  event_pattern = jsonencode({
+    detail-type = [
+      "AWS Console Sign In via CloudTrail"
+    ]
+  })
 }

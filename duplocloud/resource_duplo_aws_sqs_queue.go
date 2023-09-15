@@ -15,6 +15,11 @@ import (
 
 func duploAwsSqsQueueSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
+		"arn": {
+			Description: "The ARN of the SQS queue.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the SQS queue will be created in.",
 			Type:         schema.TypeString,
@@ -88,7 +93,7 @@ func duploAwsSqsQueueSchema() map[string]*schema.Schema {
 
 func resourceAwsSqsQueue() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_aws_sqs_queue` manages a SQS queuet in Duplo.",
+		Description: "`duplocloud_aws_sqs_queue` manages a SQS queue in Duplo.",
 
 		ReadContext:   resourceAwsSqsQueueRead,
 		CreateContext: resourceAwsSqsQueueCreate,
@@ -124,7 +129,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): start", tenantID, url)
 
-	queue, clientErr := c.DuploSQSQueueGetV2(tenantID, fullname)
+	queue, clientErr := c.DuploSQSQueueGetV3(tenantID, fullname)
 	if queue == nil {
 		d.SetId("") // object missing
 		return nil
@@ -142,6 +147,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
+	d.Set("arn", queue.Arn)
 	d.Set("tenant_id", tenantID)
 	d.Set("url", queue.Url)
 	d.Set("fullname", fullname)
@@ -179,7 +185,7 @@ func resourceAwsSqsQueueCreate(ctx context.Context, d *schema.ResourceData, m in
 	c := m.(*duplosdk.Client)
 
 	rq := expandAwsSqsQueue(d)
-	resp, err := c.DuploSQSQueueCreateV2(tenantID, rq)
+	resp, err := c.DuploSQSQueueCreateV3(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s SQS queue '%s': %s", tenantID, name, err)
 	}
@@ -188,7 +194,12 @@ func resourceAwsSqsQueueCreate(ctx context.Context, d *schema.ResourceData, m in
 		return diag.FromErr(err)
 	}
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "SQS Queue", fmt.Sprintf("%s/%s", tenantID, name), func() (interface{}, duplosdk.ClientError) {
-		return c.DuploSQSQueueGetV2(tenantID, fullname)
+		resp, err = c.DuploSQSQueueGetV3(tenantID, fullname)
+		// wait for an Arn to be available
+		if err == nil && resp != nil && resp.Arn == "" {
+			return nil, nil
+		}
+		return c.DuploSQSQueueGetV3(tenantID, fullname)
 	})
 	if diags != nil {
 		return diags
@@ -214,12 +225,12 @@ func resourceAwsSqsQueueUpdate(ctx context.Context, d *schema.ResourceData, m in
 		rq := expandAwsSqsQueue(d)
 		rq.Name = fullname
 		rq.Url = url
-		_, err = c.DuploSQSQueueUpdateV2(tenantID, rq)
+		_, err = c.DuploSQSQueueUpdateV3(tenantID, rq)
 		if err != nil {
 			return diag.Errorf("Error updating tenant %s SQS queue '%s': %s", tenantID, fullname, err)
 		}
 		diags := waitForResourceToBePresentAfterCreate(ctx, d, "SQS Queue", fmt.Sprintf("%s/%s", tenantID, fullname), func() (interface{}, duplosdk.ClientError) {
-			return c.DuploSQSQueueGetV2(tenantID, fullname)
+			return c.DuploSQSQueueGetV3(tenantID, fullname)
 		})
 		if diags != nil {
 			return diags
@@ -247,7 +258,7 @@ func resourceAwsSqsQueueDelete(ctx context.Context, d *schema.ResourceData, m in
 		return diag.FromErr(err)
 	}
 
-	clientErr := c.DuploSQSQueueDeleteV2(tenantID, fullname)
+	clientErr := c.DuploSQSQueueDeleteV3(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil
@@ -256,7 +267,7 @@ func resourceAwsSqsQueueDelete(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "SQS Queue", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DuploSQSQueueGetV2(tenantID, fullname)
+		return c.DuploSQSQueueGetV3(tenantID, fullname)
 	})
 	if diag != nil {
 		return diag

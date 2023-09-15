@@ -50,7 +50,7 @@ type DuploInfrastructure struct {
 	CustomData              *[]DuploKeyStringValue `json:"CustomData,omitempty"`
 }
 
-// DuploInfrastructureVnet represents a Duplo infrastructure VNET subnet
+// DuploInfrastructureVnetSubnet represents a Duplo infrastructure VNET subnet
 type DuploInfrastructureVnetSubnet struct {
 	// Only used by write APIs
 	State              string `json:"State,omitempty"`
@@ -158,14 +158,6 @@ type DuploAzureRecoveryServicesVaultRq struct {
 	ResourceGroup string `json:"resourceGroup,omitempty"`
 }
 
-type SgRuleType int
-
-const (
-	IPADDRESS SgRuleType = iota
-	SERVICETAG
-	APP_SG
-)
-
 type InfrastructureSgUpdate struct {
 	Name          string                           `json:"Name"`
 	SgName        string                           `json:"SgName"`
@@ -176,11 +168,11 @@ type InfrastructureSgUpdate struct {
 
 // DuploInfrastructureSetting represents a Duplo infrastruture's settings
 type DuploInfrastructureSetting struct {
-	InfraName  string                 `json:"InfraName,omitempty"`
-	CustomData *[]DuploKeyStringValue `json:"CustomData,omitempty"`
+	InfraName string                 `json:"InfraName,omitempty"`
+	Setting   *[]DuploKeyStringValue `json:"Setting,omitempty"`
 }
 
-// DuploTenantConfigUpdateRequest represents a request to update a Duplo tenant's configuration
+// DuploInfrastructureSettingUpdateRequest represents a request to update a Duplo tenant's configuration
 type DuploInfrastructureSettingUpdateRequest struct {
 	Key   string `json:"Key,omitempty"`
 	State string `json:"State,omitempty"`
@@ -195,7 +187,7 @@ type DuploInfrastructureECSConfigUpdate struct {
 
 // InfrastructureList retrieves a list of infrastructures via the Duplo API.
 func (c *Client) InfrastructureList() (*[]DuploInfrastructureConfig, ClientError) {
-	list := []DuploInfrastructureConfig{}
+	var list []DuploInfrastructureConfig
 	err := c.getAPI("InfrastructureList()", "adminproxy/GetInfrastructureConfigs", &list)
 	if err != nil {
 		return nil, err
@@ -205,7 +197,7 @@ func (c *Client) InfrastructureList() (*[]DuploInfrastructureConfig, ClientError
 
 // InfrastructureGetList retrieves a list of infrastructures via the Duplo API.
 func (c *Client) InfrastructureGetList() (*[]DuploInfrastructure, ClientError) {
-	list := []DuploInfrastructure{}
+	var list []DuploInfrastructure
 	err := c.getAPI("InfrastructureGetList()", "v2/admin/InfrastructureV2", &list)
 	if err != nil {
 		return nil, err
@@ -247,7 +239,7 @@ func (c *Client) InfrastructureGetSetting(infraName string) (*DuploInfrastructur
 	if config == nil || err != nil {
 		return nil, err
 	}
-	return &DuploInfrastructureSetting{InfraName: config.Name, CustomData: config.CustomData}, nil
+	return &DuploInfrastructureSetting{InfraName: config.Name, Setting: config.CustomData}, nil
 }
 
 // InfrastructureReplaceSetting replaces tenant configuration metadata via the Duplo API.
@@ -256,7 +248,7 @@ func (c *Client) InfrastructureReplaceSetting(setting DuploInfrastructureSetting
 	if err != nil {
 		return err
 	}
-	return c.InfrastructureChangeSetting(setting.InfraName, existing.CustomData, setting.CustomData)
+	return c.InfrastructureChangeSetting(setting.InfraName, existing.Setting, setting.Setting)
 }
 
 // InfrastructureChangeSetting changes tenant configuration metadata via the Duplo API, using the supplied

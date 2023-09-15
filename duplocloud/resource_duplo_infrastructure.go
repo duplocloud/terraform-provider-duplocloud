@@ -395,7 +395,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 	if d.HasChange("setting") {
 		var existing *[]duplosdk.DuploKeyStringValue
 		if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
-			existing = selectKeyValues(config.CustomData, *v)
+			existing = selectKeyValues(config.Setting, *v)
 		} else {
 			existing = &[]duplosdk.DuploKeyStringValue{}
 		}
@@ -410,7 +410,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 
 		// Apply the changes via Duplo
 		if d.Get("delete_unspecified_settings").(bool) {
-			err = c.InfrastructureReplaceSetting(duplosdk.DuploInfrastructureSetting{InfraName: infraName, CustomData: settings})
+			err = c.InfrastructureReplaceSetting(duplosdk.DuploInfrastructureSetting{InfraName: infraName, Setting: settings})
 		} else {
 			err = c.InfrastructureChangeSetting(infraName, existing, settings)
 		}
@@ -499,10 +499,10 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 		},
 	}
 
-	if d.HasChange("custom_data") {
-		config.CustomData = keyValueFromState("custom_data", d)
-	} else if d.HasChange("setting") {
+	if d.HasChange("setting") {
 		config.CustomData = keyValueFromState("setting", d)
+	} else if d.HasChange("custom_data") {
+		config.CustomData = keyValueFromState("custom_data", d)
 	}
 
 	return config
@@ -561,7 +561,6 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	d.Set("subnet_cidr", infra.Vnet.SubnetCidr)
 	d.Set("status", infra.ProvisioningStatus)
 
-	d.Set("custom_data", keyValueToState("custom_data", config.CustomData))
 	d.Set("all_settings", keyValueToState("all_settings", config.CustomData))
 
 	// Build a list of current state, to replace the user-supplied settings.
