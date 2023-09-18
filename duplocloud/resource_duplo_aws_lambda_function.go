@@ -162,6 +162,33 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 				validation.StringMatch(regexp.MustCompile(`^[^\s]*$`), "Invalid lambda function handler"),
 			),
 		},
+		"image_config": {
+			Description: "Configuration for the Lambda function's container image",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"command": {
+						Description: "The command that is passed to the container.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+					},
+					"entry_point": {
+						Description: "The entry point that is passed to the container.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+					},
+					"working_directory": {
+						Description: "The working directory that is passed to the container.",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+				},
+			},
+		},
 		"last_modified": {
 			Description: "A timestamp string of lambda's last modification time.",
 			Type:        schema.TypeString,
@@ -260,6 +287,9 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
 	log.Printf("[TRACE] resourceAwsLambdaFunctionCreate(%s, %s): start", tenantID, name)
+	var command []string
+	var entryPoint []string
+	var workingDir string
 
 	// Create the request object.
 	rq := duplosdk.DuploLambdaCreateRequest{
@@ -278,6 +308,19 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		rq.Layers = v
 	}
 
+	if v, ok := d.GetOk("image_config"); ok && len(v.([]interface{})) > 0 {
+		imageConfig := v.([]interface{})[0].(map[string]interface{})
+		if value, exists := imageConfig["command"]; exists {
+			command = expandStringList(value.([]interface{}))
+		}
+		if value, exists := imageConfig["entry_point"]; exists {
+			entryPoint = expandStringList(value.([]interface{}))
+		}
+		if value, exists := imageConfig["working_directory"]; exists {
+			workingDir = value.(string)
+		}
+	}
+
 	// Handle the package type
 	if rq.PackageType.Value == "Zip" {
 		rq.Handler = d.Get("handler").(string)
@@ -288,13 +331,17 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		}
 	} else if rq.PackageType.Value == "Image" {
 		rq.Code.ImageURI = d.Get("image_uri").(string)
+		rq.ImageConfig = &duplosdk.DuploLambdaImageConfig{
+			Command:    command,
+			EntryPoint: entryPoint,
+			WorkingDir: workingDir,
+		}
 	}
 
 	if v, ok := d.GetOk("tracing_config"); ok && len(v.([]interface{})) > 0 && v.([]interface{})[0] != nil {
 		rq.TracingConfig = &duplosdk.DuploLambdaTracingConfig{
 			Mode: duplosdk.DuploStringValue{Value: v.([]interface{})[0].(map[string]interface{})["mode"].(string)},
 		}
-
 	}
 
 	environment, err := getOptionalBlockAsMap(d, "environment")
