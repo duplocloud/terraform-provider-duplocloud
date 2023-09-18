@@ -68,8 +68,10 @@ resource "duplocloud_aws_timestreamwrite_table" "timestreamwrite_database_tbl" {
 
 ### Read-Only
 
+- **all_tags** (List of Object) A complete list of tags for this time stream database, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_tags))
 - **arn** (String) The ARN that uniquely identifies this Table.
 - **id** (String) The ID of this resource.
+- **specified_tags** (List of String) A list of tags being managed by this resource.
 
 <a id="nestedblock--magnetic_store_write_properties"></a>
 ### Nested Schema for `magnetic_store_write_properties`
@@ -124,6 +126,15 @@ Optional:
 
 - **create** (String)
 - **delete** (String)
+
+
+<a id="nestedatt--all_tags"></a>
+### Nested Schema for `all_tags`
+
+Read-Only:
+
+- **key** (String)
+- **value** (String)
 
 ## Import
 
