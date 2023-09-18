@@ -52,6 +52,11 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"domain_name": {
+			Description: "The domain name of the S3 bucket.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"enable_versioning": {
 			Description: "Whether or not to enable versioning.",
 			Type:        schema.TypeBool,
@@ -276,6 +281,7 @@ func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name strin
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("fullname", duplo.Name)
+	d.Set("domain_name", duplo.DomainName)
 	d.Set("arn", duplo.Arn)
 	d.Set("enable_versioning", duplo.EnableVersioning)
 	d.Set("enable_access_logs", duplo.EnableAccessLogs)

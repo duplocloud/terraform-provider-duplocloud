@@ -80,6 +80,7 @@ type DuploS3Bucket struct {
 	TenantID string `json:"-"`
 
 	Name              string                 `json:"Name,omitempty"`
+	DomainName        string                 `json:"DomainName,omitempty"`
 	Arn               string                 `json:"Arn,omitempty"`
 	MetaData          string                 `json:"MetaData,omitempty"`
 	EnableVersioning  bool                   `json:"EnableVersioning,omitempty"`
