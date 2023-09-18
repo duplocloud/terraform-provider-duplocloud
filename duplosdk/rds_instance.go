@@ -68,6 +68,12 @@ type DuploRdsInstancePasswordChange struct {
 	StorePassword  bool   `json:"StorePassword,omitempty"`
 }
 
+// DuploRdsUpdatePayload is a Duplo SDK object that represents an update payload for size and enabling/disabling logging
+type DuploRdsUpdatePayload struct {
+	EnableLogging *bool  `json:"EnableLogging,omitempty"`
+	SizeEx        string `json:"SizeEx,omitempty"`
+}
+
 type DuploRdsInstanceDeleteProtection struct {
 	DBInstanceIdentifier string `json:"DBInstanceIdentifier"`
 	DeletionProtection   *bool  `json:"DeletionProtection,omitempty"`
@@ -111,18 +117,28 @@ func (c *Client) RdsInstanceUpdate(tenantID string, duploObject *DuploRdsInstanc
 // RdsInstanceCreateOrUpdate creates or updates an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRdsInstance, updating bool) (*DuploRdsInstance, ClientError) {
 
-	// Build the request
-	verb := "POST"
+	// call update request
 	if updating {
-		verb = "PUT"
+		rp := DuploRdsInstance{}
+		err := c.doAPIWithRequestBody(
+			"PUT",
+			fmt.Sprintf("RdsInstanceCreateOrUpdate(%s, duplo%s)", tenantID, duploObject.Name),
+			fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.Identifier),
+			&duploObject,
+			&rp,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return &rp, err
 	}
 
-	// Call the API.
+	// Call create API.
 	rp := DuploRdsInstance{}
 	err := c.doAPIWithRequestBody(
-		verb,
+		"POST",
 		fmt.Sprintf("RdsInstanceCreateOrUpdate(%s, duplo%s)", tenantID, duploObject.Name),
-		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance", tenantID),
 		&duploObject,
 		&rp,
 	)
@@ -130,6 +146,7 @@ func (c *Client) RdsInstanceCreateOrUpdate(tenantID string, duploObject *DuploRd
 		return nil, err
 	}
 	return &rp, err
+
 }
 
 // RdsInstanceDelete deletes an RDS instance via the Duplo API.
@@ -141,7 +158,7 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, ClientError) {
 	// Call the API.
 	err := c.deleteAPI(
 		fmt.Sprintf("RdsInstanceDelete(%s, duplo%s)", tenantID, name),
-		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/duplo%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/duplo%s", tenantID, name),
 		nil)
 	if err != nil {
 		return nil, err
@@ -161,12 +178,11 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
 	duploObject := DuploRdsInstance{}
 	err := c.getAPI(
 		fmt.Sprintf("RdsInstanceGet(%s, duplo%s)", tenantID, name),
-		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/duplo%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/duplo%s", tenantID, name),
 		&duploObject)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
 	}
-
 	// Fill in the tenant ID and the name and return the object
 	duploObject.TenantID = tenantID
 	duploObject.Name = name
@@ -179,7 +195,7 @@ func (c *Client) RdsInstanceGetByName(tenantID, name string) (*DuploRdsInstance,
 	duploObject := DuploRdsInstance{}
 	err := c.getAPI(
 		fmt.Sprintf("RdsInstanceGet(%s, duplo%s)", tenantID, name),
-		fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/duplo%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/duplo%s", tenantID, name),
 		&duploObject)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
@@ -196,25 +212,36 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 	// Call the API.
 	return c.postAPI(
 		fmt.Sprintf("RdsInstanceChangePassword(%s, %s)", tenantID, duploObject.Identifier),
-		fmt.Sprintf("subscriptions/%s/RDSInstancePasswordChange", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/changePassword", tenantID, duploObject.Identifier),
 		&duploObject,
 		nil,
 	)
 }
 
+// RdsInstanceChangeSizeOrEnableLogging changes the size of an RDS instance or enables logging via the Duplo API.
+// DuploRdsUpdatePayload, despite the name, is only used for size and logging changes.
+func (c *Client) RdsInstanceChangeSizeOrEnableLogging(tenantID string, instanceId string, rdsUpdate DuploRdsUpdatePayload) error {
+	return c.putAPI(
+		fmt.Sprintf("RdsInstanceChangeSizeOrEnableLogging(%s, %s, %+v)", tenantID, instanceId, rdsUpdate),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/updatePayload", tenantID, instanceId),
+		&rdsUpdate,
+		nil,
+	)
+}
+
 func (c *Client) RdsInstanceChangeDeleteProtection(tenantID string, duploObject DuploRdsInstanceDeleteProtection) ClientError {
-	return c.postAPI(
+	return c.putAPI(
 		fmt.Sprintf("RdsInstanceChangeDeleteProtection(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
-		fmt.Sprintf("subscriptions/%s/ModifyRDSDBInstance", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
 		&duploObject,
 		nil,
 	)
 }
 
 func (c *Client) RdsClusterChangeDeleteProtection(tenantID string, duploObject DuploRdsClusterDeleteProtection) ClientError {
-	return c.postAPI(
+	return c.putAPI(
 		fmt.Sprintf("RdsClusterChangeDeleteProtection(%s, %s)", tenantID, duploObject.DBClusterIdentifier),
-		fmt.Sprintf("v3/subscriptions/%s/aws/modifyRdsCluster", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, duploObject.DBClusterIdentifier),
 		&duploObject,
 		nil,
 	)
@@ -223,7 +250,7 @@ func (c *Client) RdsClusterChangeDeleteProtection(tenantID string, duploObject D
 func (c *Client) RdsModifyAuroraV2ServerlessInstanceSize(tenantID string, duploObject DuploRdsModifyAuroraV2ServerlessInstanceSize) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("RdsModifyAuroraV2ServerlessInstanceSize(%s, %s)", tenantID, duploObject.ClusterIdentifier),
-		fmt.Sprintf("v3/subscriptions/%s/aws/modifyAuroraToV2Serverless", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/modifyAuroraV2Serverless", tenantID),
 		&duploObject,
 		nil,
 	)

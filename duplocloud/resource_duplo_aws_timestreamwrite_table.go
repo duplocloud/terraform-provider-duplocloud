@@ -141,8 +141,19 @@ func awsTimestreamTableSchema() map[string]*schema.Schema {
 			Description: "Tags in key-value format.",
 			Type:        schema.TypeList,
 			Optional:    true,
+			Elem:        KeyValueSchema(),
+		},
+		"all_tags": {
+			Description: "A complete list of tags for this time stream database, even ones not being managed by this resource.",
+			Type:        schema.TypeList,
 			Computed:    true,
 			Elem:        KeyValueSchema(),
+		},
+		"specified_tags": {
+			Description: "A list of tags being managed by this resource.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"wait_for_deployment": {
 			Type:     schema.TypeBool,
@@ -194,7 +205,6 @@ func resourceAwsTimestreamTableRead(ctx context.Context, d *schema.ResourceData,
 		return nil
 	}
 	flattenTimestreamTable(d, c, table, tenantID)
-
 	log.Printf("[TRACE] resourceAwsTimestreamTableRead(%s, %s, %s): end", tenantID, dbName, name)
 	return nil
 }
@@ -226,7 +236,53 @@ func resourceAwsTimestreamTableCreate(ctx context.Context, d *schema.ResourceDat
 }
 
 func resourceAwsTimestreamTableUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return resourceAwsTimestreamTableCreate(ctx, d, m)
+	id := d.Id()
+	tenantID, dbName, name, err := parseAwsTimestreamTableIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceAwsTimestreamTableUpdate(%s, %s): start", tenantID, name)
+	c := m.(*duplosdk.Client)
+	rq := &duplosdk.DuploTimestreamDBTableUpdateRequest{
+		TableName:    d.Get("name").(string),
+		DatabaseName: d.Get("database_name").(string),
+	}
+
+	if d.HasChange("tags") {
+		duplo, _ := c.DuploTimestreamDBTableGet(tenantID, dbName, name)
+		if err != nil {
+			return diag.Errorf("failed to retrieve tags  for '%s': %s", "tags", err)
+		}
+		newTags, deletedKeys := getTfManagedChangesDuploKeyStringValue("tags", duplo.Tags, d)
+		rq.UpdatedTags = newTags
+		rq.DeletedTags = deletedKeys
+	}
+
+	if v, ok := d.GetOk("retention_properties"); ok && len(v.([]interface{})) > 0 && v.([]interface{}) != nil {
+		rq.RetentionProperties = expandRetentionProperties(v.([]interface{}))
+	}
+
+	if v, ok := d.GetOk("magnetic_store_write_properties"); ok && len(v.([]interface{})) > 0 && v.([]interface{}) != nil {
+		rq.MagneticStoreWriteProperties = expandMagneticStoreWriteProperties(v.([]interface{}))
+	}
+
+	_, clientErr := c.DuploTimestreamDBTableUpdate(tenantID, dbName, name, rq)
+	if clientErr != nil {
+		return diag.Errorf("Error updating tenant %s aws timestream Table '%s': %s", tenantID, name, clientErr)
+	}
+
+	d.SetId(fmt.Sprintf("%s/%s/%s", tenantID, rq.DatabaseName, name))
+
+	if d.Get("wait_for_deployment") == nil || d.Get("wait_for_deployment").(bool) {
+		err = timestreamTableWaitUntilActive(ctx, c, tenantID, name, rq.DatabaseName, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	diags := resourceAwsTimestreamTableRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsTimestreamTableUpdate(%s, %s): end", tenantID, name)
+	return diags
 }
 
 func resourceAwsTimestreamTableDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -247,7 +303,11 @@ func resourceAwsTimestreamTableDelete(ctx context.Context, d *schema.ResourceDat
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "aws timestream Table", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DuploTimestreamDBTableGet(tenantID, dbName, name)
+		rp, err := c.DuploTimestreamDBTableGet(tenantID, dbName, name)
+		if rp == nil || err.Status() == 404 || err.Status() == 400 || err.Status() == 400 {
+			return nil, nil
+		}
+		return rp, err
 	})
 	if diag != nil {
 		return diag
@@ -270,6 +330,7 @@ func expandAwsTimestreamTable(d *schema.ResourceData) *duplosdk.DuploTimestreamD
 	if v, ok := d.GetOk("magnetic_store_write_properties"); ok && len(v.([]interface{})) > 0 && v.([]interface{}) != nil {
 		rq.MagneticStoreWriteProperties = expandMagneticStoreWriteProperties(v.([]interface{}))
 	}
+
 	return rq
 }
 
@@ -286,9 +347,9 @@ func parseAwsTimestreamTableIdParts(id string) (tenantID, dbName, name string, e
 func flattenTimestreamTable(d *schema.ResourceData, c *duplosdk.Client, duplo *duplosdk.DuploTimestreamDBTableDetails, tenantId string) diag.Diagnostics {
 	d.Set("tenant_id", tenantId)
 	d.Set("name", duplo.TableName)
-	d.Set("database_name", duplo.DatabaseName)
 	d.Set("arn", duplo.Arn)
-	d.Set("tags", keyValueToState("tags", duplo.Tags))
+
+	flattenTfManagedDuploKeyStringValues("tags", d, duplo.Tags)
 
 	if err := d.Set("retention_properties", flattenRetentionProperties(duplo.RetentionProperties)); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting retention_properties: %w", err))

@@ -23,15 +23,24 @@ data "duplocloud_tenant_aws_kms_key" "tenant_kms_key" {
 }
 
 resource "duplocloud_aws_mwaa_environment" "my-mwaa" {
-  tenant_id                       = duplocloud_tenant.myapp.tenant_id
-  name                            = "airflow-test"
-  source_bucket_arn               = "arn:aws:s3:::duploservices-demo01-dags-140563923322"
-  dag_s3_path                     = "AirflowDags/dag"
+  tenant_id              = duplocloud_tenant.myapp.tenant_id
+  name                   = "airflow-test"
+  source_bucket_arn      = "arn:aws:s3:::xxx-xxx-xx-xxxx"
+  dag_s3_path            = "AirflowDags/dag"
+  plugins_s3_path        = "AirflowDags/plugins.zip"
+  requirements_s3_path   = "AirflowDags/requirements.txt"
+  startup_script_s3_path = "AirflowDags/startup-script.sh"
+
+  ## optional: Provide particular s3 version of the file. If empty, latest version will be used (recommended).
+  # plugins_s3_object_version = "S3 object version"
+  # requirements_s3_object_version = "S3 object version"
+  # startup_script_s3_object_version = "S3 object version"
+
   kms_key                         = data.duplocloud_tenant_aws_kms_key.tenant_kms_key.key_arn
   schedulers                      = 2
   max_workers                     = 10
   min_workers                     = 1
-  airflow_version                 = "2.2.2"
+  airflow_version                 = "2.6.3"
   weekly_maintenance_window_start = "SUN:23:30"
   environment_class               = "mw1.small"
 
@@ -88,12 +97,12 @@ resource "duplocloud_aws_mwaa_environment" "my-mwaa" {
 - **logging_configuration** (Block List, Max: 1) (see [below for nested schema](#nestedblock--logging_configuration))
 - **max_workers** (Number) The maximum number of workers that can be automatically scaled up. Value need to be between `1` and `25`.
 - **min_workers** (Number) The minimum number of workers that you want to run in your environment.
-- **plugins_s3_object_version** (String) The plugins.zip file version you want to use.
+- **plugins_s3_object_version** (String) The plugins.zip file version you want to use. If not set, latest s3 file version will be used.
 - **plugins_s3_path** (String) The relative path to the plugins.zip file on your Amazon S3 storage bucket. For example, plugins.zip. If a relative path is provided in the request, then `plugins_s3_object_version` is required.
-- **requirements_s3_object_version** (String) The requirements.txt file version you want to use..
+- **requirements_s3_object_version** (String) The requirements.txt file version you want to use. If not set, latest s3 file version will be used.
 - **requirements_s3_path** (String) The relative path to the requirements.txt file on your Amazon S3 storage bucket. For example, requirements.txt. If a relative path is provided in the request, then requirements_s3_object_version is required.
 - **schedulers** (Number) The number of schedulers that you want to run in your environment.
-- **startup_script_s3_object_version** (String) The startup script file version you want to use.
+- **startup_script_s3_object_version** (String) The startup script file version you want to use. If not set, latest s3 file version will be used.
 - **startup_script_s3_path** (String) The relative path to the startup script file on your Amazon S3 storage bucket. For example, startup_script.sh.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_ready** (Boolean) Whether or not to wait until Amazon MWAA Environment to be ready, after creation. Defaults to `true`.

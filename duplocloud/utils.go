@@ -803,3 +803,94 @@ func sortCommaDelimitedString(commaDelimitedString string) string {
 	sortedStringList := strings.Join(items, ",")
 	return sortedStringList
 }
+
+// DuploKeyStringValues managed by tf and duplo backend
+func getExistingDuploKeyStringValues(key string, all *[]duplosdk.DuploKeyStringValue, d *schema.ResourceData) (existing *[]duplosdk.DuploKeyStringValue, existingKeys []string) {
+	log.Printf("[TRACE] getExistingDuploKeyStringValues key(%s): start", key)
+	specified_key := fmt.Sprintf("specified_%s", key)
+	existing = &[]duplosdk.DuploKeyStringValue{}
+	existingKeys = []string{}
+	if v, ok := getAsStringArray(d, specified_key); ok && v != nil {
+		existing = selectKeyValues(all, *v)
+		existingKeys = *v
+	}
+	log.Printf("[TRACE] getExistingDuploKeyStringValues key(%s): end", key)
+	return
+}
+
+func getNewTagsDuploKeyStringValues(key string, d *schema.ResourceData) (newTags *[]duplosdk.DuploKeyStringValue) {
+	log.Printf("[TRACE] getNewTagsDuploKeyStringValues key(%s): start", key)
+	specified_key := fmt.Sprintf("specified_%s", key)
+	newTags = keyValueFromState(key, d)
+	if newTags != nil {
+		specified := make([]string, len(*newTags))
+		for i, kv := range *newTags {
+			specified[i] = kv.Key
+		}
+		d.Set(specified_key, specified)
+	}
+	log.Printf("[TRACE] getNewTagsDuploKeyStringValues key(%s): end", key)
+	return
+}
+
+func selectDuploKeyStringValues(all *[]duplosdk.DuploKeyStringValue, keys []string) *[]duplosdk.DuploKeyStringValue {
+	log.Printf("[TRACE] selectDuploKeyStringValues start")
+	specified := map[string]duplosdk.DuploKeyStringValue{}
+	for _, kv := range *all {
+		specified[kv.Key] = kv
+	}
+	existing := make([]duplosdk.DuploKeyStringValue, 0, len(keys))
+	for _, key := range keys {
+		if kv, ok := specified[key]; ok {
+			existing = append(existing, kv)
+		}
+	}
+	log.Printf("[TRACE] selectDuploKeyStringValues keys (%s) state keyVals (%s) end", keys, existing)
+	return &existing
+}
+
+func getDeletedKeysDuploKeyStringValue(newTags *[]duplosdk.DuploKeyStringValue, existing *[]duplosdk.DuploKeyStringValue, existingKeys []string) (deletedKeys []string) {
+	log.Printf("[TRACE] getDeletedKeysDuploKeyStringValue : start")
+	present := map[string]struct{}{}
+	if newTags != nil {
+		for _, kv := range *newTags {
+			present[kv.Key] = struct{}{}
+		}
+	}
+	// Finally, delete any keys that are no longer present.
+	deletedKeys = []string{}
+	if existing != nil {
+		if newTags == nil {
+			// no existing keys all deleted by user
+			deletedKeys = existingKeys
+		} else {
+			for _, kv := range *existing {
+				if _, ok := present[kv.Key]; !ok {
+					deletedKeys = append(deletedKeys, kv.Key)
+				}
+			}
+		}
+	}
+	log.Printf("[TRACE] getDeletedKeysDuploKeyStringValue end")
+	return
+}
+
+func getTfManagedChangesDuploKeyStringValue(key string, all *[]duplosdk.DuploKeyStringValue, d *schema.ResourceData) (newTags *[]duplosdk.DuploKeyStringValue, deletedKeys []string) {
+	log.Printf("[TRACE] getTfManagedChangesDuploKeyStringValue key(%s): start", key)
+	existing, existingKeys := getExistingDuploKeyStringValues(key, all, d)
+	newTags = getNewTagsDuploKeyStringValues(key, d)
+	deletedKeys = getDeletedKeysDuploKeyStringValue(newTags, existing, existingKeys)
+	log.Printf("[TRACE] getTfManagedChangesDuploKeyStringValue key(%s): end", key)
+	return
+}
+
+func flattenTfManagedDuploKeyStringValues(key string, d *schema.ResourceData, all *[]duplosdk.DuploKeyStringValue) {
+	specified_key := fmt.Sprintf("specified_%s", key)
+	all_key := fmt.Sprintf("all_%s", key)
+	d.Set(all_key, keyValueToState(all_key, all))
+	if v, ok := getAsStringArray(d, specified_key); ok && v != nil {
+		d.Set(key, keyValueToState(key, selectDuploKeyStringValues(all, *v)))
+	} else {
+		d.Set(specified_key, make([]interface{}, 0))
+	}
+}
