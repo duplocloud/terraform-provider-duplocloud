@@ -1,4 +1,4 @@
-resource "aws_lambda_permission" "permission" {
+resource "duplocloud_aws_lambda_permission" "permission" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = duplocloud_aws_lambda_function.myfunction
@@ -6,6 +6,7 @@ resource "aws_lambda_permission" "permission" {
 
   # More: http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
   source_arn = "arn:aws:execute-api:region:accountId:aws_api_gateway_rest_api.api.id/*/*/*"
+  tenant_id  = "mytenant"
 }
 
 resource "duplocloud_aws_lambda_function" "myfunction" {
