@@ -44,9 +44,11 @@ resource "duplocloud_aws_timestreamwrite_database" "timestreamwrite_database" {
 
 ### Read-Only
 
+- **all_tags** (List of Object) A complete list of tags for this time stream database, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_tags))
 - **arn** (String) The ARN that uniquely identifies this database.
 - **fullname** (String) The full name of the Timestream Database.
 - **id** (String) The ID of this resource.
+- **specified_tags** (List of String) A list of tags being managed by this resource.
 - **table_count** (Number) The total number of tables found within the Timestream database.
 
 <a id="nestedblock--tags"></a>
@@ -65,6 +67,15 @@ Optional:
 
 - **create** (String)
 - **delete** (String)
+
+
+<a id="nestedatt--all_tags"></a>
+### Nested Schema for `all_tags`
+
+Read-Only:
+
+- **key** (String)
+- **value** (String)
 
 ## Import
 
