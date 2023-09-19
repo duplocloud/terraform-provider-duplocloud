@@ -73,12 +73,14 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 - **encrypt_storage** (Boolean) Whether or not to encrypt the RDS instance storage.
 - **engine_version** (String) The database engine version to use the for the RDS instance.
 If you don't know the available engine versions for your RDS instance, you can use the [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-engine-versions.html) to retrieve a list.
+- **iops** (Number) The IOPS (Input/Output Operations Per Second) value. Should be specified only if `storage_type` is either io1 or gp3.
 - **kms_key_id** (String) The globally unique identifier for the key.
 - **master_password** (String, Sensitive) The master password of the RDS instance.
 - **master_username** (String) The master username of the RDS instance.
 - **multi_az** (Boolean) Specifies if the RDS instance is multi-AZ.
 - **parameter_group_name** (String) A RDS parameter group name to apply to the RDS instance.
 - **snapshot_id** (String) A database snapshot to initialize the RDS instance from, at launch.
+- **storage_type** (String) Valid values: gp2 | gp3 | io1 | standard. Storage type to be used for RDS instance storage.
 - **store_details_in_secret_manager** (Boolean) Whether or not to store RDS details in the AWS secrets manager.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **v2_scaling_configuration** (Block List, Max: 1) Serverless v2_scaling_configuration min and max scalling capacity. (see [below for nested schema](#nestedblock--v2_scaling_configuration))
