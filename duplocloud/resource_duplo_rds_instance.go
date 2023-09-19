@@ -158,6 +158,21 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Required:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
+		"storage_type": {
+			Description: "Valid values: gp2 | gp3 | io1 | standard. Storage type to be used for RDS instance storage.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ValidateFunc: validation.StringInSlice(
+				[]string{"gp2", "gp3", "io1", "standard"},
+				false,
+			),
+		},
+		"iops": {
+			Description: "The IOPS (Input/Output Operations Per Second) value. Should be specified only if `storage_type` is either io1 or gp3.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
 		"allocated_storage": {
 			Description: "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.",
 			Type:        schema.TypeInt,
@@ -572,6 +587,8 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.Cloud = 0 // AWS
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.EncryptStorage = d.Get("encrypt_storage").(bool)
+	duploObject.StorageType = d.Get("storage_type").(string)
+	duploObject.Iops = d.Get("iops").(int)
 	duploObject.AllocatedStorage = d.Get("allocated_storage").(int)
 	duploObject.EncryptionKmsKeyId = d.Get("kms_key_id").(string)
 	duploObject.EnableLogging = d.Get("enable_logging").(bool)
@@ -643,6 +660,8 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["db_subnet_group_name"] = duploObject.DBSubnetGroupName
 	jo["size"] = duploObject.SizeEx
 	jo["encrypt_storage"] = duploObject.EncryptStorage
+	jo["storage_type"] = duploObject.StorageType
+	jo["iops"] = duploObject.Iops
 	jo["allocated_storage"] = duploObject.AllocatedStorage
 	jo["kms_key_id"] = duploObject.EncryptionKmsKeyId
 	jo["enable_logging"] = duploObject.EnableLogging
