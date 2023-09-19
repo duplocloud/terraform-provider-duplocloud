@@ -46,6 +46,8 @@ type DuploRdsInstance struct {
 	Cloud                       int                     `json:"Cloud,omitempty"`
 	SizeEx                      string                  `json:"SizeEx,omitempty"`
 	EncryptStorage              bool                    `json:"EncryptStorage,omitempty"`
+	StorageType                 string                  `json:"StorageType,omitempty"`
+	Iops                        int                     `json:"Iops,omitempty"`
 	AllocatedStorage            int                     `json:"AllocatedStorage,omitempty"`
 	EncryptionKmsKeyId          string                  `json:"EncryptionKmsKeyId,omitempty"`
 	EnableLogging               bool                    `json:"EnableLogging,omitempty"`
