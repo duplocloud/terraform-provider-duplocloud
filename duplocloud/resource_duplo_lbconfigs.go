@@ -60,7 +60,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 		"external_port": {
 			Description: "The frontend port associated with this load balancer configuration.",
 			Type:        schema.TypeInt,
-			Required:    true,
+			Optional:    true,
 		},
 		"custom_cidr": {
 			Description: "Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.",
@@ -290,6 +290,11 @@ func resourceDuploServiceLBConfigsUpdate(ctx context.Context, d *schema.Resource
 func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, updating bool) diag.Diagnostics {
 	var err error
 
+	err = validateExternalPortForTargetGroup(d)
+	if err != nil {
+		return diag.Errorf("Error applying Duplo service '%s' load balancer configs: %s", d.Id(), err)
+	}
+
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsCreateOrUpdate: start")
 
 	// Start the build the reqeust.
@@ -485,4 +490,13 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 
 	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... End")
 	return m
+}
+
+func validateExternalPortForTargetGroup(d *schema.ResourceData) error {
+	if lbType, ok := d.GetOk("lb_type"); ok && lbType.(int) == 7 {
+		if _, ok := d.GetOk("external_port"); !ok {
+			return fmt.Errorf("'external_port' is required when 'lb_type' is set to 7 (Target Group Only)")
+		}
+	}
+	return nil
 }
