@@ -70,6 +70,7 @@ resource "duplocloud_s3_bucket" "www" {
 ### Read-Only
 
 - **arn** (String) The ARN of the S3 bucket.
+- **domain_name** (String) The domain name of the S3 bucket.
 - **fullname** (String) The full name of the S3 bucket.
 - **id** (String) The ID of this resource.
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
