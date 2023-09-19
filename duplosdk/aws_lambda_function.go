@@ -256,7 +256,7 @@ func (c *Client) LambdaPermissionDelete(tenantID, functionName, statementId stri
 }
 
 func (c *Client) LambdaPermissionGet(tenantID string, functionName string) (*[]DuploLambdaPermissionStatement, ClientError) {
-	var rp []DuploLambdaPermissionStatement
+	rp := []DuploLambdaPermissionStatement{}
 	err := c.getAPI(
 		fmt.Sprintf("LambdaPermissionGet(%s, %s)", tenantID, functionName),
 		fmt.Sprintf("v3/subscriptions/%s/serverless/lambdapermission/%s", tenantID, functionName),
