@@ -97,7 +97,7 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringLenBetween(1, 1024),
 		},
 		"image_uri": {
-			Description:  "The docker image that holds the lambda function's code. Used (and required) only when `package_type` is `\"Image\"`.",
+			Description:  "The docker image that holds the lambda function's code. Used (and required) only when `package_type` is `\"Image\"`. The image must be in a private ECR.",
 			Type:         schema.TypeString,
 			Optional:     true,
 			ValidateFunc: validation.StringLenBetween(1, 1024),
@@ -221,8 +221,8 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 		"ephemeral_storage": {
 			Description:  "The Ephemeral Storage size, in MB, that your lambda function is allowed to use at runtime.",
 			Type:         schema.TypeInt,
+			Default:      512,
 			Optional:     true,
-			Computed:     true,
 			ValidateFunc: validation.IntBetween(512, 10240),
 		},
 	}
