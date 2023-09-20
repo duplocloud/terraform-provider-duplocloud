@@ -97,7 +97,7 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringLenBetween(1, 1024),
 		},
 		"image_uri": {
-			Description:  "The docker image that holds the lambda function's code. Used (and required) only when `package_type` is `\"Image\"`.",
+			Description:  "The docker image that holds the lambda function's code. Used (and required) only when `package_type` is `\"Image\"`. The image must be in a private ECR.",
 			Type:         schema.TypeString,
 			Optional:     true,
 			ValidateFunc: validation.StringLenBetween(1, 1024),
