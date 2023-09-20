@@ -17,11 +17,14 @@ type DuploTimestreamDBUpdateRequest struct {
 }
 
 type DuploTimestreamDBDetails struct {
-	DatabaseName string                 `json:"DatabaseName"`
-	KmsKeyId     string                 `json:"KmsKeyId,omitempty"`
-	Arn          string                 `json:"Arn,omitempty"`
-	TableCount   int                    `json:"TableCount,omitempty"`
-	Tags         *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	TenantID        string
+	DatabaseName    string                 `json:"DatabaseName"`
+	KmsKeyId        string                 `json:"KmsKeyId,omitempty"`
+	Arn             string                 `json:"Arn,omitempty"`
+	TableCount      int                    `json:"TableCount,omitempty"`
+	CreationTime    string                 `json:"CreationTime,omitempty"`
+	LastUpdatedTime string                 `json:"LastUpdatedTime,omitempty"`
+	Tags            *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
 
 type DuploTimestreamDBTableCreateRequest struct {
@@ -103,27 +106,14 @@ func (c *Client) DuploTimestreamDBDelete(tenantID, name string) ClientError {
 }
 
 func (c *Client) DuploTimestreamDBGet(tenantID string, name string) (*DuploTimestreamDBDetails, ClientError) {
-	list, err := c.DuploTimestreamDBGetList(tenantID)
-	if err != nil {
+	rp := DuploTimestreamDBDetails{}
+	err := c.getAPI(
+		fmt.Sprintf("DuploTimestreamDBGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/timeStream/%s", tenantID, name),
+		&rp)
+	if rp.DatabaseName == "" {
 		return nil, err
 	}
-
-	if list != nil {
-		for _, element := range *list {
-			if element.DatabaseName == name {
-				return &element, nil
-			}
-		}
-	}
-	return nil, nil
-}
-
-func (c *Client) DuploTimestreamDBGetList(tenantID string) (*[]DuploTimestreamDBDetails, ClientError) {
-	rp := []DuploTimestreamDBDetails{}
-	err := c.getAPI(
-		fmt.Sprintf("DuploTimestreamDBGetList(%s)", tenantID),
-		fmt.Sprintf("v3/subscriptions/%s/aws/timeStream", tenantID),
-		&rp)
 	return &rp, err
 }
 
