@@ -157,7 +157,7 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 	// Post the object to Duplo
 	_, err = c.TenantCreateAwsSecret(tenantID, &duploObject)
 	if err != nil {
-		return diag.Errorf("error creating tenant %s secret '%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("error creating secret %s for tenant '%s': %s", duploObject.Name, tenantID, err)
 	}
 	tempID := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
 
