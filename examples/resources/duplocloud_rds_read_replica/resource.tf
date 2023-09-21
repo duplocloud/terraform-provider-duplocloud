@@ -8,7 +8,7 @@ resource "duplocloud_rds_instance" "rds" {
   enable_logging  = false
   encrypt_storage = true
   engine          = 8
-  engine_version  = "5.7.mysql_aurora.2.04.0"
+  engine_version  = "8.0.mysql_aurora.3.04.0"
   master_password = "test!!1234"
   master_username = "masteruser"
   multi_az        = false
