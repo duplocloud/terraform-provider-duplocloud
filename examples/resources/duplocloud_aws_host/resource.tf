@@ -32,7 +32,7 @@ resource "duplocloud_aws_host" "eks" {
   user_account   = duplocloud_tenant.myapp.account_name
 
   metadata {
-    key   = "OsDiskSize" # <== This is the size of the OS disk in GB
-    value = "100"
+    key   = "MetadataServiceOption"
+    value = "disabled"
   }
 }
