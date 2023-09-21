@@ -31,8 +31,35 @@ resource "duplocloud_aws_host" "eks2" {
   zone           = 0 # Zone A
   user_account   =  "jt-1303"
   keypair_type   = "1"
+}
+
+# Simple Example 3:  Create a host with instance metadata service
+resource "duplocloud_aws_host" "host" {
+  tenant_id     = "81f6043b-1480-4c92-a0d8-4d3d3a6ae13a"
+  friendly_name = "tf-v2only"
+
+  image_id       = "ami-0b896ca73d6b87976" # <== put the AWS EKS 1.18 AMI ID here
+  capacity       = "t3.small"
+  agent_platform = 7 # Duplo EKS agent
+  zone           = 0 # Zone A
+  user_account   =  "jt-1303"
+  keypair_type   = "1"
+
+  # Create a host with instance metadata v2 only
   metadata {
     key   = "MetadataServiceOption"
-    value = "disabled"
+    value = "enabled_v2_only"
   }
+
+  # Create a host with instance metadata v1 and v2
+  /* metadata {
+    key   = "MetadataServiceOption"
+    value = "enabled"
+  } */
+
+  # Create a host with instance metadata disabled
+  /* metadata {
+     key   = "MetadataServiceOption"
+     value = "disabled"
+   } */
 }
