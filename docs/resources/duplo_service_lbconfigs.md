@@ -70,7 +70,6 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
 
 Required:
 
-- **external_port** (Number) The frontend port associated with this load balancer configuration.
 - **lb_type** (Number) The numerical index of the type of load balancer configuration to create.
 Should be one of:
 
@@ -89,6 +88,7 @@ Optional:
 
 - **certificate_arn** (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - **custom_cidr** (List of String) Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.
+- **external_port** (Number) The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.
 - **external_traffic_policy** (String) Only for K8S Node Port (`lb_type = 4`) or load balancers in Kubernetes.  Set the kubernetes service `externalTrafficPolicy` attribute.
 - **extra_selector_label** (Block List) Only for K8S services or load balancers in Kubernetes.  Sets an additional selector label to narrow which pods can receive traffic. (see [below for nested schema](#nestedblock--lbconfigs--extra_selector_label))
 - **health_check_url** (String) The health check URL to associate with this load balancer configuration.
