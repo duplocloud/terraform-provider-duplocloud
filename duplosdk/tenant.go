@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"net/http"
 )
 
 const (
@@ -28,7 +29,7 @@ type DuploTenant struct {
 	Tags         *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
 
-// DuploTenantPolicy reprsents policies for a Duplo Tenant
+// DuploTenantPolicy represents policies for a Duplo Tenant
 type DuploTenantPolicy struct {
 	AllowVolumeMapping bool `json:"AllowVolumeMapping,omitempty"`
 	BlockExternalEp    bool `json:"BlockExternalEp,omitempty"`
@@ -60,7 +61,7 @@ type DuploTenantAwsCredentials struct {
 	SessionToken    string `json:"SessionToken,omitempty"`
 }
 
-// DuploTenantEksCredentials represents just-in-time EKS credentials in Duplo
+// DuploTenantK8sCredentials represents just-in-time k8s credentials in Duplo
 type DuploTenantK8sCredentials struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-"`
@@ -142,18 +143,19 @@ func (c *Client) TenantDelete(tenantID string) ClientError {
 }
 
 // ListTenantsForUser retrieves a list of tenants for the current user via the Duplo API.
-func (c *Client) ListTenantsForUser() (*[]DuploTenant, ClientError) {
+func (c *Client) ListTenantsForUser() ([]DuploTenant, ClientError) {
 	list := []DuploTenant{}
+
 	err := c.getAPI("ListTenantsForUser()", "admin/GetTenantsForUser", &list)
 	if err != nil {
 		return nil, err
 	}
-	return &list, nil
+	return list, nil
 }
 
 // ListTenantsForUserByPlan retrieves a list of tenants with the given plan for the current user via the Duplo API.
 // If the planID is an empty string, returns all
-func (c *Client) ListTenantsForUserByPlan(planID string) (*[]DuploTenant, ClientError) {
+func (c *Client) ListTenantsForUserByPlan(planID string) ([]DuploTenant, ClientError) {
 	// Get all tenants.
 	allTenants, err := c.ListTenantsForUser()
 	if err != nil {
@@ -164,15 +166,15 @@ func (c *Client) ListTenantsForUserByPlan(planID string) (*[]DuploTenant, Client
 	}
 
 	// Build a new list of tenants with the given plan ID.
-	planTenants := make([]DuploTenant, 0, len(*allTenants))
-	for _, tenant := range *allTenants {
+	planTenants := make([]DuploTenant, 0, len(allTenants))
+	for _, tenant := range allTenants {
 		if tenant.PlanID == planID {
 			planTenants = append(planTenants, tenant)
 		}
 	}
 
 	// Return the new list
-	return &planTenants, nil
+	return planTenants, nil
 }
 
 // GetTenantByNameForUser retrieves a single tenant by name for the current user via the Duplo API.
@@ -184,7 +186,7 @@ func (c *Client) GetTenantByNameForUser(name string) (*DuploTenant, ClientError)
 	}
 
 	// Find and return the tenant with the specific name.
-	for _, tenant := range *allTenants {
+	for _, tenant := range allTenants {
 		if tenant.AccountName == name {
 			return &tenant, nil
 		}
@@ -203,20 +205,20 @@ func (c *Client) GetTenantForUser(tenantID string) (*DuploTenant, ClientError) {
 	}
 
 	// Find and return the tenant with the specific name.
-	for _, tenant := range *allTenants {
+	for _, tenant := range allTenants {
 		if tenant.TenantID == tenantID {
 			return &tenant, nil
 		}
 	}
 
 	// No tenant was found.
-	return nil, nil
+	return nil, clientError{status: http.StatusNotFound, message: fmt.Sprintf("Tenant %s was not found", tenantID)}
 }
 
 // TenantGetConfig retrieves tenant configuration metadata via the Duplo API.
 func (c *Client) TenantGetConfig(tenantID string) (*DuploTenantConfig, ClientError) {
 	list := []DuploKeyStringValue{}
-	err := c.getAPI(fmt.Sprintf("TenantGetConfig(%s)", tenantID), fmt.Sprintf("adminproxy/GetTenantMetadata/%s", tenantID), &list)
+	err := c.getAPI(fmt.Sprintf("TenantGetConfig(%s)", tenantID), fmt.Sprintf("v3/admin/tenant/%s/metadata", tenantID), &list)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +234,7 @@ func (c *Client) TenantReplaceConfig(config DuploTenantConfig) error {
 	return c.TenantChangeConfig(config.TenantID, existing.Metadata, config.Metadata)
 }
 
-// TenantReplaceConfig changes tenant configuration metadata via the Duplo API, using the supplied
+// TenantChangeConfig changes tenant configuration metadata via the Duplo API, using the supplied
 // oldConfig and newConfig, for the given tenantID.
 func (c *Client) TenantChangeConfig(tenantID string, oldConfig, newConfig *[]DuploKeyStringValue) ClientError {
 
@@ -336,7 +338,7 @@ func (c *Client) TenantGetGcpProjectID(tenantID string) (string, ClientError) {
 	return "", clientError{message: "No such GCP project"}
 }
 
-// GetTenantK8sCredentials retrieves just-in-time K8S cluster credentials via the Duplo API..
+// GetTenantK8sCredentials retrieves K8S cluster credentials via the Duplo API.
 func (c *Client) GetTenantK8sCredentials(tenantID string) (*DuploTenantK8sCredentials, ClientError) {
 	creds := DuploTenantK8sCredentials{}
 	err := c.getAPI(fmt.Sprintf("GetTenantEksCredentials(%s)", tenantID), fmt.Sprintf("subscriptions/%s/GetK8ClusterConfigByTenant", tenantID), &creds)
@@ -347,7 +349,7 @@ func (c *Client) GetTenantK8sCredentials(tenantID string) (*DuploTenantK8sCreden
 	return &creds, nil
 }
 
-// GetTenantK8sServiceAccountToken retrieves just-in-time EKS credentials via the Duplo API.
+// GetTenantK8sJitAccess retrieves just-in-time K8S credentials via the Duplo API.
 func (c *Client) GetTenantK8sJitAccess(tenantID string) (*DuploTenantK8sCredentials, ClientError) {
 	creds := DuploTenantK8sCredentials{}
 	err := c.getAPI(fmt.Sprintf("GetTenantK8sJitAccess(%s)", tenantID), fmt.Sprintf("v3/subscriptions/%s/k8s/jitAccess", tenantID), &creds)

@@ -36,7 +36,7 @@ func dataSourceTenantsRead(d *schema.ResourceData, m interface{}) error {
 	// List the tenants from Duplo.
 	c := m.(*duplosdk.Client)
 	planID := ""
-	var duploTenants *[]duplosdk.DuploTenant
+	var duploTenants []duplosdk.DuploTenant
 	if v, ok := d.GetOk("plan_id"); ok && v != nil {
 		planID = v.(string)
 	}
@@ -46,8 +46,8 @@ func dataSourceTenantsRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Set the Terraform resource data
-	tenants := make([]map[string]interface{}, 0, len(*duploTenants))
-	for _, duploTenant := range *duploTenants {
+	tenants := make([]map[string]interface{}, 0, len(duploTenants))
+	for _, duploTenant := range duploTenants {
 		tenant := map[string]interface{}{
 			"id":          duploTenant.TenantID,
 			"name":        duploTenant.AccountName,
