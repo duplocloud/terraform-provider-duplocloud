@@ -54,6 +54,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 - **environment** (Block List, Max: 1) Allow customization of the lambda execution environment. (see [below for nested schema](#nestedblock--environment))
 - **ephemeral_storage** (Number) The Ephemeral Storage size, in MB, that your lambda function is allowed to use at runtime. Defaults to `512`.
 - **handler** (String) The [entrypoint](https://docs.aws.amazon.com/lambda/latest/dg/walkthrough-custom-events-create-test-function.html) of the lambda function in your code.
+- **image_config** (Block List, Max: 1) Configuration for the Lambda function's container image (see [below for nested schema](#nestedblock--image_config))
 - **image_uri** (String) The docker image that holds the lambda function's code. Used (and required) only when `package_type` is `"Image"`. The image must be in a private ECR.
 - **layers** (List of String) List of Lambda Layer Version ARNs (maximum of 5) to attach to your Lambda Function.
 - **memory_size** (Number) The maximum amount of memory, in MB, that your lambda function is allowed to use at runtime. Defaults to `128`.
@@ -83,6 +84,16 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 Optional:
 
 - **variables** (Map of String) Map of environment variables that are accessible from the function code during execution.
+
+
+<a id="nestedblock--image_config"></a>
+### Nested Schema for `image_config`
+
+Optional:
+
+- **command** (List of String) The command that is passed to the container.
+- **entry_point** (List of String) The entry point that is passed to the container.
+- **working_directory** (String) The working directory that is passed to the container.
 
 
 <a id="nestedblock--timeouts"></a>

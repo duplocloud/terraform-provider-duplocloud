@@ -486,6 +486,14 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 			},
 		})
 	}
+	if duplo.ImageConfig != nil {
+		imageConfig := map[string]interface{}{
+			"command":           duplo.ImageConfig.Command,
+			"entry_point":       duplo.ImageConfig.EntryPoint,
+			"working_directory": duplo.ImageConfig.WorkingDir,
+		}
+		d.Set("image_config", []interface{}{imageConfig})
+	}
 }
 
 func flattenAwsLambdaEnvironment(environment *duplosdk.DuploLambdaEnvironment) []interface{} {
@@ -544,6 +552,7 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 		Timeout:      d.Get("timeout").(int),
 		MemorySize:   d.Get("memory_size").(int),
 		Tags:         expandAwsLambdaTags(d),
+		ImageConfig:  d.Get("image_config").(*duplosdk.DuploLambdaImageConfig),
 	}
 
 	if v, ok := getAsStringArray(d, "layers"); ok && v != nil {
@@ -566,8 +575,13 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 		rq.TracingConfig = &duplosdk.DuploLambdaTracingConfig{
 			Mode: duplosdk.DuploStringValue{Value: v.([]interface{})[0].(map[string]interface{})["mode"].(string)},
 		}
-
 	}
+
+	err := mapImageConfig(d, &rq)
+	if err != nil {
+		return err
+	}
+
 	environment, err := getOptionalBlockAsMap(d, "environment")
 	if err != nil {
 		return err
@@ -579,6 +593,50 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 	// TODO: Wait for the changes to be applied.
 	log.Printf("[TRACE] updateAwsLambdaFunctionConfig(%s): end", name)
 	return err
+}
+
+func mapImageConfig(d *schema.ResourceData, rq *duplosdk.DuploLambdaConfigurationRequest) error {
+	if imageConfigRaw, ok := d.GetOk("image_config"); ok {
+		imageConfigList, ok := imageConfigRaw.([]interface{})
+		if !ok || len(imageConfigList) == 0 {
+			return nil
+		}
+
+		imageConfig, ok := imageConfigList[0].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("image_config list element is not a valid map")
+		}
+
+		// Check if ImageConfig is nil and if so, initialize it
+		if rq.ImageConfig == nil {
+			rq.ImageConfig = &duplosdk.DuploLambdaImageConfig{}
+		}
+
+		if value, exists := imageConfig["command"]; exists {
+			commandList, ok := value.([]interface{})
+			if !ok {
+				return fmt.Errorf("command in image_config is not a valid list")
+			}
+			rq.ImageConfig.Command = expandStringList(commandList)
+		}
+
+		if value, exists := imageConfig["entry_point"]; exists {
+			entryPointList, ok := value.([]interface{})
+			if !ok {
+				return fmt.Errorf("entry_point in image_config is not a valid list")
+			}
+			rq.ImageConfig.EntryPoint = expandStringList(entryPointList)
+		}
+
+		if value, exists := imageConfig["working_directory"]; exists {
+			workingDir, ok := value.(string)
+			if !ok {
+				return fmt.Errorf("working_directory in image_config is not a valid string")
+			}
+			rq.ImageConfig.WorkingDir = workingDir
+		}
+	}
+	return nil
 }
 
 func updateAwsLambdaFunctionCode(tenantID, name string, d *schema.ResourceData, c *duplosdk.Client) error {
@@ -626,5 +684,6 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 		d.HasChange("tags") ||
 		d.HasChange("layers") ||
 		d.HasChange("tracing_config") ||
-		d.HasChange("ephemeral_storage")
+		d.HasChange("ephemeral_storage") ||
+		d.HasChange("image_config")
 }
