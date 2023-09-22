@@ -689,7 +689,7 @@ func duploAzureVirtualMachineScaleSetSchema() map[string]*schema.Schema {
 						Description: "Specifies the size of the disk in GB. This element is required when creating an empty disk.",
 						Type:        schema.TypeInt,
 						Optional:    true,
-						Computed:    true,
+						Default:     128,
 					},
 
 					"managed_disk_type": {
