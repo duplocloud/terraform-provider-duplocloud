@@ -1,7 +1,7 @@
 resource "duplocloud_aws_lambda_permission" "permission" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = duplocloud_aws_lambda_function.myfunction
+  function_name = duplocloud_aws_lambda_function.myfunction.fullname
   principal     = "apigateway.amazonaws.com"
 
   # More: http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
