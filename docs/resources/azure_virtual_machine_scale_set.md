@@ -341,7 +341,7 @@ Required:
 Optional:
 
 - **caching** (String) Specifies the caching requirements. Possible values include: `None` (default), `ReadOnly`, `ReadWrite`.
-- **disk_size_gb** (Number) Specifies the size of the disk in GB. This element is required when creating an empty disk.
+- **disk_size_gb** (Number) Specifies the size of the disk in GB. This element is required when creating an empty disk. Defaults to `128`.
 - **managed_disk_type** (String) Specifies the type of managed disk to create. Value must be either `Standard_LRS`, `StandardSSD_LRS` or `Premium_LRS`.
 
 
