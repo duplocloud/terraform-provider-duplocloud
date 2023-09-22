@@ -291,12 +291,6 @@ func resourceDuploServiceLBConfigsUpdate(ctx context.Context, d *schema.Resource
 func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}, updating bool) diag.Diagnostics {
 	var err error
 
-	//log.Printf("[TRACE] validateExternalPortForTargetGroup: start")
-	//err = validateExternalPortForTargetGroup(d)
-	//if err != nil {
-	//	return diag.Errorf("Error applying Duplo service '%s' load balancer configs: %s", d.Id(), err)
-	//}
-
 	log.Printf("[TRACE] resourceDuploServiceLBConfigsCreateOrUpdate: start")
 
 	// Start the build the reqeust.
@@ -314,11 +308,6 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 			for _, vLbc := range lbconfigs {
 				lbc := vLbc.(map[string]interface{})
 
-				err = validateExternalPort(lbc)
-				if err != nil {
-					return diag.Errorf("Error applying Duplo service '%s' load balancer configs: %s", d.Id(), err)
-				}
-
 				item := duplosdk.DuploLbConfiguration{
 					TenantId:                  tenantID,
 					ReplicationControllerName: name,
@@ -333,8 +322,11 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					SetIngressHealthCheck:     lbc["set_ingress_health_check"].(bool),
 					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
 				}
+				// if lbType is 7, then external_port is not required
 				externalPortValue, exists := lbc["external_port"]
-				if exists {
+				if item.LbType != 7 && (!exists || externalPortValue.(int) == 0) {
+					return diag.Errorf("'external_port' is required when 'lb_type' is set to %v", item.LbType)
+				} else if exists {
 					externalPort := externalPortValue.(int)
 					item.ExternalPort = &externalPort
 				} else {
@@ -504,17 +496,4 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 
 	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... End")
 	return m
-}
-
-func validateExternalPort(lbConfig map[string]interface{}) error {
-	lbType, lbTypeOK := lbConfig["lb_type"].(int)
-
-	externalPortValue, exists := lbConfig["external_port"]
-	externalPort, externalPortOK := externalPortValue.(int)
-
-	if lbTypeOK && lbType != 7 && (!exists || !externalPortOK || externalPort == 0) {
-		return fmt.Errorf("'external_port' is required when 'lb_type' is set to %v", lbType)
-	}
-
-	return nil
 }
