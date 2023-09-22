@@ -552,7 +552,6 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 		Timeout:      d.Get("timeout").(int),
 		MemorySize:   d.Get("memory_size").(int),
 		Tags:         expandAwsLambdaTags(d),
-		ImageConfig:  d.Get("image_config").(*duplosdk.DuploLambdaImageConfig),
 	}
 
 	if v, ok := getAsStringArray(d, "layers"); ok && v != nil {
