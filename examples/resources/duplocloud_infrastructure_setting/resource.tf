@@ -9,7 +9,7 @@ resource "duplocloud_infrastructure" "myinfra" {
 }
 
 resource "duplocloud_infrastructure_setting" "settings" {
-  infra_name = duplocloud_infrastructure.myinfra
+  infra_name = duplocloud_infrastructure.myinfra.name
 
   setting {
     key   = "EnableSecretCsiDriver"
