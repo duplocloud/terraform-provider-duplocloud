@@ -29,7 +29,7 @@ resource "duplocloud_aws_host" "eks2" {
   capacity       = "t3.small"
   agent_platform = 7 # Duplo EKS agent
   zone           = 0 # Zone A
-  user_account   =  "jt-1303"
+  user_account   = "jt-1303"
   keypair_type   = "1"
 }
 
@@ -42,8 +42,13 @@ resource "duplocloud_aws_host" "host" {
   capacity       = "t3.small"
   agent_platform = 7 # Duplo EKS agent
   zone           = 0 # Zone A
-  user_account   =  "jt-1303"
+  user_account   = "jt-1303"
   keypair_type   = "1"
+
+  metadata {
+    key   = "OsDiskSize" # <== This is the size of the OS disk in GB
+    value = "100"
+  }
 
   # Create a host with instance metadata v2 only
   metadata {
