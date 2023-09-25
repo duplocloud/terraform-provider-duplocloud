@@ -161,6 +161,18 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"is_unique_k8s_node_required": {
+			Description: "Whether or not the replicas must be scheduled on separate Kubernetes nodes.  Only supported on Kubernetes.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"should_spread_across_zones": {
+			Description: "Whether or not the replicas must be spread across availability zones.  Only supported on Kubernetes.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		"index": {
 			Description: "The index of the service.",
 			Type:        schema.TypeInt,
@@ -241,6 +253,8 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		IsAnyHostAllowed:                  d.Get("any_host_allowed").(bool),
 		IsReplicaCollocationAllowed:       d.Get("replica_collocation_allowed").(bool),
 		IsDaemonset:                       d.Get("is_daemonset").(bool),
+		IsUniqueK8sNodeRequired:           d.Get("is_unique_k8s_node_required").(bool),
+		ShouldSpreadAcrossZones:           d.Get("should_spread_across_zones").(bool),
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
@@ -286,6 +300,8 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 		IsAnyHostAllowed:                  d.Get("any_host_allowed").(bool),
 		IsReplicaCollocationAllowed:       d.Get("replica_collocation_allowed").(bool),
 		IsDaemonset:                       d.Get("is_daemonset").(bool),
+		IsUniqueK8sNodeRequired:           d.Get("is_unique_k8s_node_required").(bool),
+		ShouldSpreadAcrossZones:           d.Get("should_spread_across_zones").(bool),
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}

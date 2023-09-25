@@ -834,7 +834,7 @@ func getNewTagsDuploKeyStringValues(key string, d *schema.ResourceData) (newTags
 }
 
 func selectDuploKeyStringValues(all *[]duplosdk.DuploKeyStringValue, keys []string) *[]duplosdk.DuploKeyStringValue {
-	log.Printf("[TRACE] selectDuploKeyStringValues start")
+	log.Printf("[TRACE] selectDuploKeyStringValues start keys (%s) all (%s) ", keys, all)
 	specified := map[string]duplosdk.DuploKeyStringValue{}
 	for _, kv := range *all {
 		specified[kv.Key] = kv

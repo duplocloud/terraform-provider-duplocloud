@@ -95,6 +95,16 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Computed: true,
 		},
+		"is_unique_k8s_node_required": {
+			Description: "Whether or not the replicas must be scheduled on separate Kubernetes nodes.  Only supported on Kubernetes.",
+			Type:        schema.TypeBool,
+			Computed:    true,
+		},
+		"should_spread_across_zones": {
+			Description: "Whether or not the replicas must be spread across availability zones.  Only supported on Kubernetes.",
+			Type:        schema.TypeBool,
+			Computed:    true,
+		},
 		"tags": {
 			Type:     schema.TypeList,
 			Computed: true,
@@ -146,6 +156,8 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 	d.Set("replica_collocation_allowed", duplo.IsReplicaCollocationAllowed)
 	d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
 	d.Set("is_daemonset", duplo.IsDaemonset)
+	d.Set("is_unique_k8s_node_required", duplo.IsUniqueK8sNodeRequired)
+	d.Set("should_spread_across_zones", duplo.ShouldSpreadAcrossZones)
 	d.Set("force_stateful_set", duplo.ForceStatefulSet)
 	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
 	d.Set("replicas", duplo.Replicas)
