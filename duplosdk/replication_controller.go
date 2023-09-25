@@ -77,7 +77,7 @@ type DuploLbConfiguration struct {
 	Protocol                  string                    `json:"Protocol"`
 	Port                      string                    `json:"Port"`
 	HostPort                  int                       `json:"HostPort"`
-	ExternalPort              int                       `json:"ExternalPort"`
+	ExternalPort              *int                      `json:"ExternalPort,omitempty"`
 	TgCount                   int                       `json:"TgCount,omitempty"`
 	IsInfraDeployment         bool                      `json:"IsInfraDeployment,omitempty"`
 	DnsName                   string                    `json:"DnsName,omitempty"`

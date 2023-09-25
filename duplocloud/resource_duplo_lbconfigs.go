@@ -58,9 +58,10 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"external_port": {
-			Description: "The frontend port associated with this load balancer configuration.",
+			Description: "The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.",
 			Type:        schema.TypeInt,
-			Required:    true,
+			Optional:    true,
+			Computed:    true,
 		},
 		"custom_cidr": {
 			Description: "Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.",
@@ -313,7 +314,6 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					LbType:                    lbc["lb_type"].(int),
 					Protocol:                  lbc["protocol"].(string),
 					Port:                      lbc["port"].(string),
-					ExternalPort:              lbc["external_port"].(int),
 					HealthCheckURL:            lbc["health_check_url"].(string),
 					CertificateArn:            lbc["certificate_arn"].(string),
 					IsNative:                  lbc["is_native"].(bool),
@@ -322,6 +322,17 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					SetIngressHealthCheck:     lbc["set_ingress_health_check"].(bool),
 					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
 				}
+				// if lbType is 7, then external_port is not required
+				externalPortValue, exists := lbc["external_port"]
+				if item.LbType != 7 && (!exists || externalPortValue.(int) == 0) {
+					return diag.Errorf("'external_port' is required when 'lb_type' is set to %v", item.LbType)
+				} else if exists {
+					externalPort := externalPortValue.(int)
+					item.ExternalPort = &externalPort
+				} else {
+					item.ExternalPort = nil
+				}
+
 				if item.LbType == 5 {
 					item.HostNames = &[]string{lbc["host_name"].(string)}
 				}
