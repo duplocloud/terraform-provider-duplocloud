@@ -52,60 +52,60 @@ resource "duplocloud_aws_batch_compute_environment" "bce" {
 
 ### Required
 
-- **name** (String) Specifies the name of the compute environment.
-- **tenant_id** (String) The GUID of the tenant that the aws batch compute environment will be created in.
-- **type** (String) The type of the compute environment. Valid items are `MANAGED` or `UNMANAGED`.
+- `name` (String) Specifies the name of the compute environment.
+- `tenant_id` (String) The GUID of the tenant that the aws batch compute environment will be created in.
+- `type` (String) The type of the compute environment. Valid items are `MANAGED` or `UNMANAGED`.
 
 ### Optional
 
-- **compute_resources** (Block List, Max: 1) Details of the compute resources managed by the compute environment. This parameter is required for managed compute environments. (see [below for nested schema](#nestedblock--compute_resources))
-- **service_role** (String) The full Amazon Resource Name (ARN) of the IAM role that allows AWS Batch to make calls to other AWS services on your behalf.
-- **state** (String) The state of the compute environment. If the state is `ENABLED`, then the compute environment accepts jobs from a queue and can scale out automatically based on queues. Compute environment must be created in `ENABLED` state. Valid items are `ENABLED` or `DISABLED`. Defaults to `ENABLED`.
-- **tags** (Map of String) Key-value map of resource tags.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_for_deployment** (Boolean) Defaults to `true`.
+- `compute_resources` (Block List, Max: 1) Details of the compute resources managed by the compute environment. This parameter is required for managed compute environments. (see [below for nested schema](#nestedblock--compute_resources))
+- `service_role` (String) The full Amazon Resource Name (ARN) of the IAM role that allows AWS Batch to make calls to other AWS services on your behalf.
+- `state` (String) The state of the compute environment. If the state is `ENABLED`, then the compute environment accepts jobs from a queue and can scale out automatically based on queues. Compute environment must be created in `ENABLED` state. Valid items are `ENABLED` or `DISABLED`. Defaults to `ENABLED`.
+- `tags` (Map of String) Key-value map of resource tags.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_for_deployment` (Boolean) Defaults to `true`.
 
 ### Read-Only
 
-- **arn** (String) The Amazon Resource Name of the compute environment.
-- **ecs_cluster_arn** (String) The Amazon Resource Name (ARN) of the underlying Amazon ECS cluster used by the compute environment.
-- **fullname** (String) The full name of the compute environment.
-- **id** (String) The ID of this resource.
-- **status** (String) The current status of the compute environment (for example, CREATING or VALID).
-- **status_reason** (String) A short, human-readable string to provide additional details about the current status of the compute environment.
+- `arn` (String) The Amazon Resource Name of the compute environment.
+- `ecs_cluster_arn` (String) The Amazon Resource Name (ARN) of the underlying Amazon ECS cluster used by the compute environment.
+- `fullname` (String) The full name of the compute environment.
+- `id` (String) The ID of this resource.
+- `status` (String) The current status of the compute environment (for example, CREATING or VALID).
+- `status_reason` (String) A short, human-readable string to provide additional details about the current status of the compute environment.
 
 <a id="nestedblock--compute_resources"></a>
 ### Nested Schema for `compute_resources`
 
 Required:
 
-- **max_vcpus** (Number) The maximum number of EC2 vCPUs that an environment can reach.
-- **type** (String) The type of compute environment. Valid items are `EC2`, `SPOT`, `FARGATE` or `FARGATE_SPOT`.
+- `max_vcpus` (Number) The maximum number of EC2 vCPUs that an environment can reach.
+- `type` (String) The type of compute environment. Valid items are `EC2`, `SPOT`, `FARGATE` or `FARGATE_SPOT`.
 
 Optional:
 
-- **allocation_strategy** (String) The allocation strategy to use for the compute resource in case not enough instances of the best fitting instance type can be allocated.
-- **bid_percentage** (Number) Integer of maximum percentage that a Spot Instance price can be when compared with the On-Demand price for that instance type before instances are launched.
-- **desired_vcpus** (Number) The desired number of EC2 vCPUS in the compute environment. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
-- **ec2_configuration** (Block List, Max: 1) Provides information used to select Amazon Machine Images (AMIs) for EC2 instances in the compute environment. (see [below for nested schema](#nestedblock--compute_resources--ec2_configuration))
-- **ec2_key_pair** (String) The EC2 key pair that is used for instances launched in the compute environment. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
-- **image_id** (String) The Amazon Machine Image (AMI) ID used for instances launched in the compute environment. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified. (Deprecated, use ec2_configuration `image_id_override` instead)
-- **instance_role** (String) The Amazon ECS instance role applied to Amazon EC2 instances in a compute environment. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
-- **instance_type** (Set of String) A list of instance types that may be launched. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
-- **launch_template** (Block List, Max: 1) The launch template to use for your compute resources. See details below. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified. (see [below for nested schema](#nestedblock--compute_resources--launch_template))
-- **min_vcpus** (Number) The minimum number of EC2 vCPUs that an environment should maintain. For `EC2` or `SPOT` compute environments, if the parameter is not explicitly defined, a `0` default value will be set. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
-- **security_group_ids** (Set of String) A list of EC2 security group that are associated with instances launched in the compute environment. This parameter is required for Fargate compute environments.
-- **spot_iam_fleet_role** (String) The Amazon Resource Name (ARN) of the Amazon EC2 Spot Fleet IAM role applied to a SPOT compute environment. This parameter is required for SPOT compute environments. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
-- **subnets** (Set of String) A list of VPC subnets into which the compute resources are launched.
-- **tags** (Map of String) Key-value map of resource tags.
+- `allocation_strategy` (String) The allocation strategy to use for the compute resource in case not enough instances of the best fitting instance type can be allocated.
+- `bid_percentage` (Number) Integer of maximum percentage that a Spot Instance price can be when compared with the On-Demand price for that instance type before instances are launched.
+- `desired_vcpus` (Number) The desired number of EC2 vCPUS in the compute environment. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
+- `ec2_configuration` (Block List, Max: 1) Provides information used to select Amazon Machine Images (AMIs) for EC2 instances in the compute environment. (see [below for nested schema](#nestedblock--compute_resources--ec2_configuration))
+- `ec2_key_pair` (String) The EC2 key pair that is used for instances launched in the compute environment. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
+- `image_id` (String) The Amazon Machine Image (AMI) ID used for instances launched in the compute environment. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified. (Deprecated, use ec2_configuration `image_id_override` instead)
+- `instance_role` (String) The Amazon ECS instance role applied to Amazon EC2 instances in a compute environment. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
+- `instance_type` (Set of String) A list of instance types that may be launched. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
+- `launch_template` (Block List, Max: 1) The launch template to use for your compute resources. See details below. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified. (see [below for nested schema](#nestedblock--compute_resources--launch_template))
+- `min_vcpus` (Number) The minimum number of EC2 vCPUs that an environment should maintain. For `EC2` or `SPOT` compute environments, if the parameter is not explicitly defined, a `0` default value will be set. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
+- `security_group_ids` (Set of String) A list of EC2 security group that are associated with instances launched in the compute environment. This parameter is required for Fargate compute environments.
+- `spot_iam_fleet_role` (String) The Amazon Resource Name (ARN) of the Amazon EC2 Spot Fleet IAM role applied to a SPOT compute environment. This parameter is required for SPOT compute environments. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
+- `subnets` (Set of String) A list of VPC subnets into which the compute resources are launched.
+- `tags` (Map of String) Key-value map of resource tags.
 
 <a id="nestedblock--compute_resources--ec2_configuration"></a>
 ### Nested Schema for `compute_resources.ec2_configuration`
 
 Optional:
 
-- **image_id_override** (String) The AMI ID used for instances launched in the compute environment that match the image type. This setting overrides the `image_id` argument in the `compute_resources` block.
-- **image_type** (String) The image type to match with the instance type to select an AMI.
+- `image_id_override` (String) The AMI ID used for instances launched in the compute environment that match the image type. This setting overrides the `image_id` argument in the `compute_resources` block.
+- `image_type` (String) The image type to match with the instance type to select an AMI.
 
 
 <a id="nestedblock--compute_resources--launch_template"></a>
@@ -113,9 +113,9 @@ Optional:
 
 Optional:
 
-- **launch_template_id** (String) ID of the launch template. You must specify either the launch template ID or launch template name in the request, but not both.
-- **launch_template_name** (String) Name of the launch template.
-- **version** (String) The version number of the launch template. Default: The default version of the launch template.
+- `launch_template_id` (String) ID of the launch template. You must specify either the launch template ID or launch template name in the request, but not both.
+- `launch_template_name` (String) Name of the launch template.
+- `version` (String) The version number of the launch template. Default: The default version of the launch template.
 
 
 
@@ -124,8 +124,8 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

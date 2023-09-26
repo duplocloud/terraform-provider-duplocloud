@@ -17,22 +17,22 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String) The GUID of the tenant in which to list the hosts.
+- `tenant_id` (String) The GUID of the tenant in which to list the hosts.
 
 ### Read-Only
 
-- **data** (List of Object) The list of native hosts. (see [below for nested schema](#nestedatt--data))
-- **id** (String) The ID of this resource.
+- `data` (List of Object) The list of native hosts. (see [below for nested schema](#nestedatt--data))
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--data"></a>
 ### Nested Schema for `data`
 
 Read-Only:
 
-- **arn** (String)
-- **job_flow_id** (String)
-- **name** (String)
-- **status** (String)
-- **tenant_id** (String)
+- `arn` (String)
+- `job_flow_id` (String)
+- `name` (String)
+- `status` (String)
+- `tenant_id` (String)
 
 

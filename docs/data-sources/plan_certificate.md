@@ -17,12 +17,12 @@ description: |-
 
 ### Required
 
-- **name** (String) A domain name for which the certificate should be issued
-- **plan_id** (String) The plan ID
+- `name` (String) A domain name for which the certificate should be issued
+- `plan_id` (String) The plan ID
 
 ### Read-Only
 
-- **arn** (String) The ARN of the certificate
-- **id** (String) The ID of this resource.
+- `arn` (String) The ARN of the certificate
+- `id` (String) The ID of this resource.
 
 

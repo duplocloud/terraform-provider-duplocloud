@@ -32,26 +32,26 @@ resource "duplocloud_azure_vm_feature" "vm_feature" {
 
 ### Required
 
-- **component_id** (String) Specifies the name of the VM created in duplo. Changing this forces a new resource to be created.
-- **enabled** (Boolean) The status of the VM feature. By default, this is set to false.
-- **feature_name** (String) The name of the VM feature to be enabled.
-- **tenant_id** (String) The GUID of the tenant that the azure vm feature will be created in.
+- `component_id` (String) Specifies the name of the VM created in duplo. Changing this forces a new resource to be created.
+- `enabled` (Boolean) The status of the VM feature. By default, this is set to false.
+- `feature_name` (String) The name of the VM feature to be enabled.
+- `tenant_id` (String) The GUID of the tenant that the azure vm feature will be created in.
 
 ### Optional
 
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

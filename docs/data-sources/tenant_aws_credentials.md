@@ -17,15 +17,15 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **access_key_id** (String, Sensitive)
-- **console_url** (String, Sensitive)
-- **id** (String) The ID of this resource.
-- **region** (String)
-- **secret_access_key** (String, Sensitive)
-- **session_token** (String, Sensitive)
+- `access_key_id` (String, Sensitive)
+- `console_url` (String, Sensitive)
+- `id` (String) The ID of this resource.
+- `region` (String)
+- `secret_access_key` (String, Sensitive)
+- `session_token` (String, Sensitive)
 
 

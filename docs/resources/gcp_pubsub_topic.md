@@ -30,28 +30,28 @@ resource "duplocloud_gcp_pubsub_topic" "mytopic" {
 
 ### Required
 
-- **name** (String) The short name of the pubsub topic.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **tenant_id** (String) The GUID of the tenant that the pubsub topic will be created in.
+- `name` (String) The short name of the pubsub topic.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `tenant_id` (String) The GUID of the tenant that the pubsub topic will be created in.
 
 ### Optional
 
-- **labels** (Map of String) The labels assigned to this pubsub topic.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `labels` (Map of String) The labels assigned to this pubsub topic.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **fullname** (String) The full name of the pubsub topic.
-- **id** (String) The ID of this resource.
-- **self_link** (String) The SelfLink of the pubsub topic.
+- `fullname` (String) The full name of the pubsub topic.
+- `id` (String) The ID of this resource.
+- `self_link` (String) The SelfLink of the pubsub topic.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

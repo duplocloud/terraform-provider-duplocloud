@@ -47,40 +47,40 @@ resource "duplocloud_aws_batch_scheduling_policy" "bsp" {
 
 ### Required
 
-- **name** (String) Specifies the name of the scheduling policy.
-- **tenant_id** (String) The GUID of the tenant that the aws batch scheduling policy will be created in.
+- `name` (String) Specifies the name of the scheduling policy.
+- `tenant_id` (String) The GUID of the tenant that the aws batch scheduling policy will be created in.
 
 ### Optional
 
-- **fair_share_policy** (Block List, Max: 1) A fairshare policy block specifies the `compute_reservation`, `share_delay_seconds`, and `share_distribution` of the scheduling policy. The `fairshare_policy block` is documented below. (see [below for nested schema](#nestedblock--fair_share_policy))
-- **tags** (Map of String) Key-value map of resource tags.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `fair_share_policy` (Block List, Max: 1) A fairshare policy block specifies the `compute_reservation`, `share_delay_seconds`, and `share_distribution` of the scheduling policy. The `fairshare_policy block` is documented below. (see [below for nested schema](#nestedblock--fair_share_policy))
+- `tags` (Map of String) Key-value map of resource tags.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) The Amazon Resource Name of the scheduling policy.
-- **fullname** (String) The full name of the scheduling policy.
-- **id** (String) The ID of this resource.
+- `arn` (String) The Amazon Resource Name of the scheduling policy.
+- `fullname` (String) The full name of the scheduling policy.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--fair_share_policy"></a>
 ### Nested Schema for `fair_share_policy`
 
 Optional:
 
-- **compute_reservation** (Number) A value used to reserve some of the available maximum vCPU for fair share identifiers that have not yet been used.
-- **share_decay_seconds** (Number) The time period to use to calculate a fair share percentage for each fair share identifier in use, in seconds.
-- **share_distribution** (Block Set, Max: 500) One or more share distribution blocks which define the weights for the fair share identifiers for the fair share policy. (see [below for nested schema](#nestedblock--fair_share_policy--share_distribution))
+- `compute_reservation` (Number) A value used to reserve some of the available maximum vCPU for fair share identifiers that have not yet been used.
+- `share_decay_seconds` (Number) The time period to use to calculate a fair share percentage for each fair share identifier in use, in seconds.
+- `share_distribution` (Block Set, Max: 500) One or more share distribution blocks which define the weights for the fair share identifiers for the fair share policy. (see [below for nested schema](#nestedblock--fair_share_policy--share_distribution))
 
 <a id="nestedblock--fair_share_policy--share_distribution"></a>
 ### Nested Schema for `fair_share_policy.share_distribution`
 
 Required:
 
-- **share_identifier** (String) A fair share identifier or fair share identifier prefix.
+- `share_identifier` (String) A fair share identifier or fair share identifier prefix.
 
 Optional:
 
-- **weight_factor** (Number) The weight factor for the fair share identifier.
+- `weight_factor` (Number) The weight factor for the fair share identifier.
 
 
 
@@ -89,8 +89,8 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

@@ -17,18 +17,18 @@ description: |-
 
 ### Required
 
-- **name** (String)
-- **tenant_id** (String)
+- `name` (String)
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **allowed_pattern** (String)
-- **description** (String)
-- **id** (String) The ID of this resource.
-- **key_id** (String)
-- **last_modified_date** (String)
-- **last_modified_user** (String)
-- **type** (String)
-- **value** (String)
+- `allowed_pattern` (String)
+- `description` (String)
+- `id` (String) The ID of this resource.
+- `key_id` (String)
+- `last_modified_date` (String)
+- `last_modified_user` (String)
+- `type` (String)
+- `value` (String)
 
 

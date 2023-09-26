@@ -53,27 +53,27 @@ resource "duplocloud_aws_rds_tag" "tag" {
 
 ### Required
 
-- **key** (String) The tag name.
-- **resource_id** (String) The ID of the RDS resource to manage the tag for.
-- **resource_type** (String) The type of the RDS resource to manage the tag for. Valid values are `cluster` and `instance`.
-- **tenant_id** (String) The GUID of the tenant that the RDS tag will be created in.
-- **value** (String) The value of the tag.
+- `key` (String) The tag name.
+- `resource_id` (String) The ID of the RDS resource to manage the tag for.
+- `resource_type` (String) The type of the RDS resource to manage the tag for. Valid values are `cluster` and `instance`.
+- `tenant_id` (String) The GUID of the tenant that the RDS tag will be created in.
+- `value` (String) The value of the tag.
 
 ### Optional
 
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

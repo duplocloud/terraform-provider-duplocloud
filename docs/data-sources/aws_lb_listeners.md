@@ -17,36 +17,36 @@ description: |-
 
 ### Required
 
-- **name** (String)
-- **tenant_id** (String)
+- `name` (String)
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-- **listeners** (List of Object) (see [below for nested schema](#nestedatt--listeners))
+- `id` (String) The ID of this resource.
+- `listeners` (List of Object) (see [below for nested schema](#nestedatt--listeners))
 
 <a id="nestedatt--listeners"></a>
 ### Nested Schema for `listeners`
 
 Read-Only:
 
-- **arn** (String)
-- **certificates** (List of Object) (see [below for nested schema](#nestedobjatt--listeners--certificates))
-- **default_actions** (List of Object) (see [below for nested schema](#nestedobjatt--listeners--default_actions))
-- **load_balancer_arn** (String)
-- **load_balancer_name** (String)
-- **port** (Number)
-- **protocol** (String)
-- **ssl_policy** (String)
-- **tenant_id** (String)
+- `arn` (String)
+- `certificates` (List of Object) (see [below for nested schema](#nestedobjatt--listeners--certificates))
+- `default_actions` (List of Object) (see [below for nested schema](#nestedobjatt--listeners--default_actions))
+- `load_balancer_arn` (String)
+- `load_balancer_name` (String)
+- `port` (Number)
+- `protocol` (String)
+- `ssl_policy` (String)
+- `tenant_id` (String)
 
 <a id="nestedobjatt--listeners--certificates"></a>
 ### Nested Schema for `listeners.certificates`
 
 Read-Only:
 
-- **arn** (String)
-- **is_default** (Boolean)
+- `arn` (String)
+- `is_default` (Boolean)
 
 
 <a id="nestedobjatt--listeners--default_actions"></a>
@@ -54,8 +54,8 @@ Read-Only:
 
 Read-Only:
 
-- **order** (Number)
-- **target_group_arn** (String)
-- **type** (String)
+- `order` (Number)
+- `target_group_arn` (String)
+- `type` (String)
 
 

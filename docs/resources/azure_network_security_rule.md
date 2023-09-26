@@ -35,36 +35,36 @@ resource "duplocloud_azure_network_security_rule" "security_rule" {
 
 ### Required
 
-- **access** (String) Specifies whether network traffic is allowed or denied. Possible values are `Allow` and `Deny`.
-- **destination_rule_type** (Number) Type of the destination security rule. Possible values include `0(IP Address)`, `1(Service Tag)`, `2(Application Security Group)`.
-- **direction** (String) The direction specifies if rule will be evaluated on incoming or outgoing traffic. Possible values are `Inbound` and `Outbound`.
-- **infra_name** (String) The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.
-- **name** (String) The name of the security group rule.
-- **network_security_group_name** (String) The name of the Network Security Group that we want to attach the rule to.
-- **priority** (Number) Specifies the priority of the rule.
-- **protocol** (String) Network protocol this rule applies to. Possible values include `tcp`, `udp`, `icmp`, `esp`, `ah` or `*` (which matches all).
-- **source_rule_type** (Number) Type of the source security rule. Possible values include `0(IP Address)`, `1(Service Tag)`, `2(Application Security Group)`.
+- `access` (String) Specifies whether network traffic is allowed or denied. Possible values are `Allow` and `Deny`.
+- `destination_rule_type` (Number) Type of the destination security rule. Possible values include `0(IP Address)`, `1(Service Tag)`, `2(Application Security Group)`.
+- `direction` (String) The direction specifies if rule will be evaluated on incoming or outgoing traffic. Possible values are `Inbound` and `Outbound`.
+- `infra_name` (String) The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.
+- `name` (String) The name of the security group rule.
+- `network_security_group_name` (String) The name of the Network Security Group that we want to attach the rule to.
+- `priority` (Number) Specifies the priority of the rule.
+- `protocol` (String) Network protocol this rule applies to. Possible values include `tcp`, `udp`, `icmp`, `esp`, `ah` or `*` (which matches all).
+- `source_rule_type` (Number) Type of the source security rule. Possible values include `0(IP Address)`, `1(Service Tag)`, `2(Application Security Group)`.
 
 ### Optional
 
-- **destination_address_prefix** (String) CIDR or destination IP range or * to match any IP.
-- **destination_port_range** (String) Destination Port or Range. Integer or range between `0` and `65535` or `*` to match any.
-- **source_address_prefix** (String) CIDR or source IP range or * to match any IP.
-- **source_port_range** (String) Source Port or Range. Integer or range between `0` and `65535` or `*` to match any.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `destination_address_prefix` (String) CIDR or destination IP range or * to match any IP.
+- `destination_port_range` (String) Destination Port or Range. Integer or range between `0` and `65535` or `*` to match any.
+- `source_address_prefix` (String) CIDR or source IP range or * to match any IP.
+- `source_port_range` (String) Source Port or Range. Integer or range between `0` and `65535` or `*` to match any.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **fullname** (String) The fullname of the security group rule.
-- **id** (String) The ID of this resource.
+- `fullname` (String) The fullname of the security group rule.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

@@ -17,23 +17,23 @@ description: |-
 
 ### Required
 
-- **name** (String)
-- **plan_id** (String) The plan ID
+- `name` (String)
+- `plan_id` (String) The plan ID
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-- **image_id** (String)
-- **os** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
-- **username** (String)
+- `id` (String) The ID of this resource.
+- `image_id` (String)
+- `os` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
+- `username` (String)
 
 <a id="nestedatt--tags"></a>
 ### Nested Schema for `tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 

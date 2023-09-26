@@ -43,39 +43,39 @@ resource "duplocloud_aws_lb_target_group" "tg" {
 
 ### Required
 
-- **name** (String) Name of the target group.
-- **target_type** (String) Type of target that you must specify when registering targets with this target group.
-- **tenant_id** (String) The GUID of the tenant that the target group will be created in.
+- `name` (String) Name of the target group.
+- `target_type` (String) Type of target that you must specify when registering targets with this target group.
+- `tenant_id` (String) The GUID of the tenant that the target group will be created in.
 
 ### Optional
 
-- **health_check** (Block List, Max: 1) Health Check configuration block. (see [below for nested schema](#nestedblock--health_check))
-- **ip_address_type** (String) The type of IP addresses used by the target group, only supported when target type is set to `ip`. Possible values are `ipv4` or `ipv6`
-- **port** (Number) Port to use to connect with the target. Valid values are either ports 1-65535.
-- **protocol** (String) Protocol to use to connect with the target. Not applicable when `target_type` is `lambda`. Defaults to `HTTP`.
-- **protocol_version** (String) Only applicable when protocol is `HTTP` or `HTTPS`. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **vpc_id** (String) Identifier of the VPC in which to create the target group. Required when `target_type` is `instance`, `ip` or `alb`. Does not apply when `target_type` is `lambda`.
+- `health_check` (Block List, Max: 1) Health Check configuration block. (see [below for nested schema](#nestedblock--health_check))
+- `ip_address_type` (String) The type of IP addresses used by the target group, only supported when target type is set to `ip`. Possible values are `ipv4` or `ipv6`
+- `port` (Number) Port to use to connect with the target. Valid values are either ports 1-65535.
+- `protocol` (String) Protocol to use to connect with the target. Not applicable when `target_type` is `lambda`. Defaults to `HTTP`.
+- `protocol_version` (String) Only applicable when protocol is `HTTP` or `HTTPS`. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `vpc_id` (String) Identifier of the VPC in which to create the target group. Required when `target_type` is `instance`, `ip` or `alb`. Does not apply when `target_type` is `lambda`.
 
 ### Read-Only
 
-- **arn** (String) ARN of the Target Group.
-- **id** (String) The ID of this resource.
+- `arn` (String) ARN of the Target Group.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--health_check"></a>
 ### Nested Schema for `health_check`
 
 Optional:
 
-- **enabled** (Boolean) Whether health checks are enabled. Defaults to `true`.
-- **healthy_threshold** (Number) Number of consecutive health checks successes required before considering an unhealthy target healthy. Defaults to `3`.
-- **interval** (Number) Approximate amount of time, in seconds, between health checks of an individual target. Minimum value 5 seconds, Maximum value 300 seconds. For lambda target groups, it needs to be greater as the `timeout` of the underlying `lambda`. Defaults to `30`.
-- **matcher** (String) Response codes to use when checking for a healthy responses from a target. You can specify multiple values (for example, "200,202" for HTTP(s) or "0,12" for GRPC) or a range of values (for example, "200-299" or "0-99"). Required for HTTP/HTTPS/GRPC ALB. Only applies to Application Load Balancers (i.e., HTTP/HTTPS/GRPC) not Network Load Balancers (i.e., TCP).
-- **path** (String) Destination for the health check request. Required for HTTP/HTTPS ALB and HTTP NLB. Only applies to HTTP/HTTPS.
-- **port** (String) Port to use to connect with the target. Valid values are either ports 1-65535, or traffic-port. Defaults to `traffic-port`.
-- **protocol** (String) Protocol to use to connect with the target. Defaults to HTTP. Not applicable when target_type is lambda Defaults to `HTTP`.
-- **timeout** (Number) Amount of time, in seconds, during which no response means a failed health check.
-- **unhealthy_threshold** (Number) Number of consecutive health check failures required before considering the target unhealthy. Defaults to `3`.
+- `enabled` (Boolean) Whether health checks are enabled. Defaults to `true`.
+- `healthy_threshold` (Number) Number of consecutive health checks successes required before considering an unhealthy target healthy. Defaults to `3`.
+- `interval` (Number) Approximate amount of time, in seconds, between health checks of an individual target. Minimum value 5 seconds, Maximum value 300 seconds. For lambda target groups, it needs to be greater as the `timeout` of the underlying `lambda`. Defaults to `30`.
+- `matcher` (String) Response codes to use when checking for a healthy responses from a target. You can specify multiple values (for example, "200,202" for HTTP(s) or "0,12" for GRPC) or a range of values (for example, "200-299" or "0-99"). Required for HTTP/HTTPS/GRPC ALB. Only applies to Application Load Balancers (i.e., HTTP/HTTPS/GRPC) not Network Load Balancers (i.e., TCP).
+- `path` (String) Destination for the health check request. Required for HTTP/HTTPS ALB and HTTP NLB. Only applies to HTTP/HTTPS.
+- `port` (String) Port to use to connect with the target. Valid values are either ports 1-65535, or traffic-port. Defaults to `traffic-port`.
+- `protocol` (String) Protocol to use to connect with the target. Defaults to HTTP. Not applicable when target_type is lambda Defaults to `HTTP`.
+- `timeout` (Number) Amount of time, in seconds, during which no response means a failed health check.
+- `unhealthy_threshold` (Number) Number of consecutive health check failures required before considering the target unhealthy. Defaults to `3`.
 
 
 <a id="nestedblock--timeouts"></a>
@@ -83,9 +83,9 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

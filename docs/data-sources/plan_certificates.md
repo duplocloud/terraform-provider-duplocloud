@@ -17,19 +17,19 @@ description: |-
 
 ### Required
 
-- **plan_id** (String) The plan ID
+- `plan_id` (String) The plan ID
 
 ### Read-Only
 
-- **certificates** (List of Object) The list of certificates for this plan. (see [below for nested schema](#nestedatt--certificates))
-- **id** (String) The ID of this resource.
+- `certificates` (List of Object) The list of certificates for this plan. (see [below for nested schema](#nestedatt--certificates))
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--certificates"></a>
 ### Nested Schema for `certificates`
 
 Read-Only:
 
-- **arn** (String)
-- **name** (String)
+- `arn` (String)
+- `name` (String)
 
 

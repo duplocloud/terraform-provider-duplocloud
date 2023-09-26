@@ -35,37 +35,37 @@ resource "duplocloud_azure_redis_cache" "myCache" {
 
 ### Required
 
-- **capacity** (Number) The size of the Redis cache to deploy. Valid values for a SKU `family` of C (Basic/Standard) are `0, 1, 2, 3, 4, 5, 6`, and for P (Premium) `family` are `1, 2, 3, 4`
-- **family** (String) The SKU family/pricing group to use. Valid values are `C` (for Basic/Standard SKU family) and `P` (for `Premium`)
-- **name** (String) The name of the Redis instance. Changing this forces a new resource to be created.
-- **sku_name** (String) The SKU of Redis to use. Possible values are `Basic`, `Standard` and `Premium`.
-- **tenant_id** (String) The GUID of the tenant that the azure redis cache will be created in.
+- `capacity` (Number) The size of the Redis cache to deploy. Valid values for a SKU `family` of C (Basic/Standard) are `0, 1, 2, 3, 4, 5, 6`, and for P (Premium) `family` are `1, 2, 3, 4`
+- `family` (String) The SKU family/pricing group to use. Valid values are `C` (for Basic/Standard SKU family) and `P` (for `Premium`)
+- `name` (String) The name of the Redis instance. Changing this forces a new resource to be created.
+- `sku_name` (String) The SKU of Redis to use. Possible values are `Basic`, `Standard` and `Premium`.
+- `tenant_id` (String) The GUID of the tenant that the azure redis cache will be created in.
 
 ### Optional
 
-- **enable_non_ssl_port** (Boolean) Enable the non-SSL port (6379) Defaults to `false`.
-- **minimum_tls_version** (String) The minimum TLS version.
-- **redis_version** (String) Redis version. Only major version needed. Valid values: `4`, `6`.
-- **shard_count** (Number) Only available when using the Premium SKU The number of Shards to create on the Redis Cluster.
-- **subnet_id** (String) Only available when using the Premium SKU The ID of the Subnet within which the Redis Cache should be deployed.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_ready** (Boolean) Whether or not to wait until Redis cache instance to be ready, after creation. Defaults to `true`.
+- `enable_non_ssl_port` (Boolean) Enable the non-SSL port (6379) Defaults to `false`.
+- `minimum_tls_version` (String) The minimum TLS version.
+- `redis_version` (String) Redis version. Only major version needed. Valid values: `4`, `6`.
+- `shard_count` (Number) Only available when using the Premium SKU The number of Shards to create on the Redis Cluster.
+- `subnet_id` (String) Only available when using the Premium SKU The ID of the Subnet within which the Redis Cache should be deployed.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_ready` (Boolean) Whether or not to wait until Redis cache instance to be ready, after creation. Defaults to `true`.
 
 ### Read-Only
 
-- **hostname** (String)
-- **id** (String) The ID of this resource.
-- **port** (Number)
-- **ssl_port** (Number)
-- **tags** (Map of String)
+- `hostname` (String)
+- `id` (String) The ID of this resource.
+- `port` (Number)
+- `ssl_port` (Number)
+- `tags` (Map of String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

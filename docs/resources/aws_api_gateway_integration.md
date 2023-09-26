@@ -30,27 +30,27 @@ resource "duplocloud_aws_api_gateway_integration" "apigw-lambda" {
 
 ### Required
 
-- **lambda_function_name** (String) Name of the lambda function to be integrated with API gateway.
-- **name** (String) The short name of the api gateway.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **tenant_id** (String) The GUID of the tenant that the aws api gateway integration will be created in.
+- `lambda_function_name` (String) Name of the lambda function to be integrated with API gateway.
+- `name` (String) The short name of the api gateway.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `tenant_id` (String) The GUID of the tenant that the aws api gateway integration will be created in.
 
 ### Optional
 
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **fullname** (String) The full name of the api gateway.
-- **id** (String) The ID of this resource.
-- **metadata** (String)
+- `fullname` (String) The full name of the api gateway.
+- `id` (String) The ID of this resource.
+- `metadata` (String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

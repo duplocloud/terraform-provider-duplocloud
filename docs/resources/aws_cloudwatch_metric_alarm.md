@@ -40,32 +40,32 @@ resource "duplocloud_aws_cloudwatch_metric_alarm" "mAlarm" {
 
 ### Required
 
-- **comparison_operator** (String) The arithmetic operation to use when comparing the specified Statistic and Threshold. The specified Statistic value is used as the first operand. Either of the following is supported: `GreaterThanOrEqualToThreshold`, `GreaterThanThreshold`, `LessThanThreshold`, `LessThanOrEqualToThreshold`
-- **evaluation_periods** (Number) The number of periods over which data is compared to the specified threshold.
-- **metric_name** (String) The name for the alarm's associated metric.
-- **tenant_id** (String) The GUID of the tenant that the cloudwatch metric alarm will be created in.
+- `comparison_operator` (String) The arithmetic operation to use when comparing the specified Statistic and Threshold. The specified Statistic value is used as the first operand. Either of the following is supported: `GreaterThanOrEqualToThreshold`, `GreaterThanThreshold`, `LessThanThreshold`, `LessThanOrEqualToThreshold`
+- `evaluation_periods` (Number) The number of periods over which data is compared to the specified threshold.
+- `metric_name` (String) The name for the alarm's associated metric.
+- `tenant_id` (String) The GUID of the tenant that the cloudwatch metric alarm will be created in.
 
 ### Optional
 
-- **dimension** (Block List) The dimensions for the alarm's associated metric. For the list of available dimensions see the AWS documentation. (see [below for nested schema](#nestedblock--dimension))
-- **namespace** (String) The namespace for the alarm's associated metric.
-- **period** (Number) The period in seconds over which the specified `statistic` is applied.
-- **statistic** (String) The statistic to apply to the alarm's associated metric. Either of the following is supported: `SampleCount`, `Average`, `Sum`, `Minimum`, `Maximum`
-- **threshold** (Number) The value against which the specified statistic is compared. This parameter is required for alarms based on static thresholds, but should not be used for alarms based on anomaly detection models.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `dimension` (Block List) The dimensions for the alarm's associated metric. For the list of available dimensions see the AWS documentation. (see [below for nested schema](#nestedblock--dimension))
+- `namespace` (String) The namespace for the alarm's associated metric.
+- `period` (Number) The period in seconds over which the specified `statistic` is applied.
+- `statistic` (String) The statistic to apply to the alarm's associated metric. Either of the following is supported: `SampleCount`, `Average`, `Sum`, `Minimum`, `Maximum`
+- `threshold` (Number) The value against which the specified statistic is compared. This parameter is required for alarms based on static thresholds, but should not be used for alarms based on anomaly detection models.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **fullname** (String) Duplo will generate name of the metric alarm.
-- **id** (String) The ID of this resource.
+- `fullname` (String) Duplo will generate name of the metric alarm.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--dimension"></a>
 ### Nested Schema for `dimension`
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -73,8 +73,8 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 
