@@ -17,28 +17,28 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Optional
 
-- **family** (String)
-- **latest** (Boolean)
-- **name** (String)
+- `family` (String)
+- `latest` (Boolean)
+- `name` (String)
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-- **task_definitions** (List of Object) (see [below for nested schema](#nestedatt--task_definitions))
+- `id` (String) The ID of this resource.
+- `task_definitions` (List of Object) (see [below for nested schema](#nestedatt--task_definitions))
 
 <a id="nestedatt--task_definitions"></a>
 ### Nested Schema for `task_definitions`
 
 Read-Only:
 
-- **arn** (String)
-- **family** (String)
-- **latest** (Boolean)
-- **name** (String)
-- **revision** (Number)
+- `arn` (String)
+- `family` (String)
+- `latest` (Boolean)
+- `name` (String)
+- `revision` (Number)
 
 

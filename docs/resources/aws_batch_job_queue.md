@@ -88,32 +88,32 @@ resource "duplocloud_aws_batch_job_queue" "jq" {
 
 ### Required
 
-- **compute_environments** (List of String) Specifies the set of compute environments mapped to a job queue and their order. The position of the compute environments in the list will dictate the order.
-- **name** (String) Specifies the name of the Job queue.
-- **priority** (Number) The priority of the job queue. Job queues with a higher priority are evaluated first when associated with the same compute environment.
-- **state** (String) The state of the job queue. Must be one of: `ENABLED` or `DISABLED`
-- **tenant_id** (String) The GUID of the tenant that the aws batch Job queue will be created in.
+- `compute_environments` (List of String) Specifies the set of compute environments mapped to a job queue and their order. The position of the compute environments in the list will dictate the order.
+- `name` (String) Specifies the name of the Job queue.
+- `priority` (Number) The priority of the job queue. Job queues with a higher priority are evaluated first when associated with the same compute environment.
+- `state` (String) The state of the job queue. Must be one of: `ENABLED` or `DISABLED`
+- `tenant_id` (String) The GUID of the tenant that the aws batch Job queue will be created in.
 
 ### Optional
 
-- **scheduling_policy_arn** (String) The ARN of the fair share scheduling policy. If this parameter is specified, the job queue uses a fair share scheduling policy. If this parameter isn't specified, the job queue uses a first in, first out (FIFO) scheduling policy. After a job queue is created, you can replace but can't remove the fair share scheduling policy.
-- **tags** (Map of String) Key-value map of resource tags.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_for_deployment** (Boolean) Defaults to `true`.
+- `scheduling_policy_arn` (String) The ARN of the fair share scheduling policy. If this parameter is specified, the job queue uses a fair share scheduling policy. If this parameter isn't specified, the job queue uses a first in, first out (FIFO) scheduling policy. After a job queue is created, you can replace but can't remove the fair share scheduling policy.
+- `tags` (Map of String) Key-value map of resource tags.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_for_deployment` (Boolean) Defaults to `true`.
 
 ### Read-Only
 
-- **arn** (String) The Amazon Resource Name of the Job queue.
-- **fullname** (String) The full name of the Job queue.
-- **id** (String) The ID of this resource.
+- `arn` (String) The Amazon Resource Name of the Job queue.
+- `fullname` (String) The full name of the Job queue.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

@@ -45,34 +45,34 @@ resource "duplocloud_byoh" "byoh" {
 
 ### Required
 
-- **direct_address** (String) IP address of the BYOH instance.
-- **name** (String) The name of the BYOH instance. Changing this forces a new resource to be created.
-- **tenant_id** (String) The GUID of the tenant that the BYHO will be created in.
+- `direct_address` (String) IP address of the BYOH instance.
+- `name` (String) The name of the BYOH instance. Changing this forces a new resource to be created.
+- `tenant_id` (String) The GUID of the tenant that the BYHO will be created in.
 
 ### Optional
 
-- **agent_platform** (Number) The numeric ID of the container agent pool that this instance is added to. Defaults to `0`.
-- **allocation_tag** (String) Allocation tag for BYOH instance.
-- **password** (String, Sensitive) Password of the BYOH instance.
-- **private_key** (String, Sensitive) Private key for BYOH instance.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **username** (String) Username of the BYOH instance.
-- **wait_until_ready** (Boolean) Whether or not to wait until BYOH instance to be connected to the fleet, after creation. Defaults to `false`.
+- `agent_platform` (Number) The numeric ID of the container agent pool that this instance is added to. Defaults to `0`.
+- `allocation_tag` (String) Allocation tag for BYOH instance.
+- `password` (String, Sensitive) Password of the BYOH instance.
+- `private_key` (String, Sensitive) Private key for BYOH instance.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `username` (String) Username of the BYOH instance.
+- `wait_until_ready` (Boolean) Whether or not to wait until BYOH instance to be connected to the fleet, after creation. Defaults to `false`.
 
 ### Read-Only
 
-- **connection_url** (String)
-- **id** (String) The ID of this resource.
-- **network_agent_url** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
+- `connection_url` (String)
+- `id` (String) The ID of this resource.
+- `network_agent_url` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 
 <a id="nestedatt--tags"></a>
@@ -80,8 +80,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

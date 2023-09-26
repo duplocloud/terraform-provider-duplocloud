@@ -17,16 +17,16 @@ description: |-
 
 ### Required
 
-- **plan_id** (String)
+- `plan_id` (String)
 
 ### Read-Only
 
-- **ca_certificate_data** (String)
-- **endpoint** (String)
-- **id** (String) The ID of this resource.
-- **name** (String)
-- **region** (String)
-- **token** (String, Sensitive)
-- **version** (String)
+- `ca_certificate_data` (String)
+- `endpoint` (String)
+- `id` (String) The ID of this resource.
+- `name` (String)
+- `region` (String)
+- `token` (String, Sensitive)
+- `version` (String)
 
 

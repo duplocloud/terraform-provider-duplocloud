@@ -46,9 +46,9 @@ resource "duplocloud_gcp_cloud_function" "myfunc" {
 
 ### Required
 
-- **entrypoint** (String) The entry point of the cloud function.
-- **name** (String) The short name of the cloud function.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **runtime** (String) The runtime of the cloud function.
+- `entrypoint` (String) The entry point of the cloud function.
+- `name` (String) The short name of the cloud function.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `runtime` (String) The runtime of the cloud function.
 Should be one of:
 
  - `nodejs10` : Node.js 10
@@ -65,30 +65,30 @@ Should be one of:
  - `ruby27` :   Ruby 2.7
  - `nodejs6` :  Node.js 6 (deprecated)
  - `nodejs8` :  Node.js 8 (deprecated)
-- **source_archive_url** (String) The cloud storage URL where the cloud function package is located.
-- **tenant_id** (String) The GUID of the tenant that the cloud function will be created in.
+- `source_archive_url` (String) The cloud storage URL where the cloud function package is located.
+- `tenant_id` (String) The GUID of the tenant that the cloud function will be created in.
 
 ### Optional
 
-- **allow_unauthenticated** (Boolean) Whether or not to allow unauthenticated invocations. Defaults to `false`.
-- **available_memory_mb** (Number) The amount of memory available to the cloud function. Defaults to `256`.
-- **build_environment_variables** (Map of String) The build environment variables for this cloud function.
-- **description** (String) The description of the cloud function.
-- **environment_variables** (Map of String) The environment variables for this cloud function.
-- **event_trigger** (Block List, Max: 1) Specifies an event trigger for the cloud function. (see [below for nested schema](#nestedblock--event_trigger))
-- **https_trigger** (Block List, Max: 1) Specifies an HTTPS trigger for the cloud function. (see [below for nested schema](#nestedblock--https_trigger))
-- **ingress_type** (Number) The numerical index of ingress type to use for this cloud function.
+- `allow_unauthenticated` (Boolean) Whether or not to allow unauthenticated invocations. Defaults to `false`.
+- `available_memory_mb` (Number) The amount of memory available to the cloud function. Defaults to `256`.
+- `build_environment_variables` (Map of String) The build environment variables for this cloud function.
+- `description` (String) The description of the cloud function.
+- `environment_variables` (Map of String) The environment variables for this cloud function.
+- `event_trigger` (Block List, Max: 1) Specifies an event trigger for the cloud function. (see [below for nested schema](#nestedblock--event_trigger))
+- `https_trigger` (Block List, Max: 1) Specifies an HTTPS trigger for the cloud function. (see [below for nested schema](#nestedblock--https_trigger))
+- `ingress_type` (Number) The numerical index of ingress type to use for this cloud function.
 Should be one of:
 
    - `1` : Allow all
    - `2` : Allow internal traffic
    - `3` : Allow internal traffic and GCP load balancing
  Defaults to `1`.
-- **labels** (Map of String) The labels assigned to this cloud function.
-- **require_https** (Boolean) Whether or not to require HTTPS. Defaults to `true`.
-- **timeout** (Number) The execution time limit for the cloud function. Defaults to `60`.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **vpc_networking_type** (Number) The numerical index of the VPC networking type to use for this cloud function.
+- `labels` (Map of String) The labels assigned to this cloud function.
+- `require_https` (Boolean) Whether or not to require HTTPS. Defaults to `true`.
+- `timeout` (Number) The execution time limit for the cloud function. Defaults to `60`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `vpc_networking_type` (Number) The numerical index of the VPC networking type to use for this cloud function.
 Should be one of:
 
    - `0` : All traffic through the VPC
@@ -98,23 +98,23 @@ Should be one of:
 
 ### Read-Only
 
-- **build_id** (String) The ID of the cloud build that built the cloud function.
-- **fullname** (String) The full name of the cloud function.
-- **id** (String) The ID of this resource.
-- **self_link** (String) The SelfLink of the cloud function.
-- **version_id** (Number) The current version of the cloud function.
+- `build_id` (String) The ID of the cloud build that built the cloud function.
+- `fullname` (String) The full name of the cloud function.
+- `id` (String) The ID of this resource.
+- `self_link` (String) The SelfLink of the cloud function.
+- `version_id` (Number) The current version of the cloud function.
 
 <a id="nestedblock--event_trigger"></a>
 ### Nested Schema for `event_trigger`
 
 Required:
 
-- **event_type** (String) The type of event that will trigger the function
+- `event_type` (String) The type of event that will trigger the function
 
 Optional:
 
-- **resource** (String) The resource that will trigger the function
-- **service** (String) The service that will trigger the function
+- `resource` (String) The resource that will trigger the function
+- `service` (String) The service that will trigger the function
 
 
 <a id="nestedblock--https_trigger"></a>
@@ -122,12 +122,12 @@ Optional:
 
 Optional:
 
-- **enabled** (Boolean) Must be set to `true`. Defaults to `true`.
+- `enabled` (Boolean) Must be set to `true`. Defaults to `true`.
 
 Read-Only:
 
-- **security_level** (String) The security level of the HTTPS trigger
-- **url** (String) The URL of the HTTPS trigger
+- `security_level` (String) The security level of the HTTPS trigger
+- `url` (String) The URL of the HTTPS trigger
 
 
 <a id="nestedblock--timeouts"></a>
@@ -135,9 +135,9 @@ Read-Only:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

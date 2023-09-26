@@ -39,44 +39,44 @@ resource "duplocloud_aws_elasticsearch" "es-doc" {
 
 ### Required
 
-- **name** (String) The short name of the ElasticSearch instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `domain_name` attribute.
-- **tenant_id** (String) The GUID of the tenant that the ElasticSearch instance will be created in.
+- `name` (String) The short name of the ElasticSearch instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `domain_name` attribute.
+- `tenant_id` (String) The GUID of the tenant that the ElasticSearch instance will be created in.
 
 ### Optional
 
-- **cluster_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--cluster_config))
-- **elasticsearch_version** (String) The version of the ElasticSearch instance. Defaults to `7.9`.
-- **enable_node_to_node_encryption** (Boolean) Whether or not to use the enable node-to-node encryption for this ElasticSearch instance.
-- **encrypt_at_rest** (Block List, Max: 1) The storage encryption settings for the ElasticSearch instance. (see [below for nested schema](#nestedblock--encrypt_at_rest))
-- **require_ssl** (Boolean) Whether or not to require SSL for accessing this ElasticSearch instance.
-- **selected_zone** (Number) The numerical index of the zone to launch this ElasticSearch instance in.
-- **storage_size** (Number) The storage volume size, in GB, for the ElasticSearch instance. Defaults to `20`.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **use_latest_tls_cipher** (Boolean) Whether or not to use the latest TLS cipher for this ElasticSearch instance.
-- **vpc_options** (Block List) (see [below for nested schema](#nestedblock--vpc_options))
+- `cluster_config` (Block List, Max: 1) (see [below for nested schema](#nestedblock--cluster_config))
+- `elasticsearch_version` (String) The version of the ElasticSearch instance. Defaults to `7.9`.
+- `enable_node_to_node_encryption` (Boolean) Whether or not to use the enable node-to-node encryption for this ElasticSearch instance.
+- `encrypt_at_rest` (Block List, Max: 1) The storage encryption settings for the ElasticSearch instance. (see [below for nested schema](#nestedblock--encrypt_at_rest))
+- `require_ssl` (Boolean) Whether or not to require SSL for accessing this ElasticSearch instance.
+- `selected_zone` (Number) The numerical index of the zone to launch this ElasticSearch instance in.
+- `storage_size` (Number) The storage volume size, in GB, for the ElasticSearch instance. Defaults to `20`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `use_latest_tls_cipher` (Boolean) Whether or not to use the latest TLS cipher for this ElasticSearch instance.
+- `vpc_options` (Block List) (see [below for nested schema](#nestedblock--vpc_options))
 
 ### Read-Only
 
-- **access_policies** (String)
-- **advanced_options** (Map of String)
-- **arn** (String) The ARN of the ElasticSearch instance.
-- **domain_id** (String) The domain ID of the ElasticSearch instance.
-- **domain_name** (String) The full name of the ElasticSearch instance.
-- **ebs_options** (List of Object) (see [below for nested schema](#nestedatt--ebs_options))
-- **endpoints** (Map of String) The endpoints to use when connecting to the ElasticSearch instance.
-- **id** (String) The ID of this resource.
-- **snapshot_options** (List of Object) (see [below for nested schema](#nestedatt--snapshot_options))
+- `access_policies` (String)
+- `advanced_options` (Map of String)
+- `arn` (String) The ARN of the ElasticSearch instance.
+- `domain_id` (String) The domain ID of the ElasticSearch instance.
+- `domain_name` (String) The full name of the ElasticSearch instance.
+- `ebs_options` (List of Object) (see [below for nested schema](#nestedatt--ebs_options))
+- `endpoints` (Map of String) The endpoints to use when connecting to the ElasticSearch instance.
+- `id` (String) The ID of this resource.
+- `snapshot_options` (List of Object) (see [below for nested schema](#nestedatt--snapshot_options))
 
 <a id="nestedblock--cluster_config"></a>
 ### Nested Schema for `cluster_config`
 
 Optional:
 
-- **dedicated_master_count** (Number) Defaults to `0`.
-- **dedicated_master_enabled** (Boolean) Defaults to `false`.
-- **dedicated_master_type** (String) Defaults to `t2.small.elasticsearch`.
-- **instance_count** (Number) Defaults to `1`.
-- **instance_type** (String) Defaults to `t2.small.elasticsearch`.
+- `dedicated_master_count` (Number) Defaults to `0`.
+- `dedicated_master_enabled` (Boolean) Defaults to `false`.
+- `dedicated_master_type` (String) Defaults to `t2.small.elasticsearch`.
+- `instance_count` (Number) Defaults to `1`.
+- `instance_type` (String) Defaults to `t2.small.elasticsearch`.
 
 
 <a id="nestedblock--encrypt_at_rest"></a>
@@ -84,12 +84,12 @@ Optional:
 
 Optional:
 
-- **kms_key_id** (String) The ID of a KMS key to use with the ElasticSearch instance.
-- **kms_key_name** (String) The name of a KMS key to use with the ElasticSearch instance.
+- `kms_key_id` (String) The ID of a KMS key to use with the ElasticSearch instance.
+- `kms_key_name` (String) The name of a KMS key to use with the ElasticSearch instance.
 
 Read-Only:
 
-- **enabled** (Boolean)
+- `enabled` (Boolean)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -97,8 +97,8 @@ Read-Only:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 
 <a id="nestedblock--vpc_options"></a>
@@ -106,13 +106,13 @@ Optional:
 
 Optional:
 
-- **subnet_ids** (List of String)
+- `subnet_ids` (List of String)
 
 Read-Only:
 
-- **availability_zones** (List of String)
-- **security_group_ids** (List of String)
-- **vpc_id** (String)
+- `availability_zones` (List of String)
+- `security_group_ids` (List of String)
+- `vpc_id` (String)
 
 
 <a id="nestedatt--ebs_options"></a>
@@ -120,10 +120,10 @@ Read-Only:
 
 Read-Only:
 
-- **ebs_enabled** (Boolean)
-- **iops** (Number)
-- **volume_size** (Number)
-- **volume_type** (String)
+- `ebs_enabled` (Boolean)
+- `iops` (Number)
+- `volume_size` (Number)
+- `volume_type` (String)
 
 
 <a id="nestedatt--snapshot_options"></a>
@@ -131,7 +131,7 @@ Read-Only:
 
 Read-Only:
 
-- **automated_snapshot_start_hour** (Number)
+- `automated_snapshot_start_hour` (Number)
 
 ## Import
 

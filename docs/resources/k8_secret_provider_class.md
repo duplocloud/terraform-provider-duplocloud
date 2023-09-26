@@ -77,43 +77,43 @@ resource "duplocloud_k8_secret_provider_class" "spc" {
 
 ### Required
 
-- **name** (String) The name of the Secret Provider Class.
-- **secret_provider** (String) Provider to be used.
-- **tenant_id** (String) The GUID of the tenant that the Secret Provider Class will be created in.
+- `name` (String) The name of the Secret Provider Class.
+- `secret_provider` (String) Provider to be used.
+- `tenant_id` (String) The GUID of the tenant that the Secret Provider Class will be created in.
 
 ### Optional
 
-- **annotations** (Map of String) An unstructured key value map stored with the secret provider class that may be used to store arbitrary metadata.
-- **labels** (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
-- **parameters** (String) The parameters section contains the details of the mount request.
-- **secret_object** (Block List) You may want to create a Kubernetes Secret to mirror the mounted content. Use the optional secretObjects field to define the desired state of the synced Kubernetes secret objects (see [below for nested schema](#nestedblock--secret_object))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `annotations` (Map of String) An unstructured key value map stored with the secret provider class that may be used to store arbitrary metadata.
+- `labels` (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
+- `parameters` (String) The parameters section contains the details of the mount request.
+- `secret_object` (Block List) You may want to create a Kubernetes Secret to mirror the mounted content. Use the optional secretObjects field to define the desired state of the synced Kubernetes secret objects (see [below for nested schema](#nestedblock--secret_object))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--secret_object"></a>
 ### Nested Schema for `secret_object`
 
 Required:
 
-- **name** (String) Name of the secret object.
-- **type** (String) Type of the secret object.
+- `name` (String) Name of the secret object.
+- `type` (String) Type of the secret object.
 
 Optional:
 
-- **annotations** (Map of String) An unstructured key value map stored with the secret object that may be used to store arbitrary metadata.
-- **data** (Block List) (see [below for nested schema](#nestedblock--secret_object--data))
-- **labels** (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
+- `annotations` (Map of String) An unstructured key value map stored with the secret object that may be used to store arbitrary metadata.
+- `data` (Block List) (see [below for nested schema](#nestedblock--secret_object--data))
+- `labels` (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
 
 <a id="nestedblock--secret_object--data"></a>
 ### Nested Schema for `secret_object.data`
 
 Required:
 
-- **key** (String)
-- **object_name** (String)
+- `key` (String)
+- `object_name` (String)
 
 
 
@@ -122,9 +122,9 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

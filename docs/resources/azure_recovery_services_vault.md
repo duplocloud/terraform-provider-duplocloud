@@ -25,29 +25,29 @@ resource "duplocloud_azure_recovery_services_vault" "recovery_services_vault" {
 
 ### Required
 
-- **infra_name** (String) The name of the infrastructure. Infrastructure names are globally unique and less than 13 characters.
-- **name** (String) Specifies the name of the Recovery Services Vault. Recovery Service Vault name must be 2 - 50 characters long, start with a letter, contain only letters, numbers and hyphens. Changing this forces a new resource to be created.
+- `infra_name` (String) The name of the infrastructure. Infrastructure names are globally unique and less than 13 characters.
+- `name` (String) Specifies the name of the Recovery Services Vault. Recovery Service Vault name must be 2 - 50 characters long, start with a letter, contain only letters, numbers and hyphens. Changing this forces a new resource to be created.
 
 ### Optional
 
-- **resource_group_name** (String) The name of the resource group in which to create the Recovery Services Vault. Changing this forces a new resource to be created.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_ready** (Boolean) Whether or not to wait until Recovery Services Vault to be ready, after creation. Defaults to `true`.
+- `resource_group_name` (String) The name of the resource group in which to create the Recovery Services Vault. Changing this forces a new resource to be created.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_ready` (Boolean) Whether or not to wait until Recovery Services Vault to be ready, after creation. Defaults to `true`.
 
 ### Read-Only
 
-- **azure_id** (String)
-- **id** (String) The ID of this resource.
-- **location** (String)
-- **sku** (String)
+- `azure_id` (String)
+- `id` (String) The ID of this resource.
+- `location` (String)
+- `sku` (String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

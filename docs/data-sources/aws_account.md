@@ -17,11 +17,11 @@ description: |-
 
 ### Optional
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **account_id** (String)
-- **id** (String) The ID of this resource.
+- `account_id` (String)
+- `id` (String) The ID of this resource.
 
 

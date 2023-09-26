@@ -35,30 +35,30 @@ resource "duplocloud_tenant_network_security_rule" "myrule" {
 
 ### Required
 
-- **description** (String) A description for this rule.
-- **tenant_id** (String) The GUID of the tenant that the network security rule will be created in.
+- `description` (String) A description for this rule.
+- `tenant_id` (String) The GUID of the tenant that the network security rule will be created in.
 
 ### Optional
 
-- **from_port** (Number) The start of a port range to allow traffic to. Defaults to `0`.
-- **protocol** (String) The network protocol.  Must be one of:  `tcp`, `udp`, `icmp` Defaults to `tcp`.
-- **source_address** (String) The source CIDR block to allow traffic from. Only one of `source_tenant` or `source_address` may be specified.
-- **source_tenant** (String) The source tenant name (*not* GUID) to allow traffic from. Only one of `source_tenant` or `source_address` may be specified.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **to_port** (Number) The end of a port range to allow traffic to. Defaults to `65535`.
+- `from_port` (Number) The start of a port range to allow traffic to. Defaults to `0`.
+- `protocol` (String) The network protocol.  Must be one of:  `tcp`, `udp`, `icmp` Defaults to `tcp`.
+- `source_address` (String) The source CIDR block to allow traffic from. Only one of `source_tenant` or `source_address` may be specified.
+- `source_tenant` (String) The source tenant name (*not* GUID) to allow traffic from. Only one of `source_tenant` or `source_address` may be specified.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `to_port` (Number) The end of a port range to allow traffic to. Defaults to `65535`.
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

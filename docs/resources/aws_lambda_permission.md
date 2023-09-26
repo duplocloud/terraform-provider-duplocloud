@@ -50,31 +50,31 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 
 ### Required
 
-- **action** (String) The AWS Lambda action you want to allow in this statement. (e.g. `lambda:InvokeFunction`)
-- **function_name** (String) Name of the Lambda function whose resource policy you are updating.
-- **principal** (String) The principal who is getting this permission.
-- **statement_id** (String) A unique statement identifier.
-- **tenant_id** (String) The GUID of the tenant that the lambda permission will be created in.
+- `action` (String) The AWS Lambda action you want to allow in this statement. (e.g. `lambda:InvokeFunction`)
+- `function_name` (String) Name of the Lambda function whose resource policy you are updating.
+- `principal` (String) The principal who is getting this permission.
+- `statement_id` (String) A unique statement identifier.
+- `tenant_id` (String) The GUID of the tenant that the lambda permission will be created in.
 
 ### Optional
 
-- **event_source_token** (String) The Event Source Token to validate.
-- **qualifier** (String) Query parameter to specify function version or alias name. The permission will then apply to the specific qualified ARN.
-- **source_account** (String) This parameter is used for S3 and SES. The AWS account ID (without a hyphen) of the source owner.
-- **source_arn** (String) When the principal is an AWS service, the ARN of the specific resource within that service to grant permission to.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `event_source_token` (String) The Event Source Token to validate.
+- `qualifier` (String) Query parameter to specify function version or alias name. The permission will then apply to the specific qualified ARN.
+- `source_account` (String) This parameter is used for S3 and SES. The AWS account ID (without a hyphen) of the source owner.
+- `source_arn` (String) When the principal is an AWS service, the ARN of the specific resource within that service to grant permission to.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

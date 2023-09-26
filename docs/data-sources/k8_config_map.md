@@ -28,13 +28,13 @@ output "config_map" {
 
 ### Required
 
-- **name** (String) The name of the configmap.
-- **tenant_id** (String) The GUID of the tenant that the configmap will be created in.
+- `name` (String) The name of the configmap.
+- `tenant_id` (String) The GUID of the tenant that the configmap will be created in.
 
 ### Read-Only
 
-- **data** (String) A JSON encoded string representing the configmap data. You can use the `jsondecode()` function to parse this, if needed.
-- **id** (String) The ID of this resource.
-- **metadata** (String) A JSON encoded string representing the configmap metadata. You can use the `jsondecode()` function to parse this, if needed.
+- `data` (String) A JSON encoded string representing the configmap data. You can use the `jsondecode()` function to parse this, if needed.
+- `id` (String) The ID of this resource.
+- `metadata` (String) A JSON encoded string representing the configmap metadata. You can use the `jsondecode()` function to parse this, if needed.
 
 

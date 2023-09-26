@@ -22,22 +22,22 @@ data "duplocloud_infrastructures" "all" {}
 
 ### Read-Only
 
-- **data** (List of Object) (see [below for nested schema](#nestedatt--data))
-- **id** (String) The ID of this resource.
+- `data` (List of Object) (see [below for nested schema](#nestedatt--data))
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--data"></a>
 ### Nested Schema for `data`
 
 Read-Only:
 
-- **account_id** (String)
-- **address_prefix** (String)
-- **azcount** (Number)
-- **cloud** (Number)
-- **enable_k8_cluster** (Boolean)
-- **infra_name** (String)
-- **region** (String)
-- **status** (String)
-- **subnet_cidr** (Number)
+- `account_id` (String)
+- `address_prefix` (String)
+- `azcount` (Number)
+- `cloud` (Number)
+- `enable_k8_cluster` (Boolean)
+- `infra_name` (String)
+- `region` (String)
+- `status` (String)
+- `subnet_cidr` (Number)
 
 

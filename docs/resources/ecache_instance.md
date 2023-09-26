@@ -32,50 +32,50 @@ resource "duplocloud_ecache_instance" "mycache" {
 
 ### Required
 
-- **name** (String) The short name of the elasticache instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
-- **size** (String) The instance type of the elasticache instance.
+- `name` (String) The short name of the elasticache instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
+- `size` (String) The instance type of the elasticache instance.
 See AWS documentation for the [available instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CacheNodes.SupportedTypes.html).
-- **tenant_id** (String) The GUID of the tenant that the elasticache instance will be created in.
+- `tenant_id` (String) The GUID of the tenant that the elasticache instance will be created in.
 
 ### Optional
 
-- **auth_token** (String) Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.
+- `auth_token` (String) Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.
 
 See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.
-- **cache_type** (Number) The numerical index of elasticache instance type.
+- `cache_type` (Number) The numerical index of elasticache instance type.
 Should be one of:
 
    - `0` : Redis
    - `1` : Memcache
 
  Defaults to `0`.
-- **encryption_at_rest** (Boolean) Enables encryption-at-rest. Defaults to `false`.
-- **encryption_in_transit** (Boolean) Enables encryption-in-transit. Defaults to `false`.
-- **engine_version** (String) The engine version of the elastic instance.
+- `encryption_at_rest` (Boolean) Enables encryption-at-rest. Defaults to `false`.
+- `encryption_in_transit` (Boolean) Enables encryption-in-transit. Defaults to `false`.
+- `engine_version` (String) The engine version of the elastic instance.
 See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).
-- **kms_key_id** (String) The globally unique identifier for the key.
-- **parameter_group_name** (String) The REDIS parameter group to supply.
-- **replicas** (Number) The number of replicas to create. Defaults to `1`.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `kms_key_id` (String) The globally unique identifier for the key.
+- `parameter_group_name` (String) The REDIS parameter group to supply.
+- `replicas` (Number) The number of replicas to create. Defaults to `1`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) The ARN of the elasticache instance.
-- **endpoint** (String) The endpoint of the elasticache instance.
-- **host** (String) The DNS hostname of the elasticache instance.
-- **id** (String) The ID of this resource.
-- **identifier** (String) The full name of the elasticache instance.
-- **instance_status** (String) The status of the elasticache instance.
-- **port** (Number) The listening port of the elasticache instance.
+- `arn` (String) The ARN of the elasticache instance.
+- `endpoint` (String) The endpoint of the elasticache instance.
+- `host` (String) The DNS hostname of the elasticache instance.
+- `id` (String) The ID of this resource.
+- `identifier` (String) The full name of the elasticache instance.
+- `instance_status` (String) The status of the elasticache instance.
+- `port` (Number) The listening port of the elasticache instance.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

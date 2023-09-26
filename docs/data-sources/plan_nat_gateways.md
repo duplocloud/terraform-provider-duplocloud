@@ -17,34 +17,34 @@ description: |-
 
 ### Required
 
-- **plan_id** (String) The plan ID
+- `plan_id` (String) The plan ID
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-- **nat_gateways** (List of Object) The list of NAT gateways for this plan. (see [below for nested schema](#nestedatt--nat_gateways))
+- `id` (String) The ID of this resource.
+- `nat_gateways` (List of Object) The list of NAT gateways for this plan. (see [below for nested schema](#nestedatt--nat_gateways))
 
 <a id="nestedatt--nat_gateways"></a>
 ### Nested Schema for `nat_gateways`
 
 Read-Only:
 
-- **addresses** (List of Object) (see [below for nested schema](#nestedobjatt--nat_gateways--addresses))
-- **id** (String)
-- **state** (String)
-- **subnet_id** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--nat_gateways--tags))
-- **vpc_id** (String)
+- `addresses` (List of Object) (see [below for nested schema](#nestedobjatt--nat_gateways--addresses))
+- `id` (String)
+- `state` (String)
+- `subnet_id` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--nat_gateways--tags))
+- `vpc_id` (String)
 
 <a id="nestedobjatt--nat_gateways--addresses"></a>
 ### Nested Schema for `nat_gateways.addresses`
 
 Read-Only:
 
-- **allocation_id** (String)
-- **network_interface_id** (String)
-- **private_ip** (String)
-- **public_ip** (String)
+- `allocation_id` (String)
+- `network_interface_id` (String)
+- `private_ip` (String)
+- `public_ip` (String)
 
 
 <a id="nestedobjatt--nat_gateways--tags"></a>
@@ -52,7 +52,7 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 

@@ -34,31 +34,31 @@ resource "duplocloud_azure_mssql_elasticpool" "mssql_elasticpool" {
 
 ### Required
 
-- **name** (String) The name of the MS SQL elastic pool.
-- **server_name** (String) The name of the SQL Server on which to create the elastic pool.
-- **tenant_id** (String) The GUID of the tenant that the azure mssql elastic pool will be created in.
+- `name` (String) The name of the MS SQL elastic pool.
+- `server_name` (String) The name of the SQL Server on which to create the elastic pool.
+- `tenant_id` (String) The GUID of the tenant that the azure mssql elastic pool will be created in.
 
 ### Optional
 
-- **sku** (Block List, Max: 1) (see [below for nested schema](#nestedblock--sku))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `sku` (Block List, Max: 1) (see [below for nested schema](#nestedblock--sku))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **elastic_pool_id** (String) The ID of the MS SQL Elastic Pool.
-- **id** (String) The ID of this resource.
+- `elastic_pool_id` (String) The ID of the MS SQL Elastic Pool.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--sku"></a>
 ### Nested Schema for `sku`
 
 Required:
 
-- **capacity** (Number)
-- **name** (String)
+- `capacity` (Number)
+- `name` (String)
 
 Optional:
 
-- **tier** (String)
+- `tier` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -66,8 +66,8 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

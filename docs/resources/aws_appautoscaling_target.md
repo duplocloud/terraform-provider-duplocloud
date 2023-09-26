@@ -34,30 +34,30 @@ resource "duplocloud_aws_appautoscaling_target" "asg-target" {
 
 ### Required
 
-- **max_capacity** (Number) The max capacity of the scalable target.
-- **min_capacity** (Number) The min capacity of the scalable target.
-- **resource_id** (String) Resource name associated with the scaling policy.
-- **scalable_dimension** (String) The scalable dimension of the scalable target.
-- **service_namespace** (String) The AWS service namespace of the scalable target.
-- **tenant_id** (String) The GUID of the tenant that the aws autoscaling target will be created in.
+- `max_capacity` (Number) The max capacity of the scalable target.
+- `min_capacity` (Number) The min capacity of the scalable target.
+- `resource_id` (String) Resource name associated with the scaling policy.
+- `scalable_dimension` (String) The scalable dimension of the scalable target.
+- `service_namespace` (String) The AWS service namespace of the scalable target.
+- `tenant_id` (String) The GUID of the tenant that the aws autoscaling target will be created in.
 
 ### Optional
 
-- **role_arn** (String) The ARN of the IAM role that allows Application AutoScaling to modify your scalable target on your behalf.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `role_arn` (String) The ARN of the IAM role that allows Application AutoScaling to modify your scalable target on your behalf.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **full_resource_id** (String) The resource type and unique identifier string for the resource associated with the scaling policy.
-- **id** (String) The ID of this resource.
+- `full_resource_id` (String) The resource type and unique identifier string for the resource associated with the scaling policy.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

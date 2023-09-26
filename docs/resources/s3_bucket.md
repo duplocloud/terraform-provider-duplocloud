@@ -52,35 +52,35 @@ resource "duplocloud_s3_bucket" "www" {
 
 ### Required
 
-- **name** (String) The short name of the S3 bucket.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **tenant_id** (String) The GUID of the tenant that the S3 bucket will be created in.
+- `name` (String) The short name of the S3 bucket.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `tenant_id` (String) The GUID of the tenant that the S3 bucket will be created in.
 
 ### Optional
 
-- **allow_public_access** (Boolean) Whether or not to remove the public access block from the bucket.
-- **default_encryption** (Block List, Max: 1) Default encryption settings for objects uploaded to the bucket. (see [below for nested schema](#nestedblock--default_encryption))
-- **enable_access_logs** (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan.
-- **enable_versioning** (Boolean) Whether or not to enable versioning.
-- **managed_policies** (List of String) Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:
+- `allow_public_access` (Boolean) Whether or not to remove the public access block from the bucket.
+- `default_encryption` (Block List, Max: 1) Default encryption settings for objects uploaded to the bucket. (see [below for nested schema](#nestedblock--default_encryption))
+- `enable_access_logs` (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan.
+- `enable_versioning` (Boolean) Whether or not to enable versioning.
+- `managed_policies` (List of String) Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:
 
  - `"ssl"`: Require SSL / HTTPS when accessing the bucket.
  - `"ignore"`: If this key is present, Duplo will not manage your bucket policy.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) The ARN of the S3 bucket.
-- **domain_name** (String) The domain name of the S3 bucket.
-- **fullname** (String) The full name of the S3 bucket.
-- **id** (String) The ID of this resource.
-- **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
+- `arn` (String) The ARN of the S3 bucket.
+- `domain_name` (String) The domain name of the S3 bucket.
+- `fullname` (String) The full name of the S3 bucket.
+- `id` (String) The ID of this resource.
+- `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--default_encryption"></a>
 ### Nested Schema for `default_encryption`
 
 Optional:
 
-- **method** (String) Default encryption method.  Must be one of: `None`, `Sse`, `AwsKms`, `TenantKms`. Defaults to `Sse`.
+- `method` (String) Default encryption method.  Must be one of: `None`, `Sse`, `AwsKms`, `TenantKms`. Defaults to `Sse`.
 
 
 <a id="nestedblock--timeouts"></a>
@@ -88,8 +88,8 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 
 <a id="nestedatt--tags"></a>
@@ -97,8 +97,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

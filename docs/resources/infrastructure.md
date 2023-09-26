@@ -29,52 +29,52 @@ resource "duplocloud_infrastructure" "myinfra" {
 
 ### Required
 
-- **address_prefix** (String) The CIDR to use for the VPC or VNet.
-- **enable_k8_cluster** (Boolean) Whether or not to provision a kubernetes cluster.
-- **infra_name** (String) The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.
-- **region** (String) The cloud provider region.  The Duplo portal must have already been configured to support this region.
+- `address_prefix` (String) The CIDR to use for the VPC or VNet.
+- `enable_k8_cluster` (Boolean) Whether or not to provision a kubernetes cluster.
+- `infra_name` (String) The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.
+- `region` (String) The cloud provider region.  The Duplo portal must have already been configured to support this region.
 
 ### Optional
 
-- **account_id** (String) The cloud account ID.
-- **azcount** (Number) The number of availability zones.  Must be one of: `2`, `3`, or `4`. This is applicable only for AWS.
-- **cloud** (Number) The numerical index of cloud provider to use for the infrastructure.
+- `account_id` (String) The cloud account ID.
+- `azcount` (Number) The number of availability zones.  Must be one of: `2`, `3`, or `4`. This is applicable only for AWS.
+- `cloud` (Number) The numerical index of cloud provider to use for the infrastructure.
 Should be one of:
 
    - `0` : AWS
    - `2` : Azure
    - `3` : Google
  Defaults to `0`.
-- **custom_data** (Block List, Deprecated) A list of configuration settings to apply on creation, expressed as key / value pairs. The custom_data argument is only applied on creation, and is deprecated in favor of the settings argument. (see [below for nested schema](#nestedblock--custom_data))
-- **delete_unspecified_settings** (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
-- **enable_container_insights** (Boolean) Whether or not to enable container insights for an ECS cluster.
-- **enable_ecs_cluster** (Boolean) Whether or not to provision an ECS cluster.
-- **setting** (Block List) A list of configuration settings to manage, expressed as key / value pairs. (see [below for nested schema](#nestedblock--setting))
-- **subnet_address_prefix** (String) The address prefixe to use for the subnet. This is applicable only for Azure
-- **subnet_cidr** (Number) The CIDR subnet size (in bits) for the automatically created subnets. This is applicable only for AWS.
-- **subnet_name** (String) The name of the subnet. This is applicable only for Azure.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_deleted** (Boolean) Whether or not to wait until Duplo has destroyed the infrastructure. Defaults to `false`.
+- `custom_data` (Block List, Deprecated) A list of configuration settings to apply on creation, expressed as key / value pairs. The custom_data argument is only applied on creation, and is deprecated in favor of the settings argument. (see [below for nested schema](#nestedblock--custom_data))
+- `delete_unspecified_settings` (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
+- `enable_container_insights` (Boolean) Whether or not to enable container insights for an ECS cluster.
+- `enable_ecs_cluster` (Boolean) Whether or not to provision an ECS cluster.
+- `setting` (Block List) A list of configuration settings to manage, expressed as key / value pairs. (see [below for nested schema](#nestedblock--setting))
+- `subnet_address_prefix` (String) The address prefixe to use for the subnet. This is applicable only for Azure
+- `subnet_cidr` (Number) The CIDR subnet size (in bits) for the automatically created subnets. This is applicable only for AWS.
+- `subnet_name` (String) The name of the subnet. This is applicable only for Azure.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_deleted` (Boolean) Whether or not to wait until Duplo has destroyed the infrastructure. Defaults to `false`.
 
 ### Read-Only
 
-- **all_settings** (List of Object) A complete list of configuration settings for this infrastructure, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_settings))
-- **id** (String) The ID of this resource.
-- **private_subnets** (Set of Object) The private subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--private_subnets))
-- **public_subnets** (Set of Object) The public subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--public_subnets))
-- **security_groups** (Set of Object) The security groups for the VPC or VNet. (see [below for nested schema](#nestedatt--security_groups))
-- **specified_settings** (List of String) A list of configuration setting key being managed by this resource.
-- **status** (String) The status of the infrastructure.
-- **vpc_id** (String) The VPC or VNet ID.
-- **vpc_name** (String) The VPC or VNet name.
+- `all_settings` (List of Object) A complete list of configuration settings for this infrastructure, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_settings))
+- `id` (String) The ID of this resource.
+- `private_subnets` (Set of Object) The private subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--private_subnets))
+- `public_subnets` (Set of Object) The public subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--public_subnets))
+- `security_groups` (Set of Object) The security groups for the VPC or VNet. (see [below for nested schema](#nestedatt--security_groups))
+- `specified_settings` (List of String) A list of configuration setting key being managed by this resource.
+- `status` (String) The status of the infrastructure.
+- `vpc_id` (String) The VPC or VNet ID.
+- `vpc_name` (String) The VPC or VNet name.
 
 <a id="nestedblock--custom_data"></a>
 ### Nested Schema for `custom_data`
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--setting"></a>
@@ -82,8 +82,8 @@ Required:
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -91,9 +91,9 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 
 <a id="nestedatt--all_settings"></a>
@@ -101,8 +101,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedatt--private_subnets"></a>
@@ -110,20 +110,20 @@ Read-Only:
 
 Read-Only:
 
-- **cidr_block** (String)
-- **id** (String)
-- **name** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--private_subnets--tags))
-- **type** (String)
-- **zone** (String)
+- `cidr_block` (String)
+- `id` (String)
+- `name` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--private_subnets--tags))
+- `type` (String)
+- `zone` (String)
 
 <a id="nestedobjatt--private_subnets--tags"></a>
 ### Nested Schema for `private_subnets.tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -132,20 +132,20 @@ Read-Only:
 
 Read-Only:
 
-- **cidr_block** (String)
-- **id** (String)
-- **name** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--public_subnets--tags))
-- **type** (String)
-- **zone** (String)
+- `cidr_block` (String)
+- `id` (String)
+- `name` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--public_subnets--tags))
+- `type` (String)
+- `zone` (String)
 
 <a id="nestedobjatt--public_subnets--tags"></a>
 ### Nested Schema for `public_subnets.tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -154,25 +154,25 @@ Read-Only:
 
 Read-Only:
 
-- **id** (String)
-- **name** (String)
-- **read_only** (Boolean)
-- **rules** (Set of Object) (see [below for nested schema](#nestedobjatt--security_groups--rules))
-- **type** (String)
+- `id` (String)
+- `name` (String)
+- `read_only` (Boolean)
+- `rules` (Set of Object) (see [below for nested schema](#nestedobjatt--security_groups--rules))
+- `type` (String)
 
 <a id="nestedobjatt--security_groups--rules"></a>
 ### Nested Schema for `security_groups.rules`
 
 Read-Only:
 
-- **action** (String)
-- **destination_rule_type** (Number)
-- **direction** (String)
-- **priority** (Number)
-- **protocol** (String)
-- **source_address_prefix** (String)
-- **source_port_range** (String)
-- **source_rule_type** (Number)
+- `action` (String)
+- `destination_rule_type` (Number)
+- `direction` (String)
+- `priority` (Number)
+- `protocol` (String)
+- `source_address_prefix` (String)
+- `source_port_range` (String)
+- `source_rule_type` (Number)
 
 ## Import
 

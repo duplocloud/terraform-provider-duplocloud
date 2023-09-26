@@ -53,32 +53,32 @@ resource "duplocloud_azure_mssql_database" "mssql_database" {
 
 ### Required
 
-- **name** (String) The name of the MS SQL Database.
-- **server_name** (String) The name of the MS SQL Server on which to create the database.
-- **tenant_id** (String) The GUID of the tenant that the azure mssql database will be created in.
+- `name` (String) The name of the MS SQL Database.
+- `server_name` (String) The name of the MS SQL Server on which to create the database.
+- `tenant_id` (String) The GUID of the tenant that the azure mssql database will be created in.
 
 ### Optional
 
-- **collation** (String) Specifies the collation of the database.
-- **elastic_pool_id** (String) Specifies the id of the elastic pool containing this database.
-- **sku** (Block List, Max: 1) (see [below for nested schema](#nestedblock--sku))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `collation` (String) Specifies the collation of the database.
+- `elastic_pool_id` (String) Specifies the id of the elastic pool containing this database.
+- `sku` (Block List, Max: 1) (see [below for nested schema](#nestedblock--sku))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--sku"></a>
 ### Nested Schema for `sku`
 
 Required:
 
-- **capacity** (Number)
-- **name** (String)
+- `capacity` (Number)
+- `name` (String)
 
 Optional:
 
-- **tier** (String)
+- `tier` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -86,8 +86,8 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

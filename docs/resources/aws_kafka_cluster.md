@@ -32,43 +32,43 @@ resource "duplocloud_aws_kafka_cluster" "mycluster" {
 
 ### Required
 
-- **instance_type** (String) The Kafka node instance type to use.
+- `instance_type` (String) The Kafka node instance type to use.
 See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html) for more information.
-- **kafka_version** (String) The version of the Kafka cluster.
-- **name** (String) The short name of the Kafka cluster.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **storage_size** (Number) The size of the Kafka storage, in gigabytes.
-- **tenant_id** (String) The GUID of the tenant that the Kafka cluster will be created in.
+- `kafka_version` (String) The version of the Kafka cluster.
+- `name` (String) The short name of the Kafka cluster.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `storage_size` (Number) The size of the Kafka storage, in gigabytes.
+- `tenant_id` (String) The GUID of the tenant that the Kafka cluster will be created in.
 
 ### Optional
 
-- **configuration_arn** (String) An ARN of a Kafka configuration to apply to the cluster.
-- **configuration_revision** (Number) An revision of a Kafka configuration to apply to the cluster.
-- **encryption_in_transit** (String) Encryption setting for data in transit between clients and brokers. Valid values: `TLS`, `TLS_PLAINTEXT`, and `PLAINTEXT`
-- **subnets** (List of String) The list of subnets that the cluster will be launched in.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `configuration_arn` (String) An ARN of a Kafka configuration to apply to the cluster.
+- `configuration_revision` (Number) An revision of a Kafka configuration to apply to the cluster.
+- `encryption_in_transit` (String) Encryption setting for data in transit between clients and brokers. Valid values: `TLS`, `TLS_PLAINTEXT`, and `PLAINTEXT`
+- `subnets` (List of String) The list of subnets that the cluster will be launched in.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) The ARN of the Kafka cluster.
-- **az_distribution** (String) The availability zone distribution used by the cluster.
-- **fullname** (String) The full name of the Kakfa cluster.
-- **id** (String) The ID of this resource.
-- **number_of_broker_nodes** (Number) The desired total number of broker nodes in the kafka cluster.
-- **plaintext_bootstrap_broker_string** (String) The bootstrap broker connect string for plaintext (unencrypted) connections.
-- **plaintext_zookeeper_connect_string** (String) The Zookeeper connect string for plaintext (unencrypted) connections.
-- **security_groups** (List of String) The list of security groups used by the cluster.
-- **state** (String) The current state of the cluster.
-- **tags** (Map of String)
-- **tls_bootstrap_broker_string** (String) The bootstrap broker connect string for TLS (encrypted) connections.
-- **tls_zookeeper_connect_string** (String) The Zookeeper connect string for TLS (encrypted) connections.
+- `arn` (String) The ARN of the Kafka cluster.
+- `az_distribution` (String) The availability zone distribution used by the cluster.
+- `fullname` (String) The full name of the Kakfa cluster.
+- `id` (String) The ID of this resource.
+- `number_of_broker_nodes` (Number) The desired total number of broker nodes in the kafka cluster.
+- `plaintext_bootstrap_broker_string` (String) The bootstrap broker connect string for plaintext (unencrypted) connections.
+- `plaintext_zookeeper_connect_string` (String) The Zookeeper connect string for plaintext (unencrypted) connections.
+- `security_groups` (List of String) The list of security groups used by the cluster.
+- `state` (String) The current state of the cluster.
+- `tags` (Map of String)
+- `tls_bootstrap_broker_string` (String) The bootstrap broker connect string for TLS (encrypted) connections.
+- `tls_zookeeper_connect_string` (String) The Zookeeper connect string for TLS (encrypted) connections.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

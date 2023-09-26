@@ -53,39 +53,39 @@ resource "duplocloud_azure_vault_backup_policy" "backup_policy" {
 
 ### Required
 
-- **backup** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--backup))
-- **infra_name** (String) The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.
-- **name** (String) Specifies the name of the vault backup policy.
+- `backup` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--backup))
+- `infra_name` (String) The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.
+- `name` (String) Specifies the name of the vault backup policy.
 
 ### Optional
 
-- **instant_restore_retention_days** (Number) Specifies the instant restore retention range in days.
-- **policy_type** (String) Type of the Backup Policy. Defaults to `V1`.
-- **retention_daily** (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_daily))
-- **retention_monthly** (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_monthly))
-- **retention_weekly** (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_weekly))
-- **retention_yearly** (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_yearly))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **timezone** (String) Specifies the timezone. Defaults to `UTC`.
+- `instant_restore_retention_days` (Number) Specifies the instant restore retention range in days.
+- `policy_type` (String) Type of the Backup Policy. Defaults to `V1`.
+- `retention_daily` (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_daily))
+- `retention_monthly` (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_monthly))
+- `retention_weekly` (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_weekly))
+- `retention_yearly` (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_yearly))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timezone` (String) Specifies the timezone. Defaults to `UTC`.
 
 ### Read-Only
 
-- **azure_id** (String) Azure id for vault backup policy.
-- **id** (String) The ID of this resource.
+- `azure_id` (String) Azure id for vault backup policy.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--backup"></a>
 ### Nested Schema for `backup`
 
 Required:
 
-- **frequency** (String)
-- **time** (String)
+- `frequency` (String)
+- `time` (String)
 
 Optional:
 
-- **hour_duration** (Number)
-- **hour_interval** (Number)
-- **weekdays** (Set of String)
+- `hour_duration` (Number)
+- `hour_interval` (Number)
+- `weekdays` (Set of String)
 
 
 <a id="nestedblock--retention_daily"></a>
@@ -93,7 +93,7 @@ Optional:
 
 Required:
 
-- **count** (Number)
+- `count` (Number)
 
 
 <a id="nestedblock--retention_monthly"></a>
@@ -101,9 +101,9 @@ Required:
 
 Required:
 
-- **count** (Number)
-- **weekdays** (Set of String)
-- **weeks** (Set of String)
+- `count` (Number)
+- `weekdays` (Set of String)
+- `weeks` (Set of String)
 
 
 <a id="nestedblock--retention_weekly"></a>
@@ -111,8 +111,8 @@ Required:
 
 Required:
 
-- **count** (Number)
-- **weekdays** (Set of String)
+- `count` (Number)
+- `weekdays` (Set of String)
 
 
 <a id="nestedblock--retention_yearly"></a>
@@ -120,10 +120,10 @@ Required:
 
 Required:
 
-- **count** (Number)
-- **months** (Set of String)
-- **weekdays** (Set of String)
-- **weeks** (Set of String)
+- `count` (Number)
+- `months` (Set of String)
+- `weekdays` (Set of String)
+- `weeks` (Set of String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -131,8 +131,8 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

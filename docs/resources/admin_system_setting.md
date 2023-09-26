@@ -25,25 +25,25 @@ resource "duplocloud_admin_system_setting" "test-setting" {
 
 ### Required
 
-- **key** (String) Key name for the system setting.
-- **type** (String) Type of the system setting.
-- **value** (String) Value for the system setting.
+- `key` (String) Key name for the system setting.
+- `type` (String) Type of the system setting.
+- `value` (String) Value for the system setting.
 
 ### Optional
 
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

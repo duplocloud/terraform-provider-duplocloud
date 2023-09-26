@@ -101,91 +101,91 @@ resource "duplocloud_aws_cloudfront_distribution" "cfd" {
 
 ### Required
 
-- **default_cache_behavior** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--default_cache_behavior))
-- **enabled** (Boolean) Whether the distribution is enabled to accept end user requests for content.
-- **origin** (Block Set, Min: 1) (see [below for nested schema](#nestedblock--origin))
-- **tenant_id** (String) The GUID of the tenant that the aws cloudfront distribution will be created in.
-- **viewer_certificate** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--viewer_certificate))
+- `default_cache_behavior` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--default_cache_behavior))
+- `enabled` (Boolean) Whether the distribution is enabled to accept end user requests for content.
+- `origin` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--origin))
+- `tenant_id` (String) The GUID of the tenant that the aws cloudfront distribution will be created in.
+- `viewer_certificate` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--viewer_certificate))
 
 ### Optional
 
-- **aliases** (Set of String) Extra CNAMEs (alternate domain names), if any, for this distribution.
-- **comment** (String) Any comments you want to include about the distribution.
-- **cors_allowed_host_names** (List of String)
-- **custom_error_response** (Block Set) (see [below for nested schema](#nestedblock--custom_error_response))
-- **default_root_object** (String) The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.
-- **http_version** (String) The maximum HTTP version to support on the distribution. Allowed values are `http1.1` and `http2` Defaults to `http2`.
-- **is_ipv6_enabled** (Boolean) Defaults to `false`.
-- **logging_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--logging_config))
-- **ordered_cache_behavior** (Block List) (see [below for nested schema](#nestedblock--ordered_cache_behavior))
-- **origin_group** (Block Set) (see [below for nested schema](#nestedblock--origin_group))
-- **price_class** (String) The price class for this distribution. One of `PriceClass_All`, `PriceClass_200`, `PriceClass_100` Defaults to `PriceClass_All`.
-- **restrictions** (Block List, Max: 1) (see [below for nested schema](#nestedblock--restrictions))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **use_origin_access_identity** (Boolean) Defaults to `true`.
-- **wait_for_deployment** (Boolean) Defaults to `true`.
-- **web_acl_id** (String) A unique identifier that specifies the AWS WAF web ACL, if any, to associate with this distribution.
+- `aliases` (Set of String) Extra CNAMEs (alternate domain names), if any, for this distribution.
+- `comment` (String) Any comments you want to include about the distribution.
+- `cors_allowed_host_names` (List of String)
+- `custom_error_response` (Block Set) (see [below for nested schema](#nestedblock--custom_error_response))
+- `default_root_object` (String) The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.
+- `http_version` (String) The maximum HTTP version to support on the distribution. Allowed values are `http1.1` and `http2` Defaults to `http2`.
+- `is_ipv6_enabled` (Boolean) Defaults to `false`.
+- `logging_config` (Block List, Max: 1) (see [below for nested schema](#nestedblock--logging_config))
+- `ordered_cache_behavior` (Block List) (see [below for nested schema](#nestedblock--ordered_cache_behavior))
+- `origin_group` (Block Set) (see [below for nested schema](#nestedblock--origin_group))
+- `price_class` (String) The price class for this distribution. One of `PriceClass_All`, `PriceClass_200`, `PriceClass_100` Defaults to `PriceClass_All`.
+- `restrictions` (Block List, Max: 1) (see [below for nested schema](#nestedblock--restrictions))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `use_origin_access_identity` (Boolean) Defaults to `true`.
+- `wait_for_deployment` (Boolean) Defaults to `true`.
+- `web_acl_id` (String) A unique identifier that specifies the AWS WAF web ACL, if any, to associate with this distribution.
 
 ### Read-Only
 
-- **arn** (String)
-- **domain_name** (String)
-- **etag** (String)
-- **hosted_zone_id** (String)
-- **id** (String) The ID of this resource.
-- **status** (String) The current status of the distribution. `Deployed` if the distribution's information is fully propagated throughout the Amazon CloudFront system.
+- `arn` (String)
+- `domain_name` (String)
+- `etag` (String)
+- `hosted_zone_id` (String)
+- `id` (String) The ID of this resource.
+- `status` (String) The current status of the distribution. `Deployed` if the distribution's information is fully propagated throughout the Amazon CloudFront system.
 
 <a id="nestedblock--default_cache_behavior"></a>
 ### Nested Schema for `default_cache_behavior`
 
 Required:
 
-- **allowed_methods** (Set of String)
-- **cached_methods** (Set of String)
-- **target_origin_id** (String)
-- **viewer_protocol_policy** (String)
+- `allowed_methods` (Set of String)
+- `cached_methods` (Set of String)
+- `target_origin_id` (String)
+- `viewer_protocol_policy` (String)
 
 Optional:
 
-- **cache_policy_id** (String)
-- **compress** (Boolean) Defaults to `false`.
-- **default_ttl** (Number)
-- **field_level_encryption_id** (String)
-- **forwarded_values** (Block List, Max: 1) (see [below for nested schema](#nestedblock--default_cache_behavior--forwarded_values))
-- **function_association** (Block Set, Max: 2) (see [below for nested schema](#nestedblock--default_cache_behavior--function_association))
-- **lambda_function_association** (Block Set, Max: 4) (see [below for nested schema](#nestedblock--default_cache_behavior--lambda_function_association))
-- **max_ttl** (Number)
-- **min_ttl** (Number) Defaults to `0`.
-- **origin_request_policy_id** (String)
-- **realtime_log_config_arn** (String)
-- **response_headers_policy_id** (String)
-- **smooth_streaming** (Boolean)
-- **trusted_key_groups** (List of String)
-- **trusted_signers** (List of String)
+- `cache_policy_id` (String)
+- `compress` (Boolean) Defaults to `false`.
+- `default_ttl` (Number)
+- `field_level_encryption_id` (String)
+- `forwarded_values` (Block List, Max: 1) (see [below for nested schema](#nestedblock--default_cache_behavior--forwarded_values))
+- `function_association` (Block Set, Max: 2) (see [below for nested schema](#nestedblock--default_cache_behavior--function_association))
+- `lambda_function_association` (Block Set, Max: 4) (see [below for nested schema](#nestedblock--default_cache_behavior--lambda_function_association))
+- `max_ttl` (Number)
+- `min_ttl` (Number) Defaults to `0`.
+- `origin_request_policy_id` (String)
+- `realtime_log_config_arn` (String)
+- `response_headers_policy_id` (String)
+- `smooth_streaming` (Boolean)
+- `trusted_key_groups` (List of String)
+- `trusted_signers` (List of String)
 
 <a id="nestedblock--default_cache_behavior--forwarded_values"></a>
 ### Nested Schema for `default_cache_behavior.forwarded_values`
 
 Required:
 
-- **cookies** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--default_cache_behavior--forwarded_values--cookies))
-- **query_string** (Boolean)
+- `cookies` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--default_cache_behavior--forwarded_values--cookies))
+- `query_string` (Boolean)
 
 Optional:
 
-- **headers** (Set of String)
-- **query_string_cache_keys** (List of String)
+- `headers` (Set of String)
+- `query_string_cache_keys` (List of String)
 
 <a id="nestedblock--default_cache_behavior--forwarded_values--cookies"></a>
 ### Nested Schema for `default_cache_behavior.forwarded_values.cookies`
 
 Required:
 
-- **forward** (String)
+- `forward` (String)
 
 Optional:
 
-- **whitelisted_names** (Set of String)
+- `whitelisted_names` (Set of String)
 
 
 
@@ -194,8 +194,8 @@ Optional:
 
 Required:
 
-- **event_type** (String)
-- **function_arn** (String)
+- `event_type` (String)
+- `function_arn` (String)
 
 
 <a id="nestedblock--default_cache_behavior--lambda_function_association"></a>
@@ -203,12 +203,12 @@ Required:
 
 Required:
 
-- **event_type** (String)
-- **lambda_arn** (String)
+- `event_type` (String)
+- `lambda_arn` (String)
 
 Optional:
 
-- **include_body** (Boolean) Defaults to `false`.
+- `include_body` (Boolean) Defaults to `false`.
 
 
 
@@ -217,26 +217,26 @@ Optional:
 
 Required:
 
-- **domain_name** (String)
-- **origin_id** (String)
+- `domain_name` (String)
+- `origin_id` (String)
 
 Optional:
 
-- **connection_attempts** (Number) Defaults to `3`.
-- **connection_timeout** (Number) Defaults to `10`.
-- **custom_header** (Block Set) (see [below for nested schema](#nestedblock--origin--custom_header))
-- **custom_origin_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--origin--custom_origin_config))
-- **origin_path** (String) Defaults to ``.
-- **origin_shield** (Block List, Max: 1) (see [below for nested schema](#nestedblock--origin--origin_shield))
-- **s3_origin_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--origin--s3_origin_config))
+- `connection_attempts` (Number) Defaults to `3`.
+- `connection_timeout` (Number) Defaults to `10`.
+- `custom_header` (Block Set) (see [below for nested schema](#nestedblock--origin--custom_header))
+- `custom_origin_config` (Block List, Max: 1) (see [below for nested schema](#nestedblock--origin--custom_origin_config))
+- `origin_path` (String) Defaults to ``.
+- `origin_shield` (Block List, Max: 1) (see [below for nested schema](#nestedblock--origin--origin_shield))
+- `s3_origin_config` (Block List, Max: 1) (see [below for nested schema](#nestedblock--origin--s3_origin_config))
 
 <a id="nestedblock--origin--custom_header"></a>
 ### Nested Schema for `origin.custom_header`
 
 Required:
 
-- **name** (String)
-- **value** (String)
+- `name` (String)
+- `value` (String)
 
 
 <a id="nestedblock--origin--custom_origin_config"></a>
@@ -244,15 +244,15 @@ Required:
 
 Required:
 
-- **origin_protocol_policy** (String)
-- **origin_ssl_protocols** (Set of String)
+- `origin_protocol_policy` (String)
+- `origin_ssl_protocols` (Set of String)
 
 Optional:
 
-- **http_port** (Number) Defaults to `80`.
-- **https_port** (Number) Defaults to `443`.
-- **origin_keepalive_timeout** (Number) Defaults to `5`.
-- **origin_read_timeout** (Number) Defaults to `30`.
+- `http_port` (Number) Defaults to `80`.
+- `https_port` (Number) Defaults to `443`.
+- `origin_keepalive_timeout` (Number) Defaults to `5`.
+- `origin_read_timeout` (Number) Defaults to `30`.
 
 
 <a id="nestedblock--origin--origin_shield"></a>
@@ -260,8 +260,8 @@ Optional:
 
 Required:
 
-- **enabled** (Boolean)
-- **origin_shield_region** (String)
+- `enabled` (Boolean)
+- `origin_shield_region` (String)
 
 
 <a id="nestedblock--origin--s3_origin_config"></a>
@@ -269,7 +269,7 @@ Required:
 
 Optional:
 
-- **origin_access_identity** (String)
+- `origin_access_identity` (String)
 
 
 
@@ -278,11 +278,11 @@ Optional:
 
 Optional:
 
-- **acm_certificate_arn** (String)
-- **cloudfront_default_certificate** (Boolean)
-- **iam_certificate_id** (String)
-- **minimum_protocol_version** (String) Defaults to `TLSv1.2_2021`.
-- **ssl_support_method** (String) Defaults to `sni-only`.
+- `acm_certificate_arn` (String)
+- `cloudfront_default_certificate` (Boolean)
+- `iam_certificate_id` (String)
+- `minimum_protocol_version` (String) Defaults to `TLSv1.2_2021`.
+- `ssl_support_method` (String) Defaults to `sni-only`.
 
 
 <a id="nestedblock--custom_error_response"></a>
@@ -290,13 +290,13 @@ Optional:
 
 Required:
 
-- **error_code** (Number)
+- `error_code` (Number)
 
 Optional:
 
-- **error_caching_min_ttl** (Number)
-- **response_code** (Number)
-- **response_page_path** (String)
+- `error_caching_min_ttl` (Number)
+- `response_code` (Number)
+- `response_page_path` (String)
 
 
 <a id="nestedblock--logging_config"></a>
@@ -304,12 +304,12 @@ Optional:
 
 Required:
 
-- **bucket** (String)
+- `bucket` (String)
 
 Optional:
 
-- **include_cookies** (Boolean) Defaults to `false`.
-- **prefix** (String) Defaults to ``.
+- `include_cookies` (Boolean) Defaults to `false`.
+- `prefix` (String) Defaults to ``.
 
 
 <a id="nestedblock--ordered_cache_behavior"></a>
@@ -317,53 +317,53 @@ Optional:
 
 Required:
 
-- **allowed_methods** (Set of String)
-- **cached_methods** (Set of String)
-- **path_pattern** (String)
-- **target_origin_id** (String)
-- **viewer_protocol_policy** (String)
+- `allowed_methods` (Set of String)
+- `cached_methods` (Set of String)
+- `path_pattern` (String)
+- `target_origin_id` (String)
+- `viewer_protocol_policy` (String)
 
 Optional:
 
-- **cache_policy_id** (String)
-- **compress** (Boolean) Defaults to `false`.
-- **default_ttl** (Number)
-- **field_level_encryption_id** (String)
-- **forwarded_values** (Block List, Max: 1) (see [below for nested schema](#nestedblock--ordered_cache_behavior--forwarded_values))
-- **function_association** (Block Set, Max: 2) (see [below for nested schema](#nestedblock--ordered_cache_behavior--function_association))
-- **lambda_function_association** (Block Set, Max: 4) (see [below for nested schema](#nestedblock--ordered_cache_behavior--lambda_function_association))
-- **max_ttl** (Number)
-- **min_ttl** (Number) Defaults to `0`.
-- **origin_request_policy_id** (String)
-- **realtime_log_config_arn** (String)
-- **response_headers_policy_id** (String)
-- **smooth_streaming** (Boolean)
-- **trusted_key_groups** (List of String)
-- **trusted_signers** (List of String)
+- `cache_policy_id` (String)
+- `compress` (Boolean) Defaults to `false`.
+- `default_ttl` (Number)
+- `field_level_encryption_id` (String)
+- `forwarded_values` (Block List, Max: 1) (see [below for nested schema](#nestedblock--ordered_cache_behavior--forwarded_values))
+- `function_association` (Block Set, Max: 2) (see [below for nested schema](#nestedblock--ordered_cache_behavior--function_association))
+- `lambda_function_association` (Block Set, Max: 4) (see [below for nested schema](#nestedblock--ordered_cache_behavior--lambda_function_association))
+- `max_ttl` (Number)
+- `min_ttl` (Number) Defaults to `0`.
+- `origin_request_policy_id` (String)
+- `realtime_log_config_arn` (String)
+- `response_headers_policy_id` (String)
+- `smooth_streaming` (Boolean)
+- `trusted_key_groups` (List of String)
+- `trusted_signers` (List of String)
 
 <a id="nestedblock--ordered_cache_behavior--forwarded_values"></a>
 ### Nested Schema for `ordered_cache_behavior.forwarded_values`
 
 Required:
 
-- **cookies** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--ordered_cache_behavior--forwarded_values--cookies))
-- **query_string** (Boolean)
+- `cookies` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--ordered_cache_behavior--forwarded_values--cookies))
+- `query_string` (Boolean)
 
 Optional:
 
-- **headers** (Set of String)
-- **query_string_cache_keys** (List of String)
+- `headers` (Set of String)
+- `query_string_cache_keys` (List of String)
 
 <a id="nestedblock--ordered_cache_behavior--forwarded_values--cookies"></a>
 ### Nested Schema for `ordered_cache_behavior.forwarded_values.cookies`
 
 Required:
 
-- **forward** (String)
+- `forward` (String)
 
 Optional:
 
-- **whitelisted_names** (Set of String)
+- `whitelisted_names` (Set of String)
 
 
 
@@ -372,8 +372,8 @@ Optional:
 
 Required:
 
-- **event_type** (String)
-- **function_arn** (String)
+- `event_type` (String)
+- `function_arn` (String)
 
 
 <a id="nestedblock--ordered_cache_behavior--lambda_function_association"></a>
@@ -381,12 +381,12 @@ Required:
 
 Required:
 
-- **event_type** (String)
-- **lambda_arn** (String)
+- `event_type` (String)
+- `lambda_arn` (String)
 
 Optional:
 
-- **include_body** (Boolean) Defaults to `false`.
+- `include_body` (Boolean) Defaults to `false`.
 
 
 
@@ -395,16 +395,16 @@ Optional:
 
 Required:
 
-- **failover_criteria** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--origin_group--failover_criteria))
-- **member** (Block List, Min: 2, Max: 2) (see [below for nested schema](#nestedblock--origin_group--member))
-- **origin_id** (String)
+- `failover_criteria` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--origin_group--failover_criteria))
+- `member` (Block List, Min: 2, Max: 2) (see [below for nested schema](#nestedblock--origin_group--member))
+- `origin_id` (String)
 
 <a id="nestedblock--origin_group--failover_criteria"></a>
 ### Nested Schema for `origin_group.failover_criteria`
 
 Required:
 
-- **status_codes** (Set of Number)
+- `status_codes` (Set of Number)
 
 
 <a id="nestedblock--origin_group--member"></a>
@@ -412,7 +412,7 @@ Required:
 
 Required:
 
-- **origin_id** (String)
+- `origin_id` (String)
 
 
 
@@ -421,18 +421,18 @@ Required:
 
 Required:
 
-- **geo_restriction** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--restrictions--geo_restriction))
+- `geo_restriction` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--restrictions--geo_restriction))
 
 <a id="nestedblock--restrictions--geo_restriction"></a>
 ### Nested Schema for `restrictions.geo_restriction`
 
 Required:
 
-- **restriction_type** (String)
+- `restriction_type` (String)
 
 Optional:
 
-- **locations** (Set of String)
+- `locations` (Set of String)
 
 
 
@@ -441,8 +441,8 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 
