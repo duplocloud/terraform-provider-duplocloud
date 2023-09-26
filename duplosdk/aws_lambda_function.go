@@ -173,9 +173,9 @@ func (c *Client) LambdaFunctionCreate(tenantID string, rq *DuploLambdaCreateRequ
 
 // LambdaFunctionUpdate updates a lambda function via the Duplo API.
 func (c *Client) LambdaFunctionUpdate(tenantID string, rq *DuploLambdaUpdateRequest) ClientError {
-	return c.postAPI(
+	return c.putAPI(
 		fmt.Sprintf("LambdaFunctionUpdate(%s, %s)", tenantID, rq.FunctionName),
-		fmt.Sprintf("subscriptions/%s/UpdateLambdaFunction", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s/code", tenantID, rq.FunctionName),
 		&rq,
 		nil,
 	)
@@ -183,9 +183,9 @@ func (c *Client) LambdaFunctionUpdate(tenantID string, rq *DuploLambdaUpdateRequ
 
 // LambdaFunctionUpdateConfiguration updates a lambda function's configuration via the Duplo API.
 func (c *Client) LambdaFunctionUpdateConfiguration(tenantID string, rq *DuploLambdaConfigurationRequest) ClientError {
-	return c.postAPI(
+	return c.putAPI(
 		fmt.Sprintf("LambdaFunctionUpdateConfiguration(%s, %s)", tenantID, rq.FunctionName),
-		fmt.Sprintf("subscriptions/%s/UpdateLambdaFunctionConfiguration", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s/configuration", tenantID, rq.FunctionName),
 		&rq,
 		nil,
 	)
