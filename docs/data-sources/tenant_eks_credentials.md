@@ -17,20 +17,17 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **ca_certificate_data** (String)
-- **endpoint** (String)
-- **name** (String)
-- **namespace** (String)
-- **region** (String)
-- **token** (String, Sensitive)
-- **version** (String)
+- `ca_certificate_data` (String)
+- `endpoint` (String)
+- `id` (String) The ID of this resource.
+- `name` (String)
+- `namespace` (String)
+- `region` (String)
+- `token` (String, Sensitive)
+- `version` (String)
 
 

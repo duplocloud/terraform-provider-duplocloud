@@ -43,27 +43,27 @@ resource "duplocloud_tenant_config" "myapp" {
 
 ### Required
 
-- **tenant_id** (String) The GUID of the tenant to configure.
+- `tenant_id` (String) The GUID of the tenant to configure.
 
 ### Optional
 
-- **delete_unspecified_settings** (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
-- **id** (String) The ID of this resource.
-- **setting** (Block List) A list of configuration settings to manage, expressed as key / value pairs. (see [below for nested schema](#nestedblock--setting))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `delete_unspecified_settings` (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
+- `setting` (Block List) A list of configuration settings to manage, expressed as key / value pairs. (see [below for nested schema](#nestedblock--setting))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **metadata** (List of Object) A complete list of configuration settings for this tenant, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--metadata))
-- **specified_settings** (List of String) A list of configuration setting key being managed by this resource.
+- `id` (String) The ID of this resource.
+- `metadata` (List of Object) A complete list of configuration settings for this tenant, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--metadata))
+- `specified_settings` (List of String) A list of configuration setting key being managed by this resource.
 
 <a id="nestedblock--setting"></a>
 ### Nested Schema for `setting`
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -71,9 +71,9 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 
 <a id="nestedatt--metadata"></a>
@@ -81,8 +81,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

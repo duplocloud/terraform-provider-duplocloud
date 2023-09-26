@@ -41,27 +41,27 @@ resource "duplocloud_aws_sns_topic" "sns_topic" {
 
 ### Required
 
-- **name** (String) The name of the topic. Topic names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and must be between 1 and 256 characters long.
-- **tenant_id** (String) The GUID of the tenant that the SNS topic will be created in.
+- `name` (String) The name of the topic. Topic names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and must be between 1 and 256 characters long.
+- `tenant_id` (String) The GUID of the tenant that the SNS topic will be created in.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **kms_key_id** (String) The ID of an AWS-managed customer master key (CMK) for Amazon SNS or a custom CMK.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `kms_key_id` (String) The ID of an AWS-managed customer master key (CMK) for Amazon SNS or a custom CMK.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) The ARN of the SNS topic.
-- **fullname** (String) The full name of the SNS topic.
+- `arn` (String) The ARN of the SNS topic.
+- `fullname` (String) The full name of the SNS topic.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

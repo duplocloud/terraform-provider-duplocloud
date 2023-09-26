@@ -30,26 +30,26 @@ resource "duplocloud_azure_storage_share_file" "share_file" {
 
 ### Required
 
-- **name** (String) The name (or path) of the File that should be created within this File Share. Changing this forces a new resource to be created.
-- **storage_account_name** (String) Specifies the storage account in which to create the share. Changing this forces a new resource to be created.
-- **tenant_id** (String) The GUID of the tenant that the azure storage account share file will be created in.
+- `name` (String) The name (or path) of the File that should be created within this File Share. Changing this forces a new resource to be created.
+- `storage_account_name` (String) Specifies the storage account in which to create the share. Changing this forces a new resource to be created.
+- `tenant_id` (String) The GUID of the tenant that the azure storage account share file will be created in.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **url** (String) The URL of the File Share.
+- `id` (String) The ID of this resource.
+- `url` (String) The URL of the File Share.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

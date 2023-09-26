@@ -29,30 +29,30 @@ resource "duplocloud_plan_settings" "myplanSettings" {
 
 ### Required
 
-- **plan_id** (String) The ID of the plan to configure.
+- `plan_id` (String) The ID of the plan to configure.
 
 ### Optional
 
-- **dns_setting** (Block List, Max: 1) (see [below for nested schema](#nestedblock--dns_setting))
-- **id** (String) The ID of this resource.
-- **metadata** (Block List) A list of metadata for the plan to manage. (see [below for nested schema](#nestedblock--metadata))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **unrestricted_ext_lb** (Boolean)
+- `dns_setting` (Block List, Max: 1) (see [below for nested schema](#nestedblock--dns_setting))
+- `metadata` (Block List) A list of metadata for the plan to manage. (see [below for nested schema](#nestedblock--metadata))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `unrestricted_ext_lb` (Boolean)
 
 ### Read-Only
 
-- **all_metadata** (List of Object) A complete list of metadata for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_metadata))
-- **specified_metadata** (List of String) A list of metadata being managed by this resource.
+- `all_metadata` (List of Object) A complete list of metadata for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_metadata))
+- `id` (String) The ID of this resource.
+- `specified_metadata` (List of String) A list of metadata being managed by this resource.
 
 <a id="nestedblock--dns_setting"></a>
 ### Nested Schema for `dns_setting`
 
 Optional:
 
-- **domain_id** (String)
-- **external_dns_suffix** (String)
-- **ignore_global_dns** (Boolean)
-- **internal_dns_suffix** (String)
+- `domain_id` (String)
+- `external_dns_suffix` (String)
+- `ignore_global_dns` (Boolean)
+- `internal_dns_suffix` (String)
 
 
 <a id="nestedblock--metadata"></a>
@@ -60,8 +60,8 @@ Optional:
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -69,8 +69,8 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 
 <a id="nestedatt--all_metadata"></a>
@@ -78,8 +78,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

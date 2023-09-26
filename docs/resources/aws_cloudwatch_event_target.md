@@ -56,26 +56,29 @@ resource "duplocloud_aws_cloudwatch_event_target" "cw_etarget2" {
 
 ### Required
 
-- **rule_name** (String) The name of the rule you want to add targets to.
-- **target_arn** (String) The Amazon Resource Name (ARN) of the target.
-- **target_id** (String) The unique target assignment ID.
-- **tenant_id** (String) The GUID of the tenant that the cloudwatch event target will be created in.
+- `rule_name` (String) The name of the rule you want to add targets to.
+- `target_arn` (String) The Amazon Resource Name (ARN) of the target.
+- `target_id` (String) The unique target assignment ID.
+- `tenant_id` (String) The GUID of the tenant that the cloudwatch event target will be created in.
 
 ### Optional
 
-- **event_bus_name** (String) The event bus to associate with the rule. If you omit this, the default event bus is used.
-- **id** (String) The ID of this resource.
-- **input** (String) Valid JSON text passed to the target.
-- **role_arn** (String) The Amazon Resource Name (ARN) associated with the role that is used for target invocation.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `event_bus_name` (String) The event bus to associate with the rule. If you omit this, the default event bus is used.
+- `input` (String) Valid JSON text passed to the target.
+- `role_arn` (String) The Amazon Resource Name (ARN) associated with the role that is used for target invocation.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

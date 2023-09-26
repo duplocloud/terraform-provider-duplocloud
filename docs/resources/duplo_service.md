@@ -85,52 +85,52 @@ resource "duplocloud_duplo_service" "myservice" {
 
 ### Required
 
-- **docker_image** (String) The docker image to use for the launched container(s).
-- **name** (String) The name of the service to create.
-- **tenant_id** (String) The GUID of the tenant that the service will be created in.
+- `docker_image` (String) The docker image to use for the launched container(s).
+- `name` (String) The name of the service to create.
+- `tenant_id` (String) The GUID of the tenant that the service will be created in.
 
 ### Optional
 
-- **agent_platform** (Number) The numeric ID of the container agent to use for deployment.
+- `agent_platform` (Number) The numeric ID of the container agent to use for deployment.
 Should be one of:
 
    - `0` : Duplo Native container agent
    - `7` : EKS linux container agent
  Defaults to `0`.
-- **allocation_tags** (String)
-- **any_host_allowed** (Boolean) Whether or not the service can run on hosts in other tenants (within the the same plan as the current tenant). Defaults to `false`.
-- **cloud** (Number) The numeric ID of the cloud provider to launch the service in. Defaults to `0`.
-- **cloud_creds_from_k8s_service_account** (Boolean) Whether or not the service gets it's cloud credentials from Kubernetes service account. Defaults to `false`.
-- **commands** (String)
-- **extra_config** (String)
-- **force_stateful_set** (Boolean) Whether or not to force a StatefulSet to be created. Defaults to `false`.
-- **hpa_specs** (String)
-- **id** (String) The ID of this resource.
-- **is_daemonset** (Boolean) Whether or not to enable DaemonSet. Defaults to `false`.
-- **is_unique_k8s_node_required** (Boolean) Whether or not the replicas must be scheduled on separate Kubernetes nodes.  Only supported on Kubernetes. Defaults to `false`.
-- **lb_synced_deployment** (Boolean) Defaults to `false`.
-- **other_docker_config** (String)
-- **other_docker_host_config** (String)
-- **replica_collocation_allowed** (Boolean) Allow replica collocation for the service. If this is set then 2 replicas can be on the same host.
-- **replicas** (Number) The number of container replicas to deploy. Defaults to `1`.
-- **replicas_matching_asg_name** (String)
-- **should_spread_across_zones** (Boolean) Whether or not the replicas must be spread across availability zones.  Only supported on Kubernetes. Defaults to `false`.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **volumes** (String)
+- `allocation_tags` (String)
+- `any_host_allowed` (Boolean) Whether or not the service can run on hosts in other tenants (within the the same plan as the current tenant). Defaults to `false`.
+- `cloud` (Number) The numeric ID of the cloud provider to launch the service in. Defaults to `0`.
+- `cloud_creds_from_k8s_service_account` (Boolean) Whether or not the service gets it's cloud credentials from Kubernetes service account. Defaults to `false`.
+- `commands` (String)
+- `extra_config` (String)
+- `force_stateful_set` (Boolean) Whether or not to force a StatefulSet to be created. Defaults to `false`.
+- `hpa_specs` (String)
+- `is_daemonset` (Boolean) Whether or not to enable DaemonSet. Defaults to `false`.
+- `is_unique_k8s_node_required` (Boolean) Whether or not the replicas must be scheduled on separate Kubernetes nodes.  Only supported on Kubernetes. Defaults to `false`.
+- `lb_synced_deployment` (Boolean) Defaults to `false`.
+- `other_docker_config` (String)
+- `other_docker_host_config` (String)
+- `replica_collocation_allowed` (Boolean) Allow replica collocation for the service. If this is set then 2 replicas can be on the same host.
+- `replicas` (Number) The number of container replicas to deploy. Defaults to `1`.
+- `replicas_matching_asg_name` (String)
+- `should_spread_across_zones` (Boolean) Whether or not the replicas must be spread across availability zones.  Only supported on Kubernetes. Defaults to `false`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `volumes` (String)
 
 ### Read-Only
 
-- **index** (Number) The index of the service.
-- **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
+- `id` (String) The ID of this resource.
+- `index` (Number) The index of the service.
+- `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 
 <a id="nestedatt--tags"></a>
@@ -138,8 +138,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

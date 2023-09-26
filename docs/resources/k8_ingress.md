@@ -122,32 +122,35 @@ resource "duplocloud_k8_ingress" "ingress" {
 
 ### Required
 
-- **ingress_class_name** (String) The ingress class name references an IngressClass resource that contains additional configuration including the name of the controller that should implement the class.
-- **name** (String) The name of the Ingress.
-- **tenant_id** (String) The GUID of the tenant that the Ingress will be created in.
+- `ingress_class_name` (String) The ingress class name references an IngressClass resource that contains additional configuration including the name of the controller that should implement the class.
+- `name` (String) The name of the Ingress.
+- `tenant_id` (String) The GUID of the tenant that the Ingress will be created in.
 
 ### Optional
 
-- **annotations** (Map of String) An unstructured key value map stored with the ingress that may be used to store arbitrary metadata.
-- **id** (String) The ID of this resource.
-- **labels** (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service. May match selectors of replication controllers and services.
-- **lbconfig** (Block List, Max: 1) The load balancer configuration. This is required when `ingress_class_name` is set to `alb`. (see [below for nested schema](#nestedblock--lbconfig))
-- **rule** (Block List) A list of host rules used to configure the Ingress. (see [below for nested schema](#nestedblock--rule))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `annotations` (Map of String) An unstructured key value map stored with the ingress that may be used to store arbitrary metadata.
+- `labels` (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service. May match selectors of replication controllers and services.
+- `lbconfig` (Block List, Max: 1) The load balancer configuration. This is required when `ingress_class_name` is set to `alb`. (see [below for nested schema](#nestedblock--lbconfig))
+- `rule` (Block List) A list of host rules used to configure the Ingress. (see [below for nested schema](#nestedblock--rule))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--lbconfig"></a>
 ### Nested Schema for `lbconfig`
 
 Required:
 
-- **dns_prefix** (String) The DNS prefix to expose services using Route53 domain.
-- **is_internal** (Boolean) Whether or not to create an internal load balancer.
+- `dns_prefix` (String) The DNS prefix to expose services using Route53 domain.
+- `is_internal` (Boolean) Whether or not to create an internal load balancer.
 
 Optional:
 
-- **certificate_arn** (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
-- **http_port** (Number) HTTP Listener Port.
-- **https_port** (Number) HTTPS Listener Port.
+- `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
+- `http_port` (Number) HTTP Listener Port.
+- `https_port` (Number) HTTPS Listener Port.
 
 
 <a id="nestedblock--rule"></a>
@@ -155,14 +158,14 @@ Optional:
 
 Required:
 
-- **path** (String) Specify the path (for e.g. /api /v1/api/) to do a path base routing. If host is specified then both path and host should be match for the incoming request.
-- **path_type** (String) Type of the path to be used.
-- **port** (Number) Port from the kubernetes service that ingress will use as backend port to serve the requests.
-- **service_name** (String) Name of the kubernetes service which Ingress will use as backend to serve the request.
+- `path` (String) Specify the path (for e.g. /api /v1/api/) to do a path base routing. If host is specified then both path and host should be match for the incoming request.
+- `path_type` (String) Type of the path to be used.
+- `port` (Number) Port from the kubernetes service that ingress will use as backend port to serve the requests.
+- `service_name` (String) Name of the kubernetes service which Ingress will use as backend to serve the request.
 
 Optional:
 
-- **host** (String) If a host is provided (for e.g. example, foo.bar.com), the rules apply to that host.
+- `host` (String) If a host is provided (for e.g. example, foo.bar.com), the rules apply to that host.
 
 
 <a id="nestedblock--timeouts"></a>
@@ -170,9 +173,9 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

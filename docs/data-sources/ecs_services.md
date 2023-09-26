@@ -17,42 +17,39 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **services** (List of Object) (see [below for nested schema](#nestedatt--services))
+- `id` (String) The ID of this resource.
+- `services` (List of Object) (see [below for nested schema](#nestedatt--services))
 
 <a id="nestedatt--services"></a>
 ### Nested Schema for `services`
 
 Read-Only:
 
-- **capacity_provider_strategy** (List of Object) (see [below for nested schema](#nestedobjatt--services--capacity_provider_strategy))
-- **dns_prfx** (String)
-- **health_check_grace_period_seconds** (Number)
-- **index** (Number)
-- **is_target_group_only** (Boolean)
-- **load_balancer** (List of Object) (see [below for nested schema](#nestedobjatt--services--load_balancer))
-- **name** (String)
-- **old_task_definition_buffer_size** (Number)
-- **replicas** (Number)
-- **target_group_arns** (Set of String)
-- **task_definition** (String)
-- **tenant_id** (String)
+- `capacity_provider_strategy` (List of Object) (see [below for nested schema](#nestedobjatt--services--capacity_provider_strategy))
+- `dns_prfx` (String)
+- `health_check_grace_period_seconds` (Number)
+- `index` (Number)
+- `is_target_group_only` (Boolean)
+- `load_balancer` (List of Object) (see [below for nested schema](#nestedobjatt--services--load_balancer))
+- `name` (String)
+- `old_task_definition_buffer_size` (Number)
+- `replicas` (Number)
+- `target_group_arns` (Set of String)
+- `task_definition` (String)
+- `tenant_id` (String)
 
 <a id="nestedobjatt--services--capacity_provider_strategy"></a>
 ### Nested Schema for `services.capacity_provider_strategy`
 
 Read-Only:
 
-- **base** (Number)
-- **capacity_provider** (String)
-- **weight** (Number)
+- `base` (Number)
+- `capacity_provider` (String)
+- `weight` (Number)
 
 
 <a id="nestedobjatt--services--load_balancer"></a>
@@ -60,37 +57,37 @@ Read-Only:
 
 Read-Only:
 
-- **backend_protocol** (String)
-- **backend_protocol_version** (String)
-- **certificate_arn** (String)
-- **drop_invalid_headers** (Boolean)
-- **enable_access_logs** (Boolean)
-- **external_port** (Number)
-- **health_check_config** (List of Object) (see [below for nested schema](#nestedobjatt--services--load_balancer--health_check_config))
-- **health_check_url** (String)
-- **http_to_https_redirect** (Boolean)
-- **idle_timeout** (Number)
-- **index** (Number)
-- **is_internal** (Boolean)
-- **lb_type** (Number)
-- **load_balancer_arn** (String)
-- **load_balancer_name** (String)
-- **port** (String)
-- **protocol** (String)
-- **replication_controller_name** (String)
-- **target_group_count** (Number)
-- **webaclid** (String)
+- `backend_protocol` (String)
+- `backend_protocol_version` (String)
+- `certificate_arn` (String)
+- `drop_invalid_headers` (Boolean)
+- `enable_access_logs` (Boolean)
+- `external_port` (Number)
+- `health_check_config` (List of Object) (see [below for nested schema](#nestedobjatt--services--load_balancer--health_check_config))
+- `health_check_url` (String)
+- `http_to_https_redirect` (Boolean)
+- `idle_timeout` (Number)
+- `index` (Number)
+- `is_internal` (Boolean)
+- `lb_type` (Number)
+- `load_balancer_arn` (String)
+- `load_balancer_name` (String)
+- `port` (String)
+- `protocol` (String)
+- `replication_controller_name` (String)
+- `target_group_count` (Number)
+- `webaclid` (String)
 
 <a id="nestedobjatt--services--load_balancer--health_check_config"></a>
 ### Nested Schema for `services.load_balancer.health_check_config`
 
 Read-Only:
 
-- **grpc_success_code** (String)
-- **health_check_interval_seconds** (Number)
-- **health_check_timeout_seconds** (Number)
-- **healthy_threshold_count** (Number)
-- **http_success_code** (String)
-- **unhealthy_threshold_count** (Number)
+- `grpc_success_code` (String)
+- `health_check_interval_seconds` (Number)
+- `health_check_timeout_seconds` (Number)
+- `healthy_threshold_count` (Number)
+- `http_success_code` (String)
+- `unhealthy_threshold_count` (Number)
 
 

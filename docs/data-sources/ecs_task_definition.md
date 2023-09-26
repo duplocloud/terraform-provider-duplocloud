@@ -17,42 +17,39 @@ description: |-
 
 ### Required
 
-- **arn** (String) The ARN of the task definition.
-- **tenant_id** (String) The GUID of the tenant that the task definition will be created in.
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `arn` (String) The ARN of the task definition.
+- `tenant_id` (String) The GUID of the tenant that the task definition will be created in.
 
 ### Read-Only
 
-- **container_definitions** (String)
-- **cpu** (String)
-- **execution_role_arn** (String)
-- **family** (String) The name of the task definition to create.
-- **inference_accelerator** (Set of Object) (see [below for nested schema](#nestedatt--inference_accelerator))
-- **ipc_mode** (String)
-- **memory** (String)
-- **network_mode** (String)
-- **pid_mode** (String)
-- **placement_constraints** (Set of Object) (see [below for nested schema](#nestedatt--placement_constraints))
-- **prevent_tf_destroy** (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`.
-- **proxy_configuration** (List of Object) (see [below for nested schema](#nestedatt--proxy_configuration))
-- **requires_attributes** (Set of Object) (see [below for nested schema](#nestedatt--requires_attributes))
-- **requires_compatibilities** (Set of String)
-- **revision** (Number) The current revision of the task definition.
-- **status** (String) The status of the task definition.
-- **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
-- **task_role_arn** (String)
-- **volumes** (String)
+- `container_definitions` (String)
+- `cpu` (String)
+- `execution_role_arn` (String)
+- `family` (String) The name of the task definition to create.
+- `id` (String) The ID of this resource.
+- `inference_accelerator` (Set of Object) (see [below for nested schema](#nestedatt--inference_accelerator))
+- `ipc_mode` (String)
+- `memory` (String)
+- `network_mode` (String)
+- `pid_mode` (String)
+- `placement_constraints` (Set of Object) (see [below for nested schema](#nestedatt--placement_constraints))
+- `prevent_tf_destroy` (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`.
+- `proxy_configuration` (List of Object) (see [below for nested schema](#nestedatt--proxy_configuration))
+- `requires_attributes` (Set of Object) (see [below for nested schema](#nestedatt--requires_attributes))
+- `requires_compatibilities` (Set of String)
+- `revision` (Number) The current revision of the task definition.
+- `status` (String) The status of the task definition.
+- `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
+- `task_role_arn` (String)
+- `volumes` (String)
 
 <a id="nestedatt--inference_accelerator"></a>
 ### Nested Schema for `inference_accelerator`
 
 Read-Only:
 
-- **device_name** (String)
-- **device_type** (String)
+- `device_name` (String)
+- `device_type` (String)
 
 
 <a id="nestedatt--placement_constraints"></a>
@@ -60,8 +57,8 @@ Read-Only:
 
 Read-Only:
 
-- **expression** (String)
-- **type** (String)
+- `expression` (String)
+- `type` (String)
 
 
 <a id="nestedatt--proxy_configuration"></a>
@@ -69,9 +66,9 @@ Read-Only:
 
 Read-Only:
 
-- **container_name** (String)
-- **properties** (Map of String)
-- **type** (String)
+- `container_name` (String)
+- `properties` (Map of String)
+- `type` (String)
 
 
 <a id="nestedatt--requires_attributes"></a>
@@ -79,7 +76,7 @@ Read-Only:
 
 Read-Only:
 
-- **name** (String)
+- `name` (String)
 
 
 <a id="nestedatt--tags"></a>
@@ -87,7 +84,7 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 

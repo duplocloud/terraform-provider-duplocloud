@@ -31,30 +31,30 @@ resource "duplocloud_aws_ecr_repository" "test-ecr" {
 
 ### Required
 
-- **name** (String) The name of the ECR Repository.
-- **tenant_id** (String) The GUID of the tenant that the aws ecr repository will be created in.
+- `name` (String) The name of the ECR Repository.
+- `tenant_id` (String) The GUID of the tenant that the aws ecr repository will be created in.
 
 ### Optional
 
-- **enable_scan_image_on_push** (Boolean) Indicates whether images are scanned after being pushed to the repository (true) or not scanned (false).
-- **enable_tag_immutability** (Boolean) The tag mutability setting for the repository.
-- **id** (String) The ID of this resource.
-- **kms_encryption_key** (String) The ARN of the KMS key to use.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `enable_scan_image_on_push` (Boolean) Indicates whether images are scanned after being pushed to the repository (true) or not scanned (false).
+- `enable_tag_immutability` (Boolean) The tag mutability setting for the repository.
+- `kms_encryption_key` (String) The ARN of the KMS key to use.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) Full ARN of the repository.
-- **registry_id** (String) The registry ID where the repository was created.
-- **repository_url** (String) The URL of the repository.
+- `arn` (String) Full ARN of the repository.
+- `id` (String) The ID of this resource.
+- `registry_id` (String) The registry ID where the repository was created.
+- `repository_url` (String) The URL of the repository.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

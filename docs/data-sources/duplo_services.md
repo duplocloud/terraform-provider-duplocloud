@@ -17,51 +17,48 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **services** (List of Object) (see [below for nested schema](#nestedatt--services))
+- `id` (String) The ID of this resource.
+- `services` (List of Object) (see [below for nested schema](#nestedatt--services))
 
 <a id="nestedatt--services"></a>
 ### Nested Schema for `services`
 
 Read-Only:
 
-- **agent_platform** (Number)
-- **allocation_tags** (String)
-- **any_host_allowed** (Boolean)
-- **cloud** (Number)
-- **cloud_creds_from_k8s_service_account** (Boolean)
-- **commands** (List of String)
-- **docker_image** (String)
-- **extra_config** (String)
-- **force_stateful_set** (Boolean)
-- **hpa_specs** (String)
-- **is_daemonset** (Boolean)
-- **is_unique_k8s_node_required** (Boolean)
-- **lb_synced_deployment** (Boolean)
-- **name** (String)
-- **other_docker_config** (String)
-- **other_docker_host_config** (String)
-- **replica_collocation_allowed** (Boolean)
-- **replicas** (Number)
-- **replicas_matching_asg_name** (String)
-- **should_spread_across_zones** (Boolean)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--services--tags))
-- **tenant_id** (String)
-- **volumes** (String)
+- `agent_platform` (Number)
+- `allocation_tags` (String)
+- `any_host_allowed` (Boolean)
+- `cloud` (Number)
+- `cloud_creds_from_k8s_service_account` (Boolean)
+- `commands` (List of String)
+- `docker_image` (String)
+- `extra_config` (String)
+- `force_stateful_set` (Boolean)
+- `hpa_specs` (String)
+- `is_daemonset` (Boolean)
+- `is_unique_k8s_node_required` (Boolean)
+- `lb_synced_deployment` (Boolean)
+- `name` (String)
+- `other_docker_config` (String)
+- `other_docker_host_config` (String)
+- `replica_collocation_allowed` (Boolean)
+- `replicas` (Number)
+- `replicas_matching_asg_name` (String)
+- `should_spread_across_zones` (Boolean)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--services--tags))
+- `tenant_id` (String)
+- `volumes` (String)
 
 <a id="nestedobjatt--services--tags"></a>
 ### Nested Schema for `services.tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 

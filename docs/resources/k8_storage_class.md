@@ -48,40 +48,40 @@ resource "duplocloud_k8_storage_class" "sc" {
 
 ### Required
 
-- **name** (String) The name of the storage class.
-- **storage_provisioner** (String) Indicates the type of the provisioner
-- **tenant_id** (String) The GUID of the tenant that the storage class will be created in.
+- `name` (String) The name of the storage class.
+- `storage_provisioner` (String) Indicates the type of the provisioner
+- `tenant_id` (String) The GUID of the tenant that the storage class will be created in.
 
 ### Optional
 
-- **allow_volume_expansion** (Boolean) Indicates whether the storage class allow volume expand Defaults to `false`.
-- **allowed_topologies** (Block List, Max: 1) Restrict the node topologies where volumes can be dynamically provisioned. (see [below for nested schema](#nestedblock--allowed_topologies))
-- **annotations** (Map of String) An unstructured key value map stored with the storage class that may be used to store arbitrary metadata.
-- **id** (String) The ID of this resource.
-- **labels** (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
-- **parameters** (Map of String) The parameters for the provisioner that should create volumes of this storage class
-- **reclaim_policy** (String) Indicates the type of the reclaim policy Defaults to `Delete`.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **volume_binding_mode** (String) Indicates when volume binding and dynamic provisioning should occur Defaults to `Immediate`.
+- `allow_volume_expansion` (Boolean) Indicates whether the storage class allow volume expand Defaults to `false`.
+- `allowed_topologies` (Block List, Max: 1) Restrict the node topologies where volumes can be dynamically provisioned. (see [below for nested schema](#nestedblock--allowed_topologies))
+- `annotations` (Map of String) An unstructured key value map stored with the storage class that may be used to store arbitrary metadata.
+- `labels` (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
+- `parameters` (Map of String) The parameters for the provisioner that should create volumes of this storage class
+- `reclaim_policy` (String) Indicates the type of the reclaim policy Defaults to `Delete`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `volume_binding_mode` (String) Indicates when volume binding and dynamic provisioning should occur Defaults to `Immediate`.
 
 ### Read-Only
 
-- **fullname** (String) The full name of the storage class.
+- `fullname` (String) The full name of the storage class.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--allowed_topologies"></a>
 ### Nested Schema for `allowed_topologies`
 
 Optional:
 
-- **match_label_expressions** (Block List) A list of topology selector requirements by labels. (see [below for nested schema](#nestedblock--allowed_topologies--match_label_expressions))
+- `match_label_expressions` (Block List) A list of topology selector requirements by labels. (see [below for nested schema](#nestedblock--allowed_topologies--match_label_expressions))
 
 <a id="nestedblock--allowed_topologies--match_label_expressions"></a>
 ### Nested Schema for `allowed_topologies.match_label_expressions`
 
 Optional:
 
-- **key** (String) The label key that the selector applies to.
-- **values** (Set of String) An array of string values. One value must match the label to be selected.
+- `key` (String) The label key that the selector applies to.
+- `values` (Set of String) An array of string values. One value must match the label to be selected.
 
 
 
@@ -90,9 +90,9 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

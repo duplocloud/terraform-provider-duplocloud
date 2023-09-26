@@ -17,16 +17,16 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **key_name** (String)
+- `key_name` (String)
 
 ### Read-Only
 
-- **key_arn** (String)
-- **key_id** (String)
+- `id` (String) The ID of this resource.
+- `key_arn` (String)
+- `key_id` (String)
 
 

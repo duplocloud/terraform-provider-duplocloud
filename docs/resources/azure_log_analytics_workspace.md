@@ -25,32 +25,32 @@ resource "duplocloud_azure_log_analytics_workspace" "log_analytics_workspace" {
 
 ### Required
 
-- **infra_name** (String) The name of the infrastructure. Infrastructure names are globally unique and less than 13 characters.
-- **name** (String) Specifies the name of the Log Analytics Workspace. Workspace name should include 4-63 letters, digits or '-'. The '-' shouldn't be the first or the last symbol. Changing this forces a new resource to be created.
+- `infra_name` (String) The name of the infrastructure. Infrastructure names are globally unique and less than 13 characters.
+- `name` (String) Specifies the name of the Log Analytics Workspace. Workspace name should include 4-63 letters, digits or '-'. The '-' shouldn't be the first or the last symbol. Changing this forces a new resource to be created.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **resource_group_name** (String) The name of the resource group in which the Log Analytics workspace is created. Changing this forces a new resource to be created.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_ready** (Boolean) Whether or not to wait until Log Analytics Workspace to be ready, after creation. Defaults to `true`.
+- `resource_group_name` (String) The name of the resource group in which the Log Analytics workspace is created. Changing this forces a new resource to be created.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_ready` (Boolean) Whether or not to wait until Log Analytics Workspace to be ready, after creation. Defaults to `true`.
 
 ### Read-Only
 
-- **azure_id** (String)
-- **location** (String)
-- **public_network_access_for_ingestion** (String)
-- **public_network_access_for_query** (String)
-- **retention_in_days** (Number)
-- **sku** (String)
+- `azure_id` (String)
+- `id` (String) The ID of this resource.
+- `location` (String)
+- `public_network_access_for_ingestion` (String)
+- `public_network_access_for_query` (String)
+- `retention_in_days` (Number)
+- `sku` (String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

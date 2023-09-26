@@ -68,48 +68,48 @@ CONTAINER_PROPERTIES
 
 ### Required
 
-- **name** (String) Specifies the name of the Job Definition.
-- **tenant_id** (String) The GUID of the tenant that the aws batch Job Definition will be created in.
-- **type** (String) The `type` of job definition. Must be `container`.
+- `name` (String) Specifies the name of the Job Definition.
+- `tenant_id` (String) The GUID of the tenant that the aws batch Job Definition will be created in.
+- `type` (String) The `type` of job definition. Must be `container`.
 
 ### Optional
 
-- **container_properties** (String) A valid container properties provided as a single valid JSON document. This parameter is required if the type parameter is `container`.
-- **id** (String) The ID of this resource.
-- **parameters** (Map of String) Specifies the parameter substitution placeholders to set in the job definition.
-- **platform_capabilities** (Set of String) The platform capabilities required by the job definition. If no value is specified, it defaults to `EC2`. To run the job on Fargate resources, specify `FARGATE`.
-- **retry_strategy** (Block List, Max: 1) Specifies the retry strategy to use for failed jobs that are submitted with this job definition. Maximum number of `retry_strategy` is `1`. (see [below for nested schema](#nestedblock--retry_strategy))
-- **tags** (Map of String) Key-value map of resource tags.
-- **timeout** (Block List, Max: 1) Specifies the timeout for jobs so that if a job runs longer, AWS Batch terminates the job. Maximum number of `timeout` is `1`. (see [below for nested schema](#nestedblock--timeout))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `container_properties` (String) A valid container properties provided as a single valid JSON document. This parameter is required if the type parameter is `container`.
+- `parameters` (Map of String) Specifies the parameter substitution placeholders to set in the job definition.
+- `platform_capabilities` (Set of String) The platform capabilities required by the job definition. If no value is specified, it defaults to `EC2`. To run the job on Fargate resources, specify `FARGATE`.
+- `retry_strategy` (Block List, Max: 1) Specifies the retry strategy to use for failed jobs that are submitted with this job definition. Maximum number of `retry_strategy` is `1`. (see [below for nested schema](#nestedblock--retry_strategy))
+- `tags` (Map of String) Key-value map of resource tags.
+- `timeout` (Block List, Max: 1) Specifies the timeout for jobs so that if a job runs longer, AWS Batch terminates the job. Maximum number of `timeout` is `1`. (see [below for nested schema](#nestedblock--timeout))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) The Amazon Resource Name of the Job Definition.
-- **fullname** (String) The full name of the Job Definition.
-- **revision** (Number) The revision of the job definition.
-- **status** (String) The status of the Job Definition.
+- `arn` (String) The Amazon Resource Name of the Job Definition.
+- `fullname` (String) The full name of the Job Definition.
+- `id` (String) The ID of this resource.
+- `revision` (Number) The revision of the job definition.
+- `status` (String) The status of the Job Definition.
 
 <a id="nestedblock--retry_strategy"></a>
 ### Nested Schema for `retry_strategy`
 
 Optional:
 
-- **attempts** (Number) The number of times to move a job to the RUNNABLE status. You may specify between `1` and `10` attempts.
-- **evaluate_on_exit** (Block List, Max: 5) The evaluate on exit conditions under which the job should be retried or failed. If this parameter is specified, then the attempts parameter must also be specified. You may specify up to 5 configuration blocks. (see [below for nested schema](#nestedblock--retry_strategy--evaluate_on_exit))
+- `attempts` (Number) The number of times to move a job to the RUNNABLE status. You may specify between `1` and `10` attempts.
+- `evaluate_on_exit` (Block List, Max: 5) The evaluate on exit conditions under which the job should be retried or failed. If this parameter is specified, then the attempts parameter must also be specified. You may specify up to 5 configuration blocks. (see [below for nested schema](#nestedblock--retry_strategy--evaluate_on_exit))
 
 <a id="nestedblock--retry_strategy--evaluate_on_exit"></a>
 ### Nested Schema for `retry_strategy.evaluate_on_exit`
 
 Required:
 
-- **action** (String) Specifies the action to take if all of the specified conditions are met. The values are not case sensitive. Valid values: `RETRY`, `EXIT`.
+- `action` (String) Specifies the action to take if all of the specified conditions are met. The values are not case sensitive. Valid values: `RETRY`, `EXIT`.
 
 Optional:
 
-- **on_exit_code** (String) A glob pattern to match against the decimal representation of the exit code returned for a job.
-- **on_reason** (String) A glob pattern to match against the reason returned for a job.
-- **on_status_reason** (String) A glob pattern to match against the status reason returned for a job.
+- `on_exit_code` (String) A glob pattern to match against the decimal representation of the exit code returned for a job.
+- `on_reason` (String) A glob pattern to match against the reason returned for a job.
+- `on_status_reason` (String) A glob pattern to match against the status reason returned for a job.
 
 
 
@@ -118,7 +118,7 @@ Optional:
 
 Optional:
 
-- **attempt_duration_seconds** (Number) The time duration in seconds after which AWS Batch terminates your jobs if they have not finished. The minimum value for the timeout is `60`seconds.
+- `attempt_duration_seconds` (Number) The time duration in seconds after which AWS Batch terminates your jobs if they have not finished. The minimum value for the timeout is `60`seconds.
 
 
 <a id="nestedblock--timeouts"></a>
@@ -126,8 +126,8 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

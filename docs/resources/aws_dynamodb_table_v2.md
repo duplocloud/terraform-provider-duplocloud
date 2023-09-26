@@ -78,40 +78,40 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
 ### Required
 
-- **name** (String) The name of the table, this needs to be unique within a region.
-- **tenant_id** (String) The GUID of the tenant that the dynamodb table will be created in.
+- `name` (String) The name of the table, this needs to be unique within a region.
+- `tenant_id` (String) The GUID of the tenant that the dynamodb table will be created in.
 
 ### Optional
 
-- **attribute** (Block Set) (see [below for nested schema](#nestedblock--attribute))
-- **billing_mode** (String) Controls how you are charged for read and write throughput and how you manage capacity. The valid values are `PROVISIONED` and `PAY_PER_REQUEST`. Defaults to `PROVISIONED`.
-- **global_secondary_index** (Block Set) Describe a GSI for the table; subject to the normal limits on the number of GSIs, projected attributes, etc. (see [below for nested schema](#nestedblock--global_secondary_index))
-- **id** (String) The ID of this resource.
-- **key_schema** (Block List) (see [below for nested schema](#nestedblock--key_schema))
-- **local_secondary_index** (Block Set) (see [below for nested schema](#nestedblock--local_secondary_index))
-- **read_capacity** (Number) The number of read units for this table. If the `billing_mode` is `PROVISIONED`, this field is required.
-- **server_side_encryption** (Block List, Max: 1) Encryption at rest options. AWS DynamoDB tables are automatically encrypted at rest with an AWS owned Customer Master Key if this argument isn't specified. (see [below for nested schema](#nestedblock--server_side_encryption))
-- **stream_enabled** (Boolean) Indicates whether Streams are to be enabled (true) or disabled (false).
-- **stream_view_type** (String) When an item in the table is modified, StreamViewType determines what information is written to the table's stream. Valid values are `KEYS_ONLY`, `NEW_IMAGE`, `OLD_IMAGE`, `NEW_AND_OLD_IMAGES`.
-- **tag** (Block List) (see [below for nested schema](#nestedblock--tag))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_ready** (Boolean) Whether or not to wait until dynamodb instance to be ready, after creation. Defaults to `true`.
-- **write_capacity** (Number) The number of write units for this table. If the `billing_mode` is `PROVISIONED`, this field is required.
+- `attribute` (Block Set) (see [below for nested schema](#nestedblock--attribute))
+- `billing_mode` (String) Controls how you are charged for read and write throughput and how you manage capacity. The valid values are `PROVISIONED` and `PAY_PER_REQUEST`. Defaults to `PROVISIONED`.
+- `global_secondary_index` (Block Set) Describe a GSI for the table; subject to the normal limits on the number of GSIs, projected attributes, etc. (see [below for nested schema](#nestedblock--global_secondary_index))
+- `key_schema` (Block List) (see [below for nested schema](#nestedblock--key_schema))
+- `local_secondary_index` (Block Set) (see [below for nested schema](#nestedblock--local_secondary_index))
+- `read_capacity` (Number) The number of read units for this table. If the `billing_mode` is `PROVISIONED`, this field is required.
+- `server_side_encryption` (Block List, Max: 1) Encryption at rest options. AWS DynamoDB tables are automatically encrypted at rest with an AWS owned Customer Master Key if this argument isn't specified. (see [below for nested schema](#nestedblock--server_side_encryption))
+- `stream_enabled` (Boolean) Indicates whether Streams are to be enabled (true) or disabled (false).
+- `stream_view_type` (String) When an item in the table is modified, StreamViewType determines what information is written to the table's stream. Valid values are `KEYS_ONLY`, `NEW_IMAGE`, `OLD_IMAGE`, `NEW_AND_OLD_IMAGES`.
+- `tag` (Block List) (see [below for nested schema](#nestedblock--tag))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_ready` (Boolean) Whether or not to wait until dynamodb instance to be ready, after creation. Defaults to `true`.
+- `write_capacity` (Number) The number of write units for this table. If the `billing_mode` is `PROVISIONED`, this field is required.
 
 ### Read-Only
 
-- **arn** (String) The ARN of the dynamodb table.
-- **status** (String) The status of the dynamodb table.
-- **stream_arn** (String)
-- **stream_label** (String)
+- `arn` (String) The ARN of the dynamodb table.
+- `id` (String) The ID of this resource.
+- `status` (String) The status of the dynamodb table.
+- `stream_arn` (String)
+- `stream_label` (String)
 
 <a id="nestedblock--attribute"></a>
 ### Nested Schema for `attribute`
 
 Required:
 
-- **name** (String) The name of the attribute
-- **type** (String) Attribute type, which must be a scalar type: `S`, `N`, or `B` for (S)tring, (N)umber or (B)inary data
+- `name` (String) The name of the attribute
+- `type` (String) Attribute type, which must be a scalar type: `S`, `N`, or `B` for (S)tring, (N)umber or (B)inary data
 
 
 <a id="nestedblock--global_secondary_index"></a>
@@ -119,16 +119,16 @@ Required:
 
 Required:
 
-- **hash_key** (String) The name of the hash key in the index; must be defined as an attribute in the resource.
-- **name** (String) The name of the index.
-- **projection_type** (String) One of `ALL`, `INCLUDE` or `KEYS_ONLY` where `ALL` projects every attribute into the index, `KEYS_ONLY` projects just the hash and range key into the index, and `INCLUDE` projects only the keys specified in the `non_key_attributes` parameter.
+- `hash_key` (String) The name of the hash key in the index; must be defined as an attribute in the resource.
+- `name` (String) The name of the index.
+- `projection_type` (String) One of `ALL`, `INCLUDE` or `KEYS_ONLY` where `ALL` projects every attribute into the index, `KEYS_ONLY` projects just the hash and range key into the index, and `INCLUDE` projects only the keys specified in the `non_key_attributes` parameter.
 
 Optional:
 
-- **non_key_attributes** (Set of String) Only required with `INCLUDE` as a projection type; a list of attributes to project into the index. These do not need to be defined as attributes on the table.
-- **range_key** (String) The name of the range key; must be defined.
-- **read_capacity** (Number) The number of read units for this index. Must be set if `billing_mode` is set to `PROVISIONED`.
-- **write_capacity** (Number) The number of write units for this index. Must be set if `billing_mode` is set to `PROVISIONED`.
+- `non_key_attributes` (Set of String) Only required with `INCLUDE` as a projection type; a list of attributes to project into the index. These do not need to be defined as attributes on the table.
+- `range_key` (String) The name of the range key; must be defined.
+- `read_capacity` (Number) The number of read units for this index. Must be set if `billing_mode` is set to `PROVISIONED`.
+- `write_capacity` (Number) The number of write units for this index. Must be set if `billing_mode` is set to `PROVISIONED`.
 
 
 <a id="nestedblock--key_schema"></a>
@@ -136,8 +136,8 @@ Optional:
 
 Required:
 
-- **attribute_name** (String) The name of the attribute
-- **key_type** (String) Applicable key types are `HASH` or `RANGE`.
+- `attribute_name` (String) The name of the attribute
+- `key_type` (String) Applicable key types are `HASH` or `RANGE`.
 
 
 <a id="nestedblock--local_secondary_index"></a>
@@ -145,13 +145,13 @@ Required:
 
 Required:
 
-- **name** (String) The name of the index.
-- **projection_type** (String) One of `ALL`, `INCLUDE` or `KEYS_ONLY` where `ALL` projects every attribute into the index, `KEYS_ONLY` projects just the hash and range key into the index, and `INCLUDE` projects only the keys specified in the `non_key_attributes` parameter.
-- **range_key** (String) The name of the range key; must be defined.
+- `name` (String) The name of the index.
+- `projection_type` (String) One of `ALL`, `INCLUDE` or `KEYS_ONLY` where `ALL` projects every attribute into the index, `KEYS_ONLY` projects just the hash and range key into the index, and `INCLUDE` projects only the keys specified in the `non_key_attributes` parameter.
+- `range_key` (String) The name of the range key; must be defined.
 
 Optional:
 
-- **non_key_attributes** (List of String) Only required with `INCLUDE` as a projection type; a list of attributes to project into the index. These do not need to be defined as attributes on the table.
+- `non_key_attributes` (List of String) Only required with `INCLUDE` as a projection type; a list of attributes to project into the index. These do not need to be defined as attributes on the table.
 
 
 <a id="nestedblock--server_side_encryption"></a>
@@ -159,11 +159,11 @@ Optional:
 
 Required:
 
-- **enabled** (Boolean) Whether or not to enable encryption at rest using an AWS managed KMS customer master key (CMK).
+- `enabled` (Boolean) Whether or not to enable encryption at rest using an AWS managed KMS customer master key (CMK).
 
 Optional:
 
-- **kms_key_arn** (String) The ARN of the CMK that should be used for the AWS KMS encryption.
+- `kms_key_arn` (String) The ARN of the CMK that should be used for the AWS KMS encryption.
 
 
 <a id="nestedblock--tag"></a>
@@ -171,8 +171,8 @@ Optional:
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -180,8 +180,8 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

@@ -17,55 +17,52 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String) The GUID of the tenant in which to list the ASG profiles.
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `tenant_id` (String) The GUID of the tenant in which to list the ASG profiles.
 
 ### Read-Only
 
-- **asg_profiles** (List of Object) The list of ASG profiles. (see [below for nested schema](#nestedatt--asg_profiles))
+- `asg_profiles` (List of Object) The list of ASG profiles. (see [below for nested schema](#nestedatt--asg_profiles))
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--asg_profiles"></a>
 ### Nested Schema for `asg_profiles`
 
 Read-Only:
 
-- **agent_platform** (Number)
-- **allocated_public_ip** (Boolean)
-- **base64_user_data** (String)
-- **capacity** (String)
-- **cloud** (Number)
-- **encrypt_disk** (Boolean)
-- **friendly_name** (String)
-- **fullname** (String)
-- **image_id** (String)
-- **instance_count** (Number)
-- **is_cluster_autoscaled** (Boolean)
-- **is_ebs_optimized** (Boolean)
-- **is_minion** (Boolean)
-- **keypair_type** (Number)
-- **max_instance_count** (Number)
-- **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--metadata))
-- **min_instance_count** (Number)
-- **minion_tags** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--minion_tags))
-- **network_interface** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interface))
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--tags))
-- **tenant_id** (String)
-- **use_launch_template** (Boolean)
-- **user_account** (String)
-- **volume** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--volume))
-- **wait_for_capacity** (Boolean)
-- **zone** (Number)
+- `agent_platform` (Number)
+- `allocated_public_ip` (Boolean)
+- `base64_user_data` (String)
+- `capacity` (String)
+- `cloud` (Number)
+- `encrypt_disk` (Boolean)
+- `friendly_name` (String)
+- `fullname` (String)
+- `image_id` (String)
+- `instance_count` (Number)
+- `is_cluster_autoscaled` (Boolean)
+- `is_ebs_optimized` (Boolean)
+- `is_minion` (Boolean)
+- `keypair_type` (Number)
+- `max_instance_count` (Number)
+- `metadata` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--metadata))
+- `min_instance_count` (Number)
+- `minion_tags` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--minion_tags))
+- `network_interface` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interface))
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--tags))
+- `tenant_id` (String)
+- `use_launch_template` (Boolean)
+- `user_account` (String)
+- `volume` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--volume))
+- `wait_for_capacity` (Boolean)
+- `zone` (Number)
 
 <a id="nestedobjatt--asg_profiles--metadata"></a>
 ### Nested Schema for `asg_profiles.metadata`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedobjatt--asg_profiles--minion_tags"></a>
@@ -73,8 +70,8 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedobjatt--asg_profiles--network_interface"></a>
@@ -82,20 +79,20 @@ Read-Only:
 
 Read-Only:
 
-- **associate_public_ip** (Boolean)
-- **device_index** (Number)
-- **groups** (List of String)
-- **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interface--metadata))
-- **network_interface_id** (String)
-- **subnet_id** (String)
+- `associate_public_ip` (Boolean)
+- `device_index` (Number)
+- `groups` (List of String)
+- `metadata` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interface--metadata))
+- `network_interface_id` (String)
+- `subnet_id` (String)
 
 <a id="nestedobjatt--asg_profiles--network_interface--metadata"></a>
 ### Nested Schema for `asg_profiles.network_interface.metadata`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -104,8 +101,8 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedobjatt--asg_profiles--volume"></a>
@@ -113,10 +110,10 @@ Read-Only:
 
 Read-Only:
 
-- **iops** (Number)
-- **name** (String)
-- **size** (Number)
-- **volume_id** (String)
-- **volume_type** (String)
+- `iops` (Number)
+- `name` (String)
+- `size` (Number)
+- `volume_id` (String)
+- `volume_type` (String)
 
 

@@ -50,27 +50,27 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
 
 ### Required
 
-- **lbconfigs** (Block List, Min: 1) (see [below for nested schema](#nestedblock--lbconfigs))
-- **replication_controller_name** (String) The name of the duplo service.
-- **tenant_id** (String) The GUID of the tenant that hosts the duplo service.
+- `lbconfigs` (Block List, Min: 1) (see [below for nested schema](#nestedblock--lbconfigs))
+- `replication_controller_name` (String) The name of the duplo service.
+- `tenant_id` (String) The GUID of the tenant that hosts the duplo service.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_ready** (Boolean) Whether or not to wait until Duplo considers all of the load balancers ready Defaults to `true`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_ready` (Boolean) Whether or not to wait until Duplo considers all of the load balancers ready Defaults to `true`.
 
 ### Read-Only
 
-- **arn** (String) The load balancer ARN.
-- **status** (String) The load balancer's current status.
+- `arn` (String) The load balancer ARN.
+- `id` (String) The ID of this resource.
+- `status` (String) The load balancer's current status.
 
 <a id="nestedblock--lbconfigs"></a>
 ### Nested Schema for `lbconfigs`
 
 Required:
 
-- **lb_type** (Number) The numerical index of the type of load balancer configuration to create.
+- `lb_type` (Number) The numerical index of the type of load balancer configuration to create.
 Should be one of:
 
    - `0` : ELB (Classic Load Balancer)
@@ -81,42 +81,42 @@ Should be one of:
    - `5` : Azure Shared Application Gateway
    - `6` : NLB (Network Load Balancer)
    - `7` : Target Group Only
-- **port** (String) The backend port associated with this load balancer configuration.
-- **protocol** (String) The backend protocol associated with this load balancer configuration.
+- `port` (String) The backend port associated with this load balancer configuration.
+- `protocol` (String) The backend protocol associated with this load balancer configuration.
 
 Optional:
 
-- **certificate_arn** (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
-- **custom_cidr** (List of String) Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.
-- **external_port** (Number) The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.
-- **external_traffic_policy** (String) Only for K8S Node Port (`lb_type = 4`) or load balancers in Kubernetes.  Set the kubernetes service `externalTrafficPolicy` attribute.
-- **extra_selector_label** (Block List) Only for K8S services or load balancers in Kubernetes.  Sets an additional selector label to narrow which pods can receive traffic. (see [below for nested schema](#nestedblock--lbconfigs--extra_selector_label))
-- **health_check_url** (String) The health check URL to associate with this load balancer configuration.
-- **host_name** (String) (Azure Only) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).
-- **is_internal** (Boolean) Whether or not to create an internal load balancer.
-- **is_native** (Boolean)
-- **set_ingress_health_check** (Boolean) Only for K8S services or load balancers in Kubernetes.  Set to `true` to set health check annotations for ingress.
+- `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
+- `custom_cidr` (List of String) Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.
+- `external_port` (Number) The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.
+- `external_traffic_policy` (String) Only for K8S Node Port (`lb_type = 4`) or load balancers in Kubernetes.  Set the kubernetes service `externalTrafficPolicy` attribute.
+- `extra_selector_label` (Block List) Only for K8S services or load balancers in Kubernetes.  Sets an additional selector label to narrow which pods can receive traffic. (see [below for nested schema](#nestedblock--lbconfigs--extra_selector_label))
+- `health_check_url` (String) The health check URL to associate with this load balancer configuration.
+- `host_name` (String) (Azure Only) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).
+- `is_internal` (Boolean) Whether or not to create an internal load balancer.
+- `is_native` (Boolean)
+- `set_ingress_health_check` (Boolean) Only for K8S services or load balancers in Kubernetes.  Set to `true` to set health check annotations for ingress.
 
 Read-Only:
 
-- **backend_protocol_version** (String)
-- **cloud_name** (String) The name of the cloud load balancer (if applicable).
-- **dns_name** (String) The DNS name of the cloud load balancer (if applicable).
-- **frontend_ip** (String)
-- **host_port** (Number) The automatically assigned host port.
-- **index** (Number) The load balancer Index.
-- **is_infra_deployment** (Boolean)
-- **name** (String) The name of the duplo service.
-- **replication_controller_name** (String) The name of the duplo service.
-- **target_group_arn** (String) The ARN of the Target Group to which to route traffic.
+- `backend_protocol_version` (String)
+- `cloud_name` (String) The name of the cloud load balancer (if applicable).
+- `dns_name` (String) The DNS name of the cloud load balancer (if applicable).
+- `frontend_ip` (String)
+- `host_port` (Number) The automatically assigned host port.
+- `index` (Number) The load balancer Index.
+- `is_infra_deployment` (Boolean)
+- `name` (String) The name of the duplo service.
+- `replication_controller_name` (String) The name of the duplo service.
+- `target_group_arn` (String) The ARN of the Target Group to which to route traffic.
 
 <a id="nestedblock--lbconfigs--extra_selector_label"></a>
 ### Nested Schema for `lbconfigs.extra_selector_label`
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -125,9 +125,9 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

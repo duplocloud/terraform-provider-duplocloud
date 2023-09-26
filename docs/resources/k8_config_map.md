@@ -32,27 +32,27 @@ resource "duplocloud_k8_config_map" "myapp" {
 
 ### Required
 
-- **data** (String) A JSON encoded string representing the configmap data. You can use the `jsonencode()` function to build this from JSON.
-- **name** (String) The name of the configmap.
-- **tenant_id** (String) The GUID of the tenant that the configmap will be created in.
+- `data` (String) A JSON encoded string representing the configmap data. You can use the `jsonencode()` function to build this from JSON.
+- `name` (String) The name of the configmap.
+- `tenant_id` (String) The GUID of the tenant that the configmap will be created in.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **metadata** (String) A JSON encoded string representing the configmap metadata. You can use the `jsondecode()` function to parse this, if needed.
+- `id` (String) The ID of this resource.
+- `metadata` (String) A JSON encoded string representing the configmap metadata. You can use the `jsondecode()` function to parse this, if needed.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

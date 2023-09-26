@@ -44,7 +44,7 @@ resource "duplocloud_rds_instance" "mydb" {
 
 ### Required
 
-- **engine** (Number) The numerical index of database engine to use the for the RDS instance.
+- `engine` (Number) The numerical index of database engine to use the for the RDS instance.
 Should be one of:
 
    - `0` : MySQL
@@ -59,51 +59,51 @@ Should be one of:
    - `13` : DocumentDB
    - `14` : MariaDB
    - `16` : Aurora
-- **name** (String) The short name of the RDS instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
-- **size** (String) The instance type of the RDS instance.
+- `name` (String) The short name of the RDS instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
+- `size` (String) The instance type of the RDS instance.
 See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).
-- **tenant_id** (String) The GUID of the tenant that the RDS instance will be created in.
+- `tenant_id` (String) The GUID of the tenant that the RDS instance will be created in.
 
 ### Optional
 
-- **allocated_storage** (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
-- **db_subnet_group_name** (String) Name of DB subnet group. DB instance will be created in the VPC associated with the DB subnet group.
-- **deletion_protection** (Boolean) If the DB instance should have deletion protection enabled.The database can't be deleted when this value is set to `true`. This setting is not applicable for document db cluster instance. Defaults to `false`.
-- **enable_logging** (Boolean) Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance.
-- **encrypt_storage** (Boolean) Whether or not to encrypt the RDS instance storage.
-- **engine_version** (String) The database engine version to use the for the RDS instance.
+- `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
+- `db_subnet_group_name` (String) Name of DB subnet group. DB instance will be created in the VPC associated with the DB subnet group.
+- `deletion_protection` (Boolean) If the DB instance should have deletion protection enabled.The database can't be deleted when this value is set to `true`. This setting is not applicable for document db cluster instance. Defaults to `false`.
+- `enable_logging` (Boolean) Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance.
+- `encrypt_storage` (Boolean) Whether or not to encrypt the RDS instance storage.
+- `engine_version` (String) The database engine version to use the for the RDS instance.
 If you don't know the available engine versions for your RDS instance, you can use the [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-engine-versions.html) to retrieve a list.
-- **id** (String) The ID of this resource.
-- **iops** (Number) The IOPS (Input/Output Operations Per Second) value. Should be specified only if `storage_type` is either io1 or gp3.
-- **kms_key_id** (String) The globally unique identifier for the key.
-- **master_password** (String, Sensitive) The master password of the RDS instance.
-- **master_username** (String) The master username of the RDS instance.
-- **multi_az** (Boolean) Specifies if the RDS instance is multi-AZ.
-- **parameter_group_name** (String) A RDS parameter group name to apply to the RDS instance.
-- **snapshot_id** (String) A database snapshot to initialize the RDS instance from, at launch.
-- **storage_type** (String) Valid values: gp2 | gp3 | io1 | standard. Storage type to be used for RDS instance storage.
-- **store_details_in_secret_manager** (Boolean) Whether or not to store RDS details in the AWS secrets manager.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **v2_scaling_configuration** (Block List, Max: 1) Serverless v2_scaling_configuration min and max scalling capacity. (see [below for nested schema](#nestedblock--v2_scaling_configuration))
+- `iops` (Number) The IOPS (Input/Output Operations Per Second) value. Should be specified only if `storage_type` is either io1 or gp3.
+- `kms_key_id` (String) The globally unique identifier for the key.
+- `master_password` (String, Sensitive) The master password of the RDS instance.
+- `master_username` (String) The master username of the RDS instance.
+- `multi_az` (Boolean) Specifies if the RDS instance is multi-AZ.
+- `parameter_group_name` (String) A RDS parameter group name to apply to the RDS instance.
+- `snapshot_id` (String) A database snapshot to initialize the RDS instance from, at launch.
+- `storage_type` (String) Valid values: gp2 | gp3 | io1 | standard. Storage type to be used for RDS instance storage.
+- `store_details_in_secret_manager` (Boolean) Whether or not to store RDS details in the AWS secrets manager.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `v2_scaling_configuration` (Block List, Max: 1) Serverless v2_scaling_configuration min and max scalling capacity. (see [below for nested schema](#nestedblock--v2_scaling_configuration))
 
 ### Read-Only
 
-- **arn** (String) The ARN of the RDS instance.
-- **cluster_identifier** (String) The RDS Cluster Identifier
-- **endpoint** (String) The endpoint of the RDS instance.
-- **host** (String) The DNS hostname of the RDS instance.
-- **identifier** (String) The full name of the RDS instance.
-- **instance_status** (String) The current status of the RDS instance.
-- **port** (Number) The listening port of the RDS instance.
+- `arn` (String) The ARN of the RDS instance.
+- `cluster_identifier` (String) The RDS Cluster Identifier
+- `endpoint` (String) The endpoint of the RDS instance.
+- `host` (String) The DNS hostname of the RDS instance.
+- `id` (String) The ID of this resource.
+- `identifier` (String) The full name of the RDS instance.
+- `instance_status` (String) The current status of the RDS instance.
+- `port` (Number) The listening port of the RDS instance.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 
 <a id="nestedblock--v2_scaling_configuration"></a>
@@ -111,8 +111,8 @@ Optional:
 
 Required:
 
-- **max_capacity** (Number) Specifies max scalling capacity.
-- **min_capacity** (Number) Specifies min scalling capacity.
+- `max_capacity` (Number) Specifies max scalling capacity.
+- `min_capacity` (Number) Specifies min scalling capacity.
 
 ## Import
 

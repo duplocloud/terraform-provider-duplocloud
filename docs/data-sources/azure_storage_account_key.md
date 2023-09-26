@@ -17,16 +17,13 @@ description: |-
 
 ### Required
 
-- **storage_account_name** (String)
-- **tenant_id** (String)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `storage_account_name` (String)
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **key_name** (String)
-- **key_value** (String)
+- `id` (String) The ID of this resource.
+- `key_name` (String)
+- `key_value` (String)
 
 

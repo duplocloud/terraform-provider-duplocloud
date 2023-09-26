@@ -17,24 +17,24 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **selectable** (Boolean) Defaults to `true`.
+- `selectable` (Boolean) Defaults to `true`.
 
 ### Read-Only
 
-- **keys** (List of Object) (see [below for nested schema](#nestedatt--keys))
+- `id` (String) The ID of this resource.
+- `keys` (List of Object) (see [below for nested schema](#nestedatt--keys))
 
 <a id="nestedatt--keys"></a>
 ### Nested Schema for `keys`
 
 Read-Only:
 
-- **key_arn** (String)
-- **key_id** (String)
-- **key_name** (String)
+- `key_arn` (String)
+- `key_id` (String)
+- `key_name` (String)
 
 

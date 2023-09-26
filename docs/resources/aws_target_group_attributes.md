@@ -89,26 +89,29 @@ resource "duplocloud_aws_target_group_attributes" "tg_attrs" {
 
 ### Required
 
-- **tenant_id** (String) The GUID of the tenant that the aws target group attributes will be created in.
+- `tenant_id` (String) The GUID of the tenant that the aws target group attributes will be created in.
 
 ### Optional
 
-- **attribute** (Block Set) (see [below for nested schema](#nestedblock--attribute))
-- **id** (String) The ID of this resource.
-- **is_ecs_lb** (Boolean) Whether or not to look up the LB via an ECS service name instead of replication controller name.
-- **is_passthrough_lb** (Boolean) Whether or not to look up the LB via the LB name instead of replication controller name.
-- **port** (Number) Port used to connect with the target.
-- **role_name** (String) Name of the ecs service or replication controller.
-- **target_group_arn** (String) ARN of the Target Group.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `attribute` (Block Set) (see [below for nested schema](#nestedblock--attribute))
+- `is_ecs_lb` (Boolean) Whether or not to look up the LB via an ECS service name instead of replication controller name.
+- `is_passthrough_lb` (Boolean) Whether or not to look up the LB via the LB name instead of replication controller name.
+- `port` (Number) Port used to connect with the target.
+- `role_name` (String) Name of the ecs service or replication controller.
+- `target_group_arn` (String) ARN of the Target Group.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--attribute"></a>
 ### Nested Schema for `attribute`
 
 Optional:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -116,8 +119,8 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

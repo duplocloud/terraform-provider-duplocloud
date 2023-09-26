@@ -17,52 +17,49 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String) The GUID of the tenant in which to list the hosts.
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `tenant_id` (String) The GUID of the tenant in which to list the hosts.
 
 ### Read-Only
 
-- **hosts** (List of Object) The list of native hosts. (see [below for nested schema](#nestedatt--hosts))
+- `hosts` (List of Object) The list of native hosts. (see [below for nested schema](#nestedatt--hosts))
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--hosts"></a>
 ### Nested Schema for `hosts`
 
 Read-Only:
 
-- **agent_platform** (Number)
-- **allocated_public_ip** (Boolean)
-- **base64_user_data** (String)
-- **capacity** (String)
-- **cloud** (Number)
-- **encrypt_disk** (Boolean)
-- **friendly_name** (String)
-- **identity_role** (String)
-- **image_id** (String)
-- **instance_id** (String)
-- **is_ebs_optimized** (Boolean)
-- **is_minion** (Boolean)
-- **keypair_type** (Number)
-- **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--metadata))
-- **minion_tags** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--minion_tags))
-- **network_interface** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--network_interface))
-- **private_ip_address** (String)
-- **status** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--tags))
-- **tenant_id** (String)
-- **user_account** (String)
-- **volume** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--volume))
-- **zone** (Number)
+- `agent_platform` (Number)
+- `allocated_public_ip` (Boolean)
+- `base64_user_data` (String)
+- `capacity` (String)
+- `cloud` (Number)
+- `encrypt_disk` (Boolean)
+- `friendly_name` (String)
+- `identity_role` (String)
+- `image_id` (String)
+- `instance_id` (String)
+- `is_ebs_optimized` (Boolean)
+- `is_minion` (Boolean)
+- `keypair_type` (Number)
+- `metadata` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--metadata))
+- `minion_tags` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--minion_tags))
+- `network_interface` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--network_interface))
+- `private_ip_address` (String)
+- `status` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--tags))
+- `tenant_id` (String)
+- `user_account` (String)
+- `volume` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--volume))
+- `zone` (Number)
 
 <a id="nestedobjatt--hosts--metadata"></a>
 ### Nested Schema for `hosts.metadata`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedobjatt--hosts--minion_tags"></a>
@@ -70,8 +67,8 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedobjatt--hosts--network_interface"></a>
@@ -79,20 +76,20 @@ Read-Only:
 
 Read-Only:
 
-- **associate_public_ip** (Boolean)
-- **device_index** (Number)
-- **groups** (List of String)
-- **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--hosts--network_interface--metadata))
-- **network_interface_id** (String)
-- **subnet_id** (String)
+- `associate_public_ip` (Boolean)
+- `device_index` (Number)
+- `groups` (List of String)
+- `metadata` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--network_interface--metadata))
+- `network_interface_id` (String)
+- `subnet_id` (String)
 
 <a id="nestedobjatt--hosts--network_interface--metadata"></a>
 ### Nested Schema for `hosts.network_interface.metadata`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -101,8 +98,8 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedobjatt--hosts--volume"></a>
@@ -110,10 +107,10 @@ Read-Only:
 
 Read-Only:
 
-- **iops** (Number)
-- **name** (String)
-- **size** (Number)
-- **volume_id** (String)
-- **volume_type** (String)
+- `iops` (Number)
+- `name` (String)
+- `size` (Number)
+- `volume_id` (String)
+- `volume_type` (String)
 
 

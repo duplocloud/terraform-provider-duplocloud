@@ -41,23 +41,26 @@ resource "duplocloud_tenant_tag" "tags" {
 
 ### Required
 
-- **key** (String) Specify key for tag.
-- **tenant_id** (String) The GUID of the tenant that the tags will be created in.
-- **value** (String) Specify value for tag.
+- `key` (String) Specify key for tag.
+- `tenant_id` (String) The GUID of the tenant that the tags will be created in.
+- `value` (String) Specify value for tag.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

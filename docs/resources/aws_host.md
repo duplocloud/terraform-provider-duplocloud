@@ -90,50 +90,50 @@ resource "duplocloud_aws_host" "host" {
 
 ### Required
 
-- **capacity** (String) The AWS EC2 instance type.
-- **friendly_name** (String) The short name of the host.
-- **image_id** (String) The AMI ID to use.
-- **tenant_id** (String) The GUID of the tenant that the host will be created in.
+- `capacity` (String) The AWS EC2 instance type.
+- `friendly_name` (String) The short name of the host.
+- `image_id` (String) The AMI ID to use.
+- `tenant_id` (String) The GUID of the tenant that the host will be created in.
 
 ### Optional
 
-- **agent_platform** (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
-- **allocated_public_ip** (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
-- **base64_user_data** (String) Base64 encoded EC2 user data to associated with the host.
-- **cloud** (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
-- **encrypt_disk** (Boolean) Defaults to `false`.
-- **id** (String) The ID of this resource.
-- **is_ebs_optimized** (Boolean) Defaults to `false`.
-- **is_minion** (Boolean) Defaults to `true`.
-- **keypair_type** (Number) The numeric ID of the keypair type being used.Should be one of:
+- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
+- `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
+- `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
+- `cloud` (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
+- `encrypt_disk` (Boolean) Defaults to `false`.
+- `is_ebs_optimized` (Boolean) Defaults to `false`.
+- `is_minion` (Boolean) Defaults to `true`.
+- `keypair_type` (Number) The numeric ID of the keypair type being used.Should be one of:
 
    - `0` : Default
    - `1` : ED25519
    - `2` : RSA (deprecated - some operating systems no longer support it)
-- **metadata** (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
-- **minion_tags** (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
-- **network_interface** (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
-- **tags** (Block List) (see [below for nested schema](#nestedblock--tags))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **user_account** (String) The name of the tenant that the host will be created in.
-- **volume** (Block List) (see [below for nested schema](#nestedblock--volume))
-- **wait_until_connected** (Boolean) Whether or not to wait until Duplo can connect to the host, after creation. Defaults to `true`.
-- **zone** (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.
+- `metadata` (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
+- `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
+- `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
+- `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `user_account` (String) The name of the tenant that the host will be created in.
+- `volume` (Block List) (see [below for nested schema](#nestedblock--volume))
+- `wait_until_connected` (Boolean) Whether or not to wait until Duplo can connect to the host, after creation. Defaults to `true`.
+- `zone` (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.
 
 ### Read-Only
 
-- **identity_role** (String) The name of the IAM role associated with this host.
-- **instance_id** (String) The AWS EC2 instance ID of the host.
-- **private_ip_address** (String) The primary private IP address assigned to the host.
-- **status** (String) The current status of the host.
+- `id` (String) The ID of this resource.
+- `identity_role` (String) The name of the IAM role associated with this host.
+- `instance_id` (String) The AWS EC2 instance ID of the host.
+- `private_ip_address` (String) The primary private IP address assigned to the host.
+- `status` (String) The current status of the host.
 
 <a id="nestedblock--metadata"></a>
 ### Nested Schema for `metadata`
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--minion_tags"></a>
@@ -141,8 +141,8 @@ Required:
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--network_interface"></a>
@@ -150,20 +150,20 @@ Required:
 
 Optional:
 
-- **associate_public_ip** (Boolean) Whether or not to associate a public IP with the newly created ENI.  Cannot be specified if `network_interface_id` is specified.
-- **device_index** (Number) The device index to pass to AWS for attaching the ENI.  Starts at zero.
-- **groups** (List of String)
-- **metadata** (Block List) (see [below for nested schema](#nestedblock--network_interface--metadata))
-- **network_interface_id** (String) The ID of an ENI to attach to this host.  Cannot be specified if `subnet_id` or `associate_public_ip` is specified.
-- **subnet_id** (String) The ID of a subnet in which to create a new ENI.  Cannot be specified if `network_interface_id` is specified.
+- `associate_public_ip` (Boolean) Whether or not to associate a public IP with the newly created ENI.  Cannot be specified if `network_interface_id` is specified.
+- `device_index` (Number) The device index to pass to AWS for attaching the ENI.  Starts at zero.
+- `groups` (List of String)
+- `metadata` (Block List) (see [below for nested schema](#nestedblock--network_interface--metadata))
+- `network_interface_id` (String) The ID of an ENI to attach to this host.  Cannot be specified if `subnet_id` or `associate_public_ip` is specified.
+- `subnet_id` (String) The ID of a subnet in which to create a new ENI.  Cannot be specified if `network_interface_id` is specified.
 
 <a id="nestedblock--network_interface--metadata"></a>
 ### Nested Schema for `network_interface.metadata`
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -172,8 +172,8 @@ Required:
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -181,9 +181,9 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 
 <a id="nestedblock--volume"></a>
@@ -191,11 +191,11 @@ Optional:
 
 Optional:
 
-- **iops** (Number)
-- **name** (String)
-- **size** (Number)
-- **volume_id** (String)
-- **volume_type** (String)
+- `iops` (Number)
+- `name` (String)
+- `size` (Number)
+- `volume_id` (String)
+- `volume_type` (String)
 
 ## Import
 

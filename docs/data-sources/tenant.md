@@ -17,23 +17,23 @@ description: |-
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **name** (String)
+- `name` (String)
 
 ### Read-Only
 
-- **infra_owner** (String)
-- **plan_id** (String)
-- **policy** (List of Object) (see [below for nested schema](#nestedatt--policy))
-- **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
+- `id` (String) The ID of this resource.
+- `infra_owner` (String)
+- `plan_id` (String)
+- `policy` (List of Object) (see [below for nested schema](#nestedatt--policy))
+- `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedatt--policy"></a>
 ### Nested Schema for `policy`
 
 Read-Only:
 
-- **allow_volume_mapping** (Boolean)
-- **block_external_ep** (Boolean)
+- `allow_volume_mapping` (Boolean)
+- `block_external_ep` (Boolean)
 
 
 <a id="nestedatt--tags"></a>
@@ -41,7 +41,7 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 

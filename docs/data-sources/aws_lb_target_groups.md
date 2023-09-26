@@ -17,52 +17,49 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **target_groups** (List of Object) (see [below for nested schema](#nestedatt--target_groups))
+- `id` (String) The ID of this resource.
+- `target_groups` (List of Object) (see [below for nested schema](#nestedatt--target_groups))
 
 <a id="nestedatt--target_groups"></a>
 ### Nested Schema for `target_groups`
 
 Read-Only:
 
-- **arn** (String)
-- **health_check** (List of Object) (see [below for nested schema](#nestedobjatt--target_groups--health_check))
-- **load_balancer_arns** (List of String)
-- **name** (String)
-- **protocol** (String)
-- **protocol_version** (String)
-- **target_type** (String)
-- **tenant_id** (String)
-- **vpc_id** (String)
+- `arn` (String)
+- `health_check` (List of Object) (see [below for nested schema](#nestedobjatt--target_groups--health_check))
+- `load_balancer_arns` (List of String)
+- `name` (String)
+- `protocol` (String)
+- `protocol_version` (String)
+- `target_type` (String)
+- `tenant_id` (String)
+- `vpc_id` (String)
 
 <a id="nestedobjatt--target_groups--health_check"></a>
 ### Nested Schema for `target_groups.health_check`
 
 Read-Only:
 
-- **enabled** (Boolean)
-- **healthy_threshold** (Number)
-- **interval** (Number)
-- **matcher** (List of Object) (see [below for nested schema](#nestedobjatt--target_groups--health_check--matcher))
-- **path** (String)
-- **port** (String)
-- **protocol** (String)
-- **timeout** (Number)
-- **unhealthy_threshold** (Number)
+- `enabled` (Boolean)
+- `healthy_threshold` (Number)
+- `interval` (Number)
+- `matcher` (List of Object) (see [below for nested schema](#nestedobjatt--target_groups--health_check--matcher))
+- `path` (String)
+- `port` (String)
+- `protocol` (String)
+- `timeout` (Number)
+- `unhealthy_threshold` (Number)
 
 <a id="nestedobjatt--target_groups--health_check--matcher"></a>
 ### Nested Schema for `target_groups.health_check.matcher`
 
 Read-Only:
 
-- **grpc_code** (String)
-- **http_code** (String)
+- `grpc_code` (String)
+- `http_code` (String)
 
 

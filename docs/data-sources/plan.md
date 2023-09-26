@@ -17,43 +17,40 @@ description: |-
 
 ### Required
 
-- **plan_id** (String) The plan ID
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `plan_id` (String) The plan ID
 
 ### Read-Only
 
-- **account_id** (String) The cloud account ID.
-- **availability_zones** (List of String) A list of the Availability Zones available to the plan.
-- **capabilities** (Map of Boolean) Map of capability flags
-- **certificates** (List of Object) Plan certificates that can be attached to load balancers (see [below for nested schema](#nestedatt--certificates))
-- **cloud** (Number) The numerical index of the cloud provider for this planWill be one of:
+- `account_id` (String) The cloud account ID.
+- `availability_zones` (List of String) A list of the Availability Zones available to the plan.
+- `capabilities` (Map of Boolean) Map of capability flags
+- `certificates` (List of Object) Plan certificates that can be attached to load balancers (see [below for nested schema](#nestedatt--certificates))
+- `cloud` (Number) The numerical index of the cloud provider for this planWill be one of:
 
    - `0` : AWS
    - `2` : Azure
    - `3` : GCP
-- **cloud_config** (Map of String) Cloud-specific plan configuration data
-- **config** (List of Object) Plan configuration data (see [below for nested schema](#nestedatt--config))
-- **images** (List of Object) Plan images that can be used to launch native hosts (see [below for nested schema](#nestedatt--images))
-- **kms_keys** (List of Object) Plan KMS keys that can be used for cloud-based encryption (see [below for nested schema](#nestedatt--kms_keys))
-- **kubernetes_config** (List of Object) Kubernetes-specific plan configuration data (see [below for nested schema](#nestedatt--kubernetes_config))
-- **metadata** (List of Object) Plan metadata (see [below for nested schema](#nestedatt--metadata))
-- **private_subnet_ids** (List of String) The private subnets for the VPC or VNet.
-- **public_subnet_ids** (List of String) The public subnets for the VPC or VNet.
-- **region** (String) The cloud provider region.
-- **vpc_id** (String) The VPC or VNet ID.
-- **waf_infos** (List of Object) Plan web application firewalls that can be attached to load balancers (see [below for nested schema](#nestedatt--waf_infos))
+- `cloud_config` (Map of String) Cloud-specific plan configuration data
+- `config` (List of Object) Plan configuration data (see [below for nested schema](#nestedatt--config))
+- `id` (String) The ID of this resource.
+- `images` (List of Object) Plan images that can be used to launch native hosts (see [below for nested schema](#nestedatt--images))
+- `kms_keys` (List of Object) Plan KMS keys that can be used for cloud-based encryption (see [below for nested schema](#nestedatt--kms_keys))
+- `kubernetes_config` (List of Object) Kubernetes-specific plan configuration data (see [below for nested schema](#nestedatt--kubernetes_config))
+- `metadata` (List of Object) Plan metadata (see [below for nested schema](#nestedatt--metadata))
+- `private_subnet_ids` (List of String) The private subnets for the VPC or VNet.
+- `public_subnet_ids` (List of String) The public subnets for the VPC or VNet.
+- `region` (String) The cloud provider region.
+- `vpc_id` (String) The VPC or VNet ID.
+- `waf_infos` (List of Object) Plan web application firewalls that can be attached to load balancers (see [below for nested schema](#nestedatt--waf_infos))
 
 <a id="nestedatt--certificates"></a>
 ### Nested Schema for `certificates`
 
 Read-Only:
 
-- **arn** (String)
-- **id** (String)
-- **name** (String)
+- `arn` (String)
+- `id` (String)
+- `name` (String)
 
 
 <a id="nestedatt--config"></a>
@@ -61,9 +58,9 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **type** (String)
-- **value** (String)
+- `key` (String)
+- `type` (String)
+- `value` (String)
 
 
 <a id="nestedatt--images"></a>
@@ -71,19 +68,19 @@ Read-Only:
 
 Read-Only:
 
-- **image_id** (String)
-- **name** (String)
-- **os** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--images--tags))
-- **username** (String)
+- `image_id` (String)
+- `name` (String)
+- `os` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--images--tags))
+- `username` (String)
 
 <a id="nestedobjatt--images--tags"></a>
 ### Nested Schema for `images.tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -92,9 +89,9 @@ Read-Only:
 
 Read-Only:
 
-- **arn** (String)
-- **id** (String)
-- **name** (String)
+- `arn` (String)
+- `id` (String)
+- `name` (String)
 
 
 <a id="nestedatt--kubernetes_config"></a>
@@ -102,13 +99,13 @@ Read-Only:
 
 Read-Only:
 
-- **api_server** (String)
-- **certificate_authority_data** (String)
-- **name** (String)
-- **provider** (Number)
-- **region** (String)
-- **token** (String)
-- **version** (String)
+- `api_server` (String)
+- `certificate_authority_data` (String)
+- `name` (String)
+- `provider` (Number)
+- `region` (String)
+- `token` (String)
+- `version` (String)
 
 
 <a id="nestedatt--metadata"></a>
@@ -116,8 +113,8 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedatt--waf_infos"></a>
@@ -125,7 +122,7 @@ Read-Only:
 
 Read-Only:
 
-- **id** (String)
-- **name** (String)
+- `id` (String)
+- `name` (String)
 
 

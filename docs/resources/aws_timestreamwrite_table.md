@@ -54,49 +54,49 @@ resource "duplocloud_aws_timestreamwrite_table" "timestreamwrite_database_tbl" {
 
 ### Required
 
-- **database_name** (String) The full name of the Timestream database.
-- **name** (String) The short name of the Timestream Table.
-- **tenant_id** (String) The GUID of the tenant that the Timestream Table will be created in.
+- `database_name` (String) The full name of the Timestream database.
+- `name` (String) The short name of the Timestream Table.
+- `tenant_id` (String) The GUID of the tenant that the Timestream Table will be created in.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **magnetic_store_write_properties** (Block List, Max: 1) Contains properties to set on the table when enabling magnetic store writes. (see [below for nested schema](#nestedblock--magnetic_store_write_properties))
-- **retention_properties** (Block List, Max: 1) The retention duration for the memory store and magnetic store. (see [below for nested schema](#nestedblock--retention_properties))
-- **tags** (Block List) Tags in key-value format. (see [below for nested schema](#nestedblock--tags))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_for_deployment** (Boolean) Defaults to `true`.
+- `magnetic_store_write_properties` (Block List, Max: 1) Contains properties to set on the table when enabling magnetic store writes. (see [below for nested schema](#nestedblock--magnetic_store_write_properties))
+- `retention_properties` (Block List, Max: 1) The retention duration for the memory store and magnetic store. (see [below for nested schema](#nestedblock--retention_properties))
+- `tags` (Block List) Tags in key-value format. (see [below for nested schema](#nestedblock--tags))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_for_deployment` (Boolean) Defaults to `true`.
 
 ### Read-Only
 
-- **all_tags** (List of Object) A complete list of tags for this time stream database, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_tags))
-- **arn** (String) The ARN that uniquely identifies this Table.
-- **specified_tags** (List of String) A list of tags being managed by this resource.
+- `all_tags` (List of Object) A complete list of tags for this time stream database, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_tags))
+- `arn` (String) The ARN that uniquely identifies this Table.
+- `id` (String) The ID of this resource.
+- `specified_tags` (List of String) A list of tags being managed by this resource.
 
 <a id="nestedblock--magnetic_store_write_properties"></a>
 ### Nested Schema for `magnetic_store_write_properties`
 
 Optional:
 
-- **enable_magnetic_store_writes** (Boolean) A flag to enable magnetic store writes. Defaults to `false`.
-- **magnetic_store_rejected_data_location** (Block List, Max: 1) The location to write error reports for records rejected asynchronously during magnetic store writes. (see [below for nested schema](#nestedblock--magnetic_store_write_properties--magnetic_store_rejected_data_location))
+- `enable_magnetic_store_writes` (Boolean) A flag to enable magnetic store writes. Defaults to `false`.
+- `magnetic_store_rejected_data_location` (Block List, Max: 1) The location to write error reports for records rejected asynchronously during magnetic store writes. (see [below for nested schema](#nestedblock--magnetic_store_write_properties--magnetic_store_rejected_data_location))
 
 <a id="nestedblock--magnetic_store_write_properties--magnetic_store_rejected_data_location"></a>
 ### Nested Schema for `magnetic_store_write_properties.magnetic_store_rejected_data_location`
 
 Optional:
 
-- **s3_configuration** (Block List, Max: 1) Configuration of an S3 location to write error reports for records rejected, asynchronously, during magnetic store writes. (see [below for nested schema](#nestedblock--magnetic_store_write_properties--magnetic_store_rejected_data_location--s3_configuration))
+- `s3_configuration` (Block List, Max: 1) Configuration of an S3 location to write error reports for records rejected, asynchronously, during magnetic store writes. (see [below for nested schema](#nestedblock--magnetic_store_write_properties--magnetic_store_rejected_data_location--s3_configuration))
 
 <a id="nestedblock--magnetic_store_write_properties--magnetic_store_rejected_data_location--s3_configuration"></a>
 ### Nested Schema for `magnetic_store_write_properties.magnetic_store_rejected_data_location.s3_configuration`
 
 Optional:
 
-- **bucket_name** (String) Bucket name of the customer S3 bucket.
-- **encryption_option** (String) Encryption option for the customer s3 location. Options are S3 server side encryption with an S3-managed key or KMS managed key. Valid values are `SSE_KMS` and `SSE_S3`.
-- **kms_key_id** (String) KMS key arn for the customer s3 location when encrypting with a KMS managed key.
-- **object_key_prefix** (String) Object key prefix for the customer S3 location.
+- `bucket_name` (String) Bucket name of the customer S3 bucket.
+- `encryption_option` (String) Encryption option for the customer s3 location. Options are S3 server side encryption with an S3-managed key or KMS managed key. Valid values are `SSE_KMS` and `SSE_S3`.
+- `kms_key_id` (String) KMS key arn for the customer s3 location when encrypting with a KMS managed key.
+- `object_key_prefix` (String) Object key prefix for the customer S3 location.
 
 
 
@@ -106,8 +106,8 @@ Optional:
 
 Required:
 
-- **magnetic_store_retention_period_in_days** (Number) The duration for which data must be stored in the magnetic store. Minimum value of 1. Maximum value of 73000.
-- **memory_store_retention_period_in_hours** (Number) The duration for which data must be stored in the memory store. Minimum value of 1. Maximum value of 8766.
+- `magnetic_store_retention_period_in_days` (Number) The duration for which data must be stored in the magnetic store. Minimum value of 1. Maximum value of 73000.
+- `memory_store_retention_period_in_hours` (Number) The duration for which data must be stored in the memory store. Minimum value of 1. Maximum value of 8766.
 
 
 <a id="nestedblock--tags"></a>
@@ -115,8 +115,8 @@ Required:
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -124,8 +124,8 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 
 <a id="nestedatt--all_tags"></a>
@@ -133,8 +133,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

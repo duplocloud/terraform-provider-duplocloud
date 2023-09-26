@@ -17,20 +17,17 @@ description: |-
 
 ### Required
 
-- **name** (String) The name of the ECR Repository.
-- **tenant_id** (String) The GUID of the tenant in which to list the hosts.
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `name` (String) The name of the ECR Repository.
+- `tenant_id` (String) The GUID of the tenant in which to list the hosts.
 
 ### Read-Only
 
-- **arn** (String)
-- **enable_scan_image_on_push** (Boolean)
-- **enable_tag_immutability** (Boolean)
-- **kms_encryption_key** (String)
-- **registry_id** (String)
-- **repository_url** (String)
+- `arn` (String)
+- `enable_scan_image_on_push` (Boolean)
+- `enable_tag_immutability` (Boolean)
+- `id` (String) The ID of this resource.
+- `kms_encryption_key` (String)
+- `registry_id` (String)
+- `repository_url` (String)
 
 

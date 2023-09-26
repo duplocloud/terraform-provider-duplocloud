@@ -44,41 +44,41 @@ resource "duplocloud_rds_read_replica" "replica" {
 
 ### Required
 
-- **cluster_identifier** (String) The full name of the RDS Cluster.
-- **name** (String) The short name of the RDS read replica.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
-- **size** (String) The type of the RDS read replica.
+- `cluster_identifier` (String) The full name of the RDS Cluster.
+- `name` (String) The short name of the RDS read replica.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
+- `size` (String) The type of the RDS read replica.
 See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).
-- **tenant_id** (String) The GUID of the tenant that the RDS read replica will be created in.
+- `tenant_id` (String) The GUID of the tenant that the RDS read replica will be created in.
 
 ### Optional
 
-- **availability_zone** (String) The AZ for the RDS instance.
-- **id** (String) The ID of this resource.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `availability_zone` (String) The AZ for the RDS instance.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) The ARN of the RDS read replica.
-- **enable_logging** (Boolean) Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance.
-- **encrypt_storage** (Boolean) Whether or not to encrypt the RDS instance storage.
-- **endpoint** (String) The endpoint of the RDS read replica.
-- **engine** (Number) The numerical index of database engine to be used the for the RDS read replica.
-- **engine_version** (String) The database engine version to be used the for the RDS read replica.
-- **host** (String) The DNS hostname of the RDS read replica.
-- **identifier** (String) The full name of the RDS read replica.
-- **kms_key_id** (String) The globally unique identifier for the key.
-- **multi_az** (Boolean) Specifies if the RDS instance is multi-AZ.
-- **port** (Number) The listening port of the RDS read replica.
-- **replica_status** (String) The current status of the RDS read replica.
+- `arn` (String) The ARN of the RDS read replica.
+- `enable_logging` (Boolean) Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance.
+- `encrypt_storage` (Boolean) Whether or not to encrypt the RDS instance storage.
+- `endpoint` (String) The endpoint of the RDS read replica.
+- `engine` (Number) The numerical index of database engine to be used the for the RDS read replica.
+- `engine_version` (String) The database engine version to be used the for the RDS read replica.
+- `host` (String) The DNS hostname of the RDS read replica.
+- `id` (String) The ID of this resource.
+- `identifier` (String) The full name of the RDS read replica.
+- `kms_key_id` (String) The globally unique identifier for the key.
+- `multi_az` (Boolean) Specifies if the RDS instance is multi-AZ.
+- `port` (Number) The listening port of the RDS read replica.
+- `replica_status` (String) The current status of the RDS read replica.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

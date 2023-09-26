@@ -33,31 +33,31 @@ resource "duplocloud_aws_timestreamwrite_database" "timestreamwrite_database" {
 
 ### Required
 
-- **name** (String) The short name of the Timestream Database.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **tenant_id** (String) The GUID of the tenant that the Timestream Database will be created in.
+- `name` (String) The short name of the Timestream Database.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `tenant_id` (String) The GUID of the tenant that the Timestream Database will be created in.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **kms_key_id** (String) The ARN (not Alias ARN) of the KMS key to be used to encrypt the data stored in the database.
-- **tags** (Block List) Tags in key-value format. (see [below for nested schema](#nestedblock--tags))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `kms_key_id` (String) The ARN (not Alias ARN) of the KMS key to be used to encrypt the data stored in the database.
+- `tags` (Block List) Tags in key-value format. (see [below for nested schema](#nestedblock--tags))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **all_tags** (List of Object) A complete list of tags for this time stream database, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_tags))
-- **arn** (String) The ARN that uniquely identifies this database.
-- **fullname** (String) The full name of the Timestream Database.
-- **specified_tags** (List of String) A list of tags being managed by this resource.
-- **table_count** (Number) The total number of tables found within the Timestream database.
+- `all_tags` (List of Object) A complete list of tags for this time stream database, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_tags))
+- `arn` (String) The ARN that uniquely identifies this database.
+- `fullname` (String) The full name of the Timestream Database.
+- `id` (String) The ID of this resource.
+- `specified_tags` (List of String) A list of tags being managed by this resource.
+- `table_count` (Number) The total number of tables found within the Timestream database.
 
 <a id="nestedblock--tags"></a>
 ### Nested Schema for `tags`
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -65,8 +65,8 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 
 <a id="nestedatt--all_tags"></a>
@@ -74,8 +74,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

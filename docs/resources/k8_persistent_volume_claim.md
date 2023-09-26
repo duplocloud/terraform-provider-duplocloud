@@ -49,38 +49,41 @@ resource "duplocloud_k8_persistent_volume_claim" "pvc" {
 
 ### Required
 
-- **name** (String) The name of the persistent volume claim.
-- **spec** (Block List, Min: 1, Max: 1) Spec defines the desired characteristics of a volume requested by a pod author. More info: http://kubernetes.io/docs/user-guide/persistent-volumes#persistentvolumeclaims (see [below for nested schema](#nestedblock--spec))
-- **tenant_id** (String) The GUID of the tenant that the persistent volume claim will be created in.
+- `name` (String) The name of the persistent volume claim.
+- `spec` (Block List, Min: 1, Max: 1) Spec defines the desired characteristics of a volume requested by a pod author. More info: http://kubernetes.io/docs/user-guide/persistent-volumes#persistentvolumeclaims (see [below for nested schema](#nestedblock--spec))
+- `tenant_id` (String) The GUID of the tenant that the persistent volume claim will be created in.
 
 ### Optional
 
-- **annotations** (Map of String) An unstructured key value map stored with the persistent volume claim that may be used to store arbitrary metadata.
-- **id** (String) The ID of this resource.
-- **labels** (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `annotations` (Map of String) An unstructured key value map stored with the persistent volume claim that may be used to store arbitrary metadata.
+- `labels` (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--spec"></a>
 ### Nested Schema for `spec`
 
 Required:
 
-- **access_modes** (Set of String) A set of the desired access modes the volume should have. More info: http://kubernetes.io/docs/user-guide/persistent-volumes#access-modes-1
-- **resources** (Block List, Min: 1, Max: 1) A list of the minimum resources the volume should have. More info: http://kubernetes.io/docs/user-guide/persistent-volumes#resources (see [below for nested schema](#nestedblock--spec--resources))
+- `access_modes` (Set of String) A set of the desired access modes the volume should have. More info: http://kubernetes.io/docs/user-guide/persistent-volumes#access-modes-1
+- `resources` (Block List, Min: 1, Max: 1) A list of the minimum resources the volume should have. More info: http://kubernetes.io/docs/user-guide/persistent-volumes#resources (see [below for nested schema](#nestedblock--spec--resources))
 
 Optional:
 
-- **storage_class_name** (String) Name of the storage class requested by the claim
-- **volume_mode** (String) Kubernetes supports two volumeModes of PersistentVolumes: `Filesystem` and `Block`.
-- **volume_name** (String) The binding reference to the PersistentVolume backing this claim.
+- `storage_class_name` (String) Name of the storage class requested by the claim
+- `volume_mode` (String) Kubernetes supports two volumeModes of PersistentVolumes: `Filesystem` and `Block`.
+- `volume_name` (String) The binding reference to the PersistentVolume backing this claim.
 
 <a id="nestedblock--spec--resources"></a>
 ### Nested Schema for `spec.resources`
 
 Optional:
 
-- **limits** (Map of String) Map describing the maximum amount of compute resources allowed. More info: http://kubernetes.io/docs/user-guide/compute-resources/
-- **requests** (Map of String) Map describing the minimum amount of compute resources required. If this is omitted for a container, it defaults to `limits` if that is explicitly specified, otherwise to an implementation-defined value. More info: http://kubernetes.io/docs/user-guide/compute-resources/
+- `limits` (Map of String) Map describing the maximum amount of compute resources allowed. More info: http://kubernetes.io/docs/user-guide/compute-resources/
+- `requests` (Map of String) Map describing the minimum amount of compute resources required. If this is omitted for a container, it defaults to `limits` if that is explicitly specified, otherwise to an implementation-defined value. More info: http://kubernetes.io/docs/user-guide/compute-resources/
 
 
 
@@ -89,9 +92,9 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

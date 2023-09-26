@@ -32,30 +32,30 @@ resource "duplocloud_k8_secret" "myapp" {
 
 ### Required
 
-- **secret_name** (String) The name of the secret.
-- **secret_type** (String) The type of the secret.  Usually `"Opaque"`.
-- **tenant_id** (String) The GUID of the tenant that the secret will be created in.
+- `secret_name` (String) The name of the secret.
+- `secret_type` (String) The type of the secret.  Usually `"Opaque"`.
+- `tenant_id` (String) The GUID of the tenant that the secret will be created in.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **secret_annotations** (Map of String) Annotations for the secret
-- **secret_data** (String, Sensitive) A JSON encoded string representing the secret metadata. You can use the `jsonencode()` function to convert map or object data, if needed. You can use the `jsondecode()` function to read data.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `secret_annotations` (Map of String) Annotations for the secret
+- `secret_data` (String, Sensitive) A JSON encoded string representing the secret metadata. You can use the `jsonencode()` function to convert map or object data, if needed. You can use the `jsondecode()` function to read data.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **client_secret_version** (String)
-- **secret_version** (String)
+- `client_secret_version` (String)
+- `id` (String) The ID of this resource.
+- `secret_version` (String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

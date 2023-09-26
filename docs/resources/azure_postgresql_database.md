@@ -34,35 +34,35 @@ resource "duplocloud_azure_postgresql_database" "mydb" {
 
 ### Required
 
-- **name** (String) Specifies the name of the PostgreSQL Server. Changing this forces a new resource to be created. This needs to be globally unique within Azure.
-- **sku_name** (String) Specifies the SKU Name for this PostgreSQL Server.
-- **tenant_id** (String) The GUID of the tenant that the azure postgresql database will be created in.
-- **version** (String) Specifies the version of PostgreSQL to use. Valid values are `9.5`, `9.6`, `10`, `10.0`, and `11`. Changing this forces a new resource to be created.
+- `name` (String) Specifies the name of the PostgreSQL Server. Changing this forces a new resource to be created. This needs to be globally unique within Azure.
+- `sku_name` (String) Specifies the SKU Name for this PostgreSQL Server.
+- `tenant_id` (String) The GUID of the tenant that the azure postgresql database will be created in.
+- `version` (String) Specifies the version of PostgreSQL to use. Valid values are `9.5`, `9.6`, `10`, `10.0`, and `11`. Changing this forces a new resource to be created.
 
 ### Optional
 
-- **administrator_login** (String) The Administrator Login for the PostgreSQL Server.
-- **administrator_login_password** (String, Sensitive) The Password associated with the `administrator_login` for the PostgreSQL Server.
-- **backup_retention_days** (Number) Backup retention days for the server, supported values are between `7` and `35` days.
-- **geo_redundant_backup** (String) Turn Geo-redundant server backups on/off.
-- **id** (String) The ID of this resource.
-- **ssl_enforcement** (String) Specifies if SSL should be enforced on connections.
-- **storage_mb** (Number) Max storage allowed for a server. Possible values are between `5120` MB(5GB) and `1048576` MB(1TB) for the Basic SKU and between `5120` MB(5GB) and `16777216` MB(16TB) for General Purpose/Memory Optimized SKUs.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_ready** (Boolean) Whether or not to wait until PostgreSQL Server instance to be ready, after creation. Defaults to `true`.
+- `administrator_login` (String) The Administrator Login for the PostgreSQL Server.
+- `administrator_login_password` (String, Sensitive) The Password associated with the `administrator_login` for the PostgreSQL Server.
+- `backup_retention_days` (Number) Backup retention days for the server, supported values are between `7` and `35` days.
+- `geo_redundant_backup` (String) Turn Geo-redundant server backups on/off.
+- `ssl_enforcement` (String) Specifies if SSL should be enforced on connections.
+- `storage_mb` (Number) Max storage allowed for a server. Possible values are between `5120` MB(5GB) and `1048576` MB(1TB) for the Basic SKU and between `5120` MB(5GB) and `16777216` MB(16TB) for General Purpose/Memory Optimized SKUs.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_ready` (Boolean) Whether or not to wait until PostgreSQL Server instance to be ready, after creation. Defaults to `true`.
 
 ### Read-Only
 
-- **fqdn** (String) The FQDN of the PostgreSQL Server.
-- **tags** (Map of String)
+- `fqdn` (String) The FQDN of the PostgreSQL Server.
+- `id` (String) The ID of this resource.
+- `tags` (Map of String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

@@ -17,27 +17,27 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Optional
 
-- **dns_prfx** (String)
-- **id** (String) The ID of this resource.
-- **replication_controller_name** (String)
-- **webaclid** (String)
+- `dns_prfx` (String)
+- `replication_controller_name` (String)
+- `webaclid` (String)
 
 ### Read-Only
 
-- **result** (List of Object) (see [below for nested schema](#nestedatt--result))
+- `id` (String) The ID of this resource.
+- `result` (List of Object) (see [below for nested schema](#nestedatt--result))
 
 <a id="nestedatt--result"></a>
 ### Nested Schema for `result`
 
 Read-Only:
 
-- **dns_prfx** (String)
-- **replication_controller_name** (String)
-- **tenant_id** (String)
-- **webaclid** (String)
+- `dns_prfx` (String)
+- `replication_controller_name` (String)
+- `tenant_id` (String)
+- `webaclid` (String)
 
 

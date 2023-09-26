@@ -35,25 +35,28 @@ resource "duplocloud_docker_credentials" "docker_creds" {
 
 ### Required
 
-- **email** (String)
-- **password** (String, Sensitive)
-- **tenant_id** (String) The GUID of the tenant that the docker credentials will be created in.
-- **user_name** (String)
+- `email` (String)
+- `password` (String, Sensitive)
+- `tenant_id` (String) The GUID of the tenant that the docker credentials will be created in.
+- `user_name` (String)
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **registry** (String)
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `registry` (String)
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

@@ -53,47 +53,47 @@ resource "duplocloud_aws_appautoscaling_policy" "asg-app-policy" {
 
 ### Required
 
-- **name** (String) The name of the policy. Must be between 1 and 255 characters in length.
-- **resource_id** (String) The resource type and unique identifier string for the resource associated with the scaling policy.
-- **scalable_dimension** (String) The scalable dimension of the scalable target.
-- **service_namespace** (String) The AWS service namespace of the scalable target.
-- **tenant_id** (String) The GUID of the tenant that the aws autoscaling policy will be created in.
+- `name` (String) The name of the policy. Must be between 1 and 255 characters in length.
+- `resource_id` (String) The resource type and unique identifier string for the resource associated with the scaling policy.
+- `scalable_dimension` (String) The scalable dimension of the scalable target.
+- `service_namespace` (String) The AWS service namespace of the scalable target.
+- `tenant_id` (String) The GUID of the tenant that the aws autoscaling policy will be created in.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **policy_type** (String) The policy type. Valid values are `StepScaling` and `TargetTrackingScaling`. Defaults to `StepScaling`.
-- **step_scaling_policy_configuration** (Block List, Max: 1) Step scaling policy configuration, requires `policy_type = "StepScaling"` (see [below for nested schema](#nestedblock--step_scaling_policy_configuration))
-- **target_tracking_scaling_policy_configuration** (Block List, Max: 1) A target tracking policy, requires `policy_type = "TargetTrackingScaling"` (see [below for nested schema](#nestedblock--target_tracking_scaling_policy_configuration))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `policy_type` (String) The policy type. Valid values are `StepScaling` and `TargetTrackingScaling`. Defaults to `StepScaling`.
+- `step_scaling_policy_configuration` (Block List, Max: 1) Step scaling policy configuration, requires `policy_type = "StepScaling"` (see [below for nested schema](#nestedblock--step_scaling_policy_configuration))
+- `target_tracking_scaling_policy_configuration` (Block List, Max: 1) A target tracking policy, requires `policy_type = "TargetTrackingScaling"` (see [below for nested schema](#nestedblock--target_tracking_scaling_policy_configuration))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String)
-- **full_resource_id** (String) The resource type and unique identifier string for the resource associated with the scaling policy.
+- `arn` (String)
+- `full_resource_id` (String) The resource type and unique identifier string for the resource associated with the scaling policy.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--step_scaling_policy_configuration"></a>
 ### Nested Schema for `step_scaling_policy_configuration`
 
 Optional:
 
-- **adjustment_type** (String) Specifies whether the adjustment is an absolute number or a percentage of the current capacity. Valid values are `ChangeInCapacity`, `ExactCapacity`, and `PercentChangeInCapacity`.
-- **cooldown** (Number) The amount of time, in seconds, after a scaling activity completes and before the next scaling activity can start.
-- **metric_aggregation_type** (String) The aggregation type for the policy's metrics. Valid values are "Minimum", "Maximum", and "Average". Without a value, AWS will treat the aggregation type as "Average".
-- **min_adjustment_magnitude** (Number) The minimum number to adjust your scalable dimension as a result of a scaling activity. If the adjustment type is PercentChangeInCapacity, the scaling policy changes the scalable dimension of the scalable target by this amount.
-- **step_adjustment** (Block Set) A set of adjustments that manage scaling. (see [below for nested schema](#nestedblock--step_scaling_policy_configuration--step_adjustment))
+- `adjustment_type` (String) Specifies whether the adjustment is an absolute number or a percentage of the current capacity. Valid values are `ChangeInCapacity`, `ExactCapacity`, and `PercentChangeInCapacity`.
+- `cooldown` (Number) The amount of time, in seconds, after a scaling activity completes and before the next scaling activity can start.
+- `metric_aggregation_type` (String) The aggregation type for the policy's metrics. Valid values are "Minimum", "Maximum", and "Average". Without a value, AWS will treat the aggregation type as "Average".
+- `min_adjustment_magnitude` (Number) The minimum number to adjust your scalable dimension as a result of a scaling activity. If the adjustment type is PercentChangeInCapacity, the scaling policy changes the scalable dimension of the scalable target by this amount.
+- `step_adjustment` (Block Set) A set of adjustments that manage scaling. (see [below for nested schema](#nestedblock--step_scaling_policy_configuration--step_adjustment))
 
 <a id="nestedblock--step_scaling_policy_configuration--step_adjustment"></a>
 ### Nested Schema for `step_scaling_policy_configuration.step_adjustment`
 
 Required:
 
-- **scaling_adjustment** (Number) The number of members by which to scale, when the adjustment bounds are breached.
+- `scaling_adjustment` (Number) The number of members by which to scale, when the adjustment bounds are breached.
 
 Optional:
 
-- **metric_interval_lower_bound** (String) The lower bound for the difference between the alarm threshold and the CloudWatch metric.
-- **metric_interval_upper_bound** (String) The upper bound for the difference between the alarm threshold and the CloudWatch metric.
+- `metric_interval_lower_bound` (String) The lower bound for the difference between the alarm threshold and the CloudWatch metric.
+- `metric_interval_upper_bound` (String) The upper bound for the difference between the alarm threshold and the CloudWatch metric.
 
 
 
@@ -102,37 +102,37 @@ Optional:
 
 Required:
 
-- **target_value** (Number) The target value for the metric.
+- `target_value` (Number) The target value for the metric.
 
 Optional:
 
-- **customized_metric_specification** (Block List, Max: 1) (see [below for nested schema](#nestedblock--target_tracking_scaling_policy_configuration--customized_metric_specification))
-- **disable_scale_in** (Boolean) Indicates whether scale in by the target tracking policy is disabled. Defaults to `false`.
-- **predefined_metric_specification** (Block List, Max: 1) (see [below for nested schema](#nestedblock--target_tracking_scaling_policy_configuration--predefined_metric_specification))
-- **scale_in_cooldown** (Number) The amount of time, in seconds, after a scale in activity completes before another scale in activity can start.
-- **scale_out_cooldown** (Number) The amount of time, in seconds, after a scale out activity completes before another scale out activity can start.
+- `customized_metric_specification` (Block List, Max: 1) (see [below for nested schema](#nestedblock--target_tracking_scaling_policy_configuration--customized_metric_specification))
+- `disable_scale_in` (Boolean) Indicates whether scale in by the target tracking policy is disabled. Defaults to `false`.
+- `predefined_metric_specification` (Block List, Max: 1) (see [below for nested schema](#nestedblock--target_tracking_scaling_policy_configuration--predefined_metric_specification))
+- `scale_in_cooldown` (Number) The amount of time, in seconds, after a scale in activity completes before another scale in activity can start.
+- `scale_out_cooldown` (Number) The amount of time, in seconds, after a scale out activity completes before another scale out activity can start.
 
 <a id="nestedblock--target_tracking_scaling_policy_configuration--customized_metric_specification"></a>
 ### Nested Schema for `target_tracking_scaling_policy_configuration.customized_metric_specification`
 
 Required:
 
-- **metric_name** (String) The name of the metric.
-- **namespace** (String) The namespace of the metric.
-- **statistic** (String) The statistic of the metric. Valid values: `Average`, `Minimum`, `Maximum`, `SampleCount`, and `Sum`.
+- `metric_name` (String) The name of the metric.
+- `namespace` (String) The namespace of the metric.
+- `statistic` (String) The statistic of the metric. Valid values: `Average`, `Minimum`, `Maximum`, `SampleCount`, and `Sum`.
 
 Optional:
 
-- **dimensions** (Block Set) (see [below for nested schema](#nestedblock--target_tracking_scaling_policy_configuration--customized_metric_specification--dimensions))
-- **unit** (String) The unit of the metric.
+- `dimensions` (Block Set) (see [below for nested schema](#nestedblock--target_tracking_scaling_policy_configuration--customized_metric_specification--dimensions))
+- `unit` (String) The unit of the metric.
 
 <a id="nestedblock--target_tracking_scaling_policy_configuration--customized_metric_specification--dimensions"></a>
 ### Nested Schema for `target_tracking_scaling_policy_configuration.customized_metric_specification.dimensions`
 
 Required:
 
-- **name** (String) Name of the dimension.
-- **value** (String) Value of the dimension.
+- `name` (String) Name of the dimension.
+- `value` (String) Value of the dimension.
 
 
 
@@ -141,11 +141,11 @@ Required:
 
 Required:
 
-- **predefined_metric_type** (String) The metric type.
+- `predefined_metric_type` (String) The metric type.
 
 Optional:
 
-- **resource_label** (String) Reserved for future use. Must be less than or equal to 1023 characters in length.
+- `resource_label` (String) Reserved for future use. Must be less than or equal to 1023 characters in length.
 
 
 
@@ -154,8 +154,8 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

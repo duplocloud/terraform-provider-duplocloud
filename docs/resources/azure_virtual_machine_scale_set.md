@@ -64,87 +64,87 @@ resource "duplocloud_azure_virtual_machine_scale_set" "vmss" {
 
 ### Required
 
-- **name** (String) Specifies the name of the virtual machine scale set resource.
-- **network_profile** (Block Set, Min: 1) (see [below for nested schema](#nestedblock--network_profile))
-- **os_profile** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--os_profile))
-- **sku** (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--sku))
-- **tenant_id** (String) The GUID of the tenant that the azure virtual machine scale set will be created in.
-- **upgrade_policy_mode** (String) Specifies the mode of an upgrade to virtual machines in the scale set. Possible values, `Rolling`, `Manual`, or `Automatic`. When choosing Rolling, you will need to set a health probe.
+- `name` (String) Specifies the name of the virtual machine scale set resource.
+- `network_profile` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--network_profile))
+- `os_profile` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--os_profile))
+- `sku` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--sku))
+- `tenant_id` (String) The GUID of the tenant that the azure virtual machine scale set will be created in.
+- `upgrade_policy_mode` (String) Specifies the mode of an upgrade to virtual machines in the scale set. Possible values, `Rolling`, `Manual`, or `Automatic`. When choosing Rolling, you will need to set a health probe.
 
 ### Optional
 
-- **agent_platform** (Number) The numeric ID of the container agent pool that this VM is added to. Defaults to `0`.
-- **allocation_tags** (String)
-- **automatic_os_upgrade** (Boolean) Automatic OS patches can be applied by Azure to your scaleset. This is particularly useful when `upgrade_policy_mode` is set to `Rolling`. Defaults to `false`.
-- **boot_diagnostics** (Block List, Max: 1) (see [below for nested schema](#nestedblock--boot_diagnostics))
-- **eviction_policy** (String) Specifies the eviction policy for Virtual Machines in this Scale Set.
-- **extension** (Block Set) (see [below for nested schema](#nestedblock--extension))
-- **health_probe_id** (String) Specifies the identifier for the load balancer health probe. Required when using `Rolling` as your `upgrade_policy_mode`
-- **id** (String) The ID of this resource.
-- **identity** (Block List, Max: 1) (see [below for nested schema](#nestedblock--identity))
-- **is_minion** (Boolean) Defaults to `false`.
-- **license_type** (String) Specifies the Windows OS license type. If supplied, the only allowed values are `Windows_Client` and `Windows_Server`.
-- **os_profile_linux_config** (Block Set, Max: 1) (see [below for nested schema](#nestedblock--os_profile_linux_config))
-- **os_profile_secrets** (Block Set) (see [below for nested schema](#nestedblock--os_profile_secrets))
-- **os_profile_windows_config** (Block Set, Max: 1) (see [below for nested schema](#nestedblock--os_profile_windows_config))
-- **overprovision** (Boolean) Specifies whether the virtual machine scale set should be overprovisioned. Defaults to `true`.
-- **plan** (Block Set, Max: 1) (see [below for nested schema](#nestedblock--plan))
-- **priority** (String) Specifies the priority for the Virtual Machines in the Scale Set. Defaults to `Regular`.
-- **proximity_placement_group_id** (String) The ID of the Proximity Placement Group to which this Virtual Machine should be assigned.
-- **rolling_upgrade_policy** (Block List, Max: 1) (see [below for nested schema](#nestedblock--rolling_upgrade_policy))
-- **single_placement_group** (Boolean) Specifies whether the scale set is limited to a single placement group with a maximum size of 100 virtual machines. If set to false, managed disks must be used. Defaults to `true`.
-- **storage_profile_data_disk** (Block List) (see [below for nested schema](#nestedblock--storage_profile_data_disk))
-- **storage_profile_image_reference** (Block Set, Max: 1) (see [below for nested schema](#nestedblock--storage_profile_image_reference))
-- **storage_profile_os_disk** (Block Set, Max: 1) (see [below for nested schema](#nestedblock--storage_profile_os_disk))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_ready** (Boolean) Whether or not to wait until virtual machine scale set to be ready, after creation. Defaults to `true`.
-- **zones** (List of String)
+- `agent_platform` (Number) The numeric ID of the container agent pool that this VM is added to. Defaults to `0`.
+- `allocation_tags` (String)
+- `automatic_os_upgrade` (Boolean) Automatic OS patches can be applied by Azure to your scaleset. This is particularly useful when `upgrade_policy_mode` is set to `Rolling`. Defaults to `false`.
+- `boot_diagnostics` (Block List, Max: 1) (see [below for nested schema](#nestedblock--boot_diagnostics))
+- `eviction_policy` (String) Specifies the eviction policy for Virtual Machines in this Scale Set.
+- `extension` (Block Set) (see [below for nested schema](#nestedblock--extension))
+- `health_probe_id` (String) Specifies the identifier for the load balancer health probe. Required when using `Rolling` as your `upgrade_policy_mode`
+- `identity` (Block List, Max: 1) (see [below for nested schema](#nestedblock--identity))
+- `is_minion` (Boolean) Defaults to `false`.
+- `license_type` (String) Specifies the Windows OS license type. If supplied, the only allowed values are `Windows_Client` and `Windows_Server`.
+- `os_profile_linux_config` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--os_profile_linux_config))
+- `os_profile_secrets` (Block Set) (see [below for nested schema](#nestedblock--os_profile_secrets))
+- `os_profile_windows_config` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--os_profile_windows_config))
+- `overprovision` (Boolean) Specifies whether the virtual machine scale set should be overprovisioned. Defaults to `true`.
+- `plan` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--plan))
+- `priority` (String) Specifies the priority for the Virtual Machines in the Scale Set. Defaults to `Regular`.
+- `proximity_placement_group_id` (String) The ID of the Proximity Placement Group to which this Virtual Machine should be assigned.
+- `rolling_upgrade_policy` (Block List, Max: 1) (see [below for nested schema](#nestedblock--rolling_upgrade_policy))
+- `single_placement_group` (Boolean) Specifies whether the scale set is limited to a single placement group with a maximum size of 100 virtual machines. If set to false, managed disks must be used. Defaults to `true`.
+- `storage_profile_data_disk` (Block List) (see [below for nested schema](#nestedblock--storage_profile_data_disk))
+- `storage_profile_image_reference` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--storage_profile_image_reference))
+- `storage_profile_os_disk` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--storage_profile_os_disk))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_ready` (Boolean) Whether or not to wait until virtual machine scale set to be ready, after creation. Defaults to `true`.
+- `zones` (List of String)
 
 ### Read-Only
 
-- **location** (String)
+- `id` (String) The ID of this resource.
+- `location` (String)
 
 <a id="nestedblock--network_profile"></a>
 ### Nested Schema for `network_profile`
 
 Required:
 
-- **ip_configuration** (Block List, Min: 1) (see [below for nested schema](#nestedblock--network_profile--ip_configuration))
-- **name** (String) Specifies the name of the network interface configuration.
-- **primary** (Boolean) Indicates whether network interfaces created from the network interface configuration will be the primary NIC of the VM.
+- `ip_configuration` (Block List, Min: 1) (see [below for nested schema](#nestedblock--network_profile--ip_configuration))
+- `name` (String) Specifies the name of the network interface configuration.
+- `primary` (Boolean) Indicates whether network interfaces created from the network interface configuration will be the primary NIC of the VM.
 
 Optional:
 
-- **accelerated_networking** (Boolean) Specifies whether to enable accelerated networking or not. Defaults to `false`.
-- **dns_settings** (Block List, Max: 1) (see [below for nested schema](#nestedblock--network_profile--dns_settings))
-- **ip_forwarding** (Boolean) Whether IP forwarding is enabled on this NIC. Defaults to `false`.
-- **network_security_group_id** (String) Specifies the identifier for the network security group.
+- `accelerated_networking` (Boolean) Specifies whether to enable accelerated networking or not. Defaults to `false`.
+- `dns_settings` (Block List, Max: 1) (see [below for nested schema](#nestedblock--network_profile--dns_settings))
+- `ip_forwarding` (Boolean) Whether IP forwarding is enabled on this NIC. Defaults to `false`.
+- `network_security_group_id` (String) Specifies the identifier for the network security group.
 
 <a id="nestedblock--network_profile--ip_configuration"></a>
 ### Nested Schema for `network_profile.ip_configuration`
 
 Required:
 
-- **name** (String) Specifies name of the IP configuration.
-- **subnet_id** (String) Specifies the identifier of the subnet.
+- `name` (String) Specifies name of the IP configuration.
+- `subnet_id` (String) Specifies the identifier of the subnet.
 
 Optional:
 
-- **application_gateway_backend_address_pool_ids** (Set of String) Specifies an array of references to backend address pools of application gateways.
-- **application_security_group_ids** (Set of String) Specifies up to 20 application security group IDs.
-- **load_balancer_backend_address_pool_ids** (Set of String) Specifies an array of references to backend address pools of load balancers.
-- **load_balancer_inbound_nat_rules_ids** (Set of String) Specifies an array of references to inbound NAT pools for load balancers.
-- **primary** (Boolean) Specifies if this ip_configuration is the primary one.
-- **public_ip_address_configuration** (Block List, Max: 1) Describes a virtual machines scale set IP Configuration's PublicIPAddress configuration. (see [below for nested schema](#nestedblock--network_profile--ip_configuration--public_ip_address_configuration))
+- `application_gateway_backend_address_pool_ids` (Set of String) Specifies an array of references to backend address pools of application gateways.
+- `application_security_group_ids` (Set of String) Specifies up to 20 application security group IDs.
+- `load_balancer_backend_address_pool_ids` (Set of String) Specifies an array of references to backend address pools of load balancers.
+- `load_balancer_inbound_nat_rules_ids` (Set of String) Specifies an array of references to inbound NAT pools for load balancers.
+- `primary` (Boolean) Specifies if this ip_configuration is the primary one.
+- `public_ip_address_configuration` (Block List, Max: 1) Describes a virtual machines scale set IP Configuration's PublicIPAddress configuration. (see [below for nested schema](#nestedblock--network_profile--ip_configuration--public_ip_address_configuration))
 
 <a id="nestedblock--network_profile--ip_configuration--public_ip_address_configuration"></a>
 ### Nested Schema for `network_profile.ip_configuration.public_ip_address_configuration`
 
 Required:
 
-- **domain_name_label** (String) The domain name label for the dns settings.
-- **idle_timeout** (Number) The idle timeout in minutes. This value must be between 4 and 30.
-- **name** (String) The name of the public ip address configuration.
+- `domain_name_label` (String) The domain name label for the dns settings.
+- `idle_timeout` (Number) The idle timeout in minutes. This value must be between 4 and 30.
+- `name` (String) The name of the public ip address configuration.
 
 
 
@@ -153,7 +153,7 @@ Required:
 
 Required:
 
-- **dns_servers** (List of String) Specifies an array of dns servers.
+- `dns_servers` (List of String) Specifies an array of dns servers.
 
 
 
@@ -162,13 +162,13 @@ Required:
 
 Required:
 
-- **admin_username** (String) Specifies the administrator account name to use for all the instances of virtual machines in the scale set.
-- **computer_name_prefix** (String) Specifies the computer name prefix for all of the virtual machines in the scale set.
+- `admin_username` (String) Specifies the administrator account name to use for all the instances of virtual machines in the scale set.
+- `computer_name_prefix` (String) Specifies the computer name prefix for all of the virtual machines in the scale set.
 
 Optional:
 
-- **admin_password** (String, Sensitive) Specifies the administrator password to use for all the instances of virtual machines in a scale set.
-- **custom_data** (String) Specifies custom data to supply to the machine. On linux-based systems, this can be used as a cloud-init script. On other systems, this will be copied as a file on disk.
+- `admin_password` (String, Sensitive) Specifies the administrator password to use for all the instances of virtual machines in a scale set.
+- `custom_data` (String) Specifies custom data to supply to the machine. On linux-based systems, this can be used as a cloud-init script. On other systems, this will be copied as a file on disk.
 
 
 <a id="nestedblock--sku"></a>
@@ -176,12 +176,12 @@ Optional:
 
 Required:
 
-- **capacity** (Number) Specifies the number of virtual machines in the scale set.
-- **name** (String) Specifies the size of virtual machines in a scale set.
+- `capacity` (Number) Specifies the number of virtual machines in the scale set.
+- `name` (String) Specifies the size of virtual machines in a scale set.
 
 Optional:
 
-- **tier** (String) Specifies the tier of virtual machines in a scale set. Possible values, `standard` or `basic`.
+- `tier` (String) Specifies the tier of virtual machines in a scale set. Possible values, `standard` or `basic`.
 
 
 <a id="nestedblock--boot_diagnostics"></a>
@@ -189,11 +189,11 @@ Optional:
 
 Required:
 
-- **storage_uri** (String) Blob endpoint for the storage account to hold the virtual machine's diagnostic files.
+- `storage_uri` (String) Blob endpoint for the storage account to hold the virtual machine's diagnostic files.
 
 Optional:
 
-- **enabled** (Boolean) Whether to enable boot diagnostics for the virtual machine. Defaults to `true`.
+- `enabled` (Boolean) Whether to enable boot diagnostics for the virtual machine. Defaults to `true`.
 
 
 <a id="nestedblock--extension"></a>
@@ -201,17 +201,17 @@ Optional:
 
 Required:
 
-- **name** (String) Specifies the name of the extension.
-- **publisher** (String) The publisher of the extension, available publishers can be found by using the Azure CLI..
-- **type** (String) The type of extension, available types for a publisher can be found using the Azure CLI.
-- **type_handler_version** (String) Specifies the version of the extension to use, available versions can be found using the Azure CLI.
+- `name` (String) Specifies the name of the extension.
+- `publisher` (String) The publisher of the extension, available publishers can be found by using the Azure CLI..
+- `type` (String) The type of extension, available types for a publisher can be found using the Azure CLI.
+- `type_handler_version` (String) Specifies the version of the extension to use, available versions can be found using the Azure CLI.
 
 Optional:
 
-- **auto_upgrade_minor_version** (Boolean) Specifies whether or not to use the latest minor version available.
-- **protected_settings** (String, Sensitive) The protected_settings passed to the extension, like settings, these are specified as a JSON object in a string.
-- **provision_after_extensions** (Set of String) Specifies a dependency array of extensions required to be executed before, the array stores the name of each extension.
-- **settings** (String) The settings passed to the extension, these are specified as a JSON object in a string.
+- `auto_upgrade_minor_version` (Boolean) Specifies whether or not to use the latest minor version available.
+- `protected_settings` (String, Sensitive) The protected_settings passed to the extension, like settings, these are specified as a JSON object in a string.
+- `provision_after_extensions` (Set of String) Specifies a dependency array of extensions required to be executed before, the array stores the name of each extension.
+- `settings` (String) The settings passed to the extension, these are specified as a JSON object in a string.
 
 
 <a id="nestedblock--identity"></a>
@@ -219,15 +219,15 @@ Optional:
 
 Required:
 
-- **type** (String) Specifies the identity type to be assigned to the scale set. Allowable values are `SystemAssigned` and `UserAssigned`.
+- `type` (String) Specifies the identity type to be assigned to the scale set. Allowable values are `SystemAssigned` and `UserAssigned`.
 
 Optional:
 
-- **identity_ids** (List of String) Specifies a list of user managed identity ids to be assigned to the VMSS. Required if `type` is `UserAssigned`.
+- `identity_ids` (List of String) Specifies a list of user managed identity ids to be assigned to the VMSS. Required if `type` is `UserAssigned`.
 
 Read-Only:
 
-- **principal_id** (String)
+- `principal_id` (String)
 
 
 <a id="nestedblock--os_profile_linux_config"></a>
@@ -235,19 +235,19 @@ Read-Only:
 
 Optional:
 
-- **disable_password_authentication** (Boolean) Specifies whether password authentication should be disabled. Defaults to `false`.
-- **ssh_keys** (Block List) Specifies a collection of `path` and `key_data` to be placed on the virtual machine. (see [below for nested schema](#nestedblock--os_profile_linux_config--ssh_keys))
+- `disable_password_authentication` (Boolean) Specifies whether password authentication should be disabled. Defaults to `false`.
+- `ssh_keys` (Block List) Specifies a collection of `path` and `key_data` to be placed on the virtual machine. (see [below for nested schema](#nestedblock--os_profile_linux_config--ssh_keys))
 
 <a id="nestedblock--os_profile_linux_config--ssh_keys"></a>
 ### Nested Schema for `os_profile_linux_config.ssh_keys`
 
 Required:
 
-- **path** (String)
+- `path` (String)
 
 Optional:
 
-- **key_data** (String)
+- `key_data` (String)
 
 
 
@@ -256,22 +256,22 @@ Optional:
 
 Required:
 
-- **source_vault_id** (String) Specifies the key vault to use.
+- `source_vault_id` (String) Specifies the key vault to use.
 
 Optional:
 
-- **vault_certificates** (Block List) A collection of Vault Certificates as documented below. (see [below for nested schema](#nestedblock--os_profile_secrets--vault_certificates))
+- `vault_certificates` (Block List) A collection of Vault Certificates as documented below. (see [below for nested schema](#nestedblock--os_profile_secrets--vault_certificates))
 
 <a id="nestedblock--os_profile_secrets--vault_certificates"></a>
 ### Nested Schema for `os_profile_secrets.vault_certificates`
 
 Required:
 
-- **certificate_url** (String) It is the Base64 encoding of a JSON Object that which is encoded in UTF-8 of which the contents need to be `data`, `dataType` and `password`.
+- `certificate_url` (String) It is the Base64 encoding of a JSON Object that which is encoded in UTF-8 of which the contents need to be `data`, `dataType` and `password`.
 
 Optional:
 
-- **certificate_store** (String) Specifies the certificate store on the Virtual Machine where the certificate should be added to.
+- `certificate_store` (String) Specifies the certificate store on the Virtual Machine where the certificate should be added to.
 
 
 
@@ -280,20 +280,20 @@ Optional:
 
 Optional:
 
-- **additional_unattend_config** (Block List) (see [below for nested schema](#nestedblock--os_profile_windows_config--additional_unattend_config))
-- **enable_automatic_upgrades** (Boolean) Indicates whether virtual machines in the scale set are enabled for automatic updates.
-- **provision_vm_agent** (Boolean) Indicates whether virtual machine agent should be provisioned on the virtual machines in the scale set.
-- **winrm** (Block List) (see [below for nested schema](#nestedblock--os_profile_windows_config--winrm))
+- `additional_unattend_config` (Block List) (see [below for nested schema](#nestedblock--os_profile_windows_config--additional_unattend_config))
+- `enable_automatic_upgrades` (Boolean) Indicates whether virtual machines in the scale set are enabled for automatic updates.
+- `provision_vm_agent` (Boolean) Indicates whether virtual machine agent should be provisioned on the virtual machines in the scale set.
+- `winrm` (Block List) (see [below for nested schema](#nestedblock--os_profile_windows_config--winrm))
 
 <a id="nestedblock--os_profile_windows_config--additional_unattend_config"></a>
 ### Nested Schema for `os_profile_windows_config.additional_unattend_config`
 
 Required:
 
-- **component** (String) Specifies the name of the component to configure with the added content. The only allowable value is `Microsoft-Windows-Shell-Setup`.
-- **content** (String, Sensitive) Specifies the base-64 encoded XML formatted content that is added to the unattend.xml file for the specified path and component.
-- **pass** (String) Specifies the name of the pass that the content applies to. The only allowable value is `oobeSystem`.
-- **setting_name** (String) Specifies the name of the setting to which the content applies. Possible values are: `FirstLogonCommands` and `AutoLogon`.
+- `component` (String) Specifies the name of the component to configure with the added content. The only allowable value is `Microsoft-Windows-Shell-Setup`.
+- `content` (String, Sensitive) Specifies the base-64 encoded XML formatted content that is added to the unattend.xml file for the specified path and component.
+- `pass` (String) Specifies the name of the pass that the content applies to. The only allowable value is `oobeSystem`.
+- `setting_name` (String) Specifies the name of the setting to which the content applies. Possible values are: `FirstLogonCommands` and `AutoLogon`.
 
 
 <a id="nestedblock--os_profile_windows_config--winrm"></a>
@@ -301,11 +301,11 @@ Required:
 
 Required:
 
-- **protocol** (String) Specifies the protocol of listener.
+- `protocol` (String) Specifies the protocol of listener.
 
 Optional:
 
-- **certificate_url** (String) Specifies URL of the certificate with which new Virtual Machines is provisioned.
+- `certificate_url` (String) Specifies URL of the certificate with which new Virtual Machines is provisioned.
 
 
 
@@ -314,9 +314,9 @@ Optional:
 
 Required:
 
-- **name** (String) Specifies the name of the image from the marketplace.
-- **product** (String) Specifies the product of the image from the marketplace.
-- **publisher** (String) Specifies the publisher of the image.
+- `name` (String) Specifies the name of the image from the marketplace.
+- `product` (String) Specifies the product of the image from the marketplace.
+- `publisher` (String) Specifies the publisher of the image.
 
 
 <a id="nestedblock--rolling_upgrade_policy"></a>
@@ -324,10 +324,10 @@ Required:
 
 Optional:
 
-- **max_batch_instance_percent** (Number) The maximum percent of total virtual machine instances that will be upgraded simultaneously by the rolling upgrade. Defaults to `20`.
-- **max_unhealthy_instance_percent** (Number) The maximum percentage of the total virtual machine instances in the scale set that can be simultaneously unhealthy. Defaults to `20`.
-- **max_unhealthy_upgraded_instance_percent** (Number) The maximum percentage of upgraded virtual machine instances that can be found to be in an unhealthy state. Defaults to `20`.
-- **pause_time_between_batches** (String) The wait time between completing the update for all virtual machines in one batch and starting the next batch. Defaults to `PT0S`.
+- `max_batch_instance_percent` (Number) The maximum percent of total virtual machine instances that will be upgraded simultaneously by the rolling upgrade. Defaults to `20`.
+- `max_unhealthy_instance_percent` (Number) The maximum percentage of the total virtual machine instances in the scale set that can be simultaneously unhealthy. Defaults to `20`.
+- `max_unhealthy_upgraded_instance_percent` (Number) The maximum percentage of upgraded virtual machine instances that can be found to be in an unhealthy state. Defaults to `20`.
+- `pause_time_between_batches` (String) The wait time between completing the update for all virtual machines in one batch and starting the next batch. Defaults to `PT0S`.
 
 
 <a id="nestedblock--storage_profile_data_disk"></a>
@@ -335,14 +335,14 @@ Optional:
 
 Required:
 
-- **create_option** (String) Specifies how the data disk should be created. The only possible options are `FromImage` and `Empty`.
-- **lun** (Number) Specifies the Logical Unit Number of the disk in each virtual machine in the scale set.
+- `create_option` (String) Specifies how the data disk should be created. The only possible options are `FromImage` and `Empty`.
+- `lun` (Number) Specifies the Logical Unit Number of the disk in each virtual machine in the scale set.
 
 Optional:
 
-- **caching** (String) Specifies the caching requirements. Possible values include: `None` (default), `ReadOnly`, `ReadWrite`.
-- **disk_size_gb** (Number) Specifies the size of the disk in GB. This element is required when creating an empty disk. Defaults to `128`.
-- **managed_disk_type** (String) Specifies the type of managed disk to create. Value must be either `Standard_LRS`, `StandardSSD_LRS` or `Premium_LRS`.
+- `caching` (String) Specifies the caching requirements. Possible values include: `None` (default), `ReadOnly`, `ReadWrite`.
+- `disk_size_gb` (Number) Specifies the size of the disk in GB. This element is required when creating an empty disk. Defaults to `128`.
+- `managed_disk_type` (String) Specifies the type of managed disk to create. Value must be either `Standard_LRS`, `StandardSSD_LRS` or `Premium_LRS`.
 
 
 <a id="nestedblock--storage_profile_image_reference"></a>
@@ -350,11 +350,11 @@ Optional:
 
 Optional:
 
-- **id** (String) Specifies the ID of the (custom) image to use to create the virtual machine scale set.
-- **offer** (String) Specifies the offer of the image used to create the virtual machines.
-- **publisher** (String) Specifies the publisher of the image used to create the virtual machines.
-- **sku** (String) Specifies the SKU of the image used to create the virtual machines.
-- **version** (String) Specifies the version of the image used to create the virtual machines.
+- `id` (String) Specifies the ID of the (custom) image to use to create the virtual machine scale set.
+- `offer` (String) Specifies the offer of the image used to create the virtual machines.
+- `publisher` (String) Specifies the publisher of the image used to create the virtual machines.
+- `sku` (String) Specifies the SKU of the image used to create the virtual machines.
+- `version` (String) Specifies the version of the image used to create the virtual machines.
 
 
 <a id="nestedblock--storage_profile_os_disk"></a>
@@ -362,13 +362,13 @@ Optional:
 
 Optional:
 
-- **caching** (String) Specifies the caching requirements. Possible values include: `None` (default), `ReadOnly`, `ReadWrite`.
-- **create_option** (String) Specifies how the virtual machine should be created. The only possible option is `FromImage`.
-- **image** (String) Specifies the blob uri for user image. A virtual machine scale set creates an os disk in the same container as the user image.
-- **managed_disk_type** (String) Specifies the type of managed disk to create. Value you must be either `Standard_LRS`, `StandardSSD_LRS` or `Premium_LRS`. Cannot be used when `vhd_containers` or `image` is specified.
-- **name** (String) Specifies the disk name. Must be specified when using unmanaged disk ('managed_disk_type' property not set).
-- **os_type** (String) Specifies the operating system Type, valid values are `windows`, `linux`.
-- **vhd_containers** (Set of String) Specifies the vhd uri. Cannot be used when `image` or `managed_disk_type` is specified.
+- `caching` (String) Specifies the caching requirements. Possible values include: `None` (default), `ReadOnly`, `ReadWrite`.
+- `create_option` (String) Specifies how the virtual machine should be created. The only possible option is `FromImage`.
+- `image` (String) Specifies the blob uri for user image. A virtual machine scale set creates an os disk in the same container as the user image.
+- `managed_disk_type` (String) Specifies the type of managed disk to create. Value you must be either `Standard_LRS`, `StandardSSD_LRS` or `Premium_LRS`. Cannot be used when `vhd_containers` or `image` is specified.
+- `name` (String) Specifies the disk name. Must be specified when using unmanaged disk ('managed_disk_type' property not set).
+- `os_type` (String) Specifies the operating system Type, valid values are `windows`, `linux`.
+- `vhd_containers` (Set of String) Specifies the vhd uri. Cannot be used when `image` or `managed_disk_type` is specified.
 
 
 <a id="nestedblock--timeouts"></a>
@@ -376,8 +376,8 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

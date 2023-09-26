@@ -17,30 +17,30 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String) The tenant ID
+- `tenant_id` (String) The tenant ID
 
 ### Optional
 
-- **arch** (String)
-- **id** (String) The ID of this resource.
-- **is_kubernetes** (Boolean)
-- **name** (String)
+- `arch` (String)
+- `is_kubernetes` (Boolean)
+- `name` (String)
 
 ### Read-Only
 
-- **image_id** (String)
-- **k8s_version** (String)
-- **os** (String)
-- **region** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
-- **username** (String)
+- `id` (String) The ID of this resource.
+- `image_id` (String)
+- `k8s_version` (String)
+- `os` (String)
+- `region` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
+- `username` (String)
 
 <a id="nestedatt--tags"></a>
 ### Nested Schema for `tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 

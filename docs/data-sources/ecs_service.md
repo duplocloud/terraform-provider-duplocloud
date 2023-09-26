@@ -17,35 +17,32 @@ description: |-
 
 ### Required
 
-- **name** (String) The name of the service to create.
-- **tenant_id** (String) The GUID of the tenant that the service will be created in.
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `name` (String) The name of the service to create.
+- `tenant_id` (String) The GUID of the tenant that the service will be created in.
 
 ### Read-Only
 
-- **capacity_provider_strategy** (List of Object) (see [below for nested schema](#nestedatt--capacity_provider_strategy))
-- **dns_prfx** (String) The DNS prefix to assign to this service's load balancer.
-- **health_check_grace_period_seconds** (Number)
-- **index** (Number) The index of the ecs service.
-- **is_target_group_only** (Boolean)
-- **load_balancer** (List of Object) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedatt--load_balancer))
-- **old_task_definition_buffer_size** (Number) The number of older task definitions to retain in AWS.
-- **replicas** (Number) The number of container replicas to create.
-- **target_group_arns** (Set of String)
-- **task_definition** (String) The ARN of the task definition to use.
-- **wait_until_targets_ready** (Boolean) Whether or not to wait until all target groups are created for ecs service, after creation.
+- `capacity_provider_strategy` (List of Object) (see [below for nested schema](#nestedatt--capacity_provider_strategy))
+- `dns_prfx` (String) The DNS prefix to assign to this service's load balancer.
+- `health_check_grace_period_seconds` (Number)
+- `id` (String) The ID of this resource.
+- `index` (Number) The index of the ecs service.
+- `is_target_group_only` (Boolean)
+- `load_balancer` (List of Object) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedatt--load_balancer))
+- `old_task_definition_buffer_size` (Number) The number of older task definitions to retain in AWS.
+- `replicas` (Number) The number of container replicas to create.
+- `target_group_arns` (Set of String)
+- `task_definition` (String) The ARN of the task definition to use.
+- `wait_until_targets_ready` (Boolean) Whether or not to wait until all target groups are created for ecs service, after creation.
 
 <a id="nestedatt--capacity_provider_strategy"></a>
 ### Nested Schema for `capacity_provider_strategy`
 
 Read-Only:
 
-- **base** (Number)
-- **capacity_provider** (String)
-- **weight** (Number)
+- `base` (Number)
+- `capacity_provider` (String)
+- `weight` (Number)
 
 
 <a id="nestedatt--load_balancer"></a>
@@ -53,37 +50,37 @@ Read-Only:
 
 Read-Only:
 
-- **backend_protocol** (String)
-- **backend_protocol_version** (String)
-- **certificate_arn** (String)
-- **drop_invalid_headers** (Boolean)
-- **enable_access_logs** (Boolean)
-- **external_port** (Number)
-- **health_check_config** (List of Object) (see [below for nested schema](#nestedobjatt--load_balancer--health_check_config))
-- **health_check_url** (String)
-- **http_to_https_redirect** (Boolean)
-- **idle_timeout** (Number)
-- **index** (Number)
-- **is_internal** (Boolean)
-- **lb_type** (Number)
-- **load_balancer_arn** (String)
-- **load_balancer_name** (String)
-- **port** (String)
-- **protocol** (String)
-- **replication_controller_name** (String)
-- **target_group_count** (Number)
-- **webaclid** (String)
+- `backend_protocol` (String)
+- `backend_protocol_version` (String)
+- `certificate_arn` (String)
+- `drop_invalid_headers` (Boolean)
+- `enable_access_logs` (Boolean)
+- `external_port` (Number)
+- `health_check_config` (List of Object) (see [below for nested schema](#nestedobjatt--load_balancer--health_check_config))
+- `health_check_url` (String)
+- `http_to_https_redirect` (Boolean)
+- `idle_timeout` (Number)
+- `index` (Number)
+- `is_internal` (Boolean)
+- `lb_type` (Number)
+- `load_balancer_arn` (String)
+- `load_balancer_name` (String)
+- `port` (String)
+- `protocol` (String)
+- `replication_controller_name` (String)
+- `target_group_count` (Number)
+- `webaclid` (String)
 
 <a id="nestedobjatt--load_balancer--health_check_config"></a>
 ### Nested Schema for `load_balancer.health_check_config`
 
 Read-Only:
 
-- **grpc_success_code** (String)
-- **health_check_interval_seconds** (Number)
-- **health_check_timeout_seconds** (Number)
-- **healthy_threshold_count** (Number)
-- **http_success_code** (String)
-- **unhealthy_threshold_count** (Number)
+- `grpc_success_code` (String)
+- `health_check_interval_seconds` (Number)
+- `health_check_timeout_seconds` (Number)
+- `healthy_threshold_count` (Number)
+- `http_success_code` (String)
+- `unhealthy_threshold_count` (Number)
 
 

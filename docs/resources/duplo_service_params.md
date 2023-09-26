@@ -58,33 +58,33 @@ resource "duplocloud_duplo_service_params" "myservice" {
 
 ### Required
 
-- **replication_controller_name** (String) The name of the duplo service.
-- **tenant_id** (String) The GUID of the tenant that hosts the duplo service.
+- `replication_controller_name` (String) The name of the duplo service.
+- `tenant_id` (String) The GUID of the tenant that hosts the duplo service.
 
 ### Optional
 
-- **dns_prfx** (String) The DNS prefix to assign to this service's load balancer.
-- **drop_invalid_headers** (Boolean) Whether or not to drop invalid HTTP headers received by the load balancer.
-- **enable_access_logs** (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan
-- **http_to_https_redirect** (Boolean) Whether or not to enable http to https redirection.
-- **id** (String) The ID of this resource.
-- **idle_timeout** (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **webaclid** (String) The ARN of a web application firewall to associate this load balancer.
+- `dns_prfx` (String) The DNS prefix to assign to this service's load balancer.
+- `drop_invalid_headers` (Boolean) Whether or not to drop invalid HTTP headers received by the load balancer.
+- `enable_access_logs` (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan
+- `http_to_https_redirect` (Boolean) Whether or not to enable http to https redirection.
+- `idle_timeout` (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `webaclid` (String) The ARN of a web application firewall to associate this load balancer.
 
 ### Read-Only
 
-- **load_balancer_arn** (String) The load balancer ARN.
-- **load_balancer_name** (String) The load balancer name.
+- `id` (String) The ID of this resource.
+- `load_balancer_arn` (String) The load balancer ARN.
+- `load_balancer_name` (String) The load balancer name.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

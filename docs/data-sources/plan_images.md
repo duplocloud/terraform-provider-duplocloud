@@ -17,33 +17,30 @@ description: |-
 
 ### Required
 
-- **plan_id** (String) The plan ID
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `plan_id` (String) The plan ID
 
 ### Read-Only
 
-- **images** (List of Object) The list of images for this plan. (see [below for nested schema](#nestedatt--images))
+- `id` (String) The ID of this resource.
+- `images` (List of Object) The list of images for this plan. (see [below for nested schema](#nestedatt--images))
 
 <a id="nestedatt--images"></a>
 ### Nested Schema for `images`
 
 Read-Only:
 
-- **image_id** (String)
-- **name** (String)
-- **os** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--images--tags))
-- **username** (String)
+- `image_id` (String)
+- `name` (String)
+- `os` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--images--tags))
+- `username` (String)
 
 <a id="nestedobjatt--images--tags"></a>
 ### Nested Schema for `images.tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 

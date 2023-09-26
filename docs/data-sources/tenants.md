@@ -17,32 +17,32 @@ description: |-
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **plan_id** (String)
+- `plan_id` (String)
 
 ### Read-Only
 
-- **tenants** (List of Object) (see [below for nested schema](#nestedatt--tenants))
+- `id` (String) The ID of this resource.
+- `tenants` (List of Object) (see [below for nested schema](#nestedatt--tenants))
 
 <a id="nestedatt--tenants"></a>
 ### Nested Schema for `tenants`
 
 Read-Only:
 
-- **id** (String)
-- **infra_owner** (String)
-- **name** (String)
-- **plan_id** (String)
-- **policy** (List of Object) (see [below for nested schema](#nestedobjatt--tenants--policy))
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--tenants--tags))
+- `id` (String)
+- `infra_owner` (String)
+- `name` (String)
+- `plan_id` (String)
+- `policy` (List of Object) (see [below for nested schema](#nestedobjatt--tenants--policy))
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--tenants--tags))
 
 <a id="nestedobjatt--tenants--policy"></a>
 ### Nested Schema for `tenants.policy`
 
 Read-Only:
 
-- **allow_volume_mapping** (Boolean)
-- **block_external_ep** (Boolean)
+- `allow_volume_mapping` (Boolean)
+- `block_external_ep` (Boolean)
 
 
 <a id="nestedobjatt--tenants--tags"></a>
@@ -50,7 +50,7 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 

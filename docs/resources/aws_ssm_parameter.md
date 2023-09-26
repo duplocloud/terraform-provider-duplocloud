@@ -31,32 +31,32 @@ resource "duplocloud_aws_ssm_parameter" "ssm_param" {
 
 ### Required
 
-- **name** (String) The name of the SSM parameter.
-- **tenant_id** (String) The GUID of the tenant that the SSM parameter will be created in.
-- **type** (String) The type of the SSM parameter. Valid values are `String`, `StringList`, and `SecureString`.
+- `name` (String) The name of the SSM parameter.
+- `tenant_id` (String) The GUID of the tenant that the SSM parameter will be created in.
+- `type` (String) The type of the SSM parameter. Valid values are `String`, `StringList`, and `SecureString`.
 
 ### Optional
 
-- **allowed_pattern** (String)
-- **description** (String) The description of the SSM parameter.
-- **id** (String) The ID of this resource.
-- **key_id** (String)
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **value** (String) The value of the SSM parameter.
+- `allowed_pattern` (String)
+- `description` (String) The description of the SSM parameter.
+- `key_id` (String)
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `value` (String) The value of the SSM parameter.
 
 ### Read-Only
 
-- **last_modified_date** (String)
-- **last_modified_user** (String)
+- `id` (String) The ID of this resource.
+- `last_modified_date` (String)
+- `last_modified_user` (String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

@@ -80,56 +80,56 @@ resource "duplocloud_emr_cluster" "test" {
 
 ### Required
 
-- **name** (String) The short name of the emrCluster.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **release_label** (String) EMR ReleaseLabel.
-- **tenant_id** (String) The GUID of the tenant that the emrCluster will be created in.
+- `name` (String) The short name of the emrCluster.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `release_label` (String) EMR ReleaseLabel.
+- `tenant_id` (String) The GUID of the tenant that the emrCluster will be created in.
 
 ### Optional
 
-- **additional_info** (String) Emr - additional_info.
-- **applications** (String) Emr - list of applications to be installed.
-- **arn** (String) The ARN of the emrCluster.
-- **bootstrap_actions** (String) Emr - list of bootstrap_actions to be installed.
-- **configurations** (String) Emr - list of application configurations to be updated.
-- **custom_ami_id** (String) EMR CustomAmiId.
-- **ebs_root_volume_size** (Number) Emr Cluster Ec2 ebs_root_volume_size settings.
-- **full_name** (String) full_name - Duplo will add a prefix to the name.
-- **id** (String) The ID of this resource.
-- **instance_count** (Number) Emr Instance Count.
-- **instance_fleets** (String) Emr - instance_fleets.
-- **instance_groups** (String) Emr - instance_groups.
-- **job_flow_id** (String) job flow id.
-- **keep_job_flow_alive_when_no_steps** (Boolean) Keep Job Flow Alive When No Steps. Emr Cluster will be terminated if true. Defaults to `true`.
-- **log_uri** (String) S3 bucket path for logs.
-- **managed_scaling_policy** (String) Emr - managed_scaling_policy.
-- **master_instance_type** (String) Emr MasterInstanceType. Supported InstanceTypes e.g. m4.large
-- **scale_down_behavior** (String) Emr scale_down_behavior. Specifies the way that individual Amazon EC2 instances terminate when an automatic scale-in activity occurs or an instance group is resized.
-- **slave_instance_type** (String) Emr SlaveInstanceType. Supported InstanceTypes e.g. m4.large
-- **status** (String) The status of the emrCluster.
-- **step_concurrency_level** (Number) Emr Cluster step_concurrency_level settings. Defaults to `1`.
-- **steps** (String) Emr - list of steps to be run after cluster is ready.
-- **termination_protection** (Boolean) Emr termination protection setting.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **visible_to_all_users** (Boolean) Emr Cluster visible to all users settings.
+- `additional_info` (String) Emr - additional_info.
+- `applications` (String) Emr - list of applications to be installed.
+- `arn` (String) The ARN of the emrCluster.
+- `bootstrap_actions` (String) Emr - list of bootstrap_actions to be installed.
+- `configurations` (String) Emr - list of application configurations to be updated.
+- `custom_ami_id` (String) EMR CustomAmiId.
+- `ebs_root_volume_size` (Number) Emr Cluster Ec2 ebs_root_volume_size settings.
+- `full_name` (String) full_name - Duplo will add a prefix to the name.
+- `instance_count` (Number) Emr Instance Count.
+- `instance_fleets` (String) Emr - instance_fleets.
+- `instance_groups` (String) Emr - instance_groups.
+- `job_flow_id` (String) job flow id.
+- `keep_job_flow_alive_when_no_steps` (Boolean) Keep Job Flow Alive When No Steps. Emr Cluster will be terminated if true. Defaults to `true`.
+- `log_uri` (String) S3 bucket path for logs.
+- `managed_scaling_policy` (String) Emr - managed_scaling_policy.
+- `master_instance_type` (String) Emr MasterInstanceType. Supported InstanceTypes e.g. m4.large
+- `scale_down_behavior` (String) Emr scale_down_behavior. Specifies the way that individual Amazon EC2 instances terminate when an automatic scale-in activity occurs or an instance group is resized.
+- `slave_instance_type` (String) Emr SlaveInstanceType. Supported InstanceTypes e.g. m4.large
+- `status` (String) The status of the emrCluster.
+- `step_concurrency_level` (Number) Emr Cluster step_concurrency_level settings. Defaults to `1`.
+- `steps` (String) Emr - list of steps to be run after cluster is ready.
+- `termination_protection` (Boolean) Emr termination protection setting.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `visible_to_all_users` (Boolean) Emr Cluster visible to all users settings.
 
 ### Read-Only
 
-- **additional_info_hash** (String)
-- **applications_hash** (String)
-- **bootstrap_actions_hash** (String)
-- **configurations_hash** (String)
-- **instance_fleets_hash** (String)
-- **instance_groups_hash** (String)
-- **managed_scaling_policy_hash** (String)
-- **steps_hash** (String)
+- `additional_info_hash` (String)
+- `applications_hash` (String)
+- `bootstrap_actions_hash` (String)
+- `configurations_hash` (String)
+- `id` (String) The ID of this resource.
+- `instance_fleets_hash` (String)
+- `instance_groups_hash` (String)
+- `managed_scaling_policy_hash` (String)
+- `steps_hash` (String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

@@ -36,35 +36,35 @@ resource "duplocloud_azure_sql_managed_database" "mydb" {
 
 ### Required
 
-- **administrator_login** (String) The administrator login name for the new server. Changing this forces a new resource to be created.
-- **administrator_login_password** (String, Sensitive) The password associated with the `administrator_login` user. Needs to comply with Azure's Password Policy
-- **name** (String) The name of the SQL Managed Instance. This needs to be globally unique within Azure.
-- **sku_name** (String) Specifies the SKU Name for the SQL Managed Instance. Valid values include `GP_Gen4`, `GP_Gen5`, `BC_Gen4`, `BC_Gen5`. Changing this forces a new resource to be created.
-- **storage_size_in_gb** (Number) Maximum storage space for your instance. It should be a multiple of 32GB.
-- **subnet_id** (String) The subnet resource id that the SQL Managed Instance will be associated with.
-- **tenant_id** (String) The GUID of the tenant that the azure sql managed database will be created in.
-- **vcores** (Number) Number of cores that should be assigned to your instance. Values can be `8`, `16`, or `24` if `sku_name` is `GP_Gen4`, or `8`, `16`, `24`, `32`, or `40` if `sku_name` is `GP_Gen5`
+- `administrator_login` (String) The administrator login name for the new server. Changing this forces a new resource to be created.
+- `administrator_login_password` (String, Sensitive) The password associated with the `administrator_login` user. Needs to comply with Azure's Password Policy
+- `name` (String) The name of the SQL Managed Instance. This needs to be globally unique within Azure.
+- `sku_name` (String) Specifies the SKU Name for the SQL Managed Instance. Valid values include `GP_Gen4`, `GP_Gen5`, `BC_Gen4`, `BC_Gen5`. Changing this forces a new resource to be created.
+- `storage_size_in_gb` (Number) Maximum storage space for your instance. It should be a multiple of 32GB.
+- `subnet_id` (String) The subnet resource id that the SQL Managed Instance will be associated with.
+- `tenant_id` (String) The GUID of the tenant that the azure sql managed database will be created in.
+- `vcores` (Number) Number of cores that should be assigned to your instance. Values can be `8`, `16`, or `24` if `sku_name` is `GP_Gen4`, or `8`, `16`, `24`, `32`, or `40` if `sku_name` is `GP_Gen5`
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **minimum_tls_version** (String) The Minimum TLS Version for all SQL managed Database and SQL Data Warehouse databases associated with the server. Valid values are: `1.0`, `1.1` and `1.2`.
-- **public_data_endpoint_enabled** (Boolean) Is the public data endpoint enabled? Default value is `false`.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `minimum_tls_version` (String) The Minimum TLS Version for all SQL managed Database and SQL Data Warehouse databases associated with the server. Valid values are: `1.0`, `1.1` and `1.2`.
+- `public_data_endpoint_enabled` (Boolean) Is the public data endpoint enabled? Default value is `false`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **collation** (String)
-- **fqdn** (String) The fully qualified domain name of the sql managed instance.
-- **tags** (Map of String)
+- `collation` (String)
+- `fqdn` (String) The fully qualified domain name of the sql managed instance.
+- `id` (String) The ID of this resource.
+- `tags` (Map of String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

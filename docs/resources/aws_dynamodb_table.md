@@ -17,29 +17,29 @@ description: |-
 
 ### Required
 
-- **attribute_type** (String) The attribute type of the primary key attribute.
-- **key_type** (String) The key type of the primary key.
-- **name** (String) The short name of the dynamodb table.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **primary_key_name** (String) The attribute name of the primary key attribute.
-- **tenant_id** (String) The GUID of the tenant that the dynamodb table will be created in.
+- `attribute_type` (String) The attribute type of the primary key attribute.
+- `key_type` (String) The key type of the primary key.
+- `name` (String) The short name of the dynamodb table.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `primary_key_name` (String) The attribute name of the primary key attribute.
+- `tenant_id` (String) The GUID of the tenant that the dynamodb table will be created in.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) The ARN of the dynamodb table.
-- **fullname** (String) The full name of the dynamodb table.
-- **status** (String) The status of the dynamodb table.
+- `arn` (String) The ARN of the dynamodb table.
+- `fullname` (String) The full name of the dynamodb table.
+- `id` (String) The ID of this resource.
+- `status` (String) The status of the dynamodb table.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 

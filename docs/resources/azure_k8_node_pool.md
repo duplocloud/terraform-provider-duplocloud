@@ -35,32 +35,32 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 
 ### Required
 
-- **desired_capacity** (Number) The initial number of nodes which should exist within this Node.
-- **identifier** (Number) Identifier for node pool.
-- **max_capacity** (Number) The maximum number of nodes which should exist within this Node Pool.
-- **min_capacity** (Number) The minimum number of nodes which should exist within this Node Pool.
-- **tenant_id** (String) The GUID of the tenant that the azure node pool will be created in.
-- **vm_size** (String) The SKU which should be used for the Virtual Machines used in this Node Pool. Changing this forces a new resource to be created.
+- `desired_capacity` (Number) The initial number of nodes which should exist within this Node.
+- `identifier` (Number) Identifier for node pool.
+- `max_capacity` (Number) The maximum number of nodes which should exist within this Node Pool.
+- `min_capacity` (Number) The minimum number of nodes which should exist within this Node Pool.
+- `tenant_id` (String) The GUID of the tenant that the azure node pool will be created in.
+- `vm_size` (String) The SKU which should be used for the Virtual Machines used in this Node Pool. Changing this forces a new resource to be created.
 
 ### Optional
 
-- **allocation_tag** (String) Allocation tags for this node pool.
-- **enable_auto_scaling** (Boolean) Whether to enable auto-scaler.
-- **id** (String) The ID of this resource.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_ready** (Boolean) Whether or not to wait until node pool to be ready, after creation. Defaults to `true`.
+- `allocation_tag` (String) Allocation tags for this node pool.
+- `enable_auto_scaling` (Boolean) Whether to enable auto-scaler.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_ready` (Boolean) Whether or not to wait until node pool to be ready, after creation. Defaults to `true`.
 
 ### Read-Only
 
-- **name** (String) The Duplo generated name of the node pool.
+- `id` (String) The ID of this resource.
+- `name` (String) The Duplo generated name of the node pool.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

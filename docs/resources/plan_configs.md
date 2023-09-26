@@ -42,31 +42,31 @@ resource "duplocloud_plan_configs" "myplan" {
 
 ### Required
 
-- **plan_id** (String) The ID of the plan to configure.
+- `plan_id` (String) The ID of the plan to configure.
 
 ### Optional
 
-- **config** (Block List) A list of configs to manage. (see [below for nested schema](#nestedblock--config))
-- **delete_unspecified_configs** (Boolean) Whether or not this resource should delete any configs not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
-- **id** (String) The ID of this resource.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `config` (Block List) A list of configs to manage. (see [below for nested schema](#nestedblock--config))
+- `delete_unspecified_configs` (Boolean) Whether or not this resource should delete any configs not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **configs** (List of Object) A complete list of configs for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--configs))
-- **specified_configs** (List of String) A list of config keys being managed by this resource.
+- `configs` (List of Object) A complete list of configs for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--configs))
+- `id` (String) The ID of this resource.
+- `specified_configs` (List of String) A list of config keys being managed by this resource.
 
 <a id="nestedblock--config"></a>
 ### Nested Schema for `config`
 
 Required:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 Optional:
 
-- **type** (String)
+- `type` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -74,9 +74,9 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 
 <a id="nestedatt--configs"></a>
@@ -84,9 +84,9 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **type** (String)
-- **value** (String)
+- `key` (String)
+- `type` (String)
+- `value` (String)
 
 ## Import
 

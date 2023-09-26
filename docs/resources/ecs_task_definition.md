@@ -40,43 +40,43 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 
 ### Required
 
-- **container_definitions** (String)
-- **family** (String) The name of the task definition to create.
-- **tenant_id** (String) The GUID of the tenant that the task definition will be created in.
+- `container_definitions` (String)
+- `family` (String) The name of the task definition to create.
+- `tenant_id` (String) The GUID of the tenant that the task definition will be created in.
 
 ### Optional
 
-- **cpu** (String)
-- **id** (String) The ID of this resource.
-- **inference_accelerator** (Block Set) (see [below for nested schema](#nestedblock--inference_accelerator))
-- **ipc_mode** (String)
-- **memory** (String)
-- **network_mode** (String) Defaults to `awsvpc`.
-- **pid_mode** (String)
-- **placement_constraints** (Block Set, Max: 10) (see [below for nested schema](#nestedblock--placement_constraints))
-- **prevent_tf_destroy** (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`. Defaults to `true`.
-- **proxy_configuration** (Block List, Max: 1) (see [below for nested schema](#nestedblock--proxy_configuration))
-- **requires_attributes** (Block Set) (see [below for nested schema](#nestedblock--requires_attributes))
-- **requires_compatibilities** (Set of String)
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **volumes** (String) Defaults to `[]`.
+- `cpu` (String)
+- `inference_accelerator` (Block Set) (see [below for nested schema](#nestedblock--inference_accelerator))
+- `ipc_mode` (String)
+- `memory` (String)
+- `network_mode` (String) Defaults to `awsvpc`.
+- `pid_mode` (String)
+- `placement_constraints` (Block Set, Max: 10) (see [below for nested schema](#nestedblock--placement_constraints))
+- `prevent_tf_destroy` (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`. Defaults to `true`.
+- `proxy_configuration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--proxy_configuration))
+- `requires_attributes` (Block Set) (see [below for nested schema](#nestedblock--requires_attributes))
+- `requires_compatibilities` (Set of String)
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `volumes` (String) Defaults to `[]`.
 
 ### Read-Only
 
-- **arn** (String) The ARN of the task definition.
-- **execution_role_arn** (String)
-- **revision** (Number) The current revision of the task definition.
-- **status** (String) The status of the task definition.
-- **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
-- **task_role_arn** (String)
+- `arn` (String) The ARN of the task definition.
+- `execution_role_arn` (String)
+- `id` (String) The ID of this resource.
+- `revision` (Number) The current revision of the task definition.
+- `status` (String) The status of the task definition.
+- `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
+- `task_role_arn` (String)
 
 <a id="nestedblock--inference_accelerator"></a>
 ### Nested Schema for `inference_accelerator`
 
 Required:
 
-- **device_name** (String)
-- **device_type** (String)
+- `device_name` (String)
+- `device_type` (String)
 
 
 <a id="nestedblock--placement_constraints"></a>
@@ -84,11 +84,11 @@ Required:
 
 Required:
 
-- **type** (String)
+- `type` (String)
 
 Optional:
 
-- **expression** (String)
+- `expression` (String)
 
 
 <a id="nestedblock--proxy_configuration"></a>
@@ -96,12 +96,12 @@ Optional:
 
 Required:
 
-- **container_name** (String)
+- `container_name` (String)
 
 Optional:
 
-- **properties** (Map of String)
-- **type** (String) Defaults to `APPMESH`.
+- `properties` (Map of String)
+- `type` (String) Defaults to `APPMESH`.
 
 
 <a id="nestedblock--requires_attributes"></a>
@@ -109,7 +109,7 @@ Optional:
 
 Required:
 
-- **name** (String)
+- `name` (String)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -117,9 +117,9 @@ Required:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 
 <a id="nestedatt--tags"></a>
@@ -127,8 +127,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

@@ -31,32 +31,32 @@ resource "duplocloud_azure_key_vault_secret" "myapp" {
 
 ### Required
 
-- **name** (String) Specifies the name of the Key Vault Secret. Changing this forces a new resource to be created.
-- **tenant_id** (String) The GUID of the tenant that the key vault secret will be created in.
-- **value** (String, Sensitive) Specifies the value of the Key vault secret.
+- `name` (String) Specifies the name of the Key Vault Secret. Changing this forces a new resource to be created.
+- `tenant_id` (String) The GUID of the tenant that the key vault secret will be created in.
+- `value` (String, Sensitive) Specifies the value of the Key vault secret.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **key_vault_id** (String) The ID of the Key Vault where the Secret should be created.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **type** (String) Specifies the content type for the Key Vault Secret. Defaults to `duplo_container_env`.
+- `key_vault_id` (String) The ID of the Key Vault where the Secret should be created.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `type` (String) Specifies the content type for the Key Vault Secret. Defaults to `duplo_container_env`.
 
 ### Read-Only
 
-- **enabled** (Boolean) Determines whether the object is enabled.
-- **fullname** (String) Duplo will generate name of the Key Vault Secret.
-- **recovery_level** (String) Reflects the deletion recovery level currently in effect for secrets in the current vault.
-- **vault_base_url** (String) Base URL of the Azure Key Vault
-- **version** (String) The current version of the Key Vault Secret.
+- `enabled` (Boolean) Determines whether the object is enabled.
+- `fullname` (String) Duplo will generate name of the Key Vault Secret.
+- `id` (String) The ID of this resource.
+- `recovery_level` (String) Reflects the deletion recovery level currently in effect for secrets in the current vault.
+- `vault_base_url` (String) Base URL of the Azure Key Vault
+- `version` (String) The current version of the Key Vault Secret.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

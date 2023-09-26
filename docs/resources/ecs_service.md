@@ -44,39 +44,39 @@ resource "duplocloud_ecs_service" "myservice" {
 
 ### Required
 
-- **name** (String) The name of the service to create.
-- **replicas** (Number) The number of container replicas to create.
-- **task_definition** (String) The ARN of the task definition to use.
-- **tenant_id** (String) The GUID of the tenant that the service will be created in.
+- `name` (String) The name of the service to create.
+- `replicas` (Number) The number of container replicas to create.
+- `task_definition` (String) The ARN of the task definition to use.
+- `tenant_id` (String) The GUID of the tenant that the service will be created in.
 
 ### Optional
 
-- **capacity_provider_strategy** (Block List) (see [below for nested schema](#nestedblock--capacity_provider_strategy))
-- **dns_prfx** (String) The DNS prefix to assign to this service's load balancer.
-- **health_check_grace_period_seconds** (Number) Defaults to `0`.
-- **id** (String) The ID of this resource.
-- **is_target_group_only** (Boolean) Defaults to `false`.
-- **load_balancer** (Block List) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedblock--load_balancer))
-- **old_task_definition_buffer_size** (Number) The number of older task definitions to retain in AWS. Defaults to `10`.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_targets_ready** (Boolean) Whether or not to wait until all target groups are created for ecs service, after creation. Defaults to `true`.
+- `capacity_provider_strategy` (Block List) (see [below for nested schema](#nestedblock--capacity_provider_strategy))
+- `dns_prfx` (String) The DNS prefix to assign to this service's load balancer.
+- `health_check_grace_period_seconds` (Number) Defaults to `0`.
+- `is_target_group_only` (Boolean) Defaults to `false`.
+- `load_balancer` (Block List) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedblock--load_balancer))
+- `old_task_definition_buffer_size` (Number) The number of older task definitions to retain in AWS. Defaults to `10`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_targets_ready` (Boolean) Whether or not to wait until all target groups are created for ecs service, after creation. Defaults to `true`.
 
 ### Read-Only
 
-- **index** (Number) The index of the ecs service.
-- **target_group_arns** (Set of String)
+- `id` (String) The ID of this resource.
+- `index` (Number) The index of the ecs service.
+- `target_group_arns` (Set of String)
 
 <a id="nestedblock--capacity_provider_strategy"></a>
 ### Nested Schema for `capacity_provider_strategy`
 
 Required:
 
-- **capacity_provider** (String) Name of the capacity provider.
+- `capacity_provider` (String) Name of the capacity provider.
 
 Optional:
 
-- **base** (Number) The number of tasks, at a minimum, to run on the specified capacity provider.
-- **weight** (Number) The relative percentage of the total number of launched tasks that should use the specified capacity provider.
+- `base` (Number) The number of tasks, at a minimum, to run on the specified capacity provider.
+- `weight` (Number) The relative percentage of the total number of launched tasks that should use the specified capacity provider.
 
 
 <a id="nestedblock--load_balancer"></a>
@@ -84,49 +84,49 @@ Optional:
 
 Required:
 
-- **external_port** (Number) The frontend port associated with this load balancer configuration.
-- **lb_type** (Number) The numerical index of the type of load balancer configuration to create.
+- `external_port` (Number) The frontend port associated with this load balancer configuration.
+- `lb_type` (Number) The numerical index of the type of load balancer configuration to create.
 Should be one of:
 
    - `0` : ELB (Classic Load Balancer)
    - `1` : ALB (Application Load Balancer)
    - `2` : Health-check Only (No Load Balancer)
-- **port** (String) The backend port associated with this load balancer configuration.
-- **protocol** (String) The frontend protocol associated with this load balancer configuration.
-- **target_group_count** (Number) Number of Load Balancer target group to associate with the service.
+- `port` (String) The backend port associated with this load balancer configuration.
+- `protocol` (String) The frontend protocol associated with this load balancer configuration.
+- `target_group_count` (Number) Number of Load Balancer target group to associate with the service.
 
 Optional:
 
-- **backend_protocol** (String, Deprecated) The backend protocol associated with this load balancer configuration. Use 'backend_protocol_version' instead.
-- **backend_protocol_version** (String) The backend protocol version associated with this load balancer configuration.
-- **certificate_arn** (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
-- **drop_invalid_headers** (Boolean) Whether or not to drop invalid HTTP headers received by the load balancer.
-- **enable_access_logs** (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan
-- **health_check_config** (Block List, Max: 1) Health check configuration for this load balancer. (see [below for nested schema](#nestedblock--load_balancer--health_check_config))
-- **health_check_url** (String) The health check URL to associate with this load balancer configuration.
-- **http_to_https_redirect** (Boolean) Whether or not the load balancer should redirect HTTP to HTTPS.
-- **idle_timeout** (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
-- **is_internal** (Boolean) Whether or not to create an internal load balancer. Defaults to `false`.
-- **webaclid** (String) The ARN of a web application firewall to associate this load balancer.
+- `backend_protocol` (String, Deprecated) The backend protocol associated with this load balancer configuration. Use 'backend_protocol_version' instead.
+- `backend_protocol_version` (String) The backend protocol version associated with this load balancer configuration.
+- `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
+- `drop_invalid_headers` (Boolean) Whether or not to drop invalid HTTP headers received by the load balancer.
+- `enable_access_logs` (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan
+- `health_check_config` (Block List, Max: 1) Health check configuration for this load balancer. (see [below for nested schema](#nestedblock--load_balancer--health_check_config))
+- `health_check_url` (String) The health check URL to associate with this load balancer configuration.
+- `http_to_https_redirect` (Boolean) Whether or not the load balancer should redirect HTTP to HTTPS.
+- `idle_timeout` (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
+- `is_internal` (Boolean) Whether or not to create an internal load balancer. Defaults to `false`.
+- `webaclid` (String) The ARN of a web application firewall to associate this load balancer.
 
 Read-Only:
 
-- **index** (Number) The load balancer Index.
-- **load_balancer_arn** (String) The load balancer ARN.
-- **load_balancer_name** (String) The load balancer name.
-- **replication_controller_name** (String)
+- `index` (Number) The load balancer Index.
+- `load_balancer_arn` (String) The load balancer ARN.
+- `load_balancer_name` (String) The load balancer name.
+- `replication_controller_name` (String)
 
 <a id="nestedblock--load_balancer--health_check_config"></a>
 ### Nested Schema for `load_balancer.health_check_config`
 
 Optional:
 
-- **grpc_success_code** (String)
-- **health_check_interval_seconds** (Number)
-- **health_check_timeout_seconds** (Number)
-- **healthy_threshold_count** (Number)
-- **http_success_code** (String)
-- **unhealthy_threshold_count** (Number)
+- `grpc_success_code` (String)
+- `health_check_interval_seconds` (Number)
+- `health_check_timeout_seconds` (Number)
+- `healthy_threshold_count` (Number)
+- `http_success_code` (String)
+- `unhealthy_threshold_count` (Number)
 
 
 
@@ -135,9 +135,9 @@ Optional:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

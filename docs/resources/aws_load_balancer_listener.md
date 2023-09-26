@@ -40,34 +40,34 @@ resource "duplocloud_aws_load_balancer_listener" "myapp-listener" {
 
 ### Required
 
-- **load_balancer_name** (String) The short name of the load balancer.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **port** (Number) Port on which the load balancer is listening.
-- **protocol** (String) Protocol for connections from clients to the load balancer.
-- **target_group_arn** (String) ARN of the Target Group to which to route traffic.
-- **tenant_id** (String) The GUID of the tenant that the load balancer will be created in.
+- `load_balancer_name` (String) The short name of the load balancer.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `port` (Number) Port on which the load balancer is listening.
+- `protocol` (String) Protocol for connections from clients to the load balancer.
+- `target_group_arn` (String) ARN of the Target Group to which to route traffic.
+- `tenant_id` (String) The GUID of the tenant that the load balancer will be created in.
 
 ### Optional
 
-- **certificate_arn** (String) The ARN of the certificate to attach to the listener.
-- **id** (String) The ID of this resource.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `certificate_arn` (String) The ARN of the certificate to attach to the listener.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) ARN of the listener.
-- **certificates** (List of Object) (see [below for nested schema](#nestedatt--certificates))
-- **default_actions** (List of Object) (see [below for nested schema](#nestedatt--default_actions))
-- **load_balancer_arn** (String)
-- **load_balancer_fullname** (String) The full name of the load balancer.
-- **ssl_policy** (String)
+- `arn` (String) ARN of the listener.
+- `certificates` (List of Object) (see [below for nested schema](#nestedatt--certificates))
+- `default_actions` (List of Object) (see [below for nested schema](#nestedatt--default_actions))
+- `id` (String) The ID of this resource.
+- `load_balancer_arn` (String)
+- `load_balancer_fullname` (String) The full name of the load balancer.
+- `ssl_policy` (String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 
 <a id="nestedatt--certificates"></a>
@@ -75,8 +75,8 @@ Optional:
 
 Read-Only:
 
-- **arn** (String)
-- **is_default** (Boolean)
+- `arn` (String)
+- `is_default` (Boolean)
 
 
 <a id="nestedatt--default_actions"></a>
@@ -84,9 +84,9 @@ Read-Only:
 
 Read-Only:
 
-- **order** (Number)
-- **target_group_arn** (String)
-- **type** (String)
+- `order` (Number)
+- `target_group_arn` (String)
+- `type` (String)
 
 ## Import
 

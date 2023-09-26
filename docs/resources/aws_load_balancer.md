@@ -32,35 +32,35 @@ resource "duplocloud_aws_load_balancer" "myapp" {
 
 ### Required
 
-- **name** (String) The short name of the load balancer.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **tenant_id** (String) The GUID of the tenant that the load balancer will be created in.
+- `name` (String) The short name of the load balancer.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `tenant_id` (String) The GUID of the tenant that the load balancer will be created in.
 
 ### Optional
 
-- **drop_invalid_headers** (Boolean) Whether or not the load balancer should drop invalid HTTP headers. Only valid for Load Balancers of type `Application`
-- **enable_access_logs** (Boolean) Whether or not access logs should be enabled.
-- **http_to_https_redirect** (Boolean) Whether or not the load balancer should redirect HTTP to HTTPS. Only valid for Load Balancers of type `Application`
-- **id** (String) The ID of this resource.
-- **idle_timeout** (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
-- **is_internal** (Boolean) Whether or not the load balancer is internal (non internet-facing).
-- **load_balancer_type** (String) The type of load balancer to create. Possible values are `Application` or `Network`. Defaults to `Application`.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **web_acl_id** (String) The ARN of a WAF to attach to the load balancer.
+- `drop_invalid_headers` (Boolean) Whether or not the load balancer should drop invalid HTTP headers. Only valid for Load Balancers of type `Application`
+- `enable_access_logs` (Boolean) Whether or not access logs should be enabled.
+- `http_to_https_redirect` (Boolean) Whether or not the load balancer should redirect HTTP to HTTPS. Only valid for Load Balancers of type `Application`
+- `idle_timeout` (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
+- `is_internal` (Boolean) Whether or not the load balancer is internal (non internet-facing).
+- `load_balancer_type` (String) The type of load balancer to create. Possible values are `Application` or `Network`. Defaults to `Application`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `web_acl_id` (String) The ARN of a WAF to attach to the load balancer.
 
 ### Read-Only
 
-- **arn** (String) The ARN of the load balancer.
-- **dns_name** (String) The DNS name of the load balancer.
-- **fullname** (String) The full name of the load balancer.
-- **tags** (List of Object) The tags assigned to this load balancer. (see [below for nested schema](#nestedatt--tags))
+- `arn` (String) The ARN of the load balancer.
+- `dns_name` (String) The DNS name of the load balancer.
+- `fullname` (String) The full name of the load balancer.
+- `id` (String) The ID of this resource.
+- `tags` (List of Object) The tags assigned to this load balancer. (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 
 <a id="nestedatt--tags"></a>
@@ -68,8 +68,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

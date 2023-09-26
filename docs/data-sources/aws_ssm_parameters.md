@@ -17,28 +17,25 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **parameters** (List of Object) (see [below for nested schema](#nestedatt--parameters))
+- `id` (String) The ID of this resource.
+- `parameters` (List of Object) (see [below for nested schema](#nestedatt--parameters))
 
 <a id="nestedatt--parameters"></a>
 ### Nested Schema for `parameters`
 
 Read-Only:
 
-- **allowed_pattern** (String)
-- **description** (String)
-- **key_id** (String)
-- **last_modified_date** (String)
-- **last_modified_user** (String)
-- **name** (String)
-- **tenant_id** (String)
-- **type** (String)
+- `allowed_pattern` (String)
+- `description` (String)
+- `key_id` (String)
+- `last_modified_date` (String)
+- `last_modified_user` (String)
+- `name` (String)
+- `tenant_id` (String)
+- `type` (String)
 
 
