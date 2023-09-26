@@ -3,9 +3,9 @@ module terraform-provider-duplocloud
 go 1.18
 
 require (
-	github.com/stretchr/testify v1.8.1
 	github.com/hashicorp/terraform-plugin-docs v0.8.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.16.0
+	github.com/stretchr/testify v1.8.1
 	github.com/ucarion/jcs v0.1.2
 )
 
@@ -57,7 +57,6 @@ require (
 	github.com/russross/blackfriday v1.6.0 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
-	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
 	github.com/vmihailenco/tagparser v0.1.1 // indirect
