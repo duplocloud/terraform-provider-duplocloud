@@ -48,12 +48,12 @@ resource "duplocloud_plan_configs" "myplan" {
 
 - **config** (Block List) A list of configs to manage. (see [below for nested schema](#nestedblock--config))
 - **delete_unspecified_configs** (Boolean) Whether or not this resource should delete any configs not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **configs** (List of Object) A complete list of configs for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--configs))
-- **id** (String) The ID of this resource.
 - **specified_configs** (List of String) A list of config keys being managed by this resource.
 
 <a id="nestedblock--config"></a>

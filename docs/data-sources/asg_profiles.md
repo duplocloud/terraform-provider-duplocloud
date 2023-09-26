@@ -19,10 +19,13 @@ description: |-
 
 - **tenant_id** (String) The GUID of the tenant in which to list the ASG profiles.
 
+### Optional
+
+- **id** (String) The ID of this resource.
+
 ### Read-Only
 
 - **asg_profiles** (List of Object) The list of ASG profiles. (see [below for nested schema](#nestedatt--asg_profiles))
-- **id** (String) The ID of this resource.
 
 <a id="nestedatt--asg_profiles"></a>
 ### Nested Schema for `asg_profiles`

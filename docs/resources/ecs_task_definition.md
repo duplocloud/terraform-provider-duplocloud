@@ -47,6 +47,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 ### Optional
 
 - **cpu** (String)
+- **id** (String) The ID of this resource.
 - **inference_accelerator** (Block Set) (see [below for nested schema](#nestedblock--inference_accelerator))
 - **ipc_mode** (String)
 - **memory** (String)
@@ -64,7 +65,6 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 
 - **arn** (String) The ARN of the task definition.
 - **execution_role_arn** (String)
-- **id** (String) The ID of this resource.
 - **revision** (Number) The current revision of the task definition.
 - **status** (String) The status of the task definition.
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))

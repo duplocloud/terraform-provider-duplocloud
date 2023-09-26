@@ -93,6 +93,7 @@ resource "duplocloud_aws_mwaa_environment" "my-mwaa" {
 - **airflow_version** (String) Airflow version of your environment, will be set by default to the latest version that MWAA supports.
 - **environment_class** (String) Environment class for the cluster. Possible options are `mw1.small`, `mw1.medium`, `mw1.large`.
 - **execution_role_arn** (String) The Execution Role ARN of the Amazon MWAA Environment
+- **id** (String) The ID of this resource.
 - **kms_key** (String) The Amazon Resource Name (ARN) of your KMS key that you want to use for encryption. Will be set to the ARN of the managed KMS key aws/airflow by default.
 - **logging_configuration** (Block List, Max: 1) (see [below for nested schema](#nestedblock--logging_configuration))
 - **max_workers** (Number) The maximum number of workers that can be automatically scaled up. Value need to be between `1` and `25`.
@@ -113,7 +114,6 @@ resource "duplocloud_aws_mwaa_environment" "my-mwaa" {
 
 - **arn** (String) The ARN of the Managed Workflows Apache Airflow.
 - **fullname** (String) The full name provided by duplo for Apache Airflow Environment.
-- **id** (String) The ID of this resource.
 - **last_updated** (List of Object) (see [below for nested schema](#nestedatt--last_updated))
 - **status** (String) The status of the Amazon MWAA Environment.
 - **tags** (String) Tags.

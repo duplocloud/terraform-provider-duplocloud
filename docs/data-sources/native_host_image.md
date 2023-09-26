@@ -22,12 +22,12 @@ description: |-
 ### Optional
 
 - **arch** (String)
+- **id** (String) The ID of this resource.
 - **is_kubernetes** (Boolean)
 - **name** (String)
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **image_id** (String)
 - **k8s_version** (String)
 - **os** (String)

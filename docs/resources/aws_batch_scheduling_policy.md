@@ -53,6 +53,7 @@ resource "duplocloud_aws_batch_scheduling_policy" "bsp" {
 ### Optional
 
 - **fair_share_policy** (Block List, Max: 1) A fairshare policy block specifies the `compute_reservation`, `share_delay_seconds`, and `share_distribution` of the scheduling policy. The `fairshare_policy block` is documented below. (see [below for nested schema](#nestedblock--fair_share_policy))
+- **id** (String) The ID of this resource.
 - **tags** (Map of String) Key-value map of resource tags.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
@@ -60,7 +61,6 @@ resource "duplocloud_aws_batch_scheduling_policy" "bsp" {
 
 - **arn** (String) The Amazon Resource Name of the scheduling policy.
 - **fullname** (String) The full name of the scheduling policy.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--fair_share_policy"></a>
 ### Nested Schema for `fair_share_policy`

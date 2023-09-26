@@ -46,6 +46,7 @@ resource "duplocloud_aws_sns_topic" "sns_topic" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **kms_key_id** (String) The ID of an AWS-managed customer master key (CMK) for Amazon SNS or a custom CMK.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
@@ -53,7 +54,6 @@ resource "duplocloud_aws_sns_topic" "sns_topic" {
 
 - **arn** (String) The ARN of the SNS topic.
 - **fullname** (String) The full name of the SNS topic.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

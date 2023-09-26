@@ -30,6 +30,7 @@ resource "duplocloud_azure_recovery_services_vault" "recovery_services_vault" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **resource_group_name** (String) The name of the resource group in which to create the Recovery Services Vault. Changing this forces a new resource to be created.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_ready** (Boolean) Whether or not to wait until Recovery Services Vault to be ready, after creation. Defaults to `true`.
@@ -37,7 +38,6 @@ resource "duplocloud_azure_recovery_services_vault" "recovery_services_vault" {
 ### Read-Only
 
 - **azure_id** (String)
-- **id** (String) The ID of this resource.
 - **location** (String)
 - **sku** (String)
 

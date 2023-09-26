@@ -20,9 +20,12 @@ description: |-
 - **name** (String)
 - **tenant_id** (String)
 
-### Read-Only
+### Optional
 
 - **id** (String) The ID of this resource.
+
+### Read-Only
+
 - **listeners** (List of Object) (see [below for nested schema](#nestedatt--listeners))
 
 <a id="nestedatt--listeners"></a>

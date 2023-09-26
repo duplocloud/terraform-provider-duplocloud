@@ -22,12 +22,12 @@ description: |-
 ### Optional
 
 - **dns_prfx** (String)
+- **id** (String) The ID of this resource.
 - **replication_controller_name** (String)
 - **webaclid** (String)
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **result** (List of Object) (see [below for nested schema](#nestedatt--result))
 
 <a id="nestedatt--result"></a>

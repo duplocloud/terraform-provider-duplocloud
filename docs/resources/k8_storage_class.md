@@ -57,6 +57,7 @@ resource "duplocloud_k8_storage_class" "sc" {
 - **allow_volume_expansion** (Boolean) Indicates whether the storage class allow volume expand Defaults to `false`.
 - **allowed_topologies** (Block List, Max: 1) Restrict the node topologies where volumes can be dynamically provisioned. (see [below for nested schema](#nestedblock--allowed_topologies))
 - **annotations** (Map of String) An unstructured key value map stored with the storage class that may be used to store arbitrary metadata.
+- **id** (String) The ID of this resource.
 - **labels** (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
 - **parameters** (Map of String) The parameters for the provisioner that should create volumes of this storage class
 - **reclaim_policy** (String) Indicates the type of the reclaim policy Defaults to `Delete`.
@@ -66,7 +67,6 @@ resource "duplocloud_k8_storage_class" "sc" {
 ### Read-Only
 
 - **fullname** (String) The full name of the storage class.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--allowed_topologies"></a>
 ### Nested Schema for `allowed_topologies`

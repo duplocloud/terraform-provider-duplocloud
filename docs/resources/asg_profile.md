@@ -56,6 +56,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - **base64_user_data** (String) Base64 encoded EC2 user data to associated with the host.
 - **cloud** (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
 - **encrypt_disk** (Boolean) Defaults to `false`.
+- **id** (String) The ID of this resource.
 - **instance_count** (Number) The number of instances that should be running in the group.
 - **is_cluster_autoscaled** (Boolean) Whether or not to enable cluster autoscaler.
 - **is_ebs_optimized** (Boolean) Defaults to `false`.
@@ -81,7 +82,6 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 ### Read-Only
 
 - **fullname** (String) The full name of the ASG profile.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--metadata"></a>
 ### Nested Schema for `metadata`

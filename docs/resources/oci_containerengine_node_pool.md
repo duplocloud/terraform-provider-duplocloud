@@ -58,6 +58,7 @@ resource "duplocloud_oci_containerengine_node_pool" "myOciNodePool" {
 
 - **defined_tags** (Map of String) Defined tags for this resource. Each key is predefined and scoped to a namespace.
 - **freeform_tags** (Map of String) Free-form tags for this resource. Each tag is a simple key-value pair with no predefined name, type, or namespace.
+- **id** (String) The ID of this resource.
 - **initial_node_labels** (Block List) (see [below for nested schema](#nestedblock--initial_node_labels))
 - **kubernetes_version** (String) The version of Kubernetes to install on the nodes in the node pool.
 - **node_config_details** (Block List, Max: 1) (see [below for nested schema](#nestedblock--node_config_details))
@@ -76,7 +77,6 @@ resource "duplocloud_oci_containerengine_node_pool" "myOciNodePool" {
 
 - **cluster_id** (String) The OCID of the cluster to which this node pool is attached.
 - **compartment_id** (String) The OCID of the compartment in which the node pool exists.
-- **id** (String) The ID of this resource.
 - **node_pool_id** (String) The OCID of the node pool.
 - **nodes** (Block List) (see [below for nested schema](#nestedblock--nodes))
 

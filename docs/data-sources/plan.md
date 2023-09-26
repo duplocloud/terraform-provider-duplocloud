@@ -19,6 +19,10 @@ description: |-
 
 - **plan_id** (String) The plan ID
 
+### Optional
+
+- **id** (String) The ID of this resource.
+
 ### Read-Only
 
 - **account_id** (String) The cloud account ID.
@@ -32,7 +36,6 @@ description: |-
    - `3` : GCP
 - **cloud_config** (Map of String) Cloud-specific plan configuration data
 - **config** (List of Object) Plan configuration data (see [below for nested schema](#nestedatt--config))
-- **id** (String) The ID of this resource.
 - **images** (List of Object) Plan images that can be used to launch native hosts (see [below for nested schema](#nestedatt--images))
 - **kms_keys** (List of Object) Plan KMS keys that can be used for cloud-based encryption (see [below for nested schema](#nestedatt--kms_keys))
 - **kubernetes_config** (List of Object) Kubernetes-specific plan configuration data (see [below for nested schema](#nestedatt--kubernetes_config))

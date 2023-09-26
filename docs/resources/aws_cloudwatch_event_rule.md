@@ -63,6 +63,7 @@ resource "duplocloud_aws_cloudwatch_event_rule" "cw_erule2" {
 - **description** (String) The description of the rule.
 - **event_bus_name** (String) The event bus to associate with this rule. If you omit this, the default event bus is used.
 - **event_pattern** (String) The event pattern described a JSON object. At least one of `schedule_expression` or `event_pattern` is required.
+- **id** (String) The ID of this resource.
 - **role_arn** (String) The Amazon Resource Name (ARN) associated with the role that is used for target invocation.
 - **schedule_expression** (String) The scheduling expression. For example, `cron(0 20 * * ? *)` or `rate(5 minutes)`. At least one of `schedule_expression` or `event_pattern` is required.
 - **state** (String) Whether the rule should be enabled or disabled. Defaults to `ENABLED`.
@@ -73,7 +74,6 @@ resource "duplocloud_aws_cloudwatch_event_rule" "cw_erule2" {
 
 - **arn** (String) The ARN of the event rule.
 - **fullname** (String) The full name of the event rule.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--tag"></a>
 ### Nested Schema for `tag`

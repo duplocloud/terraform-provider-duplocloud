@@ -48,6 +48,7 @@ resource "duplocloud_aws_elasticsearch" "es-doc" {
 - **elasticsearch_version** (String) The version of the ElasticSearch instance. Defaults to `7.9`.
 - **enable_node_to_node_encryption** (Boolean) Whether or not to use the enable node-to-node encryption for this ElasticSearch instance.
 - **encrypt_at_rest** (Block List, Max: 1) The storage encryption settings for the ElasticSearch instance. (see [below for nested schema](#nestedblock--encrypt_at_rest))
+- **id** (String) The ID of this resource.
 - **require_ssl** (Boolean) Whether or not to require SSL for accessing this ElasticSearch instance.
 - **selected_zone** (Number) The numerical index of the zone to launch this ElasticSearch instance in.
 - **storage_size** (Number) The storage volume size, in GB, for the ElasticSearch instance. Defaults to `20`.
@@ -64,7 +65,6 @@ resource "duplocloud_aws_elasticsearch" "es-doc" {
 - **domain_name** (String) The full name of the ElasticSearch instance.
 - **ebs_options** (List of Object) (see [below for nested schema](#nestedatt--ebs_options))
 - **endpoints** (Map of String) The endpoints to use when connecting to the ElasticSearch instance.
-- **id** (String) The ID of this resource.
 - **snapshot_options** (List of Object) (see [below for nested schema](#nestedatt--snapshot_options))
 
 <a id="nestedblock--cluster_config"></a>

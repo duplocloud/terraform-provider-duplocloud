@@ -50,6 +50,7 @@ resource "duplocloud_aws_lb_target_group" "tg" {
 ### Optional
 
 - **health_check** (Block List, Max: 1) Health Check configuration block. (see [below for nested schema](#nestedblock--health_check))
+- **id** (String) The ID of this resource.
 - **ip_address_type** (String) The type of IP addresses used by the target group, only supported when target type is set to `ip`. Possible values are `ipv4` or `ipv6`
 - **port** (Number) Port to use to connect with the target. Valid values are either ports 1-65535.
 - **protocol** (String) Protocol to use to connect with the target. Not applicable when `target_type` is `lambda`. Defaults to `HTTP`.
@@ -60,7 +61,6 @@ resource "duplocloud_aws_lb_target_group" "tg" {
 ### Read-Only
 
 - **arn** (String) ARN of the Target Group.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--health_check"></a>
 ### Nested Schema for `health_check`

@@ -42,12 +42,9 @@ resource "duplocloud_docker_credentials" "docker_creds" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **registry** (String)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-
-### Read-Only
-
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

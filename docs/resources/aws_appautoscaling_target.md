@@ -43,13 +43,13 @@ resource "duplocloud_aws_appautoscaling_target" "asg-target" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **role_arn** (String) The ARN of the IAM role that allows Application AutoScaling to modify your scalable target on your behalf.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **full_resource_id** (String) The resource type and unique identifier string for the resource associated with the scaling policy.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

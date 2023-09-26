@@ -80,6 +80,7 @@ resource "duplocloud_azure_virtual_machine_scale_set" "vmss" {
 - **eviction_policy** (String) Specifies the eviction policy for Virtual Machines in this Scale Set.
 - **extension** (Block Set) (see [below for nested schema](#nestedblock--extension))
 - **health_probe_id** (String) Specifies the identifier for the load balancer health probe. Required when using `Rolling` as your `upgrade_policy_mode`
+- **id** (String) The ID of this resource.
 - **identity** (Block List, Max: 1) (see [below for nested schema](#nestedblock--identity))
 - **is_minion** (Boolean) Defaults to `false`.
 - **license_type** (String) Specifies the Windows OS license type. If supplied, the only allowed values are `Windows_Client` and `Windows_Server`.
@@ -101,7 +102,6 @@ resource "duplocloud_azure_virtual_machine_scale_set" "vmss" {
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **location** (String)
 
 <a id="nestedblock--network_profile"></a>

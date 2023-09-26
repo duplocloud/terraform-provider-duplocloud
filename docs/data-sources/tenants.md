@@ -17,11 +17,11 @@ description: |-
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **plan_id** (String)
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **tenants** (List of Object) (see [below for nested schema](#nestedatt--tenants))
 
 <a id="nestedatt--tenants"></a>

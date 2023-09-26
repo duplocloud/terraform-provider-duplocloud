@@ -61,6 +61,7 @@ resource "duplocloud_aws_appautoscaling_policy" "asg-app-policy" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **policy_type** (String) The policy type. Valid values are `StepScaling` and `TargetTrackingScaling`. Defaults to `StepScaling`.
 - **step_scaling_policy_configuration** (Block List, Max: 1) Step scaling policy configuration, requires `policy_type = "StepScaling"` (see [below for nested schema](#nestedblock--step_scaling_policy_configuration))
 - **target_tracking_scaling_policy_configuration** (Block List, Max: 1) A target tracking policy, requires `policy_type = "TargetTrackingScaling"` (see [below for nested schema](#nestedblock--target_tracking_scaling_policy_configuration))
@@ -70,7 +71,6 @@ resource "duplocloud_aws_appautoscaling_policy" "asg-app-policy" {
 
 - **arn** (String)
 - **full_resource_id** (String) The resource type and unique identifier string for the resource associated with the scaling policy.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--step_scaling_policy_configuration"></a>
 ### Nested Schema for `step_scaling_policy_configuration`

@@ -56,12 +56,9 @@ resource "duplocloud_k8_persistent_volume_claim" "pvc" {
 ### Optional
 
 - **annotations** (Map of String) An unstructured key value map stored with the persistent volume claim that may be used to store arbitrary metadata.
+- **id** (String) The ID of this resource.
 - **labels** (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-
-### Read-Only
-
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--spec"></a>
 ### Nested Schema for `spec`

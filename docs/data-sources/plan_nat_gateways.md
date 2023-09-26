@@ -19,9 +19,12 @@ description: |-
 
 - **plan_id** (String) The plan ID
 
-### Read-Only
+### Optional
 
 - **id** (String) The ID of this resource.
+
+### Read-Only
+
 - **nat_gateways** (List of Object) The list of NAT gateways for this plan. (see [below for nested schema](#nestedatt--nat_gateways))
 
 <a id="nestedatt--nat_gateways"></a>

@@ -94,6 +94,7 @@ resource "duplocloud_emr_cluster" "test" {
 - **custom_ami_id** (String) EMR CustomAmiId.
 - **ebs_root_volume_size** (Number) Emr Cluster Ec2 ebs_root_volume_size settings.
 - **full_name** (String) full_name - Duplo will add a prefix to the name.
+- **id** (String) The ID of this resource.
 - **instance_count** (Number) Emr Instance Count.
 - **instance_fleets** (String) Emr - instance_fleets.
 - **instance_groups** (String) Emr - instance_groups.
@@ -117,7 +118,6 @@ resource "duplocloud_emr_cluster" "test" {
 - **applications_hash** (String)
 - **bootstrap_actions_hash** (String)
 - **configurations_hash** (String)
-- **id** (String) The ID of this resource.
 - **instance_fleets_hash** (String)
 - **instance_groups_hash** (String)
 - **managed_scaling_policy_hash** (String)

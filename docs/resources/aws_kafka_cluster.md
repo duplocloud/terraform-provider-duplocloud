@@ -44,6 +44,7 @@ See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguid
 - **configuration_arn** (String) An ARN of a Kafka configuration to apply to the cluster.
 - **configuration_revision** (Number) An revision of a Kafka configuration to apply to the cluster.
 - **encryption_in_transit** (String) Encryption setting for data in transit between clients and brokers. Valid values: `TLS`, `TLS_PLAINTEXT`, and `PLAINTEXT`
+- **id** (String) The ID of this resource.
 - **subnets** (List of String) The list of subnets that the cluster will be launched in.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
@@ -52,7 +53,6 @@ See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguid
 - **arn** (String) The ARN of the Kafka cluster.
 - **az_distribution** (String) The availability zone distribution used by the cluster.
 - **fullname** (String) The full name of the Kakfa cluster.
-- **id** (String) The ID of this resource.
 - **number_of_broker_nodes** (Number) The desired total number of broker nodes in the kafka cluster.
 - **plaintext_bootstrap_broker_string** (String) The bootstrap broker connect string for plaintext (unencrypted) connections.
 - **plaintext_zookeeper_connect_string** (String) The Zookeeper connect string for plaintext (unencrypted) connections.

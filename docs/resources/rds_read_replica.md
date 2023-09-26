@@ -53,6 +53,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 ### Optional
 
 - **availability_zone** (String) The AZ for the RDS instance.
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -64,7 +65,6 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 - **engine** (Number) The numerical index of database engine to be used the for the RDS read replica.
 - **engine_version** (String) The database engine version to be used the for the RDS read replica.
 - **host** (String) The DNS hostname of the RDS read replica.
-- **id** (String) The ID of this resource.
 - **identifier** (String) The full name of the RDS read replica.
 - **kms_key_id** (String) The globally unique identifier for the key.
 - **multi_az** (Boolean) Specifies if the RDS instance is multi-AZ.

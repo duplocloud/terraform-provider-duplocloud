@@ -41,6 +41,7 @@ resource "duplocloud_aws_efs_file_system" "efs" {
 - **backup** (Boolean) Specifies whether automatic backups are enabled on the file system that you are creating.
 - **creation_token** (String) A unique name (a maximum of 64 characters are allowed) used as reference when creating the Elastic File System to ensure idempotent file system creation.
 - **encrypted** (Boolean) If true, the disk will be encrypted.
+- **id** (String) The ID of this resource.
 - **performance_mode** (String) The file system performance mode. Can be either `generalPurpose` or `maxIO`. Defaults to `generalPurpose`.
 - **provisioned_throughput_in_mibps** (Number) The throughput, measured in MiB/s, that you want to provision for the file system. Only applicable with `throughput_mode` set to `provisioned`.
 - **tag** (Block List) (see [below for nested schema](#nestedblock--tag))
@@ -53,7 +54,6 @@ resource "duplocloud_aws_efs_file_system" "efs" {
 - **file_system_arn** (String) Amazon Resource Name of the file system.
 - **file_system_id** (String) The ID that identifies the file system.
 - **fullname** (String) Duplo generated name of the EFS.
-- **id** (String) The ID of this resource.
 - **number_of_mount_targets** (Number) The current number of mount targets that the file system has.
 - **owner_id** (String) The AWS account that created the file system.
 - **size_in_bytes** (Number) The latest known metered size (in bytes) of data stored in the file system.

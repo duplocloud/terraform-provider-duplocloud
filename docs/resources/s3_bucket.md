@@ -61,6 +61,7 @@ resource "duplocloud_s3_bucket" "www" {
 - **default_encryption** (Block List, Max: 1) Default encryption settings for objects uploaded to the bucket. (see [below for nested schema](#nestedblock--default_encryption))
 - **enable_access_logs** (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan.
 - **enable_versioning** (Boolean) Whether or not to enable versioning.
+- **id** (String) The ID of this resource.
 - **managed_policies** (List of String) Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:
 
  - `"ssl"`: Require SSL / HTTPS when accessing the bucket.
@@ -72,7 +73,6 @@ resource "duplocloud_s3_bucket" "www" {
 - **arn** (String) The ARN of the S3 bucket.
 - **domain_name** (String) The domain name of the S3 bucket.
 - **fullname** (String) The full name of the S3 bucket.
-- **id** (String) The ID of this resource.
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--default_encryption"></a>

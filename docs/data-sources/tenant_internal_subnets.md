@@ -19,9 +19,12 @@ The `duplocloud_tenant_internal_subnets` data source retrieves a list of tenant'
 
 - **tenant_id** (String) The GUID of the tenant.
 
-### Read-Only
+### Optional
 
 - **id** (String) The ID of this resource.
+
+### Read-Only
+
 - **subnet_ids** (List of String) The list of subnet IDs.
 
 

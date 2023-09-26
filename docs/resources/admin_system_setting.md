@@ -31,11 +31,8 @@ resource "duplocloud_admin_system_setting" "test-setting" {
 
 ### Optional
 
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-
-### Read-Only
-
 - **id** (String) The ID of this resource.
+- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

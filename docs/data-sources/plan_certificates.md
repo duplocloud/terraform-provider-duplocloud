@@ -19,10 +19,13 @@ description: |-
 
 - **plan_id** (String) The plan ID
 
+### Optional
+
+- **id** (String) The ID of this resource.
+
 ### Read-Only
 
 - **certificates** (List of Object) The list of certificates for this plan. (see [below for nested schema](#nestedatt--certificates))
-- **id** (String) The ID of this resource.
 
 <a id="nestedatt--certificates"></a>
 ### Nested Schema for `certificates`

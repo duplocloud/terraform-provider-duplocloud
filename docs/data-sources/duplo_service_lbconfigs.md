@@ -24,11 +24,11 @@ NOTE: For Amazon ECS services, see the `duplocloud_ecs_services` data source.
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **name** (String) The name of the duplo service.
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **services** (List of Object) (see [below for nested schema](#nestedatt--services))
 
 <a id="nestedatt--services"></a>

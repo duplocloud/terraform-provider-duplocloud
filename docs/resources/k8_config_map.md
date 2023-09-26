@@ -38,11 +38,11 @@ resource "duplocloud_k8_config_map" "myapp" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **metadata** (String) A JSON encoded string representing the configmap metadata. You can use the `jsondecode()` function to parse this, if needed.
 
 <a id="nestedblock--timeouts"></a>

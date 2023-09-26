@@ -53,6 +53,7 @@ resource "duplocloud_byoh" "byoh" {
 
 - **agent_platform** (Number) The numeric ID of the container agent pool that this instance is added to. Defaults to `0`.
 - **allocation_tag** (String) Allocation tag for BYOH instance.
+- **id** (String) The ID of this resource.
 - **password** (String, Sensitive) Password of the BYOH instance.
 - **private_key** (String, Sensitive) Private key for BYOH instance.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -62,7 +63,6 @@ resource "duplocloud_byoh" "byoh" {
 ### Read-Only
 
 - **connection_url** (String)
-- **id** (String) The ID of this resource.
 - **network_agent_url** (String)
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
 

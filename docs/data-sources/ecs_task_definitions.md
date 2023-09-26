@@ -22,12 +22,12 @@ description: |-
 ### Optional
 
 - **family** (String)
+- **id** (String) The ID of this resource.
 - **latest** (Boolean)
 - **name** (String)
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **task_definitions** (List of Object) (see [below for nested schema](#nestedatt--task_definitions))
 
 <a id="nestedatt--task_definitions"></a>

@@ -94,16 +94,13 @@ resource "duplocloud_aws_target_group_attributes" "tg_attrs" {
 ### Optional
 
 - **attribute** (Block Set) (see [below for nested schema](#nestedblock--attribute))
+- **id** (String) The ID of this resource.
 - **is_ecs_lb** (Boolean) Whether or not to look up the LB via an ECS service name instead of replication controller name.
 - **is_passthrough_lb** (Boolean) Whether or not to look up the LB via the LB name instead of replication controller name.
 - **port** (Number) Port used to connect with the target.
 - **role_name** (String) Name of the ecs service or replication controller.
 - **target_group_arn** (String) ARN of the Target Group.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-
-### Read-Only
-
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--attribute"></a>
 ### Nested Schema for `attribute`

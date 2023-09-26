@@ -19,9 +19,12 @@ description: |-
 
 - **tenant_id** (String)
 
-### Read-Only
+### Optional
 
 - **id** (String) The ID of this resource.
+
+### Read-Only
+
 - **target_groups** (List of Object) (see [below for nested schema](#nestedatt--target_groups))
 
 <a id="nestedatt--target_groups"></a>

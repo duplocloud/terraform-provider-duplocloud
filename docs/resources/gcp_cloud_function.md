@@ -77,6 +77,7 @@ Should be one of:
 - **environment_variables** (Map of String) The environment variables for this cloud function.
 - **event_trigger** (Block List, Max: 1) Specifies an event trigger for the cloud function. (see [below for nested schema](#nestedblock--event_trigger))
 - **https_trigger** (Block List, Max: 1) Specifies an HTTPS trigger for the cloud function. (see [below for nested schema](#nestedblock--https_trigger))
+- **id** (String) The ID of this resource.
 - **ingress_type** (Number) The numerical index of ingress type to use for this cloud function.
 Should be one of:
 
@@ -100,7 +101,6 @@ Should be one of:
 
 - **build_id** (String) The ID of the cloud build that built the cloud function.
 - **fullname** (String) The full name of the cloud function.
-- **id** (String) The ID of this resource.
 - **self_link** (String) The SelfLink of the cloud function.
 - **version_id** (Number) The current version of the cloud function.
 

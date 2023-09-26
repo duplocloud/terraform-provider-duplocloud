@@ -39,13 +39,13 @@ resource "duplocloud_aws_ssm_parameter" "ssm_param" {
 
 - **allowed_pattern** (String)
 - **description** (String) The description of the SSM parameter.
+- **id** (String) The ID of this resource.
 - **key_id** (String)
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **value** (String) The value of the SSM parameter.
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **last_modified_date** (String)
 - **last_modified_user** (String)
 

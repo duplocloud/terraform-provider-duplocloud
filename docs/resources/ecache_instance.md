@@ -53,6 +53,7 @@ Should be one of:
 - **encryption_in_transit** (Boolean) Enables encryption-in-transit. Defaults to `false`.
 - **engine_version** (String) The engine version of the elastic instance.
 See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).
+- **id** (String) The ID of this resource.
 - **kms_key_id** (String) The globally unique identifier for the key.
 - **parameter_group_name** (String) The REDIS parameter group to supply.
 - **replicas** (Number) The number of replicas to create. Defaults to `1`.
@@ -63,7 +64,6 @@ See AWS documentation for the [available Redis instance types](https://docs.aws.
 - **arn** (String) The ARN of the elasticache instance.
 - **endpoint** (String) The endpoint of the elasticache instance.
 - **host** (String) The DNS hostname of the elasticache instance.
-- **id** (String) The ID of this resource.
 - **identifier** (String) The full name of the elasticache instance.
 - **instance_status** (String) The status of the elasticache instance.
 - **port** (Number) The listening port of the elasticache instance.

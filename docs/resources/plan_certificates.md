@@ -42,12 +42,12 @@ resource "duplocloud_plan_certificates" "myplan" {
 
 - **certificate** (Block List) A list of certificates to manage. (see [below for nested schema](#nestedblock--certificate))
 - **delete_unspecified_certificates** (Boolean) Whether or not this resource should delete any certificates not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **certificates** (List of Object) A complete list of certificates for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--certificates))
-- **id** (String) The ID of this resource.
 - **specified_certificates** (List of String) A list of certificate names being managed by this resource.
 
 <a id="nestedblock--certificate"></a>
@@ -55,12 +55,12 @@ resource "duplocloud_plan_certificates" "myplan" {
 
 Required:
 
+- **id** (String) The ID of this resource.
 - **name** (String)
 
 Read-Only:
 
 - **arn** (String)
-- **id** (String) The ID of this resource.
 
 
 <a id="nestedblock--timeouts"></a>

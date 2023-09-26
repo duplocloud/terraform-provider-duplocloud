@@ -36,11 +36,11 @@ resource "duplocloud_azure_storage_share_file" "share_file" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **url** (String) The URL of the File Share.
 
 <a id="nestedblock--timeouts"></a>

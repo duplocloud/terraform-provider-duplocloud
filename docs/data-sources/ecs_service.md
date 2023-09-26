@@ -20,12 +20,15 @@ description: |-
 - **name** (String) The name of the service to create.
 - **tenant_id** (String) The GUID of the tenant that the service will be created in.
 
+### Optional
+
+- **id** (String) The ID of this resource.
+
 ### Read-Only
 
 - **capacity_provider_strategy** (List of Object) (see [below for nested schema](#nestedatt--capacity_provider_strategy))
 - **dns_prfx** (String) The DNS prefix to assign to this service's load balancer.
 - **health_check_grace_period_seconds** (Number)
-- **id** (String) The ID of this resource.
 - **index** (Number) The index of the ecs service.
 - **is_target_group_only** (Boolean)
 - **load_balancer** (List of Object) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedatt--load_balancer))

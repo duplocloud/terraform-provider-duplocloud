@@ -115,6 +115,7 @@ resource "duplocloud_aws_cloudfront_distribution" "cfd" {
 - **custom_error_response** (Block Set) (see [below for nested schema](#nestedblock--custom_error_response))
 - **default_root_object** (String) The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.
 - **http_version** (String) The maximum HTTP version to support on the distribution. Allowed values are `http1.1` and `http2` Defaults to `http2`.
+- **id** (String) The ID of this resource.
 - **is_ipv6_enabled** (Boolean) Defaults to `false`.
 - **logging_config** (Block List, Max: 1) (see [below for nested schema](#nestedblock--logging_config))
 - **ordered_cache_behavior** (Block List) (see [below for nested schema](#nestedblock--ordered_cache_behavior))
@@ -132,7 +133,6 @@ resource "duplocloud_aws_cloudfront_distribution" "cfd" {
 - **domain_name** (String)
 - **etag** (String)
 - **hosted_zone_id** (String)
-- **id** (String) The ID of this resource.
 - **status** (String) The current status of the distribution. `Deployed` if the distribution's information is fully propagated throughout the Amazon CloudFront system.
 
 <a id="nestedblock--default_cache_behavior"></a>

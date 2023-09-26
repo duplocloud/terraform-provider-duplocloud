@@ -19,9 +19,12 @@ description: |-
 
 - **tenant_id** (String)
 
-### Read-Only
+### Optional
 
 - **id** (String) The ID of this resource.
+
+### Read-Only
+
 - **services** (List of Object) (see [below for nested schema](#nestedatt--services))
 
 <a id="nestedatt--services"></a>
@@ -40,6 +43,7 @@ Read-Only:
 - **force_stateful_set** (Boolean)
 - **hpa_specs** (String)
 - **is_daemonset** (Boolean)
+- **is_unique_k8s_node_required** (Boolean)
 - **lb_synced_deployment** (Boolean)
 - **name** (String)
 - **other_docker_config** (String)
@@ -47,6 +51,7 @@ Read-Only:
 - **replica_collocation_allowed** (Boolean)
 - **replicas** (Number)
 - **replicas_matching_asg_name** (String)
+- **should_spread_across_zones** (Boolean)
 - **tags** (List of Object) (see [below for nested schema](#nestedobjatt--services--tags))
 - **tenant_id** (String)
 - **volumes** (String)

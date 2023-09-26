@@ -44,6 +44,7 @@ resource "duplocloud_azure_redis_cache" "myCache" {
 ### Optional
 
 - **enable_non_ssl_port** (Boolean) Enable the non-SSL port (6379) Defaults to `false`.
+- **id** (String) The ID of this resource.
 - **minimum_tls_version** (String) The minimum TLS version.
 - **redis_version** (String) Redis version. Only major version needed. Valid values: `4`, `6`.
 - **shard_count** (Number) Only available when using the Premium SKU The number of Shards to create on the Redis Cluster.
@@ -54,7 +55,6 @@ resource "duplocloud_azure_redis_cache" "myCache" {
 ### Read-Only
 
 - **hostname** (String)
-- **id** (String) The ID of this resource.
 - **port** (Number)
 - **ssl_port** (Number)
 - **tags** (Map of String)

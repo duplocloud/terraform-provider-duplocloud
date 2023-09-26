@@ -39,6 +39,7 @@ resource "duplocloud_azure_sql_virtual_network_rule" "sql_vnet_rule" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **ignore_missing_vnet_service_endpoint** (Boolean) Create the virtual network rule before the subnet has the virtual network service endpoint enabled.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_ready** (Boolean) Whether or not to wait until Redis cache instance to be ready, after creation. Defaults to `true`.
@@ -46,7 +47,6 @@ resource "duplocloud_azure_sql_virtual_network_rule" "sql_vnet_rule" {
 ### Read-Only
 
 - **azure_id** (String) The ID of the SQL virtual network rule.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

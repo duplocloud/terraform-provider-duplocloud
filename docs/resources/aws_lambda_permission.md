@@ -59,14 +59,11 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 ### Optional
 
 - **event_source_token** (String) The Event Source Token to validate.
+- **id** (String) The ID of this resource.
 - **qualifier** (String) Query parameter to specify function version or alias name. The permission will then apply to the specific qualified ARN.
 - **source_account** (String) This parameter is used for S3 and SES. The AWS account ID (without a hyphen) of the source owner.
 - **source_arn** (String) When the principal is an AWS service, the ARN of the specific resource within that service to grant permission to.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-
-### Read-Only
-
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

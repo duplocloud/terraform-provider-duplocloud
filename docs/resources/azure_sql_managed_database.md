@@ -47,6 +47,7 @@ resource "duplocloud_azure_sql_managed_database" "mydb" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **minimum_tls_version** (String) The Minimum TLS Version for all SQL managed Database and SQL Data Warehouse databases associated with the server. Valid values are: `1.0`, `1.1` and `1.2`.
 - **public_data_endpoint_enabled** (Boolean) Is the public data endpoint enabled? Default value is `false`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -55,7 +56,6 @@ resource "duplocloud_azure_sql_managed_database" "mydb" {
 
 - **collation** (String)
 - **fqdn** (String) The fully qualified domain name of the sql managed instance.
-- **id** (String) The ID of this resource.
 - **tags** (Map of String)
 
 <a id="nestedblock--timeouts"></a>

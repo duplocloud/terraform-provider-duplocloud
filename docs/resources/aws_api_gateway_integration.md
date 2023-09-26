@@ -36,12 +36,12 @@ resource "duplocloud_aws_api_gateway_integration" "apigw-lambda" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **fullname** (String) The full name of the api gateway.
-- **id** (String) The ID of this resource.
 - **metadata** (String)
 
 <a id="nestedblock--timeouts"></a>

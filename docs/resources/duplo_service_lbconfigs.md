@@ -56,13 +56,13 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_ready** (Boolean) Whether or not to wait until Duplo considers all of the load balancers ready Defaults to `true`.
 
 ### Read-Only
 
 - **arn** (String) The load balancer ARN.
-- **id** (String) The ID of this resource.
 - **status** (String) The load balancer's current status.
 
 <a id="nestedblock--lbconfigs"></a>

@@ -75,6 +75,7 @@ CONTAINER_PROPERTIES
 ### Optional
 
 - **container_properties** (String) A valid container properties provided as a single valid JSON document. This parameter is required if the type parameter is `container`.
+- **id** (String) The ID of this resource.
 - **parameters** (Map of String) Specifies the parameter substitution placeholders to set in the job definition.
 - **platform_capabilities** (Set of String) The platform capabilities required by the job definition. If no value is specified, it defaults to `EC2`. To run the job on Fargate resources, specify `FARGATE`.
 - **retry_strategy** (Block List, Max: 1) Specifies the retry strategy to use for failed jobs that are submitted with this job definition. Maximum number of `retry_strategy` is `1`. (see [below for nested schema](#nestedblock--retry_strategy))
@@ -86,7 +87,6 @@ CONTAINER_PROPERTIES
 
 - **arn** (String) The Amazon Resource Name of the Job Definition.
 - **fullname** (String) The full name of the Job Definition.
-- **id** (String) The ID of this resource.
 - **revision** (Number) The revision of the job definition.
 - **status** (String) The status of the Job Definition.
 

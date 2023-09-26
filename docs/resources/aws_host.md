@@ -102,6 +102,7 @@ resource "duplocloud_aws_host" "host" {
 - **base64_user_data** (String) Base64 encoded EC2 user data to associated with the host.
 - **cloud** (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
 - **encrypt_disk** (Boolean) Defaults to `false`.
+- **id** (String) The ID of this resource.
 - **is_ebs_optimized** (Boolean) Defaults to `false`.
 - **is_minion** (Boolean) Defaults to `true`.
 - **keypair_type** (Number) The numeric ID of the keypair type being used.Should be one of:
@@ -121,7 +122,6 @@ resource "duplocloud_aws_host" "host" {
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **identity_role** (String) The name of the IAM role associated with this host.
 - **instance_id** (String) The AWS EC2 instance ID of the host.
 - **private_ip_address** (String) The primary private IP address assigned to the host.

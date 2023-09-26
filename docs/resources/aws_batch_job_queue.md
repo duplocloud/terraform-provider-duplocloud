@@ -96,6 +96,7 @@ resource "duplocloud_aws_batch_job_queue" "jq" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **scheduling_policy_arn** (String) The ARN of the fair share scheduling policy. If this parameter is specified, the job queue uses a fair share scheduling policy. If this parameter isn't specified, the job queue uses a first in, first out (FIFO) scheduling policy. After a job queue is created, you can replace but can't remove the fair share scheduling policy.
 - **tags** (Map of String) Key-value map of resource tags.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -105,7 +106,6 @@ resource "duplocloud_aws_batch_job_queue" "jq" {
 
 - **arn** (String) The Amazon Resource Name of the Job queue.
 - **fullname** (String) The full name of the Job queue.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

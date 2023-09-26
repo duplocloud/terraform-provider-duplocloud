@@ -40,6 +40,7 @@ resource "duplocloud_aws_load_balancer" "myapp" {
 - **drop_invalid_headers** (Boolean) Whether or not the load balancer should drop invalid HTTP headers. Only valid for Load Balancers of type `Application`
 - **enable_access_logs** (Boolean) Whether or not access logs should be enabled.
 - **http_to_https_redirect** (Boolean) Whether or not the load balancer should redirect HTTP to HTTPS. Only valid for Load Balancers of type `Application`
+- **id** (String) The ID of this resource.
 - **idle_timeout** (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
 - **is_internal** (Boolean) Whether or not the load balancer is internal (non internet-facing).
 - **load_balancer_type** (String) The type of load balancer to create. Possible values are `Application` or `Network`. Defaults to `Application`.
@@ -51,7 +52,6 @@ resource "duplocloud_aws_load_balancer" "myapp" {
 - **arn** (String) The ARN of the load balancer.
 - **dns_name** (String) The DNS name of the load balancer.
 - **fullname** (String) The full name of the load balancer.
-- **id** (String) The ID of this resource.
 - **tags** (List of Object) The tags assigned to this load balancer. (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--timeouts"></a>

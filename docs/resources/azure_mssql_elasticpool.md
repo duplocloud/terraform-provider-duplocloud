@@ -40,13 +40,13 @@ resource "duplocloud_azure_mssql_elasticpool" "mssql_elasticpool" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **sku** (Block List, Max: 1) (see [below for nested schema](#nestedblock--sku))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **elastic_pool_id** (String) The ID of the MS SQL Elastic Pool.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--sku"></a>
 ### Nested Schema for `sku`

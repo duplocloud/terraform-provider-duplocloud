@@ -105,19 +105,21 @@ Should be one of:
 - **extra_config** (String)
 - **force_stateful_set** (Boolean) Whether or not to force a StatefulSet to be created. Defaults to `false`.
 - **hpa_specs** (String)
+- **id** (String) The ID of this resource.
 - **is_daemonset** (Boolean) Whether or not to enable DaemonSet. Defaults to `false`.
+- **is_unique_k8s_node_required** (Boolean) Whether or not the replicas must be scheduled on separate Kubernetes nodes.  Only supported on Kubernetes. Defaults to `false`.
 - **lb_synced_deployment** (Boolean) Defaults to `false`.
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
 - **replica_collocation_allowed** (Boolean) Allow replica collocation for the service. If this is set then 2 replicas can be on the same host.
 - **replicas** (Number) The number of container replicas to deploy. Defaults to `1`.
 - **replicas_matching_asg_name** (String)
+- **should_spread_across_zones** (Boolean) Whether or not the replicas must be spread across availability zones.  Only supported on Kubernetes. Defaults to `false`.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **volumes** (String)
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **index** (Number) The index of the service.
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
 

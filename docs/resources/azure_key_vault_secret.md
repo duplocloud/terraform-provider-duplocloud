@@ -37,6 +37,7 @@ resource "duplocloud_azure_key_vault_secret" "myapp" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **key_vault_id** (String) The ID of the Key Vault where the Secret should be created.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **type** (String) Specifies the content type for the Key Vault Secret. Defaults to `duplo_container_env`.
@@ -45,7 +46,6 @@ resource "duplocloud_azure_key_vault_secret" "myapp" {
 
 - **enabled** (Boolean) Determines whether the object is enabled.
 - **fullname** (String) Duplo will generate name of the Key Vault Secret.
-- **id** (String) The ID of this resource.
 - **recovery_level** (String) Reflects the deletion recovery level currently in effect for secrets in the current vault.
 - **vault_base_url** (String) Base URL of the Azure Key Vault
 - **version** (String) The current version of the Key Vault Secret.

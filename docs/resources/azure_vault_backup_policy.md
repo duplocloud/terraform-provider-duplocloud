@@ -59,6 +59,7 @@ resource "duplocloud_azure_vault_backup_policy" "backup_policy" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **instant_restore_retention_days** (Number) Specifies the instant restore retention range in days.
 - **policy_type** (String) Type of the Backup Policy. Defaults to `V1`.
 - **retention_daily** (Block List, Max: 1) (see [below for nested schema](#nestedblock--retention_daily))
@@ -71,7 +72,6 @@ resource "duplocloud_azure_vault_backup_policy" "backup_policy" {
 ### Read-Only
 
 - **azure_id** (String) Azure id for vault backup policy.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--backup"></a>
 ### Nested Schema for `backup`

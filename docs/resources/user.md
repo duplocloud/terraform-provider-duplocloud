@@ -32,6 +32,7 @@ resource "duplocloud_user" "myuser" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **is_readonly** (Boolean) Defaults to `false`.
 - **reallocate_vpn_address** (Boolean) Defaults to `false`.
 - **regenerate_vpn_password** (Boolean) Defaults to `false`.
@@ -40,7 +41,6 @@ resource "duplocloud_user" "myuser" {
 ### Read-Only
 
 - **current_session_token** (String)
-- **id** (String) The ID of this resource.
 - **is_confirmation_email_sent** (Boolean)
 - **is_vpn_config_created** (Boolean)
 - **vpn_static_ip** (String)

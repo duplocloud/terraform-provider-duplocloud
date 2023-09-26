@@ -35,13 +35,13 @@ resource "duplocloud_gcp_pubsub_topic" "mytopic" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **labels** (Map of String) The labels assigned to this pubsub topic.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **fullname** (String) The full name of the pubsub topic.
-- **id** (String) The ID of this resource.
 - **self_link** (String) The SelfLink of the pubsub topic.
 
 <a id="nestedblock--timeouts"></a>

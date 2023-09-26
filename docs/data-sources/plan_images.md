@@ -19,9 +19,12 @@ description: |-
 
 - **plan_id** (String) The plan ID
 
-### Read-Only
+### Optional
 
 - **id** (String) The ID of this resource.
+
+### Read-Only
+
 - **images** (List of Object) The list of images for this plan. (see [below for nested schema](#nestedatt--images))
 
 <a id="nestedatt--images"></a>

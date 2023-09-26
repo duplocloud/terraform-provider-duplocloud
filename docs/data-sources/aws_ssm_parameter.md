@@ -20,11 +20,14 @@ description: |-
 - **name** (String)
 - **tenant_id** (String)
 
+### Optional
+
+- **id** (String) The ID of this resource.
+
 ### Read-Only
 
 - **allowed_pattern** (String)
 - **description** (String)
-- **id** (String) The ID of this resource.
 - **key_id** (String)
 - **last_modified_date** (String)
 - **last_modified_user** (String)

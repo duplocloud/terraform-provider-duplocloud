@@ -61,12 +61,9 @@ resource "duplocloud_azure_mssql_database" "mssql_database" {
 
 - **collation** (String) Specifies the collation of the database.
 - **elastic_pool_id** (String) Specifies the id of the elastic pool containing this database.
+- **id** (String) The ID of this resource.
 - **sku** (Block List, Max: 1) (see [below for nested schema](#nestedblock--sku))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-
-### Read-Only
-
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--sku"></a>
 ### Nested Schema for `sku`

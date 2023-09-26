@@ -19,9 +19,12 @@ description: |-
 
 - **tenant_id** (String)
 
-### Read-Only
+### Optional
 
 - **id** (String) The ID of this resource.
+
+### Read-Only
+
 - **parameters** (List of Object) (see [below for nested schema](#nestedatt--parameters))
 
 <a id="nestedatt--parameters"></a>

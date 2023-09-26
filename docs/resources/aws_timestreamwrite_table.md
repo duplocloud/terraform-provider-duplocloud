@@ -60,6 +60,7 @@ resource "duplocloud_aws_timestreamwrite_table" "timestreamwrite_database_tbl" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **magnetic_store_write_properties** (Block List, Max: 1) Contains properties to set on the table when enabling magnetic store writes. (see [below for nested schema](#nestedblock--magnetic_store_write_properties))
 - **retention_properties** (Block List, Max: 1) The retention duration for the memory store and magnetic store. (see [below for nested schema](#nestedblock--retention_properties))
 - **tags** (Block List) Tags in key-value format. (see [below for nested schema](#nestedblock--tags))
@@ -70,7 +71,6 @@ resource "duplocloud_aws_timestreamwrite_table" "timestreamwrite_database_tbl" {
 
 - **all_tags** (List of Object) A complete list of tags for this time stream database, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_tags))
 - **arn** (String) The ARN that uniquely identifies this Table.
-- **id** (String) The ID of this resource.
 - **specified_tags** (List of String) A list of tags being managed by this resource.
 
 <a id="nestedblock--magnetic_store_write_properties"></a>

@@ -49,6 +49,7 @@ resource "duplocloud_aws_load_balancer_listener" "myapp-listener" {
 ### Optional
 
 - **certificate_arn** (String) The ARN of the certificate to attach to the listener.
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -56,7 +57,6 @@ resource "duplocloud_aws_load_balancer_listener" "myapp-listener" {
 - **arn** (String) ARN of the listener.
 - **certificates** (List of Object) (see [below for nested schema](#nestedatt--certificates))
 - **default_actions** (List of Object) (see [below for nested schema](#nestedatt--default_actions))
-- **id** (String) The ID of this resource.
 - **load_balancer_arn** (String)
 - **load_balancer_fullname** (String) The full name of the load balancer.
 - **ssl_policy** (String)

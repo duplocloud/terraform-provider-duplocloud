@@ -40,12 +40,12 @@ resource "duplocloud_azure_sql_firewall_rule" "sql_firewall_rule" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **azure_id** (String) The ID of the SQL firewall rule.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

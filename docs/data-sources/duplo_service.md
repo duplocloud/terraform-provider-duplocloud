@@ -20,6 +20,10 @@ description: |-
 - **name** (String)
 - **tenant_id** (String)
 
+### Optional
+
+- **id** (String) The ID of this resource.
+
 ### Read-Only
 
 - **agent_platform** (Number)
@@ -32,14 +36,15 @@ description: |-
 - **extra_config** (String)
 - **force_stateful_set** (Boolean)
 - **hpa_specs** (String)
-- **id** (String) The ID of this resource.
 - **is_daemonset** (Boolean)
+- **is_unique_k8s_node_required** (Boolean) Whether or not the replicas must be scheduled on separate Kubernetes nodes.  Only supported on Kubernetes.
 - **lb_synced_deployment** (Boolean)
 - **other_docker_config** (String)
 - **other_docker_host_config** (String)
 - **replica_collocation_allowed** (Boolean)
 - **replicas** (Number)
 - **replicas_matching_asg_name** (String)
+- **should_spread_across_zones** (Boolean) Whether or not the replicas must be spread across availability zones.  Only supported on Kubernetes.
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
 - **volumes** (String)
 

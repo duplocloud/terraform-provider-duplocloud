@@ -20,9 +20,12 @@ description: |-
 - **name** (String) A domain name for which the certificate should be issued
 - **plan_id** (String) The plan ID
 
+### Optional
+
+- **id** (String) The ID of this resource.
+
 ### Read-Only
 
 - **arn** (String) The ARN of the certificate
-- **id** (String) The ID of this resource.
 
 

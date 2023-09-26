@@ -129,14 +129,11 @@ resource "duplocloud_k8_ingress" "ingress" {
 ### Optional
 
 - **annotations** (Map of String) An unstructured key value map stored with the ingress that may be used to store arbitrary metadata.
+- **id** (String) The ID of this resource.
 - **labels** (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service. May match selectors of replication controllers and services.
 - **lbconfig** (Block List, Max: 1) The load balancer configuration. This is required when `ingress_class_name` is set to `alb`. (see [below for nested schema](#nestedblock--lbconfig))
 - **rule** (Block List) A list of host rules used to configure the Ingress. (see [below for nested schema](#nestedblock--rule))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-
-### Read-Only
-
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--lbconfig"></a>
 ### Nested Schema for `lbconfig`

@@ -45,6 +45,7 @@ resource "duplocloud_azure_mysql_database" "mydb" {
 - **administrator_login_password** (String, Sensitive) The Password associated with the `administrator_login` for the MySQL Server.
 - **backup_retention_days** (Number) Backup retention days for the server, supported values are between `7` and `35` days.
 - **geo_redundant_backup** (String) Turn Geo-redundant server backups on/off.
+- **id** (String) The ID of this resource.
 - **ssl_enforcement** (String) Specifies if SSL should be enforced on connections.
 - **storage_mb** (Number) Max storage allowed for a server. Possible values are between `5120` MB(5GB) and `1048576` MB(1TB) for the Basic SKU and between `5120` MB(5GB) and `4194304` MB(4TB) for General Purpose/Memory Optimized SKUs.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -53,7 +54,6 @@ resource "duplocloud_azure_mysql_database" "mydb" {
 ### Read-Only
 
 - **fqdn** (String) The FQDN of the MySQL Server.
-- **id** (String) The ID of this resource.
 - **tags** (Map of String)
 
 <a id="nestedblock--timeouts"></a>

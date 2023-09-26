@@ -39,11 +39,8 @@ resource "duplocloud_azure_vm_feature" "vm_feature" {
 
 ### Optional
 
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-
-### Read-Only
-
 - **id** (String) The ID of this resource.
+- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

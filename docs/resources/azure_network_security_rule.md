@@ -49,6 +49,7 @@ resource "duplocloud_azure_network_security_rule" "security_rule" {
 
 - **destination_address_prefix** (String) CIDR or destination IP range or * to match any IP.
 - **destination_port_range** (String) Destination Port or Range. Integer or range between `0` and `65535` or `*` to match any.
+- **id** (String) The ID of this resource.
 - **source_address_prefix** (String) CIDR or source IP range or * to match any IP.
 - **source_port_range** (String) Source Port or Range. Integer or range between `0` and `65535` or `*` to match any.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -56,7 +57,6 @@ resource "duplocloud_azure_network_security_rule" "security_rule" {
 ### Read-Only
 
 - **fullname** (String) The fullname of the security group rule.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

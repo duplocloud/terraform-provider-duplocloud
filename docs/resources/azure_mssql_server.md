@@ -41,6 +41,7 @@ resource "duplocloud_azure_mssql_server" "mssql_server" {
 
 - **administrator_login** (String) The Administrator Login for the  MS sql Server.
 - **administrator_login_password** (String, Sensitive) The Password associated with the `administrator_login` for the MS sql Server.
+- **id** (String) The ID of this resource.
 - **minimum_tls_version** (String) The Minimum TLS Version for all SQL Database and SQL Data Warehouse databases associated with the server. Valid values are: `1.0`, `1.1` and `1.2`.
 - **public_network_access** (String) Whether public network access is enabled or disabled for this server.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -49,7 +50,6 @@ resource "duplocloud_azure_mssql_server" "mssql_server" {
 ### Read-Only
 
 - **fqdn** (String) The fully qualified domain name of the Azure SQL Server.
-- **id** (String) The ID of this resource.
 - **tags** (Map of String)
 
 <a id="nestedblock--timeouts"></a>

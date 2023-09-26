@@ -153,6 +153,7 @@ resource "duplocloud_aws_lb_listener_rule" "health_check" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **priority** (Number) The priority for the rule between `1` and `50000`. Leaving it unset will automatically set the rule with next available priority after currently existing highest rule. A listener can't have multiple rules with the same priority.
 - **tags** (Block List) (see [below for nested schema](#nestedblock--tags))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -160,7 +161,6 @@ resource "duplocloud_aws_lb_listener_rule" "health_check" {
 ### Read-Only
 
 - **arn** (String) The ARN of the rule.
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--action"></a>
 ### Nested Schema for `action`

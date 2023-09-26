@@ -55,12 +55,12 @@ resource "duplocloud_plan_images" "myplan" {
 ### Optional
 
 - **delete_unspecified_images** (Boolean) Whether or not this resource should delete any images not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
+- **id** (String) The ID of this resource.
 - **image** (Block List) A list of images to manage. (see [below for nested schema](#nestedblock--image))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **images** (List of Object) A complete list of images for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--images))
 - **specified_images** (List of String) A list of image names being managed by this resource.
 

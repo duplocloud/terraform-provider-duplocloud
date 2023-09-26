@@ -50,13 +50,13 @@ resource "duploscheduler_gcp_scheduler_job" "myjob" {
 - **attempt_deadline** (String) The attempt deadline for the scheduler job.
 - **description** (String) The description of the scheduler job.
 - **http_target** (Block List, Max: 1) Specifies an HTTP target for the scheduler job. (see [below for nested schema](#nestedblock--http_target))
+- **id** (String) The ID of this resource.
 - **pubsub_target** (Block List, Max: 1) Specifies a pubsub target for the scheduler job. (see [below for nested schema](#nestedblock--pubsub_target))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **fullname** (String) The full name of the scheduler job.
-- **id** (String) The ID of this resource.
 - **self_link** (String) The SelfLink of the scheduler job.
 
 <a id="nestedblock--app_engine_target"></a>

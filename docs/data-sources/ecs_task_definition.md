@@ -20,13 +20,16 @@ description: |-
 - **arn** (String) The ARN of the task definition.
 - **tenant_id** (String) The GUID of the tenant that the task definition will be created in.
 
+### Optional
+
+- **id** (String) The ID of this resource.
+
 ### Read-Only
 
 - **container_definitions** (String)
 - **cpu** (String)
 - **execution_role_arn** (String)
 - **family** (String) The name of the task definition to create.
-- **id** (String) The ID of this resource.
 - **inference_accelerator** (Set of Object) (see [below for nested schema](#nestedatt--inference_accelerator))
 - **ipc_mode** (String)
 - **memory** (String)

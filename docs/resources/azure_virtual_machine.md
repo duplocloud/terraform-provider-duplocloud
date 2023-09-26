@@ -70,6 +70,7 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 - **disk_size_gb** (Number) Specifies the size of the OS Disk in gigabytes Defaults to `128`.
 - **enable_log_analytics** (Boolean) Enable log analytics on virtual machine. Defaults to `false`.
 - **encrypt_disk** (Boolean) Defaults to `false`.
+- **id** (String) The ID of this resource.
 - **is_minion** (Boolean) Defaults to `true`.
 - **join_domain** (Boolean) Join a Windows Server virtual machine to an Azure Active Directory Domain Services. Defaults to `false`.
 - **minion_tags** (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
@@ -82,7 +83,6 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **instance_id** (String) The Azure Virtual Machine ID of the host.
 - **status** (String) The current status of the host.
 - **user_account** (String) The name of the tenant that the host will be created in.

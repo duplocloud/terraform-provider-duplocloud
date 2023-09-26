@@ -30,6 +30,7 @@ resource "duplocloud_azure_log_analytics_workspace" "log_analytics_workspace" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **resource_group_name** (String) The name of the resource group in which the Log Analytics workspace is created. Changing this forces a new resource to be created.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_ready** (Boolean) Whether or not to wait until Log Analytics Workspace to be ready, after creation. Defaults to `true`.
@@ -37,7 +38,6 @@ resource "duplocloud_azure_log_analytics_workspace" "log_analytics_workspace" {
 ### Read-Only
 
 - **azure_id** (String)
-- **id** (String) The ID of this resource.
 - **location** (String)
 - **public_network_access_for_ingestion** (String)
 - **public_network_access_for_query** (String)

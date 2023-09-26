@@ -25,13 +25,13 @@ description: |-
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - **arn** (String) The ARN of the dynamodb table.
 - **fullname** (String) The full name of the dynamodb table.
-- **id** (String) The ID of this resource.
 - **status** (String) The status of the dynamodb table.
 
 <a id="nestedblock--timeouts"></a>

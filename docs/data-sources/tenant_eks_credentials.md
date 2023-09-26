@@ -19,11 +19,14 @@ description: |-
 
 - **tenant_id** (String)
 
+### Optional
+
+- **id** (String) The ID of this resource.
+
 ### Read-Only
 
 - **ca_certificate_data** (String)
 - **endpoint** (String)
-- **id** (String) The ID of this resource.
 - **name** (String)
 - **namespace** (String)
 - **region** (String)

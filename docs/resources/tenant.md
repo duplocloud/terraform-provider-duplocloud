@@ -30,13 +30,13 @@ resource "duplocloud_tenant" "myapp" {
 ### Optional
 
 - **allow_deletion** (Boolean) Whether or not to even try and delete the tenant. *NOTE: This only works if you have disabled deletion protection for the tenant.* Defaults to `false`.
+- **id** (String) The ID of this resource.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **wait_until_created** (Boolean) Whether or not to wait until Duplo has created the tenant. Defaults to `true`.
 - **wait_until_deleted** (Boolean) Whether or not to wait until Duplo has destroyed the tenant. Defaults to `false`.
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **infra_owner** (String)
 - **policy** (List of Object) (see [below for nested schema](#nestedatt--policy))
 - **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))

@@ -44,6 +44,7 @@ resource "duplocloud_infrastructure_subnet" "az-subnet" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **isolated_network** (Boolean) Determines whether the isolated network is enabled. This is applicable only for Azure subnets. Defaults to `false`.
 - **service_endpoints** (Set of String) The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.AzureActiveDirectory`, `Microsoft.AzureCosmosDB`, `Microsoft.ContainerRegistry`, `Microsoft.EventHub`, `Microsoft.KeyVault`, `Microsoft.ServiceBus`,`Microsoft.Sql`, `Microsoft.Storage` and `Microsoft.Web`. This is applicable only for Azure subnets.
 - **tags** (Map of String)
@@ -52,7 +53,6 @@ resource "duplocloud_infrastructure_subnet" "az-subnet" {
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
 - **subnet_id** (String)
 - **subnet_name** (String)
 - **tags_all** (Map of String)

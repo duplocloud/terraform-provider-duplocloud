@@ -40,6 +40,7 @@ data "duplocloud_plan_certificate" "single_cert" {
 
 ### Optional
 
+- **id** (String) The ID of this resource.
 - **infra_name** (String) The name of the infrastructure to look up. Must be specified if `tenant_id` is blank.
 - **tenant_id** (String) The ID of the tenant to look up the infrastructure for. Must be specified if `infra_name` is blank.
 
@@ -54,7 +55,6 @@ Will be one of:
    - `0` : AWS
    - `2` : Azure
 - **enable_k8_cluster** (Boolean) Whether or not a kubernetes cluster is provisioned.
-- **id** (String) The ID of this resource.
 - **private_subnets** (Set of Object) The private subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--private_subnets))
 - **public_subnets** (Set of Object) The public subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--public_subnets))
 - **region** (String) The cloud provider region.  The Duplo portal must have already been configured to support this region.

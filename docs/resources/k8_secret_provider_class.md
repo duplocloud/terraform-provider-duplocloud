@@ -84,14 +84,11 @@ resource "duplocloud_k8_secret_provider_class" "spc" {
 ### Optional
 
 - **annotations** (Map of String) An unstructured key value map stored with the secret provider class that may be used to store arbitrary metadata.
+- **id** (String) The ID of this resource.
 - **labels** (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the service.
 - **parameters** (String) The parameters section contains the details of the mount request.
 - **secret_object** (Block List) You may want to create a Kubernetes Secret to mirror the mounted content. Use the optional secretObjects field to define the desired state of the synced Kubernetes secret objects (see [below for nested schema](#nestedblock--secret_object))
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-
-### Read-Only
-
-- **id** (String) The ID of this resource.
 
 <a id="nestedblock--secret_object"></a>
 ### Nested Schema for `secret_object`
