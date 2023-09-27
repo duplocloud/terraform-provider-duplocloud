@@ -85,6 +85,16 @@ Optional:
 - `variables` (Map of String) Map of environment variables that are accessible from the function code during execution.
 
 
+<a id="nestedblock--image_config"></a>
+### Nested Schema for `image_config`
+
+Optional:
+
+- **command** (List of String) The command that is passed to the container.
+- **entry_point** (List of String) The entry point that is passed to the container.
+- **working_directory** (String) The working directory that is passed to the container.
+
+
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 

@@ -198,6 +198,9 @@ github.com/mitchellh/reflectwalk
 # github.com/oklog/run v1.0.0
 ## explicit
 github.com/oklog/run
+# github.com/pmezard/go-difflib v1.0.0
+## explicit
+github.com/pmezard/go-difflib/difflib
 # github.com/posener/complete v1.1.1
 ## explicit
 github.com/posener/complete
@@ -215,6 +218,7 @@ github.com/shopspring/decimal
 github.com/spf13/cast
 # github.com/stretchr/testify v1.8.1
 ## explicit; go 1.13
+github.com/stretchr/testify/assert
 # github.com/ucarion/jcs v0.1.2
 ## explicit; go 1.14
 github.com/ucarion/jcs
@@ -376,6 +380,9 @@ google.golang.org/protobuf/types/known/anypb
 google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/emptypb
 google.golang.org/protobuf/types/known/timestamppb
+# gopkg.in/yaml.v3 v3.0.1
+## explicit
+gopkg.in/yaml.v3
 # github.com/hashicorp/go-getter v1.4.0 => github.com/hashicorp/go-getter v1.7.0
 # github.com/hashicorp/go-getter v1.5.0 => github.com/hashicorp/go-getter v1.7.0
 # github.com/hashicorp/go-getter v1.5.3 => github.com/hashicorp/go-getter v1.7.0
