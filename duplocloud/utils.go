@@ -894,3 +894,11 @@ func flattenTfManagedDuploKeyStringValues(key string, d *schema.ResourceData, al
 		d.Set(specified_key, make([]interface{}, 0))
 	}
 }
+
+func conditionalDefault(condition bool, defaultValue interface{}) interface{} {
+	if !condition {
+		return nil
+	}
+
+	return defaultValue
+}
