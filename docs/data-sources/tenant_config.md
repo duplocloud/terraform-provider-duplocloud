@@ -17,19 +17,19 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-- **metadata** (List of Object) (see [below for nested schema](#nestedatt--metadata))
+- `id` (String) The ID of this resource.
+- `metadata` (List of Object) (see [below for nested schema](#nestedatt--metadata))
 
 <a id="nestedatt--metadata"></a>
 ### Nested Schema for `metadata`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 

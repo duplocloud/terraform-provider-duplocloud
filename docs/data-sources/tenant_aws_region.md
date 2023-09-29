@@ -17,11 +17,11 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **aws_region** (String)
-- **id** (String) The ID of this resource.
+- `aws_region` (String)
+- `id` (String) The ID of this resource.
 
 

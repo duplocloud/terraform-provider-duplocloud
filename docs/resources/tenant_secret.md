@@ -44,30 +44,30 @@ resource "duplocloud_tenant_secret" "mysecret2" {
 
 ### Required
 
-- **data** (String, Sensitive) The plaintext secret data. You can use the `jsonencode()` function to store JSON data in this field.
-- **name_suffix** (String) The short name of the secret. You can get the fullname from the `name` attribute after creation.
-- **tenant_id** (String) The GUID of the tenant that the secret will be created in.
+- `data` (String, Sensitive) The plaintext secret data. You can use the `jsonencode()` function to store JSON data in this field.
+- `name_suffix` (String) The short name of the secret. You can get the fullname from the `name` attribute after creation.
+- `tenant_id` (String) The GUID of the tenant that the secret will be created in.
 
 ### Optional
 
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **arn** (String) The ARN of the created secret.
-- **id** (String) The ID of this resource.
-- **name** (String) The full name of the secret.
-- **rotation_enabled** (Boolean) Whether or not rotation is enabled for this secret.
-- **tags** (List of Object) A list of tags for this secret. (see [below for nested schema](#nestedatt--tags))
-- **version_id** (String) The version ID of the secret.
+- `arn` (String) The ARN of the created secret.
+- `id` (String) The ID of this resource.
+- `name` (String) The full name of the secret.
+- `rotation_enabled` (Boolean) Whether or not rotation is enabled for this secret.
+- `tags` (List of Object) A list of tags for this secret. (see [below for nested schema](#nestedatt--tags))
+- `version_id` (String) The version ID of the secret.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 
 <a id="nestedatt--tags"></a>
@@ -75,8 +75,8 @@ Optional:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

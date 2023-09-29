@@ -40,49 +40,49 @@ data "duplocloud_plan_certificate" "single_cert" {
 
 ### Optional
 
-- **infra_name** (String) The name of the infrastructure to look up. Must be specified if `tenant_id` is blank.
-- **tenant_id** (String) The ID of the tenant to look up the infrastructure for. Must be specified if `infra_name` is blank.
+- `infra_name` (String) The name of the infrastructure to look up. Must be specified if `tenant_id` is blank.
+- `tenant_id` (String) The ID of the tenant to look up the infrastructure for. Must be specified if `infra_name` is blank.
 
 ### Read-Only
 
-- **account_id** (String) The cloud account ID.
-- **address_prefix** (String) The CIDR for the VPC or VNet.
-- **azcount** (Number) The number of availability zones.  Will be one of: `2`, `3`, or `4`.
-- **cloud** (Number) The numerical index of cloud provider to use for the infrastructure.
+- `account_id` (String) The cloud account ID.
+- `address_prefix` (String) The CIDR for the VPC or VNet.
+- `azcount` (Number) The number of availability zones.  Will be one of: `2`, `3`, or `4`.
+- `cloud` (Number) The numerical index of cloud provider to use for the infrastructure.
 Will be one of:
 
    - `0` : AWS
    - `2` : Azure
-- **enable_k8_cluster** (Boolean) Whether or not a kubernetes cluster is provisioned.
-- **id** (String) The ID of this resource.
-- **private_subnets** (Set of Object) The private subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--private_subnets))
-- **public_subnets** (Set of Object) The public subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--public_subnets))
-- **region** (String) The cloud provider region.  The Duplo portal must have already been configured to support this region.
-- **security_groups** (Set of Object) The security groups for the VPC or VNet. (see [below for nested schema](#nestedatt--security_groups))
-- **status** (String) The status of the infrastructure.
-- **subnet_cidr** (Number) The CIDR subnet size (in bits) of the automatically created subnets.
-- **vpc_id** (String) The VPC or VNet ID.
-- **vpc_name** (String) The VPC or VNet name.
+- `enable_k8_cluster` (Boolean) Whether or not a kubernetes cluster is provisioned.
+- `id` (String) The ID of this resource.
+- `private_subnets` (Set of Object) The private subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--private_subnets))
+- `public_subnets` (Set of Object) The public subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--public_subnets))
+- `region` (String) The cloud provider region.  The Duplo portal must have already been configured to support this region.
+- `security_groups` (Set of Object) The security groups for the VPC or VNet. (see [below for nested schema](#nestedatt--security_groups))
+- `status` (String) The status of the infrastructure.
+- `subnet_cidr` (Number) The CIDR subnet size (in bits) of the automatically created subnets.
+- `vpc_id` (String) The VPC or VNet ID.
+- `vpc_name` (String) The VPC or VNet name.
 
 <a id="nestedatt--private_subnets"></a>
 ### Nested Schema for `private_subnets`
 
 Read-Only:
 
-- **cidr_block** (String)
-- **id** (String)
-- **name** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--private_subnets--tags))
-- **type** (String)
-- **zone** (String)
+- `cidr_block` (String)
+- `id` (String)
+- `name` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--private_subnets--tags))
+- `type` (String)
+- `zone` (String)
 
 <a id="nestedobjatt--private_subnets--tags"></a>
 ### Nested Schema for `private_subnets.tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -91,20 +91,20 @@ Read-Only:
 
 Read-Only:
 
-- **cidr_block** (String)
-- **id** (String)
-- **name** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--public_subnets--tags))
-- **type** (String)
-- **zone** (String)
+- `cidr_block` (String)
+- `id` (String)
+- `name` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--public_subnets--tags))
+- `type` (String)
+- `zone` (String)
 
 <a id="nestedobjatt--public_subnets--tags"></a>
 ### Nested Schema for `public_subnets.tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -113,24 +113,24 @@ Read-Only:
 
 Read-Only:
 
-- **id** (String)
-- **name** (String)
-- **read_only** (Boolean)
-- **rules** (Set of Object) (see [below for nested schema](#nestedobjatt--security_groups--rules))
-- **type** (String)
+- `id` (String)
+- `name` (String)
+- `read_only` (Boolean)
+- `rules` (Set of Object) (see [below for nested schema](#nestedobjatt--security_groups--rules))
+- `type` (String)
 
 <a id="nestedobjatt--security_groups--rules"></a>
 ### Nested Schema for `security_groups.rules`
 
 Read-Only:
 
-- **action** (String)
-- **destination_rule_type** (Number)
-- **direction** (String)
-- **priority** (Number)
-- **protocol** (String)
-- **source_address_prefix** (String)
-- **source_port_range** (String)
-- **source_rule_type** (Number)
+- `action` (String)
+- `destination_rule_type` (Number)
+- `direction` (String)
+- `priority` (Number)
+- `protocol` (String)
+- `source_address_prefix` (String)
+- `source_port_range` (String)
+- `source_rule_type` (Number)
 
 

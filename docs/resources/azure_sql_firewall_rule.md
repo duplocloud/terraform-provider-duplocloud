@@ -32,28 +32,28 @@ resource "duplocloud_azure_sql_firewall_rule" "sql_firewall_rule" {
 
 ### Required
 
-- **end_ip_address** (String) The ending IP address to allow through the firewall for this rule.
-- **name** (String) The name of the firewall rule.
-- **server_name** (String) The name of the SQL Server on which to create the Firewall Rule.
-- **start_ip_address** (String) The starting IP address to allow through the firewall for this rule.
-- **tenant_id** (String) The GUID of the tenant that the sql firewall rule will be created in.
+- `end_ip_address` (String) The ending IP address to allow through the firewall for this rule.
+- `name` (String) The name of the firewall rule.
+- `server_name` (String) The name of the SQL Server on which to create the Firewall Rule.
+- `start_ip_address` (String) The starting IP address to allow through the firewall for this rule.
+- `tenant_id` (String) The GUID of the tenant that the sql firewall rule will be created in.
 
 ### Optional
 
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **azure_id** (String) The ID of the SQL firewall rule.
-- **id** (String) The ID of this resource.
+- `azure_id` (String) The ID of the SQL firewall rule.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

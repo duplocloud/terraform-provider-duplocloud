@@ -17,23 +17,23 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-- **secrets** (List of Object) (see [below for nested schema](#nestedatt--secrets))
+- `id` (String) The ID of this resource.
+- `secrets` (List of Object) (see [below for nested schema](#nestedatt--secrets))
 
 <a id="nestedatt--secrets"></a>
 ### Nested Schema for `secrets`
 
 Read-Only:
 
-- **secret_annotations** (Map of String)
-- **secret_data** (String)
-- **secret_name** (String)
-- **secret_type** (String)
-- **secret_version** (String)
-- **tenant_id** (String)
+- `secret_annotations` (Map of String)
+- `secret_data` (String)
+- `secret_name` (String)
+- `secret_type` (String)
+- `secret_version` (String)
+- `tenant_id` (String)
 
 

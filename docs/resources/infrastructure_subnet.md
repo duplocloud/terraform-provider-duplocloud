@@ -37,34 +37,34 @@ resource "duplocloud_infrastructure_subnet" "az-subnet" {
 
 ### Required
 
-- **cidr_block** (String)
-- **infra_name** (String)
-- **name** (String)
-- **type** (String) Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace` is used for azure.
+- `cidr_block` (String)
+- `infra_name` (String)
+- `name` (String)
+- `type` (String) Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace` is used for azure.
 
 ### Optional
 
-- **isolated_network** (Boolean) Determines whether the isolated network is enabled. This is applicable only for Azure subnets. Defaults to `false`.
-- **service_endpoints** (Set of String) The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.AzureActiveDirectory`, `Microsoft.AzureCosmosDB`, `Microsoft.ContainerRegistry`, `Microsoft.EventHub`, `Microsoft.KeyVault`, `Microsoft.ServiceBus`,`Microsoft.Sql`, `Microsoft.Storage` and `Microsoft.Web`. This is applicable only for Azure subnets.
-- **tags** (Map of String)
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **zone** (String) The Duplo zone that the subnet resides in.  Will be one of:  `"A"`, `"B"`, `"C"`, or `"D"`. This is applicable only for AWS subnets.
+- `isolated_network` (Boolean) Determines whether the isolated network is enabled. This is applicable only for Azure subnets. Defaults to `false`.
+- `service_endpoints` (Set of String) The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.AzureActiveDirectory`, `Microsoft.AzureCosmosDB`, `Microsoft.ContainerRegistry`, `Microsoft.EventHub`, `Microsoft.KeyVault`, `Microsoft.ServiceBus`,`Microsoft.Sql`, `Microsoft.Storage` and `Microsoft.Web`. This is applicable only for Azure subnets.
+- `tags` (Map of String)
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `zone` (String) The Duplo zone that the subnet resides in.  Will be one of:  `"A"`, `"B"`, `"C"`, or `"D"`. This is applicable only for AWS subnets.
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-- **subnet_id** (String)
-- **subnet_name** (String)
-- **tags_all** (Map of String)
+- `id` (String) The ID of this resource.
+- `subnet_id` (String)
+- `subnet_name` (String)
+- `tags_all` (Map of String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

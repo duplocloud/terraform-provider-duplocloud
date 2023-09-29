@@ -128,7 +128,7 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Description: "Specifies the size of the OS Disk in gigabytes",
 			Type:        schema.TypeInt,
 			Optional:    true,
-			Computed:    true,
+			Default:     128,
 		},
 		"os_disk_type": {
 			Description: "Specifies the type of managed disk to create. Possible values are either `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_ZRS` or `UltraSSD_LRS`.",

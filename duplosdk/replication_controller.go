@@ -17,6 +17,8 @@ type DuploReplicationController struct {
 	IsInfraDeployment                 bool                   `json:"IsInfraDeployment,omitempty"`
 	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
 	IsDaemonset                       bool                   `json:"IsDaemonset,omitempty"`
+	IsUniqueK8sNodeRequired           bool                   `json:"IsUniqueK8sNodeRequired"`
+	ShouldSpreadAcrossZones           bool                   `json:"ShouldSpreadAcrossZones"`
 	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment,omitempty"`
 	IsReplicaCollocationAllowed       bool                   `json:"IsReplicaCollocationAllowed,omitempty"`
 	IsAnyHostAllowed                  bool                   `json:"IsAnyHostAllowed,omitempty"`
@@ -75,7 +77,7 @@ type DuploLbConfiguration struct {
 	Protocol                  string                    `json:"Protocol"`
 	Port                      string                    `json:"Port"`
 	HostPort                  int                       `json:"HostPort"`
-	ExternalPort              int                       `json:"ExternalPort"`
+	ExternalPort              *int                      `json:"ExternalPort,omitempty"`
 	TgCount                   int                       `json:"TgCount,omitempty"`
 	IsInfraDeployment         bool                      `json:"IsInfraDeployment,omitempty"`
 	DnsName                   string                    `json:"DnsName,omitempty"`
@@ -136,6 +138,8 @@ type DuploReplicationControllerCreateRequest struct {
 	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
 	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
 	IsDaemonset                       bool                   `json:"IsDaemonset"`
+	IsUniqueK8sNodeRequired           bool                   `json:"IsUniqueK8sNodeRequired"`
+	ShouldSpreadAcrossZones           bool                   `json:"ShouldSpreadAcrossZones"`
 	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment"`
 	IsReplicaCollocationAllowed       bool                   `json:"IsReplicaCollocationAllowed"`
 	IsAnyHostAllowed                  bool                   `json:"IsAnyHostAllowed"`
@@ -161,6 +165,8 @@ type DuploReplicationControllerUpdateRequest struct {
 	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
 	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
 	IsDaemonset                       bool                   `json:"IsDaemonset"`
+	IsUniqueK8sNodeRequired           bool                   `json:"IsUniqueK8sNodeRequired"`
+	ShouldSpreadAcrossZones           bool                   `json:"ShouldSpreadAcrossZones"`
 	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment"`
 	IsReplicaCollocationAllowed       bool                   `json:"IsReplicaCollocationAllowed"`
 	IsAnyHostAllowed                  bool                   `json:"IsAnyHostAllowed"`

@@ -17,40 +17,40 @@ description: |-
 
 ### Read-Only
 
-- **data** (List of Object) (see [below for nested schema](#nestedatt--data))
-- **id** (String) The ID of this resource.
+- `data` (List of Object) (see [below for nested schema](#nestedatt--data))
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--data"></a>
 ### Nested Schema for `data`
 
 Read-Only:
 
-- **account_id** (String)
-- **availability_zones** (List of String)
-- **capabilities** (Map of Boolean)
-- **certificates** (List of Object) (see [below for nested schema](#nestedobjatt--data--certificates))
-- **cloud** (Number)
-- **cloud_config** (Map of String)
-- **config** (List of Object) (see [below for nested schema](#nestedobjatt--data--config))
-- **images** (List of Object) (see [below for nested schema](#nestedobjatt--data--images))
-- **kms_keys** (List of Object) (see [below for nested schema](#nestedobjatt--data--kms_keys))
-- **kubernetes_config** (List of Object) (see [below for nested schema](#nestedobjatt--data--kubernetes_config))
-- **metadata** (List of Object) (see [below for nested schema](#nestedobjatt--data--metadata))
-- **plan_id** (String)
-- **private_subnet_ids** (List of String)
-- **public_subnet_ids** (List of String)
-- **region** (String)
-- **vpc_id** (String)
-- **waf_infos** (List of Object) (see [below for nested schema](#nestedobjatt--data--waf_infos))
+- `account_id` (String)
+- `availability_zones` (List of String)
+- `capabilities` (Map of Boolean)
+- `certificates` (List of Object) (see [below for nested schema](#nestedobjatt--data--certificates))
+- `cloud` (Number)
+- `cloud_config` (Map of String)
+- `config` (List of Object) (see [below for nested schema](#nestedobjatt--data--config))
+- `images` (List of Object) (see [below for nested schema](#nestedobjatt--data--images))
+- `kms_keys` (List of Object) (see [below for nested schema](#nestedobjatt--data--kms_keys))
+- `kubernetes_config` (List of Object) (see [below for nested schema](#nestedobjatt--data--kubernetes_config))
+- `metadata` (List of Object) (see [below for nested schema](#nestedobjatt--data--metadata))
+- `plan_id` (String)
+- `private_subnet_ids` (List of String)
+- `public_subnet_ids` (List of String)
+- `region` (String)
+- `vpc_id` (String)
+- `waf_infos` (List of Object) (see [below for nested schema](#nestedobjatt--data--waf_infos))
 
 <a id="nestedobjatt--data--certificates"></a>
 ### Nested Schema for `data.certificates`
 
 Read-Only:
 
-- **arn** (String)
-- **id** (String)
-- **name** (String)
+- `arn` (String)
+- `id` (String)
+- `name` (String)
 
 
 <a id="nestedobjatt--data--config"></a>
@@ -58,9 +58,9 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **type** (String)
-- **value** (String)
+- `key` (String)
+- `type` (String)
+- `value` (String)
 
 
 <a id="nestedobjatt--data--images"></a>
@@ -68,19 +68,19 @@ Read-Only:
 
 Read-Only:
 
-- **image_id** (String)
-- **name** (String)
-- **os** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--data--images--tags))
-- **username** (String)
+- `image_id` (String)
+- `name` (String)
+- `os` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--data--images--tags))
+- `username` (String)
 
 <a id="nestedobjatt--data--images--tags"></a>
 ### Nested Schema for `data.images.tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -89,9 +89,9 @@ Read-Only:
 
 Read-Only:
 
-- **arn** (String)
-- **id** (String)
-- **name** (String)
+- `arn` (String)
+- `id` (String)
+- `name` (String)
 
 
 <a id="nestedobjatt--data--kubernetes_config"></a>
@@ -99,13 +99,13 @@ Read-Only:
 
 Read-Only:
 
-- **api_server** (String)
-- **certificate_authority_data** (String)
-- **name** (String)
-- **provider** (Number)
-- **region** (String)
-- **token** (String)
-- **version** (String)
+- `api_server` (String)
+- `certificate_authority_data` (String)
+- `name` (String)
+- `provider` (Number)
+- `region` (String)
+- `token` (String)
+- `version` (String)
 
 
 <a id="nestedobjatt--data--metadata"></a>
@@ -113,8 +113,8 @@ Read-Only:
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 <a id="nestedobjatt--data--waf_infos"></a>
@@ -122,7 +122,7 @@ Read-Only:
 
 Read-Only:
 
-- **id** (String)
-- **name** (String)
+- `id` (String)
+- `name` (String)
 
 

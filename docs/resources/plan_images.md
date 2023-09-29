@@ -50,41 +50,41 @@ resource "duplocloud_plan_images" "myplan" {
 
 ### Required
 
-- **plan_id** (String) The ID of the plan to configure.
+- `plan_id` (String) The ID of the plan to configure.
 
 ### Optional
 
-- **delete_unspecified_images** (Boolean) Whether or not this resource should delete any images not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
-- **image** (Block List) A list of images to manage. (see [below for nested schema](#nestedblock--image))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `delete_unspecified_images` (Boolean) Whether or not this resource should delete any images not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
+- `image` (Block List) A list of images to manage. (see [below for nested schema](#nestedblock--image))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-- **images** (List of Object) A complete list of images for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--images))
-- **specified_images** (List of String) A list of image names being managed by this resource.
+- `id` (String) The ID of this resource.
+- `images` (List of Object) A complete list of images for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--images))
+- `specified_images` (List of String) A list of image names being managed by this resource.
 
 <a id="nestedblock--image"></a>
 ### Nested Schema for `image`
 
 Required:
 
-- **image_id** (String)
-- **name** (String)
-- **os** (String)
-- **username** (String)
+- `image_id` (String)
+- `name` (String)
+- `os` (String)
+- `username` (String)
 
 Read-Only:
 
-- **tags** (List of Object) (see [below for nested schema](#nestedatt--image--tags))
+- `tags` (List of Object) (see [below for nested schema](#nestedatt--image--tags))
 
 <a id="nestedatt--image--tags"></a>
 ### Nested Schema for `image.tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 
 
@@ -93,9 +93,9 @@ Read-Only:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 
 <a id="nestedatt--images"></a>
@@ -103,19 +103,19 @@ Optional:
 
 Read-Only:
 
-- **image_id** (String)
-- **name** (String)
-- **os** (String)
-- **tags** (List of Object) (see [below for nested schema](#nestedobjatt--images--tags))
-- **username** (String)
+- `image_id` (String)
+- `name` (String)
+- `os` (String)
+- `tags` (List of Object) (see [below for nested schema](#nestedobjatt--images--tags))
+- `username` (String)
 
 <a id="nestedobjatt--images--tags"></a>
 ### Nested Schema for `images.tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 ## Import
 

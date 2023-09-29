@@ -41,6 +41,7 @@ type DuploLambdaConfiguration struct {
 	MemorySize       int                          `json:"MemorySize"`
 	Role             string                       `json:"Role,omitempty"`
 	PackageType      *DuploStringValue            `json:"PackageType,omitempty"`
+	ImageConfig      *DuploLambdaImageConfig      `json:"ImageConfig,omitempty"`
 	Runtime          *DuploStringValue            `json:"Runtime,omitempty"`
 	Timeout          int                          `json:"Timeout,omitempty"`
 	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
@@ -55,6 +56,12 @@ type DuploLambdaCode struct {
 	ImageURI string `json:"ImageUri,omitempty"`
 	S3Bucket string `json:"S3Bucket,omitempty"`
 	S3Key    string `json:"S3Key,omitempty"`
+}
+
+type DuploLambdaImageConfig struct {
+	Command    []string `json:"Command,omitempty"`
+	EntryPoint []string `json:"EntryPoint,omitempty"`
+	WorkingDir string   `json:"WorkingDirectory,omitempty"`
 }
 
 // DuploLambdaEnvironment is a Duplo SDK object that represents a lambda function's environment config.
@@ -89,6 +96,7 @@ type DuploLambdaCreateRequest struct {
 	MemorySize       int                          `json:"MemorySize"`
 	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
 	PackageType      *DuploStringValue            `json:"PackageType,omitempty"`
+	ImageConfig      *DuploLambdaImageConfig      `json:"ImageConfig,omitempty"`
 	Runtime          *DuploStringValue            `json:"Runtime,omitempty"`
 	Environment      *DuploLambdaEnvironment      `json:"Environment,omitempty"`
 	Tags             map[string]string            `json:"Tags,omitempty"`
@@ -106,16 +114,17 @@ type DuploLambdaUpdateRequest struct {
 
 // DuploLambdaConfigurationRequest is a Duplo SDK object that represents a request to update a lambda function's configuration.
 type DuploLambdaConfigurationRequest struct {
-	FunctionName     string                       `json:"FunctionName,omitempty"`
-	Handler          string                       `json:"Handler,omitempty"`
-	Runtime          *DuploStringValue            `json:"Runtime,omitempty"`
 	Description      string                       `json:"Description,omitempty"`
-	Timeout          int                          `json:"Timeout,omitempty"`
-	MemorySize       int                          `json:"MemorySize"`
 	Environment      *DuploLambdaEnvironment      `json:"Environment,omitempty"`
 	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
-	Tags             map[string]string            `json:"Tags,omitempty"`
+	FunctionName     string                       `json:"FunctionName,omitempty"`
+	Handler          string                       `json:"Handler,omitempty"`
+	ImageConfig      *DuploLambdaImageConfig      `json:"ImageConfig,omitempty"`
 	Layers           *[]string                    `json:"Layers,omitempty"`
+	MemorySize       int                          `json:"MemorySize"`
+	Runtime          *DuploStringValue            `json:"Runtime,omitempty"`
+	Tags             map[string]string            `json:"Tags,omitempty"`
+	Timeout          int                          `json:"Timeout,omitempty"`
 	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
 }
 
@@ -164,9 +173,9 @@ func (c *Client) LambdaFunctionCreate(tenantID string, rq *DuploLambdaCreateRequ
 
 // LambdaFunctionUpdate updates a lambda function via the Duplo API.
 func (c *Client) LambdaFunctionUpdate(tenantID string, rq *DuploLambdaUpdateRequest) ClientError {
-	return c.postAPI(
+	return c.putAPI(
 		fmt.Sprintf("LambdaFunctionUpdate(%s, %s)", tenantID, rq.FunctionName),
-		fmt.Sprintf("subscriptions/%s/UpdateLambdaFunction", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s/code", tenantID, rq.FunctionName),
 		&rq,
 		nil,
 	)
@@ -174,9 +183,9 @@ func (c *Client) LambdaFunctionUpdate(tenantID string, rq *DuploLambdaUpdateRequ
 
 // LambdaFunctionUpdateConfiguration updates a lambda function's configuration via the Duplo API.
 func (c *Client) LambdaFunctionUpdateConfiguration(tenantID string, rq *DuploLambdaConfigurationRequest) ClientError {
-	return c.postAPI(
+	return c.putAPI(
 		fmt.Sprintf("LambdaFunctionUpdateConfiguration(%s, %s)", tenantID, rq.FunctionName),
-		fmt.Sprintf("subscriptions/%s/UpdateLambdaFunctionConfiguration", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s/configuration", tenantID, rq.FunctionName),
 		&rq,
 		nil,
 	)

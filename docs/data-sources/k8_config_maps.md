@@ -27,21 +27,21 @@ output "config_maps" {
 
 ### Required
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Read-Only
 
-- **config_maps** (List of Object) (see [below for nested schema](#nestedatt--config_maps))
-- **id** (String) The ID of this resource.
+- `config_maps` (List of Object) (see [below for nested schema](#nestedatt--config_maps))
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--config_maps"></a>
 ### Nested Schema for `config_maps`
 
 Read-Only:
 
-- **data** (String)
-- **metadata** (String)
-- **name** (String)
-- **tenant_id** (String)
+- `data` (String)
+- `metadata` (String)
+- `name` (String)
+- `tenant_id` (String)
 
 

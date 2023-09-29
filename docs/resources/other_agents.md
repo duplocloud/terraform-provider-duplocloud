@@ -34,38 +34,38 @@ resource "duplocloud_other_agents" "agents" {
 
 ### Required
 
-- **agent** (Block List, Min: 1) (see [below for nested schema](#nestedblock--agent))
-- **name** (String) Resource name to create other agents in duplo.
+- `agent` (Block List, Min: 1) (see [below for nested schema](#nestedblock--agent))
+- `name` (String) Resource name to create other agents in duplo.
 
 ### Optional
 
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--agent"></a>
 ### Nested Schema for `agent`
 
 Required:
 
-- **agent_name** (String)
+- `agent_name` (String)
 
 Optional:
 
-- **agent_linux_package_path** (String)
-- **agent_windows_package_path** (String)
-- **linux_agent_install_status_cmd** (String)
-- **linux_agent_service_name** (String)
-- **linux_agent_uninstall_status_cmd** (String)
-- **linux_install_cmd** (String)
-- **windows_agent_service_name** (String)
+- `agent_linux_package_path` (String)
+- `agent_windows_package_path` (String)
+- `linux_agent_install_status_cmd` (String)
+- `linux_agent_service_name` (String)
+- `linux_agent_uninstall_status_cmd` (String)
+- `linux_install_cmd` (String)
+- `windows_agent_service_name` (String)
 
 Read-Only:
 
-- **execution_count** (Number)
-- **user_request_reset_is_pending** (Boolean)
+- `execution_count` (Number)
+- `user_request_reset_is_pending` (Boolean)
 
 
 <a id="nestedblock--timeouts"></a>
@@ -73,8 +73,8 @@ Read-Only:
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 

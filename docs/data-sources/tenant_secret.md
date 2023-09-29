@@ -17,27 +17,27 @@ description: |-
 
 ### Required
 
-- **tenant_id** (String)
+- `tenant_id` (String)
 
 ### Optional
 
-- **arn** (String)
-- **first_match** (Boolean) Defaults to `true`.
-- **name** (String)
-- **name_suffix** (String)
+- `arn` (String)
+- `first_match` (Boolean) Defaults to `true`.
+- `name` (String)
+- `name_suffix` (String)
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-- **rotation_enabled** (Boolean)
-- **tags** (List of Object) (see [below for nested schema](#nestedatt--tags))
+- `id` (String) The ID of this resource.
+- `rotation_enabled` (Boolean)
+- `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedatt--tags"></a>
 ### Nested Schema for `tags`
 
 Read-Only:
 
-- **key** (String)
-- **value** (String)
+- `key` (String)
+- `value` (String)
 
 

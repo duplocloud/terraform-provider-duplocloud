@@ -31,30 +31,30 @@ resource "duplocloud_gcp_storage_bucket" "mybucket" {
 
 ### Required
 
-- **name** (String) The short name of the storage bucket.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- **tenant_id** (String) The GUID of the tenant that the storage bucket will be created in.
+- `name` (String) The short name of the storage bucket.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `tenant_id` (String) The GUID of the tenant that the storage bucket will be created in.
 
 ### Optional
 
-- **allow_public_access** (Boolean) Whether or not public access might be allowed for the storage bucket. Defaults to `false`.
-- **enable_versioning** (Boolean) Whether or not versioning is enabled for the storage bucket. Defaults to `false`.
-- **labels** (Map of String) The labels assigned to this storage bucket.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `allow_public_access` (Boolean) Whether or not public access might be allowed for the storage bucket. Defaults to `false`.
+- `enable_versioning` (Boolean) Whether or not versioning is enabled for the storage bucket. Defaults to `false`.
+- `labels` (Map of String) The labels assigned to this storage bucket.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- **fullname** (String) The full name of the storage bucket.
-- **id** (String) The ID of this resource.
-- **self_link** (String) The SelfLink of the storage bucket.
+- `fullname` (String) The full name of the storage bucket.
+- `id` (String) The ID of this resource.
+- `self_link` (String) The SelfLink of the storage bucket.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
-- **update** (String)
+- `create` (String)
+- `delete` (String)
+- `update` (String)
 
 ## Import
 

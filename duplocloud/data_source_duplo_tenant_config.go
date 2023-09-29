@@ -36,7 +36,7 @@ func dataSourceTenantConfig() *schema.Resource {
 func dataSourceTenantConfigRead(d *schema.ResourceData, m interface{}) error {
 
 	// Parse the identifying attributes
-	tenantID := d.Id()
+	tenantID := d.Get("tenant_id").(string)
 	log.Printf("[TRACE] dataSourceTenantConfigRead(%s): start", tenantID)
 
 	// Get the object from Duplo, detecting a missing object
@@ -51,7 +51,7 @@ func dataSourceTenantConfigRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Set the fields
-	d.Set("tenant_id", duplo.TenantID)
+	d.SetId(duplo.TenantID)
 	d.Set("metadata", keyValueToState("metadata", duplo.Metadata))
 
 	log.Printf("[TRACE] dataSourceTenantConfigRead(%s): end", tenantID)

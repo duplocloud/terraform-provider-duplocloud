@@ -33,32 +33,32 @@ resource "duplocloud_azure_mssql_server" "mssql_server" {
 
 ### Required
 
-- **name** (String) The name of the Microsoft SQL Server. This needs to be globally unique within Azure.
-- **tenant_id** (String) The GUID of the tenant that the azure mssql server will be created in.
-- **version** (String) The version for the new server. Valid values are: `2.0` (for v11 server) and `12.0` (for v12 server).
+- `name` (String) The name of the Microsoft SQL Server. This needs to be globally unique within Azure.
+- `tenant_id` (String) The GUID of the tenant that the azure mssql server will be created in.
+- `version` (String) The version for the new server. Valid values are: `2.0` (for v11 server) and `12.0` (for v12 server).
 
 ### Optional
 
-- **administrator_login** (String) The Administrator Login for the  MS sql Server.
-- **administrator_login_password** (String, Sensitive) The Password associated with the `administrator_login` for the MS sql Server.
-- **minimum_tls_version** (String) The Minimum TLS Version for all SQL Database and SQL Data Warehouse databases associated with the server. Valid values are: `1.0`, `1.1` and `1.2`.
-- **public_network_access** (String) Whether public network access is enabled or disabled for this server.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **wait_until_ready** (Boolean) Whether or not to wait until PostgreSQL Server instance to be ready, after creation. Defaults to `true`.
+- `administrator_login` (String) The Administrator Login for the  MS sql Server.
+- `administrator_login_password` (String, Sensitive) The Password associated with the `administrator_login` for the MS sql Server.
+- `minimum_tls_version` (String) The Minimum TLS Version for all SQL Database and SQL Data Warehouse databases associated with the server. Valid values are: `1.0`, `1.1` and `1.2`.
+- `public_network_access` (String) Whether public network access is enabled or disabled for this server.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `wait_until_ready` (Boolean) Whether or not to wait until PostgreSQL Server instance to be ready, after creation. Defaults to `true`.
 
 ### Read-Only
 
-- **fqdn** (String) The fully qualified domain name of the Azure SQL Server.
-- **id** (String) The ID of this resource.
-- **tags** (Map of String)
+- `fqdn` (String) The fully qualified domain name of the Azure SQL Server.
+- `id` (String) The ID of this resource.
+- `tags` (Map of String)
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **create** (String)
-- **delete** (String)
+- `create` (String)
+- `delete` (String)
 
 ## Import
 
