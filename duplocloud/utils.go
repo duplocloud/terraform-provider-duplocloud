@@ -14,7 +14,6 @@ import (
 	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
@@ -638,7 +637,7 @@ func reduceNilOrEmptyMapEntries(m map[string]interface{}) {
 }
 
 func waitForResourceWithStatusDone(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (bool, duplosdk.ClientError)) diag.Diagnostics {
-	err := resource.RetryContext(ctx, d.Timeout(kind), func() *resource.RetryError {
+	err := retry.RetryContext(ctx, d.Timeout(kind), func() *retry.RetryError {
 		status, errget := get()
 
 		if errget != nil {
@@ -646,11 +645,11 @@ func waitForResourceWithStatusDone(ctx context.Context, d *schema.ResourceData, 
 				return nil
 			}
 
-			return resource.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
+			return retry.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
 		}
-		// return nil if want to complete wait
+		// return nil if we want to complete wait
 		if !status {
-			return resource.RetryableError(fmt.Errorf("expected %s '%s' to be missing, but it still exists", kind, id))
+			return retry.RetryableError(fmt.Errorf("expected %s '%s' to be missing, but it still exists", kind, id))
 		}
 
 		return nil
