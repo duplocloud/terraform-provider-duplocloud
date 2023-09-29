@@ -439,11 +439,8 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	// Wait for the instance to become unavailable.
-	err = rdsInstanceWaitUntilUnavailable(ctx, c, id, 2*time.Minute)
-	if err != nil {
-		return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
-	}
+	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
+	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
 
 	// Wait for the instance to become available.
 	err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
