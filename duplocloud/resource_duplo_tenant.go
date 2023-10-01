@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
-	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -55,10 +55,10 @@ func resourceTenant() *schema.Resource {
 				Computed: true,
 			},
 			"existing_k8s_namespace": {
-				Description:  "Existing kubernetes namespace to use by the tenant.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true, // Change kubernetes namespace
+				Description: "Existing kubernetes namespace to use by the tenant.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true, // Change kubernetes namespace
 				ValidateFunc: validation.All(
 					validation.StringLenBetween(1, 63),
 					validation.StringMatch(regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`), "kubernetes namespace must contain only lower case alphanumeric and hypen, and cannot start or end with hypen"),
