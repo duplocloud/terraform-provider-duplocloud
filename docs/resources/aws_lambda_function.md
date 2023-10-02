@@ -35,6 +35,19 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
     }
   }
 
+  image_config {
+    command = ["app.handler5"]
+    entry_point = [
+      "/usr/local/bin/python",
+      "awslambdaruntimeclient"
+    ]
+    working_directory = "/var/task1"
+  }
+
+  tracing_config {
+    mode = "PassThrough"
+  }
+
   timeout     = 60
   memory_size = 512
 }

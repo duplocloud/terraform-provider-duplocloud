@@ -21,8 +21,8 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
   }
 
   image_config {
-    command         = ["app.handler5"]
-    entry_point   =  [
+    command = ["app.handler5"]
+    entry_point = [
       "/usr/local/bin/python",
       "awslambdaruntimeclient"
     ]
