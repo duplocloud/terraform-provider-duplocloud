@@ -20,13 +20,23 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
     }
   }
 
+  timeout     = 60
+  memory_size = 512
+}
+
+resource "duplocloud_aws_lambda_function" "thisfunction" {
+
+  tenant_id   = duplocloud_tenant.this.tenant_id
+  name        = "thisfunction"
+  description = "A description of my function"
+
+  package_type = "Image"
+  image_uri    = "dkr.ecr.us-west-2.amazonaws.com/myimage:latest"
+
   image_config {
-    command = ["app.handler5"]
-    entry_point = [
-      "/usr/local/bin/python",
-      "awslambdaruntimeclient"
-    ]
-    working_directory = "/var/task1"
+    command           = ["echo", "hello world"]
+    entry_point       = ["echo hello workd"]
+    working_directory = "/tmp3"
   }
 
   tracing_config {
