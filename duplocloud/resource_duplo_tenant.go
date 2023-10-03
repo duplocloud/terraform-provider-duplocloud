@@ -55,10 +55,10 @@ func resourceTenant() *schema.Resource {
 				Computed: true,
 			},
 			"existing_k8s_namespace": {
-				Description: "Existing kubernetes namespace to use by the tenant.",
+				Description: "Existing kubernetes namespace to use by the tenant. *NOTE: This is an advanced feature, please contact your DuploCloud administrator for help if you want to use this field.*",
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true, // Change kubernetes namespace
+				Computed:    true,
 				ValidateFunc: validation.All(
 					validation.StringLenBetween(1, 63),
 					validation.StringMatch(regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`), "kubernetes namespace must contain only lower case alphanumeric and hypen, and cannot start or end with hypen"),
