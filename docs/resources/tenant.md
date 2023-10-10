@@ -30,6 +30,7 @@ resource "duplocloud_tenant" "myapp" {
 ### Optional
 
 - `allow_deletion` (Boolean) Whether or not to even try and delete the tenant. *NOTE: This only works if you have disabled deletion protection for the tenant.* Defaults to `false`.
+- `existing_k8s_namespace` (String) Existing kubernetes namespace to use by the tenant. *NOTE: This is an advanced feature, please contact your DuploCloud administrator for help if you want to use this field.*
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `wait_until_created` (Boolean) Whether or not to wait until Duplo has created the tenant. Defaults to `true`.
 - `wait_until_deleted` (Boolean) Whether or not to wait until Duplo has destroyed the tenant. Defaults to `false`.
