@@ -404,13 +404,19 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 	// Request the password change in Duplo
 	if d.HasChange("master_password") {
-		err = c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
-			Identifier:     d.Get("identifier").(string),
-			MasterPassword: d.Get("master_password").(string),
-			StorePassword:  true,
-		})
-		if err != nil {
-			return diag.FromErr(err)
+		snapshotId, hasSnapshot := d.GetOk("snapshot_id")
+		masterPassword := d.Get("master_password").(string)
+
+		// Condition to check snapshot_id and password.
+		if !(hasSnapshot && snapshotId.(string) != "" && masterPassword == "donotuse") {
+			err = c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
+				Identifier:     d.Get("identifier").(string),
+				MasterPassword: masterPassword,
+				StorePassword:  true,
+			})
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -619,7 +625,7 @@ func expandV2ScalingConfiguration(cfg []interface{}) *duplosdk.V2ScalingConfigur
 	return out
 }
 
-// RdsInstanceToState converts a Duplo SDK object respresenting an RDS instance to terraform resource data.
+// RdsInstanceToState converts a Duplo SDK object representing an RDS instance to terraform resource data.
 func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.ResourceData) map[string]interface{} {
 	if duploObject == nil {
 		return nil
