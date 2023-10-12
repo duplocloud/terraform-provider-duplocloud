@@ -16,8 +16,8 @@ type DuploK8sJob struct {
 	Status   batchv1.JobStatus `json:"status"`
 }
 
-// K8SecretGetList retrieves a list of k8s secrets via the Duplo API.
-func (c *Client) k8sJobGetList(tenantID string) (*[]DuploK8sJob, ClientError) {
+// K8sJobGetList retrieves a list of k8s jobs via the Duplo API.
+func (c *Client) K8sJobGetList(tenantID string) (*[]DuploK8sJob, ClientError) {
 	var rp []DuploK8sJob
 	err := c.getAPI(
 		fmt.Sprintf("k8sJobGetList(%s)", tenantID),
@@ -34,26 +34,21 @@ func (c *Client) k8sJobGetList(tenantID string) (*[]DuploK8sJob, ClientError) {
 	return &rp, err
 }
 
-// K8SecretGet retrieves a k8s secret via the Duplo API.
-func (c *Client) k8sJobGet(tenantID, secretName string) (*DuploK8sSecret, ClientError) {
-	// Retrieve the list of secrets
-	list, err := c.K8SecretGetList(tenantID)
+// K8SecretGet retrieves a k8s job via the Duplo API.
+func (c *Client) K8sJobGet(tenantID, jobName string) (*DuploK8sJob, ClientError) {
+	var rp DuploK8sJob
+	err := c.getAPI(
+		fmt.Sprintf("k8sJobGet(%s, %s)", tenantID, jobName),
+		fmt.Sprintf("/v3/subscriptions/%s/k8s/job/%s", tenantID, jobName),
+		&rp)
+
 	if err != nil {
-		return nil, newClientError(fmt.Sprintf("failed to get secret list: %s", err))
+		return nil, newClientError(fmt.Sprintf("job %s not found. %s", jobName, err))
 	}
+	// Add the tenant ID, then return the result.
+	rp.TenantID = tenantID
 
-	if list == nil {
-		return nil, newClientError("secret list is nil")
-	}
-
-	// Return the secret, if it exists.
-	for _, secret := range *list {
-		if secret.SecretName == secretName {
-			return &secret, nil
-		}
-	}
-
-	return nil, newClientError(fmt.Sprintf("secret %s not found", secretName))
+	return &rp, err
 }
 
 // K8SecretCreate creates a k8s secret via the Duplo API.
