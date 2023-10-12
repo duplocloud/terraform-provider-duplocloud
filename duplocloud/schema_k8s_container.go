@@ -124,45 +124,6 @@ func resourcesFieldV1(isUpdatable bool) map[string]*schema.Schema {
 	}
 }
 
-func resourcesFieldV0() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"limits": {
-			Type:     schema.TypeList,
-			Optional: true,
-			MaxItems: 1,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"cpu": {
-						Type:     schema.TypeString,
-						Optional: true,
-					},
-					"memory": {
-						Type:     schema.TypeString,
-						Optional: true,
-					},
-				},
-			},
-		},
-		"requests": {
-			Type:     schema.TypeList,
-			Optional: true,
-			MaxItems: 1,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"cpu": {
-						Type:     schema.TypeString,
-						Optional: true,
-					},
-					"memory": {
-						Type:     schema.TypeString,
-						Optional: true,
-					},
-				},
-			},
-		},
-	}
-}
-
 func seccompProfileField(isUpdatable bool) map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"localhost_profile": {

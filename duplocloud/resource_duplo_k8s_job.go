@@ -9,14 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 func resourceKubernetesJobV1() *schema.Resource {
@@ -252,31 +245,31 @@ func resourceKubernetesJobV1Delete(ctx context.Context, d *schema.ResourceData, 
 }
 
 // retryUntilJobV1IsFinished checks if a given job has finished its execution in either a Complete or Failed state
-func retryUntilJobV1IsFinished(ctx context.Context, conn *kubernetes.Clientset, ns, name string) resource.RetryFunc {
-	return func() *resource.RetryError {
-		job, err := conn.BatchV1().Jobs(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			if statusErr, ok := err.(*errors.StatusError); ok && errors.IsNotFound(statusErr) {
-				return nil
-			}
-			return resource.NonRetryableError(err)
-		}
-
-		for _, c := range job.Status.Conditions {
-			if c.Status == corev1.ConditionTrue {
-				log.Printf("[DEBUG] Current condition of job: %s/%s: %s\n", ns, name, c.Type)
-				switch c.Type {
-				case batchv1.JobComplete:
-					return nil
-				case batchv1.JobFailed:
-					return resource.NonRetryableError(fmt.Errorf("job: %s/%s is in failed state", ns, name))
-				}
-			}
-		}
-
-		return resource.RetryableError(fmt.Errorf("job: %s/%s is not in complete state", ns, name))
-	}
-}
+//func retryUntilJobV1IsFinished(ctx context.Context, conn *kubernetes.Clientset, ns, name string) resource.RetryFunc {
+//	return func() *resource.RetryError {
+//		job, err := conn.BatchV1().Jobs(ns).Get(ctx, name, metav1.GetOptions{})
+//		if err != nil {
+//			if statusErr, ok := err.(*errors.StatusError); ok && errors.IsNotFound(statusErr) {
+//				return nil
+//			}
+//			return resource.NonRetryableError(err)
+//		}
+//
+//		for _, c := range job.Status.Conditions {
+//			if c.Status == corev1.ConditionTrue {
+//				log.Printf("[DEBUG] Current condition of job: %s/%s: %s\n", ns, name, c.Type)
+//				switch c.Type {
+//				case batchv1.JobComplete:
+//					return nil
+//				case batchv1.JobFailed:
+//					return resource.NonRetryableError(fmt.Errorf("job: %s/%s is in failed state", ns, name))
+//				}
+//			}
+//		}
+//
+//		return resource.RetryableError(fmt.Errorf("job: %s/%s is not in complete state", ns, name))
+//	}
+//}
 
 func getK8sJobName(d *schema.ResourceData) (string, error) {
 	// Retrieve the metadata, checking for its existence.
