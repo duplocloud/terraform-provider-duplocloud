@@ -133,6 +133,7 @@ func Provider() *schema.Provider {
 			"duplocloud_byoh":                            resourceByoh(),
 			"duplocloud_aws_mwaa_environment":            resourceMwaaAirflow(),
 			"duplocloud_aws_efs_file_system":             resourceAwsEFS(),
+			"duplocloud_k8s_job":                         resourceKubernetesJobV1(),
 			"duplocloud_k8_persistent_volume_claim":      resourceK8PVC(),
 			"duplocloud_k8_storage_class":                resourceK8StorageClass(),
 			"duplocloud_aws_batch_scheduling_policy":     resourceAwsBatchSchedulingPolicy(),
