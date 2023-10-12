@@ -688,6 +688,22 @@ func expandAsStringMap(fieldName string, d *schema.ResourceData) map[string]stri
 	return m
 }
 
+func fieldToStringMap(fieldName string, d map[string]interface{}) map[string]string {
+	m := map[string]string{}
+
+	if v, ok := d[fieldName]; ok && v != nil && len(v.(map[string]interface{})) > 0 {
+		for k, v := range v.(map[string]interface{}) {
+			if v == nil {
+				m[k] = ""
+			} else {
+				m[k] = v.(string)
+			}
+		}
+	}
+
+	return m
+}
+
 func errorsToDiagnostics(prefix string, errors []error) diag.Diagnostics {
 	if len(errors) == 0 {
 		return nil

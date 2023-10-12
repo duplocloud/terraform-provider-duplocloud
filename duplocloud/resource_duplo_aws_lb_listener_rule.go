@@ -1073,7 +1073,7 @@ func expandLbListenerAuthenticateCognitoConfig(l []interface{}) *duplosdk.DuploA
 	}
 
 	config := &duplosdk.DuploAwsLbListenerRuleActionAuthenticateCognitoConfig{
-		AuthenticationRequestExtraParams: expandStringMap("authentication_request_extra_params", tfMap),
+		AuthenticationRequestExtraParams: fieldToStringMap("authentication_request_extra_params", tfMap),
 		UserPoolArn:                      tfMap["user_pool_arn"].(string),
 		UserPoolClientId:                 tfMap["user_pool_client_id"].(string),
 		UserPoolDomain:                   tfMap["user_pool_domain"].(string),
@@ -1110,7 +1110,7 @@ func expandAuthenticateOIDCConfig(l []interface{}) *duplosdk.DuploAwsLbListenerR
 	}
 
 	config := &duplosdk.DuploAwsLbListenerRuleActionAuthenticateOidcConfig{
-		AuthenticationRequestExtraParams: expandStringMap("authentication_request_extra_params", tfMap),
+		AuthenticationRequestExtraParams: fieldToStringMap("authentication_request_extra_params", tfMap),
 		AuthorizationEndpoint:            tfMap["authorization_endpoint"].(string),
 		ClientId:                         tfMap["client_id"].(string),
 		ClientSecret:                     tfMap["client_secret"].(string),
