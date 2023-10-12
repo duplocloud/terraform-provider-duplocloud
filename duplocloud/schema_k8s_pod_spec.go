@@ -2,7 +2,6 @@ package duplocloud
 
 import (
 	api "k8s.io/api/core/v1"
-	"terraform-provider-duplocloud/duplocloud/resources"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -729,7 +728,7 @@ func volumeSchema(isUpdatable bool) *schema.Resource {
 								Required:    true,
 								MaxItems:    1,
 								Elem: &schema.Resource{
-									Schema: resources.persistentVolumeClaimSpecFields(),
+									Schema: persistentVolumeClaimSpecFields(),
 								},
 							},
 						},

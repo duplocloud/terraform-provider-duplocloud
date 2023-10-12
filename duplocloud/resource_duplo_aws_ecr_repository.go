@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplocloud/data_sources"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -99,7 +98,7 @@ func resourceAwsEcrRepositoryRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	data_sources.flattenEcrRepository(d, repository, tenantID)
+	flattenEcrRepository(d, repository, tenantID)
 
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
 

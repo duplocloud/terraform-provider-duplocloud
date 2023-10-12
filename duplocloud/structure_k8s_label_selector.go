@@ -39,7 +39,7 @@ func expandLabelSelector(l []interface{}) *metav1.LabelSelector {
 	in := l[0].(map[string]interface{})
 	obj := &metav1.LabelSelector{}
 	if v, ok := in["match_labels"].(map[string]interface{}); ok && len(v) > 0 {
-		obj.MatchLabels = expandK8sStringMap(v)
+		obj.MatchLabels = expandStringMap(v)
 	}
 	if v, ok := in["match_expressions"].([]interface{}); ok && len(v) > 0 {
 		obj.MatchExpressions = expandLabelSelectorRequirement(v)

@@ -3,7 +3,6 @@ package duplocloud
 import (
 	"context"
 	"log"
-	"terraform-provider-duplocloud/duplocloud/data_sources"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -125,11 +124,11 @@ func resourcePlanImagesRead(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	// Set the simple fields first.
-	d.Set("images", data_sources.flattenPlanImages(duplo))
+	d.Set("images", flattenPlanImages(duplo))
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_images"); ok && v != nil {
-		d.Set("image", data_sources.flattenPlanImages(selectPlanImages(duplo, *v)))
+		d.Set("image", flattenPlanImages(selectPlanImages(duplo, *v)))
 	}
 
 	log.Printf("[TRACE] resourcePlanImagesRead(%s): end", planID)

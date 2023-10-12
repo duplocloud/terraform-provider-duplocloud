@@ -3,7 +3,6 @@ package duplocloud
 import (
 	"context"
 	"log"
-	"terraform-provider-duplocloud/duplocloud/data_sources"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -114,11 +113,11 @@ func resourcePlanCertificatesRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	// Set the simple fields first.
-	d.Set("certificates", data_sources.flattenPlanCertificates(duplo))
+	d.Set("certificates", flattenPlanCertificates(duplo))
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_certificates"); ok && v != nil {
-		d.Set("certificate", data_sources.flattenPlanCertificates(selectPlanCertificates(duplo, *v)))
+		d.Set("certificate", flattenPlanCertificates(selectPlanCertificates(duplo, *v)))
 	}
 
 	log.Printf("[TRACE] resourcePlanCertificatesRead(%s): end", planID)

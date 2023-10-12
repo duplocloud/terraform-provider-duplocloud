@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"terraform-provider-duplocloud/duplocloud/data_sources"
 
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
@@ -226,7 +225,7 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 	}
 
 	// Read the object into state
-	data_sources.flattenDuploService(d, duplo)
+	flattenDuploService(d, duplo)
 	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceDuploServiceRead(%s, %s): end", tenantID, name)
 	return nil
