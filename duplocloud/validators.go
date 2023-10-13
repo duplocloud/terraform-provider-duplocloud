@@ -1,7 +1,6 @@
 package duplocloud
 
 import (
-	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -25,37 +24,37 @@ func validateAnnotations(value interface{}, key string) (ws []string, es []error
 	return
 }
 
-func validateBase64Encoded(v interface{}, key string) (ws []string, es []error) {
-	s, ok := v.(string)
-	if !ok {
-		es = []error{fmt.Errorf("%s: must be a non-nil base64-encoded string", key)}
-		return
-	}
+//func validateBase64Encoded(v interface{}, key string) (ws []string, es []error) {
+//	s, ok := v.(string)
+//	if !ok {
+//		es = []error{fmt.Errorf("%s: must be a non-nil base64-encoded string", key)}
+//		return
+//	}
+//
+//	_, err := base64.StdEncoding.DecodeString(s)
+//	if err != nil {
+//		es = []error{fmt.Errorf("%s: must be a base64-encoded string", key)}
+//		return
+//	}
+//	return
+//}
 
-	_, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		es = []error{fmt.Errorf("%s: must be a base64-encoded string", key)}
-		return
-	}
-	return
-}
-
-func validateBase64EncodedMap(value interface{}, key string) (ws []string, es []error) {
-	m, ok := value.(map[string]interface{})
-	if !ok {
-		es = []error{fmt.Errorf("%s: must be a map of strings to base64 encoded strings", key)}
-		return
-	}
-
-	for k, v := range m {
-		_, errs := validateBase64Encoded(v, k)
-		for _, e := range errs {
-			es = append(es, fmt.Errorf("%s (%q) %s", k, v, e))
-		}
-	}
-
-	return
-}
+//func validateBase64EncodedMap(value interface{}, key string) (ws []string, es []error) {
+//	m, ok := value.(map[string]interface{})
+//	if !ok {
+//		es = []error{fmt.Errorf("%s: must be a map of strings to base64 encoded strings", key)}
+//		return
+//	}
+//
+//	for k, v := range m {
+//		_, errs := validateBase64Encoded(v, k)
+//		for _, e := range errs {
+//			es = append(es, fmt.Errorf("%s (%q) %s", k, v, e))
+//		}
+//	}
+//
+//	return
+//}
 
 func validateName(value interface{}, key string) (ws []string, es []error) {
 	v := value.(string)
@@ -108,52 +107,53 @@ func validatePortNum(value interface{}, key string) (ws []string, es []error) {
 	return
 }
 
-func validatePortName(value interface{}, key string) (ws []string, es []error) {
-	errors := utilValidation.IsValidPortName(value.(string))
-	if len(errors) > 0 {
-		for _, err := range errors {
-			es = append(es, fmt.Errorf("%s %s", key, err))
-		}
-	}
-	return
-}
-func validatePortNumOrName(value interface{}, key string) (ws []string, es []error) {
-	switch value.(type) {
-	case string:
-		intVal, err := strconv.Atoi(value.(string))
-		if err != nil {
-			return validatePortName(value, key)
-		}
-		return validatePortNum(intVal, key)
-	case int:
-		return validatePortNum(value, key)
+//func validatePortName(value interface{}, key string) (ws []string, es []error) {
+//	errors := utilValidation.IsValidPortName(value.(string))
+//	if len(errors) > 0 {
+//		for _, err := range errors {
+//			es = append(es, fmt.Errorf("%s %s", key, err))
+//		}
+//	}
+//	return
+//}
 
-	default:
-		es = append(es, fmt.Errorf("%s must be defined of type string or int on the schema", key))
-		return
-	}
-}
+//func validatePortNumOrName(value interface{}, key string) (ws []string, es []error) {
+//	switch value.(type) {
+//	case string:
+//		intVal, err := strconv.Atoi(value.(string))
+//		if err != nil {
+//			return validatePortName(value, key)
+//		}
+//		return validatePortNum(intVal, key)
+//	case int:
+//		return validatePortNum(value, key)
+//
+//	default:
+//		es = append(es, fmt.Errorf("%s must be defined of type string or int on the schema", key))
+//		return
+//	}
+//}
 
-func validateResourceList(value interface{}, key string) (ws []string, es []error) {
-	m := value.(map[string]interface{})
-	for k, value := range m {
-		if _, ok := value.(int); ok {
-			continue
-		}
-
-		if v, ok := value.(string); ok {
-			_, err := resource.ParseQuantity(v)
-			if err != nil {
-				es = append(es, fmt.Errorf("%s.%s (%q): %s", key, k, v, err))
-			}
-			continue
-		}
-
-		err := "Value can be either string or int"
-		es = append(es, fmt.Errorf("%s.%s (%#v): %s", key, k, value, err))
-	}
-	return
-}
+//func validateResourceList(value interface{}, key string) (ws []string, es []error) {
+//	m := value.(map[string]interface{})
+//	for k, value := range m {
+//		if _, ok := value.(int); ok {
+//			continue
+//		}
+//
+//		if v, ok := value.(string); ok {
+//			_, err := resource.ParseQuantity(v)
+//			if err != nil {
+//				es = append(es, fmt.Errorf("%s.%s (%q): %s", key, k, v, err))
+//			}
+//			continue
+//		}
+//
+//		err := "Value can be either string or int"
+//		es = append(es, fmt.Errorf("%s.%s (%#v): %s", key, k, value, err))
+//	}
+//	return
+//}
 
 func validateResourceQuantity(value interface{}, key string) (ws []string, es []error) {
 	if v, ok := value.(string); ok {
@@ -233,6 +233,7 @@ func validateModeBits(value interface{}, key string) (ws []string, es []error) {
 	return
 }
 
+//nolint:staticcheck
 func validateAttributeValueDoesNotContain(searchString string) schema.SchemaValidateFunc {
 	return func(v interface{}, k string) (ws []string, errors []error) {
 		input := v.(string)
@@ -245,6 +246,7 @@ func validateAttributeValueDoesNotContain(searchString string) schema.SchemaVali
 	}
 }
 
+//nolint:staticcheck
 func validateAttributeValueIsIn(validValues []string) schema.SchemaValidateFunc {
 	return func(v interface{}, k string) (ws []string, errors []error) {
 		input := v.(string)
@@ -265,28 +267,28 @@ func validateAttributeValueIsIn(validValues []string) schema.SchemaValidateFunc 
 	}
 }
 
-func validateTypeStringNullableIntOrPercent(v interface{}, key string) (ws []string, es []error) {
-	value, ok := v.(string)
-	if !ok {
-		es = append(es, fmt.Errorf("expected type of %s to be string", key))
-		return
-	}
-
-	if value == "" {
-		return
-	}
-
-	if strings.HasSuffix(value, "%") {
-		percent, err := strconv.ParseInt(strings.TrimSuffix(value, "%"), 10, 32)
-		if err != nil {
-			es = append(es, fmt.Errorf("%s: cannot parse '%s' as percent: %s", key, value, err))
-		}
-		if percent < 0 || percent > 100 {
-			es = append(es, fmt.Errorf("%s: '%s' is not between 0%% and 100%%", key, value))
-		}
-	} else if _, err := strconv.ParseInt(value, 10, 32); err != nil {
-		es = append(es, fmt.Errorf("%s: cannot parse '%s' as int or percent: %s", key, value, err))
-	}
-
-	return
-}
+//func validateTypeStringNullableIntOrPercent(v interface{}, key string) (ws []string, es []error) {
+//	value, ok := v.(string)
+//	if !ok {
+//		es = append(es, fmt.Errorf("expected type of %s to be string", key))
+//		return
+//	}
+//
+//	if value == "" {
+//		return
+//	}
+//
+//	if strings.HasSuffix(value, "%") {
+//		percent, err := strconv.ParseInt(strings.TrimSuffix(value, "%"), 10, 32)
+//		if err != nil {
+//			es = append(es, fmt.Errorf("%s: cannot parse '%s' as percent: %s", key, value, err))
+//		}
+//		if percent < 0 || percent > 100 {
+//			es = append(es, fmt.Errorf("%s: '%s' is not between 0%% and 100%%", key, value))
+//		}
+//	} else if _, err := strconv.ParseInt(value, 10, 32); err != nil {
+//		es = append(es, fmt.Errorf("%s: cannot parse '%s' as int or percent: %s", key, value, err))
+//	}
+//
+//	return
+//}

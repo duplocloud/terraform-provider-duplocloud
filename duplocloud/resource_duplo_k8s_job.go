@@ -123,19 +123,13 @@ func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, me
 	if _, ok := d.GetOk("spec.0.manual_selector"); !ok {
 		labels := job.Metadata.Labels
 
-		if _, ok := labels["controller-uid"]; ok {
-			delete(labels, "controller-uid")
-		}
+		delete(labels, "controller-uid")
 
-		if _, ok := labels["job-name"]; ok {
-			delete(labels, "job-name")
-		}
+		delete(labels, "job-name")
 
 		labels = job.Spec.Selector.MatchLabels
 
-		if _, ok := labels["controller-uid"]; ok {
-			delete(labels, "controller-uid")
-		}
+		delete(labels, "controller-uid")
 	}
 
 	err = d.Set("metadata", flattenMetadata(job.Metadata, d, meta))

@@ -52,10 +52,10 @@ func lifecycleHandlerFields() map[string]*schema.Schema {
 						}, false),
 					},
 					"port": {
-						Type:         schema.TypeString,
-						Optional:     true,
-						ValidateFunc: validatePortNumOrName,
-						Description:  `Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.`,
+						Type:     schema.TypeString,
+						Optional: true,
+						//ValidateFunc: validatePortNumOrName,
+						Description: `Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.`,
 					},
 					"http_header": {
 						Type:        schema.TypeList,
@@ -86,10 +86,10 @@ func lifecycleHandlerFields() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"port": {
-						Type:         schema.TypeString,
-						Required:     true,
-						ValidateFunc: validatePortNumOrName,
-						Description:  "Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.",
+						Type:     schema.TypeString,
+						Required: true,
+						//ValidateFunc: validatePortNumOrName,
+						Description: "Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.",
 					},
 				},
 			},
@@ -485,11 +485,11 @@ func containerFields(isUpdatable bool) map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"container_port": {
-						Type:         schema.TypeInt,
-						Required:     true,
-						ValidateFunc: validatePortNumOrName,
-						ForceNew:     !isUpdatable,
-						Description:  "Number of port to expose on the pod's IP address. This must be a valid port number, 0 < x < 65536.",
+						Type:     schema.TypeInt,
+						Required: true,
+						//ValidateFunc: validatePortNumOrName,
+						ForceNew:    !isUpdatable,
+						Description: "Number of port to expose on the pod's IP address. This must be a valid port number, 0 < x < 65536.",
 					},
 					"host_ip": {
 						Type:        schema.TypeString,
@@ -505,11 +505,11 @@ func containerFields(isUpdatable bool) map[string]*schema.Schema {
 						ValidateFunc: validation.IsPortNumber,
 					},
 					"name": {
-						Type:         schema.TypeString,
-						Optional:     true,
-						ForceNew:     !isUpdatable,
-						ValidateFunc: validatePortNumOrName,
-						Description:  "If specified, this must be an IANA_SVC_NAME and unique within the pod. Each named port in a pod must have a unique name. Name for the port that can be referred to by services",
+						Type:     schema.TypeString,
+						Optional: true,
+						ForceNew: !isUpdatable,
+						//ValidateFunc: validatePortNumOrName,
+						Description: "If specified, this must be an IANA_SVC_NAME and unique within the pod. Each named port in a pod must have a unique name. Name for the port that can be referred to by services",
 					},
 					"protocol": {
 						Type:        schema.TypeString,
