@@ -73,20 +73,20 @@ func expandMetadata(in []interface{}) metav1.ObjectMeta {
 	return meta
 }
 
-//func patchMetadata(keyPrefix, pathPrefix string, d *schema.ResourceData) PatchOperations {
-//	ops := make([]PatchOperation, 0)
-//	if d.HasChange(keyPrefix + "annotations") {
-//		oldV, newV := d.GetChange(keyPrefix + "annotations")
-//		diffOps := diffStringMap(pathPrefix+"annotations", oldV.(map[string]interface{}), newV.(map[string]interface{}))
-//		ops = append(ops, diffOps...)
-//	}
-//	if d.HasChange(keyPrefix + "labels") {
-//		oldV, newV := d.GetChange(keyPrefix + "labels")
-//		diffOps := diffStringMap(pathPrefix+"labels", oldV.(map[string]interface{}), newV.(map[string]interface{}))
-//		ops = append(ops, diffOps...)
-//	}
-//	return ops
-//}
+func patchMetadata(keyPrefix, pathPrefix string, d *schema.ResourceData) PatchOperations {
+	ops := make([]PatchOperation, 0)
+	if d.HasChange(keyPrefix + "annotations") {
+		oldV, newV := d.GetChange(keyPrefix + "annotations")
+		diffOps := diffStringMap(pathPrefix+"annotations", oldV.(map[string]interface{}), newV.(map[string]interface{}))
+		ops = append(ops, diffOps...)
+	}
+	if d.HasChange(keyPrefix + "labels") {
+		oldV, newV := d.GetChange(keyPrefix + "labels")
+		diffOps := diffStringMap(pathPrefix+"labels", oldV.(map[string]interface{}), newV.(map[string]interface{}))
+		ops = append(ops, diffOps...)
+	}
+	return ops
+}
 
 //func expandBase64MapToByteMap(m map[string]interface{}) map[string][]byte {
 //	result := make(map[string][]byte)
@@ -100,18 +100,18 @@ func expandMetadata(in []interface{}) metav1.ObjectMeta {
 //}
 
 // nolint
-func expandStringSlice(s []interface{}) []string {
-	result := make([]string, len(s))
-	for k, v := range s {
-		// Handle the Terraform parser bug which turns empty strings in lists to nil.
-		if v == nil {
-			result[k] = ""
-		} else {
-			result[k] = v.(string)
-		}
-	}
-	return result
-}
+//func expandStringSlice(s []interface{}) []string {
+//	result := make([]string, len(s))
+//	for k, v := range s {
+//		// Handle the Terraform parser bug which turns empty strings in lists to nil.
+//		if v == nil {
+//			result[k] = ""
+//		} else {
+//			result[k] = v.(string)
+//		}
+//	}
+//	return result
+//}
 
 func flattenMetadata(meta metav1.ObjectMeta, d *schema.ResourceData, providerMetadata interface{}, metaPrefix ...string) []interface{} {
 	m := make(map[string]interface{})

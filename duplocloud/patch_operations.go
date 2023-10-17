@@ -4,7 +4,66 @@ import (
 	"encoding/json"
 	"reflect"
 	"sort"
+	"strings"
 )
+
+func diffStringMap(pathPrefix string, oldV, newV map[string]interface{}) PatchOperations {
+	ops := make([]PatchOperation, 0)
+
+	pathPrefix = strings.TrimRight(pathPrefix, "/")
+
+	// If old value was empty, just create the object
+	if len(oldV) == 0 {
+		ops = append(ops, &AddOperation{
+			Path:  pathPrefix,
+			Value: newV,
+		})
+		return ops
+	}
+
+	// This is suboptimal for adding whole new map from scratch
+	// or deleting the whole map, but it's actually intention.
+	// There may be some other map items managed outside of TF
+	// and we don't want to touch these.
+
+	for k := range oldV {
+		if _, ok := newV[k]; ok {
+			continue
+		}
+		ops = append(ops, &RemoveOperation{
+			Path: pathPrefix + "/" + escapeJsonPointer(k),
+		})
+	}
+
+	for k, v := range newV {
+		newValue := v.(string)
+
+		if oldValue, ok := oldV[k].(string); ok {
+			if oldValue == newValue {
+				continue
+			}
+
+			ops = append(ops, &ReplaceOperation{
+				Path:  pathPrefix + "/" + escapeJsonPointer(k),
+				Value: newValue,
+			})
+			continue
+		}
+
+		ops = append(ops, &AddOperation{
+			Path:  pathPrefix + "/" + escapeJsonPointer(k),
+			Value: newValue,
+		})
+	}
+
+	return ops
+}
+
+func escapeJsonPointer(path string) string {
+	path = strings.Replace(path, "~", "~0", -1)
+	path = strings.Replace(path, "/", "~1", -1)
+	return path
+}
 
 type PatchOperations []PatchOperation
 

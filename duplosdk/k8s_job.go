@@ -9,8 +9,8 @@ import (
 // DuploK8sJob represents a kubernetes secret in a Duplo tenant
 type DuploK8sJob struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
-	TenantID string `json:"-"` //nolint:govet
-
+	TenantID string            `json:"-"` //nolint:govet
+	Name     string            `json:"name"`
 	Metadata metav1.ObjectMeta `json:"metadata"`
 	Spec     batchv1.JobSpec   `json:"spec"`
 	Status   batchv1.JobStatus `json:"status"`
@@ -51,30 +51,32 @@ func (c *Client) K8sJobGet(tenantID, jobName string) (*DuploK8sJob, ClientError)
 	return &rp, err
 }
 
-//// k8sJobCreate creates a k8s secret via the Duplo API.
-//func (c *Client) k8sJobCreate(tenantID string, rq *DuploK8sSecret) ClientError {
-//	return c.K8SecretCreateOrUpdate(tenantID, rq, false)
-//}
-//
-//// k8sJobUpdate updates a k8s secret via the Duplo API.
-//func (c *Client) k8sJobUpdate(tenantID string, rq *DuploK8sSecret) ClientError {
-//	return c.K8SecretCreateOrUpdate(tenantID, rq, true)
-//}
-//
-//// k8sJobCreateOrUpdate creates or updates a k8s secret via the Duplo API.
-//func (c *Client) k8sJobCreateOrUpdate(tenantID string, rq *DuploK8sSecret, updating bool) ClientError {
-//	return c.postAPI(
-//		fmt.Sprintf("K8SecretCreateOrUpdate(%s, %s)", tenantID, rq.SecretName),
-//		fmt.Sprintf("subscriptions/%s/CreateOrUpdateK8Secret", tenantID),
-//		&rq,
-//		nil,
-//	)
-//}
+// K8sJobCreate creates a k8s secret via the Duplo API.
+func (c *Client) K8sJobCreate(tenantID string, rq *DuploK8sJob) ClientError {
+	rp := DuploK8sJob{}
+	return c.postAPI(
+		fmt.Sprintf("k8sJobCreate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("/v3/subscriptions/%s/k8s/job", tenantID),
+		&rq,
+		&rp,
+	)
+}
 
-//// k8sJobDelete deletes a k8s secret via the Duplo API.
-//func (c *Client) k8sJobDelete(tenantID, secretName string) ClientError {
-//	return c.deleteAPI(
-//		fmt.Sprintf("K8SecretDelete(%s, %s)", tenantID, secretName),
-//		fmt.Sprintf("v2/subscriptions/%s/K8SecretApiV2/%s", tenantID, secretName),
-//		nil)
-//}
+// K8sJobUpdate updates a k8s secret via the Duplo API.
+func (c *Client) K8sJobUpdate(tenantID string, rq *DuploK8sJob) ClientError {
+	rp := DuploK8sJob{}
+	return c.putAPI(
+		fmt.Sprintf("k8sJobUpdate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("/v3/subscriptions/%s/k8s/job/%s", tenantID, rq.Name),
+		&rq,
+		&rp,
+	)
+}
+
+// K8sJobDelete deletes a k8s secret via the Duplo API.
+func (c *Client) K8sJobDelete(tenantID, secretName string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("K8SecretDelete(%s, %s)", tenantID, secretName),
+		fmt.Sprintf("/v3/subscriptions/%s/k8s/job/%s", tenantID, secretName),
+		nil)
+}

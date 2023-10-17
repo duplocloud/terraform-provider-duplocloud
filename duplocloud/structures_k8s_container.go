@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func flattenCapability(in []v1.Capability) []string {
@@ -445,382 +443,382 @@ func removeVolumeMountFromContainer(i int, v []v1.VolumeMount) []v1.VolumeMount 
 	return append(v[:i], v[i+1:]...)
 }
 
-//func expandContainers(ctrs []interface{}) ([]v1.Container, error) {
-//	if len(ctrs) == 0 {
-//		return []v1.Container{}, nil
+func expandContainers(ctrs []interface{}) ([]v1.Container, error) {
+	if len(ctrs) == 0 {
+		return []v1.Container{}, nil
+	}
+	cs := make([]v1.Container, len(ctrs))
+	for i, c := range ctrs {
+		ctr := c.(map[string]interface{})
+
+		if image, ok := ctr["image"]; ok {
+			cs[i].Image = image.(string)
+		}
+		if name, ok := ctr["name"]; ok {
+			cs[i].Name = name.(string)
+		}
+		//if command, ok := ctr["command"].([]interface{}); ok {
+		//	cs[i].Command = expandStringSlice(command)
+		//} else {
+		//	// https://github.com/hashicorp/terraform-plugin-sdk/issues/142
+		//	// Set defaults manually until List defaults are supported in the SDK.
+		//	cs[i].Command = []string{}
+		//}
+		//if args, ok := ctr["args"].([]interface{}); ok {
+		//	cs[i].Args = expandStringSlice(args)
+		//} else {
+		//	cs[i].Args = []string{}
+		//}
+
+		//if v, ok := ctr["resources"].([]interface{}); ok && len(v) > 0 {
+		//
+		//	var err error
+		//	crr, err := expandContainerResourceRequirements(v)
+		//	if err != nil {
+		//		return cs, err
+		//	}
+		//	cs[i].Resources = *crr
+		//}
+		//
+		//if v, ok := ctr["port"].([]interface{}); ok && len(v) > 0 {
+		//	cp, err := expandContainerPort(v)
+		//	if err != nil {
+		//		return cs, err
+		//	}
+		//	for _, p := range cp {
+		//		cs[i].Ports = append(cs[i].Ports, *p)
+		//	}
+		//}
+		//if v, ok := ctr["env"].([]interface{}); ok && len(v) > 0 {
+		//	var err error
+		//	cs[i].Env, err = expandContainerEnv(v)
+		//	if err != nil {
+		//		return cs, err
+		//	}
+		//}
+		//if v, ok := ctr["env_from"].([]interface{}); ok && len(v) > 0 {
+		//	var err error
+		//	cs[i].EnvFrom, err = expandContainerEnvFrom(v)
+		//	if err != nil {
+		//		return cs, err
+		//	}
+		//}
+
+		if policy, ok := ctr["image_pull_policy"]; ok {
+			cs[i].ImagePullPolicy = v1.PullPolicy(policy.(string))
+		}
+
+		//if v, ok := ctr["lifecycle"].([]interface{}); ok && len(v) > 0 {
+		//	cs[i].Lifecycle = expandLifeCycle(v)
+		//}
+		//
+		//if v, ok := ctr["liveness_probe"].([]interface{}); ok && len(v) > 0 {
+		//	cs[i].LivenessProbe = expandProbe(v)
+		//}
+		//
+		//if v, ok := ctr["readiness_probe"].([]interface{}); ok && len(v) > 0 {
+		//	cs[i].ReadinessProbe = expandProbe(v)
+		//}
+		//if v, ok := ctr["startup_probe"].([]interface{}); ok && len(v) > 0 {
+		//	cs[i].StartupProbe = expandProbe(v)
+		//}
+		if v, ok := ctr["stdin"]; ok {
+			cs[i].Stdin = v.(bool)
+		}
+		if v, ok := ctr["stdin_once"]; ok {
+			cs[i].StdinOnce = v.(bool)
+		}
+		if v, ok := ctr["termination_message_path"]; ok {
+			cs[i].TerminationMessagePath = v.(string)
+		}
+		if v, ok := ctr["termination_message_policy"]; ok {
+			cs[i].TerminationMessagePolicy = v1.TerminationMessagePolicy(v.(string))
+		}
+		if v, ok := ctr["tty"]; ok {
+			cs[i].TTY = v.(bool)
+		}
+		//if v, ok := ctr["security_context"].([]interface{}); ok && len(v) > 0 {
+		//	ctx, err := expandContainerSecurityContext(v)
+		//	if err != nil {
+		//		return cs, err
+		//	}
+		//	cs[i].SecurityContext = ctx
+		//}
+
+		//if v, ok := ctr["volume_mount"].([]interface{}); ok && len(v) > 0 {
+		//	var err error
+		//	cs[i].VolumeMounts, err = expandContainerVolumeMounts(v)
+		//	if err != nil {
+		//		return cs, err
+		//	}
+		//}
+
+		if v, ok := ctr["working_dir"].(string); ok && v != "" {
+			cs[i].WorkingDir = v
+		}
+	}
+	return cs, nil
+}
+
+// nolint
+//func expandExec(l []interface{}) *v1.ExecAction {
+//	if len(l) == 0 || l[0] == nil {
+//		return &v1.ExecAction{}
 //	}
-//	cs := make([]v1.Container, len(ctrs))
-//	for i, c := range ctrs {
-//		ctr := c.(map[string]interface{})
-//
-//		if image, ok := ctr["image"]; ok {
-//			cs[i].Image = image.(string)
-//		}
-//		if name, ok := ctr["name"]; ok {
-//			cs[i].Name = name.(string)
-//		}
-//		if command, ok := ctr["command"].([]interface{}); ok {
-//			cs[i].Command = expandStringSlice(command)
-//		} else {
-//			// https://github.com/hashicorp/terraform-plugin-sdk/issues/142
-//			// Set defaults manually until List defaults are supported in the SDK.
-//			cs[i].Command = []string{}
-//		}
-//		if args, ok := ctr["args"].([]interface{}); ok {
-//			cs[i].Args = expandStringSlice(args)
-//		} else {
-//			cs[i].Args = []string{}
-//		}
-//
-//		if v, ok := ctr["resources"].([]interface{}); ok && len(v) > 0 {
-//
-//			var err error
-//			crr, err := expandContainerResourceRequirements(v)
-//			if err != nil {
-//				return cs, err
-//			}
-//			cs[i].Resources = *crr
-//		}
-//
-//		if v, ok := ctr["port"].([]interface{}); ok && len(v) > 0 {
-//			cp, err := expandContainerPort(v)
-//			if err != nil {
-//				return cs, err
-//			}
-//			for _, p := range cp {
-//				cs[i].Ports = append(cs[i].Ports, *p)
-//			}
-//		}
-//		if v, ok := ctr["env"].([]interface{}); ok && len(v) > 0 {
-//			var err error
-//			cs[i].Env, err = expandContainerEnv(v)
-//			if err != nil {
-//				return cs, err
-//			}
-//		}
-//		if v, ok := ctr["env_from"].([]interface{}); ok && len(v) > 0 {
-//			var err error
-//			cs[i].EnvFrom, err = expandContainerEnvFrom(v)
-//			if err != nil {
-//				return cs, err
-//			}
-//		}
-//
-//		if policy, ok := ctr["image_pull_policy"]; ok {
-//			cs[i].ImagePullPolicy = v1.PullPolicy(policy.(string))
-//		}
-//
-//		if v, ok := ctr["lifecycle"].([]interface{}); ok && len(v) > 0 {
-//			cs[i].Lifecycle = expandLifeCycle(v)
-//		}
-//
-//		if v, ok := ctr["liveness_probe"].([]interface{}); ok && len(v) > 0 {
-//			cs[i].LivenessProbe = expandProbe(v)
-//		}
-//
-//		if v, ok := ctr["readiness_probe"].([]interface{}); ok && len(v) > 0 {
-//			cs[i].ReadinessProbe = expandProbe(v)
-//		}
-//		if v, ok := ctr["startup_probe"].([]interface{}); ok && len(v) > 0 {
-//			cs[i].StartupProbe = expandProbe(v)
-//		}
-//		if v, ok := ctr["stdin"]; ok {
-//			cs[i].Stdin = v.(bool)
-//		}
-//		if v, ok := ctr["stdin_once"]; ok {
-//			cs[i].StdinOnce = v.(bool)
-//		}
-//		if v, ok := ctr["termination_message_path"]; ok {
-//			cs[i].TerminationMessagePath = v.(string)
-//		}
-//		if v, ok := ctr["termination_message_policy"]; ok {
-//			cs[i].TerminationMessagePolicy = v1.TerminationMessagePolicy(v.(string))
-//		}
-//		if v, ok := ctr["tty"]; ok {
-//			cs[i].TTY = v.(bool)
-//		}
-//		if v, ok := ctr["security_context"].([]interface{}); ok && len(v) > 0 {
-//			ctx, err := expandContainerSecurityContext(v)
-//			if err != nil {
-//				return cs, err
-//			}
-//			cs[i].SecurityContext = ctx
-//		}
-//
-//		if v, ok := ctr["volume_mount"].([]interface{}); ok && len(v) > 0 {
-//			var err error
-//			cs[i].VolumeMounts, err = expandContainerVolumeMounts(v)
-//			if err != nil {
-//				return cs, err
-//			}
-//		}
-//
-//		if v, ok := ctr["working_dir"].(string); ok && v != "" {
-//			cs[i].WorkingDir = v
-//		}
+//	in := l[0].(map[string]interface{})
+//	obj := v1.ExecAction{}
+//	if v, ok := in["command"].([]interface{}); ok && len(v) > 0 {
+//		obj.Command = expandStringSlice(v)
 //	}
-//	return cs, nil
+//	return &obj
 //}
 
 // nolint
-func expandExec(l []interface{}) *v1.ExecAction {
-	if len(l) == 0 || l[0] == nil {
-		return &v1.ExecAction{}
-	}
-	in := l[0].(map[string]interface{})
-	obj := v1.ExecAction{}
-	if v, ok := in["command"].([]interface{}); ok && len(v) > 0 {
-		obj.Command = expandStringSlice(v)
-	}
-	return &obj
-}
+//func expandHTTPHeaders(l []interface{}) []v1.HTTPHeader {
+//	if len(l) == 0 {
+//		return []v1.HTTPHeader{}
+//	}
+//	headers := make([]v1.HTTPHeader, len(l))
+//	for i, c := range l {
+//		m := c.(map[string]interface{})
+//		if v, ok := m["name"]; ok {
+//			headers[i].Name = v.(string)
+//		}
+//		if v, ok := m["value"]; ok {
+//			headers[i].Value = v.(string)
+//		}
+//	}
+//	return headers
+//}
 
 // nolint
-func expandHTTPHeaders(l []interface{}) []v1.HTTPHeader {
-	if len(l) == 0 {
-		return []v1.HTTPHeader{}
-	}
-	headers := make([]v1.HTTPHeader, len(l))
-	for i, c := range l {
-		m := c.(map[string]interface{})
-		if v, ok := m["name"]; ok {
-			headers[i].Name = v.(string)
-		}
-		if v, ok := m["value"]; ok {
-			headers[i].Value = v.(string)
-		}
-	}
-	return headers
-}
+//func expandContainerSecurityContext(l []interface{}) (*v1.SecurityContext, error) {
+//	if len(l) == 0 || l[0] == nil {
+//		return &v1.SecurityContext{}, nil
+//	}
+//	in := l[0].(map[string]interface{})
+//	obj := v1.SecurityContext{}
+//	if v, ok := in["allow_privilege_escalation"]; ok {
+//		obj.AllowPrivilegeEscalation = ptrToBool(v.(bool))
+//	}
+//	if v, ok := in["capabilities"].([]interface{}); ok && len(v) > 0 {
+//		obj.Capabilities = expandSecurityCapabilities(v)
+//	}
+//	if v, ok := in["privileged"]; ok {
+//		obj.Privileged = ptrToBool(v.(bool))
+//	}
+//	if v, ok := in["read_only_root_filesystem"]; ok {
+//		obj.ReadOnlyRootFilesystem = ptrToBool(v.(bool))
+//	}
+//	if v, ok := in["run_as_group"].(string); ok && v != "" {
+//		i, err := strconv.ParseInt(v, 10, 64)
+//		if err != nil {
+//			return &obj, err
+//		}
+//		obj.RunAsGroup = ptrToInt64(int64(i))
+//	}
+//	if v, ok := in["run_as_non_root"]; ok {
+//		obj.RunAsNonRoot = ptrToBool(v.(bool))
+//	}
+//	if v, ok := in["run_as_user"].(string); ok && v != "" {
+//		i, err := strconv.ParseInt(v, 10, 64)
+//		if err != nil {
+//			return &obj, err
+//		}
+//		obj.RunAsUser = ptrToInt64(int64(i))
+//	}
+//	if v, ok := in["seccomp_profile"].([]interface{}); ok && len(v) > 0 {
+//		obj.SeccompProfile = expandSeccompProfile(v)
+//	}
+//	if v, ok := in["se_linux_options"].([]interface{}); ok && len(v) > 0 {
+//		obj.SELinuxOptions = expandSeLinuxOptions(v)
+//	}
+//
+//	return &obj, nil
+//}
 
 // nolint
-func expandContainerSecurityContext(l []interface{}) (*v1.SecurityContext, error) {
-	if len(l) == 0 || l[0] == nil {
-		return &v1.SecurityContext{}, nil
-	}
-	in := l[0].(map[string]interface{})
-	obj := v1.SecurityContext{}
-	if v, ok := in["allow_privilege_escalation"]; ok {
-		obj.AllowPrivilegeEscalation = ptrToBool(v.(bool))
-	}
-	if v, ok := in["capabilities"].([]interface{}); ok && len(v) > 0 {
-		obj.Capabilities = expandSecurityCapabilities(v)
-	}
-	if v, ok := in["privileged"]; ok {
-		obj.Privileged = ptrToBool(v.(bool))
-	}
-	if v, ok := in["read_only_root_filesystem"]; ok {
-		obj.ReadOnlyRootFilesystem = ptrToBool(v.(bool))
-	}
-	if v, ok := in["run_as_group"].(string); ok && v != "" {
-		i, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return &obj, err
-		}
-		obj.RunAsGroup = ptrToInt64(int64(i))
-	}
-	if v, ok := in["run_as_non_root"]; ok {
-		obj.RunAsNonRoot = ptrToBool(v.(bool))
-	}
-	if v, ok := in["run_as_user"].(string); ok && v != "" {
-		i, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return &obj, err
-		}
-		obj.RunAsUser = ptrToInt64(int64(i))
-	}
-	if v, ok := in["seccomp_profile"].([]interface{}); ok && len(v) > 0 {
-		obj.SeccompProfile = expandSeccompProfile(v)
-	}
-	if v, ok := in["se_linux_options"].([]interface{}); ok && len(v) > 0 {
-		obj.SELinuxOptions = expandSeLinuxOptions(v)
-	}
-
-	return &obj, nil
-}
+//func expandCapabilitySlice(s []interface{}) []v1.Capability {
+//	result := make([]v1.Capability, len(s))
+//	for k, v := range s {
+//		result[k] = v1.Capability(v.(string))
+//	}
+//	return result
+//}
 
 // nolint
-func expandCapabilitySlice(s []interface{}) []v1.Capability {
-	result := make([]v1.Capability, len(s))
-	for k, v := range s {
-		result[k] = v1.Capability(v.(string))
-	}
-	return result
-}
+//func expandSecurityCapabilities(l []interface{}) *v1.Capabilities {
+//	if len(l) == 0 || l[0] == nil {
+//		return &v1.Capabilities{}
+//	}
+//	in := l[0].(map[string]interface{})
+//	obj := v1.Capabilities{}
+//	if v, ok := in["add"].([]interface{}); ok {
+//		obj.Add = expandCapabilitySlice(v)
+//	}
+//	if v, ok := in["drop"].([]interface{}); ok {
+//		obj.Drop = expandCapabilitySlice(v)
+//	}
+//	return &obj
+//}
 
 // nolint
-func expandSecurityCapabilities(l []interface{}) *v1.Capabilities {
-	if len(l) == 0 || l[0] == nil {
-		return &v1.Capabilities{}
-	}
-	in := l[0].(map[string]interface{})
-	obj := v1.Capabilities{}
-	if v, ok := in["add"].([]interface{}); ok {
-		obj.Add = expandCapabilitySlice(v)
-	}
-	if v, ok := in["drop"].([]interface{}); ok {
-		obj.Drop = expandCapabilitySlice(v)
-	}
-	return &obj
-}
+//func expandTCPSocket(l []interface{}) *v1.TCPSocketAction {
+//	if len(l) == 0 || l[0] == nil {
+//		return &v1.TCPSocketAction{}
+//	}
+//	in := l[0].(map[string]interface{})
+//	obj := v1.TCPSocketAction{}
+//	if v, ok := in["port"].(string); ok && len(v) > 0 {
+//		obj.Port = intstr.Parse(v)
+//	}
+//	return &obj
+//}
 
 // nolint
-func expandTCPSocket(l []interface{}) *v1.TCPSocketAction {
-	if len(l) == 0 || l[0] == nil {
-		return &v1.TCPSocketAction{}
-	}
-	in := l[0].(map[string]interface{})
-	obj := v1.TCPSocketAction{}
-	if v, ok := in["port"].(string); ok && len(v) > 0 {
-		obj.Port = intstr.Parse(v)
-	}
-	return &obj
-}
+//func expandGRPC(l []interface{}) *v1.GRPCAction {
+//	if len(l) == 0 || l[0] == nil {
+//		return &v1.GRPCAction{}
+//	}
+//	in := l[0].(map[string]interface{})
+//	obj := v1.GRPCAction{}
+//	if v, ok := in["port"].(int); ok {
+//		obj.Port = int32(v)
+//	}
+//	if v, ok := in["service"].(string); ok {
+//		obj.Service = ptrToString(v)
+//	}
+//	return &obj
+//}
 
 // nolint
-func expandGRPC(l []interface{}) *v1.GRPCAction {
-	if len(l) == 0 || l[0] == nil {
-		return &v1.GRPCAction{}
-	}
-	in := l[0].(map[string]interface{})
-	obj := v1.GRPCAction{}
-	if v, ok := in["port"].(int); ok {
-		obj.Port = int32(v)
-	}
-	if v, ok := in["service"].(string); ok {
-		obj.Service = ptrToString(v)
-	}
-	return &obj
-}
+//func expandHTTPGet(l []interface{}) *v1.HTTPGetAction {
+//	if len(l) == 0 || l[0] == nil {
+//		return &v1.HTTPGetAction{}
+//	}
+//	in := l[0].(map[string]interface{})
+//	obj := v1.HTTPGetAction{}
+//	if v, ok := in["host"].(string); ok && len(v) > 0 {
+//		obj.Host = v
+//	}
+//	if v, ok := in["path"].(string); ok && len(v) > 0 {
+//		obj.Path = v
+//	}
+//	if v, ok := in["scheme"].(string); ok && len(v) > 0 {
+//		obj.Scheme = v1.URIScheme(v)
+//	}
+//
+//	if v, ok := in["port"].(string); ok && len(v) > 0 {
+//		obj.Port = intstr.Parse(v)
+//	}
+//
+//	if v, ok := in["http_header"].([]interface{}); ok && len(v) > 0 {
+//		obj.HTTPHeaders = expandHTTPHeaders(v)
+//	}
+//	return &obj
+//}
 
 // nolint
-func expandHTTPGet(l []interface{}) *v1.HTTPGetAction {
-	if len(l) == 0 || l[0] == nil {
-		return &v1.HTTPGetAction{}
-	}
-	in := l[0].(map[string]interface{})
-	obj := v1.HTTPGetAction{}
-	if v, ok := in["host"].(string); ok && len(v) > 0 {
-		obj.Host = v
-	}
-	if v, ok := in["path"].(string); ok && len(v) > 0 {
-		obj.Path = v
-	}
-	if v, ok := in["scheme"].(string); ok && len(v) > 0 {
-		obj.Scheme = v1.URIScheme(v)
-	}
-
-	if v, ok := in["port"].(string); ok && len(v) > 0 {
-		obj.Port = intstr.Parse(v)
-	}
-
-	if v, ok := in["http_header"].([]interface{}); ok && len(v) > 0 {
-		obj.HTTPHeaders = expandHTTPHeaders(v)
-	}
-	return &obj
-}
-
-// nolint
-func expandProbe(l []interface{}) *v1.Probe {
-	if len(l) == 0 || l[0] == nil {
-		return &v1.Probe{}
-	}
-	in := l[0].(map[string]interface{})
-	obj := v1.Probe{}
-	if v, ok := in["exec"].([]interface{}); ok && len(v) > 0 {
-		obj.Exec = expandExec(v)
-	}
-	if v, ok := in["http_get"].([]interface{}); ok && len(v) > 0 {
-		obj.HTTPGet = expandHTTPGet(v)
-	}
-	if v, ok := in["tcp_socket"].([]interface{}); ok && len(v) > 0 {
-		obj.TCPSocket = expandTCPSocket(v)
-	}
-	if v, ok := in["grpc"].([]interface{}); ok && len(v) > 0 {
-		obj.GRPC = expandGRPC(v)
-	}
-	if v, ok := in["failure_threshold"].(int); ok {
-		obj.FailureThreshold = int32(v)
-	}
-	if v, ok := in["initial_delay_seconds"].(int); ok {
-		obj.InitialDelaySeconds = int32(v)
-	}
-	if v, ok := in["period_seconds"].(int); ok {
-		obj.PeriodSeconds = int32(v)
-	}
-	if v, ok := in["success_threshold"].(int); ok {
-		obj.SuccessThreshold = int32(v)
-	}
-	if v, ok := in["timeout_seconds"].(int); ok {
-		obj.TimeoutSeconds = int32(v)
-	}
-
-	return &obj
-}
+//func expandProbe(l []interface{}) *v1.Probe {
+//	if len(l) == 0 || l[0] == nil {
+//		return &v1.Probe{}
+//	}
+//	in := l[0].(map[string]interface{})
+//	obj := v1.Probe{}
+//	if v, ok := in["exec"].([]interface{}); ok && len(v) > 0 {
+//		obj.Exec = expandExec(v)
+//	}
+//	if v, ok := in["http_get"].([]interface{}); ok && len(v) > 0 {
+//		obj.HTTPGet = expandHTTPGet(v)
+//	}
+//	if v, ok := in["tcp_socket"].([]interface{}); ok && len(v) > 0 {
+//		obj.TCPSocket = expandTCPSocket(v)
+//	}
+//	if v, ok := in["grpc"].([]interface{}); ok && len(v) > 0 {
+//		obj.GRPC = expandGRPC(v)
+//	}
+//	if v, ok := in["failure_threshold"].(int); ok {
+//		obj.FailureThreshold = int32(v)
+//	}
+//	if v, ok := in["initial_delay_seconds"].(int); ok {
+//		obj.InitialDelaySeconds = int32(v)
+//	}
+//	if v, ok := in["period_seconds"].(int); ok {
+//		obj.PeriodSeconds = int32(v)
+//	}
+//	if v, ok := in["success_threshold"].(int); ok {
+//		obj.SuccessThreshold = int32(v)
+//	}
+//	if v, ok := in["timeout_seconds"].(int); ok {
+//		obj.TimeoutSeconds = int32(v)
+//	}
+//
+//	return &obj
+//}
 
 // nolint
-func expandLifecycleHandlers(l []interface{}) *v1.LifecycleHandler {
-	if len(l) == 0 || l[0] == nil {
-		return &v1.LifecycleHandler{}
-	}
-	in := l[0].(map[string]interface{})
-	obj := v1.LifecycleHandler{}
-	if v, ok := in["exec"].([]interface{}); ok && len(v) > 0 {
-		obj.Exec = expandExec(v)
-	}
-	if v, ok := in["http_get"].([]interface{}); ok && len(v) > 0 {
-		obj.HTTPGet = expandHTTPGet(v)
-	}
-	if v, ok := in["tcp_socket"].([]interface{}); ok && len(v) > 0 {
-		obj.TCPSocket = expandTCPSocket(v)
-	}
-	return &obj
-
-}
-
-// nolint
-func expandLifeCycle(l []interface{}) *v1.Lifecycle {
-	if len(l) == 0 || l[0] == nil {
-		return &v1.Lifecycle{}
-	}
-	in := l[0].(map[string]interface{})
-	obj := &v1.Lifecycle{}
-	if v, ok := in["post_start"].([]interface{}); ok && len(v) > 0 {
-		obj.PostStart = expandLifecycleHandlers(v)
-	}
-	if v, ok := in["pre_stop"].([]interface{}); ok && len(v) > 0 {
-		obj.PreStop = expandLifecycleHandlers(v)
-	}
-	return obj
-}
+//func expandLifecycleHandlers(l []interface{}) *v1.LifecycleHandler {
+//	if len(l) == 0 || l[0] == nil {
+//		return &v1.LifecycleHandler{}
+//	}
+//	in := l[0].(map[string]interface{})
+//	obj := v1.LifecycleHandler{}
+//	if v, ok := in["exec"].([]interface{}); ok && len(v) > 0 {
+//		obj.Exec = expandExec(v)
+//	}
+//	if v, ok := in["http_get"].([]interface{}); ok && len(v) > 0 {
+//		obj.HTTPGet = expandHTTPGet(v)
+//	}
+//	if v, ok := in["tcp_socket"].([]interface{}); ok && len(v) > 0 {
+//		obj.TCPSocket = expandTCPSocket(v)
+//	}
+//	return &obj
+//
+//}
 
 // nolint
-func expandContainerVolumeMounts(in []interface{}) ([]v1.VolumeMount, error) {
-	if len(in) == 0 {
-		return []v1.VolumeMount{}, nil
-	}
-	vmp := make([]v1.VolumeMount, len(in))
-	for i, c := range in {
-		p := c.(map[string]interface{})
-		if mountPath, ok := p["mount_path"]; ok {
-			vmp[i].MountPath = mountPath.(string)
-		}
-		if name, ok := p["name"]; ok {
-			vmp[i].Name = name.(string)
-		}
-		if readOnly, ok := p["read_only"]; ok {
-			vmp[i].ReadOnly = readOnly.(bool)
-		}
-		if subPath, ok := p["sub_path"]; ok {
-			vmp[i].SubPath = subPath.(string)
-		}
-		if mountPropagation, ok := p["mount_propagation"]; ok {
-			mp := v1.MountPropagationMode(mountPropagation.(string))
-			vmp[i].MountPropagation = &mp
-		}
-	}
-	return vmp, nil
-}
+//func expandLifeCycle(l []interface{}) *v1.Lifecycle {
+//	if len(l) == 0 || l[0] == nil {
+//		return &v1.Lifecycle{}
+//	}
+//	in := l[0].(map[string]interface{})
+//	obj := &v1.Lifecycle{}
+//	if v, ok := in["post_start"].([]interface{}); ok && len(v) > 0 {
+//		obj.PostStart = expandLifecycleHandlers(v)
+//	}
+//	if v, ok := in["pre_stop"].([]interface{}); ok && len(v) > 0 {
+//		obj.PreStop = expandLifecycleHandlers(v)
+//	}
+//	return obj
+//}
+
+// nolint
+//func expandContainerVolumeMounts(in []interface{}) ([]v1.VolumeMount, error) {
+//	if len(in) == 0 {
+//		return []v1.VolumeMount{}, nil
+//	}
+//	vmp := make([]v1.VolumeMount, len(in))
+//	for i, c := range in {
+//		p := c.(map[string]interface{})
+//		if mountPath, ok := p["mount_path"]; ok {
+//			vmp[i].MountPath = mountPath.(string)
+//		}
+//		if name, ok := p["name"]; ok {
+//			vmp[i].Name = name.(string)
+//		}
+//		if readOnly, ok := p["read_only"]; ok {
+//			vmp[i].ReadOnly = readOnly.(bool)
+//		}
+//		if subPath, ok := p["sub_path"]; ok {
+//			vmp[i].SubPath = subPath.(string)
+//		}
+//		if mountPropagation, ok := p["mount_propagation"]; ok {
+//			mp := v1.MountPropagationMode(mountPropagation.(string))
+//			vmp[i].MountPropagation = &mp
+//		}
+//	}
+//	return vmp, nil
+//}
 
 //func expandContainerEnv(in []interface{}) ([]v1.EnvVar, error) {
 //	if len(in) == 0 {
@@ -909,159 +907,159 @@ func expandContainerVolumeMounts(in []interface{}) ([]v1.VolumeMount, error) {
 //}
 
 // nolint
-func expandConfigMapKeyRef(r []interface{}) (*v1.ConfigMapKeySelector, error) {
-	if len(r) == 0 || r[0] == nil {
-		return &v1.ConfigMapKeySelector{}, nil
-	}
-	in := r[0].(map[string]interface{})
-	obj := &v1.ConfigMapKeySelector{}
-
-	if v, ok := in["key"].(string); ok {
-		obj.Key = v
-	}
-	if v, ok := in["name"].(string); ok {
-		obj.Name = v
-	}
-	if v, ok := in["optional"]; ok {
-		obj.Optional = ptrToBool(v.(bool))
-	}
-	return obj, nil
-
-}
-
-// nolint
-func expandFieldRef(r []interface{}) (*v1.ObjectFieldSelector, error) {
-	if len(r) == 0 || r[0] == nil {
-		return &v1.ObjectFieldSelector{}, nil
-	}
-	in := r[0].(map[string]interface{})
-	obj := &v1.ObjectFieldSelector{}
-
-	if v, ok := in["api_version"].(string); ok {
-		obj.APIVersion = v
-	}
-	if v, ok := in["field_path"].(string); ok {
-		obj.FieldPath = v
-	}
-	return obj, nil
-}
+//func expandConfigMapKeyRef(r []interface{}) (*v1.ConfigMapKeySelector, error) {
+//	if len(r) == 0 || r[0] == nil {
+//		return &v1.ConfigMapKeySelector{}, nil
+//	}
+//	in := r[0].(map[string]interface{})
+//	obj := &v1.ConfigMapKeySelector{}
+//
+//	if v, ok := in["key"].(string); ok {
+//		obj.Key = v
+//	}
+//	if v, ok := in["name"].(string); ok {
+//		obj.Name = v
+//	}
+//	if v, ok := in["optional"]; ok {
+//		obj.Optional = ptrToBool(v.(bool))
+//	}
+//	return obj, nil
+//
+//}
 
 // nolint
-func expandResourceFieldRef(r []interface{}) (*v1.ResourceFieldSelector, error) {
-	if len(r) == 0 || r[0] == nil {
-		return &v1.ResourceFieldSelector{}, nil
-	}
-	in := r[0].(map[string]interface{})
-	obj := &v1.ResourceFieldSelector{}
-
-	if v, ok := in["container_name"].(string); ok {
-		obj.ContainerName = v
-	}
-	if v, ok := in["resource"].(string); ok {
-		obj.Resource = v
-	}
-	if v, ok := in["divisor"].(string); ok {
-		q, err := resource.ParseQuantity(v)
-		if err != nil {
-			return obj, err
-		}
-		obj.Divisor = q
-	}
-	return obj, nil
-}
+//func expandFieldRef(r []interface{}) (*v1.ObjectFieldSelector, error) {
+//	if len(r) == 0 || r[0] == nil {
+//		return &v1.ObjectFieldSelector{}, nil
+//	}
+//	in := r[0].(map[string]interface{})
+//	obj := &v1.ObjectFieldSelector{}
+//
+//	if v, ok := in["api_version"].(string); ok {
+//		obj.APIVersion = v
+//	}
+//	if v, ok := in["field_path"].(string); ok {
+//		obj.FieldPath = v
+//	}
+//	return obj, nil
+//}
 
 // nolint
-func expandSecretRef(r []interface{}) (*v1.SecretEnvSource, error) {
-	if len(r) == 0 || r[0] == nil {
-		return &v1.SecretEnvSource{}, nil
-	}
-	in := r[0].(map[string]interface{})
-	obj := &v1.SecretEnvSource{}
-
-	if v, ok := in["name"].(string); ok {
-		obj.Name = v
-	}
-	if v, ok := in["optional"]; ok {
-		obj.Optional = ptrToBool(v.(bool))
-	}
-
-	return obj, nil
-}
-
-// nolint
-func expandSecretKeyRef(r []interface{}) (*v1.SecretKeySelector, error) {
-	if len(r) == 0 || r[0] == nil {
-		return &v1.SecretKeySelector{}, nil
-	}
-	in := r[0].(map[string]interface{})
-	obj := &v1.SecretKeySelector{}
-
-	if v, ok := in["key"].(string); ok {
-		obj.Key = v
-	}
-	if v, ok := in["name"].(string); ok {
-		obj.Name = v
-	}
-	if v, ok := in["optional"]; ok {
-		obj.Optional = ptrToBool(v.(bool))
-	}
-	return obj, nil
-}
+//func expandResourceFieldRef(r []interface{}) (*v1.ResourceFieldSelector, error) {
+//	if len(r) == 0 || r[0] == nil {
+//		return &v1.ResourceFieldSelector{}, nil
+//	}
+//	in := r[0].(map[string]interface{})
+//	obj := &v1.ResourceFieldSelector{}
+//
+//	if v, ok := in["container_name"].(string); ok {
+//		obj.ContainerName = v
+//	}
+//	if v, ok := in["resource"].(string); ok {
+//		obj.Resource = v
+//	}
+//	if v, ok := in["divisor"].(string); ok {
+//		q, err := resource.ParseQuantity(v)
+//		if err != nil {
+//			return obj, err
+//		}
+//		obj.Divisor = q
+//	}
+//	return obj, nil
+//}
 
 // nolint
-func expandEnvValueFrom(r []interface{}) (*v1.EnvVarSource, error) {
-	if len(r) == 0 || r[0] == nil {
-		return &v1.EnvVarSource{}, nil
-	}
-	in := r[0].(map[string]interface{})
-	obj := &v1.EnvVarSource{}
-
-	var err error
-	if v, ok := in["config_map_key_ref"].([]interface{}); ok && len(v) > 0 {
-		obj.ConfigMapKeyRef, err = expandConfigMapKeyRef(v)
-		if err != nil {
-			return obj, err
-		}
-	}
-	if v, ok := in["field_ref"].([]interface{}); ok && len(v) > 0 {
-		obj.FieldRef, err = expandFieldRef(v)
-		if err != nil {
-			return obj, err
-		}
-	}
-	if v, ok := in["secret_key_ref"].([]interface{}); ok && len(v) > 0 {
-		obj.SecretKeyRef, err = expandSecretKeyRef(v)
-		if err != nil {
-			return obj, err
-		}
-	}
-	if v, ok := in["resource_field_ref"].([]interface{}); ok && len(v) > 0 {
-		obj.ResourceFieldRef, err = expandResourceFieldRef(v)
-		if err != nil {
-			return obj, err
-		}
-	}
-	return obj, nil
-
-}
+//func expandSecretRef(r []interface{}) (*v1.SecretEnvSource, error) {
+//	if len(r) == 0 || r[0] == nil {
+//		return &v1.SecretEnvSource{}, nil
+//	}
+//	in := r[0].(map[string]interface{})
+//	obj := &v1.SecretEnvSource{}
+//
+//	if v, ok := in["name"].(string); ok {
+//		obj.Name = v
+//	}
+//	if v, ok := in["optional"]; ok {
+//		obj.Optional = ptrToBool(v.(bool))
+//	}
+//
+//	return obj, nil
+//}
 
 // nolint
-func expandConfigMapRef(r []interface{}) (*v1.ConfigMapEnvSource, error) {
-	if len(r) == 0 || r[0] == nil {
-		return &v1.ConfigMapEnvSource{}, nil
-	}
-	in := r[0].(map[string]interface{})
-	obj := &v1.ConfigMapEnvSource{}
+//func expandSecretKeyRef(r []interface{}) (*v1.SecretKeySelector, error) {
+//	if len(r) == 0 || r[0] == nil {
+//		return &v1.SecretKeySelector{}, nil
+//	}
+//	in := r[0].(map[string]interface{})
+//	obj := &v1.SecretKeySelector{}
+//
+//	if v, ok := in["key"].(string); ok {
+//		obj.Key = v
+//	}
+//	if v, ok := in["name"].(string); ok {
+//		obj.Name = v
+//	}
+//	if v, ok := in["optional"]; ok {
+//		obj.Optional = ptrToBool(v.(bool))
+//	}
+//	return obj, nil
+//}
 
-	if v, ok := in["name"].(string); ok {
-		obj.Name = v
-	}
-	if v, ok := in["optional"]; ok {
-		obj.Optional = ptrToBool(v.(bool))
-	}
+// nolint
+//func expandEnvValueFrom(r []interface{}) (*v1.EnvVarSource, error) {
+//	if len(r) == 0 || r[0] == nil {
+//		return &v1.EnvVarSource{}, nil
+//	}
+//	in := r[0].(map[string]interface{})
+//	obj := &v1.EnvVarSource{}
+//
+//	var err error
+//	if v, ok := in["config_map_key_ref"].([]interface{}); ok && len(v) > 0 {
+//		obj.ConfigMapKeyRef, err = expandConfigMapKeyRef(v)
+//		if err != nil {
+//			return obj, err
+//		}
+//	}
+//	if v, ok := in["field_ref"].([]interface{}); ok && len(v) > 0 {
+//		obj.FieldRef, err = expandFieldRef(v)
+//		if err != nil {
+//			return obj, err
+//		}
+//	}
+//	if v, ok := in["secret_key_ref"].([]interface{}); ok && len(v) > 0 {
+//		obj.SecretKeyRef, err = expandSecretKeyRef(v)
+//		if err != nil {
+//			return obj, err
+//		}
+//	}
+//	if v, ok := in["resource_field_ref"].([]interface{}); ok && len(v) > 0 {
+//		obj.ResourceFieldRef, err = expandResourceFieldRef(v)
+//		if err != nil {
+//			return obj, err
+//		}
+//	}
+//	return obj, nil
+//
+//}
 
-	return obj, nil
-}
+// nolint
+//func expandConfigMapRef(r []interface{}) (*v1.ConfigMapEnvSource, error) {
+//	if len(r) == 0 || r[0] == nil {
+//		return &v1.ConfigMapEnvSource{}, nil
+//	}
+//	in := r[0].(map[string]interface{})
+//	obj := &v1.ConfigMapEnvSource{}
+//
+//	if v, ok := in["name"].(string); ok {
+//		obj.Name = v
+//	}
+//	if v, ok := in["optional"]; ok {
+//		obj.Optional = ptrToBool(v.(bool))
+//	}
+//
+//	return obj, nil
+//}
 
 //func expandContainerResourceRequirements(l []interface{}) (*v1.ResourceRequirements, error) {
 //	obj := &v1.ResourceRequirements{}

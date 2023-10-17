@@ -912,17 +912,17 @@ func flattenVsphereVirtualDiskVolumeSource(in *v1.VsphereVirtualDiskVolumeSource
 //}
 
 // nolint
-func expandLocalObjectReference(l []interface{}) *v1.LocalObjectReference {
-	if len(l) == 0 || l[0] == nil {
-		return &v1.LocalObjectReference{}
-	}
-	in := l[0].(map[string]interface{})
-	obj := &v1.LocalObjectReference{}
-	if v, ok := in["name"].(string); ok {
-		obj.Name = v
-	}
-	return obj
-}
+//func expandLocalObjectReference(l []interface{}) *v1.LocalObjectReference {
+//	if len(l) == 0 || l[0] == nil {
+//		return &v1.LocalObjectReference{}
+//	}
+//	in := l[0].(map[string]interface{})
+//	obj := &v1.LocalObjectReference{}
+//	if v, ok := in["name"].(string); ok {
+//		obj.Name = v
+//	}
+//	return obj
+//}
 
 //// nolint
 //func expandSecretReference(l []interface{}) *v1.SecretReference {

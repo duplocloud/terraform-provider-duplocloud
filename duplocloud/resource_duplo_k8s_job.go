@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
+	"regexp"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -40,6 +41,13 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
+		"name": {
+			Description:  "The short name of the job.  Duplo will add a prefix to the name.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringIsNotWhiteSpace,
+		},
 		"metadata": jobMetadataSchema(),
 		"spec": {
 			Type:        schema.TypeList,
@@ -60,55 +68,50 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 }
 
 func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	//conn, err := meta.(KubeClientsets).MainClientset()
-	//if err != nil {
-	//	return diag.FromErr(err)
-	//}
-
-	//metadata := expandMetadata(d.Get("metadata").([]interface{}))
-	//spec, err := expandJobV1Spec(d.Get("spec").([]interface{}))
-	//if err != nil {
-	//	return diag.FromErr(err)
-	//}
-	//
-	//job := batchv1.Job{
-	//	ObjectMeta: metadata,
-	//	Spec:       spec,
-	//}
-	//
-	//log.Printf("[INFO] Creating new Job: %#v", job)
-	//
-	//out, err := conn.BatchV1().Jobs(metadata.Namespace).Create(ctx, &job, metav1.CreateOptions{})
-	//if err != nil {
-	//	return diag.Errorf("Failed to create Job! API error: %s", err)
-	//}
-	//log.Printf("[INFO] Submitted new job: %#v", out)
-	//
-	//d.SetId(buildId(out.ObjectMeta))
-	//
-	//namespace, name, err := idParts(d.Id())
-	//if err != nil {
-	//	return diag.FromErr(err)
-	//}
-	//if d.Get("wait_for_completion").(bool) {
-	//	err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutCreate),
-	//		retryUntilJobV1IsFinished(ctx, conn, namespace, name))
-	//	if err != nil {
-	//		return diag.FromErr(err)
-	//	}
-	//	return diag.Diagnostics{}
-	//}
-
-	return resourceKubernetesJobV1Read(ctx, d, meta)
-}
-
-func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
+	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantID)
 
-	jobName, err := getK8sJobName(d)
+	metadata := expandMetadata(d.Get("metadata").([]interface{}))
+	// try to get name from root level, if not present, use metadata name
+	name := d.Get("name").(string)
+	if name == "" {
+		name = metadata.Name
+	}
+
+	spec, err := expandJobV1Spec(d.Get("spec").([]interface{}))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	var rq duplosdk.DuploK8sJob
+	rq.Metadata = metadata
+	rq.Spec = spec
+
+	// initiate create Job
+	c := meta.(*duplosdk.Client)
+	err = c.K8sJobCreate(tenantID, &rq)
+	if err != nil {
+		return diag.Errorf("Failed to create Job! API error: %s", err)
+	}
+
+	// wait for completion
+	id := fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", tenantID, name)
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "k8s job", id, func() (interface{}, duplosdk.ClientError) {
+		return c.K8sJobGet(tenantID, name)
+	})
+	if diags != nil {
+		return diags
+	}
+	d.SetId(id)
+
+	diags = resourceKubernetesJobV1Read(ctx, d, meta)
+	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantID)
+	return diags
+}
+
+func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	tenantID, jobName, err := parseK8sJobIdParts(d.Id())
+	log.Printf("[INFO] Reading job %s/%s", tenantID, jobName)
 
 	// Get the object from Duplo, detecting a missing object
 	c := meta.(*duplosdk.Client)
@@ -132,109 +135,86 @@ func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, me
 		delete(labels, "controller-uid")
 	}
 
-	err = d.Set("metadata", flattenMetadata(job.Metadata, d, meta))
-	if err != nil {
-		return diag.FromErr(err)
+	metaError := d.Set("metadata", flattenMetadata(job.Metadata, d, meta))
+	if metaError != nil {
+		return diag.FromErr(metaError)
 	}
 
-	jobSpec, err := flattenJobV1Spec(job.Spec, d, meta)
-	if err != nil {
-		return diag.FromErr(err)
+	jobSpec, jobError := flattenJobV1Spec(job.Spec, d, meta)
+	if jobError != nil {
+		return diag.FromErr(jobError)
 	}
 
-	err = d.Set("spec", jobSpec)
-	if err != nil {
-		return diag.FromErr(err)
+	specError := d.Set("spec", jobSpec)
+	if specError != nil {
+		return diag.FromErr(specError)
 	}
 
 	return diag.Diagnostics{}
 }
 
 func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	//conn, err := meta.(KubeClientsets).MainClientset()
-	//if err != nil {
-	//	return diag.FromErr(err)
-	//}
-	//
-	//namespace, name, err := idParts(d.Id())
-	//if err != nil {
-	//	return diag.FromErr(err)
-	//}
-	//
-	//ops := patchMetadata("metadata.0.", "/metadata/", d)
-	//
-	//if d.HasChange("spec") {
-	//	specOps, err := patchJobV1Spec("/spec", "spec.0.", d)
-	//	if err != nil {
-	//		return diag.FromErr(err)
-	//	}
-	//	ops = append(ops, specOps...)
-	//}
-	//
-	//data, err := ops.MarshalJSON()
-	//if err != nil {
-	//	return diag.Errorf("Failed to marshal update operations: %s", err)
-	//}
-	//
-	//log.Printf("[INFO] Updating job %s: %#v", d.Id(), ops)
-	//
-	//out, err := conn.BatchV1().Jobs(namespace).Patch(ctx, name, pkgApi.JSONPatchType, data, metav1.PatchOptions{})
-	//if err != nil {
-	//	return diag.Errorf("Failed to update Job! API error: %s", err)
-	//}
-	//log.Printf("[INFO] Submitted updated job: %#v", out)
-	//
-	//d.SetId(buildId(out.ObjectMeta))
-	//
-	//if d.Get("wait_for_completion").(bool) {
-	//	err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutUpdate),
-	//		retryUntilJobV1IsFinished(ctx, conn, namespace, name))
-	//	if err != nil {
-	//		return diag.FromErr(err)
-	//	}
-	//}
-	return resourceKubernetesJobV1Read(ctx, d, meta)
+	tenantID := d.Get("tenant_id").(string)
+	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantID)
+
+	metadata := expandMetadata(d.Get("metadata").([]interface{}))
+	// try to get name from root level, if not present, use metadata name
+	name := d.Get("name").(string)
+	if name == "" {
+		name = metadata.Name
+	}
+
+	spec, err := expandJobV1Spec(d.Get("spec").([]interface{}))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	var rq duplosdk.DuploK8sJob
+	rq.Metadata = metadata
+	rq.Spec = spec
+
+	// initiate update Job
+	c := meta.(*duplosdk.Client)
+	err = c.K8sJobUpdate(tenantID, &rq)
+	if err != nil {
+		return diag.Errorf("Failed to update Job! API error: %s", err)
+	}
+
+	// wait for completion
+	id := fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", tenantID, name)
+	d.SetId(id)
+
+	diags := resourceKubernetesJobV1Read(ctx, d, meta)
+	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantID)
+	return diags
 }
 
 func resourceKubernetesJobV1Delete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	//conn, err := meta.(KubeClientsets).MainClientset()
-	//if err != nil {
-	//	return diag.FromErr(err)
-	//}
-	//
-	//namespace, name, err := idParts(d.Id())
-	//if err != nil {
-	//	return diag.FromErr(err)
-	//}
-	//
-	//log.Printf("[INFO] Deleting job: %#v", name)
-	//err = conn.BatchV1().Jobs(namespace).Delete(ctx, name, deleteOptions)
-	//if err != nil {
-	//	if statusErr, ok := err.(*errors.StatusError); ok && errors.IsNotFound(statusErr) {
-	//		return nil
-	//	}
-	//	return diag.Errorf("Failed to delete Job! API error: %s", err)
-	//}
-	//
-	//err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
-	//	_, err := conn.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
-	//	if err != nil {
-	//		if statusErr, ok := err.(*errors.StatusError); ok && errors.IsNotFound(statusErr) {
-	//			return nil
-	//		}
-	//		return resource.NonRetryableError(err)
-	//	}
-	//
-	//	e := fmt.Errorf("Job %s still exists", name)
-	//	return resource.RetryableError(e)
-	//})
-	//if err != nil {
-	//	return diag.FromErr(err)
-	//}
-	//
-	//log.Printf("[INFO] Job %s deleted", name)
+	tenantId := d.Get("tenant_id").(string)
+	name, err := getK8sJobName(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
+	log.Printf("[TRACE] resourceKubernetesJobV1Delete(%s, %s): start", tenantId, name)
+
+	// Get the object from Duplo, detecting a missing object
+	c := meta.(*duplosdk.Client)
+	rp, err := c.K8sJobGet(tenantId, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if rp != nil || rp.Metadata.Name != "" {
+		err := c.K8sJobDelete(tenantId, name)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// resource deleted
 	d.SetId("")
+
+	log.Printf("[TRACE] resourceKubernetesJobV1Delete(%s, %s): end", tenantId, name)
 	return nil
 }
 
@@ -281,4 +261,18 @@ func getK8sJobName(d *schema.ResourceData) (string, error) {
 
 	// Convert the job name to a string.
 	return jobNameRaw.(string), nil
+}
+
+func parseK8sJobIdParts(id string) (tenantID, name string, err error) {
+	// Compile a regular expression that matches a GUID and a job name in your specific URL format.
+	r := regexp.MustCompile(`^v3/subscriptions/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})/k8s/job/([^/]+)$`)
+	matches := r.FindStringSubmatch(id)
+
+	if matches != nil && len(matches) == 3 {
+		// The first element of matches is the entire string, the second is the first capture group (tenantID), and the third is the second capture group (name).
+		tenantID, name = matches[1], matches[2]
+	} else {
+		err = fmt.Errorf("invalid resource ID: %s", id)
+	}
+	return
 }
