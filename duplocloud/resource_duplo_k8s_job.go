@@ -56,7 +56,7 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 			MaxItems:    1,
 			ForceNew:    false,
 			Elem: &schema.Resource{
-				Schema: jobSpecFields(false),
+				Schema: jobSpecFields(true),
 			},
 		},
 		"wait_for_completion": {
@@ -111,6 +111,9 @@ func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, 
 
 func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantID, jobName, err := parseK8sJobIdParts(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	log.Printf("[INFO] Reading job %s/%s", tenantID, jobName)
 
 	// Get the object from Duplo, detecting a missing object
@@ -154,8 +157,8 @@ func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tenantID := d.Get("tenant_id").(string)
-	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantID)
+	tenantId := d.Get("tenant_id").(string)
+	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantId)
 
 	metadata := expandMetadata(d.Get("metadata").([]interface{}))
 	// try to get name from root level, if not present, use metadata name
@@ -164,28 +167,34 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 		name = metadata.Name
 	}
 
-	spec, err := expandJobV1Spec(d.Get("spec").([]interface{}))
-	if err != nil {
-		return diag.FromErr(err)
+	var rq duplosdk.DuploK8sJob
+
+	if d.HasChange("spec") {
+		spec, err := expandJobV1Spec(d.Get("spec").([]interface{}))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		rq.Spec = spec
 	}
 
-	var rq duplosdk.DuploK8sJob
-	rq.Metadata = metadata
-	rq.Spec = spec
+	if d.HasChange("metadata") {
+		metadata := expandMetadata(d.Get("metadata").([]interface{}))
+		rq.Metadata = metadata
+	}
 
 	// initiate update Job
 	c := meta.(*duplosdk.Client)
-	err = c.K8sJobUpdate(tenantID, &rq)
+	err := c.K8sJobUpdate(tenantId, name, &rq)
 	if err != nil {
 		return diag.Errorf("Failed to update Job! API error: %s", err)
 	}
 
 	// wait for completion
-	id := fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", tenantID, name)
+	id := fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", tenantId, name)
 	d.SetId(id)
 
 	diags := resourceKubernetesJobV1Read(ctx, d, meta)
-	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantID)
+	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantId)
 	return diags
 }
 
@@ -218,33 +227,6 @@ func resourceKubernetesJobV1Delete(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-// retryUntilJobV1IsFinished checks if a given job has finished its execution in either a Complete or Failed state
-//func retryUntilJobV1IsFinished(ctx context.Context, conn *kubernetes.Clientset, ns, name string) resource.RetryFunc {
-//	return func() *resource.RetryError {
-//		job, err := conn.BatchV1().Jobs(ns).Get(ctx, name, metav1.GetOptions{})
-//		if err != nil {
-//			if statusErr, ok := err.(*errors.StatusError); ok && errors.IsNotFound(statusErr) {
-//				return nil
-//			}
-//			return resource.NonRetryableError(err)
-//		}
-//
-//		for _, c := range job.Status.Conditions {
-//			if c.Status == corev1.ConditionTrue {
-//				log.Printf("[DEBUG] Current condition of job: %s/%s: %s\n", ns, name, c.Type)
-//				switch c.Type {
-//				case batchv1.JobComplete:
-//					return nil
-//				case batchv1.JobFailed:
-//					return resource.NonRetryableError(fmt.Errorf("job: %s/%s is in failed state", ns, name))
-//				}
-//			}
-//		}
-//
-//		return resource.RetryableError(fmt.Errorf("job: %s/%s is not in complete state", ns, name))
-//	}
-//}
-
 func getK8sJobName(d *schema.ResourceData) (string, error) {
 	// Retrieve the metadata, checking for its existence.
 	metadata, exists := d.GetOk("metadata")
@@ -268,7 +250,7 @@ func parseK8sJobIdParts(id string) (tenantID, name string, err error) {
 	r := regexp.MustCompile(`^v3/subscriptions/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})/k8s/job/([^/]+)$`)
 	matches := r.FindStringSubmatch(id)
 
-	if matches != nil && len(matches) == 3 {
+	if len(matches) == 3 {
 		// The first element of matches is the entire string, the second is the first capture group (tenantID), and the third is the second capture group (name).
 		tenantID, name = matches[1], matches[2]
 	} else {

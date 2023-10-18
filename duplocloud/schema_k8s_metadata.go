@@ -11,6 +11,7 @@ func metadataFields(objectName string) map[string]*schema.Schema {
 			Type:         schema.TypeMap,
 			Description:  fmt.Sprintf("An unstructured key value map stored with the %s that may be used to store arbitrary metadata. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/", objectName),
 			Optional:     true,
+			Computed:     true,
 			Elem:         &schema.Schema{Type: schema.TypeString},
 			ValidateFunc: validateAnnotations,
 		},
@@ -23,6 +24,7 @@ func metadataFields(objectName string) map[string]*schema.Schema {
 			Type:         schema.TypeMap,
 			Description:  fmt.Sprintf("Map of string keys and values that can be used to organize and categorize (scope and select) the %s. May match selectors of replication controllers and services. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/", objectName),
 			Optional:     true,
+			Computed:     true,
 			Elem:         &schema.Schema{Type: schema.TypeString},
 			ValidateFunc: validateLabels,
 		},
@@ -83,8 +85,9 @@ func namespacedMetadataSchemaIsTemplate(objectName string, generatableName, isTe
 		Type:        schema.TypeString,
 		Description: fmt.Sprintf("Namespace defines the space within which name of the %s must be unique.", objectName),
 		Optional:    true,
+		Computed:    true,
 		ForceNew:    true,
-		Default:     conditionalDefault(!isTemplate, "default"),
+		//Default:     conditionalDefault(!isTemplate, "default"),
 	}
 	if generatableName {
 		fields["generate_name"] = &schema.Schema{

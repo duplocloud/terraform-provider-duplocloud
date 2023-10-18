@@ -26,7 +26,7 @@ func jobSpecFields(specUpdatable bool) map[string]*schema.Schema {
 			ForceNew:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
-				Schema: podSpecFields(specUpdatable, false),
+				Schema: podSpecFields(specUpdatable, true),
 			},
 		},
 	}
@@ -42,6 +42,7 @@ func jobSpecFields(specUpdatable bool) map[string]*schema.Schema {
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     false,
+			Computed:     true,
 			ValidateFunc: validatePositiveInteger,
 			Description:  "Optional duration in seconds the pod may be active on the node relative to StartTime before the system will actively try to mark it failed and kill associated containers. Value must be a positive integer.",
 		},
@@ -76,6 +77,7 @@ func jobSpecFields(specUpdatable bool) map[string]*schema.Schema {
 		"manual_selector": {
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Computed:    true,
 			ForceNew:    false,
 			Description: "Controls generation of pod labels and pod selectors. Leave unset unless you are certain what you are doing. When false or unset, the system pick labels unique to this job and appends those labels to the pod template. When true, the user is responsible for picking unique labels and specifying the selector. Failure to pick a unique label may cause this and other jobs to not function correctly. More info: https://git.k8s.io/community/contributors/design-proposals/selector-generation.md",
 		},
@@ -131,6 +133,7 @@ func jobSpecFields(specUpdatable bool) map[string]*schema.Schema {
 						Type:        schema.TypeMap,
 						Description: "A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.",
 						Optional:    true,
+						Computed:    true,
 						ForceNew:    true,
 					},
 				},

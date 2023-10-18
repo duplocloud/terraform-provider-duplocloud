@@ -245,7 +245,6 @@ func podSpecFields(isUpdatable, isComputed bool) map[string]*schema.Schema {
 		"restart_policy": {
 			Type:        schema.TypeString,
 			Optional:    true,
-			Computed:    isComputed,
 			ForceNew:    !isUpdatable,
 			Default:     conditionalDefault(!isComputed, string(api.RestartPolicyAlways)),
 			Description: "Restart policy for all containers within the pod. One of Always, OnFailure, Never. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.",
@@ -471,6 +470,7 @@ func podSpecFields(isUpdatable, isComputed bool) map[string]*schema.Schema {
 						Type:        schema.TypeList,
 						Description: "A label query over a set of resources, in this case pods.",
 						Optional:    true,
+						Computed:    true,
 						Elem: &schema.Resource{
 							Schema: labelSelectorFields(true),
 						},
@@ -716,6 +716,7 @@ func volumeSchema(isUpdatable bool) *schema.Resource {
 											Type:         schema.TypeMap,
 											Description:  "Map of string keys and values that can be used to organize and categorize (scope and select) the persistent volume claim. May match selectors of replication controllers and services. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/",
 											Optional:     true,
+											Computed:     true,
 											Elem:         &schema.Schema{Type: schema.TypeString},
 											ValidateFunc: validateLabels,
 										},

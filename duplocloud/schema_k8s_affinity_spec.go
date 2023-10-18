@@ -52,6 +52,7 @@ func nodeAffinityFields() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Description: "The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, RequiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding 'weight' to the sum if the node matches the corresponding MatchExpressions; the node(s) with the highest sum are the most preferred.",
 			Optional:    true,
+			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: preferredSchedulingTermFields(),
 			},
@@ -77,7 +78,8 @@ func preferredSchedulingTermFields() map[string]*schema.Schema {
 		"weight": {
 			Type:        schema.TypeInt,
 			Description: "weight is in the range 1-100",
-			Required:    true,
+			Optional:    true,
+			Computed:    true,
 		},
 		"preference": {
 			Type:        schema.TypeList,
@@ -137,6 +139,7 @@ func podAffinityFields() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Description: "The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, RequiredDuringScheduling anti-affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding 'weight' to the sum if the node matches the corresponding MatchExpressions; the node(s) with the highest sum are the most preferred.",
 			Optional:    true,
+			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: weightedPodAffinityTermFields(),
 			},
@@ -150,6 +153,7 @@ func podAffinityTermFields() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Description: "A label query over a set of resources, in this case pods.",
 			Optional:    true,
+			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: labelSelectorFields(true),
 			},
@@ -158,13 +162,15 @@ func podAffinityTermFields() map[string]*schema.Schema {
 			Type:        schema.TypeSet,
 			Description: "namespaces specifies which namespaces the labelSelector applies to (matches against); null or empty list means 'this pod's namespace'",
 			Optional:    true,
+			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 			Set:         schema.HashString,
 		},
 		"topology_key": {
 			Type:        schema.TypeString,
 			Description: "empty topology key is interpreted by the scheduler as 'all topologies'",
-			Required:    true,
+			Optional:    true,
+			Computed:    true,
 		},
 	}
 }
