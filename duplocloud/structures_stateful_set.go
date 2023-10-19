@@ -23,17 +23,3 @@ func flattenPodTemplateSpec(t corev1.PodTemplateSpec, d *schema.ResourceData, me
 
 	return []interface{}{template}, nil
 }
-
-//func patchUpdateStrategyRollingUpdate(keyPrefix, pathPrefix string, d *schema.ResourceData) (PatchOperations, error) {
-//	ops := PatchOperations{}
-//	if d.HasChange(keyPrefix + "partition") {
-//		log.Printf("[TRACE] StatefulSet.Spec.UpdateStrategy.RollingUpdate.Partition has changes")
-//		if p, ok := d.Get(keyPrefix + "partition").(int); ok {
-//			ops = append(ops, &ReplaceOperation{
-//				Path:  pathPrefix + "partition",
-//				Value: p,
-//			})
-//		}
-//	}
-//	return ops, nil
-//}

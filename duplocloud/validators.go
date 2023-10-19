@@ -24,38 +24,6 @@ func validateAnnotations(value interface{}, key string) (ws []string, es []error
 	return
 }
 
-//func validateBase64Encoded(v interface{}, key string) (ws []string, es []error) {
-//	s, ok := v.(string)
-//	if !ok {
-//		es = []error{fmt.Errorf("%s: must be a non-nil base64-encoded string", key)}
-//		return
-//	}
-//
-//	_, err := base64.StdEncoding.DecodeString(s)
-//	if err != nil {
-//		es = []error{fmt.Errorf("%s: must be a base64-encoded string", key)}
-//		return
-//	}
-//	return
-//}
-
-//func validateBase64EncodedMap(value interface{}, key string) (ws []string, es []error) {
-//	m, ok := value.(map[string]interface{})
-//	if !ok {
-//		es = []error{fmt.Errorf("%s: must be a map of strings to base64 encoded strings", key)}
-//		return
-//	}
-//
-//	for k, v := range m {
-//		_, errs := validateBase64Encoded(v, k)
-//		for _, e := range errs {
-//			es = append(es, fmt.Errorf("%s (%q) %s", k, v, e))
-//		}
-//	}
-//
-//	return
-//}
-
 func validateName(value interface{}, key string) (ws []string, es []error) {
 	v := value.(string)
 	errors := apiValidation.NameIsDNSSubdomain(v, false)
@@ -106,54 +74,6 @@ func validatePortNum(value interface{}, key string) (ws []string, es []error) {
 	}
 	return
 }
-
-//func validatePortName(value interface{}, key string) (ws []string, es []error) {
-//	errors := utilValidation.IsValidPortName(value.(string))
-//	if len(errors) > 0 {
-//		for _, err := range errors {
-//			es = append(es, fmt.Errorf("%s %s", key, err))
-//		}
-//	}
-//	return
-//}
-
-//func validatePortNumOrName(value interface{}, key string) (ws []string, es []error) {
-//	switch value.(type) {
-//	case string:
-//		intVal, err := strconv.Atoi(value.(string))
-//		if err != nil {
-//			return validatePortName(value, key)
-//		}
-//		return validatePortNum(intVal, key)
-//	case int:
-//		return validatePortNum(value, key)
-//
-//	default:
-//		es = append(es, fmt.Errorf("%s must be defined of type string or int on the schema", key))
-//		return
-//	}
-//}
-
-//func validateResourceList(value interface{}, key string) (ws []string, es []error) {
-//	m := value.(map[string]interface{})
-//	for k, value := range m {
-//		if _, ok := value.(int); ok {
-//			continue
-//		}
-//
-//		if v, ok := value.(string); ok {
-//			_, err := resource.ParseQuantity(v)
-//			if err != nil {
-//				es = append(es, fmt.Errorf("%s.%s (%q): %s", key, k, v, err))
-//			}
-//			continue
-//		}
-//
-//		err := "Value can be either string or int"
-//		es = append(es, fmt.Errorf("%s.%s (%#v): %s", key, k, value, err))
-//	}
-//	return
-//}
 
 func validateResourceQuantity(value interface{}, key string) (ws []string, es []error) {
 	if v, ok := value.(string); ok {

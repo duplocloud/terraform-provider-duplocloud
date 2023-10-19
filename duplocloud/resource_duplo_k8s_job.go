@@ -259,6 +259,7 @@ func parseK8sJobIdParts(id string) (tenantID, name string, err error) {
 	return
 }
 
+// nolint TODO: use in a later PR
 func diffIgnoreDuploCreatedLabels(k, old, new string, d *schema.ResourceData) bool {
 	// List of labels created by the backend API
 	backendLabels := map[string]bool{

@@ -695,18 +695,7 @@ func flattenPodEphemeralVolumeSource(in *v1.EphemeralVolumeSource) []interface{}
 }
 
 // Expanders
-//
-//	func expandPodTargetState(p []interface{}) []string {
-//		if len(p) > 0 {
-//			t := make([]string, len(p))
-//			for i, v := range p {
-//				t[i] = v.(string)
-//			}
-//			return t
-//		}
-//
-//		return []string{string(v1.PodRunning)}
-//	}
+
 func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 	obj := &v1.PodSpec{}
 	if len(p) == 0 || p[0] == nil {
@@ -718,13 +707,13 @@ func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 		obj.ActiveDeadlineSeconds = ptrToInt64(int64(v))
 	}
 
-	//if v, ok := in["affinity"].([]interface{}); ok && len(v) > 0 {
-	//	a, err := expandAffinity(v)
-	//	if err != nil {
-	//		return obj, err
-	//	}
-	//	obj.Affinity = a
-	//}
+	if v, ok := in["affinity"].([]interface{}); ok && len(v) > 0 {
+		a, err := expandAffinity(v)
+		if err != nil {
+			return obj, err
+		}
+		obj.Affinity = a
+	}
 
 	if v, ok := in["automount_service_account_token"].(bool); ok {
 		obj.AutomountServiceAccountToken = ptrToBool(v)

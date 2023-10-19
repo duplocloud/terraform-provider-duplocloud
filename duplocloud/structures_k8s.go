@@ -281,3 +281,57 @@ func flattenNodeSelectorTerms(in []api.NodeSelectorTerm) []interface{} {
 	}
 	return att
 }
+
+func expandNodeSelectorTerm(l []interface{}) *api.NodeSelectorTerm {
+	if len(l) == 0 || l[0] == nil {
+		return &api.NodeSelectorTerm{}
+	}
+	in := l[0].(map[string]interface{})
+	obj := api.NodeSelectorTerm{}
+	if v, ok := in["match_expressions"].([]interface{}); ok && len(v) > 0 {
+		obj.MatchExpressions = expandNodeSelectorRequirementList(v)
+	}
+	if v, ok := in["match_fields"].([]interface{}); ok && len(v) > 0 {
+		obj.MatchFields = expandNodeSelectorRequirementList(v)
+	}
+	return &obj
+}
+
+func expandNodeSelectorTerms(l []interface{}) []api.NodeSelectorTerm {
+	if len(l) == 0 || l[0] == nil {
+		return []api.NodeSelectorTerm{}
+	}
+	obj := make([]api.NodeSelectorTerm, len(l))
+	for i, n := range l {
+		obj[i] = *expandNodeSelectorTerm([]interface{}{n})
+	}
+	return obj
+}
+
+func expandNodeSelectorRequirementList(in []interface{}) []api.NodeSelectorRequirement {
+	att := []api.NodeSelectorRequirement{}
+	if len(in) < 1 {
+		return att
+	}
+	att = make([]api.NodeSelectorRequirement, len(in))
+	for i, c := range in {
+		p := c.(map[string]interface{})
+		att[i].Key = p["key"].(string)
+		att[i].Operator = api.NodeSelectorOperator(p["operator"].(string))
+		att[i].Values = expandStringSlice(p["values"].(*schema.Set).List())
+	}
+	return att
+}
+
+func expandStringSlice(s []interface{}) []string {
+	result := make([]string, len(s))
+	for k, v := range s {
+		// Handle the Terraform parser bug which turns empty strings in lists to nil.
+		if v == nil {
+			result[k] = ""
+		} else {
+			result[k] = v.(string)
+		}
+	}
+	return result
+}
