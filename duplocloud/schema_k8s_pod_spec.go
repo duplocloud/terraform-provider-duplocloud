@@ -10,11 +10,12 @@ import (
 func podSpecFields(isUpdatable, isComputed bool) map[string]*schema.Schema {
 	s := map[string]*schema.Schema{
 		"affinity": {
-			Type:        schema.TypeList,
-			Optional:    true,
-			MaxItems:    1,
-			ForceNew:    !isUpdatable,
-			Description: "Optional pod scheduling constraints.",
+			Type:             schema.TypeList,
+			Optional:         true,
+			MaxItems:         1,
+			ForceNew:         !isUpdatable,
+			DiffSuppressFunc: diffSuppressWhenNotCreating, // TODO: Need to diffSuppressAffinity once we fix this field.
+			Description:      "Optional pod scheduling constraints.",
 			Elem: &schema.Resource{
 				Schema: affinityFields(),
 			},
@@ -1092,4 +1093,29 @@ func volumeSchema(isUpdatable bool) *schema.Resource {
 	return &schema.Resource{
 		Schema: v,
 	}
+}
+
+// nolint TODO: This will be implemented in a later PR
+func diffSuppressAffinity(k string, old, new string, d *schema.ResourceData) bool {
+	// Define the expected affinity structure as a JSON string
+	expectedAffinityJSON := `{
+        "podAntiAffinity": {
+            "preferredDuringSchedulingIgnoredDuringExecution": [
+                {
+                    "podAffinityTerm": {
+                        "labelSelector": {
+                            "matchLabels": {
+                                "app": "ddjob"
+                            }
+                        },
+                        "topologyKey": "kubernetes.io/hostname"
+                    },
+                    "weight": 1
+                }
+            ]
+        }
+    }`
+
+	// Compare the old and new values as JSON strings
+	return old == expectedAffinityJSON && new == expectedAffinityJSON
 }

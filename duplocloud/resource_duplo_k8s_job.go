@@ -56,7 +56,7 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 			MaxItems:    1,
 			ForceNew:    false,
 			Elem: &schema.Resource{
-				Schema: jobSpecFields(true),
+				Schema: jobSpecFields(false),
 			},
 		},
 		"wait_for_completion": {
@@ -158,7 +158,7 @@ func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, me
 
 func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
-	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantId)
+	log.Printf("[TRACE] resourceKubernetesJobV1Update(%s): end", tenantId)
 
 	metadata := expandMetadata(d.Get("metadata").([]interface{}))
 	// try to get name from root level, if not present, use metadata name
@@ -194,7 +194,7 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 	d.SetId(id)
 
 	diags := resourceKubernetesJobV1Read(ctx, d, meta)
-	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantId)
+	log.Printf("[TRACE] resourceKubernetesJobV1Update(%s): end", tenantId)
 	return diags
 }
 
@@ -257,4 +257,22 @@ func parseK8sJobIdParts(id string) (tenantID, name string, err error) {
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
 	return
+}
+
+func diffIgnoreDuploCreatedLabels(k, old, new string, d *schema.ResourceData) bool {
+	// List of labels created by the backend API
+	backendLabels := map[string]bool{
+		"duplocloud.net/owner":      true,
+		"duplocloud.net/tenantid":   true,
+		"duplocloud.net/tenantname": true,
+	}
+
+	// Check if the label key is in the list of backend-created labels
+	if backendLabels[k] {
+		// Ignore the difference for backend-created labels
+		return true
+	}
+
+	// For other labels, compare old and new values
+	return old == new
 }
