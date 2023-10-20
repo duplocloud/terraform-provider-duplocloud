@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -338,7 +338,7 @@ func flattenBatchJobQueue(d *schema.ResourceData, c *duplosdk.Client, duplo *dup
 }
 
 func batchJobQueueUntilDisabled(ctx context.Context, c *duplosdk.Client, tenantID string, fullname string, timeout time.Duration) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
@@ -365,7 +365,7 @@ func batchJobQueueUntilDisabled(ctx context.Context, c *duplosdk.Client, tenantI
 }
 
 func batchJobQueueUntilValid(ctx context.Context, c *duplosdk.Client, tenantID string, fullname string, timeout time.Duration) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {

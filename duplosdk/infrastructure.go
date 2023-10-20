@@ -181,7 +181,7 @@ type DuploInfrastructureSettingUpdateRequest struct {
 
 // DuploInfrastructureECSConfigUpdate represents a request to update a Duplo infrastructure's ECS cluster
 type DuploInfrastructureECSConfigUpdate struct {
-	EnableECSCluster        bool `json:"EnableECSCluster"`
+	EnableECSCluster        bool `json:"EnableECS"`
 	EnableContainerInsights bool `json:"EnableContainerInsights"`
 }
 
