@@ -3,7 +3,6 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
 	"log"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
@@ -183,14 +182,13 @@ func resourceK8sPVCCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	log.Printf("[TRACE] resourceK8sPVCCreate(%s, %s): start", tenantID, name)
 
 	// Convert the Terraform resource data into a Duplo object
-	spec := d.Get("spec").(map[string]interface{})
-	pvc, err := expandPersistentVolumeClaim(spec)
+	rq, err := expandK8sPVC(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	_, cerr := c.K8PvcCreate(tenantID, pvc)
+	_, cerr := c.K8PvcCreate(tenantID, rq)
 	if cerr != nil {
 		return diag.FromErr(cerr)
 	}
@@ -250,7 +248,7 @@ func parseK8sPVCIdParts(id string) (tenantID, name string, err error) {
 	return
 }
 
-func flattenK8sPVC(tenantId string, d *schema.ResourceData, duplo *corev1.PersistentVolumeClaim) {
+func flattenK8sPVC(tenantId string, d *schema.ResourceData, duplo *duplosdk.DuploK8sPvc) {
 	d.Set("tenant_id", tenantId)
 	d.Set("name", duplo.Name)
 	d.Set("annotations", duplo.Annotations)
@@ -258,110 +256,109 @@ func flattenK8sPVC(tenantId string, d *schema.ResourceData, duplo *corev1.Persis
 	d.Set("spec", flattenPersistentVolumeClaimSpec(duplo.Spec))
 }
 
-//func expandK8sPVC(d *schema.ResourceData) (*v1.PersistentVolumeClaimSpec, error) {
-//	pvc := &duplosdk.DuploK8sPvc{
-//		Name: d.Get("name").(string),
-//	}
-//	if v, ok := d.GetOk("annotations"); ok && !isInterfaceNil(v) {
-//		pvc.Annotations = map[string]string{}
-//		for key, value := range v.(map[string]interface{}) {
-//			pvc.Annotations[key] = value.(string)
-//		}
-//	}
-//	if v, ok := d.GetOk("labels"); ok && !isInterfaceNil(v) {
-//		pvc.Labels = map[string]string{}
-//		for key, value := range v.(map[string]interface{}) {
-//			pvc.Labels[key] = value.(string)
-//		}
-//	}
-//	spec, err := expandPersistentVolumeClaimSpec(d)
-//	if err != nil {
-//		return nil, err
-//	}
-//	pvc.Spec = spec
-//	return pvc, nil
-//}
+func expandK8sPVC(d *schema.ResourceData) (*duplosdk.DuploK8sPvc, error) {
+	pvc := &duplosdk.DuploK8sPvc{
+		Name: d.Get("name").(string),
+	}
+	if v, ok := d.GetOk("annotations"); ok && !isInterfaceNil(v) {
+		pvc.Annotations = map[string]string{}
+		for key, value := range v.(map[string]interface{}) {
+			pvc.Annotations[key] = value.(string)
+		}
+	}
+	if v, ok := d.GetOk("labels"); ok && !isInterfaceNil(v) {
+		pvc.Labels = map[string]string{}
+		for key, value := range v.(map[string]interface{}) {
+			pvc.Labels[key] = value.(string)
+		}
+	}
+	spec, err := expandPersistentVolumeClaimSpec(d)
+	if err != nil {
+		return nil, err
+	}
+	pvc.Spec = spec
+	return pvc, nil
+}
 
-//
-//func expandPersistentVolumeClaimSpec(d *schema.ResourceData) (*duplosdk.DuploK8sPvcSpec, error) {
-//	obj := &duplosdk.DuploK8sPvcSpec{}
-//
-//	if v, ok := d.GetOk("spec"); ok && !isInterfaceNil(v) {
-//		l := v.([]interface{})
-//		if len(l) == 0 || l[0] == nil {
-//			return obj, nil
-//		}
-//		in := l[0].(map[string]interface{})
-//
-//		if in["resources"] != nil {
-//			resourceRequirements, err := expandResourceRequirements(in["resources"].([]interface{}))
-//			if err != nil {
-//				return nil, err
-//			}
-//			obj.Resources = resourceRequirements
-//		}
-//
-//		obj.AccessModes = expandStringSet(in["access_modes"].(*schema.Set))
-//
-//		if v, ok := in["volume_name"].(string); ok {
-//			obj.VolumeName = v
-//		}
-//		if v, ok := in["volume_mode"].(string); ok {
-//			obj.VolumeMode = v
-//		}
-//		if v, ok := in["storage_class_name"].(string); ok && v != "" {
-//			obj.StorageClassName = v
-//		}
-//	}
-//
-//	return obj, nil
-//}
+func expandPersistentVolumeClaimSpec(d *schema.ResourceData) (*duplosdk.DuploK8sPvcSpec, error) {
+	obj := &duplosdk.DuploK8sPvcSpec{}
 
-//func expandResourceRequirements(l []interface{}) (*duplosdk.DuploK8sPvcSpecResources, error) {
-//	obj := &duplosdk.DuploK8sPvcSpecResources{}
-//	if len(l) == 0 || l[0] == nil {
-//		return obj, nil
-//	}
-//	in := l[0].(map[string]interface{})
-//	if v, ok := in["limits"].(map[string]interface{}); ok && len(v) > 0 {
-//		obj.Limits = fieldToStringMap("limits", in)
-//	}
-//	if v, ok := in["requests"].(map[string]interface{}); ok && len(v) > 0 {
-//		obj.Requests = fieldToStringMap("requests", in)
-//	}
-//	return obj, nil
-//}
-//
-//func flattenPersistentVolumeClaimSpec(spec v1.PersistentVolumeClaimSpec) []interface{} {
-//	att := make(map[string]interface{})
-//	if len(spec.AccessModes) > 0 {
-//		att["access_modes"] = flattenStringSet(spec.AccessModes)
-//	}
-//	if spec.Resources != nil {
-//		att["resources"] = flattenResourceRequirements(spec.Resources)
-//	}
-//	if len(spec.VolumeName) > 0 {
-//		att["volume_name"] = spec.VolumeName
-//	}
-//	if len(spec.StorageClassName) > 0 {
-//		att["storage_class_name"] = spec.StorageClassName
-//	}
-//	if len(spec.VolumeMode) > 0 {
-//		att["volume_mode"] = spec.VolumeMode
-//	}
-//	return []interface{}{att}
-//}
-//
-//func flattenResourceRequirements(resources *duplosdk.DuploK8sPvcSpecResources) []interface{} {
-//	att := make(map[string]interface{})
-//	if resources != nil {
-//		if len(resources.Limits) > 0 {
-//			att["limits"] = flattenStringMap(resources.Limits)
-//		}
-//		if len(resources.Requests) > 0 {
-//			att["requests"] = flattenStringMap(resources.Requests)
-//		}
-//	}
-//
-//	return []interface{}{att}
-//}
+	if v, ok := d.GetOk("spec"); ok && !isInterfaceNil(v) {
+		l := v.([]interface{})
+		if len(l) == 0 || l[0] == nil {
+			return obj, nil
+		}
+		in := l[0].(map[string]interface{})
+
+		if in["resources"] != nil {
+			resourceRequirements, err := expandResourceRequirements(in["resources"].([]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			obj.Resources = resourceRequirements
+		}
+
+		obj.AccessModes = expandStringSet(in["access_modes"].(*schema.Set))
+
+		if v, ok := in["volume_name"].(string); ok {
+			obj.VolumeName = v
+		}
+		if v, ok := in["volume_mode"].(string); ok {
+			obj.VolumeMode = v
+		}
+		if v, ok := in["storage_class_name"].(string); ok && v != "" {
+			obj.StorageClassName = v
+		}
+	}
+
+	return obj, nil
+}
+
+func expandResourceRequirements(l []interface{}) (*duplosdk.DuploK8sPvcSpecResources, error) {
+	obj := &duplosdk.DuploK8sPvcSpecResources{}
+	if len(l) == 0 || l[0] == nil {
+		return obj, nil
+	}
+	in := l[0].(map[string]interface{})
+	if v, ok := in["limits"].(map[string]interface{}); ok && len(v) > 0 {
+		obj.Limits = fieldToStringMap("limits", in)
+	}
+	if v, ok := in["requests"].(map[string]interface{}); ok && len(v) > 0 {
+		obj.Requests = fieldToStringMap("requests", in)
+	}
+	return obj, nil
+}
+
+func flattenPersistentVolumeClaimSpec(spec *duplosdk.DuploK8sPvcSpec) []interface{} {
+	att := make(map[string]interface{})
+	if len(spec.AccessModes) > 0 {
+		att["access_modes"] = flattenStringSet(spec.AccessModes)
+	}
+	if spec.Resources != nil {
+		att["resources"] = flattenResourceRequirements(spec.Resources)
+	}
+	if len(spec.VolumeName) > 0 {
+		att["volume_name"] = spec.VolumeName
+	}
+	if len(spec.StorageClassName) > 0 {
+		att["storage_class_name"] = spec.StorageClassName
+	}
+	if len(spec.VolumeMode) > 0 {
+		att["volume_mode"] = spec.VolumeMode
+	}
+	return []interface{}{att}
+}
+
+func flattenResourceRequirements(resources *duplosdk.DuploK8sPvcSpecResources) []interface{} {
+	att := make(map[string]interface{})
+	if resources != nil {
+		if len(resources.Limits) > 0 {
+			att["limits"] = flattenStringMap(resources.Limits)
+		}
+		if len(resources.Requests) > 0 {
+			att["requests"] = flattenStringMap(resources.Requests)
+		}
+	}
+
+	return []interface{}{att}
+}

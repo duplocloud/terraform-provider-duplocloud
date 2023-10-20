@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	api "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -183,46 +182,6 @@ func flattenResourceList(l api.ResourceList) map[string]string {
 		m[string(k)] = v.String()
 	}
 	return m
-}
-
-func expandMapToResourceList(m map[string]interface{}) (*api.ResourceList, error) {
-	out := make(api.ResourceList)
-	for stringKey, origValue := range m {
-		key := api.ResourceName(stringKey)
-		var value resource.Quantity
-
-		if v, ok := origValue.(int); ok {
-			q := resource.NewQuantity(int64(v), resource.DecimalExponent)
-			value = *q
-		} else if v, ok := origValue.(string); ok {
-			var err error
-			value, err = resource.ParseQuantity(v)
-			if err != nil {
-				return &out, err
-			}
-		} else {
-			return &out, fmt.Errorf("Unexpected value type: %#v", origValue)
-		}
-
-		out[key] = value
-	}
-	return &out, nil
-}
-
-func flattenPersistentVolumeAccessModes(in []api.PersistentVolumeAccessMode) *schema.Set {
-	var out = make([]interface{}, len(in))
-	for i, v := range in {
-		out[i] = string(v)
-	}
-	return schema.NewSet(schema.HashString, out)
-}
-
-func expandPersistentVolumeAccessModes(s []interface{}) []api.PersistentVolumeAccessMode {
-	out := make([]api.PersistentVolumeAccessMode, len(s))
-	for i, v := range s {
-		out[i] = api.PersistentVolumeAccessMode(v.(string))
-	}
-	return out
 }
 
 func newStringSet(f schema.SchemaSetFunc, in []string) *schema.Set {

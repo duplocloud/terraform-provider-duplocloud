@@ -9,7 +9,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/#taint-based-evictions
@@ -425,9 +424,10 @@ func flattenVolumes(volumes []v1.Volume) ([]interface{}, error) {
 		if v.PhotonPersistentDisk != nil {
 			obj["photon_persistent_disk"] = flattenPhotonPersistentDiskVolumeSource(v.PhotonPersistentDisk)
 		}
-		if v.Ephemeral != nil {
-			obj["ephemeral"] = flattenPodEphemeralVolumeSource(v.Ephemeral)
-		}
+		// TODO: implement in a later PR
+		//if v.Ephemeral != nil {
+		//	obj["ephemeral"] = flattenPodEphemeralVolumeSource(v.Ephemeral)
+		//}
 		att[i] = obj
 	}
 	return att, nil
@@ -660,38 +660,6 @@ func flattenReadinessGates(in []v1.PodReadinessGate) ([]interface{}, error) {
 		att[i] = c
 	}
 	return att, nil
-}
-
-func flattenPersistentVolumeClaimMetadata(in metav1.ObjectMeta) map[string]interface{} {
-	att := make(map[string]interface{})
-
-	if len(in.GetLabels()) > 0 {
-		att["labels"] = in.GetLabels()
-	}
-	if len(in.GetAnnotations()) > 0 {
-		att["annotations"] = in.GetAnnotations()
-	}
-
-	return att
-}
-
-func flattenPodEphemeralVolumeClaimTemplate(in *v1.PersistentVolumeClaimTemplate) []interface{} {
-	att := make(map[string]interface{})
-
-	m := flattenPersistentVolumeClaimMetadata(in.ObjectMeta)
-	if len(m) > 0 {
-		att["metadata"] = []interface{}{m}
-	}
-
-	att["spec"] = flattenPersistentVolumeClaimSpec(in.Spec)
-
-	return []interface{}{att}
-}
-
-func flattenPodEphemeralVolumeSource(in *v1.EphemeralVolumeSource) []interface{} {
-	return []interface{}{map[string]interface{}{
-		"volume_claim_template": flattenPodEphemeralVolumeClaimTemplate(in.VolumeClaimTemplate),
-	}}
 }
 
 // Expanders

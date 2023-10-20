@@ -2,7 +2,6 @@ package duplosdk
 
 import (
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
 )
 
 type DuploK8sPvc struct {
@@ -25,8 +24,8 @@ type DuploK8sPvcSpecResources struct {
 	Limits   map[string]string `json:"limits,omitempty"`
 }
 
-func (c *Client) K8PvcGetList(tenantID string) (*[]corev1.PersistentVolumeClaim, ClientError) {
-	rp := []corev1.PersistentVolumeClaim{}
+func (c *Client) K8PvcGetList(tenantID string) (*[]DuploK8sPvc, ClientError) {
+	rp := []DuploK8sPvc{}
 	err := c.getAPI(
 		fmt.Sprintf("K8PvcGetList(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/k8s/pvc", tenantID),
@@ -35,7 +34,7 @@ func (c *Client) K8PvcGetList(tenantID string) (*[]corev1.PersistentVolumeClaim,
 	return &rp, err
 }
 
-func (c *Client) K8PvcGet(tenantID, PvcFullName string) (*corev1.PersistentVolumeClaim, ClientError) {
+func (c *Client) K8PvcGet(tenantID, PvcFullName string) (*DuploK8sPvc, ClientError) {
 
 	// Retrieve the list of Pvcs
 	list, err := c.K8PvcGetList(tenantID)
@@ -53,15 +52,15 @@ func (c *Client) K8PvcGet(tenantID, PvcFullName string) (*corev1.PersistentVolum
 	return nil, nil
 }
 
-func (c *Client) K8PvcCreate(tenantID string, rq *corev1.PersistentVolumeClaim) (*DuploK8sPvc, ClientError) {
+func (c *Client) K8PvcCreate(tenantID string, rq *DuploK8sPvc) (*DuploK8sPvc, ClientError) {
 	return c.K8PvcCreateOrUpdate(tenantID, rq, false)
 }
 
-func (c *Client) K8PvcUpdate(tenantID string, rq *corev1.PersistentVolumeClaim) (*DuploK8sPvc, ClientError) {
+func (c *Client) K8PvcUpdate(tenantID string, rq *DuploK8sPvc) (*DuploK8sPvc, ClientError) {
 	return c.K8PvcCreateOrUpdate(tenantID, rq, true)
 }
 
-func (c *Client) K8PvcCreateOrUpdate(tenantID string, rq *corev1.PersistentVolumeClaim, updating bool) (*DuploK8sPvc, ClientError) {
+func (c *Client) K8PvcCreateOrUpdate(tenantID string, rq *DuploK8sPvc, updating bool) (*DuploK8sPvc, ClientError) {
 	resp := DuploK8sPvc{}
 	err := c.postAPI(
 		fmt.Sprintf("K8PvcCreateOrUpdate(%s, %s)", tenantID, rq.Name),
