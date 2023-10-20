@@ -68,7 +68,8 @@ func metadataSchema(objectName string, generatableName bool) *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
 		Description: fmt.Sprintf("Standard %s's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata", objectName),
-		Required:    true,
+		Optional:    true,
+		Computed:    true,
 		MaxItems:    1,
 		Elem: &schema.Resource{
 			Schema: fields,

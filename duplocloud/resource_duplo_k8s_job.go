@@ -41,13 +41,6 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
-		"name": {
-			Description:  "The short name of the job.  Duplo will add a prefix to the name.",
-			Type:         schema.TypeString,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.StringIsNotWhiteSpace,
-		},
 		"metadata": jobMetadataSchema(),
 		"spec": {
 			Type:        schema.TypeList,
@@ -71,12 +64,12 @@ func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, 
 	tenantID := d.Get("tenant_id").(string)
 	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantID)
 
-	metadata := expandMetadata(d.Get("metadata").([]interface{}))
-	// try to get name from root level, if not present, use metadata name
-	name := d.Get("name").(string)
-	if name == "" {
-		name = metadata.Name
+	name, err := getK8sJobName(d)
+	if err != nil {
+		return diag.FromErr(err)
 	}
+
+	metadata := expandMetadata(d.Get("metadata").([]interface{}))
 
 	spec, err := expandJobV1Spec(d.Get("spec").([]interface{}))
 	if err != nil {
@@ -160,11 +153,9 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 	tenantId := d.Get("tenant_id").(string)
 	log.Printf("[TRACE] resourceKubernetesJobV1Update(%s): end", tenantId)
 
-	metadata := expandMetadata(d.Get("metadata").([]interface{}))
-	// try to get name from root level, if not present, use metadata name
-	name := d.Get("name").(string)
-	if name == "" {
-		name = metadata.Name
+	name, err := getK8sJobName(d)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	var rq duplosdk.DuploK8sJob
@@ -184,7 +175,7 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 
 	// initiate update Job
 	c := meta.(*duplosdk.Client)
-	err := c.K8sJobUpdate(tenantId, name, &rq)
+	err = c.K8sJobUpdate(tenantId, name, &rq)
 	if err != nil {
 		return diag.Errorf("Failed to update Job! API error: %s", err)
 	}

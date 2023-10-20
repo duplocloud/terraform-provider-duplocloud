@@ -18,7 +18,6 @@ description: |-
 ### Required
 
 - `metadata` (Block List, Min: 1, Max: 1) Standard job's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata (see [below for nested schema](#nestedblock--metadata))
-- `name` (String) The short name of the job.  Duplo will add a prefix to the name.
 - `spec` (Block List, Min: 1, Max: 1) Spec of the job owned by the cluster (see [below for nested schema](#nestedblock--spec))
 - `tenant_id` (String) The GUID of the tenant that the job will be created in.
 
@@ -69,12 +68,9 @@ Optional:
 <a id="nestedblock--spec--template"></a>
 ### Nested Schema for `spec.template`
 
-Required:
-
-- `metadata` (Block List, Min: 1, Max: 1) Standard job's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata (see [below for nested schema](#nestedblock--spec--template--metadata))
-
 Optional:
 
+- `metadata` (Block List, Max: 1) Standard job's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata (see [below for nested schema](#nestedblock--spec--template--metadata))
 - `spec` (Block List, Max: 1) Spec of the pods owned by the job (see [below for nested schema](#nestedblock--spec--template--spec))
 
 <a id="nestedblock--spec--template--metadata"></a>
