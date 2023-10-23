@@ -205,8 +205,12 @@ func resourceKubernetesJobV1Delete(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 	if rp != nil || rp.Metadata.Name != "" {
-		err := c.K8sJobDelete(tenantId, name)
-		if err != nil {
+		clientError := c.K8sJobDelete(tenantId, name)
+		if clientError != nil {
+			if clientError.Status() == 404 {
+				d.SetId("")
+				return nil
+			}
 			return diag.FromErr(err)
 		}
 	}
