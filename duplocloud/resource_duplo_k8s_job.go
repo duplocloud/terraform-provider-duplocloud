@@ -3,14 +3,17 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"log"
 	"regexp"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceKubernetesJobV1() *schema.Resource {
@@ -62,7 +65,7 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 
 func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
-	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantID)
+	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): start", tenantID)
 
 	name, err := getK8sJobName(d)
 	if err != nil {
@@ -87,19 +90,30 @@ func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Failed to create Job! API error: %s", err)
 	}
 
-	// wait for completion
 	id := fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", tenantID, name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "k8s job", id, func() (interface{}, duplosdk.ClientError) {
-		return c.K8sJobGet(tenantID, name)
-	})
-	if diags != nil {
-		return diags
-	}
 	d.SetId(id)
 
-	diags = resourceKubernetesJobV1Read(ctx, d, meta)
+	if d.Get("wait_for_completion").(bool) {
+		// wait for completion
+		diags := waitForResourceToBePresentAfterCreate(ctx, d, "k8s job", id, func() (interface{}, duplosdk.ClientError) {
+			return c.K8sJobGet(tenantID, name)
+		})
+		if diags != nil {
+			return diags
+		}
+	}
+
+	if d.Get("wait_for_completion").(bool) {
+		err = retry.RetryContext(ctx, d.Timeout(schema.TimeoutCreate),
+			retryUntilJobV1IsFinished(ctx, c, tenantID, name))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		return diag.Diagnostics{}
+	}
+
 	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantID)
-	return diags
+	return resourceKubernetesJobV1Read(ctx, d, meta)
 }
 
 func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -271,4 +285,31 @@ func diffIgnoreDuploCreatedLabels(k, old, new string, d *schema.ResourceData) bo
 
 	// For other labels, compare old and new values
 	return old == new
+}
+
+// retryUntilJobV1IsFinished checks if a given job has finished its execution in either a Complete or Failed state
+func retryUntilJobV1IsFinished(ctx context.Context, client *duplosdk.Client, tenantId string, name string) retry.RetryFunc {
+	return func() *retry.RetryError {
+		job, err := client.K8sJobGet(tenantId, name)
+		if err != nil {
+			if statusErr := err.Status(); statusErr == 404 {
+				return nil
+			}
+			return retry.NonRetryableError(err)
+		}
+
+		for _, c := range job.Status.Conditions {
+			if c.Status == corev1.ConditionTrue {
+				log.Printf("[DEBUG] Current condition of job: %s: %s\n", name, c.Type)
+				switch c.Type {
+				case batchv1.JobComplete:
+					return nil
+				case batchv1.JobFailed:
+					return retry.NonRetryableError(fmt.Errorf("job: %s is in failed state", name))
+				}
+			}
+		}
+
+		return retry.RetryableError(fmt.Errorf("job: %s is not in complete state", name))
+	}
 }
