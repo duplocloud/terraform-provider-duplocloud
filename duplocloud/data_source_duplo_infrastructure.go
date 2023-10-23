@@ -2,9 +2,8 @@ package duplocloud
 
 import (
 	"context"
-	"strconv"
-
 	"log"
+	"strconv"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 

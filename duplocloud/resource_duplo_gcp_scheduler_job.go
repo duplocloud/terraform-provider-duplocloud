@@ -467,7 +467,7 @@ func expandGcpSchedulerJob(d *schema.ResourceData) *duplosdk.DuploGcpSchedulerJo
 		if v, ok := pubsub["data"]; ok && v != nil && v.(string) != "" {
 			duplo.PubsubTargetData = v.(string)
 		}
-		if v := expandStringMap("attributes", pubsub); len(v) > 0 {
+		if v := fieldToStringMap("attributes", pubsub); len(v) > 0 {
 			duplo.PubsubTargetAttributes = v
 		}
 
@@ -480,7 +480,7 @@ func expandGcpSchedulerJob(d *schema.ResourceData) *duplosdk.DuploGcpSchedulerJo
 		if v, ok := http["body"]; ok && v != nil && v.(string) != "" {
 			duplo.AnyHTTPTargetBody = v.(string)
 		}
-		if v := expandStringMap("headers", http); len(v) > 0 {
+		if v := fieldToStringMap("headers", http); len(v) > 0 {
 			duplo.AnyHTTPTargetHeaders = v
 		}
 
@@ -509,7 +509,7 @@ func expandGcpSchedulerJob(d *schema.ResourceData) *duplosdk.DuploGcpSchedulerJo
 		if v, ok := appeng["body"]; ok && v != nil && v.(string) != "" {
 			duplo.AnyHTTPTargetBody = v.(string)
 		}
-		if v := expandStringMap("headers", appeng); len(v) > 0 {
+		if v := fieldToStringMap("headers", appeng); len(v) > 0 {
 			duplo.AnyHTTPTargetHeaders = v
 		}
 

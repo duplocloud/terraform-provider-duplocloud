@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
-
 	"log"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -88,16 +87,16 @@ func resourceK8Secret() *schema.Resource {
 
 // / READ resource
 func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	tenantID, name, err := parseK8sSecretIdParts(d.Id())
+	tenantId, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[TRACE] resourceK8SecretRead(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceK8SecretRead(%s, %s): start", tenantId, name)
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.K8SecretGet(tenantID, name)
+	rp, err := c.K8SecretGet(tenantId, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -107,16 +106,16 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	flattenK8sSecret(d, rp)
-	log.Printf("[TRACE] resourceK8SecretRead(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceK8SecretRead(%s, %s): end", tenantId, name)
 	return nil
 }
 
 // / CREATE resource
 func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	tenantID := d.Get("tenant_id").(string)
+	tenantId := d.Get("tenant_id").(string)
 	name := d.Get("secret_name").(string)
 
-	log.Printf("[TRACE] resourceK8SecretCreate(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceK8SecretCreate(%s, %s): start", tenantId, name)
 
 	// Convert the Terraform resource data into a Duplo object
 	rq, err := expandK8sSecret(d)
@@ -126,25 +125,25 @@ func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	cerr := c.K8SecretCreate(tenantID, rq)
+	cerr := c.K8SecretCreate(tenantId, rq)
 	if cerr != nil {
 		return diag.FromErr(cerr)
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/K8SecretApiV2/%s", tenantID, name))
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/K8SecretApiV2/%s", tenantId, name))
 
 	diags := resourceK8SecretRead(ctx, d, m)
-	log.Printf("[TRACE] resourceK8SecretCreate(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceK8SecretCreate(%s, %s): end", tenantId, name)
 	return diags
 }
 
 // / UPDATE resource
 func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	tenantID, name, err := parseK8sSecretIdParts(d.Id())
+	tenantId, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[TRACE] resourceK8SecretUpdate(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceK8SecretUpdate(%s, %s): start", tenantId, name)
 
 	// Convert the Terraform resource data into a Duplo object
 	rq, err := expandK8sSecret(d)
@@ -154,39 +153,39 @@ func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
-	cerr := c.K8SecretUpdate(tenantID, rq)
+	cerr := c.K8SecretUpdate(tenantId, rq)
 	if cerr != nil {
 		return diag.FromErr(cerr)
 	}
 
 	diags := resourceK8SecretRead(ctx, d, m)
-	log.Printf("[TRACE] resourceK8SecretUpdate(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceK8SecretUpdate(%s, %s): end", tenantId, name)
 	return diags
 }
 
 // / DELETE resource
 func resourceK8SecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	tenantID, name, err := parseK8sSecretIdParts(d.Id())
+	tenantId, name, err := parseK8sSecretIdParts(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[TRACE] resourceK8SecretDelete(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceK8SecretDelete(%s, %s): start", tenantId, name)
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.K8SecretGet(tenantID, name)
+	rp, err := c.K8SecretGet(tenantId, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	if rp != nil && rp.SecretName != "" {
-		err := c.K8SecretDelete(tenantID, name)
+		err := c.K8SecretDelete(tenantId, name)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	log.Printf("[TRACE] resourceK8SecretDelete(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceK8SecretDelete(%s, %s): end", tenantId, name)
 	return nil
 }
 

@@ -3,10 +3,9 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
-
-	"log"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
