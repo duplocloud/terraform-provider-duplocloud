@@ -82,10 +82,11 @@ func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, 
 	var rq duplosdk.DuploK8sJob
 	rq.Metadata = metadata
 	rq.Spec = spec
+	rq.TenantId = tenantID
 
 	// initiate create Job
 	c := meta.(*duplosdk.Client)
-	err = c.K8sJobCreate(tenantID, &rq)
+	err = c.K8sJobCreate(&rq)
 	if err != nil {
 		return diag.Errorf("Failed to create Job! API error: %s", err)
 	}
