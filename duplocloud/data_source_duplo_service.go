@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
 

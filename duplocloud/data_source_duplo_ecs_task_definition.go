@@ -3,7 +3,6 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
 

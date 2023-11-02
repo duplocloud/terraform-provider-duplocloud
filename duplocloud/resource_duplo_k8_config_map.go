@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
-
 	"log"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 

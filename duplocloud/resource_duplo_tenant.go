@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -52,6 +53,16 @@ func resourceTenant() *schema.Resource {
 			"infra_owner": {
 				Type:     schema.TypeString,
 				Computed: true,
+			},
+			"existing_k8s_namespace": {
+				Description: "Existing kubernetes namespace to use by the tenant. *NOTE: This is an advanced feature, please contact your DuploCloud administrator for help if you want to use this field.*",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ValidateFunc: validation.All(
+					validation.StringLenBetween(1, 63),
+					validation.StringMatch(regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`), "kubernetes namespace must contain only lower case alphanumeric and hypen, and cannot start or end with hypen"),
+				),
 			},
 			"policy": {
 				Type:     schema.TypeList,
@@ -126,6 +137,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 	d.Set("account_name", duplo.AccountName)
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("plan_id", duplo.PlanID)
+	d.Set("existing_k8s_namespace", duplo.ExistingK8sNamespace)
 	d.Set("infra_owner", duplo.InfraOwner)
 
 	// Next, set nested fields.
@@ -146,8 +158,9 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 // CREATE resource
 func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	rq := duplosdk.DuploTenant{
-		AccountName: d.Get("account_name").(string),
-		PlanID:      d.Get("plan_id").(string),
+		AccountName:          d.Get("account_name").(string),
+		PlanID:               d.Get("plan_id").(string),
+		ExistingK8sNamespace: d.Get("existing_k8s_namespace").(string),
 	}
 
 	log.Printf("[TRACE] resourceTenantCreate(%s): start", rq.AccountName)

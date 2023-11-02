@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -622,7 +622,7 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 //
 // It should be usable both post-creation and post-modification.
 func awsElasticSearchDomainWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &retry.StateChangeConf{
 		Pending:      []string{"new", "processing", "upgrade-processing", "created"},
 		Target:       []string{"available"},
 		MinTimeout:   10 * time.Second,
@@ -661,7 +661,7 @@ func awsElasticSearchDomainWaitUntilAvailable(ctx context.Context, c *duplosdk.C
 //
 // It should be usable post-modification.
 func awsElasticSearchDomainWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &retry.StateChangeConf{
 		Pending:      []string{"created"},
 		Target:       []string{"processing", "upgrade-processing"},
 		MinTimeout:   10 * time.Second,
@@ -696,7 +696,7 @@ func awsElasticSearchDomainWaitUntilUnavailable(ctx context.Context, c *duplosdk
 //
 // It should be usable both post-creation and post-modification.
 func awsElasticSearchDomainWaitUntilDeleted(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
-	stateConf := &resource.StateChangeConf{
+	stateConf := &retry.StateChangeConf{
 		Pending:      []string{"waiting", "processing", "upgrade-processing"},
 		Target:       []string{"deleted"},
 		MinTimeout:   10 * time.Second,

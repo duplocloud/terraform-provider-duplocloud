@@ -14,7 +14,7 @@ import (
 	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -514,7 +514,7 @@ func getStringArray(data map[string]interface{}, key string) (*[]string, bool) {
 }
 
 func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
-	err := resource.RetryContext(ctx, d.Timeout("delete"), func() *resource.RetryError {
+	err := retry.RetryContext(ctx, d.Timeout("delete"), func() *retry.RetryError {
 		resp, errget := get()
 
 		if errget != nil {
@@ -522,11 +522,11 @@ func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.Resour
 				return nil
 			}
 
-			return resource.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
+			return retry.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
 		}
 
 		if !isInterfaceNil(resp) {
-			return resource.RetryableError(fmt.Errorf("expected %s '%s' to be missing, but it still exists", kind, id))
+			return retry.RetryableError(fmt.Errorf("expected %s '%s' to be missing, but it still exists", kind, id))
 		}
 
 		return nil
@@ -538,19 +538,19 @@ func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.Resour
 }
 
 func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
-	err := resource.RetryContext(ctx, d.Timeout("create"), func() *resource.RetryError {
+	err := retry.RetryContext(ctx, d.Timeout("create"), func() *retry.RetryError {
 		resp, errget := get()
 
 		if errget != nil {
 			if errget.Status() == 404 {
-				return resource.RetryableError(fmt.Errorf("expected %s '%s' to be retrieved, but got a 404", kind, id))
+				return retry.RetryableError(fmt.Errorf("expected %s '%s' to be retrieved, but got a 404", kind, id))
 			}
 
-			return resource.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
+			return retry.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
 		}
 
 		if isInterfaceNil(resp) {
-			return resource.RetryableError(fmt.Errorf("expected %s '%s' to be retrieved, but got: nil", kind, id))
+			return retry.RetryableError(fmt.Errorf("expected %s '%s' to be retrieved, but got: nil", kind, id))
 		}
 
 		return nil
@@ -637,7 +637,7 @@ func reduceNilOrEmptyMapEntries(m map[string]interface{}) {
 }
 
 func waitForResourceWithStatusDone(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (bool, duplosdk.ClientError)) diag.Diagnostics {
-	err := resource.RetryContext(ctx, d.Timeout(kind), func() *resource.RetryError {
+	err := retry.RetryContext(ctx, d.Timeout(kind), func() *retry.RetryError {
 		status, errget := get()
 
 		if errget != nil {
@@ -645,11 +645,11 @@ func waitForResourceWithStatusDone(ctx context.Context, d *schema.ResourceData, 
 				return nil
 			}
 
-			return resource.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
+			return retry.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
 		}
-		// return nil if want to complete wait
+		// return nil if we want to complete wait
 		if !status {
-			return resource.RetryableError(fmt.Errorf("expected %s '%s' to be missing, but it still exists", kind, id))
+			return retry.RetryableError(fmt.Errorf("expected %s '%s' to be missing, but it still exists", kind, id))
 		}
 
 		return nil
@@ -688,7 +688,7 @@ func expandAsStringMap(fieldName string, d *schema.ResourceData) map[string]stri
 	return m
 }
 
-func expandStringMap(fieldName string, d map[string]interface{}) map[string]string {
+func fieldToStringMap(fieldName string, d map[string]interface{}) map[string]string {
 	m := map[string]string{}
 
 	if v, ok := d[fieldName]; ok && v != nil && len(v.(map[string]interface{})) > 0 {
@@ -893,4 +893,12 @@ func flattenTfManagedDuploKeyStringValues(key string, d *schema.ResourceData, al
 	} else {
 		d.Set(specified_key, make([]interface{}, 0))
 	}
+}
+
+func conditionalDefault(condition bool, defaultValue interface{}) interface{} {
+	if !condition {
+		return nil
+	}
+
+	return defaultValue
 }
