@@ -155,7 +155,9 @@ github.com/hashicorp/terraform-plugin-log/tfsdklog
 # github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1
 ## explicit; go 1.19
 github.com/hashicorp/terraform-plugin-sdk/v2/diag
+github.com/hashicorp/terraform-plugin-sdk/v2/helper/id
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging
+github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure
@@ -167,6 +169,7 @@ github.com/hashicorp/terraform-plugin-sdk/v2/internal/helper/hashcode
 github.com/hashicorp/terraform-plugin-sdk/v2/internal/logging
 github.com/hashicorp/terraform-plugin-sdk/v2/internal/plans/objchange
 github.com/hashicorp/terraform-plugin-sdk/v2/internal/plugin/convert
+github.com/hashicorp/terraform-plugin-sdk/v2/internal/plugintest
 github.com/hashicorp/terraform-plugin-sdk/v2/internal/tfdiags
 github.com/hashicorp/terraform-plugin-sdk/v2/meta
 github.com/hashicorp/terraform-plugin-sdk/v2/plugin
@@ -230,6 +233,9 @@ github.com/pmezard/go-difflib/difflib
 github.com/posener/complete
 github.com/posener/complete/cmd
 github.com/posener/complete/cmd/install
+# github.com/robfig/cron v1.2.0
+## explicit
+github.com/robfig/cron
 # github.com/russross/blackfriday v1.6.0
 ## explicit; go 1.13
 github.com/russross/blackfriday
@@ -428,10 +434,12 @@ gopkg.in/yaml.v3
 # k8s.io/api v0.28.3
 ## explicit; go 1.20
 k8s.io/api/batch/v1
+k8s.io/api/batch/v1beta1
 k8s.io/api/core/v1
 # k8s.io/apimachinery v0.28.3
 ## explicit; go 1.20
 k8s.io/apimachinery/pkg/api/equality
+k8s.io/apimachinery/pkg/api/errors
 k8s.io/apimachinery/pkg/api/meta
 k8s.io/apimachinery/pkg/api/resource
 k8s.io/apimachinery/pkg/api/validation

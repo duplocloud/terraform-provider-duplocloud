@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.14.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1
+	github.com/robfig/cron v1.2.0
 	github.com/stretchr/testify v1.8.2
 	github.com/ucarion/jcs v0.1.2
 	k8s.io/api v0.28.3

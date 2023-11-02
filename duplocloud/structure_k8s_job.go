@@ -10,7 +10,7 @@ import (
 
 func flattenK8sJob(d *schema.ResourceData, duplo *duplosdk.DuploK8sJob) {
 	d.Set("name", duplo.Metadata.Name)
-	d.Set("tenant_id", duplo.TenantID)
+	d.Set("tenant_id", duplo.TenantId)
 	d.Set("namespace", duplo.Metadata.Namespace)
 	d.Set("spec", duplo.Spec)
 	d.Set("metadata", duplo.Metadata)
