@@ -12,7 +12,7 @@ import (
 
 func dataSourceK8sCronJob() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceK8sJobRead,
+		ReadContext: dataSourceK8sCronJobRead,
 		Schema:      resourceKubernetesJobV1Schema(),
 	}
 }

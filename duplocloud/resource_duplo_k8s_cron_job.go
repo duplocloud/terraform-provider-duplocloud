@@ -146,22 +146,14 @@ func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.Resourc
 	if _, ok := d.GetOk("spec.0.manual_selector"); !ok {
 		labels := job.Metadata.Labels
 
-		if _, ok := labels["controller-uid"]; ok {
-			delete(labels, "controller-uid")
-		}
-
-		if _, ok := labels["cron-job-name"]; ok {
-			delete(labels, "cron-job-name")
-		}
+		delete(labels, "cron-job-name")
 
 		if job.Spec.JobTemplate.Spec.Selector != nil &&
 			job.Spec.JobTemplate.Spec.Selector.MatchLabels != nil {
 			labels = job.Spec.JobTemplate.Spec.Selector.MatchLabels
 		}
 
-		if _, ok := labels["controller-uid"]; ok {
-			delete(labels, "controller-uid")
-		}
+		delete(labels, "controller-uid")
 	}
 
 	metaError := d.Set("metadata", flattenMetadata(job.Metadata, d, meta))
