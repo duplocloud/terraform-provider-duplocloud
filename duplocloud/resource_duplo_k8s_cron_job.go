@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
+	"regexp"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -128,7 +129,7 @@ func resourceKubernetesCronJobV1Beta1Update(ctx context.Context, d *schema.Resou
 }
 
 func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tenantId, jobName, err := parseK8sJobIdParts(d.Id())
+	tenantId, jobName, err := parseK8sCronJobIdParts(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -205,4 +206,18 @@ func resourceKubernetesCronJobV1Beta1Delete(ctx context.Context, d *schema.Resou
 
 	log.Printf("[TRACE] resourceKubernetesCronJobV1Beta1Delete(%s, %s): end", tenantId, name)
 	return nil
+}
+
+func parseK8sCronJobIdParts(id string) (tenantId, name string, err error) {
+	// Compile a regular expression that matches a GUID and a job name in your specific URL format.
+	r := regexp.MustCompile(`^v3/subscriptions/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})/k8s/cronjob/([^/]+)$`)
+	matches := r.FindStringSubmatch(id)
+
+	if len(matches) == 3 {
+		// The first element of matches is the entire string, the second is the first capture group (tenantId), and the third is the second capture group (name).
+		tenantId, name = matches[1], matches[2]
+	} else {
+		err = fmt.Errorf("invalid resource ID: %s", id)
+	}
+	return
 }

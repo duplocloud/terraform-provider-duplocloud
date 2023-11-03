@@ -36,7 +36,7 @@ func cronJobSpecFieldsV1Beta1() map[string]*schema.Schema {
 						Required:    true,
 						MaxItems:    1,
 						Elem: &schema.Resource{
-							Schema: jobSpecFields(true),
+							Schema: jobSpecFields(false),
 						},
 					},
 				},

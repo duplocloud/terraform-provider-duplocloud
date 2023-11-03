@@ -321,20 +321,42 @@ provider "duplocloud" {
 #  //multi_az = true
 #}
 
-resource "duplocloud_k8s_job" "myjob" {
+#resource "duplocloud_k8s_job" "myjob" {
+#  tenant_id = "81386040-9a07-4e76-a195-94191d9d47aa"
+#  metadata {
+#    name = "ddjob2"
+#  }
+#  spec {
+#    template {
+#      spec {
+#        container {
+#          name = "ddjob2"
+#          image = "nginx:1.25"
+#        }
+#      }
+#    }
+#  }
+#  wait_for_completion = false
+#}
+
+resource "duplocloud_k8s_cron_job" "mycronjob" {
   tenant_id = "81386040-9a07-4e76-a195-94191d9d47aa"
   metadata {
-    name = "ddjob2"
+    name = "mycronjob2"
   }
   spec {
-    template {
+    job_template {
       spec {
-        container {
-          name = "ddjob2"
-          image = "nginx:1.25"
+        template {
+          spec {
+            container {
+              image = "nginx:1.25"
+              name = "mycronjob2"
+            }
+          }
         }
       }
     }
+    schedule = "*/1 * * * *"
   }
-  wait_for_completion = false
 }
