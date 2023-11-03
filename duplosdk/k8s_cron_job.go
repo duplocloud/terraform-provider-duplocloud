@@ -17,7 +17,7 @@ type DuploK8sCronJob struct {
 
 // K8sCronJobGetList retrieves a list of k8s jobs via the Duplo API.
 func (c *Client) K8sCronJobGetList(tenantId string) (*[]DuploK8sCronJob, ClientError) {
-	var rp []DuploK8sJob
+	var rp []DuploK8sCronJob
 	err := c.getAPI(
 		fmt.Sprintf("k8sCronJobGetList(%s)", tenantId),
 		fmt.Sprintf("/v3/subscriptions/%s/k8s/cronjob", tenantId),
@@ -35,7 +35,7 @@ func (c *Client) K8sCronJobGetList(tenantId string) (*[]DuploK8sCronJob, ClientE
 
 // K8sCronJobGet retrieves a k8s job via the Duplo API.
 func (c *Client) K8sCronJobGet(tenantId, jobName string) (*DuploK8sCronJob, ClientError) {
-	var rp DuploK8sJob
+	var rp DuploK8sCronJob
 	err := c.getAPI(
 		fmt.Sprintf("k8sCronJobGet(%s, %s)", tenantId, jobName),
 		fmt.Sprintf("/v3/subscriptions/%s/k8s/cronjob/%s", tenantId, jobName),
@@ -52,7 +52,7 @@ func (c *Client) K8sCronJobGet(tenantId, jobName string) (*DuploK8sCronJob, Clie
 
 // K8sCronJobCreate creates a k8s job via the Duplo API.
 func (c *Client) K8sCronJobCreate(rq *DuploK8sCronJob) ClientError {
-	rp := DuploK8sJob{}
+	rp := DuploK8sCronJob{}
 	return c.postAPI(
 		fmt.Sprintf("k8sCronJobCreate(%s, %s)", rq.TenantId, rq.Metadata.Name),
 		fmt.Sprintf("/v3/subscriptions/%s/k8s/cronjob", rq.TenantId),
@@ -63,7 +63,7 @@ func (c *Client) K8sCronJobCreate(rq *DuploK8sCronJob) ClientError {
 
 // K8sCronJobUpdate updates a k8s job via the Duplo API.
 func (c *Client) K8sCronJobUpdate(tenantId string, jobName string, rq *DuploK8sCronJob) ClientError {
-	rp := DuploK8sJob{}
+	rp := DuploK8sCronJob{}
 	return c.putAPI(
 		fmt.Sprintf("k8sCronJobUpdate(%s, %s)", tenantId, jobName),
 		fmt.Sprintf("/v3/subscriptions/%s/k8s/cronjob/%s", tenantId, jobName),

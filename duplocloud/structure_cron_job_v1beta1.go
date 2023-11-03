@@ -3,7 +3,14 @@ package duplocloud
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"k8s.io/api/batch/v1beta1"
+	"terraform-provider-duplocloud/duplosdk"
 )
+
+func flattenK8sCronJob(d *schema.ResourceData, duplo *duplosdk.DuploK8sCronJob) {
+	d.Set("tenant_id", duplo.TenantId)
+	d.Set("spec", duplo.Spec)
+	d.Set("metadata", duplo.Metadata)
+}
 
 func flattenCronJobSpecV1Beta1(in v1beta1.CronJobSpec, d *schema.ResourceData, meta interface{}) ([]interface{}, error) {
 	att := make(map[string]interface{})
@@ -31,6 +38,20 @@ func flattenCronJobSpecV1Beta1(in v1beta1.CronJobSpec, d *schema.ResourceData, m
 	}
 
 	att["suspend"] = in.Suspend
+
+	return []interface{}{att}, nil
+}
+
+func flattenJobTemplate(in v1beta1.JobTemplateSpec, d *schema.ResourceData, meta interface{}) ([]interface{}, error) {
+	att := make(map[string]interface{})
+
+	att["metadata"] = flattenMetadata(in.ObjectMeta, d, meta)
+
+	jobSpec, err := flattenJobV1Spec(in.Spec, d, meta, "spec.0.job_template.0.spec.0.template.0.")
+	if err != nil {
+		return nil, err
+	}
+	att["spec"] = jobSpec
 
 	return []interface{}{att}, nil
 }

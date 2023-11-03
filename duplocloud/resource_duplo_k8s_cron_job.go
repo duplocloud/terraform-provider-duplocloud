@@ -10,11 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"k8s.io/api/batch/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func resourceKubernetesCronJobV1Beta1() *schema.Resource {
@@ -120,30 +116,15 @@ func resourceKubernetesCronJobV1Beta1Update(ctx context.Context, d *schema.Resou
 	if err != nil {
 		return diag.Errorf("Failed to update CronJob. API error: %s", err)
 	}
-	log.Printf("[INFO] Submitted updated cron job")
+	log.Printf("[INFO] Submitted updated CronJob")
 
-	metadata := expandMetadata(d.Get("metadata").([]interface{}))
-	spec, err := expandCronJobSpecV1Beta1(d.Get("spec").([]interface{}))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	spec.JobTemplate.ObjectMeta.Annotations = metadata.Annotations
+	// wait for completion
+	id := fmt.Sprintf("v3/subscriptions/%s/k8s/cronjob/%s", tenantId, name)
+	d.SetId(id)
 
-	cronjob := &v1beta1.CronJob{
-		ObjectMeta: metadata,
-		Spec:       spec,
-	}
-
-	log.Printf("[INFO] Updating cron job %s: %s", d.Id(), cronjob)
-
-	out, err := conn.BatchV1beta1().CronJobs(namespace).Update(ctx, cronjob, metav1.UpdateOptions{})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	log.Printf("[INFO] Submitted updated cron job: %#v", out)
-
-	d.SetId(buildId(out.ObjectMeta))
-	return resourceKubernetesCronJobV1Beta1Read(ctx, d, meta)
+	diags := resourceKubernetesCronJobV1Beta1Read(ctx, d, meta)
+	log.Printf("[TRACE] resourceKubernetesCronJobV1Update(%s): end", tenantId)
+	return diags
 }
 
 func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -198,66 +179,38 @@ func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	return nil
+	return diag.Diagnostics{}
 }
 
 func resourceKubernetesCronJobV1Beta1Delete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn, err := meta.(KubeClientsets).MainClientset()
+	tenantId := d.Get("tenant_id").(string)
+	name, err := getK8sJobName(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	namespace, name, err := idParts(d.Id())
+	log.Printf("[TRACE] resourceKubernetesCronJobV1Beta1Delete(%s, %s): start", tenantId, name)
+
+	// Get the object from Duplo, detecting a missing object
+	c := meta.(*duplosdk.Client)
+	rp, err := c.K8sCronJobGet(tenantId, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	log.Printf("[INFO] Deleting cron job: %#v", name)
-	err = conn.BatchV1beta1().CronJobs(namespace).Delete(ctx, name, metav1.DeleteOptions{})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
-		_, err := conn.BatchV1beta1().CronJobs(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			if statusErr, ok := err.(*errors.StatusError); ok && errors.IsNotFound(statusErr) {
+	if rp != nil || rp.Metadata.Name != "" {
+		clientError := c.K8sCronJobDelete(tenantId, name)
+		if clientError != nil {
+			if clientError.Status() == 404 {
+				d.SetId("")
 				return nil
 			}
-			return resource.NonRetryableError(err)
+			return diag.FromErr(err)
 		}
-
-		e := fmt.Errorf("Cron Job %s still exists", name)
-		return resource.RetryableError(e)
-	})
-	if err != nil {
-		return diag.FromErr(err)
 	}
 
-	log.Printf("[INFO] Cron Job %s deleted", name)
-
+	// resource deleted
 	d.SetId("")
+
+	log.Printf("[TRACE] resourceKubernetesCronJobV1Beta1Delete(%s, %s): end", tenantId, name)
 	return nil
-}
-
-func resourceKubernetesCronJobV1Beta1Exists(ctx context.Context, d *schema.ResourceData, meta interface{}) (bool, error) {
-	conn, err := meta.(KubeClientsets).MainClientset()
-	if err != nil {
-		return false, err
-	}
-
-	namespace, name, err := idParts(d.Id())
-	if err != nil {
-		return false, err
-	}
-
-	log.Printf("[INFO] Checking cron job %s", name)
-	_, err = conn.BatchV1beta1().CronJobs(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if statusErr, ok := err.(*errors.StatusError); ok && errors.IsNotFound(statusErr) {
-			return false, nil
-		}
-		log.Printf("[DEBUG] Received error: %#v", err)
-	}
-	return true, err
 }
