@@ -64,8 +64,8 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 }
 
 func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tenantID := d.Get("tenant_id").(string)
-	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): start", tenantID)
+	tenantId := d.Get("tenant_id").(string)
+	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): start", tenantId)
 
 	name, err := getK8sJobName(d)
 	if err != nil {
@@ -82,21 +82,23 @@ func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, 
 	var rq duplosdk.DuploK8sJob
 	rq.Metadata = metadata
 	rq.Spec = spec
+	rq.TenantId = tenantId
 
 	// initiate create Job
 	c := meta.(*duplosdk.Client)
-	err = c.K8sJobCreate(tenantID, &rq)
+	err = c.K8sJobCreate(&rq)
 	if err != nil {
-		return diag.Errorf("Failed to create Job! API error: %s", err)
+		return diag.Errorf("Failed to create Job. API error: %s", err)
 	}
+	log.Printf("[INFO] Submitted updated Job")
 
-	id := fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", tenantID, name)
+	id := fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", tenantId, name)
 	d.SetId(id)
 
 	if d.Get("wait_for_completion").(bool) {
 		// wait for completion
 		diags := waitForResourceToBePresentAfterCreate(ctx, d, "k8s job", id, func() (interface{}, duplosdk.ClientError) {
-			return c.K8sJobGet(tenantID, name)
+			return c.K8sJobGet(tenantId, name)
 		})
 		if diags != nil {
 			return diags
@@ -105,38 +107,36 @@ func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, 
 
 	if d.Get("wait_for_completion").(bool) {
 		err = retry.RetryContext(ctx, d.Timeout(schema.TimeoutCreate),
-			retryUntilJobV1IsFinished(ctx, c, tenantID, name))
+			retryUntilJobV1IsFinished(ctx, c, tenantId, name))
 		if err != nil {
 			return diag.FromErr(err)
 		}
 		return diag.Diagnostics{}
 	}
 
-	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantID)
+	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): end", tenantId)
 	return resourceKubernetesJobV1Read(ctx, d, meta)
 }
 
 func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tenantID, jobName, err := parseK8sJobIdParts(d.Id())
+	tenantId, jobName, err := parseK8sJobIdParts(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[INFO] Reading job %s/%s", tenantID, jobName)
+	log.Printf("[INFO] Reading job %s/%s", tenantId, jobName)
 
 	// Get the object from Duplo, detecting a missing object
 	c := meta.(*duplosdk.Client)
-	job, err := c.K8sJobGet(tenantID, jobName)
+	job, err := c.K8sJobGet(tenantId, jobName)
 	if err != nil {
 		log.Printf("[DEBUG] Received error: %#v", err)
-		return diag.Errorf("Failed to read Job! API error: %s", err)
+		return diag.Errorf("Failed to read Job. API error: %s", err)
 	}
-	log.Printf("[INFO] Received job: %#v", job)
+	log.Printf("[INFO] Received Job: %#v", job)
 
 	// Remove server-generated labels unless using manual selector
 	if _, ok := d.GetOk("spec.0.manual_selector"); !ok {
 		labels := job.Metadata.Labels
-
-		delete(labels, "controller-uid")
 
 		delete(labels, "job-name")
 
@@ -189,10 +189,11 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 
 	// initiate update Job
 	c := meta.(*duplosdk.Client)
-	err = c.K8sJobUpdate(tenantId, name, &rq)
+	err = c.K8sJobUpdate(&rq)
 	if err != nil {
-		return diag.Errorf("Failed to update Job! API error: %s", err)
+		return diag.Errorf("Failed to update Job. API error: %s", err)
 	}
+	log.Printf("[INFO] Submitted updated Job")
 
 	// wait for completion
 	id := fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", tenantId, name)
@@ -254,14 +255,14 @@ func getK8sJobName(d *schema.ResourceData) (string, error) {
 	return jobNameRaw.(string), nil
 }
 
-func parseK8sJobIdParts(id string) (tenantID, name string, err error) {
+func parseK8sJobIdParts(id string) (tenantId, name string, err error) {
 	// Compile a regular expression that matches a GUID and a job name in your specific URL format.
 	r := regexp.MustCompile(`^v3/subscriptions/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})/k8s/job/([^/]+)$`)
 	matches := r.FindStringSubmatch(id)
 
 	if len(matches) == 3 {
-		// The first element of matches is the entire string, the second is the first capture group (tenantID), and the third is the second capture group (name).
-		tenantID, name = matches[1], matches[2]
+		// The first element of matches is the entire string, the second is the first capture group (tenantId), and the third is the second capture group (name).
+		tenantId, name = matches[1], matches[2]
 	} else {
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
