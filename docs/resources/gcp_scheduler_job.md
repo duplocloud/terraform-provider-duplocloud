@@ -13,7 +13,7 @@ description: |-
 ## Example Usage
 
 ```terraform
-resource "duplocloud_tenant" "myapp" {
+resource "duploscheduler_tenant" "myapp" {
   account_name = "myapp"
   plan_id      = "default"
 }
