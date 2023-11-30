@@ -1,10 +1,8 @@
-resource "duplocloud_tenant_secret" "mysecret" {
+data "duplocloud_tenant_secret" "mysecret" {
   tenant_id = "f4bf01f0-5077-489e-aa51-95fb77049608"
 
   # The full name will be:  duploservices-myapp-mysecret
   name_suffix = "mysecret"
-
-  data = "hi"
 }
 
 # To view secret, use the following data source and run `terraform output secret_value`
