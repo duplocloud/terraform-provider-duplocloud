@@ -56,11 +56,9 @@ jobs:
             make doc
 
             # Optionally override the release version
-            if [ -z "${{ github.event.inputs.version }}" ]; then
-              version="${{ steps.version.outputs.release }}"
+            version="${{ steps.version.outputs.release }}"
 
-              # Replace the version number in all affected files
-              sed -e 's/^\(VERSION=\)[0-9\.]*/\1'"$version"'/g' -i Makefile
-              find examples -name main.tf -exec \
-                sed -e 's/\(version = "\)[0-9\.]*\(".*# RELEASE VERSION\)/\1'"$version"'\2/g' -i \{\} \;
-            fi
+            # Replace the version number in all affected files
+            sed -e 's/^\(VERSION=\)[0-9\.]*/\1'"$version"'/g' -i Makefile
+            find examples -name main.tf -exec \
+              sed -e 's/\(version = "\)[0-9\.]*\(".*# RELEASE VERSION\)/\1'"$version"'\2/g' -i \{\} \;

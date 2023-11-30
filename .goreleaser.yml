@@ -55,6 +55,6 @@ changelog:
 announce:
   slack:
     enabled: true
-    channel: '#duplo-devs'
+    channel: '#engineering'
 release:
   draft: true
