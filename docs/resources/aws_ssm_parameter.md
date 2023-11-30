@@ -34,6 +34,7 @@ resource "duplocloud_aws_ssm_parameter" "ssm_param" {
 - `name` (String) The name of the SSM parameter.
 - `tenant_id` (String) The GUID of the tenant that the SSM parameter will be created in.
 - `type` (String) The type of the SSM parameter. Valid values are `String`, `StringList`, and `SecureString`.
+- `value` (String) The value of the SSM parameter.
 
 ### Optional
 
@@ -47,7 +48,6 @@ resource "duplocloud_aws_ssm_parameter" "ssm_param" {
 - `id` (String) The ID of this resource.
 - `last_modified_date` (String)
 - `last_modified_user` (String)
-- `value` (String) The value of the SSM parameter.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
