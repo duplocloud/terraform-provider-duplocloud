@@ -21,12 +21,13 @@ const (
 
 // DuploTenant represents a Duplo tenant
 type DuploTenant struct {
-	TenantID     string                 `json:"TenantId,omitempty"`
-	AccountName  string                 `json:"AccountName"`
-	PlanID       string                 `json:"PlanID"`
-	InfraOwner   string                 `json:"InfraOwner,omitempty"`
-	TenantPolicy *DuploTenantPolicy     `json:"TenantPolicy,omitempty"`
-	Tags         *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	TenantID             string                 `json:"TenantId,omitempty"`
+	AccountName          string                 `json:"AccountName"`
+	PlanID               string                 `json:"PlanID"`
+	ExistingK8sNamespace string                 `json:"ExistingK8sNamespace"`
+	InfraOwner           string                 `json:"InfraOwner,omitempty"`
+	TenantPolicy         *DuploTenantPolicy     `json:"TenantPolicy,omitempty"`
+	Tags                 *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
 
 // DuploTenantPolicy represents policies for a Duplo Tenant

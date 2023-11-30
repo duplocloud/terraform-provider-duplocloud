@@ -688,7 +688,7 @@ func expandAsStringMap(fieldName string, d *schema.ResourceData) map[string]stri
 	return m
 }
 
-func expandStringMap(fieldName string, d map[string]interface{}) map[string]string {
+func fieldToStringMap(fieldName string, d map[string]interface{}) map[string]string {
 	m := map[string]string{}
 
 	if v, ok := d[fieldName]; ok && v != nil && len(v.(map[string]interface{})) > 0 {
@@ -893,4 +893,12 @@ func flattenTfManagedDuploKeyStringValues(key string, d *schema.ResourceData, al
 	} else {
 		d.Set(specified_key, make([]interface{}, 0))
 	}
+}
+
+func conditionalDefault(condition bool, defaultValue interface{}) interface{} {
+	if !condition {
+		return nil
+	}
+
+	return defaultValue
 }

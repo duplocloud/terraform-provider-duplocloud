@@ -73,15 +73,15 @@ func resourceAwsRdsTag() *schema.Resource {
 
 func resourceAwsRdsTagRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, resourceType, resourceId, tagKey, err := parseAwsRdsTagIdParts(id)
+	tenantId, resourceType, resourceId, tagKey, err := parseAwsRdsTagIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAwsRdsTagRead(%s, %s, %s, %s): start", tenantID, resourceType, resourceId, tagKey)
+	log.Printf("[TRACE] resourceAwsRdsTagRead(%s, %s, %s, %s): start", tenantId, resourceType, resourceId, tagKey)
 
 	c := m.(*duplosdk.Client)
 
-	tag, clientErr := c.RdsTagGetV3(tenantID, duplosdk.DuploRDSTag{
+	tag, clientErr := c.RdsTagGetV3(tenantId, duplosdk.DuploRDSTag{
 		ResourceType: resourceType,
 		ResourceId:   resourceId,
 		Key:          tagKey,
@@ -95,15 +95,15 @@ func resourceAwsRdsTagRead(ctx context.Context, d *schema.ResourceData, m interf
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve rds tag - (Tenant: %s,  ResourceType: %s, ResourceId: %s, TagKey: %s) : %s", tenantID, resourceType, resourceId, tagKey, clientErr)
+		return diag.Errorf("Unable to retrieve rds tag - (Tenant: %s,  ResourceType: %s, ResourceId: %s, TagKey: %s) : %s", tenantId, resourceType, resourceId, tagKey, clientErr)
 	}
 
-	d.Set("tenant_id", tenantID)
+	d.Set("tenant_id", tenantId)
 	d.Set("resource_type", resourceType)
 	d.Set("resource_id", resourceId)
 	d.Set("key", tagKey)
 	d.Set("value", tag.Value)
-	log.Printf("[TRACE] resourceAwsRdsTagRead(%s, %s, %s, %s): end", tenantID, resourceType, resourceId, tagKey)
+	log.Printf("[TRACE] resourceAwsRdsTagRead(%s, %s, %s, %s): end", tenantId, resourceType, resourceId, tagKey)
 	return nil
 }
 

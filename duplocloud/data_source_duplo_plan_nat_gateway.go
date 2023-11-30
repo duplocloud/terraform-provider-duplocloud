@@ -3,7 +3,6 @@ package duplocloud
 import (
 	"context"
 	"log"
-
 	"terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"

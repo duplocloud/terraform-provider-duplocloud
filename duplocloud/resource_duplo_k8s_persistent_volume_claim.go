@@ -3,9 +3,8 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"log"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -322,10 +321,10 @@ func expandResourceRequirements(l []interface{}) (*duplosdk.DuploK8sPvcSpecResou
 	}
 	in := l[0].(map[string]interface{})
 	if v, ok := in["limits"].(map[string]interface{}); ok && len(v) > 0 {
-		obj.Limits = expandStringMap("limits", in)
+		obj.Limits = fieldToStringMap("limits", in)
 	}
 	if v, ok := in["requests"].(map[string]interface{}); ok && len(v) > 0 {
-		obj.Requests = expandStringMap("requests", in)
+		obj.Requests = fieldToStringMap("requests", in)
 	}
 	return obj, nil
 }

@@ -3,9 +3,8 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"log"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
