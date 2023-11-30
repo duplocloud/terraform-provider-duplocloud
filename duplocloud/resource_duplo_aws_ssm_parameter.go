@@ -43,7 +43,7 @@ func awsSsmParameterSchema() map[string]*schema.Schema {
 			Description: "The value of the SSM parameter.",
 			Type:        schema.TypeString,
 			Required:    true,
-			Computed:    true,
+			ForceNew:    true,
 		},
 		"description": {
 			Description: "The description of the SSM parameter.",
