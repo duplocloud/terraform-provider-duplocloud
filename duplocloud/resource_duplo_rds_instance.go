@@ -193,7 +193,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"backup_retention_period": {
-			Description: "Specifies backup retention period in days. Default Backup retention period is 0 days.",
+			Description:  "Specifies backup retention period in days. Default Backup retention period is 0 days.",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			Default:      0,
@@ -679,7 +679,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["enable_logging"] = duploObject.EnableLogging
 	jo["backup_retention_period"] = duploObject.BackupRetentionPeriod
 	jo["multi_az"] = duploObject.MultiAZ
-	jo["instance_status"] = duploObject.InstanceStatus	
+	jo["instance_status"] = duploObject.InstanceStatus
 	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 {
 		d.Set("v2_scaling_configuration", []map[string]interface{}{{
 			"min_capacity": duploObject.V2ScalingConfiguration.MinCapacity,
