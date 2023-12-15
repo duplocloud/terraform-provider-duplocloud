@@ -193,7 +193,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"backup_retention_period": {
-			Description: "Specifies backup retention period in days. Default Backup retention period is 0 days.",
+			Description:  "Specifies backup retention period in days. Default Backup retention period is 0 days.",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			Default:      0,
