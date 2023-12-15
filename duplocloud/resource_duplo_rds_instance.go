@@ -192,6 +192,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"backup_retention_period": {
+			Description: "Specifies backup retention period in days. Default Backup retention period is 0 days.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Default:      0,
+			ValidateFunc: validation.IntBetween(0, 35),
+		},
 		"multi_az": {
 			Description: "Specifies if the RDS instance is multi-AZ.",
 			Type:        schema.TypeBool,
@@ -596,6 +603,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.AllocatedStorage = d.Get("allocated_storage").(int)
 	duploObject.EncryptionKmsKeyId = d.Get("kms_key_id").(string)
 	duploObject.EnableLogging = d.Get("enable_logging").(bool)
+	duploObject.BackupRetentionPeriod = d.Get("backup_retention_period").(int)
 	duploObject.MultiAZ = d.Get("multi_az").(bool)
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
 	if v, ok := d.GetOk("v2_scaling_configuration"); ok {
@@ -669,6 +677,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["allocated_storage"] = duploObject.AllocatedStorage
 	jo["kms_key_id"] = duploObject.EncryptionKmsKeyId
 	jo["enable_logging"] = duploObject.EnableLogging
+	jo["backup_retention_period"] = duploObject.BackupRetentionPeriod
 	jo["multi_az"] = duploObject.MultiAZ
 	jo["instance_status"] = duploObject.InstanceStatus
 	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 {
