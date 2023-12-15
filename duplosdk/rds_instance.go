@@ -51,6 +51,7 @@ type DuploRdsInstance struct {
 	AllocatedStorage            int                     `json:"AllocatedStorage,omitempty"`
 	EncryptionKmsKeyId          string                  `json:"EncryptionKmsKeyId,omitempty"`
 	EnableLogging               bool                    `json:"EnableLogging,omitempty"`
+	BackupRetentionPeriod       int                     `json:"BackupRetentionPeriod,omitempty"`
 	MultiAZ                     bool                    `json:"MultiAZ,omitempty"`
 	InstanceStatus              string                  `json:"InstanceStatus,omitempty"`
 	DBSubnetGroupName           string                  `json:"DBSubnetGroupName,omitempty"`
