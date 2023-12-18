@@ -69,6 +69,7 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 		Description: "The full name of the ASG profile.",
 		Type:        schema.TypeString,
 		Computed:    true,
+		ForceNew:    true,
 	}
 
 	return awsASGSchema
@@ -408,5 +409,6 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("instance_count") ||
 		d.HasChange("min_instance_count") ||
-		d.HasChange("max_instance_count")
+		d.HasChange("max_instance_count") ||
+		d.HasChange("fullname")
 }
