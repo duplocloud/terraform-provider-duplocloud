@@ -117,7 +117,7 @@ func resourceAgentK8NodePoolRead(ctx context.Context, d *schema.ResourceData, m 
 		}
 		return diag.Errorf("Unable to retrieve tenant %s azure node pool %s : %s", tenantID, friendlyName, clientErr)
 	}
-
+	d.Set("tenant_id", tenantID)
 	flattenAgentK8NodePool(d, duplo)
 
 	log.Printf("[TRACE] resourceAgentK8NodePoolRead(%s, %s): end", tenantID, friendlyName)
@@ -232,6 +232,7 @@ func flattenAgentK8NodePool(d *schema.ResourceData, duplo *duplosdk.DuploAzureK8
 	d.Set("max_capacity", duplo.MaxSize)
 	d.Set("desired_capacity", duplo.DesiredCapacity)
 	d.Set("enable_auto_scaling", duplo.EnableAutoScaling)
+	d.Set("vm_size", duplo.Capacity)
 	i := 0
 	i, _ = strconv.Atoi(string(duplo.FriendlyName[len(duplo.FriendlyName)-1:]))
 	if i > 0 {
