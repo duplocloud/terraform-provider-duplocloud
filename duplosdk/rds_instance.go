@@ -80,7 +80,7 @@ type DuploRdsUpdatePayload struct {
 type DuploRdsInstanceUpdateRequest struct {
 	DBInstanceIdentifier  string `json:"DBInstanceIdentifier"`
 	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
-	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
+	BackupRetentionPeriod *int   `json:"BackupRetentionPeriod,omitempty"`
 }
 
 type DuploRdsClusterDeleteProtection struct {
@@ -224,7 +224,7 @@ func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRds
 
 // RdsInstanceChangeSizeOrEnableLogging changes the size of an RDS instance or enables logging via the Duplo API.
 // DuploRdsUpdatePayload, despite the name, is only used for size and logging changes.
-func (c *Client) RdsInstanceChangeSizeOrEnableLogging(tenantID string, instanceId string, rdsUpdate DuploRdsUpdatePayload) error {
+func (c *Client) RdsInstanceChangeSizeOrEnableLogging(tenantID string, instanceId string, rdsUpdate *DuploRdsUpdatePayload) error {
 	return c.putAPI(
 		fmt.Sprintf("RdsInstanceChangeSizeOrEnableLogging(%s, %s, %+v)", tenantID, instanceId, rdsUpdate),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/updatePayload", tenantID, instanceId),
