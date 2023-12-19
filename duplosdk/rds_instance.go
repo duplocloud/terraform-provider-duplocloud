@@ -77,9 +77,10 @@ type DuploRdsUpdatePayload struct {
 	SizeEx        string `json:"SizeEx,omitempty"`
 }
 
-type DuploRdsInstanceDeleteProtection struct {
-	DBInstanceIdentifier string `json:"DBInstanceIdentifier"`
-	DeletionProtection   *bool  `json:"DeletionProtection,omitempty"`
+type DuploRdsInstanceUpdateRequest struct {
+	DBInstanceIdentifier  string `json:"DBInstanceIdentifier"`
+	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
+	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
 }
 
 type DuploRdsClusterDeleteProtection struct {
@@ -232,9 +233,9 @@ func (c *Client) RdsInstanceChangeSizeOrEnableLogging(tenantID string, instanceI
 	)
 }
 
-func (c *Client) RdsInstanceChangeDeleteProtection(tenantID string, duploObject DuploRdsInstanceDeleteProtection) ClientError {
+func (c *Client) RdsInstanceChangeRequest(tenantID string, duploObject DuploRdsInstanceUpdateRequest) ClientError {
 	return c.putAPI(
-		fmt.Sprintf("RdsInstanceChangeDeleteProtection(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("RdsInstanceChangeRequest(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
 		&duploObject,
 		nil,

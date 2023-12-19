@@ -196,8 +196,8 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description:  "Specifies backup retention period in days. Default Backup retention period is 0 days.",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			Default:      0,
-			ValidateFunc: validation.IntBetween(0, 35),
+			Default:      1,
+			ValidateFunc: validation.IntBetween(1, 35),
 		},
 		"multi_az": {
 			Description: "Specifies if the RDS instance is multi-AZ.",
@@ -356,7 +356,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 				ApplyImmediately:    true,
 			})
 		} else {
-			err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
+			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
 				DBInstanceIdentifier: identifier,
 				DeletionProtection:   deleteProtection,
 			})
@@ -453,6 +453,20 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
+	if d.HasChange("backup_retention_period") {
+		backupRetentionPeriod := d.Get("backup_retention_period").(int)
+		log.Printf("[TRACE] Updating backup_retention_period to: '%v' for db instance '%s'.", backupRetentionPeriod, d.Get("identifier").(string))
+
+		err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
+			DBInstanceIdentifier:  d.Get("identifier").(string),
+			BackupRetentionPeriod: backupRetentionPeriod,
+		})
+
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
 	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
 
@@ -476,7 +490,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 				ApplyImmediately:    true,
 			})
 		} else {
-			err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
+			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
 				DBInstanceIdentifier: d.Get("identifier").(string),
 				DeletionProtection:   deleteProtection,
 			})
