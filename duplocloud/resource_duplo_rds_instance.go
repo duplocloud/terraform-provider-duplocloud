@@ -193,11 +193,11 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"backup_retention_period": {
-			Description:  "Specifies backup retention period in days. Default Backup retention period is 0 days.",
+			Description:  "Specifies backup retention period between 1 and 35 day(s). Default backup retention period is 1 day.",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			Default:      0,
-			ValidateFunc: validation.IntBetween(0, 35),
+			Default:      1,
+			ValidateFunc: validation.IntBetween(1, 35),
 		},
 		"multi_az": {
 			Description: "Specifies if the RDS instance is multi-AZ.",
