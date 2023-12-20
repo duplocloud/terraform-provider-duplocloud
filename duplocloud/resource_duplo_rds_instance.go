@@ -356,7 +356,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 				ApplyImmediately:    true,
 			})
 		} else {
-			err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
+			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
 				DBInstanceIdentifier: identifier,
 				DeletionProtection:   deleteProtection,
 			})
@@ -428,26 +428,43 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	if d.HasChange("enable_logging") {
-		identifier := d.Get("identifier").(string)
-		enableLogging := new(bool)
-		*enableLogging = d.Get("enable_logging").(bool)
-		log.Printf("[TRACE] Updating enable_logging to: '%v' for db instance '%s'.", d.Get("enable_logging").(bool), d.Get("identifier").(string))
-		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, duplosdk.DuploRdsUpdatePayload{
-			EnableLogging: enableLogging,
-		})
+	identifier := d.Get("identifier").(string)
+	updateLogging := d.HasChange("enable_logging")
+	updateSize := d.HasChange("size")
+	if updateLogging || updateSize {
+		uploadDuploObject := new(duplosdk.DuploRdsUpdatePayload)
+		if updateLogging {
+			enableLogging := new(bool)
+			*enableLogging = d.Get("enable_logging").(bool)
+			uploadDuploObject.EnableLogging = enableLogging
+
+			log.Printf("[TRACE] Updating enable_logging to: '%v' for db instance '%s'.", enableLogging, identifier)
+		}
+
+		if updateSize {
+			size := d.Get("size").(string)
+			uploadDuploObject.SizeEx = size
+
+			log.Printf("[TRACE] Updating size to: '%s' for db instance '%s'.", size, identifier)
+		}
+
+		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, uploadDuploObject)
+
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if d.HasChange("size") {
-		identifier := d.Get("identifier").(string)
-		size := d.Get("size").(string)
-		log.Printf("[TRACE] Updating size to: '%s' for db instance '%s'.", d.Get("size").(string), d.Get("identifier").(string))
-		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, duplosdk.DuploRdsUpdatePayload{
-			SizeEx: size,
+	if d.HasChange("backup_retention_period") {
+		backupRetentionPeriod := new(int)
+		*backupRetentionPeriod = d.Get("backup_retention_period").(int)
+		log.Printf("[TRACE] Updating backup_retention_period to: '%v' for db instance '%s'.", backupRetentionPeriod, identifier)
+
+		err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
+			DBInstanceIdentifier:  identifier,
+			BackupRetentionPeriod: backupRetentionPeriod,
 		})
+
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -476,7 +493,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 				ApplyImmediately:    true,
 			})
 		} else {
-			err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
+			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
 				DBInstanceIdentifier: d.Get("identifier").(string),
 				DeletionProtection:   deleteProtection,
 			})
