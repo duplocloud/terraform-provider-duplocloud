@@ -410,5 +410,6 @@ func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("instance_count") ||
 		d.HasChange("min_instance_count") ||
 		d.HasChange("max_instance_count") ||
+		d.HasChange("friendly_name") ||
 		d.HasChange("fullname")
 }

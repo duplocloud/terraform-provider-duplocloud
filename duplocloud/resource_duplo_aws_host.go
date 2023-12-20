@@ -36,7 +36,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Optional:         false,
 			Required:         true,
 			ForceNew:         true, // relaunch instance
-			DiffSuppressFunc: diffIgnoreIfAlreadySet,
+			DiffSuppressFunc: diffSuppressWhenNew,
 		},
 		"instance_id": {
 			Description: "The AWS EC2 instance ID of the host.",
