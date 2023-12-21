@@ -611,15 +611,16 @@ func nativeHostWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID,
 }
 
 func diffSuppressIfSame(k, old, new string, d *schema.ResourceData) bool {
+	log.Printf("[DEBUG]diffSuppressIfSame, new: %s, old: %s)", new, old)
+
 	if d.IsNewResource() {
 		return true
 	}
 
-	id := d.Id()                                    // e.g.: fd095d0c-2429-4c19-804f-b43f0fc9e5c3/duploservices-tenant02-tftestasg01
-	friendlyNameParts := strings.SplitN(id, "-", 3) // e.g.: duploservices-tenant02-tftestasg01
+	friendlyNameParts := strings.SplitN(new, "-", 3) // e.g.: duploservices-tenant02-tftestasg01
 	if len(friendlyNameParts) == 3 {
-		return new == friendlyNameParts[2] // e.g.: tftestasg01
+		return old == friendlyNameParts[2] // e.g.: tftestasg01
 	}
 
-	return false
+	return new == old
 }
