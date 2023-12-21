@@ -36,7 +36,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Optional:         false,
 			Required:         true,
 			ForceNew:         true, // relaunch instance
-			DiffSuppressFunc: diffSuppressWhenNew,
+			DiffSuppressFunc: diffSuppressIfSame,
 		},
 		"instance_id": {
 			Description: "The AWS EC2 instance ID of the host.",
@@ -608,4 +608,18 @@ func nativeHostWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID,
 	log.Printf("[DEBUG] duploNativeHostWaitUntilReady(%s, %s)", tenantID, instanceID)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func diffSuppressIfSame(k, old, new string, d *schema.ResourceData) bool {
+	if d.IsNewResource() {
+		return true
+	}
+
+	id := d.Id()                                    // e.g.: fd095d0c-2429-4c19-804f-b43f0fc9e5c3/duploservices-tenant02-tftestasg01
+	friendlyNameParts := strings.SplitN(id, "-", 3) // e.g.: duploservices-tenant02-tftestasg01
+	if len(friendlyNameParts) == 3 {
+		return new == friendlyNameParts[2] // e.g.: tftestasg01
+	}
+
+	return false
 }
