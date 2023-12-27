@@ -25,7 +25,9 @@ type DuploTenant struct {
 	AccountName          string                 `json:"AccountName"`
 	PlanID               string                 `json:"PlanID"`
 	ExistingK8sNamespace string                 `json:"ExistingK8sNamespace"`
+	Expiry               string                 `json:"Expiry,omitempty"`
 	InfraOwner           string                 `json:"InfraOwner,omitempty"`
+	PauseTime            string                 `json:"PauseTime,omitempty"`
 	TenantPolicy         *DuploTenantPolicy     `json:"TenantPolicy,omitempty"`
 	Tags                 *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
@@ -121,7 +123,7 @@ func (c *Client) TenantGet(tenantID string) (*DuploTenant, ClientError) {
 	rp := DuploTenant{}
 
 	// Get the tenant from Duplo
-	err := c.getAPI(apiName, fmt.Sprintf("v2/admin/TenantV2/%s", tenantID), &rp)
+	err := c.getAPI(apiName, fmt.Sprintf("v3/admin/tenant/%s", tenantID), &rp)
 	if err != nil || rp.TenantID == "" {
 		return nil, err
 	}
