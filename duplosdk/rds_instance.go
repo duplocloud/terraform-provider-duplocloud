@@ -83,10 +83,11 @@ type DuploRdsInstanceUpdateRequest struct {
 	BackupRetentionPeriod *int   `json:"BackupRetentionPeriod,omitempty"`
 }
 
-type DuploRdsClusterDeleteProtection struct {
-	DBClusterIdentifier string `json:"DBClusterIdentifier"`
-	ApplyImmediately    bool   `json:"ApplyImmediately"`
-	DeletionProtection  *bool  `json:"DeletionProtection,omitempty"`
+type DuploRdsClusterUpdateRequest struct {
+	DBClusterIdentifier   string `json:"DBClusterIdentifier"`
+	ApplyImmediately      bool   `json:"ApplyImmediately"`
+	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
+	BackupRetentionPeriod *int   `json:"BackupRetentionPeriod,omitempty"`
 }
 
 type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
@@ -242,9 +243,9 @@ func (c *Client) RdsInstanceChangeRequest(tenantID string, duploObject DuploRdsI
 	)
 }
 
-func (c *Client) RdsClusterChangeDeleteProtection(tenantID string, duploObject DuploRdsClusterDeleteProtection) ClientError {
+func (c *Client) DuploRdsClusterUpdateRequest(tenantID string, duploObject DuploRdsClusterUpdateRequest) ClientError {
 	return c.putAPI(
-		fmt.Sprintf("RdsClusterChangeDeleteProtection(%s, %s)", tenantID, duploObject.DBClusterIdentifier),
+		fmt.Sprintf("DuploRdsClusterUpdateRequest(%s, %s)", tenantID, duploObject.DBClusterIdentifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, duploObject.DBClusterIdentifier),
 		&duploObject,
 		nil,
