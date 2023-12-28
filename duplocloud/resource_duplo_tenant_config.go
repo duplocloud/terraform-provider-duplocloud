@@ -77,7 +77,7 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 
-	tenant, err := c.TenantGet(tenantID)
+	tenant, err := c.TenantGetV2(tenantID)
 	if err != nil {
 		if err.Status() == 404 {
 			d.SetId("")
