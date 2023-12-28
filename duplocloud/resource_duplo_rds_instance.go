@@ -350,7 +350,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		// Update delete protection settings.
 		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), identifier)
 		if isAuroraDB(d) {
-			err = c.DuploRdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
+			err = c.RdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
 				DBClusterIdentifier: identifier + "-cluster",
 				DeletionProtection:  deleteProtection,
 				ApplyImmediately:    true,
@@ -469,7 +469,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 	if backupRetentionPeriod != nil || deleteProtection != nil {
 		if isAuroraDB(d) {
-			err = c.DuploRdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
+			err = c.RdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
 				DBClusterIdentifier:   identifier + "-cluster",
 				BackupRetentionPeriod: backupRetentionPeriod,
 				DeletionProtection:    deleteProtection,

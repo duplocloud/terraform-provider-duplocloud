@@ -243,9 +243,9 @@ func (c *Client) RdsInstanceChangeRequest(tenantID string, duploObject DuploRdsI
 	)
 }
 
-func (c *Client) DuploRdsClusterUpdateRequest(tenantID string, duploObject DuploRdsClusterUpdateRequest) ClientError {
+func (c *Client) RdsClusterUpdateRequest(tenantID string, duploObject DuploRdsClusterUpdateRequest) ClientError {
 	return c.putAPI(
-		fmt.Sprintf("DuploRdsClusterUpdateRequest(%s, %s)", tenantID, duploObject.DBClusterIdentifier),
+		fmt.Sprintf("RdsClusterUpdateRequest(%s, %s)", tenantID, duploObject.DBClusterIdentifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, duploObject.DBClusterIdentifier),
 		&duploObject,
 		nil,
