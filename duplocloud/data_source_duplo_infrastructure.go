@@ -182,7 +182,7 @@ func dataSourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m
 
 	// Look up by tenant ID, if requested.
 	if v, ok := d.GetOk("tenant_id"); ok && v != nil && v.(string) != "" {
-		tenant, err := c.TenantGet(v.(string))
+		tenant, err := c.TenantGetV2(v.(string))
 		if err != nil {
 			return diag.FromErr(err)
 		}

@@ -1,1 +1,1 @@
-terraform import duplocloud_tenant_cleanup_timers.mytimers v3/admin/tenant/*TENANT_ID*
+terraform import duplocloud_tenant_cleanup_timers.mytimers *TENANT_ID*

@@ -57,10 +57,9 @@ func resourceTenantCleanUpTimers() *schema.Resource {
 }
 
 func resourceTenantExpiryRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	id := d.Id()
-	tenantId := parseTenantIdFromResourceId(id)
+	tenantId := d.Id()
 	if tenantId == "" {
-		return diag.Errorf("Invalid resource ID: %s", id)
+		return diag.Errorf("Invalid resource ID: %s", tenantId)
 	}
 
 	log.Printf("[TRACE] resourceTenantExpiryRead(%s): start", tenantId)
@@ -136,16 +135,64 @@ func resourceTenantCleanUpTimersCreateOrUpdate(ctx context.Context, d *schema.Re
 	}
 
 	if !isUpdate {
-		d.SetId(fmt.Sprintf("v3/admin/tenant/%s", rq.TenantId))
+		d.SetId(rq.TenantId)
 	}
 
 	return nil
 }
 
 func validateTenantCleanUpTimersUpdateRequest(rq *duplosdk.DuploTenantCleanUpTimersUpdateRequest) diag.Diagnostics {
-	return nil
-}
+	var diags diag.Diagnostics
+	const layout = "2006-01-02T15:04:05Z"
 
-func parseTenantIdFromResourceId(id string) (tenantID string) {
-	return parseDuploTenantIdParts(id)
+	// Validate ExpiryTime
+	if !rq.RemoveExpiryTime && rq.ExpiryTime != "" {
+		if _, err := time.Parse(layout, rq.ExpiryTime); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Invalid Expiry Time",
+				Detail:   fmt.Sprintf("Expiry Time is not in the expected format (YYYY-MM-DDTHH:MM:SS): %v", err),
+			})
+		}
+	}
+
+	// Validate PauseTime
+	if !rq.RemovePauseTime && rq.PauseTime != "" {
+		if _, err := time.Parse(layout, rq.PauseTime); err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Invalid Pause Time",
+				Detail:   fmt.Sprintf("Pause Time is not in the expected format (YYYY-MM-DDTHH:MM:SS): %v", err),
+			})
+		}
+	}
+
+	// Validate TenantId
+	if rq.TenantId == "" {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Invalid Tenant ID",
+			Detail:   "Tenant ID cannot be empty.",
+		})
+	}
+
+	// Additional logic checks, if both RemoveExpiryTime and ExpiryTime are set
+	if rq.RemoveExpiryTime && rq.ExpiryTime != "" {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Conflicting Expiry Time settings",
+			Detail:   "Both RemoveExpiryTime and ExpiryTime are set, which is conflicting.",
+		})
+	}
+
+	// Similar check for PauseTime
+	if rq.RemovePauseTime && rq.PauseTime != "" {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Conflicting Pause Time settings",
+			Detail:   "Both RemovePauseTime and PauseTime are set, which is conflicting.",
+		})
+	}
+
+	return diags
 }

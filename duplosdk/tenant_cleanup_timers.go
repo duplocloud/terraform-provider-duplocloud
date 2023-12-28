@@ -17,7 +17,7 @@ type DuploTenantCleanUpTimersUpdateRequest struct {
 
 // GetTenantCleanUpTimers gets the expiry of a tenant. It uses the Tenant API.
 func (c *Client) GetTenantCleanUpTimers(tenantId string) (*DuploTenantCleanUpTimers, ClientError) {
-	tenant, err := c.TenantGet(tenantId)
+	tenant, err := c.TenantGetV3(tenantId)
 	if err != nil {
 		return nil, err
 	}

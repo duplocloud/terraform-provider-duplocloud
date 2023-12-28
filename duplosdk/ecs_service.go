@@ -201,7 +201,7 @@ func (c *Client) EcsServiceGetV2(id string) (*DuploEcsService, ClientError) {
 func (c *Client) EcsServiceRequiredTargetGroupsCreated(tenantID string, ecs *DuploEcsService) (bool, ClientError, []string) {
 	log.Printf("[TRACE] EcsServiceRequiredTargetGroupsCreated ******** start")
 	targetGrpCount := 0
-	tenant, err := c.TenantGet(tenantID)
+	tenant, err := c.TenantGetV2(tenantID)
 	if err != nil {
 		return false, err, nil
 	}
