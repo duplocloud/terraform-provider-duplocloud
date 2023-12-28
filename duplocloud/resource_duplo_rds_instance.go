@@ -350,7 +350,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		// Update delete protection settings.
 		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), identifier)
 		if isAuroraDB(d) {
-			err = c.RdsClusterChangeDeleteProtection(tenantID, duplosdk.DuploRdsClusterDeleteProtection{
+			err = c.RdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
 				DBClusterIdentifier: identifier + "-cluster",
 				DeletionProtection:  deleteProtection,
 				ApplyImmediately:    true,
@@ -455,15 +455,33 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
+	backupRetentionPeriod := new(int)
 	if d.HasChange("backup_retention_period") {
-		backupRetentionPeriod := new(int)
 		*backupRetentionPeriod = d.Get("backup_retention_period").(int)
-		log.Printf("[TRACE] Updating backup_retention_period to: '%v' for db instance '%s'.", backupRetentionPeriod, identifier)
+		log.Printf("[DEBUG] Updating backup_retention_period to: '%v' for db instance '%s'.", backupRetentionPeriod, identifier)
+	}
 
-		err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
-			DBInstanceIdentifier:  identifier,
-			BackupRetentionPeriod: backupRetentionPeriod,
-		})
+	deleteProtection := new(bool)
+	if isDeleteProtectionSupported(d) && d.HasChange("deletion_protection") {
+		*deleteProtection = d.Get("deletion_protection").(bool)
+		log.Printf("[DEBUG] Updating delete protection settings to '%v' for db instance '%s'.", deleteProtection, identifier)
+	}
+
+	if backupRetentionPeriod != nil || deleteProtection != nil {
+		if isAuroraDB(d) {
+			err = c.RdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
+				DBClusterIdentifier:   identifier + "-cluster",
+				BackupRetentionPeriod: backupRetentionPeriod,
+				DeletionProtection:    deleteProtection,
+				ApplyImmediately:      true,
+			})
+		} else {
+			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
+				DBInstanceIdentifier:  identifier,
+				BackupRetentionPeriod: backupRetentionPeriod,
+				DeletionProtection:    deleteProtection,
+			})
+		}
 
 		if err != nil {
 			return diag.FromErr(err)
@@ -480,29 +498,6 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
-
-	if isDeleteProtectionSupported(d) && d.HasChange("deletion_protection") {
-		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), d.Get("identifier").(string))
-		deleteProtection := new(bool)
-		*deleteProtection = d.Get("deletion_protection").(bool)
-
-		if isAuroraDB(d) {
-			err = c.RdsClusterChangeDeleteProtection(tenantID, duplosdk.DuploRdsClusterDeleteProtection{
-				DBClusterIdentifier: d.Get("identifier").(string) + "-cluster",
-				DeletionProtection:  deleteProtection,
-				ApplyImmediately:    true,
-			})
-		} else {
-			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
-				DBInstanceIdentifier: d.Get("identifier").(string),
-				DeletionProtection:   deleteProtection,
-			})
-		}
-
-		if err != nil {
-			return diag.Errorf("Error while setting deletion_protection for RDS DB instance '%s' : %s", id, err)
-		}
-	}
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
 	return diags
