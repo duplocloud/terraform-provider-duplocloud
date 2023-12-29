@@ -475,14 +475,14 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			err = c.RdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
 				DBClusterIdentifier:   identifier + "-cluster",
 				BackupRetentionPeriod: *backupRetentionPeriod,
-				DeletionProtection:    *deleteProtection,
+				DeletionProtection:    deleteProtection,
 				ApplyImmediately:      true,
 			})
 		} else {
 			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
 				DBInstanceIdentifier:  identifier,
 				BackupRetentionPeriod: *backupRetentionPeriod,
-				DeletionProtection:    *deleteProtection,
+				DeletionProtection:    deleteProtection,
 			})
 		}
 
