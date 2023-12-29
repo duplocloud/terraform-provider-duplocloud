@@ -455,31 +455,34 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
+	runUpdate := false
 	backupRetentionPeriod := new(int)
 	if d.HasChange("backup_retention_period") {
 		*backupRetentionPeriod = d.Get("backup_retention_period").(int)
 		log.Printf("[DEBUG] Updating backup_retention_period to: '%v' for db instance '%s'.", backupRetentionPeriod, identifier)
+		runUpdate = true
 	}
 
 	deleteProtection := new(bool)
 	if isDeleteProtectionSupported(d) && d.HasChange("deletion_protection") {
 		*deleteProtection = d.Get("deletion_protection").(bool)
 		log.Printf("[DEBUG] Updating delete protection settings to '%v' for db instance '%s'.", deleteProtection, identifier)
+		runUpdate = true
 	}
 
-	if backupRetentionPeriod != nil || deleteProtection != nil {
+	if runUpdate {
 		if isAuroraDB(d) {
 			err = c.RdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
 				DBClusterIdentifier:   identifier + "-cluster",
-				BackupRetentionPeriod: backupRetentionPeriod,
-				DeletionProtection:    deleteProtection,
+				BackupRetentionPeriod: *backupRetentionPeriod,
+				DeletionProtection:    *deleteProtection,
 				ApplyImmediately:      true,
 			})
 		} else {
 			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
 				DBInstanceIdentifier:  identifier,
-				BackupRetentionPeriod: backupRetentionPeriod,
-				DeletionProtection:    deleteProtection,
+				BackupRetentionPeriod: *backupRetentionPeriod,
+				DeletionProtection:    *deleteProtection,
 			})
 		}
 
