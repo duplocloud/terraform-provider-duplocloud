@@ -610,17 +610,25 @@ func nativeHostWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID,
 	return err
 }
 
-func diffSuppressIfSame(k, old, new string, d *schema.ResourceData) bool {
-	log.Printf("[DEBUG]diffSuppressIfSame, new: %s, old: %s)", new, old)
-
+func diffSuppressIfSame(k, old string, new string, d *schema.ResourceData) bool {
 	if d.IsNewResource() {
 		return true
 	}
 
-	friendlyNameParts := strings.SplitN(new, "-", 3) // e.g.: duploservices-tenant02-tftestasg01
-	if len(friendlyNameParts) == 3 {
-		return old == friendlyNameParts[2] // e.g.: tftestasg01
+	oldFullName := d.Get("fullname").(string) // duploservices-tenant02-tftestasg01 (from Duplo API)
+
+	// new: duploservices-tenant02-tftestasg01
+	if strings.Contains(new, "duploservices-") {
+		log.Printf("[DEBUG]diffSuppressIfSame old: %s, new: %s)", oldFullName, new)
+		return oldFullName == new
 	}
 
-	return new == old
+	// new: tftestasg01
+	friendlyNameParts := strings.SplitN(oldFullName, "-", 3)
+	if len(friendlyNameParts) == 3 {
+		log.Printf("[DEBUG]diffSuppressIfSame new: %s, old: %s)", new, friendlyNameParts[2])
+		return friendlyNameParts[2] == new
+	}
+
+	return old == new
 }
