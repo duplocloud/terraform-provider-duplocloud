@@ -1,0 +1,1 @@
+terraform import duplocloud_tenant_cleanup_timers.mytimers *TENANT_ID*

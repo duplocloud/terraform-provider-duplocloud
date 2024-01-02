@@ -25,7 +25,9 @@ type DuploTenant struct {
 	AccountName          string                 `json:"AccountName"`
 	PlanID               string                 `json:"PlanID"`
 	ExistingK8sNamespace string                 `json:"ExistingK8sNamespace"`
+	Expiry               string                 `json:"Expiry,omitempty"`
 	InfraOwner           string                 `json:"InfraOwner,omitempty"`
+	PauseTime            string                 `json:"PauseTime,omitempty"`
 	TenantPolicy         *DuploTenantPolicy     `json:"TenantPolicy,omitempty"`
 	Tags                 *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
@@ -115,13 +117,26 @@ type DuploTenantFeatures struct {
 	UseLbIndex          bool   `json:"UseLbIndex"`
 }
 
-// TenantGet retrieves a tenant via the Duplo API.
-func (c *Client) TenantGet(tenantID string) (*DuploTenant, ClientError) {
-	apiName := fmt.Sprintf("TenantGet(%s)", tenantID)
+// TenantGetV2 retrieves a tenant via the V2 Duplo APIs.
+func (c *Client) TenantGetV2(tenantID string) (*DuploTenant, ClientError) {
+	apiName := fmt.Sprintf("TenantGetV2(%s)", tenantID)
 	rp := DuploTenant{}
 
 	// Get the tenant from Duplo
 	err := c.getAPI(apiName, fmt.Sprintf("v2/admin/TenantV2/%s", tenantID), &rp)
+	if err != nil || rp.TenantID == "" {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+// TenantGetV3 retrieves a tenant via the V3 Duplo APIs
+func (c *Client) TenantGetV3(tenantID string) (*DuploTenant, ClientError) {
+	apiName := fmt.Sprintf("TenantGetV2(%s)", tenantID)
+	rp := DuploTenant{}
+
+	// Get the tenant from Duplo
+	err := c.getAPI(apiName, fmt.Sprintf("v3/admin/tenant/%s", tenantID), &rp)
 	if err != nil || rp.TenantID == "" {
 		return nil, err
 	}
