@@ -618,16 +618,16 @@ func diffSuppressIfSame(k, old string, new string, d *schema.ResourceData) bool 
 	oldFullName := d.Get("fullname").(string) // duploservices-tenant02-tftestasg01 (from Duplo API)
 
 	// new: duploservices-tenant02-tftestasg01
-	if strings.Contains(new, "duploservices-") {
+	if strings.HasPrefix(new, "duploservices-") {
 		log.Printf("[DEBUG]diffSuppressIfSame old: %s, new: %s)", oldFullName, new)
 		return oldFullName == new
 	}
 
 	// new: tftestasg01
-	friendlyNameParts := strings.SplitN(oldFullName, "-", 3)
-	if len(friendlyNameParts) == 3 {
+	friendlyNameParts := strings.Split(oldFullName, "-")
+	if len(friendlyNameParts) > 1 {
 		log.Printf("[DEBUG]diffSuppressIfSame new: %s, old: %s)", new, friendlyNameParts[2])
-		return friendlyNameParts[2] == new
+		return friendlyNameParts[len(friendlyNameParts)-1] == new
 	}
 
 	return old == new
