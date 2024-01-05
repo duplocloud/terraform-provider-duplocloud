@@ -13,6 +13,7 @@ type DuploReplicationController struct {
 	DnsPrfx                           string                 `json:"DnsPrfx"`
 	ElbDnsName                        string                 `json:"ElbDnsName"`
 	Fqdn                              string                 `json:"Fqdn"`
+	FqdnEx                            *string                `json:"FqdnEx"`
 	ParentDomain                      string                 `json:"ParentDomain"`
 	IsInfraDeployment                 bool                   `json:"IsInfraDeployment,omitempty"`
 	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
