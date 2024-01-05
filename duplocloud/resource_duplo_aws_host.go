@@ -623,12 +623,12 @@ func diffSuppressIfSame(k, old string, new string, d *schema.ResourceData) bool 
 		return oldFullName == new
 	}
 
-	// new: tftestasg01
-	friendlyNameParts := strings.Split(oldFullName, "-")
-	if len(friendlyNameParts) > 1 {
-		log.Printf("[DEBUG]diffSuppressIfSame new: %s, old: %s)", new, friendlyNameParts[2])
-		return friendlyNameParts[len(friendlyNameParts)-1] == new
-	}
+	oldAccountName := d.Get("user_account").(string)
+	prefix := strings.Join([]string{"duploservices", oldAccountName}, "-")
+	oldName, _ := duplosdk.UnprefixName(prefix, oldFullName)
 
-	return old == new
+	log.Printf("[DEBUG]diffSuppressIfSame prefix: %s and new: %s, old: %s)", prefix, new, oldName)
+
+	// new: tftestasg01
+	return oldName == new
 }
