@@ -178,6 +178,26 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Computed:    true,
 		},
+		"fqdn": {
+			Description: "The fully qualified domain associated with the service",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"fqdn_ex": {
+			Description: "External fully qualified domain associated with the service",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"parent_domain": {
+			Description: "The service's parent domain",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"domain": {
+			Description: "The service domain (whichever fqdn_ex or fqdn which is non empty)",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
