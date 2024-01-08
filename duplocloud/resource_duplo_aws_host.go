@@ -36,7 +36,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Optional:         false,
 			Required:         true,
 			ForceNew:         true, // relaunch instance
-			DiffSuppressFunc: diffIgnoreIfAlreadySet,
+			DiffSuppressFunc: diffSuppressIfSame,
 		},
 		"instance_id": {
 			Description: "The AWS EC2 instance ID of the host.",
@@ -608,4 +608,27 @@ func nativeHostWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID,
 	log.Printf("[DEBUG] duploNativeHostWaitUntilReady(%s, %s)", tenantID, instanceID)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func diffSuppressIfSame(k, old string, new string, d *schema.ResourceData) bool {
+	if d.IsNewResource() {
+		return true
+	}
+
+	oldFullName := d.Get("fullname").(string) // duploservices-tenant02-tftestasg01 (from Duplo API)
+
+	// new: duploservices-tenant02-tftestasg01
+	if strings.HasPrefix(new, "duploservices-") {
+		log.Printf("[DEBUG]diffSuppressIfSame old: %s, new: %s)", oldFullName, new)
+		return oldFullName == new
+	}
+
+	oldAccountName := d.Get("user_account").(string)
+	prefix := strings.Join([]string{"duploservices", oldAccountName}, "-")
+	oldName, _ := duplosdk.UnprefixName(prefix, oldFullName)
+
+	log.Printf("[DEBUG]diffSuppressIfSame prefix: %s and new: %s, old: %s)", prefix, new, oldName)
+
+	// new: tftestasg01
+	return oldName == new
 }
