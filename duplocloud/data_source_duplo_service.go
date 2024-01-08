@@ -184,9 +184,9 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("fqdn", duplo.Fqdn)
 	d.Set("parent_domain", duplo.ParentDomain)
-	if duplo.FqdnEx != nil {
-		d.Set("fqdn_ex", *duplo.FqdnEx)
-		d.Set("domain", *duplo.FqdnEx)
+	d.Set("fqdn_ex", duplo.FqdnEx)
+	if duplo.FqdnEx != "" {
+		d.Set("domain", duplo.FqdnEx)
 	} else {
 		d.Set("domain", duplo.Fqdn)
 	}
