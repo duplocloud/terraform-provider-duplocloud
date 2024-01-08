@@ -55,16 +55,6 @@ func duploComputedPlanSettingsSchema() map[string]*schema.Schema {
 			Optional: true,
 			Elem:     KeyValueSchema(),
 		},
-		"all_metadata": {
-			Type:     schema.TypeList,
-			Computed: true,
-			Elem:     KeyValueSchema(),
-		},
-		"specified_metadata": {
-			Type:     schema.TypeList,
-			Computed: true,
-			Elem:     &schema.Schema{Type: schema.TypeString},
-		},
 	}
 }
 
@@ -106,15 +96,10 @@ func dataSourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m i
 
 	// Set the simple fields first.
 	d.SetId(planID)
-	d.Set("all_metadata", keyValueToState("all_metadata", allMetadata))
+	d.Set("metadata", keyValueToState("metadata", allMetadata))
 	d.Set("unrestricted_ext_lb", settings.UnrestrictedExtLB)
 	if dns != nil {
 		d.Set("dns_setting", flattenDnsSetting(dns))
-	}
-
-	// Build a list of current state, to replace the user-supplied settings.
-	if v, ok := getAsStringArray(d, "specified_metadata"); ok && v != nil {
-		d.Set("metadata", keyValueToState("metadata", selectPlanMetadata(allMetadata, *v)))
 	}
 
 	log.Printf("[TRACE] dataSourcePlanSettingsRead(%s): end", planID)
