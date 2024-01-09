@@ -20,13 +20,36 @@ cd examples/service
 terraform init && terraform apply
 ```
 
-### Using debug output during execution.
+### Debugging
+
+#### Using debug output during execution
 
 ``` shell
 export TF_LOG_PATH=duplo.log
 export TF_LOG=TRACE
 terraform init && terraform apply
 ```
+
+#### Using a debugger on VS code
+
+Reference documentation [here](https://developer.hashicorp.com/terraform/plugin/debugging#debugger-based-debugging)
+
+1. Install the VS code [GO extension](https://marketplace.visualstudio.com/items?itemName=golang.go)
+2. Go to VS code debug tab and start a new debug session for the terraform provider. You should see something similar to the output below in the console:
+```
+Starting: /Users/matheusbafutto/go/bin/dlv dap --listen=127.0.0.1:55046 --log-dest=3 from /Users/matheusbafutto/Desktop/duplocloud/terraform-provider-duplocloud
+DAP server listening at: 127.0.0.1:55046
+Type 'dlv help' for list of commands.
+Provider started. To attach Terraform CLI, set the TF_REATTACH_PROVIDERS environment variable with the following:
+
+	TF_REATTACH_PROVIDERS='{"registry.terraform.io/duplocloud/duplocloud":{"Protocol":"grpc","ProtocolVersion":5,"Pid":79817,"Test":true,"Addr":{"Network":"unix","String":"/var/folders/32/bgvj1ynd6p16109l4t7sx4jm0000gn/T/plugin2604224326"}}}'
+```
+3. Copy `TF_REATTACH_PROVIDERS` to your clipboard and a terminal session to run the terraform commands
+4. Run the terraform apply command like the following:
+```
+TF_REATTACH_PROVIDERS='{"registry.terraform.io/duplocloud/duplocloud":{"Protocol":"grpc","ProtocolVersion":5,"Pid":79817,"Test":true,"Addr":{"Network":"unix","String":"/var/folders/32/bgvj1ynd6p16109l4t7sx4jm0000gn/T/plugin2604224326"}}}' terraform apply
+```
+5. Happy debugging!
 
 ## Installing and running project on WSL2
 *Assumptions*
