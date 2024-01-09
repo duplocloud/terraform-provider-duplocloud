@@ -17,34 +17,28 @@ func duploComputedPlanSettingsSchema() map[string]*schema.Schema {
 		},
 		"unrestricted_ext_lb": {
 			Type:     schema.TypeBool,
-			Optional: true,
 			Computed: true,
 		},
 		"dns_setting": {
 			Type:     schema.TypeList,
-			Optional: true,
 			Computed: true,
 			MaxItems: 1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"domain_id": {
 						Type:     schema.TypeString,
-						Optional: true,
 						Computed: true,
 					},
 					"internal_dns_suffix": {
 						Type:     schema.TypeString,
-						Optional: true,
 						Computed: true,
 					},
 					"external_dns_suffix": {
 						Type:     schema.TypeString,
-						Optional: true,
 						Computed: true,
 					},
 					"ignore_global_dns": {
 						Type:     schema.TypeBool,
-						Optional: true,
 						Computed: true,
 					},
 				},
@@ -52,7 +46,7 @@ func duploComputedPlanSettingsSchema() map[string]*schema.Schema {
 		},
 		"metadata": {
 			Type:     schema.TypeList,
-			Optional: true,
+			Computed: true,
 			Elem:     KeyValueSchema(),
 		},
 	}
