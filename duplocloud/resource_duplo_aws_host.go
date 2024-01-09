@@ -310,8 +310,15 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 	rq := expandNativeHost(d)
 	log.Printf("[TRACE] resourceAwsHostCreate(%s, %s): start", rq.TenantID, rq.FriendlyName)
 
-	// Create the host in Duplo.
 	c := m.(*duplosdk.Client)
+
+	// Set the NetworkInterfaces property as needed.
+	diags := setNetworkInterfaces(rq, c)
+	if diags != nil {
+		return diags
+	}
+
+	// Create the host in Duplo.
 	rp, err := c.NativeHostCreate(rq)
 	if err != nil {
 		return diag.Errorf("Error creating AWS host '%s': %s", rq.FriendlyName, err)
@@ -322,7 +329,7 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 
 	// Wait up to 60 seconds for Duplo to be able to return the host details.
 	id := fmt.Sprintf("v2/subscriptions/%s/NativeHostV2/%s", rp.TenantID, rp.InstanceID)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "AWS host", id, func() (interface{}, duplosdk.ClientError) {
+	diags = waitForResourceToBePresentAfterCreate(ctx, d, "AWS host", id, func() (interface{}, duplosdk.ClientError) {
 		return c.NativeHostGet(rp.TenantID, rp.InstanceID)
 	})
 	if diags != nil {
@@ -342,6 +349,69 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 	diags = resourceAwsHostRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsHostCreate(%s, %s): end", rq.TenantID, rq.FriendlyName)
 	return diags
+}
+
+func setNetworkInterfaces(rq *duplosdk.DuploNativeHost, c *duplosdk.Client) diag.Diagnostics {
+	// Handle subnet selection for hosts
+	var subnetIds []string
+	var err duplosdk.ClientError
+	var orientation string
+
+	if rq.AllocatedPublicIP {
+		orientation = "external"
+		subnetIds, err = c.TenantGetExternalSubnets(rq.TenantID)
+	} else {
+		orientation = "internal"
+		subnetIds, err = c.TenantGetInternalSubnets(rq.TenantID)
+	}
+
+	if err != nil {
+		return diag.Errorf("Error creating AWS host '%s': failed to get %s subnets for tenant '%s' "+
+			"Internal error: %s", rq.FriendlyName, orientation, rq.TenantID, err)
+	}
+
+	if len(subnetIds) == 0 {
+		return diag.Errorf("Error creating AWS host '%s': no %s subnets were found for tenant '%s' "+
+			rq.FriendlyName, orientation, rq.TenantID)
+	}
+
+	if rq.Zone < 0 || rq.Zone >= len(subnetIds) {
+		return diag.Errorf("Error creating AWS host '%s': zone %d is invalid. zone must be between 0 and %d.",
+			rq.FriendlyName, rq.Zone, len(subnetIds))
+	}
+
+	subnetId := subnetIds[rq.Zone]
+
+	// When AllocatedPublicIP is true, ensure there is at least one network interface
+	if rq.AllocatedPublicIP && (rq.NetworkInterfaces == nil || len(*rq.NetworkInterfaces) == 0) {
+		// No network interfaces, create a new one on the external subnet for the given zone.
+		rq.NetworkInterfaces = &[]duplosdk.DuploNativeHostNetworkInterface{{
+			SubnetID: subnetId,
+		}}
+	}
+
+	if rq.NetworkInterfaces == nil {
+		return nil
+	}
+
+	// Ensure all network interfaces without an ID are using the correct subnet
+	for idx, niConfig := range *rq.NetworkInterfaces {
+		if niConfig.NetworkInterfaceID != "" && niConfig.SubnetID != "" {
+			return diag.Errorf("Error creating AWS host '%s': a subnetId on network interface %d cannot be specified since network_interface_id '%s' is provided",
+				rq.FriendlyName, idx, niConfig.NetworkInterfaceID)
+		}
+
+		if niConfig.NetworkInterfaceID == "" {
+			if niConfig.SubnetID == "" {
+				niConfig.SubnetID = subnetId
+			} else if niConfig.SubnetID != subnetId {
+				return diag.Errorf("Error creating AWS host '%s': %s subnetId on network interface %d for zone %d must be '%s' instead of '%s'",
+					rq.FriendlyName, orientation, idx, rq.Zone, subnetId, niConfig.SubnetID)
+			}
+		}
+	}
+
+	return nil
 }
 
 // UPDATE resource
