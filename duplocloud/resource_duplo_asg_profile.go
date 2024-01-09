@@ -65,6 +65,13 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 		Computed:    true,
 	}
 
+	awsASGSchema["can_scale_from_zero"] = &schema.Schema{
+		Description: "Whether or not ASG should leverage duplocloud's scale from 0 feature",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	}
+
 	awsASGSchema["fullname"] = &schema.Schema{
 		Description: "The full name of the ASG profile.",
 		Type:        schema.TypeString,
@@ -306,6 +313,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("agent_platform", duplo.AgentPlatform)
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
 	d.Set("is_cluster_autoscaled", duplo.IsClusterAutoscaled)
+	d.Set("can_scale_from_zero", duplo.CanScaleFromZero)
 	d.Set("cloud", duplo.Cloud)
 	d.Set("keypair_type", duplo.KeyPairType)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
@@ -336,6 +344,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		AgentPlatform:       d.Get("agent_platform").(int),
 		IsEbsOptimized:      d.Get("is_ebs_optimized").(bool),
 		IsClusterAutoscaled: d.Get("is_cluster_autoscaled").(bool),
+		CanScaleFromZero:    d.Get("can_scale_from_zero").(bool),
 		AllocatedPublicIP:   d.Get("allocated_public_ip").(bool),
 		Cloud:               d.Get("cloud").(int),
 		KeyPairType:         d.Get("keypair_type").(int),
