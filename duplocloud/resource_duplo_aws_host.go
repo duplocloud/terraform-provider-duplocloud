@@ -366,12 +366,12 @@ func setNetworkInterfaces(rq *duplosdk.DuploNativeHost, c *duplosdk.Client) diag
 	}
 
 	if err != nil {
-		return diag.Errorf("Error creating AWS host '%s': failed to get %s subnets for tenant '%s'"+
+		return diag.Errorf("Error creating AWS host '%s': failed to get %s subnets for tenant '%s' "+
 			"Internal error: %s", rq.FriendlyName, orientation, rq.TenantID, err)
 	}
 
 	if len(subnetIds) == 0 {
-		return diag.Errorf("Error creating AWS host '%s': no %s subnets were found for tenant '%s'"+
+		return diag.Errorf("Error creating AWS host '%s': no %s subnets were found for tenant '%s' "+
 			rq.FriendlyName, orientation, rq.TenantID)
 	}
 
