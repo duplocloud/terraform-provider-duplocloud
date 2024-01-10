@@ -119,8 +119,12 @@ Should be one of:
 
 ### Read-Only
 
+- `domain` (String) The service domain (whichever fqdn_ex or fqdn which is non empty)
+- `fqdn` (String) The fully qualified domain associated with the service
+- `fqdn_ex` (String) External fully qualified domain associated with the service
 - `id` (String) The ID of this resource.
 - `index` (Number) The index of the service.
+- `parent_domain` (String) The service's parent domain
 - `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--timeouts"></a>

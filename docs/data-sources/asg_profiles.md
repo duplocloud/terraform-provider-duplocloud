@@ -51,6 +51,7 @@ Read-Only:
 - `tags` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--tags))
 - `tenant_id` (String)
 - `use_launch_template` (Boolean)
+- `use_spot_instances` (Boolean)
 - `user_account` (String)
 - `volume` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--volume))
 - `wait_for_capacity` (Boolean)
