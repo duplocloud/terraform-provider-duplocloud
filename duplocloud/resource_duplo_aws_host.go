@@ -615,8 +615,7 @@ func diffSuppressIfSame(k, old string, new string, d *schema.ResourceData) bool 
 		return true
 	}
 
-	var oldFullName string = ""
-
+	oldFullName := ""
 	fn := d.Get("fullname")
 	if fn != nil {
 		oldFullName = fn.(string) // duploservices-tenant02-tftestasg01 (from Duplo API)
