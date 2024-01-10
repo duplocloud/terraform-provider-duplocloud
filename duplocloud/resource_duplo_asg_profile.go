@@ -43,10 +43,18 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 	}
 
 	awsASGSchema["use_launch_template"] = &schema.Schema{
-		Description: "Whether or not to use launch template.",
+		Description: "Whether or not to use a launch template.",
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
+	}
+
+	awsASGSchema["use_spot_instances"] = &schema.Schema{
+		Description: "Whether or not to use spot instances.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		ForceNew:    true,
+		Default:     false,
 	}
 
 	awsASGSchema["wait_for_capacity"] = &schema.Schema{
@@ -298,6 +306,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("min_instance_count", duplo.MinSize)
 	d.Set("max_instance_count", duplo.MaxSize)
 	d.Set("use_launch_template", duplo.UseLaunchTemplate)
+	d.Set("use_spot_instances", duplo.UseSpotInstances)
 	d.Set("fullname", duplo.FriendlyName)
 	d.Set("capacity", duplo.Capacity)
 	d.Set("is_minion", duplo.IsMinion)
@@ -349,6 +358,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		MinSize:             d.Get("min_instance_count").(int),
 		MaxSize:             d.Get("max_instance_count").(int),
 		UseLaunchTemplate:   d.Get("use_launch_template").(bool),
+		UseSpotInstances:    d.Get("use_spot_instances").(bool),
 	}
 }
 
