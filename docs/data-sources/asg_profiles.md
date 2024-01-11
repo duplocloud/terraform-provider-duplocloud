@@ -44,6 +44,7 @@ Read-Only:
 - `is_minion` (Boolean)
 - `keypair_type` (Number)
 - `max_instance_count` (Number)
+- `max_spot_price` (String)
 - `metadata` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--metadata))
 - `min_instance_count` (Number)
 - `minion_tags` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--minion_tags))

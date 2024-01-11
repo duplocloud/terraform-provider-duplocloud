@@ -66,6 +66,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
    - `1` : ED25519
    - `2` : RSA (deprecated - some operating systems no longer support it)
 - `max_instance_count` (Number) The maximum size of the Auto Scaling Group.
+- `max_spot_price` (String) Maximum price to pay for a spot instance in dollars per unit hour.
 - `metadata` (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
 - `min_instance_count` (Number) The minimum size of the Auto Scaling Group.
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
