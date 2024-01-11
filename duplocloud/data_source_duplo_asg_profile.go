@@ -27,7 +27,7 @@ func dataSourceAsgProfiles() *schema.Resource {
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: autosalingGroupSchema(),
+					Schema: autoscalingGroupSchema(),
 				},
 			},
 		},

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func autosalingGroupSchema() map[string]*schema.Schema {
+func autoscalingGroupSchema() map[string]*schema.Schema {
 
 	awsASGSchema := nativeHostSchema()
 	delete(awsASGSchema, "instance_id")
@@ -57,6 +58,13 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 		Default:     false,
 	}
 
+	awsASGSchema["max_spot_price"] = &schema.Schema{
+		Description: "Maximum price to pay for a spot instance in dollars per unit hour.",
+		Type:        schema.TypeString,
+		Optional:    true,
+		ForceNew:    true,
+	}
+
 	awsASGSchema["wait_for_capacity"] = &schema.Schema{
 		Description:      "Whether or not to wait until ASG instances to be healthy, after creation.",
 		Type:             schema.TypeBool,
@@ -83,6 +91,22 @@ func autosalingGroupSchema() map[string]*schema.Schema {
 	return awsASGSchema
 }
 
+func validateMaxSpotPrice(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	useSpotInstances := diff.Get("use_spot_instances").(bool)
+	maxSpotPrice := diff.Get("max_spot_price").(string)
+	if maxSpotPrice != "" {
+		if useSpotInstances {
+			if _, err := strconv.ParseFloat(maxSpotPrice, 64); err != nil {
+				return fmt.Errorf("'max_spot_price' must be a string representing a decimal number")
+			}
+		} else {
+			return fmt.Errorf("'use_spot_instances' must be true when 'max_spot_price' is non-empty")
+		}
+	}
+
+	return nil
+}
+
 func resourceAwsASG() *schema.Resource {
 
 	return &schema.Resource{
@@ -100,7 +124,8 @@ func resourceAwsASG() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: autosalingGroupSchema(),
+		Schema:        autoscalingGroupSchema(),
+		CustomizeDiff: validateMaxSpotPrice,
 	}
 }
 
@@ -307,6 +332,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("max_instance_count", duplo.MaxSize)
 	d.Set("use_launch_template", duplo.UseLaunchTemplate)
 	d.Set("use_spot_instances", duplo.UseSpotInstances)
+	d.Set("max_spot_price", duplo.MaxSpotPrice)
 	d.Set("fullname", duplo.FriendlyName)
 	d.Set("capacity", duplo.Capacity)
 	d.Set("is_minion", duplo.IsMinion)
@@ -359,6 +385,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		MaxSize:             d.Get("max_instance_count").(int),
 		UseLaunchTemplate:   d.Get("use_launch_template").(bool),
 		UseSpotInstances:    d.Get("use_spot_instances").(bool),
+		MaxSpotPrice:        d.Get("max_spot_price").(string),
 	}
 }
 
