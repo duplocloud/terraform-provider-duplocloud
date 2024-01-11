@@ -20,6 +20,6 @@ resource "duplocloud_rds_instance" "mydb" {
   master_username = "myuser"
   master_password = random_password.mypassword.result
 
-  encrypt_storage = true
-  backup_retention_period  = 1
+  encrypt_storage         = true
+  backup_retention_period = 1
 }
