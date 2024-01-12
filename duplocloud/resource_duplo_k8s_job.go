@@ -173,6 +173,7 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	var rq duplosdk.DuploK8sJob
+	rq.TenantId = tenantId
 
 	if d.HasChange("spec") {
 		spec, err := expandJobV1Spec(d.Get("spec").([]interface{}))
