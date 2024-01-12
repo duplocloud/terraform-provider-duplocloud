@@ -685,6 +685,14 @@ func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 		obj.Containers = cs
 	}
 
+	if v, ok := in["init_container"].([]interface{}); ok && len(v) > 0 {
+		cs, err := expandContainers(v)
+		if err != nil {
+			return obj, err
+		}
+		obj.InitContainers = cs
+	}
+
 	if v, ok := in["dns_policy"].(string); ok {
 		obj.DNSPolicy = v1.DNSPolicy(v)
 	}

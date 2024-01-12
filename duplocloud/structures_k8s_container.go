@@ -1,6 +1,7 @@
 package duplocloud
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	"regexp"
 	"strconv"
 	"strings"
@@ -457,52 +458,50 @@ func expandContainers(ctrs []interface{}) ([]v1.Container, error) {
 		if name, ok := ctr["name"]; ok {
 			cs[i].Name = name.(string)
 		}
-		//if command, ok := ctr["command"].([]interface{}); ok {
-		//	cs[i].Command = expandStringSlice(command)
-		//} else {
-		//	// https://github.com/hashicorp/terraform-plugin-sdk/issues/142
-		//	// Set defaults manually until List defaults are supported in the SDK.
-		//	cs[i].Command = []string{}
-		//}
-		//if args, ok := ctr["args"].([]interface{}); ok {
-		//	cs[i].Args = expandStringSlice(args)
-		//} else {
-		//	cs[i].Args = []string{}
-		//}
+		if command, ok := ctr["command"].([]interface{}); ok {
+			cs[i].Command = expandStringSlice(command)
+		} else {
+			cs[i].Command = []string{}
+		}
+		if args, ok := ctr["args"].([]interface{}); ok {
+			cs[i].Args = expandStringSlice(args)
+		} else {
+			cs[i].Args = []string{}
+		}
 
-		//if v, ok := ctr["resources"].([]interface{}); ok && len(v) > 0 {
-		//
-		//	var err error
-		//	crr, err := expandContainerResourceRequirements(v)
-		//	if err != nil {
-		//		return cs, err
-		//	}
-		//	cs[i].Resources = *crr
-		//}
-		//
-		//if v, ok := ctr["port"].([]interface{}); ok && len(v) > 0 {
-		//	cp, err := expandContainerPort(v)
-		//	if err != nil {
-		//		return cs, err
-		//	}
-		//	for _, p := range cp {
-		//		cs[i].Ports = append(cs[i].Ports, *p)
-		//	}
-		//}
-		//if v, ok := ctr["env"].([]interface{}); ok && len(v) > 0 {
-		//	var err error
-		//	cs[i].Env, err = expandContainerEnv(v)
-		//	if err != nil {
-		//		return cs, err
-		//	}
-		//}
-		//if v, ok := ctr["env_from"].([]interface{}); ok && len(v) > 0 {
-		//	var err error
-		//	cs[i].EnvFrom, err = expandContainerEnvFrom(v)
-		//	if err != nil {
-		//		return cs, err
-		//	}
-		//}
+		if v, ok := ctr["resources"].([]interface{}); ok && len(v) > 0 {
+
+			var err error
+			crr, err := expandContainerResourceRequirements(v)
+			if err != nil {
+				return cs, err
+			}
+			cs[i].Resources = *crr
+		}
+
+		if v, ok := ctr["port"].([]interface{}); ok && len(v) > 0 {
+			cp, err := expandContainerPort(v)
+			if err != nil {
+				return cs, err
+			}
+			for _, p := range cp {
+				cs[i].Ports = append(cs[i].Ports, *p)
+			}
+		}
+		if v, ok := ctr["env"].([]interface{}); ok && len(v) > 0 {
+			var err error
+			cs[i].Env, err = expandContainerEnv(v)
+			if err != nil {
+				return cs, err
+			}
+		}
+		if v, ok := ctr["env_from"].([]interface{}); ok && len(v) > 0 {
+			var err error
+			cs[i].EnvFrom, err = expandContainerEnvFrom(v)
+			if err != nil {
+				return cs, err
+			}
+		}
 
 		if policy, ok := ctr["image_pull_policy"]; ok {
 			cs[i].ImagePullPolicy = v1.PullPolicy(policy.(string))
@@ -820,269 +819,269 @@ func expandContainers(ctrs []interface{}) ([]v1.Container, error) {
 //	return vmp, nil
 //}
 
-//func expandContainerEnv(in []interface{}) ([]v1.EnvVar, error) {
-//	if len(in) == 0 {
-//		return []v1.EnvVar{}, nil
-//	}
-//	envs := []v1.EnvVar{}
-//	for _, c := range in {
-//		p, ok := c.(map[string]interface{})
-//		if !ok {
-//			continue
-//		}
-//
-//		env := v1.EnvVar{}
-//		if name, ok := p["name"]; ok {
-//			env.Name = name.(string)
-//		}
-//		if value, ok := p["value"]; ok {
-//			env.Value = value.(string)
-//		}
-//		if v, ok := p["value_from"].([]interface{}); ok && len(v) > 0 {
-//			var err error
-//			env.ValueFrom, err = expandEnvValueFrom(v)
-//			if err != nil {
-//				return envs, err
-//			}
-//		}
-//		envs = append(envs, env)
-//	}
-//	return envs, nil
-//}
+func expandContainerEnv(in []interface{}) ([]v1.EnvVar, error) {
+	if len(in) == 0 {
+		return []v1.EnvVar{}, nil
+	}
+	envs := []v1.EnvVar{}
+	for _, c := range in {
+		p, ok := c.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		env := v1.EnvVar{}
+		if name, ok := p["name"]; ok {
+			env.Name = name.(string)
+		}
+		if value, ok := p["value"]; ok {
+			env.Value = value.(string)
+		}
+		if v, ok := p["value_from"].([]interface{}); ok && len(v) > 0 {
+			var err error
+			env.ValueFrom, err = expandEnvValueFrom(v)
+			if err != nil {
+				return envs, err
+			}
+		}
+		envs = append(envs, env)
+	}
+	return envs, nil
+}
 
 // nolint
-//func expandContainerEnvFrom(in []interface{}) ([]v1.EnvFromSource, error) {
-//	if len(in) == 0 {
-//		return []v1.EnvFromSource{}, nil
-//	}
-//	envFroms := make([]v1.EnvFromSource, len(in))
-//	for i, c := range in {
-//		p := c.(map[string]interface{})
-//		if v, ok := p["config_map_ref"].([]interface{}); ok && len(v) > 0 {
-//			var err error
-//			envFroms[i].ConfigMapRef, err = expandConfigMapRef(v)
-//			if err != nil {
-//				return envFroms, err
-//			}
-//		}
-//		if value, ok := p["prefix"]; ok {
-//			envFroms[i].Prefix = value.(string)
-//		}
-//		if v, ok := p["secret_ref"].([]interface{}); ok && len(v) > 0 {
-//			var err error
-//			envFroms[i].SecretRef, err = expandSecretRef(v)
-//			if err != nil {
-//				return envFroms, err
-//			}
-//		}
-//	}
-//	return envFroms, nil
-//}
+func expandContainerEnvFrom(in []interface{}) ([]v1.EnvFromSource, error) {
+	if len(in) == 0 {
+		return []v1.EnvFromSource{}, nil
+	}
+	envFroms := make([]v1.EnvFromSource, len(in))
+	for i, c := range in {
+		p := c.(map[string]interface{})
+		if v, ok := p["config_map_ref"].([]interface{}); ok && len(v) > 0 {
+			var err error
+			envFroms[i].ConfigMapRef, err = expandConfigMapRef(v)
+			if err != nil {
+				return envFroms, err
+			}
+		}
+		if value, ok := p["prefix"]; ok {
+			envFroms[i].Prefix = value.(string)
+		}
+		if v, ok := p["secret_ref"].([]interface{}); ok && len(v) > 0 {
+			var err error
+			envFroms[i].SecretRef, err = expandSecretRef(v)
+			if err != nil {
+				return envFroms, err
+			}
+		}
+	}
+	return envFroms, nil
+}
 
-//func expandContainerPort(in []interface{}) ([]*v1.ContainerPort, error) {
-//	ports := make([]*v1.ContainerPort, len(in))
-//	if len(in) == 0 {
-//		return ports, nil
-//	}
-//	for i, c := range in {
-//		p := c.(map[string]interface{})
-//		ports[i] = &v1.ContainerPort{}
-//		if containerPort, ok := p["container_port"]; ok {
-//			ports[i].ContainerPort = int32(containerPort.(int))
-//		}
-//		if hostIP, ok := p["host_ip"]; ok {
-//			ports[i].HostIP = hostIP.(string)
-//		}
-//		if hostPort, ok := p["host_port"]; ok {
-//			ports[i].HostPort = int32(hostPort.(int))
-//		}
-//		if name, ok := p["name"]; ok {
-//			ports[i].Name = name.(string)
-//		}
-//		if protocol, ok := p["protocol"]; ok {
-//			ports[i].Protocol = v1.Protocol(protocol.(string))
-//		}
-//	}
-//	return ports, nil
-//}
-
-// nolint
-//func expandConfigMapKeyRef(r []interface{}) (*v1.ConfigMapKeySelector, error) {
-//	if len(r) == 0 || r[0] == nil {
-//		return &v1.ConfigMapKeySelector{}, nil
-//	}
-//	in := r[0].(map[string]interface{})
-//	obj := &v1.ConfigMapKeySelector{}
-//
-//	if v, ok := in["key"].(string); ok {
-//		obj.Key = v
-//	}
-//	if v, ok := in["name"].(string); ok {
-//		obj.Name = v
-//	}
-//	if v, ok := in["optional"]; ok {
-//		obj.Optional = ptrToBool(v.(bool))
-//	}
-//	return obj, nil
-//
-//}
+func expandContainerPort(in []interface{}) ([]*v1.ContainerPort, error) {
+	ports := make([]*v1.ContainerPort, len(in))
+	if len(in) == 0 {
+		return ports, nil
+	}
+	for i, c := range in {
+		p := c.(map[string]interface{})
+		ports[i] = &v1.ContainerPort{}
+		if containerPort, ok := p["container_port"]; ok {
+			ports[i].ContainerPort = int32(containerPort.(int))
+		}
+		if hostIP, ok := p["host_ip"]; ok {
+			ports[i].HostIP = hostIP.(string)
+		}
+		if hostPort, ok := p["host_port"]; ok {
+			ports[i].HostPort = int32(hostPort.(int))
+		}
+		if name, ok := p["name"]; ok {
+			ports[i].Name = name.(string)
+		}
+		if protocol, ok := p["protocol"]; ok {
+			ports[i].Protocol = v1.Protocol(protocol.(string))
+		}
+	}
+	return ports, nil
+}
 
 // nolint
-//func expandFieldRef(r []interface{}) (*v1.ObjectFieldSelector, error) {
-//	if len(r) == 0 || r[0] == nil {
-//		return &v1.ObjectFieldSelector{}, nil
-//	}
-//	in := r[0].(map[string]interface{})
-//	obj := &v1.ObjectFieldSelector{}
-//
-//	if v, ok := in["api_version"].(string); ok {
-//		obj.APIVersion = v
-//	}
-//	if v, ok := in["field_path"].(string); ok {
-//		obj.FieldPath = v
-//	}
-//	return obj, nil
-//}
+func expandConfigMapKeyRef(r []interface{}) (*v1.ConfigMapKeySelector, error) {
+	if len(r) == 0 || r[0] == nil {
+		return &v1.ConfigMapKeySelector{}, nil
+	}
+	in := r[0].(map[string]interface{})
+	obj := &v1.ConfigMapKeySelector{}
+
+	if v, ok := in["key"].(string); ok {
+		obj.Key = v
+	}
+	if v, ok := in["name"].(string); ok {
+		obj.Name = v
+	}
+	if v, ok := in["optional"]; ok {
+		obj.Optional = ptrToBool(v.(bool))
+	}
+	return obj, nil
+
+}
 
 // nolint
-//func expandResourceFieldRef(r []interface{}) (*v1.ResourceFieldSelector, error) {
-//	if len(r) == 0 || r[0] == nil {
-//		return &v1.ResourceFieldSelector{}, nil
-//	}
-//	in := r[0].(map[string]interface{})
-//	obj := &v1.ResourceFieldSelector{}
-//
-//	if v, ok := in["container_name"].(string); ok {
-//		obj.ContainerName = v
-//	}
-//	if v, ok := in["resource"].(string); ok {
-//		obj.Resource = v
-//	}
-//	if v, ok := in["divisor"].(string); ok {
-//		q, err := resource.ParseQuantity(v)
-//		if err != nil {
-//			return obj, err
-//		}
-//		obj.Divisor = q
-//	}
-//	return obj, nil
-//}
+func expandFieldRef(r []interface{}) (*v1.ObjectFieldSelector, error) {
+	if len(r) == 0 || r[0] == nil {
+		return &v1.ObjectFieldSelector{}, nil
+	}
+	in := r[0].(map[string]interface{})
+	obj := &v1.ObjectFieldSelector{}
+
+	if v, ok := in["api_version"].(string); ok {
+		obj.APIVersion = v
+	}
+	if v, ok := in["field_path"].(string); ok {
+		obj.FieldPath = v
+	}
+	return obj, nil
+}
 
 // nolint
-//func expandSecretRef(r []interface{}) (*v1.SecretEnvSource, error) {
-//	if len(r) == 0 || r[0] == nil {
-//		return &v1.SecretEnvSource{}, nil
-//	}
-//	in := r[0].(map[string]interface{})
-//	obj := &v1.SecretEnvSource{}
-//
-//	if v, ok := in["name"].(string); ok {
-//		obj.Name = v
-//	}
-//	if v, ok := in["optional"]; ok {
-//		obj.Optional = ptrToBool(v.(bool))
-//	}
-//
-//	return obj, nil
-//}
+func expandResourceFieldRef(r []interface{}) (*v1.ResourceFieldSelector, error) {
+	if len(r) == 0 || r[0] == nil {
+		return &v1.ResourceFieldSelector{}, nil
+	}
+	in := r[0].(map[string]interface{})
+	obj := &v1.ResourceFieldSelector{}
+
+	if v, ok := in["container_name"].(string); ok {
+		obj.ContainerName = v
+	}
+	if v, ok := in["resource"].(string); ok {
+		obj.Resource = v
+	}
+	if v, ok := in["divisor"].(string); ok {
+		q, err := resource.ParseQuantity(v)
+		if err != nil {
+			return obj, err
+		}
+		obj.Divisor = q
+	}
+	return obj, nil
+}
 
 // nolint
-//func expandSecretKeyRef(r []interface{}) (*v1.SecretKeySelector, error) {
-//	if len(r) == 0 || r[0] == nil {
-//		return &v1.SecretKeySelector{}, nil
-//	}
-//	in := r[0].(map[string]interface{})
-//	obj := &v1.SecretKeySelector{}
-//
-//	if v, ok := in["key"].(string); ok {
-//		obj.Key = v
-//	}
-//	if v, ok := in["name"].(string); ok {
-//		obj.Name = v
-//	}
-//	if v, ok := in["optional"]; ok {
-//		obj.Optional = ptrToBool(v.(bool))
-//	}
-//	return obj, nil
-//}
+func expandSecretRef(r []interface{}) (*v1.SecretEnvSource, error) {
+	if len(r) == 0 || r[0] == nil {
+		return &v1.SecretEnvSource{}, nil
+	}
+	in := r[0].(map[string]interface{})
+	obj := &v1.SecretEnvSource{}
+
+	if v, ok := in["name"].(string); ok {
+		obj.Name = v
+	}
+	if v, ok := in["optional"]; ok {
+		obj.Optional = ptrToBool(v.(bool))
+	}
+
+	return obj, nil
+}
 
 // nolint
-//func expandEnvValueFrom(r []interface{}) (*v1.EnvVarSource, error) {
-//	if len(r) == 0 || r[0] == nil {
-//		return &v1.EnvVarSource{}, nil
-//	}
-//	in := r[0].(map[string]interface{})
-//	obj := &v1.EnvVarSource{}
-//
-//	var err error
-//	if v, ok := in["config_map_key_ref"].([]interface{}); ok && len(v) > 0 {
-//		obj.ConfigMapKeyRef, err = expandConfigMapKeyRef(v)
-//		if err != nil {
-//			return obj, err
-//		}
-//	}
-//	if v, ok := in["field_ref"].([]interface{}); ok && len(v) > 0 {
-//		obj.FieldRef, err = expandFieldRef(v)
-//		if err != nil {
-//			return obj, err
-//		}
-//	}
-//	if v, ok := in["secret_key_ref"].([]interface{}); ok && len(v) > 0 {
-//		obj.SecretKeyRef, err = expandSecretKeyRef(v)
-//		if err != nil {
-//			return obj, err
-//		}
-//	}
-//	if v, ok := in["resource_field_ref"].([]interface{}); ok && len(v) > 0 {
-//		obj.ResourceFieldRef, err = expandResourceFieldRef(v)
-//		if err != nil {
-//			return obj, err
-//		}
-//	}
-//	return obj, nil
-//
-//}
+func expandSecretKeyRef(r []interface{}) (*v1.SecretKeySelector, error) {
+	if len(r) == 0 || r[0] == nil {
+		return &v1.SecretKeySelector{}, nil
+	}
+	in := r[0].(map[string]interface{})
+	obj := &v1.SecretKeySelector{}
+
+	if v, ok := in["key"].(string); ok {
+		obj.Key = v
+	}
+	if v, ok := in["name"].(string); ok {
+		obj.Name = v
+	}
+	if v, ok := in["optional"]; ok {
+		obj.Optional = ptrToBool(v.(bool))
+	}
+	return obj, nil
+}
 
 // nolint
-//func expandConfigMapRef(r []interface{}) (*v1.ConfigMapEnvSource, error) {
-//	if len(r) == 0 || r[0] == nil {
-//		return &v1.ConfigMapEnvSource{}, nil
-//	}
-//	in := r[0].(map[string]interface{})
-//	obj := &v1.ConfigMapEnvSource{}
-//
-//	if v, ok := in["name"].(string); ok {
-//		obj.Name = v
-//	}
-//	if v, ok := in["optional"]; ok {
-//		obj.Optional = ptrToBool(v.(bool))
-//	}
-//
-//	return obj, nil
-//}
+func expandEnvValueFrom(r []interface{}) (*v1.EnvVarSource, error) {
+	if len(r) == 0 || r[0] == nil {
+		return &v1.EnvVarSource{}, nil
+	}
+	in := r[0].(map[string]interface{})
+	obj := &v1.EnvVarSource{}
 
-//func expandContainerResourceRequirements(l []interface{}) (*v1.ResourceRequirements, error) {
-//	obj := &v1.ResourceRequirements{}
-//	if len(l) == 0 || l[0] == nil {
-//		return obj, nil
-//	}
-//	in := l[0].(map[string]interface{})
-//
-//	if v, ok := in["limits"].(map[string]interface{}); ok && len(v) > 0 {
-//		r, err := expandMapToResourceList(v)
-//		if err != nil {
-//			return obj, err
-//		}
-//		obj.Limits = *r
-//	}
-//
-//	if v, ok := in["requests"].(map[string]interface{}); ok && len(v) > 0 {
-//		r, err := expandMapToResourceList(v)
-//		if err != nil {
-//			return obj, err
-//		}
-//		obj.Requests = *r
-//	}
-//
-//	return obj, nil
-//}
+	var err error
+	if v, ok := in["config_map_key_ref"].([]interface{}); ok && len(v) > 0 {
+		obj.ConfigMapKeyRef, err = expandConfigMapKeyRef(v)
+		if err != nil {
+			return obj, err
+		}
+	}
+	if v, ok := in["field_ref"].([]interface{}); ok && len(v) > 0 {
+		obj.FieldRef, err = expandFieldRef(v)
+		if err != nil {
+			return obj, err
+		}
+	}
+	if v, ok := in["secret_key_ref"].([]interface{}); ok && len(v) > 0 {
+		obj.SecretKeyRef, err = expandSecretKeyRef(v)
+		if err != nil {
+			return obj, err
+		}
+	}
+	if v, ok := in["resource_field_ref"].([]interface{}); ok && len(v) > 0 {
+		obj.ResourceFieldRef, err = expandResourceFieldRef(v)
+		if err != nil {
+			return obj, err
+		}
+	}
+	return obj, nil
+
+}
+
+// nolint
+func expandConfigMapRef(r []interface{}) (*v1.ConfigMapEnvSource, error) {
+	if len(r) == 0 || r[0] == nil {
+		return &v1.ConfigMapEnvSource{}, nil
+	}
+	in := r[0].(map[string]interface{})
+	obj := &v1.ConfigMapEnvSource{}
+
+	if v, ok := in["name"].(string); ok {
+		obj.Name = v
+	}
+	if v, ok := in["optional"]; ok {
+		obj.Optional = ptrToBool(v.(bool))
+	}
+
+	return obj, nil
+}
+
+func expandContainerResourceRequirements(l []interface{}) (*v1.ResourceRequirements, error) {
+	obj := &v1.ResourceRequirements{}
+	if len(l) == 0 || l[0] == nil {
+		return obj, nil
+	}
+	in := l[0].(map[string]interface{})
+
+	if v, ok := in["limits"].(map[string]interface{}); ok && len(v) > 0 {
+		r, err := expandMapToResourceList(v)
+		if err != nil {
+			return obj, err
+		}
+		obj.Limits = *r
+	}
+
+	if v, ok := in["requests"].(map[string]interface{}); ok && len(v) > 0 {
+		r, err := expandMapToResourceList(v)
+		if err != nil {
+			return obj, err
+		}
+		obj.Requests = *r
+	}
+
+	return obj, nil
+}

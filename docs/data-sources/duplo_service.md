@@ -29,8 +29,11 @@ description: |-
 - `cloud_creds_from_k8s_service_account` (Boolean)
 - `commands` (List of String)
 - `docker_image` (String)
+- `domain` (String) The service domain (whichever fqdn_ex or fqdn which is non empty)
 - `extra_config` (String)
 - `force_stateful_set` (Boolean)
+- `fqdn` (String) The fully qualified domain associated with the service
+- `fqdn_ex` (String) External fully qualified domain associated with the service
 - `hpa_specs` (String)
 - `id` (String) The ID of this resource.
 - `is_daemonset` (Boolean)
@@ -38,6 +41,7 @@ description: |-
 - `lb_synced_deployment` (Boolean)
 - `other_docker_config` (String)
 - `other_docker_host_config` (String)
+- `parent_domain` (String) The service's parent domain
 - `replica_collocation_allowed` (Boolean)
 - `replicas` (Number)
 - `replicas_matching_asg_name` (String)

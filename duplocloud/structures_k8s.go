@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"net/url"
 	"regexp"
 	"strings"
@@ -293,4 +294,28 @@ func expandStringSlice(s []interface{}) []string {
 		}
 	}
 	return result
+}
+
+func expandMapToResourceList(m map[string]interface{}) (*api.ResourceList, error) {
+	out := make(api.ResourceList)
+	for stringKey, origValue := range m {
+		key := api.ResourceName(stringKey)
+		var value resource.Quantity
+
+		if v, ok := origValue.(int); ok {
+			q := resource.NewQuantity(int64(v), resource.DecimalExponent)
+			value = *q
+		} else if v, ok := origValue.(string); ok {
+			var err error
+			value, err = resource.ParseQuantity(v)
+			if err != nil {
+				return &out, err
+			}
+		} else {
+			return &out, fmt.Errorf("Unexpected value type: %#v", origValue)
+		}
+
+		out[key] = value
+	}
+	return &out, nil
 }
