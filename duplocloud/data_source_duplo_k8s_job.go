@@ -20,6 +20,9 @@ func dataSourceK8sJob() *schema.Resource {
 func dataSourceK8sJobRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	name, err := getK8sJobName(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	log.Printf("[TRACE] dataSourceK8sJobRead(%s, %s): start", tenantID, name)
 

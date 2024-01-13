@@ -15,7 +15,7 @@ func flattenK8sJob(d *schema.ResourceData, duplo *duplosdk.DuploK8sJob, meta int
 	if err != nil {
 		return err
 	}
-	err = d.Set("spec", jobSpec)
+	d.Set("spec", jobSpec)
 
 	return nil
 }
