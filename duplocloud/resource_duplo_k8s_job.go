@@ -270,13 +270,12 @@ func parseK8sJobIdParts(id string) (tenantId, name string, err error) {
 	return
 }
 
-// nolint TODO: use in a later PR
 func diffIgnoreDuploCreatedLabels(k, old, new string, d *schema.ResourceData) bool {
 	// List of labels created by the backend API
 	backendLabels := map[string]bool{
-		"duplocloud.net/owner":      true,
-		"duplocloud.net/tenantid":   true,
-		"duplocloud.net/tenantname": true,
+		"metadata.0.labels.duplocloud.net/owner":      true,
+		"metadata.0.labels.duplocloud.net/tenantid":   true,
+		"metadata.0.labels.duplocloud.net/tenantname": true,
 	}
 
 	// Check if the label key is in the list of backend-created labels
