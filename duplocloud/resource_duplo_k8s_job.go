@@ -31,11 +31,11 @@ func resourceKubernetesJobV1() *schema.Resource {
 			Update: schema.DefaultTimeout(1 * time.Minute),
 			Delete: schema.DefaultTimeout(1 * time.Minute),
 		},
-		Schema: resourceKubernetesJobV1Schema(),
+		Schema: resourceKubernetesJobV1Schema(false),
 	}
 }
 
-func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
+func resourceKubernetesJobV1Schema(readonly bool) map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the job will be created in.",
@@ -48,8 +48,8 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 		"spec": {
 			Type:        schema.TypeList,
 			Description: "Spec of the job owned by the cluster",
-			Required:    true,
-			MaxItems:    1,
+			Optional:    !readonly,
+			Computed:    readonly,
 			ForceNew:    false,
 			Elem: &schema.Resource{
 				Schema: jobSpecFields(false),
@@ -57,8 +57,8 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 		},
 		"wait_for_completion": {
 			Type:     schema.TypeBool,
-			Optional: true,
-			Default:  true,
+			Optional: !readonly,
+			Computed: readonly,
 		},
 	}
 }

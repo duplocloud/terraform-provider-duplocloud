@@ -69,7 +69,6 @@ func cronJobSpecFieldsV1Beta1() map[string]*schema.Schema {
 	}
 }
 
-// nolint
 func validateCronExpression() schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (s []string, es []error) {
 		v, ok := i.(string)
