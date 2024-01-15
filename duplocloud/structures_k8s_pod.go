@@ -653,7 +653,6 @@ func flattenReadinessGates(in []v1.PodReadinessGate) ([]interface{}, error) {
 }
 
 // Expanders
-
 func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 	obj := &v1.PodSpec{}
 	if len(p) == 0 || p[0] == nil {

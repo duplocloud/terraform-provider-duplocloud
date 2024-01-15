@@ -190,7 +190,7 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 
 	// initiate update Job
 	c := meta.(*duplosdk.Client)
-	err = c.K8sJobUpdate(&rq)
+	err = c.K8sJobUpdate(&rq, name)
 	if err != nil {
 		return diag.Errorf("Failed to update Job. API error: %s", err)
 	}
