@@ -47,8 +47,8 @@ resource "duplocloud_tenant_cleanup_timers" "mytimers" {
 
 ### Optional
 
-- `expiry_time` (String) The expiry time of the tenant.
-- `pause_time` (String) The time to pause the tenant.
+- `expiry_time` (String) The expiry time of the tenant, in UTC with the format YYYY-MM-DDTHH:MM:SSZ (e.g. `2021-06-01T00:00:00Z`)
+- `pause_time` (String) The time to pause the tenant, in UTC with the format YYYY-MM-DDTHH:MM:SSZ (e.g. `2021-06-01T00:00:00Z`)
 - `remove_expiry_time` (Boolean) Whether to remove the expiry time.
 - `remove_pause_time` (Boolean) Whether to remove the pause time.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
