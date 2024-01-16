@@ -31,11 +31,11 @@ func resourceKubernetesJobV1() *schema.Resource {
 			Update: schema.DefaultTimeout(1 * time.Minute),
 			Delete: schema.DefaultTimeout(1 * time.Minute),
 		},
-		Schema: resourceKubernetesJobV1Schema(),
+		Schema: resourceKubernetesJobV1Schema(false),
 	}
 }
 
-func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
+func resourceKubernetesJobV1Schema(readonly bool) map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the job will be created in.",
@@ -48,8 +48,8 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 		"spec": {
 			Type:        schema.TypeList,
 			Description: "Spec of the job owned by the cluster",
-			Required:    true,
-			MaxItems:    1,
+			Optional:    !readonly,
+			Computed:    readonly,
 			ForceNew:    false,
 			Elem: &schema.Resource{
 				Schema: jobSpecFields(false),
@@ -57,8 +57,8 @@ func resourceKubernetesJobV1Schema() map[string]*schema.Schema {
 		},
 		"wait_for_completion": {
 			Type:     schema.TypeBool,
-			Optional: true,
-			Default:  true,
+			Optional: !readonly,
+			Computed: readonly,
 		},
 	}
 }
@@ -173,6 +173,7 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	var rq duplosdk.DuploK8sJob
+	rq.TenantId = tenantId
 
 	if d.HasChange("spec") {
 		spec, err := expandJobV1Spec(d.Get("spec").([]interface{}))
@@ -189,7 +190,7 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 
 	// initiate update Job
 	c := meta.(*duplosdk.Client)
-	err = c.K8sJobUpdate(&rq)
+	err = c.K8sJobUpdate(&rq, name)
 	if err != nil {
 		return diag.Errorf("Failed to update Job. API error: %s", err)
 	}
@@ -269,13 +270,12 @@ func parseK8sJobIdParts(id string) (tenantId, name string, err error) {
 	return
 }
 
-// nolint TODO: use in a later PR
 func diffIgnoreDuploCreatedLabels(k, old, new string, d *schema.ResourceData) bool {
 	// List of labels created by the backend API
 	backendLabels := map[string]bool{
-		"duplocloud.net/owner":      true,
-		"duplocloud.net/tenantid":   true,
-		"duplocloud.net/tenantname": true,
+		"metadata.0.labels.duplocloud.net/owner":      true,
+		"metadata.0.labels.duplocloud.net/tenantid":   true,
+		"metadata.0.labels.duplocloud.net/tenantname": true,
 	}
 
 	// Check if the label key is in the list of backend-created labels

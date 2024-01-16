@@ -27,11 +27,11 @@ func resourceKubernetesCronJobV1Beta1() *schema.Resource {
 			Delete: schema.DefaultTimeout(1 * time.Minute),
 		},
 		SchemaVersion: 1,
-		Schema:        resourceKubernetesCronJobSchemaV1Beta1(),
+		Schema:        resourceKubernetesCronJobSchemaV1Beta1(false),
 	}
 }
 
-func resourceKubernetesCronJobSchemaV1Beta1() map[string]*schema.Schema {
+func resourceKubernetesCronJobSchemaV1Beta1(readonly bool) map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the job will be created in.",
@@ -44,8 +44,8 @@ func resourceKubernetesCronJobSchemaV1Beta1() map[string]*schema.Schema {
 		"spec": {
 			Type:        schema.TypeList,
 			Description: "Spec of the cron job owned by the cluster",
-			Required:    true,
-			MaxItems:    1,
+			Optional:    !readonly,
+			Computed:    readonly,
 			Elem: &schema.Resource{
 				Schema: cronJobSpecFieldsV1Beta1(),
 			},
