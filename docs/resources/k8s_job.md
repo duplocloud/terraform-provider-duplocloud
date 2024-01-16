@@ -42,13 +42,13 @@ resource "duplocloud_k8s_job" "myapp" {
 ### Required
 
 - `metadata` (Block List, Min: 1, Max: 1) Standard job's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata (see [below for nested schema](#nestedblock--metadata))
-- `spec` (Block List, Min: 1, Max: 1) Spec of the job owned by the cluster (see [below for nested schema](#nestedblock--spec))
 - `tenant_id` (String) The GUID of the tenant that the job will be created in.
 
 ### Optional
 
+- `spec` (Block List) Spec of the job owned by the cluster (see [below for nested schema](#nestedblock--spec))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `wait_for_completion` (Boolean) Defaults to `true`.
+- `wait_for_completion` (Boolean)
 
 ### Read-Only
 
