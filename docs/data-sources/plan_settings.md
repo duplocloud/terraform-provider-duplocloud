@@ -19,6 +19,10 @@ description: |-
 
 - `plan_id` (String)
 
+### Optional
+
+- `include_global_dns` (Boolean) Defaults to `true`.
+
 ### Read-Only
 
 - `dns_setting` (List of Object) (see [below for nested schema](#nestedatt--dns_setting))
