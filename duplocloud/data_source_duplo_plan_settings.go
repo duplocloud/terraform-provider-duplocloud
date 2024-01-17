@@ -19,6 +19,11 @@ func duploComputedPlanSettingsSchema() map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Computed: true,
 		},
+		"include_global_dns": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  true,
+		},
 		"dns_setting": {
 			Type:     schema.TypeList,
 			Computed: true,
@@ -74,10 +79,11 @@ func dataSourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m i
 
 	// Get plan DNS config.  If the config is "global", that means there is no plan DNS config.
 	dns, err := c.PlanGetDnsConfig(planID)
+	includeGlobalDns := d.Get("include_global_dns").(bool)
 	if err != nil {
 		return diag.Errorf("failed to retrieve plan DNS config for '%s': %s", planID, err)
 	}
-	if dns != nil && dns.IsGlobalDNS {
+	if dns != nil && dns.IsGlobalDNS && !includeGlobalDns {
 		dns = nil
 	}
 
