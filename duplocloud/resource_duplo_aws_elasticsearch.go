@@ -201,6 +201,39 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 						Optional: true,
 						Default:  "t2.small.elasticsearch",
 					},
+					"cold_storage_options": {
+						Type:     schema.TypeList,
+						Optional: true,
+						Computed: true,
+						MaxItems: 1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"enabled": {
+									Type:     schema.TypeBool,
+									Optional: true,
+									Computed: true,
+								},
+							},
+						},
+					},
+					"warm_count": {
+						Type:         schema.TypeInt,
+						Optional:     true,
+						ValidateFunc: validation.IntBetween(2, 150),
+					},
+					"warm_enabled": {
+						Type:     schema.TypeBool,
+						Optional: true,
+					},
+					"warm_type": {
+						Type:     schema.TypeString,
+						Optional: true,
+						ValidateFunc: validation.StringInSlice([]string{
+							"ultrawarm1.medium.search",
+							"ultrawarm1.large.search",
+							"ultrawarm1.xlarge.search",
+						}, false),
+					},
 				},
 			},
 		},
@@ -588,6 +621,19 @@ func awsElasticSearchDomainClusterConfigToState(duplo *duplosdk.DuploElasticSear
 	}
 	clusterConfig["instance_count"] = duplo.InstanceCount
 	clusterConfig["instance_type"] = duplo.InstanceType.Value
+
+	if duplo.WarmEnabled {
+		clusterConfig["warm_enabled"] = duplo.WarmEnabled
+		clusterConfig["warm_count"] = duplo.WarmCount
+		clusterConfig["warm_type"] = duplo.WarmType.Value
+	}
+
+	if duplo.ColdStorageOptions.Enabled {
+		cold_storage_options := make(map[string]bool)
+		cold_storage_options["enabled"] = duplo.ColdStorageOptions.Enabled
+		clusterConfig["cold_storage_options"] = cold_storage_options
+	}
+
 	return []map[string]interface{}{clusterConfig}
 }
 
@@ -601,6 +647,18 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 		duplo.InstanceType.Value = v.(string)
 	} else {
 		duplo.InstanceType.Value = "t2.small.elasticsearch"
+	}
+	if v, ok := m["cold_storage_options"]; ok {
+		duplo.ColdStorageOptions.Enabled = v.([]interface{})[0].(map[string]interface{})["enabled"].(bool)
+	}
+	if v, ok := m["warm_count"]; ok {
+		duplo.WarmCount = v.(int)
+	}
+	if v, ok := m["warm_enabled"]; ok {
+		duplo.WarmEnabled = v.(bool)
+	}
+	if v, ok := m["warm_type"]; ok {
+		duplo.WarmType.Value = v.(string)
 	}
 
 	if v, ok := m["dedicated_master_enabled"]; ok {
