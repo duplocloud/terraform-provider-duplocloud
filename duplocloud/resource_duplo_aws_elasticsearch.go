@@ -626,6 +626,8 @@ func awsElasticSearchDomainClusterConfigToState(duplo *duplosdk.DuploElasticSear
 		clusterConfig["warm_enabled"] = duplo.WarmEnabled
 		clusterConfig["warm_count"] = duplo.WarmCount
 		clusterConfig["warm_type"] = duplo.WarmType.Value
+	} else {
+		clusterConfig["warm_enabled"] = false
 	}
 
 	if duplo.ColdStorageOptions.Enabled {
