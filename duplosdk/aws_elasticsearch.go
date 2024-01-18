@@ -35,11 +35,19 @@ type DuploElasticSearchDomainEndpointOptions struct {
 
 // DuploElasticSearchDomainClusterConfig represents an AWS ElasticSearch domain's endpoint options for a Duplo tenant
 type DuploElasticSearchDomainClusterConfig struct {
-	DedicatedMasterCount   int               `json:"DedicatedMasterCount,omitempty"`
-	DedicatedMasterEnabled bool              `json:"DedicatedMasterEnabled,omitempty"`
-	DedicatedMasterType    *DuploStringValue `json:"DedicatedMasterType,omitempty"`
-	InstanceCount          int               `json:"InstanceCount,omitempty"`
-	InstanceType           DuploStringValue  `json:"InstanceType,omitempty"`
+	DedicatedMasterCount   int                                        `json:"DedicatedMasterCount,omitempty"`
+	DedicatedMasterEnabled bool                                       `json:"DedicatedMasterEnabled,omitempty"`
+	DedicatedMasterType    DuploStringValue                           `json:"DedicatedMasterType,omitempty"`
+	InstanceCount          int                                        `json:"InstanceCount,omitempty"`
+	InstanceType           DuploStringValue                           `json:"InstanceType,omitempty"`
+	WarmCount              int                                        `json:"WarmCount,omitempty"`
+	WarmEnabled            bool                                       `json:"WarmEnabled,omitempty"`
+	WarmType               DuploStringValue                           `json:"WarmType,omitempty"`
+	ColdStorageOptions     DuploElasticSearchDomainColdStorageOptions `json:"ColdStorageOptions,omitempty"`
+}
+
+type DuploElasticSearchDomainColdStorageOptions struct {
+	Enabled bool `json:"Enabled,omitempty"`
 }
 
 // DuploElasticSearchDomainSnapshotOptions represents an AWS ElasticSearch domain's endpoint options for a Duplo tenant
@@ -62,7 +70,7 @@ type DuploElasticSearchDomain struct {
 	CognitoOptions              DuploEnabled                                 `json:"CognitoOptions,omitempty"`
 	DomainEndpointOptions       DuploElasticSearchDomainEndpointOptions      `json:"DomainEndpointOptions,omitempty"`
 	EBSOptions                  DuploElasticSearchDomainEBSOptions           `json:"EBSOptions,omitempty"`
-	ClusterConfig               DuploElasticSearchDomainClusterConfig        `json:"ElasticsearchClusterConfig,omitempty"`
+	ClusterConfig               DuploElasticSearchDomainClusterConfig        `json:"ClusterConfig,omitempty"`
 	NodeToNodeEncryptionOptions DuploEnabled                                 `json:"NodeToNodeEncryptionOptions,omitempty"`
 	ElasticSearchVersion        string                                       `json:"ElasticsearchVersion,omitempty"`
 	EncryptionAtRestOptions     DuploElasticSearchDomainEncryptAtRestOptions `json:"EncryptionAtRestOptions,omitempty"`
