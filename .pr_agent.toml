@@ -1,4 +1,5 @@
 # See: https://github.com/Codium-ai/pr-agent/blob/main/Usage.md#working-with-github-app
+# See: https://github.com/Codium-ai/pr-agent/blob/main/pr_agent/settings/configuration.toml
 
 [pr_reviewer]
 enable_review_labels_effort = true
@@ -17,5 +18,6 @@ pr_commands = [
 handle_push_trigger = true
 push_commands = [
     "/describe",
-    "/review -i --pr_reviewer.remove_previous_review_comment=true"
+    "/review -i --pr_reviewer.remove_previous_review_comment=true",
+    "/update_changelog"
 ]
