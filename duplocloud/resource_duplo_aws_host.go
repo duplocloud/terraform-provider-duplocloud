@@ -685,7 +685,13 @@ func diffSuppressIfSame(k, old string, new string, d *schema.ResourceData) bool 
 		return true
 	}
 
-	oldFullName := d.Get("fullname").(string) // duploservices-tenant02-tftestasg01 (from Duplo API)
+	oldFullName := ""
+	fn := d.Get("fullname")
+	if fn != nil {
+		oldFullName = fn.(string) // duploservices-tenant02-tftestasg01 (from Duplo API)
+	} else {
+		oldFullName = old
+	}
 
 	// new: duploservices-tenant02-tftestasg01
 	if strings.HasPrefix(new, "duploservices-") {
@@ -693,7 +699,12 @@ func diffSuppressIfSame(k, old string, new string, d *schema.ResourceData) bool 
 		return oldFullName == new
 	}
 
-	oldAccountName := d.Get("user_account").(string)
+	ua := d.Get("user_account")
+	if ua == nil {
+		return old == new
+	}
+
+	oldAccountName := ua.(string)
 	prefix := strings.Join([]string{"duploservices", oldAccountName}, "-")
 	oldName, _ := duplosdk.UnprefixName(prefix, oldFullName)
 

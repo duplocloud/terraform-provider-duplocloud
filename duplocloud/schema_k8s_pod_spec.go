@@ -247,10 +247,9 @@ func podSpecFields(isUpdatable, isComputed bool) map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    !isUpdatable,
-			Default:     conditionalDefault(!isComputed, string(api.RestartPolicyAlways)),
-			Description: "Restart policy for all containers within the pod. One of Always, OnFailure, Never. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.",
+			Default:     conditionalDefault(!isComputed, string(api.RestartPolicyOnFailure)),
+			Description: "Restart policy for all containers within the pod. One of OnFailure, Never. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.",
 			ValidateFunc: validation.StringInSlice([]string{
-				string(api.RestartPolicyAlways),
 				string(api.RestartPolicyOnFailure),
 				string(api.RestartPolicyNever),
 			}, false),

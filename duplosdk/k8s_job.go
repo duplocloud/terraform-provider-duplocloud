@@ -20,7 +20,7 @@ func (c *Client) K8sJobGetList(tenantId string) (*[]DuploK8sJob, ClientError) {
 	var rp []DuploK8sJob
 	err := c.getAPI(
 		fmt.Sprintf("k8sJobGetList(%s)", tenantId),
-		fmt.Sprintf("/v3/subscriptions/%s/k8s/job", tenantId),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/job", tenantId),
 		&rp)
 
 	// Add the tenant ID, then return the result.
@@ -38,7 +38,7 @@ func (c *Client) K8sJobGet(tenantId, jobName string) (*DuploK8sJob, ClientError)
 	var rp DuploK8sJob
 	err := c.getAPI(
 		fmt.Sprintf("k8sJobGet(%s, %s)", tenantId, jobName),
-		fmt.Sprintf("/v3/subscriptions/%s/k8s/job/%s", tenantId, jobName),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", tenantId, jobName),
 		&rp)
 
 	if err != nil {
@@ -55,18 +55,18 @@ func (c *Client) K8sJobCreate(rq *DuploK8sJob) ClientError {
 	rp := DuploK8sJob{}
 	return c.postAPI(
 		fmt.Sprintf("k8sJobCreate(%s, %s)", rq.TenantId, rq.Metadata.Name),
-		fmt.Sprintf("/v3/subscriptions/%s/k8s/job", rq.TenantId),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/job", rq.TenantId),
 		&rq,
 		&rp,
 	)
 }
 
 // K8sJobUpdate updates a k8s job via the Duplo API.
-func (c *Client) K8sJobUpdate(rq *DuploK8sJob) ClientError {
+func (c *Client) K8sJobUpdate(rq *DuploK8sJob, name string) ClientError {
 	rp := DuploK8sJob{}
 	return c.putAPI(
-		fmt.Sprintf("k8sJobUpdate(%s, %s)", rq.TenantId, rq.Metadata.Name),
-		fmt.Sprintf("/v3/subscriptions/%s/k8s/job/%s", rq.TenantId, rq.Metadata.Name),
+		fmt.Sprintf("k8sJobUpdate(%s, %s)", rq.TenantId, name),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", rq.TenantId, name),
 		&rq,
 		&rp,
 	)
@@ -76,6 +76,6 @@ func (c *Client) K8sJobUpdate(rq *DuploK8sJob) ClientError {
 func (c *Client) K8sJobDelete(tenantId, jobName string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("K8sJobDelete(%s, %s)", tenantId, jobName),
-		fmt.Sprintf("/v3/subscriptions/%s/k8s/job/%s", tenantId, jobName),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/job/%s", tenantId, jobName),
 		nil)
 }

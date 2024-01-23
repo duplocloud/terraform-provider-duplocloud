@@ -6,10 +6,16 @@ import (
 	"terraform-provider-duplocloud/duplosdk"
 )
 
-func flattenK8sCronJob(d *schema.ResourceData, duplo *duplosdk.DuploK8sCronJob) {
+func flattenK8sCronJob(d *schema.ResourceData, duplo *duplosdk.DuploK8sCronJob, meta interface{}) error {
 	d.Set("tenant_id", duplo.TenantId)
-	d.Set("spec", duplo.Spec)
-	d.Set("metadata", duplo.Metadata)
+	d.Set("metadata", flattenMetadata(duplo.Metadata, d, meta))
+	jobSpec, err := flattenCronJobSpecV1Beta1(duplo.Spec, d, meta)
+	if err != nil {
+		return err
+	}
+	d.Set("spec", jobSpec)
+
+	return nil
 }
 
 func flattenCronJobSpecV1Beta1(in v1beta1.CronJobSpec, d *schema.ResourceData, meta interface{}) ([]interface{}, error) {

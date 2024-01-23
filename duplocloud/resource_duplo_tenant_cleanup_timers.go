@@ -33,12 +33,12 @@ func resourceTenantCleanUpTimers() *schema.Resource {
 				ForceNew:    true,
 			},
 			"expiry_time": {
-				Description: "The expiry time of the tenant.",
+				Description: "The expiry time of the tenant, in UTC with the format YYYY-MM-DDTHH:MM:SSZ (e.g. `2021-06-01T00:00:00Z`)",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 			"pause_time": {
-				Description: "The time to pause the tenant.",
+				Description: "The time to pause the tenant, in UTC with the format YYYY-MM-DDTHH:MM:SSZ (e.g. `2021-06-01T00:00:00Z`)",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},

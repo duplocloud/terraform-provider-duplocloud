@@ -27,11 +27,11 @@ func resourceKubernetesCronJobV1Beta1() *schema.Resource {
 			Delete: schema.DefaultTimeout(1 * time.Minute),
 		},
 		SchemaVersion: 1,
-		Schema:        resourceKubernetesCronJobSchemaV1Beta1(),
+		Schema:        resourceKubernetesCronJobSchemaV1Beta1(false),
 	}
 }
 
-func resourceKubernetesCronJobSchemaV1Beta1() map[string]*schema.Schema {
+func resourceKubernetesCronJobSchemaV1Beta1(readonly bool) map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the job will be created in.",
@@ -44,8 +44,8 @@ func resourceKubernetesCronJobSchemaV1Beta1() map[string]*schema.Schema {
 		"spec": {
 			Type:        schema.TypeList,
 			Description: "Spec of the cron job owned by the cluster",
-			Required:    true,
-			MaxItems:    1,
+			Optional:    !readonly,
+			Computed:    readonly,
 			Elem: &schema.Resource{
 				Schema: cronJobSpecFieldsV1Beta1(),
 			},
@@ -57,7 +57,6 @@ func resourceKubernetesCronJobV1Beta1Create(ctx context.Context, d *schema.Resou
 	tenantId := d.Get("tenant_id").(string)
 	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): start", tenantId)
 
-	// TODO: validate the getK8sJobName() function works for cron jobs
 	name, err := getK8sJobName(d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -96,19 +95,16 @@ func resourceKubernetesCronJobV1Beta1Update(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	var rq duplosdk.DuploK8sCronJob
-
-	if d.HasChange("spec") {
-		spec, err := expandCronJobSpecV1Beta1(d.Get("spec").([]interface{}))
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		rq.Spec = spec
+	metadata := expandMetadata(d.Get("metadata").([]interface{}))
+	spec, err := expandCronJobSpecV1Beta1(d.Get("spec").([]interface{}))
+	if err != nil {
+		return diag.FromErr(err)
 	}
+	spec.JobTemplate.ObjectMeta.Annotations = metadata.Annotations
 
-	if d.HasChange("metadata") {
-		metadata := expandMetadata(d.Get("metadata").([]interface{}))
-		rq.Metadata = metadata
+	rq := duplosdk.DuploK8sCronJob{
+		Metadata: metadata,
+		Spec:     spec,
 	}
 
 	// initiate update Job

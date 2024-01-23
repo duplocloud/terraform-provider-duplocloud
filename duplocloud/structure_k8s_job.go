@@ -8,10 +8,16 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 )
 
-func flattenK8sJob(d *schema.ResourceData, duplo *duplosdk.DuploK8sJob) {
+func flattenK8sJob(d *schema.ResourceData, duplo *duplosdk.DuploK8sJob, meta interface{}) error {
 	d.Set("tenant_id", duplo.TenantId)
-	d.Set("spec", duplo.Spec)
-	d.Set("metadata", duplo.Metadata)
+	d.Set("metadata", flattenMetadata(duplo.Metadata, d, meta))
+	jobSpec, err := flattenJobV1Spec(duplo.Spec, d, meta)
+	if err != nil {
+		return err
+	}
+	d.Set("spec", jobSpec)
+
+	return nil
 }
 
 func flattenJobV1Spec(in batchv1.JobSpec, d *schema.ResourceData, meta interface{}, prefix ...string) ([]interface{}, error) {

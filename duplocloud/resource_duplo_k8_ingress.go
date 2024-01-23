@@ -107,6 +107,7 @@ func k8sIngressSchema() map[string]*schema.Schema {
 						ValidateFunc: validation.StringInSlice([]string{
 							"Prefix",
 							"Exact",
+							"ImplementationSpecific",
 						}, false),
 					},
 					"host": {
