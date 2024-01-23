@@ -484,7 +484,8 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 
 	// to check if boolean which is optional and doesn't have a default value there is no replacement for GetOkExist
 	// https://discuss.hashicorp.com/t/terraform-sdk-usage-which-out-of-get-getok-getokexists-with-boolean/41815/8
-	if v, ok := d.GetOkExists("is_serverless_kubernetes"); ok {
+
+	if v, ok := d.GetOkExists("is_serverless_kubernetes"); ok { //nolint:all
 		IsServerlessKubernetes = v.(bool)
 	} else {
 		if d.Get("cloud").(int) == 3 {
