@@ -112,6 +112,7 @@ type DuploInfrastructureConfig struct {
 	EnableK8Cluster         bool                     `json:"EnableK8Cluster"`
 	EnableECSCluster        bool                     `json:"EnableECSCluster"`
 	EnableContainerInsights bool                     `json:"EnableContainerInsights"`
+	IsServerlessKubernetes  bool                     `json:"IsServerlessKubernetes"`
 	Vnet                    *DuploInfrastructureVnet `json:"Vnet"`
 	ProvisioningStatus      string                   `json:"ProvisioningStatus"`
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
