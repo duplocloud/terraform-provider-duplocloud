@@ -182,6 +182,12 @@ func resourceInfrastructure() *schema.Resource {
 				ForceNew:    true,
 				Required:    true,
 			},
+			"is_serverless_kubernetes": {
+				Description: "Whether or not to make GKE with autopilot.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
 			"enable_ecs_cluster": {
 				Description: "Whether or not to provision an ECS cluster.",
 				Type:        schema.TypeBool,
@@ -474,6 +480,18 @@ func parseInfrastructureId(d *schema.ResourceData) (string, diag.Diagnostics) {
 func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploInfrastructureConfig {
 	subnet := duplosdk.DuploInfrastructureVnetSubnet{}
 
+	var IsServerlessKubernetes bool
+
+	// to check if boolean which is optional and doesn't have a default value there is no replacement for GetOkExist
+	// https://discuss.hashicorp.com/t/terraform-sdk-usage-which-out-of-get-getok-getokexists-with-boolean/41815/8
+	if v, ok := d.GetOkExists("is_serverless_kubernetes"); ok {
+		IsServerlessKubernetes = v.(bool)
+	} else {
+		if d.Get("cloud").(int) == 3 {
+			IsServerlessKubernetes = true
+		}
+	}
+
 	if v, ok := d.GetOk("subnet_name"); ok {
 		subnet.Name = v.(string)
 	}
@@ -488,6 +506,7 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 		AzCount:                 d.Get("azcount").(int),
 		EnableK8Cluster:         d.Get("enable_k8_cluster").(bool),
 		EnableECSCluster:        d.Get("enable_ecs_cluster").(bool),
+		IsServerlessKubernetes:  IsServerlessKubernetes,
 		EnableContainerInsights: d.Get("enable_container_insights").(bool),
 		Vnet: &duplosdk.DuploInfrastructureVnet{
 			AddressPrefix: d.Get("address_prefix").(string),
@@ -554,6 +573,7 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	d.Set("region", infra.Region)
 	d.Set("azcount", infra.AzCount)
 	d.Set("enable_k8_cluster", infra.EnableK8Cluster)
+	d.Set("is_serverless_kubernetes", infra.IsServerlessKubernetes)
 	d.Set("enable_ecs_cluster", infra.EnableECSCluster)
 	d.Set("enable_container_insights", infra.EnableContainerInsights)
 	d.Set("address_prefix", infra.Vnet.AddressPrefix)

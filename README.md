@@ -37,7 +37,7 @@ Reference documentation [here](https://developer.hashicorp.com/terraform/plugin/
 1. Install the VS code [GO extension](https://marketplace.visualstudio.com/items?itemName=golang.go)
 2. Go to VS code debug tab and start a new debug session for the terraform provider. You should see something similar to the output below in the console:
 ```
-Starting: /Users/matheusbafutto/go/bin/dlv dap --listen=127.0.0.1:55046 --log-dest=3 from /Users/matheusbafutto/Desktop/duplocloud/terraform-provider-duplocloud
+Starting: /Users/{USERNAME}/go/bin/dlv dap --listen=127.0.0.1:55046 --log-dest=3 from /Users/{USERNAME}/Desktop/duplocloud/terraform-provider-duplocloud
 DAP server listening at: 127.0.0.1:55046
 Type 'dlv help' for list of commands.
 Provider started. To attach Terraform CLI, set the TF_REATTACH_PROVIDERS environment variable with the following:
