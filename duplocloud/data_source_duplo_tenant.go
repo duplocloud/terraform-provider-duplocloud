@@ -75,7 +75,7 @@ func dataSourceTenantRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[TRACE] dataSourceTenantRead(): start")
 
 	var tenantID, tenantName string
-	if v, ok := d.GetOk("tenant_id"); ok && v != nil {
+	if v, ok := d.GetOk("id"); ok && v != nil {
 		tenantID = v.(string)
 	} else if v, ok := d.GetOk("name"); ok && v != nil {
 		tenantName = v.(string)
