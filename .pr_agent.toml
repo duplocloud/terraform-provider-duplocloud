@@ -19,5 +19,5 @@ handle_push_trigger = true
 push_commands = [
     "/describe",
     "/review -i --pr_reviewer.remove_previous_review_comment=true",
-    "/update_changelog --pr_update_changelog.push_changelog_changes=true"
+    "/update_changelog"
 ]
