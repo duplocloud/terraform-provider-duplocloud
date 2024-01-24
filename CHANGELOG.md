@@ -1,3 +1,8 @@
+## 2024-01-24
+
+### Updated
+- Enhanced the documentation for `cloud` and `agent_platform` fields in the `duplocloud_duplo_service` resource. The description now includes a list of numeric IDs representing different cloud providers and container agents respectively.
+
 ## 2024-01-23
 
 ### Fixed

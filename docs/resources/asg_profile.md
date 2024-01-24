@@ -54,6 +54,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
 - `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
+- `can_scale_from_zero` (Boolean) Whether or not ASG should leverage duplocloud's scale from 0 feature
 - `cloud` (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
 - `encrypt_disk` (Boolean) Defaults to `false`.
 - `instance_count` (Number) The number of instances that should be running in the group.

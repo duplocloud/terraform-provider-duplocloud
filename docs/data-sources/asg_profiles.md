@@ -32,6 +32,7 @@ Read-Only:
 - `agent_platform` (Number)
 - `allocated_public_ip` (Boolean)
 - `base64_user_data` (String)
+- `can_scale_from_zero` (Boolean)
 - `capacity` (String)
 - `cloud` (Number)
 - `encrypt_disk` (Boolean)
