@@ -1,5 +1,9 @@
 ## 2024-01-23
 
+### Fixed
+- Corrected a typo in `duplocloud_tenant` data source read function (tenant_id is the id naming for the resource but datasource calls it "id").
+- Enhanced schema for `duplocloud_asg_profile` resource by forcing recreation when `is_cluster_autoscaled` and `can_scale_from_zero` attributes are changed.
+
 ### Updated
 - Enhanced the documentation and examples for `duplocloud_ecs_service` and `duplocloud_ecs_task_definition` resources.
 - Introduced `health_check_url` to the `duplocloud_ecs_service` resource in the documentation and example.
