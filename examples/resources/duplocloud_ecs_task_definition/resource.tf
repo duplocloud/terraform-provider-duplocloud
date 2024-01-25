@@ -16,7 +16,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
     ContainerMappings = [
       {
         ContainerPorts = "80",
-        HostPort = "80",
+        HostPort       = "80",
         Protocol = {
           Value = "tcp"
         }
