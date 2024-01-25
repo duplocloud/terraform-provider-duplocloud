@@ -1,3 +1,15 @@
+## 2024-01-25
+
+### Added
+- Introduced support for backup retention period in RDS instances.
+- Added support for spot instances and maximum spot price in ASG profiles.
+- Introduced a new resource for managing tenant cleanup timers.
+
+### Updated
+- Refactored deletion protection settings update in RDS instances.
+- Consolidated size and logging updates into a single function in RDS instances.
+- Enhanced validation for update requests in tenant cleanup timers.
+
 ## 2024-01-24
 
 ### Added
