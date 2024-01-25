@@ -29,7 +29,6 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 			ValidateFunc: validation.All(
-				validation.StringLenBetween(1, 64-MAX_DUPLOSERVICES_LENGTH),
 				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9-_]*$`), "Invalid AWS lambda function name"),
 			),
 		},
@@ -287,6 +286,17 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
 	log.Printf("[TRACE] resourceAwsLambdaFunctionCreate(%s, %s): start", tenantID, name)
+
+	c := m.(*duplosdk.Client)
+	features, _ := c.AdminGetSystemFeatures()
+	lambdaMaxLength := 64 - MAX_DUPLOSERVICES_LENGTH
+	if features != nil && features.IsTagsBasedResourceMgmtEnabled {
+		lambdaMaxLength = 64
+	}
+	if len(name) > lambdaMaxLength {
+		return diag.Errorf("Expected length of lambda function name '%s' to be in the range (1 - %d)", name, lambdaMaxLength)
+	}
+
 	var command []string
 	var entryPoint []string
 	var workingDir string
@@ -353,7 +363,6 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	if v, ok := d.GetOk("ephemeral_storage"); ok && v != nil && v.(int) != 0 {
 		rq.EphemeralStorage = &duplosdk.DuploLambdaEphemeralStorage{Size: v.(int)}
 	}
-	c := m.(*duplosdk.Client)
 
 	// Post the object to Duplo
 	_, err = c.LambdaFunctionCreate(tenantID, &rq)

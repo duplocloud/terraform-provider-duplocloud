@@ -1,7 +1,12 @@
 ## 2024-01-24
 
+### Added
+- Introduced a new feature for validating the length of the lambda function name based on whether tag-based resource management is enabled or not in the `duplocloud/resource_duplo_aws_lambda_function.go` file.
+- Added a new field `IsTagsBasedResourceMgmtEnabled` to the `DuploSystemFeatures` struct in the `duplosdk/admin.go` file.
+
 ### Updated
 - Enhanced the documentation for `cloud` and `agent_platform` fields in the `duplocloud_duplo_service` resource. The description now includes a list of numeric IDs representing different cloud providers and container agents respectively.
+
 
 ## 2024-01-23
 

@@ -434,7 +434,11 @@ func (c *Client) TenantGetApplicationLbFullName(tenantID string, name string) (s
 // TenantGetS3Bucket retrieves a managed S3 bucket via the Duplo API
 func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket, ClientError) {
 	// Figure out the full resource name.
+	features, _ := c.AdminGetSystemFeatures()
 	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
+	if features.IsTagsBasedResourceMgmtEnabled {
+		fullName = name
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -522,6 +526,10 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError 
 
 	// Get the full name of the S3 bucket
 	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
+	features, _ := c.AdminGetSystemFeatures()
+	if features.IsTagsBasedResourceMgmtEnabled {
+		fullName = name
+	}
 	if err != nil {
 		return err
 	}
@@ -552,7 +560,11 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 	apiName := fmt.Sprintf("TenantApplyS3BucketSettings(%s, %s)", tenantID, duplo.Name)
 
 	// Figure out the full resource name.
+	features, _ := c.AdminGetSystemFeatures()
 	fullName, err := c.GetDuploServicesNameWithAws(tenantID, duplo.Name)
+	if features.IsTagsBasedResourceMgmtEnabled {
+		fullName = duplo.Name
+	}
 	if err != nil {
 		return nil, err
 	}

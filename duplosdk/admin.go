@@ -17,11 +17,12 @@ type DuploSystemFeatures struct {
 		DefaultVersion    string   `json:"DefaultVersion"`
 		SupportedVersions []string `json:"SupportedVersions"`
 	} `json:"EksVersions"`
-	IsOtpNeeded           bool   `json:"IsOtpNeeded"`
-	IsAwsAdminJITEnabled  bool   `json:"IsAwsAdminJITEnabled"`
-	IsDuploOpsEnabled     bool   `json:"IsDuploOpsEnabled"`
-	DevopsManagerHostname string `json:"DevopsManagerHostname"`
-	TenantNameMaxLength   int    `json:"TenantNameMaxLength"`
+	IsOtpNeeded                    bool   `json:"IsOtpNeeded"`
+	IsAwsAdminJITEnabled           bool   `json:"IsAwsAdminJITEnabled"`
+	IsDuploOpsEnabled              bool   `json:"IsDuploOpsEnabled"`
+	IsTagsBasedResourceMgmtEnabled bool   `json:"IsTagsBasedResourceMgmtEnabled"`
+	DevopsManagerHostname          string `json:"DevopsManagerHostname"`
+	TenantNameMaxLength            int    `json:"TenantNameMaxLength"`
 }
 
 // DuploAdminAwsCredentials represents just-in-time admin AWS credentials from Duplo
