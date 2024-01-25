@@ -79,6 +79,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
+		ForceNew:    true,
 	}
 
 	awsASGSchema["can_scale_from_zero"] = &schema.Schema{
@@ -86,6 +87,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
+		ForceNew:    true,
 	}
 
 	awsASGSchema["fullname"] = &schema.Schema{
