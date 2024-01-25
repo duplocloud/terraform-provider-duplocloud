@@ -192,6 +192,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"backup_retention_period": {
+			Description:  "Specifies backup retention period between 1 and 35 day(s). Default backup retention period is 1 day.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Default:      1,
+			ValidateFunc: validation.IntBetween(1, 35),
+		},
 		"multi_az": {
 			Description: "Specifies if the RDS instance is multi-AZ.",
 			Type:        schema.TypeBool,
@@ -343,13 +350,13 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		// Update delete protection settings.
 		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), identifier)
 		if isAuroraDB(d) {
-			err = c.RdsClusterChangeDeleteProtection(tenantID, duplosdk.DuploRdsClusterDeleteProtection{
+			err = c.RdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
 				DBClusterIdentifier: identifier + "-cluster",
 				DeletionProtection:  deleteProtection,
 				ApplyImmediately:    true,
 			})
 		} else {
-			err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
+			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
 				DBInstanceIdentifier: identifier,
 				DeletionProtection:   deleteProtection,
 			})
@@ -421,26 +428,64 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	if d.HasChange("enable_logging") {
-		identifier := d.Get("identifier").(string)
-		enableLogging := new(bool)
-		*enableLogging = d.Get("enable_logging").(bool)
-		log.Printf("[TRACE] Updating enable_logging to: '%v' for db instance '%s'.", d.Get("enable_logging").(bool), d.Get("identifier").(string))
-		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, duplosdk.DuploRdsUpdatePayload{
-			EnableLogging: enableLogging,
-		})
+	identifier := d.Get("identifier").(string)
+	updateLogging := d.HasChange("enable_logging")
+	updateSize := d.HasChange("size")
+	if updateLogging || updateSize {
+		uploadDuploObject := new(duplosdk.DuploRdsUpdatePayload)
+		if updateLogging {
+			enableLogging := new(bool)
+			*enableLogging = d.Get("enable_logging").(bool)
+			uploadDuploObject.EnableLogging = enableLogging
+
+			log.Printf("[TRACE] Updating enable_logging to: '%v' for db instance '%s'.", enableLogging, identifier)
+		}
+
+		if updateSize {
+			size := d.Get("size").(string)
+			uploadDuploObject.SizeEx = size
+
+			log.Printf("[TRACE] Updating size to: '%s' for db instance '%s'.", size, identifier)
+		}
+
+		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, uploadDuploObject)
+
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if d.HasChange("size") {
-		identifier := d.Get("identifier").(string)
-		size := d.Get("size").(string)
-		log.Printf("[TRACE] Updating size to: '%s' for db instance '%s'.", d.Get("size").(string), d.Get("identifier").(string))
-		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, duplosdk.DuploRdsUpdatePayload{
-			SizeEx: size,
-		})
+	runUpdate := false
+	backupRetentionPeriod := new(int)
+	if d.HasChange("backup_retention_period") {
+		*backupRetentionPeriod = d.Get("backup_retention_period").(int)
+		log.Printf("[DEBUG] Updating backup_retention_period to: '%v' for db instance '%s'.", backupRetentionPeriod, identifier)
+		runUpdate = true
+	}
+
+	deleteProtection := new(bool)
+	if isDeleteProtectionSupported(d) && d.HasChange("deletion_protection") {
+		*deleteProtection = d.Get("deletion_protection").(bool)
+		log.Printf("[DEBUG] Updating delete protection settings to '%v' for db instance '%s'.", deleteProtection, identifier)
+		runUpdate = true
+	}
+
+	if runUpdate {
+		if isAuroraDB(d) {
+			err = c.RdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
+				DBClusterIdentifier:   identifier + "-cluster",
+				BackupRetentionPeriod: *backupRetentionPeriod,
+				DeletionProtection:    deleteProtection,
+				ApplyImmediately:      true,
+			})
+		} else {
+			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
+				DBInstanceIdentifier:  identifier,
+				BackupRetentionPeriod: *backupRetentionPeriod,
+				DeletionProtection:    deleteProtection,
+			})
+		}
+
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -456,29 +501,6 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
-
-	if isDeleteProtectionSupported(d) && d.HasChange("deletion_protection") {
-		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), d.Get("identifier").(string))
-		deleteProtection := new(bool)
-		*deleteProtection = d.Get("deletion_protection").(bool)
-
-		if isAuroraDB(d) {
-			err = c.RdsClusterChangeDeleteProtection(tenantID, duplosdk.DuploRdsClusterDeleteProtection{
-				DBClusterIdentifier: d.Get("identifier").(string) + "-cluster",
-				DeletionProtection:  deleteProtection,
-				ApplyImmediately:    true,
-			})
-		} else {
-			err = c.RdsInstanceChangeDeleteProtection(tenantID, duplosdk.DuploRdsInstanceDeleteProtection{
-				DBInstanceIdentifier: d.Get("identifier").(string),
-				DeletionProtection:   deleteProtection,
-			})
-		}
-
-		if err != nil {
-			return diag.Errorf("Error while setting deletion_protection for RDS DB instance '%s' : %s", id, err)
-		}
-	}
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
 	return diags
@@ -596,6 +618,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.AllocatedStorage = d.Get("allocated_storage").(int)
 	duploObject.EncryptionKmsKeyId = d.Get("kms_key_id").(string)
 	duploObject.EnableLogging = d.Get("enable_logging").(bool)
+	duploObject.BackupRetentionPeriod = d.Get("backup_retention_period").(int)
 	duploObject.MultiAZ = d.Get("multi_az").(bool)
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
 	if v, ok := d.GetOk("v2_scaling_configuration"); ok {
@@ -669,6 +692,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["allocated_storage"] = duploObject.AllocatedStorage
 	jo["kms_key_id"] = duploObject.EncryptionKmsKeyId
 	jo["enable_logging"] = duploObject.EnableLogging
+	jo["backup_retention_period"] = duploObject.BackupRetentionPeriod
 	jo["multi_az"] = duploObject.MultiAZ
 	jo["instance_status"] = duploObject.InstanceStatus
 	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 {

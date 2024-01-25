@@ -653,7 +653,6 @@ func flattenReadinessGates(in []v1.PodReadinessGate) ([]interface{}, error) {
 }
 
 // Expanders
-
 func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 	obj := &v1.PodSpec{}
 	if len(p) == 0 || p[0] == nil {
@@ -683,6 +682,14 @@ func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 			return obj, err
 		}
 		obj.Containers = cs
+	}
+
+	if v, ok := in["init_container"].([]interface{}); ok && len(v) > 0 {
+		cs, err := expandContainers(v)
+		if err != nil {
+			return obj, err
+		}
+		obj.InitContainers = cs
 	}
 
 	if v, ok := in["dns_policy"].(string); ok {

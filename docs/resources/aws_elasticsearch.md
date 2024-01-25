@@ -72,11 +72,23 @@ resource "duplocloud_aws_elasticsearch" "es-doc" {
 
 Optional:
 
+- `cold_storage_options` (Block List, Max: 1) (see [below for nested schema](#nestedblock--cluster_config--cold_storage_options))
 - `dedicated_master_count` (Number) Defaults to `0`.
 - `dedicated_master_enabled` (Boolean) Defaults to `false`.
 - `dedicated_master_type` (String) Defaults to `t2.small.elasticsearch`.
 - `instance_count` (Number) Defaults to `1`.
 - `instance_type` (String) Defaults to `t2.small.elasticsearch`.
+- `warm_count` (Number)
+- `warm_enabled` (Boolean)
+- `warm_type` (String)
+
+<a id="nestedblock--cluster_config--cold_storage_options"></a>
+### Nested Schema for `cluster_config.cold_storage_options`
+
+Optional:
+
+- `enabled` (Boolean)
+
 
 
 <a id="nestedblock--encrypt_at_rest"></a>

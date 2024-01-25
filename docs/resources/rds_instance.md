@@ -35,7 +35,8 @@ resource "duplocloud_rds_instance" "mydb" {
   master_username = "myuser"
   master_password = random_password.mypassword.result
 
-  encrypt_storage = true
+  encrypt_storage         = true
+  backup_retention_period = 1
 }
 ```
 
@@ -67,6 +68,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 ### Optional
 
 - `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
+- `backup_retention_period` (Number) Specifies backup retention period between 1 and 35 day(s). Default backup retention period is 1 day. Defaults to `1`.
 - `db_subnet_group_name` (String) Name of DB subnet group. DB instance will be created in the VPC associated with the DB subnet group.
 - `deletion_protection` (Boolean) If the DB instance should have deletion protection enabled.The database can't be deleted when this value is set to `true`. This setting is not applicable for document db cluster instance. Defaults to `false`.
 - `enable_logging` (Boolean) Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance.

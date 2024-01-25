@@ -29,7 +29,6 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 			ValidateFunc: validation.All(
-				validation.StringLenBetween(1, 63-MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH),
 				validation.StringMatch(regexp.MustCompile(`^[a-z0-9._-]*$`), "Invalid S3 bucket name"),
 
 				// NOTE: some validations are moot, because Duplo provides a prefix and suffix for the name:
@@ -163,14 +162,22 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 // CREATE resource
 func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketCreate ******** start")
-
+	name := d.Get("name").(string)
 	// Create the request object.
 	duploObject := duplosdk.DuploS3BucketRequest{
-		Name:           d.Get("name").(string),
+		Name:           name,
 		InTenantRegion: true,
 	}
 
 	c := m.(*duplosdk.Client)
+	features, _ := c.AdminGetSystemFeatures()
+	s3MaxLength := 63 - MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH
+	if features != nil && features.IsTagsBasedResourceMgmtEnabled {
+		s3MaxLength = 63
+	}
+	if len(name) > s3MaxLength {
+		return diag.Errorf("Expected length of lambda function name '%s' to be in the range (1 - %d)", name, s3MaxLength)
+	}
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo

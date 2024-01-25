@@ -1,0 +1,23 @@
+# See: https://github.com/Codium-ai/pr-agent/blob/main/Usage.md#working-with-github-app
+# See: https://github.com/Codium-ai/pr-agent/blob/main/pr_agent/settings/configuration.toml
+
+[pr_reviewer]
+enable_review_labels_effort = true
+
+[pr_description]
+add_original_user_description = true
+keep_original_user_title = true
+
+[github_app]
+handle_pr_actions = ['opened', 'reopened', 'ready_for_review', 'review_requested']
+pr_commands = [
+    "/describe",
+    "/review",
+    "/update_changelog --pr_update_changelog.push_changelog_changes=true"
+]
+handle_push_trigger = true
+push_commands = [
+    "/describe",
+    "/review -i --pr_reviewer.remove_previous_review_comment=true",
+    "/update_changelog"
+]

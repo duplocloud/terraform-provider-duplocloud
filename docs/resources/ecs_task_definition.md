@@ -28,6 +28,15 @@ resource "duplocloud_ecs_task_definition" "myservice" {
     Environment = [
       { Name = "NGINX_HOST", Value = "foo" }
     ]
+    ContainerMappings = [
+      {
+        ContainerPorts = "80",
+        HostPort       = "80",
+        Protocol = {
+          Value = "tcp"
+        }
+      }
+    ]
   }])
   cpu                      = "256"
   memory                   = "1024"

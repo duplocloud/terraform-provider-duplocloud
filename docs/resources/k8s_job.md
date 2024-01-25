@@ -42,13 +42,13 @@ resource "duplocloud_k8s_job" "myapp" {
 ### Required
 
 - `metadata` (Block List, Min: 1, Max: 1) Standard job's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata (see [below for nested schema](#nestedblock--metadata))
-- `spec` (Block List, Min: 1, Max: 1) Spec of the job owned by the cluster (see [below for nested schema](#nestedblock--spec))
 - `tenant_id` (String) The GUID of the tenant that the job will be created in.
 
 ### Optional
 
+- `spec` (Block List) Spec of the job owned by the cluster (see [below for nested schema](#nestedblock--spec))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `wait_for_completion` (Boolean) Defaults to `true`.
+- `wait_for_completion` (Boolean)
 
 ### Read-Only
 
@@ -138,7 +138,7 @@ Optional:
 - `node_selector` (Map of String) NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.
 - `priority_class_name` (String) If specified, indicates the pod's priority. "system-node-critical" and "system-cluster-critical" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be default or zero if there is no default.
 - `readiness_gate` (Block List) If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its containers are ready AND all conditions specified in the readiness gates have status equal to "True" More info: https://git.k8s.io/enhancements/keps/sig-network/0007-pod-ready%2B%2B.md (see [below for nested schema](#nestedblock--spec--template--spec--readiness_gate))
-- `restart_policy` (String) Restart policy for all containers within the pod. One of Always, OnFailure, Never. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. Defaults to `Never`.
+- `restart_policy` (String) Restart policy for all containers within the pod. One of OnFailure, Never. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. Defaults to `Never`.
 - `runtime_class_name` (String) RuntimeClassName is a feature for selecting the container runtime configuration. The container runtime configuration is used to run a Pod's containers. More info: https://kubernetes.io/docs/concepts/containers/runtime-class
 - `scheduler_name` (String) If specified, the pod will be dispatched by specified scheduler. If not specified, the pod will be dispatched by default scheduler.
 - `security_context` (Block List, Max: 1) SecurityContext holds pod-level security attributes and common container settings. Optional: Defaults to empty (see [below for nested schema](#nestedblock--spec--template--spec--security_context))

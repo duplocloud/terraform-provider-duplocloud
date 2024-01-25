@@ -99,7 +99,18 @@ Should be one of:
  Defaults to `0`.
 - `allocation_tags` (String)
 - `any_host_allowed` (Boolean) Whether or not the service can run on hosts in other tenants (within the the same plan as the current tenant). Defaults to `false`.
-- `cloud` (Number) The numeric ID of the cloud provider to launch the service in. Defaults to `0`.
+- `cloud` (Number) The numeric ID of the cloud provider to launch the service in.
+Should be one of:
+
+   - `0` : AWS (Default)
+   - `1` : Oracle
+   - `2` : Azure
+   - `3` : Google
+   - `4` : Byoh
+   - `5` : Unknown
+   - `6` : DigitalOcean
+   - `10` : OnPrem
+ Defaults to `0`.
 - `cloud_creds_from_k8s_service_account` (Boolean) Whether or not the service gets it's cloud credentials from Kubernetes service account. Defaults to `false`.
 - `commands` (String)
 - `extra_config` (String)
@@ -119,8 +130,12 @@ Should be one of:
 
 ### Read-Only
 
+- `domain` (String) The service domain (whichever fqdn_ex or fqdn which is non empty)
+- `fqdn` (String) The fully qualified domain associated with the service
+- `fqdn_ex` (String) External fully qualified domain associated with the service
 - `id` (String) The ID of this resource.
 - `index` (Number) The index of the service.
+- `parent_domain` (String) The service's parent domain
 - `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--timeouts"></a>

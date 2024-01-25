@@ -87,11 +87,20 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Required: false,
 		},
 		"cloud": {
-			Description: "The numeric ID of the cloud provider to launch the service in.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Required:    false,
-			Default:     0,
+			Description: "The numeric ID of the cloud provider to launch the service in.\n" +
+				"Should be one of:\n\n" +
+				"   - `0` : AWS (Default)\n" +
+				"   - `1` : Oracle\n" +
+				"   - `2` : Azure\n" +
+				"   - `3` : Google\n" +
+				"   - `4` : Byoh\n" +
+				"   - `5` : Unknown\n" +
+				"   - `6` : DigitalOcean\n" +
+				"   - `10` : OnPrem\n",
+			Type:     schema.TypeInt,
+			Optional: true,
+			Required: false,
+			Default:  0,
 		},
 		"agent_platform": {
 			Description: "The numeric ID of the container agent to use for deployment.\n" +
@@ -176,6 +185,26 @@ func duploServiceSchema() map[string]*schema.Schema {
 		"index": {
 			Description: "The index of the service.",
 			Type:        schema.TypeInt,
+			Computed:    true,
+		},
+		"fqdn": {
+			Description: "The fully qualified domain associated with the service",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"fqdn_ex": {
+			Description: "External fully qualified domain associated with the service",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"parent_domain": {
+			Description: "The service's parent domain",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"domain": {
+			Description: "The service domain (whichever fqdn_ex or fqdn which is non empty)",
+			Type:        schema.TypeString,
 			Computed:    true,
 		},
 	}

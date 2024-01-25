@@ -25,7 +25,7 @@ func metadataFields(objectName string) map[string]*schema.Schema {
 			Description:      fmt.Sprintf("Map of string keys and values that can be used to organize and categorize (scope and select) the %s. May match selectors of replication controllers and services. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/", objectName),
 			Optional:         true,
 			Computed:         true,
-			DiffSuppressFunc: diffSuppressWhenNotCreating, // TODO: use diffIgnoreDuploCreatedLabels in a later PR
+			DiffSuppressFunc: diffIgnoreDuploCreatedLabels,
 			Elem:             &schema.Schema{Type: schema.TypeString},
 			ValidateFunc:     validateLabels,
 		},

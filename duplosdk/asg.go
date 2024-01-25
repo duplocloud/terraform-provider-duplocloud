@@ -23,6 +23,7 @@ type DuploAsgProfile struct {
 	Cloud               int                                `json:"Cloud"`
 	KeyPairType         int                                `json:"KeyPairType,omitempty"`
 	IsClusterAutoscaled bool                               `json:"IsClusterAutoscaled,omitempty"`
+	CanScaleFromZero    bool                               `json:"CanScaleFromZero,omitempty"`
 	EncryptDisk         bool                               `json:"EncryptDisk,omitempty"`
 	Status              string                             `json:"Status,omitempty"`
 	NetworkInterfaces   *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
@@ -31,6 +32,8 @@ type DuploAsgProfile struct {
 	Tags                *[]DuploKeyStringValue             `json:"Tags,omitempty"`
 	MinionTags          *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
 	UseLaunchTemplate   bool                               `json:"UseLaunchTemplate"`
+	UseSpotInstances    bool                               `json:"UseSpotInstances,omitempty"`
+	MaxSpotPrice        string                             `json:"SpotPrice,omitempty"`
 }
 
 type DuploAsgProfileDeleteReq struct {

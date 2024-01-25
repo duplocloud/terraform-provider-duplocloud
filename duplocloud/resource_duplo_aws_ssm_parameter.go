@@ -42,8 +42,8 @@ func awsSsmParameterSchema() map[string]*schema.Schema {
 		"value": {
 			Description: "The value of the SSM parameter.",
 			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Required:    true,
+			ForceNew:    false,
 		},
 		"description": {
 			Description: "The description of the SSM parameter.",

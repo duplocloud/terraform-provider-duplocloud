@@ -120,7 +120,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.TenantGet(tenantID)
+	duplo, err := c.TenantGetV2(tenantID)
 	if err != nil {
 		if err.Status() == 404 {
 			d.SetId("")
@@ -228,7 +228,7 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 
 		// Delete the object with Duplo
 		c := m.(*duplosdk.Client)
-		duplo, err := c.TenantGet(tenantID)
+		duplo, err := c.TenantGetV2(tenantID)
 		if err != nil {
 			if err.Status() == 404 {
 				return nil

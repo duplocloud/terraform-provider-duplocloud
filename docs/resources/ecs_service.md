@@ -35,6 +35,7 @@ resource "duplocloud_ecs_service" "myservice" {
     protocol             = "HTTP"
     enable_access_logs   = false
     drop_invalid_headers = true
+    health_check_url     = "https://example.healthcheckurl.com/healthcheck"
   }
 }
 ```

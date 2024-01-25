@@ -109,6 +109,26 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 			Computed: true,
 			Elem:     KeyValueSchema(),
 		},
+		"fqdn": {
+			Description: "The fully qualified domain associated with the service",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"fqdn_ex": {
+			Description: "External fully qualified domain associated with the service",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"parent_domain": {
+			Description: "The service's parent domain",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"domain": {
+			Description: "The service domain (whichever fqdn_ex or fqdn which is non empty)",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
@@ -162,6 +182,14 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 	d.Set("replicas", duplo.Replicas)
 	d.Set("index", duplo.Index)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
+	d.Set("fqdn", duplo.Fqdn)
+	d.Set("parent_domain", duplo.ParentDomain)
+	d.Set("fqdn_ex", duplo.FqdnEx)
+	if duplo.FqdnEx != "" {
+		d.Set("domain", duplo.FqdnEx)
+	} else {
+		d.Set("domain", duplo.Fqdn)
+	}
 	if len(duplo.HPASpecs) > 0 {
 		flattenHPASpecs("hpa_specs", duplo.HPASpecs, d)
 	}
