@@ -1,3 +1,9 @@
+## 2024-01-29
+
+### Updated
+- Upgraded the `terraform-plugin-docs` version to fix an issue with generated docs incorrectly marking some fields as read-only.
+- Updated multiple indirect dependencies to newer versions for bug fixes, performance improvements, and new features.
+
 ## 2024-01-25
 
 ### Added
