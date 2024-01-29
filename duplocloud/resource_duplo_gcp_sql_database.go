@@ -110,8 +110,10 @@ func resourceGcpSqlDBInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	}
 	c := m.(*duplosdk.Client)
 
-	fullName, _ := c.GetDuploServicesName(tenantID, name)
-
+	fullName, clientErr := c.GetDuploServicesName(tenantID, name)
+	if clientErr != nil {
+		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+	}
 	duplo, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
@@ -141,7 +143,10 @@ func resourceGcpSqlDBInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	tenantID := d.Get("tenant_id").(string)
 
 	c := m.(*duplosdk.Client)
-	fullName, _ := c.GetDuploServicesName(tenantID, rq.Name)
+	fullName, clientErr := c.GetDuploServicesName(tenantID, rq.Name)
+	if clientErr != nil {
+		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+	}
 	// Post the object to Duplo
 	resp, err := c.GCPSqlDBInstanceCreate(tenantID, rq)
 	if err != nil {
@@ -179,7 +184,10 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 	c := m.(*duplosdk.Client)
-	fullName, _ := c.GetDuploServicesName(tenantID, name)
+	fullName, clientErr := c.GetDuploServicesName(tenantID, name)
+	if clientErr != nil {
+		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+	}
 	// Post the object to Duplo
 	duplo, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
 	if clientErr != nil {
@@ -228,14 +236,17 @@ func resourceGcpSqlDBInstanceDelete(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 	c := m.(*duplosdk.Client)
-	fullName, _ := c.GetDuploServicesName(tenantID, name)
-	_, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
+	fullName, clientErr := c.GetDuploServicesName(tenantID, name)
+	if clientErr != nil {
+		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+	}
+	resp, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve tenant %s gpc sql database instance %s : %s", tenantID, fullName, clientErr)
+		return diag.Errorf("Unable to retrieve tenant %s gpc sql database instance %s : %s", tenantID, resp.Name, clientErr)
 	}
 
 	clientErr = c.GCPSqlDBInstanceDelete(tenantID, fullName)
