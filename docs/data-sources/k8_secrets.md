@@ -35,5 +35,3 @@ Read-Only:
 - `secret_type` (String)
 - `secret_version` (String)
 - `tenant_id` (String)
-
-

@@ -43,5 +43,3 @@ Read-Only:
 - `metadata` (String)
 - `name` (String)
 - `tenant_id` (String)
-
-

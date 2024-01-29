@@ -61,5 +61,3 @@ Read-Only:
 
 - `grpc_code` (String)
 - `http_code` (String)
-
-

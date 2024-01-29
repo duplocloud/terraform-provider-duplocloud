@@ -28,5 +28,3 @@ description: |-
 - `id` (String) The ID of this resource.
 - `key_arn` (String)
 - `key_id` (String)
-
-

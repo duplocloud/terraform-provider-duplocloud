@@ -118,5 +118,3 @@ Read-Only:
 - `size` (Number)
 - `volume_id` (String)
 - `volume_type` (String)
-
-

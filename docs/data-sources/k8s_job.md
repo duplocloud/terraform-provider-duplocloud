@@ -2008,5 +2008,3 @@ Read-Only:
 
 - `fs_type` (String)
 - `volume_path` (String)
-
-

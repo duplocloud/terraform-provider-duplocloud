@@ -24,5 +24,3 @@ description: |-
 - `expiry_time` (String) The expiry time of the tenant.
 - `id` (String) The ID of this resource.
 - `pause_time` (String) The time to pause the tenant.
-
-

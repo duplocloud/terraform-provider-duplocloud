@@ -39,5 +39,3 @@ Read-Only:
 - `replication_controller_name` (String)
 - `tenant_id` (String)
 - `webaclid` (String)
-
-

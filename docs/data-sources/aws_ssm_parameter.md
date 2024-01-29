@@ -30,5 +30,3 @@ description: |-
 - `last_modified_user` (String)
 - `type` (String)
 - `value` (String)
-
-
