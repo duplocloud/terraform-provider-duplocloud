@@ -2,10 +2,6 @@
 
 ### Added
 - Introduced a new resource `duplocloud_gcp_sql_database_instance` for managing a GCP SQL Database Instance in Duplo.
-- Implemented Create, Read, Update, and Delete functions for the new resource.
-- Added helper functions for handling GCP SQL Database Instance.
-- Registered the new resource `duplocloud_gcp_sql_database_instance` to the provider.
-- Provided examples and documentation for the new resource.
 
 ## 2024-01-25
 
