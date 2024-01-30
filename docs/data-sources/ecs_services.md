@@ -89,5 +89,3 @@ Read-Only:
 - `healthy_threshold_count` (Number)
 - `http_success_code` (String)
 - `unhealthy_threshold_count` (Number)
-
-

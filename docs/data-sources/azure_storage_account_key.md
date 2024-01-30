@@ -25,5 +25,3 @@ description: |-
 - `id` (String) The ID of this resource.
 - `key_name` (String)
 - `key_value` (String)
-
-

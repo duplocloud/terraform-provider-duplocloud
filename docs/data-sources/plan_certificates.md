@@ -31,5 +31,3 @@ Read-Only:
 
 - `arn` (String)
 - `name` (String)
-
-

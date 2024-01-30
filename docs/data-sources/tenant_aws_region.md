@@ -23,5 +23,3 @@ description: |-
 
 - `aws_region` (String)
 - `id` (String) The ID of this resource.
-
-

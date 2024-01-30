@@ -29,5 +29,3 @@ description: |-
 - `region` (String)
 - `token` (String, Sensitive)
 - `version` (String)
-
-

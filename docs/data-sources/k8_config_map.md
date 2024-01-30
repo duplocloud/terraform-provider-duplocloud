@@ -36,5 +36,3 @@ output "config_map" {
 - `data` (String) A JSON encoded string representing the configmap data. You can use the `jsondecode()` function to parse this, if needed.
 - `id` (String) The ID of this resource.
 - `metadata` (String) A JSON encoded string representing the configmap metadata. You can use the `jsondecode()` function to parse this, if needed.
-
-

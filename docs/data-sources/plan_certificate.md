@@ -24,5 +24,3 @@ description: |-
 
 - `arn` (String) The ARN of the certificate
 - `id` (String) The ID of this resource.
-
-
