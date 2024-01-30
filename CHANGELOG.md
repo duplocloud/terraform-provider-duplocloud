@@ -1,3 +1,8 @@
+## 2024-01-29
+
+### Added
+- Introduced a new resource `duplocloud_gcp_sql_database_instance` for managing a GCP SQL Database Instance in Duplo.
+
 ## 2024-01-25
 
 ### Added
