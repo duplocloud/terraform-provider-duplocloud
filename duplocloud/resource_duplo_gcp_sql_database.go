@@ -47,6 +47,7 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 				"`SQLSERVER_2019_WEB`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions)includes an up-to-date reference of supported versions.",
 			Type:         schema.TypeString,
 			Required:     true,
+			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice(supportedGcpSQLDBVersions(), false),
 		},
 		"tier": {
