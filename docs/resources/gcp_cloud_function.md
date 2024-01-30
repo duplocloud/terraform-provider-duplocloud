@@ -20,7 +20,7 @@ resource "duplocloud_tenant" "myapp" {
 
 // A simple cloud function with an HTTPS trigger
 resource "duplocloud_gcp_cloud_function" "myfunc" {
-  tenant_id = local.tenant_id
+  tenant_id = duplocloud_tenant.myapp.tenant_id
 
   name = "myfunc"
 
