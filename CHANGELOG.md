@@ -1,7 +1,7 @@
 ## 2024-02-01
 
 ### Added
-- Introduced a new optional field `is_any_host_allowed` to the CronJob and Job resources, enhancing the control over host permissions.
+- Introduced a new optional field `is_any_host_allowed` to the CronJob and Job resources, enhancing the control over host selection.
 
 
 ## 2024-01-29
