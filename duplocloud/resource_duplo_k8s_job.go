@@ -3,12 +3,13 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
 	"log"
 	"regexp"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -60,11 +61,17 @@ func resourceKubernetesJobV1Schema(readonly bool) map[string]*schema.Schema {
 			Optional: !readonly,
 			Computed: readonly,
 		},
+		"is_any_host_allowed": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  false,
+		},
 	}
 }
 
 func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
+	isAnyHostAllowed := d.Get("is_any_host_allowed").(bool)
 	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): start", tenantId)
 
 	name, err := getK8sJobName(d)
@@ -83,6 +90,7 @@ func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, 
 	rq.Metadata = metadata
 	rq.Spec = spec
 	rq.TenantId = tenantId
+	rq.IsAnyHostAllowed = isAnyHostAllowed
 
 	// initiate create Job
 	c := meta.(*duplosdk.Client)
@@ -134,6 +142,13 @@ func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, me
 	}
 	log.Printf("[INFO] Received Job: %#v", job)
 
+	isAnyHostAllowed, err := GetIsAnyHostAllowed(job.Metadata.Annotations)
+	if err != nil {
+		log.Printf("[DEBUG] Received error: %#v", err)
+		return diag.Errorf("Failed to read IsAnyHostAllowed on Job. error: %s", err)
+	}
+	job.IsAnyHostAllowed = isAnyHostAllowed
+
 	// Remove server-generated labels unless using manual selector
 	if _, ok := d.GetOk("spec.0.manual_selector"); !ok {
 		labels := job.Metadata.Labels
@@ -165,6 +180,7 @@ func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, me
 
 func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
+	isAnyHostAllowed := d.Get("is_any_host_allowed").(bool)
 	log.Printf("[TRACE] resourceKubernetesJobV1Update(%s): end", tenantId)
 
 	name, err := getK8sJobName(d)
@@ -174,6 +190,7 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 
 	var rq duplosdk.DuploK8sJob
 	rq.TenantId = tenantId
+	rq.IsAnyHostAllowed = isAnyHostAllowed
 
 	if d.HasChange("spec") {
 		spec, err := expandJobV1Spec(d.Get("spec").([]interface{}))

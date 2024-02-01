@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+
 	"k8s.io/api/batch/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -9,10 +10,11 @@ import (
 // DuploK8sCronJob represents a kubernetes job in a Duplo tenant
 type DuploK8sCronJob struct {
 	// NOTE: The TenantId field does not come from the backend - we synthesize it
-	TenantId string                `json:"-"` //nolint:govet
-	Metadata metav1.ObjectMeta     `json:"metadata"`
-	Spec     v1beta1.CronJobSpec   `json:"spec"`
-	Status   v1beta1.CronJobStatus `json:"status"`
+	TenantId         string                `json:"-"` //nolint:govet
+	Metadata         metav1.ObjectMeta     `json:"metadata"`
+	Spec             v1beta1.CronJobSpec   `json:"spec"`
+	Status           v1beta1.CronJobStatus `json:"status"`
+	IsAnyHostAllowed bool                  `json:"IsAnyHostAllowed"`
 }
 
 // K8sCronJobGetList retrieves a list of k8s jobs via the Duplo API.
