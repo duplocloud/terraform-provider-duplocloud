@@ -142,11 +142,7 @@ func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, me
 	}
 	log.Printf("[INFO] Received Job: %#v", job)
 
-	isAnyHostAllowed, err := GetIsAnyHostAllowed(job.Metadata.Annotations)
-	if err != nil {
-		log.Printf("[DEBUG] Received error: %#v", err)
-		return diag.Errorf("Failed to read IsAnyHostAllowed on Job. error: %s", err)
-	}
+	isAnyHostAllowed := GetIsAnyHostAllowed(job.Metadata.Annotations)
 	job.IsAnyHostAllowed = isAnyHostAllowed
 
 	// Remove server-generated labels unless using manual selector

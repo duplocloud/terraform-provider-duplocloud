@@ -150,11 +150,7 @@ func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.Resourc
 	}
 	log.Printf("[INFO] Received CronJob: %#v", job)
 
-	isAnyHostAllowed, err := GetIsAnyHostAllowed(job.Metadata.Annotations)
-	if err != nil {
-		log.Printf("[DEBUG] Received error: %#v", err)
-		return diag.Errorf("Failed to read IsAnyHostAllowed on CronJob. error: %s", err)
-	}
+	isAnyHostAllowed := GetIsAnyHostAllowed(job.Metadata.Annotations)
 	job.IsAnyHostAllowed = isAnyHostAllowed
 
 	// Remove server-generated labels unless using manual selector
@@ -189,15 +185,16 @@ func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.Resourc
 	return diag.Diagnostics{}
 }
 
-func GetIsAnyHostAllowed(annotations map[string]string) (bool, error) {
+func GetIsAnyHostAllowed(annotations map[string]string) bool {
 	if val, ok := annotations["duplocloud.net/is-any-host-allowed"]; ok {
 		boolValue, err := strconv.ParseBool(val)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("[DEBUG] Received error: %#v", err)
+			boolValue = false
 		}
-		return boolValue, err
+		return boolValue
 	}
-	return false, nil
+	return false
 }
 
 func resourceKubernetesCronJobV1Beta1Delete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
