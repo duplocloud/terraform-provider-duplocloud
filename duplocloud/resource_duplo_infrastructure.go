@@ -478,8 +478,6 @@ func parseInfrastructureId(d *schema.ResourceData) (string, diag.Diagnostics) {
 }
 
 func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploInfrastructureConfig {
-	subnet := duplosdk.DuploInfrastructureVnetSubnet{}
-
 	var IsServerlessKubernetes bool
 
 	// to check if boolean which is optional and doesn't have a default value there is no replacement for GetOkExist
@@ -493,12 +491,6 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 		}
 	}
 
-	if v, ok := d.GetOk("subnet_name"); ok {
-		subnet.Name = v.(string)
-	}
-	if v, ok := d.GetOk("subnet_address_prefix"); ok {
-		subnet.AddressPrefix = v.(string)
-	}
 	config := duplosdk.DuploInfrastructureConfig{
 		Name:                    d.Get("infra_name").(string),
 		AccountId:               d.Get("account_id").(string),
@@ -518,6 +510,13 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 
 	//Azure -> if needed only there, this subnet should be added only in Azure
 	if config.Cloud == 2 {
+		subnet := duplosdk.DuploInfrastructureVnetSubnet{}
+		if v, ok := d.GetOk("subnet_name"); ok {
+			subnet.Name = v.(string)
+		}
+		if v, ok := d.GetOk("subnet_address_prefix"); ok {
+			subnet.AddressPrefix = v.(string)
+		}
 		config.Vnet.Subnets = &[]duplosdk.DuploInfrastructureVnetSubnet{
 			subnet,
 		}
