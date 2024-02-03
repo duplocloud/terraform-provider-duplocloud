@@ -3,11 +3,13 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
 	"regexp"
+	"strconv"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
@@ -50,11 +52,17 @@ func resourceKubernetesCronJobSchemaV1Beta1(readonly bool) map[string]*schema.Sc
 				Schema: cronJobSpecFieldsV1Beta1(),
 			},
 		},
+		"is_any_host_allowed": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  false,
+		},
 	}
 }
 
 func resourceKubernetesCronJobV1Beta1Create(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
+	isAnyHostAllowed := d.Get("is_any_host_allowed").(bool)
 	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): start", tenantId)
 
 	name, err := getK8sJobName(d)
@@ -72,6 +80,7 @@ func resourceKubernetesCronJobV1Beta1Create(ctx context.Context, d *schema.Resou
 	rq.Metadata = metadata
 	rq.Spec = spec
 	rq.TenantId = tenantId
+	rq.IsAnyHostAllowed = isAnyHostAllowed
 
 	c := meta.(*duplosdk.Client)
 	err = c.K8sCronJobCreate(&rq)
@@ -88,6 +97,7 @@ func resourceKubernetesCronJobV1Beta1Create(ctx context.Context, d *schema.Resou
 
 func resourceKubernetesCronJobV1Beta1Update(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
+	isAnyHostAllowed := d.Get("is_any_host_allowed").(bool)
 	log.Printf("[TRACE] resourceKubernetesCronJobV1Update(%s): end", tenantId)
 
 	name, err := getK8sJobName(d)
@@ -103,8 +113,9 @@ func resourceKubernetesCronJobV1Beta1Update(ctx context.Context, d *schema.Resou
 	spec.JobTemplate.ObjectMeta.Annotations = metadata.Annotations
 
 	rq := duplosdk.DuploK8sCronJob{
-		Metadata: metadata,
-		Spec:     spec,
+		Metadata:         metadata,
+		Spec:             spec,
+		IsAnyHostAllowed: isAnyHostAllowed,
 	}
 
 	// initiate update Job
@@ -139,6 +150,9 @@ func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.Resourc
 	}
 	log.Printf("[INFO] Received CronJob: %#v", job)
 
+	isAnyHostAllowed := GetIsAnyHostAllowed(job.Metadata.Annotations)
+	job.IsAnyHostAllowed = isAnyHostAllowed
+
 	// Remove server-generated labels unless using manual selector
 	if _, ok := d.GetOk("spec.0.manual_selector"); !ok {
 		labels := job.Metadata.Labels
@@ -169,6 +183,18 @@ func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.Resourc
 	}
 
 	return diag.Diagnostics{}
+}
+
+func GetIsAnyHostAllowed(annotations map[string]string) bool {
+	if val, ok := annotations["duplocloud.net/is-any-host-allowed"]; ok {
+		boolValue, err := strconv.ParseBool(val)
+		if err != nil {
+			log.Printf("[DEBUG] Received error: %#v", err)
+			boolValue = false
+		}
+		return boolValue
+	}
+	return false
 }
 
 func resourceKubernetesCronJobV1Beta1Delete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

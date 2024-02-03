@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -9,10 +10,11 @@ import (
 // DuploK8sJob represents a kubernetes job in a Duplo tenant
 type DuploK8sJob struct {
 	// NOTE: The TenantId field does not come from the backend - we synthesize it
-	TenantId string            `json:"-"` //nolint:govet
-	Metadata metav1.ObjectMeta `json:"metadata"`
-	Spec     batchv1.JobSpec   `json:"spec"`
-	Status   batchv1.JobStatus `json:"status"`
+	TenantId         string            `json:"-"` //nolint:govet
+	Metadata         metav1.ObjectMeta `json:"metadata"`
+	Spec             batchv1.JobSpec   `json:"spec"`
+	Status           batchv1.JobStatus `json:"status"`
+	IsAnyHostAllowed bool              `json:"IsAnyHostAllowed"`
 }
 
 // K8sJobGetList retrieves a list of k8s jobs via the Duplo API.
