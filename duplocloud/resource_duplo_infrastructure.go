@@ -512,10 +512,15 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 		Vnet: &duplosdk.DuploInfrastructureVnet{
 			AddressPrefix: d.Get("address_prefix").(string),
 			SubnetCidr:    d.Get("subnet_cidr").(int),
-			Subnets: &[]duplosdk.DuploInfrastructureVnetSubnet{
-				subnet,
-			},
+			Subnets:       &[]duplosdk.DuploInfrastructureVnetSubnet{},
 		},
+	}
+
+	//Azure -> if needed only there, this subnet should be added only in Azure
+	if config.Cloud == 2 {
+		config.Vnet.Subnets = &[]duplosdk.DuploInfrastructureVnetSubnet{
+			subnet,
+		}
 	}
 
 	if d.HasChange("setting") {
