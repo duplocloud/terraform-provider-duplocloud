@@ -1,7 +1,14 @@
+
+## 2024-02-03
+
+### Fixed
+- Resolved a bug where an empty subnet was being created in all infrastructures, which could lead to errors. Now, a subnet is only created when the infrastructure is Azure, where it is needed.
+
 ## 2024-02-01
 
 ### Added
 - Introduced a new optional field `is_any_host_allowed` to the CronJob and Job resources, enhancing the control over host selection.
+
 
 
 ## 2024-01-29
