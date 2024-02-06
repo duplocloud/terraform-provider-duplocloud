@@ -1,3 +1,9 @@
+## 2024-02-06
+
+### Added
+- Introduced comprehensive unit tests for the `postAPI` method in the DuploCloud SDK client, covering various scenarios including successful API calls, error handling, and response parsing.
+- Added utility functions for creating and tearing down HTTP test servers, facilitating the simulation of API responses.
+
 
 ## 2024-02-03
 
