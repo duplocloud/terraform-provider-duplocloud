@@ -1,3 +1,13 @@
+## 2024-02-06
+
+### Fixed
+- Fixed an issue where changes to allocation tags in the ASG profile were not being detected and updated correctly.
+
+### Updated
+- Enhanced the ASG profile update process to detect and update changes in allocation tags.
+- Refactored the update logic in ASG profiles for better clarity and maintainability.
+- Introduced a new function to check for differences in allocation tags, ensuring that updates are only applied when necessary.
+
 ## 2024-02-01
 
 ### Added
