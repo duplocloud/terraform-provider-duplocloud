@@ -217,9 +217,9 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	needsUpdate := needsResourceAwsASGUpdate(d)
+	rq := expandAsgProfile(d)
 	if needsUpdate {
 		// Build a request.
-		rq := expandAsgProfile(d)
 		log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): start", rq.TenantId, rq.FriendlyName)
 
 		// Update the ASG Prfoile in Duplo.
@@ -245,6 +245,20 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 			if err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+
+	needsAllocationTagsUpdate, newTags := checkAllocationTagsDiff(d)
+	if needsAllocationTagsUpdate {
+		updateRequest := duplosdk.CustomDataUpdate{
+			ComponentId:   d.Get("fullname").(string),
+			ComponentType: duplosdk.ASG,
+			Key:           "AllocationTags",
+			Value:         newTags,
+		}
+		err := c.TenantUpdateCustomData(rq.TenantId, updateRequest)
+		if err != nil {
+			return diag.Errorf("Error updating ASG profile '%s': %s", rq.FriendlyName, err)
 		}
 	}
 
@@ -459,4 +473,34 @@ func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 		d.HasChange("min_instance_count") ||
 		d.HasChange("max_instance_count") ||
 		d.HasChange("friendly_name")
+}
+
+func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags string) {
+	oldRevision, newRevision := d.GetChange("minion_tags")
+	oldTags := oldRevision.([]interface{})
+	newTags := newRevision.([]interface{})
+
+	var oldAllocationTagValue, newAllocationTagValue string
+
+	for _, tag := range oldTags {
+		tagMap := tag.(map[string]interface{})
+		if tagMap["key"].(string) == "AllocationTags" {
+			oldAllocationTagValue = tagMap["value"].(string)
+			break
+		}
+	}
+
+	for _, tag := range newTags {
+		tagMap := tag.(map[string]interface{})
+		if tagMap["key"].(string) == "AllocationTags" {
+			newAllocationTagValue = tagMap["value"].(string)
+			break
+		}
+	}
+
+	if oldAllocationTagValue != newAllocationTagValue {
+		return true, newAllocationTagValue
+	}
+
+	return false, ""
 }
