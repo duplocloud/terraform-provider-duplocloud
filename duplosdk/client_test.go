@@ -9,8 +9,83 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Should call doAPIWithRequestBody with "POST", apiName, apiPath, rq, rp and return its result
-func TestPostAPI_CallDoAPIWithRequestBodyAndReturnResult(t *testing.T) {
+// Should collect a response body and deserialize it from JSON
+func TestGetAPI_ResponseExpected(t *testing.T) {
+	srv, c, err := setupClientOneshot(200, "{\"foo\":\"bar\"}")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	rp := struct {
+		Foo string `json:"foo"`
+	}{}
+	result := c.getAPI("testAPI", "/test", &rp)
+
+	assert.Nil(t, result)
+	assert.Equal(t, "bar", rp.Foo)
+}
+
+// Should raise an error on invalid response JSON.
+func TestGetAPI_ResponseExpected_InvalidResponseJson(t *testing.T) {
+	srv, c, err := setupClientOneshot(200, "not JSON")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	rp := struct{}{}
+	result := c.getAPI("testAPI", "/test", &rp)
+
+	invalidJsonMsg := "getAPI testAPI: cannot unmarshal response from JSON:"
+	assert.NotNil(t, result)
+	assert.True(t, strings.HasPrefix(result.Error(), invalidJsonMsg))
+}
+
+// Should support eliding a response for blank response bodies
+func TestGetAPI_ResponseElided_NoContent(t *testing.T) {
+	srv, c, err := setupClientOneshot(204, "")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	result := c.getAPI("testAPI", "/test", nil)
+
+	assert.Nil(t, result)
+}
+
+// Should support eliding a response for blank response bodies
+func TestGetAPI_ResponseElided_Null(t *testing.T) {
+	srv, c, err := setupClientOneshot(200, "null")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	result := c.getAPI("testAPI", "/test", nil)
+
+	assert.Nil(t, result)
+}
+
+// Should support eliding a response for blank response bodies
+func TestGetAPI_ResponseElided_Blank(t *testing.T) {
+	srv, c, err := setupClientOneshot(200, "")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	result := c.getAPI("testAPI", "/test", nil)
+
+	assert.Nil(t, result)
+}
+
+// Should raise an error on invalid response JSON.
+func TestGetAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
+	srv, c, err := setupClientOneshot(200, "not JSON")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	result := c.getAPI("testAPI", "/test", nil)
+
+	invalidJsonMsg := "getAPI testAPI: received unexpected response: not JSON"
+	assert.NotNil(t, result)
+	assert.True(t, strings.HasPrefix(result.Error(), invalidJsonMsg))
+}
+
+// Should collect a response body and deserialize it from JSON
+func TestPostAPI_ResponseExpected(t *testing.T) {
 	srv, c, err := setupClientOneshot(200, "{\"foo\":\"bar\"}")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
@@ -90,8 +165,8 @@ func TestPostAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
 	assert.True(t, strings.HasPrefix(result.Error(), invalidJsonMsg))
 }
 
-// Should call doAPIWithRequestBody with "PUT", apiName, apiPath, rq, rp and return its result
-func TestPutAPI_CallDoAPIWithRequestBodyAndReturnResult(t *testing.T) {
+// Should collect a response body and deserialize it from JSON
+func TestPutAPI_ResponseExpected(t *testing.T) {
 	srv, c, err := setupClientOneshot(200, "{\"foo\":\"bar\"}")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
