@@ -1,3 +1,9 @@
+## 2024-02-06
+
+### Fixed
+- Resolved an issue where `minion_tags` in ASG profile were incorrectly fetched from `MinionTags` instead of `CustomDataTags`.
+- Reordered fields in the `DuploAsgProfile` struct for better clarity and included `CustomDataTags` and `MaxSpotPrice`.
+
 
 ## 2024-02-06
 
