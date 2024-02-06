@@ -11,7 +11,7 @@ import (
 
 // Should collect a response body and deserialize it from JSON
 func TestGetAPI_ResponseExpected(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "{\"foo\":\"bar\"}")
+	srv, c, err := setupClientOneshot(t, "GET", 200, "{\"foo\":\"bar\"}")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -26,7 +26,7 @@ func TestGetAPI_ResponseExpected(t *testing.T) {
 
 // Should raise an error on invalid response JSON.
 func TestGetAPI_ResponseExpected_InvalidResponseJson(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "not JSON")
+	srv, c, err := setupClientOneshot(t, "GET", 200, "not JSON")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -40,7 +40,7 @@ func TestGetAPI_ResponseExpected_InvalidResponseJson(t *testing.T) {
 
 // Should support eliding a response for blank response bodies
 func TestGetAPI_ResponseElided_NoContent(t *testing.T) {
-	srv, c, err := setupClientOneshot(204, "")
+	srv, c, err := setupClientOneshot(t, "GET", 204, "")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -51,7 +51,7 @@ func TestGetAPI_ResponseElided_NoContent(t *testing.T) {
 
 // Should support eliding a response for blank response bodies
 func TestGetAPI_ResponseElided_Null(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "null")
+	srv, c, err := setupClientOneshot(t, "GET", 200, "null")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -62,7 +62,7 @@ func TestGetAPI_ResponseElided_Null(t *testing.T) {
 
 // Should support eliding a response for blank response bodies
 func TestGetAPI_ResponseElided_Blank(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "")
+	srv, c, err := setupClientOneshot(t, "GET", 200, "")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -73,7 +73,7 @@ func TestGetAPI_ResponseElided_Blank(t *testing.T) {
 
 // Should raise an error on invalid response JSON.
 func TestGetAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "not JSON")
+	srv, c, err := setupClientOneshot(t, "GET", 200, "not JSON")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -86,7 +86,7 @@ func TestGetAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
 
 // Should collect a response body and deserialize it from JSON
 func TestPostAPI_ResponseExpected(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "{\"foo\":\"bar\"}")
+	srv, c, err := setupClientOneshot(t, "POST", 200, "{\"foo\":\"bar\"}")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -102,7 +102,7 @@ func TestPostAPI_ResponseExpected(t *testing.T) {
 
 // Should raise an error on invalid response JSON.
 func TestPostAPI_ResponseExpected_InvalidResponseJson(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "not JSON")
+	srv, c, err := setupClientOneshot(t, "POST", 200, "not JSON")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -117,7 +117,7 @@ func TestPostAPI_ResponseExpected_InvalidResponseJson(t *testing.T) {
 
 // Should support eliding a response for blank response bodies
 func TestPostAPI_ResponseElided_NoContent(t *testing.T) {
-	srv, c, err := setupClientOneshot(204, "")
+	srv, c, err := setupClientOneshot(t, "POST", 204, "")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -129,7 +129,7 @@ func TestPostAPI_ResponseElided_NoContent(t *testing.T) {
 
 // Should support eliding a response for blank response bodies
 func TestPostAPI_ResponseElided_Null(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "null")
+	srv, c, err := setupClientOneshot(t, "POST", 200, "null")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -141,7 +141,7 @@ func TestPostAPI_ResponseElided_Null(t *testing.T) {
 
 // Should support eliding a response for blank response bodies
 func TestPostAPI_ResponseElided_Blank(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "")
+	srv, c, err := setupClientOneshot(t, "POST", 200, "")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -153,7 +153,7 @@ func TestPostAPI_ResponseElided_Blank(t *testing.T) {
 
 // Should raise an error on invalid response JSON.
 func TestPostAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "not JSON")
+	srv, c, err := setupClientOneshot(t, "POST", 200, "not JSON")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -167,7 +167,7 @@ func TestPostAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
 
 // Should collect a response body and deserialize it from JSON
 func TestPutAPI_ResponseExpected(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "{\"foo\":\"bar\"}")
+	srv, c, err := setupClientOneshot(t, "PUT", 200, "{\"foo\":\"bar\"}")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -183,7 +183,7 @@ func TestPutAPI_ResponseExpected(t *testing.T) {
 
 // Should raise an error on invalid response JSON.
 func TestPutAPI_ResponseExpected_InvalidResponseJson(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "not JSON")
+	srv, c, err := setupClientOneshot(t, "PUT", 200, "not JSON")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -198,7 +198,7 @@ func TestPutAPI_ResponseExpected_InvalidResponseJson(t *testing.T) {
 
 // Should support eliding a response for blank response bodies
 func TestPutAPI_ResponseElided_NoContent(t *testing.T) {
-	srv, c, err := setupClientOneshot(204, "")
+	srv, c, err := setupClientOneshot(t, "PUT", 204, "")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -210,7 +210,7 @@ func TestPutAPI_ResponseElided_NoContent(t *testing.T) {
 
 // Should support eliding a response for blank response bodies
 func TestPutAPI_ResponseElided_Null(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "null")
+	srv, c, err := setupClientOneshot(t, "PUT", 200, "null")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -222,7 +222,7 @@ func TestPutAPI_ResponseElided_Null(t *testing.T) {
 
 // Should support eliding a response for blank response bodies
 func TestPutAPI_ResponseElided_Blank(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "")
+	srv, c, err := setupClientOneshot(t, "PUT", 200, "")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -234,7 +234,7 @@ func TestPutAPI_ResponseElided_Blank(t *testing.T) {
 
 // Should raise an error on invalid response JSON.
 func TestPutAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
-	srv, c, err := setupClientOneshot(200, "not JSON")
+	srv, c, err := setupClientOneshot(t, "PUT", 200, "not JSON")
 	defer teardownClient(srv, c)
 	assert.Nil(t, err, err)
 
@@ -246,9 +246,9 @@ func TestPutAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
 	assert.True(t, strings.HasPrefix(result.Error(), invalidJsonMsg))
 }
 
-func setupClientOneshot(status int, body string) (srv *httptest.Server, c *Client, err error) {
-	srv = setupHttptestOneshot(status, body)
-	c, err = NewClient(srv.URL, "none")
+func setupClientOneshot(t *testing.T, expectedMethod string, status int, body string) (srv *httptest.Server, c *Client, err error) {
+	srv = setupHttptestOneshot(t, expectedMethod, status, body)
+	c, err = NewClient(srv.URL, "FAKE")
 	return
 }
 
@@ -271,8 +271,14 @@ Example:
 	server := setupHttptestOneshot(200, "Hello, World!")
 	defer teardownHttptest(server)
 */
-func setupHttptestOneshot(status int, body string) *httptest.Server {
+func setupHttptestOneshot(t *testing.T, expectedMethod string, status int, body string) *httptest.Server {
 	return setupHttptest(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		m := req.Method
+		if m == "" {
+			m = "GET"
+		}
+		assert.Equal(t, expectedMethod, m)
+		assert.Equal(t, "Bearer FAKE", req.Header.Get("Authorization"))
 		res.WriteHeader(200)
 		res.Write([]byte(body)) // nolint
 	}))
