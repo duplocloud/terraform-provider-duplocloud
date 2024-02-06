@@ -246,6 +246,81 @@ func TestPutAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
 	assert.True(t, strings.HasPrefix(result.Error(), invalidJsonMsg))
 }
 
+// Should collect a response body and deserialize it from JSON
+func TestDeleteAPI_ResponseExpected(t *testing.T) {
+	srv, c, err := setupClientOneshot(t, "DELETE", 200, "{\"foo\":\"bar\"}")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	rp := struct {
+		Foo string `json:"foo"`
+	}{}
+	result := c.deleteAPI("testAPI", "/test", &rp)
+
+	assert.Nil(t, result)
+	assert.Equal(t, "bar", rp.Foo)
+}
+
+// Should raise an error on invalid response JSON.
+func TestDeleteAPI_ResponseExpected_InvalidResponseJson(t *testing.T) {
+	srv, c, err := setupClientOneshot(t, "DELETE", 200, "not JSON")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	rp := struct{}{}
+	result := c.deleteAPI("testAPI", "/test", &rp)
+
+	invalidJsonMsg := "deleteAPI testAPI: cannot unmarshal response from JSON:"
+	assert.NotNil(t, result)
+	assert.True(t, strings.HasPrefix(result.Error(), invalidJsonMsg))
+}
+
+// Should support eliding a response for blank response bodies
+func TestDeleteAPI_ResponseElided_NoContent(t *testing.T) {
+	srv, c, err := setupClientOneshot(t, "DELETE", 204, "")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	result := c.deleteAPI("testAPI", "/test", nil)
+
+	assert.Nil(t, result)
+}
+
+// Should support eliding a response for blank response bodies
+func TestDeleteAPI_ResponseElided_Null(t *testing.T) {
+	srv, c, err := setupClientOneshot(t, "DELETE", 200, "null")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	result := c.deleteAPI("testAPI", "/test", nil)
+
+	assert.Nil(t, result)
+}
+
+// Should support eliding a response for blank response bodies
+func TestDeleteAPI_ResponseElided_Blank(t *testing.T) {
+	srv, c, err := setupClientOneshot(t, "DELETE", 200, "")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	result := c.deleteAPI("testAPI", "/test", nil)
+
+	assert.Nil(t, result)
+}
+
+// Should raise an error on invalid response JSON.
+func TestDeleteAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
+	srv, c, err := setupClientOneshot(t, "DELETE", 200, "not JSON")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	result := c.deleteAPI("testAPI", "/test", nil)
+
+	invalidJsonMsg := "deleteAPI testAPI: received unexpected response: not JSON"
+	assert.NotNil(t, result)
+	assert.True(t, strings.HasPrefix(result.Error(), invalidJsonMsg))
+}
+
 func setupClientOneshot(t *testing.T, expectedMethod string, status int, body string) (srv *httptest.Server, c *Client, err error) {
 	srv = setupHttptestOneshot(t, expectedMethod, status, body)
 	c, err = NewClient(srv.URL, "FAKE")
