@@ -90,6 +90,87 @@ func TestPostAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
 	assert.True(t, strings.HasPrefix(result.Error(), invalidJsonMsg))
 }
 
+// Should call doAPIWithRequestBody with "PUT", apiName, apiPath, rq, rp and return its result
+func TestPutAPI_CallDoAPIWithRequestBodyAndReturnResult(t *testing.T) {
+	srv, c, err := setupClientOneshot(200, "{\"foo\":\"bar\"}")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	rq := struct{}{}
+	rp := struct {
+		Foo string `json:"foo"`
+	}{}
+	result := c.putAPI("testAPI", "/test", &rq, &rp)
+
+	assert.Nil(t, result)
+	assert.Equal(t, "bar", rp.Foo)
+}
+
+// Should raise an error on invalid response JSON.
+func TestPutAPI_ResponseExpected_InvalidResponseJson(t *testing.T) {
+	srv, c, err := setupClientOneshot(200, "not JSON")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	rq := struct{}{}
+	rp := struct{}{}
+	result := c.putAPI("testAPI", "/test", &rq, &rp)
+
+	invalidJsonMsg := "putAPI testAPI: cannot unmarshal response from JSON:"
+	assert.NotNil(t, result)
+	assert.True(t, strings.HasPrefix(result.Error(), invalidJsonMsg))
+}
+
+// Should support eliding a response for blank response bodies
+func TestPutAPI_ResponseElided_NoContent(t *testing.T) {
+	srv, c, err := setupClientOneshot(204, "")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	rq := struct{}{}
+	result := c.putAPI("testAPI", "/test", &rq, nil)
+
+	assert.Nil(t, result)
+}
+
+// Should support eliding a response for blank response bodies
+func TestPutAPI_ResponseElided_Null(t *testing.T) {
+	srv, c, err := setupClientOneshot(200, "null")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	rq := struct{}{}
+	result := c.putAPI("testAPI", "/test", &rq, nil)
+
+	assert.Nil(t, result)
+}
+
+// Should support eliding a response for blank response bodies
+func TestPutAPI_ResponseElided_Blank(t *testing.T) {
+	srv, c, err := setupClientOneshot(200, "")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	rq := struct{}{}
+	result := c.putAPI("testAPI", "/test", &rq, nil)
+
+	assert.Nil(t, result)
+}
+
+// Should raise an error on invalid response JSON.
+func TestPutAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
+	srv, c, err := setupClientOneshot(200, "not JSON")
+	defer teardownClient(srv, c)
+	assert.Nil(t, err, err)
+
+	rq := struct{}{}
+	result := c.putAPI("testAPI", "/test", &rq, nil)
+
+	invalidJsonMsg := "putAPI testAPI: received unexpected response: not JSON"
+	assert.NotNil(t, result)
+	assert.True(t, strings.HasPrefix(result.Error(), invalidJsonMsg))
+}
+
 func setupClientOneshot(status int, body string) (srv *httptest.Server, c *Client, err error) {
 	srv = setupHttptestOneshot(status, body)
 	c, err = NewClient(srv.URL, "none")
