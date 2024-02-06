@@ -13,6 +13,7 @@ type DuploAsgProfile struct {
 	CanScaleFromZero    bool                               `json:"CanScaleFromZero,omitempty"`
 	Capacity            string                             `json:"Capacity,omitempty"`
 	Cloud               int                                `json:"Cloud"`
+	CustomDataTags      *[]DuploKeyStringValue             `json:"CustomDataTags"`
 	DesiredCapacity     int                                `json:"DesiredCapacity"`
 	EncryptDisk         bool                               `json:"EncryptDisk,omitempty"`
 	FriendlyName        string                             `json:"FriendlyName,omitempty"`

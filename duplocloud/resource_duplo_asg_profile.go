@@ -369,7 +369,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("keypair_type", duplo.KeyPairType)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
+	d.Set("minion_tags", keyValueToState("minion_tags", duplo.CustomDataTags))
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
