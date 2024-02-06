@@ -97,7 +97,7 @@ func setupClientOneshot(status int, body string) (srv *httptest.Server, c *Clien
 }
 
 func teardownClient(srv *httptest.Server, c *Client) {
-	srv.Close()
+	teardownHttptest(srv)
 }
 
 /*
