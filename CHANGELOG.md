@@ -3,13 +3,6 @@
 ### Added
 - Introduced comprehensive unit tests for the `getAPI`, `putAPI`, and `deleteAPI` methods in the DuploCloud SDK client, enhancing the test coverage for various scenarios including successful API calls, error handling, and response parsing.
 
-## 2024-02-06
-
-### Added
-- Introduced comprehensive unit tests for the `postAPI` method in the DuploCloud SDK client, covering various scenarios including successful API calls, error handling, and response parsing.
-- Added utility functions for creating and tearing down HTTP test servers, facilitating the simulation of API responses.
-
-
 ## 2024-02-03
 
 ### Fixed
@@ -19,8 +12,6 @@
 
 ### Added
 - Introduced a new optional field `is_any_host_allowed` to the CronJob and Job resources, enhancing the control over host selection.
-
-
 
 ## 2024-01-29
 
