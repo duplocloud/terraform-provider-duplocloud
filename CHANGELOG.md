@@ -1,18 +1,21 @@
+
 ## 2024-02-06
 
 ### Fixed
 - Fixed an issue where changes to allocation tags in the ASG profile were not being detected and updated correctly.
 
-### Updated
-- Enhanced the ASG profile update process to detect and update changes in allocation tags.
-- Refactored the update logic in ASG profiles for better clarity and maintainability.
-- Introduced a new function to check for differences in allocation tags, ensuring that updates are only applied when necessary.
+### Added
+- Introduced comprehensive unit tests for the `getAPI`, `putAPI`, and `deleteAPI` methods in the DuploCloud SDK client, enhancing the test coverage for various scenarios including successful API calls, error handling, and response parsing.
+
+## 2024-02-03
+
+### Fixed
+- Resolved a bug where an empty subnet was being created in all infrastructures, which could lead to errors. Now, a subnet is only created when the infrastructure is Azure, where it is needed.
 
 ## 2024-02-01
 
 ### Added
 - Introduced a new optional field `is_any_host_allowed` to the CronJob and Job resources, enhancing the control over host selection.
-
 
 ## 2024-01-29
 
