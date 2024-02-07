@@ -6,34 +6,35 @@ import (
 )
 
 type DuploAsgProfile struct {
-	MinSize             int                                `json:"MinSize"`
-	MaxSize             int                                `json:"MaxSize"`
-	DesiredCapacity     int                                `json:"DesiredCapacity"`
 	AccountName         string                             `json:"AccountName,omitempty"`
-	TenantId            string                             `json:"TenantId,omitempty"`
-	FriendlyName        string                             `json:"FriendlyName,omitempty"`
-	Capacity            string                             `json:"Capacity,omitempty"`
-	Zone                int                                `json:"Zone"`
-	IsMinion            bool                               `json:"IsMinion"`
-	ImageID             string                             `json:"ImageId,omitempty"`
-	Base64UserData      string                             `json:"Base64UserData,omitempty"`
 	AgentPlatform       int                                `json:"AgentPlatform"`
-	IsEbsOptimized      bool                               `json:"IsEbsOptimized"`
 	AllocatedPublicIP   bool                               `json:"AllocatedPublicIp,omitempty"`
-	Cloud               int                                `json:"Cloud"`
-	KeyPairType         int                                `json:"KeyPairType,omitempty"`
-	IsClusterAutoscaled bool                               `json:"IsClusterAutoscaled,omitempty"`
+	Base64UserData      string                             `json:"Base64UserData,omitempty"`
 	CanScaleFromZero    bool                               `json:"CanScaleFromZero,omitempty"`
+	Capacity            string                             `json:"Capacity,omitempty"`
+	Cloud               int                                `json:"Cloud"`
+	CustomDataTags      *[]DuploKeyStringValue             `json:"CustomDataTags"`
+	DesiredCapacity     int                                `json:"DesiredCapacity"`
 	EncryptDisk         bool                               `json:"EncryptDisk,omitempty"`
-	Status              string                             `json:"Status,omitempty"`
-	NetworkInterfaces   *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
-	Volumes             *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
+	FriendlyName        string                             `json:"FriendlyName,omitempty"`
+	ImageID             string                             `json:"ImageId,omitempty"`
+	IsClusterAutoscaled bool                               `json:"IsClusterAutoscaled,omitempty"`
+	IsEbsOptimized      bool                               `json:"IsEbsOptimized"`
+	IsMinion            bool                               `json:"IsMinion"`
+	KeyPairType         int                                `json:"KeyPairType,omitempty"`
+	MaxSize             int                                `json:"MaxSize"`
+	MaxSpotPrice        string                             `json:"SpotPrice,omitempty"`
 	MetaData            *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
-	Tags                *[]DuploKeyStringValue             `json:"Tags,omitempty"`
 	MinionTags          *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
+	MinSize             int                                `json:"MinSize"`
+	NetworkInterfaces   *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
+	Status              string                             `json:"Status,omitempty"`
+	Tags                *[]DuploKeyStringValue             `json:"Tags,omitempty"`
+	TenantId            string                             `json:"TenantId,omitempty"`
 	UseLaunchTemplate   bool                               `json:"UseLaunchTemplate"`
 	UseSpotInstances    bool                               `json:"UseSpotInstances,omitempty"`
-	MaxSpotPrice        string                             `json:"SpotPrice,omitempty"`
+	Volumes             *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
+	Zone                int                                `json:"Zone"`
 }
 
 type DuploAsgProfileDeleteReq struct {

@@ -1,8 +1,8 @@
-
 ## 2024-02-06
 
 ### Fixed
 - Fixed an issue where changes to allocation tags in the ASG profile were not being detected and updated correctly.
+- assigns `CustomDataTags` to AsgProfile's minion_tags fields as this field receives the tag edits in the beckend
 
 ### Added
 - Introduced comprehensive unit tests for the `getAPI`, `putAPI`, and `deleteAPI` methods in the DuploCloud SDK client, enhancing the test coverage for various scenarios including successful API calls, error handling, and response parsing.
