@@ -1,3 +1,9 @@
+## 2024-02-08
+
+### Added
+- Added support for `port_name` attribute in Kubernetes ingress rules, allowing service port specification by name.
+- Made `port` attribute optional and enforced port range validation for ingress rules.
+
 ## 2024-02-06
 
 ### Fixed
