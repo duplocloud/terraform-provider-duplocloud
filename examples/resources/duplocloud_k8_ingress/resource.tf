@@ -1,10 +1,16 @@
-locals {
-  tenant_id = "72916492-b69f-492e-8f64-957ad211aca1"
-  cert_arn  = "arn:aws:acm:us-west-2:708951311304:certificate/829b32dc-d106-4229-a96d-123456789"
+resource "duplocloud_tenant" "myapp" {
+  account_name = "myapp"
+  plan_id      = "default"
 }
 
+// Example 1:
+//
+// - Two services in duplocloud (`echo` and `echo2`)
+// - Both of the above services configured as kubernetes services of type `NodePort`
+// - Both of the services exposed as a kubernetes ingress
+//
 resource "duplocloud_duplo_service" "echo" {
-  tenant_id                            = local.tenant_id
+  tenant_id                            = duplocloud_tenant.myapp.tenant_id
   name                                 = "echo"
   replicas                             = 1
   lb_synced_deployment                 = false
@@ -36,7 +42,7 @@ resource "duplocloud_duplo_service_lbconfigs" "echo_config" {
 }
 
 resource "duplocloud_duplo_service" "echo2" {
-  tenant_id                            = local.tenant_id
+  tenant_id                            = duplocloud_tenant.myapp.tenant_id
   name                                 = "echo2"
   replicas                             = 1
   lb_synced_deployment                 = false
@@ -75,13 +81,13 @@ resource "time_sleep" "wait_45_seconds" {
 }
 
 resource "duplocloud_k8_ingress" "ingress" {
-  tenant_id          = local.tenant_id
+  tenant_id          = duplocloud_tenant.myapp.tenant_id
   name               = "external-echo"
   ingress_class_name = "alb"
   lbconfig {
     is_internal     = false
     dns_prefix      = "external-echo"
-    certificate_arn = local.cert_arn
+    certificate_arn = "put your certificate ARN here"
     https_port      = 443
   }
 
@@ -99,4 +105,43 @@ resource "duplocloud_k8_ingress" "ingress" {
   }
 
   depends_on = [time_sleep.wait_45_seconds]
+}
+
+
+
+// Example 2:
+//
+// - Adding a custom redirect to an ingress resource
+//
+resource "duplocloud_k8_ingress" "ingress" {
+  tenant_id          = duplocloud_tenant.myapp.tenant_id
+  name               = "joedemo"
+  ingress_class_name = "alb"
+
+  annotations = {
+    "alb.ingress.kubernetes.io/actions.redirect-to-new-domain" = jsonencode({
+      Type = "redirect",
+      RedirectConfig = {
+        Host       = "my.example.com",
+        Path       = "/#{path}",
+        Port       = "#{port}",
+        Protocol   = "HTTPS",
+        Query      = "#{query}",
+        StatusCode = "HTTP_301"
+      }
+    })
+  }
+
+  lbconfig {
+    is_internal = false
+    dns_prefix  = "joedemo-ingress"
+    http_port   = 80
+  }
+
+  rule {
+    path         = "/"
+    path_type    = "Prefix"
+    service_name = "redirect-to-new-domain"
+    port_name    = "use-annotation"
+  }
 }
