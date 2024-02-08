@@ -115,10 +115,12 @@ func awsEFSLifecyclePolicy() map[string]*schema.Schema {
 		"tenant_id": {
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"file_system_id": {
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"lifecycle_policy": {
 			Type:     schema.TypeList,
