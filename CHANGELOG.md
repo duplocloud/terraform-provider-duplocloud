@@ -1,3 +1,9 @@
+## 2024-02-08
+
+### Added
+- Added support for configuring the delay seconds (`delay_seconds`) for AWS SQS queues, allowing messages to be delayed up to 900 seconds.
+- Updated documentation and examples to include the new `delay_seconds` attribute.
+
 ## 2024-02-06
 
 ### Fixed
