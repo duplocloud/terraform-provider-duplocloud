@@ -42,6 +42,30 @@ func awsEFSFileSystem() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"lifecycle_policy": {
+			Type:     schema.TypeList,
+			Optional: true,
+			MaxItems: 3,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"transition_to_archive": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						ValidateFunc: validation.StringInSlice(TransitionToArchiveRules_Values(), false),
+					},
+					"transition_to_ia": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						ValidateFunc: validation.StringInSlice(TransitionToIARules_Values(), false),
+					},
+					"transition_to_primary_storage_class": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						ValidateFunc: validation.StringInSlice(TransitionToPrimaryStorageClassRules_Values(), false),
+					},
+				},
+			},
+		},
 		"file_system_arn": {
 			Description: "Amazon Resource Name of the file system.",
 			Type:        schema.TypeString,
@@ -67,7 +91,6 @@ func awsEFSFileSystem() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Computed:    true,
 		},
-
 		"performance_mode": {
 			Description: "The file system performance mode. Can be either `generalPurpose` or `maxIO`.",
 			Type:        schema.TypeString,
@@ -197,16 +220,30 @@ func resourceAwsEFSCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		}
 	}
 
+	if v, ok := d.GetOk("lifecycle_policy"); ok {
+		input := &duplosdk.PutLifecycleConfigurationInput{
+			FileSystemId:      resp.FileSystemID,
+			LifecyclePolicies: expandFileSystemLifecyclePolicies(v.([]interface{})),
+		}
+
+		_, err := c.DuploAwsLifecyclePolicyUpdate(tenantID, input)
+
+		if err != nil {
+			return diag.Errorf("putting EFS file system (%s) lifecycle configuration: %s", d.Id(), err)
+		}
+	}
+
 	diags = resourceAwsEFSRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsEFSCreate(%s, %s): end", tenantID, name)
 	return diags
 }
 
 func resourceAwsEFSUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	tenantID := d.Get("tenant_id").(string)
+	efsId := d.Get("file_system_id").(string)
+	c := m.(*duplosdk.Client)
+
 	if d.HasChanges("provisioned_throughput_in_mibps", "throughput_mode") {
-		tenantID := d.Get("tenant_id").(string)
-		efsId := d.Get("file_system_id").(string)
-		c := m.(*duplosdk.Client)
 
 		throughputMode := d.Get("throughput_mode").(string)
 
@@ -233,6 +270,23 @@ func resourceAwsEFSUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 			if err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+
+	if d.HasChange("lifecycle_policy") {
+		input := &duplosdk.PutLifecycleConfigurationInput{
+			FileSystemId:      d.Id(),
+			LifecyclePolicies: expandFileSystemLifecyclePolicies(d.Get("lifecycle_policy").([]interface{})),
+		}
+
+		if input.LifecyclePolicies == nil {
+			input.LifecyclePolicies = []*duplosdk.LifecyclePolicy{}
+		}
+
+		_, err := c.DuploAwsLifecyclePolicyUpdate(tenantID, input)
+
+		if err != nil {
+			return diag.Errorf("putting EFS file system (%s) lifecycle configuration: %s", d.Id(), err)
 		}
 	}
 
