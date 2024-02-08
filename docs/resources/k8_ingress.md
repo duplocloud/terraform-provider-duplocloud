@@ -160,12 +160,13 @@ Required:
 
 - `path` (String) Specify the path (for e.g. /api /v1/api/) to do a path base routing. If host is specified then both path and host should be match for the incoming request.
 - `path_type` (String) Type of the path to be used.
-- `port` (Number) Port from the kubernetes service that ingress will use as backend port to serve the requests.
 - `service_name` (String) Name of the kubernetes service which Ingress will use as backend to serve the request.
 
 Optional:
 
 - `host` (String) If a host is provided (for e.g. example, foo.bar.com), the rules apply to that host.
+- `port` (Number) Port from the kubernetes service that ingress will use as backend port to serve the requests.
+- `port_name` (String) Port name from the kubernetes service that ingress will use as backend port to serve the requests.
 
 
 <a id="nestedblock--timeouts"></a>

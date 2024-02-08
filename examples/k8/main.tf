@@ -106,7 +106,7 @@ provider "duplocloud" {
 #   secret_data = file("customer-api-secrets.json")
 # }
 
-variable "tenant_id" { }
+variable "tenant_id" {}
 
 resource "duplocloud_k8_ingress" "ingress" {
   tenant_id          = var.tenant_id
@@ -115,7 +115,7 @@ resource "duplocloud_k8_ingress" "ingress" {
 
   annotations = {
     "alb.ingress.kubernetes.io/actions.redirect-to-new-domain" = jsonencode({
-      Type           = "redirect",
+      Type = "redirect",
       RedirectConfig = {
         Host       = "my.example.com",
         Path       = "/#{path}",
@@ -130,7 +130,7 @@ resource "duplocloud_k8_ingress" "ingress" {
   lbconfig {
     is_internal = false
     dns_prefix  = "joedemo-ingress"
-    http_port = 80
+    http_port   = 80
   }
 
   rule {
