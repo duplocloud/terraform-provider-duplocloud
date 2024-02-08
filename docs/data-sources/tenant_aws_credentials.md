@@ -27,5 +27,3 @@ description: |-
 - `region` (String)
 - `secret_access_key` (String, Sensitive)
 - `session_token` (String, Sensitive)
-
-

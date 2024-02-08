@@ -132,5 +132,3 @@ Read-Only:
 - `source_address_prefix` (String)
 - `source_port_range` (String)
 - `source_rule_type` (Number)
-
-

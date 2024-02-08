@@ -34,5 +34,3 @@ Read-Only:
 - `name` (String)
 - `status` (String)
 - `tenant_id` (String)
-
-

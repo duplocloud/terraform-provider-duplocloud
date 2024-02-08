@@ -57,5 +57,3 @@ Read-Only:
 - `order` (Number)
 - `target_group_arn` (String)
 - `type` (String)
-
-

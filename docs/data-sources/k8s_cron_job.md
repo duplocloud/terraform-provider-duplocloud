@@ -33,6 +33,10 @@ output "metadata" {
 - `metadata` (Block List, Min: 1, Max: 1) Standard cronjob's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata (see [below for nested schema](#nestedblock--metadata))
 - `tenant_id` (String) The GUID of the tenant that the job will be created in.
 
+### Optional
+
+- `is_any_host_allowed` (Boolean) Defaults to `false`.
+
 ### Read-Only
 
 - `id` (String) The ID of this resource.
@@ -2042,5 +2046,3 @@ Read-Only:
 
 - `fs_type` (String)
 - `volume_path` (String)
-
-

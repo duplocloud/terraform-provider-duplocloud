@@ -39,5 +39,3 @@ Read-Only:
 - `region` (String)
 - `status` (String)
 - `subnet_cidr` (Number)
-
-

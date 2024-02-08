@@ -40,5 +40,3 @@ Read-Only:
 - `latest` (Boolean)
 - `name` (String)
 - `revision` (Number)
-
-

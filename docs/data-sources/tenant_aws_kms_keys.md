@@ -36,5 +36,3 @@ Read-Only:
 - `key_arn` (String)
 - `key_id` (String)
 - `key_name` (String)
-
-

@@ -121,10 +121,16 @@ func k8sIngressSchema() map[string]*schema.Schema {
 						Type:        schema.TypeString,
 						Required:    true,
 					},
+					"port_name": {
+						Description: "Port name from the kubernetes service that ingress will use as backend port to serve the requests.",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
 					"port": {
-						Description: "Port from the kubernetes service that ingress will use as backend port to serve the requests.",
-						Type:        schema.TypeInt,
-						Required:    true,
+						Description:  "Port from the kubernetes service that ingress will use as backend port to serve the requests.",
+						ValidateFunc: validation.IntBetween(1, 65535),
+						Type:         schema.TypeInt,
+						Optional:     true,
 					},
 				},
 			},
@@ -335,14 +341,22 @@ func flattenK8sIngressRule(duplo duplosdk.DuploK8sIngressRule) map[string]interf
 	if len(duplo.ServiceName) > 0 {
 		m["service_name"] = duplo.ServiceName
 	}
+	if len(duplo.PortName) > 0 {
+		m["port_name"] = duplo.PortName
+	}
 	return m
 }
 
 func expandK8sIngress(d *schema.ResourceData) (*duplosdk.DuploK8sIngress, error) {
+	rules, err := expandK8sIngressRules(d.Get("rule").([]interface{}))
+	if err != nil {
+		return nil, err
+	}
+
 	duplo := duplosdk.DuploK8sIngress{
 		Name:             d.Get("name").(string),
 		IngressClassName: d.Get("ingress_class_name").(string),
-		Rules:            expandK8sIngressRules(d.Get("rule").([]interface{})),
+		Rules:            rules,
 	}
 
 	if v, ok := d.GetOk("lbconfig"); ok && !isInterfaceNil(v) && len(v.([]interface{})) == 1 {
@@ -388,20 +402,31 @@ func expandK8sIngressLBConfig(m map[string]interface{}) *duplosdk.DuploK8sLbConf
 	return dcb
 }
 
-func expandK8sIngressRules(lst []interface{}) *[]duplosdk.DuploK8sIngressRule {
+func expandK8sIngressRules(lst []interface{}) (*[]duplosdk.DuploK8sIngressRule, error) {
 	rules := make([]duplosdk.DuploK8sIngressRule, 0, len(lst))
 	for _, v := range lst {
-		rules = append(rules, expandK8sIngressRule(v.(map[string]interface{})))
+		rule, err := expandK8sIngressRule(v.(map[string]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, rule)
 	}
-	return &rules
+	return &rules, nil
 }
 
-func expandK8sIngressRule(m map[string]interface{}) duplosdk.DuploK8sIngressRule {
-
+func expandK8sIngressRule(m map[string]interface{}) (duplosdk.DuploK8sIngressRule, error) {
 	r := duplosdk.DuploK8sIngressRule{
 		Path:     m["path"].(string),
 		PathType: m["path_type"].(string),
-		Port:     m["port"].(int),
+	}
+	if v, ok := m["port"]; ok {
+		r.Port = v.(int)
+		if _, ok := m["port_name"]; ok && r.Port > 0 {
+			return r, fmt.Errorf("port and port_name are mutually exclusive")
+		}
+	}
+	if v, ok := m["port_name"]; ok {
+		r.PortName = v.(string)
 	}
 	if v, ok := m["host"]; ok {
 		r.Host = v.(string)
@@ -409,5 +434,5 @@ func expandK8sIngressRule(m map[string]interface{}) duplosdk.DuploK8sIngressRule
 	if v, ok := m["service_name"]; ok {
 		r.ServiceName = v.(string)
 	}
-	return r
+	return r, nil
 }

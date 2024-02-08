@@ -41,6 +41,7 @@ resource "duplocloud_aws_efs_file_system" "efs" {
 - `backup` (Boolean) Specifies whether automatic backups are enabled on the file system that you are creating.
 - `creation_token` (String) A unique name (a maximum of 64 characters are allowed) used as reference when creating the Elastic File System to ensure idempotent file system creation.
 - `encrypted` (Boolean) If true, the disk will be encrypted.
+- `lifecycle_policy` (Block List, Max: 3) (see [below for nested schema](#nestedblock--lifecycle_policy))
 - `performance_mode` (String) The file system performance mode. Can be either `generalPurpose` or `maxIO`. Defaults to `generalPurpose`.
 - `provisioned_throughput_in_mibps` (Number) The throughput, measured in MiB/s, that you want to provision for the file system. Only applicable with `throughput_mode` set to `provisioned`.
 - `tag` (Block List) (see [below for nested schema](#nestedblock--tag))
@@ -57,6 +58,16 @@ resource "duplocloud_aws_efs_file_system" "efs" {
 - `number_of_mount_targets` (Number) The current number of mount targets that the file system has.
 - `owner_id` (String) The AWS account that created the file system.
 - `size_in_bytes` (Number) The latest known metered size (in bytes) of data stored in the file system.
+
+<a id="nestedblock--lifecycle_policy"></a>
+### Nested Schema for `lifecycle_policy`
+
+Optional:
+
+- `transition_to_archive` (String)
+- `transition_to_ia` (String)
+- `transition_to_primary_storage_class` (String)
+
 
 <a id="nestedblock--tag"></a>
 ### Nested Schema for `tag`

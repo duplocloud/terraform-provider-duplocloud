@@ -29,5 +29,3 @@ description: |-
 - `kms_encryption_key` (String)
 - `registry_id` (String)
 - `repository_url` (String)
-
-

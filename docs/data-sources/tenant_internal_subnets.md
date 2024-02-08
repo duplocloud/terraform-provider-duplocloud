@@ -23,5 +23,3 @@ The `duplocloud_tenant_internal_subnets` data source retrieves a list of tenant'
 
 - `id` (String) The ID of this resource.
 - `subnet_ids` (List of String) The list of subnet IDs.
-
-
