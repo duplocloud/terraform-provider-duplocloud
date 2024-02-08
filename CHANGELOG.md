@@ -1,3 +1,10 @@
+## 2024-02-08
+
+### Added
+- Introduced a new resource `duplocloud_aws_efs_lifecycle_policy` for managing AWS EFS lifecycle policies.
+- Added `lifecycle_policy` attribute to `duplocloud_aws_efs_file_system` resource to support lifecycle policy configurations.
+- Implemented CRUD operations for EFS lifecycle policy management in both Terraform resource and Duplo SDK.
+
 ## 2024-02-06
 
 ### Fixed
