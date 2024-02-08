@@ -217,9 +217,9 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	needsUpdate := needsResourceAwsASGUpdate(d)
+	rq := expandAsgProfile(d)
 	if needsUpdate {
 		// Build a request.
-		rq := expandAsgProfile(d)
 		log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): start", rq.TenantId, rq.FriendlyName)
 
 		// Update the ASG Prfoile in Duplo.
@@ -245,6 +245,20 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 			if err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+
+	needsAllocationTagsUpdate, newTags := checkAllocationTagsDiff(d)
+	if needsAllocationTagsUpdate {
+		updateRequest := duplosdk.CustomDataUpdate{
+			ComponentId:   d.Get("fullname").(string),
+			ComponentType: duplosdk.ASG,
+			Key:           "AllocationTags",
+			Value:         newTags,
+		}
+		err := c.TenantUpdateCustomData(rq.TenantId, updateRequest)
+		if err != nil {
+			return diag.Errorf("Error updating ASG profile '%s': %s", rq.FriendlyName, err)
 		}
 	}
 
@@ -355,7 +369,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("keypair_type", duplo.KeyPairType)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
+	d.Set("minion_tags", keyValueToState("minion_tags", duplo.CustomDataTags))
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
@@ -459,4 +473,34 @@ func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 		d.HasChange("min_instance_count") ||
 		d.HasChange("max_instance_count") ||
 		d.HasChange("friendly_name")
+}
+
+func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags string) {
+	oldRevision, newRevision := d.GetChange("minion_tags")
+	oldTags := oldRevision.([]interface{})
+	newTags := newRevision.([]interface{})
+
+	var oldAllocationTagValue, newAllocationTagValue string
+
+	for _, tag := range oldTags {
+		tagMap := tag.(map[string]interface{})
+		if tagMap["key"].(string) == "AllocationTags" {
+			oldAllocationTagValue = tagMap["value"].(string)
+			break
+		}
+	}
+
+	for _, tag := range newTags {
+		tagMap := tag.(map[string]interface{})
+		if tagMap["key"].(string) == "AllocationTags" {
+			newAllocationTagValue = tagMap["value"].(string)
+			break
+		}
+	}
+
+	if oldAllocationTagValue != newAllocationTagValue {
+		return true, newAllocationTagValue
+	}
+
+	return false, ""
 }

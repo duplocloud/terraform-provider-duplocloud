@@ -1,3 +1,11 @@
+## 2024-02-06
+
+### Fixed
+- Fixed an issue where changes to allocation tags in the ASG profile were not being detected and updated correctly.
+- assigns `CustomDataTags` to AsgProfile's minion_tags fields as this field receives the tag edits in the beckend
+
+### Added
+- Introduced comprehensive unit tests for the `getAPI`, `putAPI`, and `deleteAPI` methods in the DuploCloud SDK client, enhancing the test coverage for various scenarios including successful API calls, error handling, and response parsing.
 
 ## 2024-02-03
 
@@ -8,8 +16,6 @@
 
 ### Added
 - Introduced a new optional field `is_any_host_allowed` to the CronJob and Job resources, enhancing the control over host selection.
-
-
 
 ## 2024-01-29
 

@@ -84,7 +84,7 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		//"status":              duplo.Status,
 		"metadata":           keyValueToState("metadata", duplo.MetaData),
 		"tags":               keyValueToState("tags", duplo.Tags),
-		"minion_tags":        keyValueToState("minion_tags", duplo.MinionTags),
+		"minion_tags":        keyValueToState("minion_tags", duplo.CustomDataTags),
 		"volumes":            flattenNativeHostVolumes(duplo.Volumes),
 		"network_interfaces": flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 	}
