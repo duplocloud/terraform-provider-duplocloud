@@ -33,6 +33,7 @@ type DuploK8sIngressRule struct {
 	ServiceName string `json:"serviceName,omitempty"`
 	Host        string `json:"host,omitempty"`
 	Port        int    `json:"port,omitempty"`
+	PortName    string `json:"portName,omitempty"`
 }
 
 func (c *Client) DuploK8sIngressCreate(tenantID string, rq *DuploK8sIngress) ClientError {
