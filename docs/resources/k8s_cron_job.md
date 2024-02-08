@@ -51,6 +51,7 @@ resource "duplocloud_k8s_cron_job" "myapp" {
 
 ### Optional
 
+- `is_any_host_allowed` (Boolean) Defaults to `false`.
 - `spec` (Block List) Spec of the cron job owned by the cluster (see [below for nested schema](#nestedblock--spec))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
