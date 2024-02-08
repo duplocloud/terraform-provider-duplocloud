@@ -3,8 +3,6 @@
 ### Added
 - Added support for `port_name` attribute in Kubernetes ingress rules, allowing service port specification by name.
 - Made `port` attribute optional and enforced port range validation for ingress rules.
-- Updated Go code to handle ingress rules with either `port` or `port_name` specified.
-- Provided an updated Terraform example demonstrating the use of the new `port_name` attribute in a Kubernetes ingress resource.
 
 ## 2024-02-06
 
