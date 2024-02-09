@@ -1,13 +1,8 @@
 ## 2024-02-09
 
-### Fixed
-- Fixed a regression in `duplocloud_k8_ingress` validation where `port` and `port_name` were not correctly validated as mutually exclusive.
-
-### Updated
+## Updated
 - Updated ECS task definition examples and documentation to use the correct `PortMappings` field instead of `ContainerMappings`.
 - Aligned the field within the port mappings from `ContainerPorts` to `ContainerPort` to match AWS supported configuration.
-
-## 2024-02-09
 
 ### Fixed
 - Fixed a regression in `duplocloud_k8_ingress` validation where `port` and `port_name` were not correctly validated as mutually exclusive.
