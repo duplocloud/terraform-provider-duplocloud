@@ -1,8 +1,12 @@
 ## 2024-02-09
 
 ### Fixed
+<<<<<<< HEAD
 - Resolved nil pointer and index out of bound exceptions in `resource_duplo_aws_elasticsearch.go` by properly initializing `ColdStorageOptions` and `WarmType` only if applicable for `aws_elasticsearch` resource.
 - Updated `DuploElasticSearchDomainClusterConfig` struct to use pointers for `WarmType` and `ColdStorageOptions` to prevent nil pointer dereference issues for `aws_eleasticsearch` resource.
+=======
+- Fixed a regression in `duplocloud_k8_ingress` validation where `port` and `port_name` were not correctly validated as mutually exclusive.
+>>>>>>> develop
 
 ## 2024-02-08
 
@@ -12,6 +16,11 @@
 - Implemented CRUD operations for EFS lifecycle policy management in both Terraform resource and Duplo SDK.
 - Added support for `port_name` attribute in `duplocloud_k8_ingress` allowing service port specification by name.
 - Made `port` in `duplocloud_k8_ingress` attribute optional and enforced port range validation for ingress rules.
+- Added the `delay_seconds` attribute to the `aws_sqs_queue` resource, enabling the postponing of delivery for new messages in seconds.
+
+### Update 
+- Updated documentation for `aws_sqs_queue` for new attribute `delay_seconds`.
+- Updated example for `aws_sqs_queue` resource added attribute `delay_seconds` to resource type `duplocloud_aws_sqs_queue`.
 
 ## 2024-02-06
 
