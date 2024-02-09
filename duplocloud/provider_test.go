@@ -33,10 +33,11 @@ func testAccProvider_ConfigureContextFunc(d *schema.Provider) schema.ConfigureCo
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		c, diags := orig(ctx, d)
 
-		client := c.(*duplosdk.Client)
-		client.HostURL = srv.URL
+		if client, ok := c.(*duplosdk.Client); ok {
+			client.HostURL = srv.URL
+		}
 
-		return client, diags
+		return c, diags
 	}
 }
 
