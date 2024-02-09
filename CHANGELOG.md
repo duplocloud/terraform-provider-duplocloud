@@ -1,5 +1,9 @@
 ## 2024-02-09
 
+## Updated
+- Updated `duplocloud_ecs_task_definition` examples and documentation to use the correct `PortMappings` property instead of `ContainerMappings` in `container_definitions` field.
+- Fixed property typos in `duplocloud_ecs_task_definition`'s `container_definitions` example and docs
+
 ### Added
 - Introduced a new attribute `prepend_user_data` to the `duplocloud_aws_host` and `duplocloud_asg_profile` resources, allowing for prepending user data on AWS hosts.
 - Enhanced the `duplocloud_aws_host` and `duplocloud_asg_profile` resources to avoid triggering an unnecessary "force replacement" on hosts and ASGs that prepend Duplo's user data.
