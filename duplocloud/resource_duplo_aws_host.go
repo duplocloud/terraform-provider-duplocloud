@@ -85,7 +85,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			ForceNew:    true, // relaunch instance
-			Computed:    true,
+			Default:     false,
 		},
 		"agent_platform": {
 			Description: "The numeric ID of the container agent pool that this host is added to.",
@@ -388,11 +388,6 @@ func initUserDataOptions(d *schema.ResourceData) {
 	if userData, ok := d.GetOk("base64_user_data"); ok {
 		d.Set("initial_base64_user_data", userData)
 	}
-
-	// Set default prepend_user_data value here to avoid a force replacement due to DUPLO-14926
-	if _, ok := d.GetOk("prepend_user_data"); !ok {
-		d.Set("prepend_user_data", true) // default true
-	}
 }
 
 func setNetworkInterfaces(rq *duplosdk.DuploNativeHost, c *duplosdk.Client) diag.Diagnostics {
@@ -622,7 +617,6 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("is_minion", duplo.IsMinion)
 	d.Set("image_id", duplo.ImageID)
 	d.Set("base64_user_data", duplo.Base64UserData)
-	d.Set("prepend_user_data", duplo.PrependUserData)
 	d.Set("agent_platform", duplo.AgentPlatform)
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
 	d.Set("cloud", duplo.Cloud)
@@ -633,6 +627,7 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("private_ip_address", duplo.PrivateIPAddress)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
+	// Ignore the value in the response for duplo.PrependUserData
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
