@@ -630,7 +630,7 @@ func awsElasticSearchDomainClusterConfigToState(duplo *duplosdk.DuploElasticSear
 		clusterConfig["warm_enabled"] = false
 	}
 
-	if duplo.ColdStorageOptions.Enabled {
+	if duplo.ColdStorageOptions != nil && duplo.ColdStorageOptions.Enabled {
 		cold_storage_options := make(map[string]bool)
 		cold_storage_options["enabled"] = duplo.ColdStorageOptions.Enabled
 		clusterConfig["cold_storage_options"] = cold_storage_options
@@ -651,7 +651,6 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 		duplo.InstanceType.Value = "t2.small.elasticsearch"
 	}
 	if v, ok := m["cold_storage_options"]; ok {
-		duplo.ColdStorageOptions = nil
 		obj := v.([]interface{})
 		if len(obj) > 0 {
 			duplo.ColdStorageOptions.Enabled = obj[0].(map[string]interface{})["enabled"].(bool)
