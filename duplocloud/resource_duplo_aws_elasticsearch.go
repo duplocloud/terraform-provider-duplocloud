@@ -658,7 +658,6 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 			if value {
 				duplo.ColdStorageOptions.Enabled = value
 			}
-
 		}
 
 	}
