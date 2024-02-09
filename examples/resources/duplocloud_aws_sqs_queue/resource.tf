@@ -10,4 +10,5 @@ resource "duplocloud_aws_sqs_queue" "sqs_queue" {
   message_retention_seconds   = 345600
   visibility_timeout_seconds  = 30
   content_based_deduplication = true
+  delay_seconds               = 10
 }

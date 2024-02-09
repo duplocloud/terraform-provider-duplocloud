@@ -6,6 +6,11 @@
 - Implemented CRUD operations for EFS lifecycle policy management in both Terraform resource and Duplo SDK.
 - Added support for `port_name` attribute in `duplocloud_k8_ingress` allowing service port specification by name.
 - Made `port` in `duplocloud_k8_ingress` attribute optional and enforced port range validation for ingress rules.
+- Added the `delay_seconds` attribute to the `aws_sqs_queue` resource, enabling the postponing of delivery for new messages in seconds.
+
+### Update 
+- Updated documentation for `aws_sqs_queue` for new attribute `delay_seconds`.
+- Updated example for `aws_sqs_queue` resource added attribute `delay_seconds` to resource type `duplocloud_aws_sqs_queue`.
 
 ## 2024-02-06
 

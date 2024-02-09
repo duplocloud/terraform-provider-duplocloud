@@ -88,6 +88,13 @@ func duploAwsSqsQueueSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"delay_seconds": {
+			Description:  "Postpone the delivery of new messages to consumers for a number of seconds seconds range [0-900]",
+			Type:         schema.TypeInt,
+			Computed:     true,
+			Optional:     true,
+			ValidateFunc: validation.IntBetween(0, 900),
+		},
 	}
 }
 
@@ -111,6 +118,7 @@ func resourceAwsSqsQueue() *schema.Resource {
 }
 
 func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+
 	id := d.Id()
 	tenantID, url, err := parseAwsSqsQueueIdParts(id)
 	if err != nil {
@@ -155,6 +163,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 	d.Set("content_based_deduplication", queue.ContentBasedDeduplication)
 	d.Set("message_retention_seconds", queue.MessageRetentionPeriod)
 	d.Set("visibility_timeout_seconds", queue.VisibilityTimeout)
+	d.Set("delay_seconds", queue.DelaySeconds)
 	if queue.QueueType == 1 {
 		if queue.DeduplicationScope == 0 {
 			d.Set("deduplication_scope", "queue")
@@ -178,7 +187,6 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceAwsSqsQueueCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
-
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
 	log.Printf("[TRACE] resourceAwsSqsQueueCreate(%s, %s): start", tenantID, name)
@@ -213,7 +221,8 @@ func resourceAwsSqsQueueCreate(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func resourceAwsSqsQueueUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	if d.HasChanges("message_retention_seconds", "visibility_timeout_seconds", "content_based_deduplication", "deduplication_scope", "fifo_throughput_limit") {
+
+	if d.HasChanges("message_retention_seconds", "visibility_timeout_seconds", "content_based_deduplication", "deduplication_scope", "fifo_throughput_limit", "delay_seconds") {
 		var err error
 
 		tenantID := d.Get("tenant_id").(string)
@@ -292,6 +301,9 @@ func expandAwsSqsQueue(d *schema.ResourceData) *duplosdk.DuploSQSQueue {
 	}
 	if v, ok := d.GetOk("visibility_timeout_seconds"); ok && v != nil {
 		req.VisibilityTimeout = d.Get("visibility_timeout_seconds").(int)
+	}
+	if v, ok := d.GetOk("delay_seconds"); ok && v != nil {
+		req.DelaySeconds = d.Get("delay_seconds").(int)
 	}
 	if v, ok := d.GetOk("deduplication_scope"); ok && v != nil {
 		if v.(string) == "messageGroup" {
