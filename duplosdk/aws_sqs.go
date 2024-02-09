@@ -17,6 +17,7 @@ type DuploSQSQueue struct {
 	DeduplicationScope        int    `json:"DeduplicationScope"`
 	FifoThroughputLimit       int    `json:"FifoThroughputLimit"`
 	ResourceType              int    `json:"ResourceType,omitempty"`
+	DelaySeconds              int    `json:"DelaySeconds,omitempty" validate:"required,gte=0,lte=900"`
 }
 
 type DuploSQSQueueResource struct {

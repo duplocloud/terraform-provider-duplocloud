@@ -4,7 +4,10 @@
 - Introduced a new attribute `prepend_user_data` to the `duplocloud_aws_host` and `duplocloud_asg_profile` resources, allowing for prepending user data on AWS hosts.
 - Enhanced the `duplocloud_aws_host` and `duplocloud_asg_profile` resources to avoid triggering an unnecessary "force replacement" on hosts and ASGs that prepend Duplo's user data.
 - Updated the data source types for `duplocloud_aws_host` and `duplocloud_asg_profile` resources to include the new `prepend_user_data` attribute.
-- Added the `customdiff` helper to the implementation.
+
+### Fixed
+- Fixed a bug that prevented the creation of `duplocloud_aws_elasticsearch` with both `warm_enabled` and `cold_storage_options` are set to `false`. Now, these options are properly handled, preventing errors during the creation of `duplocloud_aws_elasticsearch`  with these options disabled.
+- Fixed a regression in `duplocloud_k8_ingress` validation where `port` and `port_name` were not correctly validated as mutually exclusive.
 
 ## 2024-02-08
 
@@ -14,6 +17,11 @@
 - Implemented CRUD operations for EFS lifecycle policy management in both Terraform resource and Duplo SDK.
 - Added support for `port_name` attribute in `duplocloud_k8_ingress` allowing service port specification by name.
 - Made `port` in `duplocloud_k8_ingress` attribute optional and enforced port range validation for ingress rules.
+- Added the `delay_seconds` attribute to the `aws_sqs_queue` resource, enabling the postponing of delivery for new messages in seconds.
+
+### Update 
+- Updated documentation for `aws_sqs_queue` for new attribute `delay_seconds`.
+- Updated example for `aws_sqs_queue` resource added attribute `delay_seconds` to resource type `duplocloud_aws_sqs_queue`.
 
 ## 2024-02-06
 

@@ -1,32 +1,20 @@
-## Change description
+## Overview
 
-> Description here
+... (don't forget to put your clickup ticket ID in the title) ...
 
-## Type of change
-- [ ] Bug fix (fixes an issue)
-- [ ] New feature (adds functionality)
+## Summary of changes
 
-## Related issues
+This PR does the following:
 
-> Fix [#1]() 
+- ...
+- ...
 
-## Checklists
+## Testing performed
 
-### Development
+- [ ] Using unit tests
+- [ ] Manually, on my local system
+- [ ] Manually, on a remote test system
 
-- [ ] Pull requests may not be submitted to the *master* branch (use *develop* instead) - or they will be closed.
-- [ ] Lint rules pass locally
-- [ ] Application changes have been tested thoroughly
-- [ ] Automated tests covering modified code pass
+## Describe any breaking changes
 
-### Security
-
-- [ ] Security impact of change has been considered
-- [ ] Code follows company security practices and guidelines
-
-### Code review 
-
-- [ ] Pull request has a descriptive title and context useful to a reviewer.
-- [ ] "Ready for review" label attached and reviewers assigned
-- [ ] Changes have been reviewed by at least one other contributor
-- [ ] Pull request linked to task tracker where applicable
+- ...
