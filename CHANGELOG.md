@@ -1,7 +1,7 @@
 ## 2024-02-09
 
 ### Fixed
-- Fixed a regression in ingress validation where `port` and `port_name` were not correctly validated as mutually exclusive.
+- Fixed a regression in `duplocloud_k8_ingress` validation where `port` and `port_name` were not correctly validated as mutually exclusive.
 
 ## 2024-02-08
 
