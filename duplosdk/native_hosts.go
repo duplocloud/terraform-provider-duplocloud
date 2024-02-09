@@ -19,31 +19,32 @@ var AzureVmFeatures = map[string]string{
 
 // DuploNativeHost is a Duplo SDK object that represents an nativehost
 type DuploNativeHost struct {
-	InstanceID         string                             `json:"InstanceId"`
-	UserAccount        string                             `json:"UserAccount,omitempty"`
-	TenantID           string                             `json:"TenantId,omitempty"`
-	FriendlyName       string                             `json:"FriendlyName,omitempty"`
-	Capacity           string                             `json:"Capacity,omitempty"`
-	Zone               int                                `json:"Zone"`
-	IsMinion           bool                               `json:"IsMinion"`
-	ImageID            string                             `json:"ImageId,omitempty"`
-	Base64UserData     string                             `json:"Base64UserData,omitempty"`
-	AgentPlatform      int                                `json:"AgentPlatform"`
-	IsEbsOptimized     bool                               `json:"IsEbsOptimized"`
-	AllocatedPublicIP  bool                               `json:"AllocatedPublicIp,omitempty"`
-	Cloud              int                                `json:"Cloud"`
-	KeyPairType        int                                `json:"KeyPairType"`
-	EncryptDisk        bool                               `json:"EncryptDisk,omitempty"`
-	Status             string                             `json:"Status,omitempty"`
-	IdentityRole       string                             `json:"IdentityRole,omitempty"`
-	PrivateIPAddress   string                             `json:"PrivateIpAddress,omitempty"`
-	NetworkInterfaceId string                             `json:"NetworkInterfaceId,omitempty"`
-	NetworkInterfaces  *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
-	Volumes            *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
-	MetaData           *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
-	Tags               *[]DuploKeyStringValue             `json:"Tags,omitempty"`
-	TagsEx             *[]DuploKeyStringValue             `json:"TagsEx,omitempty"`
-	MinionTags         *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
+	InstanceID           string                             `json:"InstanceId"`
+	UserAccount          string                             `json:"UserAccount,omitempty"`
+	TenantID             string                             `json:"TenantId,omitempty"`
+	FriendlyName         string                             `json:"FriendlyName,omitempty"`
+	Capacity             string                             `json:"Capacity,omitempty"`
+	Zone                 int                                `json:"Zone"`
+	IsMinion             bool                               `json:"IsMinion"`
+	ImageID              string                             `json:"ImageId,omitempty"`
+	Base64UserData       string                             `json:"Base64UserData,omitempty"`
+	PrependDuploUserData bool                               `json:"IsUserDataCombined,omitempty"`
+	AgentPlatform        int                                `json:"AgentPlatform"`
+	IsEbsOptimized       bool                               `json:"IsEbsOptimized"`
+	AllocatedPublicIP    bool                               `json:"AllocatedPublicIp,omitempty"`
+	Cloud                int                                `json:"Cloud"`
+	KeyPairType          int                                `json:"KeyPairType"`
+	EncryptDisk          bool                               `json:"EncryptDisk,omitempty"`
+	Status               string                             `json:"Status,omitempty"`
+	IdentityRole         string                             `json:"IdentityRole,omitempty"`
+	PrivateIPAddress     string                             `json:"PrivateIpAddress,omitempty"`
+	NetworkInterfaceId   string                             `json:"NetworkInterfaceId,omitempty"`
+	NetworkInterfaces    *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
+	Volumes              *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
+	MetaData             *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
+	Tags                 *[]DuploKeyStringValue             `json:"Tags,omitempty"`
+	TagsEx               *[]DuploKeyStringValue             `json:"TagsEx,omitempty"`
+	MinionTags           *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
 }
 
 // DuploNativeHostNetworkInterface is a Duplo SDK object that represents a network interface of a native host

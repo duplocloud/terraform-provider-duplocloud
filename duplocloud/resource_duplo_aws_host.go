@@ -80,6 +80,13 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"prepend_duplo_user_data": {
+			Description: "Bootstrap the host with Duplo's user data, prepending it to custom user data if also provided.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
+			Computed:    true,
+		},
 		"agent_platform": {
 			Description: "The numeric ID of the container agent pool that this host is added to.",
 			Type:        schema.TypeInt,
@@ -326,10 +333,7 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
-	// Store initial base64_user_data if supplied
-	if userData, ok := d.GetOk("base64_user_data"); ok {
-		d.Set("initial_base64_user_data", userData)
-	}
+	initUserDataOptions(d)
 
 	// Build a request.
 	rq := expandNativeHost(d)
@@ -374,6 +378,19 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 	diags = resourceAwsHostRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsHostCreate(%s, %s): end", rq.TenantID, rq.FriendlyName)
 	return diags
+}
+
+func initUserDataOptions(d *schema.ResourceData) {
+	// Store initial base64_user_data if supplied
+	if userData, ok := d.GetOk("base64_user_data"); ok {
+		d.Set("initial_base64_user_data", userData)
+	}
+
+	// Set default prepend_duplo_user_data value based on agent_platform
+	if _, ok := d.GetOk("prepend_duplo_user_data"); !ok {
+		agentPlatform := d.Get("agent_platform").(int)
+		d.Set("prepend_duplo_user_data", agentPlatform == 7) // default true for EKS
+	}
 }
 
 func setNetworkInterfaces(rq *duplosdk.DuploNativeHost, c *duplosdk.Client) diag.Diagnostics {
@@ -502,26 +519,27 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 
 func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 	return &duplosdk.DuploNativeHost{
-		TenantID:          d.Get("tenant_id").(string),
-		InstanceID:        d.Get("instance_id").(string),
-		UserAccount:       d.Get("user_account").(string),
-		FriendlyName:      d.Get("friendly_name").(string),
-		Capacity:          d.Get("capacity").(string),
-		Zone:              d.Get("zone").(int),
-		IsMinion:          d.Get("is_minion").(bool),
-		ImageID:           d.Get("image_id").(string),
-		Base64UserData:    d.Get("base64_user_data").(string),
-		AgentPlatform:     d.Get("agent_platform").(int),
-		IsEbsOptimized:    d.Get("is_ebs_optimized").(bool),
-		AllocatedPublicIP: d.Get("allocated_public_ip").(bool),
-		Cloud:             d.Get("cloud").(int),
-		KeyPairType:       d.Get("keypair_type").(int),
-		EncryptDisk:       d.Get("encrypt_disk").(bool),
-		MetaData:          keyValueFromState("metadata", d),
-		Tags:              keyValueFromState("tags", d),
-		MinionTags:        keyValueFromState("minion_tags", d),
-		Volumes:           expandNativeHostVolumes("volume", d),
-		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
+		TenantID:             d.Get("tenant_id").(string),
+		InstanceID:           d.Get("instance_id").(string),
+		UserAccount:          d.Get("user_account").(string),
+		FriendlyName:         d.Get("friendly_name").(string),
+		Capacity:             d.Get("capacity").(string),
+		Zone:                 d.Get("zone").(int),
+		IsMinion:             d.Get("is_minion").(bool),
+		ImageID:              d.Get("image_id").(string),
+		Base64UserData:       d.Get("base64_user_data").(string),
+		PrependDuploUserData: d.Get("prepend_duplo_user_data").(bool),
+		AgentPlatform:        d.Get("agent_platform").(int),
+		IsEbsOptimized:       d.Get("is_ebs_optimized").(bool),
+		AllocatedPublicIP:    d.Get("allocated_public_ip").(bool),
+		Cloud:                d.Get("cloud").(int),
+		KeyPairType:          d.Get("keypair_type").(int),
+		EncryptDisk:          d.Get("encrypt_disk").(bool),
+		MetaData:             keyValueFromState("metadata", d),
+		Tags:                 keyValueFromState("tags", d),
+		MinionTags:           keyValueFromState("minion_tags", d),
+		Volumes:              expandNativeHostVolumes("volume", d),
+		NetworkInterfaces:    expandNativeHostNetworkInterfaces("network_interface", d),
 	}
 }
 
@@ -602,6 +620,7 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("is_minion", duplo.IsMinion)
 	d.Set("image_id", duplo.ImageID)
 	d.Set("base64_user_data", duplo.Base64UserData)
+	d.Set("prepend_duplo_user_data", duplo.PrependDuploUserData)
 	d.Set("agent_platform", duplo.AgentPlatform)
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
 	d.Set("cloud", duplo.Cloud)

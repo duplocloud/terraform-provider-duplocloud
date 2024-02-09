@@ -145,10 +145,7 @@ func resourceAwsASG() *schema.Resource {
 func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
-	// Store initial base64_user_data if supplied
-	if userData, ok := d.GetOk("base64_user_data"); ok {
-		d.Set("initial_base64_user_data", userData)
-	}
+	initUserDataOptions(d)
 
 	// Build a request.
 	rq := expandAsgProfile(d)
@@ -370,6 +367,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("is_minion", duplo.IsMinion)
 	d.Set("image_id", duplo.ImageID)
 	d.Set("base64_user_data", duplo.Base64UserData)
+	d.Set("prepend_duplo_user_data", duplo.PrependDuploUserData)
 	d.Set("agent_platform", duplo.AgentPlatform)
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
 	d.Set("is_cluster_autoscaled", duplo.IsClusterAutoscaled)
@@ -393,33 +391,34 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 
 func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 	return &duplosdk.DuploAsgProfile{
-		TenantId:            d.Get("tenant_id").(string),
-		AccountName:         d.Get("user_account").(string),
-		FriendlyName:        d.Get("friendly_name").(string),
-		Capacity:            d.Get("capacity").(string),
-		Zone:                d.Get("zone").(int),
-		IsMinion:            d.Get("is_minion").(bool),
-		ImageID:             d.Get("image_id").(string),
-		Base64UserData:      d.Get("base64_user_data").(string),
-		AgentPlatform:       d.Get("agent_platform").(int),
-		IsEbsOptimized:      d.Get("is_ebs_optimized").(bool),
-		IsClusterAutoscaled: d.Get("is_cluster_autoscaled").(bool),
-		CanScaleFromZero:    d.Get("can_scale_from_zero").(bool),
-		AllocatedPublicIP:   d.Get("allocated_public_ip").(bool),
-		Cloud:               d.Get("cloud").(int),
-		KeyPairType:         d.Get("keypair_type").(int),
-		EncryptDisk:         d.Get("encrypt_disk").(bool),
-		MetaData:            keyValueFromState("metadata", d),
-		Tags:                keyValueFromState("tags", d),
-		MinionTags:          keyValueFromState("minion_tags", d),
-		Volumes:             expandNativeHostVolumes("volume", d),
-		NetworkInterfaces:   expandNativeHostNetworkInterfaces("network_interface", d),
-		DesiredCapacity:     d.Get("instance_count").(int),
-		MinSize:             d.Get("min_instance_count").(int),
-		MaxSize:             d.Get("max_instance_count").(int),
-		UseLaunchTemplate:   d.Get("use_launch_template").(bool),
-		UseSpotInstances:    d.Get("use_spot_instances").(bool),
-		MaxSpotPrice:        d.Get("max_spot_price").(string),
+		TenantId:             d.Get("tenant_id").(string),
+		AccountName:          d.Get("user_account").(string),
+		FriendlyName:         d.Get("friendly_name").(string),
+		Capacity:             d.Get("capacity").(string),
+		Zone:                 d.Get("zone").(int),
+		IsMinion:             d.Get("is_minion").(bool),
+		ImageID:              d.Get("image_id").(string),
+		Base64UserData:       d.Get("base64_user_data").(string),
+		PrependDuploUserData: d.Get("prepend_duplo_user_data").(bool),
+		AgentPlatform:        d.Get("agent_platform").(int),
+		IsEbsOptimized:       d.Get("is_ebs_optimized").(bool),
+		IsClusterAutoscaled:  d.Get("is_cluster_autoscaled").(bool),
+		CanScaleFromZero:     d.Get("can_scale_from_zero").(bool),
+		AllocatedPublicIP:    d.Get("allocated_public_ip").(bool),
+		Cloud:                d.Get("cloud").(int),
+		KeyPairType:          d.Get("keypair_type").(int),
+		EncryptDisk:          d.Get("encrypt_disk").(bool),
+		MetaData:             keyValueFromState("metadata", d),
+		Tags:                 keyValueFromState("tags", d),
+		MinionTags:           keyValueFromState("minion_tags", d),
+		Volumes:              expandNativeHostVolumes("volume", d),
+		NetworkInterfaces:    expandNativeHostNetworkInterfaces("network_interface", d),
+		DesiredCapacity:      d.Get("instance_count").(int),
+		MinSize:              d.Get("min_instance_count").(int),
+		MaxSize:              d.Get("max_instance_count").(int),
+		UseLaunchTemplate:    d.Get("use_launch_template").(bool),
+		UseSpotInstances:     d.Get("use_spot_instances").(bool),
+		MaxSpotPrice:         d.Get("max_spot_price").(string),
 	}
 }
 
