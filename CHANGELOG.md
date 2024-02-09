@@ -1,8 +1,8 @@
 ## 2024-02-09
 
 ## Updated
-- Updated ECS task definition examples and documentation to use the correct `PortMappings` field instead of `ContainerMappings`.
-- Aligned the field within the port mappings from `ContainerPorts` to `ContainerPort` to match AWS supported configuration.
+- Updated `duplocloud_ecs_task_definition` examples and documentation to use the correct `PortMappings` property instead of `ContainerMappings` in `container_definitions` field.
+- Fixed property typos in `duplocloud_ecs_task_definition`'s `container_definitions` example and docs
 
 ### Fixed
 - Fixed a regression in `duplocloud_k8_ingress` validation where `port` and `port_name` were not correctly validated as mutually exclusive.
