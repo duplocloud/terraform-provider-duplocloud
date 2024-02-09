@@ -75,6 +75,7 @@ func flattenNativeHost(duplo *duplosdk.DuploNativeHost) map[string]interface{} {
 		"is_minion":           duplo.IsMinion,
 		"image_id":            duplo.ImageID,
 		"base64_user_data":    duplo.Base64UserData,
+		"prepend_user_data":   duplo.PrependUserData,
 		"agent_platform":      duplo.AgentPlatform,
 		"is_ebs_optimized":    duplo.IsEbsOptimized,
 		"allocated_public_ip": duplo.AllocatedPublicIP,
