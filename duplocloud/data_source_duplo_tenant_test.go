@@ -26,7 +26,7 @@ func TestAccDatasource_duplocloud_tenant_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.duplocloud_tenant."+rName, "id", Tenant_testacc1a),
 					resource.TestCheckResourceAttr("data.duplocloud_tenant."+rName, "plan_id", "testacc1"),
-					resource.TestCheckResourceAttr("data.duplocloud_tenant."+rName, "name", "testacc1"),
+					resource.TestCheckResourceAttr("data.duplocloud_tenant."+rName, "name", "testacc1a"),
 				),
 			},
 		},
