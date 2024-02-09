@@ -72,7 +72,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `min_instance_count` (Number) The minimum size of the Auto Scaling Group.
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
-- `prepend_user_data` (Boolean) Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided.
+- `prepend_user_data` (Boolean) Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided. Defaults to `false`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `use_launch_template` (Boolean) Whether or not to use a launch template.
