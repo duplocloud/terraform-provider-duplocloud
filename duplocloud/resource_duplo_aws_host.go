@@ -258,7 +258,10 @@ func diffUserData(ctx context.Context, diff *schema.ResourceDiff, m interface{})
 		log.Printf("[DEBUG] diffUserData initial: %s, new: %s)", initialUserData, newUserData)
 		if newUserData == initialUserData {
 			// Suppress diffs caused by prepended data alone
-			diff.Clear("base64_user_data")
+			err := diff.Clear("base64_user_data")
+			if err != nil {
+				return fmt.Errorf("[Error] Error clearing diff for base64_user_data: %s", err)
+			}
 		}
 	}
 
