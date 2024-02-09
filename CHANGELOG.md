@@ -1,6 +1,11 @@
 ## 2024-02-08
 
 ### Added
+- Introduced a new resource `duplocloud_aws_efs_lifecycle_policy` for managing AWS EFS lifecycle policies.
+- Added `lifecycle_policy` attribute to `duplocloud_aws_efs_file_system` resource to support lifecycle policy configurations.
+- Implemented CRUD operations for EFS lifecycle policy management in both Terraform resource and Duplo SDK.
+- Added support for `port_name` attribute in `duplocloud_k8_ingress` allowing service port specification by name.
+- Made `port` in `duplocloud_k8_ingress` attribute optional and enforced port range validation for ingress rules.
 - Added the `delay_seconds` attribute to the `aws_sqs_queue` resource, enabling the postponing of delivery for new messages in seconds.
 
 ### Update 
