@@ -25,6 +25,7 @@ resource "duplocloud_aws_sqs_queue" "sqs_queue" {
   message_retention_seconds   = 345600
   visibility_timeout_seconds  = 30
   content_based_deduplication = true
+  delay_seconds               = 10
 }
 ```
 
@@ -40,6 +41,7 @@ resource "duplocloud_aws_sqs_queue" "sqs_queue" {
 
 - `content_based_deduplication` (Boolean) Enables content-based deduplication for FIFO queues.
 - `deduplication_scope` (String) Specifies whether message deduplication occurs at the message group or queue level. Valid values are `messageGroup` and `queue`.
+- `delay_seconds` (Number) Postpone the delivery of new messages to consumers for a number of seconds seconds range [0-900]
 - `fifo_queue` (Boolean) Boolean designating a FIFO queue. If not set, it defaults to `false` making it standard.
 - `fifo_throughput_limit` (String) Specifies whether the FIFO queue throughput quota applies to the entire queue or per message group. Valid values are `perQueue` (default) and `perMessageGroupId`.
 - `message_retention_seconds` (Number) The number of seconds Amazon SQS retains a message. Integer representing seconds, from 60 (1 minute) to 1209600 (14 days).

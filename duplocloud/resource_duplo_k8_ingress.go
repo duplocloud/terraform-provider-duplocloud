@@ -421,12 +421,12 @@ func expandK8sIngressRule(m map[string]interface{}) (duplosdk.DuploK8sIngressRul
 	}
 	if v, ok := m["port"]; ok {
 		r.Port = v.(int)
-		if _, ok := m["port_name"]; ok && r.Port > 0 {
-			return r, fmt.Errorf("port and port_name are mutually exclusive")
-		}
 	}
 	if v, ok := m["port_name"]; ok {
 		r.PortName = v.(string)
+		if r.Port > 0 && r.PortName != "" {
+			return r, fmt.Errorf("port and port_name are mutually exclusive")
+		}
 	}
 	if v, ok := m["host"]; ok {
 		r.Host = v.(string)
