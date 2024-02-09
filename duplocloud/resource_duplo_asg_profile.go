@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -133,13 +134,18 @@ func resourceAwsASG() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema:        autoscalingGroupSchema(),
-		CustomizeDiff: validateMaxSpotPrice,
+		Schema: autoscalingGroupSchema(),
+		CustomizeDiff: customdiff.All(
+			diffUserData,
+			validateMaxSpotPrice,
+		),
 	}
 }
 
 func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
+
+	initUserDataOptions(d)
 
 	// Build a request.
 	rq := expandAsgProfile(d)
@@ -361,6 +367,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("is_minion", duplo.IsMinion)
 	d.Set("image_id", duplo.ImageID)
 	d.Set("base64_user_data", duplo.Base64UserData)
+	d.Set("prepend_user_data", duplo.PrependUserData)
 	d.Set("agent_platform", duplo.AgentPlatform)
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
 	d.Set("is_cluster_autoscaled", duplo.IsClusterAutoscaled)
@@ -392,6 +399,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		IsMinion:            d.Get("is_minion").(bool),
 		ImageID:             d.Get("image_id").(string),
 		Base64UserData:      d.Get("base64_user_data").(string),
+		PrependUserData:     d.Get("prepend_user_data").(bool),
 		AgentPlatform:       d.Get("agent_platform").(int),
 		IsEbsOptimized:      d.Get("is_ebs_optimized").(bool),
 		IsClusterAutoscaled: d.Get("is_cluster_autoscaled").(bool),
