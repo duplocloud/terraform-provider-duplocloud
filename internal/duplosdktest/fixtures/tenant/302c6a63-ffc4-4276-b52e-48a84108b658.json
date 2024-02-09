@@ -1,0 +1,14 @@
+{
+  "TenantID":    "302c6a63-ffc4-4276-b52e-48a84108b658",
+  "AccountName": "testacc1a",
+  "PlanID":      "testacc1",
+  "TenantPolicy": {
+    "IamPolicies": [],
+    "AllowVolumeMapping": false,
+    "BlockExternalEp": false
+  },
+  "Tags": [
+    {"Key":"foo", "Value":"bar"},
+    {"Key":"my", "Value":"tag"}
+  ]
+}
