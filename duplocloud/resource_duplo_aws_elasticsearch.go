@@ -659,7 +659,6 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 				duplo.ColdStorageOptions.Enabled = value
 			}
 		}
-
 	}
 	if v, ok := m["warm_count"]; ok {
 		duplo.WarmCount = v.(int)
