@@ -103,7 +103,7 @@ func SetupHttptestWithFixtures() *httptest.Server {
 		// TODO: Handlers for mutation
 		if m != "GET" {
 			res.WriteHeader(599)
-			res.Write([]byte(""))
+			res.Write([]byte("")) // nolint
 			return
 		}
 
@@ -112,12 +112,11 @@ func SetupHttptestWithFixtures() *httptest.Server {
 		if path == "/admin/GetTenantsForUser" {
 			buff := fixureList("fixtures/tenant")
 			res.WriteHeader(200)
-			res.Write(buff)
+			res.Write(buff) // nolint
 		}
 
 		res.WriteHeader(404)
-		res.Write([]byte(""))
-		return
+		res.Write([]byte("")) // nolint
 	}))
 }
 
@@ -136,7 +135,12 @@ func fixureList(subdir string) []byte {
 	if err != nil {
 		log.Panicf("chdir: %s: %s", dir, err)
 	}
-	defer os.Chdir(origDir)
+	defer func() {
+		err = os.Chdir(origDir)
+		if err != nil {
+			log.Panicf("chdir: %s: %s", origDir, err)
+		}
+	}()
 
 	// List files
 	files, err := os.ReadDir(".")
@@ -174,6 +178,7 @@ func fixureList(subdir string) []byte {
 	return buff
 }
 
+// nolint
 func fixtureGet(file string) []byte {
 	if buff, ok := fc[file]; ok {
 		return buff
