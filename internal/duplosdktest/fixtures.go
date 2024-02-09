@@ -1,6 +1,7 @@
 package duplosdktest
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,7 @@ import (
 
 type fixtureCache map[string][]byte
 
-type FixturePatcher func(interface{})
+type FixturePatcher func()
 
 var (
 	fc   = fixtureCache{}
@@ -23,7 +24,31 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	fdir = path.Join(dir, "../internal/duplosdktest")
+	fdir = path.Join(dir, "../internal/duplosdktest/fixtures")
+}
+
+func ResetFixtures() {
+	fc = fixtureCache{}
+}
+
+func PatchFixture(location string, target interface{}, patcher FixturePatcher) {
+	body := fixtureGet(location)
+	err := json.Unmarshal(body, target)
+	if err != nil {
+		log.Panicf("json.Unmarshal: %s: %s", location, err)
+	}
+
+	patcher()
+
+	body, err = json.Marshal(target)
+	if err != nil {
+		log.Panicf("json.Marshal: %s: %s", location, err)
+	}
+
+	fc[location] = body
+
+	// Invalidate any cached list
+	delete(fc, path.Dir(location))
 }
 
 func SetupHttptestWithFixtures() *httptest.Server {
@@ -45,7 +70,7 @@ func SetupHttptestWithFixtures() *httptest.Server {
 		// Lookup
 		path := req.URL.Path
 		if path == "/admin/GetTenantsForUser" {
-			buff := fixtureList("fixtures/tenant")
+			buff := fixtureList("tenant")
 			res.WriteHeader(200)
 			res.Write(buff) // nolint
 		}
