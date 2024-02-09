@@ -389,10 +389,9 @@ func initUserDataOptions(d *schema.ResourceData) {
 		d.Set("initial_base64_user_data", userData)
 	}
 
-	// Set default prepend_user_data value based on agent_platform
+	// Set default prepend_user_data value here to avoid a force replacement due to DUPLO-14926
 	if _, ok := d.GetOk("prepend_user_data"); !ok {
-		agentPlatform := d.Get("agent_platform").(int)
-		d.Set("prepend_user_data", agentPlatform == 7) // default true for EKS
+		d.Set("prepend_user_data", true) // default true
 	}
 }
 
