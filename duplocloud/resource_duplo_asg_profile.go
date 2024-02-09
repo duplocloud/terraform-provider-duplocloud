@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -133,13 +134,21 @@ func resourceAwsASG() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema:        autoscalingGroupSchema(),
-		CustomizeDiff: validateMaxSpotPrice,
+		Schema: autoscalingGroupSchema(),
+		CustomizeDiff: customdiff.All(
+			diffUserData,
+			validateMaxSpotPrice,
+		),
 	}
 }
 
 func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
+
+	// Store initial base64_user_data if supplied
+	if userData, ok := d.GetOk("base64_user_data"); ok {
+		d.Set("initial_base64_user_data", userData)
+	}
 
 	// Build a request.
 	rq := expandAsgProfile(d)

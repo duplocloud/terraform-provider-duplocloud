@@ -76,6 +76,10 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew:    true, // relaunch instance
 			Computed:    true,
 		},
+		"initial_base64_user_data": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 		"agent_platform": {
 			Description: "The numeric ID of the container agent pool that this host is added to.",
 			Type:        schema.TypeInt,
@@ -239,6 +243,21 @@ func nativeHostSchema() map[string]*schema.Schema {
 	}
 }
 
+func diffUserData(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	if diff.HasChange("base64_user_data") {
+		_, newUserData := diff.GetChange("base64_user_data")
+		initialUserData := diff.Get("initial_base64_user_data").(string)
+
+		log.Printf("[DEBUG] diffUserData initial: %s, new: %s)", initialUserData, newUserData)
+		if newUserData == initialUserData {
+			// Suppress diffs caused by prepended data alone
+			diff.Clear("base64_user_data")
+		}
+	}
+
+	return nil
+}
+
 // SCHEMA for resource crud
 func resourceAwsHost() *schema.Resource {
 	awsHostSchema := nativeHostSchema()
@@ -266,7 +285,8 @@ func resourceAwsHost() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: awsHostSchema,
+		Schema:        awsHostSchema,
+		CustomizeDiff: diffUserData,
 	}
 }
 
@@ -305,6 +325,11 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
+
+	// Store initial base64_user_data if supplied
+	if userData, ok := d.GetOk("base64_user_data"); ok {
+		d.Set("initial_base64_user_data", userData)
+	}
 
 	// Build a request.
 	rq := expandNativeHost(d)
