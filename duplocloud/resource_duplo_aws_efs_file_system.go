@@ -45,14 +45,9 @@ func awsEFSFileSystem() map[string]*schema.Schema {
 		"lifecycle_policy": {
 			Type:     schema.TypeList,
 			Optional: true,
-			MaxItems: 3,
+			MaxItems: 2,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"transition_to_archive": {
-						Type:         schema.TypeString,
-						Optional:     true,
-						ValidateFunc: validation.StringInSlice(TransitionToArchiveRules_Values(), false),
-					},
 					"transition_to_ia": {
 						Type:         schema.TypeString,
 						Optional:     true,
@@ -275,7 +270,7 @@ func resourceAwsEFSUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 
 	if d.HasChange("lifecycle_policy") {
 		input := &duplosdk.PutLifecycleConfigurationInput{
-			FileSystemId:      d.Id(),
+			FileSystemId:      efsId,
 			LifecyclePolicies: expandFileSystemLifecyclePolicies(d.Get("lifecycle_policy").([]interface{})),
 		}
 

@@ -11,50 +11,6 @@ import (
 )
 
 const (
-	// TransitionToArchiveRulesAfter1Day is a TransitionToArchiveRules enum value
-	TransitionToArchiveRulesAfter1Day = "AFTER_1_DAY"
-
-	// TransitionToArchiveRulesAfter7Days is a TransitionToArchiveRules enum value
-	TransitionToArchiveRulesAfter7Days = "AFTER_7_DAYS"
-
-	// TransitionToArchiveRulesAfter14Days is a TransitionToArchiveRules enum value
-	TransitionToArchiveRulesAfter14Days = "AFTER_14_DAYS"
-
-	// TransitionToArchiveRulesAfter30Days is a TransitionToArchiveRules enum value
-	TransitionToArchiveRulesAfter30Days = "AFTER_30_DAYS"
-
-	// TransitionToArchiveRulesAfter60Days is a TransitionToArchiveRules enum value
-	TransitionToArchiveRulesAfter60Days = "AFTER_60_DAYS"
-
-	// TransitionToArchiveRulesAfter90Days is a TransitionToArchiveRules enum value
-	TransitionToArchiveRulesAfter90Days = "AFTER_90_DAYS"
-
-	// TransitionToArchiveRulesAfter180Days is a TransitionToArchiveRules enum value
-	TransitionToArchiveRulesAfter180Days = "AFTER_180_DAYS"
-
-	// TransitionToArchiveRulesAfter270Days is a TransitionToArchiveRules enum value
-	TransitionToArchiveRulesAfter270Days = "AFTER_270_DAYS"
-
-	// TransitionToArchiveRulesAfter365Days is a TransitionToArchiveRules enum value
-	TransitionToArchiveRulesAfter365Days = "AFTER_365_DAYS"
-)
-
-// TransitionToArchiveRules_Values returns all elements of the TransitionToArchiveRules enum
-func TransitionToArchiveRules_Values() []string {
-	return []string{
-		TransitionToArchiveRulesAfter1Day,
-		TransitionToArchiveRulesAfter7Days,
-		TransitionToArchiveRulesAfter14Days,
-		TransitionToArchiveRulesAfter30Days,
-		TransitionToArchiveRulesAfter60Days,
-		TransitionToArchiveRulesAfter90Days,
-		TransitionToArchiveRulesAfter180Days,
-		TransitionToArchiveRulesAfter270Days,
-		TransitionToArchiveRulesAfter365Days,
-	}
-}
-
-const (
 	// TransitionToIARulesAfter7Days is a TransitionToIARules enum value
 	TransitionToIARulesAfter7Days = "AFTER_7_DAYS"
 
@@ -124,15 +80,10 @@ func awsEFSLifecyclePolicy() map[string]*schema.Schema {
 		},
 		"lifecycle_policy": {
 			Type:     schema.TypeList,
-			Optional: true,
-			MaxItems: 3,
+			Required: true,
+			MaxItems: 2,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"transition_to_archive": {
-						Type:         schema.TypeString,
-						Optional:     true,
-						ValidateFunc: validation.StringInSlice(TransitionToArchiveRules_Values(), false),
-					},
 					"transition_to_ia": {
 						Type:         schema.TypeString,
 						Optional:     true,
