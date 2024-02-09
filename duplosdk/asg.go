@@ -10,6 +10,7 @@ type DuploAsgProfile struct {
 	AgentPlatform       int                                `json:"AgentPlatform"`
 	AllocatedPublicIP   bool                               `json:"AllocatedPublicIp,omitempty"`
 	Base64UserData      string                             `json:"Base64UserData,omitempty"`
+	PrependUserData     bool                               `json:"IsUserDataCombined,omitempty"`
 	CanScaleFromZero    bool                               `json:"CanScaleFromZero,omitempty"`
 	Capacity            string                             `json:"Capacity,omitempty"`
 	Cloud               int                                `json:"Cloud"`

@@ -28,6 +28,7 @@ type DuploNativeHost struct {
 	IsMinion           bool                               `json:"IsMinion"`
 	ImageID            string                             `json:"ImageId,omitempty"`
 	Base64UserData     string                             `json:"Base64UserData,omitempty"`
+	PrependUserData    bool                               `json:"IsUserDataCombined,omitempty"`
 	AgentPlatform      int                                `json:"AgentPlatform"`
 	IsEbsOptimized     bool                               `json:"IsEbsOptimized"`
 	AllocatedPublicIP  bool                               `json:"AllocatedPublicIp,omitempty"`
