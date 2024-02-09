@@ -1,7 +1,7 @@
 ## 2024-02-09
 
 ### Fixed
-- Fixed a bug that prevented the creation of AWS elasticsearch with both warm enable and cold storage options are set to false. Now, these options are properly handled, preventing errors during the creation of AWS elasticsearch domains with these options disabled.
+- Fixed a bug that prevented the creation of `duplocloud_aws_elasticsearch` with both `warm_enabled` and `cold_storage_options` are set to `false`. Now, these options are properly handled, preventing errors during the creation of `duplocloud_aws_elasticsearch`  with these options disabled.
 - Fixed a regression in `duplocloud_k8_ingress` validation where `port` and `port_name` were not correctly validated as mutually exclusive.
 
 ## 2024-02-08
