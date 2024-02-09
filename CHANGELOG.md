@@ -1,8 +1,11 @@
 ## 2024-02-08
 
 ### Added
-- Added support for configuring the delay seconds (`delay_seconds`) for AWS SQS queues, allowing messages to be delayed up to 900 seconds.
-- Updated documentation and examples to include the new `delay_seconds` attribute.
+- Added the `delay_seconds` attribute to the `aws_sqs_queue` resource, enabling the postponing of delivery for new messages in seconds.
+
+### Update 
+- Updated documentation for `aws_sqs_queue` for new attribute `delay_seconds`.
+- Updated example for `aws_sqs_queue` resource added attribute `delay_seconds` to resource type `duplocloud_aws_sqs_queue`.
 
 ## 2024-02-06
 
