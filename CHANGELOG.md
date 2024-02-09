@@ -1,3 +1,9 @@
+## 2024-02-09
+
+### Fixed
+- Resolved nil pointer and index out of bound exceptions in `resource_duplo_aws_elasticsearch.go` by properly initializing `ColdStorageOptions` and `WarmType` only if applicable.
+- Updated `DuploElasticSearchDomainClusterConfig` struct to use pointers for `WarmType` and `ColdStorageOptions` to prevent nil pointer dereference issues.
+
 ## 2024-02-08
 
 ### Added
