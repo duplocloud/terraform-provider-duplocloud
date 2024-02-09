@@ -1,7 +1,7 @@
 ## 2024-02-09
 
 ### Added
-- Introduced a new attribute `prepend_user_data` to the `duplocloud_aws_host` and `duplocloud_asg_profile` resources, allowing for prepending user data on EKS hosts.
+- Introduced a new attribute `prepend_user_data` to the `duplocloud_aws_host` and `duplocloud_asg_profile` resources, allowing for prepending user data on AWS hosts.
 - Enhanced the `duplocloud_aws_host` and `duplocloud_asg_profile` resources to avoid triggering an unnecessary "force replacement" on hosts and ASGs that prepend Duplo's user data.
 - Updated the data source types for `duplocloud_aws_host` and `duplocloud_asg_profile` resources to include the new `prepend_user_data` attribute.
 - Added the `customdiff` helper to the implementation.
