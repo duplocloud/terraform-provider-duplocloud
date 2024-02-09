@@ -651,13 +651,10 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 		duplo.InstanceType.Value = "t2.small.elasticsearch"
 	}
 	if v, ok := m["cold_storage_options"]; ok {
-		obj := v.([]interface{})
 		duplo.ColdStorageOptions = nil
+		obj := v.([]interface{})
 		if len(obj) > 0 {
-			value := obj[0].(map[string]interface{})["enabled"].(bool)
-			if value {
-				duplo.ColdStorageOptions.Enabled = value
-			}
+			duplo.ColdStorageOptions.Enabled = obj[0].(map[string]interface{})["enabled"].(bool)
 		}
 	}
 	if v, ok := m["warm_count"]; ok {
