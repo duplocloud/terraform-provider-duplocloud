@@ -1,3 +1,8 @@
+## 2024-02-09
+
+### Fixed
+- Fixed a bug that prevented the creation of OpenSearch with both warm enable and cold storage options set to false. Now, these options are properly handled, preventing errors during the creation of OpenSearch domains with these options disabled.
+
 ## 2024-02-08
 
 ### Added
