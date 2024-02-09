@@ -35,15 +35,15 @@ type DuploElasticSearchDomainEndpointOptions struct {
 
 // DuploElasticSearchDomainClusterConfig represents an AWS ElasticSearch domain's endpoint options for a Duplo tenant
 type DuploElasticSearchDomainClusterConfig struct {
-	DedicatedMasterCount   int                                        `json:"DedicatedMasterCount,omitempty"`
-	DedicatedMasterEnabled bool                                       `json:"DedicatedMasterEnabled,omitempty"`
-	DedicatedMasterType    DuploStringValue                           `json:"DedicatedMasterType,omitempty"`
-	InstanceCount          int                                        `json:"InstanceCount,omitempty"`
-	InstanceType           DuploStringValue                           `json:"InstanceType,omitempty"`
-	WarmCount              int                                        `json:"WarmCount,omitempty"`
-	WarmEnabled            bool                                       `json:"WarmEnabled,omitempty"`
-	WarmType               DuploStringValue                           `json:"WarmType,omitempty"`
-	ColdStorageOptions     DuploElasticSearchDomainColdStorageOptions `json:"ColdStorageOptions,omitempty"`
+	DedicatedMasterCount   int                                         `json:"DedicatedMasterCount,omitempty"`
+	DedicatedMasterEnabled bool                                        `json:"DedicatedMasterEnabled,omitempty"`
+	DedicatedMasterType    DuploStringValue                            `json:"DedicatedMasterType,omitempty"`
+	InstanceCount          int                                         `json:"InstanceCount,omitempty"`
+	InstanceType           DuploStringValue                            `json:"InstanceType,omitempty"`
+	WarmCount              int                                         `json:"WarmCount,omitempty"`
+	WarmEnabled            bool                                        `json:"WarmEnabled,omitempty"`
+	WarmType               *DuploStringValue                           `json:"WarmType,omitempty"`
+	ColdStorageOptions     *DuploElasticSearchDomainColdStorageOptions `json:"ColdStorageOptions,omitempty"`
 }
 
 type DuploElasticSearchDomainColdStorageOptions struct {
