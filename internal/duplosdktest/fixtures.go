@@ -54,6 +54,18 @@ func PostFixture(location string, source interface{}) {
 	delete(fc, path.Dir(location))
 }
 
+func fixtureDelete(location string) bool {
+	file := path.Join(fdir, location) + ".json"
+
+	if _, err := os.Stat(file); err == nil {
+		log.Panicf("fixtureDelete: %s: cannot delete a permanent fixture", location)
+	}
+
+	_, ok := fc[location]
+	delete(fc, location)
+	return ok
+}
+
 func fixtureList(location string) []byte {
 	// Return the data if it is cached
 	if buff, ok := fc[location]; ok {

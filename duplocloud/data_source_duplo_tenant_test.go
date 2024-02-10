@@ -20,7 +20,7 @@ func TestAccDatasource_duplocloud_tenant_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		IsUnitTest: true,
 		Providers:  testAccProviders,
-		PreCheck:   duplosdktest.ResetFixtures,
+		PreCheck:   duplosdktest.ResetEmulator,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccProvider_GenConfig("data \"duplocloud_tenant\" \"" + rName + "\" {\n" +

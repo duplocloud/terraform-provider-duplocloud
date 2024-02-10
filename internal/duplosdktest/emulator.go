@@ -22,11 +22,17 @@ type EmuConfig struct {
 
 var (
 	emuCreated = []interface{}{}
+	emuDeleted = []string{}
 )
 
 func ResetEmulator() {
 	ResetFixtures()
 	emuCreated = []interface{}{}
+	emuDeleted = []string{}
+}
+
+func EmuDeleted() []string {
+	return emuDeleted
 }
 
 func EmuCreated() []interface{} {
@@ -44,24 +50,41 @@ func emuList(location string) httprouter.Handle {
 func emuGet(location string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		id := ps.ByName("id")
-		buff := fixtureGet(location + "/" + id)
+		l := location + "/" + id
+		log.Printf("[TRACE] emuGet(%s)", l)
+		buff := fixtureGet(l)
 		w.WriteHeader(200)
 		w.Write(buff) // nolint
 	}
 }
 
-func emuCreate(location string, config EmuConfig, empty bool) httprouter.Handle {
+func emuPost(location string, config EmuConfig, empty bool) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		log.Printf("[TRACE] emuPost(%s)", location)
 		in := config.Types[location].Factory()
 		unmarshallRequestBody(r, in)
 		id, out := config.Types[location].Responder(in)
-		location += "/" + id
-		PostFixture(location, out)
+		l := location + "/" + id
+		PostFixture(l, out)
 		emuCreated = append(emuCreated, out)
 		w.WriteHeader(200)
 		if !empty {
-			w.Write(fc[location]) // nolint
+			w.Write(fc[l]) // nolint
 		}
+	}
+}
+
+func emuDelete(location string) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		id := ps.ByName("id")
+		l := location + "/" + id
+		log.Printf("[TRACE] emuDelete(%s)", l)
+		if fixtureDelete(l) {
+			w.WriteHeader(204)
+		} else {
+			w.WriteHeader(404)
+		}
+		emuDeleted = append(emuDeleted, l)
 	}
 }
 
@@ -71,6 +94,7 @@ func emuNotFound(res http.ResponseWriter, req *http.Request) {
 	if m == "" {
 		m = "GET"
 	}
+	log.Printf("[TRACE] emuNotFound(%s %s)", m, path)
 	if m == "GET" {
 		res.WriteHeader(404)
 	} else {
@@ -92,7 +116,8 @@ func NewEmulator(config EmuConfig) *httptest.Server {
 	router.GET("/v2/admin/TenantV2/:id", emuGet("tenant"))
 	router.GET("/v3/admin/tenant", emuList("tenant"))
 	router.GET("/v3/admin/tenant/:id", emuGet("tenant"))
-	router.POST("/admin/AddTenant", emuCreate("tenant", config, true))
+	router.POST("/admin/AddTenant", emuPost("tenant", config, true))
+	router.POST("/admin/DeleteTenant/:id", emuDelete("tenant"))
 
 	return SetupHttptest(router)
 }
