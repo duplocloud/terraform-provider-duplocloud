@@ -2,24 +2,18 @@ package duplosdktest
 
 import (
 	"encoding/json"
-	"io"
 	"log"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path"
 	"strings"
 )
 
 type fixtureCache map[string][]byte
-type handlerCache map[string]http.HandlerFunc
 
-type FixtureAdder func() string
 type FixtureWriter func()
 
 var (
 	fc   = fixtureCache{}
-	hc   = handlerCache{}
 	fdir string
 )
 
@@ -31,71 +25,8 @@ func init() {
 	fdir = path.Join(dir, "../internal/duplosdktest/fixtures")
 }
 
-func SetupHttptestWithFixtures() *httptest.Server {
-	fc = fixtureCache{}
-
-	return SetupHttptest(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		m := req.Method
-		if m == "" {
-			m = "GET"
-		}
-		path := req.URL.Path
-
-		if m != "GET" {
-			if h, ok := hc[path]; ok {
-				h(res, req)
-			} else {
-				res.WriteHeader(599)
-				res.Write([]byte("No test-case handler for " + m + " " + path)) // nolint
-			}
-		} else if path == "/admin/GetTenantsForUser" {
-			buff := fixtureList("tenant")
-			res.WriteHeader(200)
-			res.Write(buff) // nolint
-		} else if strings.HasPrefix(path, "/v2/admin/TenantV2/") {
-			id := strings.TrimPrefix(path, "/v2/admin/TenantV2/")
-			buff := fixtureGet("tenant/" + id)
-			res.WriteHeader(200)
-			res.Write(buff) // nolint
-		} else {
-			res.WriteHeader(404)
-			res.Write([]byte("")) // nolint
-		}
-	}))
-}
-
-func OnPostFixture(reqPath string, fixtureLocation string, source interface{}, target interface{}, adder FixtureAdder) {
-	hc[reqPath] = func(res http.ResponseWriter, req *http.Request) {
-		unmarshallRequestBody(req, source)
-		fixtureLocation += "/" + adder()
-		if target == nil {
-			PostFixture(fixtureLocation, source)
-		} else {
-			PostFixture(fixtureLocation, target)
-		}
-		res.WriteHeader(200)
-		if target != nil {
-			res.Write(fc[fixtureLocation]) // nolint
-		}
-	}
-}
-
-func unmarshallRequestBody(req *http.Request, target interface{}) {
-	body, err := io.ReadAll(req.Body)
-	defer req.Body.Close()
-	if err != nil {
-		log.Panicf("req.ReadBody: %s: %s", req.URL.Path, err)
-	}
-
-	err = json.Unmarshal(body, target)
-	if err != nil {
-		log.Panicf("json.Unmarshal: %s: %s", req.URL.Path, err)
-	}
-}
-
 func ResetFixtures() {
 	fc = fixtureCache{}
-	hc = handlerCache{}
 }
 
 func PatchFixture(location string, target interface{}, writer FixtureWriter) {
@@ -158,7 +89,7 @@ func fixtureList(location string) []byte {
 		name := strings.TrimPrefix(key, prefix)
 
 		// Only direct descendants.
-		if strings.Index(name, "/") != -1 {
+		if strings.Contains(name, "/") {
 			continue
 		}
 

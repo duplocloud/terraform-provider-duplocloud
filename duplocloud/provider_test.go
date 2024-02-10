@@ -5,6 +5,8 @@ import (
 	"terraform-provider-duplocloud/duplosdk"
 	"terraform-provider-duplocloud/internal/duplosdktest"
 
+	"github.com/barkimedes/go-deepcopy"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -28,7 +30,19 @@ func init() {
 
 func testAccProvider_ConfigureContextFunc(d *schema.Provider) schema.ConfigureContextFunc {
 	orig := d.ConfigureContextFunc
-	srv := duplosdktest.SetupHttptestWithFixtures()
+	srv := duplosdktest.NewEmulator(duplosdktest.EmuConfig{
+		Types: map[string]duplosdktest.EmuType{
+			"tenant": {
+				Factory: func() interface{} { return &duplosdk.DuploTenant{} },
+				Responder: func(in interface{}) (id string, out interface{}) {
+					id = uuid.New().String()
+					out = deepcopy.MustAnything(in.(*duplosdk.DuploTenant))
+					out.(*duplosdk.DuploTenant).TenantID = id
+					return
+				},
+			},
+		},
+	})
 
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		c, diags := orig(ctx, d)
