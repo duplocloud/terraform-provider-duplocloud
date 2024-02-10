@@ -17,7 +17,7 @@
     },
     {
       "Key": "Name",
-      "Value": "duploservices-default-testacc1as"
+      "Value": "duploservices-testacc1a-host1"
     },
     {
       "Key": "duplo-project",
@@ -38,6 +38,14 @@
       "AssociatePublicIpAddress": false,
       "DeviceIndex": 0,
       "MetaData": []
+    }
+  ],
+  "Volumes": [
+    {
+			"Name":        "xvda1",
+			"Size":        1,
+			"VolumeId":   "vol-1234abc",
+			"VolumeType": "gp3"
     }
   ],
   "MetaData": [
