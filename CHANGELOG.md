@@ -1,3 +1,17 @@
+## 2024-02-10
+
+### Added
+- Added Terraform acceptance tests for `data.duplocloud_native_hosts`.
+- Introduced a placeholder for future `duplocloud_aws_host` resource tests.
+- Extended the emulator to handle dynamic path parameters and added routes for the AWS host API.
+
+### Updated
+- Refactored data source output keys in `duplocloud/data_source_duplo_native_hosts.go` for consistency.
+- Enhanced provider test setup with AWS host API emulation to support more comprehensive testing.
+
+### Fixed
+- Fixed bugs in `data.duplocloud_native_hosts`.
+
 ## 2024-02-09
 
 ### Added
