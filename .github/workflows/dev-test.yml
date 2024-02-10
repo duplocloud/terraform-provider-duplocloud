@@ -22,4 +22,7 @@ jobs:
       -
         name: Run tests
         run: make test
+        env:
+          duplo_host: http://localhost:60020
+          duplo_token: FAKE
 
