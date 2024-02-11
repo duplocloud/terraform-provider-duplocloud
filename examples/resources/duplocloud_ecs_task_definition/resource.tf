@@ -13,10 +13,10 @@ resource "duplocloud_ecs_task_definition" "myservice" {
     Environment = [
       { Name = "NGINX_HOST", Value = "foo" }
     ]
-    ContainerMappings = [
+    PortMappings = [
       {
-        ContainerPorts = "80",
-        HostPort       = "80",
+        ContainerPort = "80",
+        HostPort      = "80",
         Protocol = {
           Value = "tcp"
         }

@@ -1,3 +1,40 @@
+## 2024-02-10
+
+### Added
+- Added Terraform acceptance tests for `data.duplocloud_native_hosts`.
+- Introduced a placeholder for future `duplocloud_aws_host` resource tests.
+- Extended the emulator to handle dynamic path parameters and added routes for the AWS host API.
+
+### Fixed
+- Fixed bugs in `data.duplocloud_native_hosts` and `duplocloud_aws_host` where `volume` and `network_interface` fields were not parsed.
+
+## 2024-02-09
+
+### Added
+- Introduced acceptance tests for Terraform provider with mock data.
+- Implemented a mock server setup for testing HTTP requests.
+- Added a basic acceptance test for tenant data source.
+- Refactored existing SDK client tests to utilize shared test utilities.
+- Created shared test utilities for mocking HTTP responses.
+- Added a JSON fixture for tenant data for testing purposes.
+
+## 2024-02-09
+
+## Updated
+- Updated `duplocloud_ecs_task_definition` examples and documentation to use the correct `PortMappings` property instead of `ContainerMappings` in `container_definitions` field.
+- Fixed property typos in `duplocloud_ecs_task_definition`'s `container_definitions` example and docs
+
+### Added
+- Introduced a new attribute `prepend_user_data` to the `duplocloud_aws_host` and `duplocloud_asg_profile` resources, allowing for prepending user data on AWS hosts.
+- Enhanced the `duplocloud_aws_host` and `duplocloud_asg_profile` resources to avoid triggering an unnecessary "force replacement" on hosts and ASGs that prepend Duplo's user data.
+- Updated the data source types for `duplocloud_aws_host` and `duplocloud_asg_profile` resources to include the new `prepend_user_data` attribute.
+
+### Fixed
+- Resolved nil pointer and index out of bound exceptions in `resource_duplo_aws_elasticsearch.go` by properly initializing `ColdStorageOptions` and `WarmType` only if applicable for `duplocloud_aws_elasticsearch` resource.
+- Updated `DuploElasticSearchDomainClusterConfig` struct to use pointers for `WarmType` and `ColdStorageOptions` to prevent nil pointer dereference issues for `duplocloud_aws_elasticsearch` resource.
+- Fixed a bug that prevented the creation of `duplocloud_aws_elasticsearch` with both `warm_enabled` and `cold_storage_options` are set to `false`. Now, these options are properly handled, preventing errors during the creation of `duplocloud_aws_elasticsearch`  with these options disabled.
+- Fixed a regression in `duplocloud_k8_ingress` validation where `port` and `port_name` were not correctly validated as mutually exclusive.
+
 ## 2024-02-08
 
 ### Added
@@ -6,6 +43,11 @@
 - Implemented CRUD operations for EFS lifecycle policy management in both Terraform resource and Duplo SDK.
 - Added support for `port_name` attribute in `duplocloud_k8_ingress` allowing service port specification by name.
 - Made `port` in `duplocloud_k8_ingress` attribute optional and enforced port range validation for ingress rules.
+- Added the `delay_seconds` attribute to the `aws_sqs_queue` resource, enabling the postponing of delivery for new messages in seconds.
+
+### Update 
+- Updated documentation for `aws_sqs_queue` for new attribute `delay_seconds`.
+- Updated example for `aws_sqs_queue` resource added attribute `delay_seconds` to resource type `duplocloud_aws_sqs_queue`.
 
 ## 2024-02-06
 

@@ -144,13 +144,8 @@ func (c *Client) TenantGetV3(tenantID string) (*DuploTenant, ClientError) {
 }
 
 // TenantCreate creates a tenant via the Duplo API.
-func (c *Client) TenantCreate(rq DuploTenant) (string, ClientError) {
-	rp := ""
-	err := c.postAPI(fmt.Sprintf("TenantCreate(%s, %s)", rq.AccountName, rq.PlanID), "admin/AddTenant", &rq, &rp)
-	if err != nil {
-		return "", err
-	}
-	return rp, err
+func (c *Client) TenantCreate(rq DuploTenant) ClientError {
+	return c.postAPI(fmt.Sprintf("TenantCreate(%s, %s)", rq.AccountName, rq.PlanID), "admin/AddTenant", &rq, nil)
 }
 
 // TenantDelete deletes an AWS host via the Duplo API.
