@@ -2,7 +2,6 @@ package duplocloud
 
 import (
 	"context"
-	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"terraform-provider-duplocloud/internal/duplosdktest"
 
@@ -39,15 +38,6 @@ func testAccProvider_ConfigureContextFunc(d *schema.Provider) schema.ConfigureCo
 					id = uuid.New().String()
 					out = deepcopy.MustAnything(in.(*duplosdk.DuploTenant))
 					out.(*duplosdk.DuploTenant).TenantID = id
-					return
-				},
-			},
-			"tenant/:tenantId/aws_host": {
-				Factory: func() interface{} { return &duplosdk.DuploNativeHost{} },
-				Responder: func(in interface{}) (id string, out interface{}) {
-					id = "i-" + strings.ReplaceAll(uuid.New().String(), "-", "")[:17]
-					out = deepcopy.MustAnything(in.(*duplosdk.DuploNativeHost))
-					out.(*duplosdk.DuploNativeHost).InstanceID = id
 					return
 				},
 			},
