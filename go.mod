@@ -3,11 +3,8 @@ module terraform-provider-duplocloud
 go 1.20
 
 require (
-	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
-	github.com/google/uuid v1.3.0
 	github.com/hashicorp/terraform-plugin-docs v0.18.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1
-	github.com/julienschmidt/httprouter v1.3.0
 	github.com/robfig/cron v1.2.0
 	github.com/stretchr/testify v1.8.2
 	github.com/ucarion/jcs v0.1.2
@@ -34,6 +31,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/cli v1.1.6 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-checkpoint v0.5.0 // indirect
