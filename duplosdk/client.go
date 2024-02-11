@@ -199,7 +199,7 @@ func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface
 	// Check for an expected "null" response.
 	if rp == nil {
 		log.Printf("[TRACE] %s: expected null response", apiName)
-		if bodyString == "null" || bodyString == "" || bodyString == "\"\"" {
+		if bodyString == "null" || bodyString == "" {
 			return nil
 		}
 		message := fmt.Sprintf("%s: received unexpected response: %s", apiName, bodyString)
@@ -248,7 +248,7 @@ func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath strin
 	// Check for an expected "null" response.
 	if rp == nil {
 		log.Printf("[TRACE] %s: expected null response", apiName)
-		if bodyString == "null" || bodyString == "" || bodyString == "\"\"" {
+		if bodyString == "null" || bodyString == "" {
 			return nil
 		}
 		message := fmt.Sprintf("%s: received unexpected response: %s", apiName, bodyString)

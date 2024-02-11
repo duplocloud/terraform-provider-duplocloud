@@ -173,7 +173,7 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diags
 	}
 
-	err := c.TenantCreate(rq)
+	_, err := c.TenantCreate(rq)
 	if err != nil {
 		return diag.Errorf("Unable to create tenant '%s': %s", rq.AccountName, err)
 	}

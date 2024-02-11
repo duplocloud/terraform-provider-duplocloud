@@ -1,15 +1,5 @@
 ## 2024-02-09
 
-### Added
-- Introduced acceptance tests for Terraform provider with mock data.
-- Implemented a mock server setup for testing HTTP requests.
-- Added a basic acceptance test for tenant data source.
-- Refactored existing SDK client tests to utilize shared test utilities.
-- Created shared test utilities for mocking HTTP responses.
-- Added a JSON fixture for tenant data for testing purposes.
-
-## 2024-02-09
-
 ## Updated
 - Updated `duplocloud_ecs_task_definition` examples and documentation to use the correct `PortMappings` property instead of `ContainerMappings` in `container_definitions` field.
 - Fixed property typos in `duplocloud_ecs_task_definition`'s `container_definitions` example and docs
