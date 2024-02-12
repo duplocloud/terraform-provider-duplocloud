@@ -15,6 +15,8 @@ VERSION=0.10.11
 OS_ARCH := $(shell go env GOOS)_$(shell go env GOARCH)
 OS_ARCH_MAC=darwin_amd64
 OS_ARCH_DOCKER=linux_amd64
+duplo_host?=http://localhost:60020
+duplo_token?=FAKE
 
 default: install
 
