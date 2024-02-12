@@ -30,7 +30,7 @@ func ResetFixtures() {
 }
 
 func PatchFixture(location string, target interface{}, writer FixtureWriter) {
-	body := fixtureGet(location)
+	body := GetFixture(location)
 	err := json.Unmarshal(body, target)
 	if err != nil {
 		log.Panicf("json.Unmarshal: %s: %s", location, err)
@@ -54,7 +54,7 @@ func PostFixture(location string, source interface{}) {
 	delete(fc, path.Dir(location))
 }
 
-func fixtureDelete(location string) bool {
+func DeleteFixture(location string) bool {
 	file := path.Join(fdir, location) + ".json"
 
 	if _, err := os.Stat(file); err == nil {
@@ -63,10 +63,13 @@ func fixtureDelete(location string) bool {
 
 	_, ok := fc[location]
 	delete(fc, location)
+
+	// Invalidate any cached list
+	delete(fc, path.Dir(location))
 	return ok
 }
 
-func fixtureList(location string) []byte {
+func ListFixtures(location string) []byte {
 	// Return the data if it is cached
 	if buff, ok := fc[location]; ok {
 		return buff
@@ -84,7 +87,7 @@ func fixtureList(location string) []byte {
 	for i := range files {
 		name := files[i].Name()
 		if strings.HasSuffix(name, ".json") {
-			fixtureGet(path.Join(location, strings.TrimSuffix(name, ".json")))
+			GetFixture(path.Join(location, strings.TrimSuffix(name, ".json")))
 		}
 	}
 
@@ -129,7 +132,7 @@ func fixtureList(location string) []byte {
 }
 
 // nolint
-func fixtureGet(location string) []byte {
+func GetFixture(location string) []byte {
 	if buff, ok := fc[location]; ok {
 		return buff
 	}
@@ -143,4 +146,9 @@ func fixtureGet(location string) []byte {
 	// cache the result and return it
 	fc[location] = buff
 	return buff
+}
+
+func GetResource(location string, target interface{}) error {
+	bytes := GetFixture(location)
+	return json.Unmarshal(bytes, &target)
 }
