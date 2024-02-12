@@ -641,12 +641,12 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	// d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 }
 
-func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []map[string]interface{} {
+func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []interface{} {
 	if duplo == nil {
-		return []map[string]interface{}{}
+		return []interface{}{}
 	}
 
-	list := make([]map[string]interface{}, len(*duplo))
+	list := make([]interface{}, 0, len(*duplo))
 	for _, item := range *duplo {
 		list = append(list, map[string]interface{}{
 			"iops":        item.Iops,
@@ -660,12 +660,12 @@ func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []map[str
 	return list
 }
 
-func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetworkInterface) []map[string]interface{} {
+func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetworkInterface) []interface{} {
 	if duplo == nil {
-		return []map[string]interface{}{}
+		return []interface{}{}
 	}
 
-	list := make([]map[string]interface{}, len(*duplo))
+	list := make([]interface{}, 0, len(*duplo))
 	for _, item := range *duplo {
 		nic := map[string]interface{}{
 			"associate_public_ip": item.AssociatePublicIP,
@@ -676,6 +676,7 @@ func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetwork
 			nic["network_interface_id"] = item.NetworkInterfaceID
 		}
 		if item.SubnetID != "" {
+			log.Printf("[TRACE] flattenNativeHostNetworkInterfaces(%s): end", item.SubnetID)
 			nic["subnet_id"] = item.SubnetID
 		}
 		if item.Groups != nil {
