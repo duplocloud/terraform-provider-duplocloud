@@ -110,7 +110,7 @@ func dataSourceDuploCloudWatchEventRuleRead(d *schema.ResourceData, m interface{
 	log.Printf("Fetched data \n %+v", r)
 	if r != nil {
 		//for _, r := range *resp {
-		d.Set("id", tenantID+"/"+r.Name)
+		d.SetId(tenantID + "/" + r.Name)
 		d.Set("name", r.Name)
 		d.Set("arn", r.Arn)
 		d.Set("schedule_expression", r.ScheduleExpression)
