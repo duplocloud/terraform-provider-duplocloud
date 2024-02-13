@@ -200,6 +200,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_nat_gateways":         dataSourcePlanNgws(),
 			"duplocloud_ecr_repository":            dataSourceEcrRepository(),
 			"duplocloud_azure_storage_account_key": dataSourceAzureStorageAccountKey(),
+			"duplocloud_aws_cloudwatch_event_rule": dataSourceAwsCloudWatchEventRule(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

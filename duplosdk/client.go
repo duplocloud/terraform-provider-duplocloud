@@ -214,6 +214,7 @@ func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface
 		log.Printf("[TRACE] %s", message)
 		return newHttpError(req, -1, message)
 	}
+	log.Printf("[TRACE] Response %+v", rp)
 	return nil
 }
 
