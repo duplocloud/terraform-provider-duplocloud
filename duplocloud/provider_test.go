@@ -61,7 +61,9 @@ func testAccProvider_ConfigureContextFunc(d *schema.Provider) schema.ConfigureCo
 						host.UserAccount = tenant.AccountName
 					}
 					host.IdentityRole = "duploservices-" + host.UserAccount
-					host.FriendlyName = host.IdentityRole + "-" + host.FriendlyName
+					if !strings.HasPrefix(host.FriendlyName, host.IdentityRole) {
+						host.FriendlyName = host.IdentityRole + "-" + host.FriendlyName
+					}
 					return
 				},
 			},

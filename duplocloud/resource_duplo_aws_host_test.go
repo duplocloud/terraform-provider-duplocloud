@@ -35,7 +35,7 @@ func TestAccResource_duplocloud_aws_host_basic(t *testing.T) {
 					"resource \"duplocloud_aws_host\" \"" + rName + "\" {\n" +
 						"	 tenant_id = \"" + Tenant_testacc1a + "\"\n" +
 						"	 user_account = \"testacc1a\"\n" +
-						"	 friendly_name = \"" + hostName + "\"\n" +
+						"	 friendly_name = \"duploservices-testacc1a-" + hostName + "\"\n" +
 						"	 zone = 0\n" +
 						"	 image_id = \"ami-1234abc\"\n" +
 						"	 capacity = \"t4g.small\"\n" +
