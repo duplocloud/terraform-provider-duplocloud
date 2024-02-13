@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"slices"
 	"strings"
 )
 
@@ -115,9 +116,10 @@ func ListFixtures(location string) []byte {
 		locations = append(locations, key)
 	}
 
-	// Fill the buffer
+	// Fill the buffer, in sort order
 	buff := make([]byte, 0, size)
 	buff = append(buff, []byte("[")...)
+	slices.Sort(locations)
 	for i := range locations {
 		if i > 0 {
 			buff = append(buff, []byte(",")...)
