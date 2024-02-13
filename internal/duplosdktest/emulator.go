@@ -41,6 +41,10 @@ func EmuCreated() []interface{} {
 	return emuCreated
 }
 
+func EmuLastCreated() interface{} {
+	return emuCreated[len(emuCreated)-1]
+}
+
 func emuLocation(location string, ps httprouter.Params) string {
 	return emuParams.ReplaceAllStringFunc(location, func(match string) string {
 		return ps.ByName(match[1:])
