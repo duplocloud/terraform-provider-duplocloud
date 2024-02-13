@@ -350,28 +350,34 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 
 	diags = resourceDuploRdsInstanceRead(ctx, d, m)
 
-	if isDeleteProtectionSupported(d) {
-		identifier := d.Get("identifier").(string)
-		deleteProtection := new(bool)
-		*deleteProtection = d.Get("deletion_protection").(bool)
+	identifier := d.Get("identifier").(string)
 
-		// Update delete protection settings.
-		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), identifier)
+	if d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
+		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
+		deleteProtection := new(bool)
+
+		if isDeleteProtectionSupported(d) {
+			log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), d.Get("identifier").(string))
+			*deleteProtection = d.Get("deletion_protection").(bool)
+		}
+
 		if isAuroraDB(d) {
 			err = c.UpdateRdsCluster(tenantID, duplosdk.DuploRdsUpdateCluster{
 				DBClusterIdentifier: identifier + "-cluster",
 				DeletionProtection:  deleteProtection,
+				SkipFinalSnapshot:   skipFinalSnapshot,
 				ApplyImmediately:    true,
 			})
 		} else {
 			err = c.UpdateRDSDBInstance(tenantID, duplosdk.DuploRdsUpdateInstance{
 				DBInstanceIdentifier: identifier,
 				DeletionProtection:   deleteProtection,
+				SkipFinalSnapshot:    skipFinalSnapshot,
 			})
 		}
 
 		if err != nil {
-			return diag.Errorf("Error while setting deletion_protection for RDS DB instance '%s' : %s", id, err)
+			return diag.FromErr(err)
 		}
 	}
 
