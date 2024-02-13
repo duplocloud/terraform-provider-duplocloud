@@ -67,6 +67,13 @@ func testAccProvider_ConfigureContextFunc(d *schema.Provider) schema.ConfigureCo
 					return
 				},
 			},
+			"tenant/:tenantId/metadata": {
+				Factory: func() interface{} { return &duplosdk.DuploKeyStringValue{} },
+				Responder: func(in interface{}) (id string, out interface{}) {
+					out = deepcopy.MustAnything(in.(*duplosdk.DuploKeyStringValue))
+					return
+				},
+			},
 		},
 	})
 
