@@ -11,6 +11,7 @@ import (
 
 const (
 	Tenant_testacc1a = "302c6a63-ffc4-4276-b52e-48a84108b658"
+	Tenant_testacc1b = "6b2672db-b930-4875-b327-78d9dcbd5dd6"
 )
 
 func TestAccDatasource_duplocloud_tenant_basic(t *testing.T) {

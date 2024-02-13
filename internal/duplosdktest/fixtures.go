@@ -80,13 +80,8 @@ func ListFixtures(location string) []byte {
 
 	// List files
 	files, err := os.ReadDir(dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			fc[location] = []byte("[]")
-			return fc[location]
-		} else {
-			log.Panicf("readdir: %s: %s", location, err)
-		}
+	if err != nil && !os.IsNotExist(err) {
+		log.Panicf("readdir: %s: %s", location, err)
 	}
 
 	// Cache all non-present elements.
