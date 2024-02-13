@@ -150,5 +150,5 @@ func GetFixture(location string) []byte {
 
 func GetResource(location string, target interface{}) error {
 	bytes := GetFixture(location)
-	return json.Unmarshal(bytes, &target)
+	return json.Unmarshal(bytes, target)
 }

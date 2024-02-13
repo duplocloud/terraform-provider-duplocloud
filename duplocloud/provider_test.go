@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"log"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"terraform-provider-duplocloud/internal/duplosdktest"
@@ -47,7 +48,20 @@ func testAccProvider_ConfigureContextFunc(d *schema.Provider) schema.ConfigureCo
 				Responder: func(in interface{}) (id string, out interface{}) {
 					id = "i-" + strings.ReplaceAll(uuid.New().String(), "-", "")[:17]
 					out = deepcopy.MustAnything(in.(*duplosdk.DuploNativeHost))
-					out.(*duplosdk.DuploNativeHost).InstanceID = id
+					host := out.(*duplosdk.DuploNativeHost)
+					host.InstanceID = id
+					if host.UserAccount == "" {
+						tenant := &duplosdk.DuploTenant{}
+						location := "tenant/" + host.TenantID
+						if err := duplosdktest.GetResource(location, tenant); err != nil {
+							log.Panicf("json.Unmarshall: %s: %s", location, err)
+						} else if tenant.AccountName == "" {
+							log.Panicf("%s.Responder: could not get tenant", location)
+						}
+						host.UserAccount = tenant.AccountName
+					}
+					host.IdentityRole = "duploservices-" + host.UserAccount
+					host.FriendlyName = host.IdentityRole + "-" + host.FriendlyName
 					return
 				},
 			},
