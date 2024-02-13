@@ -1,6 +1,7 @@
 {
   "InstanceId": "i-a4a64e4407f5ae678",
   "IdentityRole": "duploservices-testacc1a",
+  "UserAccount": "testacc1a",
   "PrivateIpAddress": "10.220.60.216",
   "Status": "running",
   "Arch": "amd64",

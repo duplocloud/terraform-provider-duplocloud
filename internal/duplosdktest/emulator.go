@@ -41,6 +41,10 @@ func EmuCreated() []interface{} {
 	return emuCreated
 }
 
+func EmuLastCreated() interface{} {
+	return emuCreated[len(emuCreated)-1]
+}
+
 func emuLocation(location string, ps httprouter.Params) string {
 	return emuParams.ReplaceAllStringFunc(location, func(match string) string {
 		return ps.ByName(match[1:])
@@ -51,7 +55,7 @@ func emuList(location string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		l := emuLocation(location, ps)
 		log.Printf("[TRACE] emuList(%s)", l)
-		buff := fixtureList(l)
+		buff := ListFixtures(l)
 		w.WriteHeader(200)
 		w.Write(buff) // nolint
 	}
@@ -62,7 +66,7 @@ func emuGet(location string) httprouter.Handle {
 		id := ps.ByName("id")
 		l := emuLocation(location, ps) + "/" + id
 		log.Printf("[TRACE] emuGet(%s)", l)
-		buff := fixtureGet(l)
+		buff := GetFixture(l)
 		w.WriteHeader(200)
 		w.Write(buff) // nolint
 	}
@@ -90,7 +94,7 @@ func emuDelete(location string) httprouter.Handle {
 		id := ps.ByName("id")
 		l := emuLocation(location, ps) + "/" + id
 		log.Printf("[TRACE] emuDelete(%s)", l)
-		if fixtureDelete(l) {
+		if DeleteFixture(l) {
 			w.WriteHeader(204)
 		} else {
 			w.WriteHeader(404)
@@ -121,7 +125,7 @@ func NewEmulator(config EmuConfig) *httptest.Server {
 
 	router.NotFound = http.HandlerFunc(emuNotFound)
 
-	// tenant API emulation
+	// tenant APIs
 	router.GET("/admin/GetTenantsForUser", emuList("tenant"))
 	router.GET("/v2/admin/TenantV2", emuList("tenant"))
 	router.GET("/v2/admin/TenantV2/:id", emuGet("tenant"))
@@ -130,9 +134,15 @@ func NewEmulator(config EmuConfig) *httptest.Server {
 	router.POST("/admin/AddTenant", emuPost("tenant", config, true))
 	router.POST("/admin/DeleteTenant/:id", emuDelete("tenant"))
 
-	// AWS host API emulation
+	// non-admin tenant APIs
+	router.GET("/subscriptions/:tenantId/GetExternalSubnets", emuList("tenant/:tenantId/external_subnets"))
+	router.GET("/subscriptions/:tenantId/GetInternalSubnets", emuList("tenant/:tenantId/internal_subnets"))
+
+	// AWS host APIs
 	router.GET("/v2/subscriptions/:tenantId/NativeHostV2", emuList("tenant/:tenantId/aws_host"))
 	router.GET("/v2/subscriptions/:tenantId/NativeHostV2/:id", emuGet("tenant/:tenantId/aws_host"))
+	router.POST("/v2/subscriptions/:tenantId/NativeHostV2", emuPost("tenant/:tenantId/aws_host", config, false))
+	router.DELETE("/v2/subscriptions/:tenantId/NativeHostV2/:id", emuDelete("tenant/:tenantId/aws_host"))
 
 	return SetupHttptest(router)
 }

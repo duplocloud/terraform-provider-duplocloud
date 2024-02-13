@@ -1,3 +1,14 @@
+## 2024-02-12
+
+### Added
+- Unit tests for `duplocloud_aws_host`
+  - Added comprehensive test cases for AWS host resource, covering basic configuration, public/private subnets, and zone selection.
+  - Enhanced emulator response for AWS hosts to include `UserAccount` and `IdentityRole`.
+  - Improved handling of `volume` and `network_interface` in AWS host resource to avoid unnecessary diffs.
+  - Extended the emulator to support AWS host creation and deletion APIs, and to list external and internal subnets per tenant.
+  - Introduced helper functions for generating Terraform resource definitions in tests.
+  - Updated and added new fixtures for AWS hosts and subnets to support testing.
+
 ## 2024-02-10
 
 ### Added
