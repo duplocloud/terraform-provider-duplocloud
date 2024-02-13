@@ -22,6 +22,9 @@
 ## 2024-02-09
 
 ### Added
+- Introduced a new attribute `prepend_user_data` to the `duplocloud_aws_host` and `duplocloud_asg_profile` resources, allowing for prepending user data on AWS hosts.
+- Enhanced the `duplocloud_aws_host` and `duplocloud_asg_profile` resources to avoid triggering an unnecessary "force replacement" on hosts and ASGs that prepend Duplo's user data.
+- Updated the data source types for `duplocloud_aws_host` and `duplocloud_asg_profile` resources to include the new `prepend_user_data` attribute.
 - Introduced acceptance tests for Terraform provider with mock data.
 - Implemented a mock server setup for testing HTTP requests.
 - Added a basic acceptance test for tenant data source.
@@ -29,16 +32,9 @@
 - Created shared test utilities for mocking HTTP responses.
 - Added a JSON fixture for tenant data for testing purposes.
 
-## 2024-02-09
-
 ## Updated
 - Updated `duplocloud_ecs_task_definition` examples and documentation to use the correct `PortMappings` property instead of `ContainerMappings` in `container_definitions` field.
 - Fixed property typos in `duplocloud_ecs_task_definition`'s `container_definitions` example and docs
-
-### Added
-- Introduced a new attribute `prepend_user_data` to the `duplocloud_aws_host` and `duplocloud_asg_profile` resources, allowing for prepending user data on AWS hosts.
-- Enhanced the `duplocloud_aws_host` and `duplocloud_asg_profile` resources to avoid triggering an unnecessary "force replacement" on hosts and ASGs that prepend Duplo's user data.
-- Updated the data source types for `duplocloud_aws_host` and `duplocloud_asg_profile` resources to include the new `prepend_user_data` attribute.
 
 ### Fixed
 - Resolved nil pointer and index out of bound exceptions in `resource_duplo_aws_elasticsearch.go` by properly initializing `ColdStorageOptions` and `WarmType` only if applicable for `duplocloud_aws_elasticsearch` resource.
