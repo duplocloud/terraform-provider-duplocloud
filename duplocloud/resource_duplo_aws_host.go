@@ -170,6 +170,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 		"volume": {
 			Type:     schema.TypeList,
 			Optional: true,
+			Computed: true,
 			ForceNew: true, // relaunch instance
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -205,6 +206,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Description: "An optional list of custom network interface configurations to use when creating the host.",
 			Type:        schema.TypeList,
 			Optional:    true,
+			Computed:    true,
 			ForceNew:    true, // relaunch instance
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -635,10 +637,9 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
 	}
 
-	// TODO:  The backend doesn't return these yet.
-	// d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
-	// d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
-	// d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	//d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
+	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
+	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 }
 
 func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []interface{} {
