@@ -36,20 +36,30 @@ func testAccProvider_ConfigureContextFunc(d *schema.Provider) schema.ConfigureCo
 		Types: map[string]duplosdktest.EmuType{
 			"tenant": {
 				Factory: func() interface{} { return &duplosdk.DuploTenant{} },
-				Responder: func(in interface{}) (id string, out interface{}) {
-					id = uuid.New().String()
+				Responder: func(verb string, in interface{}) (id string, out interface{}) {
 					out = deepcopy.MustAnything(in.(*duplosdk.DuploTenant))
-					out.(*duplosdk.DuploTenant).TenantID = id
+					if verb == "POST" {
+						id = uuid.New().String()
+						out.(*duplosdk.DuploTenant).TenantID = id
+					} else {
+						id = out.(*duplosdk.DuploTenant).TenantID
+					}
 					return
 				},
 			},
 			"tenant/:tenantId/aws_host": {
 				Factory: func() interface{} { return &duplosdk.DuploNativeHost{} },
-				Responder: func(in interface{}) (id string, out interface{}) {
-					id = "i-" + strings.ReplaceAll(uuid.New().String(), "-", "")[:17]
+				Responder: func(verb string, in interface{}) (id string, out interface{}) {
 					out = deepcopy.MustAnything(in.(*duplosdk.DuploNativeHost))
 					host := out.(*duplosdk.DuploNativeHost)
-					host.InstanceID = id
+
+					if verb == "POST" {
+						id = "i-" + strings.ReplaceAll(uuid.New().String(), "-", "")[:17]
+						host.InstanceID = id
+					} else {
+						id = host.InstanceID
+					}
+
 					if host.UserAccount == "" {
 						tenant := &duplosdk.DuploTenant{}
 						location := "tenant/" + host.TenantID
@@ -69,8 +79,9 @@ func testAccProvider_ConfigureContextFunc(d *schema.Provider) schema.ConfigureCo
 			},
 			"tenant/:tenantId/metadata": {
 				Factory: func() interface{} { return &duplosdk.DuploKeyStringValue{} },
-				Responder: func(in interface{}) (id string, out interface{}) {
+				Responder: func(verb string, in interface{}) (id string, out interface{}) {
 					out = deepcopy.MustAnything(in.(*duplosdk.DuploKeyStringValue))
+					id = out.(*duplosdk.DuploKeyStringValue).Key
 					return
 				},
 			},

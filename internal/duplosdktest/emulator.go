@@ -11,7 +11,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-type EmuResponder func(in interface{}) (id string, out interface{})
+type EmuResponder func(verb string, in interface{}) (id string, out interface{})
 type EmuFactory func() interface{}
 type EmuType struct {
 	Factory   EmuFactory
@@ -72,13 +72,13 @@ func emuGet(location, idKey string) httprouter.Handle {
 	}
 }
 
-func emuPost(location string, config EmuConfig, empty bool) httprouter.Handle {
+func emuWrite(logPrefix, location string, config EmuConfig, hasId, empty bool) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		in := config.Types[location].Factory()
 		l := emuLocation(location, ps)
-		log.Printf("[TRACE] emuPost(%s)", l)
+		log.Printf("[TRACE] emu%s(%s)", logPrefix, l)
 		unmarshallRequestBody(r, in)
-		id, out := config.Types[location].Responder(in)
+		id, out := config.Types[location].Responder(r.Method, in)
 		l += "/" + id
 		PostFixture(l, out)
 		emuCreated = append(emuCreated, out)
@@ -87,6 +87,14 @@ func emuPost(location string, config EmuConfig, empty bool) httprouter.Handle {
 			w.Write(fc[l]) // nolint
 		}
 	}
+}
+
+func emuPut(location string, config EmuConfig, empty bool) httprouter.Handle {
+	return emuWrite("Put", location, config, true, empty)
+}
+
+func emuPost(location string, config EmuConfig, empty bool) httprouter.Handle {
+	return emuWrite("Post", location, config, false, empty)
 }
 
 func emuDelete(location, idKey string) httprouter.Handle {
@@ -135,6 +143,9 @@ func NewEmulator(config EmuConfig) *httptest.Server {
 	router.POST("/admin/DeleteTenant/:tenantId", emuDelete("tenant", "tenantId"))
 	router.GET("/v3/admin/tenant/:tenantId/metadata", emuList("tenant/:tenantId/metadata"))
 	router.GET("/v3/admin/tenant/:tenantId/metadata/:key", emuGet("tenant/:tenantId/metadata", "key"))
+	router.POST("/v3/admin/tenant/:tenantId/metadata", emuPost("tenant/:tenantId/metadata", config, false))
+	router.PUT("/v3/admin/tenant/:tenantId/metadata/:key", emuPut("tenant/:tenantId/metadata", config, false))
+	router.DELETE("/v3/admin/tenant/:tenantId/metadata/:key", emuDelete("tenant/:tenantId/metadata", "key"))
 
 	// non-admin tenant APIs
 	router.GET("/subscriptions/:tenantId/GetExternalSubnets", emuList("tenant/:tenantId/external_subnets"))
