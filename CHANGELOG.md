@@ -1,3 +1,19 @@
+## 2024-02-13
+
+### Added
+- Unit tests for `duplocloud_tenant_config` resource and data source, focusing on basic functionality and happy path scenarios.
+- Enhancements to the emulator to support v3 tenant metadata APIs, including creation, update, and deletion of tenant metadata.
+- Updates to `TenantSetConfigKey` and `TenantDeleteConfigKey` methods in the SDK to use the v3 API, improving the handling of tenant configurations.
+- New test helpers for more flexible and simplified resource creation in unit tests.
+- Fixtures for tenant metadata to support the new unit tests.
+
+### Changed
+- The emulator now supports dynamic path parameters and added routes for the tenant metadata API.
+- Updated the `duplocloud_aws_host` resource test helper function to use the new test helper for generating Terraform resource definitions.
+
+### Breaking Changes
+- Duplo releases older than 1/2023 will be missing the v3 tenant metadata APIs.
+
 ## 2024-02-12
 
 ### Added
