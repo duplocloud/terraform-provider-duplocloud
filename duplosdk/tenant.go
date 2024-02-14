@@ -253,7 +253,7 @@ func (c *Client) TenantChangeConfig(tenantID string, oldConfig, newConfig *[]Dup
 	present := map[string]struct{}{}
 	if newConfig != nil {
 		for _, kv := range *newConfig {
-			if err := c.TenantSetConfigKey(tenantID, kv.Key, kv.Value); err != nil {
+			if _, err := c.TenantSetConfigKey(tenantID, kv.Key, kv.Value); err != nil {
 				return err
 			}
 			present[kv.Key] = struct{}{}
@@ -276,14 +276,22 @@ func (c *Client) TenantChangeConfig(tenantID string, oldConfig, newConfig *[]Dup
 
 // TenantDeleteConfigKey deletes a specific configuration key for a tenant via the Duplo API.
 func (c *Client) TenantDeleteConfigKey(tenantID, key string) ClientError {
-	rq := DuploTenantConfigUpdateRequest{TenantID: tenantID, State: "delete", Key: key}
-	return c.postAPI(fmt.Sprintf("TenantDeleteConfigKey(%s, %s)", tenantID, key), "adminproxy/TenantMetadataUpdate", &rq, nil)
+	return c.deleteAPI(
+		fmt.Sprintf("TenantDeleteConfigKey(%s, %s)", tenantID, key),
+		fmt.Sprintf("v3/admin/tenant/%s/metadata/%s", tenantID, key),
+		nil)
 }
 
 // TenantSetConfigKey set a specific configuration key for a tenant via the Duplo API.
-func (c *Client) TenantSetConfigKey(tenantID, key, value string) ClientError {
-	rq := DuploTenantConfigUpdateRequest{TenantID: tenantID, Key: key, Value: value}
-	return c.postAPI(fmt.Sprintf("TenantSetConfigKey(%s, %s)", tenantID, key), "adminproxy/TenantMetadataUpdate", &rq, nil)
+func (c *Client) TenantSetConfigKey(tenantID, key, value string) (rp DuploKeyStringValue, err ClientError) {
+	rq := DuploKeyStringValue{Key: key, Value: value}
+	rp = DuploKeyStringValue{}
+	err = c.postAPI(
+		fmt.Sprintf("TenantSetConfigKey(%s, %s)", tenantID, key),
+		fmt.Sprintf("v3/admin/tenant/%s/metadata", tenantID),
+		&rq,
+		&rp)
+	return
 }
 
 // TenantGetAwsRegion retrieves a tenant's AWS region via the Duplo API.

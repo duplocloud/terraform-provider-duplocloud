@@ -4,7 +4,19 @@ import (
 	"strings"
 )
 
-func WriteResource(rType, rName string, defaults, overrides map[string]string) string {
+func WriteCustomResource(rType, rName string, writer func(*strings.Builder)) string {
+	var sb strings.Builder
+	sb.WriteString("resource \"")
+	sb.WriteString(rType)
+	sb.WriteString("\" \"")
+	sb.WriteString(rName)
+	sb.WriteString("\" {\n")
+	writer(&sb)
+	sb.WriteString("}\n")
+	return sb.String()
+}
+
+func WriteFlatResource(rType, rName string, defaults, overrides map[string]string) string {
 	var sb strings.Builder
 	sb.WriteString("resource \"")
 	sb.WriteString(rType)

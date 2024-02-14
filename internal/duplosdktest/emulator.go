@@ -11,7 +11,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-type EmuResponder func(in interface{}) (id string, out interface{})
+type EmuResponder func(verb string, in interface{}) (id string, out interface{})
 type EmuFactory func() interface{}
 type EmuType struct {
 	Factory   EmuFactory
@@ -61,9 +61,9 @@ func emuList(location string) httprouter.Handle {
 	}
 }
 
-func emuGet(location string) httprouter.Handle {
+func emuGet(location, idKey string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		id := ps.ByName("id")
+		id := ps.ByName(idKey)
 		l := emuLocation(location, ps) + "/" + id
 		log.Printf("[TRACE] emuGet(%s)", l)
 		buff := GetFixture(l)
@@ -72,13 +72,13 @@ func emuGet(location string) httprouter.Handle {
 	}
 }
 
-func emuPost(location string, config EmuConfig, empty bool) httprouter.Handle {
+func emuWrite(logPrefix, location string, config EmuConfig, hasId, empty bool) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		in := config.Types[location].Factory()
 		l := emuLocation(location, ps)
-		log.Printf("[TRACE] emuPost(%s)", l)
+		log.Printf("[TRACE] emu%s(%s)", logPrefix, l)
 		unmarshallRequestBody(r, in)
-		id, out := config.Types[location].Responder(in)
+		id, out := config.Types[location].Responder(r.Method, in)
 		l += "/" + id
 		PostFixture(l, out)
 		emuCreated = append(emuCreated, out)
@@ -89,9 +89,17 @@ func emuPost(location string, config EmuConfig, empty bool) httprouter.Handle {
 	}
 }
 
-func emuDelete(location string) httprouter.Handle {
+func emuPut(location string, config EmuConfig, empty bool) httprouter.Handle {
+	return emuWrite("Put", location, config, true, empty)
+}
+
+func emuPost(location string, config EmuConfig, empty bool) httprouter.Handle {
+	return emuWrite("Post", location, config, false, empty)
+}
+
+func emuDelete(location, idKey string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		id := ps.ByName("id")
+		id := ps.ByName(idKey)
 		l := emuLocation(location, ps) + "/" + id
 		log.Printf("[TRACE] emuDelete(%s)", l)
 		if DeleteFixture(l) {
@@ -128,11 +136,16 @@ func NewEmulator(config EmuConfig) *httptest.Server {
 	// tenant APIs
 	router.GET("/admin/GetTenantsForUser", emuList("tenant"))
 	router.GET("/v2/admin/TenantV2", emuList("tenant"))
-	router.GET("/v2/admin/TenantV2/:id", emuGet("tenant"))
+	router.GET("/v2/admin/TenantV2/:tenantId", emuGet("tenant", "tenantId"))
 	router.GET("/v3/admin/tenant", emuList("tenant"))
-	router.GET("/v3/admin/tenant/:id", emuGet("tenant"))
+	router.GET("/v3/admin/tenant/:tenantId", emuGet("tenant", "tenantId"))
 	router.POST("/admin/AddTenant", emuPost("tenant", config, true))
-	router.POST("/admin/DeleteTenant/:id", emuDelete("tenant"))
+	router.POST("/admin/DeleteTenant/:tenantId", emuDelete("tenant", "tenantId"))
+	router.GET("/v3/admin/tenant/:tenantId/metadata", emuList("tenant/:tenantId/metadata"))
+	router.GET("/v3/admin/tenant/:tenantId/metadata/:key", emuGet("tenant/:tenantId/metadata", "key"))
+	router.POST("/v3/admin/tenant/:tenantId/metadata", emuPost("tenant/:tenantId/metadata", config, false))
+	router.PUT("/v3/admin/tenant/:tenantId/metadata/:key", emuPut("tenant/:tenantId/metadata", config, false))
+	router.DELETE("/v3/admin/tenant/:tenantId/metadata/:key", emuDelete("tenant/:tenantId/metadata", "key"))
 
 	// non-admin tenant APIs
 	router.GET("/subscriptions/:tenantId/GetExternalSubnets", emuList("tenant/:tenantId/external_subnets"))
@@ -140,9 +153,9 @@ func NewEmulator(config EmuConfig) *httptest.Server {
 
 	// AWS host APIs
 	router.GET("/v2/subscriptions/:tenantId/NativeHostV2", emuList("tenant/:tenantId/aws_host"))
-	router.GET("/v2/subscriptions/:tenantId/NativeHostV2/:id", emuGet("tenant/:tenantId/aws_host"))
+	router.GET("/v2/subscriptions/:tenantId/NativeHostV2/:id", emuGet("tenant/:tenantId/aws_host", "id"))
 	router.POST("/v2/subscriptions/:tenantId/NativeHostV2", emuPost("tenant/:tenantId/aws_host", config, false))
-	router.DELETE("/v2/subscriptions/:tenantId/NativeHostV2/:id", emuDelete("tenant/:tenantId/aws_host"))
+	router.DELETE("/v2/subscriptions/:tenantId/NativeHostV2/:id", emuDelete("tenant/:tenantId/aws_host", "id"))
 
 	return SetupHttptest(router)
 }

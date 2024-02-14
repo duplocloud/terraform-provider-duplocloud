@@ -80,7 +80,7 @@ func ListFixtures(location string) []byte {
 
 	// List files
 	files, err := os.ReadDir(dir)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		log.Panicf("readdir: %s: %s", location, err)
 	}
 
@@ -150,7 +150,20 @@ func GetFixture(location string) []byte {
 	return buff
 }
 
+func ResourceExists(location string) bool {
+	_, ok := fc[location]
+	return ok
+}
+
 func GetResource(location string, target interface{}) error {
 	bytes := GetFixture(location)
 	return json.Unmarshal(bytes, target)
+}
+
+func SetResource(location string, source interface{}) error {
+	bytes, err := json.Marshal(source)
+	if err == nil {
+		fc[location] = bytes
+	}
+	return err
 }
