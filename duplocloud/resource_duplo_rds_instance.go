@@ -250,7 +250,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 		},
 		"skip_final_snapshot": {
 			Description: "If the final snapshot should be taken." +
-				"When set to true, the final snapshot will not be taken when the resource is deleted. Default final snapshot will be taken.",
+				" When set to true, the final snapshot will not be taken when the resource is deleted.",
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  false,
