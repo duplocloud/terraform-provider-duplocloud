@@ -348,9 +348,12 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
 
-	diags = resourceDuploRdsInstanceRead(ctx, d, m)
+	createdRds, err := c.RdsInstanceGet(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	identifier := d.Get("identifier").(string)
+	identifier := createdRds.Identifier
 
 	if d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
 		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
@@ -380,6 +383,8 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 			return diag.FromErr(err)
 		}
 	}
+
+	diags = resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** end")
 	return diags
