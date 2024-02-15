@@ -1,6 +1,15 @@
 ## 2024-02-15
 
 ### Fixed
+- Fixed plugin crash while creating opensearch resource when warm enabled set to true for `duplocloud_aws_elasticsearch` resource.
+
+### Changed
+- Improved handling of Elasticsearch cold and warm storage options, including better logging and struct initialization.
+- Added nil check in `resourceAwsCloudWatchEventRuleRead` to prevent potential nil pointer dereference.
+
+## 2024-02-15
+
+### Fixed
 - Fixed plugin crash while creating opensearch resource when warm enabled set to true for `duplocloud_aws_elasticsearch resource.
 
 ## 2024-02-13
