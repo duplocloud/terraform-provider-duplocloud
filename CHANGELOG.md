@@ -1,3 +1,11 @@
+## 2024-02-15
+
+### Added
+- Introduced `skip_final_snapshot` attribute to RDS instance creation and update, allowing control over whether a final snapshot is taken upon RDS instance deletion.
+- Enhanced deletion protection and backup retention period handling in RDS instance creation and update.
+- Updated SDK structs and functions to support the new `skip_final_snapshot` feature.
+- Updated RDS instance documentation to include the new `skip_final_snapshot` attribute.
+
 ## 2024-02-12
 
 ### Added
