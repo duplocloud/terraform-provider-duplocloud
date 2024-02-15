@@ -1,5 +1,10 @@
 ## 2024-02-15
 
+### Fixed
+- Fixed the issue of missing Elasticsearch version in Terraform state after apply by correcting the JSON tag name for `ElasticSearchVersion` in `DuploElasticSearchDomain` struct.
+
+## 2024-02-15
+
 ### Added
 - Introduced `skip_final_snapshot` attribute to `duplocloud_rds_instance`, allowing control over whether a final snapshot is taken upon RDS instance deletion.
 
