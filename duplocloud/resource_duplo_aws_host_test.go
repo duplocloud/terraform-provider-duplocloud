@@ -13,7 +13,7 @@ import (
 )
 
 func duplocloud_aws_host_basic(rName, hostName string, attrs map[string]string) string {
-	return duplocloudtest.WriteResource("duplocloud_aws_host", rName,
+	return duplocloudtest.WriteFlatResource("duplocloud_aws_host", rName,
 		map[string]string{
 			"tenant_id":            "\"" + Tenant_testacc1a + "\"",
 			"user_account":         "\"testacc1a\"",
