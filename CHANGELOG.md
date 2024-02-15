@@ -1,3 +1,10 @@
+## 2024-02-15
+
+### Fixed
+- Fixed plugin crash while creating opensearch resource when warm enabled set to true.
+- Resolved nil pointer exceptions in CloudWatch Event Rule and Elasticsearch resources.
+- Enhanced logging for debugging cold storage options in Elasticsearch resource.
+
 ## 2024-02-13
 
 ### Added
