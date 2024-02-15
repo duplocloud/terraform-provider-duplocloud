@@ -1,3 +1,8 @@
+## 2024-02-15
+
+### Added
+- Introduced `skip_final_snapshot` attribute to `duplocloud_rds_instance`, allowing control over whether a final snapshot is taken upon RDS instance deletion.
+
 ## 2024-02-13
 
 ### Added
