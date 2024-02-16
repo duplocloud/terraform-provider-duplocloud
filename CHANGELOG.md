@@ -18,6 +18,8 @@
 ### Fixed
 - Fixed plugin crash while creating opensearch resource when warm enabled set to true for `duplocloud_aws_elasticsearch` resource at `awsElasticSearchDomainClusterConfigFromState`..
 - Handled nil pointer exceptions in `duplocloud_aws_cloudwatch_event_rule` resources at `resourceAwsCloudWatchEventRuleRead`  
+-Fixed the issue of missing Elasticsearch version in Terraform state after apply by correcting the JSON tag name for `ElasticSearchVersion` in `DuploElasticSearchDomain` struct for `duplocloud_aws_elasticsearch` resource.
+
 
 ## 2024-02-13
 

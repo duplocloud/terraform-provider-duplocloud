@@ -72,7 +72,7 @@ type DuploElasticSearchDomain struct {
 	EBSOptions                  DuploElasticSearchDomainEBSOptions           `json:"EBSOptions,omitempty"`
 	ClusterConfig               DuploElasticSearchDomainClusterConfig        `json:"ClusterConfig,omitempty"`
 	NodeToNodeEncryptionOptions DuploEnabled                                 `json:"NodeToNodeEncryptionOptions,omitempty"`
-	ElasticSearchVersion        string                                       `json:"ElasticsearchVersion,omitempty"`
+	ElasticSearchVersion        string                                       `json:"EngineVersion,omitempty"`
 	EncryptionAtRestOptions     DuploElasticSearchDomainEncryptAtRestOptions `json:"EncryptionAtRestOptions,omitempty"`
 	Endpoints                   map[string]string                            `json:"Endpoints,omitempty"`
 	LogPublishingOptions        map[string]interface{}                       `json:"LogPublishingOptions,omitempty"`
