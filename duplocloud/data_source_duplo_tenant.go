@@ -105,8 +105,8 @@ func dataSourceTenantRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("infra_owner", duploTenant.InfraOwner)
 	if duploTenant.TenantPolicy != nil {
 		d.Set("policy", []map[string]interface{}{{
-			"allow_volume_mapping": true,
-			"block_external_ep":    true,
+			"allow_volume_mapping": duploTenant.TenantPolicy.AllowVolumeMapping,
+			"block_external_ep":    duploTenant.TenantPolicy.BlockExternalEp,
 		}})
 	}
 	d.Set("tags", keyValueToState("tags", duploTenant.Tags))

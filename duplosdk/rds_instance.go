@@ -52,6 +52,7 @@ type DuploRdsInstance struct {
 	EncryptionKmsKeyId          string                  `json:"EncryptionKmsKeyId,omitempty"`
 	EnableLogging               bool                    `json:"EnableLogging,omitempty"`
 	BackupRetentionPeriod       int                     `json:"BackupRetentionPeriod,omitempty"`
+	SkipFinalSnapshot           bool                    `json:"SkipFinalSnapshot,omitempty"`
 	MultiAZ                     bool                    `json:"MultiAZ,omitempty"`
 	InstanceStatus              string                  `json:"InstanceStatus,omitempty"`
 	DBSubnetGroupName           string                  `json:"DBSubnetGroupName,omitempty"`
@@ -77,17 +78,19 @@ type DuploRdsUpdatePayload struct {
 	SizeEx        string `json:"SizeEx,omitempty"`
 }
 
-type DuploRdsInstanceUpdateRequest struct {
+type DuploRdsUpdateInstance struct {
 	DBInstanceIdentifier  string `json:"DBInstanceIdentifier"`
 	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
 	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
+	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot,omitempty"`
 }
 
-type DuploRdsClusterUpdateRequest struct {
+type DuploRdsUpdateCluster struct {
 	DBClusterIdentifier   string `json:"DBClusterIdentifier"`
 	ApplyImmediately      bool   `json:"ApplyImmediately"`
 	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
 	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
+	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot,omitempty"`
 }
 
 type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
@@ -234,18 +237,18 @@ func (c *Client) RdsInstanceChangeSizeOrEnableLogging(tenantID string, instanceI
 	)
 }
 
-func (c *Client) RdsInstanceChangeRequest(tenantID string, duploObject DuploRdsInstanceUpdateRequest) ClientError {
+func (c *Client) UpdateRDSDBInstance(tenantID string, duploObject DuploRdsUpdateInstance) ClientError {
 	return c.putAPI(
-		fmt.Sprintf("RdsInstanceChangeRequest(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
 		&duploObject,
 		nil,
 	)
 }
 
-func (c *Client) RdsClusterUpdateRequest(tenantID string, duploObject DuploRdsClusterUpdateRequest) ClientError {
+func (c *Client) UpdateRdsCluster(tenantID string, duploObject DuploRdsUpdateCluster) ClientError {
 	return c.putAPI(
-		fmt.Sprintf("RdsClusterUpdateRequest(%s, %s)", tenantID, duploObject.DBClusterIdentifier),
+		fmt.Sprintf("UpdateRdsCluster(%s, %s)", tenantID, duploObject.DBClusterIdentifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, duploObject.DBClusterIdentifier),
 		&duploObject,
 		nil,

@@ -121,7 +121,10 @@ func resourceAwsCloudWatchEventRuleRead(ctx context.Context, d *schema.ResourceD
 		}
 		return diag.Errorf("Unable to retrieve tenant %s cloudwatch event rule'%s': %s", tenantID, fullName, clientErr)
 	}
-
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	d.Set("tenant_id", tenantID)
 	d.Set("fullname", fullName)
 	d.Set("arn", duplo.Arn)
@@ -129,7 +132,6 @@ func resourceAwsCloudWatchEventRuleRead(ctx context.Context, d *schema.ResourceD
 	d.Set("role_arn", duplo.RoleArn)
 	d.Set("schedule_expression", duplo.ScheduleExpression)
 	d.Set("event_pattern", duplo.EventPattern)
-
 	log.Printf("[TRACE] resourceAwsCloudWatchEventRuleRead(%s, %s): end", tenantID, fullName)
 	return nil
 }

@@ -112,6 +112,7 @@ resource "duplocloud_aws_host" "host" {
 - `metadata` (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
+- `prepend_user_data` (Boolean) Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided. Defaults to `false`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_account` (String) The name of the tenant that the host will be created in.
@@ -123,6 +124,7 @@ resource "duplocloud_aws_host" "host" {
 
 - `id` (String) The ID of this resource.
 - `identity_role` (String) The name of the IAM role associated with this host.
+- `initial_base64_user_data` (String)
 - `instance_id` (String) The AWS EC2 instance ID of the host.
 - `private_ip_address` (String) The primary private IP address assigned to the host.
 - `status` (String) The current status of the host.

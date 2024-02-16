@@ -76,6 +76,17 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew:    true, // relaunch instance
 			Computed:    true,
 		},
+		"initial_base64_user_data": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"prepend_user_data": {
+			Description: "Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
+			Default:     false,
+		},
 		"agent_platform": {
 			Description: "The numeric ID of the container agent pool that this host is added to.",
 			Type:        schema.TypeInt,
@@ -159,6 +170,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 		"volume": {
 			Type:     schema.TypeList,
 			Optional: true,
+			Computed: true,
 			ForceNew: true, // relaunch instance
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -194,6 +206,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Description: "An optional list of custom network interface configurations to use when creating the host.",
 			Type:        schema.TypeList,
 			Optional:    true,
+			Computed:    true,
 			ForceNew:    true, // relaunch instance
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -239,6 +252,24 @@ func nativeHostSchema() map[string]*schema.Schema {
 	}
 }
 
+func diffUserData(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	if diff.HasChange("base64_user_data") {
+		_, newUserData := diff.GetChange("base64_user_data")
+		initialUserData := diff.Get("initial_base64_user_data").(string)
+
+		log.Printf("[DEBUG] diffUserData initial: %s, new: %s)", initialUserData, newUserData)
+		if newUserData == initialUserData {
+			// Suppress diffs caused by prepended data alone
+			err := diff.Clear("base64_user_data")
+			if err != nil {
+				return fmt.Errorf("[Error] Error clearing diff for base64_user_data: %s", err)
+			}
+		}
+	}
+
+	return nil
+}
+
 // SCHEMA for resource crud
 func resourceAwsHost() *schema.Resource {
 	awsHostSchema := nativeHostSchema()
@@ -266,7 +297,8 @@ func resourceAwsHost() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: awsHostSchema,
+		Schema:        awsHostSchema,
+		CustomizeDiff: diffUserData,
 	}
 }
 
@@ -305,6 +337,8 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
+
+	initUserDataOptions(d)
 
 	// Build a request.
 	rq := expandNativeHost(d)
@@ -349,6 +383,13 @@ func resourceAwsHostCreate(ctx context.Context, d *schema.ResourceData, m interf
 	diags = resourceAwsHostRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsHostCreate(%s, %s): end", rq.TenantID, rq.FriendlyName)
 	return diags
+}
+
+func initUserDataOptions(d *schema.ResourceData) {
+	// Store initial base64_user_data if supplied
+	if userData, ok := d.GetOk("base64_user_data"); ok {
+		d.Set("initial_base64_user_data", userData)
+	}
 }
 
 func setNetworkInterfaces(rq *duplosdk.DuploNativeHost, c *duplosdk.Client) diag.Diagnostics {
@@ -486,6 +527,7 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		IsMinion:          d.Get("is_minion").(bool),
 		ImageID:           d.Get("image_id").(string),
 		Base64UserData:    d.Get("base64_user_data").(string),
+		PrependUserData:   d.Get("prepend_user_data").(bool),
 		AgentPlatform:     d.Get("agent_platform").(int),
 		IsEbsOptimized:    d.Get("is_ebs_optimized").(bool),
 		AllocatedPublicIP: d.Get("allocated_public_ip").(bool),
@@ -587,6 +629,7 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("private_ip_address", duplo.PrivateIPAddress)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
+	// Ignore the value in the response for duplo.PrependUserData
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
@@ -594,18 +637,17 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
 	}
 
-	// TODO:  The backend doesn't return these yet.
-	// d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
-	// d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
-	// d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	//d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
+	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
+	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 }
 
-func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []map[string]interface{} {
+func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []interface{} {
 	if duplo == nil {
-		return []map[string]interface{}{}
+		return []interface{}{}
 	}
 
-	list := make([]map[string]interface{}, len(*duplo))
+	list := make([]interface{}, 0, len(*duplo))
 	for _, item := range *duplo {
 		list = append(list, map[string]interface{}{
 			"iops":        item.Iops,
@@ -619,12 +661,12 @@ func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []map[str
 	return list
 }
 
-func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetworkInterface) []map[string]interface{} {
+func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetworkInterface) []interface{} {
 	if duplo == nil {
-		return []map[string]interface{}{}
+		return []interface{}{}
 	}
 
-	list := make([]map[string]interface{}, len(*duplo))
+	list := make([]interface{}, 0, len(*duplo))
 	for _, item := range *duplo {
 		nic := map[string]interface{}{
 			"associate_public_ip": item.AssociatePublicIP,
@@ -635,6 +677,7 @@ func flattenNativeHostNetworkInterfaces(duplo *[]duplosdk.DuploNativeHostNetwork
 			nic["network_interface_id"] = item.NetworkInterfaceID
 		}
 		if item.SubnetID != "" {
+			log.Printf("[TRACE] flattenNativeHostNetworkInterfaces(%s): end", item.SubnetID)
 			nic["subnet_id"] = item.SubnetID
 		}
 		if item.Groups != nil {
