@@ -49,11 +49,13 @@ func awsEFSFileSystem() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"transition_to_ia": {
+						Description:  "Indicates how long it takes to transition files to the IA storage class. Valid values: `AFTER_1_DAY`, `AFTER_7_DAYS`, `AFTER_14_DAYS`, `AFTER_30_DAYS`, `AFTER_60_DAYS`, or `AFTER_90_DAYS`",
 						Type:         schema.TypeString,
 						Optional:     true,
 						ValidateFunc: validation.StringInSlice(TransitionToIARules_Values(), false),
 					},
 					"transition_to_primary_storage_class": {
+						Description:  "Describes the policy used to transition a file from infequent access storage to primary storage. Valid values: `AFTER_1_ACCESS`",
 						Type:         schema.TypeString,
 						Optional:     true,
 						ValidateFunc: validation.StringInSlice(TransitionToPrimaryStorageClassRules_Values(), false),
