@@ -5,9 +5,8 @@ import (
 )
 
 type LifecyclePolicy struct {
-	TransitionToArchive             *string `type:"string" enum:"TransitionToArchiveRules"`
-	TransitionToIA                  *string `type:"string" enum:"TransitionToIARules"`
-	TransitionToPrimaryStorageClass *string `type:"string" enum:"TransitionToPrimaryStorageClassRules"`
+	TransitionToIA                  *DuploStringValue `json:"TransitionToIA"`
+	TransitionToPrimaryStorageClass *DuploStringValue `json:"TransitionToPrimaryStorageClass"`
 }
 
 type PutLifecycleConfigurationInput struct {
