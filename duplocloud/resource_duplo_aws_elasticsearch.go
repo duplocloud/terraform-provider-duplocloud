@@ -654,10 +654,16 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 		obj := v.([]interface{})
 		log.Printf("cold storage option value %+v", obj)
 		if len(obj) > 0 {
-			coldStorageOptions := duplosdk.DuploElasticSearchDomainColdStorageOptions{
-				Enabled: obj[0].(map[string]interface{})["enabled"].(bool),
+			value := obj[0].(map[string]interface{})["enabled"].(bool)
+			if value {
+				coldStorageOptions := duplosdk.DuploElasticSearchDomainColdStorageOptions{
+					Enabled: value,
+				}
+				duplo.ColdStorageOptions = &coldStorageOptions
+			} else {
+				duplo.ColdStorageOptions = nil
 			}
-			duplo.ColdStorageOptions = &coldStorageOptions
+
 		}
 	}
 	if v, ok := m["warm_count"]; ok {
