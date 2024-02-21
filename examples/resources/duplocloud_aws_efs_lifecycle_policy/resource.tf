@@ -18,8 +18,8 @@ resource "duplocloud_aws_efs_lifecycle_policy" "efs_policy" {
   lifecycle_policy {
     transition_to_ia = "AFTER_7_DAYS"
   }
-  lifecycle_policy{
-  transition_to_archive = "AFTER_14_DAYS"
+  lifecycle_policy {
+    transition_to_archive = "AFTER_14_DAYS"
   }
   lifecycle_policy {
     transition_to_primary_storage_class = "AFTER_1_ACCESS"
