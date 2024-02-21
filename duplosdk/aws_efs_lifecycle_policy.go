@@ -5,6 +5,7 @@ import (
 )
 
 type LifecyclePolicy struct {
+	TransitionToArchive             *DuploStringValue `json:"TransitionToArchive"`
 	TransitionToIA                  *DuploStringValue `json:"TransitionToIA"`
 	TransitionToPrimaryStorageClass *DuploStringValue `json:"TransitionToPrimaryStorageClass"`
 }

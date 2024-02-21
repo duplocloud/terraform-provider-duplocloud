@@ -13,6 +13,50 @@ import (
 )
 
 const (
+	// TransitionToArchiveRulesAfter1Day is a TransitionToArchiveRules enum value
+	TransitionToArchiveRulesAfter1Day = "AFTER_1_DAY"
+
+	// TransitionToArchiveRulesAfter7Days is a TransitionToArchiveRules enum value
+	TransitionToArchiveRulesAfter7Days = "AFTER_7_DAYS"
+
+	// TransitionToArchiveRulesAfter14Days is a TransitionToArchiveRules enum value
+	TransitionToArchiveRulesAfter14Days = "AFTER_14_DAYS"
+
+	// TransitionToArchiveRulesAfter30Days is a TransitionToArchiveRules enum value
+	TransitionToArchiveRulesAfter30Days = "AFTER_30_DAYS"
+
+	// TransitionToArchiveRulesAfter60Days is a TransitionToArchiveRules enum value
+	TransitionToArchiveRulesAfter60Days = "AFTER_60_DAYS"
+
+	// TransitionToArchiveRulesAfter90Days is a TransitionToArchiveRules enum value
+	TransitionToArchiveRulesAfter90Days = "AFTER_90_DAYS"
+
+	// TransitionToArchiveRulesAfter180Days is a TransitionToArchiveRules enum value
+	TransitionToArchiveRulesAfter180Days = "AFTER_180_DAYS"
+
+	// TransitionToArchiveRulesAfter270Days is a TransitionToArchiveRules enum value
+	TransitionToArchiveRulesAfter270Days = "AFTER_270_DAYS"
+
+	// TransitionToArchiveRulesAfter365Days is a TransitionToArchiveRules enum value
+	TransitionToArchiveRulesAfter365Days = "AFTER_365_DAYS"
+)
+
+// TransitionToArchiveRules_Values returns all elements of the TransitionToArchiveRules enum
+func TransitionToArchiveRules_Values() []string {
+	return []string{
+		TransitionToArchiveRulesAfter1Day,
+		TransitionToArchiveRulesAfter7Days,
+		TransitionToArchiveRulesAfter14Days,
+		TransitionToArchiveRulesAfter30Days,
+		TransitionToArchiveRulesAfter60Days,
+		TransitionToArchiveRulesAfter90Days,
+		TransitionToArchiveRulesAfter180Days,
+		TransitionToArchiveRulesAfter270Days,
+		TransitionToArchiveRulesAfter365Days,
+	}
+}
+
+const (
 	// TransitionToIARulesAfter7Days is a TransitionToIARules enum value
 	TransitionToIARulesAfter7Days = "AFTER_7_DAYS"
 
@@ -83,9 +127,15 @@ func awsEFSLifecyclePolicy() map[string]*schema.Schema {
 		"lifecycle_policy": {
 			Type:     schema.TypeList,
 			Required: true,
-			MaxItems: 2,
+			MaxItems: 3,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
+					"transition_to_archive": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						ValidateFunc: validation.StringInSlice(TransitionToArchiveRules_Values(), false),
+					},
+
 					"transition_to_ia": {
 						Description:  "Indicates how long it takes to transition files to the IA storage class. Valid values: `AFTER_1_DAY`, `AFTER_7_DAYS`, `AFTER_14_DAYS`, `AFTER_30_DAYS`, `AFTER_60_DAYS`, or `AFTER_90_DAYS`",
 						Type:         schema.TypeString,
@@ -182,6 +232,10 @@ func expandFileSystemLifecyclePolicies(tfList []interface{}) []*duplosdk.Lifecyc
 		}
 
 		apiObject := &duplosdk.LifecyclePolicy{}
+
+		if v, ok := tfMap["transition_to_archive"].(string); ok && v != "" {
+			apiObject.TransitionToArchive = &duplosdk.DuploStringValue{Value: v}
+		}
 
 		if v, ok := tfMap["transition_to_ia"].(string); ok && v != "" {
 			apiObject.TransitionToIA = &duplosdk.DuploStringValue{Value: v}
