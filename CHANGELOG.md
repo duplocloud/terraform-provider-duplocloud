@@ -1,3 +1,8 @@
+## 2024-02-21
+
+### Added 
+- Implemented `duplocloud_gcp_node_pool` resource.
+
 ## 2024-02-15
 
 ### Added
