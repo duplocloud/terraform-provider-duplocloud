@@ -309,6 +309,7 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	d.Set("arn", duplo.TableArn)
 	d.Set("status", duplo.TableStatus.Value)
 	d.Set("is_point_in_time_recovery", duplo.PointInTimeRecoveryStatus == "ENABLED")
+	d.Set("deletion_protection_enabled", duplo.DeletionProtectionEnabled)
 
 	if duplo.BillingModeSummary != nil {
 		d.Set("billing_mode", duplo.BillingModeSummary.BillingMode)
