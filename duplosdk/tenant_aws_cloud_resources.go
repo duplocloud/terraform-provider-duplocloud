@@ -512,13 +512,13 @@ func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApp
 // TenantCreateS3Bucket creates an S3 bucket resource via Duplo.
 func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketRequest) ClientError {
 	duplo.Type = ResourceTypeS3Bucket
-
+	resp := DuploS3Bucket{}
 	// Create the bucket via Duplo.
 	return c.postAPI(
 		fmt.Sprintf("TenantCreateS3Bucket(%s, %s)", tenantID, duplo.Name),
 		fmt.Sprintf("/v3/subscriptions/%s/aws/s3Bucket", tenantID),
 		&duplo,
-		nil)
+		&resp)
 }
 
 // TenantDeleteS3Bucket deletes an S3 bucket resource via Duplo.
@@ -537,7 +537,7 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError 
 	// Delete the bucket via Duplo.
 	return c.deleteAPI(
 		fmt.Sprintf("TenantDeleteS3Bucket(%s, %s)", tenantID, fullName),
-		fmt.Sprintf("/v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, fullName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, fullName),
 		nil)
 }
 
@@ -546,7 +546,7 @@ func (c *Client) TenantGetS3BucketSettings(tenantID string, name string) (*Duplo
 	rp := DuploS3Bucket{}
 
 	err := c.getAPI(fmt.Sprintf("TenantGetS3BucketSettings(%s, %s)", tenantID, name),
-		fmt.Sprintf("/v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, name),
 		&rp)
 	if err != nil || rp.Name == "" {
 		return nil, err
@@ -571,7 +571,7 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 
 	// Apply the settings via Duplo.
 	rp := DuploS3Bucket{}
-	err = c.putAPI(apiName, fmt.Sprintf("/v3/subscriptions/%s/aws/s3Bucket", tenantID), &duplo, &rp)
+	err = c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, duplo.Name), &duplo, &rp)
 	if err != nil {
 		return nil, err
 	}
