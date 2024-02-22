@@ -516,7 +516,7 @@ func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketReques
 	// Create the bucket via Duplo.
 	return c.postAPI(
 		fmt.Sprintf("TenantCreateS3Bucket(%s, %s)", tenantID, duplo.Name),
-		fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
+		fmt.Sprintf("/v3/subscriptions/%s/aws/s3Bucket", tenantID),
 		&duplo,
 		nil)
 }
@@ -535,10 +535,9 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError 
 	}
 
 	// Delete the bucket via Duplo.
-	return c.postAPI(
-		fmt.Sprintf("TenantDeleteS3Bucket(%s, %s)", tenantID, name),
-		fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
-		&DuploS3BucketRequest{Type: ResourceTypeS3Bucket, Name: fullName, State: "delete"},
+	return c.deleteAPI(
+		fmt.Sprintf("TenantDeleteS3Bucket(%s, %s)", tenantID, fullName),
+		fmt.Sprintf("/v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, fullName),
 		nil)
 }
 
@@ -547,7 +546,7 @@ func (c *Client) TenantGetS3BucketSettings(tenantID string, name string) (*Duplo
 	rp := DuploS3Bucket{}
 
 	err := c.getAPI(fmt.Sprintf("TenantGetS3BucketSettings(%s, %s)", tenantID, name),
-		fmt.Sprintf("subscriptions/%s/GetS3BucketSettings/%s", tenantID, name),
+		fmt.Sprintf("/v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, name),
 		&rp)
 	if err != nil || rp.Name == "" {
 		return nil, err
@@ -572,7 +571,7 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 
 	// Apply the settings via Duplo.
 	rp := DuploS3Bucket{}
-	err = c.postAPI(apiName, fmt.Sprintf("subscriptions/%s/ApplyS3BucketSettings", tenantID), &duplo, &rp)
+	err = c.putAPI(apiName, fmt.Sprintf("/v3/subscriptions/%s/aws/s3Bucket", tenantID), &duplo, &rp)
 	if err != nil {
 		return nil, err
 	}
