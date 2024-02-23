@@ -30,6 +30,7 @@ type DuploDynamoDBTableV2 struct {
 	TableName                 string                                      `json:"TableName"`
 	TableId                   string                                      `json:"TableId"`
 	TableArn                  string                                      `json:"TableArn,omitempty"`
+	DeletionProtectionEnabled bool                                        `json:"DeletionProtectionEnabled,omitempty"`
 	PointInTimeRecoveryStatus string                                      `json:"PointInTimeRecoveryStatus,omitempty"`
 	KeySchema                 *[]DuploDynamoDBKeySchema                   `json:"KeySchema,omitempty"`
 	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinion           `json:"AttributeDefinitions,omitempty"`
