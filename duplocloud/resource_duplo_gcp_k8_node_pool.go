@@ -17,14 +17,14 @@ import (
 func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the cloud function will be created in.",
+			Description:  "The GUID of the tenant that the node pool will be created in.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "The short name of the cloud function.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
+			Description: "The short name of the node pool.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
