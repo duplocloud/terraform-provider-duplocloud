@@ -61,6 +61,13 @@ func k8sSecretSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"labels": {
+			Description: "Map of string keys and values that can be used to organize and categorize (scope and select) the secret",
+			Type:        schema.TypeMap,
+			Optional:    true,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 	}
 }
 
@@ -221,6 +228,7 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret) {
 
 	// Finally, set the map
 	d.Set("secret_annotations", duplo.SecretAnnotations)
+	d.Set("labels", duplo.Labels)
 }
 
 func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
@@ -234,6 +242,13 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 		duplo.SecretAnnotations = map[string]string{}
 		for key, value := range v.(map[string]interface{}) {
 			duplo.SecretAnnotations[key] = value.(string)
+		}
+	}
+
+	if v, ok := d.GetOk("labels"); ok && !isInterfaceNil(v) {
+		duplo.Labels = map[string]string{}
+		for key, value := range v.(map[string]interface{}) {
+			duplo.Labels[key] = value.(string)
 		}
 	}
 
