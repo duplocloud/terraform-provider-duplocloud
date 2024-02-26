@@ -1,4 +1,12 @@
 ## 2024-02-26
+### Added
+- Added SDK support for managing GCP K8 Node Pools, including create, read, update, and delete operations.
+- Refactored the `NativeHostGet` function in the SDK to improve the method of retrieving native hosts.
+
+### Fixed
+- Fixed an issue where the `store_details_in_secret_manager` attribute was not being correctly set for the `duplocloud_rds_instance` resource.
+
+## 2024-02-26
 ### Fixed
 - Fixed `store_details_in_secret_manager` attribute not getting set for `duplocloud_rds_instance` resource in duplo
 ## 2024-02-21
