@@ -1,5 +1,10 @@
 ## 2024-02-21
 
+### Added
+- Added `secret_labels` attribute support for `duplo_k8_secret` resource
+
+## 2024-02-21
+
 ### Added 
 - Implemented `duplocloud_gcp_node_pool` resource.
 
