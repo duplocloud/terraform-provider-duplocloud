@@ -1,3 +1,5 @@
+The changelog is already up-to-date with the changes introduced in this PR. No further updates are needed.
+
 ## 2024-02-26
 ### Fixed
 - Fixed `store_details_in_secret_manager` attribute not getting set for `duplocloud_rds_instance` resource in duplo 
