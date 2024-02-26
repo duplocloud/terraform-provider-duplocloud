@@ -235,3 +235,8 @@ func StringIsValidRegExp(i interface{}, k string) (warnings []string, errors []e
 
 	return warnings, errors
 }
+
+func IsStringValid(r *regexp.Regexp, message string) bool {
+	return r.MatchString(message)
+
+}

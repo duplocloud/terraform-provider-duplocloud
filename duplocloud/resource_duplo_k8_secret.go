@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -229,7 +230,7 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret) {
 
 	// Finally, set the map
 	d.Set("secret_annotations", duplo.SecretAnnotations)
-	d.Set("labels", duplo.SecretLabels)
+	d.Set("secret_labels", duplo.SecretLabels)
 }
 
 func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
@@ -248,9 +249,20 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 
 	if v, ok := d.GetOk("secret_labels"); ok && !isInterfaceNil(v) {
 		duplo.SecretLabels = map[string]string{}
-		for key, value := range v.(map[string]interface{}) {
-			duplo.SecretLabels[key] = value.(string)
+		if v, ok := d.GetOk("secret_labels"); ok && !isInterfaceNil(v) {
+			duplo.SecretLabels = map[string]string{}
+			for key, value := range v.(map[string]interface{}) {
+				if !validation.IsStringValid(regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$"), key) {
+					return nil, secretLabelValidationError(duplo.SecretName, key)
+				}
+				val := value.(string)
+				if !validation.IsStringValid(regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$"), val) {
+					return nil, secretLabelValidationError(duplo.SecretName, val)
+				}
+				duplo.SecretLabels[key] = val
+			}
 		}
+
 	}
 
 	// The data must be decoded as JSON.
@@ -267,4 +279,11 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 	}
 
 	return &duplo, nil
+}
+
+func secretLabelValidationError(name, value string) error {
+	return fmt.Errorf(`Secret '%s' is invalid: metadata.labels: Invalid value: '%s,': a valid label must 
+	be an empty string or consist of alphanumeric characters, '-', '', or '.', and must start and end with an alphanumeric 
+	character (e.g. 'MyValue', or 'my_value', or '12345',
+	 regex used for validation is '((A-Za-z0-9][-A-Za-z0-9.]*)?[A-Za-z0-9])?').`, name, value)
 }
