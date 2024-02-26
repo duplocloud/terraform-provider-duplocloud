@@ -1,3 +1,9 @@
+## 2024-02-26
+
+### Added
+- Enhanced Kubernetes secret management with the addition of `secret_labels` attribute in `duplo_k8_secret` resource.
+- Introduced `duplocloud_gcp_node_pools` resource for managing GCP Node Pools in DuploCloud.
+
 ## 2024-02-21
 
 ### Added
