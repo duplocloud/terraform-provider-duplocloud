@@ -652,7 +652,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.MultiAZ = d.Get("multi_az").(bool)
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
 	duploObject.SkipFinalSnapshot = d.Get("skip_final_snapshot").(bool)
-
+	duploObject.StoreDetailsInSecretManager = d.Get("store_details_in_secret_manager").(bool)
 	if v, ok := d.GetOk("v2_scaling_configuration"); ok {
 		duploObject.V2ScalingConfiguration = expandV2ScalingConfiguration(v.([]interface{}))
 	}
@@ -729,6 +729,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["multi_az"] = duploObject.MultiAZ
 	jo["instance_status"] = duploObject.InstanceStatus
 	jo["skip_final_snapshot"] = duploObject.SkipFinalSnapshot
+	jo["store_details_in_secret_manager"] = duploObject.StoreDetailsInSecretManager
 
 	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 {
 		d.Set("v2_scaling_configuration", []map[string]interface{}{{

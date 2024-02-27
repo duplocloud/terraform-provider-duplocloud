@@ -1,15 +1,30 @@
-The CHANGELOG.md is already up-to-date with the changes introduced in this PR. No further updates are required.
 
 ## 2024-02-27
 
 ### Added
 - Added support for `cluster_parameter_group_name` for `duplocloud_rds_instance`
 
-## 2024-02-21
 
-### Added 
-- Implemented `duplocloud_gcp_node_pool` resource.
-s
+## 2024-02-26
+
+### Fixed
+- Fixed `store_details_in_secret_manager` attribute not getting set for `duplocloud_rds_instance` resource in duplo 
+
+## 2024-02-27
+
+### Changed
+- Enhanced EFS lifecycle policies by adding detailed descriptions for `transition_to_ia` and `transition_to_primary_storage_class` policies in `duplocloud_aws_efs_lifecycle_policy` resource.
+- Provided an example Terraform configuration demonstrating how to use the `duplocloud_aws_efs_lifecycle_policy` resource.
+
+### Added
+- Added support for configuring a dead letter queue (DLQ) `dead_letter_queue` for AWS Lambda functions `duplocloud_aws_lambda_function`, allowing users to specify an SNS topic or SQS queue for failed invocation notifications. This includes CRUD operations for this new feature and state management in the Terraform provider.
+- Added support for Node.js 20.x runtime for the `duplocloud_aws_lambda_function` resource.
+
+### Fixed
+- Resolved an issue in `duplocloud_aws_elasticsearch` resource where OpenSearch could not be created with both warm enable and cold storage set to false.
+- Corrected the `FileSystemId` assignment in the EFS update function for `duplocloud_aws_efs_lifecycle_policy`
+- Fixed a potential crash in `duplocloud_aws_elasticsearch` creation when `dedicated_master_type` was not defined.
+
 ## 2024-02-15
 
 ### Added
@@ -18,8 +33,7 @@ s
 ### Fixed
 - Fixed plugin crash while creating opensearch resource when warm enabled set to true for `duplocloud_aws_elasticsearch` resource at `awsElasticSearchDomainClusterConfigFromState`..
 - Handled nil pointer exceptions in `duplocloud_aws_cloudwatch_event_rule` resources at `resourceAwsCloudWatchEventRuleRead`  
--Fixed the issue of missing Elasticsearch version in Terraform state after apply by correcting the JSON tag name for `ElasticSearchVersion` in `DuploElasticSearchDomain` struct for `duplocloud_aws_elasticsearch` resource.
-
+- Fixed the issue of missing Elasticsearch version in Terraform state after apply by correcting the JSON tag name for `ElasticSearchVersion` in `DuploElasticSearchDomain` struct for `duplocloud_aws_elasticsearch` resource.
 
 ## 2024-02-13
 

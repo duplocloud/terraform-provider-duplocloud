@@ -2,6 +2,8 @@ package duplocloud
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -124,21 +126,25 @@ func awsEFSLifecyclePolicy() map[string]*schema.Schema {
 		},
 		"lifecycle_policy": {
 			Type:     schema.TypeList,
-			Optional: true,
+			Required: true,
 			MaxItems: 3,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"transition_to_archive": {
+						Description:  "Indicates how long it takes to transition files to the archive storage class. Requires transition_to_ia, Elastic Throughput and General Purpose performance mode. Valid values: `AFTER_1_DAY`, `AFTER_7_DAYS`, `AFTER_14_DAYS`, `AFTER_30_DAYS`, `AFTER_60_DAYS`, or `AFTER_90_DAYS`",
 						Type:         schema.TypeString,
 						Optional:     true,
 						ValidateFunc: validation.StringInSlice(TransitionToArchiveRules_Values(), false),
 					},
+
 					"transition_to_ia": {
+						Description:  "Indicates how long it takes to transition files to the IA storage class. Valid values: `AFTER_1_DAY`, `AFTER_7_DAYS`, `AFTER_14_DAYS`, `AFTER_30_DAYS`, `AFTER_60_DAYS`, or `AFTER_90_DAYS`",
 						Type:         schema.TypeString,
 						Optional:     true,
 						ValidateFunc: validation.StringInSlice(TransitionToIARules_Values(), false),
 					},
 					"transition_to_primary_storage_class": {
+						Description:  "Describes the policy used to transition a file from infequent access storage to primary storage. Valid values: `AFTER_1_ACCESS`",
 						Type:         schema.TypeString,
 						Optional:     true,
 						ValidateFunc: validation.StringInSlice(TransitionToPrimaryStorageClassRules_Values(), false),
@@ -182,9 +188,9 @@ func resourceFileSystemPolicyPut(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.Errorf("putting EFS File System Policy (%s): %s", input.FileSystemId, err)
 	}
-
+	id := fmt.Sprintf("%s/%s", tenantID, input.FileSystemId)
 	if d.IsNewResource() {
-		d.SetId(input.FileSystemId)
+		d.SetId(id)
 	}
 
 	return nil
@@ -194,12 +200,16 @@ func resourceFileSystemPolicyRead(ctx context.Context, d *schema.ResourceData, m
 	var diags diag.Diagnostics
 	c := meta.(*duplosdk.Client)
 
-	fsID := d.Get("file_system_id").(string)
-	tenantID := d.Get("tenant_id").(string)
+	id := d.Id()
+	tenantID, fsID, err := parseAwsEFSLifecyclesIdParts(id)
+	if err != nil {
+		return diag.Errorf("reading EFS File System Lifecycle Policy (%s): %s", d.Id(), err)
+	}
+
 	output, err := c.DuploAWsLifecyclePolicyGet(tenantID, fsID)
 
 	if err != nil {
-		return diag.Errorf("reading EFS File System Policy (%s): %s", d.Id(), err)
+		return diag.Errorf("reading EFS File System Lifecycle Policy (%s): %s", d.Id(), err)
 	}
 
 	d.Set("lifecycle_policy", output)
@@ -225,19 +235,29 @@ func expandFileSystemLifecyclePolicies(tfList []interface{}) []*duplosdk.Lifecyc
 		apiObject := &duplosdk.LifecyclePolicy{}
 
 		if v, ok := tfMap["transition_to_archive"].(string); ok && v != "" {
-			apiObject.TransitionToArchive = &v
+			apiObject.TransitionToArchive = &duplosdk.DuploStringValue{Value: v}
 		}
 
 		if v, ok := tfMap["transition_to_ia"].(string); ok && v != "" {
-			apiObject.TransitionToIA = &v
+			apiObject.TransitionToIA = &duplosdk.DuploStringValue{Value: v}
 		}
 
 		if v, ok := tfMap["transition_to_primary_storage_class"].(string); ok && v != "" {
-			apiObject.TransitionToPrimaryStorageClass = &v
+			apiObject.TransitionToPrimaryStorageClass = &duplosdk.DuploStringValue{Value: v}
 		}
 
 		apiObjects = append(apiObjects, apiObject)
 	}
 
 	return apiObjects
+}
+
+func parseAwsEFSLifecyclesIdParts(id string) (tenantID, efsId string, err error) {
+	idParts := strings.SplitN(id, "/", 2)
+	if len(idParts) == 2 {
+		tenantID, efsId = idParts[0], idParts[1]
+	} else {
+		err = fmt.Errorf("invalid resource ID: %s", id)
+	}
+	return
 }
