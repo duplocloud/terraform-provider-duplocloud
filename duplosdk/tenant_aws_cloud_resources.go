@@ -206,22 +206,16 @@ type DuploAwsLbTargetGroup struct {
 	VpcID                      string                      `json:"VpcId"`
 }
 
-// DuploS3BucketRequest represents a request to create an S3 bucket resource
-type DuploS3BucketRequest struct {
-	Type           int    `json:"ResourceType"`
-	Name           string `json:"Name"`
-	State          string `json:"State,omitempty"`
-	InTenantRegion bool   `json:"InTenantRegion"`
-}
-
 // DuploS3BucketSettingsRequest represents a request to create an S3 bucket resource
 type DuploS3BucketSettingsRequest struct {
-	Name              string   `json:"Name"`
-	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
-	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
-	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
-	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
-	Policies          []string `json:"Policies,omitempty"`
+	Name                string   `json:"Name"`
+	EnableVersioning    bool     `json:"EnableVersioning,omitempty"`
+	EnableAccessLogs    bool     `json:"EnableAccessLogs,omitempty"`
+	AllowPublicAccess   bool     `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryption   string   `json:"DefaultEncryption,omitempty"` // ??
+	Policies            []string `json:"Policies,omitempty"`
+	IsObjectLockEnabled bool     `json:"IsObjectLockEnabled"`
+	Region              string   `json:"Region"`
 }
 
 // DuploKafkaEbsStorageInfo represents a Kafka cluster's EBS storage info
@@ -431,38 +425,6 @@ func (c *Client) TenantGetApplicationLbFullName(tenantID string, name string) (s
 	return c.GetResourceName("duplo3", tenantID, name, false)
 }
 
-// TenantGetS3Bucket retrieves a managed S3 bucket via the Duplo API
-func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket, ClientError) {
-	// Figure out the full resource name.
-	features, _ := c.AdminGetSystemFeatures()
-	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
-	if features.IsTagsBasedResourceMgmtEnabled {
-		fullName = name
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the resource from Duplo.
-	resource, err := c.TenantGetAwsCloudResource(tenantID, ResourceTypeS3Bucket, fullName)
-	if err != nil || resource == nil {
-		return nil, err
-	}
-
-	return &DuploS3Bucket{
-		TenantID:          tenantID,
-		Name:              resource.Name,
-		Arn:               resource.Arn,
-		MetaData:          resource.MetaData,
-		EnableVersioning:  resource.EnableVersioning,
-		AllowPublicAccess: resource.AllowPublicAccess,
-		EnableAccessLogs:  resource.EnableAccessLogs,
-		DefaultEncryption: resource.DefaultEncryption,
-		Policies:          resource.Policies,
-		Tags:              resource.Tags,
-	}, nil
-}
-
 // TenantGetKafkaCluster retrieves a managed Kafka Cluster via the Duplo API
 func (c *Client) TenantGetKafkaCluster(tenantID string, name string) (*DuploKafkaCluster, ClientError) {
 	// Figure out the full resource name.
@@ -510,72 +472,81 @@ func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApp
 }
 
 // TenantCreateS3Bucket creates an S3 bucket resource via Duplo.
-func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketRequest) ClientError {
-	duplo.Type = ResourceTypeS3Bucket
+func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
+	// duplo.Type = ResourceTypeS3Bucket
 	resp := DuploS3Bucket{}
 	// Create the bucket via Duplo.
-	return c.postAPI(
+	err := c.postAPI(
 		fmt.Sprintf("TenantCreateS3Bucket(%s, %s)", tenantID, duplo.Name),
 		//  fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
-		fmt.Sprintf("/v3/subscriptions/%s/aws/s3Bucket", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket", tenantID),
 		&duplo,
 		&resp)
+
+	if err != nil || resp.Name == "" {
+		return nil, err
+	}
+	return &resp, nil
 }
 
 // TenantDeleteS3Bucket deletes an S3 bucket resource via Duplo.
 func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError {
-
-	// Get the full name of the S3 bucket
-	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
-	features, _ := c.AdminGetSystemFeatures()
-	if features.IsTagsBasedResourceMgmtEnabled {
-		fullName = name
-	}
+	fullname, err := c.getS3BucketFullname(tenantID, name)
 	if err != nil {
 		return err
 	}
-
 	// Delete the bucket via Duplo.
-	// fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
 	return c.deleteAPI(
-		fmt.Sprintf("TenantDeleteS3Bucket(%s, %s)", tenantID, fullName),
-		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, fullName),
+		fmt.Sprintf("TenantDeleteS3Bucket(%s, %s)", tenantID, fullname),
+		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, fullname),
 		nil)
 }
 
 // TenantGetS3BucketSettings gets a non-cached view of the  S3 buckets's settings via Duplo.
 func (c *Client) TenantGetS3BucketSettings(tenantID string, name string) (*DuploS3Bucket, ClientError) {
+	fullname, errName := c.getS3BucketFullname(tenantID, name)
+	if errName != nil {
+		return nil, errName
+	}
 	rp := DuploS3Bucket{}
-
-	// fmt.Sprintf("subscriptions/%s/GetS3BucketSettings/%s", tenantID, name),
-	err := c.getAPI(fmt.Sprintf("TenantGetS3BucketSettings(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, name),
+	err := c.getAPI(fmt.Sprintf("TenantGetS3BucketSettings(%s, %s)", tenantID, fullname),
+		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, fullname),
 		&rp)
-	if err != nil || rp.Name == "" {
+	if err != nil || rp.Arn == "" {
 		return nil, err
 	}
 	return &rp, err
 }
 
+func (c *Client) getS3BucketFullname(tenantID, name string) (string, ClientError) {
+	// already has prefix
+	if c.IsDuploServicesNameWithAws(name) {
+		return name, nil
+	}
+	// Figure out the full resource name.
+	features, _ := c.AdminGetSystemFeatures()
+	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
+	if features.IsTagsBasedResourceMgmtEnabled {
+		fullName = name
+	}
+	if err != nil {
+		return "", err
+	}
+	return fullName, nil
+}
+
 // TenantApplyS3BucketSettings applies settings to an S3 bucket resource via Duplo.
 func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
 	apiName := fmt.Sprintf("TenantApplyS3BucketSettings(%s, %s)", tenantID, duplo.Name)
-
-	// Figure out the full resource name.
-	features, _ := c.AdminGetSystemFeatures()
-	fullName, err := c.GetDuploServicesNameWithAws(tenantID, duplo.Name)
-	if features.IsTagsBasedResourceMgmtEnabled {
-		fullName = duplo.Name
-	}
+	fullname, err := c.getS3BucketFullname(tenantID, duplo.Name)
 	if err != nil {
 		return nil, err
 	}
-	duplo.Name = fullName
 
 	// Apply the settings via Duplo.
 	rp := DuploS3Bucket{}
 	// err = c.postAPI(apiName, fmt.Sprintf("subscriptions/%s/ApplyS3BucketSettings", tenantID), &duplo, &rp)
-	err = c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, duplo.Name), &duplo, &rp)
+	err = c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, fullname), &duplo, &rp)
 	if err != nil {
 		return nil, err
 	}

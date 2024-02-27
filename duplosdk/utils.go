@@ -18,6 +18,12 @@ func isInterfaceNil(v interface{}) bool {
 }
 
 // GetDuploServicesNameWithAws builds a duplo resource name, given a tenant ID. The name includes the AWS account ID suffix.
+func (c *Client) IsDuploServicesNameWithAws(name string) bool {
+	// starts with
+	return strings.HasPrefix(name, "duploservices-")
+}
+
+// GetDuploServicesNameWithAws builds a duplo resource name, given a tenant ID. The name includes the AWS account ID suffix.
 func (c *Client) GetDuploServicesNameWithAws(tenantID, name string) (string, ClientError) {
 	return c.GetResourceName("duploservices", tenantID, name, true)
 }

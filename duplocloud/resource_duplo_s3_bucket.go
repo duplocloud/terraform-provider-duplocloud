@@ -153,7 +153,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	// Set simple fields first.
-	resourceS3BucketSetData(d, tenantID, name, duplo)
+	resourceS3BucketSetData(d, tenantID, duplo)
 
 	log.Printf("[TRACE] resourceS3BucketRead ******** end")
 	return nil
@@ -163,11 +163,6 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketCreate ******** start")
 	name := d.Get("name").(string)
-	// Create the request object.
-	duploObject := duplosdk.DuploS3BucketRequest{
-		Name:           name,
-		InTenantRegion: true,
-	}
 
 	c := m.(*duplosdk.Client)
 	features, _ := c.AdminGetSystemFeatures()
@@ -176,27 +171,55 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		s3MaxLength = 63
 	}
 	if len(name) > s3MaxLength {
-		return diag.Errorf("Expected length of lambda function name '%s' to be in the range (1 - %d)", name, s3MaxLength)
+		return diag.Errorf("Expected length of s3 name '%s' to be in the range (1 - %d)", name, s3MaxLength)
 	}
 	tenantID := d.Get("tenant_id").(string)
 
+	// prefix + name based on settings
+	fullName, errname := c.GetDuploServicesNameWithAws(tenantID, name)
+	if features.IsTagsBasedResourceMgmtEnabled {
+		fullName = name
+	}
+	if errname != nil {
+		return diag.Errorf("Error get duplo services name with aws '%s' error: '%s'", name, errname.Error())
+	}
+
+	// Create the request object.
+	duploObject := duplosdk.DuploS3BucketSettingsRequest{
+		Name: name,
+	}
+	errFill := fillS3BucketRequest(&duploObject, d)
+	if errFill != nil {
+		return diag.FromErr(errFill)
+	}
+
 	// Post the object to Duplo
-	err := c.TenantCreateS3Bucket(tenantID, duploObject)
+	_, err := c.TenantCreateS3Bucket(tenantID, duploObject)
 	if err != nil {
 		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
-	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
+	id := fmt.Sprintf("%s/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "S3 bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenantGetS3Bucket(tenantID, duploObject.Name)
+		return c.TenantGetS3BucketSettings(tenantID, fullName)
 	})
 	if diags != nil {
 		return diags
 	}
 	d.SetId(id)
 
-	diags = resourceS3BucketUpdate(ctx, d, m)
+	duplo, err := c.TenantGetS3BucketSettings(tenantID, fullName)
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
+	if err != nil {
+		return diag.Errorf("Unable to retrieve tenant %s bucket '%s': %s", tenantID, name, err)
+	}
+
+	// Set simple fields first.
+	resourceS3BucketSetData(d, tenantID, duplo)
 	log.Printf("[TRACE] resourceS3BucketCreate ******** end")
 	return diags
 }
@@ -207,36 +230,12 @@ func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Create the request object.
 	duploObject := duplosdk.DuploS3BucketSettingsRequest{
-		Name: d.Get("name").(string),
+		Name: d.Get("fullname").(string),
 	}
 
-	// Set the object versioning
-	if v, ok := d.GetOk("enable_versioning"); ok && v != nil {
-		duploObject.EnableVersioning = v.(bool)
-	}
-
-	// Set the access logs flag
-	if v, ok := d.GetOk("enable_access_logs"); ok && v != nil {
-		duploObject.EnableAccessLogs = v.(bool)
-	}
-
-	// Set the public access block.
-	if v, ok := d.GetOk("allow_public_access"); ok && v != nil {
-		duploObject.AllowPublicAccess = v.(bool)
-	}
-
-	// Set the default encryption.
-	defaultEncryption, err := getOptionalBlockAsMap(d, "default_encryption")
+	err := fillS3BucketRequest(&duploObject, d)
 	if err != nil {
 		return diag.FromErr(err)
-	}
-	if v, ok := defaultEncryption["method"]; ok && v != nil {
-		duploObject.DefaultEncryption = v.(string)
-	}
-
-	// Set the managed policies.
-	if v, ok := getAsStringArray(d, "managed_policies"); ok && v != nil {
-		duploObject.Policies = *v
 	}
 
 	c := m.(*duplosdk.Client)
@@ -247,7 +246,7 @@ func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	if err != nil {
 		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
 	}
-	resourceS3BucketSetData(d, tenantID, d.Get("name").(string), resource)
+	resourceS3BucketSetData(d, tenantID, resource)
 
 	log.Printf("[TRACE] resourceS3BucketUpdate ******** end")
 	return nil
@@ -271,7 +270,7 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Wait up to 60 seconds for Duplo to delete the bucket.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenantGetS3Bucket(idParts[0], idParts[1])
+		return c.TenantGetS3BucketSettings(idParts[0], idParts[1])
 	})
 	if diag != nil {
 		return diag
@@ -284,9 +283,9 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 	return nil
 }
 
-func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploS3Bucket) {
+func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, duplo *duplosdk.DuploS3Bucket) {
+	log.Printf("[TRACE] resourceS3BucketSetData name=%s fullname=%s", duplo.Name)
 	d.Set("tenant_id", tenantID)
-	d.Set("name", name)
 	d.Set("fullname", duplo.Name)
 	d.Set("domain_name", duplo.DomainName)
 	d.Set("arn", duplo.Arn)
@@ -298,4 +297,40 @@ func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name strin
 	}})
 	d.Set("managed_policies", duplo.Policies)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
+}
+
+func fillS3BucketRequest(duploObject *duplosdk.DuploS3BucketSettingsRequest, d *schema.ResourceData) error {
+	log.Printf("[TRACE] fillS3BucketRequest ******** start")
+
+	// Set the object versioning
+	if v, ok := d.GetOk("enable_versioning"); ok && v != nil {
+		duploObject.EnableVersioning = v.(bool)
+	}
+
+	// Set the access logs flag
+	if v, ok := d.GetOk("enable_access_logs"); ok && v != nil {
+		duploObject.EnableAccessLogs = v.(bool)
+	}
+
+	// Set the public access block.
+	if v, ok := d.GetOk("allow_public_access"); ok && v != nil {
+		duploObject.AllowPublicAccess = v.(bool)
+	}
+
+	// Set the default encryption.
+	defaultEncryption, err := getOptionalBlockAsMap(d, "default_encryption")
+	if err != nil {
+		return err
+	}
+	if v, ok := defaultEncryption["method"]; ok && v != nil {
+		duploObject.DefaultEncryption = v.(string)
+	}
+
+	// Set the managed policies.
+	if v, ok := getAsStringArray(d, "managed_policies"); ok && v != nil {
+		duploObject.Policies = *v
+	}
+
+	log.Printf("[TRACE] fillS3BucketRequest ******** end")
+	return nil
 }
