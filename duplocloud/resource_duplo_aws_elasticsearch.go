@@ -652,8 +652,19 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 	}
 	if v, ok := m["cold_storage_options"]; ok {
 		obj := v.([]interface{})
+		log.Printf("cold storage option value %+v", obj)
 		if len(obj) > 0 {
-			duplo.ColdStorageOptions.Enabled = obj[0].(map[string]interface{})["enabled"].(bool)
+			value, ok := obj[0].(map[string]interface{})["enabled"].(bool)
+
+			if ok && value {
+				coldStorageOptions := duplosdk.DuploElasticSearchDomainColdStorageOptions{
+					Enabled: value,
+				}
+				duplo.ColdStorageOptions = &coldStorageOptions
+			} else {
+				duplo.ColdStorageOptions = nil
+			}
+
 		}
 	}
 	if v, ok := m["warm_count"]; ok {
@@ -664,9 +675,11 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 	}
 	if v, ok := m["warm_type"]; ok {
 		obj := v.(string)
-		duplo.WarmType = nil
 		if obj != "" {
-			duplo.WarmType.Value = obj
+			warmType := duplosdk.DuploStringValue{
+				Value: obj,
+			}
+			duplo.WarmType = &warmType
 		}
 	}
 
@@ -679,7 +692,10 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 				duplo.DedicatedMasterCount = v.(int)
 			}
 			if v, ok := m["dedicated_master_type"]; ok && v.(string) != "" {
-				duplo.DedicatedMasterType.Value = v.(string)
+				dedicatedMasterType := duplosdk.DuploStringValue{
+					Value: v.(string),
+				}
+				duplo.DedicatedMasterType = &dedicatedMasterType
 			}
 		}
 	}

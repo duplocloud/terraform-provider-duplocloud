@@ -95,6 +95,7 @@ resource "duplocloud_aws_lambda_function" "edgefunction" {
 
 ### Optional
 
+- `dead_letter_config` (Block List) Dead letter queue configuration that specifies the queue or topic where Lambda sends asynchronous events when they fail processing. (see [below for nested schema](#nestedblock--dead_letter_config))
 - `description` (String) A description of the lambda function.
 - `environment` (Block List, Max: 1) Allow customization of the lambda execution environment. (see [below for nested schema](#nestedblock--environment))
 - `ephemeral_storage` (Number) The Ephemeral Storage size, in MB, that your lambda function is allowed to use at runtime. Defaults to `512`.
@@ -122,6 +123,14 @@ resource "duplocloud_aws_lambda_function" "edgefunction" {
 - `source_code_hash` (String) The SHA 256 hash of the lambda functions's source code package.
 - `source_code_size` (Number) The size in bytes of the lambda functions's source code package.
 - `version` (String) The version of the lambda function.
+
+<a id="nestedblock--dead_letter_config"></a>
+### Nested Schema for `dead_letter_config`
+
+Optional:
+
+- `target_arn` (String) ARN of an SNS topic or SQS queue to notify when an invocation fails.
+
 
 <a id="nestedblock--environment"></a>
 ### Nested Schema for `environment`

@@ -37,7 +37,7 @@ type DuploElasticSearchDomainEndpointOptions struct {
 type DuploElasticSearchDomainClusterConfig struct {
 	DedicatedMasterCount   int                                         `json:"DedicatedMasterCount,omitempty"`
 	DedicatedMasterEnabled bool                                        `json:"DedicatedMasterEnabled,omitempty"`
-	DedicatedMasterType    DuploStringValue                            `json:"DedicatedMasterType,omitempty"`
+	DedicatedMasterType    *DuploStringValue                           `json:"DedicatedMasterType,omitempty"`
 	InstanceCount          int                                         `json:"InstanceCount,omitempty"`
 	InstanceType           DuploStringValue                            `json:"InstanceType,omitempty"`
 	WarmCount              int                                         `json:"WarmCount,omitempty"`
@@ -72,7 +72,7 @@ type DuploElasticSearchDomain struct {
 	EBSOptions                  DuploElasticSearchDomainEBSOptions           `json:"EBSOptions,omitempty"`
 	ClusterConfig               DuploElasticSearchDomainClusterConfig        `json:"ClusterConfig,omitempty"`
 	NodeToNodeEncryptionOptions DuploEnabled                                 `json:"NodeToNodeEncryptionOptions,omitempty"`
-	ElasticSearchVersion        string                                       `json:"ElasticsearchVersion,omitempty"`
+	ElasticSearchVersion        string                                       `json:"EngineVersion,omitempty"`
 	EncryptionAtRestOptions     DuploElasticSearchDomainEncryptAtRestOptions `json:"EncryptionAtRestOptions,omitempty"`
 	Endpoints                   map[string]string                            `json:"Endpoints,omitempty"`
 	LogPublishingOptions        map[string]interface{}                       `json:"LogPublishingOptions,omitempty"`

@@ -248,6 +248,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"skip_final_snapshot": {
+			Description: "If the final snapshot should be taken." +
+				" When set to true, the final snapshot will not be taken when the resource is deleted.",
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  false,
+		},
 	}
 }
 
@@ -341,31 +348,43 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
 
-	diags = resourceDuploRdsInstanceRead(ctx, d, m)
+	createdRds, err := c.RdsInstanceGet(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	if isDeleteProtectionSupported(d) {
-		identifier := d.Get("identifier").(string)
+	identifier := createdRds.Identifier
+
+	if d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
+		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
 		deleteProtection := new(bool)
-		*deleteProtection = d.Get("deletion_protection").(bool)
-		// Update delete protection settings.
-		log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), identifier)
+
+		if isDeleteProtectionSupported(d) {
+			log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), d.Get("identifier").(string))
+			*deleteProtection = d.Get("deletion_protection").(bool)
+		}
+
 		if isAuroraDB(d) {
-			err = c.RdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
+			err = c.UpdateRdsCluster(tenantID, duplosdk.DuploRdsUpdateCluster{
 				DBClusterIdentifier: identifier + "-cluster",
 				DeletionProtection:  deleteProtection,
+				SkipFinalSnapshot:   skipFinalSnapshot,
 				ApplyImmediately:    true,
 			})
 		} else {
-			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
+			err = c.UpdateRDSDBInstance(tenantID, duplosdk.DuploRdsUpdateInstance{
 				DBInstanceIdentifier: identifier,
 				DeletionProtection:   deleteProtection,
+				SkipFinalSnapshot:    skipFinalSnapshot,
 			})
 		}
 
 		if err != nil {
-			return diag.Errorf("Error while setting deletion_protection for RDS DB instance '%s' : %s", id, err)
+			return diag.FromErr(err)
 		}
 	}
+
+	diags = resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** end")
 	return diags
@@ -455,40 +474,36 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	runUpdate := false
-	backupRetentionPeriod := new(int)
-	if d.HasChange("backup_retention_period") {
-		*backupRetentionPeriod = d.Get("backup_retention_period").(int)
-		log.Printf("[DEBUG] Updating backup_retention_period to: '%v' for db instance '%s'.", backupRetentionPeriod, identifier)
-		runUpdate = true
-	}
+	if d.HasChange("backup_retention_period") || d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
+		backupRetentionPeriod := d.Get("backup_retention_period").(int)
+		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
+		deleteProtection := new(bool)
 
-	deleteProtection := new(bool)
-	if isDeleteProtectionSupported(d) && d.HasChange("deletion_protection") {
-		*deleteProtection = d.Get("deletion_protection").(bool)
-		log.Printf("[DEBUG] Updating delete protection settings to '%v' for db instance '%s'.", deleteProtection, identifier)
-		runUpdate = true
-	}
+		if isDeleteProtectionSupported(d) {
+			log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), d.Get("identifier").(string))
+			*deleteProtection = d.Get("deletion_protection").(bool)
+		}
 
-	if runUpdate {
 		if isAuroraDB(d) {
-			err = c.RdsClusterUpdateRequest(tenantID, duplosdk.DuploRdsClusterUpdateRequest{
+			err = c.UpdateRdsCluster(tenantID, duplosdk.DuploRdsUpdateCluster{
 				DBClusterIdentifier:   identifier + "-cluster",
-				BackupRetentionPeriod: *backupRetentionPeriod,
+				BackupRetentionPeriod: backupRetentionPeriod,
 				DeletionProtection:    deleteProtection,
+				SkipFinalSnapshot:     skipFinalSnapshot,
 				ApplyImmediately:      true,
 			})
 		} else {
-			err = c.RdsInstanceChangeRequest(tenantID, duplosdk.DuploRdsInstanceUpdateRequest{
+			err = c.UpdateRDSDBInstance(tenantID, duplosdk.DuploRdsUpdateInstance{
 				DBInstanceIdentifier:  identifier,
-				BackupRetentionPeriod: *backupRetentionPeriod,
+				BackupRetentionPeriod: backupRetentionPeriod,
 				DeletionProtection:    deleteProtection,
+				SkipFinalSnapshot:     skipFinalSnapshot,
 			})
 		}
+	}
 
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
@@ -621,6 +636,8 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.BackupRetentionPeriod = d.Get("backup_retention_period").(int)
 	duploObject.MultiAZ = d.Get("multi_az").(bool)
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
+	duploObject.SkipFinalSnapshot = d.Get("skip_final_snapshot").(bool)
+	duploObject.StoreDetailsInSecretManager = d.Get("store_details_in_secret_manager").(bool)
 	if v, ok := d.GetOk("v2_scaling_configuration"); ok {
 		duploObject.V2ScalingConfiguration = expandV2ScalingConfiguration(v.([]interface{}))
 	}
@@ -695,6 +712,9 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["backup_retention_period"] = duploObject.BackupRetentionPeriod
 	jo["multi_az"] = duploObject.MultiAZ
 	jo["instance_status"] = duploObject.InstanceStatus
+	jo["skip_final_snapshot"] = duploObject.SkipFinalSnapshot
+	jo["store_details_in_secret_manager"] = duploObject.StoreDetailsInSecretManager
+
 	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 {
 		d.Set("v2_scaling_configuration", []map[string]interface{}{{
 			"min_capacity": duploObject.V2ScalingConfiguration.MinCapacity,

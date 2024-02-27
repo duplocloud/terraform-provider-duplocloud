@@ -1,13 +1,93 @@
-## 2024-02-09
+## 2024-02-28
 
-## Updated
-- Updated `duplocloud_ecs_task_definition` examples and documentation to use the correct `PortMappings` property instead of `ContainerMappings` in `container_definitions` field.
-- Fixed property typos in `duplocloud_ecs_task_definition`'s `container_definitions` example and docs
+### Added
+- Introduced shared test utilities for mocking HTTP responses and refactored HTTP test setup.
+- Added acceptance tests for `data.duplocloud_native_hosts` data source.
+
+### Fixed
+- Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
+- Fixed crash in tenant data source on missing `TenantPolicy`.
+
+## 2024-02-26
+
+### Fixed
+- Fixed `store_details_in_secret_manager` attribute not getting set for `duplocloud_rds_instance` resource in duplo 
+
+## 2024-02-27
+
+### Changed
+- Enhanced EFS lifecycle policies by adding detailed descriptions for `transition_to_ia` and `transition_to_primary_storage_class` policies in `duplocloud_aws_efs_lifecycle_policy` resource.
+- Provided an example Terraform configuration demonstrating how to use the `duplocloud_aws_efs_lifecycle_policy` resource.
+
+### Added
+- Added support for configuring a dead letter queue (DLQ) `dead_letter_queue` for AWS Lambda functions `duplocloud_aws_lambda_function`, allowing users to specify an SNS topic or SQS queue for failed invocation notifications. This includes CRUD operations for this new feature and state management in the Terraform provider.
+- Added support for Node.js 20.x runtime for the `duplocloud_aws_lambda_function` resource.
+
+### Fixed
+- Resolved an issue in `duplocloud_aws_elasticsearch` resource where OpenSearch could not be created with both warm enable and cold storage set to false.
+- Corrected the `FileSystemId` assignment in the EFS update function for `duplocloud_aws_efs_lifecycle_policy`
+- Fixed a potential crash in `duplocloud_aws_elasticsearch` creation when `dedicated_master_type` was not defined.
+
+## 2024-02-15
+
+### Added
+- Introduced `skip_final_snapshot` attribute to `duplocloud_rds_instance`, allowing control over whether a final snapshot is taken upon RDS instance deletion.
+
+### Fixed
+- Fixed plugin crash while creating opensearch resource when warm enabled set to true for `duplocloud_aws_elasticsearch` resource at `awsElasticSearchDomainClusterConfigFromState`..
+- Handled nil pointer exceptions in `duplocloud_aws_cloudwatch_event_rule` resources at `resourceAwsCloudWatchEventRuleRead`  
+- Fixed the issue of missing Elasticsearch version in Terraform state after apply by correcting the JSON tag name for `ElasticSearchVersion` in `DuploElasticSearchDomain` struct for `duplocloud_aws_elasticsearch` resource.
+
+## 2024-02-13
+
+### Added
+- Unit tests for `duplocloud_tenant_config` resource and data source, both happy path and edge cases.
+- Updates to `TenantSetConfigKey` and `TenantDeleteConfigKey` methods in the SDK to use the v3 API, improving the handling of tenant configurations.
+
+### Changed
+- The emulator now supports dynamic path parameters and added routes for the tenant metadata API.
+- Updated the `duplocloud_aws_host` resource test helper function to use the new test helper for generating Terraform resource definitions.
+
+### Breaking Changes
+- Duplo releases older than 1/2023 will be missing the v3 tenant metadata APIs.
+
+## 2024-02-12
+
+### Added
+- Unit tests for `duplocloud_aws_host`
+  - Added comprehensive test cases for AWS host resource, covering basic configuration, public/private subnets, and zone selection.
+  - Enhanced emulator response for AWS hosts to include `UserAccount` and `IdentityRole`.
+  - Improved handling of `volume` and `network_interface` in AWS host resource to avoid unnecessary diffs.
+  - Extended the emulator to support AWS host creation and deletion APIs, and to list external and internal subnets per tenant.
+  - Introduced helper functions for generating Terraform resource definitions in tests.
+  - Updated and added new fixtures for AWS hosts and subnets to support testing.
+
+## 2024-02-10
+
+### Added
+- Added Terraform acceptance tests for `data.duplocloud_native_hosts`.
+- Introduced a placeholder for future `duplocloud_aws_host` resource tests.
+- Extended the emulator to handle dynamic path parameters and added routes for the AWS host API.
+
+### Fixed
+- Fixed bugs in `data.duplocloud_native_hosts` and `duplocloud_aws_host` where `volume` and `network_interface` fields were not parsed.
+
+## 2024-02-09
 
 ### Added
 - Introduced a new attribute `prepend_user_data` to the `duplocloud_aws_host` and `duplocloud_asg_profile` resources, allowing for prepending user data on AWS hosts.
 - Enhanced the `duplocloud_aws_host` and `duplocloud_asg_profile` resources to avoid triggering an unnecessary "force replacement" on hosts and ASGs that prepend Duplo's user data.
 - Updated the data source types for `duplocloud_aws_host` and `duplocloud_asg_profile` resources to include the new `prepend_user_data` attribute.
+- Introduced acceptance tests for Terraform provider with mock data.
+- Implemented a mock server setup for testing HTTP requests.
+- Added a basic acceptance test for tenant data source.
+- Refactored existing SDK client tests to utilize shared test utilities.
+- Created shared test utilities for mocking HTTP responses.
+- Added a JSON fixture for tenant data for testing purposes.
+
+## Updated
+- Updated `duplocloud_ecs_task_definition` examples and documentation to use the correct `PortMappings` property instead of `ContainerMappings` in `container_definitions` field.
+- Fixed property typos in `duplocloud_ecs_task_definition`'s `container_definitions` example and docs
 
 ### Fixed
 - Resolved nil pointer and index out of bound exceptions in `resource_duplo_aws_elasticsearch.go` by properly initializing `ColdStorageOptions` and `WarmType` only if applicable for `duplocloud_aws_elasticsearch` resource.

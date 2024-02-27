@@ -8,13 +8,15 @@ NAMESPACE=duplocloud
 
 NAME=duplocloud
 BINARY=terraform-provider-${NAME}
-VERSION=0.10.10
+VERSION=0.10.11
 #mac
 #OS_ARCH=darwin_amd64
 #OS_ARCH=linux_amd64
 OS_ARCH := $(shell go env GOOS)_$(shell go env GOARCH)
 OS_ARCH_MAC=darwin_amd64
 OS_ARCH_DOCKER=linux_amd64
+duplo_host?=http://localhost:60020
+duplo_token?=FAKE
 
 default: install
 
@@ -62,7 +64,7 @@ install_window: build
 #	mv ${BINARY} bin
 test:
 	go test -i $(TEST) || exit 1
-	echo $(TEST) | xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
+	echo $(TEST) | xargs -t -n4 go test $(TESTARGS) -timeout=90s -parallel=4
 
 testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m

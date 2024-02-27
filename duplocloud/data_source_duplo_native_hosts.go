@@ -88,7 +88,7 @@ func flattenNativeHost(duplo *duplosdk.DuploNativeHost) map[string]interface{} {
 		"metadata":            keyValueToState("metadata", duplo.MetaData),
 		"tags":                keyValueToState("tags", duplo.Tags),
 		"minion_tags":         keyValueToState("minion_tags", duplo.MinionTags),
-		"volumes":             flattenNativeHostVolumes(duplo.Volumes),
-		"network_interfaces":  flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
+		"volume":              flattenNativeHostVolumes(duplo.Volumes),
+		"network_interface":   flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 	}
 }
