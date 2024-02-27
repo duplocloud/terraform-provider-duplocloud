@@ -37,7 +37,7 @@ type DuploElasticSearchDomainEndpointOptions struct {
 type DuploElasticSearchDomainClusterConfig struct {
 	DedicatedMasterCount   int                                         `json:"DedicatedMasterCount,omitempty"`
 	DedicatedMasterEnabled bool                                        `json:"DedicatedMasterEnabled,omitempty"`
-	DedicatedMasterType    DuploStringValue                            `json:"DedicatedMasterType,omitempty"`
+	DedicatedMasterType    *DuploStringValue                           `json:"DedicatedMasterType,omitempty"`
 	InstanceCount          int                                         `json:"InstanceCount,omitempty"`
 	InstanceType           DuploStringValue                            `json:"InstanceType,omitempty"`
 	WarmCount              int                                         `json:"WarmCount,omitempty"`
