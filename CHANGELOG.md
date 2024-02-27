@@ -1,7 +1,7 @@
 ## 2024-02-27
 
 ### Added
-- Added support for Node.js 20.x runtime in AWS Lambda functions.
+- Added support for Node.js 20.x runtime for the `duplocloud_aws_lambda_function` resource.
 
 ## 2024-02-15
 
