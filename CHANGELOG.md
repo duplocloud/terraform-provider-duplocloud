@@ -1,3 +1,14 @@
+## 2024-02-27
+
+### Added
+- Introduced v3 APIs for S3, improving the handling of S3 buckets.
+- Enhanced the `duplocloud/resource_duplo_s3_bucket.go` and `duplosdk/tenant_aws_cloud_resources.go` files to use the v3 API.
+- Updated the `duplosdk/utils.go` file to include a function for checking if a name starts with "duploservices-".
+
+### Changed
+- Refactored the `duplocloud/resource_duplo_s3_bucket.go` file to improve code readability and maintainability.
+- Updated the `duplosdk/tenant_aws_cloud_resources.go` file to remove redundant code and improve efficiency.
+
 ## 2024-02-15
 
 ### Added
