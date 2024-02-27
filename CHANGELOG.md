@@ -1,3 +1,7 @@
+## 2024-02-27
+
+### Added
+- Implementd support for `secret_labels` attribute for `duplocloud_k8_secret` resource
 ## 2024-02-26
 
 ### Fixed
