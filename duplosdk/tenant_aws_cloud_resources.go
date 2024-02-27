@@ -473,8 +473,9 @@ func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApp
 
 // TenantCreateS3Bucket creates an S3 bucket resource via Duplo.
 func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
-	// duplo.Type = ResourceTypeS3Bucket
+
 	resp := DuploS3Bucket{}
+
 	// Create the bucket via Duplo.
 	err := c.postAPI(
 		fmt.Sprintf("TenantCreateS3Bucket(%s, %s)", tenantID, duplo.Name),
@@ -491,6 +492,8 @@ func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketSettin
 
 // TenantDeleteS3Bucket deletes an S3 bucket resource via Duplo.
 func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError {
+
+	// Get S3 Bucket fullname
 	fullname, err := c.getS3BucketFullname(tenantID, name)
 	if err != nil {
 		return err
@@ -502,20 +505,52 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError 
 		nil)
 }
 
-// TenantGetS3BucketSettings gets a non-cached view of the  S3 buckets's settings via Duplo.
-func (c *Client) TenantGetS3BucketSettings(tenantID string, name string) (*DuploS3Bucket, ClientError) {
+// TenantGetS3Bucket gets a non-cached view of the  S3 buckets's settings via Duplo.
+func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket, ClientError) {
+
+	// Get S3 Bucket fullname
 	fullname, errName := c.getS3BucketFullname(tenantID, name)
 	if errName != nil {
 		return nil, errName
 	}
+
 	rp := DuploS3Bucket{}
-	err := c.getAPI(fmt.Sprintf("TenantGetS3BucketSettings(%s, %s)", tenantID, fullname),
+	err := c.getAPI(fmt.Sprintf("TenantGetS3Bucket(%s, %s)", tenantID, fullname),
 		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, fullname),
 		&rp)
 	if err != nil || rp.Arn == "" {
 		return nil, err
 	}
 	return &rp, err
+}
+
+// TenantUpdateS3Bucket applies settings to an S3 bucket resource via Duplo.
+func (c *Client) TenantUpdateS3Bucket(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
+
+	// Get S3 Bucket fullname
+	fullname, err := c.getS3BucketFullname(tenantID, duplo.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply the settings via Duplo.
+	apiName := fmt.Sprintf("TenantUpdateS3Bucket(%s, %s)", tenantID, duplo.Name)
+	rp := DuploS3Bucket{}
+	err = c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, fullname), &duplo, &rp)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deal with a missing response.
+	if rp.Name == "" {
+		message := fmt.Sprintf("%s: unexpected missing response from backend", apiName)
+		log.Printf("[TRACE] %s", message)
+		return nil, newClientError(message)
+	}
+
+	// Return the response.
+	rp.TenantID = tenantID
+	return &rp, nil
 }
 
 func (c *Client) getS3BucketFullname(tenantID, name string) (string, ClientError) {
@@ -533,34 +568,6 @@ func (c *Client) getS3BucketFullname(tenantID, name string) (string, ClientError
 		return "", err
 	}
 	return fullName, nil
-}
-
-// TenantApplyS3BucketSettings applies settings to an S3 bucket resource via Duplo.
-func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
-	apiName := fmt.Sprintf("TenantApplyS3BucketSettings(%s, %s)", tenantID, duplo.Name)
-	fullname, err := c.getS3BucketFullname(tenantID, duplo.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	// Apply the settings via Duplo.
-	rp := DuploS3Bucket{}
-	// err = c.postAPI(apiName, fmt.Sprintf("subscriptions/%s/ApplyS3BucketSettings", tenantID), &duplo, &rp)
-	err = c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, fullname), &duplo, &rp)
-	if err != nil {
-		return nil, err
-	}
-
-	// Deal with a missing response.
-	if rp.Name == "" {
-		message := fmt.Sprintf("%s: unexpected missing response from backend", apiName)
-		log.Printf("[TRACE] %s", message)
-		return nil, newClientError(message)
-	}
-
-	// Return the response.
-	rp.TenantID = tenantID
-	return &rp, nil
 }
 
 // TenantCreateKafkaCluster creates a kafka cluster resource via Duplo.

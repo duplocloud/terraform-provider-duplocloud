@@ -143,7 +143,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.TenantGetS3BucketSettings(tenantID, name)
+	duplo, err := c.TenantGetS3Bucket(tenantID, name)
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
@@ -202,14 +202,14 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "S3 bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenantGetS3BucketSettings(tenantID, fullName)
+		return c.TenantGetS3Bucket(tenantID, fullName)
 	})
 	if diags != nil {
 		return diags
 	}
 	d.SetId(id)
 
-	duplo, err := c.TenantGetS3BucketSettings(tenantID, fullName)
+	duplo, err := c.TenantGetS3Bucket(tenantID, fullName)
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
@@ -242,7 +242,7 @@ func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	resource, err := c.TenantApplyS3BucketSettings(tenantID, duploObject)
+	resource, err := c.TenantUpdateS3Bucket(tenantID, duploObject)
 	if err != nil {
 		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
 	}
@@ -270,7 +270,7 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Wait up to 60 seconds for Duplo to delete the bucket.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenantGetS3BucketSettings(idParts[0], idParts[1])
+		return c.TenantGetS3Bucket(idParts[0], idParts[1])
 	})
 	if diag != nil {
 		return diag
