@@ -1,3 +1,8 @@
+## 2024-02-27
+
+### Fixed
+- Resolved an issue in `duplocloud_aws_elasticsearch` resource where OpenSearch could not be created with both warm enable and cold storage set to false.
+
 ## 2024-02-15
 
 ### Added
