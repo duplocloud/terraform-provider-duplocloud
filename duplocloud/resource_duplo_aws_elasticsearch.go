@@ -692,7 +692,10 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 				duplo.DedicatedMasterCount = v.(int)
 			}
 			if v, ok := m["dedicated_master_type"]; ok && v.(string) != "" {
-				duplo.DedicatedMasterType.Value = v.(string)
+				dedicatedMasterType := duplosdk.DuploStringValue{
+					Value: v.(string),
+				}
+				duplo.DedicatedMasterType = &dedicatedMasterType
 			}
 		}
 	}
