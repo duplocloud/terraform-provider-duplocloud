@@ -1,8 +1,7 @@
 ## 2024-02-21
 
 ### Fixed
-- Fixed a potential crash in ElasticSearch resource creation when `dedicated_master_type` was not defined.
-- Corrected the parameter name from `ElasticSearchVersion` to `EngineVersion` to accurately reflect the API's expected parameter.
+- Fixed a potential crash in `duplocloud_aws_elasticsearch` creation when `dedicated_master_type` was not defined.
 
 ## 2024-02-15
 
