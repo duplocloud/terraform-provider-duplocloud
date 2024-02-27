@@ -1,3 +1,8 @@
+## 2024-02-27
+
+### Added
+- Added support for configuring a dead letter queue (DLQ) for AWS Lambda functions, allowing users to specify an SNS topic or SQS queue for failed invocation notifications. This includes CRUD operations for this new feature and state management in the Terraform provider.
+
 ## 2024-02-15
 
 ### Added
