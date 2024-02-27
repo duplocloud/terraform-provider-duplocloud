@@ -1,3 +1,5 @@
+No updates are needed for the CHANGELOG.md file as the changes introduced in this PR are already documented in the current file.
+
 ## 2024-02-21
 
 ### Added
