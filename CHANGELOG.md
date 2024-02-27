@@ -1,3 +1,8 @@
+## 2024-02-27
+
+### Fixed
+- Resolved an issue where `SkipFinalSnapshot` was not included in the JSON during an update in the DuploRdsUpdateInstance serialization.
+
 ## 2024-02-15
 
 ### Added
