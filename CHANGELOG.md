@@ -1,3 +1,8 @@
+## 2024-02-27
+
+### Added
+- Added support for Node.js 20.x runtime in AWS Lambda functions.
+
 ## 2024-02-15
 
 ### Added
