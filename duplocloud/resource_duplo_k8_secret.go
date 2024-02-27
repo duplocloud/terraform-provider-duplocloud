@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -56,6 +57,13 @@ func k8sSecretSchema() map[string]*schema.Schema {
 		},
 		"secret_annotations": {
 			Description: "Annotations for the secret",
+			Type:        schema.TypeMap,
+			Optional:    true,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		"secret_labels": {
+			Description: "Map of string keys and values that can be used to organize and categorize (scope and select) the secret",
 			Type:        schema.TypeMap,
 			Optional:    true,
 			Computed:    true,
@@ -221,6 +229,7 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret) {
 
 	// Finally, set the map
 	d.Set("secret_annotations", duplo.SecretAnnotations)
+	d.Set("secret_labels", duplo.SecretLabels)
 }
 
 func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
@@ -234,6 +243,20 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 		duplo.SecretAnnotations = map[string]string{}
 		for key, value := range v.(map[string]interface{}) {
 			duplo.SecretAnnotations[key] = value.(string)
+		}
+	}
+
+	if v, ok := d.GetOk("secret_labels"); ok && !isInterfaceNil(v) {
+		duplo.SecretLabels = map[string]string{}
+		for key, value := range v.(map[string]interface{}) {
+			if !isStringValid(regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$"), key) {
+				return nil, secretLabelValidationError(duplo.SecretName, key)
+			}
+			v := value.(string)
+			if !isStringValid(regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$"), v) {
+				return nil, secretLabelValidationError(duplo.SecretName, v)
+			}
+			duplo.SecretAnnotations[key] = v
 		}
 	}
 
@@ -251,4 +274,11 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 	}
 
 	return &duplo, nil
+}
+
+func secretLabelValidationError(name, value string) error {
+	return fmt.Errorf(`Secret '%s' is invalid: metadata.labels: Invalid value: '%s,': a valid label must 
+	be an empty string or consist of alphanumeric characters, '-', '', or '.', and must start and end with an alphanumeric 
+	character (e.g. 'MyValue', or 'my_value', or '12345',
+	 regex used for validation is '((A-Za-z0-9][-A-Za-z0-9.]*)?[A-Za-z0-9])?').`, name, value)
 }

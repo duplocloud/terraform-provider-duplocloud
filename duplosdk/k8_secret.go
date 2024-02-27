@@ -14,6 +14,7 @@ type DuploK8sSecret struct {
 	SecretVersion     string                 `json:"SecretVersion,omitempty"`
 	SecretData        map[string]interface{} `json:"SecretData"`
 	SecretAnnotations map[string]string      `json:"SecretAnnotations,omitempty"`
+	SecretLabels      map[string]string      `json:"SecretLabels,omitempty"`
 }
 
 // K8SecretGetList retrieves a list of k8s secrets via the Duplo API.

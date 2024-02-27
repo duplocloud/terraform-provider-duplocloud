@@ -31,6 +31,7 @@ Read-Only:
 
 - `secret_annotations` (Map of String)
 - `secret_data` (String)
+- `secret_labels` (Map of String)
 - `secret_name` (String)
 - `secret_type` (String)
 - `secret_version` (String)
