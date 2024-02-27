@@ -1,11 +1,8 @@
-## 2024-02-16
+## 2024-02-27
 
 ### Changed
 - Enhanced EFS lifecycle policies by adding detailed descriptions for `transition_to_ia` and `transition_to_primary_storage_class` policies in `duplocloud_aws_efs_lifecycle_policy` resource.
 - Provided an example Terraform configuration demonstrating how to use the EFS lifecycle policies.
-
-### Removed
-- Removed the `transition_to_archive` lifecycle policy from EFS configurations in `duplocloud_aws_efs_lifecycle_policy` resource.
 
 ### Fixed
 - Corrected the `FileSystemId` assignment in the EFS update function.
