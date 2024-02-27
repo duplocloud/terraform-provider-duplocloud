@@ -1,7 +1,14 @@
 ## 2024-02-27
 
 ### Added
+- Introduced shared test utilities for mocking HTTP responses and refactored HTTP test setup.
+- Added acceptance tests for `data.duplocloud_native_hosts` data source.
 - Implementd support for `secret_labels` attribute for `duplocloud_k8_secret` resource
+
+### Fixed
+- Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
+- Fixed crash in tenant data source on missing `TenantPolicy`.
+
 ## 2024-02-26
 
 ### Fixed
