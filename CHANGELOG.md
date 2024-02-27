@@ -3,6 +3,7 @@
 ### Changed
 - Enhanced EFS lifecycle policies by adding detailed descriptions for `transition_to_ia` and `transition_to_primary_storage_class` policies in `duplocloud_aws_efs_lifecycle_policy` resource.
 - Provided an example Terraform configuration demonstrating how to use the `duplocloud_aws_efs_lifecycle_policy` resource.
+- Updated the 'duplocloud_s3_bucket' resource to utilize the new S3 V3 API, phasing out the old, obsolete API. This update consolidates multiple API calls into more efficient V3 API calls.
 - Refactored the `duplocloud/resource_duplo_s3_bucket.go` file to improve code readability and maintainability.
 - Updated the `duplosdk/tenant_aws_cloud_resources.go` file to remove redundant code and improve efficiency.
 
