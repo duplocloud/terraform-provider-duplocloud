@@ -45,9 +45,15 @@ func awsEFSFileSystem() map[string]*schema.Schema {
 		"lifecycle_policy": {
 			Type:     schema.TypeList,
 			Optional: true,
-			MaxItems: 2,
+			MaxItems: 3,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
+					"transition_to_archive": {
+						Description:  "Indicates how long it takes to transition files to the archive storage class. Requires transition_to_ia, Elastic Throughput and General Purpose performance mode. Valid values: `AFTER_1_DAY`, `AFTER_7_DAYS`, `AFTER_14_DAYS`, `AFTER_30_DAYS`, `AFTER_60_DAYS`, or `AFTER_90_DAYS`",
+						Type:         schema.TypeString,
+						Optional:     true,
+						ValidateFunc: validation.StringInSlice(TransitionToArchiveRules_Values(), false),
+					},
 					"transition_to_ia": {
 						Description:  "Indicates how long it takes to transition files to the IA storage class. Valid values: `AFTER_1_DAY`, `AFTER_7_DAYS`, `AFTER_14_DAYS`, `AFTER_30_DAYS`, `AFTER_60_DAYS`, or `AFTER_90_DAYS`",
 						Type:         schema.TypeString,
