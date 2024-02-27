@@ -1,8 +1,13 @@
+## 2024-02-27
+
+### Added
+- Added support for `cluster_parameter_group_name` for `duplocloud_rds_instance`
+
 ## 2024-02-21
 
 ### Added 
 - Implemented `duplocloud_gcp_node_pool` resource.
-
+s
 ## 2024-02-15
 
 ### Added
