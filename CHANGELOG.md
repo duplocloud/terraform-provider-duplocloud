@@ -1,3 +1,5 @@
+The CHANGELOG.md is already up-to-date with the changes introduced in this PR. No further updates are required.
+
 ## 2024-02-27
 
 ### Added
