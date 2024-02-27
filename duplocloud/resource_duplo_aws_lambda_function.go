@@ -224,6 +224,20 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Optional:     true,
 			ValidateFunc: validation.IntBetween(512, 10240),
 		},
+		"dead_letter_config": {
+			Description: "Dead letter queue configuration that specifies the queue or topic where Lambda sends asynchronous events when they fail processing.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"target_arn": {
+						Description: "ARN of an SNS topic or SQS queue to notify when an invocation fails.",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -273,6 +287,16 @@ func resourceAwsLambdaFunctionRead(ctx context.Context, d *schema.ResourceData, 
 	d.Set("name", name)
 	flattenAwsLambdaConfiguration(d, &duplo.Configuration)
 	d.Set("tags", duplo.Tags)
+
+	if duplo.Configuration.DeadLetterConfig != nil && duplo.Configuration.DeadLetterConfig.TargetArn != "" {
+		if err := d.Set("dead_letter_config", []interface{}{
+			map[string]interface{}{
+				"target_arn": string(duplo.Configuration.DeadLetterConfig.TargetArn),
+			},
+		}); err != nil {
+			return diag.Errorf("setting dead_letter_config: %s", err)
+		}
+	}
 	// d.Set("s3_bucket", duplo.Code.S3Bucket)
 	// d.Set("s3_key", duplo.Code.S3Key)
 
@@ -362,6 +386,12 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 
 	if v, ok := d.GetOk("ephemeral_storage"); ok && v != nil && v.(int) != 0 {
 		rq.EphemeralStorage = &duplosdk.DuploLambdaEphemeralStorage{Size: v.(int)}
+	}
+
+	if v, ok := d.GetOk("dead_letter_config"); ok && len(v.([]interface{})) > 0 && v.([]interface{})[0] != nil {
+		rq.DeadLetterConfig = &duplosdk.DuploDeadLetterConfig{
+			TargetArn: v.([]interface{})[0].(map[string]interface{})["target_arn"].(string),
+		}
 	}
 
 	// Post the object to Duplo
@@ -495,6 +525,13 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 			},
 		})
 	}
+	if duplo.DeadLetterConfig != nil {
+		d.Set("dead_letter_config", []interface{}{
+			map[string]interface{}{
+				"target_arn": duplo.DeadLetterConfig.TargetArn,
+			},
+		})
+	}
 	if duplo.ImageConfig != nil {
 		imageConfig := map[string]interface{}{
 			"command":           duplo.ImageConfig.Command,
@@ -582,6 +619,12 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 	if v, ok := d.GetOk("tracing_config"); ok && len(v.([]interface{})) > 0 && v.([]interface{})[0] != nil {
 		rq.TracingConfig = &duplosdk.DuploLambdaTracingConfig{
 			Mode: duplosdk.DuploStringValue{Value: v.([]interface{})[0].(map[string]interface{})["mode"].(string)},
+		}
+	}
+
+	if v, ok := d.GetOk("dead_letter_config"); ok && len(v.([]interface{})) > 0 && v.([]interface{})[0] != nil {
+		rq.DeadLetterConfig = &duplosdk.DuploDeadLetterConfig{
+			TargetArn: v.([]interface{})[0].(map[string]interface{})["target_arn"].(string),
 		}
 	}
 
@@ -693,5 +736,6 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 		d.HasChange("layers") ||
 		d.HasChange("tracing_config") ||
 		d.HasChange("ephemeral_storage") ||
-		d.HasChange("image_config")
+		d.HasChange("image_config") ||
+		d.HasChange("dead_letter_config")
 }
