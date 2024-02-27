@@ -11,6 +11,7 @@
 ### Fixed
 - Resolved an issue in `duplocloud_aws_elasticsearch` resource where OpenSearch could not be created with both warm enable and cold storage set to false.
 - Corrected the `FileSystemId` assignment in the EFS update function for `duplocloud_aws_efs_lifecycle_policy`
+- Fixed a potential crash in `duplocloud_aws_elasticsearch` creation when `dedicated_master_type` was not defined.
 
 ## 2024-02-15
 
