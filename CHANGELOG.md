@@ -1,3 +1,5 @@
+The changelog is already up-to-date with the changes introduced in this PR. No further updates are needed.
+
 ## 2024-02-27
 
 ### Added
