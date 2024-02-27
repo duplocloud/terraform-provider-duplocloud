@@ -64,9 +64,9 @@ resource "duplocloud_aws_efs_file_system" "efs" {
 
 Optional:
 
-- `transition_to_archive` (String)
-- `transition_to_ia` (String)
-- `transition_to_primary_storage_class` (String)
+- `transition_to_archive` (String) Indicates how long it takes to transition files to the archive storage class. Requires transition_to_ia, Elastic Throughput and General Purpose performance mode. Valid values: `AFTER_1_DAY`, `AFTER_7_DAYS`, `AFTER_14_DAYS`, `AFTER_30_DAYS`, `AFTER_60_DAYS`, or `AFTER_90_DAYS`
+- `transition_to_ia` (String) Indicates how long it takes to transition files to the IA storage class. Valid values: `AFTER_1_DAY`, `AFTER_7_DAYS`, `AFTER_14_DAYS`, `AFTER_30_DAYS`, `AFTER_60_DAYS`, or `AFTER_90_DAYS`
+- `transition_to_primary_storage_class` (String) Describes the policy used to transition a file from infequent access storage to primary storage. Valid values: `AFTER_1_ACCESS`
 
 
 <a id="nestedblock--tag"></a>
