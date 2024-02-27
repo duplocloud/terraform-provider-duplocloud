@@ -280,7 +280,7 @@ func resourceAwsBatchJobDefinitionUpdate(ctx context.Context, d *schema.Resource
 func resourceAwsBatchJobDefinitionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	tenantID, name, err := parseAwsBatchJobDefinitionIdParts(id)
-	revision := d.Get("revision").(int)
+	//revision := d.Get("revision").(int)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -289,20 +289,21 @@ func resourceAwsBatchJobDefinitionDelete(ctx context.Context, d *schema.Resource
 	c := m.(*duplosdk.Client)
 	fullName, _ := c.GetDuploServicesName(tenantID, name)
 
-	jq, err := c.AwsBatchJobDefinitionGet(tenantID, fullName)
+	jq, err := c.AwsBatchJobDefinitionGetAllRevisions(tenantID, fullName)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	if jq == nil {
 		return nil
 	}
-
-	clientErr := c.AwsBatchJobDefinitionDelete(tenantID, fullName+":"+strconv.Itoa(revision))
-	if clientErr != nil {
-		if clientErr.Status() == 404 {
-			return nil
+	for _, data := range *jq {
+		clientErr := c.AwsBatchJobDefinitionDelete(tenantID, fullName+":"+strconv.Itoa(data.Revision))
+		if clientErr != nil {
+			if clientErr.Status() == 404 {
+				return nil
+			}
+			return diag.Errorf("Unable to delete tenant %s aws batch Job Definition '%s': %s", tenantID, name, clientErr)
 		}
-		return diag.Errorf("Unable to delete tenant %s aws batch Job Definition '%s': %s", tenantID, name, clientErr)
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "aws batch Job Definition", id, func() (interface{}, duplosdk.ClientError) {

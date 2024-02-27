@@ -1,3 +1,9 @@
+## 2024-02-27
+
+### Fixed
+
+- Fixed resource deletion terraform timeout issue for `duplo_aws_batch_job_definition` resource
+
 ## 2024-02-21
 
 ### Added 
