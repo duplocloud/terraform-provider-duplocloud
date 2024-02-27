@@ -1,3 +1,8 @@
+## 2024-02-27
+
+### Added
+- Enhanced Kubernetes secret management with the addition of label validation in `duplo_k8_secret` resource.
+
 ## 2024-02-26
 
 ### Added
