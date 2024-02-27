@@ -2,6 +2,10 @@
 
 ### Added
 - Added support for configuring a dead letter queue (DLQ) `dead_letter_queue` for AWS Lambda functions `duplocloud_aws_lambda_function`, allowing users to specify an SNS topic or SQS queue for failed invocation notifications. This includes CRUD operations for this new feature and state management in the Terraform provider.
+- Added support for Node.js 20.x runtime for the `duplocloud_aws_lambda_function` resource.
+
+### Fixed
+- Resolved an issue in `duplocloud_aws_elasticsearch` resource where OpenSearch could not be created with both warm enable and cold storage set to false.
 
 ## 2024-02-15
 
