@@ -1,5 +1,8 @@
 ## 2024-02-27
 
+### Added
+- Added support for Node.js 20.x runtime for the `duplocloud_aws_lambda_function` resource.
+
 ### Fixed
 - Resolved an issue in `duplocloud_aws_elasticsearch` resource where OpenSearch could not be created with both warm enable and cold storage set to false.
 
