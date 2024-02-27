@@ -284,7 +284,6 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 }
 
 func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, duplo *duplosdk.DuploS3Bucket) {
-	log.Printf("[TRACE] resourceS3BucketSetData name=%s fullname=%s", duplo.Name)
 	d.Set("tenant_id", tenantID)
 	d.Set("fullname", duplo.Name)
 	d.Set("domain_name", duplo.DomainName)
