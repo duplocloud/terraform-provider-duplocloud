@@ -12,6 +12,5 @@ resource "duplocloud_k8_secret" "myapp" {
   secret_labels = {
     KeyA = "ValueA"
     KeyB = "ValueB"
-
   }
 }
