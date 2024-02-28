@@ -299,3 +299,39 @@ func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name strin
 	d.Set("managed_policies", duplo.Policies)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 }
+
+func fillS3BucketRequest(duploObject *duplosdk.DuploS3BucketSettingsRequest, d *schema.ResourceData) error {
+	log.Printf("[TRACE] fillS3BucketRequest ******** start")
+
+	// Set the object versioning
+	if v, ok := d.GetOk("enable_versioning"); ok && v != nil {
+		duploObject.EnableVersioning = v.(bool)
+	}
+
+	// Set the access logs flag
+	if v, ok := d.GetOk("enable_access_logs"); ok && v != nil {
+		duploObject.EnableAccessLogs = v.(bool)
+	}
+
+	// Set the public access block.
+	if v, ok := d.GetOk("allow_public_access"); ok && v != nil {
+		duploObject.AllowPublicAccess = v.(bool)
+	}
+
+	// Set the default encryption.
+	defaultEncryption, err := getOptionalBlockAsMap(d, "default_encryption")
+	if err != nil {
+		return err
+	}
+	if v, ok := defaultEncryption["method"]; ok && v != nil {
+		duploObject.DefaultEncryption = v.(string)
+	}
+
+	// Set the managed policies.
+	if v, ok := getAsStringArray(d, "managed_policies"); ok && v != nil {
+		duploObject.Policies = *v
+	}
+
+	log.Printf("[TRACE] fillS3BucketRequest ******** end")
+	return nil
+}
