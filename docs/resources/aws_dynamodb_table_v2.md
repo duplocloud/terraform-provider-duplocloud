@@ -24,6 +24,10 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
   name           = "tst-dynamodb-table"
   read_capacity  = 10
   write_capacity = 10
+  
+  deletion_protection_enabled = false
+  is_point_in_time_recovery = false
+
   #billing_mode = "PAY_PER_REQUEST"
   tag {
     key   = "CreatedBy"

@@ -1,5 +1,8 @@
 ## 2024-02-28
 
+### Added
+- Added support for configuring deletion protection and point-in-time recovery for the `duplocloud_aws_dynamodb_table_v2` resource.
+
 ### Fixed
 - `duplocloud_rds_instance` Resolved an issue where `SkipFinalSnapshot` was not included in the JSON during an update in the DuploRdsUpdateInstance serialization.
 
