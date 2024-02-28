@@ -82,7 +82,7 @@ type DuploRdsUpdateInstance struct {
 	DBInstanceIdentifier  string `json:"DBInstanceIdentifier"`
 	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
 	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
-	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot,omitempty"`
+	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot"`
 }
 
 type DuploRdsUpdateCluster struct {
@@ -90,7 +90,7 @@ type DuploRdsUpdateCluster struct {
 	ApplyImmediately      bool   `json:"ApplyImmediately"`
 	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
 	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
-	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot,omitempty"`
+	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot"`
 }
 
 type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
