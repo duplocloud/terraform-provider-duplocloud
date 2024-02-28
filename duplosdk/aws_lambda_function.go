@@ -49,6 +49,7 @@ type DuploLambdaConfiguration struct {
 	VpcConfig        *DuploLambdaVpcConfig        `json:"VpcConfig,omitempty"`
 	Layers           *[]DuploLambdaLayerGet       `json:"Layers,omitempty"`
 	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
+	DeadLetterConfig *DuploDeadLetterConfig       `json:"DeadLetterConfig,omitempty"`
 }
 
 // DuploLambdaCode is a Duplo SDK object that represents a lambda function's code.
@@ -72,6 +73,11 @@ type DuploLambdaEnvironment struct {
 // DuploLambdaEphemeralStorage is a Duplo SDK object that represents a lambda function's ephemeral storage config.
 type DuploLambdaEphemeralStorage struct {
 	Size int `json:"Size"`
+}
+
+// DuploDeadLetterConfig is a Duplo SDK object that represents a lambda function's dead letter config (SNS or SQS).
+type DuploDeadLetterConfig struct {
+	TargetArn string `json:"TargetArn"`
 }
 
 // DuploLambdaTracingConfig is a Duplo SDK object that represents a lambda function's tracing config.
@@ -102,6 +108,7 @@ type DuploLambdaCreateRequest struct {
 	Tags             map[string]string            `json:"Tags,omitempty"`
 	Layers           *[]string                    `json:"Layers,omitempty"`
 	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
+	DeadLetterConfig *DuploDeadLetterConfig       `json:"DeadLetterConfig,omitempty"`
 }
 
 // DuploLambdaUpdateRequest is a Duplo SDK object that represents a request to update a lambda function's code.
@@ -126,6 +133,7 @@ type DuploLambdaConfigurationRequest struct {
 	Tags             map[string]string            `json:"Tags,omitempty"`
 	Timeout          int                          `json:"Timeout,omitempty"`
 	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
+	DeadLetterConfig *DuploDeadLetterConfig       `json:"DeadLetterConfig,omitempty"`
 }
 
 type DuploLambdaPermissionStatement struct {
