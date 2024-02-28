@@ -81,6 +81,7 @@ type DuploS3Bucket struct {
 
 	Name              string                 `json:"Name,omitempty"`
 	DomainName        string                 `json:"DomainName,omitempty"`
+	Region            string                 `json:"Name,omitempty"`
 	Arn               string                 `json:"Arn,omitempty"`
 	MetaData          string                 `json:"MetaData,omitempty"`
 	EnableVersioning  bool                   `json:"EnableVersioning,omitempty"`
@@ -217,6 +218,7 @@ type DuploS3BucketRequest struct {
 // DuploS3BucketSettingsRequest represents a request to create an S3 bucket resource
 type DuploS3BucketSettingsRequest struct {
 	Name              string   `json:"Name"`
+	Region            string   `json:"Region,omitempty"`
 	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
 	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
 	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`

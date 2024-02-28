@@ -44,6 +44,8 @@ resource "duplocloud_s3_bucket" "www" {
   default_encryption {
     method = "Sse"
   }
+  # optional , if not provided, tenant region will be used
+  region              = "us-west-2"
 }
 ```
 
