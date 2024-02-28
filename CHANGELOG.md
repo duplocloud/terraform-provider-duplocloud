@@ -4,7 +4,7 @@
 - Introduced shared test utilities for mocking HTTP responses and refactored HTTP test setup.
 - Added acceptance tests for `data.duplocloud_native_hosts` data source.
 - Implementd support for `secret_labels` attribute for `duplocloud_k8_secret` resource
-- Added support for `cluster_parameter_group_name` for `duplocloud_rds_instance`
+- Added support for `cluster_parameter_group_name` for `duplocloud_rds_instance` resource
 
 ### Fixed
 - Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
