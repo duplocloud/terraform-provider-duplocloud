@@ -1,18 +1,7 @@
-## 2024-02-27
-
-### Added
-- Introduced shared test utilities for mocking HTTP responses and refactored HTTP test setup.
-- Added acceptance tests for `data.duplocloud_native_hosts` data source.
-- Implementd support for `secret_labels` attribute for `duplocloud_k8_secret` resource
+## 2024-02-28
 
 ### Fixed
-- Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
-- Fixed crash in tenant data source on missing `TenantPolicy`.
-
-## 2024-02-26
-
-### Fixed
-- Fixed `store_details_in_secret_manager` attribute not getting set for `duplocloud_rds_instance` resource in duplo 
+- `duplocloud_rds_instance` Resolved an issue where `SkipFinalSnapshot` was not included in the JSON during an update in the DuploRdsUpdateInstance serialization.
 
 ## 2024-02-27
 
@@ -23,11 +12,17 @@
 ### Added
 - Added support for configuring a dead letter queue (DLQ) `dead_letter_queue` for AWS Lambda functions `duplocloud_aws_lambda_function`, allowing users to specify an SNS topic or SQS queue for failed invocation notifications. This includes CRUD operations for this new feature and state management in the Terraform provider.
 - Added support for Node.js 20.x runtime for the `duplocloud_aws_lambda_function` resource.
+- Introduced shared test utilities for mocking HTTP responses and refactored HTTP test setup.
+- Added acceptance tests for `data.duplocloud_native_hosts` data source.
+- Implementd support for `secret_labels` attribute for `duplocloud_k8_secret` resource
 
 ### Fixed
 - Resolved an issue in `duplocloud_aws_elasticsearch` resource where OpenSearch could not be created with both warm enable and cold storage set to false.
 - Corrected the `FileSystemId` assignment in the EFS update function for `duplocloud_aws_efs_lifecycle_policy`
 - Fixed a potential crash in `duplocloud_aws_elasticsearch` creation when `dedicated_master_type` was not defined.
+- Fixed `store_details_in_secret_manager` attribute not getting set for `duplocloud_rds_instance` resource in duplo 
+- Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
+- Fixed crash in tenant data source on missing `TenantPolicy`.
 
 ## 2024-02-15
 
