@@ -221,7 +221,6 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 						Type:        schema.TypeString,
 						Optional:    true,
 						ValidateFunc: validation.StringInSlice([]string{
-							"NODE_POOL_UPDATE_STRATEGY_UNSPECIFIED",
 							"BLUE_GREEN",
 							"SURGE",
 						}, false),
@@ -443,26 +442,26 @@ func expandGCPNodePoolUpgradeSettings(d *schema.ResourceData, req *duplosdk.Dupl
 	if val, ok := d.Get("upgrade_settings").([]interface{}); ok {
 		for _, item := range val {
 			if m, ok := item.(map[string]interface{}); ok {
-				upgradeSetting := map[string]interface{}{
-					"maxSurge":       m["max_surge"],
-					"maxUnavailable": m["max_unavailable"],
-					"strategy":       m["strategy"],
+				upgradeSetting := &duplosdk.GCPNodeUpgradeSetting{
+					MaxSurge:       m["max_surge"].(int),
+					MaxUnavailable: m["max_unavailable"].(int),
+					Strategy:       m["strategy"].(string),
 				}
 
 				if bgMap, ok := m["blue_green_settings"].(map[string]interface{}); ok {
-					blueGreenSettings := map[string]interface{}{
-						"nodePoolSoakDuration": bgMap["node_pool_soak_duration"],
+					blueGreenSettings := &duplosdk.BlueGreenSettings{
+						NodePoolSoakDuration: bgMap["node_pool_soak_duration"].(string),
 					}
 
 					if rollout, ok := bgMap["standard_rollout_policy"].(map[string]interface{}); ok {
-						rolloutPolicy := map[string]interface{}{
-							"batchPercentage":   rollout["batch_percentage"],
-							"batchNodeCount":    rollout["batch_node_count"],
-							"batchSoakDuration": rollout["batch_soak_duration"],
+						rolloutPolicy := &duplosdk.StandardRolloutPolicy{
+							BatchPercentage:   rollout["batch_percentage"].(float32),
+							BatchNodeCount:    rollout["batch_node_count"].(int),
+							BatchSoakDuration: rollout["batch_soak_duration"].(string),
 						}
-						blueGreenSettings["standardRolloutPolicy"] = rolloutPolicy
+						blueGreenSettings.StandardRolloutPolicy = rolloutPolicy
 					}
-					upgradeSetting["blueGreenSettings"] = blueGreenSettings
+					upgradeSetting.BlueGreenSettings = blueGreenSettings
 				}
 				req.UpgradeSettings = upgradeSetting
 			}
@@ -482,27 +481,27 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 	}
 	req.Spot = d.Get("spot").(bool)
 	if val, ok := d.Get("linux_node_config").([]map[string]interface{}); ok {
-		req.LinuxNodeConfig["cgroupMode"] = val[0]["cgroup_mode"].(string)
-		req.LinuxNodeConfig["sysctls"] = val[0]["sysctls"]
+		req.LinuxNodeConfig.CGroupMode = val[0]["cgroup_mode"].(string)
+		req.LinuxNodeConfig.SysCtls = val[0]["sysctls"]
 	}
 	if val, ok := d.Get("labels").(map[string]string); ok {
 		req.Labels = val
 	}
 	if val, ok := d.Get("logging_config").(map[string]interface{}); ok {
-		loggingConfig := make(map[string]interface{})
+		loggingConfig := duplosdk.GCPLoggingConfig{}
 
 		if vConfig, ok := val["variant_config"].(map[string]interface{}); ok {
-			variantConfig := make(map[string]interface{})
+			variantConfig := duplosdk.VariantConfig{}
 
 			if variant, ok := vConfig["variant"].(string); ok {
-				variantConfig["variant"] = variant
+				variantConfig.Variant = variant
 			}
 
-			loggingConfig["variantConfig"] = variantConfig
+			loggingConfig.VariantConfig = &variantConfig
 		}
 
 		// Assign the loggingConfig to the request object
-		req.LoggingConfig = loggingConfig
+		req.LoggingConfig = &loggingConfig
 	}
 
 	if val, ok := d.Get("taints").([]duplosdk.GCPNodeTaints); ok {
@@ -643,32 +642,80 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 	d.Set("spot", duplo.Spot)
 	d.Set("tags", duplo.Tags)
 	d.Set("taints", gcpNodePoolTaintstoState(duplo.Taints))
-	d.Set("node_pool_logging_config", duplo.LoggingConfig)
-	d.Set("linux_node_config", duplo.LinuxNodeConfig)
-	d.Set("upgrade_settings", duplo.UpgradeSettings)
+	d.Set("node_pool_logging_config", gcpNodePoolLoggingConfigToState(duplo.LoggingConfig))
+	d.Set("linux_node_config", gcpNodePoolLinuxConfigToState(duplo.LinuxNodeConfig))
+	d.Set("upgrade_settings", gcpNodePoolUpgradeSettingToState(duplo.UpgradeSettings))
 	d.Set("accelerator", gcpNodePoolAcceleratortoState(duplo.Accelerator))
 	// Set more complex fields next.
 
 }
 
-func gcpNodePoolAcceleratortoState(accelerator duplosdk.Accelerator) []map[string]interface{} {
-
+func gcpNodePoolUpgradeSettingToState(upgradeSetting *duplosdk.GCPNodeUpgradeSetting) []map[string]interface{} {
 	state := make(map[string]interface{})
-	state["accelerator_count"] = strconv.Itoa(accelerator.AcceleratorCount)
+	state["strategy"] = upgradeSetting.Strategy
+	state["max_surge"] = upgradeSetting.MaxSurge
+	state["max_unavailable"] = upgradeSetting.MaxUnavailable
+
+	if upgradeSetting.BlueGreenSettings != nil {
+		blueGreenSettings := make(map[string]interface{})
+		if upgradeSetting.BlueGreenSettings.StandardRolloutPolicy != nil {
+			rolloutPolicy := make(map[string]interface{})
+			rolloutPolicy["batch_percentage"] = upgradeSetting.BlueGreenSettings.StandardRolloutPolicy.BatchPercentage
+			rolloutPolicy["batch_node_count"] = upgradeSetting.BlueGreenSettings.StandardRolloutPolicy.BatchNodeCount
+			rolloutPolicy["batch_soak_duration"] = upgradeSetting.BlueGreenSettings.StandardRolloutPolicy.BatchSoakDuration
+			blueGreenSettings["standard_rollout_policy"] = []map[string]interface{}{rolloutPolicy}
+		}
+		blueGreenSettings["node_pool_soak_duration"] = upgradeSetting.BlueGreenSettings.NodePoolSoakDuration
+		state["blue_green_settings"] = []map[string]interface{}{blueGreenSettings}
+	}
+
+	return []map[string]interface{}{state}
+}
+
+func gcpNodePoolLoggingConfigToState(loggingConfig *duplosdk.GCPLoggingConfig) []map[string]interface{} {
+	state := make(map[string]interface{})
+	if loggingConfig != nil && loggingConfig.VariantConfig != nil {
+		variant := make(map[string]interface{})
+		variant["variant"] = loggingConfig.VariantConfig.Variant
+		state["variant_config"] = []map[string]interface{}{variant}
+	}
+	return []map[string]interface{}{state}
+}
+
+func gcpNodePoolLinuxConfigToState(linuxConfig *duplosdk.GCPLinuxNodeConfig) []map[string]interface{} {
+	state := make(map[string]interface{})
+	if linuxConfig != nil {
+		state["cgroup_mode"] = linuxConfig.CGroupMode
+		state["systctls"] = linuxConfig.SysCtls
+	}
+	return []map[string]interface{}{state}
+}
+
+func gcpNodePoolAcceleratortoState(accelerator duplosdk.Accelerator) []map[string]interface{} {
+	state := make(map[string]interface{})
+
+	if accelerator.AcceleratorCount != 0 {
+		state["accelerator_count"] = strconv.Itoa(accelerator.AcceleratorCount)
+	}
 	state["accelerator_type"] = accelerator.AcceleratorType
 	state["gpu_partition_size"] = accelerator.GPUPartitionSize
 
 	gpuSharingConfigMap := make(map[string]interface{})
-	gpuSharingConfigMap["gpu_sharing_strategy"] = accelerator.GPUSharingConfig.GPUSharingStrategy
-	gpuSharingConfigMap["max_shared_clients_per_gpu"] = strconv.Itoa(accelerator.GPUSharingConfig.MaxSharedClientPerGPU)
-
+	if accelerator.GPUSharingConfig.GPUSharingStrategy != "" {
+		gpuSharingConfigMap["gpu_sharing_strategy"] = accelerator.GPUSharingConfig.GPUSharingStrategy
+	}
+	if accelerator.GPUSharingConfig.MaxSharedClientPerGPU != 0 {
+		gpuSharingConfigMap["max_shared_clients_per_gpu"] = strconv.Itoa(accelerator.GPUSharingConfig.MaxSharedClientPerGPU)
+	}
 	state["gpu_sharing_config"] = gpuSharingConfigMap
 
 	driverConfig := make(map[string]interface{})
-	driverConfig["gpu_driver_version"] = accelerator.GPUDriverInstallationConfig.GPUDriverVersion
+	if accelerator.GPUDriverInstallationConfig.GPUDriverVersion != "" {
+		driverConfig["gpu_driver_version"] = accelerator.GPUDriverInstallationConfig.GPUDriverVersion
+	}
 	state["gpu_driver_installation_config"] = driverConfig
-	return []map[string]interface{}{state}
 
+	return []map[string]interface{}{state}
 }
 
 func gcpNodePoolTaintstoState(taints []duplosdk.GCPNodeTaints) []interface{} {

@@ -6,17 +6,17 @@ import (
 )
 
 type DuploGCPK8NodePool struct {
-	AutoRepair           bool                   `json:"AutoRepair"`
-	AutoUpgrade          bool                   `json:"AutoUpgrade" default:"true"`
-	DiscSizeGb           int                    `json:"DiscSizeGb" default:"100"`
-	DiscType             string                 `json:"DiscType" default:"pd-standard"`
-	ImageType            string                 `json:"ImageType" default:"cos_containerd"`
-	InitialNodeCount     int                    `json:"InitialNodeCount"`
-	IsAutoScalingEnabled bool                   `json:"IsAutoscalingEnabled"`
-	Labels               map[string]string      `json:"Labels"`
-	LinuxNodeConfig      map[string]interface{} `json:"LinuxNodeConfig"`
-	LocationPolicy       string                 `json:"LocationPolicy" default:"BALANCED"`
-	LoggingConfig        map[string]interface{} `json:"LoggingConfig"`
+	AutoRepair           bool                `json:"AutoRepair"`
+	AutoUpgrade          bool                `json:"AutoUpgrade" default:"true"`
+	DiscSizeGb           int                 `json:"DiscSizeGb" default:"100"`
+	DiscType             string              `json:"DiscType" default:"pd-standard"`
+	ImageType            string              `json:"ImageType" default:"cos_containerd"`
+	InitialNodeCount     int                 `json:"InitialNodeCount"`
+	IsAutoScalingEnabled bool                `json:"IsAutoscalingEnabled"`
+	Labels               map[string]string   `json:"Labels"`
+	LinuxNodeConfig      *GCPLinuxNodeConfig `json:"LinuxNodeConfig"`
+	LocationPolicy       string              `json:"LocationPolicy" default:"BALANCED"`
+	LoggingConfig        *GCPLoggingConfig   `json:"LoggingConfig"`
 
 	MachineType       string                 `json:"MachineType" default:"e2-medium"`
 	MaxNodeCount      *int                   `json:"MaxNodeCount"`
@@ -26,7 +26,7 @@ type DuploGCPK8NodePool struct {
 	Spot              bool                   `json:"Spot"`
 	Tags              []string               `json:"Tags"`
 	Taints            []GCPNodeTaints        `json:"Taints"`
-	UpgradeSettings   map[string]interface{} `json:"UpgradeSettings"`
+	UpgradeSettings   *GCPNodeUpgradeSetting `json:"UpgradeSettings"`
 	Zones             []string               `json:"Zones"`
 	Metadata          map[string]string      `json:"Metadata"`
 	TotalMaxNodeCount *int                   `json:"TotalMaxNodeCount"`
@@ -62,7 +62,7 @@ type GCPLinuxNodeConfig struct {
 }
 
 type GCPLoggingConfig struct {
-	VariantConfig VariantConfig `json:"variantConfig"`
+	VariantConfig *VariantConfig `json:"variantConfig"`
 }
 
 type VariantConfig struct {
@@ -70,15 +70,15 @@ type VariantConfig struct {
 }
 
 type GCPNodeUpgradeSetting struct {
-	Strategy          string            `json:"strategy" default:"NODE_POOL_UPDATE_STRATEGY_UNSPECIFIED"`
-	MaxSurge          int               `json:"maxSurge"`
-	MaxUnavailable    int               `json:"maxUnavailable"`
-	BlueGreenSettings BlueGreenSettings `json:"blueGreenSettings,omitempty"`
+	Strategy          string             `json:"strategy" default:"NODE_POOL_UPDATE_STRATEGY_UNSPECIFIED"`
+	MaxSurge          int                `json:"maxSurge"`
+	MaxUnavailable    int                `json:"maxUnavailable"`
+	BlueGreenSettings *BlueGreenSettings `json:"blueGreenSettings,omitempty"`
 }
 
 type BlueGreenSettings struct {
-	StandardRolloutPolicy StandardRolloutPolicy `json:"standardRolloutPolicy"`
-	NodePoolSoakDuration  string                `json:"nodePoolSoakDuration"`
+	StandardRolloutPolicy *StandardRolloutPolicy `json:"standardRolloutPolicy"`
+	NodePoolSoakDuration  string                 `json:"nodePoolSoakDuration"`
 }
 
 type StandardRolloutPolicy struct {
