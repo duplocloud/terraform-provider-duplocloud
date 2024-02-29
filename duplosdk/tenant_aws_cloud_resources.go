@@ -579,7 +579,7 @@ func (c *Client) TenantCreateS3Bucket(tenantID string, duplo DuploS3BucketReques
 
 	// Create the bucket via Duplo.
 	return c.postAPI(
-		fmt.Sprintf("TenantCreateV3S3Bucket(%s, %s)", tenantID, duplo.Name),
+		fmt.Sprintf("TenantCreateS3Bucket(%s, %s)", tenantID, duplo.Name),
 		fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
 		&duplo,
 		nil)
@@ -600,7 +600,7 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError 
 
 	// Delete the bucket via Duplo.
 	return c.postAPI(
-		fmt.Sprintf("TenantDeleteV3S3Bucket(%s, %s)", tenantID, name),
+		fmt.Sprintf("TenantDeleteS3Bucket(%s, %s)", tenantID, name),
 		fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
 		&DuploS3BucketRequest{Type: ResourceTypeS3Bucket, Name: fullName, State: "delete"},
 		nil)
