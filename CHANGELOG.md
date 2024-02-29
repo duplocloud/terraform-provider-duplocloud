@@ -1,5 +1,3 @@
-The changes have already been updated in the CHANGELOG.md file. No new updates are needed.
-
 ## 2024-02-29
 
 ### Added
