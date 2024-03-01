@@ -474,7 +474,10 @@ func expandGCPNodePool(d *schema.ResourceData) (*duplosdk.DuploGCPK8NodePool, er
 	expandGCPNodePoolAutoScaling(d, rq)
 	expandGCPNodePoolUpgradeSettings(d, rq)
 	_, err := autoScalingHelper(rq.IsAutoScalingEnabled, rq)
-	return rq, err
+	if err != nil {
+		return nil, err
+	}
+	return rq, nil
 }
 
 func expandGCPNodePoolUpgradeSettings(d *schema.ResourceData, req *duplosdk.DuploGCPK8NodePool) {
@@ -884,7 +887,9 @@ func gcpNodePoolAutoScalingUpdate(c *duplosdk.Client, tenantID, fullName string,
 			return err
 		}
 		_, err = c.GCPK8NodePoolUpdate(tenantID, fullName, "/autoscaling", rq)
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
