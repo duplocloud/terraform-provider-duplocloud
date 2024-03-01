@@ -31,7 +31,8 @@ type DuploGCPK8NodePool struct {
 	Metadata          map[string]string      `json:"Metadata"`
 	TotalMaxNodeCount *int                   `json:"TotalMaxNodeCount"`
 	TotalMinNodeCount *int                   `json:"TotalMinNodeCount"`
-	Accelerator       Accelerator            `json:"Accelerator,omitempty"`
+	Accelerator       *Accelerator           `json:"Accelerator,omitempty"`
+	ResourceLabels    map[string]string      `json:"ResourceLabels"`
 }
 
 type Accelerator struct {
@@ -117,11 +118,11 @@ func (c *Client) GCPK8NodePoolDelete(tenantID, name string) ClientError {
 		nil)
 }
 
-func (c *Client) GCPK8NodePoolUpdate(tenantID, name string, rq *DuploGCPK8NodePool) (*DuploGCPK8NodePool, ClientError) {
+func (c *Client) GCPK8NodePoolUpdate(tenantID, name, updateAttribute string, rq *DuploGCPK8NodePool) (*DuploGCPK8NodePool, ClientError) {
 	rp := DuploGCPK8NodePool{}
 	err := c.putAPI(
 		fmt.Sprintf("GCPK8NodePoolUpdate(%s)", tenantID),
-		fmt.Sprintf("v3/subscriptions/%s/google/nodePools/%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/nodePools/%s%s", tenantID, name, updateAttribute),
 		&rq,
 		&rp,
 	)
