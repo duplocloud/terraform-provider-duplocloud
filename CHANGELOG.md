@@ -1,3 +1,11 @@
+## 2024-02-29
+
+### Added
+- Implemented V3 API support for S3 bucket operations, including create, read, update, and delete, with fallback to older API if V3 is not available.
+- Added support for specifying the region of an S3 bucket in Terraform resource.
+- Extended SDK to support new V3 API endpoints for S3 bucket operations.
+- Updated documentation to include the new `region` attribute for the S3 bucket resource.
+
 ## 2024-02-28
 
 ### Added
