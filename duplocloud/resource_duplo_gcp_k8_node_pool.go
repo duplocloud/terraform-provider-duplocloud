@@ -861,7 +861,10 @@ func resourceGCPK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m 
 		}
 	}
 
-	gcpNodePoolAutoScalingUpdate(c, tenantID, fullName, d, *rq)
+	err = gcpNodePoolAutoScalingUpdate(c, tenantID, fullName, d, *rq)
+	if err != nil {
+		return diag.Errorf(err.Error())
+	}
 	duplo, err := c.GCPK8NodePoolGet(tenantID, fullName)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve tenant %s GCP Node Pool Domain '%s': %s", tenantID, fullName, err)
