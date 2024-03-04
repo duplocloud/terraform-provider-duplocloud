@@ -518,6 +518,11 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 	for _, tag := range d.Get("tags").([]interface{}) {
 		req.Tags = append(req.Tags, tag.(string))
 	}
+
+	for _, oauth := range d.Get("oauth_scopes").([]interface{}) {
+		req.OAuthScopes = append(req.OAuthScopes, oauth.(string))
+	}
+
 	if val, ok := d.Get("disc_type").(string); ok {
 		req.DiscType = val
 	}
@@ -684,14 +689,15 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 	d.Set("disc_type", duplo.DiscType)
 	d.Set("machine_type", duplo.MachineType)
 	d.Set("metadata", duplo.Metadata)
-	d.Set("labels", duplo.Labels)
+	d.Set("labels", filterOutDefaultLabels(duplo.Labels))
 	d.Set("spot", duplo.Spot)
-	d.Set("tags", duplo.Tags)
+	d.Set("tags", filterOutDefaultTags(duplo.Tags))
 	d.Set("taints", gcpNodePoolTaintstoState(duplo.Taints))
 	d.Set("node_pool_logging_config", gcpNodePoolLoggingConfigToState(duplo.LoggingConfig))
 	d.Set("linux_node_config", gcpNodePoolLinuxConfigToState(duplo.LinuxNodeConfig))
 	d.Set("upgrade_settings", gcpNodePoolUpgradeSettingToState(duplo.UpgradeSettings))
 	d.Set("accelerator", gcpNodePoolAcceleratortoState(duplo.Accelerator))
+	d.Set("oauth_scopes", filterOutDefaultOAuth(duplo.OAuthScopes))
 	// Set more complex fields next.
 
 }
@@ -919,6 +925,7 @@ func autoScalingHelper(isAutoScalingEnabled bool, r *duplosdk.DuploGCPK8NodePool
 	}
 	return rq, nil
 }
+
 func gcpNodePoolUpdateInitialNodeCount(c *duplosdk.Client, tenantID, fullName string, nodeCount int) (*duplosdk.DuploGCPK8NodePool, error) {
 	rq := &duplosdk.DuploGCPK8NodePool{
 		InitialNodeCount: nodeCount,
@@ -1013,4 +1020,50 @@ func excludeAutomaticallyAppliedMapValues(attributeName string) schema.SchemaDif
 		_, exists := oldMapStr[k]
 		return exists
 	}
+}
+
+func hasSuffix(s string, suffixes map[string]struct{}) bool {
+	for suffix := range suffixes {
+		if strings.HasSuffix(s, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func filterStringsBySuffix(stringsSlice []string) []string {
+	suffixes := map[string]struct{}{
+		"allow-lb-healthcheck": {},
+		"allow-lb-internal":    {},
+		"iap-ssh":              {},
+		"iap-rdp":              {},
+	}
+
+	filtered := make([]string, 0, len(stringsSlice))
+	for _, str := range stringsSlice {
+		if !hasSuffix(str, suffixes) {
+			filtered = append(filtered, str)
+		}
+	}
+	return filtered
+}
+
+func filterOutDefaultTags(tags []string) []string {
+	return filterStringsBySuffix(tags)
+}
+
+func filterOutDefaultLabels(labels map[string]string) map[string]string {
+	delete(labels, "tenantname")
+	return labels
+}
+
+func filterOutDefaultOAuth(oAuths []string) []string {
+	oauthMap := map[string]struct{}{}
+	filters := []string{}
+	for _, oAuth := range oAuths {
+		if _, ok := oauthMap[oAuth]; !ok {
+			filters = append(filters, oAuth)
+		}
+	}
+	return filters
 }

@@ -6,33 +6,33 @@ import (
 )
 
 type DuploGCPK8NodePool struct {
-	AutoRepair           bool                `json:"AutoRepair"`
-	AutoUpgrade          bool                `json:"AutoUpgrade" default:"true"`
-	DiscSizeGb           int                 `json:"DiscSizeGb" default:"100"`
-	DiscType             string              `json:"DiscType" default:"pd-standard"`
-	ImageType            string              `json:"ImageType" default:"cos_containerd"`
-	InitialNodeCount     int                 `json:"InitialNodeCount"`
-	IsAutoScalingEnabled bool                `json:"IsAutoscalingEnabled"`
-	Labels               map[string]string   `json:"Labels"`
-	LinuxNodeConfig      *GCPLinuxNodeConfig `json:"LinuxNodeConfig"`
-	LocationPolicy       string              `json:"LocationPolicy" default:"BALANCED"`
-	LoggingConfig        *GCPLoggingConfig   `json:"LoggingConfig"`
-
-	MachineType       string                 `json:"MachineType" default:"e2-medium"`
-	MaxNodeCount      *int                   `json:"MaxNodeCount"`
-	MinNodeCount      *int                   `json:"MinNodeCount"`
-	Name              string                 `json:"Name" valid:"required"`
-	FullName          string                 `json:"-"`
-	Spot              bool                   `json:"Spot"`
-	Tags              []string               `json:"Tags"`
-	Taints            []GCPNodeTaints        `json:"Taints"`
-	UpgradeSettings   *GCPNodeUpgradeSetting `json:"UpgradeSettings"`
-	Zones             []string               `json:"Zones"`
-	Metadata          map[string]string      `json:"Metadata"`
-	TotalMaxNodeCount *int                   `json:"TotalMaxNodeCount"`
-	TotalMinNodeCount *int                   `json:"TotalMinNodeCount"`
-	Accelerator       *Accelerator           `json:"Accelerator,omitempty"`
-	ResourceLabels    map[string]string      `json:"ResourceLabels"`
+	AutoRepair           bool                   `json:"AutoRepair"`
+	AutoUpgrade          bool                   `json:"AutoUpgrade" default:"true"`
+	DiscSizeGb           int                    `json:"DiscSizeGb" default:"100"`
+	DiscType             string                 `json:"DiscType" default:"pd-standard"`
+	ImageType            string                 `json:"ImageType" default:"cos_containerd"`
+	InitialNodeCount     int                    `json:"InitialNodeCount"`
+	IsAutoScalingEnabled bool                   `json:"IsAutoscalingEnabled"`
+	Labels               map[string]string      `json:"Labels"`
+	LinuxNodeConfig      *GCPLinuxNodeConfig    `json:"LinuxNodeConfig"`
+	LocationPolicy       string                 `json:"LocationPolicy" default:"BALANCED"`
+	LoggingConfig        *GCPLoggingConfig      `json:"LoggingConfig"`
+	OAuthScopes          []string               `json:"OAuthScopes"`
+	MachineType          string                 `json:"MachineType" default:"e2-medium"`
+	MaxNodeCount         *int                   `json:"MaxNodeCount"`
+	MinNodeCount         *int                   `json:"MinNodeCount"`
+	Name                 string                 `json:"Name" valid:"required"`
+	FullName             string                 `json:"-"`
+	Spot                 bool                   `json:"Spot"`
+	Tags                 []string               `json:"Tags"`
+	Taints               []GCPNodeTaints        `json:"Taints"`
+	UpgradeSettings      *GCPNodeUpgradeSetting `json:"UpgradeSettings"`
+	Zones                []string               `json:"Zones"`
+	Metadata             map[string]string      `json:"Metadata"`
+	TotalMaxNodeCount    *int                   `json:"TotalMaxNodeCount"`
+	TotalMinNodeCount    *int                   `json:"TotalMinNodeCount"`
+	Accelerator          *Accelerator           `json:"Accelerator,omitempty"`
+	ResourceLabels       map[string]string      `json:"ResourceLabels"`
 }
 
 type Accelerator struct {
