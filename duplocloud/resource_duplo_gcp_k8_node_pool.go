@@ -1058,7 +1058,10 @@ func filterOutDefaultLabels(labels map[string]string) map[string]string {
 }
 
 func filterOutDefaultOAuth(oAuths []string) []string {
-	oauthMap := map[string]struct{}{}
+	oauthMap := map[string]struct{}{
+		"https://www.googleapis.com/auth/compute":              {},
+		"https://www.googleapis.com/auth/devstorage.read_only": {},
+	}
 	filters := []string{}
 	for _, oAuth := range oAuths {
 		if _, ok := oauthMap[oAuth]; !ok {
