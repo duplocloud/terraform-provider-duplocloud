@@ -1,3 +1,8 @@
+## 2024-03-04
+
+### Added
+- Added support for specifying the instruction set architecture for AWS Lambda functions, including `[x86_64]` and `[arm64]` options, with a default of `[x86_64]`.
+
 ## 2024-02-28
 
 ### Added
