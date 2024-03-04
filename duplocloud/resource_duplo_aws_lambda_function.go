@@ -238,6 +238,13 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"architectures": {
+			Description: "Instruction set architecture for your Lambda function. Valid values are `[x86_64]` and `[arm64]`. Default is `[x86_64]`",
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Optional:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 	}
 }
 
@@ -340,6 +347,10 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	}
 	if v, ok := getAsStringArray(d, "layers"); ok && v != nil {
 		rq.Layers = v
+	}
+
+	if v, ok := getAsStringArray(d, "architectures"); ok && v != nil {
+		rq.Architectures = v
 	}
 
 	if v, ok := d.GetOk("image_config"); ok && len(v.([]interface{})) > 0 {
@@ -710,6 +721,11 @@ func updateAwsLambdaFunctionCode(tenantID, name string, d *schema.ResourceData, 
 	} else if packageType == "Image" {
 		rq.ImageURI = d.Get("image_uri").(string)
 	}
+
+	if v, ok := getAsStringArray(d, "architectures"); ok && v != nil {
+		rq.Architectures = v
+	}
+
 	err := c.LambdaFunctionUpdate(tenantID, &rq)
 
 	// TODO: Wait for the changes to be applied.
@@ -728,7 +744,8 @@ func getPackageType(d *schema.ResourceData) (packageType string) {
 func needsAwsLambdaFunctionCodeUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("s3_bucket") ||
 		d.HasChange("s3_key") ||
-		d.HasChange("image_uri")
+		d.HasChange("image_uri") ||
+		d.HasChange("architectures")
 }
 
 func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
