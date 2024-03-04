@@ -520,7 +520,7 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 	}
 
 	for _, oauth := range d.Get("oauth_scopes").([]interface{}) {
-		req.OAuthScopes = append(req.OAuthScopes, oauth.(string))
+		req.OauthScopes = append(req.OauthScopes, oauth.(string))
 	}
 
 	if val, ok := d.Get("disc_type").(string); ok {
@@ -697,7 +697,7 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 	d.Set("linux_node_config", gcpNodePoolLinuxConfigToState(duplo.LinuxNodeConfig))
 	d.Set("upgrade_settings", gcpNodePoolUpgradeSettingToState(duplo.UpgradeSettings))
 	d.Set("accelerator", gcpNodePoolAcceleratortoState(duplo.Accelerator))
-	d.Set("oauth_scopes", filterOutDefaultOAuth(duplo.OAuthScopes))
+	d.Set("oauth_scopes", filterOutDefaultOAuth(duplo.OauthScopes))
 	// Set more complex fields next.
 
 }
@@ -1061,6 +1061,8 @@ func filterOutDefaultOAuth(oAuths []string) []string {
 	oauthMap := map[string]struct{}{
 		"https://www.googleapis.com/auth/compute":              {},
 		"https://www.googleapis.com/auth/devstorage.read_only": {},
+		"https://www.googleapis.com/auth/logging.write":        {},
+		"https://www.googleapis.com/auth/monitoring":           {},
 	}
 	filters := []string{}
 	for _, oAuth := range oAuths {

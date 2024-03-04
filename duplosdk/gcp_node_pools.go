@@ -17,7 +17,7 @@ type DuploGCPK8NodePool struct {
 	LinuxNodeConfig      *GCPLinuxNodeConfig    `json:"LinuxNodeConfig"`
 	LocationPolicy       string                 `json:"LocationPolicy" default:"BALANCED"`
 	LoggingConfig        *GCPLoggingConfig      `json:"LoggingConfig"`
-	OAuthScopes          []string               `json:"OAuthScopes"`
+	OauthScopes          []string               `json:"OauthScopes"`
 	MachineType          string                 `json:"MachineType" default:"e2-medium"`
 	MaxNodeCount         *int                   `json:"MaxNodeCount"`
 	MinNodeCount         *int                   `json:"MinNodeCount"`
