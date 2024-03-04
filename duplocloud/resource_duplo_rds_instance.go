@@ -635,9 +635,10 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.Engine = d.Get("engine").(int)
 	duploObject.EngineVersion = d.Get("engine_version").(string)
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
-	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
-	if isAuroraDB(d) {
+	if isClusterGroupParameterSupportDb(duploObject.Engine) {
 		duploObject.ClusterParameterGroupName = d.Get("cluster_parameter_group_name").(string)
+	} else {
+		duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
 	}
 	duploObject.DBSubnetGroupName = d.Get("db_subnet_group_name").(string)
 	duploObject.Cloud = 0 // AWS
@@ -795,4 +796,16 @@ func isAuroraDB(d *schema.ResourceData) bool {
 func isDeleteProtectionSupported(d *schema.ResourceData) bool {
 	// Avoid setting delete protection for document DB
 	return d.Get("engine").(int) != 13
+}
+
+func isClusterGroupParameterSupportDb(db int) bool {
+	clusterDb := map[int]bool{
+		8:  true,
+		9:  true,
+		11: true,
+		12: true,
+		13: true,
+		16: true,
+	}
+	return clusterDb[db]
 }
