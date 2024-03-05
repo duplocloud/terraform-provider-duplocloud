@@ -1,3 +1,9 @@
+## 2024-03-05
+
+### Added
+- Added data source for `duplocloud_gcp_sql_database_instance`
+- Added example related to data for `duplocloud_gcp_sql_database_instance`
+
 ## 2024-02-28
 
 ### Added
