@@ -1,3 +1,8 @@
+## 2024-03-05
+
+### Fixed
+- Fixed `duplocloud_k8_secret` nil map panic bug
+
 ## 2024-02-28
 
 ### Added
