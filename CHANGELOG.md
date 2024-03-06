@@ -1,3 +1,12 @@
+## 2024-03-06
+
+### Changed
+- Simplified the `DuploAwsLifecyclePolicyUpdate` function by removing the return value to enhance clarity and efficiency in EFS lifecycle updates.
+- Updated function calls and error handling in `resource_duplo_aws_efs_file_system` and `resource_duplo_aws_efs_file_system_lifecycle_policy` to accommodate the changes in lifecycle policy updates.
+
+### Fixed
+- Fixed parameter handling in the update lifecycle policy for EFS, ensuring more reliable lifecycle management.
+
 ## 2024-02-28
 
 ### Added
