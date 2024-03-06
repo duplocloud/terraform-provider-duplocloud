@@ -96,7 +96,11 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.InfrastructureGetSubnet(rq.InfrastructureName, "duploinfra-"+rq.Name, rq.AddressPrefix)
+	subnetName := rq.Name
+	if strings.HasPrefix(rq.InfrastructureName, "duploinfra-") {
+		subnetName = "duploinfra-" + rq.Name
+	}
+	duplo, err := c.InfrastructureGetSubnet(rq.InfrastructureName, subnetName, rq.AddressPrefix)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve infrastructure subnet '%s': %s", id, err)
 	}
