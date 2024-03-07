@@ -313,10 +313,14 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 		ParameterGroupName:  d.Get("parameter_group_name").(string),
 	}
 	if data.CacheType == 0 {
-		data.EnableClusterMode = d.Get("enable_cluster_mode").(bool)
+		if v, ok := d.GetOk("enable_cluster_mode"); ok { //applicable for only redis type
+			data.EnableClusterMode = v.(bool)
+		}
 	}
 	if data.EnableClusterMode {
-		data.NumberOfShards = d.Get("number_of_shards").(int)
+		if v, ok := d.GetOk("number_of_shards"); ok {
+			data.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
+		}
 	}
 	return data
 }
