@@ -1,3 +1,7 @@
+## 2024-03-07
+
+### Fixed
+- `unrestricted_ext_lb` attribute not setting to false fix for `duplocloud_plan_settings` resource
 ## 2024-02-28
 
 ### Added
