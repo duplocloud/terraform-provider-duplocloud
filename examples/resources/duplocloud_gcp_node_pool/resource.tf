@@ -4,7 +4,7 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 
-resource "duplocloud_gcp_node_pools" "myNodePool" {
+resource "duplocloud_gcp_node_pool" "myNodePool" {
   tenant_id              = duplocloud_tenant.myapp.tenant_id
   name                   = "myNodePool"
   is_autoscaling_enabled = false
@@ -33,3 +33,8 @@ resource "duplocloud_gcp_node_pools" "myNodePool" {
   disc_type       = "pd-standard"
   disc_size_gb    = 100
 }
+
+resource "duplocloud_gcp_node_pool" "node_pool"{
+
+}
+

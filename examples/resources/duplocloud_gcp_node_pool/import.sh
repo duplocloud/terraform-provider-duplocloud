@@ -3,4 +3,4 @@
 #  - *NAME* is the  name of the Node Pool
 #
 
-terraform import duplocloud_gcp_node_pools.node_pool *TENANT_ID*/*NAME* 
+terraform import duplocloud_gcp_node_pool.node_pool *TENANT_ID*/*NAME* 
