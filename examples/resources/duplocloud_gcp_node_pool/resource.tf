@@ -34,7 +34,7 @@ resource "duplocloud_gcp_node_pool" "myNodePool" {
   disc_size_gb    = 100
 }
 
-resource "duplocloud_gcp_node_pool" "node_pool"{
+resource "duplocloud_gcp_node_pool" "node_pool" {
 
 }
 
