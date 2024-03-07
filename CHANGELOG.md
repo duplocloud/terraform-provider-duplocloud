@@ -6,7 +6,17 @@ The changelog is already up-to-date with the changes introduced in this PR. No f
 - Added `duplocloud_gcp_node_pools` resource to the Terraform provider.
 - Added `duplocloud_gcp_node_pools` resource example and document
 
-## 2024-02-27
+## 2024-03-05
+
+### Fixed
+- Fixed `duplocloud_k8_secret` nil map panic bug
+
+## 2024-03-07
+
+### Fixed
+- `unrestricted_ext_lb` attribute not setting to false fix for `duplocloud_plan_settings` resource
+
+## 2024-02-28
 
 ### Added
 - Added support for configuring deletion protection and point-in-time recovery for the `duplocloud_aws_dynamodb_table_v2` resource.

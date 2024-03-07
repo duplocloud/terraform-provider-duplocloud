@@ -142,11 +142,11 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	log.Printf("[TRACE] resourcePlanSettingsCreateOrUpdate(%s): start", planID)
 
 	c := m.(*duplosdk.Client)
-
 	// Apply "special" plan settings.
-	if v, ok := d.GetOk("unrestricted_ext_lb"); ok {
+	if d.HasChange("unrestricted_ext_lb") {
+		unRestrictedExtLB := d.Get("unrestricted_ext_lb").(bool)
 		settings := duplosdk.DuploPlanSettings{
-			UnrestrictedExtLB: v.(bool),
+			UnrestrictedExtLB: unRestrictedExtLB,
 		}
 		_, err := c.PlanUpdateSettings(planID, &settings)
 		if err != nil {

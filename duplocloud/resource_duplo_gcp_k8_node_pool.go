@@ -303,14 +303,12 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
-						Description: "",
-						Type:        schema.TypeString,
-						Optional:    true,
+						Type:     schema.TypeString,
+						Optional: true,
 					},
 					"value": {
-						Description: "",
-						Type:        schema.TypeString,
-						Optional:    true,
+						Type:     schema.TypeString,
+						Optional: true,
 					},
 					"effect": {
 						Description: "Update strategy of the node pool.",
@@ -411,9 +409,9 @@ func resourceGcpK8NodePool() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(2 * time.Minute),
-			Update: schema.DefaultTimeout(2 * time.Minute),
-			Delete: schema.DefaultTimeout(2 * time.Minute),
+			Create: schema.DefaultTimeout(30 * time.Minute),
+			Update: schema.DefaultTimeout(30 * time.Minute),
+			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
 		Schema: gcpK8NodePoolFunctionSchema(),
 	}
@@ -796,16 +794,25 @@ func resourceGcpNodePoolDelete(ctx context.Context, d *schema.ResourceData, m in
 	c := m.(*duplosdk.Client)
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
-	tenantId := idParts[0]
+	tenantID := idParts[0]
 	fullName := idParts[1]
-	err := c.GCPK8NodePoolDelete(tenantId, fullName)
+	resp, err := c.GCPK8NodePoolGet(tenantID, fullName)
+	if err != nil {
+		if err.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve tenant %s gcp node pool %s : %s", tenantID, resp.Name, err)
+	}
+
+	err = c.GCPK8NodePoolDelete(tenantID, fullName)
 	if err != nil {
 		return diag.Errorf("Error deleting node pool '%s': %s", id, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the node pool.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp node pool", id, func() (interface{}, duplosdk.ClientError) {
-		return c.GCPK8NodePoolGet(tenantId, fullName)
+		return c.GCPK8NodePoolGet(tenantID, fullName)
 	})
 	if diag != nil {
 		return diag
