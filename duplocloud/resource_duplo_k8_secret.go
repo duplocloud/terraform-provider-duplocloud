@@ -256,7 +256,7 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 			if !isStringValid(regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$"), v) {
 				return nil, secretLabelValidationError(duplo.SecretName, v)
 			}
-			duplo.SecretAnnotations[key] = v
+			duplo.SecretLabels[key] = v
 		}
 	}
 

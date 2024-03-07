@@ -25,6 +25,8 @@ type DuploEcacheInstance struct {
 	AuthToken           string `json:"AuthToken,omitempty"`
 	ParameterGroupName  string `json:"ParameterGroupName,omitempty"`
 	InstanceStatus      string `json:"InstanceStatus,omitempty"`
+	EnableClusterMode   bool   `json:"ClusteringEnabled,omitempty"`
+	NumberOfShards      int    `json:"NoOfShards,omitempty"`
 }
 
 /*************************************************
