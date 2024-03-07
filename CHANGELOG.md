@@ -1,3 +1,11 @@
+The changelog is already up-to-date with the changes introduced in this PR. No further updates are needed.
+
+## 2024-02-21
+
+### Added 
+- Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
+- Added `duplocloud_gcp_node_pool` resource example and document
+
 ## 2024-03-05
 
 ### Fixed
