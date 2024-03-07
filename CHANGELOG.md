@@ -19,6 +19,10 @@ The changelog is already up-to-date with the changes introduced in this PR. No f
 ## 2024-02-28
 
 ### Added
+- Introduced shared test utilities for mocking HTTP responses and refactored HTTP test setup.
+- Added acceptance tests for `data.duplocloud_native_hosts` data source.
+- Implementd support for `secret_labels` attribute for `duplocloud_k8_secret` resource
+- Added support for `cluster_parameter_group_name` for `duplocloud_rds_instance` resource
 - Added support for configuring deletion protection and point-in-time recovery for the `duplocloud_aws_dynamodb_table_v2` resource.
 
 ### Fixed
