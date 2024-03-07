@@ -24,10 +24,6 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
   name           = "tst-dynamodb-table"
   read_capacity  = 10
   write_capacity = 10
-  
-  deletion_protection_enabled = false
-  is_point_in_time_recovery = false
-
   #billing_mode = "PAY_PER_REQUEST"
   tag {
     key   = "CreatedBy"
@@ -89,7 +85,9 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
 - `attribute` (Block Set) (see [below for nested schema](#nestedblock--attribute))
 - `billing_mode` (String) Controls how you are charged for read and write throughput and how you manage capacity. The valid values are `PROVISIONED` and `PAY_PER_REQUEST`. Defaults to `PROVISIONED`.
+- `deletion_protection_enabled` (Boolean) Deletion protection keeps the tables from being deleted unintentionally. While this setting is on, you can't delete the table.
 - `global_secondary_index` (Block Set) Describe a GSI for the table; subject to the normal limits on the number of GSIs, projected attributes, etc. (see [below for nested schema](#nestedblock--global_secondary_index))
+- `is_point_in_time_recovery` (Boolean) The point in time recovery status of the dynamodb table. Enabled if true.
 - `key_schema` (Block List) (see [below for nested schema](#nestedblock--key_schema))
 - `local_secondary_index` (Block Set) (see [below for nested schema](#nestedblock--local_secondary_index))
 - `read_capacity` (Number) The number of read units for this table. If the `billing_mode` is `PROVISIONED`, this field is required.
