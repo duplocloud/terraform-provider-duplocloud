@@ -1,7 +1,12 @@
+## 2024-03-05
+
+### Fixed
+- Fixed `duplocloud_k8_secret` nil map panic bug
+
 ## 2024-03-07
 
-### Added
-- Added support attribute for setting cluster mode and number of shards for `duplocloud_ecache_instance` resource
+### Fixed
+- `unrestricted_ext_lb` attribute not setting to false fix for `duplocloud_plan_settings` resource
 
 ## 2024-02-28
 
