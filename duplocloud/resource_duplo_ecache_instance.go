@@ -142,6 +142,20 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			ForceNew:    true,
 		},
+		"enable_cluster_mode": {
+			Description: "Flag to enable/disable redis cluster mode.",
+			Type:        schema.TypeBool,
+			Computed:    true,
+			Optional:    true,
+		},
+		"number_of_shards": {
+			Description:  "The number of shards to create.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Default:      2,
+			ForceNew:     true,
+			ValidateFunc: validation.IntBetween(1, 500),
+		},
 	}
 }
 
@@ -282,7 +296,7 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 
 // expandEcacheInstance converts resource data respresenting an ECache instance to a Duplo SDK object.
 func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance {
-	return &duplosdk.DuploEcacheInstance{
+	data := &duplosdk.DuploEcacheInstance{
 		Name:                d.Get("name").(string),
 		Identifier:          d.Get("identifier").(string),
 		Arn:                 d.Get("arn").(string),
@@ -298,6 +312,13 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 		KMSKeyID:            d.Get("kms_key_id").(string),
 		ParameterGroupName:  d.Get("parameter_group_name").(string),
 	}
+	if data.CacheType == 0 {
+		data.EnableClusterMode = d.Get("enable_cluster_mode").(bool)
+	}
+	if data.EnableClusterMode {
+		data.NumberOfShards = d.Get("number_of_shards").(int)
+	}
+	return data
 }
 
 // flattenEcacheInstance converts a Duplo SDK object respresenting an ECache instance to terraform resource data.
@@ -325,6 +346,8 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("instance_status", duplo.InstanceStatus)
 	d.Set("kms_key_id", duplo.KMSKeyID)
 	d.Set("parameter_group_name", duplo.ParameterGroupName)
+	d.Set("enable_cluster_mode", duplo.EnableClusterMode)
+	d.Set("number_of_shards", duplo.NumberOfShards)
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.

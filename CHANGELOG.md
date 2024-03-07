@@ -1,3 +1,8 @@
+## 2024-03-07
+
+### Added
+- Added support for cluster mode enable/disable and number of shards for `duplocloud_ecache_instance` resource
+
 ## 2024-02-28
 
 ### Added
