@@ -1,3 +1,14 @@
+
+## 2024-03-07
+
+### Fixed
+- `unrestricted_ext_lb` attribute not setting to false fix for `duplocloud_plan_settings` resource
+
+## 2024-03-05
+
+### Fixed
+- Fixed `duplocloud_k8_secret` nil map panic bug
+
 ## 2024-03-04
 
 ### Added
@@ -6,6 +17,10 @@
 ## 2024-02-28
 
 ### Added
+- Introduced shared test utilities for mocking HTTP responses and refactored HTTP test setup.
+- Added acceptance tests for `data.duplocloud_native_hosts` data source.
+- Implementd support for `secret_labels` attribute for `duplocloud_k8_secret` resource
+- Added support for `cluster_parameter_group_name` for `duplocloud_rds_instance` resource
 - Added support for configuring deletion protection and point-in-time recovery for the `duplocloud_aws_dynamodb_table_v2` resource.
 
 ### Fixed
@@ -31,6 +46,12 @@
 - Fixed `store_details_in_secret_manager` attribute not getting set for `duplocloud_rds_instance` resource in duplo 
 - Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
 - Fixed crash in tenant data source on missing `TenantPolicy`.
+- 
+## 2024-02-21
+
+### Added 
+- Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
+- Added `duplocloud_gcp_node_pool` resource example and document
 
 ## 2024-02-15
 

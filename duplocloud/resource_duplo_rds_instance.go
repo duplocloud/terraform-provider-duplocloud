@@ -145,6 +145,18 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
 		},
+		"cluster_parameter_group_name": {
+			Description: "Parameter group associated with this instance's DB Cluster.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(1, 255),
+				validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9-]*$`), "Invalid DB parameter group name"),
+				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
+				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
+			),
+		},
 		"store_details_in_secret_manager": {
 			Description: "Whether or not to store RDS details in the AWS secrets manager.",
 			Type:        schema.TypeBool,
@@ -623,7 +635,11 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.Engine = d.Get("engine").(int)
 	duploObject.EngineVersion = d.Get("engine_version").(string)
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
-	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
+	if isClusterGroupParameterSupportDb(duploObject.Engine) {
+		duploObject.ClusterParameterGroupName = d.Get("cluster_parameter_group_name").(string)
+	} else {
+		duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
+	}
 	duploObject.DBSubnetGroupName = d.Get("db_subnet_group_name").(string)
 	duploObject.Cloud = 0 // AWS
 	duploObject.SizeEx = d.Get("size").(string)
@@ -701,6 +717,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["snapshot_id"] = duploObject.SnapshotID
 	jo["parameter_group_name"] = duploObject.DBParameterGroupName
+	jo["cluster_parameter_group_name"] = duploObject.ClusterParameterGroupName
 	jo["db_subnet_group_name"] = duploObject.DBSubnetGroupName
 	jo["size"] = duploObject.SizeEx
 	jo["encrypt_storage"] = duploObject.EncryptStorage
@@ -779,4 +796,16 @@ func isAuroraDB(d *schema.ResourceData) bool {
 func isDeleteProtectionSupported(d *schema.ResourceData) bool {
 	// Avoid setting delete protection for document DB
 	return d.Get("engine").(int) != 13
+}
+
+func isClusterGroupParameterSupportDb(db int) bool {
+	clusterDb := map[int]bool{
+		8:  true,
+		9:  true,
+		11: true,
+		12: true,
+		13: true,
+		16: true,
+	}
+	return clusterDb[db]
 }
