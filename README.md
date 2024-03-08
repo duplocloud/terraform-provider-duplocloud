@@ -56,6 +56,7 @@ TF_REATTACH_PROVIDERS='{"registry.terraform.io/duplocloud/duplocloud":{"Protocol
 1. Wsl2 is already installed
 2. You are using a Ubuntu Linux
 3. You have pulled the project on Wsl2
+4. You will need to enable systemd support https://devblogs.microsoft.com/commandline/systemd-support-is-now-available-in-wsl/#set-the-systemd-flag-set-in-your-wsl-distro-settings
 
 Install make on Wsl2:
 
