@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -212,3 +213,8 @@ func validateAttributeValueIsIn(validValues []string) schema.SchemaValidateFunc 
 //
 //	return
 //}
+
+func isStringValid(r *regexp.Regexp, message string) bool {
+	return r.MatchString(message)
+
+}
