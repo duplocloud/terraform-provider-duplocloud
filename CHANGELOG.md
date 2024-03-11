@@ -1,3 +1,8 @@
+## 2024-03-11
+
+## Fixed
+- fixed changes occuring while planning on already created memcache type for `duplocloud_ecache_instance` resource when no changes done
+
 ## 2024-03-07
 
 ### Fixed
