@@ -1,7 +1,5 @@
 ## 2024-02-27
 
-### Added
-- Added support for managing GCP Kubernetes node pools with the new `duplocloud_gcp_node_pools` resource.
 
 ### Fixed
 - Improved the deletion process for AWS Batch Job Definitions to correctly handle all revisions, resolving a timeout issue during resource destruction.
@@ -11,11 +9,6 @@
 ### Fixed
 
 - Fixed resource deletion terraform timeout issue for `duplo_aws_batch_job_definition` resource
-
-## 2024-02-21
-
-### Added 
-- Implemented `duplocloud_gcp_node_pool` resource.
 
 ## 2024-02-15
 
