@@ -1,20 +1,21 @@
-The changelog is already up-to-date with the changes introduced in this PR. No further updates are needed.
-
-## 2024-02-21
-
-### Added 
-- Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
-- Added `duplocloud_gcp_node_pool` resource example and document
-
-## 2024-03-05
-
-### Fixed
-- Fixed `duplocloud_k8_secret` nil map panic bug
-
 ## 2024-03-07
 
 ### Fixed
 - `unrestricted_ext_lb` attribute not setting to false fix for `duplocloud_plan_settings` resource
+
+## 2024-03-06
+
+### Changed
+- Simplified the `DuploAwsLifecyclePolicyUpdate` function by removing the return value to enhance clarity and efficiency in EFS lifecycle updates.
+- Updated function calls and error handling in `resource_duplo_aws_efs_file_system` and `resource_duplo_aws_efs_file_system_lifecycle_policy` to accommodate the changes in lifecycle policy updates.
+
+### Fixed
+- Fixed parameter handling in the update lifecycle policy for EFS, ensuring more reliable lifecycle management.
+- 
+## 2024-03-05
+
+### Fixed
+- Fixed `duplocloud_k8_secret` nil map panic bug
 
 ## 2024-02-28
 
@@ -24,6 +25,15 @@ The changelog is already up-to-date with the changes introduced in this PR. No f
 - Implementd support for `secret_labels` attribute for `duplocloud_k8_secret` resource
 - Added support for `cluster_parameter_group_name` for `duplocloud_rds_instance` resource
 - Added support for configuring deletion protection and point-in-time recovery for the `duplocloud_aws_dynamodb_table_v2` resource.
+- Introduced shared test utilities for mocking HTTP responses and refactored HTTP test setup.
+- Added acceptance tests for `data.duplocloud_native_hosts` data source.
+
+### Fixed
+- Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
+- Fixed crash in tenant data source on missing `TenantPolicy`.
+
+
+## 2024-02-26
 
 ### Fixed
 - `duplocloud_rds_instance` Resolved an issue where `SkipFinalSnapshot` was not included in the JSON during an update in the DuploRdsUpdateInstance serialization.
@@ -48,6 +58,12 @@ The changelog is already up-to-date with the changes introduced in this PR. No f
 - Fixed `store_details_in_secret_manager` attribute not getting set for `duplocloud_rds_instance` resource in duplo 
 - Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
 - Fixed crash in tenant data source on missing `TenantPolicy`.
+
+## 2024-02-21
+
+### Added 
+- Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
+- Added `duplocloud_gcp_node_pool` resource example and document
 
 ## 2024-02-15
 
