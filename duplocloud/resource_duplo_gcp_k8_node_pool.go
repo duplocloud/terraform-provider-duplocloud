@@ -61,7 +61,6 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
-			DiffSuppressFunc: excludeAutomaticallyAppliedListValues("tags"),
 		},
 		"disc_type": {
 			Description: `Type of the disk attached to each node
@@ -218,7 +217,6 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
-			DiffSuppressFunc: excludeAutomaticallyAppliedListValues("oauth_scopes"),
 		},
 
 		"zones": {
@@ -456,9 +454,13 @@ func resourceGCPK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, m 
 }
 
 func expandGCPNodePool(d *schema.ResourceData) (*duplosdk.DuploGCPK8NodePool, error) {
+	fullName := d.Get("name").(string)
+
 	id := d.Id()
-	idParts := strings.SplitN(id, "/", 2)
-	fullName := idParts[1]
+	if id != "" {
+		idParts := strings.SplitN(id, "/", 2)
+		fullName = idParts[1]
+	}
 	rq := &duplosdk.DuploGCPK8NodePool{
 		Name:                 fullName,
 		InitialNodeCount:     d.Get("initial_node_count").(int),
@@ -986,7 +988,7 @@ func gcpNodePoolZoneUpdate(c *duplosdk.Client, tenantID, fullName string, zones 
 	return resp, nil
 }
 
-func excludeAutomaticallyAppliedListValues(attributeName string) schema.SchemaDiffSuppressFunc {
+/*func excludeAutomaticallyAppliedListValues(attributeName string) schema.SchemaDiffSuppressFunc {
 	return func(k, old, new string, d *schema.ResourceData) bool {
 		autoAppliedTags := d.Get(attributeName)
 		if autoAppliedTags == nil {
@@ -1003,7 +1005,7 @@ func excludeAutomaticallyAppliedListValues(attributeName string) schema.SchemaDi
 		return false
 	}
 }
-
+*/
 // Convert an interface slice to a slice of strings
 func convertInterfaceToStringSlice(interfaceSlice interface{}) []string {
 	stringSlice := make([]string, 0)
