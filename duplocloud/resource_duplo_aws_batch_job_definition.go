@@ -300,7 +300,7 @@ func resourceAwsBatchJobDefinitionDelete(ctx context.Context, d *schema.Resource
 		clientErr := c.AwsBatchJobDefinitionDelete(tenantID, fullName+":"+strconv.Itoa(data.Revision))
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
-				return nil
+				continue
 			}
 			return diag.Errorf("Unable to delete tenant %s aws batch Job Definition '%s': %s", tenantID, name, clientErr)
 		}
