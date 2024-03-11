@@ -149,12 +149,10 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 		},
 		"number_of_shards": {
-			Description:  "The number of shards to create.",
-			Type:         schema.TypeInt,
-			Optional:     true,
-			Default:      2,
-			ForceNew:     true,
-			ValidateFunc: validation.IntBetween(1, 500),
+			Description: "The number of shards to create.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
 		},
 	}
 }
@@ -319,7 +317,11 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 	}
 	if data.EnableClusterMode {
 		if v, ok := d.GetOk("number_of_shards"); ok {
-			data.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
+			shards := v.(int)
+			if shards < 1 && shards > 500 {
+				shards = 2
+			}
+			data.NumberOfShards = shards //number of shards accepted if cluster mode is enabled
 		}
 	}
 	return data
