@@ -229,7 +229,7 @@ func resourceAwsEFSCreate(ctx context.Context, d *schema.ResourceData, m interfa
 			LifecyclePolicies: expandFileSystemLifecyclePolicies(v.([]interface{})),
 		}
 
-		_, err := c.DuploAwsLifecyclePolicyUpdate(tenantID, input)
+		err := c.DuploAwsLifecyclePolicyUpdate(tenantID, input)
 
 		if err != nil {
 			return diag.Errorf("putting EFS file system (%s) lifecycle configuration: %s", d.Id(), err)
@@ -286,7 +286,7 @@ func resourceAwsEFSUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 			input.LifecyclePolicies = []*duplosdk.LifecyclePolicy{}
 		}
 
-		_, err := c.DuploAwsLifecyclePolicyUpdate(tenantID, input)
+		err := c.DuploAwsLifecyclePolicyUpdate(tenantID, input)
 
 		if err != nil {
 			return diag.Errorf("putting EFS file system (%s) lifecycle configuration: %s", d.Id(), err)

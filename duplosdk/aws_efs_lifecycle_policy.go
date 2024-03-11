@@ -19,15 +19,14 @@ type PutLifecycleConfigurationInput struct {
  * API CALLS to duplo
  */
 
-func (c *Client) DuploAwsLifecyclePolicyUpdate(tenantID string, rq *PutLifecycleConfigurationInput) (*DuploEFSGetResp, ClientError) {
-	rp := DuploEFSGetResp{}
+func (c *Client) DuploAwsLifecyclePolicyUpdate(tenantID string, rq *PutLifecycleConfigurationInput) ClientError {
 	err := c.putAPI(
 		fmt.Sprintf("DuploEFSUpdate(%s, %s)", tenantID, rq.FileSystemId),
 		fmt.Sprintf("v3/subscriptions/%s/aws/efs/%s", tenantID, rq.FileSystemId),
 		&rq,
-		&rp,
+		nil,
 	)
-	return &rp, err
+	return err
 }
 
 func (c *Client) DuploAWsLifecyclePolicyGet(tenantID string, efsId string) (*[]LifecyclePolicy, ClientError) {
