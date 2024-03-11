@@ -32,7 +32,12 @@
 - Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
 - Fixed crash in tenant data source on missing `TenantPolicy`.
 
+## 2024-02-27
 
+### Fixed
+- Improved the deletion process for AWS Batch Job Definitions to correctly handle all revisions, resolving a timeout issue during resource destruction.
+- Fixed resource deletion terraform timeout issue for `duplo_aws_batch_job_definition` resource
+ 
 ## 2024-02-26
 
 ### Fixed
