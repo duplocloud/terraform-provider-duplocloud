@@ -115,7 +115,6 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
-			DiffSuppressFunc: excludeAutomaticallyAppliedMapValues("labels"),
 		},
 		"is_autoscaling_enabled": {
 			Description: "Is autoscaling enabled for this node pool.",
@@ -986,49 +985,6 @@ func gcpNodePoolZoneUpdate(c *duplosdk.Client, tenantID, fullName string, zones 
 		return nil, err
 	}
 	return resp, nil
-}
-
-/*func excludeAutomaticallyAppliedListValues(attributeName string) schema.SchemaDiffSuppressFunc {
-	return func(k, old, new string, d *schema.ResourceData) bool {
-		autoAppliedTags := d.Get(attributeName)
-		if autoAppliedTags == nil {
-			return false
-		}
-
-		oldTagsSlice := convertInterfaceToStringSlice(old)
-		newTagsSlice := convertInterfaceToStringSlice(new)
-
-		if Contains(oldTagsSlice, k) && Contains(newTagsSlice, k) {
-			return true
-		}
-
-		return false
-	}
-}
-*/
-// Convert an interface slice to a slice of strings
-func convertInterfaceToStringSlice(interfaceSlice interface{}) []string {
-	stringSlice := make([]string, 0)
-	if interfaceSlice != nil {
-		for _, v := range interfaceSlice.([]interface{}) {
-			stringSlice = append(stringSlice, v.(string))
-		}
-	}
-	return stringSlice
-}
-
-func excludeAutomaticallyAppliedMapValues(attributeName string) schema.SchemaDiffSuppressFunc {
-	return func(k, old, new string, d *schema.ResourceData) bool {
-		oldMap, _ := d.GetChange(attributeName)
-		if oldMap == nil {
-			return false
-		}
-
-		oldMapStr := oldMap.(map[string]interface{})
-
-		_, exists := oldMapStr[k]
-		return exists
-	}
 }
 
 func hasSuffix(s string, suffixes map[string]struct{}) bool {
