@@ -3,6 +3,9 @@
 ### Added
 - Extended python version support for `duplocloud_aws_lambda_function` resource
 
+### Fixed
+- `duplocloud_infrastructure` resource dereference bug fix
+
 ## 2024-03-11
 
 ## Fixed
