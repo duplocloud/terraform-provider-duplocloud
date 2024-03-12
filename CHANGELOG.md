@@ -2,6 +2,10 @@
 
 ### Added
 - Extended python version support for `duplocloud_aws_lambda_function` resource
+- Added datasource for `duplocloud_gke_credentials`
+
+### Fixed
+- `duplocloud_infrastructure` resource dereference bug fix
 
 ## 2024-03-11
 
