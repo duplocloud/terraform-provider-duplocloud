@@ -537,7 +537,6 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			rp, err := c.InfrastructureGetConfig(name)
-			log.Printf("\n***********************\nduploInfrastructureWaitUntilReady\n\n%+v\n\n*******************", rp)
 			status := "pending"
 			if rp != nil && err == nil {
 				log.Printf("[DEBUG] Infrastructure provisioning status is %s", rp.ProvisioningStatus)
@@ -546,10 +545,9 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 				}
 				return rp, status, nil
 			}
-			log.Printf("[TRACE] ERROR \nxxxxxxxxxxxxxx\n%s\nxxxxxxxxxxxxx\n", err.Error())
-			return nil, status, nil
+			return nil, status, err
 		},
-		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		// MinTimeout will be 10 sec freq, if times-out forces 45 sec anyway
 		PollInterval: 45 * time.Second,
 		Timeout:      timeout,
 	}

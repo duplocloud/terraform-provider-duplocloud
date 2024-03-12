@@ -2,7 +2,6 @@ package duplosdk
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -228,8 +227,6 @@ func (c *Client) InfrastructureGet(name string) (*DuploInfrastructureConfig, Cli
 // InfrastructureGetConfig retrieves extended infrastructure configuration by name via the Duplo API.
 func (c *Client) InfrastructureGetConfig(name string) (*DuploInfrastructureConfig, ClientError) {
 	rp := DuploInfrastructureConfig{}
-	x := fmt.Sprintf("adminproxy/GetInfrastructureConfig/%s", name)
-	log.Printf("[TRACE] infra config req \n================\n%+v\n================\n", x)
 	err := c.getAPI(fmt.Sprintf("InfrastructureGetConfig(%s)", name), fmt.Sprintf("adminproxy/GetInfrastructureConfig/%s", name), &rp)
 	if err != nil || rp.Name == "" {
 		return nil, err

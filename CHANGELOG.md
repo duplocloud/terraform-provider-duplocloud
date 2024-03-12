@@ -1,3 +1,8 @@
+## 2024-03-12
+
+### Fixed
+- `duplocloud_infrastructure` resource dereference bug fix
+
 ## 2024-03-07
 
 ### Fixed
