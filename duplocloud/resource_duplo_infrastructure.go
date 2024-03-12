@@ -537,15 +537,20 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			rp, err := c.InfrastructureGetConfig(name)
-			log.Printf("[DEBUG] Infrastructure provisioning status is %s", rp.ProvisioningStatus)
+			log.Printf("\n***********************\nduploInfrastructureWaitUntilReady\n\n%+v\n\n*******************", rp)
 			status := "pending"
-			if err == nil && (rp.ProvisioningStatus == "Complete" || strings.Contains(rp.ProvisioningStatus, "Ready")) {
-				status = "ready"
+			if rp != nil && err == nil {
+				log.Printf("[DEBUG] Infrastructure provisioning status is %s", rp.ProvisioningStatus)
+				if rp.ProvisioningStatus == "Complete" || strings.Contains(rp.ProvisioningStatus, "Ready") {
+					status = "ready"
+				}
+				return rp, status, nil
 			}
-			return rp, status, err
+			log.Printf("[TRACE] ERROR \nxxxxxxxxxxxxxx\n%s\nxxxxxxxxxxxxx\n", err.Error())
+			return nil, status, nil
 		},
 		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
-		PollInterval: 30 * time.Second,
+		PollInterval: 45 * time.Second,
 		Timeout:      timeout,
 	}
 	log.Printf("[DEBUG] duploInfrastructureWaitUntilReady(%s)", name)
