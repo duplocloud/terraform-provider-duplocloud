@@ -385,7 +385,7 @@ func (c *Client) InfrastructureDelete(infraName string) ClientError {
 // GetEksCredentials retrieves just-in-time EKS credentials via the Duplo API.
 func (c *Client) GetK8sCredentials(planID string) (*DuploEksCredentials, ClientError) {
 	creds := DuploEksCredentials{}
-	err := c.getAPI(fmt.Sprintf("GetEksCredentials(%s)", planID), fmt.Sprintf("adminproxy/%s/GetEksClusterByInfra", planID), &creds)
+	err := c.getAPI(fmt.Sprintf("GetK8sCredentials(%s)", planID), fmt.Sprintf("adminproxy/%s/GetEksClusterByInfra", planID), &creds)
 	if err != nil {
 		return nil, err
 	}
