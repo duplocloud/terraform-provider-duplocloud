@@ -1,7 +1,15 @@
 ## 2024-03-12
 
+### Added
+- Extended python version support for `duplocloud_aws_lambda_function` resource
+
 ### Fixed
 - `duplocloud_infrastructure` resource dereference bug fix
+
+## 2024-03-11
+
+## Fixed
+- fixed changes occuring while planning on already created memcache type for `duplocloud_ecache_instance` resource when no changes done
 
 ## 2024-03-07
 
@@ -37,7 +45,12 @@
 - Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
 - Fixed crash in tenant data source on missing `TenantPolicy`.
 
+## 2024-02-27
 
+### Fixed
+- Improved the deletion process for AWS Batch Job Definitions to correctly handle all revisions, resolving a timeout issue during resource destruction.
+- Fixed resource deletion terraform timeout issue for `duplo_aws_batch_job_definition` resource
+ 
 ## 2024-02-26
 
 ### Fixed
