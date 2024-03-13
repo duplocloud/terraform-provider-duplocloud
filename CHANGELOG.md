@@ -1,3 +1,8 @@
+## 2024-03-13
+
+### Fixed
+- Fixed an issue with Azure tenant creation by updating the `TenantCreate` function to return a response string, improving error handling and feedback.
+
 ## 2024-03-12
 
 ### Added
