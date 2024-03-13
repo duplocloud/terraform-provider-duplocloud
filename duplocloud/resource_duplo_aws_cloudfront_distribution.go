@@ -438,6 +438,28 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Type:     schema.TypeString,
 						Optional: true,
 						Computed: true,
+						Description: ` 
+						Amplify: 
+										Policy Id : 2e54312d-136d-493c-8eb9-b001f22f67d2
+										URL       : https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policy-amplify
+						
+						CachingDisabled:
+										Policy Id : 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+										URL		  :	https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policy-caching-disabled
+						
+						CachingOptimized:
+										Policy Id : 658327ea-f89d-4fab-a63d-7e88639e58f6
+										URL       : https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-caching-optimized
+						
+						CachingOptimizedForUncompressedObjects:
+										Policy Id : b2884449-e4de-46a7-ac36-70bc7f1ddd6d
+										URL       : https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-caching-optimized-uncompressed
+						
+						Elemental-MediaPackage:
+										Policy Id : 08627262-05a9-4f76-9ded-b50ca2e3a84f
+										URL       :https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policy-mediapackage
+						
+						`,
 					},
 					"compress": {
 						Type:     schema.TypeBool,
@@ -445,9 +467,10 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Default:  false,
 					},
 					"default_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+						Description: "default time to live: Not required when cache_policy_id is set",
 					},
 					"field_level_encryption_id": {
 						Type:     schema.TypeString,
@@ -464,6 +487,8 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 									Type:     schema.TypeList,
 									Required: true,
 									MaxItems: 1,
+									Description: `
+									cookies: Not required when cache_policy_id is set`,
 									Elem: &schema.Resource{
 										Schema: map[string]*schema.Schema{
 											"forward": {
@@ -489,16 +514,22 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 									Optional: true,
 									Computed: true,
 									Elem:     &schema.Schema{Type: schema.TypeString},
+									Description: `
+									headers: Not required when cache_policy_id is set`,
 								},
 								"query_string": {
 									Type:     schema.TypeBool,
 									Required: true,
+									Description: `
+									query_string: Not required when cache_policy_id is set`,
 								},
 								"query_string_cache_keys": {
 									Type:     schema.TypeList,
 									Optional: true,
 									Computed: true,
 									Elem:     &schema.Schema{Type: schema.TypeString},
+									Description: `
+									query_string_cache_keys: Not required when cache_policy_id is set`,
 								},
 							},
 						},
@@ -553,14 +584,16 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						},
 					},
 					"max_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+						Description: "Maximum time to live: Not required when cache_policy_id is set",
 					},
 					"min_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Default:  0,
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Default:     0,
+						Description: "Minimum time to live: Not required when cache_policy_id is set",
 					},
 					"origin_request_policy_id": {
 						Type:     schema.TypeString,

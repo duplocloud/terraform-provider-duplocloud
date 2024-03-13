@@ -1,3 +1,7 @@
+## 2024-03-13
+
+### Updated
+- updated doc for `duplocloud_aws_cloudfront_distribution` resource
 ## 2024-03-12
 
 ### Added
