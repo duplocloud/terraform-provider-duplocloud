@@ -423,7 +423,80 @@ func updateDynamoDBTableV2PointInRecovery(ctx context.Context, d *schema.Resourc
 }
 
 func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	var err error
+
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("name").(string)
+	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
+
+	c := m.(*duplosdk.Client)
+
+	// Check if the DynamoDB table already exists.
+	exists, err := c.DynamoDBTableExistsV2(tenantID, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Expand the resource data into the SDK's DynamoDB table request struct.
+	rq, err := expandDynamoDBTable(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// If the table exists, update it; otherwise, create a new table.
+	if exists {
+		m := "[INFO] Updating existing DynamoDB table '%s' in tenant '%s'"
+		log.Printf(m, name, tenantID)
+		// Update existing table logic here
+		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+		if err != nil {
+			e := "Error updating tenant %s DynamoDB table '%s': %s"
+			return diag.Errorf(e, tenantID, name, err)
+		}
+	} else {
+		m := "[INFO] Creating new DynamoDB table '%s' in tenant '%s'"
+		log.Printf(m, name, tenantID)
+		_, err = c.DynamoDBTableCreateV2(tenantID, rq)
+		if err != nil {
+			e := "Error creating tenant %s DynamoDB table '%s': %s"
+			return diag.Errorf(e, tenantID, name, err)
+		}
+
+		time.Sleep(time.Duration(10) * time.Second)
+	}
+
+	// Generate the ID for the resource and set it.
+	id := fmt.Sprintf("%s/%s", tenantID, name)
+	getResource := func() (interface{}, duplosdk.ClientError) {
+		return c.DynamoDBTableGet(tenantID, name)
+	}
+	diags := waitForResourceToBePresentAfterUpdate(ctx, d, "dynamodb table", id, getResource)
+
+	// If there are diagnostics from waiting, return them.
+	if diags != nil {
+		return diags
+	}
+	d.SetId(id)
+
+	// wait until the cache instances to be healthy.
+	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
+		err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// Update table settings related to point-in-time recovery.
+	diags = updateDynamoDBTableV2PointInRecovery(ctx, d, m)
+	if diags != nil {
+		return diags
+	}
+
+	// Perform a read after update to sync state.
+	diags = resourceAwsDynamoDBTableReadV2(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsDynamoDBTableUpdateV2(%s, %s): end", tenantID, name)
+
+	return diags
 }
 
 func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
