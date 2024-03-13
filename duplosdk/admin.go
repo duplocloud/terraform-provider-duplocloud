@@ -1,5 +1,9 @@
 package duplosdk
 
+import (
+	"strings"
+)
+
 type DuploSystemFeatures struct {
 	IsKatkitEnabled      bool     `json:"IsKatkitEnabled"`
 	IsSignupEnabled      bool     `json:"IsSignupEnabled"`
@@ -17,12 +21,25 @@ type DuploSystemFeatures struct {
 		DefaultVersion    string   `json:"DefaultVersion"`
 		SupportedVersions []string `json:"SupportedVersions"`
 	} `json:"EksVersions"`
-	IsOtpNeeded                    bool   `json:"IsOtpNeeded"`
-	IsAwsAdminJITEnabled           bool   `json:"IsAwsAdminJITEnabled"`
-	IsDuploOpsEnabled              bool   `json:"IsDuploOpsEnabled"`
-	IsTagsBasedResourceMgmtEnabled bool   `json:"IsTagsBasedResourceMgmtEnabled"`
-	DevopsManagerHostname          string `json:"DevopsManagerHostname"`
-	TenantNameMaxLength            int    `json:"TenantNameMaxLength"`
+	IsOtpNeeded                    bool                 `json:"IsOtpNeeded"`
+	IsAwsAdminJITEnabled           bool                 `json:"IsAwsAdminJITEnabled"`
+	IsDuploOpsEnabled              bool                 `json:"IsDuploOpsEnabled"`
+	IsTagsBasedResourceMgmtEnabled bool                 `json:"IsTagsBasedResourceMgmtEnabled"`
+	DevopsManagerHostname          string               `json:"DevopsManagerHostname"`
+	TenantNameMaxLength            int                  `json:"TenantNameMaxLength"`
+	AzureResourcePrefix            *AzureResourcePrefix `json:"AzureResourcePrefix,omitempty"`
+}
+
+type AzureResourcePrefix struct {
+	InfraRgPrefix      string                    `json:"InfraRgPrefix"`
+	TenantRgPrefix     string                    `json:"TenantRgPrefix"`
+	BackupRgPrefix     string                    `json:"BackupRgPrefix"`
+	ResourceTypePrefix []AzureResourceTypePrefix `json:"ResourceTypePrefix"`
+}
+
+type AzureResourceTypePrefix struct {
+	Type   string `json:"Type"`
+	Prefix string `json:"Prefix"`
 }
 
 // DuploAdminAwsCredentials represents just-in-time admin AWS credentials from Duplo
@@ -59,4 +76,54 @@ func (c *Client) AdminGetSystemFeatures() (*DuploSystemFeatures, ClientError) {
 		return nil, err
 	}
 	return &features, nil
+}
+
+func (c *Client) TrimPrefixSuffixFromResourceName(resourceName, resourceType string, isInfraResource bool) string {
+	features := DuploSystemFeatures{}
+	prefixToTrim := ""
+	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
+	if err != nil {
+		return resourceName
+	}
+	azureResourcePrefix := features.AzureResourcePrefix
+	if azureResourcePrefix != nil {
+		resourceTypePrefix := azureResourcePrefix.ResourceTypePrefix
+		for i := range resourceTypePrefix {
+			if resourceTypePrefix[i].Type == resourceType {
+				prefixToTrim = resourceTypePrefix[i].Prefix
+				break
+			}
+		}
+		if isInfraResource {
+			prefixToTrim += azureResourcePrefix.InfraRgPrefix
+		} else {
+			prefixToTrim += azureResourcePrefix.TenantRgPrefix
+		}
+	}
+	return strings.TrimPrefix(resourceName, prefixToTrim)
+}
+
+func (c *Client) AddPrefixSuffixFromResourceName(resourceName, resourceType string, isInfraResource bool) string {
+	features := DuploSystemFeatures{}
+	prefixToAdd := ""
+	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
+	if err != nil {
+		return resourceName
+	}
+	azureResourcePrefix := features.AzureResourcePrefix
+	if azureResourcePrefix != nil {
+		resourceTypePrefix := azureResourcePrefix.ResourceTypePrefix
+		for i := range resourceTypePrefix {
+			if resourceTypePrefix[i].Type == resourceType {
+				prefixToAdd = resourceTypePrefix[i].Prefix
+				break
+			}
+		}
+		if isInfraResource {
+			prefixToAdd += azureResourcePrefix.InfraRgPrefix
+		} else {
+			prefixToAdd += azureResourcePrefix.TenantRgPrefix
+		}
+	}
+	return prefixToAdd + resourceName
 }

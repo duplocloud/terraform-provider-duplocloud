@@ -99,6 +99,8 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 	subnetName := rq.Name
 	if strings.HasPrefix(rq.InfrastructureName, "duploinfra-") {
 		subnetName = "duploinfra-" + rq.Name
+	} else {
+		subnetName = c.AddPrefixSuffixFromResourceName(subnetName, "subnet", true)
 	}
 	duplo, err := c.InfrastructureGetSubnet(rq.InfrastructureName, subnetName, rq.AddressPrefix)
 	if err != nil {
