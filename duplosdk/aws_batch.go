@@ -380,6 +380,22 @@ func (c *Client) AwsBatchJobDefinitionGet(tenantID string, name string) (*DuploA
 	return nil, nil
 }
 
+func (c *Client) AwsBatchJobDefinitionGetAllRevisions(tenantID string, name string) (*[]DuploAwsBatchJobDefinitionResp, ClientError) {
+	list, err := c.AwsBatchJobDefinitionList(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	jobRev := []DuploAwsBatchJobDefinitionResp{}
+	if list != nil {
+		for _, element := range *list {
+			if element.JobDefinitionName == name {
+				jobRev = append(jobRev, element)
+			}
+		}
+	}
+	return &jobRev, nil
+}
+
 func (c *Client) AwsBatchJobDefinitionList(tenantID string) (*[]DuploAwsBatchJobDefinitionResp, ClientError) {
 	rp := []DuploAwsBatchJobDefinitionResp{}
 	err := c.getAPI(

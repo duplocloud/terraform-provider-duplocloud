@@ -147,6 +147,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_timestreamwrite_table":       resourceAwsTimestreamTable(),
 			"duplocloud_aws_rds_tag":                     resourceAwsRdsTag(),
 			"duplocloud_gcp_sql_database_instance":       resourceGcpSqlDBInstance(),
+			"duplocloud_gcp_node_pool":                   resourceGcpK8NodePool(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":     dataSourceAdminAwsCredentials(),
@@ -156,6 +157,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_ssm_parameter":         dataSourceAwsSsmParameter(),
 			"duplocloud_aws_ssm_parameters":        dataSourceAwsSsmParameters(),
 			"duplocloud_eks_credentials":           dataSourceEksCredentials(),
+			"duplocloud_gke_credentials":           dataSourceGKECredentials(),
 			"duplocloud_duplo_service":             dataSourceDuploService(),
 			"duplocloud_duplo_services":            dataSourceDuploServices(),
 			"duplocloud_duplo_service_lbconfigs":   dataSourceDuploServiceLbConfigs(),

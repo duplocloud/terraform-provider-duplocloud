@@ -39,6 +39,18 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"deletion_protection_enabled": {
+			Description: "Deletion protection keeps the tables from being deleted unintentionally. While this setting is on, you can't delete the table.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+		"is_point_in_time_recovery": {
+			Description: "The point in time recovery status of the dynamodb table. Enabled if true.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 		"billing_mode": {
 			Description: "Controls how you are charged for read and write throughput and how you manage capacity. The valid values are `PROVISIONED` and `PAY_PER_REQUEST`.",
 			Type:        schema.TypeString,
@@ -296,6 +308,9 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	d.Set("name", name)
 	d.Set("arn", duplo.TableArn)
 	d.Set("status", duplo.TableStatus.Value)
+	d.Set("is_point_in_time_recovery", duplo.PointInTimeRecoveryStatus == "ENABLED")
+	d.Set("deletion_protection_enabled", duplo.DeletionProtectionEnabled)
+
 	if duplo.BillingModeSummary != nil {
 		d.Set("billing_mode", duplo.BillingModeSummary.BillingMode)
 	} else {
@@ -384,9 +399,27 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 		}
 	}
 
+	diags = updateDynamoDBTableV2PointInRecovery(ctx, d, m)
+	if diags != nil {
+		return diags
+	}
+
 	diags = resourceAwsDynamoDBTableReadV2(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateV2(%s, %s): end", tenantID, name)
 	return diags
+}
+
+func updateDynamoDBTableV2PointInRecovery(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	if v, ok := d.GetOk("is_point_in_time_recovery"); ok && v.(bool) {
+		id := d.Id()
+		tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
+		c := m.(*duplosdk.Client)
+		_, errPir := c.DynamoDBTableV2PointInRecovery(tenantID, name, v.(bool))
+		if errPir != nil {
+			return diag.Errorf("Error while setting point in recovery tenant %s dynamodb table '%s': %s", tenantID, name, err)
+		}
+	}
+	return nil
 }
 
 func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -430,6 +463,10 @@ func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRe
 		BillingMode: d.Get("billing_mode").(string),
 		Tags:        keyValueFromState("tag", d),
 		KeySchema:   expandDynamoDBKeySchema(d),
+	}
+
+	if v, ok := d.GetOk("deletion_protection_enabled"); ok {
+		req.DeletionProtectionEnabled = v.(bool)
 	}
 
 	if v, ok := d.GetOk("attribute"); ok {
