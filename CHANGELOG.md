@@ -1,3 +1,10 @@
+markdown
+## 2024-03-14
+
+### Added
+- Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
+- Added `duplocloud_gcp_node_pool` resource example and document.
+
 ## 2024-03-12
 
 ### Added
