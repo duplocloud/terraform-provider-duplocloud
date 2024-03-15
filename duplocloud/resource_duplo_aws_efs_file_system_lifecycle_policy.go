@@ -183,7 +183,7 @@ func resourceFileSystemPolicyPut(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	tenantID := d.Get("tenant_id").(string)
-	_, err := c.DuploAwsLifecyclePolicyUpdate(tenantID, input)
+	err := c.DuploAwsLifecyclePolicyUpdate(tenantID, input)
 
 	if err != nil {
 		return diag.Errorf("putting EFS File System Policy (%s): %s", input.FileSystemId, err)
