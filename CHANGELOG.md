@@ -1,3 +1,8 @@
+## 2024-03-15
+
+### Added
+- Added support for GCP SQL data source and SQL list data source in DuploCloud provider.
+
 ## 2024-03-12
 
 ### Added
