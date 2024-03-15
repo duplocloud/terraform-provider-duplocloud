@@ -32,7 +32,7 @@ func duploAzureStorageAccountSchema() map[string]*schema.Schema {
 		"account_tier": {
 			Type: schema.TypeString,
 			//Required: true,
-			//ForceNew: true,
+			Computed: true,
 			Optional: true,
 			ValidateFunc: validation.StringInSlice([]string{
 				"Standard",
