@@ -142,7 +142,7 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringInSlice([]string{
 				"nodejs", "nodejs4.3", "nodejs6.10", "nodejs8.10", "nodejs10.x", "nodejs12.x", "nodejs14.x", "nodejs16.x", "nodejs18.x", "nodejs20.x",
 				"java8", "java8.al2", "java11", "java17",
-				"python2.7", "python3.6", "python3.7", "python3.8", "python3.9", "python3.10", "python3.11", "python3.12",
+				"python2.7", "python3.6", "python3.7", "python3.8", "python3.9", "python3.10",
 				"dotnetcore1.0", "dotnetcore2.0", "dotnetcore2.1", "dotnetcore3.1",
 				"dotnet6", "dotnet7",
 				"nodejs4.3-edge",
@@ -394,13 +394,7 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 	rq.Environment = expandAwsLambdaEnvironment(environment)
-	if rq.Environment != nil {
-		if v, ok := rq.Environment.Variables["AWS_REGION"]; ok {
-			if strings.Contains(v, "gov") && rq.Runtime.Value == "python3.12" {
-				return diag.Errorf("unsupported runtime version for govcloud")
-			}
-		}
-	}
+
 	if v, ok := d.GetOk("ephemeral_storage"); ok && v != nil && v.(int) != 0 {
 		rq.EphemeralStorage = &duplosdk.DuploLambdaEphemeralStorage{Size: v.(int)}
 	}
@@ -525,6 +519,7 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 	d.Set("handler", duplo.Handler)
 	d.Set("version", duplo.Version)
 	d.Set("layers", duplo.Layers)
+	d.Set("architectures", duplo.Architectures)
 	if duplo.EphemeralStorage != nil {
 		d.Set("ephemeral_storage", duplo.EphemeralStorage.Size)
 	}
@@ -549,10 +544,6 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 				"target_arn": duplo.DeadLetterConfig.TargetArn,
 			},
 		})
-	}
-
-	if duplo.Architectures != nil {
-		d.Set("architectures", duplo.Architectures)
 	}
 
 	if duplo.ImageConfig != nil {
