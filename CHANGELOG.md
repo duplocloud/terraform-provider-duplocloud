@@ -1,3 +1,9 @@
+markdown
+## 2024-03-15
+
+### Updated
+- Enhanced `duplocloud_aws_cloudfront_distribution` resource documentation with cache policy descriptions and default TTL clarifications.
+
 ## 2024-03-13
 
 ### Updated
