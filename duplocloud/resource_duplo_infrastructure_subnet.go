@@ -97,10 +97,11 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	subnetName := rq.Name
-	if strings.HasPrefix(rq.InfrastructureName, "duploinfra-") {
-		subnetName = "duploinfra-" + rq.Name
-	} else {
+
+	if c.IsAzureCustomPrefixesEnabled() {
 		subnetName = c.AddPrefixSuffixFromResourceName(subnetName, "subnet", true)
+	} else {
+		subnetName = "duploinfra-" + rq.Name
 	}
 	duplo, err := c.InfrastructureGetSubnet(rq.InfrastructureName, subnetName, rq.AddressPrefix)
 	if err != nil {

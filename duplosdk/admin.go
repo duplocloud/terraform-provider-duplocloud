@@ -31,10 +31,11 @@ type DuploSystemFeatures struct {
 }
 
 type AzureResourcePrefix struct {
-	InfraRgPrefix      string                    `json:"InfraRgPrefix"`
-	TenantRgPrefix     string                    `json:"TenantRgPrefix"`
-	BackupRgPrefix     string                    `json:"BackupRgPrefix"`
-	ResourceTypePrefix []AzureResourceTypePrefix `json:"ResourceTypePrefix"`
+	IsAzureCustomPrefixesEnabled bool                      `json:"IsAzureCustomPrefixesEnabled"`
+	InfraRgPrefix                string                    `json:"InfraRgPrefix"`
+	TenantRgPrefix               string                    `json:"TenantRgPrefix"`
+	BackupRgPrefix               string                    `json:"BackupRgPrefix"`
+	ResourceTypePrefix           []AzureResourceTypePrefix `json:"ResourceTypePrefix"`
 }
 
 type AzureResourceTypePrefix struct {
@@ -76,6 +77,15 @@ func (c *Client) AdminGetSystemFeatures() (*DuploSystemFeatures, ClientError) {
 		return nil, err
 	}
 	return &features, nil
+}
+
+func (c *Client) IsAzureCustomPrefixesEnabled() bool {
+	features := DuploSystemFeatures{}
+	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
+	if err != nil || features.AzureResourcePrefix == nil || !features.AzureResourcePrefix.IsAzureCustomPrefixesEnabled {
+		return false
+	}
+	return true
 }
 
 func (c *Client) TrimPrefixSuffixFromResourceName(resourceName, resourceType string, isInfraResource bool) string {

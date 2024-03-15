@@ -664,7 +664,7 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 					}
 				}
 
-				if config.Cloud == 2 {
+				if config.Cloud == 2 && c.IsAzureCustomPrefixesEnabled() {
 					d.Set("subnet_name", c.TrimPrefixSuffixFromResourceName(vnetSubnet.Name, "subnet", true))
 				} else {
 					d.Set("subnet_name", vnetSubnet.Name)
