@@ -536,6 +536,7 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 			},
 		})
 	}
+
 	if duplo.DeadLetterConfig != nil {
 		d.Set("dead_letter_config", []interface{}{
 			map[string]interface{}{
@@ -543,6 +544,11 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 			},
 		})
 	}
+
+	if duplo.Architectures != nil {
+		d.Set("architectures", duplo.Architectures)
+	}
+
 	if duplo.ImageConfig != nil {
 		imageConfig := map[string]interface{}{
 			"command":           duplo.ImageConfig.Command,

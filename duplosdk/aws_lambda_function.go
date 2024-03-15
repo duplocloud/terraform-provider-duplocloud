@@ -50,6 +50,7 @@ type DuploLambdaConfiguration struct {
 	Layers           *[]DuploLambdaLayerGet       `json:"Layers,omitempty"`
 	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
 	DeadLetterConfig *DuploDeadLetterConfig       `json:"DeadLetterConfig,omitempty"`
+	Architectures    *[]string                    `json:"Architectures,omitempty"`
 }
 
 // DuploLambdaCode is a Duplo SDK object that represents a lambda function's code.
