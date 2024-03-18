@@ -157,6 +157,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_ssm_parameter":          dataSourceAwsSsmParameter(),
 			"duplocloud_aws_ssm_parameters":         dataSourceAwsSsmParameters(),
 			"duplocloud_eks_credentials":            dataSourceEksCredentials(),
+			"duplocloud_gke_credentials":            dataSourceGKECredentials(),
 			"duplocloud_duplo_service":              dataSourceDuploService(),
 			"duplocloud_duplo_services":             dataSourceDuploServices(),
 			"duplocloud_duplo_service_lbconfigs":    dataSourceDuploServiceLbConfigs(),
