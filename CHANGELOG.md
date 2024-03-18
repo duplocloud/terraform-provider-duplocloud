@@ -1,4 +1,10 @@
 markdown
+## 2024-03-18
+
+### Added
+- Added support for specifying the instruction set architecture for AWS Lambda functions in the Terraform provider, including `[x86_64]` and `[arm64]`.
+
+markdown
 ## 2024-03-14
 
 ### Added
