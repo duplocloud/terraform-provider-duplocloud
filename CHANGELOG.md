@@ -1,4 +1,3 @@
-markdown
 ## 2024-03-14
 
 ### Added
@@ -23,7 +22,6 @@ markdown
 
 ### Fixed
 - `unrestricted_ext_lb` attribute not setting to false fix for `duplocloud_plan_settings` resource
-
 ## 2024-03-06
 
 ### Changed
@@ -37,6 +35,11 @@ markdown
 
 ### Fixed
 - Fixed `duplocloud_k8_secret` nil map panic bug
+
+## 2024-03-04
+
+### Added
+- Added support for specifying the instruction set architecture for AWS Lambda functions`duplocloud_aws_lambda_function`, including `[x86_64]` and `[arm64]` options, with a default of `[x86_64]`.
 
 ## 2024-03-04
 
@@ -89,6 +92,12 @@ markdown
 - Fixed `store_details_in_secret_manager` attribute not getting set for `duplocloud_rds_instance` resource in duplo 
 - Fixed handling of `volume` and `network_interface` in `duplocloud_aws_host` resource to avoid unnecessary diffs.
 - Fixed crash in tenant data source on missing `TenantPolicy`.
+- 
+## 2024-02-21
+
+### Added 
+- Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
+- Added `duplocloud_gcp_node_pool` resource example and document
 
 ## 2024-02-21
 
