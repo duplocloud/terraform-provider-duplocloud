@@ -3,10 +3,26 @@
 ### Added
 - Added support for GCP SQL data source and SQL list data source in DuploCloud provider.
 
+## 2024-03-18
+
+### Added
+- Added support for specifying the instruction set architecture for AWS Lambda functions in the Terraform provider, including `[x86_64]` and `[arm64]`.
+
+markdown
+## 2024-03-14
+
+### Added
+- Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
+- Added `duplocloud_gcp_node_pool` resource example and document.
+
 ## 2024-03-12
 
 ### Added
 - Extended python version support for `duplocloud_aws_lambda_function` resource
+- Added datasource for `duplocloud_gke_credentials`
+
+### Fixed
+- `duplocloud_infrastructure` resource dereference bug fix
 
 ## 2024-03-11
 

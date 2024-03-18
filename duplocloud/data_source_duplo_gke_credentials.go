@@ -10,9 +10,9 @@ import (
 )
 
 // SCHEMA for resource crud
-func dataSourceEksCredentials() *schema.Resource {
+func dataSourceGKECredentials() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceEksCredentialsRead,
+		Read: dataSourceGKECredentialsRead,
 
 		Schema: map[string]*schema.Schema{
 			"plan_id": {
@@ -49,8 +49,8 @@ func dataSourceEksCredentials() *schema.Resource {
 }
 
 // READ resource
-func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
-	log.Printf("[TRACE] dataSourceEksCredentialsRead ******** start")
+func dataSourceGKECredentialsRead(d *schema.ResourceData, m interface{}) error {
+	log.Printf("[TRACE] dataSourceGKECredentialsRead ******** start")
 
 	// Get the data from Duplo.
 	planID := d.Get("plan_id").(string)
@@ -84,6 +84,6 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 		d.Set("ca_certificate_data", string(bytes))
 	}
 
-	log.Printf("[TRACE] dataSourceEksCredentialsRead ******** end")
+	log.Printf("[TRACE] dataSourceGKECredentialsRead ******** end")
 	return nil
 }

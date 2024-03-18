@@ -57,7 +57,7 @@ Should be one of:
 - `engine_version` (String) The engine version of the elastic instance.
 See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).
 - `kms_key_id` (String) The globally unique identifier for the key.
-- `number_of_shards` (Number) The number of shards to create. Defaults to `2`.
+- `number_of_shards` (Number) The number of shards to create.
 - `parameter_group_name` (String) The REDIS parameter group to supply.
 - `replicas` (Number) The number of replicas to create. Defaults to `1`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
