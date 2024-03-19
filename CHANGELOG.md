@@ -1,3 +1,6 @@
+## 2024-03-19
+- Added datasource `duplocloud_gcp_node_pools`
+- Added datasource `duplocloud_gcp_node_pool`
 markdown
 ## 2024-03-15
 
