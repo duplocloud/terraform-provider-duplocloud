@@ -187,7 +187,7 @@ func (c *Client) DynamoDBTableUpdateV2(
 	rp := DuploDynamoDBTableV2{}
 	err := c.putAPI(
 		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
-		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
 		&rq,
 		&rp,
 	)

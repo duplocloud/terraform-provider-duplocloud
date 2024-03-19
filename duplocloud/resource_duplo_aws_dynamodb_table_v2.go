@@ -447,7 +447,6 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	if exists {
 		m := "[INFO] Updating existing DynamoDB table '%s' in tenant '%s'"
 		log.Printf(m, name, tenantID)
-		// Update existing table logic here
 		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
 		if err != nil {
 			e := "Error updating tenant %s DynamoDB table '%s': %s"
