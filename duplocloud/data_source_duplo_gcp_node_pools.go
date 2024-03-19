@@ -42,7 +42,13 @@ func dataGcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "The short name of the node pool.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
+			Description: "The short name of the node pool.",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+		},
+		"fullname": {
+			Description: "The full name of the node pool.",
 			Type:        schema.TypeString,
 			Computed:    true,
 			Optional:    true,
@@ -383,6 +389,7 @@ func setGCPNodePoolStateFieldList(duplo *duplosdk.DuploGCPK8NodePool) map[string
 	// Set simple fields first.
 	return map[string]interface{}{
 		"name":                     getGCPNodePoolShortName(duplo.Name, duplo.ResourceLabels["duplo-tenant"]),
+		"fullname":                 duplo.Name,
 		"is_autoscaling_enabled":   duplo.IsAutoScalingEnabled,
 		"auto_upgrade":             duplo.AutoUpgrade,
 		"zones":                    duplo.Zones,
