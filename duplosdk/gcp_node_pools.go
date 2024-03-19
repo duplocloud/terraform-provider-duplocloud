@@ -111,6 +111,17 @@ func (c *Client) GCPK8NodePoolGet(tenantID string, name string) (*DuploGCPK8Node
 	return &rp, err
 }
 
+func (c *Client) GCPK8NodePoolList(tenantID string) (*[]DuploGCPK8NodePool, ClientError) {
+	rp := []DuploGCPK8NodePool{}
+	err := c.getAPI(
+		fmt.Sprintf("GCPK8NodePoolList(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/google/nodePools", tenantID),
+		&rp,
+	)
+
+	return &rp, err
+}
+
 func (c *Client) GCPK8NodePoolDelete(tenantID, name string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("GCPK8NodePoolDelete(%s, %s)", tenantID, name),
