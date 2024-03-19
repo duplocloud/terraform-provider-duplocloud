@@ -1,8 +1,14 @@
+markdown
 ## 2024-03-15
 
-### Added
+### Updated
+- Enhanced `duplocloud_aws_cloudfront_distribution` resource documentation with cache policy descriptions and default TTL clarifications.
 - Added support for GCP SQL data source and SQL list data source in DuploCloud provider.
 
+## 2024-03-13
+
+### Updated
+- updated doc for `duplocloud_aws_cloudfront_distribution` resource
 ## 2024-03-18
 
 ### Added
@@ -14,6 +20,11 @@ markdown
 ### Added
 - Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
 - Added `duplocloud_gcp_node_pool` resource example and document.
+
+## 2024-03-13
+
+### Updated
+- updated doc for `duplocloud_aws_cloudfront_distribution` resource
 
 ## 2024-03-12
 
