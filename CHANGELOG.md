@@ -1,15 +1,35 @@
 markdown
+## 2024-03-15
+
+### Updated
+- Enhanced `duplocloud_aws_cloudfront_distribution` resource documentation with cache policy descriptions and default TTL clarifications.
+
+## 2024-03-13
+
+### Updated
+- updated doc for `duplocloud_aws_cloudfront_distribution` resource
 ## 2024-03-18
 
 ### Added
 - Added support for specifying the instruction set architecture for AWS Lambda functions in the Terraform provider, including `[x86_64]` and `[arm64]`.
 
 markdown
+## 2024-03-15
+
+### Updated
+- Enhanced `duplocloud_aws_cloudfront_distribution` resource documentation with cache policy descriptions and default TTL clarifications.
+
+
 ## 2024-03-14
 
 ### Added
 - Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
 - Added `duplocloud_gcp_node_pool` resource example and document.
+
+## 2024-03-13
+
+### Updated
+- updated doc for `duplocloud_aws_cloudfront_distribution` resource
 
 ## 2024-03-12
 
