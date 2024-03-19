@@ -97,6 +97,7 @@ resource "duplocloud_gcp_node_pool" "node_pool" {
 
 ### Read-Only
 
+- `fullname` (String) The short name of the node pool.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--accelerator"></a>
