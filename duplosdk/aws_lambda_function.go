@@ -50,6 +50,7 @@ type DuploLambdaConfiguration struct {
 	Layers           *[]DuploLambdaLayerGet       `json:"Layers,omitempty"`
 	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
 	DeadLetterConfig *DuploDeadLetterConfig       `json:"DeadLetterConfig,omitempty"`
+	Architectures    *[]string                    `json:"Architectures,omitempty"`
 }
 
 // DuploLambdaCode is a Duplo SDK object that represents a lambda function's code.
@@ -109,14 +110,16 @@ type DuploLambdaCreateRequest struct {
 	Layers           *[]string                    `json:"Layers,omitempty"`
 	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
 	DeadLetterConfig *DuploDeadLetterConfig       `json:"DeadLetterConfig,omitempty"`
+	Architectures    *[]string                    `json:"Architectures,omitempty"`
 }
 
 // DuploLambdaUpdateRequest is a Duplo SDK object that represents a request to update a lambda function's code.
 type DuploLambdaUpdateRequest struct {
-	FunctionName string `json:"FunctionName,omitempty"`
-	ImageURI     string `json:"ImageUri,omitempty"`
-	S3Bucket     string `json:"S3Bucket,omitempty"`
-	S3Key        string `json:"S3Key,omitempty"`
+	FunctionName  string    `json:"FunctionName,omitempty"`
+	ImageURI      string    `json:"ImageUri,omitempty"`
+	S3Bucket      string    `json:"S3Bucket,omitempty"`
+	S3Key         string    `json:"S3Key,omitempty"`
+	Architectures *[]string `json:"Architectures,omitempty"`
 }
 
 // DuploLambdaConfigurationRequest is a Duplo SDK object that represents a request to update a lambda function's configuration.

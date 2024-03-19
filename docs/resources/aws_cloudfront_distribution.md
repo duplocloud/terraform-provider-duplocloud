@@ -147,15 +147,21 @@ Required:
 
 Optional:
 
-- `cache_policy_id` (String)
+- `cache_policy_id` (String)						
+  - [Amplify](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policy-amplify): 2e54312d-136d-493c-8eb9-b001f22f67d2
+  - [CachingDisabled](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policy-caching-disabled): 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+  - [CachingOptimized](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-caching-optimized): 658327ea-f89d-4fab-a63d-7e88639e58f6
+  - [CachingOptimizedForUncompressedObjects](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html): b2884449-e4de-46a7-ac36-70bc7f1ddd6d
+  - [Elemental-MediaPackage](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html): 08627262-05a9-4f76-9ded-b50ca2e3a84f
+
 - `compress` (Boolean) Defaults to `false`.
-- `default_ttl` (Number)
+- `default_ttl` (Number) default time to live: Not required when cache_policy_id is set
 - `field_level_encryption_id` (String)
 - `forwarded_values` (Block List, Max: 1) (see [below for nested schema](#nestedblock--default_cache_behavior--forwarded_values))
 - `function_association` (Block Set, Max: 2) (see [below for nested schema](#nestedblock--default_cache_behavior--function_association))
 - `lambda_function_association` (Block Set, Max: 4) (see [below for nested schema](#nestedblock--default_cache_behavior--lambda_function_association))
-- `max_ttl` (Number)
-- `min_ttl` (Number) Defaults to `0`.
+- `max_ttl` (Number) Maximum time to live: Not required when cache_policy_id is set
+- `min_ttl` (Number) Minimum time to live: Not required when cache_policy_id is set Defaults to `0`.
 - `origin_request_policy_id` (String)
 - `realtime_log_config_arn` (String)
 - `response_headers_policy_id` (String)
@@ -173,8 +179,8 @@ Required:
 
 Optional:
 
-- `headers` (Set of String)
-- `query_string_cache_keys` (List of String)
+- `headers` (Set of String) headers: Not required when cache_policy_id is set
+- `query_string_cache_keys` (List of String) query_string_cache_keys: Not required when cache_policy_id is set
 
 <a id="nestedblock--default_cache_behavior--forwarded_values--cookies"></a>
 ### Nested Schema for `default_cache_behavior.forwarded_values.cookies`
