@@ -147,15 +147,13 @@ Required:
 
 Optional:
 
-- `cache_policy_id` (String) <br />						
-| Policy name                                                                                                                                                                                  | Policy Id                            |
-|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
-| [Amplify](#https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policy-amplify)                                                | 2e54312d-136d-493c-8eb9-b001f22f67d2 |
-| [CachingDisabled](#https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policy-caching-disabled)                               | 4135ea2d-6df8-44a3-9df3-4b5a84be39ad |
-| [CachingOptimized](#https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-caching-optimized)                                    | 658327ea-f89d-4fab-a63d-7e88639e58f6 |
-| [CachingOptimizedForUncompressedObjects](#https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-caching-optimized-uncompressed) | b2884449-e4de-46a7-ac36-70bc7f1ddd6d |
-| [Elemental-MediaPackage](#https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policy-mediapackage)                            | 08627262-05a9-4f76-9ded-b50ca2e3a84f |
-<br />
+- `cache_policy_id` (String)						
+  - [Amplify](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policy-amplify): 2e54312d-136d-493c-8eb9-b001f22f67d2
+  - [CachingDisabled](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policy-caching-disabled): 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+  - [CachingOptimized](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-caching-optimized): 658327ea-f89d-4fab-a63d-7e88639e58f6
+  - [CachingOptimizedForUncompressedObjects](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html): b2884449-e4de-46a7-ac36-70bc7f1ddd6d
+  - [Elemental-MediaPackage](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html): 08627262-05a9-4f76-9ded-b50ca2e3a84f
+
 - `compress` (Boolean) Defaults to `false`.
 - `default_ttl` (Number) default time to live: Not required when cache_policy_id is set
 - `field_level_encryption_id` (String)

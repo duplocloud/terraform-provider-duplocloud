@@ -181,6 +181,20 @@ func (c *Client) DynamoDBTableCreateV2(tenantID string, rq *DuploDynamoDBTableRe
 	return &rp, err
 }
 
+func (c *Client) DynamoDBTableUpdateV2(
+	tenantID string,
+	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+	rp := DuploDynamoDBTableV2{}
+	err := c.putAPI(
+		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
+		&rq,
+		&rp,
+	)
+	rp.TenantID = tenantID
+	return &rp, err
+}
+
 // DynamoDBTableDelete deletes a dynamodb table via the Duplo API.
 func (c *Client) DynamoDBTableDelete(tenantID, name string) ClientError {
 	return c.deleteAPI(
@@ -229,4 +243,12 @@ func (c *Client) DynamoDBTableV2PointInRecovery(tenantID, tableName string, isPo
 		&rp,
 	)
 	return &rp, err
+}
+
+func (c *Client) DynamoDBTableExistsV2(tenantID string, name string) (bool, ClientError) {
+	_, err := c.DynamoDBTableGetV2(tenantID, name)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
