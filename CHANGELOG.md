@@ -1,9 +1,38 @@
+## 2024-03-20
+
+### Fixed
+- VM not getting created on `duplocloud_gcp_node_pool` resource creation fixed
+
+## 2024-03-19
+- Added datasource `duplocloud_gcp_node_pools`
+- Added datasource `duplocloud_gcp_node_pool`
+markdown
+## 2024-03-15
+
+### Updated
+- Enhanced `duplocloud_aws_cloudfront_distribution` resource documentation with cache policy descriptions and default TTL clarifications.
+- Added support for GCP SQL data source and SQL list data source in DuploCloud provider.
+
+## 2024-03-13
+
+### Updated
+- updated doc for `duplocloud_aws_cloudfront_distribution` resource
+## 2024-03-18
+
+### Added
+- Added support for specifying the instruction set architecture for AWS Lambda functions in the Terraform provider, including `[x86_64]` and `[arm64]`.
+
 markdown
 ## 2024-03-14
 
 ### Added
 - Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
 - Added `duplocloud_gcp_node_pool` resource example and document.
+
+## 2024-03-13
+
+### Updated
+- updated doc for `duplocloud_aws_cloudfront_distribution` resource
 
 ## 2024-03-12
 
@@ -34,6 +63,10 @@ markdown
 - Fixed parameter handling in the update lifecycle policy for EFS, ensuring more reliable lifecycle management.
 - 
 ## 2024-03-05
+
+### Added
+- Added data source for `duplocloud_gcp_sql_database_instance`
+- Added example related to data for `duplocloud_gcp_sql_database_instance`
 
 ### Fixed
 - Fixed `duplocloud_k8_secret` nil map panic bug
