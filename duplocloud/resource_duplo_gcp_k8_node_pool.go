@@ -143,7 +143,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Description: "The initial node count for the pool",
 			Type:        schema.TypeInt,
 			Optional:    true,
-			Computed:    true,
+			Default:     1,
 		},
 
 		"max_node_count": {
