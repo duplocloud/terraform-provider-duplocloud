@@ -12,7 +12,7 @@ import (
 
 func dataSourceGCPCloudSQLs() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_gcp_sql_cloud` retrieves a gcp sql instance in Duplo.",
+		Description: "`duplocloud_gcp_sql_database_instances` retrieves a gcp sql instance in Duplo.",
 
 		ReadContext: dataSourceGCPSQLCloudList,
 

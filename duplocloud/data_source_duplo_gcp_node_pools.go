@@ -13,6 +13,8 @@ import (
 
 func dataSourceGCPNodePools() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_gcp_node_pools` retrieves list of node pools in Duplo.",
+
 		ReadContext: dataSourceGCPNodePoolList,
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
@@ -51,7 +53,6 @@ func dataGcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Description: "The full name of the node pool.",
 			Type:        schema.TypeString,
 			Computed:    true,
-			Optional:    true,
 		},
 		"machine_type": {
 			Description: `The name of a Google Compute Engine machine type.

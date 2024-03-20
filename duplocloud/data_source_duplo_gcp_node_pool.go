@@ -12,6 +12,8 @@ import (
 
 func dataSourceGCPNodePool() *schema.Resource {
 	return &schema.Resource{
+		Description: "`duplocloud_gcp_node_pool` retrieves a node pool in Duplo.",
+
 		ReadContext: dataSourceGCPNodePoolRead,
 		Schema:      dataGcpK8NodePoolFunctionSchema(),
 	}
