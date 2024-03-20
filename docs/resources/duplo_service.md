@@ -60,6 +60,18 @@ resource "duplocloud_duplo_service" "myservice" {
     NetworkMode = "host",
     CapAdd      = ["NET_ADMIN"]
   })
+
+  force_recreate_on_volumes_change = true
+  volumes = jsonencode(
+      [
+        {
+          AccessMode : "ReadWriteOnce",
+          Name : "${local.svs_frontend_name}-${local.tenant_name}",
+          Path : "/tmp/test2",
+          Size : "2Gi"
+        }
+      ]
+  )
 }
 
 # Example 4:  Deploy NGINX with host networking and env vars, using Duplo's EKS agent
