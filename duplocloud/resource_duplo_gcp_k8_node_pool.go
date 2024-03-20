@@ -467,7 +467,7 @@ func expandGCPNodePool(d *schema.ResourceData) (*duplosdk.DuploGCPK8NodePool, er
 	}
 	rq := &duplosdk.DuploGCPK8NodePool{
 		Name:                 fullName,
-		InitialNodeCount:     d.Get("initial_node_count").(int),
+		InitialNodeCount:     setInitialNodeCount(d),
 		IsAutoScalingEnabled: d.Get("is_autoscaling_enabled").(bool),
 	}
 	for _, zone := range d.Get("zones").([]interface{}) {
@@ -482,6 +482,14 @@ func expandGCPNodePool(d *schema.ResourceData) (*duplosdk.DuploGCPK8NodePool, er
 		return nil, err
 	}
 	return rq, nil
+}
+
+func setInitialNodeCount(d *schema.ResourceData) int {
+	val := d.Get("initial_node_count").(int)
+	if val > 1 {
+		return val
+	}
+	return 1
 }
 
 func expandGCPNodePoolUpgradeSettings(d *schema.ResourceData, req *duplosdk.DuploGCPK8NodePool) {
