@@ -24,7 +24,7 @@ func dataSourceGCPCloudSQLs() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.IsUUID,
 			},
-			"sqls": {
+			"databases": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
@@ -109,7 +109,7 @@ func dataSourceGCPSQLCloudList(ctx context.Context, d *schema.ResourceData, m in
 		}
 		list = append(list, sql)
 	}
-	d.Set("sqls", list)
+	d.Set("databases", list)
 	log.Printf("[TRACE] dataSourceGCPSQLCloudList ******** end")
 	return nil
 

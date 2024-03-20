@@ -3,12 +3,12 @@
 page_title: "duplocloud_gcp_node_pool Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_gcp_node_pool retrieves a node pool in Duplo.
 ---
 
 # duplocloud_gcp_node_pool (Data Source)
 
-
+`duplocloud_gcp_node_pool` retrieves a node pool in Duplo.
 
 
 
@@ -22,7 +22,6 @@ description: |-
 ### Optional
 
 - `accelerator` (Block List) (see [below for nested schema](#nestedblock--accelerator))
-- `fullname` (String) The full name of the node pool.
 - `name` (String) The short name of the node pool.
 
 ### Read-Only
@@ -33,6 +32,7 @@ description: |-
 				If unspecified, the default disk size is 100GB.
 - `disc_type` (String) Type of the disk attached to each node
 				If unspecified, the default disk type is 'pd-standard'
+- `fullname` (String) The full name of the node pool.
 - `id` (String) The ID of this resource.
 - `image_type` (String) The image type to use for this node. Note that for a given image type, the latest version of it will be used
 - `initial_node_count` (Number) The initial node count for the pool

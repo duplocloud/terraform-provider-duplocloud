@@ -3,12 +3,12 @@
 page_title: "duplocloud_gcp_sql_database_instance Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_gcp_sql_cloud retrieves a gcp sql instance in Duplo.
+  duplocloud_gcp_sql_database_instance retrieves a gcp sql instance in Duplo.
 ---
 
 # duplocloud_gcp_sql_database_instance (Data Source)
 
-`duplocloud_gcp_sql_cloud` retrieves a gcp sql instance in Duplo.
+`duplocloud_gcp_sql_database_instance` retrieves a gcp sql instance in Duplo.
 
 
 

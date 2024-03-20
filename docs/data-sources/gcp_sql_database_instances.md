@@ -3,12 +3,12 @@
 page_title: "duplocloud_gcp_sql_database_instances Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_gcp_sql_cloud retrieves a gcp sql instance in Duplo.
+  duplocloud_gcp_sql_database_instances retrieves a gcp sql instance in Duplo.
 ---
 
 # duplocloud_gcp_sql_database_instances (Data Source)
 
-`duplocloud_gcp_sql_cloud` retrieves a gcp sql instance in Duplo.
+`duplocloud_gcp_sql_database_instances` retrieves a gcp sql instance in Duplo.
 
 
 
@@ -21,11 +21,11 @@ description: |-
 
 ### Read-Only
 
+- `databases` (List of Object) (see [below for nested schema](#nestedatt--databases))
 - `id` (String) The ID of this resource.
-- `sqls` (List of Object) (see [below for nested schema](#nestedatt--sqls))
 
-<a id="nestedatt--sqls"></a>
-### Nested Schema for `sqls`
+<a id="nestedatt--databases"></a>
+### Nested Schema for `databases`
 
 Read-Only:
 

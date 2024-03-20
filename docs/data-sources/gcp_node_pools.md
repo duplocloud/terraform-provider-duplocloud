@@ -3,12 +3,12 @@
 page_title: "duplocloud_gcp_node_pools Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  
+  duplocloud_gcp_node_pools retrieves list of node pools in Duplo.
 ---
 
 # duplocloud_gcp_node_pools (Data Source)
 
-
+`duplocloud_gcp_node_pools` retrieves list of node pools in Duplo.
 
 
 
