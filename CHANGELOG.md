@@ -1,11 +1,13 @@
+## 2024-03-21
+
+### Updated
+- Updated documentation and examples to version 0.10.14.
+
 ## 2024-03-20
 
 ### Added
 - Introduced `force_recreate_on_volumes_change` boolean field in `duplocloud_duplo_service` to control resource recreation when volume mappings are modified.
-- Implemented V3 API support for S3 bucket operations, including create, read, update, and delete, with fallback to older API if V3 is not available.
-- Added support for specifying the region of an S3 bucket in Terraform resource.
-- Extended SDK to support new V3 API endpoints for S3 bucket operations.
-- Updated documentation to include the new `region` attribute for the S3 bucket resource.
+- VM not getting created on `duplocloud_gcp_node_pool` resource creation fixed
 
 ### Updated
 - Enhanced `volumes` field description in `duplocloud_duplo_service` schema for better clarity.
@@ -13,41 +15,33 @@
 
 ### Fixed
 - VM not getting created on `duplocloud_gcp_node_pool` resource creation fixed
-
+ 
 ## 2024-03-19
+
+### Added
 - Added datasource `duplocloud_gcp_node_pools`
 - Added datasource `duplocloud_gcp_node_pool`
+ 
+## 2024-03-18
 
-## 2024-03-20
+### Added
+- Added support for specifying the instruction set architecture for AWS Lambda functions in the Terraform provider, including `[x86_64]` and `[arm64]`.
 
-### Fixed
-- VM not getting created on `duplocloud_gcp_node_pool` resource creation fixed
-
-## 2024-03-19
-- Added datasource `duplocloud_gcp_node_pools`
-- Added datasource `duplocloud_gcp_node_pool`
-markdown
 ## 2024-03-15
 
 ### Updated
 - Enhanced `duplocloud_aws_cloudfront_distribution` resource documentation with cache policy descriptions and default TTL clarifications.
 - Added support for GCP SQL data source and SQL list data source in DuploCloud provider.
 
-## 2024-03-13
-
-### Updated
-- updated doc for `duplocloud_aws_cloudfront_distribution` resource
-## 2024-03-18
-
-### Added
-- Added support for specifying the instruction set architecture for AWS Lambda functions in the Terraform provider, including `[x86_64]` and `[arm64]`.
-
-markdown
 ## 2024-03-14
 
 ### Added
 - Added `duplocloud_gcp_node_pool` resource to the Terraform provider.
 - Added `duplocloud_gcp_node_pool` resource example and document.
+- Implemented V3 API support for S3 bucket operations, including create, read, update, and delete, with fallback to older API if V3 is not available.
+- Added support for specifying the region of an S3 bucket in Terraform resource.
+- Extended SDK to support new V3 API endpoints for S3 bucket operations.
+- Updated documentation to include the new `region` attribute for the S3 bucket resource.
 
 ## 2024-03-13
 
