@@ -1,4 +1,10 @@
 markdown
+## 2024-03-21
+
+### Updated
+- Updated documentation and examples to version 0.10.14.
+
+markdown
 ## 2024-03-20
 
 ### Added
