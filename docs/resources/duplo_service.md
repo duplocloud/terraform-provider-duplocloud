@@ -60,18 +60,6 @@ resource "duplocloud_duplo_service" "myservice" {
     NetworkMode = "host",
     CapAdd      = ["NET_ADMIN"]
   })
-
-  force_recreate_on_volumes_change = true
-  volumes = jsonencode(
-      [
-        {
-          AccessMode : "ReadWriteOnce",
-          Name : "${local.svs_frontend_name}-${local.tenant_name}",
-          Path : "/tmp/test2",
-          Size : "2Gi"
-        }
-      ]
-  )
 }
 
 # Example 4:  Deploy NGINX with host networking and env vars, using Duplo's EKS agent
@@ -89,6 +77,31 @@ resource "duplocloud_duplo_service" "myservice" {
       { Name = "NGINX_HOST", Value = "foo" },
     ]
   })
+}
+
+# Simple Example 5:  Deploy NGINX using Duplo's GKE agent
+resource "duplocloud_duplo_service" "myservice" {
+  tenant_id = duplocloud_tenant.myapp.tenant_id
+
+  cloud          = 3
+  name           = "myservice"
+  agent_platform = 7
+  # Duplo GKE agent
+  docker_image = "nginx:latest"
+  replicas     = 1
+
+  # to update volume, we need to recreate service in k8
+  force_recreate_on_volumes_change = true
+  volumes = jsonencode(
+    [
+      {
+        AccessMode : "ReadWriteOnce",
+        Name : "name_of_volume_1",
+        Path : "/tmp/test2",
+        Size : "2Gi"
+      }
+    ]
+  )
 }
 ```
 
@@ -126,6 +139,7 @@ Should be one of:
 - `cloud_creds_from_k8s_service_account` (Boolean) Whether or not the service gets it's cloud credentials from Kubernetes service account. Defaults to `false`.
 - `commands` (String)
 - `extra_config` (String)
+- `force_recreate_on_volumes_change` (Boolean) if 'force_recreate_on_volumes_change=true' and any changing to Volumes, will results in forceNew and hence recreating the resource. Defaults to `false`.
 - `force_stateful_set` (Boolean) Whether or not to force a StatefulSet to be created. Defaults to `false`.
 - `hpa_specs` (String)
 - `is_daemonset` (Boolean) Whether or not to enable DaemonSet. Defaults to `false`.
@@ -138,7 +152,7 @@ Should be one of:
 - `replicas_matching_asg_name` (String)
 - `should_spread_across_zones` (Boolean) Whether or not the replicas must be spread across availability zones.  Only supported on Kubernetes. Defaults to `false`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `volumes` (String)
+- `volumes` (String) Volumes to be attached to pod.
 
 ### Read-Only
 
