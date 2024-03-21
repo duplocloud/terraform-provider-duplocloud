@@ -1,3 +1,20 @@
+markdown
+## 2024-03-20
+
+### Added
+- Introduced `force_recreate_on_volumes_change` boolean field in `duplocloud_duplo_service` to control resource recreation when volume mappings are modified.
+
+### Updated
+- Enhanced `volumes` field description in `duplocloud_duplo_service` schema for better clarity.
+- Implemented `customDuploServiceDiff` function to enforce resource recreation based on `force_recreate_on_volumes_change` field.
+
+### Fixed
+- VM not getting created on `duplocloud_gcp_node_pool` resource creation fixed
+
+## 2024-03-19
+- Added datasource `duplocloud_gcp_node_pools`
+- Added datasource `duplocloud_gcp_node_pool`
+
 ## 2024-03-20
 
 ### Fixed
