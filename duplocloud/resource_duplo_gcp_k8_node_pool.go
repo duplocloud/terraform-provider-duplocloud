@@ -29,6 +29,11 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"fullname": {
+			Description: "The short name of the node pool.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"machine_type": {
 			Description: `The name of a Google Compute Engine machine type.
 				If unspecified, the default machine type is e2-medium.`,
@@ -138,7 +143,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Description: "The initial node count for the pool",
 			Type:        schema.TypeInt,
 			Optional:    true,
-			Computed:    true,
+			Default:     1,
 		},
 
 		"max_node_count": {
@@ -671,6 +676,7 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, duplo.Name))
 	d.Set("tenant_id", tenantID)
 	d.Set("name", getGCPNodePoolShortName(duplo.Name, duplo.ResourceLabels["duplo-tenant"]))
+	d.Set("fullname", duplo.Name)
 	d.Set("is_autoscaling_enabled", duplo.IsAutoScalingEnabled)
 	d.Set("auto_upgrade", duplo.AutoUpgrade)
 	d.Set("zones", duplo.Zones)

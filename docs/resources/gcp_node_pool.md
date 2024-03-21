@@ -75,7 +75,7 @@ resource "duplocloud_gcp_node_pool" "node_pool" {
 				If unspecified, the default disk size is 100GB.
 - `disc_type` (String) Type of the disk attached to each node
 				If unspecified, the default disk type is 'pd-standard'
-- `initial_node_count` (Number) The initial node count for the pool
+- `initial_node_count` (Number) The initial node count for the pool Defaults to `1`.
 - `is_autoscaling_enabled` (Boolean) Is autoscaling enabled for this node pool.
 - `labels` (Map of String) The map of Kubernetes labels (key/value pairs) to be applied to each node.
 - `linux_node_config` (Block List) Parameters that can be configured on Linux nodes (see [below for nested schema](#nestedblock--linux_node_config))
@@ -97,6 +97,7 @@ resource "duplocloud_gcp_node_pool" "node_pool" {
 
 ### Read-Only
 
+- `fullname` (String) The short name of the node pool.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--accelerator"></a>

@@ -561,6 +561,41 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 	return nil
 }
 
+func waitForResourceToBePresentAfterUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	resourceType string,
+	resourceId string,
+	getResource func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
+	err := retry.RetryContext(ctx, d.Timeout("update"), func() *retry.RetryError {
+		resource, errGet := getResource()
+
+		if errGet != nil {
+			if errGet.Status() == 404 {
+				s := "expected %s '%s' to be present after update, but got a 404"
+				e := fmt.Errorf(s, resourceType, resourceId)
+				return retry.RetryableError(e)
+			}
+
+			s := "error retrieving %s '%s': %s"
+			e := fmt.Errorf(s, resourceType, resourceId, errGet)
+			return retry.NonRetryableError(e)
+		}
+
+		if isInterfaceNil(resource) {
+			s := "expected %s '%s' to be present after update, but got: nil"
+			e := fmt.Errorf(s, resourceType, resourceId)
+			return retry.RetryableError(e)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return diag.Errorf("error updating %s '%s': %s", resourceType, resourceId, err)
+	}
+	return nil
+}
+
 func isInterfaceNil(v interface{}) bool {
 	return v == nil || (reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil())
 }
