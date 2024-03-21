@@ -143,7 +143,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) < 2 {
-		return diag.Errorf("Invalid resource ID: %s", id)
+		return diag.Errorf("resourceS3BucketRead: Invalid resource (ID: %s)", id)
 	}
 	tenantID, name := idParts[0], idParts[1]
 
@@ -153,7 +153,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	features, _ := c.AdminGetSystemFeatures()
 	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Unable get duplo services name with aws, tenant %s bucket '%s': %s", tenantID, name, err)
+		return diag.Errorf("resourceS3BucketRead: Unable to retrieve duplo service name (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 	if features.IsTagsBasedResourceMgmtEnabled {
 		fullName = name
@@ -162,7 +162,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	// Get the object from Duplo
 	duplo, err := c.TenantGetV3S3Bucket(tenantID, fullName)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("Unable to retrieve tenant %s bucket '%s': %s", tenantID, name, err)
+		return diag.Errorf("resourceS3BucketRead: Unable to retrieve s3 bucket (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 
 	// **** fallback on older api ****
@@ -173,7 +173,7 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 			return nil
 		}
 		if err != nil {
-			return diag.Errorf("Unable to retrieve tenant %s bucket '%s': %s", tenantID, name, err)
+			return diag.Errorf("resourceS3BucketRead: Unable to retrieve s3 bucket settings (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 		}
 	}
 
@@ -196,7 +196,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		s3MaxLength = 63
 	}
 	if len(name) > s3MaxLength {
-		return diag.Errorf("Expected length of s3 name '%s' to be in the range (1 - %d)", name, s3MaxLength)
+		return diag.Errorf("resourceS3BucketCreate: Invalid s3 bucket name: %s, Length must be in the range: (1 - %d)", name, s3MaxLength)
 	}
 	tenantID := d.Get("tenant_id").(string)
 
@@ -206,7 +206,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		fullName = name
 	}
 	if errname != nil {
-		return diag.Errorf("Error get duplo services name with aws '%s' error: '%s'", name, errname.Error())
+		return diag.Errorf("resourceS3BucketCreate: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
 	}
 
 	// Create the request object.
@@ -221,7 +221,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 	// Post the object to Duplo
 	_, err := c.TenantCreateV3S3Bucket(tenantID, duploObject)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("resourceS3BucketCreate: Unable to create s3 bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
 	}
 
 	// **** fallback on older api ****
@@ -245,7 +245,7 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 		return nil
 	}
 	if err != nil {
-		return diag.Errorf("Unable to retrieve tenant %s bucket '%s': %s", tenantID, name, err)
+		return diag.Errorf("resourceS3BucketCreate: Unable to retrieve s3 bucket details using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 
 	// Set simple fields first.
@@ -277,7 +277,7 @@ func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	// Post the object to Duplo
 	resource, err := c.TenantUpdateV3S3Bucket(tenantID, duploObject)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("resourceS3BucketUpdate: Unable to update s3 bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
 	}
 	// **** fallback on older api ****
 	if err != nil && err.PossibleMissingAPI() {
@@ -299,11 +299,11 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) < 2 {
-		return diag.Errorf("Invalid resource ID: %s", id)
+		return diag.Errorf("resourceS3BucketDelete: Invalid resource (ID: %s)", id)
 	}
 	err := c.TenantDeleteS3Bucket(idParts[0], idParts[1])
 	if err != nil {
-		return diag.Errorf("Error deleting bucket '%s': %s", id, err)
+		return diag.Errorf("resourceS3BucketDelete: Unable to delete bucket (name:%s, error: %s)", id, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the bucket.
@@ -323,29 +323,21 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 
 // CREATE resource older
 func resourceS3BucketCreateOldApi(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceS3BucketCreate ******** start")
+	log.Printf("[TRACE] resourceS3BucketCreateOldApi ******** start")
 	name := d.Get("name").(string)
 	// Create the request object.
 	duploObject := duplosdk.DuploS3BucketRequest{
 		Name:           name,
 		InTenantRegion: true,
 	}
-	//
+
 	c := m.(*duplosdk.Client)
-	//features, _ := c.AdminGetSystemFeatures()
-	//s3MaxLength := 63 - MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH
-	//if features != nil && features.IsTagsBasedResourceMgmtEnabled {
-	//	s3MaxLength = 63
-	//}
-	//if len(name) > s3MaxLength {
-	//	return diag.Errorf("Expected length of lambda function name '%s' to be in the range (1 - %d)", name, s3MaxLength)
-	//}
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
 	err := c.TenantCreateS3Bucket(tenantID, duploObject)
 	if err != nil {
-		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("resourceS3BucketCreateOldApi: Unable to create s3 bucket (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
@@ -359,13 +351,13 @@ func resourceS3BucketCreateOldApi(ctx context.Context, d *schema.ResourceData, m
 	d.SetId(id)
 
 	diags = resourceS3BucketUpdateOldApi(ctx, d, m)
-	log.Printf("[TRACE] resourceS3BucketCreate ******** end")
+	log.Printf("[TRACE] resourceS3BucketCreateOldApi ******** end")
 	return diags
 }
 
 // UPDATE resource older
 func resourceS3BucketUpdateOldApi(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceS3BucketUpdate ******** start")
+	log.Printf("[TRACE] resourceS3BucketUpdateOldApi ******** start")
 
 	// Create the request object.
 	duploObject := duplosdk.DuploS3BucketSettingsRequest{
@@ -407,7 +399,7 @@ func resourceS3BucketUpdateOldApi(ctx context.Context, d *schema.ResourceData, m
 	// Post the object to Duplo
 	resource, err := c.TenantApplyS3BucketSettings(tenantID, duploObject)
 	if err != nil {
-		return diag.Errorf("Error applying tenant %s bucket '%s': %s", tenantID, duploObject.Name, err)
+		return diag.Errorf("resourceS3BucketUpdateOldApi: Unable to update s3 bucket settings (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
 	}
 	resourceS3BucketSetData(d, tenantID, d.Get("name").(string), resource)
 
