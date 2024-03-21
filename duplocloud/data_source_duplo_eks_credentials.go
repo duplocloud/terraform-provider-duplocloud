@@ -64,7 +64,7 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 
 	// If it failed, try the fallback method.
 	if k8sConfig == nil {
-		k8sConfig, err = c.GetEksCredentials(planID)
+		k8sConfig, err = c.GetK8sCredentials(planID)
 		if err != nil {
 			return fmt.Errorf("failed to read EKS credentials: %s", err)
 		}

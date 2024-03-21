@@ -142,7 +142,7 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringInSlice([]string{
 				"nodejs", "nodejs4.3", "nodejs6.10", "nodejs8.10", "nodejs10.x", "nodejs12.x", "nodejs14.x", "nodejs16.x", "nodejs18.x", "nodejs20.x",
 				"java8", "java8.al2", "java11", "java17",
-				"python2.7", "python3.6", "python3.7", "python3.8", "python3.9", "python3.10",
+				"python2.7", "python3.6", "python3.7", "python3.8", "python3.9", "python3.10", "python3.11", "python3.12",
 				"dotnetcore1.0", "dotnetcore2.0", "dotnetcore2.1", "dotnetcore3.1",
 				"dotnet6", "dotnet7",
 				"nodejs4.3-edge",
@@ -237,6 +237,13 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 					},
 				},
 			},
+		},
+		"architectures": {
+			Description: "Instruction set architecture for your Lambda function. Valid values are `[x86_64]` and `[arm64]`. Default is `[x86_64]`",
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Optional:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 	}
 }
@@ -342,6 +349,10 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		rq.Layers = v
 	}
 
+	if v, ok := getAsStringArray(d, "architectures"); ok && v != nil {
+		rq.Architectures = v
+	}
+
 	if v, ok := d.GetOk("image_config"); ok && len(v.([]interface{})) > 0 {
 		imageConfig := v.([]interface{})[0].(map[string]interface{})
 		if value, exists := imageConfig["command"]; exists {
@@ -383,7 +394,13 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 	rq.Environment = expandAwsLambdaEnvironment(environment)
-
+	if rq.Environment != nil {
+		if v, ok := rq.Environment.Variables["AWS_REGION"]; ok {
+			if strings.Contains(v, "gov") && rq.Runtime.Value == "python3.12" {
+				return diag.Errorf("unsupported runtime version for govcloud")
+			}
+		}
+	}
 	if v, ok := d.GetOk("ephemeral_storage"); ok && v != nil && v.(int) != 0 {
 		rq.EphemeralStorage = &duplosdk.DuploLambdaEphemeralStorage{Size: v.(int)}
 	}
@@ -508,6 +525,7 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 	d.Set("handler", duplo.Handler)
 	d.Set("version", duplo.Version)
 	d.Set("layers", duplo.Layers)
+	d.Set("architectures", duplo.Architectures)
 	if duplo.EphemeralStorage != nil {
 		d.Set("ephemeral_storage", duplo.EphemeralStorage.Size)
 	}
@@ -704,6 +722,10 @@ func updateAwsLambdaFunctionCode(tenantID, name string, d *schema.ResourceData, 
 	} else if packageType == "Image" {
 		rq.ImageURI = d.Get("image_uri").(string)
 	}
+
+	if v, ok := getAsStringArray(d, "architectures"); ok && v != nil {
+		rq.Architectures = v
+	}
 	err := c.LambdaFunctionUpdate(tenantID, &rq)
 
 	// TODO: Wait for the changes to be applied.
@@ -722,7 +744,8 @@ func getPackageType(d *schema.ResourceData) (packageType string) {
 func needsAwsLambdaFunctionCodeUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("s3_bucket") ||
 		d.HasChange("s3_key") ||
-		d.HasChange("image_uri")
+		d.HasChange("image_uri") ||
+		d.HasChange("architectures")
 }
 
 func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {

@@ -78,9 +78,10 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "The engine version of the elastic instance.\n" +
 				"See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) " +
 				"or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).",
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
+			Type:             schema.TypeString,
+			Optional:         true,
+			ForceNew:         true,
+			DiffSuppressFunc: suppressEnginePatchVersion,
 		},
 		"size": {
 			Description: "The instance type of the elasticache instance.\n" +
@@ -141,6 +142,20 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Optional:    true,
 			ForceNew:    true,
+		},
+		"enable_cluster_mode": {
+			Description: "Flag to enable/disable redis cluster mode.",
+			Type:        schema.TypeBool,
+			Computed:    true,
+			Optional:    true,
+		},
+		"number_of_shards": {
+			Description:      "The number of shards to create.",
+			Type:             schema.TypeInt,
+			Optional:         true,
+			DiffSuppressFunc: suppressNoOfShardsDiff,
+			Computed:         true,
+			ValidateFunc:     validation.IntBetween(1, 500),
 		},
 	}
 }
@@ -282,7 +297,7 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 
 // expandEcacheInstance converts resource data respresenting an ECache instance to a Duplo SDK object.
 func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance {
-	return &duplosdk.DuploEcacheInstance{
+	data := &duplosdk.DuploEcacheInstance{
 		Name:                d.Get("name").(string),
 		Identifier:          d.Get("identifier").(string),
 		Arn:                 d.Get("arn").(string),
@@ -298,6 +313,19 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 		KMSKeyID:            d.Get("kms_key_id").(string),
 		ParameterGroupName:  d.Get("parameter_group_name").(string),
 	}
+	if data.CacheType == 0 {
+		if v, ok := d.GetOk("enable_cluster_mode"); ok { //applicable for only redis type
+			data.EnableClusterMode = v.(bool)
+		}
+	}
+	if data.EnableClusterMode {
+		if v, ok := d.GetOk("number_of_shards"); !ok || (v.(int) < 1 && v.(int) > 500) {
+			data.NumberOfShards = 2
+		} else {
+			data.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
+		}
+	}
+	return data
 }
 
 // flattenEcacheInstance converts a Duplo SDK object respresenting an ECache instance to terraform resource data.
@@ -325,6 +353,8 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("instance_status", duplo.InstanceStatus)
 	d.Set("kms_key_id", duplo.KMSKeyID)
 	d.Set("parameter_group_name", duplo.ParameterGroupName)
+	d.Set("enable_cluster_mode", duplo.EnableClusterMode)
+	d.Set("number_of_shards", duplo.NumberOfShards)
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
@@ -361,4 +391,35 @@ func parseECacheInstanceIdParts(id string) (tenantID, name string, err error) {
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
 	return
+}
+
+func suppressNoOfShardsDiff(k, old, new string, d *schema.ResourceData) bool {
+	newValue, err := strconv.Atoi(new)
+	if err != nil {
+		return false // Unexpected new value type
+	}
+	if newValue == 0 {
+		return true
+	}
+
+	oldValue, err := strconv.Atoi(old)
+	if err != nil {
+		return false // Unexpected old value type
+	}
+
+	return newValue == oldValue // Suppress diff if between 1 and 500 (inclusive)
+}
+
+func suppressEnginePatchVersion(k, old, new string, d *schema.ResourceData) bool {
+	oldVer := removePatchVersion(old)
+	newVer := removePatchVersion(new)
+	return oldVer == newVer // Suppress diff if patch exist
+}
+
+func removePatchVersion(version string) string {
+	parts := strings.Split(version, ".")
+	if len(parts) >= 2 {
+		return strings.Join(parts[:2], ".")
+	}
+	return version
 }

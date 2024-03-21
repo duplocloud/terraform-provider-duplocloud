@@ -60,3 +60,28 @@ resource "duplocloud_duplo_service" "myservice" {
     ]
   })
 }
+
+# Simple Example 5:  Deploy NGINX using Duplo's GKE agent
+resource "duplocloud_duplo_service" "myservice" {
+  tenant_id = duplocloud_tenant.myapp.tenant_id
+
+  cloud          = 3
+  name           = "myservice"
+  agent_platform = 7
+  # Duplo GKE agent
+  docker_image = "nginx:latest"
+  replicas     = 1
+
+  # to update volume, we need to recreate service in k8
+  force_recreate_on_volumes_change = true
+  volumes = jsonencode(
+    [
+      {
+        AccessMode : "ReadWriteOnce",
+        Name : "name_of_volume_1",
+        Path : "/tmp/test2",
+        Size : "2Gi"
+      }
+    ]
+  )
+}

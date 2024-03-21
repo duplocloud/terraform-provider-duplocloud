@@ -1,0 +1,5 @@
+# Defaults
+*     @duplocloud/duplo-reviewers
+
+# Require review of codeowner changes
+.github/CODEOWNERS     @zafarabbas @jeeva-duplo @tahir-duplo @joek-duplo
