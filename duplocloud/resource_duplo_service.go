@@ -76,10 +76,20 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional: true,
 			Required: false,
 		},
-		"volumes": {
-			Type:     schema.TypeString,
+		"force_recreate_on_volumes_change": {
+			Description: "if 'force_recreate_on_volumes_change=true' " +
+				"and any changing to Volumes, " +
+				"will results in forceNew " +
+				"and hence recreating the resource.",
+			Type:     schema.TypeBool,
 			Optional: true,
-			Required: false,
+			Default:  false,
+		},
+		"volumes": {
+			Description: "Volumes to be attached to pod.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Required:    false,
 		},
 		"commands": {
 			Type:     schema.TypeString,
@@ -230,6 +240,9 @@ func resourceDuploService() *schema.Resource {
 		},
 
 		Schema: duploServiceSchema(),
+
+		// CustomizeDiff to forceNew on => changes to volumes + force_recreate_on_volumes_change = true
+		CustomizeDiff: customDuploServiceDiff,
 	}
 }
 
@@ -566,4 +579,15 @@ func expandHPASpecs(specs string) (hpaSpec map[string]interface{}, err error) {
 	err = json.Unmarshal([]byte(specs), &hpaSpec)
 	log.Printf("[DEBUG] Expanded duplocloud_duplo_service.hpa_specs: %v", hpaSpec)
 	return
+}
+
+func customDuploServiceDiff(ctx context.Context, diff *schema.ResourceDiff, v interface{}) error {
+	force_recreate_on_volumes_change := diff.Get("force_recreate_on_volumes_change").(bool)
+	log.Printf("[DEBUG] customDuploServiceDiff force_recreate_on_volumes_change : %t HasChange volumes  %t ", force_recreate_on_volumes_change, diff.HasChange("volumes"))
+	if force_recreate_on_volumes_change && diff.HasChange("volumes") {
+		if err := diff.ForceNew("volumes"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
