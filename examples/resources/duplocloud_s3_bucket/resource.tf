@@ -30,3 +30,14 @@ resource "duplocloud_s3_bucket" "www" {
     method = "Sse"
   }
 }
+
+
+# Simple Example 3:  Deploy an S3 bucket to dersired region.
+resource "duplocloud_s3_bucket" "mydata" {
+  tenant_id = duplocloud_tenant.myapp.tenant_id
+  name      = "mydata"
+
+  # optional, if not provided, tenant region will be used
+  region = "us-west-2"
+
+}
