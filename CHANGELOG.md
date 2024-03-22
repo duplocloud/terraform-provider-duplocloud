@@ -1,3 +1,7 @@
+## 20234-03-22
+
+### Fixed
+- Fixed plugin crash issue for user exist case related to `duplocloud_user` resource
 ## 2024-03-21
 
 ### Updated
