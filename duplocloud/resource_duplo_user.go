@@ -128,7 +128,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, m interface
 	c := m.(*duplosdk.Client)
 	resp, err := c.UserCreate(rq)
 	if err != nil {
-		return diag.Errorf("Unable to create User '%s': %s", resp.Username, err)
+		return diag.Errorf("Unable to create User '%s': %s", userName, err)
 	}
 
 	var rp *duplosdk.DuploUser
