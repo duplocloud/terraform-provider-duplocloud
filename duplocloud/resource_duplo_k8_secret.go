@@ -198,13 +198,7 @@ func resourceK8SecretDelete(ctx context.Context, d *schema.ResourceData, m inter
 }
 
 func diffIgnoreForSecretMap(k, old, new string, d *schema.ResourceData) bool {
-	mapFieldName := "client_secret_version"
-	hashFieldName := "secret_data"
-	_, dataNew := d.GetChange(hashFieldName)
-	hashOld := d.Get(mapFieldName).(string)
-	hashNew := hashForData(dataNew.(string))
-	log.Printf("[TRACE] duplo-diffIgnoreForSecretMap ******** 1: hash_old %s hash_new %s", hashNew, hashOld)
-	return hashOld == hashNew
+	return old == new
 }
 
 func parseK8sSecretIdParts(id string) (tenantID, name string, err error) {
