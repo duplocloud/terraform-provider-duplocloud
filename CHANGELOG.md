@@ -1,3 +1,8 @@
+## 2024-03-26
+
+### Fixed
+- Fixed `secret_data` diff issue for `duplocloud_k8_secret`
+
 ## 20234-03-22
 
 ### Fixed
