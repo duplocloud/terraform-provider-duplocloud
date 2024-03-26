@@ -3,7 +3,7 @@
 ### Fixed
 - Fixed `secret_data` diff issue for `duplocloud_k8_secret`
 
-## 20234-03-22
+## 2023-03-22
 
 ### Fixed
 - Fixed plugin crash issue for user exist case related to `duplocloud_user` resource
