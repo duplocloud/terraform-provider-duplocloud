@@ -1,3 +1,8 @@
+## 2023-03-27
+
+### Added
+- Added example for `duplocloud_gcp_node_pool` and `duplocloud_gcp_node_pools` for data-source
+
 ## 20234-03-22
 
 ### Fixed
