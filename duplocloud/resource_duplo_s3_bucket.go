@@ -262,15 +262,15 @@ func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	name := d.Get("name").(string)
 
 	// Create the request object.
-	duploObject := duplosdk.DuploS3BucketSettingsRequest{
-		Name: fullname,
-	}
+	duploObject := duplosdk.DuploS3BucketSettingsRequest{}
+	//	Name: fullname,
+	//}
 
 	errName := fillS3BucketRequest(&duploObject, d)
 	if errName != nil {
 		return diag.FromErr(errName)
 	}
-
+	duploObject.Name = fullname
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 
