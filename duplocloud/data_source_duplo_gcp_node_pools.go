@@ -28,21 +28,15 @@ func dataSourceGCPNodePools() *schema.Resource {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: dataGcpK8NodePoolFunctionSchema(),
+					Schema: dataGcpK8NodePoolsFunctionSchema(),
 				},
 			},
 		},
 	}
 }
 
-func dataGcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
+func dataGcpK8NodePoolsFunctionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"tenant_id": {
-			Description:  "The GUID of the tenant that the node pool will be created in.",
-			Type:         schema.TypeString,
-			Required:     true,
-			ValidateFunc: validation.IsUUID,
-		},
 		"name": {
 			Description: "The short name of the node pool.",
 			Type:        schema.TypeString,

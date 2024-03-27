@@ -3,6 +3,10 @@
 ### Fixed
 - Error output fix for data-source of `duplocloud_eks_credentials`/`duplocloud_gke_credentials`
 
+## 2023-03-26
+
+### Fixed
+- Fixed `duplocloud_s3_bucket` resource creation issue
 ## 20234-03-22
 
 ### Fixed
