@@ -88,52 +88,45 @@ func (c *Client) IsAzureCustomPrefixesEnabled() bool {
 	return true
 }
 
-func (c *Client) TrimPrefixSuffixFromResourceName(resourceName, resourceType string, isInfraResource bool) string {
+func (c *Client) getPrefixFromResourceType(resourceType string, isInfraResource bool) (string, error) {
 	features := DuploSystemFeatures{}
-	prefixToTrim := ""
 	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
 	if err != nil {
-		return resourceName
+		return "", err
 	}
 	azureResourcePrefix := features.AzureResourcePrefix
-	if azureResourcePrefix != nil {
-		resourceTypePrefix := azureResourcePrefix.ResourceTypePrefix
-		for i := range resourceTypePrefix {
-			if resourceTypePrefix[i].Type == resourceType {
-				prefixToTrim = resourceTypePrefix[i].Prefix
-				break
-			}
-		}
-		if isInfraResource {
-			prefixToTrim += azureResourcePrefix.InfraRgPrefix
-		} else {
-			prefixToTrim += azureResourcePrefix.TenantRgPrefix
+	if azureResourcePrefix == nil {
+		return "", nil
+	}
+
+	prefix := ""
+	resourceTypePrefix := azureResourcePrefix.ResourceTypePrefix
+	for i := range resourceTypePrefix {
+		if resourceTypePrefix[i].Type == resourceType {
+			prefix = resourceTypePrefix[i].Prefix
+			break
 		}
 	}
-	return strings.TrimPrefix(resourceName, prefixToTrim)
+	if isInfraResource {
+		prefix += azureResourcePrefix.InfraRgPrefix
+	} else {
+		prefix += azureResourcePrefix.TenantRgPrefix
+	}
+	return prefix, nil
+}
+
+func (c *Client) TrimPrefixSuffixFromResourceName(resourceName, resourceType string, isInfraResource bool) string {
+	prefix, err := c.getPrefixFromResourceType(resourceType, isInfraResource)
+	if err != nil || prefix == "" {
+		return resourceName
+	}
+	return strings.TrimPrefix(resourceName, prefix)
 }
 
 func (c *Client) AddPrefixSuffixFromResourceName(resourceName, resourceType string, isInfraResource bool) string {
-	features := DuploSystemFeatures{}
-	prefixToAdd := ""
-	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
-	if err != nil {
+	prefix, err := c.getPrefixFromResourceType(resourceType, isInfraResource)
+	if err != nil || prefix == "" {
 		return resourceName
 	}
-	azureResourcePrefix := features.AzureResourcePrefix
-	if azureResourcePrefix != nil {
-		resourceTypePrefix := azureResourcePrefix.ResourceTypePrefix
-		for i := range resourceTypePrefix {
-			if resourceTypePrefix[i].Type == resourceType {
-				prefixToAdd = resourceTypePrefix[i].Prefix
-				break
-			}
-		}
-		if isInfraResource {
-			prefixToAdd += azureResourcePrefix.InfraRgPrefix
-		} else {
-			prefixToAdd += azureResourcePrefix.TenantRgPrefix
-		}
-	}
-	return prefixToAdd + resourceName
+	return prefix + resourceName
 }
