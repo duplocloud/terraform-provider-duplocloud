@@ -1,3 +1,7 @@
+## 2023-03-26
+
+### Fixed
+- Fixed `duplocloud_s3_bucket` resource creation issue
 ## 20234-03-22
 
 ### Fixed
