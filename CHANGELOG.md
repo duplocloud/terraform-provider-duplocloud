@@ -1,8 +1,15 @@
+<<<<<<< HEAD
 ## 2023-03-27
 
 ### Added
 - Added example for `duplocloud_gcp_node_pool` and `duplocloud_gcp_node_pools` for data-source
 
+=======
+## 2023-03-26
+
+### Fixed
+- Fixed `duplocloud_s3_bucket` resource creation issue
+>>>>>>> develop
 ## 20234-03-22
 
 ### Fixed
