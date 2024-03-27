@@ -58,7 +58,7 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 
 	// First, try the newer method of obtaining a JIT access token.
 	k8sConfig, err := c.GetPlanK8sJitAccess(planID)
-	if err != nil && !err.PossibleMissingAPI() {
+	if err != nil || !err.PossibleMissingAPI() {
 		return fmt.Errorf("failed to get plan %s kubernetes JIT access: %s", planID, err)
 	}
 
