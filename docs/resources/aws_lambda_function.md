@@ -95,6 +95,7 @@ resource "duplocloud_aws_lambda_function" "edgefunction" {
 
 ### Optional
 
+- `architectures` (List of String) Instruction set architecture for your Lambda function. Valid values are `[x86_64]` and `[arm64]`. Default is `[x86_64]`
 - `dead_letter_config` (Block List) Dead letter queue configuration that specifies the queue or topic where Lambda sends asynchronous events when they fail processing. (see [below for nested schema](#nestedblock--dead_letter_config))
 - `description` (String) A description of the lambda function.
 - `environment` (Block List, Max: 1) Allow customization of the lambda execution environment. (see [below for nested schema](#nestedblock--environment))

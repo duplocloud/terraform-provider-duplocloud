@@ -19,11 +19,13 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 resource "duplocloud_ecache_instance" "mycache" {
-  tenant_id  = duplocloud_tenant.myapp.tenant_id
-  name       = "mycache"
-  cache_type = 0 // Redis
-  replicas   = 1
-  size       = "cache.t2.small"
+  tenant_id           = duplocloud_tenant.myapp.tenant_id
+  name                = "mycache"
+  cache_type          = 0 // Redis
+  replicas            = 1
+  size                = "cache.t2.small"
+  enable_cluster_mode = true // applicable only for redis
+  number_of_shards    = 1    // applicable only for redis
 }
 ```
 
@@ -49,11 +51,13 @@ Should be one of:
    - `1` : Memcache
 
  Defaults to `0`.
+- `enable_cluster_mode` (Boolean) Flag to enable/disable redis cluster mode.
 - `encryption_at_rest` (Boolean) Enables encryption-at-rest. Defaults to `false`.
 - `encryption_in_transit` (Boolean) Enables encryption-in-transit. Defaults to `false`.
 - `engine_version` (String) The engine version of the elastic instance.
 See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).
 - `kms_key_id` (String) The globally unique identifier for the key.
+- `number_of_shards` (Number) The number of shards to create.
 - `parameter_group_name` (String) The REDIS parameter group to supply.
 - `replicas` (Number) The number of replicas to create. Defaults to `1`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))

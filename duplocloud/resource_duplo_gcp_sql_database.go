@@ -78,7 +78,6 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 		},
 	}
 }
-
 func resourceGcpSqlDBInstance() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_gcp_sql_database_instance` manages a GCP SQL Database Instance in Duplo.",

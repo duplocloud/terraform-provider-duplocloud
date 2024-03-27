@@ -116,3 +116,13 @@ func (c *Client) GCPSqlDBInstanceDelete(tenantID string, name string) ClientErro
 		nil,
 	)
 }
+
+func (c *Client) GCPSqlDBInstanceList(tenantID string) (*[]DuploGCPSqlDBInstance, ClientError) {
+	rp := []DuploGCPSqlDBInstance{}
+	err := c.getAPI(
+		fmt.Sprintf("GCPSqlDBInstanceList(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/google/database", tenantID),
+		&rp,
+	)
+	return &rp, err
+}
