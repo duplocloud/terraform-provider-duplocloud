@@ -2,6 +2,7 @@
 
 ### Fixed
 - Fixed `secret_data` diff issue for `duplocloud_k8_secret`
+- Fixed `duplocloud_s3_bucket` resource creation issue
 
 ## 2023-03-22
 
