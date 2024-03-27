@@ -1,0 +1,84 @@
+{
+    "Name": "testacc1",
+    "Accountid": "12345678900",
+    "Cloud": 0,
+    "Vnet": {
+        "AddressPrefix": "10.221.0.0/16",
+        "SubnetCidr": 0,
+        "Subnets": [
+            {
+                "AddressPrefix": "10.221.4.0/22",
+                "NameEx": "nonprod-B-public",
+                "Id": "subnet-12345678900",
+                "Zone": "B"
+            },
+            {
+                "AddressPrefix": "10.221.12.0/22",
+                "NameEx": "nonprod-B-private",
+                "Id": "subnet-12345678900",
+                "Zone": "B"
+            },
+            {
+                "AddressPrefix": "10.221.0.0/22",
+                "NameEx": "nonprod-A-public",
+                "Id": "subnet-12345678900",
+                "Zone": "A"
+            },
+            {
+                "AddressPrefix": "10.221.8.0/22",
+                "NameEx": "nonprod-A-private",
+                "Id": "subnet-12345678900",
+                "Zone": "A"
+            }
+        ],
+        "SecurityGroups": [
+            {
+                "Name": "duplo-allhosts",
+                "SystemId": "sg-12345678900",
+                "Rules": [
+                    {
+                        "SrcRuleType": 0,
+                        "SrcAddressPrefix": "*",
+                        "DstRuleType": 0,
+                        "SourcePortRange": "*",
+                        "Protocol": "*",
+                        "Direction": "inbound",
+                        "RuleAction": "Allow",
+                        "Priority": 0
+                    }
+                ],
+                "ReadOnly": false,
+                "SgType": "host"
+            },
+            {
+                "Name": "duplo-ExternalELB",
+                "SystemId": "sg-12345678900",
+                "Rules": [
+                    {
+                        "SrcRuleType": 0,
+                        "SrcAddressPrefix": "*",
+                        "DstRuleType": 0,
+                        "SourcePortRange": "80-80",
+                        "Protocol": "tcp",
+                        "Direction": "inbound",
+                        "RuleAction": "Allow",
+                        "Priority": 0
+                    }
+                ],
+                "ReadOnly": false,
+                "SgType": "lb"
+            }
+        ],
+        "P2SRootCerts": [],
+        "Id": "vpc-1232asdasda232",
+        "Name": "nonprod"
+    },
+    "Region": "us-west-2",
+    "AzCount": 2,
+    "EnableK8Cluster": true,
+    "EnableECSCluster": false,
+    "EnableContainerInsights": false,
+    "VpcPeers": [],
+    "VpcPeerSubnets": [],
+    "ProvisioningStatus": "Complete"
+}

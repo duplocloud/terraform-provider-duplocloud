@@ -134,8 +134,8 @@ func NewEmulator(config EmuConfig) *httptest.Server {
 	router.NotFound = http.HandlerFunc(emuNotFound)
 
 	// infra API
+	router.GET("/adminproxy/GetInfrastructureConfig/:infraName", emuGet("infra", "infraName"))
 
-	router.GET("/adminproxy/GetInfrastructureConfigs", emuList("infra"))
 	// tenant APIs
 	router.GET("/admin/GetTenantsForUser", emuList("tenant"))
 	router.GET("/v2/admin/TenantV2", emuList("tenant"))

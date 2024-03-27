@@ -173,7 +173,7 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diags
 	}
 
-	infra, err := c.InfrastructureGet(rq.PlanID)
+	infra, err := c.InfrastructureGetConfig(rq.PlanID)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve duplo infrastructure '%s': %s", rq.PlanID, err)
 	}
