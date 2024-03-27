@@ -114,6 +114,12 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		"tags": awsTagsKeyValueSchemaComputed(),
+		"duplo_lifecycle_owner": {
+			Description: "duplo lifecycle owner name tag",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -462,7 +468,10 @@ func fillS3BucketRequest(duploObject *duplosdk.DuploS3BucketSettingsRequest, d *
 	if v, ok := getAsStringArray(d, "managed_policies"); ok && v != nil {
 		duploObject.Policies = *v
 	}
-
+	duploObject.ResourceTags = make(map[string]string)
+	if v, ok := d.GetOk("duplo_lifecycle_owner"); ok && v != nil {
+		duploObject.ResourceTags["duplo_lifecycle_owner"] = v.(string)
+	}
 	log.Printf("[TRACE] fillS3BucketRequest ******** end")
 	return nil
 }

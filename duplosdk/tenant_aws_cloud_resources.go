@@ -217,13 +217,14 @@ type DuploS3BucketRequest struct {
 
 // DuploS3BucketSettingsRequest represents a request to create an S3 bucket resource
 type DuploS3BucketSettingsRequest struct {
-	Name              string   `json:"Name,omitempty"`
-	Region            string   `json:"Region,omitempty"`
-	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
-	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
-	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
-	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
-	Policies          []string `json:"Policies,omitempty"`
+	Name              string            `json:"Name,omitempty"`
+	Region            string            `json:"Region,omitempty"`
+	EnableVersioning  bool              `json:"EnableVersioning,omitempty"`
+	EnableAccessLogs  bool              `json:"EnableAccessLogs,omitempty"`
+	AllowPublicAccess bool              `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryption string            `json:"DefaultEncryption,omitempty"`
+	Policies          []string          `json:"Policies,omitempty"`
+	ResourceTags      map[string]string `json:"ResourceTags,omitempty"`
 }
 
 // DuploKafkaEbsStorageInfo represents a Kafka cluster's EBS storage info

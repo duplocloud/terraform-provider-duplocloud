@@ -51,7 +51,6 @@ Read-Only:
 - `spot` (Boolean)
 - `tags` (List of String)
 - `taints` (List of Object) (see [below for nested schema](#nestedobjatt--node_pools--taints))
-- `tenant_id` (String)
 - `total_max_node_count` (Number)
 - `total_min_node_count` (Number)
 - `upgrade_settings` (List of Object) (see [below for nested schema](#nestedobjatt--node_pools--upgrade_settings))

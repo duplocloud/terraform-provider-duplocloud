@@ -17,12 +17,12 @@ description: |-
 
 ### Required
 
-- `tenant_id` (String) The GUID of the tenant that the node pool will be created in.
+- `name` (String) The short name of the node pool.
+- `tenant_id` (String) The GUID of the tenant that the node pool will be associated with.
 
 ### Optional
 
 - `accelerator` (Block List) (see [below for nested schema](#nestedblock--accelerator))
-- `name` (String) The short name of the node pool.
 
 ### Read-Only
 

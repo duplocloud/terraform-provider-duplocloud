@@ -70,6 +70,7 @@ resource "duplocloud_s3_bucket" "mydata" {
 
 - `allow_public_access` (Boolean) Whether or not to remove the public access block from the bucket.
 - `default_encryption` (Block List, Max: 1) Default encryption settings for objects uploaded to the bucket. (see [below for nested schema](#nestedblock--default_encryption))
+- `duplo_lifecycle_owner` (String) duplo lifecycle owner name tag
 - `enable_access_logs` (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan.
 - `enable_versioning` (Boolean) Whether or not to enable versioning.
 - `managed_policies` (List of String) Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:
