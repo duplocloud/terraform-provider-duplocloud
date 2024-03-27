@@ -1,3 +1,8 @@
+## 2023-03-27
+
+### Fixed
+- Error output fix for data-source of `duplocloud_eks_credentials`/`duplocloud_gke_credentials`
+
 ## 20234-03-22
 
 ### Fixed
