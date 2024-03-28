@@ -1,3 +1,14 @@
+## 2024-03-27
+
+### Added
+- Added support for Azure custom prefixes in various resources and SDK enhancements.
+- Implemented Azure tenant creation logic with specific handling for Azure environments.
+- Introduced test infrastructure and fixtures for new Azure-related features.
+
+### Enhanced
+- Enhanced Azure storage account creation with a delay and adjusted `account_tier` attribute for better reliability.
+
+
 ## 2023-03-26
 
 ### Fixed
