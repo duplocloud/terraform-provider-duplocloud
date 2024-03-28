@@ -85,6 +85,15 @@ func testAccProvider_ConfigureContextFunc(d *schema.Provider) schema.ConfigureCo
 					return
 				},
 			},
+			"/adminproxy/GetInfrastructureConfig/:infraName": {
+				Factory: func() interface{} { return &duplosdk.DuploInfrastructureConfig{} },
+				Responder: func(verb string, in interface{}) (id string, out interface{}) {
+					out = deepcopy.MustAnything(in.(*duplosdk.DuploInfrastructureConfig))
+					infraConfig := out.(*duplosdk.DuploInfrastructureConfig)
+					id = infraConfig.Name
+					return
+				},
+			},
 		},
 	})
 
