@@ -1,3 +1,5 @@
+## 2023-03-27
+
 ## 2024-03-27
 
 ### Added
@@ -9,6 +11,9 @@
 
 ### Enhanced
 - Enhanced Azure storage account creation with a delay and adjusted `account_tier` attribute for better reliability.
+
+### Fixed
+- Error output fix for data-source of `duplocloud_eks_credentials`/`duplocloud_gke_credentials`
 
 
 ## 2023-03-26
