@@ -1,5 +1,9 @@
 package duplosdk
 
+import (
+	"strings"
+)
+
 type DuploSystemFeatures struct {
 	IsKatkitEnabled      bool     `json:"IsKatkitEnabled"`
 	IsSignupEnabled      bool     `json:"IsSignupEnabled"`
@@ -17,12 +21,26 @@ type DuploSystemFeatures struct {
 		DefaultVersion    string   `json:"DefaultVersion"`
 		SupportedVersions []string `json:"SupportedVersions"`
 	} `json:"EksVersions"`
-	IsOtpNeeded                    bool   `json:"IsOtpNeeded"`
-	IsAwsAdminJITEnabled           bool   `json:"IsAwsAdminJITEnabled"`
-	IsDuploOpsEnabled              bool   `json:"IsDuploOpsEnabled"`
-	IsTagsBasedResourceMgmtEnabled bool   `json:"IsTagsBasedResourceMgmtEnabled"`
-	DevopsManagerHostname          string `json:"DevopsManagerHostname"`
-	TenantNameMaxLength            int    `json:"TenantNameMaxLength"`
+	IsOtpNeeded                    bool                 `json:"IsOtpNeeded"`
+	IsAwsAdminJITEnabled           bool                 `json:"IsAwsAdminJITEnabled"`
+	IsDuploOpsEnabled              bool                 `json:"IsDuploOpsEnabled"`
+	IsTagsBasedResourceMgmtEnabled bool                 `json:"IsTagsBasedResourceMgmtEnabled"`
+	DevopsManagerHostname          string               `json:"DevopsManagerHostname"`
+	TenantNameMaxLength            int                  `json:"TenantNameMaxLength"`
+	AzureResourcePrefix            *AzureResourcePrefix `json:"AzureResourcePrefix,omitempty"`
+}
+
+type AzureResourcePrefix struct {
+	IsAzureCustomPrefixesEnabled bool                      `json:"IsAzureCustomPrefixesEnabled"`
+	InfraRgPrefix                string                    `json:"InfraRgPrefix"`
+	TenantRgPrefix               string                    `json:"TenantRgPrefix"`
+	BackupRgPrefix               string                    `json:"BackupRgPrefix"`
+	ResourceTypePrefix           []AzureResourceTypePrefix `json:"ResourceTypePrefix"`
+}
+
+type AzureResourceTypePrefix struct {
+	Type   string `json:"Type"`
+	Prefix string `json:"Prefix"`
 }
 
 // DuploAdminAwsCredentials represents just-in-time admin AWS credentials from Duplo
@@ -59,4 +77,56 @@ func (c *Client) AdminGetSystemFeatures() (*DuploSystemFeatures, ClientError) {
 		return nil, err
 	}
 	return &features, nil
+}
+
+func (c *Client) IsAzureCustomPrefixesEnabled() bool {
+	features := DuploSystemFeatures{}
+	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
+	if err != nil || features.AzureResourcePrefix == nil || !features.AzureResourcePrefix.IsAzureCustomPrefixesEnabled {
+		return false
+	}
+	return true
+}
+
+func (c *Client) getPrefixFromResourceType(resourceType string, isInfraResource bool) (string, error) {
+	features := DuploSystemFeatures{}
+	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
+	if err != nil {
+		return "", err
+	}
+	azureResourcePrefix := features.AzureResourcePrefix
+	if azureResourcePrefix == nil {
+		return "", nil
+	}
+
+	prefix := ""
+	resourceTypePrefix := azureResourcePrefix.ResourceTypePrefix
+	for i := range resourceTypePrefix {
+		if resourceTypePrefix[i].Type == resourceType {
+			prefix = resourceTypePrefix[i].Prefix
+			break
+		}
+	}
+	if isInfraResource {
+		prefix += azureResourcePrefix.InfraRgPrefix
+	} else {
+		prefix += azureResourcePrefix.TenantRgPrefix
+	}
+	return prefix, nil
+}
+
+func (c *Client) TrimPrefixSuffixFromResourceName(resourceName, resourceType string, isInfraResource bool) string {
+	prefix, err := c.getPrefixFromResourceType(resourceType, isInfraResource)
+	if err != nil || prefix == "" {
+		return resourceName
+	}
+	return strings.TrimPrefix(resourceName, prefix)
+}
+
+func (c *Client) AddPrefixSuffixFromResourceName(resourceName, resourceType string, isInfraResource bool) string {
+	prefix, err := c.getPrefixFromResourceType(resourceType, isInfraResource)
+	if err != nil || prefix == "" {
+		return resourceName
+	}
+	return prefix + resourceName
 }

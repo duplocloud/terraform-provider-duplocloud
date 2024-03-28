@@ -32,7 +32,7 @@ func duploAzureStorageAccountSchema() map[string]*schema.Schema {
 		"account_tier": {
 			Type: schema.TypeString,
 			//Required: true,
-			//ForceNew: true,
+			Computed: true,
 			Optional: true,
 			ValidateFunc: validation.StringInSlice([]string{
 				"Standard",
@@ -126,6 +126,7 @@ func resourceAzureStorageAccountCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	id := fmt.Sprintf("%s/%s", tenantID, name)
+	time.Sleep(time.Duration(30) * time.Second)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure storage account", id, func() (interface{}, duplosdk.ClientError) {
 		return c.StorageAccountGet(tenantID, name)
 	})
