@@ -1,3 +1,9 @@
+## 2024-03-28
+
+### Enhanced
+- Enhanced handling of subnet names in Azure infrastructure resources to support custom prefixes.
+- Removed redundant code that incorrectly set `subnet_fullname` without considering Azure custom prefixes.
+
 ## 2023-03-27
 
 ## 2024-03-27
