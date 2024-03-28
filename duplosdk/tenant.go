@@ -148,6 +148,15 @@ func (c *Client) TenantCreate(rq DuploTenant) ClientError {
 	return c.postAPI(fmt.Sprintf("TenantCreate(%s, %s)", rq.AccountName, rq.PlanID), "admin/AddTenant", &rq, nil)
 }
 
+func (c *Client) TenantCreateAzure(rq DuploTenant) (string, ClientError) {
+	rp := ""
+	err := c.postAPI(fmt.Sprintf("TenantCreateAzure(%s, %s)", rq.AccountName, rq.PlanID), "admin/AddTenant", &rq, &rp)
+	if err != nil {
+		return "", err
+	}
+	return rp, err
+}
+
 // TenantDelete deletes an AWS host via the Duplo API.
 func (c *Client) TenantDelete(tenantID string) ClientError {
 	return c.postAPI(fmt.Sprintf("TenantDelete(%s)", tenantID), fmt.Sprintf("admin/DeleteTenant/%s", tenantID), "", nil)
