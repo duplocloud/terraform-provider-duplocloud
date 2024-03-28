@@ -4,6 +4,8 @@
 - Added support for Azure custom prefixes in various resources and SDK enhancements.
 - Implemented Azure tenant creation logic with specific handling for Azure environments.
 - Introduced test infrastructure and fixtures for new Azure-related features.
+- Added example for `duplocloud_gcp_node_pool` and `duplocloud_gcp_node_pools` for data-source
+
 
 ### Enhanced
 - Enhanced Azure storage account creation with a delay and adjusted `account_tier` attribute for better reliability.
