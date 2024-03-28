@@ -12,8 +12,10 @@
 ## 2023-03-26
 
 ### Fixed
+- Fixed `secret_data` diff issue for `duplocloud_k8_secret`
 - Fixed `duplocloud_s3_bucket` resource creation issue
-## 20234-03-22
+
+## 2023-03-22
 
 ### Fixed
 - Fixed plugin crash issue for user exist case related to `duplocloud_user` resource
