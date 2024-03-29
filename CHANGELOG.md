@@ -1,3 +1,12 @@
+## 2024-03-29
+
+### Enhanced
+- Disabled handling for `account_tier`, `access_tier`, and `enable_https_traffic_only` attributes in Azure Storage Account resource to align with API changes.
+- Commented out the `flattenAzureStorageAccount` function call, indicating a shift in handling Azure Storage Account data.
+
+### Documentation
+- Updated Azure Storage Account and Infrastructure documentation to reflect changes and added `subnet_fullname` attribute documentation for Azure infrastructure.
+
 ## 2024-03-28
 
 ### Enhanced
