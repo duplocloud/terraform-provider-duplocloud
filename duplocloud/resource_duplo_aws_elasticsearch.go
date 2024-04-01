@@ -234,6 +234,10 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 							"ultrawarm1.xlarge.search",
 						}, false),
 					},
+					"multi_az_with_standby_enabled": {
+						Type:     schema.TypeBool,
+						Optional: true,
+					},
 				},
 			},
 		},

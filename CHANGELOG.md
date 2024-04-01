@@ -1,3 +1,7 @@
+## 2024-04-01
+
+### Fixed
+- fixed `duplocloud_plan_settings` resource diff issue on no change for gcp
 ## 2024-03-29
 
 ### Enhanced
