@@ -1,3 +1,7 @@
+## 2024-04-02
+
+### Enhanced
+- Enhanced functionality to update single zone cluster to multizone cluster for `duplocloud_aws_elasticsearch` opensearch resource.
 ## 2024-03-29
 
 ### Enhanced
