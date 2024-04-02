@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -312,8 +313,9 @@ func (c *Client) InfrastructureGetSubnet(infraName string, subnetName string, su
 
 	// Return the subnet, if it exists.
 	for _, subnet := range *config.Vnet.Subnets {
+		log.Printf("[TRACE] Subnet (%s, %s), AddressPrefix (%s,%s).", subnet.Name, subnetName, subnet.AddressPrefix, subnetCidr)
 		if subnet.Name == subnetName && subnet.AddressPrefix == subnetCidr {
-
+			log.Printf("[TRACE] Subnet found.")
 			// Interpret the subnet type (FIXME - the backend needs to return this)
 			if subnet.SubnetType == "" {
 				if strings.Contains(strings.ToLower(subnet.Name), "public") {
