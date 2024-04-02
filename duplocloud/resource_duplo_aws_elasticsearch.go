@@ -596,7 +596,6 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 	if err != nil {
 		return diag.Errorf("Error creating ElasticSearch domain '%s': %s", id, err)
 	}
-
 	// Wait for the instance to become available.
 	err = awsElasticSearchDomainWaitUntilAvailable(ctx, c, tenantID, duploObject.Name, d.Timeout("update"))
 	if err != nil {
@@ -809,7 +808,7 @@ func awsElasticSearchDomainWaitUntilAvailable(ctx context.Context, c *duplosdk.C
 // awsElasticSearchDomainWaitUntilUnavailable waits until an ES domain is unavailable.
 //
 // It should be usable post-modification.
-func awsElasticSearchDomainWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+/*func awsElasticSearchDomainWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
 	stateConf := &retry.StateChangeConf{
 		Pending:      []string{"created"},
 		Target:       []string{"processing", "upgrade-processing"},
@@ -839,7 +838,7 @@ func awsElasticSearchDomainWaitUntilUnavailable(ctx context.Context, c *duplosdk
 	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilUnavailable (%s/%s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
-}
+}*/
 
 // awsElasticSearchDomainWaitUntilDeleted waits until an ES domain is deleted.
 //
