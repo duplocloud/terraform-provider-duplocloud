@@ -82,6 +82,7 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 
 ### Read-Only
 
+- `fullname` (String) The full name of the host.
 - `id` (String) The ID of this resource.
 - `instance_id` (String) The Azure Virtual Machine ID of the host.
 - `status` (String) The current status of the host.

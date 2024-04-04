@@ -32,6 +32,11 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			ForceNew:         true, // relaunch instance
 			DiffSuppressFunc: diffIgnoreIfAlreadySet,
 		},
+		"fullname": {
+			Description: "The full name of the host.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"capacity": {
 			Description: "Specifies the [size of the Virtual Machine](https://docs.microsoft.com/azure/virtual-machines/sizes-general). See also [Azure VM Naming Conventions](https://docs.microsoft.com/azure/virtual-machines/vm-naming-conventions).",
 			Type:        schema.TypeString,
@@ -230,15 +235,23 @@ func resourceAzureVirtualMachine() *schema.Resource {
 }
 
 func resourceAzureVirtualMachineRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var fullname string
 	id := d.Id()
 	tenantID, name, err := parseAzureVirtualMachineIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAzureVirtualMachineRead(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceAzureVirtualMachineRead(%s, %s): start", tenantID, fullname)
 
 	c := m.(*duplosdk.Client)
-	duplo, clientErr := c.AzureNativeHostGet(tenantID, name)
+
+	if c.IsAzureCustomPrefixesEnabled() {
+		fullname = c.AddPrefixSuffixFromResourceName(name, "vm", false)
+	} else {
+		fullname = name
+	}
+
+	duplo, clientErr := c.AzureNativeHostGet(tenantID, fullname)
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
@@ -251,28 +264,36 @@ func resourceAzureVirtualMachineRead(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("Unable to retrieve tenant %s azure virtual machine %s : %s", tenantID, name, clientErr)
 	}
 	d.Set("friendly_name", name)
+	d.Set("fullname", fullname)
 	d.Set("tenant_id", tenantID)
 	flattenAzureVirtualMachine(d, duplo)
-	minion, _ := c.GetMinionForHost(tenantID, name)
+	minion, _ := c.GetMinionForHost(tenantID, fullname)
 	if minion != nil {
-		log.Printf("[TRACE] Minion found for host (%s).", name)
+		log.Printf("[TRACE] Minion found for host (%s).", fullname)
 		d.Set("is_minion", true)
 		d.Set("agent_platform", minion.AgentPlatform)
 	} else {
-		log.Printf("[TRACE] Minion not found for host (%s).", name)
+		log.Printf("[TRACE] Minion not found for host (%s).", fullname)
 		d.Set("is_minion", false)
 	}
-	log.Printf("[TRACE] resourceAzureVirtualMachineRead(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceAzureVirtualMachineRead(%s, %s): end", tenantID, fullname)
 	return nil
 }
 
 func resourceAzureVirtualMachineCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
+	var fullname string
 
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("friendly_name").(string)
 	log.Printf("[TRACE] resourceAzureVirtualMachineCreate(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
+
+	if c.IsAzureCustomPrefixesEnabled() {
+		fullname = c.AddPrefixSuffixFromResourceName(name, "vm", false)
+	} else {
+		fullname = name
+	}
 
 	rq := expandAzureVirtualMachine(d)
 	err = c.AzureNativeHostCreate(rq)
@@ -282,7 +303,7 @@ func resourceAzureVirtualMachineCreate(ctx context.Context, d *schema.ResourceDa
 
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure virtual machine", id, func() (interface{}, duplosdk.ClientError) {
-		return c.AzureNativeHostGet(tenantID, name)
+		return c.AzureNativeHostGet(tenantID, fullname)
 	})
 	if diags != nil {
 		return diags
@@ -291,7 +312,7 @@ func resourceAzureVirtualMachineCreate(ctx context.Context, d *schema.ResourceDa
 
 	//By default, wait until the virtual machine to be ready.
 	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-		err = virtualMachineWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		err = virtualMachineWaitUntilReady(ctx, c, tenantID, fullname, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -307,25 +328,27 @@ func resourceAzureVirtualMachineUpdate(ctx context.Context, d *schema.ResourceDa
 
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("friendly_name").(string)
-	log.Printf("[TRACE] resourceAzureVirtualMachineUpdate(%s, %s): start", tenantID, name)
+	fullname := d.Get("fullname").(string)
+	log.Printf("[TRACE] resourceAzureVirtualMachineUpdate(%s, %s): start", tenantID, fullname)
 	c := m.(*duplosdk.Client)
 
 	if d.HasChange("capacity") {
 		clientErr := c.UpdateAzureVirtualMachineSize(tenantID, &duplosdk.UpdateAzureVirtualMachineSizeReq{
 			Capacity:     d.Get("capacity").(string),
-			FriendlyName: name,
+			FriendlyName: fullname,
 		})
 		if clientErr != nil {
 			return diag.Errorf("Error updating tenant %s azure virtual machine capacity '%s': %s", tenantID, name, err)
 		}
 		time.Sleep(time.Duration(40) * time.Second)
-		err = virtualMachineWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		err = virtualMachineWaitUntilReady(ctx, c, tenantID, fullname, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 	if needsAzureVMUpdate(d) {
 		rq := expandAzureVirtualMachine(d)
+		rq.FriendlyName = fullname
 		err = c.AzureNativeHostCreate(rq)
 		if err != nil {
 			return diag.Errorf("Error creating tenant %s azure virtual machine '%s': %s", tenantID, name, err)
@@ -333,7 +356,7 @@ func resourceAzureVirtualMachineUpdate(ctx context.Context, d *schema.ResourceDa
 
 		id := fmt.Sprintf("%s/%s", tenantID, name)
 		diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure virtual machine", id, func() (interface{}, duplosdk.ClientError) {
-			return c.AzureNativeHostGet(tenantID, name)
+			return c.AzureNativeHostGet(tenantID, fullname)
 		})
 		if diags != nil {
 			return diags
@@ -342,7 +365,7 @@ func resourceAzureVirtualMachineUpdate(ctx context.Context, d *schema.ResourceDa
 
 		//By default, wait until the virtual machine to be ready.
 		if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-			err = virtualMachineWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+			err = virtualMachineWaitUntilReady(ctx, c, tenantID, fullname, d.Timeout("create"))
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -358,22 +381,23 @@ func resourceAzureVirtualMachineUpdate(ctx context.Context, d *schema.ResourceDa
 func resourceAzureVirtualMachineDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	tenantID, name, err := parseAzureVirtualMachineIdParts(id)
+	fullname := d.Get("fullname").(string)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAzureVirtualMachineDelete(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceAzureVirtualMachineDelete(%s, %s): start", tenantID, fullname)
 
 	c := m.(*duplosdk.Client)
-	clientErr := c.AzureNativeHostDelete(tenantID, name)
+	clientErr := c.AzureNativeHostDelete(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil
 		}
-		return diag.Errorf("Unable to delete tenant %s azure virtual machine '%s': %s", tenantID, name, clientErr)
+		return diag.Errorf("Unable to delete tenant %s azure virtual machine '%s': %s", tenantID, fullname, clientErr)
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure virtual machine", id, func() (interface{}, duplosdk.ClientError) {
-		return c.AzureNativeHostGet(tenantID, name)
+		return c.AzureNativeHostGet(tenantID, fullname)
 	})
 	if diag != nil {
 		return diag
