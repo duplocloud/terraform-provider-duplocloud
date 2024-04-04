@@ -1,3 +1,7 @@
+## 2024-04-04
+
+### Added
+- Added support to pass `root_password` for `duplocloud_gcp_sql_database_instance` resource
 ## 2024-03-29
 
 ### Enhanced
