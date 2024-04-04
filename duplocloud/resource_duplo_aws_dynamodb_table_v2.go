@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -386,6 +387,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
 		return c.DynamoDBTableGetV2(tenantID, name)
 	})
+
 	if diags != nil {
 		return diags
 	}
@@ -409,7 +411,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-func updateDynamoDBTableV2PointInRecovery(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	if v, ok := d.GetOk("is_point_in_time_recovery"); ok && v.(bool) {
 		id := d.Id()
 		tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
@@ -431,37 +433,36 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 
 	c := m.(*duplosdk.Client)
 
-	// Check if the DynamoDB table already exists.
-	exists, err := c.DynamoDBTableExistsV2(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	// Expand the resource data into the SDK's DynamoDB table request struct.
 	rq, err := expandDynamoDBTable(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// If the table exists, update it; otherwise, create a new table.
-	if exists {
-		m := "[INFO] Updating existing DynamoDB table '%s' in tenant '%s'"
-		log.Printf(m, name, tenantID)
+	// Fetch the existing table for compairson
+	existing, err := c.DynamoDBTableGetV2(tenantID, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Updating Point In Time Recovery status
+	isPITREnabled := existing.PointInTimeRecoveryStatus == "ENABLED"
+	targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
+	if isPITREnabled != targetPITRStatus {
+		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, name, targetPITRStatus)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// Updating Global Secondary Indexes and Throughput
+	if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) {
+		log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
 		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
 		if err != nil {
 			e := "Error updating tenant %s DynamoDB table '%s': %s"
 			return diag.Errorf(e, tenantID, name, err)
 		}
-	} else {
-		m := "[INFO] Creating new DynamoDB table '%s' in tenant '%s'"
-		log.Printf(m, name, tenantID)
-		_, err = c.DynamoDBTableCreateV2(tenantID, rq)
-		if err != nil {
-			e := "Error creating tenant %s DynamoDB table '%s': %s"
-			return diag.Errorf(e, tenantID, name, err)
-		}
-
-		time.Sleep(time.Duration(10) * time.Second)
 	}
 
 	// Generate the ID for the resource and set it.
@@ -483,12 +484,6 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 		if err != nil {
 			return diag.FromErr(err)
 		}
-	}
-
-	// Update table settings related to point-in-time recovery.
-	diags = updateDynamoDBTableV2PointInRecovery(ctx, d, m)
-	if diags != nil {
-		return diags
 	}
 
 	// Perform a read after update to sync state.
@@ -518,7 +513,7 @@ func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceDat
 
 	// Wait up to 60 seconds for Duplo to delete the cluster.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DynamoDBTableGetV2(tenantID, name)
+		return c.DynamoDBTableGet(tenantID, name)
 	})
 	if diag != nil {
 		return diag
@@ -888,4 +883,38 @@ func dynamodbWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID st
 	log.Printf("[DEBUG] dynamodbWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+// shouldUpdateGSI compares the DuploDynamoDBTableV2LocalSecondaryIndex  of the
+// existing table with the updated table. Returns true if a change is detected.
+func shouldUpdateGSI(
+	table *duplosdk.DuploDynamoDBTableV2,
+	request *duplosdk.DuploDynamoDBTableRequestV2,
+) bool {
+	if len(*table.GlobalSecondaryIndexes) != len(*request.GlobalSecondaryIndexes) {
+		return true
+	}
+
+	for i, aIndex := range *table.GlobalSecondaryIndexes {
+		bIndex := (*request.GlobalSecondaryIndexes)[i]
+
+		isDeepEqual := reflect.DeepEqual(
+			aIndex.ProvisionedThroughput,
+			bIndex.ProvisionedThroughput,
+		)
+		if aIndex.IndexName != bIndex.IndexName || !isDeepEqual {
+			return true
+		}
+	}
+
+	return false
+}
+
+// shouldUpdateThroughput compares the DuploDynamoDBProvisionedThroughput of
+// the existing table and updated table. Returns true if a change is detected.
+func shouldUpdateThroughput(
+	table *duplosdk.DuploDynamoDBTableV2,
+	request *duplosdk.DuploDynamoDBTableRequestV2,
+) bool {
+	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
 }
