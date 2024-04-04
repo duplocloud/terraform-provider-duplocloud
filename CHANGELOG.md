@@ -1,3 +1,16 @@
+## 2024-04-04
+
+### Added
+- Introduced support for custom prefixes in Azure VM names for flexible naming conventions.
+- Added a `fullname` attribute to Azure VM resources for enhanced traceability and management.
+
+### Enhanced
+- Updated Azure VM resource documentation to include the `fullname` attribute.
+- Improved logging and resource management to handle the `fullname` of Azure VMs across operations.
+
+### Fixed
+- Resolved issues with Azure VM operations (create, read, update, delete) to correctly handle the `fullname`.
+
 ## 2024-03-29
 
 ### Enhanced
