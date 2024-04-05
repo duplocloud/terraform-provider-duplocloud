@@ -1,3 +1,9 @@
+markdown
+## 2024-04-05
+
+### Fixed
+- Fixed a nil pointer exception and improved Kubernetes cluster check in `duplocloud/data_source_duplo_eks_credentials.go`.
+
 ## 2024-04-05
 
 ### Fixed
