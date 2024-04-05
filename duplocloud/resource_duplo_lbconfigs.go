@@ -149,6 +149,11 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Computed:    true,
 		},
+		"allow_global_access": {
+			Description: "Applicable for internal lb.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+		},
 	}
 }
 
@@ -337,6 +342,9 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 				}
 				if v, ok := lbc["custom_cidr"]; ok && v != nil && len(v.([]interface{})) > 0 && item.LbType == 6 {
 					item.CustomCidrs = expandStringList(v.([]interface{}))
+				}
+				if item.IsInternal {
+					item.AllowGlobalAccess = lbc["allow_global_access"].(bool)
 				}
 				list = append(list, item)
 			}
