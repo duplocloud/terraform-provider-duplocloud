@@ -450,8 +450,14 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 				if lberr != nil && lberr.Status() != 404 {
 					return nil, "error", lberr
 				}
-				if lbDetails == nil {
-					return name, "pending", nil
+				if lbDetails != nil {
+					if val, ok := lbDetails["State"]; ok {
+						if val != "active" {
+							return name, "pending", nil
+
+						}
+					}
+					return name, "ready", nil
 
 				}
 				log.Printf("[DEBUG] lbDetails %+v", lbDetails)
@@ -461,9 +467,8 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 				//		return name, "pending", nil
 				//	}
 			}
-
 			// If we got this far, we either have no cloud LB, or it's ready.
-			return name, "ready", nil
+			return name, "pending", nil
 		},
 		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
 		PollInterval: 10 * time.Second,
