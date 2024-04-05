@@ -1,3 +1,31 @@
+## 2024-04-04
+
+### Added
+- Introduced support for custom prefixes in Azure VM names for flexible naming conventions.
+- Added a `fullname` attribute to Azure VM resources for enhanced traceability and management.
+
+### Enhanced
+- Updated Azure VM resource documentation to include the `fullname` attribute.
+- Improved logging and resource management to handle the `fullname` of Azure VMs across operations.
+
+### Fixed
+- Resolved issues with Azure VM operations (create, read, update, delete) to correctly handle the `fullname`.
+
+## 2024-03-29
+
+### Enhanced
+- Disabled handling for `account_tier`, `access_tier`, and `enable_https_traffic_only` attributes in Azure Storage Account resource to align with API changes.
+- Commented out the `flattenAzureStorageAccount` function call, indicating a shift in handling Azure Storage Account data.
+
+### Documentation
+- Updated Azure Storage Account and Infrastructure documentation to reflect changes and added `subnet_fullname` attribute documentation for Azure infrastructure.
+
+## 2024-03-28
+
+### Enhanced
+- Enhanced handling of subnet names in Azure infrastructure resources to support custom prefixes.
+- Removed redundant code that incorrectly set `subnet_fullname` without considering Azure custom prefixes.
+
 ## 2023-03-27
 
 ## 2024-03-27
@@ -6,6 +34,8 @@
 - Added support for Azure custom prefixes in various resources and SDK enhancements.
 - Implemented Azure tenant creation logic with specific handling for Azure environments.
 - Introduced test infrastructure and fixtures for new Azure-related features.
+- Added example for `duplocloud_gcp_node_pool` and `duplocloud_gcp_node_pools` for data-source
+
 
 ### Enhanced
 - Enhanced Azure storage account creation with a delay and adjusted `account_tier` attribute for better reliability.
@@ -17,8 +47,10 @@
 ## 2023-03-26
 
 ### Fixed
+- Fixed `secret_data` diff issue for `duplocloud_k8_secret`
 - Fixed `duplocloud_s3_bucket` resource creation issue
-## 20234-03-22
+
+## 2023-03-22
 
 ### Fixed
 - Fixed plugin crash issue for user exist case related to `duplocloud_user` resource

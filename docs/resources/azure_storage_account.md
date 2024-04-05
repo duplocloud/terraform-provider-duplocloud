@@ -34,9 +34,6 @@ resource "duplocloud_azure_storage_account" "myapp" {
 
 ### Optional
 
-- `access_tier` (String) Defines the access tier for `BlobStorage`, `FileStorage` and `StorageV2` accounts. Valid options are `Hot` and `Cool`, defaults to Hot.
-- `account_tier` (String)
-- `enable_https_traffic_only` (Boolean) Boolean flag which forces HTTPS if enabled. Defaults to `true`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `wait_until_ready` (Boolean) Whether or not to wait until azure storage account to be ready, after creation. Defaults to `true`.
 

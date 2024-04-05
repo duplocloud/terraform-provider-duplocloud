@@ -48,11 +48,10 @@ func k8sSecretSchema() map[string]*schema.Schema {
 		"secret_data": {
 			Description: "A JSON encoded string representing the secret metadata. " +
 				"You can use the `jsonencode()` function to convert map or object data, if needed. You can use the `jsondecode()` function to read data.",
-			Type:             schema.TypeString,
-			Optional:         true,
-			Sensitive:        true,
-			ValidateFunc:     ValidateJSONObjectString,
-			DiffSuppressFunc: diffIgnoreForSecretMap,
+			Type:         schema.TypeString,
+			Optional:     true,
+			Sensitive:    true,
+			ValidateFunc: ValidateJSONObjectString,
 			//DiffSuppressFunc: diffIgnoreIfSameHash,
 		},
 		"secret_annotations": {
@@ -195,16 +194,6 @@ func resourceK8SecretDelete(ctx context.Context, d *schema.ResourceData, m inter
 
 	log.Printf("[TRACE] resourceK8SecretDelete(%s, %s): end", tenantId, name)
 	return nil
-}
-
-func diffIgnoreForSecretMap(k, old, new string, d *schema.ResourceData) bool {
-	mapFieldName := "client_secret_version"
-	hashFieldName := "secret_data"
-	_, dataNew := d.GetChange(hashFieldName)
-	hashOld := d.Get(mapFieldName).(string)
-	hashNew := hashForData(dataNew.(string))
-	log.Printf("[TRACE] duplo-diffIgnoreForSecretMap ******** 1: hash_old %s hash_new %s", hashNew, hashOld)
-	return hashOld == hashNew
 }
 
 func parseK8sSecretIdParts(id string) (tenantID, name string, err error) {

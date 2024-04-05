@@ -157,7 +157,11 @@ type DuploDynamoDBTableRequestV2 struct {
  */
 
 // DynamoDBTableCreate creates a dynamodb table via the Duplo API.
-func (c *Client) DynamoDBTableCreate(tenantID string, rq *DuploDynamoDBTableRequest) (*DuploDynamoDBTable, ClientError) {
+func (c *Client) DynamoDBTableCreate(
+	tenantID string,
+	rq *DuploDynamoDBTableRequest,
+) (*DuploDynamoDBTable, ClientError) {
+	fmt.Println("calling DynamoDBTableCreate")
 	rp := DuploDynamoDBTable{}
 	err := c.postAPI(
 		fmt.Sprintf("DynamoDBTableCreate(%s, %s)", tenantID, rq.Name),
@@ -169,7 +173,12 @@ func (c *Client) DynamoDBTableCreate(tenantID string, rq *DuploDynamoDBTableRequ
 	return &rp, err
 }
 
-func (c *Client) DynamoDBTableCreateV2(tenantID string, rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+func (c *Client) DynamoDBTableCreateV2(
+	tenantID string,
+	rq *DuploDynamoDBTableRequestV2,
+) (*DuploDynamoDBTableV2, ClientError) {
+	fmt.Println("calling DynamoDBTableCreateV2")
+
 	rp := DuploDynamoDBTableV2{}
 	err := c.postAPI(
 		fmt.Sprintf("DynamoDBTableCreate(%s, %s)", tenantID, rq.TableName),
@@ -177,6 +186,7 @@ func (c *Client) DynamoDBTableCreateV2(tenantID string, rq *DuploDynamoDBTableRe
 		&rq,
 		&rp,
 	)
+
 	rp.TenantID = tenantID
 	return &rp, err
 }
