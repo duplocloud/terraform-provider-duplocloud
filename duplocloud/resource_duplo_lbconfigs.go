@@ -338,6 +338,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 				if v, ok := lbc["custom_cidr"]; ok && v != nil && len(v.([]interface{})) > 0 && item.LbType == 6 {
 					item.CustomCidrs = expandStringList(v.([]interface{}))
 				}
+
 				list = append(list, item)
 			}
 		}

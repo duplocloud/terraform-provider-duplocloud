@@ -1,3 +1,9 @@
+markdown
+
+## 2024-04-05
+
+### Fixed
+- Fixed nil pointer exception while error handling for `duplocloud_eks_credentials` and `duplocloud_gke_credentials` datasource
 ## 2024-04-04
 
 ### Added
