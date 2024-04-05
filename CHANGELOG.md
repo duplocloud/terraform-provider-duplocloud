@@ -1,4 +1,17 @@
 markdown
+## 2024-04-05
+
+### Added
+- Introduced support for `allow_global_access` attribute in GCP internal load balancer configurations.
+- Added a new API endpoint `TenantGetLbDetailsInServiceNew` for enhanced load balancer details retrieval.
+
+### Enhanced
+- Updated SDK and Terraform provider to support the new `allow_global_access` attribute in load balancer configurations.
+
+### Documentation
+- Updated documentation to reflect changes in load balancer configurations, including the addition of the `allow_global_access` attribute.
+
+markdown
 
 ## 2024-04-05
 
