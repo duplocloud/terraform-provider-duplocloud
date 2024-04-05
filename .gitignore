@@ -30,3 +30,4 @@ main.tf
 __debug_bin*
 
 my-test/
+.terraform.tfstate.lock.info

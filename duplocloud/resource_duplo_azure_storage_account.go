@@ -29,32 +29,32 @@ func duploAzureStorageAccountSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
-		"account_tier": {
-			Type: schema.TypeString,
-			//Required: true,
-			//ForceNew: true,
-			Optional: true,
-			ValidateFunc: validation.StringInSlice([]string{
-				"Standard",
-				"Premium",
-			}, true),
-		},
-		"access_tier": {
-			Description: "Defines the access tier for `BlobStorage`, `FileStorage` and `StorageV2` accounts. Valid options are `Hot` and `Cool`, defaults to Hot.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-			ValidateFunc: validation.StringInSlice([]string{
-				"Hot",
-				"Cool",
-			}, true),
-		},
-		"enable_https_traffic_only": {
-			Description: "Boolean flag which forces HTTPS if enabled.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     true,
-		},
+		// "account_tier": {
+		// 	Type: schema.TypeString,
+		// 	//Required: true,
+		// 	Computed: true,
+		// 	Optional: true,
+		// 	ValidateFunc: validation.StringInSlice([]string{
+		// 		"Standard",
+		// 		"Premium",
+		// 	}, true),
+		// },
+		// "access_tier": {
+		// 	Description: "Defines the access tier for `BlobStorage`, `FileStorage` and `StorageV2` accounts. Valid options are `Hot` and `Cool`, defaults to Hot.",
+		// 	Type:        schema.TypeString,
+		// 	Optional:    true,
+		// 	Computed:    true,
+		// 	ValidateFunc: validation.StringInSlice([]string{
+		// 		"Hot",
+		// 		"Cool",
+		// 	}, true),
+		// },
+		// "enable_https_traffic_only": {
+		// 	Description: "Boolean flag which forces HTTPS if enabled.",
+		// 	Type:        schema.TypeBool,
+		// 	Optional:    true,
+		// 	Default:     true,
+		// },
 		"wait_until_ready": {
 			Description: "Whether or not to wait until azure storage account to be ready, after creation.",
 			Type:        schema.TypeBool,
@@ -105,7 +105,7 @@ func resourceAzureStorageAccountRead(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("Unable to retrieve tenant %s azure storage account %s : %s", tenantID, name, clientErr)
 	}
 
-	flattenAzureStorageAccount(d, duplo)
+	// flattenAzureStorageAccount(d, duplo)
 
 	log.Printf("[TRACE] resourceAzureStorageAccountRead(%s, %s): end", tenantID, name)
 	return nil
@@ -126,6 +126,7 @@ func resourceAzureStorageAccountCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	id := fmt.Sprintf("%s/%s", tenantID, name)
+	time.Sleep(time.Duration(30) * time.Second)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure storage account", id, func() (interface{}, duplosdk.ClientError) {
 		return c.StorageAccountGet(tenantID, name)
 	})
@@ -197,11 +198,11 @@ func parseAzureStorageAccountIdParts(id string) (tenantID, name string, err erro
 	return
 }
 
-func flattenAzureStorageAccount(d *schema.ResourceData, duplo *duplosdk.DuploAzureStorageAccount) {
-	d.Set("account_tier", duplo.Sku.Tier)
-	d.Set("access_tier", duplo.PropertiesAccessTier)
-	d.Set("enable_https_traffic_only", duplo.PropertiesSupportsHTTPSTrafficOnly)
-}
+// func flattenAzureStorageAccount(d *schema.ResourceData, duplo *duplosdk.DuploAzureStorageAccount) {
+// 	d.Set("account_tier", duplo.Sku.Tier)
+// 	d.Set("access_tier", duplo.PropertiesAccessTier)
+// 	d.Set("enable_https_traffic_only", duplo.PropertiesSupportsHTTPSTrafficOnly)
+// }
 
 func storageAccountWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
 	stateConf := &retry.StateChangeConf{

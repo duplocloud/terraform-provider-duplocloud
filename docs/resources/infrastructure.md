@@ -66,6 +66,7 @@ Should be one of:
 - `security_groups` (Set of Object) The security groups for the VPC or VNet. (see [below for nested schema](#nestedatt--security_groups))
 - `specified_settings` (List of String) A list of configuration setting key being managed by this resource.
 - `status` (String) The status of the infrastructure.
+- `subnet_fullname` (String) The full name of the subnet. This is applicable only for Azure.
 - `vpc_id` (String) The VPC or VNet ID.
 - `vpc_name` (String) The VPC or VNet name.
 
