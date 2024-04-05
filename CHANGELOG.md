@@ -13,6 +13,7 @@ markdown
 ### Added
 - Introduced support for custom prefixes in Azure VM names for flexible naming conventions.
 - Added a `fullname` attribute to Azure VM resources for enhanced traceability and management.
+- Added support for global access attribute for `duplocloud_duplo_service_lbconfigs` resource
 
 ### Enhanced
 - Updated Azure VM resource documentation to include the `fullname` attribute.
