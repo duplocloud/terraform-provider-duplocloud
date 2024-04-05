@@ -103,7 +103,6 @@ type DuploLbConfiguration struct {
 	HostNames *[]string `json:"HostNames,omitempty"`
 
 	// TODO: DIPAddresses
-	AllowGlobalAccess bool `json:"AllowGlobalAccess,omitempty"`
 }
 
 // DuploPodLbConfiguration represents an LB configuration deletion request.

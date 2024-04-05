@@ -1,15 +1,4 @@
 markdown
-## 2024-04-05
-
-### Added
-- Introduced `allow_global_access` field for internal load balancer configurations in GKE plans.
-
-### Enhanced
-- Improved JIT access token retrieval logic with enhanced error handling for GKE datasource.
-- Updated the `DuploLbConfiguration` struct to include `AllowGlobalAccess` field for new load balancer configuration options.
-
-### Fixed
-- Added error handling for cases where a Kubernetes cluster is not enabled for a GKE plan.
 
 ## 2024-04-05
 
