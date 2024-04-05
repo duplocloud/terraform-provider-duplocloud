@@ -90,6 +90,7 @@ func (c *Client) IsAzureCustomPrefixesEnabled() bool {
 
 func (c *Client) getPrefixFromResourceType(resourceType string, isInfraResource bool) (string, error) {
 	features := DuploSystemFeatures{}
+	resourcePrefixEnabled := false
 	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
 	if err != nil {
 		return "", err
@@ -104,8 +105,12 @@ func (c *Client) getPrefixFromResourceType(resourceType string, isInfraResource 
 	for i := range resourceTypePrefix {
 		if resourceTypePrefix[i].Type == resourceType {
 			prefix = resourceTypePrefix[i].Prefix
+			resourcePrefixEnabled = true
 			break
 		}
+	}
+	if !resourcePrefixEnabled {
+		return prefix, nil
 	}
 	if isInfraResource {
 		prefix += azureResourcePrefix.InfraRgPrefix
