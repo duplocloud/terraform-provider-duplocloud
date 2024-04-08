@@ -1,4 +1,10 @@
 markdown
+## 2024-04-08
+
+### Documentation
+- Corrected GKE credentials documentation and Terraform example, updating references from EKS to GKE and ensuring output values accurately reflect GKE credentials.
+
+markdown
 
 ## 2024-04-05
 
