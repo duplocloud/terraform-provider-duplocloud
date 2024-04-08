@@ -13,13 +13,13 @@ description: |-
 ## Example Usage
 
 ```terraform
-data "duplocloud_gcp_node_pools" "pool" {
+data "duplocloud_gcp_node_pools" "app" {
   tenant_id = "tenantid"
 }
 
 output "nodepool_output" {
   value = {
-    node_pools = data.duplocloud_gcp_node_pools.pool.node_pools
+    node_pools = data.duplocloud_gcp_node_pools.app.node_pools
   }
 }
 ```
@@ -103,7 +103,7 @@ Read-Only:
 
 Read-Only:
 
-- `cgroup_mode` (String)
+- `cgroup_mode` (List of String)
 - `sysctls` (Map of String)
 
 
