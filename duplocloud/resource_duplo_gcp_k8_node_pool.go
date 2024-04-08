@@ -737,7 +737,7 @@ func gcpNodePoolLoggingConfigToState(loggingConfig *duplosdk.GCPLoggingConfig) [
 	if loggingConfig != nil && loggingConfig.VariantConfig != nil {
 		variant := make(map[string]interface{})
 		variant["variant"] = loggingConfig.VariantConfig.Variant
-		state["variant_config"] = []map[string]interface{}{variant}
+		state["variant_config"] = variant
 	}
 	return []map[string]interface{}{state}
 }
@@ -745,8 +745,8 @@ func gcpNodePoolLoggingConfigToState(loggingConfig *duplosdk.GCPLoggingConfig) [
 func gcpNodePoolLinuxConfigToState(linuxConfig *duplosdk.GCPLinuxNodeConfig) []map[string]interface{} {
 	state := make(map[string]interface{})
 	if linuxConfig != nil {
-		state["cgroup_mode"] = linuxConfig.CGroupMode
-		state["systctls"] = linuxConfig.SysCtls
+		state["cgroup_mode"] = []string{linuxConfig.CGroupMode}
+		state["sysctls"] = linuxConfig.SysCtls
 	}
 	return []map[string]interface{}{state}
 }

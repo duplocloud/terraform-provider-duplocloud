@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
@@ -95,8 +96,11 @@ func dataGcpK8NodePoolsFunctionSchema() map[string]*schema.Schema {
 				Schema: map[string]*schema.Schema{
 					"cgroup_mode": {
 						Description: "cgroupMode specifies the cgroup mode to be used on the node.",
-						Type:        schema.TypeString,
+						Type:        schema.TypeList,
 						Computed:    true,
+						Elem: &schema.Schema{
+							Type: schema.TypeString,
+						},
 					},
 					"sysctls": {
 						Description: "The Linux kernel parameters to be applied to the nodes and all pods running on the nodes.",
@@ -369,11 +373,13 @@ func dataSourceGCPNodePoolList(ctx context.Context, d *schema.ResourceData, m in
 
 	// Set simple fields first.
 	d.SetId(tenantID)
+
 	list := make([]map[string]interface{}, 0, len(*duploList))
 
 	for _, duplo := range *duploList {
 		list = append(list, setGCPNodePoolStateFieldList(&duplo))
 	}
+	fmt.Println("List ", list)
 	d.Set("node_pools", list)
 
 	log.Printf("[TRACE] dataSourceGCPNodePoolList ******** end")
@@ -382,7 +388,7 @@ func dataSourceGCPNodePoolList(ctx context.Context, d *schema.ResourceData, m in
 
 func setGCPNodePoolStateFieldList(duplo *duplosdk.DuploGCPK8NodePool) map[string]interface{} {
 	// Set simple fields first.
-	return map[string]interface{}{
+	mp := map[string]interface{}{
 		"name":                     getGCPNodePoolShortName(duplo.Name, duplo.ResourceLabels["duplo-tenant"]),
 		"fullname":                 duplo.Name,
 		"is_autoscaling_enabled":   duplo.IsAutoScalingEnabled,
@@ -411,5 +417,5 @@ func setGCPNodePoolStateFieldList(duplo *duplosdk.DuploGCPK8NodePool) map[string
 		"oauth_scopes":             filterOutDefaultOAuth(duplo.OauthScopes),
 	}
 	// Set more complex fields next.
-
+	return mp
 }
