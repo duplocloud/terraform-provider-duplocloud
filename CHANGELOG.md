@@ -1,4 +1,8 @@
 markdown
+### Enhanced
+- Removed handling and documentation for the `use_launch_template` attribute from the ASG profile resource, aligning with schema updates.
+
+markdown
 ## 2024-04-08
 
 ### Documentation
