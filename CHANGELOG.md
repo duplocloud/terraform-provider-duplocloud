@@ -1,3 +1,14 @@
+## 2024-04-09
+
+### Added
+- Implemented exponential backoff in `TenantUpdateLbSettings` and `TenantGetLbSettings` methods to handle AWS API rate limits more gracefully.
+
+### Enhanced
+- Added `RetryWithExponentialBackoff` utility function for general use in retrying operations with exponential backoff, configurable delay, jitter, and total timeout.
+
+### Fixed
+- Fixed a potential panic issue in the `calculateBackoff` function by ensuring the input to `rand.Intn` is non-negative.
+
 markdown
 ## 2024-04-08
 
