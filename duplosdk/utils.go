@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"encoding/base64"
+	"math"
 	"math/rand"
 	"net/url"
 	"reflect"
@@ -166,6 +167,10 @@ func calculateBackoff(attempt int, config RetryConfig) time.Duration {
 		expBackoff = config.MaxDelay
 	}
 
-	jitter := time.Duration(rand.Intn(config.MaxJitter)) * time.Millisecond
+	jitter := time.Duration(
+		rand.Intn(
+			int(math.Max(float64(0), float64(config.MaxJitter))),
+		),
+	) * time.Millisecond
 	return expBackoff + jitter
 }
