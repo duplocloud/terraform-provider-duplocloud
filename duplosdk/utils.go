@@ -2,9 +2,11 @@ package duplosdk
 
 import (
 	"encoding/base64"
+	"math/rand"
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // handle path parameter encoding when it might contain slashes
@@ -109,4 +111,61 @@ func UnwrapName(prefix, accountID, name string, optionalAccountID bool) (string,
 
 func urlSafeBase64Encode(data string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(data))
+}
+
+type IsRetryableFunc func(error ClientError) bool
+
+type RetryableFunc func() (interface{}, ClientError)
+
+type RetryConfig struct {
+	MinDelay    time.Duration   // Minimum delay between retries
+	MaxDelay    time.Duration   // Maximum delay between retries
+	MaxJitter   int             // Maximum jitter in milliseconds to add to the delay
+	Timeout     time.Duration   // Total timeout for all retries
+	IsRetryable IsRetryableFunc // Function to check if an error is retryable
+}
+
+// RetryWithExponentialBackoff tries to execute the provided RetryableFunc according to the RetryConfig.
+// Returns the result of the API call or nil and the last error if all retries fail.
+func RetryWithExponentialBackoff(apiCall RetryableFunc, config RetryConfig) (interface{}, ClientError) {
+	var result interface{}
+	var lastError ClientError
+	var attempt int
+
+	// Calculate the deadline for the retries
+	deadline := time.Now().Add(config.Timeout)
+
+	for time.Now().Before(deadline) {
+		result, lastError = apiCall()
+		if lastError == nil {
+			return result, nil
+		}
+
+		if !config.IsRetryable(lastError) {
+			return nil, lastError
+		}
+
+		attempt++
+		sleepDuration := calculateBackoff(attempt, config)
+
+		time.Sleep(sleepDuration)
+
+		// Check if we've reached the deadline after sleeping
+		if time.Now().After(deadline) {
+			break
+		}
+	}
+
+	return nil, lastError
+}
+
+// calculateBackoff calculates the time to wait before the next retry attempt.
+func calculateBackoff(attempt int, config RetryConfig) time.Duration {
+	expBackoff := config.MinDelay * time.Duration(1<<attempt)
+	if expBackoff > config.MaxDelay {
+		expBackoff = config.MaxDelay
+	}
+
+	jitter := time.Duration(rand.Intn(config.MaxJitter)) * time.Millisecond
+	return expBackoff + jitter
 }
