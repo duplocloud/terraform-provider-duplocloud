@@ -3,11 +3,14 @@
 ### Added
 - Implemented exponential backoff in `TenantUpdateLbSettings` and `TenantGetLbSettings` methods to handle AWS API rate limits more gracefully.
 
-### Enhanced
-- Added `RetryWithExponentialBackoff` utility function for general use in retrying operations with exponential backoff, configurable delay, jitter, and total timeout.
-
 ### Fixed
-- Fixed a potential panic issue in the `calculateBackoff` function by ensuring the input to `rand.Intn` is non-negative.
+- Fixed an issue where Terraform resources would not be recreated when volume mappings were modified for Duplo services.
+- Fixed rate limiting exceptions when creating and managing `duplocloud_duplo_service_params`s with terraform
+
+### Enhanced
+- Improved the deletion process for Duplo services by efficiently checking the existence of replication controllers before proceeding.
+- Increased the wait time after service deletion from 40 seconds to 240 seconds to better accommodate backend cleanup processes, especially for GCP environments.
+- Added `RetryWithExponentialBackoff` utility function for general use in retrying operations with exponential backoff, configurable delay, jitter, and total timeout.
 
 markdown
 ## 2024-04-08
