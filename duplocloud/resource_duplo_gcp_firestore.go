@@ -142,22 +142,26 @@ func resourceGcpFirestoreCreate(ctx context.Context, d *schema.ResourceData, m i
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	_, err := c.FirestoreCreate(tenantID, rq)
+	duplo, err := c.FirestoreCreate(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s firestore '%s': %s", tenantID, rq.Name, err)
 	}
+	strSlice := strings.Split(duplo.Name, "/")
+	fullName := strSlice[len(strSlice)-1]
+	id := fmt.Sprintf("%s/%s", tenantID, fullName)
 
 	// Wait for Duplo to be able to return the firestore details.
-	id := fmt.Sprintf("%s/%s", tenantID, rq.Name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "firestore", id, func() (interface{}, duplosdk.ClientError) {
-		return c.FirestoreGet(tenantID, rq.Name)
+		return c.FirestoreGet(tenantID, fullName)
 	})
 	if diags != nil {
 		return diags
 	}
-	d.SetId(id)
 
-	resourceGcpFirestoreRead(ctx, d, m)
+	d.SetId(id)
+	resourceGcpFirestoreSetData(d, tenantID, fullName, duplo)
+
+	//resourceGcpFirestoreRead(ctx, d, m)
 	log.Printf("[TRACE] resourceGcpFirestoreCreate ******** end")
 	return diags
 }
