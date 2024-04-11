@@ -456,7 +456,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Updating Global Secondary Indexes and Throughput
-	if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) {
+	if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) || updateDeleteController(d) {
 		log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
 		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
 		if err != nil {
@@ -917,4 +917,13 @@ func shouldUpdateThroughput(
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 ) bool {
 	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
+}
+
+func updateDeleteController(d *schema.ResourceData) bool {
+	//if _, ok := d.GetOk("deletion_protection_enabled"); ok {
+	if d.HasChange("deletion_protection_enabled") {
+		return true
+	}
+	//}
+	return false
 }
