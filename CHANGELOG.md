@@ -1,3 +1,12 @@
+## 2024-04-11
+
+### Fixed
+- Fixed error handling for `duplocloud_eks_credentials` data-source related to Azure infrastructure, ensuring proper Kubernetes cluster availability checks.
+
+### Enhanced
+- Enhanced Kubernetes Just-In-Time (JIT) access and cluster availability validation for Azure in the `duplocloud_eks_credentials` data source.
+- Introduced `AksConfig` struct for managing Azure Kubernetes Service (AKS) configurations, including cluster management and privacy settings.
+
 ## 2024-04-09
 
 ### Fixed
