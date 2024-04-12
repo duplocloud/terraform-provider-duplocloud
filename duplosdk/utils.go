@@ -2,10 +2,12 @@ package duplosdk
 
 import (
 	"encoding/base64"
+	"fmt"
 	"math"
 	"math/rand"
 	"net/url"
 	"reflect"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -114,6 +116,10 @@ func urlSafeBase64Encode(data string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(data))
 }
 
+func GetFunctionName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+}
+
 // method that receives the error and returns true if error is retriable, false otherwise
 type IsRetryableFunc func(error ClientError) bool
 
@@ -134,11 +140,13 @@ type RetryConfig struct {
 func RetryWithExponentialBackoff(apiCall RetryableFunc, config RetryConfig) (interface{}, ClientError) {
 	var lastError ClientError
 	var attempt int
+	var retryableMethodName string = GetFunctionName(apiCall)
 
 	// Calculate the deadline for the retries
 	deadline := time.Now().Add(config.Timeout)
 
 	for time.Now().Before(deadline) {
+		fmt.Printf("Calling %s, attempt #%d", retryableMethodName, attempt)
 		var result interface{}
 		result, lastError = apiCall()
 		if lastError == nil {
@@ -146,9 +154,11 @@ func RetryWithExponentialBackoff(apiCall RetryableFunc, config RetryConfig) (int
 		}
 
 		if !config.IsRetryable(lastError) {
+			fmt.Printf("Method call %s attempt #%d failed with unrecoverable error", retryableMethodName, attempt)
 			return nil, lastError
 		}
 
+		fmt.Printf("Method call %s attempt #%d failed with retryable error, retrying soon", retryableMethodName, attempt)
 		attempt++
 		sleepDuration := calculateBackoff(attempt, config)
 
@@ -160,6 +170,7 @@ func RetryWithExponentialBackoff(apiCall RetryableFunc, config RetryConfig) (int
 		}
 	}
 
+	fmt.Printf("Method %s failed to succeed before retry timeout", retryableMethodName)
 	return nil, lastError
 }
 
