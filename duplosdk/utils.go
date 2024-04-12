@@ -114,10 +114,13 @@ func urlSafeBase64Encode(data string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(data))
 }
 
+// method that receives the error and returns true if error is retriable, false otherwise
 type IsRetryableFunc func(error ClientError) bool
 
+// signature for method that performs the API call which needs the retry logic
 type RetryableFunc func() (interface{}, ClientError)
 
+// Configuration to customize behavior of retry wrapper function
 type RetryConfig struct {
 	MinDelay    time.Duration   // Minimum delay between retries
 	MaxDelay    time.Duration   // Maximum delay between retries
@@ -129,7 +132,6 @@ type RetryConfig struct {
 // RetryWithExponentialBackoff tries to execute the provided RetryableFunc according to the RetryConfig.
 // Returns the result of the API call or nil and the last error if all retries fail.
 func RetryWithExponentialBackoff(apiCall RetryableFunc, config RetryConfig) (interface{}, ClientError) {
-	var result interface{}
 	var lastError ClientError
 	var attempt int
 
@@ -137,6 +139,7 @@ func RetryWithExponentialBackoff(apiCall RetryableFunc, config RetryConfig) (int
 	deadline := time.Now().Add(config.Timeout)
 
 	for time.Now().Before(deadline) {
+		var result interface{}
 		result, lastError = apiCall()
 		if lastError == nil {
 			return result, nil
