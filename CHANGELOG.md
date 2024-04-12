@@ -1,3 +1,13 @@
+## 2024-04-12
+
+### Fixed
+- Fixed an issue where the `deletion_protection_enabled` attribute was not updating correctly for `duplocloud_aws_dynamodb_table_v2` resource.
+
+### Enhanced
+- Added a separate update request for `DeletionProtectionEnabled` attribute to ensure its proper handling.
+- Made `DeletionProtectionEnabled` field non-omitempty to ensure it's always included in update requests.
+- Enhanced the update process for Global Secondary Indexes and Throughput when changes are detected.
+
 ## 2024-04-09
 
 ### Fixed
