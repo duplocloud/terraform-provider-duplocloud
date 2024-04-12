@@ -1,3 +1,9 @@
+## 2024-04-12
+
+### Enhanced
+- Introduced logic for in-place updates during GCP Cloud SQL database version changes, eliminating the need for resource replacement.
+- Implemented custom diff logic to selectively force new resource creation based on specific conditions for GCP Cloud SQL.
+
 ## 2024-04-09
 
 ### Fixed
