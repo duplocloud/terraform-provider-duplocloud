@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -45,11 +46,24 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 				"`POSTGRES_11`,`POSTGRES_12`, `POSTGRES_13`, `POSTGRES_14`, `POSTGRES_15`, `SQLSERVER_2017_STANDARD`,`SQLSERVER_2017_ENTERPRISE`," +
 				"`SQLSERVER_2017_EXPRESS`, `SQLSERVER_2017_WEB`.`SQLSERVER_2019_STANDARD`, `SQLSERVER_2019_ENTERPRISE`, `SQLSERVER_2019_EXPRESS`," +
 				"`SQLSERVER_2019_WEB`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions)includes an up-to-date reference of supported versions.",
-			Type:         schema.TypeString,
-			Required:     true,
-			ForceNew:     true,
+			Type:     schema.TypeString,
+			Required: true,
+			//ForceNew:     true,
 			ValidateFunc: validation.StringInSlice(supportedGcpSQLDBVersions(), false),
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// Suppress diff if both database name and version are the same
+				oldParts := strings.Split(old, "_")
+				newParts := strings.Split(new, "_")
+				if oldParts[0] == newParts[0] && oldParts[1] == newParts[1] {
+					if len(oldParts) > 2 && len(newParts) > 2 && oldParts[2] != newParts[2] {
+						return false
+					}
+					return true
+				}
+				return false
+			},
 		},
+
 		"tier": {
 			Description: "The machine type to use. See tiers for more details and supported versions. " +
 				"Postgres supports only shared-core machine types, and custom machine types such as `db-custom-2-13312`." +
@@ -95,6 +109,8 @@ func resourceGcpSqlDBInstance() *schema.Resource {
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
 		Schema: gcpSqlDBInstanceSchema(),
+		CustomizeDiff: customdiff.All(
+			customdiff.ForceNewIf("database_version", replaceOn)),
 	}
 }
 
@@ -345,4 +361,12 @@ func gcpSqlDBInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, ten
 	}
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func replaceOn(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+	// Suppress diff if both database name and version are the same
+	old, new := d.GetChange("database_version")
+	oldParts := strings.Split(old.(string), "_")
+	newParts := strings.Split(new.(string), "_")
+	return oldParts[0] != newParts[0]
 }
