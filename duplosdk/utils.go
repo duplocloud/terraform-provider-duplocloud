@@ -138,40 +138,38 @@ type RetryConfig struct {
 // RetryWithExponentialBackoff tries to execute the provided RetryableFunc according to the RetryConfig.
 // Returns the result of the API call or nil and the last error if all retries fail.
 func RetryWithExponentialBackoff(apiCall RetryableFunc, config RetryConfig) (interface{}, ClientError) {
-	var lastError ClientError
 	var attempt int
 	var retryableMethodName string = GetFunctionName(apiCall)
 
-	// Calculate the deadline for the retries
-	deadline := time.Now().Add(config.Timeout)
+	// Create a channel to signal the timeout
+	timeout := time.After(config.Timeout)
 
-	for time.Now().Before(deadline) {
-		fmt.Printf("Calling %s, attempt #%d", retryableMethodName, attempt)
-		var result interface{}
-		result, lastError = apiCall()
+	for {
+		fmt.Printf("Calling %s, attempt #%d\n", retryableMethodName, attempt)
+		result, lastError := apiCall()
 		if lastError == nil {
 			return result, nil
 		}
 
 		if !config.IsRetryable(lastError) {
-			fmt.Printf("Method call %s attempt #%d failed with unrecoverable error", retryableMethodName, attempt)
+			fmt.Printf("Method call %s attempt #%d failed with unrecoverable error\n", retryableMethodName, attempt)
 			return nil, lastError
 		}
 
-		fmt.Printf("Method call %s attempt #%d failed with retryable error, retrying soon", retryableMethodName, attempt)
+		fmt.Printf("Method call %s attempt #%d failed with retryable error, retrying soon\n", retryableMethodName, attempt)
 		attempt++
 		sleepDuration := calculateBackoff(attempt, config)
 
-		time.Sleep(sleepDuration)
-
-		// Check if we've reached the deadline after sleeping
-		if time.Now().After(deadline) {
-			break
+		select {
+		case <-time.After(sleepDuration):
+			// Continue to the next iteration of the loop after the sleep duration
+			continue
+		case <-timeout:
+			// If the timeout channel receives a message, break out of the loop
+			fmt.Printf("Method %s failed to succeed before retry timeout\n", retryableMethodName)
+			return nil, lastError
 		}
 	}
-
-	fmt.Printf("Method %s failed to succeed before retry timeout", retryableMethodName)
-	return nil, lastError
 }
 
 // calculateBackoff calculates the time to wait before the next retry attempt.
