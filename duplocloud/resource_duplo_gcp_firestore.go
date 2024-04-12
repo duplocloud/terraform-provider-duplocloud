@@ -51,9 +51,10 @@ func gcpFirestoreSchema() map[string]*schema.Schema {
 			Required:    true,
 		},
 		"type": {
-			Description: "Firestore type",
-			Type:        schema.TypeString,
-			Required:    true,
+			Description:  "Firestore type",
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validateFirestoreOrDatastoreMode,
 		},
 		"etag": {
 			Type:     schema.TypeString,
@@ -111,21 +112,21 @@ func resourceGcpFirestoreRead(ctx context.Context, d *schema.ResourceData, m int
 	if len(idParts) < 2 {
 		return diag.Errorf("Invalid resource ID: %s", id)
 	}
-	tenantID, name := idParts[0], idParts[1]
+	tenantID, fullname := idParts[0], idParts[1]
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 
-	duplo, err := c.FirestoreGet(tenantID, name)
+	duplo, err := c.FirestoreGet(tenantID, fullname)
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
 	}
 	if err != nil {
-		return diag.Errorf("Unable to retrieve tenant %s firestore '%s': %s", tenantID, name, err)
+		return diag.Errorf("Unable to retrieve tenant %s firestore '%s': %s", tenantID, fullname, err)
 	}
-
+	name := d.Get("name").(string)
 	// Set simple fields first.
-	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
+	d.SetId(fmt.Sprintf("%s/%s", tenantID, fullname))
 	resourceGcpFirestoreSetData(d, tenantID, name, duplo)
 	log.Printf("[TRACE] resourceGcpFirestoreRead ******** end")
 	return nil
@@ -149,7 +150,7 @@ func resourceGcpFirestoreCreate(ctx context.Context, d *schema.ResourceData, m i
 	strSlice := strings.Split(duplo.Name, "/")
 	fullName := strSlice[len(strSlice)-1]
 	id := fmt.Sprintf("%s/%s", tenantID, fullName)
-
+	name := d.Get("name").(string)
 	// Wait for Duplo to be able to return the firestore details.
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "firestore", id, func() (interface{}, duplosdk.ClientError) {
 		return c.FirestoreGet(tenantID, fullName)
@@ -157,9 +158,9 @@ func resourceGcpFirestoreCreate(ctx context.Context, d *schema.ResourceData, m i
 	if diags != nil {
 		return diags
 	}
-
+	duplo.Name = fullName
 	d.SetId(id)
-	resourceGcpFirestoreSetData(d, tenantID, fullName, duplo)
+	resourceGcpFirestoreSetData(d, tenantID, name, duplo)
 
 	//resourceGcpFirestoreRead(ctx, d, m)
 	log.Printf("[TRACE] resourceGcpFirestoreCreate ******** end")
@@ -266,4 +267,15 @@ func expandGcpFirestore(d *schema.ResourceData) *duplosdk.DuploFirestoreBody {
 	}
 
 	return &duplo
+}
+
+func validateFirestoreOrDatastoreMode(value interface{}, key string) (warns []string, errs []error) {
+	// Convert the input value to a string
+	strValue := value.(string)
+
+	// Check if the input value is either "FIRESTORE_NATIVE" or "DATASTORE_MODE"
+	if strValue != "FIRESTORE_NATIVE" && strValue != "DATASTORE_MODE" {
+		errs = append(errs, fmt.Errorf("%q must be either 'FIRESTORE_NATIVE' or 'DATASTORE_MODE'", key))
+	}
+	return
 }

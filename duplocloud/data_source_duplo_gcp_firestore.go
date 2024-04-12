@@ -28,15 +28,11 @@ func dataGcpFirestoreSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "The short name of the firestore.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
+			Description: "The full name of the firestore.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
 			Type:        schema.TypeString,
 			Required:    true,
 		},
-		"fullname": {
-			Description: "The full name of the firestore.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
+
 		"enable_delete_protection": {
 			Description: "Delete protection prevents accidental deletion of firestore.",
 			Type:        schema.TypeBool,
