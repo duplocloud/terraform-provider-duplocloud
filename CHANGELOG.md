@@ -1,9 +1,38 @@
-No update is needed for the CHANGELOG.md file based on the provided PR information, as the changes mentioned are already reflected in the current version of the document.
+## 2024-04-09
 
+### Fixed
+- Fixed an issue where Terraform resources would not be recreated when volume mappings were modified for Duplo services.
+
+### Enhanced
+- Improved the deletion process for Duplo services by efficiently checking the existence of replication controllers before proceeding.
+- Increased the wait time after service deletion from 40 seconds to 240 seconds to better accommodate backend cleanup processes, especially for GCP environments.
+
+markdown
+## 2024-04-08
+
+### Documentation
+- Corrected GKE credentials documentation and Terraform example, updating references from EKS to GKE and ensuring output values accurately reflect GKE credentials.
+
+markdown
+
+## 2024-04-05
+
+### Fixed
+- Fixed nil pointer exception while error handling for `duplocloud_eks_credentials` and `duplocloud_gke_credentials` datasource
 ## 2024-04-04
 
 ### Added
+- Introduced support for custom prefixes in Azure VM names for flexible naming conventions.
+- Added a `fullname` attribute to Azure VM resources for enhanced traceability and management.
 - Added support to pass `root_password` for `duplocloud_gcp_sql_database_instance` resource
+
+### Enhanced
+- Updated Azure VM resource documentation to include the `fullname` attribute.
+- Improved logging and resource management to handle the `fullname` of Azure VMs across operations.
+
+### Fixed
+- Resolved issues with Azure VM operations (create, read, update, delete) to correctly handle the `fullname`.
+
 ## 2024-03-29
 
 ### Enhanced
