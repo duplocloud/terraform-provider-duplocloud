@@ -1,3 +1,12 @@
+## 2024-04-09
+
+### Fixed
+- Fixed an issue where Terraform resources would not be recreated when volume mappings were modified for Duplo services.
+
+### Enhanced
+- Improved the deletion process for Duplo services by efficiently checking the existence of replication controllers before proceeding.
+- Increased the wait time after service deletion from 40 seconds to 240 seconds to better accommodate backend cleanup processes, especially for GCP environments.
+
 markdown
 ### Enhanced
 - Removed handling and documentation for the `use_launch_template` attribute from the ASG profile resource, aligning with schema updates.

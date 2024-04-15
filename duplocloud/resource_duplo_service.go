@@ -397,12 +397,15 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 
 		// Wait for it to be deleted
 		diags := waitForResourceToBeMissingAfterDelete(ctx, d, "duplo service", d.Id(), func() (interface{}, duplosdk.ClientError) {
-			return c.ReplicationControllerGet(tenantID, name)
+			if rp, err := c.ReplicationControllerExists(tenantID, name); rp || err != nil {
+				return rp, err
+			}
+			return nil, nil
 		})
 
-		// Wait 40 more seconds to deal with consistency issues.
+		// Wait 240 more seconds to deal with consistency issues. let's wait longer, GCP has to do a lot.
 		if diags == nil {
-			time.Sleep(40 * time.Second)
+			time.Sleep(240 * time.Second)
 		}
 	}
 
