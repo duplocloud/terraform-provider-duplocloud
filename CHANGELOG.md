@@ -1,4 +1,20 @@
+## 2024-04-09
+
+### Fixed
+- Fixed an issue where Terraform resources would not be recreated when volume mappings were modified for Duplo services.
+
+### Enhanced
+- Improved the deletion process for Duplo services by efficiently checking the existence of replication controllers before proceeding.
+- Increased the wait time after service deletion from 40 seconds to 240 seconds to better accommodate backend cleanup processes, especially for GCP environments.
+
 markdown
+## 2024-04-08
+
+### Documentation
+- Corrected GKE credentials documentation and Terraform example, updating references from EKS to GKE and ensuring output values accurately reflect GKE credentials.
+
+markdown
+
 ## 2024-04-05
 
 ### Added
@@ -10,10 +26,6 @@ markdown
 
 ### Documentation
 - Updated documentation to reflect changes in load balancer configurations, including the addition of the `allow_global_access` attribute.
-
-markdown
-
-## 2024-04-05
 
 ### Fixed
 - Fixed nil pointer exception while error handling for `duplocloud_eks_credentials` and `duplocloud_gke_credentials` datasource
