@@ -1,3 +1,8 @@
+## 2024-04-15
+
+### Fixed
+- Fixed an issue in `duplocloud_ecs_task_definition` update process by marking the `task_definition` field with `ForceNew` in `duplocloud_ecs_service.go`, ensuring the ECS service resource is recreated when the task definition is updated.
+
 ## 2024-04-09
 
 ### Fixed
