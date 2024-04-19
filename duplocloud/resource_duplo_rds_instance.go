@@ -637,6 +637,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
 	if isClusterGroupParameterSupportDb(duploObject.Engine) {
 		duploObject.ClusterParameterGroupName = d.Get("cluster_parameter_group_name").(string)
+		duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
 	} else {
 		duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
 	}
