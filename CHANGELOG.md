@@ -1,8 +1,15 @@
+
+## 2024-04-15
+
+### Fixed
+- Fixed an issue in `duplocloud_ecs_task_definition` update process by marking the `task_definition` field with `ForceNew` in `duplocloud_ecs_service.go`, ensuring the ECS service resource is recreated when the task definition is updated.
+
 ## 2024-04-12
 
 ### Enhanced
 - Introduced logic for in-place updates during GCP Cloud SQL database version changes, eliminating the need for resource replacement.
 - Implemented custom diff logic to selectively force new resource creation based on specific conditions for GCP Cloud SQL.
+
 
 ## 2024-04-09
 
