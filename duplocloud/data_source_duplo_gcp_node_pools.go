@@ -181,7 +181,7 @@ func dataGcpK8NodePoolsFunctionSchema() map[string]*schema.Schema {
 			},
 		},
 		"resource_labels": {
-			Description: "The metadata key/value pairs assigned to instances in the cluster.",
+			Description: "Resource labels associated to node pool.",
 			Type:        schema.TypeMap,
 			Computed:    true,
 			Elem: &schema.Schema{
