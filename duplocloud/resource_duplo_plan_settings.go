@@ -76,10 +76,6 @@ func duploPlanSettingsSchema() map[string]*schema.Schema {
 	}
 }
 
-func diffSuppressSpecifiedMetadata(k, old, new string, d *schema.ResourceData) bool {
-	return old == new
-}
-
 func resourcePlanSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_plan_settings` manages an plan settings in Duplo.",
