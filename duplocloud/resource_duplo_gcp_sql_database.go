@@ -78,9 +78,10 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"root_password": {
-			Description: "root password for specific database versions",
+			Description: "Provide root password for specific database versions.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 		},
 	}
 }
