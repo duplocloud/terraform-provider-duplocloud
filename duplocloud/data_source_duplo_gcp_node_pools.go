@@ -180,6 +180,14 @@ func dataGcpK8NodePoolsFunctionSchema() map[string]*schema.Schema {
 				Type: schema.TypeString,
 			},
 		},
+		"resource_labels": {
+			Description: "The metadata key/value pairs assigned to instances in the cluster.",
+			Type:        schema.TypeMap,
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
 		"node_pool_logging_config": {
 			Description: "Logging configuration.",
 			Type:        schema.TypeList,
@@ -415,6 +423,7 @@ func setGCPNodePoolStateFieldList(duplo *duplosdk.DuploGCPK8NodePool) map[string
 		"upgrade_settings":         gcpNodePoolUpgradeSettingToState(duplo.UpgradeSettings),
 		"accelerator":              gcpNodePoolAcceleratortoState(duplo.Accelerator),
 		"oauth_scopes":             filterOutDefaultOAuth(duplo.OauthScopes),
+		"resource_labels":          duplo.ResourceLabels,
 	}
 	// Set more complex fields next.
 	return mp
