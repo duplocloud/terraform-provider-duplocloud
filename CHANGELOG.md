@@ -1,3 +1,18 @@
+
+## 2024-04-15
+
+### Fixed
+- Fixed an issue in `duplocloud_ecs_task_definition` update process by marking the `task_definition` field with `ForceNew` in `duplocloud_ecs_service.go`, ensuring the ECS service resource is recreated when the task definition is updated.
+
+## 2024-04-12
+
+### Enhanced
+- Introduced logic for in-place updates during GCP Cloud SQL database version changes, eliminating the need for resource replacement.
+- Implemented custom diff logic to selectively force new resource creation based on specific conditions for GCP Cloud SQL.
+- Added a separate update request for `DeletionProtectionEnabled` attribute to ensure its proper handling.
+- Made `DeletionProtectionEnabled` field non-omitempty to ensure it's always included in update requests.
+- Enhanced the update process for Global Secondary Indexes and Throughput when changes are detected.
+
 ## 2024-04-09
 
 ### Fixed
@@ -18,8 +33,8 @@ markdown
 ## 2024-04-05
 
 ### Added
-- Introduced support for `allow_global_access` attribute in GCP internal load balancer configurations.
-- Added a new API endpoint `TenantGetLbDetailsInServiceNew` for enhanced load balancer details retrieval.
+- Introduced support for `allow_global_access` attribute `duplocloud_duplo_service_lbconfigs` resource.
+- Added a new API endpoint `TenantGetLbDetailsInServiceNew` in `duplocloud_duplo_service_lbconfigs` for enhanced load balancer details retrieval.
 
 ### Enhanced
 - Updated SDK and Terraform provider to support the new `allow_global_access` attribute in load balancer configurations.
@@ -34,7 +49,7 @@ markdown
 ### Added
 - Introduced support for custom prefixes in Azure VM names for flexible naming conventions.
 - Added a `fullname` attribute to Azure VM resources for enhanced traceability and management.
-- Added support for global access attribute for `duplocloud_duplo_service_lbconfigs` resource
+- Added support to pass `root_password` for `duplocloud_gcp_sql_database_instance` resource
 
 ### Enhanced
 - Updated Azure VM resource documentation to include the `fullname` attribute.
@@ -43,6 +58,10 @@ markdown
 ### Fixed
 - Resolved issues with Azure VM operations (create, read, update, delete) to correctly handle the `fullname`.
 
+## 2024-04-02
+
+### Enhanced
+- Enhanced functionality to update single zone cluster to multizone cluster for `duplocloud_aws_elasticsearch` opensearch resource.
 ## 2024-03-29
 
 ### Enhanced
