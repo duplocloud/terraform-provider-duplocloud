@@ -35,6 +35,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			Description: "The ARN of the task definition to use.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 		},
 		"replicas": {
 			Description: "The number of container replicas to create.",

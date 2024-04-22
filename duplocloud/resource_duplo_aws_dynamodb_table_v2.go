@@ -454,7 +454,20 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 			return diag.FromErr(err)
 		}
 	}
-
+	if setDeleteProtection(d) {
+		tableName := rq.TableName
+		status := rq.DeletionProtectionEnabled
+		rq = &duplosdk.DuploDynamoDBTableRequestV2{
+			DeletionProtectionEnabled: status,
+			TableName:                 tableName,
+		}
+		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+		if err != nil {
+			e := "Error updating tenant %s DynamoDB table '%s': %s"
+			return diag.Errorf(e, tenantID, name, err)
+		}
+		return nil
+	}
 	// Updating Global Secondary Indexes and Throughput
 	if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) {
 		log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
@@ -533,7 +546,8 @@ func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRe
 	}
 
 	if v, ok := d.GetOk("deletion_protection_enabled"); ok {
-		req.DeletionProtectionEnabled = v.(bool)
+		state := v.(bool)
+		req.DeletionProtectionEnabled = state
 	}
 
 	if v, ok := d.GetOk("attribute"); ok {
@@ -917,4 +931,8 @@ func shouldUpdateThroughput(
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 ) bool {
 	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
+}
+
+func setDeleteProtection(d *schema.ResourceData) bool {
+	return d.HasChange("deletion_protection_enabled")
 }

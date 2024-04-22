@@ -141,7 +141,7 @@ type DuploDynamoDBTableV2BillingModeSummary struct {
 type DuploDynamoDBTableRequestV2 struct {
 	TableName                 string                                      `json:"TableName"`
 	BillingMode               string                                      `json:"BillingMode,omitempty"`
-	DeletionProtectionEnabled bool                                        `json:"DeletionProtectionEnabled,omitempty"`
+	DeletionProtectionEnabled bool                                        `json:"DeletionProtectionEnabled"`
 	Tags                      *[]DuploKeyStringValue                      `json:"Tags,omitempty"`
 	KeySchema                 *[]DuploDynamoDBKeySchemaV2                 `json:"KeySchema,omitempty"`
 	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinionV2         `json:"AttributeDefinitions,omitempty"`
