@@ -39,6 +39,7 @@ markdown
 ### Added
 - Introduced support for custom prefixes in Azure VM names for flexible naming conventions.
 - Added a `fullname` attribute to Azure VM resources for enhanced traceability and management.
+- Added support to pass `root_password` for `duplocloud_gcp_sql_database_instance` resource
 
 ### Enhanced
 - Updated Azure VM resource documentation to include the `fullname` attribute.
