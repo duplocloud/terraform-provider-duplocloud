@@ -40,7 +40,7 @@ resource "duplocloud_gcp_firestore" "firestore-app" {
 - `location_id` (String) Location for firestore
 - `name` (String) The short name of the firestore.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
 - `tenant_id` (String) The GUID of the tenant that the firestore will be created in.
-- `type` (String) Firestore type
+- `type` (String) Firestore supports type `FIRESTORE_NATIVE` and `DATASTORE_MODE`
 
 ### Optional
 

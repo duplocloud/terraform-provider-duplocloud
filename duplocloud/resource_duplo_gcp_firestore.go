@@ -51,7 +51,7 @@ func gcpFirestoreSchema() map[string]*schema.Schema {
 			Required:    true,
 		},
 		"type": {
-			Description:  "Firestore type",
+			Description:  "Firestore supports type `FIRESTORE_NATIVE` and `DATASTORE_MODE`",
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validateFirestoreOrDatastoreMode,

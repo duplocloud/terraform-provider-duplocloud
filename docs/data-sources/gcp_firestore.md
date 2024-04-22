@@ -40,7 +40,7 @@ output "out" {
 
 ### Required
 
-- `name` (String) The short name of the firestore.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `name` (String) The full name of the firestore.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
 - `tenant_id` (String) The GUID of the tenant that the firestore will be created in.
 
 ### Read-Only
@@ -51,7 +51,6 @@ output "out" {
 - `enable_delete_protection` (Boolean) Delete protection prevents accidental deletion of firestore.
 - `enable_point_in_time_recovery` (Boolean) Restores data to a specific moment in time, enhancing data protection and recovery capabilities.
 - `etag` (String)
-- `fullname` (String) The full name of the firestore.
 - `id` (String) The ID of this resource.
 - `location_id` (String) Location for firestore
 - `type` (String) Firestore type
