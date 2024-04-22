@@ -39,6 +39,7 @@ markdown
 ### Added
 - Introduced support for custom prefixes in Azure VM names for flexible naming conventions.
 - Added a `fullname` attribute to Azure VM resources for enhanced traceability and management.
+- Added support to pass `root_password` for `duplocloud_gcp_sql_database_instance` resource
 
 ### Enhanced
 - Updated Azure VM resource documentation to include the `fullname` attribute.
@@ -46,6 +47,11 @@ markdown
 
 ### Fixed
 - Resolved issues with Azure VM operations (create, read, update, delete) to correctly handle the `fullname`.
+
+## 2024-04-02
+
+### Enhanced
+- Enhanced functionality to update single zone cluster to multizone cluster for `duplocloud_aws_elasticsearch` opensearch resource.
 
 ## 2024-04-01
 
