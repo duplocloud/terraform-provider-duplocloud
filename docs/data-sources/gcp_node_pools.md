@@ -60,6 +60,7 @@ Read-Only:
 - `name` (String)
 - `node_pool_logging_config` (List of Object) (see [below for nested schema](#nestedobjatt--node_pools--node_pool_logging_config))
 - `oauth_scopes` (List of String)
+- `resource_labels` (Map of String)
 - `spot` (Boolean)
 - `tags` (List of String)
 - `taints` (List of Object) (see [below for nested schema](#nestedobjatt--node_pools--taints))
