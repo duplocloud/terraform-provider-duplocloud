@@ -119,6 +119,14 @@ func dataGcpK8NodePoolsFunctionSchema() map[string]*schema.Schema {
 				Type: schema.TypeString,
 			},
 		},
+		"resource_labels": {
+			Description: "Resource labels associated to node pool",
+			Type:        schema.TypeMap,
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
 		"is_autoscaling_enabled": {
 			Description: "Is autoscaling enabled for this node pool.",
 			Type:        schema.TypeBool,
@@ -372,7 +380,8 @@ func dataSourceGCPNodePoolList(ctx context.Context, d *schema.ResourceData, m in
 	list := make([]map[string]interface{}, 0, len(*duploList))
 
 	for _, duplo := range *duploList {
-		list = append(list, setGCPNodePoolStateFieldList(&duplo))
+		nodepool := setGCPNodePoolStateFieldList(&duplo)
+		list = append(list, nodepool)
 	}
 	d.Set("node_pools", list)
 
@@ -409,6 +418,7 @@ func setGCPNodePoolStateFieldList(duplo *duplosdk.DuploGCPK8NodePool) map[string
 		"upgrade_settings":         gcpNodePoolUpgradeSettingToState(duplo.UpgradeSettings),
 		"accelerator":              gcpNodePoolAcceleratortoState(duplo.Accelerator),
 		"oauth_scopes":             filterOutDefaultOAuth(duplo.OauthScopes),
+		"resource_labels":          duplo.ResourceLabels,
 	}
 	// Set more complex fields next.
 
