@@ -48,6 +48,10 @@ markdown
 ### Fixed
 - Resolved issues with Azure VM operations (create, read, update, delete) to correctly handle the `fullname`.
 
+## 2024-04-02
+
+### Enhanced
+- Enhanced functionality to update single zone cluster to multizone cluster for `duplocloud_aws_elasticsearch` opensearch resource.
 ## 2024-03-29
 
 ### Enhanced
