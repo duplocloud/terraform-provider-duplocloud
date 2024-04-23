@@ -149,6 +149,12 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Computed:    true,
 		},
+		"allow_global_access": {
+			Description: "Applicable for internal lb.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -338,7 +344,9 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 				if v, ok := lbc["custom_cidr"]; ok && v != nil && len(v.([]interface{})) > 0 && item.LbType == 6 {
 					item.CustomCidrs = expandStringList(v.([]interface{}))
 				}
-
+				if item.IsInternal {
+					item.AllowGlobalAccess = lbc["allow_global_access"].(bool)
+				}
 				list = append(list, item)
 			}
 		}
@@ -439,19 +447,29 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 				}
 			}
 			if isCloudLb {
-				lbdetails, lberr := c.TenantGetLbDetailsInService(tenantID, name)
+				lbDetails, lberr := c.TenantGetLbDetailsInServiceNew(tenantID, name)
 				if lberr != nil && lberr.Status() != 404 {
 					return nil, "error", lberr
 				}
+				if lbDetails != nil {
+					if val, ok := lbDetails["State"]; ok {
+						if val != "active" {
+							return name, "pending", nil
+
+						}
+					}
+					return name, "ready", nil
+
+				}
+				log.Printf("[DEBUG] lbDetails %+v", lbDetails)
 
 				// Detect a not-ready cloud load balancer.
-				if lbdetails == nil || lbdetails.State == nil || lbdetails.State.Code == nil || lbdetails.State.Code.Value != "active" {
-					return name, "pending", nil
-				}
+				//	if lbdetails == nil || lbdetails.State == nil || lbdetails.State.Code == nil || lbdetails.State.Code.Value != "active" {
+				//		return name, "pending", nil
+				//	}
 			}
-
 			// If we got this far, we either have no cloud LB, or it's ready.
-			return name, "ready", nil
+			return name, "pending", nil
 		},
 		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
 		PollInterval: 10 * time.Second,
