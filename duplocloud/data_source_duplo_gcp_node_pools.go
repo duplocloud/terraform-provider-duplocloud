@@ -119,6 +119,7 @@ func dataGcpK8NodePoolsFunctionSchema() map[string]*schema.Schema {
 				Type: schema.TypeString,
 			},
 		},
+
 		"is_autoscaling_enabled": {
 			Description: "Is autoscaling enabled for this node pool.",
 			Type:        schema.TypeBool,
@@ -372,7 +373,8 @@ func dataSourceGCPNodePoolList(ctx context.Context, d *schema.ResourceData, m in
 	list := make([]map[string]interface{}, 0, len(*duploList))
 
 	for _, duplo := range *duploList {
-		list = append(list, setGCPNodePoolStateFieldList(&duplo))
+		nodepool := setGCPNodePoolStateFieldList(&duplo)
+		list = append(list, nodepool)
 	}
 	d.Set("node_pools", list)
 
