@@ -584,10 +584,6 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 		req.Metadata = metadata
 	}
 
-	if val, ok := d.Get("metadata").(map[string]string); ok {
-		req.Metadata = val
-	}
-
 	if val, ok := d.Get("resource_labels").(map[string]interface{}); ok {
 		resourceLabels := make(map[string]string)
 		for key, value := range val {
