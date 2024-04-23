@@ -153,6 +153,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Description: "Applicable for internal lb.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Computed:    true,
 		},
 	}
 }
