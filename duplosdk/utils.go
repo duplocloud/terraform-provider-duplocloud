@@ -161,13 +161,12 @@ func RetryWithExponentialBackoff(apiCall RetryableFunc, config RetryConfig) (int
 		sleepDuration := calculateBackoff(attempt, config)
 
 		select {
-		case <-time.After(sleepDuration):
-			// Continue to the next iteration of the loop after the sleep duration
-			continue
 		case <-timeout:
 			// If the timeout channel receives a message, break out of the loop
 			fmt.Printf("Method %s failed to succeed before retry timeout\n", retryableMethodName)
 			return nil, lastError
+		default:
+			time.Sleep(sleepDuration)
 		}
 	}
 }
