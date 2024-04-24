@@ -316,11 +316,22 @@ func (c *Client) ReplicationControllerLbConfigurationList(tenantID string, name 
 	if err != nil {
 		return nil, err
 	}
+	//list,err:=c.ReplicationControllerList(tenantID)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// Find and return the matching LBs.
 	rpcLbs := make([]DuploLbConfiguration, 0, len(*allLbs))
 	for _, lb := range *allLbs {
 		if lb.ReplicationControllerName == name {
+			//	for _, rl := range *list {
+			//		if rl.Name == name {
+			//
+			//			rpcLbs = append(rpcLbs, lb)
+			//		}
+			//	}
+
 			rpcLbs = append(rpcLbs, lb)
 		}
 	}

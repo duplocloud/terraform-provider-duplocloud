@@ -423,6 +423,7 @@ func parseDuploServiceLbConfigsIdParts(id string) (tenantID, name string) {
 }
 
 // DuploServiceLBConfigsWaitForCreation waits for creation of an service's load balancer by the Duplo API
+
 func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID, name string) error {
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"missing", "pending"},
@@ -467,6 +468,8 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 				//	if lbdetails == nil || lbdetails.State == nil || lbdetails.State.Code == nil || lbdetails.State.Code.Value != "active" {
 				//		return name, "pending", nil
 				//	}
+			} else {
+				return name, "ready", nil
 			}
 			// If we got this far, we either have no cloud LB, or it's ready.
 			return name, "pending", nil
