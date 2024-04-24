@@ -222,7 +222,15 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 				Type: schema.TypeString,
 			},
 		},
-
+		"resource_labels": {
+			Description: "Resource labels associated to node pool",
+			Type:        schema.TypeMap,
+			Optional:    true,
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
 		"zones": {
 			Description: "The list of Google Compute Engine zones in which the NodePool's nodes should be located.",
 			Type:        schema.TypeList,
@@ -566,9 +574,24 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 
 		}
 	}
+	if val, ok := d.Get("metadata").(map[string]interface{}); ok {
+		metadata := make(map[string]string)
+		for key, value := range val {
+			if strVal, ok := value.(string); ok {
+				metadata[key] = strVal
+			}
+		}
+		req.Metadata = metadata
+	}
 
-	if val, ok := d.Get("metadata").(map[string]string); ok {
-		req.Metadata = val
+	if val, ok := d.Get("resource_labels").(map[string]interface{}); ok {
+		resourceLabels := make(map[string]string)
+		for key, value := range val {
+			if strVal, ok := value.(string); ok {
+				resourceLabels[key] = strVal
+			}
+		}
+		req.ResourceLabels = resourceLabels
 	}
 	expandGCPNodePoolAccelerator(d, req)
 }
@@ -703,6 +726,7 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 	d.Set("upgrade_settings", gcpNodePoolUpgradeSettingToState(duplo.UpgradeSettings))
 	d.Set("accelerator", gcpNodePoolAcceleratortoState(duplo.Accelerator))
 	d.Set("oauth_scopes", filterOutDefaultOAuth(duplo.OauthScopes))
+	d.Set("resource_labels", duplo.ResourceLabels)
 	// Set more complex fields next.
 
 }
@@ -859,7 +883,7 @@ func resourceGCPK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 		}
 	}
-	if d.HasChange("taints") || d.HasChange("labels") || d.HasChange("tags") {
+	if d.HasChange("taints") || d.HasChange("labels") || d.HasChange("tags") || d.HasChange("resource_labels") {
 		_, err = gcpNodePoolUpdateTaintAndTags(c, tenantID, fullName, rq)
 		if err != nil {
 			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())

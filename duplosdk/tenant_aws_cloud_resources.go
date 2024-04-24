@@ -727,6 +727,19 @@ func (c *Client) TenantGetLbDetailsInService(tenantID string, name string) (*Dup
 	return &details, nil
 }
 
+func (c *Client) TenantGetLbDetailsInServiceNew(tenantID string, name string) (map[string]interface{}, ClientError) {
+	apiName := fmt.Sprintf("TenantGetLbDetailsInService(%s, %s)", tenantID, name)
+	details := make(map[string]interface{})
+
+	// Get the list from Duplo
+	err := c.getAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/containers/replicationController/%s/lbDetails", tenantID, name), &details)
+	if err != nil {
+		return nil, err
+	}
+
+	return details, nil
+}
+
 // TenantCreateApplicationLB creates an application LB resource via Duplo.
 func (c *Client) TenantCreateApplicationLB(tenantID string, duplo DuploAwsLBConfiguration) ClientError {
 	return c.postAPI("TenantCreateApplicationLB",

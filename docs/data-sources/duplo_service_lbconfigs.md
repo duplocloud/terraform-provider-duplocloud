@@ -47,6 +47,7 @@ Read-Only:
 
 Read-Only:
 
+- `allow_global_access` (Boolean)
 - `backend_protocol_version` (String)
 - `certificate_arn` (String)
 - `cloud_name` (String)
