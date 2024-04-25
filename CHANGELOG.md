@@ -13,6 +13,15 @@
 - Made `DeletionProtectionEnabled` field non-omitempty to ensure it's always included in update requests.
 - Enhanced the update process for Global Secondary Indexes and Throughput when changes are detected.
 
+## 2024-04-11
+
+### Added
+- Introduced GCP Firestore resource and data sources for managing GCP Firestore in DuploCloud.
+- Added CRUD operations and data retrieval for GCP Firestore resources.
+
+### Enhanced
+- Enhanced DynamoDB table logic to support delete controller updates.
+
 ## 2024-04-09
 
 ### Fixed
