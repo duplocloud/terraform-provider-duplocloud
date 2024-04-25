@@ -1,4 +1,3 @@
-
 ## 2024-04-15
 
 ### Fixed
@@ -21,6 +20,12 @@
 
 ### Enhanced
 - Enhanced DynamoDB table logic to support delete controller updates.
+- Enhanced Kubernetes Just-In-Time (JIT) access and cluster availability validation for Azure in the `duplocloud_eks_credentials` data source.
+- Introduced `AksConfig` struct for managing Azure Kubernetes Service (AKS) configurations, including cluster management and privacy settings.
+
+### Fixed
+- Fixed error handling for `duplocloud_eks_credentials` data-source related to Azure infrastructure, ensuring proper Kubernetes cluster availability checks.
+
 
 ## 2024-04-09
 

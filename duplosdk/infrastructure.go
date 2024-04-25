@@ -116,6 +116,12 @@ type DuploInfrastructureConfig struct {
 	Vnet                    *DuploInfrastructureVnet `json:"Vnet"`
 	ProvisioningStatus      string                   `json:"ProvisioningStatus"`
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
+	AksConfig               *AksConfig               `json:"AksConfig,omitempty"`
+}
+
+type AksConfig struct {
+	CreateAndManage bool `json:"CreateAndManage"`
+	PrivateCluster  bool `json:"PrivateCluster"`
 }
 
 type DuploAzureLogAnalyticsWorkspace struct {
