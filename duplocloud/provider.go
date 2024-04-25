@@ -148,6 +148,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_rds_tag":                     resourceAwsRdsTag(),
 			"duplocloud_gcp_sql_database_instance":       resourceGcpSqlDBInstance(),
 			"duplocloud_gcp_node_pool":                   resourceGcpK8NodePool(),
+			"duplocloud_gcp_firestore":                   resourceFirestore(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
@@ -206,6 +207,8 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_node_pools":             dataSourceGCPNodePools(),
 			"duplocloud_gcp_sql_database_instance":  dataSourceGCPCloudSQL(),
 			"duplocloud_gcp_sql_database_instances": dataSourceGCPCloudSQLs(),
+			"duplocloud_gcp_firestore":              dataSourceFirestore(),
+			"duplocloud_gcp_firestores":             dataSourceFirestores(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

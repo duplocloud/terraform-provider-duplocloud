@@ -1,4 +1,3 @@
-
 ## 2024-04-15
 
 ### Fixed
@@ -13,6 +12,21 @@
 - Made `DeletionProtectionEnabled` field non-omitempty to ensure it's always included in update requests.
 - Enhanced the update process for Global Secondary Indexes and Throughput when changes are detected.
 
+## 2024-04-11
+
+### Added
+- Introduced GCP Firestore resource and data sources for managing GCP Firestore in DuploCloud.
+- Added CRUD operations and data retrieval for GCP Firestore resources.
+
+### Enhanced
+- Enhanced DynamoDB table logic to support delete controller updates.
+- Enhanced Kubernetes Just-In-Time (JIT) access and cluster availability validation for Azure in the `duplocloud_eks_credentials` data source.
+- Introduced `AksConfig` struct for managing Azure Kubernetes Service (AKS) configurations, including cluster management and privacy settings.
+
+### Fixed
+- Fixed error handling for `duplocloud_eks_credentials` data-source related to Azure infrastructure, ensuring proper Kubernetes cluster availability checks.
+
+
 ## 2024-04-09
 
 ### Fixed
@@ -24,6 +38,14 @@
 
 markdown
 ## 2024-04-08
+
+### Fixed
+- Fixed state not being set for GCP Node Pools data source.
+
+### Enhanced
+- Enhanced logging in GCP Node Pools data source by adding `fmt` import.
+- Changed `cgroup_mode` from `TypeString` to `TypeList` in GCP Node Pools to handle multiple values correctly.
+- Updated documentation and examples to reflect changes in data source and resource configurations for GCP Node Pools and GCP SQL Database Instances.
 
 ### Documentation
 - Corrected GKE credentials documentation and Terraform example, updating references from EKS to GKE and ensuring output values accurately reflect GKE credentials.

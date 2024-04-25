@@ -85,6 +85,7 @@ resource "duplocloud_gcp_node_pool" "node_pool" {
 - `min_node_count` (Number) Minimum number of nodes for one location in the NodePool. Must be >= 1 and <= maxNodeCount.
 - `node_pool_logging_config` (Block List) Logging configuration. (see [below for nested schema](#nestedblock--node_pool_logging_config))
 - `oauth_scopes` (List of String) The set of Google API scopes to be made available on all of the node VMs under the default service account.
+- `resource_labels` (Map of String) Resource labels associated to node pool
 - `spot` (Boolean) Spot flag for enabling Spot VM
 - `tags` (List of String) The list of instance tags applied to all nodes.
 				Tags are used to identify valid sources or targets for network firewalls and are specified by the client during cluster or node pool creation.
