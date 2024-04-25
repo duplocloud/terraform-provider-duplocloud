@@ -34,13 +34,30 @@
 markdown
 ## 2024-04-08
 
+### Fixed
+- Fixed state not being set for GCP Node Pools data source.
+
+### Enhanced
+- Enhanced logging in GCP Node Pools data source by adding `fmt` import.
+- Changed `cgroup_mode` from `TypeString` to `TypeList` in GCP Node Pools to handle multiple values correctly.
+- Updated documentation and examples to reflect changes in data source and resource configurations for GCP Node Pools and GCP SQL Database Instances.
+
 ### Documentation
 - Corrected GKE credentials documentation and Terraform example, updating references from EKS to GKE and ensuring output values accurately reflect GKE credentials.
-
 
 markdown
 
 ## 2024-04-05
+
+### Added
+- Introduced support for `allow_global_access` attribute `duplocloud_duplo_service_lbconfigs` resource.
+- Added a new API endpoint `TenantGetLbDetailsInServiceNew` in `duplocloud_duplo_service_lbconfigs` for enhanced load balancer details retrieval.
+
+### Enhanced
+- Updated SDK and Terraform provider to support the new `allow_global_access` attribute in load balancer configurations.
+
+### Documentation
+- Updated documentation to reflect changes in load balancer configurations, including the addition of the `allow_global_access` attribute.
 
 ### Fixed
 - Fixed nil pointer exception while error handling for `duplocloud_eks_credentials` and `duplocloud_gke_credentials` datasource
@@ -49,6 +66,7 @@ markdown
 ### Added
 - Introduced support for custom prefixes in Azure VM names for flexible naming conventions.
 - Added a `fullname` attribute to Azure VM resources for enhanced traceability and management.
+- Added support to pass `root_password` for `duplocloud_gcp_sql_database_instance` resource
 
 ### Enhanced
 - Updated Azure VM resource documentation to include the `fullname` attribute.
@@ -56,6 +74,16 @@ markdown
 
 ### Fixed
 - Resolved issues with Azure VM operations (create, read, update, delete) to correctly handle the `fullname`.
+
+## 2024-04-02
+
+### Enhanced
+- Enhanced functionality to update single zone cluster to multizone cluster for `duplocloud_aws_elasticsearch` opensearch resource.
+
+## 2024-04-01
+
+### Fixed
+- fixed `duplocloud_plan_settings` resource diff issue on no change for gcp
 
 ## 2024-03-29
 

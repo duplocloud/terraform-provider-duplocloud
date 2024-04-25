@@ -4,7 +4,7 @@ data "duplocloud_gcp_sql_database_instances" "app" {
 
 output "sql_output" {
   value = {
-    sqls = data.duplocloud_gcp_sql_database_instances.app.sqls
+    databases = data.duplocloud_gcp_sql_database_instances.app.databases
   }
 }
 

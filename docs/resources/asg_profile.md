@@ -75,7 +75,6 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `prepend_user_data` (Boolean) Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided. Defaults to `false`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `use_launch_template` (Boolean) Whether or not to use a launch template.
 - `use_spot_instances` (Boolean) Whether or not to use spot instances. Defaults to `false`.
 - `user_account` (String) The name of the tenant that the host will be created in.
 - `volume` (Block List) (see [below for nested schema](#nestedblock--volume))
