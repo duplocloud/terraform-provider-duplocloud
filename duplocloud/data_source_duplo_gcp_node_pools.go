@@ -2,7 +2,6 @@ package duplocloud
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
@@ -389,7 +388,6 @@ func dataSourceGCPNodePoolList(ctx context.Context, d *schema.ResourceData, m in
 		nodepool := setGCPNodePoolStateFieldList(&duplo)
 		list = append(list, nodepool)
 	}
-	fmt.Println("List ", list)
 	d.Set("node_pools", list)
 
 	log.Printf("[TRACE] dataSourceGCPNodePoolList ******** end")
