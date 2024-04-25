@@ -398,7 +398,7 @@ func dataSourceGCPNodePoolList(ctx context.Context, d *schema.ResourceData, m in
 
 func setGCPNodePoolStateFieldList(duplo *duplosdk.DuploGCPK8NodePool) map[string]interface{} {
 	// Set simple fields first.
-	mp := map[string]interface{}{
+	return map[string]interface{}{
 		"name":                     getGCPNodePoolShortName(duplo.Name, duplo.ResourceLabels["duplo-tenant"]),
 		"fullname":                 duplo.Name,
 		"is_autoscaling_enabled":   duplo.IsAutoScalingEnabled,
@@ -428,5 +428,4 @@ func setGCPNodePoolStateFieldList(duplo *duplosdk.DuploGCPK8NodePool) map[string
 		"resource_labels":          duplo.ResourceLabels,
 	}
 	// Set more complex fields next.
-	return mp
 }
