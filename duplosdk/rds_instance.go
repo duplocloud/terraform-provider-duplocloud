@@ -59,6 +59,7 @@ type DuploRdsInstance struct {
 	DBSubnetGroupName           string                  `json:"DBSubnetGroupName,omitempty"`
 	V2ScalingConfiguration      *V2ScalingConfiguration `json:"V2ScalingConfiguration,omitempty"`
 	AvailabilityZone            string                  `json:"AvailabilityZone,omitempty"`
+	EnableIamAuth               bool                    `json:"EnableIamAuth"`
 }
 
 type V2ScalingConfiguration struct {
