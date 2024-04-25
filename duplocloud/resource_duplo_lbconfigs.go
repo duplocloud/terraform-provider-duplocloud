@@ -505,6 +505,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"extra_selector_label":        keyValueToState("extra_selector_label", lb.ExtraSelectorLabels),
 		"target_group_arn":            lb.TgArn,
 		"custom_cidr":                 lb.CustomCidrs,
+		"allow_global_access":         lb.AllowGlobalAccess,
 	}
 
 	if lb.LbType == 5 && lb.HostNames != nil && len(*lb.HostNames) > 0 {
