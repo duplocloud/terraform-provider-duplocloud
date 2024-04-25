@@ -35,6 +35,7 @@ resource "duplocloud_plan_settings" "myplanSettings" {
 
 - `dns_setting` (Block List, Max: 1) (see [below for nested schema](#nestedblock--dns_setting))
 - `metadata` (Block List) A list of metadata for the plan to manage. (see [below for nested schema](#nestedblock--metadata))
+- `specified_metadata` (List of String) A list of metadata being managed by this resource.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `unrestricted_ext_lb` (Boolean)
 
@@ -42,7 +43,6 @@ resource "duplocloud_plan_settings" "myplanSettings" {
 
 - `all_metadata` (List of Object) A complete list of metadata for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_metadata))
 - `id` (String) The ID of this resource.
-- `specified_metadata` (List of String) A list of metadata being managed by this resource.
 
 <a id="nestedblock--dns_setting"></a>
 ### Nested Schema for `dns_setting`
