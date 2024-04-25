@@ -191,7 +191,14 @@ func dataGcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 				Type: schema.TypeString,
 			},
 		},
-
+		"resource_labels": {
+			Description: "Resource labels associated to node pool",
+			Type:        schema.TypeMap,
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
 		"zones": {
 			Description: "The list of Google Compute Engine zones in which the NodePool's nodes should be located.",
 			Type:        schema.TypeList,

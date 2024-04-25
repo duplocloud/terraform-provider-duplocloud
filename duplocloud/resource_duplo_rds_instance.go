@@ -267,6 +267,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional: true,
 			Default:  false,
 		},
+		"enable_iam_auth": {
+			Description: "Whether or not to enable the RDS IAM authentication.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -637,6 +643,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
 	if isClusterGroupParameterSupportDb(duploObject.Engine) {
 		duploObject.ClusterParameterGroupName = d.Get("cluster_parameter_group_name").(string)
+		duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
 	} else {
 		duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
 	}
@@ -654,6 +661,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
 	duploObject.SkipFinalSnapshot = d.Get("skip_final_snapshot").(bool)
 	duploObject.StoreDetailsInSecretManager = d.Get("store_details_in_secret_manager").(bool)
+	duploObject.EnableIamAuth = d.Get("enable_iam_auth").(bool)
 	if v, ok := d.GetOk("v2_scaling_configuration"); ok {
 		duploObject.V2ScalingConfiguration = expandV2ScalingConfiguration(v.([]interface{}))
 	}
@@ -731,7 +739,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["instance_status"] = duploObject.InstanceStatus
 	jo["skip_final_snapshot"] = duploObject.SkipFinalSnapshot
 	jo["store_details_in_secret_manager"] = duploObject.StoreDetailsInSecretManager
-
+	jo["enable_iam_auth"] = duploObject.EnableIamAuth
 	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 {
 		d.Set("v2_scaling_configuration", []map[string]interface{}{{
 			"min_capacity": duploObject.V2ScalingConfiguration.MinCapacity,

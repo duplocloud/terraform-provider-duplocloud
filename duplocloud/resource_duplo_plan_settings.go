@@ -66,10 +66,12 @@ func duploPlanSettingsSchema() map[string]*schema.Schema {
 			Elem:        KeyValueSchema(),
 		},
 		"specified_metadata": {
-			Description: "A list of metadata being managed by this resource.",
-			Type:        schema.TypeList,
-			Computed:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
+			Description:      "A list of metadata being managed by this resource.",
+			Type:             schema.TypeList,
+			Elem:             &schema.Schema{Type: schema.TypeString},
+			Computed:         true,
+			Optional:         true,
+			DiffSuppressFunc: diffSuppressSpecifiedMetadata, //if removed it notifies the change when there is no change
 		},
 	}
 }
