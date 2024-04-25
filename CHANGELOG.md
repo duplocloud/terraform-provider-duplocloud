@@ -40,6 +40,16 @@ markdown
 
 ## 2024-04-05
 
+### Added
+- Introduced support for `allow_global_access` attribute `duplocloud_duplo_service_lbconfigs` resource.
+- Added a new API endpoint `TenantGetLbDetailsInServiceNew` in `duplocloud_duplo_service_lbconfigs` for enhanced load balancer details retrieval.
+
+### Enhanced
+- Updated SDK and Terraform provider to support the new `allow_global_access` attribute in load balancer configurations.
+
+### Documentation
+- Updated documentation to reflect changes in load balancer configurations, including the addition of the `allow_global_access` attribute.
+
 ### Fixed
 - Fixed nil pointer exception while error handling for `duplocloud_eks_credentials` and `duplocloud_gke_credentials` datasource
 ## 2024-04-04
