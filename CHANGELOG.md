@@ -25,6 +25,14 @@
 markdown
 ## 2024-04-08
 
+### Fixed
+- Fixed state not being set for GCP Node Pools data source.
+
+### Enhanced
+- Enhanced logging in GCP Node Pools data source by adding `fmt` import.
+- Changed `cgroup_mode` from `TypeString` to `TypeList` in GCP Node Pools to handle multiple values correctly.
+- Updated documentation and examples to reflect changes in data source and resource configurations for GCP Node Pools and GCP SQL Database Instances.
+
 ### Documentation
 - Corrected GKE credentials documentation and Terraform example, updating references from EKS to GKE and ensuring output values accurately reflect GKE credentials.
 
