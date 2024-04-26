@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"time"
 )
 
 // AgnosticLbSettings represents a load balancer's settings.
@@ -37,18 +38,42 @@ type AgnosticLbSettingsGcp struct {
 // TenantUpdateLbSettings updates a load balancer's settings via Duplo.
 func (c *Client) TenantUpdateLbSettings(tenantID, loadBalancerID string, rq *AgnosticLbSettings) (*AgnosticLbSettings, ClientError) {
 	rp := AgnosticLbSettings{}
-	err := c.putAPI("TenantUpdateLbSettings",
-		fmt.Sprintf("v3/subscriptions/%s/agnostic/loadBalancer/%s/setting", tenantID, loadBalancerID),
-		&rq,
-		&rp)
+	_, err := RetryWithExponentialBackoff(func() (interface{}, ClientError) {
+		err := c.putAPI("TenantUpdateLbSettings",
+			fmt.Sprintf("v3/subscriptions/%s/agnostic/loadBalancer/%s/setting", tenantID, loadBalancerID),
+			&rq,
+			&rp)
+		return &rp, err
+	},
+		RetryConfig{
+			MinDelay:  1 * time.Second,
+			MaxDelay:  5 * time.Second,
+			MaxJitter: 2000,
+			Timeout:   60 * time.Second,
+			IsRetryable: func(error ClientError) bool {
+				return error.Status() == 400
+			},
+		})
 	return &rp, err
 }
 
 // TenantGetLbSettings retrieves a load balancer's settings via Duplo.
 func (c *Client) TenantGetLbSettings(tenantID, loadBalancerID string) (*AgnosticLbSettings, ClientError) {
 	rp := AgnosticLbSettings{}
-	err := c.getAPI("TenantGetLbSettings",
-		fmt.Sprintf("v3/subscriptions/%s/agnostic/loadBalancer/%s/setting", tenantID, loadBalancerID),
-		&rp)
+	_, err := RetryWithExponentialBackoff(func() (interface{}, ClientError) {
+		err := c.getAPI("TenantGetLbSettings",
+			fmt.Sprintf("v3/subscriptions/%s/agnostic/loadBalancer/%s/setting", tenantID, loadBalancerID),
+			&rp)
+		return &rp, err
+	},
+		RetryConfig{
+			MinDelay:  1 * time.Second,
+			MaxDelay:  5 * time.Second,
+			MaxJitter: 2000,
+			Timeout:   60 * time.Second,
+			IsRetryable: func(error ClientError) bool {
+				return error.Status() == 400
+			},
+		})
 	return &rp, err
 }

@@ -1,3 +1,4 @@
+
 ## 2024-04-15
 
 ### Fixed
@@ -31,10 +32,13 @@
 
 ### Fixed
 - Fixed an issue where Terraform resources would not be recreated when volume mappings were modified for Duplo services.
+- Implemented exponential backoff in `TenantUpdateLbSettings` and `TenantGetLbSettings` methods to handle AWS API rate limits more gracefully.
+- Fixed rate limiting exceptions when creating and managing `duplocloud_duplo_service_params`s with terraform
 
 ### Enhanced
 - Improved the deletion process for Duplo services by efficiently checking the existence of replication controllers before proceeding.
 - Increased the wait time after service deletion from 40 seconds to 240 seconds to better accommodate backend cleanup processes, especially for GCP environments.
+- Added `RetryWithExponentialBackoff` utility function for general use in retrying operations with exponential backoff, configurable delay, jitter, and total timeout.
 
 markdown
 ## 2024-04-08
@@ -46,6 +50,7 @@ markdown
 - Enhanced logging in GCP Node Pools data source by adding `fmt` import.
 - Changed `cgroup_mode` from `TypeString` to `TypeList` in GCP Node Pools to handle multiple values correctly.
 - Updated documentation and examples to reflect changes in data source and resource configurations for GCP Node Pools and GCP SQL Database Instances.
+
 
 ### Documentation
 - Corrected GKE credentials documentation and Terraform example, updating references from EKS to GKE and ensuring output values accurately reflect GKE credentials.
