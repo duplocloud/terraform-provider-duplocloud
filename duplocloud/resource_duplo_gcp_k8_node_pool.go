@@ -726,7 +726,7 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 	d.Set("upgrade_settings", gcpNodePoolUpgradeSettingToState(duplo.UpgradeSettings))
 	d.Set("accelerator", gcpNodePoolAcceleratortoState(duplo.Accelerator))
 	d.Set("oauth_scopes", filterOutDefaultOAuth(duplo.OauthScopes))
-	d.Set("resource_labels", duplo.ResourceLabels)
+	d.Set("resource_labels", filterOutDefaultResourceLabels(duplo.ResourceLabels))
 	// Set more complex fields next.
 
 }
@@ -1066,4 +1066,9 @@ func filterOutDefaultOAuth(oAuths []string) []string {
 		}
 	}
 	return filters
+}
+
+func filterOutDefaultResourceLabels(labels map[string]string) map[string]string {
+	delete(labels, "duplo-tenant")
+	return labels
 }
