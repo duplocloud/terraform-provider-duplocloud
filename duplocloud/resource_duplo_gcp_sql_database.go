@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -47,9 +48,9 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 				"`SQLSERVER_2019_WEB`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions)includes an up-to-date reference of supported versions.",
 			Type:         schema.TypeString,
 			Required:     true,
-			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice(supportedGcpSQLDBVersions(), false),
 		},
+
 		"tier": {
 			Description: "The machine type to use. See tiers for more details and supported versions. " +
 				"Postgres supports only shared-core machine types, and custom machine types such as `db-custom-2-13312`." +
@@ -76,7 +77,31 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     true,
 		},
+		"root_password": {
+			Description: "Provide root password for specific database versions.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
+}
+
+func checkPasswordNeeded(d *schema.ResourceData) bool {
+
+	// Check the value of dependent_field
+
+	dependentFieldValue := d.Get("database_version").(string)
+	mp := map[string]bool{
+		"SQLSERVER_2017_STANDARD":   true,
+		"SQLSERVER_2017_ENTERPRISE": true,
+		"SQLSERVER_2017_EXPRESS":    true,
+		"SQLSERVER_2017_WEB":        true,
+		"SQLSERVER_2019_STANDARD":   true,
+		"SQLSERVER_2019_ENTERPRISE": true,
+		"SQLSERVER_2019_EXPRESS":    true,
+		"SQLSERVER_2019_WEB":        true,
+	}
+	return mp[dependentFieldValue]
 }
 func resourceGcpSqlDBInstance() *schema.Resource {
 	return &schema.Resource{
@@ -95,6 +120,8 @@ func resourceGcpSqlDBInstance() *schema.Resource {
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
 		Schema: gcpSqlDBInstanceSchema(),
+		CustomizeDiff: customdiff.All(
+			customdiff.ForceNewIf("database_version", replaceOn)),
 	}
 }
 
@@ -137,10 +164,12 @@ func resourceGcpSqlDBInstanceRead(ctx context.Context, d *schema.ResourceData, m
 // CREATE resource
 func resourceGcpSqlDBInstanceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpSqlDBInstanceCreate ******** start")
-
 	// Create the request object.
 	rq := expandGcpSqlDBInstance(d)
 	tenantID := d.Get("tenant_id").(string)
+	if checkPasswordNeeded(d) && rq.RootPassword == "" {
+		return diag.Errorf("root password is mandatory for database version %s ", d.Get("database_version").(string))
+	}
 
 	c := m.(*duplosdk.Client)
 	fullName, clientErr := c.GetDuploServicesName(tenantID, rq.Name)
@@ -299,6 +328,7 @@ func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInsta
 		Tier:            d.Get("tier").(string),
 		DataDiskSizeGb:  d.Get("disk_size").(int),
 		ResourceType:    duplosdk.DuploGCPDatabaseInstanceResourceType,
+		RootPassword:    d.Get("root_password").(string),
 	}
 	if v, ok := d.GetOk("labels"); ok && !isInterfaceNil(v) {
 		rq.Labels = map[string]string{}
@@ -345,4 +375,12 @@ func gcpSqlDBInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, ten
 	}
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func replaceOn(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+	// Suppress diff if both database name and version are the same
+	old, new := d.GetChange("database_version")
+	oldParts := strings.Split(old.(string), "_")
+	newParts := strings.Split(new.(string), "_")
+	return oldParts[0] != newParts[0]
 }

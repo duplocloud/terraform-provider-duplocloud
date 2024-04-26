@@ -95,8 +95,11 @@ func dataGcpK8NodePoolsFunctionSchema() map[string]*schema.Schema {
 				Schema: map[string]*schema.Schema{
 					"cgroup_mode": {
 						Description: "cgroupMode specifies the cgroup mode to be used on the node.",
-						Type:        schema.TypeString,
+						Type:        schema.TypeList,
 						Computed:    true,
+						Elem: &schema.Schema{
+							Type: schema.TypeString,
+						},
 					},
 					"sysctls": {
 						Description: "The Linux kernel parameters to be applied to the nodes and all pods running on the nodes.",
@@ -119,6 +122,7 @@ func dataGcpK8NodePoolsFunctionSchema() map[string]*schema.Schema {
 				Type: schema.TypeString,
 			},
 		},
+
 		"is_autoscaling_enabled": {
 			Description: "Is autoscaling enabled for this node pool.",
 			Type:        schema.TypeBool,
@@ -170,6 +174,14 @@ func dataGcpK8NodePoolsFunctionSchema() map[string]*schema.Schema {
 		},
 		"metadata": {
 			Description: "The metadata key/value pairs assigned to instances in the cluster.",
+			Type:        schema.TypeMap,
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"resource_labels": {
+			Description: "Resource labels associated to node pool.",
 			Type:        schema.TypeMap,
 			Computed:    true,
 			Elem: &schema.Schema{
@@ -369,10 +381,12 @@ func dataSourceGCPNodePoolList(ctx context.Context, d *schema.ResourceData, m in
 
 	// Set simple fields first.
 	d.SetId(tenantID)
+
 	list := make([]map[string]interface{}, 0, len(*duploList))
 
 	for _, duplo := range *duploList {
-		list = append(list, setGCPNodePoolStateFieldList(&duplo))
+		nodepool := setGCPNodePoolStateFieldList(&duplo)
+		list = append(list, nodepool)
 	}
 	d.Set("node_pools", list)
 
@@ -409,7 +423,7 @@ func setGCPNodePoolStateFieldList(duplo *duplosdk.DuploGCPK8NodePool) map[string
 		"upgrade_settings":         gcpNodePoolUpgradeSettingToState(duplo.UpgradeSettings),
 		"accelerator":              gcpNodePoolAcceleratortoState(duplo.Accelerator),
 		"oauth_scopes":             filterOutDefaultOAuth(duplo.OauthScopes),
+		"resource_labels":          duplo.ResourceLabels,
 	}
 	// Set more complex fields next.
-
 }

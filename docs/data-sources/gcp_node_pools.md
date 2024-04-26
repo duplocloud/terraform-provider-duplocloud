@@ -13,13 +13,13 @@ description: |-
 ## Example Usage
 
 ```terraform
-data "duplocloud_gcp_node_pools" "pool" {
+data "duplocloud_gcp_node_pools" "app" {
   tenant_id = "tenantid"
 }
 
 output "nodepool_output" {
   value = {
-    node_pools = data.duplocloud_gcp_node_pools.pool.node_pools
+    node_pools = data.duplocloud_gcp_node_pools.app.node_pools
   }
 }
 ```
@@ -60,6 +60,7 @@ Read-Only:
 - `name` (String)
 - `node_pool_logging_config` (List of Object) (see [below for nested schema](#nestedobjatt--node_pools--node_pool_logging_config))
 - `oauth_scopes` (List of String)
+- `resource_labels` (Map of String)
 - `spot` (Boolean)
 - `tags` (List of String)
 - `taints` (List of Object) (see [below for nested schema](#nestedobjatt--node_pools--taints))
@@ -103,7 +104,7 @@ Read-Only:
 
 Read-Only:
 
-- `cgroup_mode` (String)
+- `cgroup_mode` (List of String)
 - `sysctls` (Map of String)
 
 

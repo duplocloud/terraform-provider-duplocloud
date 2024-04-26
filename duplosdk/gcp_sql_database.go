@@ -75,6 +75,7 @@ type DuploGCPSqlDBInstance struct {
 	ResourceType    int               `json:"ResourceType,omitempty"`
 	Labels          map[string]string `json:"labels,omitempty"`
 	SelfLink        string            `json:"SelfLink,omitempty"`
+	RootPassword    string            `json:"RootPassword,omitempty"`
 }
 
 func (c *Client) GCPSqlDBInstanceCreate(tenantID string, rq *DuploGCPSqlDBInstance) (*DuploGCPSqlDBInstance, ClientError) {

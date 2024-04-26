@@ -61,7 +61,6 @@ func dataSourceGKECredentialsRead(d *schema.ResourceData, m interface{}) error {
 	}
 	if infra != nil && !infra.EnableK8Cluster {
 		return fmt.Errorf("no kubernetes cluster for this plan %s", planID)
-
 	}
 	// First, try the newer method of obtaining a JIT access token.
 	k8sConfig, err := c.GetPlanK8sJitAccess(planID)

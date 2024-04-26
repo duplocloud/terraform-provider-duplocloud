@@ -164,7 +164,6 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
-			ForceNew:    true,
 		},
 		"cluster_config": {
 			Type:     schema.TypeList,
@@ -233,6 +232,10 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 							"ultrawarm1.large.search",
 							"ultrawarm1.xlarge.search",
 						}, false),
+					},
+					"multi_az_with_standby_enabled": {
+						Type:     schema.TypeBool,
+						Optional: true,
 					},
 				},
 			},
@@ -502,35 +505,101 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 
 // UPDATE jresource
 func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var err error
-
-	log.Printf("[TRACE] resourceDuploAwsElasticSearchUpdate ******** start")
-
-	// Set simple fields first.
+	duploVPCOptions := duplosdk.DuploElasticSearchDomainVPCOptions{}
 	duploObject := duplosdk.DuploElasticSearchDomainRequest{
-		State:              "update",
-		Name:               d.Get("name").(string),
-		RequireSSL:         d.Get("require_ssl").(bool),
-		UseLatestTLSCipher: d.Get("use_latest_tls_cipher").(bool),
+		State:                      "update",
+		Name:                       d.Get("name").(string),
+		Version:                    d.Get("elasticsearch_version").(string),
+		RequireSSL:                 d.Get("require_ssl").(bool),
+		UseLatestTLSCipher:         d.Get("use_latest_tls_cipher").(bool),
+		EnableNodeToNodeEncryption: d.Get("enable_node_to_node_encryption").(bool),
+		EBSOptions: duplosdk.DuploElasticSearchDomainEBSOptions{
+			VolumeSize: d.Get("storage_size").(int),
+		},
+		VPCOptions: duploVPCOptions,
 	}
 
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
 
+	// Set encryption-at-rest
+	encryptAtRest, err := getOptionalBlockAsMap(d, "encrypt_at_rest")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if kmsKeyName, ok := encryptAtRest["kms_key_name"]; ok && kmsKeyName != nil && kmsKeyName.(string) != "" {
+		if kmsKeyID, ok := encryptAtRest["kms_key_id"]; ok && kmsKeyID != nil && kmsKeyID.(string) != "" {
+			return diag.Errorf("encrypt_at_rest.kms_key_name and encrypt_at_rest.kms_key_id are mutually exclusive")
+		}
+
+		// Let the user pick a KMS key by name, just like the UI.
+		kmsKey, err := c.TenantGetKmsKeyByName(tenantID, kmsKeyName.(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if kmsKey != nil {
+			duploObject.KmsKeyID = kmsKey.KeyID
+		}
+
+	} else if kmsKeyID, ok := encryptAtRest["kms_key_id"]; ok {
+		if kmsKeyID != nil {
+			duploObject.KmsKeyID = kmsKeyID.(string)
+		}
+	}
+
+	// Set cluster config
+	clusterConfig, err := getOptionalBlockAsMap(d, "cluster_config")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	awsElasticSearchDomainClusterConfigFromState(clusterConfig, &duploObject.ClusterConfig)
+
+	// Set VPC options
+	vpcOptions, err := getOptionalBlockAsMap(d, "vpc_options")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	selectedSubnetIDs, ok := vpcOptions["subnet_ids"]
+	if ok && selectedSubnetIDs != nil {
+		for _, subnetId := range selectedSubnetIDs.([]interface{}) {
+			duploObject.VPCOptions.SubnetIDs = append(duploObject.VPCOptions.SubnetIDs, subnetId.(string))
+		}
+		// duploObject.VPCOptions.SubnetIDs = selectedSubnetIDs.([]string)
+	}
+
+	// Handle subnet selection: either a single zone domain, or explicit subnet IDs
+	selectedZone := d.Get("selected_zone").(int)
+	subnetIDs, err := c.TenantGetInternalSubnets(tenantID)
+	if err != nil {
+		return diag.Errorf("Internal error: failed to get internal subnets for tenant '%s': %s", tenantID, err)
+	}
+	if selectedZone > 0 {
+		if selectedZone > len(subnetIDs) {
+			return diag.Errorf("Invalid ElasticSearch domain '%s': selected_zone == %d but Duplo only has %d zones", id, selectedZone, len(subnetIDs))
+		}
+		if duploObject.ClusterConfig.InstanceCount > 1 {
+			return diag.Errorf("Invalid ElasticSearch domain '%s': selected_zone not supported when cluster_config.instance_count > 1", id)
+		}
+
+		// Populate a single subnet ID automatically, just like the UI
+		duploObject.VPCOptions.SubnetIDs = []string{subnetIDs[selectedZone-1]}
+
+	} else if len(duploObject.VPCOptions.SubnetIDs) == 0 {
+		if duploObject.ClusterConfig.InstanceCount > 1 {
+			// Populate the subnet IDs automatically, just like the UI
+			duploObject.VPCOptions.SubnetIDs = subnetIDs
+		} else {
+			// Require a zone to be selected, just like the UI
+			return diag.Errorf("Invalid ElasticSearch domain '%s': vpc_options.subnet_ids or selected_zone must be set", id)
+		}
+	}
+
 	// Post the object to Duplo
 	err = c.TenantUpdateElasticSearchDomain(tenantID, &duploObject)
 	if err != nil {
-		return diag.Errorf("Error updating ElasticSearch domain '%s': %s", id, err)
+		return diag.Errorf("Error creating ElasticSearch domain '%s': %s", id, err)
 	}
-
-	// Wait up to 60 seconds for the ES domain to start processing.
-	err = awsElasticSearchDomainWaitUntilUnavailable(ctx, c, tenantID, duploObject.Name, d.Timeout("update"))
-	if err != nil {
-		log.Printf("[TRACE] resourceDuploAwsElasticSearchUpdate: Error waiting for ElasticSearch domain '%s' changes to begin processing: %s", id, err)
-		// return diag.Errorf("Error waiting for ElasticSearch domain '%s' changes to begin processing: %s", id, err)
-	}
-
 	// Wait for the instance to become available.
 	err = awsElasticSearchDomainWaitUntilAvailable(ctx, c, tenantID, duploObject.Name, d.Timeout("update"))
 	if err != nil {
@@ -743,7 +812,7 @@ func awsElasticSearchDomainWaitUntilAvailable(ctx context.Context, c *duplosdk.C
 // awsElasticSearchDomainWaitUntilUnavailable waits until an ES domain is unavailable.
 //
 // It should be usable post-modification.
-func awsElasticSearchDomainWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+/*func awsElasticSearchDomainWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
 	stateConf := &retry.StateChangeConf{
 		Pending:      []string{"created"},
 		Target:       []string{"processing", "upgrade-processing"},
@@ -773,7 +842,7 @@ func awsElasticSearchDomainWaitUntilUnavailable(ctx context.Context, c *duplosdk
 	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilUnavailable (%s/%s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
-}
+}*/
 
 // awsElasticSearchDomainWaitUntilDeleted waits until an ES domain is deleted.
 //
