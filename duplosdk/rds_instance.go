@@ -110,6 +110,12 @@ type DuploRDSTag struct {
 	Value        string `json:"Value"`
 }
 
+type DuploMonitoringInterval struct {
+	DBInstanceIdentifier string `json:"DBInstanceIdentifier"`
+	ApplyImmediately     bool   `json:"ApplyImmediately"`
+	MonitoringInterval   int    `json:"MonitoringInterval"`
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -261,6 +267,15 @@ func (c *Client) RdsModifyAuroraV2ServerlessInstanceSize(tenantID string, duploO
 	return c.postAPI(
 		fmt.Sprintf("RdsModifyAuroraV2ServerlessInstanceSize(%s, %s)", tenantID, duploObject.ClusterIdentifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/modifyAuroraV2Serverless", tenantID),
+		&duploObject,
+		nil,
+	)
+}
+
+func (c *Client) RdsUpdateMonitoringInterval(tenantID string, duploObject DuploMonitoringInterval) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("RdsUpdateMonitoringInterval(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("/subscriptions/%s/ModifyRDSDBInstance", tenantID),
 		&duploObject,
 		nil,
 	)
