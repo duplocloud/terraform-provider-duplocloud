@@ -423,7 +423,7 @@ func setGCPNodePoolStateFieldList(duplo *duplosdk.DuploGCPK8NodePool) map[string
 		"upgrade_settings":         gcpNodePoolUpgradeSettingToState(duplo.UpgradeSettings),
 		"accelerator":              gcpNodePoolAcceleratortoState(duplo.Accelerator),
 		"oauth_scopes":             filterOutDefaultOAuth(duplo.OauthScopes),
-		"resource_labels":          duplo.ResourceLabels,
+		"resource_labels":          filterOutDefaultResourceLabels(duplo.ResourceLabels),
 	}
 	// Set more complex fields next.
 }
