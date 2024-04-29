@@ -94,7 +94,8 @@ func resourceAdminSystemSettingCreate(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Error creating key type %s admin system setting '%s': %s", keyType, key, err)
 	}
 
-	id := fmt.Sprintf("%s/%s", keyType, key)
+	keyTypeWithoutSlash := duplosdk.EncodeSlashInIdPart(keyType)
+	id := fmt.Sprintf("%s/%s", keyTypeWithoutSlash, key)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "admin system setting", id, func() (interface{}, duplosdk.ClientError) {
 		return c.SystemSettingGet(key)
 	})
@@ -152,6 +153,7 @@ func parseAdminSystemSettingIdParts(id string) (keyType, key string, err error) 
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) == 2 {
 		keyType, key = idParts[0], idParts[1]
+		keyType = duplosdk.DecodeSlashInIdPart(keyType)
 	} else {
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
