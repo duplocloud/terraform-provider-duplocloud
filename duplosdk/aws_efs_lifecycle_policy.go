@@ -10,6 +10,10 @@ type LifecyclePolicy struct {
 	TransitionToPrimaryStorageClass *DuploStringValue `json:"TransitionToPrimaryStorageClass"`
 }
 
+type LifeCycleState struct {
+	Value string `json:"value"`
+}
+
 type PutLifecycleConfigurationInput struct {
 	FileSystemId      string             `json:"FileSystemId"`
 	LifecyclePolicies []*LifecyclePolicy `json:"LifecyclePolicies"`
