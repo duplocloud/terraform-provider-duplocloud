@@ -3,6 +3,7 @@ package duplosdk
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"net/url"
@@ -184,4 +185,21 @@ func calculateBackoff(attempt int, config RetryConfig) time.Duration {
 		),
 	) * time.Millisecond
 	return expBackoff + jitter
+}
+
+func DecodeSlashInIdPart(name string) string {
+	// for-now we only identified / as problematic e.g. aurora5.7/query_cache_size
+	return ReplaceReservedWordsInId("_SLASH_", "/", name)
+}
+
+func EncodeSlashInIdPart(name string) string {
+	return ReplaceReservedWordsInId("/", "_SLASH_", name)
+}
+
+func ReplaceReservedWordsInId(find, replace, name string) string {
+	if name != "" && strings.Contains(name, find) {
+		log.Printf("[TRACE] ReplaceReservedWordsInId %s %s %s %s ", find, replace, name, strings.Replace(name, find, replace, -1))
+		return strings.Replace(name, find, replace, -1)
+	}
+	return name
 }
