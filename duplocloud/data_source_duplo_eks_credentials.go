@@ -55,14 +55,15 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	// Get the data from Duplo.
 	planID := d.Get("plan_id").(string)
 	c := m.(*duplosdk.Client)
-	// infra, err := c.InfrastructureGetConfig(planID)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to get plan %s kubernetes JIT access: %s", planID, err)
-	// }
-	// if infra != nil && !infra.EnableK8Cluster {
-	// 	return fmt.Errorf("no kubernetes cluster for this plan %s", planID)
-
-	// }
+	infra, err := c.InfrastructureGetConfig(planID)
+	if err != nil {
+		return fmt.Errorf("failed to get plan %s kubernetes JIT access: %s", planID, err)
+	}
+	if infra != nil && !infra.EnableK8Cluster && infra.Cloud != 2 {
+		return fmt.Errorf("no kubernetes cluster for this plan %s", planID)
+	} else if infra.AksConfig != nil && !infra.AksConfig.CreateAndManage {
+		return fmt.Errorf("no kubernetes cluster for this plan %s", planID)
+	}
 	// First, try the newer method of obtaining a JIT access token.
 	k8sConfig, err := c.GetPlanK8sJitAccess(planID)
 	if err != nil && !err.PossibleMissingAPI() {

@@ -78,6 +78,7 @@ Optional:
 - `dedicated_master_type` (String) Defaults to `t2.small.elasticsearch`.
 - `instance_count` (Number) Defaults to `1`.
 - `instance_type` (String) Defaults to `t2.small.elasticsearch`.
+- `multi_az_with_standby_enabled` (Boolean)
 - `warm_count` (Number)
 - `warm_enabled` (Boolean)
 - `warm_type` (String)

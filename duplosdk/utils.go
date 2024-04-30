@@ -2,9 +2,15 @@ package duplosdk
 
 import (
 	"encoding/base64"
+	"fmt"
+	"log"
+	"math"
+	"math/rand"
 	"net/url"
 	"reflect"
+	"runtime"
 	"strings"
+	"time"
 )
 
 // handle path parameter encoding when it might contain slashes
@@ -109,4 +115,91 @@ func UnwrapName(prefix, accountID, name string, optionalAccountID bool) (string,
 
 func urlSafeBase64Encode(data string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(data))
+}
+
+func GetFunctionName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+}
+
+// method that receives the error and returns true if error is retriable, false otherwise
+type IsRetryableFunc func(error ClientError) bool
+
+// signature for method that performs the API call which needs the retry logic
+type RetryableFunc func() (interface{}, ClientError)
+
+// Configuration to customize behavior of retry wrapper function
+type RetryConfig struct {
+	MinDelay    time.Duration   // Minimum delay between retries
+	MaxDelay    time.Duration   // Maximum delay between retries
+	MaxJitter   int             // Maximum jitter in milliseconds to add to the delay
+	Timeout     time.Duration   // Total timeout for all retries
+	IsRetryable IsRetryableFunc // Function to check if an error is retryable
+}
+
+// RetryWithExponentialBackoff tries to execute the provided RetryableFunc according to the RetryConfig.
+// Returns the result of the API call or nil and the last error if all retries fail.
+func RetryWithExponentialBackoff(apiCall RetryableFunc, config RetryConfig) (interface{}, ClientError) {
+	var attempt int
+	var retryableMethodName string = GetFunctionName(apiCall)
+
+	// Create a channel to signal the timeout
+	timeout := time.After(config.Timeout)
+
+	for {
+		fmt.Printf("Calling %s, attempt #%d\n", retryableMethodName, attempt)
+		result, lastError := apiCall()
+		if lastError == nil {
+			return result, nil
+		}
+
+		if !config.IsRetryable(lastError) {
+			fmt.Printf("Method call %s attempt #%d failed with unrecoverable error\n", retryableMethodName, attempt)
+			return nil, lastError
+		}
+
+		fmt.Printf("Method call %s attempt #%d failed with retryable error, retrying soon\n", retryableMethodName, attempt)
+		attempt++
+		sleepDuration := calculateBackoff(attempt, config)
+
+		select {
+		case <-timeout:
+			// If the timeout channel receives a message, break out of the loop
+			fmt.Printf("Method %s failed to succeed before retry timeout\n", retryableMethodName)
+			return nil, lastError
+		default:
+			time.Sleep(sleepDuration)
+		}
+	}
+}
+
+// calculateBackoff calculates the time to wait before the next retry attempt.
+func calculateBackoff(attempt int, config RetryConfig) time.Duration {
+	expBackoff := config.MinDelay * time.Duration(1<<attempt)
+	if expBackoff > config.MaxDelay {
+		expBackoff = config.MaxDelay
+	}
+
+	jitter := time.Duration(
+		rand.Intn(
+			int(math.Max(float64(0), float64(config.MaxJitter))),
+		),
+	) * time.Millisecond
+	return expBackoff + jitter
+}
+
+func DecodeSlashInIdPart(name string) string {
+	// for-now we only identified / as problematic e.g. aurora5.7/query_cache_size
+	return ReplaceReservedWordsInId("_SLASH_", "/", name)
+}
+
+func EncodeSlashInIdPart(name string) string {
+	return ReplaceReservedWordsInId("/", "_SLASH_", name)
+}
+
+func ReplaceReservedWordsInId(find, replace, name string) string {
+	if name != "" && strings.Contains(name, find) {
+		log.Printf("[TRACE] ReplaceReservedWordsInId %s %s %s %s ", find, replace, name, strings.Replace(name, find, replace, -1))
+		return strings.Replace(name, find, replace, -1)
+	}
+	return name
 }

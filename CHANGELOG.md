@@ -1,14 +1,65 @@
+## 2024-04-29
+
+### Fixed
+- Fixed an issue with handling slashes in `keyType` for `duplocloud_admin_system_setting` resource ID creation and parsing.
+
+### Enhanced
+- Added utility functions to encode and decode slashes in identifiers, improving handling of special characters in resource IDs.
+- Updated build script to include documentation generation and modified import script to guide users on handling slashes in identifiers.
+
+
+## 2024-04-15
+
+### Fixed
+- Fixed an issue in `duplocloud_ecs_task_definition` update process by marking the `task_definition` field with `ForceNew` in `duplocloud_ecs_service.go`, ensuring the ECS service resource is recreated when the task definition is updated.
+
+## 2024-04-12
+
+### Enhanced
+- Introduced logic for in-place updates during GCP Cloud SQL database version changes, eliminating the need for resource replacement.
+- Implemented custom diff logic to selectively force new resource creation based on specific conditions for GCP Cloud SQL.
+- Added a separate update request for `DeletionProtectionEnabled` attribute to ensure its proper handling.
+- Made `DeletionProtectionEnabled` field non-omitempty to ensure it's always included in update requests.
+- Enhanced the update process for Global Secondary Indexes and Throughput when changes are detected.
+
+## 2024-04-11
+
+### Added
+- Introduced GCP Firestore resource and data sources for managing GCP Firestore in DuploCloud.
+- Added CRUD operations and data retrieval for GCP Firestore resources.
+
+### Enhanced
+- Enhanced DynamoDB table logic to support delete controller updates.
+- Enhanced Kubernetes Just-In-Time (JIT) access and cluster availability validation for Azure in the `duplocloud_eks_credentials` data source.
+- Introduced `AksConfig` struct for managing Azure Kubernetes Service (AKS) configurations, including cluster management and privacy settings.
+
+### Fixed
+- Fixed error handling for `duplocloud_eks_credentials` data-source related to Azure infrastructure, ensuring proper Kubernetes cluster availability checks.
+
+
 ## 2024-04-09
 
 ### Fixed
 - Fixed an issue where Terraform resources would not be recreated when volume mappings were modified for Duplo services.
+- Implemented exponential backoff in `TenantUpdateLbSettings` and `TenantGetLbSettings` methods to handle AWS API rate limits more gracefully.
+- Fixed rate limiting exceptions when creating and managing `duplocloud_duplo_service_params`s with terraform
 
 ### Enhanced
 - Improved the deletion process for Duplo services by efficiently checking the existence of replication controllers before proceeding.
 - Increased the wait time after service deletion from 40 seconds to 240 seconds to better accommodate backend cleanup processes, especially for GCP environments.
+- Added `RetryWithExponentialBackoff` utility function for general use in retrying operations with exponential backoff, configurable delay, jitter, and total timeout.
 
 markdown
 ## 2024-04-08
+
+### Fixed
+- Fixed state not being set for GCP Node Pools data source.
+
+### Enhanced
+- Enhanced logging in GCP Node Pools data source by adding `fmt` import.
+- Changed `cgroup_mode` from `TypeString` to `TypeList` in GCP Node Pools to handle multiple values correctly.
+- Updated documentation and examples to reflect changes in data source and resource configurations for GCP Node Pools and GCP SQL Database Instances.
+
 
 ### Documentation
 - Corrected GKE credentials documentation and Terraform example, updating references from EKS to GKE and ensuring output values accurately reflect GKE credentials.
@@ -17,6 +68,16 @@ markdown
 
 ## 2024-04-05
 
+### Added
+- Introduced support for `allow_global_access` attribute `duplocloud_duplo_service_lbconfigs` resource.
+- Added a new API endpoint `TenantGetLbDetailsInServiceNew` in `duplocloud_duplo_service_lbconfigs` for enhanced load balancer details retrieval.
+
+### Enhanced
+- Updated SDK and Terraform provider to support the new `allow_global_access` attribute in load balancer configurations.
+
+### Documentation
+- Updated documentation to reflect changes in load balancer configurations, including the addition of the `allow_global_access` attribute.
+
 ### Fixed
 - Fixed nil pointer exception while error handling for `duplocloud_eks_credentials` and `duplocloud_gke_credentials` datasource
 ## 2024-04-04
@@ -24,6 +85,7 @@ markdown
 ### Added
 - Introduced support for custom prefixes in Azure VM names for flexible naming conventions.
 - Added a `fullname` attribute to Azure VM resources for enhanced traceability and management.
+- Added support to pass `root_password` for `duplocloud_gcp_sql_database_instance` resource
 
 ### Enhanced
 - Updated Azure VM resource documentation to include the `fullname` attribute.
@@ -31,6 +93,16 @@ markdown
 
 ### Fixed
 - Resolved issues with Azure VM operations (create, read, update, delete) to correctly handle the `fullname`.
+
+## 2024-04-02
+
+### Enhanced
+- Enhanced functionality to update single zone cluster to multizone cluster for `duplocloud_aws_elasticsearch` opensearch resource.
+
+## 2024-04-01
+
+### Fixed
+- fixed `duplocloud_plan_settings` resource diff issue on no change for gcp
 
 ## 2024-03-29
 

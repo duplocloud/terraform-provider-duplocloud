@@ -44,13 +44,6 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Computed:    true,
 	}
 
-	awsASGSchema["use_launch_template"] = &schema.Schema{
-		Description: "Whether or not to use a launch template.",
-		Type:        schema.TypeBool,
-		Optional:    true,
-		Computed:    true,
-	}
-
 	awsASGSchema["use_spot_instances"] = &schema.Schema{
 		Description: "Whether or not to use spot instances.",
 		Type:        schema.TypeBool,
@@ -359,7 +352,6 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("instance_count", duplo.DesiredCapacity)
 	d.Set("min_instance_count", duplo.MinSize)
 	d.Set("max_instance_count", duplo.MaxSize)
-	d.Set("use_launch_template", duplo.UseLaunchTemplate)
 	d.Set("use_spot_instances", duplo.UseSpotInstances)
 	d.Set("max_spot_price", duplo.MaxSpotPrice)
 	d.Set("fullname", duplo.FriendlyName)
@@ -416,7 +408,6 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		DesiredCapacity:     d.Get("instance_count").(int),
 		MinSize:             d.Get("min_instance_count").(int),
 		MaxSize:             d.Get("max_instance_count").(int),
-		UseLaunchTemplate:   d.Get("use_launch_template").(bool),
 		UseSpotInstances:    d.Get("use_spot_instances").(bool),
 		MaxSpotPrice:        d.Get("max_spot_price").(string),
 	}

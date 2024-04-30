@@ -32,7 +32,6 @@ type DuploAsgProfile struct {
 	Status              string                             `json:"Status,omitempty"`
 	Tags                *[]DuploKeyStringValue             `json:"Tags,omitempty"`
 	TenantId            string                             `json:"TenantId,omitempty"`
-	UseLaunchTemplate   bool                               `json:"UseLaunchTemplate"`
 	UseSpotInstances    bool                               `json:"UseSpotInstances,omitempty"`
 	Volumes             *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
 	Zone                int                                `json:"Zone"`
