@@ -905,6 +905,9 @@ func shouldUpdateGSI(
 	table *duplosdk.DuploDynamoDBTableV2,
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 ) bool {
+	if table.GlobalSecondaryIndexes == nil || request.GlobalSecondaryIndexes == nil {
+		return true
+	}
 	if len(*table.GlobalSecondaryIndexes) != len(*request.GlobalSecondaryIndexes) {
 		return true
 	}
