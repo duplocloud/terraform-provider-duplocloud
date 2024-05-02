@@ -457,14 +457,14 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 			return diag.FromErr(err)
 		}
 		fallthrough
-	case setDeleteProtection(d):
+	case rq.DeletionProtectionEnabled != nil && existing.DeletionProtectionEnabled != *rq.DeletionProtectionEnabled:
 		log.Printf("[INFO] Updating Deletion Protection for DynamoDB table '%s' in tenant '%s'", name, tenantID)
 		_, err := c.DuploDynamoDBTableV2UpdateDeletionProtection(tenantID, rq)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 		fallthrough
-	case setSSESpecificiation(d):
+	case shouldUpdateSSESepecification(existing, rq):
 		log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
 		_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
 		if err != nil {
@@ -943,10 +943,11 @@ func shouldUpdateThroughput(
 	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
 }
 
-func setDeleteProtection(d *schema.ResourceData) bool {
-	return d.HasChange("deletion_protection_enabled")
-}
-
-func setSSESpecificiation(d *schema.ResourceData) bool {
-	return d.HasChange("SSESpecification")
+// shouldUpdateSSESepecification compares the DuploDynamoDBTableV2SSESpecification of
+// the existing table and updated table. Returns true if a change is detected.
+func shouldUpdateSSESepecification(
+	table *duplosdk.DuploDynamoDBTableV2,
+	request *duplosdk.DuploDynamoDBTableRequestV2,
+) bool {
+	return !reflect.DeepEqual(table.SSEDescription, request.SSESpecification)
 }

@@ -152,18 +152,6 @@ type DuploDynamoDBTableRequestV2 struct {
 	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexes,omitempty"`
 }
 
-type DuploDynamoDBTableSSESpecificationRequestV2 struct {
-	TableName                 string                                   `json:"TableName"`
-	BillingMode               string                                   `json:"BillingMode,omitempty"`
-	DeletionProtectionEnabled bool                                     `json:"DeletionProtectionEnabled"`
-	Tags                      *[]DuploKeyStringValue                   `json:"Tags,omitempty"`
-	KeySchema                 *[]DuploDynamoDBKeySchemaV2              `json:"KeySchema,omitempty"`
-	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinionV2      `json:"AttributeDefinitions,omitempty"`
-	ProvisionedThroughput     *DuploDynamoDBProvisionedThroughput      `json:"ProvisionedThroughput,omitempty"`
-	StreamSpecification       *DuploDynamoDBTableV2StreamSpecification `json:"StreamSpecification,omitempty"`
-	SSESpecification          *DuploDynamoDBTableV2SSESpecification    `json:"SSESpecification,omitempty"`
-}
-
 /*************************************************
  * API CALLS to duplo
  */
