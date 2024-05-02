@@ -554,7 +554,7 @@ func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRe
 
 	if v, ok := d.GetOk("deletion_protection_enabled"); ok {
 		state := v.(bool)
-		req.DeletionProtectionEnabled = state
+		req.DeletionProtectionEnabled = &state
 	}
 
 	if v, ok := d.GetOk("attribute"); ok {
