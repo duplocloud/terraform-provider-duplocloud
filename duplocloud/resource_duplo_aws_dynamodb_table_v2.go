@@ -448,28 +448,67 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	// Updating Point In Time Recovery status
 	isPITREnabled := existing.PointInTimeRecoveryStatus == "ENABLED"
 	targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
-	if isPITREnabled != targetPITRStatus {
+
+	// if isPITREnabled != targetPITRStatus {
+	// 	_, err = c.DynamoDBTableV2PointInRecovery(tenantID, name, targetPITRStatus)
+	// 	if err != nil {
+	// 		return diag.FromErr(err)
+	// 	}
+	// }
+
+	// if setDeleteProtection(d) {
+	// 	tableName := rq.TableName
+	// 	status := rq.DeletionProtectionEnabled
+	// 	rq = &duplosdk.DuploDynamoDBTableRequestV2{
+	// 		DeletionProtectionEnabled: status,
+	// 		TableName:                 tableName,
+	// 	}
+	// 	_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+	// 	if err != nil {
+	// 		e := "Error updating tenant %s DynamoDB table '%s': %s"
+	// 		return diag.Errorf(e, tenantID, name, err)
+	// 	}
+	// 	return nil
+	// }
+
+	// Updating Global Secondary Indexes and Throughput
+	// if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) {
+	// 	log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
+	// 	_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+	// 	if err != nil {
+	// 		e := "Error updating tenant %s DynamoDB table '%s': %s"
+	// 		return diag.Errorf(e, tenantID, name, err)
+	// 	}
+	// }
+
+	switch {
+	case isPITREnabled != targetPITRStatus:
+		log.Printf("[INFO] Updating Point In Recovery for DynamoDB table '%s' in tenant '%s'", name, tenantID)
 		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, name, targetPITRStatus)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-	}
-	if setDeleteProtection(d) {
-		tableName := rq.TableName
-		status := rq.DeletionProtectionEnabled
-		rq = &duplosdk.DuploDynamoDBTableRequestV2{
-			DeletionProtectionEnabled: status,
-			TableName:                 tableName,
-		}
-		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+		fallthrough
+	case setDeleteProtection(d):
+		log.Printf("[INFO] Updating Deletion Protection for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+		_, err := c.DuploDynamoDBTableV2UpdateDeletionProtection(tenantID, rq)
 		if err != nil {
-			e := "Error updating tenant %s DynamoDB table '%s': %s"
-			return diag.Errorf(e, tenantID, name, err)
+			return diag.FromErr(err)
 		}
-		return nil
-	}
-	// Updating Global Secondary Indexes and Throughput
-	if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) {
+		fallthrough
+	case setSSESpecificiation(d):
+		log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+		_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+    fallthrough
+	default:
+		// SSESpecification & DeletionProtectionEnabled must be updated alone.
+		// Passing these values with the rest of the update table request willcause
+		// cause a error. (Per .NET AWS SDK@3.7)
+		rq.SSESpecification, rq.DeletionProtectionEnabled = nil, nil
+
 		log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
 		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
 		if err != nil {
@@ -929,13 +968,17 @@ func shouldUpdateGSI(
 
 // shouldUpdateThroughput compares the DuploDynamoDBProvisionedThroughput of
 // the existing table and updated table. Returns true if a change is detected.
-func shouldUpdateThroughput(
-	table *duplosdk.DuploDynamoDBTableV2,
-	request *duplosdk.DuploDynamoDBTableRequestV2,
-) bool {
-	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
-}
+// func shouldUpdateThroughput(
+// 	table *duplosdk.DuploDynamoDBTableV2,
+// 	request *duplosdk.DuploDynamoDBTableRequestV2,
+// ) bool {
+// 	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
+// }
 
 func setDeleteProtection(d *schema.ResourceData) bool {
 	return d.HasChange("deletion_protection_enabled")
+}
+
+func setSSESpecificiation(d *schema.ResourceData) bool {
+	return d.HasChange("SSESpecification")
 }
