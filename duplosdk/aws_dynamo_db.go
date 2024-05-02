@@ -141,7 +141,7 @@ type DuploDynamoDBTableV2BillingModeSummary struct {
 type DuploDynamoDBTableRequestV2 struct {
 	TableName                 string                                      `json:"TableName"`
 	BillingMode               string                                      `json:"BillingMode,omitempty"`
-	DeletionProtectionEnabled bool                                        `json:"DeletionProtectionEnabled"`
+	DeletionProtectionEnabled *bool                                       `json:"DeletionProtectionEnabled"`
 	Tags                      *[]DuploKeyStringValue                      `json:"Tags,omitempty"`
 	KeySchema                 *[]DuploDynamoDBKeySchemaV2                 `json:"KeySchema,omitempty"`
 	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinionV2         `json:"AttributeDefinitions,omitempty"`
@@ -150,6 +150,18 @@ type DuploDynamoDBTableRequestV2 struct {
 	SSESpecification          *DuploDynamoDBTableV2SSESpecification       `json:"SSESpecification,omitempty"`
 	LocalSecondaryIndexes     *[]DuploDynamoDBTableV2LocalSecondaryIndex  `json:"LocalSecondaryIndexes,omitempty"`
 	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexes,omitempty"`
+}
+
+type DuploDynamoDBTableSSESpecificationRequestV2 struct {
+	TableName                 string                                   `json:"TableName"`
+	BillingMode               string                                   `json:"BillingMode,omitempty"`
+	DeletionProtectionEnabled bool                                     `json:"DeletionProtectionEnabled"`
+	Tags                      *[]DuploKeyStringValue                   `json:"Tags,omitempty"`
+	KeySchema                 *[]DuploDynamoDBKeySchemaV2              `json:"KeySchema,omitempty"`
+	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinionV2      `json:"AttributeDefinitions,omitempty"`
+	ProvisionedThroughput     *DuploDynamoDBProvisionedThroughput      `json:"ProvisionedThroughput,omitempty"`
+	StreamSpecification       *DuploDynamoDBTableV2StreamSpecification `json:"StreamSpecification,omitempty"`
+	SSESpecification          *DuploDynamoDBTableV2SSESpecification    `json:"SSESpecification,omitempty"`
 }
 
 /*************************************************
@@ -194,6 +206,10 @@ func (c *Client) DynamoDBTableCreateV2(
 func (c *Client) DynamoDBTableUpdateV2(
 	tenantID string,
 	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+
+	// rq.SSESpecification = nil
+	// rq.DeletionProtectionEnabled = nil
+
 	rp := DuploDynamoDBTableV2{}
 	err := c.putAPI(
 		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
@@ -261,4 +277,34 @@ func (c *Client) DynamoDBTableExistsV2(tenantID string, name string) (bool, Clie
 		return false, err
 	}
 	return true, nil
+}
+
+// DuploDynamoDBTableV2UpdateSSESpecification updates the server side encryption
+// settings on the provide DynamoDB table. Per the the AWS .NET SDK@3.7:
+// "server side encryption modification must be the only operation in the request"
+func (c *Client) DuploDynamoDBTableV2UpdateSSESpecification(
+	tenantID string,
+	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+
+	r := DuploDynamoDBTableRequestV2{}
+
+	r.TableName = rq.TableName
+	r.SSESpecification = rq.SSESpecification
+
+	return c.DynamoDBTableUpdateV2(tenantID, &r)
+}
+
+// DuploDynamoDBTableV2UpdateDeletionProtection updates the deletion protection
+// settings on the provide DynamoDB table. Per the the AWS .NET SDK@3.7:
+// "DeletionProtection modification must be the only operation in the request"
+func (c *Client) DuploDynamoDBTableV2UpdateDeletionProtection(
+	tenantID string,
+	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+
+	r := DuploDynamoDBTableRequestV2{}
+
+	r.TableName = rq.TableName
+	r.DeletionProtectionEnabled = rq.DeletionProtectionEnabled
+
+	return c.DynamoDBTableUpdateV2(tenantID, &r)
 }
