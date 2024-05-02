@@ -206,10 +206,6 @@ func (c *Client) DynamoDBTableCreateV2(
 func (c *Client) DynamoDBTableUpdateV2(
 	tenantID string,
 	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
-
-	// rq.SSESpecification = nil
-	// rq.DeletionProtectionEnabled = nil
-
 	rp := DuploDynamoDBTableV2{}
 	err := c.putAPI(
 		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
