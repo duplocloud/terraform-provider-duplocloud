@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: master                 # Always finish releases from the "merged to" master
           fetch-depth: 0
@@ -41,7 +41,7 @@ jobs:
       - finish-release
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: develop
           fetch-depth: 0
