@@ -471,7 +471,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 			return diag.FromErr(err)
 		}
 		fallthrough
-	default:
+	case shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq):
 		// SSESpecification & DeletionProtectionEnabled must be updated alone.
 		// Passing these values with the rest of the update table request willcause
 		// cause a error. (Per .NET AWS SDK@3.7)
@@ -936,12 +936,12 @@ func shouldUpdateGSI(
 
 // shouldUpdateThroughput compares the DuploDynamoDBProvisionedThroughput of
 // the existing table and updated table. Returns true if a change is detected.
-// func shouldUpdateThroughput(
-// 	table *duplosdk.DuploDynamoDBTableV2,
-// 	request *duplosdk.DuploDynamoDBTableRequestV2,
-// ) bool {
-// 	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
-// }
+func shouldUpdateThroughput(
+	table *duplosdk.DuploDynamoDBTableV2,
+	request *duplosdk.DuploDynamoDBTableRequestV2,
+) bool {
+	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
+}
 
 func setDeleteProtection(d *schema.ResourceData) bool {
 	return d.HasChange("deletion_protection_enabled")
