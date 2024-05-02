@@ -502,7 +502,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 		if err != nil {
 			return diag.FromErr(err)
 		}
-    fallthrough
+		fallthrough
 	default:
 		// SSESpecification & DeletionProtectionEnabled must be updated alone.
 		// Passing these values with the rest of the update table request willcause
