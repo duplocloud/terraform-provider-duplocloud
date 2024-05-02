@@ -449,38 +449,6 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	isPITREnabled := existing.PointInTimeRecoveryStatus == "ENABLED"
 	targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
 
-	// if isPITREnabled != targetPITRStatus {
-	// 	_, err = c.DynamoDBTableV2PointInRecovery(tenantID, name, targetPITRStatus)
-	// 	if err != nil {
-	// 		return diag.FromErr(err)
-	// 	}
-	// }
-
-	// if setDeleteProtection(d) {
-	// 	tableName := rq.TableName
-	// 	status := rq.DeletionProtectionEnabled
-	// 	rq = &duplosdk.DuploDynamoDBTableRequestV2{
-	// 		DeletionProtectionEnabled: status,
-	// 		TableName:                 tableName,
-	// 	}
-	// 	_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
-	// 	if err != nil {
-	// 		e := "Error updating tenant %s DynamoDB table '%s': %s"
-	// 		return diag.Errorf(e, tenantID, name, err)
-	// 	}
-	// 	return nil
-	// }
-
-	// Updating Global Secondary Indexes and Throughput
-	// if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) {
-	// 	log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
-	// 	_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
-	// 	if err != nil {
-	// 		e := "Error updating tenant %s DynamoDB table '%s': %s"
-	// 		return diag.Errorf(e, tenantID, name, err)
-	// 	}
-	// }
-
 	switch {
 	case isPITREnabled != targetPITRStatus:
 		log.Printf("[INFO] Updating Point In Recovery for DynamoDB table '%s' in tenant '%s'", name, tenantID)
