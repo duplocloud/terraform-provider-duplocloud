@@ -424,6 +424,19 @@ func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceD
 	return nil
 }
 
+func tagDynamoDBtTableV2(
+	tenantId string,
+	rq *duplosdk.DuploDynamoDBTagResourceRequest,
+	m interface{},
+) (*duplosdk.DuploDynamoDBTagResourceResponse, duplosdk.ClientError) {
+	c := m.(*duplosdk.Client)
+	resp, err := c.DynamoDBTableUpdateTagsV2(tenantId, rq)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -441,6 +454,15 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 
 	// Fetch the existing table for compairson
 	existing, err := c.DynamoDBTableGetV2(tenantID, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	tagReq := &duplosdk.DuploDynamoDBTagResourceRequest{
+		ResourceArn: existing.TableArn,
+		Tags:        rq.Tags,
+	}
+	_, err = tagDynamoDBtTableV2(tenantID, tagReq, m)
 	if err != nil {
 		return diag.FromErr(err)
 	}

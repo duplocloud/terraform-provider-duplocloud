@@ -152,6 +152,17 @@ type DuploDynamoDBTableRequestV2 struct {
 	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexes,omitempty"`
 }
 
+type DuploDynamoDBTagResourceRequest struct {
+	ResourceArn string                 `json:"ResourceArn,omitempty"` // The ARN of the resource to tag
+	Tags        *[]DuploKeyStringValue `json:"Tags,omitempty"`        // A list of tags to associate with the resource
+}
+
+type DuploDynamoDBTagResourceResponse struct {
+	StatusCode int    `json:"statusCode"` // HTTP status code of the response
+	Message    string `json:"message"`    // A message about the result of the operation, e.g., "Success"
+	RequestID  string `json:"requestID"`  // The AWS request ID associated with the operation
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -202,6 +213,19 @@ func (c *Client) DynamoDBTableUpdateV2(
 		&rp,
 	)
 	rp.TenantID = tenantID
+	return &rp, err
+}
+
+func (c *Client) DynamoDBTableUpdateTagsV2(
+	tenantId string,
+	rq *DuploDynamoDBTagResourceRequest) (*DuploDynamoDBTagResourceResponse, ClientError) {
+	rp := DuploDynamoDBTagResourceResponse{}
+	err := c.putAPI(
+		fmt.Sprintf("DynamoDBTableUpdateTags(%s, %s)", tenantId, rq.ResourceArn),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s/tags", tenantId, rq.ResourceArn),
+		&rq,
+		&rp,
+	)
 	return &rp, err
 }
 
