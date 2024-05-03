@@ -157,6 +157,26 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Computed:         true,
 			ValidateFunc:     validation.IntBetween(1, 500),
 		},
+		"snapshot_arn": {
+			Description:   "Specify the ARN of a Redis RDB snapshot file stored in Amazon S3.",
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			ConflictsWith: []string{"snapshot_name"},
+		},
+		"snapshot_name": {
+			Description: "Select the snapshot/backup you want to use for creating redis.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+		"snapshot_retention_limit": {
+			Description:  "Specify retention limit in days. Accepted values - 1-35.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.IntBetween(1, 35),
+		},
 	}
 }
 
@@ -298,20 +318,23 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 // expandEcacheInstance converts resource data respresenting an ECache instance to a Duplo SDK object.
 func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance {
 	data := &duplosdk.DuploEcacheInstance{
-		Name:                d.Get("name").(string),
-		Identifier:          d.Get("identifier").(string),
-		Arn:                 d.Get("arn").(string),
-		Endpoint:            d.Get("endpoint").(string),
-		CacheType:           d.Get("cache_type").(int),
-		EngineVersion:       d.Get("engine_version").(string),
-		Size:                d.Get("size").(string),
-		Replicas:            d.Get("replicas").(int),
-		EncryptionAtRest:    d.Get("encryption_at_rest").(bool),
-		EncryptionInTransit: d.Get("encryption_in_transit").(bool),
-		AuthToken:           d.Get("auth_token").(string),
-		InstanceStatus:      d.Get("instance_status").(string),
-		KMSKeyID:            d.Get("kms_key_id").(string),
-		ParameterGroupName:  d.Get("parameter_group_name").(string),
+		Name:                   d.Get("name").(string),
+		Identifier:             d.Get("identifier").(string),
+		Arn:                    d.Get("arn").(string),
+		Endpoint:               d.Get("endpoint").(string),
+		CacheType:              d.Get("cache_type").(int),
+		EngineVersion:          d.Get("engine_version").(string),
+		Size:                   d.Get("size").(string),
+		Replicas:               d.Get("replicas").(int),
+		EncryptionAtRest:       d.Get("encryption_at_rest").(bool),
+		EncryptionInTransit:    d.Get("encryption_in_transit").(bool),
+		AuthToken:              d.Get("auth_token").(string),
+		InstanceStatus:         d.Get("instance_status").(string),
+		KMSKeyID:               d.Get("kms_key_id").(string),
+		ParameterGroupName:     d.Get("parameter_group_name").(string),
+		SnapshotName:           d.Get("snapshot_name").(string),
+		SnapshotArn:            d.Get("snapshot_arn").(string),
+		SnapshotRetentionLimit: d.Get("snapshot_retention_limit").(int),
 	}
 	if data.CacheType == 0 {
 		if v, ok := d.GetOk("enable_cluster_mode"); ok { //applicable for only redis type
@@ -355,6 +378,9 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("parameter_group_name", duplo.ParameterGroupName)
 	d.Set("enable_cluster_mode", duplo.EnableClusterMode)
 	d.Set("number_of_shards", duplo.NumberOfShards)
+	d.Set("snapshot_name", duplo.SnapshotName)
+	d.Set("snapshot_arn", duplo.SnapshotArn)
+	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.

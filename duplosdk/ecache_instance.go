@@ -12,21 +12,24 @@ type DuploEcacheInstance struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`
 
-	Identifier          string `json:"Identifier"`
-	Arn                 string `json:"Arn"`
-	Endpoint            string `json:"Endpoint,omitempty"`
-	CacheType           int    `json:"CacheType,omitempty"`
-	EngineVersion       string `json:"EngineVersion,omitempty"`
-	Size                string `json:"Size,omitempty"`
-	Replicas            int    `json:"Replicas,omitempty"`
-	EncryptionAtRest    bool   `json:"EnableEncryptionAtRest,omitempty"`
-	EncryptionInTransit bool   `json:"EnableEncryptionAtTransit,omitempty"`
-	KMSKeyID            string `json:"KmsKeyId,omitempty"`
-	AuthToken           string `json:"AuthToken,omitempty"`
-	ParameterGroupName  string `json:"ParameterGroupName,omitempty"`
-	InstanceStatus      string `json:"InstanceStatus,omitempty"`
-	EnableClusterMode   bool   `json:"ClusteringEnabled,omitempty"`
-	NumberOfShards      int    `json:"NoOfShards,omitempty"`
+	Identifier             string `json:"Identifier"`
+	Arn                    string `json:"Arn"`
+	Endpoint               string `json:"Endpoint,omitempty"`
+	CacheType              int    `json:"CacheType,omitempty"`
+	EngineVersion          string `json:"EngineVersion,omitempty"`
+	Size                   string `json:"Size,omitempty"`
+	Replicas               int    `json:"Replicas,omitempty"`
+	EncryptionAtRest       bool   `json:"EnableEncryptionAtRest,omitempty"`
+	EncryptionInTransit    bool   `json:"EnableEncryptionAtTransit,omitempty"`
+	KMSKeyID               string `json:"KmsKeyId,omitempty"`
+	AuthToken              string `json:"AuthToken,omitempty"`
+	ParameterGroupName     string `json:"ParameterGroupName,omitempty"`
+	InstanceStatus         string `json:"InstanceStatus,omitempty"`
+	EnableClusterMode      bool   `json:"ClusteringEnabled,omitempty"`
+	NumberOfShards         int    `json:"NoOfShards,omitempty"`
+	SnapshotName           string
+	SnapshotArn            string
+	SnapshotRetentionLimit int
 }
 
 // Modeled after the class of the same name in 'RDSConfiguration.cs
