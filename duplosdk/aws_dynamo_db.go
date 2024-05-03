@@ -240,7 +240,7 @@ func (c *Client) DynamoDBTableDelete(tenantID, name string) ClientError {
 func (c *Client) DynamoDBTableDeleteV2(tenantID, name string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("DynamoDBTableDelete(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/aws/dynamodbTableV2/%s/tag-resource", tenantID, name),
+    fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, name),
 		nil)
 }
 
