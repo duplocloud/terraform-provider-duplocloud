@@ -157,12 +157,13 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Computed:         true,
 			ValidateFunc:     validation.IntBetween(1, 500),
 		},
-		"snapshot_arn": {
-			Description:   "Specify the ARN of a Redis RDB snapshot file stored in Amazon S3.",
-			Type:          schema.TypeString,
+		"snapshot_arns": {
+			Description:   "Specify the ARN of a Redis RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html",
+			Type:          schema.TypeList,
 			Optional:      true,
 			Computed:      true,
 			ConflictsWith: []string{"snapshot_name"},
+			Elem:          &schema.Schema{Type: schema.TypeString},
 		},
 		"snapshot_name": {
 			Description: "Select the snapshot/backup you want to use for creating redis.",
