@@ -237,7 +237,6 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		if err != nil {
 			return diag.Errorf("Error updating tenant %s sql database '%s': %s", tenantID, resp.Name, err)
 		}
-		time.Sleep(153 * time.Second)
 		clientErr := gcpSqlDBInstanceWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 		if clientErr != nil {
 			return diag.FromErr(clientErr)
@@ -344,6 +343,7 @@ func parseGcpSqlDatabaseIdParts(id string) (tenantID, name string, err error) {
 
 func gcpSqlDBInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
 	log.Printf("[DEBUG] gcpSqlDBInstanceWaitUntilReady(%s, %s)", tenantID, name)
+	stateChange := false
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -353,6 +353,11 @@ func gcpSqlDBInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, ten
 			log.Printf("[TRACE] Gcp sql database instance state is (%s).", rp.Status)
 			status := "pending"
 			if err == nil {
+				if rp.Status == "RUNNABLE" && !stateChange {
+					return rp, status, err
+				} else {
+					stateChange = true
+				}
 				if rp.Status == "RUNNABLE" {
 					status = "ready"
 				} else {
