@@ -24,23 +24,23 @@ func BeforeHook(fn func(ctx context.Context, d *schema.ResourceData, m interface
 			return diag.FromErr(err)
 		}
 
-		// Additional before hooks
-
 		return fn(ctx, d, m)
 	}
 }
 
 func prefixName(c *duplosdk.Client, d *schema.ResourceData) duplosdk.ClientError {
 	tenantId, name := d.Get("tenant_id").(string), d.Get("name").(string)
+
 	prefix, err := c.GetDuploServicesPrefix(tenantId)
 	if err != nil {
 		return err
 	}
 
 	if !strings.HasPrefix(name, prefix) {
-		name = prefix + name
+		name = fmt.Sprintf("%s-%s", prefix, name)
 		d.Set("name", name)
 	}
+
 	return nil
 }
 
