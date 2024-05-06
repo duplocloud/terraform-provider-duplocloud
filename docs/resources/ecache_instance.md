@@ -60,7 +60,7 @@ See AWS documentation for the [available Redis instance types](https://docs.aws.
 - `number_of_shards` (Number) The number of shards to create.
 - `parameter_group_name` (String) The REDIS parameter group to supply.
 - `replicas` (Number) The number of replicas to create. Defaults to `1`.
-- `snapshot_arn` (String) Specify the ARN of a Redis RDB snapshot file stored in Amazon S3.
+- `snapshot_arns` (List of String) Specify the ARN of a Redis RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html
 - `snapshot_name` (String) Select the snapshot/backup you want to use for creating redis.
 - `snapshot_retention_limit` (Number) Specify retention limit in days. Accepted values - 1-35.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
