@@ -9,7 +9,6 @@ import (
 	"hash/fnv"
 	"reflect"
 	"regexp"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -176,15 +175,4 @@ func diffStringMaps(oldMap, newMap map[string]interface{}) (map[string]*string, 
 	}
 
 	return create, remove
-}
-
-func diffSuppressIgnoreDuploPrefix(k, old, new string, d *schema.ResourceData) bool {
-	oldStr, newStr := "", ""
-	if d.HasChange(k) {
-		old, new := d.GetChange(k)
-		oldStr = old.(string)
-		newStr = new.(string)
-		return !strings.Contains(oldStr, newStr)
-	}
-	return true
 }
