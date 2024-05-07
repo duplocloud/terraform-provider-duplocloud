@@ -424,6 +424,19 @@ func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceD
 	return nil
 }
 
+func tagDynamoDBtTableV2(
+	tenantId string,
+	rq *duplosdk.DuploDynamoDBTagResourceRequest,
+	m interface{},
+) (*duplosdk.DuploDynamoDBTagResourceResponse, duplosdk.ClientError) {
+	c := m.(*duplosdk.Client)
+	resp, err := c.DynamoDBTableUpdateTagsV2(tenantId, rq)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
@@ -445,31 +458,47 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
+	tagReq := &duplosdk.DuploDynamoDBTagResourceRequest{
+		ResourceArn: existing.TableArn,
+		Tags:        rq.Tags,
+	}
+	_, err = tagDynamoDBtTableV2(tenantID, tagReq, m)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	// Updating Point In Time Recovery status
 	isPITREnabled := existing.PointInTimeRecoveryStatus == "ENABLED"
 	targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
-	if isPITREnabled != targetPITRStatus {
+
+	switch {
+	case isPITREnabled != targetPITRStatus:
+		log.Printf("[INFO] Updating Point In Recovery for DynamoDB table '%s' in tenant '%s'", name, tenantID)
 		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, name, targetPITRStatus)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-	}
-	if setDeleteProtection(d) {
-		tableName := rq.TableName
-		status := rq.DeletionProtectionEnabled
-		rq = &duplosdk.DuploDynamoDBTableRequestV2{
-			DeletionProtectionEnabled: status,
-			TableName:                 tableName,
-		}
-		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+		fallthrough
+	case rq.DeletionProtectionEnabled != nil && existing.DeletionProtectionEnabled != *rq.DeletionProtectionEnabled:
+		log.Printf("[INFO] Updating Deletion Protection for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+		_, err := c.DuploDynamoDBTableV2UpdateDeletionProtection(tenantID, rq)
 		if err != nil {
-			e := "Error updating tenant %s DynamoDB table '%s': %s"
-			return diag.Errorf(e, tenantID, name, err)
+			return diag.FromErr(err)
 		}
-		return nil
-	}
-	// Updating Global Secondary Indexes and Throughput
-	if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) {
+		fallthrough
+	case shouldUpdateSSESepecification(existing, rq):
+		log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+		_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		fallthrough
+	case shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq):
+		// SSESpecification & DeletionProtectionEnabled must be updated alone.
+		// Passing these values with the rest of the update table request willcause
+		// cause a error. (Per .NET AWS SDK@3.7)
+		rq.SSESpecification, rq.DeletionProtectionEnabled = nil, nil
+
 		log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
 		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
 		if err != nil {
@@ -547,7 +576,7 @@ func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRe
 
 	if v, ok := d.GetOk("deletion_protection_enabled"); ok {
 		state := v.(bool)
-		req.DeletionProtectionEnabled = state
+		req.DeletionProtectionEnabled = &state
 	}
 
 	if v, ok := d.GetOk("attribute"); ok {
@@ -936,6 +965,11 @@ func shouldUpdateThroughput(
 	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
 }
 
-func setDeleteProtection(d *schema.ResourceData) bool {
-	return d.HasChange("deletion_protection_enabled")
+// shouldUpdateSSESepecification compares the DuploDynamoDBTableV2SSESpecification of
+// the existing table and updated table. Returns true if a change is detected.
+func shouldUpdateSSESepecification(
+	table *duplosdk.DuploDynamoDBTableV2,
+	request *duplosdk.DuploDynamoDBTableRequestV2,
+) bool {
+	return !reflect.DeepEqual(table.SSEDescription, request.SSESpecification)
 }
