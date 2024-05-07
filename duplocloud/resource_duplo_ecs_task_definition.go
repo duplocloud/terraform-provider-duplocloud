@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/ucarion/jcs"
@@ -32,7 +33,14 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
+			//DiffSuppressFunc: diffSuppressIgnoreDuploPrefix,
 		},
+		//	"full_family": {
+		//		Description: "The name of the task definition to create.",
+		//		Type:        schema.TypeString,
+		//		Computed:    true,
+		//		//	DiffSuppressFunc: diffSuppressIgnoreDuploPrefix,
+		//	},
 		"revision": {
 			Description: "The current revision of the task definition.",
 			Type:        schema.TypeInt,
@@ -242,6 +250,14 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: ecsTaskDefinitionSchema(),
+		CustomizeDiff: customdiff.All(
+			customdiff.ForceNewIfChange("family", func(ctx context.Context, old, new, meta interface{}) bool {
+				oldStr := old.(string)
+				newStr := new.(string)
+				log.Println("OLD ", oldStr, " NEW ", newStr, " ", !strings.Contains(oldStr, newStr))
+
+				return !strings.Contains(oldStr, newStr)
+			})),
 	}
 }
 
@@ -264,10 +280,8 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 		d.SetId("")
 		return nil
 	}
-
 	// Convert the object into Terraform resource data
 	flattenEcsTaskDefinition(rp, d)
-
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead(%s, %s): end", tenantID, arn)
 	return nil
 }
