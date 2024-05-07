@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/ucarion/jcs"
@@ -33,14 +32,12 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
-			//DiffSuppressFunc: diffSuppressIgnoreDuploPrefix,
 		},
-		//	"full_family": {
-		//		Description: "The name of the task definition to create.",
-		//		Type:        schema.TypeString,
-		//		Computed:    true,
-		//		//	DiffSuppressFunc: diffSuppressIgnoreDuploPrefix,
-		//	},
+		"full_family_name": {
+			Description: "The name of the task definition to create.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"revision": {
 			Description: "The current revision of the task definition.",
 			Type:        schema.TypeInt,
@@ -250,14 +247,6 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: ecsTaskDefinitionSchema(),
-		CustomizeDiff: customdiff.All(
-			customdiff.ForceNewIfChange("family", func(ctx context.Context, old, new, meta interface{}) bool {
-				oldStr := old.(string)
-				newStr := new.(string)
-				log.Println("OLD ", oldStr, " NEW ", newStr, " ", !strings.Contains(oldStr, newStr))
-
-				return !strings.Contains(oldStr, newStr)
-			})),
 	}
 }
 
@@ -395,7 +384,7 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 
 	// First, convert things into simple scalars
 	d.Set("tenant_id", duplo.TenantID)
-	d.Set("family", duplo.Family)
+	d.Set("full_family_name", duplo.Family)
 	d.Set("revision", duplo.Revision)
 	d.Set("arn", duplo.Arn)
 	d.Set("cpu", duplo.CPU)
