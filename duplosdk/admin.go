@@ -28,6 +28,7 @@ type DuploSystemFeatures struct {
 	DevopsManagerHostname          string               `json:"DevopsManagerHostname"`
 	TenantNameMaxLength            int                  `json:"TenantNameMaxLength"`
 	AzureResourcePrefix            *AzureResourcePrefix `json:"AzureResourcePrefix,omitempty"`
+	S3BucketNamePrefix             string               `json:"S3BucketNamePrefix"`
 }
 
 type AzureResourcePrefix struct {
