@@ -452,7 +452,9 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	tenantID := d.Get("tenant_id").(string)
 	fullname := d.Get("fullname").(string)
 	_, name, err := parseAwsDynamoDBTableIdParts(d.Id())
-
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
