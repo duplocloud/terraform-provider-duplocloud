@@ -28,6 +28,10 @@ func (c *Client) GetDuploServicesNameWithAws(tenantID, name string) (string, Cli
 	return c.GetResourceName("duploservices", tenantID, name, true)
 }
 
+func (c *Client) GetDuploServicesNameWithAwsDynamoDbV2(tenantID, name string) (string, ClientError) {
+	return c.GetResourceName("duploservices", tenantID, name, false)
+}
+
 // GetDuploServicesName builds a duplo resource name, given a tenant ID.
 func (c *Client) GetDuploServicesName(tenantID, name string) (string, ClientError) {
 	return c.GetResourceName("duploservices", tenantID, name, false)
