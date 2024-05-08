@@ -296,7 +296,7 @@ func resourceGcpSchedulerJobRead(ctx context.Context, d *schema.ResourceData, m 
 	if err != nil {
 		return diag.Errorf("Unable to retrieve tenant %s scheduler job '%s': %s", tenantID, name, err)
 	}
-
+	name = d.Get("name").(string)
 	// Set simple fields first.
 	d.SetId(fmt.Sprintf("%s/%s", duplo.TenantID, name))
 	resourceGcpSchedulerJobSetData(d, tenantID, name, duplo)
@@ -321,16 +321,16 @@ func resourceGcpSchedulerJobCreate(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	// Wait for Duplo to be able to return the scheduler job's details.
-	id := fmt.Sprintf("%s/%s", tenantID, rq.Name)
+	id := fmt.Sprintf("%s/%s", tenantID, rp.Name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "scheduler job", id, func() (interface{}, duplosdk.ClientError) {
-		return c.GcpSchedulerJobGet(tenantID, rq.Name)
+		return c.GcpSchedulerJobGet(tenantID, rp.Name)
 	})
 	if diags != nil {
 		return diags
 	}
 	d.SetId(id)
-
-	resourceGcpSchedulerJobSetData(d, tenantID, rq.Name, rp)
+	diags = resourceGcpSchedulerJobRead(ctx, d, m)
+	//resourceGcpSchedulerJobSetData(d, tenantID, rq.Name, rp)
 	log.Printf("[TRACE] resourceGcpSchedulerJobCreate ******** end")
 	return diags
 }
@@ -411,8 +411,8 @@ func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, nam
 		})
 	} else if duplo.TargetType == duplosdk.GcpSchedulerJob_TargetType_HttpTarget {
 		m := map[string]interface{}{
-			"method":  flattenGcpSchedulerJobHttpMethod(duplo.HTTPTarget.HTTPMethod),
-			"headers": flattenStringMap(duplo.HTTPTarget.Headers),
+			"method":  flattenGcpSchedulerJobHttpMethod(duplo.AppEngineTarget.HTTPMethod),
+			"headers": flattenStringMap(duplo.AppEngineTarget.Headers),
 			"body":    duplo.AnyHTTPTargetBody,
 			"uri":     duplo.HTTPTarget.URI,
 		}
@@ -440,8 +440,8 @@ func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, nam
 		d.Set("http_target", []interface{}{m})
 	} else if duplo.TargetType == duplosdk.GcpSchedulerJob_TargetType_AppEngineHttpTarget {
 		m := map[string]interface{}{
-			"method":       flattenGcpSchedulerJobHttpMethod(duplo.HTTPTarget.HTTPMethod),
-			"headers":      flattenStringMap(duplo.HTTPTarget.Headers),
+			"method":       flattenGcpSchedulerJobHttpMethod(duplo.AppEngineTarget.HTTPMethod),
+			"headers":      flattenStringMap(duplo.AppEngineTarget.Headers),
 			"body":         duplo.AnyHTTPTargetBody,
 			"relative_uri": duplo.AppEngineTarget.RelativeURI,
 		}
