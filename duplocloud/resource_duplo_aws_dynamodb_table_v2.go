@@ -301,7 +301,11 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, name)
+	fullName, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, name)
+	if errname != nil {
+		return diag.Errorf("resourceAwsDynamoDBTableReadV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
+	}
+	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
@@ -311,7 +315,8 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	}
 
 	d.Set("tenant_id", tenantID)
-	d.Set("fullname", name)
+	d.Set("name", name)
+	d.Set("fullname", fullName)
 	d.Set("arn", duplo.TableArn)
 	d.Set("status", duplo.TableStatus.Value)
 	d.Set("is_point_in_time_recovery", duplo.PointInTimeRecoveryStatus == "ENABLED")
@@ -388,7 +393,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	time.Sleep(time.Duration(10) * time.Second)
 
 	// Wait for Duplo to be able to return the table's details.
-	id := fmt.Sprintf("%s/%s", tenantID, rp.TableName)
+	id := fmt.Sprintf("%s/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
 		return c.DynamoDBTableGetV2(tenantID, rp.TableName)
 	})
@@ -445,7 +450,9 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
-	name := d.Get("fullname").(string)
+	fullname := d.Get("fullname").(string)
+	_, name, err := parseAwsDynamoDBTableIdParts(d.Id())
+
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
@@ -457,7 +464,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Fetch the existing table for compairson
-	existing, err := c.DynamoDBTableGetV2(tenantID, name)
+	existing, err := c.DynamoDBTableGetV2(tenantID, fullname)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -478,7 +485,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	switch {
 	case isPITREnabled != targetPITRStatus:
 		log.Printf("[INFO] Updating Point In Recovery for DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, name, targetPITRStatus)
+		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, fullname, targetPITRStatus)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -514,7 +521,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	// Generate the ID for the resource and set it.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	getResource := func() (interface{}, duplosdk.ClientError) {
-		return c.DynamoDBTableGet(tenantID, name)
+		return c.DynamoDBTableGet(tenantID, fullname)
 	}
 	diags := waitForResourceToBePresentAfterUpdate(ctx, d, "dynamodb table", id, getResource)
 
@@ -526,7 +533,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 
 	// wait until the cache instances to be healthy.
 	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-		err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		err = dynamodbWaitUntilReady(ctx, c, tenantID, fullname, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
