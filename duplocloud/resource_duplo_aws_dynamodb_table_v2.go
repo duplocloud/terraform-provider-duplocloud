@@ -30,6 +30,11 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"fullname": {
+			Description: "The name of the table, this needs to be unique within a region.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"arn": {
 			Description: "The ARN of the dynamodb table.",
 			Type:        schema.TypeString,
@@ -306,7 +311,7 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	}
 
 	d.Set("tenant_id", tenantID)
-	d.Set("name", name)
+	d.Set("fullname", name)
 	d.Set("arn", duplo.TableArn)
 	d.Set("status", duplo.TableStatus.Value)
 	d.Set("is_point_in_time_recovery", duplo.PointInTimeRecoveryStatus == "ENABLED")
@@ -375,7 +380,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	_, err = c.DynamoDBTableCreateV2(tenantID, rq)
+	rp, err := c.DynamoDBTableCreateV2(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s dynamodb table '%s': %s", tenantID, name, err)
 	}
@@ -383,9 +388,9 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	time.Sleep(time.Duration(10) * time.Second)
 
 	// Wait for Duplo to be able to return the table's details.
-	id := fmt.Sprintf("%s/%s", tenantID, name)
+	id := fmt.Sprintf("%s/%s", tenantID, rp.TableName)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DynamoDBTableGetV2(tenantID, name)
+		return c.DynamoDBTableGetV2(tenantID, rp.TableName)
 	})
 
 	if diags != nil {
@@ -395,7 +400,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 
 	//By default, wait until the cache instances to be healthy.
 	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-		err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		err = dynamodbWaitUntilReady(ctx, c, tenantID, rp.TableName, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -405,7 +410,6 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if diags != nil {
 		return diags
 	}
-
 	diags = resourceAwsDynamoDBTableReadV2(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateV2(%s, %s): end", tenantID, name)
 	return diags
@@ -441,7 +445,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
-	name := d.Get("name").(string)
+	name := d.Get("fullname").(string)
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
@@ -907,7 +911,7 @@ func dynamodbWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID st
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			rp, err := c.DynamoDBTableGetV2(tenantID, name)
-			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
+			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
 			status := "pending"
 			if err == nil {
 				if rp.TableStatus.Value == "ACTIVE" {
