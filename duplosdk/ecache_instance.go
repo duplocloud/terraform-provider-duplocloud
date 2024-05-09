@@ -79,7 +79,6 @@ func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *Dupl
 	}
 
 	// Call the API.
-	// var rp []DuploEcacheInstanceDetails
 	var rp DuploEcacheInstance
 	err := c.doAPIWithRequestBody(
 		verb,
@@ -88,13 +87,6 @@ func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *Dupl
 		&duploObject,
 		&rp,
 	)
-	// err := c.doAPIWithRequestBody(
-	// 	verb,
-	// 	fmt.Sprintf("EcacheInstanceCreateOrUpdate(%s, duplo-%s)", tenantID, duploObject.Name),
-	// 	fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance", tenantID),
-	// 	&duploObject,
-	// 	&rp,
-	// )
 
 	return &rp, err
 }
