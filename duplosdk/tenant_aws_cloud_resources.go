@@ -439,7 +439,7 @@ func (c *Client) TenantGetS3Bucket(tenantID string, name string) (*DuploS3Bucket
 	features, _ := c.AdminGetSystemFeatures()
 	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
 	if features.IsTagsBasedResourceMgmtEnabled {
-		fullName = name
+		fullName = features.S3BucketNamePrefix + name
 	}
 	if err != nil {
 		return nil, err
@@ -592,7 +592,7 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError 
 	fullName, err := c.GetDuploServicesNameWithAws(tenantID, name)
 	features, _ := c.AdminGetSystemFeatures()
 	if features.IsTagsBasedResourceMgmtEnabled {
-		fullName = name
+		fullName = features.S3BucketNamePrefix + name
 	}
 	if err != nil {
 		return err
@@ -627,7 +627,7 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 	features, _ := c.AdminGetSystemFeatures()
 	fullName, err := c.GetDuploServicesNameWithAws(tenantID, duplo.Name)
 	if features.IsTagsBasedResourceMgmtEnabled {
-		fullName = duplo.Name
+		fullName = features.S3BucketNamePrefix + duplo.Name
 	}
 	if err != nil {
 		return nil, err

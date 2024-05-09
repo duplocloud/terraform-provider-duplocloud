@@ -94,6 +94,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 - `encrypt_storage` (Boolean) Whether or not to encrypt the RDS instance storage.
 - `engine_version` (String) The database engine version to use the for the RDS instance.
 If you don't know the available engine versions for your RDS instance, you can use the [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-engine-versions.html) to retrieve a list.
+- `enhanced_monitoring` (Number) Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.
 - `iops` (Number) The IOPS (Input/Output Operations Per Second) value. Should be specified only if `storage_type` is either io1 or gp3.
 - `kms_key_id` (String) The globally unique identifier for the key.
 - `master_password` (String, Sensitive) The master password of the RDS instance.
