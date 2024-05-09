@@ -762,6 +762,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 			"max_capacity": duploObject.V2ScalingConfiguration.MaxCapacity,
 		}})
 	}
+	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
