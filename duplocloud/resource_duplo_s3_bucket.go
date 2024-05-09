@@ -155,8 +155,8 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.Errorf("resourceS3BucketRead: Unable to retrieve duplo service name (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
-	if features.IsTagsBasedResourceMgmtEnabled {
-		fullName = name
+	if features != nil && features.IsTagsBasedResourceMgmtEnabled {
+		fullName = features.S3BucketNamePrefix + name
 	}
 
 	// Get the object from Duplo
@@ -188,9 +188,9 @@ func resourceS3BucketRead(ctx context.Context, d *schema.ResourceData, m interfa
 func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketCreate ******** start")
 	name := d.Get("name").(string)
-
 	c := m.(*duplosdk.Client)
 	features, _ := c.AdminGetSystemFeatures()
+
 	s3MaxLength := 63 - MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH
 	if features != nil && features.IsTagsBasedResourceMgmtEnabled {
 		s3MaxLength = 63
@@ -202,8 +202,8 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 
 	// prefix + name based on settings
 	fullName, errname := c.GetDuploServicesNameWithAws(tenantID, name)
-	if features.IsTagsBasedResourceMgmtEnabled {
-		fullName = name
+	if features != nil && features.IsTagsBasedResourceMgmtEnabled {
+		fullName = features.S3BucketNamePrefix + name
 	}
 	if errname != nil {
 		return diag.Errorf("resourceS3BucketCreate: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())

@@ -5,5 +5,5 @@ go mod vendor
 make build
 #make release
 make install
-
+make doc
 

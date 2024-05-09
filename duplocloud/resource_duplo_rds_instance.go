@@ -144,6 +144,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"cluster_parameter_group_name": {
 			Description: "Parameter group associated with this instance's DB Cluster.",
@@ -156,6 +157,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"store_details_in_secret_manager": {
 			Description: "Whether or not to store RDS details in the AWS secrets manager.",
