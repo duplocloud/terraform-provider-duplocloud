@@ -145,6 +145,35 @@ func awsEFSFileSystem() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+
+		"mount_targets": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"subnet_id": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"mount_target_id": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"ip_address": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"availability_zone": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"lifecycle_state": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -184,7 +213,16 @@ func resourceAwsEFSRead(ctx context.Context, d *schema.ResourceData, m interface
 		}
 		return diag.Errorf("Unable to retrieve tenant %s EFS  '%s': %s", tenantID, efsId, clientErr)
 	}
+	mnts, clientErr := c.DuploAWsMountTargetGet(tenantID, efsId)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve tenant %s EFS  '%s': %s", tenantID, efsId, clientErr)
+	}
 
+	duplo.MountTarget = mnts
 	d.Set("tenant_id", tenantID)
 	flattenAwsEfs(tenantID, d, duplo, c)
 	log.Printf("[TRACE] resourceAwsEFSRead(%s, %s): end", tenantID, efsId)
@@ -366,9 +404,24 @@ func flattenAwsEfs(tenantId string, d *schema.ResourceData, efs *duplosdk.DuploE
 	d.Set("tag", keyValueToState("tag", efs.Tags))
 	d.Set("provisioned_throughput_in_mibps", efs.ProvisionedThroughputInMibps)
 	d.Set("creation_token", efs.CreationToken)
+	d.Set("mount_targets", flattenMounts(*efs.MountTarget))
 	return nil
 }
 
+func flattenMounts(mnts []duplosdk.MountTarget) []interface{} {
+	result := make([]interface{}, 0, len(mnts))
+	for _, mnt := range mnts {
+		result = append(result, map[string]interface{}{
+			"subnet_id":         mnt.SubnetId,
+			"mount_target_id":   mnt.MountTargetId,
+			"ip_address":        mnt.IP,
+			"availability_zone": mnt.AvailabilityZone,
+			"lifecycle_state":   mnt.LifeCycleState.Value,
+		})
+
+	}
+	return result
+}
 func parseAwsEFSIdParts(id string) (tenantID, efsId string, err error) {
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) == 2 {
