@@ -141,7 +141,7 @@ type DuploDynamoDBTableV2BillingModeSummary struct {
 type DuploDynamoDBTableRequestV2 struct {
 	TableName                 string                                      `json:"TableName"`
 	BillingMode               string                                      `json:"BillingMode,omitempty"`
-	DeletionProtectionEnabled bool                                        `json:"DeletionProtectionEnabled"`
+	DeletionProtectionEnabled *bool                                       `json:"DeletionProtectionEnabled"`
 	Tags                      *[]DuploKeyStringValue                      `json:"Tags,omitempty"`
 	KeySchema                 *[]DuploDynamoDBKeySchemaV2                 `json:"KeySchema,omitempty"`
 	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinionV2         `json:"AttributeDefinitions,omitempty"`
@@ -150,6 +150,17 @@ type DuploDynamoDBTableRequestV2 struct {
 	SSESpecification          *DuploDynamoDBTableV2SSESpecification       `json:"SSESpecification,omitempty"`
 	LocalSecondaryIndexes     *[]DuploDynamoDBTableV2LocalSecondaryIndex  `json:"LocalSecondaryIndexes,omitempty"`
 	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexes,omitempty"`
+}
+
+type DuploDynamoDBTagResourceRequest struct {
+	ResourceArn string                 `json:"ResourceArn,omitempty"` // The ARN of the resource to tag
+	Tags        *[]DuploKeyStringValue `json:"Tags,omitempty"`        // A list of tags to associate with the resource
+}
+
+type DuploDynamoDBTagResourceResponse struct {
+	StatusCode int    `json:"statusCode"` // HTTP status code of the response
+	Message    string `json:"message"`    // A message about the result of the operation, e.g., "Success"
+	RequestID  string `json:"requestID"`  // The AWS request ID associated with the operation
 }
 
 /*************************************************
@@ -202,6 +213,19 @@ func (c *Client) DynamoDBTableUpdateV2(
 		&rp,
 	)
 	rp.TenantID = tenantID
+	return &rp, err
+}
+
+func (c *Client) DynamoDBTableUpdateTagsV2(
+	tenantId string,
+	rq *DuploDynamoDBTagResourceRequest) (*DuploDynamoDBTagResourceResponse, ClientError) {
+	rp := DuploDynamoDBTagResourceResponse{}
+	err := c.putAPI(
+		fmt.Sprintf("DynamoDBTableUpdateTags(%s, %s)", tenantId, rq.ResourceArn),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/tag-resource", tenantId),
+		&rq,
+		&rp,
+	)
 	return &rp, err
 }
 
@@ -261,4 +285,34 @@ func (c *Client) DynamoDBTableExistsV2(tenantID string, name string) (bool, Clie
 		return false, err
 	}
 	return true, nil
+}
+
+// DuploDynamoDBTableV2UpdateSSESpecification updates the server side encryption
+// settings on the provide DynamoDB table. Per the the AWS .NET SDK@3.7:
+// "server side encryption modification must be the only operation in the request"
+func (c *Client) DuploDynamoDBTableV2UpdateSSESpecification(
+	tenantID string,
+	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+
+	r := DuploDynamoDBTableRequestV2{}
+
+	r.TableName = rq.TableName
+	r.SSESpecification = rq.SSESpecification
+
+	return c.DynamoDBTableUpdateV2(tenantID, &r)
+}
+
+// DuploDynamoDBTableV2UpdateDeletionProtection updates the deletion protection
+// settings on the provide DynamoDB table. Per the the AWS .NET SDK@3.7:
+// "DeletionProtection modification must be the only operation in the request"
+func (c *Client) DuploDynamoDBTableV2UpdateDeletionProtection(
+	tenantID string,
+	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+
+	r := DuploDynamoDBTableRequestV2{}
+
+	r.TableName = rq.TableName
+	r.DeletionProtectionEnabled = rq.DeletionProtectionEnabled
+
+	return c.DynamoDBTableUpdateV2(tenantID, &r)
 }
