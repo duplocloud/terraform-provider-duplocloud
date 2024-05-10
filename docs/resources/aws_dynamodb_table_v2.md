@@ -102,6 +102,7 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 ### Read-Only
 
 - `arn` (String) The ARN of the dynamodb table.
+- `fullname` (String) The name of the table, this needs to be unique within a region.
 - `id` (String) The ID of this resource.
 - `status` (String) The status of the dynamodb table.
 - `stream_arn` (String)
