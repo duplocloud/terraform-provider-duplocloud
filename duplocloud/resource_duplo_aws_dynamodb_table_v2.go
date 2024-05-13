@@ -308,10 +308,16 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
-			d.SetId("")
-			return nil
+			duplo, clientErr = c.DynamoDBTableGetV2(tenantID, name)
+			if clientErr != nil {
+				if clientErr.Status() == 404 {
+					d.SetId("")
+					return nil
+				}
+				return diag.Errorf("Unable to retrieve tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
+			}
 		}
-		return diag.Errorf("Unable to retrieve tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
+		//return diag.Errorf("Unable to retrieve tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
 	}
 
 	d.Set("tenant_id", tenantID)
@@ -399,7 +405,12 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	})
 
 	if diags != nil {
-		return diags
+		inDiags := waitForResourceToBePresentAfterCreate(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
+			return c.DynamoDBTableGetV2(tenantID, name)
+		})
+		if inDiags != nil {
+			return inDiags
+		}
 	}
 	d.SetId(id)
 
@@ -407,7 +418,10 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
 		err = dynamodbWaitUntilReady(ctx, c, tenantID, rp.TableName, d.Timeout("create"))
 		if err != nil {
-			return diag.FromErr(err)
+			err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -415,6 +429,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if diags != nil {
 		return diags
 	}
+
 	diags = resourceAwsDynamoDBTableReadV2(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateV2(%s, %s): end", tenantID, name)
 	return diags
@@ -423,12 +438,15 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	if v, ok := d.GetOk("is_point_in_time_recovery"); ok && v.(bool) {
 		id := d.Id()
-		tenantID, _, err := parseAwsDynamoDBTableIdParts(id)
-		name := d.Get("fullname").(string)
+		tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
+		fname := d.Get("fullname").(string)
 		c := m.(*duplosdk.Client)
-		_, errPir := c.DynamoDBTableV2PointInRecovery(tenantID, name, v.(bool))
+		_, errPir := c.DynamoDBTableV2PointInRecovery(tenantID, fname, v.(bool))
 		if errPir != nil {
-			return diag.Errorf("Error while setting point in recovery tenant %s dynamodb table '%s': %s", tenantID, name, err)
+			_, errPir = c.DynamoDBTableV2PointInRecovery(tenantID, name, v.(bool))
+			if errPir != nil {
+				return diag.Errorf("Error while setting point in recovery tenant %s dynamodb table '%s': %s", tenantID, name, err)
+			}
 		}
 	}
 	return nil
