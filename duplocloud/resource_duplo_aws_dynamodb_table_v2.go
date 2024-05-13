@@ -59,6 +59,11 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"fullname": {
+			Description: "The name of the table, this needs to be unique within a region.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"arn": {
 			Description: "The ARN of the dynamodb table.",
 			Type:        schema.TypeString,
@@ -325,7 +330,11 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, name)
+	fullName, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, name)
+	if errname != nil {
+		return diag.Errorf("resourceAwsDynamoDBTableReadV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
+	}
+	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
@@ -336,6 +345,7 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
+	d.Set("fullname", fullName)
 	d.Set("arn", duplo.TableArn)
 	d.Set("status", duplo.TableStatus.Value)
 	d.Set("is_point_in_time_recovery", duplo.PointInTimeRecoveryStatus == "ENABLED")
@@ -404,17 +414,17 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	_, err = c.DynamoDBTableCreateV2(tenantID, rq)
+	rp, err := c.DynamoDBTableCreateV2(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s dynamodb table '%s': %s", tenantID, name, err)
 	}
-
+	d.Set("fullname", rp.TableName)
 	time.Sleep(time.Duration(10) * time.Second)
 
 	// Wait for Duplo to be able to return the table's details.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DynamoDBTableGetV2(tenantID, name)
+		return c.DynamoDBTableGetV2(tenantID, rp.TableName)
 	})
 
 	if diags != nil {
@@ -424,7 +434,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 
 	//By default, wait until the cache instances to be healthy.
 	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-		err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		err = dynamodbWaitUntilReady(ctx, c, tenantID, rp.TableName, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -434,7 +444,6 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if diags != nil {
 		return diags
 	}
-
 	diags = resourceAwsDynamoDBTableReadV2(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateV2(%s, %s): end", tenantID, name)
 	return diags
@@ -443,7 +452,8 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	if v, ok := d.GetOk("is_point_in_time_recovery"); ok && v.(bool) {
 		id := d.Id()
-		tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
+		tenantID, _, err := parseAwsDynamoDBTableIdParts(id)
+		name := d.Get("fullname").(string)
 		c := m.(*duplosdk.Client)
 		_, errPir := c.DynamoDBTableV2PointInRecovery(tenantID, name, v.(bool))
 		if errPir != nil {
@@ -470,7 +480,11 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
-	name := d.Get("name").(string)
+	fullname := d.Get("fullname").(string)
+	_, name, err := parseAwsDynamoDBTableIdParts(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
@@ -482,7 +496,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Fetch the existing table for compairson
-	existing, err := c.DynamoDBTableGetV2(tenantID, name)
+	existing, err := c.DynamoDBTableGetV2(tenantID, fullname)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -503,7 +517,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	switch {
 	case isPITREnabled != targetPITRStatus:
 		log.Printf("[INFO] Updating Point In Recovery for DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, name, targetPITRStatus)
+		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, fullname, targetPITRStatus)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -539,7 +553,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	// Generate the ID for the resource and set it.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	getResource := func() (interface{}, duplosdk.ClientError) {
-		return c.DynamoDBTableGet(tenantID, name)
+		return c.DynamoDBTableGet(tenantID, fullname)
 	}
 	diags := waitForResourceToBePresentAfterUpdate(ctx, d, "dynamodb table", id, getResource)
 
@@ -551,7 +565,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 
 	// wait until the cache instances to be healthy.
 	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-		err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		err = dynamodbWaitUntilReady(ctx, c, tenantID, fullname, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -936,7 +950,7 @@ func dynamodbWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID st
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			rp, err := c.DynamoDBTableGetV2(tenantID, name)
-			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
+			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
 			status := "pending"
 			if err == nil {
 				if rp.TableStatus.Value == "ACTIVE" {

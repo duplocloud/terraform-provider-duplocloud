@@ -19,7 +19,7 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 // A simple scheduler job with an HTTPS target, running at 9 am daily.
-resource "duploscheduler_gcp_scheduler_job" "myjob" {
+resource "duplocloud_gcp_scheduler_job" "myjob" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
 
   name = "myjob"

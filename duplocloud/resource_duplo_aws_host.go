@@ -85,7 +85,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			ForceNew:    true, // relaunch instance
-			Default:     false,
+			Default:     true,
 		},
 		"agent_platform": {
 			Description: "The numeric ID of the container agent pool that this host is added to.",
