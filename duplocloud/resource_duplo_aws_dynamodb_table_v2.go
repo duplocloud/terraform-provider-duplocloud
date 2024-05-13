@@ -15,6 +15,35 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+func BeforeHook(fn func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics) func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+		c := m.(*duplosdk.Client)
+
+		err := prefixName(c, d)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		return fn(ctx, d, m)
+	}
+}
+
+func prefixName(c *duplosdk.Client, d *schema.ResourceData) duplosdk.ClientError {
+	tenantId, name := d.Get("tenant_id").(string), d.Get("name").(string)
+
+	prefix, err := c.GetDuploServicesPrefix(tenantId)
+	if err != nil {
+		return err
+	}
+
+	if !strings.HasPrefix(name, prefix) {
+		name = fmt.Sprintf("%s-%s", prefix, name)
+		d.Set("name", name)
+	}
+
+	return nil
+}
+
 func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
@@ -277,10 +306,10 @@ func resourceAwsDynamoDBTableV2() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_aws_dynamodb_table_v2` manages an AWS dynamodb table in Duplo.",
 
-		ReadContext:   resourceAwsDynamoDBTableReadV2,
-		CreateContext: resourceAwsDynamoDBTableCreateV2,
-		UpdateContext: resourceAwsDynamoDBTableUpdateV2,
-		DeleteContext: resourceAwsDynamoDBTableDeleteV2,
+		ReadContext:   BeforeHook(resourceAwsDynamoDBTableReadV2),
+		CreateContext: BeforeHook(resourceAwsDynamoDBTableCreateV2),
+		UpdateContext: BeforeHook(resourceAwsDynamoDBTableUpdateV2),
+		DeleteContext: BeforeHook(resourceAwsDynamoDBTableDeleteV2),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
