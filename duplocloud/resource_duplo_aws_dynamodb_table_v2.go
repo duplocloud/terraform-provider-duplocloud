@@ -389,7 +389,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s dynamodb table '%s': %s", tenantID, name, err)
 	}
-
+	d.Set("fullname", rp.TableName)
 	time.Sleep(time.Duration(10) * time.Second)
 
 	// Wait for Duplo to be able to return the table's details.
@@ -423,7 +423,8 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	if v, ok := d.GetOk("is_point_in_time_recovery"); ok && v.(bool) {
 		id := d.Id()
-		tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
+		tenantID, _, err := parseAwsDynamoDBTableIdParts(id)
+		name := d.Get("fullname").(string)
 		c := m.(*duplosdk.Client)
 		_, errPir := c.DynamoDBTableV2PointInRecovery(tenantID, name, v.(bool))
 		if errPir != nil {
