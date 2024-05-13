@@ -405,11 +405,11 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	})
 
 	if diags != nil {
-		inDiags := waitForResourceToBePresentAfterCreate(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
+		diags = waitForResourceToBePresentAfterCreate(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
 			return c.DynamoDBTableGetV2(tenantID, name)
 		})
-		if inDiags != nil {
-			return inDiags
+		if diags != nil {
+			return diags
 		}
 	}
 	d.SetId(id)
