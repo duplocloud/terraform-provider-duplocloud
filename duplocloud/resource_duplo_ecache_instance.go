@@ -335,8 +335,11 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 		KMSKeyID:               d.Get("kms_key_id").(string),
 		ParameterGroupName:     d.Get("parameter_group_name").(string),
 		SnapshotName:           d.Get("snapshot_name").(string),
-		SnapshotArn:            d.Get("snapshot_arn").(string),
 		SnapshotRetentionLimit: d.Get("snapshot_retention_limit").(int),
+	}
+
+	for _, val := range d.Get("snapshot_arns").([]interface{}) {
+		data.SnapshotArns = append(data.SnapshotArns, val.(string))
 	}
 	if data.CacheType == 0 {
 		if v, ok := d.GetOk("enable_cluster_mode"); ok { //applicable for only redis type
@@ -381,7 +384,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("enable_cluster_mode", duplo.EnableClusterMode)
 	d.Set("number_of_shards", duplo.NumberOfShards)
 	d.Set("snapshot_name", duplo.SnapshotName)
-	d.Set("snapshot_arn", duplo.SnapshotArn)
+	d.Set("snapshot_arns", duplo.SnapshotArns)
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 }
 
