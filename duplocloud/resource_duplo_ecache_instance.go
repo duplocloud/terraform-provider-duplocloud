@@ -166,10 +166,11 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Elem:          &schema.Schema{Type: schema.TypeString},
 		},
 		"snapshot_name": {
-			Description: "Select the snapshot/backup you want to use for creating redis.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Description:   "Select the snapshot/backup you want to use for creating redis.",
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			ConflictsWith: []string{"snapshot_arns"},
 		},
 		"snapshot_retention_limit": {
 			Description:  "Specify retention limit in days. Accepted values - 1-35.",
