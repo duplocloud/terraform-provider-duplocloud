@@ -19,9 +19,16 @@ func BeforeHook(fn func(ctx context.Context, d *schema.ResourceData, m interface
 	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 		c := m.(*duplosdk.Client)
 
-		err := prefixName(c, d)
+		features, err := c.AdminGetSystemFeatures()
 		if err != nil {
 			return diag.FromErr(err)
+		}
+
+		if features.IsTagsBasedResourceMgmtEnabled {
+			err := prefixName(c, d)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		return fn(ctx, d, m)
@@ -330,11 +337,14 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	fullName, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, name)
-	if errname != nil {
-		return diag.Errorf("resourceAwsDynamoDBTableReadV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
-	}
-	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
+
+	// this method calls a broken or not existing endpoint
+	// fullName, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, name)
+	// if errname != nil {
+	// 	return diag.Errorf("resourceAwsDynamoDBTableReadV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
+	// }
+
+	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
@@ -345,7 +355,7 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
-	d.Set("fullname", fullName)
+	d.Set("fullname", name)
 	d.Set("arn", duplo.TableArn)
 	d.Set("status", duplo.TableStatus.Value)
 	d.Set("is_point_in_time_recovery", duplo.PointInTimeRecoveryStatus == "ENABLED")
