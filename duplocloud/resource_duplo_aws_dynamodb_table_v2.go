@@ -541,13 +541,13 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 			return diag.FromErr(err)
 		}
 		fallthrough
-	case shouldUpdateSSESepecification(existing, rq):
-		log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		fallthrough
+		//	case !reflect.DeepEqual(existing.SSEDescription, rq.SSESpecification): //shouldUpdateSSESepecification(existing, rq):
+		//		log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+		//		_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
+		//		if err != nil {
+		//			return diag.FromErr(err)
+		//		}
+		//		fallthrough
 	case shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq):
 		// SSESpecification & DeletionProtectionEnabled must be updated alone.
 		// Passing these values with the rest of the update table request willcause
@@ -561,7 +561,14 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 			return diag.Errorf(e, tenantID, name, err)
 		}
 	}
-
+	isSSESUpdatable := shouldUpdateSSESepecification(existing, rq)
+	if isSSESUpdatable {
+		log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+		_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
 	// Generate the ID for the resource and set it.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	getResource := func() (interface{}, duplosdk.ClientError) {
@@ -629,8 +636,8 @@ func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRe
 		KeySchema:   expandDynamoDBKeySchema(d),
 	}
 
-	if v, ok := d.GetOk("deletion_protection_enabled"); ok {
-		state := v.(bool)
+	if d.HasChange("deletion_protection_enabled") {
+		state := d.Get("deletion_protection_enabled").(bool)
 		req.DeletionProtectionEnabled = &state
 	}
 
@@ -1026,5 +1033,8 @@ func shouldUpdateSSESepecification(
 	table *duplosdk.DuploDynamoDBTableV2,
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 ) bool {
+	if table.SSEDescription == nil && request.SSESpecification == nil {
+		return false
+	}
 	return !reflect.DeepEqual(table.SSEDescription, request.SSESpecification)
 }
