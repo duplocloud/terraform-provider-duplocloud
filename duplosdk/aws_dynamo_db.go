@@ -141,7 +141,7 @@ type DuploDynamoDBTableV2BillingModeSummary struct {
 type DuploDynamoDBTableRequestV2 struct {
 	TableName                 string                                      `json:"TableName"`
 	BillingMode               string                                      `json:"BillingMode,omitempty"`
-	DeletionProtectionEnabled *bool                                       `json:"DeletionProtectionEnabled"`
+	DeletionProtectionEnabled *bool                                       `json:"DeletionProtectionEnabled,omitempty"`
 	Tags                      *[]DuploKeyStringValue                      `json:"Tags,omitempty"`
 	KeySchema                 *[]DuploDynamoDBKeySchemaV2                 `json:"KeySchema,omitempty"`
 	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinionV2         `json:"AttributeDefinitions,omitempty"`
@@ -149,7 +149,7 @@ type DuploDynamoDBTableRequestV2 struct {
 	StreamSpecification       *DuploDynamoDBTableV2StreamSpecification    `json:"StreamSpecification,omitempty"`
 	SSESpecification          *DuploDynamoDBTableV2SSESpecification       `json:"SSESpecification,omitempty"`
 	LocalSecondaryIndexes     *[]DuploDynamoDBTableV2LocalSecondaryIndex  `json:"LocalSecondaryIndexes,omitempty"`
-	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexes,omitempty"`
+	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexeUpdatess,omitempty"`
 }
 
 type DuploDynamoDBTagResourceRequest struct {
@@ -210,6 +210,22 @@ func (c *Client) DynamoDBTableUpdateV2(
 		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
 		&rq,
+		&rp,
+	)
+	rp.TenantID = tenantID
+	return &rp, err
+}
+
+func (c *Client) DynamoDBTableUpdateV21(
+	tenantID string,
+	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+	rp := DuploDynamoDBTableV2{}
+	//rs := &[]DuploDynamoDBTableV2GlobalSecondaryIndex{}
+	//rs = rq.GlobalSecondaryIndexes
+	err := c.putAPI(
+		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
+		rq,
 		&rp,
 	)
 	rp.TenantID = tenantID
@@ -307,12 +323,7 @@ func (c *Client) DuploDynamoDBTableV2UpdateSSESpecification(
 // "DeletionProtection modification must be the only operation in the request"
 func (c *Client) DuploDynamoDBTableV2UpdateDeletionProtection(
 	tenantID string,
-	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+	r *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
 
-	r := DuploDynamoDBTableRequestV2{}
-
-	r.TableName = rq.TableName
-	r.DeletionProtectionEnabled = rq.DeletionProtectionEnabled
-
-	return c.DynamoDBTableUpdateV2(tenantID, &r)
+	return c.DynamoDBTableUpdateV2(tenantID, r)
 }

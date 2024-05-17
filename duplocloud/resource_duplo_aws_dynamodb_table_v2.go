@@ -521,55 +521,63 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	// Updating Point In Time Recovery status
-	isPITREnabled := existing.PointInTimeRecoveryStatus == "ENABLED"
-	targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
-
-	switch {
-	case isPITREnabled != targetPITRStatus:
-		log.Printf("[INFO] Updating Point In Recovery for DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, fullname, targetPITRStatus)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		fallthrough
-	case rq.DeletionProtectionEnabled != nil && existing.DeletionProtectionEnabled != *rq.DeletionProtectionEnabled:
-		log.Printf("[INFO] Updating Deletion Protection for DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err := c.DuploDynamoDBTableV2UpdateDeletionProtection(tenantID, rq)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		fallthrough
-		//	case !reflect.DeepEqual(existing.SSEDescription, rq.SSESpecification): //shouldUpdateSSESepecification(existing, rq):
-		//		log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		//		_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
-		//		if err != nil {
-		//			return diag.FromErr(err)
-		//		}
-		//		fallthrough
-	case shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq):
-		// SSESpecification & DeletionProtectionEnabled must be updated alone.
-		// Passing these values with the rest of the update table request willcause
-		// cause a error. (Per .NET AWS SDK@3.7)
-		rq.SSESpecification, rq.DeletionProtectionEnabled = nil, nil
-
-		log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
-		if err != nil {
-			e := "Error updating tenant %s DynamoDB table '%s': %s"
-			return diag.Errorf(e, tenantID, name, err)
-		}
+	diagErr := updatePointInTimeRecovery(c, d, tenantID, fullname)
+	if diagErr != nil {
+		return diagErr
 	}
-	isSSESUpdatable := shouldUpdateSSESepecification(existing, rq)
-	if isSSESUpdatable {
-		log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+
+	diagErr = updateDeleteProtection(c, d, tenantID, fullname)
+	if diagErr != nil {
+		return diagErr
 	}
-	// Generate the ID for the resource and set it.
+	diagErr = updateGlobalSecondaryIndex(c, d, tenantID, fullname)
+	if diagErr != nil {
+		return diagErr
+	}
+	//switch {
+	//case isPITREnabled != targetPITRStatus:
+	//	log.Printf("[INFO] Updating Point In Recovery for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+	//	_, err = c.DynamoDBTableV2PointInRecovery(tenantID, fullname, targetPITRStatus)
+	//	if err != nil {
+	//		return diag.FromErr(err)
+	//	}
+	//	fallthrough
+	//case rq.DeletionProtectionEnabled != nil && existing.DeletionProtectionEnabled != *rq.DeletionProtectionEnabled:
+	//	log.Printf("[INFO] Updating Deletion Protection for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+	//	_, err := c.DuploDynamoDBTableV2UpdateDeletionProtection(tenantID, rq)
+	//	if err != nil {
+	//		return diag.FromErr(err)
+	//	}
+	//	fallthrough
+	//	//	case !reflect.DeepEqual(existing.SSEDescription, rq.SSESpecification): //shouldUpdateSSESepecification(existing, rq):
+	//	//		log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+	//	//		_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
+	//	//		if err != nil {
+	//	//			return diag.FromErr(err)
+	//	//		}
+	//	//		fallthrough
+	//case shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq):
+	//	// SSESpecification & DeletionProtectionEnabled must be updated alone.
+	//	// Passing these values with the rest of the update table request willcause
+	//	// cause a error. (Per .NET AWS SDK@3.7)
+	//	rq.SSESpecification, rq.DeletionProtectionEnabled = nil, nil
+	//
+	//	log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
+	//	_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+	//	if err != nil {
+	//		e := "Error updating tenant %s DynamoDB table '%s': %s"
+	//		return diag.Errorf(e, tenantID, name, err)
+	//	}
+	//}
+	//isSSESUpdatable := shouldUpdateSSESepecification(existing, rq)
+	//if isSSESUpdatable {
+	//	log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+	//	_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
+	//	if err != nil {
+	//		return diag.FromErr(err)
+	//	}
+	//}
+	//// Generate the ID for the resource and set it.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	getResource := func() (interface{}, duplosdk.ClientError) {
 		return c.DynamoDBTableGet(tenantID, fullname)
@@ -597,6 +605,61 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
+func updatePointInTimeRecovery(c *duplosdk.Client, d *schema.ResourceData, tenantID, fullname string) diag.Diagnostics {
+	if d.HasChange("is_point_in_time_recovery") {
+		targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
+		_, err := c.DynamoDBTableV2PointInRecovery(tenantID, fullname, targetPITRStatus)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	return nil
+}
+func updateDeleteProtection(c *duplosdk.Client, d *schema.ResourceData, tenantID, fullname string) diag.Diagnostics {
+	r := duplosdk.DuploDynamoDBTableRequestV2{}
+	if d.HasChange("deletion_protection_enabled") {
+		state := d.Get("deletion_protection_enabled").(bool)
+		r.DeletionProtectionEnabled = &state
+
+		r.TableName = fullname
+
+		_, err := c.DuploDynamoDBTableV2UpdateDeletionProtection(tenantID, &r)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	return nil
+}
+
+func updateGlobalSecondaryIndex(c *duplosdk.Client, d *schema.ResourceData, tenantID, fullname string) diag.Diagnostics {
+
+	if d.HasChange("global_secondary_index") {
+		r := duplosdk.DuploDynamoDBTableRequestV2{}
+		billingMode := d.Get("billing_mode").(string)
+		r.TableName = d.Get("name").(string)
+		globalSecondaryIndexes := []duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndex{}
+		gsiSet := d.Get("global_secondary_index").(*schema.Set)
+
+		for _, gsiObject := range gsiSet.List() {
+			gsi := gsiObject.(map[string]interface{})
+			if err := validateGSIProvisionedThroughput(gsi, billingMode); err != nil {
+				return diag.Errorf("failed to create GSI: %w", err)
+			}
+
+			gsiObject := expandGlobalSecondaryIndex(gsi, billingMode)
+			globalSecondaryIndexes = append(globalSecondaryIndexes, *gsiObject)
+		}
+		r.GlobalSecondaryIndexes = &[]duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndex{}
+		r.GlobalSecondaryIndexes = &globalSecondaryIndexes
+		_, diagErr := c.DynamoDBTableUpdateV2(tenantID, &r)
+		if diagErr != nil {
+			e := "Error updating tenant %s DynamoDB table '%s': %s"
+			return diag.Errorf(e, tenantID, fullname, diagErr)
+		}
+	}
+
+	return nil
+}
 func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
@@ -634,11 +697,6 @@ func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRe
 		BillingMode: d.Get("billing_mode").(string),
 		Tags:        keyValueFromState("tag", d),
 		KeySchema:   expandDynamoDBKeySchema(d),
-	}
-
-	if d.HasChange("deletion_protection_enabled") {
-		state := d.Get("deletion_protection_enabled").(bool)
-		req.DeletionProtectionEnabled = &state
 	}
 
 	if v, ok := d.GetOk("attribute"); ok {
