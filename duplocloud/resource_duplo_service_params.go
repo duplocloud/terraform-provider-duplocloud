@@ -182,18 +182,17 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 		return diag.FromErr(err)
 	}
 
-	// Update the DNS.
 	dns := d.Get("dns_prfx").(string)
-	if dns != "" && dns != duplo.DnsPrfx {
-		dnsRq := duplosdk.DuploLbDnsRequest{DnsPrfx: dns}
-		err = c.ReplicationControllerLbDnsUpdate(tenantID, name, &dnsRq)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	} else if dns == "" && duplo.DnsPrfx != "" {
-		err = c.ReplicationControllerLbDnsDelete(tenantID, name)
-		if err != nil {
-			log.Printf("[TRACE] resourceDuploServiceParamsCreateOrUpdate(%s, %s): failed to delete DNS Prefix - continuing", tenantID, name)
+
+	// On new created, update DNS.
+	if d.HasChange("dns_prfx") {
+		if (isUpdate && dns != "") || (!isUpdate && dns != "" && duplo.DnsPrfx != dns) {
+
+			dnsRq := duplosdk.DuploLbDnsRequest{DnsPrfx: dns}
+			err = c.ReplicationControllerLbDnsUpdate(tenantID, name, &dnsRq)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
