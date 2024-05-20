@@ -51,10 +51,11 @@ func gcpFirestoreSchema() map[string]*schema.Schema {
 			Required:    true,
 		},
 		"type": {
-			Description:  "Firestore supports type `FIRESTORE_NATIVE` and `DATASTORE_MODE`",
-			Type:         schema.TypeString,
-			Required:     true,
-			ValidateFunc: validateFirestoreOrDatastoreMode,
+			Description:      "Firestore supports type `FIRESTORE_NATIVE` and `DATASTORE_MODE`",
+			Type:             schema.TypeString,
+			Required:         true,
+			ValidateFunc:     validateFirestoreOrDatastoreMode,
+			DiffSuppressFunc: nativeToModeNotAllowed,
 		},
 		"etag": {
 			Type:     schema.TypeString,
@@ -262,7 +263,7 @@ func expandGcpFirestore(d *schema.ResourceData) *duplosdk.DuploFirestoreBody {
 
 	if val, ok := d.GetOk("enable_point_in_time_recovery"); ok {
 		if val.(bool) {
-			duplo.PointInTimeRecoveryEnablement = "POINT_IN_TIME_RECOVERY_DISABLED_ENABLED"
+			duplo.PointInTimeRecoveryEnablement = "POINT_IN_TIME_RECOVERY_ENABLED"
 		}
 	}
 
@@ -278,4 +279,11 @@ func validateFirestoreOrDatastoreMode(value interface{}, key string) (warns []st
 		errs = append(errs, fmt.Errorf("%q must be either 'FIRESTORE_NATIVE' or 'DATASTORE_MODE'", key))
 	}
 	return
+}
+
+func nativeToModeNotAllowed(k, old, new string, d *schema.ResourceData) bool {
+	if old == "FIRESTORE_NATIVE" && new == "DATASTORE_MODE" {
+		return true
+	}
+	return false
 }
