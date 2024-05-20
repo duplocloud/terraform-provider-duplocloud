@@ -61,7 +61,7 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	}
 	if infra != nil && !infra.EnableK8Cluster && infra.Cloud != 2 {
 		return fmt.Errorf("no kubernetes cluster for this plan %s", planID)
-	} else if infra.AksConfig != nil && !infra.AksConfig.CreateAndManage {
+	} else if infra.AksConfig == nil || (infra.AksConfig != nil && !infra.AksConfig.CreateAndManage) {
 		return fmt.Errorf("no kubernetes cluster for this plan %s", planID)
 	}
 	// First, try the newer method of obtaining a JIT access token.
