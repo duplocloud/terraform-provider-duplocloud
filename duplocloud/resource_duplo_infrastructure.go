@@ -305,6 +305,13 @@ func resourceInfrastructure() *schema.Resource {
 				Default:          false,
 				DiffSuppressFunc: diffSuppressFuncIgnore,
 			},
+			"cluster_ip_cidr": {
+				Description: "cluster IP CIDR defines a private IP address range used for internal Kubernetes services.",
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
