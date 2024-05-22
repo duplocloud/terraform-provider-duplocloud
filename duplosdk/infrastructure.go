@@ -117,7 +117,7 @@ type DuploInfrastructureConfig struct {
 	ProvisioningStatus      string                   `json:"ProvisioningStatus"`
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
 	AksConfig               *AksConfig               `json:"AksConfig,omitempty"`
-	ClusterIPCIDR           string                   `json:"ClusterIPCIDR,omitempty"`
+	ClusterIpv4Cidr         string                   `json:"ClusterIpv4Cidr,omitempty"`
 }
 
 type AksConfig struct {

@@ -534,6 +534,10 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 		}
 	}
 
+	if config.Cloud == 3 && !config.IsServerlessKubernetes {
+		config.ClusterIpv4Cidr = d.Get("cluster_ip_cidr").(string)
+	}
+
 	if d.HasChange("setting") {
 		config.CustomData = keyValueFromState("setting", d)
 	} else if d.HasChange("custom_data") {
