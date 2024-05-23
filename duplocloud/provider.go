@@ -149,6 +149,7 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_sql_database_instance":       resourceGcpSqlDBInstance(),
 			"duplocloud_gcp_node_pool":                   resourceGcpK8NodePool(),
 			"duplocloud_gcp_firestore":                   resourceFirestore(),
+			"duplocloud_plan_waf":                        resourcePlanWaf(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
