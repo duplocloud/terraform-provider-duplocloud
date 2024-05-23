@@ -61,6 +61,7 @@ type DuploRdsInstance struct {
 	AvailabilityZone            string                  `json:"AvailabilityZone,omitempty"`
 	EnableIamAuth               bool                    `json:"EnableIamAuth"`
 	MonitoringInterval          int                     `json:"MonitoringInterval"`
+	DatabaseName                string                  `json:"DatabaseName,omitempty"`
 }
 
 type V2ScalingConfiguration struct {
