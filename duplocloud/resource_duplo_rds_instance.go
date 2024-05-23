@@ -138,7 +138,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Type:             schema.TypeString,
 			Optional:         true,
 			Computed:         true,
-			DiffSuppressFunc: diffSuppressFuncIgnore,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"parameter_group_name": {
 			Description: "A RDS parameter group name to apply to the RDS instance.",
