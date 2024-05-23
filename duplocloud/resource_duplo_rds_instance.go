@@ -133,6 +133,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"db_name": {
+			Description:      "The name of the database to create when the DB instance is created. This is not applicable for update.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressFuncIgnore,
+		},
 		"parameter_group_name": {
 			Description: "A RDS parameter group name to apply to the RDS instance.",
 			Type:        schema.TypeString,
@@ -274,6 +281,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
+		},
+		"enhanced_monitoring": {
+			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
 		},
 	}
 }
@@ -522,6 +536,13 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
+	if val, ok := d.GetOk("enhanced_monitoring"); ok {
+		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
+			DBInstanceIdentifier: identifier,
+			ApplyImmediately:     true,
+			MonitoringInterval:   val.(int),
+		})
+	}
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -670,7 +691,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	if duploObject.SizeEx == "db.serverless" && duploObject.V2ScalingConfiguration == nil {
 		return nil, errors.New("v2_scaling_configuration: min_capacity and max_capacity must be provided")
 	}
-
+	duploObject.DatabaseName = d.Get("db_name").(string)
 	return duploObject, nil
 }
 
@@ -748,6 +769,8 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 			"max_capacity": duploObject.V2ScalingConfiguration.MaxCapacity,
 		}})
 	}
+	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
+	jo["db_name"] = duploObject.DatabaseName
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)

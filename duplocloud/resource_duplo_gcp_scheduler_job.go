@@ -388,7 +388,6 @@ func resourceGcpSchedulerJobDelete(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("[TRACE] resourceGcpSchedulerJobDelete ******** end")
 	return nil
 }
-
 func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploGcpSchedulerJob) {
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
@@ -440,8 +439,8 @@ func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, nam
 		d.Set("http_target", []interface{}{m})
 	} else if duplo.TargetType == duplosdk.GcpSchedulerJob_TargetType_AppEngineHttpTarget {
 		m := map[string]interface{}{
-			"method":       flattenGcpSchedulerJobHttpMethod(duplo.HTTPTarget.HTTPMethod),
-			"headers":      flattenStringMap(duplo.HTTPTarget.Headers),
+			"method":       flattenGcpSchedulerJobHttpMethod(duplo.AppEngineTarget.HTTPMethod),
+			"headers":      flattenStringMap(duplo.AppEngineTarget.Headers),
 			"body":         duplo.AnyHTTPTargetBody,
 			"relative_uri": duplo.AppEngineTarget.RelativeURI,
 		}

@@ -33,6 +33,11 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"full_family_name": {
+			Description: "The name of the task definition to create.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"revision": {
 			Description: "The current revision of the task definition.",
 			Type:        schema.TypeInt,
@@ -264,10 +269,8 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 		d.SetId("")
 		return nil
 	}
-
 	// Convert the object into Terraform resource data
 	flattenEcsTaskDefinition(rp, d)
-
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead(%s, %s): end", tenantID, arn)
 	return nil
 }
@@ -381,7 +384,7 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 
 	// First, convert things into simple scalars
 	d.Set("tenant_id", duplo.TenantID)
-	d.Set("family", duplo.Family)
+	d.Set("full_family_name", duplo.Family)
 	d.Set("revision", duplo.Revision)
 	d.Set("arn", duplo.Arn)
 	d.Set("cpu", duplo.CPU)

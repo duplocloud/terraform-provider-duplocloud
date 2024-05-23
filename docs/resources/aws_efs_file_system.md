@@ -55,6 +55,7 @@ resource "duplocloud_aws_efs_file_system" "efs" {
 - `file_system_id` (String) The ID that identifies the file system.
 - `fullname` (String) Duplo generated name of the EFS.
 - `id` (String) The ID of this resource.
+- `mount_targets` (List of Object) (see [below for nested schema](#nestedatt--mount_targets))
 - `number_of_mount_targets` (Number) The current number of mount targets that the file system has.
 - `owner_id` (String) The AWS account that created the file system.
 - `size_in_bytes` (Number) The latest known metered size (in bytes) of data stored in the file system.
@@ -85,6 +86,18 @@ Optional:
 
 - `create` (String)
 - `delete` (String)
+
+
+<a id="nestedatt--mount_targets"></a>
+### Nested Schema for `mount_targets`
+
+Read-Only:
+
+- `availability_zone` (String)
+- `ip_address` (String)
+- `lifecycle_state` (String)
+- `mount_target_id` (String)
+- `subnet_id` (String)
 
 ## Import
 

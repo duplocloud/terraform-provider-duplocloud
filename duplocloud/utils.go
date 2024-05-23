@@ -941,3 +941,7 @@ func conditionalDefault(condition bool, defaultValue interface{}) interface{} {
 func diffSuppressSpecifiedMetadata(k, old, new string, d *schema.ResourceData) bool {
 	return old == new
 }
+
+func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
+	return strings.EqualFold(old, new)
+}

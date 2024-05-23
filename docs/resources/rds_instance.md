@@ -87,6 +87,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 - `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
 - `backup_retention_period` (Number) Specifies backup retention period between 1 and 35 day(s). Default backup retention period is 1 day. Defaults to `1`.
 - `cluster_parameter_group_name` (String) Parameter group associated with this instance's DB Cluster.
+- `db_name` (String) The name of the database to create when the DB instance is created. This is not applicable for update.
 - `db_subnet_group_name` (String) Name of DB subnet group. DB instance will be created in the VPC associated with the DB subnet group.
 - `deletion_protection` (Boolean) If the DB instance should have deletion protection enabled.The database can't be deleted when this value is set to `true`. This setting is not applicable for document db cluster instance. Defaults to `false`.
 - `enable_iam_auth` (Boolean) Whether or not to enable the RDS IAM authentication.
@@ -94,6 +95,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 - `encrypt_storage` (Boolean) Whether or not to encrypt the RDS instance storage.
 - `engine_version` (String) The database engine version to use the for the RDS instance.
 If you don't know the available engine versions for your RDS instance, you can use the [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-engine-versions.html) to retrieve a list.
+- `enhanced_monitoring` (Number) Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.
 - `iops` (Number) The IOPS (Input/Output Operations Per Second) value. Should be specified only if `storage_type` is either io1 or gp3.
 - `kms_key_id` (String) The globally unique identifier for the key.
 - `master_password` (String, Sensitive) The master password of the RDS instance.
