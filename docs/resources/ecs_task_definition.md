@@ -73,6 +73,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 
 - `arn` (String) The ARN of the task definition.
 - `execution_role_arn` (String)
+- `full_family_name` (String) The name of the task definition to create.
 - `id` (String) The ID of this resource.
 - `revision` (Number) The current revision of the task definition.
 - `status` (String) The status of the task definition.
