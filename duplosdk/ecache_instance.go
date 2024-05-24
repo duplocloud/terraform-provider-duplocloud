@@ -12,21 +12,50 @@ type DuploEcacheInstance struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`
 
-	Identifier          string `json:"Identifier"`
-	Arn                 string `json:"Arn"`
-	Endpoint            string `json:"Endpoint,omitempty"`
-	CacheType           int    `json:"CacheType,omitempty"`
-	EngineVersion       string `json:"EngineVersion,omitempty"`
-	Size                string `json:"Size,omitempty"`
-	Replicas            int    `json:"Replicas,omitempty"`
-	EncryptionAtRest    bool   `json:"EnableEncryptionAtRest,omitempty"`
-	EncryptionInTransit bool   `json:"EnableEncryptionAtTransit,omitempty"`
-	KMSKeyID            string `json:"KmsKeyId,omitempty"`
-	AuthToken           string `json:"AuthToken,omitempty"`
-	ParameterGroupName  string `json:"ParameterGroupName,omitempty"`
-	InstanceStatus      string `json:"InstanceStatus,omitempty"`
-	EnableClusterMode   bool   `json:"ClusteringEnabled,omitempty"`
-	NumberOfShards      int    `json:"NoOfShards,omitempty"`
+	Identifier             string   `json:"Identifier"`
+	Arn                    string   `json:"Arn"`
+	Endpoint               string   `json:"Endpoint,omitempty"`
+	CacheType              int      `json:"CacheType,omitempty"`
+	EngineVersion          string   `json:"EngineVersion,omitempty"`
+	Size                   string   `json:"Size,omitempty"`
+	Replicas               int      `json:"Replicas,omitempty"`
+	EncryptionAtRest       bool     `json:"EnableEncryptionAtRest,omitempty"`
+	EncryptionInTransit    bool     `json:"EnableEncryptionAtTransit,omitempty"`
+	KMSKeyID               string   `json:"KmsKeyId,omitempty"`
+	AuthToken              string   `json:"AuthToken,omitempty"`
+	ParameterGroupName     string   `json:"ParameterGroupName,omitempty"`
+	InstanceStatus         string   `json:"InstanceStatus,omitempty"`
+	EnableClusterMode      bool     `json:"ClusteringEnabled,omitempty"`
+	NumberOfShards         int      `json:"NoOfShards,omitempty"`
+	SnapshotName           string   `json:"SnapshotName,omitempty"`
+	SnapshotArns           []string `json:"SnapshotArns,omitempty"`
+	SnapshotRetentionLimit int      `json:"SnapshotRetentionLimit,omitempty"`
+}
+
+// Modeled after the class of the same name in 'RDSConfiguration.cs
+// Represents an item in the response array from v2/subscriptions/{tenantID}/ECacheDBInstance
+type DuploEcacheInstanceDetails struct {
+	TenantID string `json:"TenantId"`
+
+	Identifier                string `json:"Identifier"`
+	Arn                       string `json:"Arn"`
+	Endpoint                  string `json:"Endpoint"`
+	CacheType                 int64  `json:"CacheType"`
+	EngineVersion             string `json:"EngineVersion"`
+	Size                      string `json:"Size"`
+	Replicas                  int64  `json:"Replicas"`
+	EnableEncryptionAtREST    bool   `json:"EnableEncryptionAtRest"`
+	EnableEncryptionAtTransit bool   `json:"EnableEncryptionAtTransit"`
+
+	InstanceStatus string `json:"InstanceStatus"`
+
+	ClusteringEnabled bool  `json:"ClusteringEnabled"`
+	NoOfShards        int64 `json:"NoOfShards"`
+
+	Version                string        `json:"Version"`
+	ClusterIdentifier      string        `json:"ClusterIdentifier"`
+	SnapshotArns           []interface{} `json:"SnapshotArns"`
+	SnapshotRetentionLimit int64         `json:"SnapshotRetentionLimit"`
 }
 
 /*************************************************
@@ -53,17 +82,15 @@ func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *Dupl
 	}
 
 	// Call the API.
-	rp := DuploEcacheInstance{}
+	var rp DuploEcacheInstance
 	err := c.doAPIWithRequestBody(
 		verb,
-		fmt.Sprintf("EcacheInstanceCreateOrUpdate(%s, duplo-%s)", tenantID, duploObject.Name),
-		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance", tenantID),
+		fmt.Sprintf("ECacheInstanceUpdate(%s, duplo-%s)", tenantID, duploObject.Name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdate", tenantID),
 		&duploObject,
 		&rp,
 	)
-	if err != nil {
-		return nil, err
-	}
+
 	return &rp, err
 }
 

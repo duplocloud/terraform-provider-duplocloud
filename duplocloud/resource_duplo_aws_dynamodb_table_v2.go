@@ -15,6 +15,38 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+/*
+//creating conflicts with name set up
+
+	func BeforeHook(fn func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics) func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+		return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+			c := m.(*duplosdk.Client)
+
+			err := prefixName(c, d)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			return fn(ctx, d, m)
+		}
+	}
+
+	func prefixName(c *duplosdk.Client, d *schema.ResourceData) duplosdk.ClientError {
+		tenantId, name := d.Get("tenant_id").(string), d.Get("name").(string)
+
+		prefix, err := c.GetDuploServicesPrefix(tenantId)
+		if err != nil {
+			return err
+		}
+
+		if !strings.HasPrefix(name, prefix) {
+			name = fmt.Sprintf("%s-%s", prefix, name)
+			d.Set("name", name)
+		}
+
+		return nil
+	}
+*/
 func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
@@ -277,10 +309,10 @@ func resourceAwsDynamoDBTableV2() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_aws_dynamodb_table_v2` manages an AWS dynamodb table in Duplo.",
 
-		ReadContext:   resourceAwsDynamoDBTableReadV2,
-		CreateContext: resourceAwsDynamoDBTableCreateV2,
-		UpdateContext: resourceAwsDynamoDBTableUpdateV2,
-		DeleteContext: resourceAwsDynamoDBTableDeleteV2,
+		ReadContext:   resourceAwsDynamoDBTableReadV2,   //BeforeHook(resourceAwsDynamoDBTableReadV2),
+		CreateContext: resourceAwsDynamoDBTableCreateV2, //BeforeHook(resourceAwsDynamoDBTableCreateV2),
+		UpdateContext: resourceAwsDynamoDBTableUpdateV2, //BeforeHook(resourceAwsDynamoDBTableUpdateV2),
+		DeleteContext: resourceAwsDynamoDBTableDeleteV2, //BeforeHook(resourceAwsDynamoDBTableDeleteV2),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -299,11 +331,14 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
-
+	reservedFullname := d.Get("fullname").(string)
 	c := m.(*duplosdk.Client)
 	fullName, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, name)
 	if errname != nil {
 		return diag.Errorf("resourceAwsDynamoDBTableReadV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
+	}
+	if fullName != reservedFullname {
+		fullName = reservedFullname
 	}
 	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
 	if clientErr != nil {
@@ -389,7 +424,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s dynamodb table '%s': %s", tenantID, name, err)
 	}
-
+	d.Set("fullname", rp.TableName)
 	time.Sleep(time.Duration(10) * time.Second)
 
 	// Wait for Duplo to be able to return the table's details.
@@ -399,7 +434,12 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	})
 
 	if diags != nil {
-		return diags
+		diags = waitForResourceToBePresentAfterCreate(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
+			return c.DynamoDBTableGetV2(tenantID, name)
+		})
+		if diags != nil {
+			return diags
+		}
 	}
 	d.SetId(id)
 
@@ -415,6 +455,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if diags != nil {
 		return diags
 	}
+
 	diags = resourceAwsDynamoDBTableReadV2(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateV2(%s, %s): end", tenantID, name)
 	return diags
@@ -424,8 +465,9 @@ func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceD
 	if v, ok := d.GetOk("is_point_in_time_recovery"); ok && v.(bool) {
 		id := d.Id()
 		tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
+		fname := d.Get("fullname").(string)
 		c := m.(*duplosdk.Client)
-		_, errPir := c.DynamoDBTableV2PointInRecovery(tenantID, name, v.(bool))
+		_, errPir := c.DynamoDBTableV2PointInRecovery(tenantID, fname, v.(bool))
 		if errPir != nil {
 			return diag.Errorf("Error while setting point in recovery tenant %s dynamodb table '%s': %s", tenantID, name, err)
 		}

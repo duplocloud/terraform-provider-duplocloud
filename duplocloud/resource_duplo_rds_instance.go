@@ -133,6 +133,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"db_name": {
+			Description:      "The name of the database to create when the DB instance is created. This is not applicable for update.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
 		"parameter_group_name": {
 			Description: "A RDS parameter group name to apply to the RDS instance.",
 			Type:        schema.TypeString,
@@ -684,7 +691,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	if duploObject.SizeEx == "db.serverless" && duploObject.V2ScalingConfiguration == nil {
 		return nil, errors.New("v2_scaling_configuration: min_capacity and max_capacity must be provided")
 	}
-
+	duploObject.DatabaseName = d.Get("db_name").(string)
 	return duploObject, nil
 }
 
@@ -763,6 +770,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 		}})
 	}
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
+	jo["db_name"] = duploObject.DatabaseName
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)

@@ -26,6 +26,7 @@ description: |-
 - `cpu` (String)
 - `execution_role_arn` (String)
 - `family` (String) The name of the task definition to create.
+- `full_family_name` (String) The name of the task definition to create.
 - `id` (String) The ID of this resource.
 - `inference_accelerator` (Set of Object) (see [below for nested schema](#nestedatt--inference_accelerator))
 - `ipc_mode` (String)

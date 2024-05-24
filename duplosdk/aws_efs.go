@@ -41,6 +41,15 @@ type DuploEFSGetResp struct {
 	SizeInBytes                  *EFSSizeInBytes        `json:"SizeInBytes,omitempty"`
 	Tags                         *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	ThroughputMode               *DuploStringValue      `json:"ThroughputMode,omitempty"`
+	MountTarget                  *[]MountTarget         `json:"-"`
+}
+
+type MountTarget struct {
+	IP               string         `json:"IpAddress"`
+	AvailabilityZone string         `json:"AvailabilityZoneName"`
+	SubnetId         string         `json:"SubnetId"`
+	LifeCycleState   LifeCycleState `json:"LifeCycleState"`
+	MountTargetId    string         `json:"MountTargetId"`
 }
 
 /*************************************************
@@ -84,6 +93,16 @@ func (c *Client) DuploEFSDelete(tenantID string, efsId string) (*DuploEFSGetResp
 	err := c.deleteAPI(
 		fmt.Sprintf("DuploEFSDelete(%s, %s)", tenantID, efsId),
 		fmt.Sprintf("v3/subscriptions/%s/aws/efs/%s", tenantID, efsId),
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) DuploAWsMountTargetGet(tenantID string, efsId string) (*[]MountTarget, ClientError) {
+	rp := []MountTarget{}
+	err := c.getAPI(
+		fmt.Sprintf("DuploEFSGet(%s, %s)", tenantID, efsId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/efs_mount_targets/%s", tenantID, efsId),
 		&rp,
 	)
 	return &rp, err
