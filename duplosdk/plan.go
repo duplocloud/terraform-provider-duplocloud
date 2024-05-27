@@ -120,11 +120,12 @@ func (c *Client) PlanWAFGet(planID, name string) (*DuploPlanWAF, ClientError) {
 }
 
 func (c *Client) PlanWAF(planID string, wafs *DuploPlanWAF) ClientError {
+	rp := &DuploPlanWAF{}
 	return c.postAPI(
 		fmt.Sprintf("PlanWAF(%s)", planID),
 		fmt.Sprintf("v3/admin/plans/%s/waf", planID),
 		wafs,
-		nil)
+		rp)
 }
 
 // PlanGetList retrieves a list of plans via the Duplo API.

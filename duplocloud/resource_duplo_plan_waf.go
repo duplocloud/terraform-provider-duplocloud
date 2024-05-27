@@ -57,26 +57,26 @@ func resourcePlanWafRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	// Parse the identifying attributes
 	planID := d.Id()
-	log.Printf("[TRACE] resourcePlanConfigsRead(%s): start", planID)
+	log.Printf("[TRACE] resourcePlanWafRead(%s): start", planID)
 	name := d.Get("waf_name").(string)
 	c := m.(*duplosdk.Client)
 
 	// First, try the newer method of getting the plan configs.
 	duplo, err := c.PlanWAFGet(planID, name)
 	if err != nil {
-		return diag.Errorf("failed to retrieve plan configs for '%s': %s", planID, err)
+		return diag.Errorf("failed to retrieve plan waf for '%s': %s", planID, err)
 	}
 	d.Set("waf_name", duplo.WebAclName)
 	d.Set("waf_arn", duplo.WebAclId)
 	d.Set("dashboard_url", duplo.DashboardUrl)
-	log.Printf("[TRACE] resourcePlanConfigsRead(%s): end", planID)
+	log.Printf("[TRACE] resourcePlanWafRead(%s): end", planID)
 	return nil
 }
 
 func resourcePlanWafCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// Parse the identifying attributes
 	planID := d.Get("plan_id").(string)
-	log.Printf("[TRACE] resourcePlanConfigsCreateOrUpdate(%s): start", planID)
+	log.Printf("[TRACE] resourcePlanWafCreateOrUpdate(%s): start", planID)
 
 	// Get all of the plan configs from duplo.
 	c := m.(*duplosdk.Client)
@@ -93,7 +93,7 @@ func resourcePlanWafCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 	d.SetId(planID)
 
 	diags := resourcePlanConfigsRead(ctx, d, m)
-	log.Printf("[TRACE] resourcePlanWafCreate(%s): end", planID)
+	log.Printf("[TRACE] resourcePlanWafCreateOrUpdate(%s): end", planID)
 	return diags
 }
 

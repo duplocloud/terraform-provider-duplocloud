@@ -1,0 +1,1 @@
+terraform import duplocloud_plan_waf.myplan PLAN_ID
