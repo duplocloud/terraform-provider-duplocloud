@@ -44,6 +44,7 @@ func resourcePlanWaf() *schema.Resource {
 			"waf_arn": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"dashboard_url": {
 				Type:     schema.TypeString,
@@ -90,7 +91,8 @@ func resourcePlanWafCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.Errorf("Error creating plan wafs for '%s': %s", planID, err)
 	}
-	d.SetId(planID)
+	id := planID + "/" + rq.WebAclName
+	d.SetId(id)
 
 	diags := resourcePlanConfigsRead(ctx, d, m)
 	log.Printf("[TRACE] resourcePlanWafCreateOrUpdate(%s): end", planID)

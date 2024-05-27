@@ -1,1 +1,1 @@
-terraform import duplocloud_plan_waf.myplan PLAN_ID
+terraform import duplocloud_plan_waf.myplan PLAN_ID/WAF_NAME
