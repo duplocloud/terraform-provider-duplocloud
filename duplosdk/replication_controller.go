@@ -2,6 +2,8 @@ package duplosdk
 
 import (
 	"fmt"
+	"strings"
+	"time"
 )
 
 // DuploReplicationController represents a service in the Duplo SDK
@@ -399,11 +401,24 @@ func (c *Client) ReplicationControllerLbConfigurationDeleteAll(tenantID, name st
 // ReplicationControllerLbWafGet gets a replication controller LB's WAF ACL ID via the Duplo API.
 func (c *Client) ReplicationControllerLbWafGet(tenantID, name string) (string, ClientError) {
 	wafAclId := ""
-	err := c.getAPI(
-		fmt.Sprintf("ReplicationControllerLbGetWaf(%s, %s)", tenantID, name),
-		fmt.Sprintf("subscriptions/%s/GetWafInLb/%s", tenantID, name),
-		&wafAclId,
-	)
+
+	_, err := RetryWithExponentialBackoff(func() (interface{}, ClientError) {
+		err := c.getAPI(
+			fmt.Sprintf("ReplicationControllerLbGetWaf(%s, %s)", tenantID, name),
+			fmt.Sprintf("subscriptions/%s/GetWafInLb/%s", tenantID, name),
+			&wafAclId,
+		)
+		return &wafAclId, err
+	},
+		RetryConfig{
+			MinDelay:  1 * time.Second,
+			MaxDelay:  5 * time.Second,
+			MaxJitter: 2000,
+			Timeout:   60 * time.Second,
+			IsRetryable: func(error ClientError) bool {
+				return error.Status() == 400 || error.Status() == 500 || strings.Contains(error.Error(), "context deadline exceeded")
+			},
+		})
 	return wafAclId, err
 }
 
