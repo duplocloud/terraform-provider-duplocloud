@@ -148,7 +148,7 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 				"nodejs4.3-edge",
 				"go1.x",
 				"ruby2.5", "ruby2.7", "ruby3.2",
-				"provided", "provided.al2",
+				"provided", "provided.al2", "provided.al2023",
 			}, false),
 		},
 		"handler": {
