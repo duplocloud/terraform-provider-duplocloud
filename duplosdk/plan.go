@@ -152,6 +152,22 @@ func (c *Client) PlanCertificateGetList(planID string) (*[]DuploPlanCertificate,
 	return &list, nil
 }
 
+func (c *Client) PlanKMSGetList(planID string) (*[]DuploPlanKmsKeyInfo, ClientError) {
+	list := []DuploPlanKmsKeyInfo{}
+	err := c.getAPI("PlanKMSGetList()", fmt.Sprintf("v3/admin/plans/%s/kmskeys", planID), &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+func (c *Client) PlanKMSDelete(planID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("PlanDeleteCertificate(%s, %s)", planID, name),
+		fmt.Sprintf("v3/admin/plans/%s/kmskeys/%s", planID, name),
+		nil)
+}
+
 // TenantReplaceConfig replaces plan certificates via the Duplo API.
 func (c *Client) PlanReplaceCertificates(planID string, newCerts *[]DuploPlanCertificate) ClientError {
 	existing, err := c.PlanCertificateGetList(planID)
@@ -159,6 +175,13 @@ func (c *Client) PlanReplaceCertificates(planID string, newCerts *[]DuploPlanCer
 		return err
 	}
 	return c.PlanChangeCertificates(planID, existing, newCerts)
+}
+func (c *Client) PlanReplaceKMS(planID string, newCerts *[]DuploPlanKmsKeyInfo) ClientError {
+	existing, err := c.PlanKMSGetList(planID)
+	if err != nil {
+		return err
+	}
+	return c.PlanChangeKMS(planID, existing, newCerts)
 }
 
 // PlanChangeCertificates changes plan certificates via the Duplo API, using the supplied
@@ -190,6 +213,33 @@ func (c *Client) PlanChangeCertificates(planID string, oldCerts, newCerts *[]Dup
 	return nil
 }
 
+func (c *Client) PlanChangeKMS(planID string, oldKms, newKms *[]DuploPlanKmsKeyInfo) ClientError {
+
+	// Next, update all certs that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if newKms != nil {
+		for _, pc := range *newKms {
+			if err := c.PlanSetKMS(planID, pc); err != nil {
+				return err
+			}
+			present[pc.KeyName] = struct{}{}
+		}
+	}
+
+	// Finally, delete any certs that are no longer present.
+	if oldKms != nil {
+		for _, pc := range *oldKms {
+			if _, ok := present[pc.KeyName]; !ok {
+				if err := c.PlanDeleteCertificate(planID, pc.KeyName); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 // PlanDeleteCertificate deletes a specific certificate for a plan via the Duplo API.
 func (c *Client) PlanDeleteCertificate(planID, name string) ClientError {
 	return c.deleteAPI(
@@ -206,6 +256,36 @@ func (c *Client) PlanSetCertificate(planID string, cert DuploPlanCertificate) Cl
 		fmt.Sprintf("v3/admin/plans/%s/certificates", planID),
 		&cert,
 		&rp)
+}
+
+func (c *Client) PlanCreateKMSKey(planID string, kms DuploPlanKmsKeyInfo) ClientError {
+	var rp DuploPlanKmsKeyInfo
+	return c.postAPI(
+		fmt.Sprintf("PlanCreateKMSKey(%s, %s)", planID, kms.KeyName),
+		fmt.Sprintf("v3/admin/plans/%s/kmskeys", planID),
+		kms,
+		&rp)
+}
+
+func (c *Client) PlanSetKMS(planID string, kms DuploPlanKmsKeyInfo) ClientError {
+	var rp DuploPlanKmsKeyInfo
+	return c.postAPI(
+		fmt.Sprintf("PlanSetKMS(%s, %s)", planID, kms.KeyName),
+		fmt.Sprintf("v3/admin/plans/%s/kmskeys", planID),
+		kms,
+		&rp)
+}
+
+func (c *Client) PlanGetKMSKey(planID string, name string) (*DuploPlanKmsKeyInfo, ClientError) {
+	var rp DuploPlanKmsKeyInfo
+	err := c.getAPI(
+		fmt.Sprintf("PlanGetKMSKey(%s, %s)", planID, name),
+		fmt.Sprintf("v3/admin/plans/%s/kmskeys/%s", planID, name),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
 }
 
 // PlanImageGetList retrieves a list of plan images via the Duplo API.
