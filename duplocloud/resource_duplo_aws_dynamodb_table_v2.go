@@ -530,11 +530,23 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	if diagErr != nil {
 		return diagErr
 	}
-	if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) {
+
+	if shouldUpdateGSI(existing, rq) {
+		rq.SSESpecification, rq.DeletionProtectionEnabled = nil, nil
+
+		log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
+		_, err = c.DynamoDBTableUpdateGSIV2(tenantID, rq)
+		if err != nil {
+			e := "Error updating tenant %s DynamoDB table '%s': %s"
+			return diag.Errorf(e, tenantID, name, err)
+		}
+
+	}
+	if shouldUpdateThroughput(existing, rq) {
 		rq.SSESpecification, rq.DeletionProtectionEnabled = nil, nil
 		//
 		log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+		_, err = c.DynamoDBTableUpdateGSIV2(tenantID, rq)
 		if err != nil {
 			e := "Error updating tenant %s DynamoDB table '%s': %s"
 			return diag.Errorf(e, tenantID, name, err)

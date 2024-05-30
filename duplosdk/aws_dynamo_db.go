@@ -133,7 +133,12 @@ type DuploDynamoDBTableV2GlobalSecondaryIndex struct {
 	KeySchema             *[]DuploDynamoDBKeySchema           `json:"KeySchema,omitempty"`
 	ProvisionedThroughput *DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput,omitempty"`
 }
-
+type UpdateGSIReq struct {
+	UpdateGSI UpdateGSI `json:"Update"`
+}
+type UpdateGSI struct {
+	GlobalSecondaryIndexes *[]DuploDynamoDBTableV2GlobalSecondaryIndex
+}
 type DuploDynamoDBTableV2BillingModeSummary struct {
 	BillingMode *DuploStringValue `json:"BillingMode,omitempty"`
 }
@@ -210,6 +215,27 @@ func (c *Client) DynamoDBTableUpdateV2(
 		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
 		&rq,
+		&rp,
+	)
+	rp.TenantID = tenantID
+	return &rp, err
+}
+
+func (c *Client) DynamoDBTableUpdateGSIV2(
+	tenantID string,
+	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+	rp := DuploDynamoDBTableV2{}
+	u := UpdateGSI{
+		rq.GlobalSecondaryIndexes,
+	}
+	ur := UpdateGSIReq{
+		u,
+	}
+
+	err := c.putAPI(
+		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s/globalSecondaryIndex", tenantID, rq.TableName),
+		&ur,
 		&rp,
 	)
 	rp.TenantID = tenantID
