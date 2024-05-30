@@ -54,10 +54,9 @@ func dataSourcePlanKMSReadList(ctx context.Context, d *schema.ResourceData, m in
 	log.Printf("[TRACE] dataSourcePlanKMSRead(%s): start", planID)
 	c := m.(*duplosdk.Client)
 
-	// First, try the newer method of getting the plan certificates.
 	duplo, err := c.PlanKMSGetList(planID)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("failed to retrieve plan certificates for '%s': %s", planID, err)
+		return diag.Errorf("failed to retrieve plan kms for '%s': %s", planID, err)
 	}
 	count := 0
 	if duplo != nil {

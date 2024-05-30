@@ -67,10 +67,9 @@ func resourcePlanKMSRead(ctx context.Context, d *schema.ResourceData, m interfac
 	log.Printf("[TRACE] resourcePlanKMSRead(%s): start", planID)
 	c := m.(*duplosdk.Client)
 
-	// First, try the newer method of getting the plan certificates.
 	duplo, err := c.PlanGetKMSKey(planID, name)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("failed to retrieve plan certificates for '%s': %s", planID, err)
+		return diag.Errorf("failed to retrieve plan kms for '%s': %s", planID, err)
 	}
 
 	// Set the simple fields first.
@@ -107,7 +106,7 @@ func resourcePlanKMSCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 		KeyId:   d.Get("kms_id").(string),
 		KeyArn:  d.Get("kms_arn").(string),
 	}
-	// Get all of the plan certificates from duplo.
+	// Get all of the plan kms from duplo.
 	c := m.(*duplosdk.Client)
 	rp, _ := c.PlanKMSGetList(planID)
 	if !isKMSUpdateOrCreateable(*rp, rq) {
@@ -125,7 +124,6 @@ func resourcePlanKMSCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 }
 
 func resourcePlanKMSDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	//planID := d.Get("plan_id").(string)
 	id := d.Id()
 	info := strings.Split(id, "/")
 	planID := info[0]
