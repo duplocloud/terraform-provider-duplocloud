@@ -57,5 +57,5 @@ Optional:
 Import is supported using the following syntax:
 
 ```shell
-terraform import duplocloud_plan_kms.myplan PLAN_ID
+terraform import duplocloud_plan_kms.myplan PLAN_ID/kms/KMS_NAME
 ```
