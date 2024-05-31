@@ -20,18 +20,11 @@ This resource allows you take control of individual plan kms for a specific plan
 
 ### Required
 
+- `kms_name` (String)
 - `plan_id` (String) The ID of the plan to configure.
 
 ### Read-Only
 
-- `data` (List of Object) (see [below for nested schema](#nestedatt--data))
 - `id` (String) The ID of this resource.
-
-<a id="nestedatt--data"></a>
-### Nested Schema for `data`
-
-Read-Only:
-
 - `kms_arn` (String)
 - `kms_id` (String)
-- `kms_name` (String)

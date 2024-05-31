@@ -60,7 +60,7 @@ func resourcePlanKMSRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	// Parse the identifying attributes
 	id := d.Id()
-	info := strings.Split(id, "/")
+	info := strings.SplitN(id, "/", 3)
 	planID := info[0]
 	name := info[2]
 
@@ -68,7 +68,7 @@ func resourcePlanKMSRead(ctx context.Context, d *schema.ResourceData, m interfac
 	c := m.(*duplosdk.Client)
 
 	duplo, err := c.PlanGetKMSKey(planID, name)
-	if err != nil && !err.PossibleMissingAPI() {
+	if err != nil || !err.PossibleMissingAPI() {
 		return diag.Errorf("failed to retrieve plan kms for '%s': %s", planID, err)
 	}
 
@@ -125,7 +125,7 @@ func resourcePlanKMSCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 
 func resourcePlanKMSDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	info := strings.Split(id, "/")
+	info := strings.SplitN(id, "/", 3)
 	planID := info[0]
 	name := info[2]
 

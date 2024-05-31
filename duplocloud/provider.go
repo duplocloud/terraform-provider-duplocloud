@@ -210,8 +210,8 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_sql_database_instances": dataSourceGCPCloudSQLs(),
 			"duplocloud_gcp_firestore":              dataSourceFirestore(),
 			"duplocloud_gcp_firestores":             dataSourceFirestores(),
-			"duplocloud_plan_km":                    dataSourcePlanKMS(),
-			"duplocloud_plan_kms":                   dataSourcePlanKMSList(),
+			"duplocloud_plan_kms":                   dataSourcePlanKMS(),
+			"duplocloud_plan_kms_key":               dataSourcePlanKMSList(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
