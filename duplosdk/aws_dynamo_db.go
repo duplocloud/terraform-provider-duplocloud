@@ -74,8 +74,8 @@ type DuploDynamoDBProvisionedThroughput struct {
 
 // DuploDynamoDBKeySchema is a Duplo SDK object that represents a dynamodb key schema
 type DuploDynamoDBKeySchema struct {
-	AttributeName string            `json:"AttributeName"`
-	KeyType       *DuploStringValue `json:"KeyType,omitempty"`
+	AttributeName string `json:"AttributeName"`
+	KeyType       string `json:"KeyType,omitempty"`
 }
 
 type DuploDynamoDBKeySchemaV2 struct {
@@ -117,8 +117,8 @@ type DuploDynamoDBTableV2SSESpecification struct {
 }
 
 type DuploDynamoDBTableV2Projection struct {
-	NonKeyAttributes []string          `json:"NonKeyAttributes,omitempty"`
-	ProjectionType   *DuploStringValue `json:"ProjectionType,omitempty"`
+	NonKeyAttributes []string `json:"NonKeyAttributes,omitempty"`
+	ProjectionType   string   `json:"ProjectionType,omitempty"`
 }
 
 type DuploDynamoDBTableV2LocalSecondaryIndex struct {

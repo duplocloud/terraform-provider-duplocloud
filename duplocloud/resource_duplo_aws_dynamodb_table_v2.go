@@ -217,6 +217,11 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 						Required:    true,
 						ForceNew:    true,
 					},
+					"hash_key": {
+						Description: "The name of the hash key in the index; must be defined as an attribute in the resource.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
 					"non_key_attributes": {
 						Description: "Only required with `INCLUDE` as a projection type; a list of attributes to project into the index. These do not need to be defined as attributes on the table.",
 						Type:        schema.TypeList,
@@ -382,11 +387,11 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	}
 
 	for _, attribute := range *duplo.KeySchema {
-		if attribute.KeyType.Value == duplosdk.DynamoDBKeyTypeHash {
+		if attribute.KeyType == duplosdk.DynamoDBKeyTypeHash {
 			d.Set("hash_key", attribute.AttributeName)
 		}
 
-		if attribute.KeyType.Value == duplosdk.DynamoDBKeyTypeRange {
+		if attribute.KeyType == duplosdk.DynamoDBKeyTypeRange {
 			d.Set("range_key", attribute.AttributeName)
 		}
 	}
@@ -818,17 +823,17 @@ func flattenTableGlobalSecondaryIndex(gsi *[]duplosdk.DuploDynamoDBTableV2Global
 
 		for _, attribute := range *g.KeySchema {
 
-			if attribute.KeyType.Value == "HASH" {
+			if attribute.KeyType == "HASH" {
 				gsi["hash_key"] = attribute.AttributeName
 			}
 
-			if attribute.KeyType.Value == "RANGE" {
+			if attribute.KeyType == "RANGE" {
 				gsi["range_key"] = attribute.AttributeName
 			}
 		}
 
 		if g.Projection != nil {
-			gsi["projection_type"] = g.Projection.ProjectionType.Value
+			gsi["projection_type"] = g.Projection.ProjectionType
 			gsi["non_key_attributes"] = g.Projection.NonKeyAttributes
 		}
 
@@ -853,14 +858,14 @@ func expandKeySchema(data map[string]interface{}) *[]duplosdk.DuploDynamoDBKeySc
 	if v, ok := data["hash_key"]; ok && v != nil && v != "" {
 		keySchema = append(keySchema, duplosdk.DuploDynamoDBKeySchema{
 			AttributeName: v.(string),
-			KeyType:       &duplosdk.DuploStringValue{Value: "HASH"},
+			KeyType:       "HASH",
 		})
 	}
 
 	if v, ok := data["range_key"]; ok && v != nil && v != "" {
 		keySchema = append(keySchema, duplosdk.DuploDynamoDBKeySchema{
 			AttributeName: v.(string),
-			KeyType:       &duplosdk.DuploStringValue{Value: "RANGE"},
+			KeyType:       "RANGE",
 		})
 	}
 	return &keySchema
@@ -868,7 +873,7 @@ func expandKeySchema(data map[string]interface{}) *[]duplosdk.DuploDynamoDBKeySc
 
 func expandProjection(data map[string]interface{}) *duplosdk.DuploDynamoDBTableV2Projection {
 	projection := &duplosdk.DuploDynamoDBTableV2Projection{
-		ProjectionType: &duplosdk.DuploStringValue{Value: data["projection_type"].(string)},
+		ProjectionType: data["projection_type"].(string),
 	}
 
 	if v, ok := data["non_key_attributes"].([]interface{}); ok && len(v) > 0 {
@@ -921,12 +926,12 @@ func flattenTableLocalSecondaryIndex(lsi *[]duplosdk.DuploDynamoDBTableV2LocalSe
 		}
 
 		if l.Projection != nil {
-			m["projection_type"] = l.Projection.ProjectionType.Value
+			m["projection_type"] = l.Projection.ProjectionType
 			m["non_key_attributes"] = l.Projection.NonKeyAttributes
 		}
 
 		for _, attribute := range *l.KeySchema {
-			if attribute.KeyType.Value == "RANGE" {
+			if attribute.KeyType == "RANGE" {
 				m["range_key"] = attribute.AttributeName
 			}
 		}
