@@ -86,5 +86,5 @@ Import is supported using the following syntax:
 #  - *TENANT_ID* is the tenant GUID
 #  - *NAME* is the name of the Azure  Private Endpoint
 #
-terraform import duplocloud_azure_postgresql_database.myPostgreSQLDatabase *TENANT_ID*/*NAME*
+terraform import duplocloud_azure_private_endpoint.private_endpoint *TENANT_ID*/*NAME*
 ```
