@@ -46,6 +46,29 @@ type DuploDynamoDBTableV2 struct {
 	BillingModeSummary        *DuploDynamoDBTableV2BillingModeSummary     `json:"BillingModeSummary,omitempty"`
 }
 
+type DuploDynamoDBTableV2Response struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-"`
+
+	TableName                 string                                              `json:"TableName"`
+	TableId                   string                                              `json:"TableId"`
+	TableArn                  string                                              `json:"TableArn,omitempty"`
+	DeletionProtectionEnabled bool                                                `json:"DeletionProtectionEnabled,omitempty"`
+	PointInTimeRecoveryStatus string                                              `json:"PointInTimeRecoveryStatus,omitempty"`
+	KeySchema                 *[]DuploDynamoDBKeySchemaResponse                   `json:"KeySchema,omitempty"`
+	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinion                   `json:"AttributeDefinitions,omitempty"`
+	TableStatus               *DuploStringValue                                   `json:"TableStatus,omitempty"`
+	TableSizeBytes            int                                                 `json:"TableSizeBytes,omitempty"`
+	LocalSecondaryIndexes     *[]DuploDynamoDBTableV2LocalSecondaryIndexResponse  `json:"LocalSecondaryIndexes,omitempty"`
+	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndexResponse `json:"GlobalSecondaryIndexes,omitempty"`
+	LatestStreamArn           string                                              `json:"LatestStreamArn,omitempty"`
+	LatestStreamLabel         string                                              `json:"LatestStreamLabel,omitempty"`
+	ProvisionedThroughput     *DuploDynamoDBProvisionedThroughput                 `json:"ProvisionedThroughput,omitempty"`
+	SSEDescription            *DuploDynamoDBTableV2SSESpecification               `json:"SSEDescription,omitempty"`
+	StreamSpecification       *DuploDynamoDBTableV2StreamSpecification            `json:"StreamSpecification,omitempty"`
+	BillingModeSummary        *DuploDynamoDBTableV2BillingModeSummary             `json:"BillingModeSummary,omitempty"`
+}
+
 type DuploDynamoDBTableV2TimeInRecovery struct {
 	IsPointInTimeRecovery bool `json:"IsPointInTimeRecovery,omitempty"`
 }
@@ -76,6 +99,11 @@ type DuploDynamoDBProvisionedThroughput struct {
 type DuploDynamoDBKeySchema struct {
 	AttributeName string `json:"AttributeName"`
 	KeyType       string `json:"KeyType,omitempty"`
+}
+
+type DuploDynamoDBKeySchemaResponse struct {
+	AttributeName string           `json:"AttributeName"`
+	KeyType       DuploStringValue `json:"KeyType,omitempty"`
 }
 
 type DuploDynamoDBKeySchemaV2 struct {
@@ -121,10 +149,21 @@ type DuploDynamoDBTableV2Projection struct {
 	ProjectionType   string   `json:"ProjectionType,omitempty"`
 }
 
+type DuploDynamoDBTableV2ProjectionResponse struct {
+	NonKeyAttributes []string          `json:"NonKeyAttributes,omitempty"`
+	ProjectionType   *DuploStringValue `json:"ProjectionType,omitempty"`
+}
+
 type DuploDynamoDBTableV2LocalSecondaryIndex struct {
 	IndexName  string                          `json:"IndexName"`
 	Projection *DuploDynamoDBTableV2Projection `json:"Projection,omitempty"`
 	KeySchema  *[]DuploDynamoDBKeySchema       `json:"KeySchema,omitempty"`
+}
+
+type DuploDynamoDBTableV2LocalSecondaryIndexResponse struct {
+	IndexName  string                                  `json:"IndexName"`
+	Projection *DuploDynamoDBTableV2ProjectionResponse `json:"Projection,omitempty"`
+	KeySchema  *[]DuploDynamoDBKeySchemaResponse       `json:"KeySchema,omitempty"`
 }
 
 type DuploDynamoDBTableV2GlobalSecondaryIndex struct {
@@ -132,6 +171,13 @@ type DuploDynamoDBTableV2GlobalSecondaryIndex struct {
 	Projection            *DuploDynamoDBTableV2Projection     `json:"Projection,omitempty"`
 	KeySchema             *[]DuploDynamoDBKeySchema           `json:"KeySchema,omitempty"`
 	ProvisionedThroughput *DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput,omitempty"`
+}
+
+type DuploDynamoDBTableV2GlobalSecondaryIndexResponse struct {
+	IndexName             string                                  `json:"IndexName"`
+	Projection            *DuploDynamoDBTableV2ProjectionResponse `json:"Projection,omitempty"`
+	KeySchema             *[]DuploDynamoDBKeySchemaResponse       `json:"KeySchema,omitempty"`
+	ProvisionedThroughput *DuploDynamoDBProvisionedThroughput     `json:"ProvisionedThroughput,omitempty"`
 }
 type UpdateGSIReq struct {
 	UpdateGSI UpdateGSI `json:"Update"`
@@ -154,7 +200,7 @@ type DuploDynamoDBTableRequestV2 struct {
 	StreamSpecification       *DuploDynamoDBTableV2StreamSpecification    `json:"StreamSpecification,omitempty"`
 	SSESpecification          *DuploDynamoDBTableV2SSESpecification       `json:"SSESpecification,omitempty"`
 	LocalSecondaryIndexes     *[]DuploDynamoDBTableV2LocalSecondaryIndex  `json:"LocalSecondaryIndexes,omitempty"`
-	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexeUpdatess,omitempty"`
+	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexes,omitempty"`
 }
 
 type DuploDynamoDBTagResourceRequest struct {
@@ -192,10 +238,10 @@ func (c *Client) DynamoDBTableCreate(
 func (c *Client) DynamoDBTableCreateV2(
 	tenantID string,
 	rq *DuploDynamoDBTableRequestV2,
-) (*DuploDynamoDBTableV2, ClientError) {
+) (*DuploDynamoDBTableV2Response, ClientError) {
 	fmt.Println("calling DynamoDBTableCreateV2")
 
-	rp := DuploDynamoDBTableV2{}
+	rp := DuploDynamoDBTableV2Response{}
 	err := c.postAPI(
 		fmt.Sprintf("DynamoDBTableCreate(%s, %s)", tenantID, rq.TableName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2", tenantID),
@@ -297,8 +343,8 @@ func (c *Client) DynamoDBTableGet(tenantID string, name string) (*DuploDynamoDBT
 	return &rp, err
 }
 
-func (c *Client) DynamoDBTableGetV2(tenantID string, name string) (*DuploDynamoDBTableV2, ClientError) {
-	rp := DuploDynamoDBTableV2{}
+func (c *Client) DynamoDBTableGetV2(tenantID string, name string) (*DuploDynamoDBTableV2Response, ClientError) {
+	rp := DuploDynamoDBTableV2Response{}
 	err := c.getAPI(
 		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, name),

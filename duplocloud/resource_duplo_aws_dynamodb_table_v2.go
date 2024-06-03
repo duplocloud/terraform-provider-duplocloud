@@ -387,11 +387,11 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	}
 
 	for _, attribute := range *duplo.KeySchema {
-		if attribute.KeyType == duplosdk.DynamoDBKeyTypeHash {
+		if attribute.KeyType.Value == duplosdk.DynamoDBKeyTypeHash {
 			d.Set("hash_key", attribute.AttributeName)
 		}
 
-		if attribute.KeyType == duplosdk.DynamoDBKeyTypeRange {
+		if attribute.KeyType.Value == duplosdk.DynamoDBKeyTypeRange {
 			d.Set("range_key", attribute.AttributeName)
 		}
 	}
@@ -653,7 +653,7 @@ func updateDeleteProtection(c *duplosdk.Client, d *schema.ResourceData, tenantID
 	return nil
 }
 
-func updateGlobalSecondaryIndex(c *duplosdk.Client, d *schema.ResourceData, tenantID, fullname string, existing *duplosdk.DuploDynamoDBTableV2) diag.Diagnostics {
+func updateGlobalSecondaryIndex(c *duplosdk.Client, d *schema.ResourceData, tenantID, fullname string, existing *duplosdk.DuploDynamoDBTableV2Response) diag.Diagnostics {
 
 	if d.HasChange("global_secondary_index") {
 		r := duplosdk.DuploDynamoDBTableRequestV2{}
@@ -805,7 +805,7 @@ func expandDynamoDBKeySchema(d *schema.ResourceData) *[]duplosdk.DuploDynamoDBKe
 	return &ary
 }
 
-func flattenTableGlobalSecondaryIndex(gsi *[]duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndex) []interface{} {
+func flattenTableGlobalSecondaryIndex(gsi *[]duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndexResponse) []interface{} {
 	if len(*gsi) == 0 {
 		return []interface{}{}
 	}
@@ -823,17 +823,17 @@ func flattenTableGlobalSecondaryIndex(gsi *[]duplosdk.DuploDynamoDBTableV2Global
 
 		for _, attribute := range *g.KeySchema {
 
-			if attribute.KeyType == "HASH" {
+			if attribute.KeyType.Value == "HASH" {
 				gsi["hash_key"] = attribute.AttributeName
 			}
 
-			if attribute.KeyType == "RANGE" {
+			if attribute.KeyType.Value == "RANGE" {
 				gsi["range_key"] = attribute.AttributeName
 			}
 		}
 
 		if g.Projection != nil {
-			gsi["projection_type"] = g.Projection.ProjectionType
+			gsi["projection_type"] = g.Projection.ProjectionType.Value
 			gsi["non_key_attributes"] = g.Projection.NonKeyAttributes
 		}
 
@@ -912,7 +912,7 @@ func expandProvisionedThroughputField(id string, data map[string]interface{}, ke
 	return v
 }
 
-func flattenTableLocalSecondaryIndex(lsi *[]duplosdk.DuploDynamoDBTableV2LocalSecondaryIndex) []interface{} {
+func flattenTableLocalSecondaryIndex(lsi *[]duplosdk.DuploDynamoDBTableV2LocalSecondaryIndexResponse) []interface{} {
 	if len(*lsi) == 0 {
 		return []interface{}{}
 	}
@@ -926,12 +926,12 @@ func flattenTableLocalSecondaryIndex(lsi *[]duplosdk.DuploDynamoDBTableV2LocalSe
 		}
 
 		if l.Projection != nil {
-			m["projection_type"] = l.Projection.ProjectionType
+			m["projection_type"] = l.Projection.ProjectionType.Value
 			m["non_key_attributes"] = l.Projection.NonKeyAttributes
 		}
 
 		for _, attribute := range *l.KeySchema {
-			if attribute.KeyType == "RANGE" {
+			if attribute.KeyType.Value == "RANGE" {
 				m["range_key"] = attribute.AttributeName
 			}
 		}
@@ -1076,7 +1076,7 @@ func dynamodbWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID st
 // shouldUpdateGSI compares the DuploDynamoDBTableV2LocalSecondaryIndex  of the
 // existing table with the updated table. Returns true if a change is detected.
 func shouldUpdateGSI(
-	table *duplosdk.DuploDynamoDBTableV2,
+	table *duplosdk.DuploDynamoDBTableV2Response,
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 ) bool {
 	if table.GlobalSecondaryIndexes == nil || request.GlobalSecondaryIndexes == nil {
@@ -1101,10 +1101,21 @@ func shouldUpdateGSI(
 	return false
 }
 
+func globalIndexAction(existing *duplosdk.DuploDynamoDBTableV2Response, request *duplosdk.DuploDynamoDBTableRequestV2) {
+	if existing.GlobalSecondaryIndexes != nil && request.GlobalSecondaryIndexes != nil {
+		return "update"
+	} else if existing.GlobalSecondaryIndexes == nil && request.GlobalSecondaryIndexes != nil {
+		return "create"
+	} else {
+		return "nil"
+	}
+
+}
+
 // shouldUpdateThroughput compares the DuploDynamoDBProvisionedThroughput of
 // the existing table and updated table. Returns true if a change is detected.
 func shouldUpdateThroughput(
-	table *duplosdk.DuploDynamoDBTableV2,
+	table *duplosdk.DuploDynamoDBTableV2Response,
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 ) bool {
 	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
@@ -1113,7 +1124,7 @@ func shouldUpdateThroughput(
 // shouldUpdateSSESepecification compares the DuploDynamoDBTableV2SSESpecification of
 // the existing table and updated table. Returns true if a change is detected.
 func shouldUpdateSSESepecification(
-	table *duplosdk.DuploDynamoDBTableV2,
+	table *duplosdk.DuploDynamoDBTableV2Response,
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 ) bool {
 	if table.SSEDescription == nil && request.SSESpecification == nil {
