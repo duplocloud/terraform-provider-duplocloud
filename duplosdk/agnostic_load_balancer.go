@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -51,7 +52,7 @@ func (c *Client) TenantUpdateLbSettings(tenantID, loadBalancerID string, rq *Agn
 			MaxJitter: 2000,
 			Timeout:   60 * time.Second,
 			IsRetryable: func(error ClientError) bool {
-				return error.Status() == 400
+				return error.Status() == 400 || strings.Contains(error.Error(), "context deadline exceeded")
 			},
 		})
 	return &rp, err
@@ -72,7 +73,7 @@ func (c *Client) TenantGetLbSettings(tenantID, loadBalancerID string) (*Agnostic
 			MaxJitter: 2000,
 			Timeout:   60 * time.Second,
 			IsRetryable: func(error ClientError) bool {
-				return error.Status() == 400
+				return error.Status() == 400 || strings.Contains(error.Error(), "context deadline exceeded")
 			},
 		})
 	return &rp, err

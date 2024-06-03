@@ -130,6 +130,8 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_k8_node_pool":              resourceAzureK8NodePool(),
 			"duplocloud_azure_sql_virtual_network_rule":  resourceAzureSqlServerVnetRule(),
 			"duplocloud_azure_sql_firewall_rule":         resourceAzureSqlFirewallRule(),
+			"duplocloud_azure_k8s_cluster":               resourceAzureK8sCluster(),
+			"duplocloud_azure_private_endpoint":          resourceAzurePrivateEndpoint(),
 			"duplocloud_other_agents":                    resourceOtherAgents(),
 			"duplocloud_byoh":                            resourceByoh(),
 			"duplocloud_aws_mwaa_environment":            resourceMwaaAirflow(),
@@ -222,9 +224,16 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	var diags diag.Diagnostics
 	if token == "" {
 		token = os.Getenv("duplo_token")
+		if token == "" {
+			token = os.Getenv("DUPLO_TOKEN")
+
+		}
 	}
 	if host == "" {
 		host = os.Getenv("duplo_host")
+		if host == "" {
+			host = os.Getenv("DUPLO_HOST")
+		}
 	}
 
 	c, err := duplosdk.NewClient(host, token)
