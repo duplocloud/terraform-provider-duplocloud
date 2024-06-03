@@ -224,9 +224,16 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	var diags diag.Diagnostics
 	if token == "" {
 		token = os.Getenv("duplo_token")
+		if token == "" {
+			token = os.Getenv("DUPLO_TOKEN")
+
+		}
 	}
 	if host == "" {
 		host = os.Getenv("duplo_host")
+		if host == "" {
+			host = os.Getenv("DUPLO_HOST")
+		}
 	}
 
 	c, err := duplosdk.NewClient(host, token)
