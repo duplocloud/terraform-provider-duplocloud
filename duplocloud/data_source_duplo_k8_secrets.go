@@ -56,7 +56,7 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 			"secret_version": duplo.SecretVersion,
 		}
 		if usrrp.IsReadOnly {
-			for key, _ := range duplo.SecretData {
+			for key := range duplo.SecretData {
 				duplo.SecretData[key] = "**********"
 			}
 		}

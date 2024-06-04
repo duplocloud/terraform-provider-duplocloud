@@ -213,7 +213,7 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret, re
 	d.Set("secret_type", duplo.SecretType)
 	d.Set("secret_version", duplo.SecretVersion)
 	if readOnly {
-		for key, _ := range duplo.SecretData {
+		for key := range duplo.SecretData {
 			duplo.SecretData[key] = "**********"
 		}
 	}
