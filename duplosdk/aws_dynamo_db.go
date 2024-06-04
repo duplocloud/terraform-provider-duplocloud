@@ -2,7 +2,6 @@ package duplosdk
 
 import (
 	"fmt"
-	"time"
 )
 
 const DynamoDBProvisionedThroughputMinValue = 1
@@ -64,7 +63,7 @@ type DuploDynamoDBTableV2Response struct {
 	LatestStreamArn           string                                              `json:"LatestStreamArn,omitempty"`
 	LatestStreamLabel         string                                              `json:"LatestStreamLabel,omitempty"`
 	ProvisionedThroughput     *DuploDynamoDBProvisionedThroughput                 `json:"ProvisionedThroughput,omitempty"`
-	SSEDescription            *DuploDynamoDBTableV2SSESpecification               `json:"SSEDescription,omitempty"`
+	SSEDescription            *DuploDynamoDBTableV2SSESpecificationResponse       `json:"SSEDescription,omitempty"`
 	StreamSpecification       *DuploDynamoDBTableV2StreamSpecification            `json:"StreamSpecification,omitempty"`
 	BillingModeSummary        *DuploDynamoDBTableV2BillingModeSummary             `json:"BillingModeSummary,omitempty"`
 }
@@ -74,14 +73,14 @@ type DuploDynamoDBTableV2TimeInRecovery struct {
 }
 
 type DuploDynamoDBTableV2ContinuousBackupsDescription struct {
-	LatestRestorableDateTime time.Time `json:"LatestRestorableDateTime,omitempty"`
+	//LatestRestorableDateTime time.Time `json:"LatestRestorableDateTime,omitempty"`
 
 	ContinuousBackupsStatus struct {
 		Value string `json:"Value,omitempty"`
 	} `json:"ContinuousBackupsStatus,omitempty"`
 
 	PointInTimeRecoveryDescription struct {
-		EarliestRestorableDateTime time.Time `json:"EarliestRestorableDateTime,omitempty"`
+		EarliestRestorableDateTime string `json:"EarliestRestorableDateTime,omitempty"`
 	} `json:"PointInTimeRecoveryDescription,omitempty"`
 
 	PointInTimeRecoveryStatus struct {
@@ -144,6 +143,13 @@ type DuploDynamoDBTableV2SSESpecification struct {
 	KMSMasterKeyArn string            `json:"KMSMasterKeyArn,omitempty"`
 }
 
+type DuploDynamoDBTableV2SSESpecificationResponse struct {
+	Status          DuploStringValue  `json:"Status,omitempty"`
+	KMSMasterKeyId  string            `json:"KMSMasterKeyId,omitempty"`
+	SSEType         *DuploStringValue `json:"SSEType,omitempty"`
+	KMSMasterKeyArn string            `json:"KMSMasterKeyArn,omitempty"`
+}
+
 type DuploDynamoDBTableV2Projection struct {
 	NonKeyAttributes []string `json:"NonKeyAttributes,omitempty"`
 	ProjectionType   string   `json:"ProjectionType,omitempty"`
@@ -171,6 +177,7 @@ type DuploDynamoDBTableV2GlobalSecondaryIndex struct {
 	Projection            *DuploDynamoDBTableV2Projection     `json:"Projection,omitempty"`
 	KeySchema             *[]DuploDynamoDBKeySchema           `json:"KeySchema,omitempty"`
 	ProvisionedThroughput *DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput,omitempty"`
+	DeleteIndex           bool                                `json:"-"`
 }
 
 type DuploDynamoDBTableV2GlobalSecondaryIndexResponse struct {
@@ -269,19 +276,13 @@ func (c *Client) DynamoDBTableUpdateV2(
 
 func (c *Client) DynamoDBTableUpdateGSIV2(
 	tenantID string,
-	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+	rq *ModifyGSI) (*DuploDynamoDBTableV2, ClientError) {
 	rp := DuploDynamoDBTableV2{}
-	u := UpdateGSI{
-		rq.GlobalSecondaryIndexes,
-	}
-	ur := UpdateGSIReq{
-		u,
-	}
 
 	err := c.putAPI(
 		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
-		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s/globalSecondaryIndex", tenantID, rq.TableName),
-		&ur,
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
+		&rq,
 		&rp,
 	)
 	rp.TenantID = tenantID
@@ -398,4 +399,24 @@ func (c *Client) DuploDynamoDBTableV2UpdateDeletionProtection(
 	r *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
 
 	return c.DynamoDBTableUpdateV2(tenantID, r)
+}
+
+type ModifyGSI struct {
+	TableName                   string                             `json:"TableName"`
+	AttributeDefinitions        []DuploDynamoDBAttributeDefinionV2 `json:"AttributeDefinitions,omitempty"`
+	GlobalSecondaryIndexUpdates []GlobalSecondaryIndexUpdates
+}
+type GlobalSecondaryIndexUpdates struct {
+	Create *DuploDynamoDBTableV2GlobalSecondaryIndex `json:"Create,omitempty"`
+	Delete *Delete                                   `json:"Delete,omitempty"`
+	Update *Update                                   `json:"Update,omitempty"`
+}
+
+type Delete struct {
+	IndexName string `json:"IndexName"`
+}
+
+type Update struct {
+	IndexName             string                             `json:"IndexName"`
+	ProvisionedThroughput DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput"`
 }
