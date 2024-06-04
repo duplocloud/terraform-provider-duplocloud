@@ -215,7 +215,7 @@ func resourceDuploServiceParamsCreateOrUpdate(ctx context.Context, d *schema.Res
 			if clientError.Status() == 500 && duplo.Template.Cloud != 0 {
 				log.Printf("[TRACE] Ignoring error %s for non AWS cloud.", clientError)
 			} else {
-				return diag.FromErr(err)
+				return diag.FromErr(clientError)
 			}
 		}
 	}

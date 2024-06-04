@@ -54,14 +54,14 @@ func duploAzureMssqlServerSchema() map[string]*schema.Schema {
 			Sensitive:   true,
 		},
 		"public_network_access": {
-			Description: "Whether public network access is enabled or disabled for this server.",
+			Description: "Whether public network access is enabled or disabled for this server. Valid values are `Enabled` or `Disabled`.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice([]string{
 				"Enabled",
 				"Disabled",
-			}, true),
+			}, false),
 		},
 		"minimum_tls_version": {
 			Description: "The Minimum TLS Version for all SQL Database and SQL Data Warehouse databases associated with the server. Valid values are: `1.0`, `1.1` and `1.2`.",
