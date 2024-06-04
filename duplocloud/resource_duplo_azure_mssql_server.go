@@ -136,7 +136,7 @@ func resourceAzureMssqlServerRead(ctx context.Context, d *schema.ResourceData, m
 
 	// TODO Set ccomputed attributes from duplo object to tf state.
 	flattenAzureMssqlServer(d, duplo)
-
+	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceAzureMssqlServerRead(%s, %s): end", tenantID, name)
 	return nil
 }

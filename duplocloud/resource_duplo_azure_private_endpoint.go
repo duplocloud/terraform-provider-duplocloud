@@ -106,9 +106,6 @@ func resourceAzurePrivateEndpointRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	flattenAzurePrivateEndpoint(d, duplo)
-	if err != nil {
-		return diag.FromErr(err)
-	}
 	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceAzurePrivateEndpointRead(%s, %s): end", tenantID, peName)
 	return nil
