@@ -112,7 +112,7 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 		return nil
 	}
 
-	flattenK8sSecret(d, rp)
+	flattenK8sSecret(d, rp, false)
 	log.Printf("[TRACE] resourceK8SecretRead(%s, %s): end", tenantId, name)
 	return nil
 }
@@ -206,13 +206,17 @@ func parseK8sSecretIdParts(id string) (tenantID, name string, err error) {
 	return
 }
 
-func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret) {
+func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret, readOnly bool) {
 	// First, set the simple fields.
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("secret_name", duplo.SecretName)
 	d.Set("secret_type", duplo.SecretType)
 	d.Set("secret_version", duplo.SecretVersion)
-
+	if readOnly {
+		for key, _ := range duplo.SecretData {
+			duplo.SecretData[key] = "**********"
+		}
+	}
 	// Next, set the JSON encoded strings.
 	toJsonStringState("secret_data", duplo.SecretData, d)
 

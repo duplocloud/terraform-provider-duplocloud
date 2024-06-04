@@ -35,6 +35,10 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 	log.Printf("[TRACE] dataSourceK8SecretsRead(%s): start", tenantID)
 
 	c := m.(*duplosdk.Client)
+	usrrp, err := c.UserInfo()
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	rp, err := c.K8SecretGetList(tenantID)
 	if err != nil {
 		return diag.FromErr(err)
@@ -51,7 +55,11 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 			"secret_type":    duplo.SecretType,
 			"secret_version": duplo.SecretVersion,
 		}
-
+		if usrrp.IsReadOnly {
+			for key, _ := range duplo.SecretData {
+				duplo.SecretData[key] = "**********"
+			}
+		}
 		// Next, set the JSON encoded strings.
 		toJsonStringField("secret_data", duplo.SecretData, sc)
 		toJsonStringField("secret_annotations", duplo.SecretAnnotations, sc)
