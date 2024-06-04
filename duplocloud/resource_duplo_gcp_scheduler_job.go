@@ -410,8 +410,8 @@ func resourceGcpSchedulerJobSetData(d *schema.ResourceData, tenantID string, nam
 		})
 	} else if duplo.TargetType == duplosdk.GcpSchedulerJob_TargetType_HttpTarget {
 		m := map[string]interface{}{
-			"method":  flattenGcpSchedulerJobHttpMethod(duplo.AppEngineTarget.HTTPMethod),
-			"headers": flattenStringMap(duplo.AppEngineTarget.Headers),
+			"method":  flattenGcpSchedulerJobHttpMethod(duplo.HTTPTarget.HTTPMethod),
+			"headers": flattenStringMap(duplo.HTTPTarget.Headers),
 			"body":    duplo.AnyHTTPTargetBody,
 			"uri":     duplo.HTTPTarget.URI,
 		}

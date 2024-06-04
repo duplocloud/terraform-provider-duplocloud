@@ -45,6 +45,7 @@ Should be one of:
    - `2` : Azure
    - `3` : Google
  Defaults to `0`.
+- `cluster_ip_cidr` (String) cluster IP CIDR defines a private IP address range used for internal Kubernetes services.
 - `custom_data` (Block List, Deprecated) A list of configuration settings to apply on creation, expressed as key / value pairs. The custom_data argument is only applied on creation, and is deprecated in favor of the settings argument. (see [below for nested schema](#nestedblock--custom_data))
 - `delete_unspecified_settings` (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
 - `enable_container_insights` (Boolean) Whether or not to enable container insights for an ECS cluster.

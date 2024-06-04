@@ -16,7 +16,7 @@ func duploLbConfigSchemaComputed() map[string]*schema.Schema {
 	for _, v := range x {
 		v.Computed = true
 		v.Required = false
-		v.Optional = false
+		v.Optional = true
 		v.ForceNew = false
 	}
 	return x

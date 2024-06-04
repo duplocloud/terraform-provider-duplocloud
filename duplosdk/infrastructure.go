@@ -117,11 +117,17 @@ type DuploInfrastructureConfig struct {
 	ProvisioningStatus      string                   `json:"ProvisioningStatus"`
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
 	AksConfig               *AksConfig               `json:"AksConfig,omitempty"`
+	ClusterIpv4Cidr         string                   `json:"ClusterIpv4Cidr,omitempty"`
 }
 
 type AksConfig struct {
-	CreateAndManage bool `json:"CreateAndManage"`
-	PrivateCluster  bool `json:"PrivateCluster"`
+	Name            string `json:"Name"`
+	CreateAndManage bool   `json:"CreateAndManage"`
+	PrivateCluster  bool   `json:"PrivateCluster"`
+	K8sVersion      string `json:"K8sVersion,omitempty"`
+	VmSize          string `json:"VmSize,omitempty"`
+	NetworkPlugin   string `json:"NetworkPlugin,omitempty"`
+	OutboundType    string `json:"OutboundType,omitempty"`
 }
 
 type DuploAzureLogAnalyticsWorkspace struct {
@@ -469,4 +475,12 @@ func (c *Client) NetworkSgRuleGet(infraName, sgName, ruleName string) (*DuploInf
 		}
 	}
 	return nil, nil
+}
+
+func (c *Client) AzureK8sClusterCreate(infraName string, rq *AksConfig) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("AzureK8sClusterCreate(%s,%s)", infraName, rq.Name),
+		fmt.Sprintf("adminproxy/UpdateInfrastructureAksConfig/%s", infraName),
+		&rq,
+		nil)
 }

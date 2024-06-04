@@ -124,7 +124,7 @@ func NewClient(host, token string) (*Client, error) {
 	if host != "" && token != "" {
 		tokenBearer := fmt.Sprintf("Bearer %s", token)
 		c := Client{
-			HTTPClient: &http.Client{Timeout: 20 * time.Second},
+			HTTPClient: &http.Client{Timeout: 30 * time.Second},
 			HostURL:    host,
 			Token:      tokenBearer,
 		}
