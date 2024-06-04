@@ -80,13 +80,12 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
-			Elem:     KeyValueSchema(),
+			Elem:     DynamoDbV2TagSchema(),
 		},
 
 		"attribute": {
 			Type:     schema.TypeSet,
-			Optional: true,
-			Computed: true,
+			Required: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"name": {
@@ -105,8 +104,7 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 
 		"key_schema": {
 			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
+			Required: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"attribute_name": {
@@ -491,15 +489,30 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	tagsToUpdate := []duplosdk.DuploKeyStringValue{}
+	tagsToDelete := []string{}
+	for _, v := range *rq.Tags {
+		if v.DeleteTag {
+			tagsToDelete = append(tagsToDelete, v.Key)
+		} else {
+			tagsToUpdate = append(tagsToUpdate, duplosdk.DuploKeyStringValue{
+				Key:   v.Key,
+				Value: v.Value,
+			})
+		}
+	}
 	tagReq := &duplosdk.DuploDynamoDBTagResourceRequest{
 		ResourceArn: existing.TableArn,
-		Tags:        rq.Tags,
+		Tags:        &tagsToUpdate,
 	}
-	_, err = tagDynamoDBtTableV2(tenantID, tagReq, m)
+	//if len(tagsToDelete) > 0 {
+	//	tagReq.TagKeys = &tagsToDelete
+	//}
+	_, err = tagDynamoDBtTableV2(tenantID, tagReq, m) //taging and untaging dynamodb
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	diagErr := updatePointInTimeRecovery(c, d, tenantID, fullname)
 	if diagErr != nil {
 		return diagErr
@@ -611,12 +624,32 @@ func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
+func expandTags(fieldName string, d *schema.ResourceData) *[]duplosdk.DyanmoDbV2Tag {
+	var ary []duplosdk.DyanmoDbV2Tag
+
+	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
+		kvs := v.([]interface{})
+		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
+		ary = make([]duplosdk.DyanmoDbV2Tag, 0, len(kvs))
+		for _, raw := range kvs {
+			kv := raw.(map[string]interface{})
+			ary = append(ary, duplosdk.DyanmoDbV2Tag{
+				Key:       kv["key"].(string),
+				Value:     kv["value"].(string),
+				DeleteTag: kv["delete_tag"].(bool),
+			})
+		}
+	}
+
+	return &ary
+}
+
 func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRequestV2, error) {
 
 	req := &duplosdk.DuploDynamoDBTableRequestV2{
 		TableName:   d.Get("name").(string),
 		BillingMode: d.Get("billing_mode").(string),
-		Tags:        keyValueFromState("tag", d),
+		Tags:        expandTags("tag", d),
 		KeySchema:   expandDynamoDBKeySchema(d),
 	}
 
@@ -1047,6 +1080,8 @@ func shouldUpdateSSESepecification(
 ) bool {
 	if table.SSEDescription == nil && request.SSESpecification == nil {
 		return false
+	} else if table.SSEDescription == nil && request.SSESpecification != nil {
+		return request.SSESpecification.Enabled
 	}
 	status := "DISABLED"
 	if request.SSESpecification.Enabled {

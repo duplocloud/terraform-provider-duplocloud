@@ -200,7 +200,7 @@ type DuploDynamoDBTableRequestV2 struct {
 	TableName                 string                                      `json:"TableName"`
 	BillingMode               string                                      `json:"BillingMode,omitempty"`
 	DeletionProtectionEnabled *bool                                       `json:"DeletionProtectionEnabled,omitempty"`
-	Tags                      *[]DuploKeyStringValue                      `json:"Tags,omitempty"`
+	Tags                      *[]DyanmoDbV2Tag                            `json:"Tags,omitempty"`
 	KeySchema                 *[]DuploDynamoDBKeySchemaV2                 `json:"KeySchema,omitempty"`
 	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinionV2         `json:"AttributeDefinitions,omitempty"`
 	ProvisionedThroughput     *DuploDynamoDBProvisionedThroughput         `json:"ProvisionedThroughput,omitempty"`
@@ -210,9 +210,15 @@ type DuploDynamoDBTableRequestV2 struct {
 	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexes,omitempty"`
 }
 
+type DyanmoDbV2Tag struct {
+	Key       string `json:"Key"`
+	Value     string `json:"Value,omitempty"`
+	DeleteTag bool   `json:"-"`
+}
 type DuploDynamoDBTagResourceRequest struct {
 	ResourceArn string                 `json:"ResourceArn,omitempty"` // The ARN of the resource to tag
 	Tags        *[]DuploKeyStringValue `json:"Tags,omitempty"`        // A list of tags to associate with the resource
+	TagKeys     *[]string              `json:"TagKeys,omitempty"`
 }
 
 type DuploDynamoDBTagResourceResponse struct {

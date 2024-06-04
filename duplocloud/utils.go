@@ -213,6 +213,26 @@ func KeyValueSchema() *schema.Resource {
 	}
 }
 
+func DynamoDbV2TagSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"value": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"delete_tag": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+		},
+	}
+}
+
 // CustomDataExSchema returns a Terraform schema to represent a key value pair with a type
 func CustomDataExSchema() *schema.Resource {
 	return &schema.Resource{
