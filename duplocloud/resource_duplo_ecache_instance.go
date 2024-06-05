@@ -256,6 +256,27 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
+	treq, err := c.TenantGetV2(tenantID)
+	if err != nil {
+		return diag.Errorf("Error fetching tenant plan details  for tenant-id '%s': %s", id, err)
+	}
+	if treq == nil {
+		return diag.Errorf("tenant %s data not found", tenantID)
+	}
+	kmsKeys, _ := c.PlanKMSGetList(treq.PlanID)
+
+	kmsmap := make(map[string]bool)
+
+	if kmsKeys != nil {
+
+		for _, kms := range *kmsKeys {
+			kmsmap[kms.KeyId] = true
+		}
+	}
+	if duplo.KMSKeyID != "" && !kmsmap[duplo.KMSKeyID] {
+		return diag.Errorf("kms_id '%s' not associated to plan %s", duplo.KMSKeyID, treq.PlanID)
+	}
+	//}
 	_, err = c.EcacheInstanceCreate(tenantID, duplo)
 	if err != nil {
 		return diag.Errorf("Error updating ECache instance '%s': %s", id, err)
