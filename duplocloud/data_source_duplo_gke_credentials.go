@@ -68,9 +68,7 @@ func dataSourceGKECredentialsRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("no kubernetes cluster for this plan %s", planID)
 	} else if infra.Cloud == 2 {
 		// Check for AksConfig only if Cloud is 2 (relevant scenario)
-		if infra.AksConfig == nil {
-			return fmt.Errorf("no kubernetes cluster for plan %s", planID)
-		} else if !infra.AksConfig.CreateAndManage {
+		if infra.AksConfig == nil || !infra.AksConfig.CreateAndManage {
 			return fmt.Errorf("no kubernetes cluster for plan %s", planID)
 		}
 	}
