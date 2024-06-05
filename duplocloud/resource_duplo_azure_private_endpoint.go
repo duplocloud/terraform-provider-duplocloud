@@ -240,6 +240,6 @@ func flattenAzurePrivateEndpointServiceConnection(duplo duplosdk.DuploAzurePriva
 	m := make(map[string]interface{})
 	m["name"] = duplo.Name
 	m["private_connection_resource_id"] = duplo.PrivateLinkServiceId
-	m["origin_path"] = duplo.GroupIds
+	m["group_ids"] = duplo.GroupIds
 	return m
 }
