@@ -536,11 +536,12 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	if val, ok := d.GetOk("enhanced_monitoring"); ok {
+	if d.HasChange("enhanced_monitoring") {
+		val := d.Get("enhanced_monitoring").(int)
 		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
 			DBInstanceIdentifier: identifier,
 			ApplyImmediately:     true,
-			MonitoringInterval:   val.(int),
+			MonitoringInterval:   val,
 		})
 	}
 	if err != nil {
