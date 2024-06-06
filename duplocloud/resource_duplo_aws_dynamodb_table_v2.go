@@ -1015,8 +1015,12 @@ func globalIndexUpdateAction(c *duplosdk.Client, existing *duplosdk.DuploDynamoD
 		}
 		for _, r := range *request.GlobalSecondaryIndexes {
 			if ev, ok := existingIndex[r.IndexName]; !ok {
-				t := duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndex{}
-				t = r
+				t := duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndex{
+					IndexName:             r.IndexName,
+					Projection:            r.Projection,
+					KeySchema:             r.KeySchema,
+					ProvisionedThroughput: r.ProvisionedThroughput,
+				}
 				cr := duplosdk.GlobalSecondaryIndexUpdates{
 					Create: &t,
 				}
