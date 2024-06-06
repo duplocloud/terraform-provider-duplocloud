@@ -106,7 +106,8 @@ func resourceAzureStorageAccountRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	// flattenAzureStorageAccount(d, duplo)
-
+	d.Set("tenant_id", tenantID)
+	d.Set("name", name)
 	log.Printf("[TRACE] resourceAzureStorageAccountRead(%s, %s): end", tenantID, name)
 	return nil
 }
