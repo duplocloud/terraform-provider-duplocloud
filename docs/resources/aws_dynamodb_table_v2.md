@@ -256,10 +256,6 @@ Required:
 - `key` (String)
 - `value` (String)
 
-Optional:
-
-- `delete_tag` (Boolean) Defaults to `false`.
-
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
