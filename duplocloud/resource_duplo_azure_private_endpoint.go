@@ -106,9 +106,6 @@ func resourceAzurePrivateEndpointRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	flattenAzurePrivateEndpoint(d, duplo)
-	if err != nil {
-		return diag.FromErr(err)
-	}
 	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceAzurePrivateEndpointRead(%s, %s): end", tenantID, peName)
 	return nil
@@ -243,6 +240,6 @@ func flattenAzurePrivateEndpointServiceConnection(duplo duplosdk.DuploAzurePriva
 	m := make(map[string]interface{})
 	m["name"] = duplo.Name
 	m["private_connection_resource_id"] = duplo.PrivateLinkServiceId
-	m["origin_path"] = duplo.GroupIds
+	m["group_ids"] = duplo.GroupIds
 	return m
 }
