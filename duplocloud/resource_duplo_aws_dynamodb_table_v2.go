@@ -80,7 +80,7 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
-			Elem:     DynamoDbV2TagSchema(),
+			Elem:     KeyValueSchema(), //DynamoDbV2TagSchema(),
 		},
 
 		"attribute": {
@@ -490,16 +490,16 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 	tagsToUpdate := []duplosdk.DuploKeyStringValue{}
-	tagsToDelete := []string{}
+	//tagsToDelete := []string{}
 	for _, v := range *rq.Tags {
-		if v.DeleteTag {
-			tagsToDelete = append(tagsToDelete, v.Key)
-		} else {
-			tagsToUpdate = append(tagsToUpdate, duplosdk.DuploKeyStringValue{
-				Key:   v.Key,
-				Value: v.Value,
-			})
-		}
+		//	if v.DeleteTag {
+		//		tagsToDelete = append(tagsToDelete, v.Key)  //waiting for backend change
+		//	} else {
+		tagsToUpdate = append(tagsToUpdate, duplosdk.DuploKeyStringValue{
+			Key:   v.Key,
+			Value: v.Value,
+		})
+		//	}
 	}
 	tagReq := &duplosdk.DuploDynamoDBTagResourceRequest{
 		ResourceArn: existing.TableArn,
@@ -634,9 +634,9 @@ func expandTags(fieldName string, d *schema.ResourceData) *[]duplosdk.DyanmoDbV2
 		for _, raw := range kvs {
 			kv := raw.(map[string]interface{})
 			ary = append(ary, duplosdk.DyanmoDbV2Tag{
-				Key:       kv["key"].(string),
-				Value:     kv["value"].(string),
-				DeleteTag: kv["delete_tag"].(bool),
+				Key:   kv["key"].(string),
+				Value: kv["value"].(string),
+				//				DeleteTag: kv["delete_tag"].(bool),
 			})
 		}
 	}
