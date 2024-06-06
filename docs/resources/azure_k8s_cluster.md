@@ -41,8 +41,8 @@ resource "duplocloud_azure_k8s_cluster" "cluster" {
 ### Optional
 
 - `kubernetes_version` (String) Version of Kubernetes specified when creating the AKS managed cluster.
-- `network_plugin` (String) Network plugin to use for networking.
-- `outbound_type` (String) The outbound (egress) routing method which should be used for this Kubernetes Cluster.
+- `network_plugin` (String) Network plugin to use for networking. Valid values are: `azure` and `kubenet`.
+- `outbound_type` (String) The outbound (egress) routing method which should be used for this Kubernetes Cluster. Valid values are: `loadBalancer` and `userDefinedRouting`.
 - `private_cluster_enabled` (Boolean) Should this Kubernetes Cluster have its API server only exposed on internal IP addresses? This provides a Private IP Address for the Kubernetes API on the Virtual Network where the Kubernetes Cluster is located. Defaults to `false`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `vm_size` (String) The size of the Virtual Machine.
