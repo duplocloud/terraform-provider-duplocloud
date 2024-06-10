@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"log"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -43,12 +44,12 @@ func resourcePlanWaf() *schema.Resource {
 			},
 			"waf_arn": {
 				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Required: true,
 			},
 			"dashboard_url": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 			},
 		},
 	}
@@ -57,9 +58,11 @@ func resourcePlanWaf() *schema.Resource {
 func resourcePlanWafRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
-	planID := d.Id()
+	id := d.Id()
+	idSplit := strings.SplitN(id, "/", 2)
+
+	planID, name := idSplit[0], idSplit[1]
 	log.Printf("[TRACE] resourcePlanWafRead(%s): start", planID)
-	name := d.Get("waf_name").(string)
 	c := m.(*duplosdk.Client)
 
 	// First, try the newer method of getting the plan configs.
@@ -102,8 +105,9 @@ func resourcePlanWafCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 func resourcePlanWafDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
-	planID := d.Id()
-	name := d.Get("waf_name").(string)
+	id := d.Id()
+	idSplit := strings.SplitN(id, "/", 2)
+	planID, name := idSplit[0], idSplit[1]
 	log.Printf("[TRACE] resourcePlanWafDelete(%s): start", planID)
 
 	// Get all of the plan configs from duplo.

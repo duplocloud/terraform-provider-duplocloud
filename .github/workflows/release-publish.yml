@@ -35,7 +35,7 @@ jobs:
         name: Build and draft the release
         uses: goreleaser/goreleaser-action@v4
         with:
-          version: latest
+          version: v1.26.2
           args: release --parallelism 2 --rm-dist
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}

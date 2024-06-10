@@ -29,14 +29,14 @@ resource "duplocloud_plan_waf" "myplan" {
 
 ### Required
 
-- `dashboard_url` (String)
 - `plan_id` (String) The ID of the plan for waf.
+- `waf_arn` (String)
 - `waf_name` (String)
 
 ### Optional
 
+- `dashboard_url` (String)
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `waf_arn` (String)
 
 ### Read-Only
 
@@ -56,5 +56,9 @@ Optional:
 Import is supported using the following syntax:
 
 ```shell
-terraform import duplocloud_plan_waf.myplan PLAN_ID
+# Example: Importing an existing WAF instance
+#  - *PLAN_ID* is the plan name
+#  - *WAF_NAME* is the name of the WAF
+#
+terraform import duplocloud_plan_waf.myplan *PLAN_ID*/*WAF_NAME*
 ```
