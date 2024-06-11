@@ -600,8 +600,9 @@ func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAwsDynamoDBTableDeleteV2(%s, %s): start", tenantID, name)
 	name := d.Get("fullname").(string)
+
+	log.Printf("[TRACE] resourceAwsDynamoDBTableDeleteV2(%s, %s): start", tenantID, name)
 	// Delete the function.
 	c := m.(*duplosdk.Client)
 	clientErr := c.DynamoDBTableDeleteV2(tenantID, name)
