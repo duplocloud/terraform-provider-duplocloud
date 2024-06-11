@@ -180,7 +180,7 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Type:             schema.TypeSet,
 			Optional:         true,
 			ForceNew:         true,
-			DiffSuppressFunc: diffSuppressFuncIgnore,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"name": {
@@ -596,12 +596,12 @@ func updateDeleteProtection(c *duplosdk.Client, d *schema.ResourceData, tenantID
 
 func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
+	tenantID, _, err := parseAwsDynamoDBTableIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	log.Printf("[TRACE] resourceAwsDynamoDBTableDeleteV2(%s, %s): start", tenantID, name)
-
+	name := d.Get("fullname").(string)
 	// Delete the function.
 	c := m.(*duplosdk.Client)
 	clientErr := c.DynamoDBTableDeleteV2(tenantID, name)
