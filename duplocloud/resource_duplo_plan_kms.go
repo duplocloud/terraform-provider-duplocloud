@@ -68,10 +68,14 @@ func resourcePlanKMSRead(ctx context.Context, d *schema.ResourceData, m interfac
 	c := m.(*duplosdk.Client)
 
 	duplo, err := c.PlanGetKMSKey(planID, name)
-	if err != nil || !err.PossibleMissingAPI() {
+	if err != nil {
 		return diag.Errorf("failed to retrieve plan kms for '%s': %s", planID, err)
 	}
 
+	if duplo == nil {
+		d.SetId("")
+		return nil
+	}
 	// Set the simple fields first.
 	d.Set("kms_id", duplo.KeyId)
 	d.Set("kms_name", duplo.KeyName)
@@ -109,8 +113,10 @@ func resourcePlanKMSCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 	// Get all of the plan kms from duplo.
 	c := m.(*duplosdk.Client)
 	rp, _ := c.PlanKMSGetList(planID)
-	if !isKMSUpdateOrCreateable(*rp, rq) {
-		return diag.Errorf("Kms key with name %s or id %s already exist for plan %s", rq.KeyName, rq.KeyId, planID)
+	if rp != nil {
+		if !isKMSUpdateOrCreateable(*rp, rq) {
+			return diag.Errorf("Kms key with name %s or id %s already exist for plan %s", rq.KeyName, rq.KeyId, planID)
+		}
 	}
 	clientErr := c.PlanCreateKMSKey(planID, rq)
 	if clientErr != nil {
