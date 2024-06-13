@@ -230,23 +230,17 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		d.SetId("") // object missing
 		return nil
 	}
-	if d.HasChanges("tier", "disk_size", "labels") {
+	if d.HasChanges("tier", "disk_size", "labels", "database_version") {
 		rq := expandGcpSqlDBInstance(d)
 		rq.Name = fullName
 		resp, err := c.GCPSqlDBInstanceUpdate(tenantID, rq)
 		if err != nil {
 			return diag.Errorf("Error updating tenant %s sql database '%s': %s", tenantID, resp.Name, err)
 		}
-		diags := waitForResourceToBePresentAfterCreate(ctx, d, "gcp sql database", id, func() (interface{}, duplosdk.ClientError) {
-			return c.GCPSqlDBInstanceGet(tenantID, fullName)
-		})
-		if diags != nil {
-			return diags
-		}
 		if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-			err := gcpSqlDBInstanceWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("create"))
-			if err != nil {
-				return diag.FromErr(err)
+			clientErr := gcpSqlDBInstanceWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
+			if clientErr != nil {
+				return diag.FromErr(clientErr)
 			}
 		}
 		resourceGcpSqlDBInstanceRead(ctx, d, m)
@@ -351,6 +345,7 @@ func parseGcpSqlDatabaseIdParts(id string) (tenantID, name string, err error) {
 
 func gcpSqlDBInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
 	log.Printf("[DEBUG] gcpSqlDBInstanceWaitUntilReady(%s, %s)", tenantID, name)
+	stateChange := false
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -360,6 +355,11 @@ func gcpSqlDBInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, ten
 			log.Printf("[TRACE] Gcp sql database instance state is (%s).", rp.Status)
 			status := "pending"
 			if err == nil {
+				if rp.Status == "RUNNABLE" && !stateChange {
+					return rp, status, err
+				} else {
+					stateChange = true
+				}
 				if rp.Status == "RUNNABLE" {
 					status = "ready"
 				} else {
