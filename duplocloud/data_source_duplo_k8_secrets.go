@@ -35,9 +35,24 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 	log.Printf("[TRACE] dataSourceK8SecretsRead(%s): start", tenantID)
 
 	c := m.(*duplosdk.Client)
-	usrrp, err := c.UserInfo()
+	usrResp, err := c.UserInfo()
 	if err != nil {
 		return diag.FromErr(err)
+	}
+	tennantAccess, err := c.TenantAccessGet(usrResp.Username)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if len(tennantAccess) > 0 && !usrResp.IsReadOnly {
+		for _, tenantAccessInfo := range tennantAccess {
+			if tenantAccessInfo.TenantId == tenantID {
+				if tenantAccessInfo.Policy.IsReadOnly {
+					usrResp.IsReadOnly = true
+				}
+				break
+			}
+		}
+		usrResp.IsReadOnly = true
 	}
 	rp, err := c.K8SecretGetList(tenantID)
 	if err != nil {
@@ -55,7 +70,7 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 			"secret_type":    duplo.SecretType,
 			"secret_version": duplo.SecretVersion,
 		}
-		if usrrp.IsReadOnly {
+		if usrResp.IsReadOnly {
 			for key := range duplo.SecretData {
 				duplo.SecretData[key] = "**********"
 			}
