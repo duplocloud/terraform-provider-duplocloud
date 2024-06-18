@@ -86,6 +86,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `fullname` (String) The full name of the ASG profile.
 - `id` (String) The ID of this resource.
 - `initial_base64_user_data` (String)
+- `puplic_ip_address` (String) The primary public IP address assigned to the host.
 
 <a id="nestedblock--metadata"></a>
 ### Nested Schema for `metadata`

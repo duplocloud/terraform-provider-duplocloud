@@ -45,6 +45,7 @@ type DuploNativeHost struct {
 	Tags               *[]DuploKeyStringValue             `json:"Tags,omitempty"`
 	TagsEx             *[]DuploKeyStringValue             `json:"TagsEx,omitempty"`
 	MinionTags         *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
+	PublicIpAddress    string                             `json:"PublicIpAddress,omitempty"`
 }
 
 // DuploNativeHostNetworkInterface is a Duplo SDK object that represents a network interface of a native host
