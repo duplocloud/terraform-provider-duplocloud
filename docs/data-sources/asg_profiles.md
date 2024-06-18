@@ -52,6 +52,7 @@ Read-Only:
 - `minion_tags` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--minion_tags))
 - `network_interface` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interface))
 - `prepend_user_data` (Boolean)
+- `puplic_ip_address` (String)
 - `tags` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--tags))
 - `tenant_id` (String)
 - `use_spot_instances` (Boolean)
