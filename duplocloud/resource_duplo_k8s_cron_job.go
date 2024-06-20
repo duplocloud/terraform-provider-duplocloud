@@ -181,7 +181,7 @@ func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.Resourc
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	d.Set("tenant_id", tenantId)
 	return diag.Diagnostics{}
 }
 
