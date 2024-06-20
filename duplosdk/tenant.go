@@ -533,3 +533,21 @@ func (c *Client) TenantTagDelete(req DuploTenantConfigUpdateRequest) ClientError
 		req,
 		nil)
 }
+
+type DuploTenantAccess struct {
+	TenantId    string  `json:"TenantId"`
+	Policy      *Policy `json:"Policy"`
+	AccountName string  `json:"AccountName"`
+}
+type Policy struct {
+	IsReadOnly bool `json:"IsreadOnly"`
+}
+
+func (c *Client) TenantAccessGet(userName string) ([]DuploTenantAccess, ClientError) {
+	rp := []DuploTenantAccess{}
+	err := c.getAPI(fmt.Sprintf("TenantAccessGet(%s)", userName), fmt.Sprintf("v3/admin/user/%s/tenantAccess", EncodePathParam(userName)), &rp)
+	if err != nil {
+		return nil, err
+	}
+	return rp, nil
+}

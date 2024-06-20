@@ -45,6 +45,29 @@ func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m inter
 	log.Printf("[TRACE] dataSourceK8SecretRead(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
+	usrResp, err := c.UserInfo()
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if usrResp == nil {
+		return diag.Errorf("user not found")
+
+	}
+	tennantAccess, err := c.TenantAccessGet(usrResp.Username)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if len(tennantAccess) > 0 && !usrResp.IsReadOnly {
+		for _, tenantAccessInfo := range tennantAccess {
+			if tenantAccessInfo.TenantId == tenantID {
+				if tenantAccessInfo.Policy.IsReadOnly {
+					usrResp.IsReadOnly = true
+				}
+				break
+			}
+		}
+		usrResp.IsReadOnly = true
+	}
 	rp, err := c.K8SecretGet(tenantID, name)
 	if err != nil {
 		return diag.FromErr(err)
@@ -53,7 +76,7 @@ func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.Errorf("tenant k8 secret '%s' not found", name)
 	}
 	// Convert the results into TF state.
-	flattenK8sSecret(d, rp)
+	flattenK8sSecret(d, rp, usrResp.IsReadOnly)
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
 
 	log.Printf("[TRACE] dataSourceK8SecretRead(%s, %s): end", tenantID, name)

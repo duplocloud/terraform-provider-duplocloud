@@ -145,7 +145,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		"puplic_ip_address": {
+		"public_ip_address": {
 			Description: "The primary public IP address assigned to the host.",
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -632,7 +632,7 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("status", duplo.Status)
 	d.Set("identity_role", duplo.IdentityRole)
 	d.Set("private_ip_address", duplo.PrivateIPAddress)
-	d.Set("private_ip_address", duplo.PublicIpAddress)
+	d.Set("public_ip_address", duplo.PublicIPAddress)
 
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
