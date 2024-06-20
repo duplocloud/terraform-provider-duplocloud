@@ -38,6 +38,7 @@ type DuploNativeHost struct {
 	Status             string                             `json:"Status,omitempty"`
 	IdentityRole       string                             `json:"IdentityRole,omitempty"`
 	PrivateIPAddress   string                             `json:"PrivateIpAddress,omitempty"`
+	PublicIPAddress    string                             `json:"PublicIpAddress,omitempty"`
 	NetworkInterfaceId string                             `json:"NetworkInterfaceId,omitempty"`
 	NetworkInterfaces  *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
 	Volumes            *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
@@ -45,7 +46,6 @@ type DuploNativeHost struct {
 	Tags               *[]DuploKeyStringValue             `json:"Tags,omitempty"`
 	TagsEx             *[]DuploKeyStringValue             `json:"TagsEx,omitempty"`
 	MinionTags         *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
-	PublicIpAddress    string                             `json:"PublicIpAddress,omitempty"`
 }
 
 // DuploNativeHostNetworkInterface is a Duplo SDK object that represents a network interface of a native host
