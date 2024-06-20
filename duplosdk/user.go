@@ -71,3 +71,10 @@ func (c *Client) UserDelete(userName string) ClientError {
 	}
 	return c.postAPI(fmt.Sprintf("UserDelete(%s)", userName), "admin/UpdateUserRole", rq, nil)
 }
+
+func (c *Client) UserInfo() (*DuploUser, ClientError) {
+	rp := DuploUser{}
+	err := c.getAPI("UserList", "admin/GetUserRoleInfo", &rp)
+
+	return &rp, err
+}
