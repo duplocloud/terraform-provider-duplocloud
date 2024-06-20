@@ -49,6 +49,10 @@ func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m inter
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	if usrResp == nil {
+		return diag.Errorf("user not found")
+
+	}
 	tennantAccess, err := c.TenantAccessGet(usrResp.Username)
 	if err != nil {
 		return diag.FromErr(err)
