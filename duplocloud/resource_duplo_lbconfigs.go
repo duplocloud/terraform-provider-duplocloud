@@ -156,6 +156,12 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"web_acl_id": {
+			Description: "The ARN of a WAF to attach to the load balancer.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
