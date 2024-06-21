@@ -247,7 +247,7 @@ func resourceAwsApiGatewayEventUpdate(ctx context.Context, d *schema.ResourceDat
 	if v, ok := d.GetOk("authorization_type"); ok && v != nil {
 		rq.AuthorizationType = v.(string)
 	}
-	if v, ok := d.GetOk("integration"); ok && ok {
+	if v, ok := d.GetOk("integration"); ok {
 		if s := v.([]interface{}); len(s) > 0 {
 			rq.Integration = expandAwsApiGatewayEventIntegration(s[0].(map[string]interface{}))
 		}
