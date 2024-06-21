@@ -423,7 +423,10 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	if err := d.Set("server_side_encryption", flattenDynamoDBTableServerSideEncryption(duplo.SSEDescription)); err != nil {
 		return diag.FromErr(err)
 	}
+	if err := d.Set("ttl", flattenDynamoDBTableTTl(duplo.TtlAttributeName, duplo.TtlStatus)); err != nil {
+		return diag.FromErr(err)
 
+	}
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -916,6 +919,19 @@ func flattenDynamoDBTableServerSideEncryption(spec *duplosdk.DuploDynamoDBTableV
 	m := map[string]interface{}{
 		"enabled":     spec.Enabled,
 		"kms_key_arn": spec.KMSMasterKeyId,
+	}
+
+	return []interface{}{m}
+}
+
+func flattenDynamoDBTableTTl(attributeName, enabled string) []interface{} {
+
+	if attributeName == "" {
+		return nil
+	}
+	m := map[string]interface{}{
+		"enabled":        enabled == "ENABLED",
+		"attribute_name": attributeName,
 	}
 
 	return []interface{}{m}

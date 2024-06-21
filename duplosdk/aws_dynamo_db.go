@@ -44,6 +44,8 @@ type DuploDynamoDBTableV2 struct {
 	SSEDescription            *DuploDynamoDBTableV2SSESpecification       `json:"SSEDescription,omitempty"`
 	StreamSpecification       *DuploDynamoDBTableV2StreamSpecification    `json:"StreamSpecification,omitempty"`
 	BillingModeSummary        *DuploDynamoDBTableV2BillingModeSummary     `json:"BillingModeSummary,omitempty"`
+	TtlAttributeName          string                                      `json:"TtlAttributeName,omitempty"`
+	TtlStatus                 string                                      `json:"TtlStatus,omitempty"`
 }
 
 type DuploDynamoDBTableV2TimeInRecovery struct {
