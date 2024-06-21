@@ -82,6 +82,7 @@ type DuploS3Bucket struct {
 	Name              string                 `json:"Name,omitempty"`
 	DomainName        string                 `json:"DomainName,omitempty"`
 	Region            string                 `json:"Region,omitempty"`
+	Location          string                 `json:"Location,omitempty"`
 	Arn               string                 `json:"Arn,omitempty"`
 	MetaData          string                 `json:"MetaData,omitempty"`
 	EnableVersioning  bool                   `json:"EnableVersioning,omitempty"`
@@ -219,6 +220,7 @@ type DuploS3BucketRequest struct {
 type DuploS3BucketSettingsRequest struct {
 	Name              string   `json:"Name,omitempty"`
 	Region            string   `json:"Region,omitempty"`
+	Location          string   `json:"Location,omitempty"`
 	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
 	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
 	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
