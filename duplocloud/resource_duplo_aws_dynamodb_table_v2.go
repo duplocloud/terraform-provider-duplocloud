@@ -302,6 +302,27 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     true,
 		},
+		"ttl": {
+			Description: "Setup ttl for dynamodb table",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"attribute_name": {
+						Description: "The name of the attribute that will be stored in the ttl timestamp",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"enabled": {
+						Description: "Status of the ttl",
+						Type:        schema.TypeBool,
+						Required:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -455,12 +476,33 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if diags != nil {
 		return diags
 	}
-
+	diags = updateDynamoDBTTl(ctx, d, m)
+	if diags != nil {
+		return diags
+	}
 	diags = resourceAwsDynamoDBTableReadV2(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateV2(%s, %s): end", tenantID, name)
 	return diags
 }
+func updateDynamoDBTTl(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	if v, ok := d.GetOk("ttl"); ok {
+		id := d.Id()
+		tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
+		if err != nil {
+			return diag.Errorf("Error while parsing id %s", err.Error())
+		}
+		fname := d.Get("fullname").(string)
 
+		ttlReq := expandTTl(v.([]interface{}))
+		c := m.(*duplosdk.Client)
+		_, respErr := c.DynamoDBTableV2TTl(tenantID, fname, ttlReq)
+		if respErr != nil {
+			return diag.Errorf("Error while setting point in recovery tenant %s dynamodb table '%s': %s", tenantID, name, respErr)
+		}
+
+	}
+	return nil
+}
 func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	if v, ok := d.GetOk("is_point_in_time_recovery"); ok && v.(bool) {
 		id := d.Id()
@@ -897,6 +939,23 @@ func expandEncryptAtRestOptions(vOptions []interface{}) *duplosdk.DuploDynamoDBT
 	options.Enabled = enabled
 
 	return options
+}
+
+func expandTTl(ttlObj []interface{}) *duplosdk.DuploDynamoDBTableV2TTl {
+
+	if len(ttlObj) > 0 {
+		ttlMap := ttlObj[0].(map[string]interface{})
+
+		ttlBody := &duplosdk.DuploDynamoDBTableV2TTl{
+			AttributeName: ttlMap["attribute_name"].(string),
+			Enabled:       ttlMap["enabled"].(bool),
+		}
+
+		return ttlBody
+
+	}
+
+	return nil
 }
 
 func flattenTableAttributeDefinitions(definitions *[]duplosdk.DuploDynamoDBAttributeDefinion) []interface{} {

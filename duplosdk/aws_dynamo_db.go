@@ -138,6 +138,11 @@ type DuploDynamoDBTableV2BillingModeSummary struct {
 	BillingMode *DuploStringValue `json:"BillingMode,omitempty"`
 }
 
+type DuploDynamoDBTableV2TTl struct {
+	AttributeName string `json:"AttributeName"`
+	Enabled       bool   `json:"IsTtlEnabled"`
+}
+
 type DuploDynamoDBTableRequestV2 struct {
 	TableName                 string                                      `json:"TableName"`
 	BillingMode               string                                      `json:"BillingMode,omitempty"`
@@ -273,6 +278,18 @@ func (c *Client) DynamoDBTableV2PointInRecovery(tenantID, tableName string, isPo
 	err := c.putAPI(
 		fmt.Sprintf("DynamoDBTableV2PointInRecovery(%s, %s)", tenantID, tableName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s/point-in-time-recovery", tenantID, tableName),
+		&rq,
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) DynamoDBTableV2TTl(tenantID, tableName string, rq *DuploDynamoDBTableV2TTl) (*DuploDynamoDBTableV2TTl, ClientError) {
+	rp := DuploDynamoDBTableV2TTl{}
+
+	err := c.putAPI(
+		fmt.Sprintf("DynamoDBTableV2TTl(%s, %s)", tenantID, tableName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s/ttl", tenantID, tableName),
 		&rq,
 		&rp,
 	)
