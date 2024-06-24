@@ -108,7 +108,6 @@ func AwsApiGatewayEventSchema() map[string]*schema.Schema {
 	}
 }
 
-// Resource for managing an AWS SSM parameter
 func resourceAwsApiGatewayEvent() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_aws_apigateway_event` manages an AWS API Gateway events with integration in Duplo.",
