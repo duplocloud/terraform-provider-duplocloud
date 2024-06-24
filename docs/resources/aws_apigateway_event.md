@@ -29,7 +29,7 @@ resource "duplocloud_aws_apigateway_event" "apigateway_event" {
 
   integration {
     type    = "AWS_PROXY"
-    uri     = "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:366133256645:function:duploservices-dev-valuation-manheimAspects/invocations"
+    uri     = "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:1234567890:function:duploservices-dev-valuation-test/invocations"
     timeout = 29000
   }
 }
