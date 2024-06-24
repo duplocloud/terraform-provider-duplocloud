@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/#taint-based-evictions
@@ -767,6 +768,319 @@ func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 	if v, ok := in["termination_grace_period_seconds"].(int); ok {
 		obj.TerminationGracePeriodSeconds = ptrToInt64(int64(v))
 	}
-
+	//volume missing
+	if v, ok := in["volume"]; ok {
+		flattenVolumes(v.([]v1.Volume))
+		//obj.Volumes=
+	}
 	return obj, nil
+}
+
+func expandPodSpecVolumes(volumes []interface{}) ([]v1.Volume, error) {
+	if len(volumes) == 0 {
+		return []v1.Volume{}, nil
+	}
+	vols := make([]v1.Volume, len(volumes))
+	for i, v := range volumes {
+		vol := v1.Volume{}
+		var err error
+		mp := v.(map[string][]interface{})
+		if vmp, ok := mp["config_map"]; ok {
+			vol.ConfigMap, err = expandConfigMap(vmp)
+			if err != nil {
+				return nil, err
+			}
+
+		}
+		if vmp, ok := mp["secret"]; ok {
+			vol.Secret, err = expandSecret(vmp)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if vmp, ok := mp["git_repo"]; ok {
+			vol.GitRepo, err = expandGitRepo(vmp)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if vmp, ok := mp["downward_api"]; ok {
+			api, err := expandDownwardAPI(vmp)
+			if err != nil {
+				return nil, err
+			}
+			vol.DownwardAPI = api
+		}
+
+		if vmp, ok := mp["csi"]; ok {
+			vol.CSI = expandCSI(vmp)
+
+		}
+		if vmp, ok := mp["empty_dir"]; ok {
+			emptyDir, err := expandEmptyDir(vmp)
+			if err != nil {
+				return nil, err
+			}
+			vol.EmptyDir = emptyDir
+		}
+		if vmp, ok := mp["ephemeral"]; ok {
+			emptyDir, err := expandEmptyDir(vmp)
+			if err != nil {
+				return nil, err
+			}
+			vol.Ephemeral = emptyDir
+		}
+
+		vols = append(vols, vol)
+	}
+}
+
+func expandConfigMap(configMap []interface{}) (*v1.ConfigMapVolumeSource, error) {
+	if len(configMap) == 0 {
+		return nil, nil
+	}
+	cmap := v1.ConfigMapVolumeSource{}
+	mp := configMap[0].(map[string]interface{})
+	if v, ok := mp["default_mode"]; ok {
+		val, err := strconv.Atoi(v.(string))
+		if err != nil {
+			return nil, err
+		}
+		cmap.DefaultMode = ptrToInt32(int32(val))
+	}
+	if v, ok := mp["optional"]; ok {
+		val := v.(bool)
+		cmap.Optional = &val
+	}
+	if v, ok := mp["name"]; ok {
+		cmap.Name = v.(string)
+	}
+	if v, ok := mp["items"].([]interface{}); ok {
+		items, err := expandItems(v)
+		if err != nil {
+			return nil, err
+		}
+		cmap.Items = items
+	}
+	return &cmap, nil
+}
+
+func expandSecret(secrets []interface{}) (*v1.SecretVolumeSource, error) {
+	if len(secrets) == 0 {
+		return nil, nil
+	}
+	secret := v1.SecretVolumeSource{}
+	mp := secrets[0].(map[string]interface{})
+	if v, ok := mp["default_mode"]; ok {
+		val, err := strconv.Atoi(v.(string))
+		if err != nil {
+			return nil, err
+		}
+		secret.DefaultMode = ptrToInt32(int32(val))
+	}
+	if v, ok := mp["optional"]; ok {
+		val := v.(bool)
+		secret.Optional = &val
+	}
+	if v, ok := mp["name"]; ok {
+		secret.SecretName = v.(string)
+	}
+	if v, ok := mp["items"].([]interface{}); ok {
+		items, err := expandItems(v)
+		if err != nil {
+			return nil, err
+		}
+		secret.Items = items
+	}
+	return &secret, nil
+}
+
+func expandItems(items []interface{}) ([]v1.KeyToPath, error) {
+	if len(items) == 0 {
+		return nil, nil
+	}
+	mapItems := make([]v1.KeyToPath, len(items))
+	for _, item := range items {
+		val := item.(map[string]interface{})
+		i := v1.KeyToPath{}
+		if v, ok := val["key"]; ok {
+			i.Key = v.(string)
+		}
+		if v, ok := val["mode"]; ok {
+			val, err := strconv.Atoi(v.(string))
+			if err != nil {
+				return nil, err
+			}
+			i.Mode = ptrToInt32(int32(val))
+		}
+		if v, ok := val["path"]; ok {
+			i.Path = v.(string)
+		}
+		mapItems = append(mapItems, i)
+	}
+	return mapItems, nil
+}
+
+func expandGitRepo(gitRepo []interface{}) (*v1.GitRepoVolumeSource, error) {
+	if len(gitRepo) == 0 {
+		return nil, nil
+	}
+	gitBody := v1.GitRepoVolumeSource{}
+	gitMap := gitRepo[0].(map[string]interface{})
+	if v, ok := gitMap["directory"]; ok {
+		gitBody.Directory = v.(string)
+	}
+	if v, ok := gitMap["repository"]; ok {
+		gitBody.Repository = v.(string)
+	}
+	if v, ok := gitMap["revision"]; ok {
+		gitBody.Revision = v.(string)
+	}
+	return &gitBody, nil
+}
+
+func expandCSI(csi []interface{}) *v1.CSIVolumeSource {
+	if len(csi) == 0 || csi[0] == nil {
+		return nil
+	}
+	csiBody := v1.CSIVolumeSource{}
+	csiMap := csi[0].(map[string]interface{})
+	if v, ok := csiMap["driver"]; ok {
+		csiBody.Driver = v.(string)
+	}
+	if v, ok := csiMap["volume_attributes"]; ok {
+		csiBody.VolumeAttributes = v.(map[string]string)
+	}
+	if v, ok := csiMap["fs_type"]; ok {
+		str := v.(string)
+		csiBody.FSType = &str
+	}
+	if v, ok := csiMap["read_only"]; ok {
+		flag := v.(bool)
+		csiBody.ReadOnly = &flag
+	}
+	if v, ok := csiMap["node_publish_secret_ref"].([]interface{}); ok {
+		csiBody.NodePublishSecretRef = expandNodePublishSecretRef(v)
+	}
+	return &csiBody
+}
+
+func expandNodePublishSecretRef(npsr []interface{}) *v1.LocalObjectReference {
+	if len(npsr) == 0 {
+		return nil
+	}
+	npsrBody := v1.LocalObjectReference{}
+	npsrMap := npsr[0].(map[string]interface{})
+	if v, ok := npsrMap["name"]; ok {
+		npsrBody.Name = v.(string)
+	}
+	return &npsrBody
+}
+
+func expandDownwardAPI(downwardApi []interface{}) (*v1.DownwardAPIVolumeSource, error) {
+	if len(downwardApi) == 0 {
+		return nil, nil
+	}
+	downwardAPIBody := v1.DownwardAPIVolumeSource{}
+	apiMap := downwardApi[0].(map[string]interface{})
+	if v, ok := apiMap["default_mode"]; ok {
+		val, err := strconv.Atoi(v.(string))
+		if err != nil {
+			return nil, err
+		}
+		downwardAPIBody.DefaultMode = ptrToInt32(int32(val))
+	}
+	if v, ok := apiMap["items"]; ok {
+		items, err := expandDownwardAPIItems(v.([]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		downwardAPIBody.Items = items
+	}
+	return &downwardAPIBody, nil
+}
+
+func expandDownwardAPIItems(items []interface{}) ([]v1.DownwardAPIVolumeFile, error) {
+
+	if len(items) == 0 {
+		return nil, nil
+	}
+	mapItems := make([]v1.DownwardAPIVolumeFile, len(items))
+	for _, item := range items {
+		val := item.(map[string]interface{})
+		i := v1.DownwardAPIVolumeFile{}
+		if v, ok := val["field_ref"]; ok {
+			ref, err := expandFieldRef(v.([]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			i.FieldRef = ref
+		}
+		if v, ok := val["mode"]; ok {
+			val, err := strconv.Atoi(v.(string))
+			if err != nil {
+				return nil, err
+			}
+			i.Mode = ptrToInt32(int32(val))
+		}
+		if v, ok := val["path"]; ok {
+			i.Path = v.(string)
+		}
+		if v, ok := val["resource_field_ref"]; ok {
+			ref, err := expandResourceFieldRef(v.([]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			i.ResourceFieldRef = ref
+		}
+		mapItems = append(mapItems, i)
+
+	}
+	return mapItems, nil
+}
+
+func expandEmptyDir(dir []interface{}) (*v1.EmptyDirVolumeSource, error) {
+	if len(dir) == 0 || dir[0] != nil {
+		return nil, nil
+	}
+	dirBody := v1.EmptyDirVolumeSource{}
+	dirMap := dir[0].(map[string]interface{})
+	if v, ok := dirMap["medium"]; ok {
+		dirBody.Medium = v.(v1.StorageMedium)
+	}
+	if v, ok := dirMap["size_limit"]; ok {
+
+		qty, err := resource.ParseQuantity(v.(string))
+		if err != nil {
+			return nil, err
+		}
+		dirBody.SizeLimit = &qty
+	}
+	return &dirBody, nil
+}
+
+func expandEmphemeral(emp []interface{}) (*v1.EphemeralVolumeSource, error) {
+	if len(emp) == 0 || emp[0] != nil {
+		return nil, nil
+	}
+	empBody := v1.EphemeralVolumeSource{}
+	empMap := emp[0].(map[string]interface{})
+	if v, ok := empMap["volume_claim_template"]; ok {
+		empBody.VolumeClaimTemplate = v.(v1.StorageMedium)
+	}
+	if v, ok := dirMap["size_limit"]; ok {
+
+		qty, err := resource.ParseQuantity(v.(string))
+		if err != nil {
+			return nil, err
+		}
+		dirBody.SizeLimit = &qty
+	}
+}
+
+func expandVolumeClaimTemplate(vct []interface{}){
+	if len(vct)==0 || vct[0]==nil{
+		return nil
+	}
+	vctBody:=
 }
