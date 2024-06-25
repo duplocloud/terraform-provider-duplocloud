@@ -97,6 +97,7 @@ Optional:
 - `is_internal` (Boolean) Whether or not to create an internal load balancer.
 - `is_native` (Boolean)
 - `set_ingress_health_check` (Boolean) Only for K8S services or load balancers in Kubernetes.  Set to `true` to set health check annotations for ingress.
+- `skip_http_to_https` (Boolean) Skip http to https.
 
 Read-Only:
 
