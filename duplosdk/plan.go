@@ -95,6 +95,39 @@ type DuploPlanSettings struct {
 	DefaultApplicationUrl string `json:"DefaultApplicationUrl"`
 }
 
+type DuploPlanWAF struct {
+	WebAclName   string
+	WebAclId     string
+	DashboardUrl string
+}
+
+func (c *Client) PlanWAFGetList(planID string) (*[]DuploPlanWAF, ClientError) {
+	list := []DuploPlanWAF{}
+	err := c.getAPI("PlanWAFGetList()", fmt.Sprintf("v3/admin/plans/%s/waf", planID), &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+func (c *Client) PlanWAFGet(planID, name string) (*DuploPlanWAF, ClientError) {
+	w := DuploPlanWAF{}
+	err := c.getAPI("PlanWAFGetList()", fmt.Sprintf("v3/admin/plans/%s/waf/%s", planID, name), &w)
+	if err != nil {
+		return nil, err
+	}
+	return &w, nil
+}
+
+func (c *Client) PlanWAF(planID string, wafs *DuploPlanWAF) ClientError {
+	rp := &DuploPlanWAF{}
+	return c.postAPI(
+		fmt.Sprintf("PlanWAF(%s)", planID),
+		fmt.Sprintf("v3/admin/plans/%s/waf", planID),
+		wafs,
+		rp)
+}
+
 // PlanGetList retrieves a list of plans via the Duplo API.
 func (c *Client) PlanGetList() (*[]DuploPlan, ClientError) {
 	list := []DuploPlan{}
@@ -119,6 +152,13 @@ func (c *Client) PlanGet(name string) (*DuploPlan, ClientError) {
 	}
 
 	return nil, nil
+}
+
+func (c *Client) PlanWafDelete(planID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("PlanWafDelete(%s, %s)", planID, name),
+		fmt.Sprintf("v3/admin/plans/%s/waf/%s", planID, name),
+		nil)
 }
 
 // GetK8sCredentials retrieves just-in-time kubernetes credentials via the Duplo API.

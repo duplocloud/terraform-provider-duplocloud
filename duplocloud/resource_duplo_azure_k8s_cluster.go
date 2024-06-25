@@ -34,7 +34,7 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"network_plugin": {
-			Description: "Network plugin to use for networking.",
+			Description: "Network plugin to use for networking. Valid values are: `azure` and `kubenet`.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
@@ -44,7 +44,7 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 			}, false),
 		},
 		"outbound_type": {
-			Description: "The outbound (egress) routing method which should be used for this Kubernetes Cluster.",
+			Description: "The outbound (egress) routing method which should be used for this Kubernetes Cluster. Valid values are: `loadBalancer` and `userDefinedRouting`.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,

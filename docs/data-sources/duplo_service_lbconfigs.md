@@ -70,6 +70,7 @@ Read-Only:
 - `protocol` (String)
 - `replication_controller_name` (String)
 - `set_ingress_health_check` (Boolean)
+- `skip_http_to_https` (Boolean)
 - `target_group_arn` (String)
 
 <a id="nestedobjatt--services--lbconfigs--extra_selector_label"></a>

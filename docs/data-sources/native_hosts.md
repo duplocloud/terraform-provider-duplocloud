@@ -48,6 +48,7 @@ Read-Only:
 - `network_interface` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--network_interface))
 - `prepend_user_data` (Boolean)
 - `private_ip_address` (String)
+- `public_ip_address` (String)
 - `status` (String)
 - `tags` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--tags))
 - `tenant_id` (String)
