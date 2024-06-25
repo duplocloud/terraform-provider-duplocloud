@@ -1066,21 +1066,25 @@ func expandEmphemeral(emp []interface{}) (*v1.EphemeralVolumeSource, error) {
 	empBody := v1.EphemeralVolumeSource{}
 	empMap := emp[0].(map[string]interface{})
 	if v, ok := empMap["volume_claim_template"]; ok {
-		empBody.VolumeClaimTemplate = v.(v1.StorageMedium)
+		empBody.VolumeClaimTemplate = expandVolumeClaimTemplate(v.([]interface{}))
 	}
-	if v, ok := dirMap["size_limit"]; ok {
 
-		qty, err := resource.ParseQuantity(v.(string))
-		if err != nil {
-			return nil, err
-		}
-		dirBody.SizeLimit = &qty
+}
+
+func expandVolumeClaimTemplate(vct []interface{}) *v1.PersistentVolumeClaimTemplate {
+	if len(vct) == 0 || vct[0] == nil {
+		return nil
+	}
+	vctBody := v1.PersistentVolumeClaimTemplate{}
+	vctMap := vct[0].(map[string]interface{})
+	if v, ok := vctMap["metadata"]; ok {
+		vctBody.ObjectMeta = expandMetadata(v.([]interface{}))
+	}
+	if v,ok:=vctMap["spec"];ok{
+		vctBody.Spec=
 	}
 }
 
-func expandVolumeClaimTemplate(vct []interface{}){
-	if len(vct)==0 || vct[0]==nil{
-		return nil
-	}
-	vctBody:=
+func expandVolumeClaimTemplateSpec(s []interface{}){
+	
 }
