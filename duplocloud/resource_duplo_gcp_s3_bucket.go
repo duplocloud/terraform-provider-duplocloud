@@ -195,25 +195,8 @@ func resourceGCPS3BucketCreate(ctx context.Context, d *schema.ResourceData, m in
 	log.Printf("[TRACE] resourceS3BucketCreate ******** start")
 	name := d.Get("name").(string)
 	c := m.(*duplosdk.Client)
-	features, _ := c.AdminGetSystemFeatures()
 
-	s3MaxLength := 63 - MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH
-	if features != nil && features.IsTagsBasedResourceMgmtEnabled {
-		s3MaxLength = 63
-	}
-	if len(name) > s3MaxLength {
-		return diag.Errorf("resourceS3BucketCreate: Invalid s3 bucket name: %s, Length must be in the range: (1 - %d)", name, s3MaxLength)
-	}
 	tenantID := d.Get("tenant_id").(string)
-
-	// prefix + name based on settings
-	fullName, errname := c.GetDuploServicesNameWithAws(tenantID, name)
-	if features != nil && features.IsTagsBasedResourceMgmtEnabled {
-		fullName = features.S3BucketNamePrefix + name
-	}
-	if errname != nil {
-		return diag.Errorf("resourceS3BucketCreate: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
-	}
 
 	// Create the request object.
 	duploObject := duplosdk.DuploS3BucketSettingsRequest{
@@ -225,16 +208,12 @@ func resourceGCPS3BucketCreate(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	// Post the object to Duplo
-	_, err := c.TenantCreateV3S3Bucket(tenantID, duploObject)
+	resp, err := c.GCPTenantCreateV3S3Bucket(tenantID, duploObject)
 	if err != nil && !err.PossibleMissingAPI() {
 		return diag.Errorf("resourceS3BucketCreate: Unable to create s3 bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
 	}
 
-	// **** fallback on older api ****
-	if err != nil && err.PossibleMissingAPI() {
-		return resourceS3BucketCreateOldApi(ctx, d, m)
-	}
-
+	fullName := resp.Name
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "S3 bucket", id, func() (interface{}, duplosdk.ClientError) {
@@ -245,11 +224,11 @@ func resourceGCPS3BucketCreate(ctx context.Context, d *schema.ResourceData, m in
 	}
 	d.SetId(id)
 	duploObject.Name = fullName
-	_, err = c.TenantUpdateV3S3Bucket(tenantID, duploObject)
+	_, err = c.GCPTenantUpdateV3S3Bucket(tenantID, duploObject)
 	if err != nil {
 		return diag.Errorf("%s", err.Error())
 	}
-	duplo, err := c.TenantGetV3S3Bucket(tenantID, fullName)
+	duplo, err := c.GCPTenantGetV3S3Bucket(tenantID, fullName)
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
