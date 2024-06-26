@@ -127,7 +127,7 @@ resource "duplocloud_aws_host" "host" {
 - `initial_base64_user_data` (String)
 - `instance_id` (String) The AWS EC2 instance ID of the host.
 - `private_ip_address` (String) The primary private IP address assigned to the host.
-- `puplic_ip_address` (String) The primary public IP address assigned to the host.
+- `public_ip_address` (String) The primary public IP address assigned to the host.
 - `status` (String) The current status of the host.
 
 <a id="nestedblock--metadata"></a>
