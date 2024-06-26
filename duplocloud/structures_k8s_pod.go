@@ -860,11 +860,11 @@ func expandConfigMap(configMap []interface{}) (*v1.ConfigMapVolumeSource, error)
 	cmap := v1.ConfigMapVolumeSource{}
 	mp := configMap[0].(map[string]interface{})
 	if v, ok := mp["default_mode"]; ok {
-		val, err := strconv.Atoi(v.(string))
+		num, err := OctalToNumericInt32(v.(string))
 		if err != nil {
 			return nil, err
 		}
-		cmap.DefaultMode = ptrToInt32(int32(val))
+		cmap.DefaultMode = ptrToInt32(num)
 	}
 	if v, ok := mp["optional"]; ok {
 		val := v.(bool)
@@ -890,11 +890,11 @@ func expandSecret(secrets []interface{}) (*v1.SecretVolumeSource, error) {
 	secret := v1.SecretVolumeSource{}
 	mp := secrets[0].(map[string]interface{})
 	if v, ok := mp["default_mode"]; ok {
-		_, err := strconv.Atoi(v.(string))
+		num, err := OctalToNumericInt32(v.(string))
 		if err != nil {
 			return nil, err
 		}
-		secret.DefaultMode = ptrToInt32(int32(252))
+		secret.DefaultMode = ptrToInt32(num)
 	}
 	if v, ok := mp["optional"]; ok {
 		val := v.(bool)
@@ -1002,12 +1002,13 @@ func expandDownwardAPI(downwardApi []interface{}) (*v1.DownwardAPIVolumeSource, 
 	downwardAPIBody := v1.DownwardAPIVolumeSource{}
 	apiMap := downwardApi[0].(map[string]interface{})
 	if v, ok := apiMap["default_mode"]; ok {
-		val, err := strconv.Atoi(v.(string))
+		num, err := OctalToNumericInt32(v.(string))
 		if err != nil {
 			return nil, err
 		}
-		downwardAPIBody.DefaultMode = ptrToInt32(int32(val))
+		downwardAPIBody.DefaultMode = ptrToInt32(num)
 	}
+
 	if v, ok := apiMap["items"]; ok {
 		items, err := expandDownwardAPIItems(v.([]interface{}))
 		if err != nil {
@@ -1178,14 +1179,15 @@ func expandProjected(p []interface{}) (*v1.ProjectedVolumeSource, error) {
 	projBody := v1.ProjectedVolumeSource{}
 
 	mp := p[0].(map[string]interface{})
-	if m, ok := mp["default_mode"]; ok {
-		val, err := strconv.Atoi(m.(string))
+
+	if v, ok := mp["default_mode"]; ok {
+		num, err := OctalToNumericInt32(v.(string))
 		if err != nil {
 			return nil, err
 		}
-		projBody.DefaultMode = ptrToInt32(int32(val))
-
+		projBody.DefaultMode = ptrToInt32(num)
 	}
+
 	if m, ok := mp["sources"]; ok {
 		obj, err := expandSources(m.([]interface{}))
 		if err != nil {
