@@ -425,6 +425,7 @@ func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name strin
 	d.Set("managed_policies", duplo.Policies)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("region", duplo.Region)
+	d.Set("location", duplo.Location)
 }
 
 func fillS3BucketRequest(duploObject *duplosdk.DuploS3BucketSettingsRequest, d *schema.ResourceData) error {
@@ -456,6 +457,10 @@ func fillS3BucketRequest(duploObject *duplosdk.DuploS3BucketSettingsRequest, d *
 
 	if v, ok := d.GetOk("region"); ok && v != nil {
 		duploObject.Region = v.(string)
+	}
+
+	if v, ok := d.GetOk("location"); ok && v != nil {
+		duploObject.Location = v.(string)
 	}
 
 	// Set the managed policies.
