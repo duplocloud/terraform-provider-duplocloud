@@ -540,7 +540,7 @@ func (c *Client) GCPTenantCreateV3S3Bucket(tenantID string, duplo DuploS3BucketS
 	err := c.postAPI(
 		fmt.Sprintf("TenantCreateV3S3Bucket(%s, %s)", tenantID, duplo.Name),
 		//  fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
-		fmt.Sprintf("v3/subscriptions/%s/google/s3Bucket", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket", tenantID),
 		&duplo,
 		&resp)
 
@@ -573,10 +573,10 @@ func (c *Client) TenantGetV3S3Bucket(tenantID string, name string) (*DuploS3Buck
 
 func (c *Client) GCPTenantGetV3S3Bucket(tenantID string, name string) (*DuploS3Bucket, ClientError) {
 	rp := DuploS3Bucket{}
-	err := c.getAPI(fmt.Sprintf("TenantGetV3S3Bucket(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/google/s3Bucket/%s", tenantID, name),
+	err := c.getAPI(fmt.Sprintf("GCPTenantGetV3S3Bucket(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, name),
 		&rp)
-	if err != nil || rp.Arn == "" {
+	if err != nil { //|| rp.Arn == "" {
 		return nil, err
 	}
 	return &rp, err
@@ -608,7 +608,7 @@ func (c *Client) GCPTenantUpdateV3S3Bucket(tenantID string, duplo DuploS3BucketS
 	// Apply the settings via Duplo.
 	apiName := fmt.Sprintf("TenantUpdateV3S3Bucket(%s, %s)", tenantID, duplo.Name)
 	rp := DuploS3Bucket{}
-	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/google/s3Bucket/%s", tenantID, duplo.Name), &duplo, &rp)
+	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, duplo.Name), &duplo, &rp)
 	if err != nil {
 		return nil, err
 	}
@@ -656,6 +656,15 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError 
 		fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
 		&DuploS3BucketRequest{Type: ResourceTypeS3Bucket, Name: fullName, State: "delete"},
 		nil)
+}
+
+func (c *Client) GCPTenantDeleteS3Bucket(tenantID string, name, fullName string) ClientError {
+
+	// Delete the bucket via Duplo.
+	return c.deleteAPI(fmt.Sprintf("NativeHostDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, fullName),
+		nil)
+
 }
 
 // TenantGetS3BucketSettings gets a non-cached view of the  S3 buckets's settings via Duplo.

@@ -114,12 +114,6 @@ func s3BucketSchema() map[string]*schema.Schema {
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		"tags": awsTagsKeyValueSchemaComputed(),
-		"location": {
-			Description: "The location is to set multi region, applicable for gcp cloud.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-		},
 	}
 }
 
