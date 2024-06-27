@@ -96,7 +96,6 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Optional:    true,
 			ForceNew:    true,
-			Default:     20,
 		},
 		"ebs_options": {
 			Type:     schema.TypeList,
@@ -392,12 +391,14 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 		RequireSSL:                 d.Get("require_ssl").(bool),
 		UseLatestTLSCipher:         d.Get("use_latest_tls_cipher").(bool),
 		EnableNodeToNodeEncryption: d.Get("enable_node_to_node_encryption").(bool),
-		EBSOptions: duplosdk.DuploElasticSearchDomainEBSOptions{
-			VolumeSize: d.Get("storage_size").(int),
-		},
+
 		VPCOptions: duploVPCOptions,
 	}
-
+	if size, ok := d.GetOk("storage_size"); ok {
+		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
+			VolumeSize: size.(int),
+		}
+	}
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
@@ -513,10 +514,7 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 		RequireSSL:                 d.Get("require_ssl").(bool),
 		UseLatestTLSCipher:         d.Get("use_latest_tls_cipher").(bool),
 		EnableNodeToNodeEncryption: d.Get("enable_node_to_node_encryption").(bool),
-		EBSOptions: duplosdk.DuploElasticSearchDomainEBSOptions{
-			VolumeSize: d.Get("storage_size").(int),
-		},
-		VPCOptions: duploVPCOptions,
+		VPCOptions:                 duploVPCOptions,
 	}
 
 	c := m.(*duplosdk.Client)
