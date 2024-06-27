@@ -82,4 +82,3 @@ Install terraform
 sudo snap install terraform --classic
 terraform version # you should see something like Terraform v1.6.5 ....
 ```
- 
