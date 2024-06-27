@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/#taint-based-evictions
@@ -767,6 +768,505 @@ func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 	if v, ok := in["termination_grace_period_seconds"].(int); ok {
 		obj.TerminationGracePeriodSeconds = ptrToInt64(int64(v))
 	}
+	if v, ok := in["volume"]; ok {
+		r, err := expandPodSpecVolumes(v.([]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		obj.Volumes = r
 
+	}
 	return obj, nil
+}
+
+func expandPodSpecVolumes(volumes []interface{}) ([]v1.Volume, error) {
+	if len(volumes) == 0 {
+		return []v1.Volume{}, nil
+	}
+	vols := make([]v1.Volume, 0, len(volumes))
+	for _, v := range volumes {
+		vol := v1.Volume{}
+		var err error
+		mp := v.(map[string]interface{})
+		if n, ok := mp["name"]; ok {
+			vol.Name = n.(string)
+		}
+		if vmp, ok := mp["config_map"].([]interface{}); ok {
+			vol.ConfigMap, err = expandConfigMap(vmp)
+			if err != nil {
+				return nil, err
+			}
+
+		}
+		if vmp, ok := mp["secret"].([]interface{}); ok {
+			vol.Secret, err = expandSecret(vmp)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if vmp, ok := mp["git_repo"].([]interface{}); ok {
+			vol.GitRepo, err = expandGitRepo(vmp)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if vmp, ok := mp["downward_api"].([]interface{}); ok {
+			api, err := expandDownwardAPI(vmp)
+			if err != nil {
+				return nil, err
+			}
+			vol.DownwardAPI = api
+		}
+
+		if vmp, ok := mp["csi"].([]interface{}); ok {
+			vol.CSI = expandCSI(vmp)
+
+		}
+		if vmp, ok := mp["empty_dir"].([]interface{}); ok {
+			emptyDir, err := expandEmptyDir(vmp)
+			if err != nil {
+				return nil, err
+			}
+			vol.EmptyDir = emptyDir
+		}
+		if vmp, ok := mp["ephemeral"].([]interface{}); ok {
+			emph := expandEmphemeral(vmp)
+			if emph != nil {
+				vol.Ephemeral = emph
+			}
+		}
+		if pvc, ok := mp["persistent_volume_claim"].([]interface{}); ok {
+			vol.PersistentVolumeClaim = expandPVC(pvc)
+		}
+
+		if p, ok := mp["projected"].([]interface{}); ok {
+			obj, err := expandProjected(p)
+			if err != nil {
+				return nil, err
+			}
+			if obj != nil {
+				vol.Projected = obj
+			}
+		}
+		vols = append(vols, vol)
+	}
+	return vols, nil
+}
+
+func expandConfigMap(configMap []interface{}) (*v1.ConfigMapVolumeSource, error) {
+	if len(configMap) == 0 || configMap[0] == nil {
+		return nil, nil
+	}
+	cmap := v1.ConfigMapVolumeSource{}
+	mp := configMap[0].(map[string]interface{})
+	if v, ok := mp["default_mode"]; ok {
+		num, err := OctalToNumericInt32(v.(string))
+		if err != nil {
+			return nil, err
+		}
+		cmap.DefaultMode = ptrToInt32(num)
+	}
+	if v, ok := mp["optional"]; ok {
+		val := v.(bool)
+		cmap.Optional = &val
+	}
+	if v, ok := mp["name"]; ok {
+		cmap.Name = v.(string)
+	}
+	if v, ok := mp["items"].([]interface{}); ok {
+		items, err := expandItems(v)
+		if err != nil {
+			return nil, err
+		}
+		cmap.Items = items
+	}
+	return &cmap, nil
+}
+
+func expandSecret(secrets []interface{}) (*v1.SecretVolumeSource, error) {
+	if len(secrets) == 0 || secrets[0] == nil {
+		return nil, nil
+	}
+	secret := v1.SecretVolumeSource{}
+	mp := secrets[0].(map[string]interface{})
+	if v, ok := mp["default_mode"]; ok {
+		num, err := OctalToNumericInt32(v.(string))
+		if err != nil {
+			return nil, err
+		}
+		secret.DefaultMode = ptrToInt32(num)
+	}
+	if v, ok := mp["optional"]; ok {
+		val := v.(bool)
+		secret.Optional = &val
+	}
+	if v, ok := mp["secret_name"]; ok {
+		secret.SecretName = v.(string)
+	}
+	if v, ok := mp["items"].([]interface{}); ok {
+		items, err := expandItems(v)
+		if err != nil {
+			return nil, err
+		}
+		secret.Items = items
+	}
+	return &secret, nil
+}
+
+func expandItems(items []interface{}) ([]v1.KeyToPath, error) {
+	if len(items) == 0 {
+		return nil, nil
+	}
+	mapItems := make([]v1.KeyToPath, 0, len(items))
+	for _, item := range items {
+		val := item.(map[string]interface{})
+		i := v1.KeyToPath{}
+		if v, ok := val["key"]; ok {
+			i.Key = v.(string)
+		}
+		if v, ok := val["mode"]; ok {
+			val, err := strconv.Atoi(v.(string))
+			if err != nil {
+				return nil, err
+			}
+			i.Mode = ptrToInt32(int32(val))
+		}
+		if v, ok := val["path"]; ok {
+			i.Path = v.(string)
+		}
+		mapItems = append(mapItems, i)
+	}
+	return mapItems, nil
+}
+
+func expandGitRepo(gitRepo []interface{}) (*v1.GitRepoVolumeSource, error) {
+	if len(gitRepo) == 0 || gitRepo[0] == nil {
+		return nil, nil
+	}
+	gitBody := v1.GitRepoVolumeSource{}
+	gitMap := gitRepo[0].(map[string]interface{})
+	if v, ok := gitMap["directory"]; ok {
+		gitBody.Directory = v.(string)
+	}
+	if v, ok := gitMap["repository"]; ok {
+		gitBody.Repository = v.(string)
+	}
+	if v, ok := gitMap["revision"]; ok {
+		gitBody.Revision = v.(string)
+	}
+	return &gitBody, nil
+}
+
+func expandCSI(csi []interface{}) *v1.CSIVolumeSource {
+	if len(csi) == 0 || csi[0] == nil {
+		return nil
+	}
+	csiBody := v1.CSIVolumeSource{}
+	csiMap := csi[0].(map[string]interface{})
+	if v, ok := csiMap["driver"]; ok {
+		csiBody.Driver = v.(string)
+	}
+	if v, ok := csiMap["volume_attributes"]; ok {
+		csiBody.VolumeAttributes = v.(map[string]string)
+	}
+	if v, ok := csiMap["fs_type"]; ok {
+		str := v.(string)
+		csiBody.FSType = &str
+	}
+	if v, ok := csiMap["read_only"]; ok {
+		flag := v.(bool)
+		csiBody.ReadOnly = &flag
+	}
+	if v, ok := csiMap["node_publish_secret_ref"].([]interface{}); ok {
+		csiBody.NodePublishSecretRef = expandNodePublishSecretRef(v)
+	}
+	return &csiBody
+}
+
+func expandNodePublishSecretRef(npsr []interface{}) *v1.LocalObjectReference {
+	if len(npsr) == 0 || npsr[0] == nil {
+		return nil
+	}
+	npsrBody := v1.LocalObjectReference{}
+	npsrMap := npsr[0].(map[string]interface{})
+	if v, ok := npsrMap["name"]; ok {
+		npsrBody.Name = v.(string)
+	}
+	return &npsrBody
+}
+
+func expandDownwardAPI(downwardApi []interface{}) (*v1.DownwardAPIVolumeSource, error) {
+	if len(downwardApi) == 0 || downwardApi[0] == nil {
+		return nil, nil
+	}
+	downwardAPIBody := v1.DownwardAPIVolumeSource{}
+	apiMap := downwardApi[0].(map[string]interface{})
+	if v, ok := apiMap["default_mode"]; ok {
+		num, err := OctalToNumericInt32(v.(string))
+		if err != nil {
+			return nil, err
+		}
+		downwardAPIBody.DefaultMode = ptrToInt32(num)
+	}
+
+	if v, ok := apiMap["items"]; ok {
+		items, err := expandDownwardAPIItems(v.([]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		downwardAPIBody.Items = items
+	}
+	return &downwardAPIBody, nil
+}
+
+func expandDownwardAPIItems(items []interface{}) ([]v1.DownwardAPIVolumeFile, error) {
+
+	if len(items) == 0 {
+		return nil, nil
+	}
+	mapItems := make([]v1.DownwardAPIVolumeFile, 0, len(items))
+	for _, item := range items {
+		val := item.(map[string]interface{})
+		i := v1.DownwardAPIVolumeFile{}
+		if v, ok := val["field_ref"]; ok {
+			ref, err := expandFieldRef(v.([]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			i.FieldRef = ref
+		}
+		if v, ok := val["mode"]; ok {
+			val, err := strconv.Atoi(v.(string))
+			if err != nil {
+				return nil, err
+			}
+			i.Mode = ptrToInt32(int32(val))
+		}
+		if v, ok := val["path"]; ok {
+			i.Path = v.(string)
+		}
+		if v, ok := val["resource_field_ref"]; ok {
+			ref, err := expandResourceFieldRef(v.([]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			i.ResourceFieldRef = ref
+		}
+		mapItems = append(mapItems, i)
+
+	}
+	return mapItems, nil
+}
+
+func expandEmptyDir(dir []interface{}) (*v1.EmptyDirVolumeSource, error) {
+	if len(dir) == 0 || dir[0] == nil {
+		return nil, nil
+	}
+	dirBody := v1.EmptyDirVolumeSource{}
+	dirMap := dir[0].(map[string]interface{})
+	if v, ok := dirMap["medium"]; ok {
+		dirBody.Medium = v.(v1.StorageMedium)
+	}
+	if v, ok := dirMap["size_limit"]; ok {
+
+		qty, err := resource.ParseQuantity(v.(string))
+		if err != nil {
+			return nil, err
+		}
+		dirBody.SizeLimit = &qty
+	}
+	return &dirBody, nil
+}
+
+func expandEmphemeral(emp []interface{}) *v1.EphemeralVolumeSource {
+	if len(emp) == 0 || emp[0] == nil {
+		return nil
+	}
+	empBody := v1.EphemeralVolumeSource{}
+	empMap := emp[0].(map[string]interface{})
+	if v, ok := empMap["volume_claim_template"]; ok {
+		empBody.VolumeClaimTemplate = expandVolumeClaimTemplate(v.([]interface{}))
+	}
+	return &empBody
+
+}
+
+func expandVolumeClaimTemplate(vct []interface{}) *v1.PersistentVolumeClaimTemplate {
+	if len(vct) == 0 || vct[0] == nil {
+		return nil
+	}
+	vctBody := v1.PersistentVolumeClaimTemplate{}
+	vctMap := vct[0].(map[string]interface{})
+	if v, ok := vctMap["metadata"]; ok {
+		vctBody.ObjectMeta = expandMetadata(v.([]interface{}))
+	}
+	if v, ok := vctMap["spec"]; ok {
+		r := expandVolumeClaimTemplateSpec(v.([]interface{}))
+		if r != nil {
+			vctBody.Spec = *r
+		}
+	}
+	return &vctBody //, nil
+}
+
+func expandVolumeClaimTemplateSpec(s []interface{}) *v1.PersistentVolumeClaimSpec {
+	if len(s) == 0 || s[0] == nil {
+		return nil
+	}
+	specBody := v1.PersistentVolumeClaimSpec{}
+	specMap := s[0].(map[string]interface{})
+	if v, ok := specMap["access_modes"]; ok {
+		specBody.AccessModes = v.([]v1.PersistentVolumeAccessMode)
+	}
+	if v, ok := specMap["resources"]; ok {
+		r := expandSpecResource(v.([]interface{}))
+		if r != nil {
+			specBody.Resources = *r
+		}
+	}
+	if v, ok := specMap["volume_name"]; ok {
+		specBody.VolumeName = v.(string)
+	}
+	if v, ok := specMap["volume_mode"]; ok {
+		specBody.VolumeMode = v.(*v1.PersistentVolumeMode)
+
+	}
+	if v, ok := specMap["storage_class_name"]; ok {
+		val := v.(string)
+		specBody.StorageClassName = &val
+
+	}
+	return &specBody
+}
+
+func expandSpecResource(r []interface{}) *v1.ResourceRequirements {
+	if len(r) == 0 || r[0] == nil {
+		return nil
+	}
+	resource := v1.ResourceRequirements{}
+	rsrcMap := r[0].(map[string]interface{})
+
+	if v, ok := rsrcMap["limits"]; ok {
+		resource.Limits = v.(v1.ResourceList)
+
+	}
+	if v, ok := rsrcMap["requests"]; ok {
+		resource.Requests = v.(v1.ResourceList)
+	}
+	return &resource
+}
+
+func expandPVC(p []interface{}) *v1.PersistentVolumeClaimVolumeSource {
+	if len(p) == 0 || p[0] != nil {
+		return nil
+	}
+	pvcBody := v1.PersistentVolumeClaimVolumeSource{}
+	pvcMap := p[0].(map[string]interface{})
+
+	if v, ok := pvcMap["claim_name"]; ok {
+		pvcBody.ClaimName = v.(string)
+	}
+	if v, ok := pvcMap["read_only"]; ok {
+		pvcBody.ReadOnly = v.(bool)
+	}
+	return &pvcBody
+}
+
+func expandProjected(p []interface{}) (*v1.ProjectedVolumeSource, error) {
+	if len(p) == 0 || p[0] != nil {
+		return nil, nil
+	}
+	projBody := v1.ProjectedVolumeSource{}
+
+	mp := p[0].(map[string]interface{})
+
+	if v, ok := mp["default_mode"]; ok {
+		num, err := OctalToNumericInt32(v.(string))
+		if err != nil {
+			return nil, err
+		}
+		projBody.DefaultMode = ptrToInt32(num)
+	}
+
+	if m, ok := mp["sources"]; ok {
+		obj, err := expandSources(m.([]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		projBody.Sources = obj
+	}
+
+	return &projBody, nil
+}
+
+func expandSources(s []interface{}) ([]v1.VolumeProjection, error) {
+	if len(s) == 0 {
+		return nil, nil
+	}
+	sourceBody := make([]v1.VolumeProjection, 0, len(s))
+	for _, v := range s {
+		sourceObj := v1.VolumeProjection{}
+		mp := v.(map[string]interface{})
+		if m, ok := mp["secret"]; ok {
+			obj, err := expandSecret(m.([]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			sourceObj.Secret = &v1.SecretProjection{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: obj.SecretName},
+				Items:    obj.Items,
+				Optional: obj.Optional,
+			}
+		}
+		if m, ok := mp["config_map"]; ok {
+			obj, err := expandConfigMap(m.([]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			sourceObj.ConfigMap = &v1.ConfigMapProjection{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: obj.Name,
+				},
+				Items:    obj.Items,
+				Optional: obj.Optional,
+			}
+		}
+
+		if m, ok := mp["downward_api"]; ok {
+			obj, err := expandDownwardAPI(m.([]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			sourceObj.DownwardAPI = &v1.DownwardAPIProjection{
+				Items: obj.Items,
+			}
+		}
+		if m, ok := mp["service_account_token"]; ok {
+			sourceObj.ServiceAccountToken = expandServiceAccountToken(m.([]interface{}))
+		}
+		sourceBody = append(sourceBody, sourceObj)
+	}
+	return sourceBody, nil
+}
+
+func expandServiceAccountToken(sat []interface{}) *v1.ServiceAccountTokenProjection {
+	if len(sat) == 0 || sat[0] != nil {
+		return nil
+	}
+	tokenBody := v1.ServiceAccountTokenProjection{}
+	tokenMap := sat[0].(map[string]interface{})
+
+	if v, ok := tokenMap["audience"]; ok {
+		tokenBody.Audience = v.(string)
+
+	}
+	if v, ok := tokenMap["expiration_seconds"]; ok {
+		i := int64(v.(int))
+		tokenBody.ExpirationSeconds = &i
+	}
+	if v, ok := tokenMap["path"]; ok {
+		tokenBody.Path = v.(string)
+	}
+	return &tokenBody
 }

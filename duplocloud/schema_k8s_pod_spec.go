@@ -824,6 +824,7 @@ func volumeSchema(isUpdatable bool) *schema.Resource {
 		Type:        schema.TypeList,
 		Description: "Projected represents a single volume that projects several volume sources into the same directory. More info: https://kubernetes.io/docs/concepts/storage/volumes/#projected",
 		Optional:    true,
+		MaxItems:    1,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"default_mode": {

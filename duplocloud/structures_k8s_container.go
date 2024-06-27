@@ -1,10 +1,11 @@
 package duplocloud
 
 import (
-	"k8s.io/apimachinery/pkg/api/resource"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	v1 "k8s.io/api/core/v1"
 )
@@ -544,13 +545,13 @@ func expandContainers(ctrs []interface{}) ([]v1.Container, error) {
 		//	cs[i].SecurityContext = ctx
 		//}
 
-		//if v, ok := ctr["volume_mount"].([]interface{}); ok && len(v) > 0 {
-		//	var err error
-		//	cs[i].VolumeMounts, err = expandContainerVolumeMounts(v)
-		//	if err != nil {
-		//		return cs, err
-		//	}
-		//}
+		if v, ok := ctr["volume_mount"].([]interface{}); ok && len(v) > 0 {
+			var err error
+			cs[i].VolumeMounts, err = expandContainerVolumeMounts(v)
+			if err != nil {
+				return cs, err
+			}
+		}
 
 		if v, ok := ctr["working_dir"].(string); ok && v != "" {
 			cs[i].WorkingDir = v
@@ -792,32 +793,32 @@ func expandContainers(ctrs []interface{}) ([]v1.Container, error) {
 //}
 
 // nolint
-//func expandContainerVolumeMounts(in []interface{}) ([]v1.VolumeMount, error) {
-//	if len(in) == 0 {
-//		return []v1.VolumeMount{}, nil
-//	}
-//	vmp := make([]v1.VolumeMount, len(in))
-//	for i, c := range in {
-//		p := c.(map[string]interface{})
-//		if mountPath, ok := p["mount_path"]; ok {
-//			vmp[i].MountPath = mountPath.(string)
-//		}
-//		if name, ok := p["name"]; ok {
-//			vmp[i].Name = name.(string)
-//		}
-//		if readOnly, ok := p["read_only"]; ok {
-//			vmp[i].ReadOnly = readOnly.(bool)
-//		}
-//		if subPath, ok := p["sub_path"]; ok {
-//			vmp[i].SubPath = subPath.(string)
-//		}
-//		if mountPropagation, ok := p["mount_propagation"]; ok {
-//			mp := v1.MountPropagationMode(mountPropagation.(string))
-//			vmp[i].MountPropagation = &mp
-//		}
-//	}
-//	return vmp, nil
-//}
+func expandContainerVolumeMounts(in []interface{}) ([]v1.VolumeMount, error) {
+	if len(in) == 0 {
+		return []v1.VolumeMount{}, nil
+	}
+	vmp := make([]v1.VolumeMount, len(in))
+	for i, c := range in {
+		p := c.(map[string]interface{})
+		if mountPath, ok := p["mount_path"]; ok {
+			vmp[i].MountPath = mountPath.(string)
+		}
+		if name, ok := p["name"]; ok {
+			vmp[i].Name = name.(string)
+		}
+		if readOnly, ok := p["read_only"]; ok {
+			vmp[i].ReadOnly = readOnly.(bool)
+		}
+		if subPath, ok := p["sub_path"]; ok {
+			vmp[i].SubPath = subPath.(string)
+		}
+		if mountPropagation, ok := p["mount_propagation"]; ok {
+			mp := v1.MountPropagationMode(mountPropagation.(string))
+			vmp[i].MountPropagation = &mp
+		}
+	}
+	return vmp, nil
+}
 
 func expandContainerEnv(in []interface{}) ([]v1.EnvVar, error) {
 	if len(in) == 0 {
