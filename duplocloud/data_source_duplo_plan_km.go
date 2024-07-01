@@ -55,11 +55,11 @@ func dataSourcePlanKMSRead(ctx context.Context, d *schema.ResourceData, m interf
 		return nil
 	}
 	// Set the simple fields first.
-	d.Set("kms_id", duplo.KeyId)
-	d.Set("kms_name", duplo.KeyName)
-	d.Set("kms_arn", duplo.KeyArn)
+	//d.Set("kms_id", duplo.KeyId)
+	//d.Set("kms_name", duplo.KeyName)
+	//d.Set("kms_arn", duplo.KeyArn)
 	// Build a list of current state, to replace the user-supplied settings.
-	d.SetId(planID + "/kms/" + duplo.KeyName)
+	d.SetId(planID + "/kms/")
 
 	log.Printf("[TRACE] dataSourcePlanKMSRead(%s): end", planID)
 	return nil

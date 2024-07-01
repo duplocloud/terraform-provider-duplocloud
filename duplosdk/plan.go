@@ -264,17 +264,17 @@ func (c *Client) PlanSetCertificate(planID string, cert DuploPlanCertificate) Cl
 		&rp)
 }
 
-func (c *Client) PlanCreateKMSKey(planID string, kms DuploPlanKmsKeyInfo) ClientError {
+func (c *Client) PlanCreateKMSKey(planID string, kms []DuploPlanKmsKeyInfo) ClientError {
 	var rp DuploPlanKmsKeyInfo
 	return c.postAPI(
-		fmt.Sprintf("PlanCreateKMSKey(%s, %s)", planID, kms.KeyName),
+		fmt.Sprintf("PlanCreateKMSKey(%s)", planID),
 		fmt.Sprintf("v3/admin/plans/%s/kmskeys", planID),
 		kms,
 		&rp)
 }
 
-func (c *Client) PlanGetKMSKey(planID string, name string) (*DuploPlanKmsKeyInfo, ClientError) {
-	var rp DuploPlanKmsKeyInfo
+func (c *Client) PlanGetKMSKey(planID string, name string) (*[]DuploPlanKmsKeyInfo, ClientError) {
+	var rp []DuploPlanKmsKeyInfo
 	err := c.getAPI(
 		fmt.Sprintf("PlanGetKMSKey(%s, %s)", planID, name),
 		fmt.Sprintf("v3/admin/plans/%s/kmskeys/%s", planID, EncodePathParam(name)),
