@@ -264,12 +264,12 @@ func (c *Client) PlanSetCertificate(planID string, cert DuploPlanCertificate) Cl
 		&rp)
 }
 
-func (c *Client) PlanCreateKMSKey(planID string, kms []DuploPlanKmsKeyInfo) ClientError {
+func (c *Client) PlanCreateKMSKey(planID string, kms DuploPlanKmsKeyInfo) ClientError {
 	var rp DuploPlanKmsKeyInfo
 	return c.postAPI(
 		fmt.Sprintf("PlanCreateKMSKey(%s)", planID),
 		fmt.Sprintf("v3/admin/plans/%s/kmskeys", planID),
-		kms,
+		&kms,
 		&rp)
 }
 

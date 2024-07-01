@@ -61,7 +61,7 @@ func PlanKmsSchema() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
+				//ForceNew: true,
 			},
 			"id": {
 				Type:     schema.TypeString,
@@ -69,7 +69,7 @@ func PlanKmsSchema() *schema.Resource {
 			},
 			"arn": {
 				Type:     schema.TypeString,
-				Computed: true,
+				Required: true,
 			},
 		},
 	}
@@ -149,9 +149,14 @@ func resourcePlanKMSCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 		}
 
 	}
-	clientErr := c.PlanCreateKMSKey(planID, *desired)
-	if clientErr != nil {
-		return diag.Errorf(clientErr.Error())
+	update := make([]duplosdk.DuploPlanKmsKeyInfo, 0, len(*desired)+len(*rp))
+	update = append(update, *desired...)
+	update = append(update, *rp...)
+	for _, data := range update {
+		clientErr := c.PlanCreateKMSKey(planID, data)
+		if clientErr != nil {
+			return diag.Errorf(clientErr.Error())
+		}
 	}
 	d.SetId(planID + "/kms")
 
@@ -164,14 +169,14 @@ func resourcePlanKMSDelete(ctx context.Context, d *schema.ResourceData, m interf
 	id := d.Id()
 	info := strings.SplitN(id, "/", 3)
 	planID := info[0]
-	name := info[2]
-
+	data := expandPlanKms("kms", d)
 	c := m.(*duplosdk.Client)
-	clientErr := c.PlanKMSDelete(planID, name)
-	if clientErr != nil {
-		return diag.Errorf(clientErr.Error())
+	for _, kms := range *data {
+		clientErr := c.PlanKMSDelete(planID, kms.KeyName)
+		if clientErr != nil {
+			return diag.Errorf(clientErr.Error())
+		}
 	}
-
 	return nil
 }
 
