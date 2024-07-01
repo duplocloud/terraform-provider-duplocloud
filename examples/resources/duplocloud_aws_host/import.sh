@@ -4,3 +4,4 @@
 #
 terraform import duplocloud_aws_host.myhost v2/subscriptions/*TENANT_ID*/NativeHostV2/*INSTANCE_ID*
 
+
