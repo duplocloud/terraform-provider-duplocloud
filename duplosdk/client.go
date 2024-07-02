@@ -221,7 +221,6 @@ func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface
 func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath string, rq interface{}, rp interface{}) ClientError {
 	apiName = fmt.Sprintf("%sAPI %s", strings.ToLower(verb), apiName)
 	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
-
 	// Build the request
 	rqBody, err := json.Marshal(rq)
 	if err != nil {
