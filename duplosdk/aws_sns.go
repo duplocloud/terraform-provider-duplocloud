@@ -2,16 +2,46 @@ package duplosdk
 
 import (
 	"fmt"
+	"strings"
+	"time"
 )
 
 type DuploSnsTopic struct {
-	Name     string `json:"Name"`
-	KmsKeyId string `json:"KmsKeyId,omitempty"`
+	Name                 string                        `json:"Name"`
+	KmsKeyId             string                        `json:"KmsKeyId,omitempty"`
+	ExtraTopicAttributes DuploSnsTopicAttributesCreate `json:"ExtraTopicAttributes,omitempty"`
 }
 
 type DuploSnsTopicResource struct {
-	Name         string `json:"Name"`
-	ResourceType int    `json:"ResourceType,omitempty"`
+	Name                 string                  `json:"Name"`
+	ResourceType         int                     `json:"ResourceType,omitempty"`
+	ExtraTopicAttributes DuploSnsTopicAttributes `json:"ExtraTopicAttributes,omitempty"`
+}
+
+type DuploSnsTopicAttributesCreate struct {
+	DeliveryPolicy            string `json:"DeliveryPolicy,omitempty"`
+	DisplayName               string `json:"DisplayName,omitempty"`
+	FifoTopic                 bool   `json:"FifoTopic,omitempty"`
+	Policy                    string `json:"Policy,omitempty"`
+	SignatureVersion          string `json:"SignatureVersion,omitempty"`
+	TracingConfig             string `json:"TracingConfig,omitempty"`
+	KmsMasterKeyId            string `json:"KmsMasterKeyId,omitempty"`
+	ArchivePolicy             string `json:"ArchivePolicy,omitempty"`
+	BeginningArchiveTime      string `json:"BeginningArchiveTime,omitempty"`
+	ContentBasedDeduplication string `json:"ContentBasedDeduplication,omitempty"`
+}
+
+type DuploSnsTopicAttributes struct {
+	Policy                    string `json:"Policy,omitempty"`
+	Owner                     string `json:"Owner,omitempty"`
+	SubscriptionsPending      int    `json:"SubscriptionsPending,omitempty"`
+	TopicArn                  string `json:"TopicArn,omitempty"`
+	EffectiveDeliveryPolicy   string `json:"EffectiveDeliveryPolicy,omitempty"`
+	SubscriptionsConfirmed    int    `json:"SubscriptionsConfirmed,omitempty"`
+	FifoTopic                 string `json:"FifoTopic,omitempty"`
+	DisplayName               string `json:"DisplayName,omitempty"`
+	ContentBasedDeduplication string `json:"ContentBasedDeduplication,omitempty"`
+	SubscriptionsDeleted      int    `json:"SubscriptionsDeleted,omitempty"`
 }
 
 func (c *Client) DuploSnsTopicCreate(tenantID string, rq *DuploSnsTopic) (*DuploSnsTopicResource, ClientError) {
@@ -40,6 +70,29 @@ func (c *Client) TenantListSnsTopic(tenantID string) (*[]DuploSnsTopicResource, 
 		fmt.Sprintf("v3/subscriptions/%s/aws/snsTopic", tenantID),
 		&rp,
 	)
+	return &rp, err
+}
+
+func (c *Client) TenantGetSnsTopicAttributes(tenantID string, topicArn string) (*DuploSnsTopicAttributes, ClientError) {
+	rp := DuploSnsTopicAttributes{}
+	_, err := RetryWithExponentialBackoff(func() (interface{}, ClientError) {
+		err := c.getAPI(
+			fmt.Sprintf("TenantListSnsTopic(%s)", tenantID),
+			fmt.Sprintf("v3/subscriptions/%s/aws/snsTopic/%s/attributes", tenantID, topicArn),
+			&rp,
+		)
+		return &rp, err
+	},
+		RetryConfig{
+			MinDelay:  1 * time.Second,
+			MaxDelay:  5 * time.Second,
+			MaxJitter: 2000,
+			Timeout:   60 * time.Second,
+			IsRetryable: func(error ClientError) bool {
+				return error.Status() == 400 || strings.Contains(error.Error(), "context deadline exceeded")
+			},
+		})
+
 	return &rp, err
 }
 
