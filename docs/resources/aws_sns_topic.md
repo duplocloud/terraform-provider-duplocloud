@@ -18,10 +18,11 @@ resource "duplocloud_tenant" "myapp" {
   plan_id      = "default"
 }
 
-# Without KMS Key
+# Without KMS Key running as fifo
 resource "duplocloud_aws_sns_topic" "sns_topic" {
-  tenant_id = duplocloud_tenant.myapp.tenant_id
-  name      = "duplo_topic"
+  tenant_id  = duplocloud_tenant.myapp.tenant_id
+  name       = "duplo_topic.fifo" # AWS requires the ".fifo" extension for fifo sns topics
+  fifo_topic = true
 }
 
 # With Tenant KMS Key
@@ -46,6 +47,7 @@ resource "duplocloud_aws_sns_topic" "sns_topic" {
 
 ### Optional
 
+- `fifo_topic` (Boolean) Whether the topic processes messages as fifo or not Defaults to `false`.
 - `kms_key_id` (String) The ID of an AWS-managed customer master key (CMK) for Amazon SNS or a custom CMK.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
