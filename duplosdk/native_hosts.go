@@ -38,6 +38,7 @@ type DuploNativeHost struct {
 	Status             string                             `json:"Status,omitempty"`
 	IdentityRole       string                             `json:"IdentityRole,omitempty"`
 	PrivateIPAddress   string                             `json:"PrivateIpAddress,omitempty"`
+	PublicIPAddress    string                             `json:"PublicIpAddress,omitempty"`
 	NetworkInterfaceId string                             `json:"NetworkInterfaceId,omitempty"`
 	NetworkInterfaces  *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
 	Volumes            *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`

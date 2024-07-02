@@ -106,6 +106,7 @@ type DuploLbConfiguration struct {
 
 	// TODO: DIPAddresses
 	AllowGlobalAccess bool `json:"AllowGlobalAccess,omitempty"`
+	SkipHttpToHttps   bool `json:"SkipHttpToHttps,omitempty"`
 }
 
 // DuploPodLbConfiguration represents an LB configuration deletion request.

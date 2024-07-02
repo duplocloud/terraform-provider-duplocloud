@@ -156,6 +156,12 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"skip_http_to_https": {
+			Description: "Skip http to https.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -327,6 +333,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					ExternalTrafficPolicy:     lbc["external_traffic_policy"].(string),
 					SetIngressHealthCheck:     lbc["set_ingress_health_check"].(bool),
 					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
+					SkipHttpToHttps:           lbc["skip_http_to_https"].(bool),
 				}
 				// if lbType is 7, then external_port is not required
 				externalPortValue, exists := lbc["external_port"]
@@ -510,6 +517,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"target_group_arn":            lb.TgArn,
 		"custom_cidr":                 lb.CustomCidrs,
 		"allow_global_access":         lb.AllowGlobalAccess,
+		"skip_http_to_https":          lb.SkipHttpToHttps,
 	}
 
 	if lb.LbType == 5 && lb.HostNames != nil && len(*lb.HostNames) > 0 {

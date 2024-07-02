@@ -173,6 +173,7 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 - `stream_view_type` (String) When an item in the table is modified, StreamViewType determines what information is written to the table's stream. Valid values are `KEYS_ONLY`, `NEW_IMAGE`, `OLD_IMAGE`, `NEW_AND_OLD_IMAGES`.
 - `tag` (Block List) (see [below for nested schema](#nestedblock--tag))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `ttl` (Block List, Max: 1) Setup ttl for dynamodb table (see [below for nested schema](#nestedblock--ttl))
 - `wait_until_ready` (Boolean) Whether or not to wait until dynamodb instance to be ready, after creation. Defaults to `true`.
 - `write_capacity` (Number) The number of write units for this table. If the `billing_mode` is `PROVISIONED`, this field is required.
 
@@ -264,6 +265,15 @@ Optional:
 
 - `create` (String)
 - `delete` (String)
+
+
+<a id="nestedblock--ttl"></a>
+### Nested Schema for `ttl`
+
+Required:
+
+- `attribute_name` (String) The name of the attribute that will be stored in the ttl timestamp
+- `enabled` (Boolean) Status of the ttl
 
 ## Import
 

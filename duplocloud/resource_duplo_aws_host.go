@@ -145,6 +145,11 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"public_ip_address": {
+			Description: "The primary public IP address assigned to the host.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"metadata": {
 			Description: "Configuration metadata used when creating the host.",
 			Type:        schema.TypeList,
@@ -627,10 +632,14 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("status", duplo.Status)
 	d.Set("identity_role", duplo.IdentityRole)
 	d.Set("private_ip_address", duplo.PrivateIPAddress)
+	d.Set("public_ip_address", duplo.PublicIPAddress)
+
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
 	// Ignore the value in the response for duplo.PrependUserData
-
+	if duplo.MetaData != nil {
+		d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
+	}
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
 		d.Set("zone", duplo.Zone)
