@@ -167,12 +167,6 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 						Type:        schema.TypeInt,
 						Optional:    true,
 					},
-					"delete_index": {
-						Description: "Set it to true when global index need to be deleted during update",
-						Type:        schema.TypeBool,
-						Optional:    true,
-						Default:     false,
-					},
 				},
 			},
 		},
@@ -1084,10 +1078,45 @@ func globalIndexUpdateAction(c *duplosdk.Client, existing *duplosdk.DuploDynamoD
 	tenantID, name string, d *schema.ResourceData) diag.Diagnostics {
 
 	existingIndex := make(map[string]duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndexResponse)
+	rqIndex := make(map[string]duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndex)
+
 	gsiu := []duplosdk.GlobalSecondaryIndexUpdates{}
 	if existing != nil && d.HasChange("global_secondary_index") {
 		for _, e := range *existing.GlobalSecondaryIndexes {
 			existingIndex[e.IndexName] = e
+		}
+		for _, ne := range *request.GlobalSecondaryIndexes {
+			rqIndex[ne.IndexName] = ne
+		}
+		//remove non staged gsi
+		for _, r := range *existing.GlobalSecondaryIndexes {
+			if _, ok := rqIndex[r.IndexName]; !ok {
+				del := duplosdk.GlobalSecondaryIndexUpdates{
+					Delete: &duplosdk.Delete{
+						IndexName: r.IndexName,
+					},
+				}
+				gsiu = append(gsiu, del)
+			}
+		}
+		if len(gsiu) > 0 {
+			req := &duplosdk.ModifyGSI{
+				TableName:                   name,
+				GlobalSecondaryIndexUpdates: gsiu,
+				AttributeDefinitions:        *request.AttributeDefinitions,
+			}
+
+			_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
+			if err != nil {
+				e := "Error updating tenant %s DynamoDB table '%s': %s"
+				return diag.Errorf(e, tenantID, name, err)
+			}
+			gsictx := context.Background()
+			er := dynamodbWaitUntilReady(gsictx, c, tenantID, name, d.Timeout("update"))
+			if er != nil {
+				return diag.FromErr(err)
+			}
+			gsiu = nil
 		}
 		for _, r := range *request.GlobalSecondaryIndexes {
 			if ev, ok := existingIndex[r.IndexName]; !ok {
@@ -1103,37 +1132,29 @@ func globalIndexUpdateAction(c *duplosdk.Client, existing *duplosdk.DuploDynamoD
 				gsiu = append(gsiu, cr)
 
 			} else {
-				if r.DeleteIndex {
-					del := duplosdk.GlobalSecondaryIndexUpdates{
-						Delete: &duplosdk.Delete{
-							IndexName: r.IndexName,
+				ev = existingIndex[r.IndexName]
+				if (ev.ProvisionedThroughput.ReadCapacityUnits != r.ProvisionedThroughput.ReadCapacityUnits) || (ev.ProvisionedThroughput.WriteCapacityUnits != r.ProvisionedThroughput.WriteCapacityUnits) {
+					up := duplosdk.GlobalSecondaryIndexUpdates{
+						Update: &duplosdk.Update{
+							IndexName:             r.IndexName,
+							ProvisionedThroughput: *r.ProvisionedThroughput,
 						},
 					}
-					gsiu = append(gsiu, del)
-
-				} else {
-					ev = existingIndex[r.IndexName]
-					if (ev.ProvisionedThroughput.ReadCapacityUnits != r.ProvisionedThroughput.ReadCapacityUnits) || (ev.ProvisionedThroughput.WriteCapacityUnits != r.ProvisionedThroughput.WriteCapacityUnits) {
-						up := duplosdk.GlobalSecondaryIndexUpdates{
-							Update: &duplosdk.Update{
-								IndexName:             r.IndexName,
-								ProvisionedThroughput: *r.ProvisionedThroughput,
-							},
-						}
-						gsiu = append(gsiu, up)
-					}
+					gsiu = append(gsiu, up)
 				}
 			}
 		}
-		req := &duplosdk.ModifyGSI{
-			TableName:                   name,
-			GlobalSecondaryIndexUpdates: gsiu,
-			AttributeDefinitions:        *request.AttributeDefinitions,
-		}
-		_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
-		if err != nil {
-			e := "Error updating tenant %s DynamoDB table '%s': %s"
-			return diag.Errorf(e, tenantID, name, err)
+		if len(gsiu) > 0 {
+			req := &duplosdk.ModifyGSI{
+				TableName:                   name,
+				GlobalSecondaryIndexUpdates: gsiu,
+				AttributeDefinitions:        *request.AttributeDefinitions,
+			}
+			_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
+			if err != nil {
+				e := "Error updating tenant %s DynamoDB table '%s': %s"
+				return diag.Errorf(e, tenantID, name, err)
+			}
 		}
 
 	}

@@ -282,7 +282,6 @@ Required:
 
 Optional:
 
-- `delete_index` (Boolean) Set it to true when global index need to be deleted during update Defaults to `false`.
 - `non_key_attributes` (Set of String) Only required with `INCLUDE` as a projection type; a list of attributes to project into the index. These do not need to be defined as attributes on the table.
 - `range_key` (String) The name of the range key; must be defined.
 - `read_capacity` (Number) The number of read units for this index. Must be set if `billing_mode` is set to `PROVISIONED`.
