@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -33,6 +34,13 @@ func duploAwsSnsTopicSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
+		},
+		"fifo_topic": {
+			Description: "Whether the topic processes messages as fifo or not",
+			Type:        schema.TypeBool,
+			ForceNew:    true,
+			Optional:    true,
+			Default:     false,
 		},
 		"arn": {
 			Description: "The ARN of the SNS topic.",
@@ -93,6 +101,9 @@ func resourceAwsSnsTopicRead(ctx context.Context, d *schema.ResourceData, m inte
 		}
 		return diag.Errorf("Unable to retrieve tenant %s sns topic %s : %s", tenantID, arn, clientErr)
 	}
+
+	attributes, _ := c.TenantGetSnsTopicAttributes(tenantID, topic.Name)
+	d.Set("fifo_topic", attributes.FifoTopic)
 
 	prefix, err := c.GetDuploServicesPrefix(tenantID)
 	if err != nil {
@@ -172,9 +183,26 @@ func resourceAwsSnsTopicDelete(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func expandAwsSnsTopic(d *schema.ResourceData) *duplosdk.DuploSnsTopic {
+	var extraAttributes = duplosdk.DuploSnsTopicAttributesCreate{}
+
+	addIfDefined(&extraAttributes, "FifoTopic", d.Get("fifo_topic"))
 	return &duplosdk.DuploSnsTopic{
-		Name:     d.Get("name").(string),
-		KmsKeyId: d.Get("kms_key_id").(string),
+		Name:                 d.Get("name").(string),
+		KmsKeyId:             d.Get("kms_key_id").(string),
+		ExtraTopicAttributes: extraAttributes,
+	}
+}
+
+func addIfDefined(target interface{}, resourceName string, targetValue interface{}) {
+	v := reflect.ValueOf(target).Elem()
+	field := v.FieldByName(resourceName)
+	if field.IsValid() && field.CanSet() && targetValue != nil {
+
+		val := reflect.ValueOf(targetValue)
+
+		if val.Type().AssignableTo(field.Type()) {
+			field.Set(val)
+		}
 	}
 }
 

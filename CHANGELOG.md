@@ -1,3 +1,12 @@
+## 2024-07-02
+
+### Added
+- Added support for FIFO message processing in SNS topics, including a new `fifo_topic` field in the SNS topic schema.
+
+### Enhanced
+- Enhanced example configurations and documentation to demonstrate FIFO topic usage.
+- Implemented retrieval of SNS topic attributes, including FIFO settings, with retries for improved reliability.
+
 ## 2024-04-29
 
 ### Fixed
