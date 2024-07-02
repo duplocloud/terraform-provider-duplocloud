@@ -72,7 +72,6 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
 }
 
-
 resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
   tenant_id                   = duplocloud_tenant.myapp.tenant_id
@@ -147,6 +146,74 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
     projection_type = "KEYS_ONLY"
   }
 
+}
+
+
+resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
+
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
+  name                        = "mytable"
+  read_capacity               = 80
+  write_capacity              = 40
+  billing_mode                = "PROVISIONED"
+  is_point_in_time_recovery   = false
+  deletion_protection_enabled = false
+
+  tag {
+    key   = "school"
+    value = "admission"
+  }
+  attribute {
+    name = "ForumName"
+    type = "S"
+  }
+  attribute {
+    name = "Subject"
+    type = "S"
+  }
+  attribute {
+    name = "LastPostDateTime"
+    type = "S"
+  }
+  attribute {
+    name = "PostMonth"
+    type = "S"
+  }
+
+  attribute {
+    name = "GameTitle"
+    type = "S"
+  }
+
+  attribute {
+    name = "TopScore"
+    type = "N"
+  }
+
+  key_schema {
+    attribute_name = "UserId"
+    key_type       = "HASH"
+  }
+
+  key_schema {
+    attribute_name = "GameTitle"
+    key_type       = "RANGE"
+  }
+
+  global_secondary_index {
+    name               = "GameTitleIndex"
+    hash_key           = "GameTitle"
+    range_key          = "TopScore"
+    write_capacity     = 10
+    read_capacity      = 10
+    projection_type    = "INCLUDE"
+    non_key_attributes = ["UserId"]
+  }
+
+  ttl {
+    attribute_name = "TimeToExist"
+    enabled        = true
+  }
 }
 ```
 
