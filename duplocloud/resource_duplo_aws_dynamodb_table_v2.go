@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -531,22 +532,15 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	tagsToUpdate := []duplosdk.DuploKeyStringValue{}
 	//tagsToDelete := []string{}
 	for _, v := range *rq.Tags {
-		//	if v.DeleteTag {
-		//		tagsToDelete = append(tagsToDelete, v.Key)  //waiting for backend change
-		//	} else {
 		tagsToUpdate = append(tagsToUpdate, duplosdk.DuploKeyStringValue{
 			Key:   v.Key,
 			Value: v.Value,
 		})
-		//	}
 	}
 	tagReq := &duplosdk.DuploDynamoDBTagResourceRequest{
 		ResourceArn: existing.TableArn,
 		Tags:        &tagsToUpdate,
 	}
-	//if len(tagsToDelete) > 0 {
-	//	tagReq.TagKeys = &tagsToDelete
-	//}
 	_, err = tagDynamoDBtTableV2(tenantID, tagReq, m) //taging and untaging dynamodb
 	if err != nil {
 		return diag.FromErr(err)
@@ -818,7 +812,6 @@ func expandGlobalSecondaryIndex(data map[string]interface{}, billingMode string)
 		KeySchema:             expandKeySchema(data),
 		Projection:            expandProjection(data),
 		ProvisionedThroughput: expandProvisionedThroughput(data, billingMode),
-		DeleteIndex:           data["delete_index"].(bool),
 	}
 }
 
@@ -1073,6 +1066,38 @@ func dynamodbWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID st
 	return err
 }
 
+func dynamodbWaitUntilGSIReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration, indexName string) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.DynamoDBTableGetV2(tenantID, name)
+			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
+			status := "pending"
+			for _, gsi := range *rp.GlobalSecondaryIndexes {
+				if err == nil {
+					if gsi.IndexName == indexName {
+						if gsi.IndexStatus.Value == "ACTIVE" {
+							status = "ready"
+						} else {
+							status = "pending"
+						}
+						break
+					}
+
+				}
+			}
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] dynamodbWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
 func globalIndexUpdateAction(c *duplosdk.Client, existing *duplosdk.DuploDynamoDBTableV2Response,
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 	tenantID, name string, d *schema.ResourceData) diag.Diagnostics {
@@ -1090,33 +1115,59 @@ func globalIndexUpdateAction(c *duplosdk.Client, existing *duplosdk.DuploDynamoD
 		}
 		//remove non staged gsi
 		for _, r := range *existing.GlobalSecondaryIndexes {
-			if _, ok := rqIndex[r.IndexName]; !ok {
+			if rs, ok := rqIndex[r.IndexName]; !ok {
 				del := duplosdk.GlobalSecondaryIndexUpdates{
 					Delete: &duplosdk.Delete{
 						IndexName: r.IndexName,
 					},
 				}
 				gsiu = append(gsiu, del)
-			}
-		}
-		if len(gsiu) > 0 {
-			req := &duplosdk.ModifyGSI{
-				TableName:                   name,
-				GlobalSecondaryIndexUpdates: gsiu,
-				AttributeDefinitions:        *request.AttributeDefinitions,
-			}
+				req := &duplosdk.ModifyGSI{
+					TableName:                   name,
+					GlobalSecondaryIndexUpdates: gsiu,
+					AttributeDefinitions:        *request.AttributeDefinitions,
+				}
+				//only one gsi can be deleted per update request
+				_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
+				if err != nil {
+					e := "Error updating tenant %s DynamoDB table '%s': %s"
+					return diag.Errorf(e, tenantID, name, err)
+				}
+				gsictx := context.Background()
+				er := dynamodbWaitUntilReady(gsictx, c, tenantID, name, d.Timeout("update"))
+				if er != nil {
+					return diag.FromErr(err)
+				}
+				gsiu = nil
+			} else if (r.Projection.ProjectionType.Value != rs.Projection.ProjectionType) ||
+				(!reflect.DeepEqual(r.KeySchema, rs.KeySchema)) ||
+				(!reflect.DeepEqual(r.Projection.NonKeyAttributes, rs.Projection.NonKeyAttributes)) {
+				del := duplosdk.GlobalSecondaryIndexUpdates{
+					Delete: &duplosdk.Delete{
+						IndexName: r.IndexName,
+					},
+				}
+				gsiu = append(gsiu, del)
+				delete(existingIndex, r.IndexName)
+				//removing gsi for attribute change which is not supported for updation and provisioning for recreation.
+				req := &duplosdk.ModifyGSI{
+					TableName:                   name,
+					GlobalSecondaryIndexUpdates: gsiu,
+					AttributeDefinitions:        *request.AttributeDefinitions,
+				}
 
-			_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
-			if err != nil {
-				e := "Error updating tenant %s DynamoDB table '%s': %s"
-				return diag.Errorf(e, tenantID, name, err)
+				_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
+				if err != nil {
+					e := "Error updating tenant %s DynamoDB table '%s': %s"
+					return diag.Errorf(e, tenantID, name, err)
+				}
+				gsictx := context.Background()
+				er := dynamodbWaitUntilReady(gsictx, c, tenantID, name, d.Timeout("update"))
+				if er != nil {
+					return diag.FromErr(err)
+				}
+				gsiu = nil
 			}
-			gsictx := context.Background()
-			er := dynamodbWaitUntilReady(gsictx, c, tenantID, name, d.Timeout("update"))
-			if er != nil {
-				return diag.FromErr(err)
-			}
-			gsiu = nil
 		}
 		for _, r := range *request.GlobalSecondaryIndexes {
 			if ev, ok := existingIndex[r.IndexName]; !ok {
@@ -1130,7 +1181,24 @@ func globalIndexUpdateAction(c *duplosdk.Client, existing *duplosdk.DuploDynamoD
 					Create: &t,
 				}
 				gsiu = append(gsiu, cr)
+				req := &duplosdk.ModifyGSI{
+					TableName:                   name,
+					GlobalSecondaryIndexUpdates: gsiu,
+					AttributeDefinitions:        *request.AttributeDefinitions,
+				}
 
+				//only one gsi can be created per update request
+				_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
+				if err != nil {
+					e := "Error updating tenant %s DynamoDB table '%s': %s"
+					return diag.Errorf(e, tenantID, name, err)
+				}
+				gsictx := context.Background()
+				er := dynamodbWaitUntilGSIReady(gsictx, c, tenantID, name, d.Timeout("update"), r.IndexName)
+				if er != nil {
+					return diag.FromErr(err)
+				}
+				gsiu = nil
 			} else {
 				ev = existingIndex[r.IndexName]
 				if (ev.ProvisionedThroughput.ReadCapacityUnits != r.ProvisionedThroughput.ReadCapacityUnits) || (ev.ProvisionedThroughput.WriteCapacityUnits != r.ProvisionedThroughput.WriteCapacityUnits) {

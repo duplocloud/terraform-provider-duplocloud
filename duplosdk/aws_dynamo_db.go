@@ -181,7 +181,6 @@ type DuploDynamoDBTableV2GlobalSecondaryIndex struct {
 	Projection            *DuploDynamoDBTableV2Projection     `json:"Projection,omitempty"`
 	KeySchema             *[]DuploDynamoDBKeySchema           `json:"KeySchema,omitempty"`
 	ProvisionedThroughput *DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput,omitempty"`
-	DeleteIndex           bool                                `json:"-"`
 }
 
 type DuploDynamoDBTableV2GlobalSecondaryIndexResponse struct {
@@ -189,6 +188,7 @@ type DuploDynamoDBTableV2GlobalSecondaryIndexResponse struct {
 	Projection            *DuploDynamoDBTableV2ProjectionResponse `json:"Projection,omitempty"`
 	KeySchema             *[]DuploDynamoDBKeySchemaResponse       `json:"KeySchema,omitempty"`
 	ProvisionedThroughput *DuploDynamoDBProvisionedThroughput     `json:"ProvisionedThroughput,omitempty"`
+	IndexStatus           *DuploStringValue                       `json:"IndexStatus,omitempty"`
 }
 type UpdateGSIReq struct {
 	UpdateGSI UpdateGSI `json:"Update"`
