@@ -134,7 +134,6 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
     write_capacity  = 5
     read_capacity   = 5
     projection_type = "ALL"
-    #delete_index = true #To remove an global secondary index from associated table
   }
   server_side_encryption {
     enabled = false
