@@ -9,78 +9,174 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourcePlanKMSList() *schema.Resource {
-	return &schema.Resource{
-		Description: "`duplocloud_plan_kms` manages the list of kms avaialble to a plan in Duplo.\n\n" +
-			"This resource allows you take control of individual plan kms for a specific plan.",
+func planKmsDataSourceSchema(single bool) map[string]*schema.Schema {
 
-		ReadContext: dataSourcePlanKMSReadList,
+	// Create a fully computed schema.
+	kms_schema := planKmsDataSchema()
+	for k := range kms_schema {
+		kms_schema[k].Required = false
+		kms_schema[k].Computed = true
+	}
 
-		Schema: map[string]*schema.Schema{
-			"plan_id": {
-				Description: "The ID of the plan to configure.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"data": {
-				Type:     schema.TypeList,
-				Computed: true,
+	// For a single certifiate, the name is required, not computed.
+	var result map[string]*schema.Schema
+	if single {
+		result = kms_schema
+		result["name"].Computed = false
+		result["name"].Required = true
+
+		// For a list of certificates, move the list under the result key.
+	} else {
+		result = map[string]*schema.Schema{
+			"kms_keys": {
+				Description: "The list of kms keys for this plan.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"kms_name": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"kms_id": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"kms_arn": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-					},
+					Schema: kms_schema,
 				},
 			},
-		},
+		}
+
+	}
+
+	// Always require the plan ID.
+	result["plan_id"] = &schema.Schema{
+		Description: "The plan ID",
+		Type:        schema.TypeString,
+		Required:    true,
+	}
+
+	return result
+}
+
+func dataSourcePlanKMSList() *schema.Resource {
+	return &schema.Resource{
+		Description: "`duplocloud_plan_kms_key` retrieves a list of kms keys for a given plan.",
+
+		ReadContext: dataSourcePlanKmsKeysRead,
+		Schema:      planKmsDataSourceSchema(false),
 	}
 }
 
-func dataSourcePlanKMSReadList(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourcePlanKMS() *schema.Resource {
+	return &schema.Resource{
+		Description: "`duplocloud_plan_kms` retrieves details of a specific kms for a given plan.",
+
+		ReadContext: dataSourcePlanKmsRead,
+		Schema:      planKmsDataSourceSchema(true),
+	}
+}
+
+func dataSourcePlanKmsKeysRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	// Parse the identifying attributes
+	planID := d.Get("plan_id").(string)
+	log.Printf("[TRACE] dataSourcePlanKmsKeysRead(%s): start", planID)
+
+	// Get all of the plan certificates from duplo.
+	c := m.(*duplosdk.Client)
+	all, err := getPlanKmsKeys(c, planID)
+	if err != nil {
+		return err
+	}
+	// Populate the results from the list.
+	d.Set("kms_keys", flattenPlanKmsKeys(all))
+
+	d.SetId(planID)
+
+	log.Printf("[TRACE] dataSourcePlanKmsKeysRead(%s): end", planID)
+	return nil
+}
+
+// READ/SEARCH resources
+func dataSourcePlanKmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
 	planID := d.Get("plan_id").(string)
+	name := d.Get("name").(string)
+	log.Printf("[TRACE] dataSourcePlanKmsRead(%s, %s): start", planID, name)
 
-	log.Printf("[TRACE] dataSourcePlanKMSRead(%s): start", planID)
+	// Get the plan certificate from Duplo.
 	c := m.(*duplosdk.Client)
-
-	duplo, err := c.PlanKMSGetList(planID)
-	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("failed to retrieve plan kms for '%s': %s", planID, err)
+	kms, diags := getPlanKms(c, planID, name)
+	if diags != nil {
+		return diags
 	}
-	count := 0
-	if duplo != nil {
-		count = len(*duplo)
-	} else {
+	d.SetId(planID + "/kms/" + kms.KeyName)
+	d.Set("name", kms.KeyName)
+	d.Set("id", kms.KeyId)
+	d.Set("arn", kms.KeyArn)
 
-		d.SetId("")
-		return nil
-
-	}
-	data := make([]map[string]interface{}, 0, count)
-	// Set the simple fields first.
-	for _, v := range *duplo {
-		val := map[string]interface{}{
-			"kms_name": v.KeyName,
-			"kms_id":   v.KeyId,
-			"kms_arn":  v.KeyArn,
-		}
-		data = append(data, val)
-	}
-	d.Set("data", data)
-	// Build a list of current state, to replace the user-supplied settings.
-	d.SetId(planID)
-
-	log.Printf("[TRACE] dataSourcePlanKMSRead(%s): end", planID)
+	log.Printf("[TRACE] dataSourcePlanKmsRead(): end")
 	return nil
+}
+
+func getPlanKms(c *duplosdk.Client, planID, name string) (*duplosdk.DuploPlanKmsKeyInfo, diag.Diagnostics) {
+	rsp, err := c.PlanGetKMSKey(planID, name)
+	if err != nil && !err.PossibleMissingAPI() {
+		return nil, diag.Errorf("failed to retrieve plan certificate for '%s/%s': %s", planID, name, err)
+	}
+
+	// If it failed, try the fallback method.
+	if rsp == nil {
+		plan, err := c.PlanGet(planID)
+		if err != nil {
+			return nil, diag.Errorf("failed to read plan kms info: %s", err)
+		}
+		if plan == nil {
+			return nil, diag.Errorf("failed to read plan: %s", planID)
+		}
+
+		if plan.KmsKeyInfos != nil {
+			for _, v := range *plan.KmsKeyInfos {
+				if v.KeyName == name {
+					rsp = &v
+				}
+			}
+		}
+	}
+
+	if rsp == nil {
+		return nil, diag.Errorf("failed to retrieve plan kms key for '%s/%s': %s", planID, name, err)
+	}
+	return rsp, nil
+}
+
+func getPlanKmsKeys(c *duplosdk.Client, planID string) (*[]duplosdk.DuploPlanKmsKeyInfo, diag.Diagnostics) {
+	resp, err := c.PlanKMSGetList(planID)
+	if err != nil && !err.PossibleMissingAPI() {
+		return nil, diag.Errorf("failed to retrieve plan certificates for '%s': %s", planID, err)
+	}
+
+	// If it failed, try the fallback method.
+	if resp == nil {
+		plan, err := c.PlanGet(planID)
+		if err != nil {
+			return nil, diag.Errorf("failed to read plan certificates: %s", err)
+		}
+		if plan == nil {
+			return nil, diag.Errorf("failed to read plan: %s", planID)
+		}
+
+		resp = plan.KmsKeyInfos
+	}
+
+	return resp, nil
+}
+
+func planKmsDataSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"id": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"arn": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+	}
 }

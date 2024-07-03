@@ -273,8 +273,8 @@ func (c *Client) PlanCreateKMSKey(planID string, kms DuploPlanKmsKeyInfo) Client
 		&rp)
 }
 
-func (c *Client) PlanGetKMSKey(planID string, name string) (*[]DuploPlanKmsKeyInfo, ClientError) {
-	var rp []DuploPlanKmsKeyInfo
+func (c *Client) PlanGetKMSKey(planID string, name string) (*DuploPlanKmsKeyInfo, ClientError) {
+	var rp DuploPlanKmsKeyInfo
 	err := c.getAPI(
 		fmt.Sprintf("PlanGetKMSKey(%s, %s)", planID, name),
 		fmt.Sprintf("v3/admin/plans/%s/kmskeys/%s", planID, EncodePathParam(name)),
@@ -555,4 +555,38 @@ func (c *Client) PlanSetMetadata(planID string, item DuploKeyStringValue) Client
 		fmt.Sprintf("v3/admin/plans/%s/metadata", planID),
 		&item,
 		&rp)
+}
+
+func (c *Client) PlanReplaceKmsKeys(planID string, existing, newKeys *[]DuploPlanKmsKeyInfo) ClientError {
+
+	return c.PlanChangeKmsKeys(planID, existing, newKeys)
+}
+
+// PlanChangeCertificates changes plan certificates via the Duplo API, using the supplied
+// oldConfig and newConfig, for the given planID.
+func (c *Client) PlanChangeKmsKeys(planID string, oldKeys, newKeys *[]DuploPlanKmsKeyInfo) ClientError {
+
+	// Next, update all certs that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if newKeys != nil {
+		for _, pc := range *newKeys {
+			if err := c.PlanCreateKMSKey(planID, pc); err != nil {
+				return err
+			}
+			present[pc.KeyName] = struct{}{}
+		}
+	}
+
+	// Finally, delete any certs that are no longer present.
+	if oldKeys != nil {
+		for _, pc := range *oldKeys {
+			if _, ok := present[pc.KeyName]; !ok {
+				if err := c.PlanKMSDelete(planID, pc.KeyName); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }

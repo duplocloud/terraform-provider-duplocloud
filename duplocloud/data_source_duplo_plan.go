@@ -416,20 +416,6 @@ func flattenPlanWafs(list *[]duplosdk.DuploPlanWafInfo) []interface{} {
 	return result
 }
 
-func flattenPlanKmsKeys(list *[]duplosdk.DuploPlanKmsKeyInfo) []interface{} {
-	result := make([]interface{}, 0, len(*list))
-
-	for _, kms := range *list {
-		result = append(result, map[string]interface{}{
-			"name": kms.KeyName,
-			"id":   kms.KeyId,
-			"arn":  kms.KeyArn,
-		})
-	}
-
-	return result
-}
-
 func flattenKubernetesConfig(list *[]duplosdk.DuploPlanK8ClusterConfig) []interface{} {
 	kc := (*list)[0]
 
