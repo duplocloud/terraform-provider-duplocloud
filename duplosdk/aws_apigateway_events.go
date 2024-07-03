@@ -9,6 +9,7 @@ type DuploApiGatewayEvent struct {
 	Path              string                           `json:"Path,omitempty"`
 	Method            string                           `json:"Method,omitempty"`
 	Cors              bool                             `json:"Cors,omitempty"`
+	ApiKeyRequired    bool                             `json:"ApiKeyRequired,omitempty"`
 	AuthorizerId      string                           `json:"AuthorizerId,omitempty"`
 	AuthorizationType string                           `json:"AuthorizationType,omitempty"`
 	Integration       *DuploApiGatewayEventIntegration `json:"Integration"`

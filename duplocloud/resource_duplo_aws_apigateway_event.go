@@ -55,6 +55,12 @@ func AwsApiGatewayEventSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"api_key_required": {
+			Description: "Specify if the method requires an API key.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 		"authorizer_id": {
 			Description: "Authorizer id to be used when the authorization is `CUSTOM` or `COGNITO_USER_POOLS`.",
 			Type:        schema.TypeString,
@@ -155,6 +161,7 @@ func resourceAwsApiGatewayEventRead(ctx context.Context, d *schema.ResourceData,
 	d.Set("method", duplo.Method)
 	d.Set("path", duplo.Path)
 	d.Set("cors", duplo.Cors)
+	d.Set("api_key_required", duplo.ApiKeyRequired)
 	d.Set("authorizer_id", duplo.AuthorizerId)
 	d.Set("authorization_type", duplo.AuthorizationType)
 	if duplo.Integration != nil {
@@ -183,10 +190,11 @@ func resourceAwsApiGatewayEventCreate(ctx context.Context, d *schema.ResourceDat
 
 	// Create the request object.
 	rq := duplosdk.DuploApiGatewayEvent{
-		APIGatewayID: apigatewayid,
-		Method:       method,
-		Path:         path,
-		Cors:         d.Get("cors").(bool),
+		APIGatewayID:   apigatewayid,
+		Method:         method,
+		Path:           path,
+		Cors:           d.Get("cors").(bool),
+		ApiKeyRequired: d.Get("api_key_required").(bool),
 	}
 	if v, ok := d.GetOk("authorizer_id"); ok && v != nil {
 		rq.AuthorizerId = v.(string)
@@ -234,10 +242,11 @@ func resourceAwsApiGatewayEventUpdate(ctx context.Context, d *schema.ResourceDat
 
 	// Create the request object.
 	rq := duplosdk.DuploApiGatewayEvent{
-		APIGatewayID: apigatewayid,
-		Method:       method,
-		Path:         path,
-		Cors:         d.Get("cors").(bool),
+		APIGatewayID:   apigatewayid,
+		Method:         method,
+		Path:           path,
+		Cors:           d.Get("cors").(bool),
+		ApiKeyRequired: d.Get("api_key_required").(bool),
 	}
 
 	if v, ok := d.GetOk("authorizer_id"); ok && v != nil {
