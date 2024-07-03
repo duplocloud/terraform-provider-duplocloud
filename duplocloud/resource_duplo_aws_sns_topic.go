@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"reflect"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -102,7 +101,11 @@ func resourceAwsSnsTopicRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.Errorf("Unable to retrieve tenant %s sns topic %s : %s", tenantID, arn, clientErr)
 	}
 
-	attributes, _ := c.TenantGetSnsTopicAttributes(tenantID, topic.Name)
+	attributes, err := c.TenantGetSnsTopicAttributes(tenantID, topic.Name)
+	if err != nil {
+		return diag.Errorf("Failed to retrieve attributes from sns topic %s in tenant %s : %s", tenantID, arn, err)
+	}
+
 	d.Set("fifo_topic", attributes.FifoTopic)
 
 	prefix, err := c.GetDuploServicesPrefix(tenantID)
@@ -190,19 +193,6 @@ func expandAwsSnsTopic(d *schema.ResourceData) *duplosdk.DuploSnsTopic {
 		Name:                 d.Get("name").(string),
 		KmsKeyId:             d.Get("kms_key_id").(string),
 		ExtraTopicAttributes: extraAttributes,
-	}
-}
-
-func addIfDefined(target interface{}, resourceName string, targetValue interface{}) {
-	v := reflect.ValueOf(target).Elem()
-	field := v.FieldByName(resourceName)
-	if field.IsValid() && field.CanSet() && targetValue != nil {
-
-		val := reflect.ValueOf(targetValue)
-
-		if val.Type().AssignableTo(field.Type()) {
-			field.Set(val)
-		}
 	}
 }
 

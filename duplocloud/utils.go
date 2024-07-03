@@ -945,3 +945,16 @@ func diffSuppressSpecifiedMetadata(k, old, new string, d *schema.ResourceData) b
 func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
 }
+
+func addIfDefined(target interface{}, resourceName string, targetValue interface{}) {
+	v := reflect.ValueOf(target).Elem()
+	field := v.FieldByName(resourceName)
+	if field.IsValid() && field.CanSet() && targetValue != nil {
+
+		val := reflect.ValueOf(targetValue)
+
+		if val.Type().AssignableTo(field.Type()) {
+			field.Set(val)
+		}
+	}
+}
