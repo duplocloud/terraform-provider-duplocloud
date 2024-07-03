@@ -403,13 +403,14 @@ func flattenPlanCertificates(list *[]duplosdk.DuploPlanCertificate) []interface{
 	return result
 }
 
-func flattenPlanWafs(list *[]duplosdk.DuploPlanWafInfo) []interface{} {
+func flattenPlanWafs(list *[]duplosdk.DuploPlanWAF) []interface{} {
 	result := make([]interface{}, 0, len(*list))
 
 	for _, waf := range *list {
 		result = append(result, map[string]interface{}{
-			"name": waf.WebAclName,
-			"id":   waf.WebAclId,
+			"name":          waf.WebAclName,
+			"id":            waf.WebAclId,
+			"dashboard_url": waf.DashboardUrl,
 		})
 	}
 
