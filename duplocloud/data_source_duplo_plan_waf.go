@@ -208,7 +208,7 @@ func dataSourcePlanWafsRead(ctx context.Context, d *schema.ResourceData, m inter
 	// Populate the results from the list.
 	d.Set("wafs", flattenPlanWafs(all))
 
-	d.SetId(planID)
+	d.SetId(planID + "/waf")
 
 	log.Printf("[TRACE] dataSourcePlanWafsRead(%s): end", planID)
 	return nil
@@ -228,7 +228,7 @@ func dataSourcePlanWafRead(ctx context.Context, d *schema.ResourceData, m interf
 	if diag != nil {
 		return diag
 	}
-	d.SetId(planID + duplo.WebAclName)
+	d.SetId(planID + "/waf/" + duplo.WebAclName)
 	d.Set("name", duplo.WebAclName)
 	d.Set("arn", duplo.WebAclId)
 	d.Set("dashboard_url", duplo.DashboardUrl)
