@@ -32,7 +32,17 @@ type DuploSnsTopicAttributesCreate struct {
 }
 
 type DuploSnsTopicAttributes struct {
-	FifoTopic string `json:"FifoTopic,omitempty"`
+	Policy                    string `json:"Policy,omitempty"`
+	Owner                     string `json:"Owner,omitempty"`
+	SubscriptionsPending      int    `json:"SubscriptionsPending,omitempty"`
+	TopicArn                  string `json:"TopicArn,omitempty"`
+	EffectiveDeliveryPolicy   string `json:"EffectiveDeliveryPolicy,omitempty"`
+	SubscriptionsConfirmed    int    `json:"SubscriptionsConfirmed,omitempty"`
+	FifoTopic                 string `json:"FifoTopic,omitempty"`
+	KmsMasterKeyId            string `json:"KmsMasterKeyId,omitempty"`
+	DisplayName               string `json:"DisplayName,omitempty"`
+	ContentBasedDeduplication string `json:"ContentBasedDeduplication,omitempty"`
+	SubscriptionsDeleted      int    `json:"SubscriptionsDeleted,omitempty"`
 }
 
 func (c *Client) DuploSnsTopicCreate(tenantID string, rq *DuploSnsTopic) (*DuploSnsTopicResource, ClientError) {
