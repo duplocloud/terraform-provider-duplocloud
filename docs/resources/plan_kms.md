@@ -17,11 +17,12 @@ This resource allows you take control of individual plan kms for a specific plan
 
 ```terraform
 resource "duplocloud_plan_kms" "myplan" {
-  plan_id  = "plan-name"
-  kms_id   = "kms-id"
-  kms_arn  = "kms-arn"
-  kms_name = "kms-name"
-
+  plan_id = "plan-name"
+  kms {
+    id   = "kms-id"
+    arn  = "kms-arn"
+    name = "kms-name"
+  }
 }
 ```
 
@@ -30,18 +31,32 @@ resource "duplocloud_plan_kms" "myplan" {
 
 ### Required
 
-- `kms_arn` (String)
-- `kms_id` (String)
-- `kms_name` (String)
 - `plan_id` (String) The ID of the plan to configure.
 
 ### Optional
 
+- `delete_unspecified_kms_keys` (Boolean) Whether or not this resource should delete any certificates not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
+- `kms` (Block List) A list of KMS key to manage. (see [below for nested schema](#nestedblock--kms))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `kms_keys` (List of Object) A list of KMS key to manage. (see [below for nested schema](#nestedatt--kms_keys))
+- `specified_kms_keys` (List of String) A list of certificate names being managed by this resource.
+
+<a id="nestedblock--kms"></a>
+### Nested Schema for `kms`
+
+Required:
+
+- `arn` (String)
+- `name` (String)
+
+Read-Only:
+
+- `id` (String) The ID of this resource.
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -52,6 +67,16 @@ Optional:
 - `delete` (String)
 - `update` (String)
 
+
+<a id="nestedatt--kms_keys"></a>
+### Nested Schema for `kms_keys`
+
+Read-Only:
+
+- `arn` (String)
+- `id` (String)
+- `name` (String)
+
 ## Import
 
 Import is supported using the following syntax:
@@ -59,6 +84,5 @@ Import is supported using the following syntax:
 ```shell
 # Example: Importing an existing WAF instance
 #  - *PLAN_ID* is the plan name
-#  - *KMS_NAME* is the name of the KMS
-terraform import duplocloud_plan_kms.myplan *PLAN_ID*/kms/*KMS_NAME*
+terraform import duplocloud_plan_kms.myplan *PLAN_ID*/kms*
 ```

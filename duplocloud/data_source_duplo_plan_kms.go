@@ -82,7 +82,7 @@ func dataSourcePlanKmsKeysRead(ctx context.Context, d *schema.ResourceData, m in
 	// Populate the results from the list.
 	d.Set("kms_keys", flattenPlanKmsKeys(all))
 
-	d.SetId(planID)
+	d.SetId(planID + "/kms")
 
 	log.Printf("[TRACE] dataSourcePlanKmsKeysRead(%s): end", planID)
 	return nil

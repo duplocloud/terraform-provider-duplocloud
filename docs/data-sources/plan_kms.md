@@ -3,15 +3,12 @@
 page_title: "duplocloud_plan_kms Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_plan_kms manages the list of kms avaialble to a plan in Duplo.
-  This resource allows you take control of individual plan kms for a specific plan.
+  duplocloud_plan_kms retrieves details of a specific kms for a given plan.
 ---
 
 # duplocloud_plan_kms (Data Source)
 
-`duplocloud_plan_kms` manages the list of kms avaialble to a plan in Duplo.
-
-This resource allows you take control of individual plan kms for a specific plan.
+`duplocloud_plan_kms` retrieves details of a specific kms for a given plan.
 
 
 
@@ -20,11 +17,10 @@ This resource allows you take control of individual plan kms for a specific plan
 
 ### Required
 
-- `kms_name` (String)
-- `plan_id` (String) The ID of the plan to configure.
+- `name` (String)
+- `plan_id` (String) The plan ID
 
 ### Read-Only
 
+- `arn` (String)
 - `id` (String) The ID of this resource.
-- `kms_arn` (String)
-- `kms_id` (String)
