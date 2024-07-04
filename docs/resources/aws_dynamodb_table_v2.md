@@ -72,24 +72,110 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
 }
 
-#ttl example: currently ttl can be set during creating resource
 resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
-  tenant_id = duplocloud_tenant.myapp.tenant_id
-  name      = "tst-dynamodb-table"
 
-  read_capacity  = 11
-  write_capacity = 12
-  tag {
-    key   = "CreatedBy"
-    value = "Duplo"
-  }
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
+  name                        = "mytable"
+  read_capacity               = 80
+  write_capacity              = 40
+  billing_mode                = "PROVISIONED"
+  is_point_in_time_recovery   = false
+  deletion_protection_enabled = false
 
   tag {
-    key   = "CreatedFrom"
-    value = "Duplo"
+    key   = "school"
+    value = "admission"
   }
   attribute {
-    name = "UserId"
+    name = "ForumName"
+    type = "S"
+  }
+  attribute {
+    name = "Subject"
+    type = "S"
+  }
+  attribute {
+    name = "LastPostDateTime"
+    type = "S"
+  }
+  attribute {
+    name = "PostMonth"
+    type = "S"
+  }
+
+  attribute {
+    name = "GamerZone"
+    type = "S"
+  }
+  attribute {
+    name = "TopScore"
+    type = "N"
+  }
+  key_schema {
+    attribute_name = "ForumName"
+    key_type       = "HASH"
+  }
+  key_schema {
+    attribute_name = "Subject"
+    key_type       = "RANGE"
+  }
+  global_secondary_index {
+    name            = "PostDate"
+    hash_key        = "PostMonth"
+    range_key       = "LastPostDateTime"
+    write_capacity  = 2
+    read_capacity   = 2
+    projection_type = "KEYS_ONLY"
+  }
+  global_secondary_index {
+    name            = "GamerZone"
+    hash_key        = "GamerZone"
+    range_key       = "TopScore"
+    write_capacity  = 5
+    read_capacity   = 5
+    projection_type = "ALL"
+  }
+  server_side_encryption {
+    enabled = false
+  }
+  local_secondary_index { #local secondary index doesnot support updation
+    hash_key        = "ForumName"
+    name            = "LastPostIndex"
+    range_key       = "LastPostDateTime"
+    projection_type = "KEYS_ONLY"
+  }
+
+}
+
+
+resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
+
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
+  name                        = "mytable"
+  read_capacity               = 80
+  write_capacity              = 40
+  billing_mode                = "PROVISIONED"
+  is_point_in_time_recovery   = false
+  deletion_protection_enabled = false
+
+  tag {
+    key   = "school"
+    value = "admission"
+  }
+  attribute {
+    name = "ForumName"
+    type = "S"
+  }
+  attribute {
+    name = "Subject"
+    type = "S"
+  }
+  attribute {
+    name = "LastPostDateTime"
+    type = "S"
+  }
+  attribute {
+    name = "PostMonth"
     type = "S"
   }
 
@@ -135,17 +221,17 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
 ### Required
 
+- `attribute` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--attribute))
+- `key_schema` (Block List, Min: 1) (see [below for nested schema](#nestedblock--key_schema))
 - `name` (String) The name of the table, this needs to be unique within a region.
 - `tenant_id` (String) The GUID of the tenant that the dynamodb table will be created in.
 
 ### Optional
 
-- `attribute` (Block Set) (see [below for nested schema](#nestedblock--attribute))
 - `billing_mode` (String) Controls how you are charged for read and write throughput and how you manage capacity. The valid values are `PROVISIONED` and `PAY_PER_REQUEST`. Defaults to `PROVISIONED`.
 - `deletion_protection_enabled` (Boolean) Deletion protection keeps the tables from being deleted unintentionally. While this setting is on, you can't delete the table.
 - `global_secondary_index` (Block Set) Describe a GSI for the table; subject to the normal limits on the number of GSIs, projected attributes, etc. (see [below for nested schema](#nestedblock--global_secondary_index))
 - `is_point_in_time_recovery` (Boolean) The point in time recovery status of the dynamodb table. Enabled if true.
-- `key_schema` (Block List) (see [below for nested schema](#nestedblock--key_schema))
 - `local_secondary_index` (Block Set) (see [below for nested schema](#nestedblock--local_secondary_index))
 - `read_capacity` (Number) The number of read units for this table. If the `billing_mode` is `PROVISIONED`, this field is required.
 - `server_side_encryption` (Block List, Max: 1) Encryption at rest options. AWS DynamoDB tables are automatically encrypted at rest with an AWS owned Customer Master Key if this argument isn't specified. (see [below for nested schema](#nestedblock--server_side_encryption))
@@ -175,6 +261,15 @@ Required:
 - `type` (String) Attribute type, which must be a scalar type: `S`, `N`, or `B` for (S)tring, (N)umber or (B)inary data
 
 
+<a id="nestedblock--key_schema"></a>
+### Nested Schema for `key_schema`
+
+Required:
+
+- `attribute_name` (String) The name of the attribute
+- `key_type` (String) Applicable key types are `HASH` or `RANGE`.
+
+
 <a id="nestedblock--global_secondary_index"></a>
 ### Nested Schema for `global_secondary_index`
 
@@ -192,20 +287,12 @@ Optional:
 - `write_capacity` (Number) The number of write units for this index. Must be set if `billing_mode` is set to `PROVISIONED`.
 
 
-<a id="nestedblock--key_schema"></a>
-### Nested Schema for `key_schema`
-
-Required:
-
-- `attribute_name` (String) The name of the attribute
-- `key_type` (String) Applicable key types are `HASH` or `RANGE`.
-
-
 <a id="nestedblock--local_secondary_index"></a>
 ### Nested Schema for `local_secondary_index`
 
 Required:
 
+- `hash_key` (String) The name of the hash key in the index; must be defined as an attribute in the resource.
 - `name` (String) The name of the index.
 - `projection_type` (String) One of `ALL`, `INCLUDE` or `KEYS_ONLY` where `ALL` projects every attribute into the index, `KEYS_ONLY` projects just the hash and range key into the index, and `INCLUDE` projects only the keys specified in the `non_key_attributes` parameter.
 - `range_key` (String) The name of the range key; must be defined.
