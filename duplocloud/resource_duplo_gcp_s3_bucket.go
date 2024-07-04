@@ -182,7 +182,7 @@ func resourceGCPS3BucketRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 
 	// Set simple fields first.
-	resourceS3BucketSetData(d, tenantID, name, duplo)
+	resourceGcpS3BucketSetData(d, tenantID, name, duplo)
 
 	log.Printf("[TRACE] resourceGCPS3BucketRead ******** end")
 	return nil
@@ -231,7 +231,7 @@ func resourceGCPS3BucketCreate(ctx context.Context, d *schema.ResourceData, m in
 	d.SetId(id)
 
 	// Set simple fields first.
-	resourceS3BucketSetData(d, tenantID, name, duplo)
+	resourceGcpS3BucketSetData(d, tenantID, name, duplo)
 	log.Printf("[TRACE] resourceGCPS3BucketCreate ******** end")
 	return nil
 }
@@ -261,7 +261,7 @@ func resourceGCPS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m in
 		return diag.Errorf("resourceGCPS3BucketUpdate: Unable to update s3 bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
 	}
 
-	resourceS3BucketSetData(d, tenantID, name, resource)
+	resourceGcpS3BucketSetData(d, tenantID, name, resource)
 
 	log.Printf("[TRACE] resourceGCPS3BucketUpdate ******** end")
 	return nil
@@ -297,4 +297,22 @@ func resourceGCPS3BucketDelete(ctx context.Context, d *schema.ResourceData, m in
 
 	log.Printf("[TRACE] resourceGCPS3BucketDelete ******** end")
 	return nil
+}
+
+func resourceGcpS3BucketSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploS3Bucket) {
+	d.Set("tenant_id", tenantID)
+	d.Set("name", name)
+	d.Set("fullname", duplo.Name)
+	d.Set("domain_name", duplo.DomainName)
+	d.Set("arn", duplo.Arn)
+	d.Set("enable_versioning", duplo.EnableVersioning)
+	d.Set("enable_access_logs", duplo.EnableAccessLogs)
+	d.Set("allow_public_access", duplo.AllowPublicAccess)
+	d.Set("default_encryption", []map[string]interface{}{{
+		"method": duplo.DefaultEncryption,
+	}})
+	d.Set("managed_policies", duplo.Policies)
+	d.Set("tags", keyValueToState("tags", duplo.Tags))
+	d.Set("region", duplo.Region)
+	d.Set("location", duplo.Location)
 }
