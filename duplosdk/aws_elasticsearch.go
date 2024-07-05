@@ -92,7 +92,7 @@ type DuploElasticSearchDomainRequest struct {
 	Version                    string                                `json:"Version,omitempty"`
 	KmsKeyID                   string                                `json:"KmsKeyId,omitempty"`
 	ClusterConfig              DuploElasticSearchDomainClusterConfig `json:"ClusterConfig,omitempty"`
-	EBSOptions                 DuploElasticSearchDomainEBSOptions    `json:"EbsOptions,omitempty"`
+	EBSOptions                 *DuploElasticSearchDomainEBSOptions   `json:"EbsOptions,omitempty"`
 	VPCOptions                 DuploElasticSearchDomainVPCOptions    `json:"VPCOptions,omitempty"`
 	EnableNodeToNodeEncryption bool                                  `json:"EnableNodeToNodeEncryption,omitempty"`
 	RequireSSL                 bool                                  `json:"RequireSSL,omitempty"`
