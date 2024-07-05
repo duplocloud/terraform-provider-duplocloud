@@ -205,8 +205,8 @@ func expandDynamoDBTablePrimaryKey(duplo *duplosdk.DuploDynamoDBTable, d *schema
 	primaryKeyName := keySchema.AttributeName
 
 	d.Set("primary_key_name", primaryKeyName)
-	if keySchema.KeyType != nil {
-		d.Set("key_type", keySchema.KeyType.Value)
+	if keySchema.KeyType != "" {
+		d.Set("key_type", keySchema.KeyType)
 	}
 
 	if duplo.AttributeDefinitions != nil {
