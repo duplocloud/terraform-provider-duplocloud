@@ -28,21 +28,22 @@ type DuploSnsTopicAttributesCreate struct {
 	KmsMasterKeyId            string `json:"KmsMasterKeyId,omitempty"`
 	ArchivePolicy             string `json:"ArchivePolicy,omitempty"`
 	BeginningArchiveTime      string `json:"BeginningArchiveTime,omitempty"`
-	ContentBasedDeduplication string `json:"ContentBasedDeduplication,omitempty"`
+	ContentBasedDeduplication bool   `json:"ContentBasedDeduplication,omitempty"`
 }
 
 type DuploSnsTopicAttributes struct {
 	Policy                    string `json:"Policy,omitempty"`
 	Owner                     string `json:"Owner,omitempty"`
-	SubscriptionsPending      int    `json:"SubscriptionsPending,omitempty"`
+	SubscriptionsPending      string `json:"SubscriptionsPending,omitempty"`
 	TopicArn                  string `json:"TopicArn,omitempty"`
 	EffectiveDeliveryPolicy   string `json:"EffectiveDeliveryPolicy,omitempty"`
-	SubscriptionsConfirmed    int    `json:"SubscriptionsConfirmed,omitempty"`
+	SubscriptionsConfirmed    string `json:"SubscriptionsConfirmed,omitempty"`
 	FifoTopic                 string `json:"FifoTopic,omitempty"`
 	KmsMasterKeyId            string `json:"KmsMasterKeyId,omitempty"`
 	DisplayName               string `json:"DisplayName,omitempty"`
+	ArchivePolicy             string `json:"ArchivePolicy,omitempty"`
 	ContentBasedDeduplication string `json:"ContentBasedDeduplication,omitempty"`
-	SubscriptionsDeleted      int    `json:"SubscriptionsDeleted,omitempty"`
+	SubscriptionsDeleted      string `json:"SubscriptionsDeleted,omitempty"`
 }
 
 func (c *Client) DuploSnsTopicCreate(tenantID string, rq *DuploSnsTopic) (*DuploSnsTopicResource, ClientError) {
@@ -78,7 +79,7 @@ func (c *Client) TenantGetSnsTopicAttributes(tenantID string, topicArn string) (
 	rp := DuploSnsTopicAttributes{}
 	_, err := RetryWithExponentialBackoff(func() (interface{}, ClientError) {
 		err := c.getAPI(
-			fmt.Sprintf("TenantListSnsTopic(%s)", tenantID),
+			fmt.Sprintf("TenantListSnsTopicAttributes(%s)", tenantID),
 			fmt.Sprintf("v3/subscriptions/%s/aws/snsTopic/%s/attributes", tenantID, topicArn),
 			&rp,
 		)

@@ -5,9 +5,10 @@ resource "duplocloud_tenant" "myapp" {
 
 # Without KMS Key running as fifo
 resource "duplocloud_aws_sns_topic" "sns_topic" {
-  tenant_id  = duplocloud_tenant.myapp.tenant_id
-  name       = "duplo_topic.fifo" # AWS requires the ".fifo" extension for fifo sns topics
-  fifo_topic = true
+  tenant_id                        = duplocloud_tenant.myapp.tenant_id
+  name                             = "duplo_topic.fifo" # AWS requires the ".fifo" extension for fifo sns topics
+  fifo_topic                       = true
+  fifo_content_based_deduplication = true
 }
 
 # With Tenant KMS Key
