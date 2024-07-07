@@ -39,6 +39,21 @@ func resourcePlanKMS() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"kms_name": {
+				Type:       schema.TypeString,
+				Optional:   true,
+				Deprecated: "The kms_name argument is only applied on creation, and is deprecated in favor of the kms.name argument.",
+			},
+			"kms_id": {
+				Type:       schema.TypeString,
+				Optional:   true,
+				Deprecated: "The kms_id argument is only applied on creation, and is deprecated in favor of the kms.id argument.",
+			},
+			"kms_arn": {
+				Type:       schema.TypeString,
+				Optional:   true,
+				Deprecated: "The kms_arn argument is only applied on creation, and is deprecated in favor of the kms.arn argument.",
+			},
 			"kms": {
 				Description: "A list of KMS key to manage.",
 				Type:        schema.TypeList,
@@ -234,6 +249,20 @@ func expandPlanKms(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPl
 		kvs := v.([]interface{})
 		log.Printf("[TRACE] expandPlanKms ********: found %s", fieldName)
 		ary = make([]duplosdk.DuploPlanKmsKeyInfo, 0, len(kvs))
+		if len(kvs) == 0 {
+			depKms := duplosdk.DuploPlanKmsKeyInfo{}
+			if v, ok := d.GetOk("kms_id"); ok {
+				depKms.KeyId = v.(string)
+			}
+			if v, ok := d.GetOk("kms_name"); ok {
+				depKms.KeyName = v.(string)
+			}
+			if v, ok := d.GetOk("kms_arn"); ok {
+				depKms.KeyArn = v.(string)
+			}
+			ary = append(ary, depKms)
+			return &ary
+		}
 		for _, raw := range kvs {
 			kv := raw.(map[string]interface{})
 			ary = append(ary, duplosdk.DuploPlanKmsKeyInfo{
