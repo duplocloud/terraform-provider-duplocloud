@@ -37,6 +37,22 @@ func resourcePlanWaf() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"waf_name": {
+				Type:       schema.TypeString,
+				Optional:   true,
+				Deprecated: "The waf_name argument is only applied on creation, and is deprecated in favor of the waf.name argument.",
+			},
+			"waf_arn": {
+				Type:       schema.TypeString,
+				Optional:   true,
+				Deprecated: "The waf_arn argument is only applied on creation, and is deprecated in favor of the waf.arn argument.",
+			},
+			"dashboard_url": {
+				Type:       schema.TypeString,
+				Optional:   true,
+				Deprecated: "The dashboard_url argument is only applied on creation, and is deprecated in favor of the waf.dashboard_url argument.",
+			},
+
 			"waf": {
 				Type:     schema.TypeList,
 				Required: true,
@@ -164,6 +180,20 @@ func expandWaf(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPlanWA
 	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
 		kvs := v.([]interface{})
 		ary = make([]duplosdk.DuploPlanWAF, 0, len(kvs))
+		if len(kvs) == 0 {
+			depWaf := duplosdk.DuploPlanWAF{}
+			if v, ok := d.GetOk("waf_name"); ok {
+				depWaf.WebAclName = v.(string)
+			}
+			if v, ok := d.GetOk("waf_arn"); ok {
+				depWaf.WebAclId = v.(string)
+			}
+			if v, ok := d.GetOk("dashboard_url"); ok {
+				depWaf.DashboardUrl = v.(string)
+			}
+			ary = append(ary, depWaf)
+			return &ary
+		}
 		for _, raw := range kvs {
 			kv := raw.(map[string]interface{})
 			ary = append(ary, duplosdk.DuploPlanWAF{

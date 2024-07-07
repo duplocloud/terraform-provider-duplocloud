@@ -3,12 +3,12 @@
 page_title: "duplocloud_plan_waf Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_plan_waf retrieves details of a plan in Duplo.
+  duplocloud_plan_waf retrieves details of a specific waf for a given plan.
 ---
 
 # duplocloud_plan_waf (Data Source)
 
-`duplocloud_plan_waf` retrieves details of a plan in Duplo.
+`duplocloud_plan_waf` retrieves details of a specific waf for a given plan.
 
 
 
@@ -17,11 +17,11 @@ description: |-
 
 ### Required
 
-- `plan_id` (String) The ID of the plan for waf.
-- `waf_name` (String)
+- `name` (String) Name of the waf  issued
+- `plan_id` (String) The plan ID
 
 ### Read-Only
 
-- `dashboard_url` (String)
+- `arn` (String) The ARN of the waf
+- `dashboard_url` (String) The dashboard url associated to waf
 - `id` (String) The ID of this resource.
-- `waf_arn` (String)

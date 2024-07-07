@@ -17,10 +17,12 @@ This resource allows you take control of individual waf's for a specific plan.
 
 ```terraform
 resource "duplocloud_plan_waf" "myplan" {
-  plan_id       = "plan-name"
-  waf_name      = "WebAcl name"
-  waf_arn       = "WebAcl ARN"
-  dashboard_url = "dashboard url"
+  plan_id = "plan-name"
+  waf {
+    name          = "WebAcl name"
+    arn           = "WebAcl ARN"
+    dashboard_url = "dashboard url"
+  }
 }
 ```
 
@@ -30,17 +32,34 @@ resource "duplocloud_plan_waf" "myplan" {
 ### Required
 
 - `plan_id` (String) The ID of the plan for waf.
-- `waf_arn` (String)
-- `waf_name` (String)
+- `waf` (Block List, Min: 1) (see [below for nested schema](#nestedblock--waf))
 
 ### Optional
 
-- `dashboard_url` (String)
+- `dashboard_url` (String, Deprecated) The dashboard_url argument is only applied on creation, and is deprecated in favor of the waf.dashboard_url argument.
+- `delete_unspecified_wafs` (Boolean) Whether or not this resource should delete any wafs not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `waf_arn` (String, Deprecated) The waf_arn argument is only applied on creation, and is deprecated in favor of the waf.arn argument.
+- `waf_name` (String, Deprecated) The waf_name argument is only applied on creation, and is deprecated in favor of the waf.name argument.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `specified_wafs` (List of String) A list of wafs names being managed by this resource.
+- `wafs` (List of Object) A complete list of wafs for this plan, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--wafs))
+
+<a id="nestedblock--waf"></a>
+### Nested Schema for `waf`
+
+Required:
+
+- `arn` (String)
+- `name` (String)
+
+Optional:
+
+- `dashboard_url` (String)
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -51,6 +70,16 @@ Optional:
 - `delete` (String)
 - `update` (String)
 
+
+<a id="nestedatt--wafs"></a>
+### Nested Schema for `wafs`
+
+Read-Only:
+
+- `arn` (String)
+- `id` (String)
+- `name` (String)
+
 ## Import
 
 Import is supported using the following syntax:
@@ -58,7 +87,6 @@ Import is supported using the following syntax:
 ```shell
 # Example: Importing an existing WAF instance
 #  - *PLAN_ID* is the plan name
-#  - *WAF_NAME* is the name of the WAF
-#
-terraform import duplocloud_plan_waf.myplan *PLAN_ID*/*WAF_NAME*
+
+terraform import duplocloud_plan_waf.myplan *PLAN_ID*/waf
 ```

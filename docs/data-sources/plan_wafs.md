@@ -3,12 +3,12 @@
 page_title: "duplocloud_plan_wafs Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_plans retrieves a list of plans from Duplo.
+  duplocloud_plan_wafs retrieves a list of wafs for a given plan.
 ---
 
 # duplocloud_plan_wafs (Data Source)
 
-`duplocloud_plans` retrieves a list of plans from Duplo.
+`duplocloud_plan_wafs` retrieves a list of wafs for a given plan.
 
 
 
@@ -17,18 +17,18 @@ description: |-
 
 ### Required
 
-- `plan_id` (String) The ID of the plan for waf.
+- `plan_id` (String) The plan ID
 
 ### Read-Only
 
-- `data` (List of Object) (see [below for nested schema](#nestedatt--data))
 - `id` (String) The ID of this resource.
+- `wafs` (List of Object) The list of wafs for this plan. (see [below for nested schema](#nestedatt--wafs))
 
-<a id="nestedatt--data"></a>
-### Nested Schema for `data`
+<a id="nestedatt--wafs"></a>
+### Nested Schema for `wafs`
 
 Read-Only:
 
+- `arn` (String)
 - `dashboard_url` (String)
-- `waf_arn` (String)
-- `waf_name` (String)
+- `name` (String)
