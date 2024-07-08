@@ -213,6 +213,26 @@ func KeyValueSchema() *schema.Resource {
 	}
 }
 
+func DynamoDbV2TagSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"value": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"delete_tag": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+		},
+	}
+}
+
 // CustomDataExSchema returns a Terraform schema to represent a key value pair with a type
 func CustomDataExSchema() *schema.Resource {
 	return &schema.Resource{
@@ -561,41 +581,43 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 	return nil
 }
 
+/*
 func waitForResourceToBePresentAfterUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	resourceType string,
-	resourceId string,
-	getResource func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
-	err := retry.RetryContext(ctx, d.Timeout("update"), func() *retry.RetryError {
-		resource, errGet := getResource()
 
-		if errGet != nil {
-			if errGet.Status() == 404 {
-				s := "expected %s '%s' to be present after update, but got a 404"
+		ctx context.Context,
+		d *schema.ResourceData,
+		resourceType string,
+		resourceId string,
+		getResource func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
+		err := retry.RetryContext(ctx, d.Timeout("update"), func() *retry.RetryError {
+			resource, errGet := getResource()
+
+			if errGet != nil {
+				if errGet.Status() == 404 {
+					s := "expected %s '%s' to be present after update, but got a 404"
+					e := fmt.Errorf(s, resourceType, resourceId)
+					return retry.RetryableError(e)
+				}
+
+				s := "error retrieving %s '%s': %s"
+				e := fmt.Errorf(s, resourceType, resourceId, errGet)
+				return retry.NonRetryableError(e)
+			}
+
+			if isInterfaceNil(resource) {
+				s := "expected %s '%s' to be present after update, but got: nil"
 				e := fmt.Errorf(s, resourceType, resourceId)
 				return retry.RetryableError(e)
 			}
 
-			s := "error retrieving %s '%s': %s"
-			e := fmt.Errorf(s, resourceType, resourceId, errGet)
-			return retry.NonRetryableError(e)
+			return nil
+		})
+		if err != nil {
+			return diag.Errorf("error updating %s '%s': %s", resourceType, resourceId, err)
 		}
-
-		if isInterfaceNil(resource) {
-			s := "expected %s '%s' to be present after update, but got: nil"
-			e := fmt.Errorf(s, resourceType, resourceId)
-			return retry.RetryableError(e)
-		}
-
 		return nil
-	})
-	if err != nil {
-		return diag.Errorf("error updating %s '%s': %s", resourceType, resourceId, err)
 	}
-	return nil
-}
-
+*/
 func isInterfaceNil(v interface{}) bool {
 	return v == nil || (reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil())
 }

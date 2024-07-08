@@ -66,7 +66,6 @@ func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m inter
 				break
 			}
 		}
-		usrResp.IsReadOnly = true
 	}
 	rp, err := c.K8SecretGet(tenantID, name)
 	if err != nil {
