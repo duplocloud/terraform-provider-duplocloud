@@ -249,20 +249,7 @@ func expandPlanKms(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPl
 		kvs := v.([]interface{})
 		log.Printf("[TRACE] expandPlanKms ********: found %s", fieldName)
 		ary = make([]duplosdk.DuploPlanKmsKeyInfo, 0, len(kvs))
-		if len(kvs) == 0 {
-			depKms := duplosdk.DuploPlanKmsKeyInfo{}
-			if v, ok := d.GetOk("kms_id"); ok {
-				depKms.KeyId = v.(string)
-			}
-			if v, ok := d.GetOk("kms_name"); ok {
-				depKms.KeyName = v.(string)
-			}
-			if v, ok := d.GetOk("kms_arn"); ok {
-				depKms.KeyArn = v.(string)
-			}
-			ary = append(ary, depKms)
-			return &ary
-		}
+
 		for _, raw := range kvs {
 			kv := raw.(map[string]interface{})
 			ary = append(ary, duplosdk.DuploPlanKmsKeyInfo{
@@ -271,6 +258,19 @@ func expandPlanKms(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPl
 				KeyArn:  kv["arn"].(string),
 			})
 		}
+	} else {
+		depKms := duplosdk.DuploPlanKmsKeyInfo{}
+		if v, ok := d.GetOk("kms_id"); ok {
+			depKms.KeyId = v.(string)
+		}
+		if v, ok := d.GetOk("kms_name"); ok {
+			depKms.KeyName = v.(string)
+		}
+		if v, ok := d.GetOk("kms_arn"); ok {
+			depKms.KeyArn = v.(string)
+		}
+		ary = append(ary, depKms)
+		//return &ary
 	}
 
 	return &ary

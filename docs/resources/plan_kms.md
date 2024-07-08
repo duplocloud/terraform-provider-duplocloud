@@ -37,6 +37,9 @@ resource "duplocloud_plan_kms" "myplan" {
 
 - `delete_unspecified_kms_keys` (Boolean) Whether or not this resource should delete any certificates not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
 - `kms` (Block List) A list of KMS key to manage. (see [below for nested schema](#nestedblock--kms))
+- `kms_arn` (String, Deprecated) The kms_arn argument is only applied on creation, and is deprecated in favor of the kms.arn argument.
+- `kms_id` (String, Deprecated) The kms_id argument is only applied on creation, and is deprecated in favor of the kms.id argument.
+- `kms_name` (String, Deprecated) The kms_name argument is only applied on creation, and is deprecated in favor of the kms.name argument.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
