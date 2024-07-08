@@ -34,6 +34,20 @@ func duploAwsSnsTopicSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"fifo_topic": {
+			Description: "Whether the topic processes messages as fifo or not",
+			Type:        schema.TypeBool,
+			ForceNew:    true,
+			Optional:    true,
+			Default:     false,
+		},
+		"fifo_content_based_deduplication": {
+			Description: "Whether to enable content based deduplication for fifo type SNS topics",
+			Type:        schema.TypeBool,
+			ForceNew:    true,
+			Optional:    true,
+			Default:     false,
+		},
 		"arn": {
 			Description: "The ARN of the SNS topic.",
 			Type:        schema.TypeString,
@@ -93,6 +107,14 @@ func resourceAwsSnsTopicRead(ctx context.Context, d *schema.ResourceData, m inte
 		}
 		return diag.Errorf("Unable to retrieve tenant %s sns topic %s : %s", tenantID, arn, clientErr)
 	}
+
+	attributes, err := c.TenantGetSnsTopicAttributes(tenantID, topic.Name)
+	if err != nil {
+		return diag.Errorf("Failed to retrieve attributes from sns topic %s in tenant %s : %s", tenantID, arn, err)
+	}
+
+	d.Set("fifo_topic", attributes.FifoTopic)
+	d.Set("fifo_content_based_deduplication", attributes.ContentBasedDeduplication)
 
 	prefix, err := c.GetDuploServicesPrefix(tenantID)
 	if err != nil {
@@ -172,9 +194,14 @@ func resourceAwsSnsTopicDelete(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func expandAwsSnsTopic(d *schema.ResourceData) *duplosdk.DuploSnsTopic {
+	var extraAttributes = duplosdk.DuploSnsTopicAttributesCreate{}
+
+	addIfDefined(&extraAttributes, "FifoTopic", d.Get("fifo_topic"))
+	addIfDefined(&extraAttributes, "ContentBasedDeduplication", d.Get("fifo_content_based_deduplication"))
 	return &duplosdk.DuploSnsTopic{
-		Name:     d.Get("name").(string),
-		KmsKeyId: d.Get("kms_key_id").(string),
+		Name:                 d.Get("name").(string),
+		KmsKeyId:             d.Get("kms_key_id").(string),
+		ExtraTopicAttributes: extraAttributes,
 	}
 }
 
