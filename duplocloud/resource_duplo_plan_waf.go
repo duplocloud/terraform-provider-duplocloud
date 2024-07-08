@@ -180,20 +180,7 @@ func expandWaf(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPlanWA
 	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
 		kvs := v.([]interface{})
 		ary = make([]duplosdk.DuploPlanWAF, 0, len(kvs))
-		if len(kvs) == 0 {
-			depWaf := duplosdk.DuploPlanWAF{}
-			if v, ok := d.GetOk("waf_name"); ok {
-				depWaf.WebAclName = v.(string)
-			}
-			if v, ok := d.GetOk("waf_arn"); ok {
-				depWaf.WebAclId = v.(string)
-			}
-			if v, ok := d.GetOk("dashboard_url"); ok {
-				depWaf.DashboardUrl = v.(string)
-			}
-			ary = append(ary, depWaf)
-			return &ary
-		}
+
 		for _, raw := range kvs {
 			kv := raw.(map[string]interface{})
 			ary = append(ary, duplosdk.DuploPlanWAF{
@@ -202,6 +189,19 @@ func expandWaf(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPlanWA
 				DashboardUrl: kv["dashboard_url"].(string),
 			})
 		}
+	} else {
+		depWaf := duplosdk.DuploPlanWAF{}
+		if v, ok := d.GetOk("waf_name"); ok {
+			depWaf.WebAclName = v.(string)
+		}
+		if v, ok := d.GetOk("waf_arn"); ok {
+			depWaf.WebAclId = v.(string)
+		}
+		if v, ok := d.GetOk("dashboard_url"); ok {
+			depWaf.DashboardUrl = v.(string)
+		}
+		ary = append(ary, depWaf)
+
 	}
 
 	return &ary
