@@ -57,24 +57,110 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
 }
 
-#ttl example: currently ttl can be set during creating resource
 resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
-  tenant_id = duplocloud_tenant.myapp.tenant_id
-  name      = "tst-dynamodb-table"
 
-  read_capacity  = 11
-  write_capacity = 12
-  tag {
-    key   = "CreatedBy"
-    value = "Duplo"
-  }
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
+  name                        = "mytable"
+  read_capacity               = 80
+  write_capacity              = 40
+  billing_mode                = "PROVISIONED"
+  is_point_in_time_recovery   = false
+  deletion_protection_enabled = false
 
   tag {
-    key   = "CreatedFrom"
-    value = "Duplo"
+    key   = "school"
+    value = "admission"
   }
   attribute {
-    name = "UserId"
+    name = "ForumName"
+    type = "S"
+  }
+  attribute {
+    name = "Subject"
+    type = "S"
+  }
+  attribute {
+    name = "LastPostDateTime"
+    type = "S"
+  }
+  attribute {
+    name = "PostMonth"
+    type = "S"
+  }
+
+  attribute {
+    name = "GamerZone"
+    type = "S"
+  }
+  attribute {
+    name = "TopScore"
+    type = "N"
+  }
+  key_schema {
+    attribute_name = "ForumName"
+    key_type       = "HASH"
+  }
+  key_schema {
+    attribute_name = "Subject"
+    key_type       = "RANGE"
+  }
+  global_secondary_index {
+    name            = "PostDate"
+    hash_key        = "PostMonth"
+    range_key       = "LastPostDateTime"
+    write_capacity  = 2
+    read_capacity   = 2
+    projection_type = "KEYS_ONLY"
+  }
+  global_secondary_index {
+    name            = "GamerZone"
+    hash_key        = "GamerZone"
+    range_key       = "TopScore"
+    write_capacity  = 5
+    read_capacity   = 5
+    projection_type = "ALL"
+  }
+  server_side_encryption {
+    enabled = false
+  }
+  local_secondary_index { #local secondary index doesnot support updation
+    hash_key        = "ForumName"
+    name            = "LastPostIndex"
+    range_key       = "LastPostDateTime"
+    projection_type = "KEYS_ONLY"
+  }
+
+}
+
+
+resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
+
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
+  name                        = "mytable"
+  read_capacity               = 80
+  write_capacity              = 40
+  billing_mode                = "PROVISIONED"
+  is_point_in_time_recovery   = false
+  deletion_protection_enabled = false
+
+  tag {
+    key   = "school"
+    value = "admission"
+  }
+  attribute {
+    name = "ForumName"
+    type = "S"
+  }
+  attribute {
+    name = "Subject"
+    type = "S"
+  }
+  attribute {
+    name = "LastPostDateTime"
+    type = "S"
+  }
+  attribute {
+    name = "PostMonth"
     type = "S"
   }
 

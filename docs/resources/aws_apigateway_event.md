@@ -48,6 +48,7 @@ resource "duplocloud_aws_apigateway_event" "apigateway_event" {
 
 ### Optional
 
+- `api_key_required` (Boolean) Specify if the method requires an API key.
 - `authorization_type` (String) Type of authorization used for the method. (`NONE`, `CUSTOM`, `AWS_IAM`, `COGNITO_USER_POOLS`)
 - `authorizer_id` (String) Authorizer id to be used when the authorization is `CUSTOM` or `COGNITO_USER_POOLS`.
 - `cors` (Boolean) Enable handling of preflight requests.

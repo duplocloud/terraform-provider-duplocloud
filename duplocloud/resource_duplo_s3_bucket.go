@@ -458,6 +458,10 @@ func fillS3BucketRequest(duploObject *duplosdk.DuploS3BucketSettingsRequest, d *
 		duploObject.Region = v.(string)
 	}
 
+	if v, ok := d.GetOk("location"); ok && v != nil {
+		duploObject.Location = v.(string)
+	}
+
 	// Set the managed policies.
 	if v, ok := getAsStringArray(d, "managed_policies"); ok && v != nil {
 		duploObject.Policies = *v
