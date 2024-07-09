@@ -969,7 +969,6 @@ func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
 }
 
-
 func OctalToNumericInt32(octal string) (int32, error) {
 	var result int64
 	base := int64(8) // Base for octal numbers
@@ -1001,4 +1000,3 @@ func addIfDefined(target interface{}, resourceName string, targetValue interface
 		}
 	}
 }
-
