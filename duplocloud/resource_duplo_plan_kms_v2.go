@@ -39,21 +39,6 @@ func resourcePlanKMSV2() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
-			"kms_name": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "The kms_name argument is only applied on creation, and is deprecated in favor of the kms.name argument.",
-			},
-			"kms_id": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "The kms_id argument is only applied on creation, and is deprecated in favor of the kms.id argument.",
-			},
-			"kms_arn": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "The kms_arn argument is only applied on creation, and is deprecated in favor of the kms.arn argument.",
-			},
 			"kms": {
 				Description: "A list of KMS key to manage.",
 				Type:        schema.TypeList,
