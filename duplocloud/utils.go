@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"reflect"
 	"regexp"
 	"sort"
@@ -208,6 +209,26 @@ func KeyValueSchema() *schema.Resource {
 			"value": {
 				Type:     schema.TypeString,
 				Required: true,
+			},
+		},
+	}
+}
+
+func DynamoDbV2TagSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"value": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"delete_tag": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
 			},
 		},
 	}
@@ -561,41 +582,43 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 	return nil
 }
 
+/*
 func waitForResourceToBePresentAfterUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	resourceType string,
-	resourceId string,
-	getResource func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
-	err := retry.RetryContext(ctx, d.Timeout("update"), func() *retry.RetryError {
-		resource, errGet := getResource()
 
-		if errGet != nil {
-			if errGet.Status() == 404 {
-				s := "expected %s '%s' to be present after update, but got a 404"
+		ctx context.Context,
+		d *schema.ResourceData,
+		resourceType string,
+		resourceId string,
+		getResource func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
+		err := retry.RetryContext(ctx, d.Timeout("update"), func() *retry.RetryError {
+			resource, errGet := getResource()
+
+			if errGet != nil {
+				if errGet.Status() == 404 {
+					s := "expected %s '%s' to be present after update, but got a 404"
+					e := fmt.Errorf(s, resourceType, resourceId)
+					return retry.RetryableError(e)
+				}
+
+				s := "error retrieving %s '%s': %s"
+				e := fmt.Errorf(s, resourceType, resourceId, errGet)
+				return retry.NonRetryableError(e)
+			}
+
+			if isInterfaceNil(resource) {
+				s := "expected %s '%s' to be present after update, but got: nil"
 				e := fmt.Errorf(s, resourceType, resourceId)
 				return retry.RetryableError(e)
 			}
 
-			s := "error retrieving %s '%s': %s"
-			e := fmt.Errorf(s, resourceType, resourceId, errGet)
-			return retry.NonRetryableError(e)
+			return nil
+		})
+		if err != nil {
+			return diag.Errorf("error updating %s '%s': %s", resourceType, resourceId, err)
 		}
-
-		if isInterfaceNil(resource) {
-			s := "expected %s '%s' to be present after update, but got: nil"
-			e := fmt.Errorf(s, resourceType, resourceId)
-			return retry.RetryableError(e)
-		}
-
 		return nil
-	})
-	if err != nil {
-		return diag.Errorf("error updating %s '%s': %s", resourceType, resourceId, err)
 	}
-	return nil
-}
-
+*/
 func isInterfaceNil(v interface{}) bool {
 	return v == nil || (reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil())
 }
@@ -944,4 +967,36 @@ func diffSuppressSpecifiedMetadata(k, old, new string, d *schema.ResourceData) b
 
 func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
+}
+
+func OctalToNumericInt32(octal string) (int32, error) {
+	var result int64
+	base := int64(8) // Base for octal numbers
+
+	for i, digit := range octal {
+		if digit < '0' || digit > '7' {
+			return 0, fmt.Errorf("Invalid octal digit: %c", digit)
+		}
+		numericDigit := int64(digit - '0')
+		result += numericDigit * int64(math.Pow(float64(base), float64(len(octal)-i-1)))
+	}
+
+	if result > math.MaxInt32 || result < math.MinInt32 {
+		return 0, fmt.Errorf("Octal value overflows int32 range")
+	}
+
+	return int32(result), nil
+}
+
+func addIfDefined(target interface{}, resourceName string, targetValue interface{}) {
+	v := reflect.ValueOf(target).Elem()
+	field := v.FieldByName(resourceName)
+	if field.IsValid() && field.CanSet() && targetValue != nil {
+
+		val := reflect.ValueOf(targetValue)
+
+		if val.Type().AssignableTo(field.Type()) {
+			field.Set(val)
+		}
+	}
 }

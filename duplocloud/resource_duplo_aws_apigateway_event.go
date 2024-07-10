@@ -40,6 +40,7 @@ func AwsApiGatewayEventSchema() map[string]*schema.Schema {
 				"DELETE",
 				"HEAD",
 				"OPTIONS",
+				"PATCH",
 				"ANY",
 			}, false),
 		},

@@ -110,14 +110,10 @@ func (c *Client) getPrefixFromResourceType(resourceType string, isInfraResource 
 			break
 		}
 	}
-	if !resourcePrefixEnabled {
-		return prefix, nil
-	}
-	if isInfraResource {
+	if !resourcePrefixEnabled && isInfraResource && (resourceType == "subnet" || resourceType == "nsg") {
 		prefix += azureResourcePrefix.InfraRgPrefix
-	} else {
-		prefix += azureResourcePrefix.TenantRgPrefix
 	}
+
 	return prefix, nil
 }
 
