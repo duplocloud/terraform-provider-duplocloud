@@ -154,6 +154,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_waf":                        resourcePlanWaf(),
 			"duplocloud_plan_kms":                        resourcePlanKMS(),
 			"duplocloud_aws_apigateway_event":            resourceAwsApiGatewayEvent(),
+			"duplocloud_gcp_s3_bucket":                   resourceGCPS3Bucket(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
