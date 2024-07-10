@@ -12,7 +12,7 @@ import (
 func planWafV2DataSourceSchema(single bool) map[string]*schema.Schema {
 
 	// Create a fully computed schema.
-	wafs_schema := planWafSchema()
+	wafs_schema := planWafSchemaV2()
 	for k := range wafs_schema {
 		wafs_schema[k].Required = false
 		wafs_schema[k].Computed = true
@@ -163,7 +163,7 @@ func getPlanWafs(c *duplosdk.Client, planID string) (*[]duplosdk.DuploPlanWAF, d
 	return resp, nil
 }
 
-func planWafSchema() map[string]*schema.Schema {
+func planWafSchemaV2() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"name": {
 			Type:        schema.TypeString,

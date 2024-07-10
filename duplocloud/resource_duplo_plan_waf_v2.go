@@ -14,7 +14,7 @@ import (
 // Resource for managing an AWS ElasticSearch instance
 func resourcePlanWafV2() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_plan_waf` manages the list of waf's avaialble to a plan in Duplo.\n\n" +
+		Description: "`duplocloud_plan_waf_v2` manages the list of waf's avaialble to a plan in Duplo.\n\n" +
 			"This resource allows you take control of individual waf's for a specific plan.",
 
 		ReadContext:   resourcePlanWafReadV2,
@@ -36,21 +36,6 @@ func resourcePlanWafV2() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-			},
-			"waf_name": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "The waf_name argument is only applied on creation, and is deprecated in favor of the waf.name argument.",
-			},
-			"waf_arn": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "The waf_arn argument is only applied on creation, and is deprecated in favor of the waf.arn argument.",
-			},
-			"dashboard_url": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "The dashboard_url argument is only applied on creation, and is deprecated in favor of the waf.dashboard_url argument.",
 			},
 
 			"waf": {
