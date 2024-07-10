@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"reflect"
 	"regexp"
 	"sort"
@@ -966,4 +967,36 @@ func diffSuppressSpecifiedMetadata(k, old, new string, d *schema.ResourceData) b
 
 func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
+}
+
+func OctalToNumericInt32(octal string) (int32, error) {
+	var result int64
+	base := int64(8) // Base for octal numbers
+
+	for i, digit := range octal {
+		if digit < '0' || digit > '7' {
+			return 0, fmt.Errorf("Invalid octal digit: %c", digit)
+		}
+		numericDigit := int64(digit - '0')
+		result += numericDigit * int64(math.Pow(float64(base), float64(len(octal)-i-1)))
+	}
+
+	if result > math.MaxInt32 || result < math.MinInt32 {
+		return 0, fmt.Errorf("Octal value overflows int32 range")
+	}
+
+	return int32(result), nil
+}
+
+func addIfDefined(target interface{}, resourceName string, targetValue interface{}) {
+	v := reflect.ValueOf(target).Elem()
+	field := v.FieldByName(resourceName)
+	if field.IsValid() && field.CanSet() && targetValue != nil {
+
+		val := reflect.ValueOf(targetValue)
+
+		if val.Type().AssignableTo(field.Type()) {
+			field.Set(val)
+		}
+	}
 }

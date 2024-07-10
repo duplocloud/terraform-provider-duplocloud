@@ -18,11 +18,11 @@ func resourcePlanKMS() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_plan_kms` manages the list of kms avaialble to a plan in Duplo.\n\n" +
 			"This resource allows you take control of individual plan kms for a specific plan.",
-
-		ReadContext:   resourcePlanKMSRead,
-		CreateContext: resourcePlanKMSCreateOrUpdate,
-		UpdateContext: resourcePlanKMSCreateOrUpdate,
-		DeleteContext: resourcePlanKMSDelete,
+		DeprecationMessage: "duplocloud_plan_kms is deprecated. Use duplocloud_plan_kms_v2 instead.",
+		ReadContext:        resourcePlanKMSRead,
+		CreateContext:      resourcePlanKMSCreateOrUpdate,
+		UpdateContext:      resourcePlanKMSCreateOrUpdate,
+		DeleteContext:      resourcePlanKMSDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -40,61 +40,15 @@ func resourcePlanKMS() *schema.Resource {
 				ForceNew:    true,
 			},
 			"kms_name": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "The kms_name argument is only applied on creation, and is deprecated in favor of the kms.name argument.",
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
 			"kms_id": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "The kms_id argument is only applied on creation, and is deprecated in favor of the kms.id argument.",
+				Type:     schema.TypeString,
+				Required: true,
 			},
 			"kms_arn": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "The kms_arn argument is only applied on creation, and is deprecated in favor of the kms.arn argument.",
-			},
-			"kms": {
-				Description: "A list of KMS key to manage.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        planKmsSchema(),
-			},
-			"kms_keys": {
-				Description: "A list of KMS key to manage.",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem:        planKmsSchema(),
-			},
-			"delete_unspecified_kms_keys": {
-				Description: "Whether or not this resource should delete any certificates not specified by this resource. " +
-					"**WARNING:**  It is not recommended to change the default value of `false`.",
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
-			"specified_kms_keys": {
-				Description: "A list of certificate names being managed by this resource.",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-		},
-	}
-}
-
-func planKmsSchema() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"id": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"arn": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -108,105 +62,70 @@ func resourcePlanKMSRead(ctx context.Context, d *schema.ResourceData, m interfac
 	id := d.Id()
 	info := strings.SplitN(id, "/", 3)
 	planID := info[0]
+	name := info[2]
 
 	log.Printf("[TRACE] resourcePlanKMSRead(%s): start", planID)
-
 	c := m.(*duplosdk.Client)
 
-	// First, try the newer method of getting the plan certificates.
-	duplo, err := c.PlanKMSGetList(planID)
-	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("failed to retrieve plan kmskeys for '%s': %s", planID, err)
+	duplo, err := c.PlanGetKMSKey(planID, name)
+	if err != nil {
+		return diag.Errorf("failed to retrieve plan kms for '%s': %s", planID, err)
 	}
 
-	// If it failed, try the fallback method.
 	if duplo == nil {
-		plan, err := c.PlanGet(planID)
-		if err != nil {
-			return diag.Errorf("failed to read plan certificates: %s", err)
-		}
-		if plan == nil {
-			return diag.Errorf("failed to read plan: %s", planID)
-		}
-
-		duplo = plan.KmsKeyInfos
+		d.SetId("")
+		return nil
 	}
-
 	// Set the simple fields first.
-	d.Set("kms_keys", flattenPlanKmsKeys(duplo))
-
+	d.Set("kms_id", duplo.KeyId)
+	d.Set("kms_name", duplo.KeyName)
+	d.Set("kms_arn", duplo.KeyArn)
 	// Build a list of current state, to replace the user-supplied settings.
-	if v, ok := getAsStringArray(d, "specified_kms_keys"); ok && v != nil {
-		d.Set("certificate", flattenPlanKmsKeys(selectPlanKms(duplo, *v)))
-	}
 
-	log.Printf("[TRACE] resourcePlanCertificatesRead(%s): end", planID)
+	log.Printf("[TRACE] resourcePlanKMSRead(%s): end", planID)
 	return nil
-
 }
 
-func flattenPlanKmsKeys(list *[]duplosdk.DuploPlanKmsKeyInfo) []interface{} {
-	result := make([]interface{}, 0, len(*list))
-
-	for _, kms := range *list {
-		result = append(result, map[string]interface{}{
-			"name": kms.KeyName,
-			"id":   kms.KeyId,
-			"arn":  kms.KeyArn,
-		})
-	}
-
-	return result
-}
-
-func isKMSUpdateOrCreateable(list []duplosdk.DuploPlanKmsKeyInfo, reqs []duplosdk.DuploPlanKmsKeyInfo) (bool, string) {
+func isKMSUpdateOrCreateable(list []duplosdk.DuploPlanKmsKeyInfo, rq duplosdk.DuploPlanKmsKeyInfo) bool {
 	nameMap := make(map[string]bool)
 	idMap := make(map[string]bool)
 	for _, val := range list {
 		nameMap[val.KeyName] = true
 		idMap[val.KeyId] = true
 	}
-
-	for _, rq := range reqs {
-		if nameMap[rq.KeyName] {
-			return false, "name : " + rq.KeyName
-		} else if idMap[rq.KeyId] {
-			return false, "id : " + rq.KeyName
-		}
+	if nameMap[rq.KeyName] {
+		return false
+	} else if idMap[rq.KeyId] {
+		return false
 	}
-	return true, ""
+	return true
 }
 func resourcePlanKMSCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// Parse the identifying attributes
 	planID := d.Get("plan_id").(string)
 	log.Printf("[TRACE] resourcePlanKMSCreateOrUpdate(%s): start", planID)
 
+	rq := duplosdk.DuploPlanKmsKeyInfo{
+		KeyName: d.Get("kms_name").(string),
+		KeyId:   d.Get("kms_id").(string),
+		KeyArn:  d.Get("kms_arn").(string),
+	}
+	// Get all of the plan kms from duplo.
 	c := m.(*duplosdk.Client)
 	rp, _ := c.PlanKMSGetList(planID)
-	previous, desired := getPlanKmsChange(rp, d)
-
 	if rp != nil {
-		//	previous, desired := getPlanKmsChange(rp, d)
-		createable, errStr := isKMSUpdateOrCreateable(*rp, *desired)
-		if !createable {
-			return diag.Errorf("Kms key with %s  already exist for plan %s", errStr, planID)
+		if !isKMSUpdateOrCreateable(*rp, rq) {
+			return diag.Errorf("Kms key with name %s or id %s already exist for plan %s", rq.KeyName, rq.KeyId, planID)
 		}
 	}
-
-	// Apply the changes via Duplo
-	var err duplosdk.ClientError
-	if d.Get("delete_unspecified_kms_keys").(bool) {
-		err = c.PlanReplaceKmsKeys(planID, rp, desired)
-	} else {
-		err = c.PlanChangeKmsKeys(planID, previous, desired)
+	clientErr := c.PlanCreateKMSKey(planID, rq)
+	if clientErr != nil {
+		return diag.Errorf(clientErr.Error())
 	}
-	if err != nil {
-		return diag.Errorf("Error updating plan certificates for '%s': %s", planID, err)
-	}
-	d.SetId(planID + "/kms")
+	d.SetId(planID + "/kms/" + rq.KeyName)
 
 	diags := resourcePlanKMSRead(ctx, d, m)
-	log.Printf("[TRACE] resourcePlanCertificatesCreateOrUpdate(%s): end", planID)
+	log.Printf("[TRACE] resourcePlanKMSCreateOrUpdate(%s): end", planID)
 	return diags
 }
 
@@ -214,104 +133,13 @@ func resourcePlanKMSDelete(ctx context.Context, d *schema.ResourceData, m interf
 	id := d.Id()
 	info := strings.SplitN(id, "/", 3)
 	planID := info[0]
-	log.Printf("[TRACE] resourcePlanKMSDelete(%s): start", planID)
+	name := info[2]
 
-	// Get all of the plan certificates from duplo.
 	c := m.(*duplosdk.Client)
-	all, clientErrr := c.PlanKMSGetList(planID)
-	if clientErrr != nil {
-		return diag.Errorf(clientErrr.Error())
+	clientErr := c.PlanKMSDelete(planID, name)
+	if clientErr != nil {
+		return diag.Errorf(clientErr.Error())
 	}
 
-	// Get the previous and desired plan certificates
-	previous, _ := getPlanKmsChange(all, d)
-	desired := &[]duplosdk.DuploPlanKmsKeyInfo{}
-
-	// Apply the changes via Duplo
-	var err duplosdk.ClientError
-	if d.Get("delete_unspecified_certificates").(bool) {
-		err = c.PlanReplaceKmsKeys(planID, all, desired)
-	} else {
-		err = c.PlanChangeKmsKeys(planID, previous, desired)
-	}
-	if err != nil {
-		return diag.Errorf("Error updating plan kmskeys for '%s': %s", planID, err)
-	}
-
-	log.Printf("[TRACE] resourcePlanKMSDelete(%s): end", planID)
 	return nil
-}
-
-func expandPlanKms(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPlanKmsKeyInfo {
-	var ary []duplosdk.DuploPlanKmsKeyInfo
-
-	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
-		kvs := v.([]interface{})
-		log.Printf("[TRACE] expandPlanKms ********: found %s", fieldName)
-		ary = make([]duplosdk.DuploPlanKmsKeyInfo, 0, len(kvs))
-
-		for _, raw := range kvs {
-			kv := raw.(map[string]interface{})
-			ary = append(ary, duplosdk.DuploPlanKmsKeyInfo{
-				KeyId:   kv["id"].(string),
-				KeyName: kv["name"].(string),
-				KeyArn:  kv["arn"].(string),
-			})
-		}
-	} else {
-		depKms := duplosdk.DuploPlanKmsKeyInfo{}
-		if v, ok := d.GetOk("kms_id"); ok {
-			depKms.KeyId = v.(string)
-		}
-		if v, ok := d.GetOk("kms_name"); ok {
-			depKms.KeyName = v.(string)
-		}
-		if v, ok := d.GetOk("kms_arn"); ok {
-			depKms.KeyArn = v.(string)
-		}
-		ary = append(ary, depKms)
-		//return &ary
-	}
-
-	return &ary
-}
-
-func getPlanKmsChange(all *[]duplosdk.DuploPlanKmsKeyInfo, d *schema.ResourceData) (previous, desired *[]duplosdk.DuploPlanKmsKeyInfo) {
-	if v, ok := getAsStringArray(d, "specified_kms_keys"); ok && v != nil {
-		previous = selectPlanKms(all, *v)
-	} else {
-		previous = &[]duplosdk.DuploPlanKmsKeyInfo{}
-	}
-
-	// Collect the desired state of settings specified by the user.
-	desired = expandPlanKms("kms", d)
-	specified := make([]string, len(*desired))
-	for i, pc := range *desired {
-		specified[i] = pc.KeyName
-	}
-
-	// Track the change
-	d.Set("specified_kms_key", specified)
-
-	return
-}
-
-func selectPlanKmsFromMap(all *[]duplosdk.DuploPlanKmsKeyInfo, keys map[string]interface{}) *[]duplosdk.DuploPlanKmsKeyInfo {
-	kmsKeys := make([]duplosdk.DuploPlanKmsKeyInfo, 0, len(keys))
-	for _, pc := range *all {
-		if _, ok := keys[pc.KeyName]; ok {
-			kmsKeys = append(kmsKeys, pc)
-		}
-	}
-
-	return &kmsKeys
-}
-
-func selectPlanKms(all *[]duplosdk.DuploPlanKmsKeyInfo, keys []string) *[]duplosdk.DuploPlanKmsKeyInfo {
-	specified := map[string]interface{}{}
-	for _, k := range keys {
-		specified[k] = struct{}{}
-	}
-
-	return selectPlanKmsFromMap(all, specified)
 }
