@@ -14,15 +14,15 @@ import (
 // PlanKmsSchema returns a Terraform schema to represent a plan KMS
 
 // Resource for managing an AWS ElasticSearch instance
-func resourcePlanKMS() *schema.Resource {
+func resourcePlanKMSV2() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_plan_kms` manages the list of kms avaialble to a plan in Duplo.\n\n" +
 			"This resource allows you take control of individual plan kms for a specific plan.",
 
-		ReadContext:   resourcePlanKMSRead,
-		CreateContext: resourcePlanKMSCreateOrUpdate,
-		UpdateContext: resourcePlanKMSCreateOrUpdate,
-		DeleteContext: resourcePlanKMSDelete,
+		ReadContext:   resourcePlanKMSReadV2,
+		CreateContext: resourcePlanKMSCreateOrUpdateV2,
+		UpdateContext: resourcePlanKMSCreateOrUpdateV2,
+		DeleteContext: resourcePlanKMSDeleteV2,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -102,7 +102,7 @@ func planKmsSchema() *schema.Resource {
 	}
 }
 
-func resourcePlanKMSRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePlanKMSReadV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
 	id := d.Id()
@@ -133,11 +133,11 @@ func resourcePlanKMSRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Set the simple fields first.
-	d.Set("kms_keys", flattenPlanKmsKeys(duplo))
+	d.Set("kms_keys", flattenPlanKmsKeysV2(duplo))
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_kms_keys"); ok && v != nil {
-		d.Set("certificate", flattenPlanKmsKeys(selectPlanKms(duplo, *v)))
+		d.Set("certificate", flattenPlanKmsKeysV2(selectPlanKms(duplo, *v)))
 	}
 
 	log.Printf("[TRACE] resourcePlanCertificatesRead(%s): end", planID)
@@ -145,7 +145,7 @@ func resourcePlanKMSRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 }
 
-func flattenPlanKmsKeys(list *[]duplosdk.DuploPlanKmsKeyInfo) []interface{} {
+func flattenPlanKmsKeysV2(list *[]duplosdk.DuploPlanKmsKeyInfo) []interface{} {
 	result := make([]interface{}, 0, len(*list))
 
 	for _, kms := range *list {
@@ -159,7 +159,7 @@ func flattenPlanKmsKeys(list *[]duplosdk.DuploPlanKmsKeyInfo) []interface{} {
 	return result
 }
 
-func isKMSUpdateOrCreateable(list []duplosdk.DuploPlanKmsKeyInfo, reqs []duplosdk.DuploPlanKmsKeyInfo) (bool, string) {
+func isKMSV2UpdateOrCreateable(list []duplosdk.DuploPlanKmsKeyInfo, reqs []duplosdk.DuploPlanKmsKeyInfo) (bool, string) {
 	nameMap := make(map[string]bool)
 	idMap := make(map[string]bool)
 	for _, val := range list {
@@ -176,7 +176,7 @@ func isKMSUpdateOrCreateable(list []duplosdk.DuploPlanKmsKeyInfo, reqs []duplosd
 	}
 	return true, ""
 }
-func resourcePlanKMSCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePlanKMSCreateOrUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// Parse the identifying attributes
 	planID := d.Get("plan_id").(string)
 	log.Printf("[TRACE] resourcePlanKMSCreateOrUpdate(%s): start", planID)
@@ -187,7 +187,7 @@ func resourcePlanKMSCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	if rp != nil {
 		//	previous, desired := getPlanKmsChange(rp, d)
-		createable, errStr := isKMSUpdateOrCreateable(*rp, *desired)
+		createable, errStr := isKMSV2UpdateOrCreateable(*rp, *desired)
 		if !createable {
 			return diag.Errorf("Kms key with %s  already exist for plan %s", errStr, planID)
 		}
@@ -205,12 +205,12 @@ func resourcePlanKMSCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 	d.SetId(planID + "/kms")
 
-	diags := resourcePlanKMSRead(ctx, d, m)
+	diags := resourcePlanKMSReadV2(ctx, d, m)
 	log.Printf("[TRACE] resourcePlanCertificatesCreateOrUpdate(%s): end", planID)
 	return diags
 }
 
-func resourcePlanKMSDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePlanKMSDeleteV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	info := strings.SplitN(id, "/", 3)
 	planID := info[0]
@@ -242,7 +242,7 @@ func resourcePlanKMSDelete(ctx context.Context, d *schema.ResourceData, m interf
 	return nil
 }
 
-func expandPlanKms(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPlanKmsKeyInfo {
+func expandPlanKmsV2(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPlanKmsKeyInfo {
 	var ary []duplosdk.DuploPlanKmsKeyInfo
 
 	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
@@ -284,7 +284,7 @@ func getPlanKmsChange(all *[]duplosdk.DuploPlanKmsKeyInfo, d *schema.ResourceDat
 	}
 
 	// Collect the desired state of settings specified by the user.
-	desired = expandPlanKms("kms", d)
+	desired = expandPlanKmsV2("kms", d)
 	specified := make([]string, len(*desired))
 	for i, pc := range *desired {
 		specified[i] = pc.KeyName

@@ -152,7 +152,7 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_node_pool":                   resourceGcpK8NodePool(),
 			"duplocloud_gcp_firestore":                   resourceFirestore(),
 			"duplocloud_plan_waf":                        resourcePlanWaf(),
-			"duplocloud_plan_kms":                        resourcePlanKMS(),
+			"duplocloud_plan_kms_v2":                     resourcePlanKMSV2(),
 			"duplocloud_aws_apigateway_event":            resourceAwsApiGatewayEvent(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
@@ -216,8 +216,8 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_firestores":             dataSourceFirestores(),
 			"duplocloud_plan_wafs":                  dataSourcePlanWafs(),
 			"duplocloud_plan_waf":                   dataSourcePlanWaf(),
-			"duplocloud_plan_kms":                   dataSourcePlanKMS(),
-			"duplocloud_plan_kms_key":               dataSourcePlanKMSList(),
+			"duplocloud_plan_kms_v2":                dataSourcePlanKMSV2(),
+			"duplocloud_plan_kms_key_v2":            dataSourcePlanKMSListV2(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

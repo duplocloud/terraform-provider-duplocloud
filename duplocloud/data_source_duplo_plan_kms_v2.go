@@ -50,25 +50,25 @@ func planKmsDataSourceSchema(single bool) map[string]*schema.Schema {
 	return result
 }
 
-func dataSourcePlanKMSList() *schema.Resource {
+func dataSourcePlanKMSListV2() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_plan_kms_key` retrieves a list of kms keys for a given plan.",
 
-		ReadContext: dataSourcePlanKmsKeysRead,
+		ReadContext: dataSourcePlanKmsKeysReadV2,
 		Schema:      planKmsDataSourceSchema(false),
 	}
 }
 
-func dataSourcePlanKMS() *schema.Resource {
+func dataSourcePlanKMSV2() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_plan_kms` retrieves details of a specific kms for a given plan.",
 
-		ReadContext: dataSourcePlanKmsRead,
+		ReadContext: dataSourcePlanKmsReadV2,
 		Schema:      planKmsDataSourceSchema(true),
 	}
 }
 
-func dataSourcePlanKmsKeysRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourcePlanKmsKeysReadV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// Parse the identifying attributes
 	planID := d.Get("plan_id").(string)
 	log.Printf("[TRACE] dataSourcePlanKmsKeysRead(%s): start", planID)
@@ -80,7 +80,7 @@ func dataSourcePlanKmsKeysRead(ctx context.Context, d *schema.ResourceData, m in
 		return err
 	}
 	// Populate the results from the list.
-	d.Set("kms_keys", flattenPlanKmsKeys(all))
+	d.Set("kms_keys", flattenPlanKmsKeysV2(all))
 
 	d.SetId(planID + "/kms")
 
@@ -89,7 +89,7 @@ func dataSourcePlanKmsKeysRead(ctx context.Context, d *schema.ResourceData, m in
 }
 
 // READ/SEARCH resources
-func dataSourcePlanKmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourcePlanKmsReadV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
 	planID := d.Get("plan_id").(string)
