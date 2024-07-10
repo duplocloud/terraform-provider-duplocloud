@@ -214,7 +214,7 @@ func resourcePlanKMSDeleteV2(ctx context.Context, d *schema.ResourceData, m inte
 
 	// Apply the changes via Duplo
 	var err duplosdk.ClientError
-	if d.Get("delete_unspecified_certificates").(bool) {
+	if d.Get("delete_unspecified_kms_keys").(bool) {
 		err = c.PlanReplaceKmsKeys(planID, all, desired)
 	} else {
 		err = c.PlanChangeKmsKeys(planID, previous, desired)
@@ -243,19 +243,6 @@ func expandPlanKmsV2(fieldName string, d *schema.ResourceData) *[]duplosdk.Duplo
 				KeyArn:  kv["arn"].(string),
 			})
 		}
-	} else {
-		depKms := duplosdk.DuploPlanKmsKeyInfo{}
-		if v, ok := d.GetOk("kms_id"); ok {
-			depKms.KeyId = v.(string)
-		}
-		if v, ok := d.GetOk("kms_name"); ok {
-			depKms.KeyName = v.(string)
-		}
-		if v, ok := d.GetOk("kms_arn"); ok {
-			depKms.KeyArn = v.(string)
-		}
-		ary = append(ary, depKms)
-		//return &ary
 	}
 
 	return &ary

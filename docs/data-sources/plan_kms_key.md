@@ -3,12 +3,15 @@
 page_title: "duplocloud_plan_kms_key Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_plan_kms_key retrieves a list of kms keys for a given plan.
+  duplocloud_plan_kms manages the list of kms avaialble to a plan in Duplo.
+  This resource allows you take control of individual plan kms for a specific plan.
 ---
 
 # duplocloud_plan_kms_key (Data Source)
 
-`duplocloud_plan_kms_key` retrieves a list of kms keys for a given plan.
+`duplocloud_plan_kms` manages the list of kms avaialble to a plan in Duplo.
+
+This resource allows you take control of individual plan kms for a specific plan.
 
 
 
@@ -17,18 +20,18 @@ description: |-
 
 ### Required
 
-- `plan_id` (String) The plan ID
+- `plan_id` (String) The ID of the plan to configure.
 
 ### Read-Only
 
+- `data` (List of Object) (see [below for nested schema](#nestedatt--data))
 - `id` (String) The ID of this resource.
-- `kms_keys` (List of Object) The list of kms keys for this plan. (see [below for nested schema](#nestedatt--kms_keys))
 
-<a id="nestedatt--kms_keys"></a>
-### Nested Schema for `kms_keys`
+<a id="nestedatt--data"></a>
+### Nested Schema for `data`
 
 Read-Only:
 
-- `arn` (String)
-- `id` (String)
-- `name` (String)
+- `kms_arn` (String)
+- `kms_id` (String)
+- `kms_name` (String)
