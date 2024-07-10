@@ -12,15 +12,15 @@ import (
 )
 
 // Resource for managing an AWS ElasticSearch instance
-func resourcePlanWaf() *schema.Resource {
+func resourcePlanWafV2() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_plan_waf` manages the list of waf's avaialble to a plan in Duplo.\n\n" +
 			"This resource allows you take control of individual waf's for a specific plan.",
 
-		ReadContext:   resourcePlanWafRead,
-		CreateContext: resourcePlanWafCreateOrUpdate,
-		UpdateContext: resourcePlanWafCreateOrUpdate,
-		DeleteContext: resourcePlanWafDelete,
+		ReadContext:   resourcePlanWafReadV2,
+		CreateContext: resourcePlanWafCreateOrUpdateV2,
+		UpdateContext: resourcePlanWafCreateOrUpdateV2,
+		DeleteContext: resourcePlanWafDeleteV2,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -102,7 +102,7 @@ func wafSchema() *schema.Resource {
 	}
 
 }
-func resourcePlanWafRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePlanWafReadV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
 	id := d.Id()
@@ -144,7 +144,7 @@ func resourcePlanWafRead(ctx context.Context, d *schema.ResourceData, m interfac
 	return nil
 }
 
-func resourcePlanWafCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePlanWafCreateOrUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// Parse the identifying attributes
 	planID := d.Get("plan_id").(string)
 	log.Printf("[TRACE] resourcePlanWafCreateOrUpdate(%s): start", planID)
@@ -169,12 +169,12 @@ func resourcePlanWafCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 	id := planID + "/waf"
 	d.SetId(id)
 
-	diags := resourcePlanWafRead(ctx, d, m)
+	diags := resourcePlanWafReadV2(ctx, d, m)
 	log.Printf("[TRACE] resourcePlanWafCreateOrUpdate(%s): end", planID)
 	return diags
 }
 
-func expandWaf(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPlanWAF {
+func expandWafV2(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPlanWAF {
 	var ary []duplosdk.DuploPlanWAF
 
 	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
@@ -189,25 +189,12 @@ func expandWaf(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploPlanWA
 				DashboardUrl: kv["dashboard_url"].(string),
 			})
 		}
-	} else {
-		depWaf := duplosdk.DuploPlanWAF{}
-		if v, ok := d.GetOk("waf_name"); ok {
-			depWaf.WebAclName = v.(string)
-		}
-		if v, ok := d.GetOk("waf_arn"); ok {
-			depWaf.WebAclId = v.(string)
-		}
-		if v, ok := d.GetOk("dashboard_url"); ok {
-			depWaf.DashboardUrl = v.(string)
-		}
-		ary = append(ary, depWaf)
-
 	}
 
 	return &ary
 }
 
-func resourcePlanWafDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePlanWafDeleteV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
 	id := d.Id()
@@ -248,7 +235,7 @@ func getPlanWafChange(all *[]duplosdk.DuploPlanWAF, d *schema.ResourceData) (pre
 	}
 
 	// Collect the desired state of settings specified by the user.
-	desired = expandWaf("waf", d)
+	desired = expandWafV2("waf", d)
 	specified := make([]string, len(*desired))
 	for i, pc := range *desired {
 		specified[i] = pc.WebAclName
