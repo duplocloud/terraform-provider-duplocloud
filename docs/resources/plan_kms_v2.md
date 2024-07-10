@@ -3,13 +3,13 @@
 page_title: "duplocloud_plan_kms_v2 Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_plan_kms manages the list of kms avaialble to a plan in Duplo.
+  duplocloud_plan_kms_v2 manages the list of kms avaialble to a plan in Duplo.
   This resource allows you take control of individual plan kms for a specific plan.
 ---
 
 # duplocloud_plan_kms_v2 (Resource)
 
-`duplocloud_plan_kms` manages the list of kms avaialble to a plan in Duplo.
+`duplocloud_plan_kms_v2` manages the list of kms avaialble to a plan in Duplo.
 
 This resource allows you take control of individual plan kms for a specific plan.
 

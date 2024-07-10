@@ -16,7 +16,7 @@ import (
 // Resource for managing an AWS ElasticSearch instance
 func resourcePlanKMSV2() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_plan_kms` manages the list of kms avaialble to a plan in Duplo.\n\n" +
+		Description: "`duplocloud_plan_kms_v2` manages the list of kms avaialble to a plan in Duplo.\n\n" +
 			"This resource allows you take control of individual plan kms for a specific plan.",
 
 		ReadContext:   resourcePlanKMSReadV2,
