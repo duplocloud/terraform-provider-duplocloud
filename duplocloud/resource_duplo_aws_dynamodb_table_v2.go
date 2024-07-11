@@ -493,12 +493,12 @@ func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceD
 }
 
 func tagDynamoDBtTableV2(
-	tenantId string,
-	rq *duplosdk.DuploDynamoDBTagResourceRequest,
+	tenantId, name string,
+	rq *duplosdk.DuploDynamoDBTagResource,
 	m interface{},
 ) (*duplosdk.DuploDynamoDBTagResourceResponse, duplosdk.ClientError) {
 	c := m.(*duplosdk.Client)
-	resp, err := c.DynamoDBTableUpdateTagsV2(tenantId, rq)
+	resp, err := c.DynamoDBTableUpdateTagsV2(tenantId, name, rq)
 	if err != nil {
 		return nil, err
 	}
@@ -537,11 +537,11 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 			Value: v.Value,
 		})
 	}
-	tagReq := &duplosdk.DuploDynamoDBTagResourceRequest{
+	tagReq := &duplosdk.DuploDynamoDBTagResource{
 		ResourceArn: existing.TableArn,
 		Tags:        &tagsToUpdate,
 	}
-	_, err = tagDynamoDBtTableV2(tenantID, tagReq, m) //taging and untaging dynamodb
+	_, err = tagDynamoDBtTableV2(tenantID, fullname, tagReq, m) //taging and untaging dynamodb
 	if err != nil {
 		return diag.FromErr(err)
 	}
