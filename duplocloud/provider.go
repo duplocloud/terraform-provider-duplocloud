@@ -216,6 +216,8 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_sql_database_instances": dataSourceGCPCloudSQLs(),
 			"duplocloud_gcp_firestore":              dataSourceFirestore(),
 			"duplocloud_gcp_firestores":             dataSourceFirestores(),
+			"duplocloud_plan_wafs":                  dataSourcePlanWafs(),
+			"duplocloud_plan_waf":                   dataSourcePlanWaf(),
 			"duplocloud_plan_wafs_v2":               dataSourcePlanWafsV2(),
 			"duplocloud_plan_waf_v2":                dataSourcePlanWafV2(),
 			"duplocloud_plan_kms":                   dataSourcePlanKMS(),
