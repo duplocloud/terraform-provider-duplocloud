@@ -67,6 +67,13 @@ func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m inter
 			}
 		}
 	}
+	access, err := c.SystemSettingGet("AllowReadonlySecrets")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if access.Value == "True" {
+		usrResp.IsReadOnly = false
+	}
 	rp, err := c.K8SecretGet(tenantID, name)
 	if err != nil {
 		return diag.FromErr(err)
