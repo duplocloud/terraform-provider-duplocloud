@@ -49,6 +49,13 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			Optional:     true,
 			Computed:     true,
 			ValidateFunc: validation.StringLenBetween(0, 128),
+			Deprecated:   "comment has been depreciated instead use name",
+		},
+		"name": {
+			Description:  "Name of the distributiion",
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringLenBetween(0, 128),
 		},
 		"default_root_object": {
 			Description: "The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.",
@@ -866,7 +873,6 @@ func resourceAwsCloudfrontDistributionRead(ctx context.Context, d *schema.Resour
 	d.Set("arn", duplo.Distribution.ARN)
 	d.Set("tenant_id", tenantID)
 	d.Set("hosted_zone_id", duplosdk.CloudFrontRoute53ZoneID)
-
 	log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end", tenantID, cfdId)
 	return nil
 }
@@ -1021,8 +1027,9 @@ func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData) *duplosdk.Dup
 	distributionConfig := &duplosdk.DuploAwsCloudfrontDistributionConfig{
 		DefaultCacheBehavior: expandAwsCloudfrontDistributionDefaultCacheBehavior(d.Get("default_cache_behavior").([]interface{})[0].(map[string]interface{})),
 
-		CacheBehaviors:       expandAwsCloudfrontDistributionCacheBehaviorAll(d.Get("ordered_cache_behavior").([]interface{})),
-		Comment:              d.Get("comment").(string),
+		CacheBehaviors: expandAwsCloudfrontDistributionCacheBehaviorAll(d.Get("ordered_cache_behavior").([]interface{})),
+		Comment:        d.Get("comment").(string),
+
 		CustomErrorResponses: expandCustomErrorResponses(d.Get("custom_error_response").(*schema.Set)),
 		DefaultRootObject:    d.Get("default_root_object").(string),
 		Enabled:              d.Get("enabled").(bool),
@@ -1032,7 +1039,7 @@ func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData) *duplosdk.Dup
 		PriceClass:           &duplosdk.DuploStringValue{Value: d.Get("price_class").(string)},
 		WebACLId:             d.Get("web_acl_id").(string),
 	}
-
+	distributionConfig.Comment = d.Get("name").(string)
 	if v, ok := d.GetOk("logging_config"); ok {
 		distributionConfig.Logging = expandLoggingConfig(v.([]interface{})[0].(map[string]interface{}))
 	} else {
@@ -1609,6 +1616,7 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 
 	if duplo.Comment != "" {
 		d.Set("comment", duplo.Comment)
+		d.Set("name", duplo.Comment)
 	}
 
 	if duplo.DefaultRootObject != "" {
