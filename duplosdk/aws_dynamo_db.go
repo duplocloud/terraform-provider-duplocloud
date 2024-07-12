@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"net/url"
 )
 
 const DynamoDBProvisionedThroughputMinValue = 1
@@ -357,6 +358,15 @@ func (c *Client) DynamoDBTableGet(tenantID string, name string) (*DuploDynamoDBT
 		&rp)
 	rp.TenantID = tenantID
 	return &rp, err
+}
+
+func (c *Client) DynamoDBTableGetTags(tenantID string, arn string) ([]DuploKeyStringValue, ClientError) {
+	rp := []DuploKeyStringValue{}
+	err := c.getAPI(
+		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, arn), // triple encoding needed to fetch the data
+		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s", tenantID, url.PathEscape(url.PathEscape(url.PathEscape(arn)))),
+		&rp)
+	return rp, err
 }
 
 func (c *Client) DynamoDBTableGetV2(tenantID string, name string) (*DuploDynamoDBTableV2Response, ClientError) {
