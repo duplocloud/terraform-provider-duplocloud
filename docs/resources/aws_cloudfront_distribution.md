@@ -103,6 +103,7 @@ resource "duplocloud_aws_cloudfront_distribution" "cfd" {
 
 - `default_cache_behavior` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--default_cache_behavior))
 - `enabled` (Boolean) Whether the distribution is enabled to accept end user requests for content.
+- `name` (String) Name of the distributiion
 - `origin` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--origin))
 - `tenant_id` (String) The GUID of the tenant that the aws cloudfront distribution will be created in.
 - `viewer_certificate` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--viewer_certificate))
@@ -110,7 +111,7 @@ resource "duplocloud_aws_cloudfront_distribution" "cfd" {
 ### Optional
 
 - `aliases` (Set of String) Extra CNAMEs (alternate domain names), if any, for this distribution.
-- `comment` (String) Any comments you want to include about the distribution.
+- `comment` (String, Deprecated) Any comments you want to include about the distribution. comment has been depreciated instead use name
 - `cors_allowed_host_names` (List of String)
 - `custom_error_response` (Block Set) (see [below for nested schema](#nestedblock--custom_error_response))
 - `default_root_object` (String) The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.
