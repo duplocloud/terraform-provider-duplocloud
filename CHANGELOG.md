@@ -1,3 +1,8 @@
+## 2024-07-12
+
+### Enhanced
+- Added support for advanced health check configurations in load balancer configurations for Duplo services, including parameters for thresholds, timeouts, intervals, and success codes.
+
 ## 2024-04-29
 
 ### Fixed
