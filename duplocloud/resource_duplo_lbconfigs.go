@@ -386,7 +386,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					SkipHttpToHttps:           lbc["skip_http_to_https"].(bool),
 				}
 
-				if v, ok := lbc["health_check"]; ok {
+				if v, ok := lbc["health_check"]; ok && len(v.([]interface{})) > 0 {
 					healthcheck := v.([]interface{})[0].(map[string]interface{})
 
 					item.HealthCheckConfig = &duplosdk.DuploLbHealthCheckConfig{}
