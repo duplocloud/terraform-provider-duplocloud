@@ -1278,7 +1278,7 @@ func removeTags(d *schema.ResourceData) []string {
 		newMap[kv["key"].(string)] = kv["value"].(string)
 	}
 
-	for key, _ := range oldMap {
+	for key := range oldMap {
 		if _, ok := newMap[key]; !ok {
 			del = append(del, key)
 		}
