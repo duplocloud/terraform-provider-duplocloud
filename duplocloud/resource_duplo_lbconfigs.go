@@ -162,6 +162,56 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"health_check": {
+			Description: "Health Check configuration block.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"healthy_threshold": {
+						Description:  "Number of consecutive health checks successes required before considering an unhealthy target healthy.",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Default:      3,
+						ValidateFunc: validation.IntBetween(2, 10),
+					},
+					"unhealthy_threshold": {
+						Description:  "Number of consecutive health check failures required before considering the target unhealthy.",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Default:      3,
+						ValidateFunc: validation.IntBetween(2, 10),
+					},
+					"timeout": {
+						Description:  "Amount of time, in seconds, during which no response means a failed health check.",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Computed:     true,
+						ValidateFunc: validation.IntBetween(2, 100),
+					},
+					"interval": {
+						Description: "Approximate amount of time, in seconds, between health checks of an individual target. Minimum value 5 seconds, Maximum value 300 seconds.",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Default:     30,
+					},
+					"http_success_codes": {
+						Description: "Response codes to use when checking for a healthy responses from a target. You can specify multiple values (for example, \"200,202\" for HTTP(s)) or a range of values (for example, \"200-299\"). Required for HTTP/HTTPS ALB. Only applies to Application Load Balancers (i.e., HTTP/HTTPS) not Network Load Balancers (i.e., TCP).",
+						Type:        schema.TypeString,
+						Computed:    true,
+						Optional:    true,
+					},
+					"grpc_success_codes": {
+						Description: "Response codes to use when checking for a healthy responses from a target. You can specify multiple values (for example, \"0,12\" for GRPC) or a range of values (for example, \"0-99\"). Required for GRPC ALB. Only applies to Application Load Balancers (i.e., GRPC) not Network Load Balancers (i.e., TCP).",
+						Type:        schema.TypeString,
+						Computed:    true,
+						Optional:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -335,6 +385,19 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
 					SkipHttpToHttps:           lbc["skip_http_to_https"].(bool),
 				}
+
+				if v, ok := lbc["health_check"]; ok {
+					healthcheck := v.([]interface{})[0].(map[string]interface{})
+
+					item.HealthCheckConfig = &duplosdk.DuploLbHealthCheckConfig{}
+					item.HealthCheckConfig.HealthyThresholdCount = healthcheck["healthy_threshold"].(int)
+					item.HealthCheckConfig.UnhealthyThresholdCount = healthcheck["unhealthy_threshold"].(int)
+					item.HealthCheckConfig.HealthCheckTimeoutSeconds = healthcheck["timeout"].(int)
+					item.HealthCheckConfig.LbHealthCheckIntervalSecondsype = healthcheck["interval"].(int)
+					item.HealthCheckConfig.HttpSuccessCode = healthcheck["http_success_codes"].(string)
+					item.HealthCheckConfig.GrpcSuccessCode = healthcheck["grpc_success_codes"].(string)
+				}
+
 				// if lbType is 7, then external_port is not required
 				externalPortValue, exists := lbc["external_port"]
 				if item.LbType != 7 && (!exists || externalPortValue.(int) == 0) {
@@ -493,6 +556,14 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 
 func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[string]interface{} {
 	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... Start")
+	healthcheckConfig := map[string]interface{}{
+		"healthy_threshold":   lb.HealthCheckConfig.HealthyThresholdCount,
+		"unhealthy_threshold": lb.HealthCheckConfig.UnhealthyThresholdCount,
+		"timeout":             lb.HealthCheckConfig.HealthCheckTimeoutSeconds,
+		"interval":            lb.HealthCheckConfig.LbHealthCheckIntervalSecondsype,
+		"http_success_codes":  lb.HealthCheckConfig.HttpSuccessCode,
+		"grpc_success_codes":  lb.HealthCheckConfig.GrpcSuccessCode,
+	}
 	m := map[string]interface{}{
 		"name":                        lb.ReplicationControllerName,
 		"replication_controller_name": lb.ReplicationControllerName,
@@ -518,6 +589,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"custom_cidr":                 lb.CustomCidrs,
 		"allow_global_access":         lb.AllowGlobalAccess,
 		"skip_http_to_https":          lb.SkipHttpToHttps,
+		"health_check":                []map[string]interface{}{healthcheckConfig},
 	}
 
 	if lb.LbType == 5 && lb.HostNames != nil && len(*lb.HostNames) > 0 {
