@@ -225,9 +225,9 @@ type DyanmoDbV2Tag struct {
 	DeleteTag bool   `json:"-"`
 }
 type DuploDynamoDBTagResource struct {
-	ResourceArn string                 `json:"ResourceArn,omitempty"` // The ARN of the resource to tag
+	ResourceArn string                 `json:"Arn,omitempty"`         // The ARN of the resource to tag
 	Tags        *[]DuploKeyStringValue `json:"Tags,omitempty"`        // A list of tags to associate with the resource
-	TagKeys     *[]string              `json:"TagKeys,omitempty"`
+	DeleteTags  []string               `json:"DeletedTags,omitempty"` //A list of tags to be deleted
 }
 
 type DuploDynamoDBTagResourceResponse struct {
@@ -322,13 +322,13 @@ func (c *Client) DynamoDBTableUpdateV21(
 
 func (c *Client) DynamoDBTableUpdateTagsV2(
 	tenantId, name string,
-	rq *DuploDynamoDBTagResource) (*DuploDynamoDBTagResourceResponse, ClientError) {
-	rp := DuploDynamoDBTagResourceResponse{}
-	err := c.putAPI(
+	rq *DuploDynamoDBTagResource) (*DuploDynamoDBTagResource, ClientError) {
+	rp := DuploDynamoDBTagResource{}
+	err := c.postAPI(
 		fmt.Sprintf("DynamoDBTableUpdateTags(%s, %s)", tenantId, rq.ResourceArn),
 		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/manage", tenantId, name),
 		&rq,
-		&rp,
+		nil,
 	)
 	return &rp, err
 }

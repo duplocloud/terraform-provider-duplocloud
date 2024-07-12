@@ -496,7 +496,7 @@ func tagDynamoDBtTableV2(
 	tenantId, name string,
 	rq *duplosdk.DuploDynamoDBTagResource,
 	m interface{},
-) (*duplosdk.DuploDynamoDBTagResourceResponse, duplosdk.ClientError) {
+) (*duplosdk.DuploDynamoDBTagResource, duplosdk.ClientError) {
 	c := m.(*duplosdk.Client)
 	resp, err := c.DynamoDBTableUpdateTagsV2(tenantId, name, rq)
 	if err != nil {
@@ -507,7 +507,6 @@ func tagDynamoDBtTableV2(
 
 func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
-
 	tenantID := d.Get("tenant_id").(string)
 	fullname := d.Get("fullname").(string)
 	_, name, err := parseAwsDynamoDBTableIdParts(d.Id())
@@ -537,9 +536,11 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 			Value: v.Value,
 		})
 	}
+	toDel := removeTags(d)
 	tagReq := &duplosdk.DuploDynamoDBTagResource{
 		ResourceArn: existing.TableArn,
 		Tags:        &tagsToUpdate,
+		DeleteTags:  toDel,
 	}
 	_, err = tagDynamoDBtTableV2(tenantID, fullname, tagReq, m) //taging and untaging dynamodb
 	if err != nil {
@@ -1257,4 +1258,30 @@ func shouldUpdateSSESepecification(
 		status = "ENABLED"
 	}
 	return !(table.SSEDescription.Status.Value == status)
+}
+
+func removeTags(d *schema.ResourceData) []string {
+	del := []string{}
+	old, new := d.GetChange("tag")
+	oldArr := old.([]interface{})
+	oldMap := make(map[string]string)
+	newArr := new.([]interface{})
+	newMap := make(map[string]string)
+
+	for _, old := range oldArr {
+		kv := old.(map[string]interface{})
+		oldMap[kv["key"].(string)] = kv["value"].(string)
+	}
+
+	for _, new := range newArr {
+		kv := new.(map[string]interface{})
+		newMap[kv["key"].(string)] = kv["value"].(string)
+	}
+
+	for key, _ := range oldMap {
+		if _, ok := newMap[key]; !ok {
+			del = append(del, key)
+		}
+	}
+	return del
 }
