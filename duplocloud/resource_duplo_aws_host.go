@@ -156,7 +156,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			Elem:             KeyValueSchema(),
-			DiffSuppressFunc: diffSuppressWhenExisting,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"tags": {
 			Type:     schema.TypeList,

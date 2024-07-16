@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"log"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -52,7 +53,13 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 				break
 			}
 		}
-		usrResp.IsReadOnly = true
+	}
+	access, err := c.SystemSettingGet("AllowReadonlyK8sSecrets")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if access != nil && strings.ToLower(access.Value) == "true" {
+		usrResp.IsReadOnly = false
 	}
 	rp, err := c.K8SecretGetList(tenantID)
 	if err != nil {
@@ -65,10 +72,11 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 
 		// First, set the simple fields.
 		sc := map[string]interface{}{
-			"tenant_id":      duplo.TenantID,
-			"secret_name":    duplo.SecretName,
-			"secret_type":    duplo.SecretType,
-			"secret_version": duplo.SecretVersion,
+			"tenant_id":          duplo.TenantID,
+			"secret_name":        duplo.SecretName,
+			"secret_type":        duplo.SecretType,
+			"secret_version":     duplo.SecretVersion,
+			"secret_annotations": duplo.SecretAnnotations,
 		}
 		if usrResp.IsReadOnly {
 			for key := range duplo.SecretData {
@@ -77,7 +85,6 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 		}
 		// Next, set the JSON encoded strings.
 		toJsonStringField("secret_data", duplo.SecretData, sc)
-		toJsonStringField("secret_annotations", duplo.SecretAnnotations, sc)
 
 		list = append(list, sc)
 	}
