@@ -18,11 +18,11 @@ func resourcePlanKMS() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_plan_kms` manages the list of kms avaialble to a plan in Duplo.\n\n" +
 			"This resource allows you take control of individual plan kms for a specific plan.",
-
-		ReadContext:   resourcePlanKMSRead,
-		CreateContext: resourcePlanKMSCreateOrUpdate,
-		UpdateContext: resourcePlanKMSCreateOrUpdate,
-		DeleteContext: resourcePlanKMSDelete,
+		DeprecationMessage: "duplocloud_plan_kms is deprecated. Use duplocloud_plan_kms_v2 instead.",
+		ReadContext:        resourcePlanKMSRead,
+		CreateContext:      resourcePlanKMSCreateOrUpdate,
+		UpdateContext:      resourcePlanKMSCreateOrUpdate,
+		DeleteContext:      resourcePlanKMSDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
