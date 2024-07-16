@@ -556,14 +556,7 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 
 func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[string]interface{} {
 	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... Start")
-	healthcheckConfig := map[string]interface{}{
-		"healthy_threshold":   lb.HealthCheckConfig.HealthyThresholdCount,
-		"unhealthy_threshold": lb.HealthCheckConfig.UnhealthyThresholdCount,
-		"timeout":             lb.HealthCheckConfig.HealthCheckTimeoutSeconds,
-		"interval":            lb.HealthCheckConfig.LbHealthCheckIntervalSecondsype,
-		"http_success_codes":  lb.HealthCheckConfig.HttpSuccessCode,
-		"grpc_success_codes":  lb.HealthCheckConfig.GrpcSuccessCode,
-	}
+
 	m := map[string]interface{}{
 		"name":                        lb.ReplicationControllerName,
 		"replication_controller_name": lb.ReplicationControllerName,
@@ -589,7 +582,18 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"custom_cidr":                 lb.CustomCidrs,
 		"allow_global_access":         lb.AllowGlobalAccess,
 		"skip_http_to_https":          lb.SkipHttpToHttps,
-		"health_check":                []map[string]interface{}{healthcheckConfig},
+	}
+
+	if lb.HealthCheckConfig != nil {
+		healthcheckConfig := map[string]interface{}{
+			"healthy_threshold":   lb.HealthCheckConfig.HealthyThresholdCount,
+			"unhealthy_threshold": lb.HealthCheckConfig.UnhealthyThresholdCount,
+			"timeout":             lb.HealthCheckConfig.HealthCheckTimeoutSeconds,
+			"interval":            lb.HealthCheckConfig.LbHealthCheckIntervalSecondsype,
+			"http_success_codes":  lb.HealthCheckConfig.HttpSuccessCode,
+			"grpc_success_codes":  lb.HealthCheckConfig.GrpcSuccessCode,
+		}
+		m["health_check"] = []map[string]interface{}{healthcheckConfig}
 	}
 
 	if lb.LbType == 5 && lb.HostNames != nil && len(*lb.HostNames) > 0 {
