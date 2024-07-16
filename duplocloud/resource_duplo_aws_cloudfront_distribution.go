@@ -53,13 +53,11 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			ConflictsWith: []string{"name"},
 		},
 		"name": {
-<<<<<<< HEAD
-			Description:   "Name of the distributiion",
-=======
 			Description:   "Name of the distribution",
->>>>>>> temp
 			Type:          schema.TypeString,
 			ValidateFunc:  validation.StringLenBetween(0, 128),
+			Optional:      true,
+			Computed:      true,
 			ConflictsWith: []string{"comment"},
 		},
 		"default_root_object": {
