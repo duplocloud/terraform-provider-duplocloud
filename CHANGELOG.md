@@ -1,3 +1,8 @@
+## 2024-07-17
+
+### Enhanced
+- Added `force_delete` option to ECR resource, allowing forced deletion of ECR repositories in DuploCloud provider.
+
 ## 2024-04-29
 
 ### Fixed
