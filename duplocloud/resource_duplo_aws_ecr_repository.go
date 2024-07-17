@@ -61,6 +61,12 @@ func duploAwsEcrRepositorySchema() map[string]*schema.Schema {
 			Computed:    true,
 			Optional:    true,
 		},
+		"force_delete": {
+			Description: "Whether to force delete the repository on destroy operations",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 	}
 }
 
@@ -142,13 +148,14 @@ func resourceAwsEcrRepositoryUpdate(ctx context.Context, d *schema.ResourceData,
 func resourceAwsEcrRepositoryDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	tenantID, name, err := parseAwsEcrRepositoryIdParts(id)
+	forceDelete := d.Get("force_delete").(bool)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	log.Printf("[TRACE] resourceAwsEcrRepositoryDelete(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	clientErr := c.AwsEcrRepositoryDelete(tenantID, name)
+	clientErr := c.AwsEcrRepositoryDelete(tenantID, name, forceDelete)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil
