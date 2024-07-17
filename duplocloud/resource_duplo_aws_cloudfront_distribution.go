@@ -1042,7 +1042,12 @@ func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData) *duplosdk.Dup
 		PriceClass:           &duplosdk.DuploStringValue{Value: d.Get("price_class").(string)},
 		WebACLId:             d.Get("web_acl_id").(string),
 	}
-	distributionConfig.Comment = d.Get("name").(string)
+	if v, ok := d.GetOk("name"); ok {
+		distributionConfig.Comment = v.(string)
+	} else if v, ok := d.GetOk("comment"); ok {
+		distributionConfig.Comment = v.(string)
+	}
+
 	if v, ok := d.GetOk("logging_config"); ok {
 		distributionConfig.Logging = expandLoggingConfig(v.([]interface{})[0].(map[string]interface{}))
 	} else {
