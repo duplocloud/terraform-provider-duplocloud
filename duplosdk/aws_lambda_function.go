@@ -287,15 +287,15 @@ func (c *Client) LambdaPermissionGet(tenantID string, functionName string) (*[]D
 	return &rp, err
 }
 
-type LambdaPermissionConfiguration struct {
+type DuploLambdaPermissionConfiguration struct {
 	LastUpdateStatus DuploStringValue `json:"LastUpdateStatus"`
 }
-type LambdaPermission struct {
-	Configuration LambdaPermissionConfiguration `json:"Configuration"`
+type DuploLambdaPermission struct {
+	Configuration DuploLambdaPermissionConfiguration `json:"Configuration"`
 }
 
-func (c *Client) LambdaStatusCheck(tenantID string, functionName string) (*LambdaPermission, ClientError) {
-	rp := LambdaPermission{}
+func (c *Client) LambdaStatusCheck(tenantID string, functionName string) (*DuploLambdaPermission, ClientError) {
+	rp := DuploLambdaPermission{}
 	err := c.getAPI(
 		fmt.Sprintf("LambdaStatusCheck(%s, %s)", tenantID, functionName),
 		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s", tenantID, functionName),
