@@ -287,8 +287,11 @@ func (c *Client) LambdaPermissionGet(tenantID string, functionName string) (*[]D
 	return &rp, err
 }
 
-type LambdaPermission struct {
+type LambdaPermissionConfiguration struct {
 	LastUpdateStatus DuploStringValue `json:"LastUpdateStatus"`
+}
+type LambdaPermission struct {
+	Configuration LambdaPermissionConfiguration `json:"Configuration"`
 }
 
 func (c *Client) LambdaStatusCheck(tenantID string, functionName string) (*LambdaPermission, ClientError) {

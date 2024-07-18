@@ -782,8 +782,8 @@ func lambdaWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID stri
 			rp, err := c.LambdaStatusCheck(tenantID, name)
 			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
 			status := "pending"
-			if err == nil {
-				if rp.LastUpdateStatus.Value == "Successful" {
+			if err == nil && rp != nil {
+				if rp.Configuration.LastUpdateStatus.Value == "Successful" {
 					status = "ready"
 				} else {
 					status = "pending"
