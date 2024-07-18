@@ -661,14 +661,18 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 	rq.Environment = expandAwsLambdaEnvironment(environment)
 
 	err = c.LambdaFunctionUpdateConfiguration(tenantID, &rq)
-
+	if err != nil {
+		return err
+	}
 	ctx := context.Background()
 
 	err = lambdaWaitUntilReady(ctx, c, tenantID, rq.FunctionName, d.Timeout("update"))
-
+	if err != nil {
+		return err
+	}
 	// TODO: Wait for the changes to be applied.
 	log.Printf("[TRACE] updateAwsLambdaFunctionConfig(%s): end", name)
-	return err
+	return nil
 }
 
 func mapImageConfig(d *schema.ResourceData, rq *duplosdk.DuploLambdaConfigurationRequest) error {
