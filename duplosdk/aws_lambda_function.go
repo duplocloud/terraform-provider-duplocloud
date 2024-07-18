@@ -51,6 +51,7 @@ type DuploLambdaConfiguration struct {
 	EphemeralStorage *DuploLambdaEphemeralStorage `json:"EphemeralStorage,omitempty"`
 	DeadLetterConfig *DuploDeadLetterConfig       `json:"DeadLetterConfig,omitempty"`
 	Architectures    *[]string                    `json:"Architectures,omitempty"`
+	LastUpdateStatus DuploStringValue             `json:"LastUpdateStatus"`
 }
 
 // DuploLambdaCode is a Duplo SDK object that represents a lambda function's code.
@@ -285,4 +286,16 @@ func (c *Client) LambdaPermissionGet(tenantID string, functionName string) (*[]D
 		return nil, err
 	}
 	return &rp, err
+}
+
+func (c *Client) LambdaStatusCheck(tenantID string, functionName string) (*DuploLambdaFunction, ClientError) {
+	rp := DuploLambdaFunction{}
+	err := c.getAPI(
+		fmt.Sprintf("LambdaStatusCheck(%s, %s)", tenantID, functionName),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s", tenantID, functionName),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
 }

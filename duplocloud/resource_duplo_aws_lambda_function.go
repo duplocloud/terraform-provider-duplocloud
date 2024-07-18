@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -455,6 +456,8 @@ func resourceAwsLambdaFunctionUpdate(ctx context.Context, d *schema.ResourceData
 		}
 	}
 
+	//wait for update
+
 	// Optionally update lambda function code.
 	if needsCode {
 		err = updateAwsLambdaFunctionCode(tenantID, name, d, c)
@@ -658,10 +661,18 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 	rq.Environment = expandAwsLambdaEnvironment(environment)
 
 	err = c.LambdaFunctionUpdateConfiguration(tenantID, &rq)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
 
+	err = lambdaWaitUntilReady(ctx, c, tenantID, rq.FunctionName, d.Timeout("update"))
+	if err != nil {
+		return err
+	}
 	// TODO: Wait for the changes to be applied.
 	log.Printf("[TRACE] updateAwsLambdaFunctionConfig(%s): end", name)
-	return err
+	return nil
 }
 
 func mapImageConfig(d *schema.ResourceData, rq *duplosdk.DuploLambdaConfigurationRequest) error {
@@ -761,4 +772,31 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 		d.HasChange("ephemeral_storage") ||
 		d.HasChange("image_config") ||
 		d.HasChange("dead_letter_config")
+}
+
+func lambdaWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.LambdaStatusCheck(tenantID, name)
+			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
+			status := "pending"
+			if err == nil && rp != nil {
+				if rp.Configuration.LastUpdateStatus.Value == "Successful" {
+					status = "ready"
+				} else {
+					status = "pending"
+				}
+			}
+
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] lambdaWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
