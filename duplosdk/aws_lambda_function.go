@@ -297,5 +297,8 @@ func (c *Client) LambdaStatusCheck(tenantID string, functionName string) (*Lambd
 		fmt.Sprintf("LambdaStatusCheck(%s, %s)", tenantID, functionName),
 		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s", tenantID, functionName),
 		&rp)
-	return &rp, err
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
 }
