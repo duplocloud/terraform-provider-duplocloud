@@ -288,10 +288,6 @@ func (c *Client) LambdaPermissionGet(tenantID string, functionName string) (*[]D
 	return &rp, err
 }
 
-type DuploLambdaPermissionConfiguration struct {
-	LastUpdateStatus DuploStringValue `json:"LastUpdateStatus"`
-}
-
 func (c *Client) LambdaStatusCheck(tenantID string, functionName string) (*DuploLambdaFunction, ClientError) {
 	rp := DuploLambdaFunction{}
 	err := c.getAPI(
