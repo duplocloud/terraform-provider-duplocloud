@@ -417,6 +417,10 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s lambda function '%s': %s", tenantID, name, err)
 	}
+	err = lambdaWaitUntilReady(ctx, c, tenantID, rq.FunctionName, d.Timeout("create"))
+	if err != nil {
+		return diag.Errorf(err.Error())
+	}
 
 	// Wait for Duplo to be able to return the cluster's details.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
