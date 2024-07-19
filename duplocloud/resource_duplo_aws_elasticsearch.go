@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -95,7 +96,7 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Description: "The storage volume size, in GB, for the ElasticSearch instance.",
 			Type:        schema.TypeInt,
 			Optional:    true,
-			ForceNew:    true,
+			//ForceNew:    true,
 		},
 		"ebs_options": {
 			Type:     schema.TypeList,
@@ -301,6 +302,9 @@ func resourceDuploAwsElasticSearch() *schema.Resource {
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: awsElasticSearchSchema(),
+		CustomizeDiff: customdiff.All(
+			validateEBSStorage,
+		),
 	}
 }
 
@@ -399,6 +403,13 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 			VolumeSize: size.(int),
 		}
 	}
+	//if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.")) && (duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
+	//	duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
+	//		VolumeSize: 20,
+	//	}
+	//
+	//}
+
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 	id := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
@@ -591,6 +602,18 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 			// Require a zone to be selected, just like the UI
 			return diag.Errorf("Invalid ElasticSearch domain '%s': vpc_options.subnet_ids or selected_zone must be set", id)
 		}
+	}
+	//	if size, ok := d.GetOk("storage_size"); ok {
+	//		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
+	//			VolumeSize: size.(int),
+	//		}
+	//	}
+
+	if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.")) && (duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
+		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
+			VolumeSize: 20,
+		}
+
 	}
 
 	// Post the object to Duplo
@@ -875,4 +898,18 @@ func awsElasticSearchDomainWaitUntilDeleted(ctx context.Context, c *duplosdk.Cli
 	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilDeleted (%s/%s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func validateEBSStorage(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	clusterConfig := diff.Get("cluster_config").([]interface{})
+	storage := diff.Get("storage_size").(int)
+	if len(clusterConfig) == 0 {
+		return nil
+	}
+	mp := clusterConfig[0].(map[string]interface{})
+	instanceType := mp["instance_type"].(string)
+	if (!strings.Contains(instanceType, "im4gn.") && !strings.Contains(instanceType, "i3.")) && (storage == 0) {
+		return fmt.Errorf("storage_size cannot be 0 for non ebs storage instance_type (im4gn./i3.)")
+	}
+	return nil
 }
