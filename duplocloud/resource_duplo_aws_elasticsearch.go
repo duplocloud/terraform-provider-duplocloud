@@ -403,12 +403,6 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 			VolumeSize: size.(int),
 		}
 	}
-	//if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.")) && (duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
-	//	duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
-	//		VolumeSize: 20,
-	//	}
-	//
-	//}
 
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
@@ -603,11 +597,6 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 			return diag.Errorf("Invalid ElasticSearch domain '%s': vpc_options.subnet_ids or selected_zone must be set", id)
 		}
 	}
-	//	if size, ok := d.GetOk("storage_size"); ok {
-	//		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
-	//			VolumeSize: size.(int),
-	//		}
-	//	}
 
 	if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.")) && (duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
 		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
