@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -66,6 +67,13 @@ func dataSourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m inter
 				break
 			}
 		}
+	}
+	access, err := c.SystemSettingGet("AllowReadonlyK8sSecrets")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if access != nil && strings.ToLower(access.Value) == "true" {
+		usrResp.IsReadOnly = false
 	}
 	rp, err := c.K8SecretGet(tenantID, name)
 	if err != nil {

@@ -54,7 +54,7 @@ func resourcePlanWafV2() *schema.Resource {
 				Description: "A complete list of wafs for this plan, even ones not being managed by this resource.",
 				Type:        schema.TypeList,
 				Computed:    true,
-				Elem:        PlanCertificateSchema(),
+				Elem:        wafSchema(),
 			},
 			"specified_wafs": {
 				Description: "A list of wafs names being managed by this resource.",
@@ -72,7 +72,6 @@ func wafSchema() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"arn": {
 				Type:     schema.TypeString,
@@ -121,7 +120,7 @@ func resourcePlanWafReadV2(ctx context.Context, d *schema.ResourceData, m interf
 	d.Set("wafs", flattenPlanWafs(duplo))
 
 	// Build a list of current state, to replace the user-supplied settings.
-	if v, ok := getAsStringArray(d, "specified_certificates"); ok && v != nil {
+	if v, ok := getAsStringArray(d, "specified_wafs"); ok && v != nil {
 		d.Set("waf", flattenPlanWafs(selectPlanWaf(duplo, *v)))
 	}
 

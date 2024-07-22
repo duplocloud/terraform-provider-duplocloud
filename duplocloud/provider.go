@@ -154,6 +154,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_waf_v2":                     resourcePlanWafV2(),
 			"duplocloud_plan_waf":                        resourcePlanWaf(),
 			"duplocloud_plan_kms":                        resourcePlanKMS(),
+			"duplocloud_plan_kms_v2":                     resourcePlanKMSV2(),
 			"duplocloud_aws_apigateway_event":            resourceAwsApiGatewayEvent(),
 			"duplocloud_gcp_s3_bucket":                   resourceGCPS3Bucket(),
 		},
@@ -222,6 +223,8 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_waf_v2":                dataSourcePlanWafV2(),
 			"duplocloud_plan_kms":                   dataSourcePlanKMS(),
 			"duplocloud_plan_kms_key":               dataSourcePlanKMSList(),
+			"duplocloud_plan_kms_v2":                dataSourcePlanKMSV2(),
+			"duplocloud_plan_kms_key_v2":            dataSourcePlanKMSListV2(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
