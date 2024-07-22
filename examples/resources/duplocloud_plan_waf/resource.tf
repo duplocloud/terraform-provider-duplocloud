@@ -4,3 +4,4 @@ resource "duplocloud_plan_waf" "myplan" {
   waf_arn       = "WebAcl ARN"
   dashboard_url = "dashboard url"
 }
+ 
