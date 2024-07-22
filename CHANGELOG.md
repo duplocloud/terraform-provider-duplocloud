@@ -1,3 +1,8 @@
+## 2024-07-22
+
+### Enhanced
+- Added support for enabling/disabling metrics in ASG resources by introducing the `enabled_metrics` property in the ASG profile schema.
+
 ## 2024-04-29
 
 ### Fixed
