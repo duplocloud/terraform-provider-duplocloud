@@ -63,5 +63,5 @@ Optional:
 Read-Only:
 
 - `arn` (String)
-- `id` (String)
+- `dashboard_url` (String)
 - `name` (String)
