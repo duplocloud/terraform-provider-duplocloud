@@ -1,3 +1,9 @@
+## 2024-07-22
+
+### Added
+- Introduced support for managing AWS Lambda function event invoke configurations in the DuploCloud provider.
+- Added a new resource `duplocloud_aws_lambda_function_event_config` to handle asynchronous invocation settings for AWS Lambda functions.
+
 ## 2024-04-29
 
 ### Fixed
