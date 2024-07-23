@@ -31,9 +31,9 @@ func planWafSchema(single bool) map[string]*schema.Schema {
 
 func dataSourcePlanWafs() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_plans` retrieves a list of plans from Duplo.",
-
-		ReadContext: dataSourcePlanWafsRead,
+		Description:        "`duplocloud_plan_wafs` retrieves a list of web acls from Duplo.",
+		DeprecationMessage: "duplocloud_plan_wafs is deprecated. Use duplocloud_plan_wafs_v2 instead.",
+		ReadContext:        dataSourcePlanWafsRead,
 		Schema: map[string]*schema.Schema{
 			"plan_id": {
 				Description: "The ID of the plan for waf.",
@@ -54,7 +54,8 @@ func dataSourcePlanWafs() *schema.Resource {
 
 func dataSourcePlanWaf() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_plan_waf` retrieves details of a plan in Duplo.",
+		Description:        "`duplocloud_plan_waf` retrieves details of a web acl in Duplo.",
+		DeprecationMessage: "duplocloud_plan_waf is deprecated. Use duplocloud_plan_waf_v2 instead.",
 
 		ReadContext: dataSourcePlanWafRead,
 		Schema: map[string]*schema.Schema{
