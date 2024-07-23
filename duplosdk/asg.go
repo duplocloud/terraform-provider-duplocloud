@@ -35,6 +35,7 @@ type DuploAsgProfile struct {
 	UseSpotInstances    bool                               `json:"UseSpotInstances,omitempty"`
 	Volumes             *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
 	Zone                int                                `json:"Zone"`
+	EnabledMetrics      *[]string                          `json:"EnabledMetrics,omitempty"`
 }
 
 type DuploAsgProfileDeleteReq struct {

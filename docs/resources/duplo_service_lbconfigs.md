@@ -41,6 +41,14 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
     lb_type          = 1 # Application load balancer
     port             = "80"
     protocol         = "http"
+
+    health_check {
+      healthy_threshold   = 4
+      unhealthy_threshold = 4
+      timeout             = 50
+      interval            = 30
+      http_success_codes  = "200-399"
+    }
   }
 }
 ```
@@ -92,6 +100,7 @@ Optional:
 - `external_port` (Number) The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.
 - `external_traffic_policy` (String) Only for K8S Node Port (`lb_type = 4`) or load balancers in Kubernetes.  Set the kubernetes service `externalTrafficPolicy` attribute.
 - `extra_selector_label` (Block List) Only for K8S services or load balancers in Kubernetes.  Sets an additional selector label to narrow which pods can receive traffic. (see [below for nested schema](#nestedblock--lbconfigs--extra_selector_label))
+- `health_check` (Block List, Max: 1) Health Check configuration block. (see [below for nested schema](#nestedblock--lbconfigs--health_check))
 - `health_check_url` (String) The health check URL to associate with this load balancer configuration.
 - `host_name` (String) (Azure Only) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).
 - `is_internal` (Boolean) Whether or not to create an internal load balancer.
@@ -119,6 +128,19 @@ Required:
 
 - `key` (String)
 - `value` (String)
+
+
+<a id="nestedblock--lbconfigs--health_check"></a>
+### Nested Schema for `lbconfigs.health_check`
+
+Optional:
+
+- `grpc_success_codes` (String) Response codes to use when checking for a healthy responses from a target. You can specify multiple values (for example, "0,12" for GRPC) or a range of values (for example, "0-99"). Required for GRPC ALB. Only applies to Application Load Balancers (i.e., GRPC) not Network Load Balancers (i.e., TCP).
+- `healthy_threshold` (Number) Number of consecutive health checks successes required before considering an unhealthy target healthy. Defaults to `3`.
+- `http_success_codes` (String) Response codes to use when checking for a healthy responses from a target. You can specify multiple values (for example, "200,202" for HTTP(s)) or a range of values (for example, "200-299"). Required for HTTP/HTTPS ALB. Only applies to Application Load Balancers (i.e., HTTP/HTTPS) not Network Load Balancers (i.e., TCP).
+- `interval` (Number) Approximate amount of time, in seconds, between health checks of an individual target. Minimum value 5 seconds, Maximum value 300 seconds. Defaults to `30`.
+- `timeout` (Number) Amount of time, in seconds, during which no response means a failed health check.
+- `unhealthy_threshold` (Number) Number of consecutive health check failures required before considering the target unhealthy. Defaults to `3`.
 
 
 
