@@ -122,7 +122,7 @@ func resourcePlanKMSReadV2(ctx context.Context, d *schema.ResourceData, m interf
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_kms_keys"); ok && v != nil {
-		d.Set("certificate", flattenPlanKmsKeysV2(selectPlanKms(duplo, *v)))
+		d.Set("kms", flattenPlanKmsKeysV2(selectPlanKms(duplo, *v)))
 	}
 
 	log.Printf("[TRACE] resourcePlanCertificatesRead(%s): end", planID)
@@ -144,23 +144,23 @@ func flattenPlanKmsKeysV2(list *[]duplosdk.DuploPlanKmsKeyInfo) []interface{} {
 	return result
 }
 
-func isKMSV2UpdateOrCreateable(list []duplosdk.DuploPlanKmsKeyInfo, reqs []duplosdk.DuploPlanKmsKeyInfo) (bool, string) {
-	nameMap := make(map[string]bool)
-	idMap := make(map[string]bool)
-	for _, val := range list {
-		nameMap[val.KeyName] = true
-		idMap[val.KeyId] = true
-	}
-
-	for _, rq := range reqs {
-		if nameMap[rq.KeyName] {
-			return false, "name : " + rq.KeyName
-		} else if idMap[rq.KeyId] {
-			return false, "id : " + rq.KeyName
-		}
-	}
-	return true, ""
-}
+//	func isKMSV2UpdateOrCreateable(list []duplosdk.DuploPlanKmsKeyInfo, reqs []duplosdk.DuploPlanKmsKeyInfo) (bool, string) {
+//		nameMap := make(map[string]bool)
+//		idMap := make(map[string]bool)
+//		for _, val := range list {
+//			nameMap[val.KeyName] = true
+//			idMap[val.KeyId] = true
+//		}
+//
+//		for _, rq := range reqs {
+//			if nameMap[rq.KeyName] {
+//				return false, "name : " + rq.KeyName
+//			} else if idMap[rq.KeyId] {
+//				return false, "id : " + rq.KeyName
+//			}
+//		}
+//		return true, ""
+//	}
 func resourcePlanKMSCreateOrUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// Parse the identifying attributes
 	planID := d.Get("plan_id").(string)
@@ -170,13 +170,13 @@ func resourcePlanKMSCreateOrUpdateV2(ctx context.Context, d *schema.ResourceData
 	rp, _ := c.PlanKMSGetList(planID)
 	previous, desired := getPlanKmsChange(rp, d)
 
-	if rp != nil {
-		//	previous, desired := getPlanKmsChange(rp, d)
-		createable, errStr := isKMSV2UpdateOrCreateable(*rp, *desired)
-		if !createable {
-			return diag.Errorf("Kms key with %s  already exist for plan %s", errStr, planID)
-		}
-	}
+	//if rp != nil {
+	//	//	previous, desired := getPlanKmsChange(rp, d)
+	//	createable, errStr := isKMSV2UpdateOrCreateable(*rp, *desired)
+	//	if !createable {
+	//		return diag.Errorf("Kms key with %s  already exist for plan %s", errStr, planID)
+	//	}
+	//}
 
 	// Apply the changes via Duplo
 	var err duplosdk.ClientError
@@ -263,7 +263,7 @@ func getPlanKmsChange(all *[]duplosdk.DuploPlanKmsKeyInfo, d *schema.ResourceDat
 	}
 
 	// Track the change
-	d.Set("specified_kms_key", specified)
+	d.Set("specified_kms_keys", specified)
 
 	return
 }

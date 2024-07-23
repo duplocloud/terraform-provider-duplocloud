@@ -91,6 +91,15 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		ForceNew:    true,
 	}
 
+	awsASGSchema["enabled_metrics"] = &schema.Schema{
+		Description: "List of metrics to collect for the ASG",
+		Type:        schema.TypeList,
+		Optional:    true,
+		Elem: &schema.Schema{
+			Type: schema.TypeString,
+		},
+	}
+
 	return awsASGSchema
 }
 
@@ -369,6 +378,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.CustomDataTags))
+	d.Set("enabled_metrics", duplo.EnabledMetrics)
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
@@ -382,7 +392,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 }
 
 func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
-	return &duplosdk.DuploAsgProfile{
+	asgProfile := &duplosdk.DuploAsgProfile{
 		TenantId:            d.Get("tenant_id").(string),
 		AccountName:         d.Get("user_account").(string),
 		FriendlyName:        d.Get("friendly_name").(string),
@@ -411,6 +421,16 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		UseSpotInstances:    d.Get("use_spot_instances").(bool),
 		MaxSpotPrice:        d.Get("max_spot_price").(string),
 	}
+
+	if v, ok := d.GetOk("enabled_metrics"); ok && len(v.([]interface{})) > 0 {
+		metricList := make([]string, len(v.([]interface{})))
+		for i, val := range v.([]interface{}) {
+			metricList[i] = val.(string)
+		}
+		asgProfile.EnabledMetrics = &metricList
+	}
+
+	return asgProfile
 }
 
 func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantID string, minInstanceCount int, asgFriendlyName string, timeout time.Duration) error {
@@ -471,7 +491,8 @@ func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("instance_count") ||
 		d.HasChange("min_instance_count") ||
 		d.HasChange("max_instance_count") ||
-		d.HasChange("friendly_name")
+		d.HasChange("friendly_name") ||
+		d.HasChange("enabled_metrics")
 }
 
 func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags string) {

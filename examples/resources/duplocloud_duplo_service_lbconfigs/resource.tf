@@ -23,5 +23,13 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
     lb_type          = 1 # Application load balancer
     port             = "80"
     protocol         = "http"
+
+    health_check {
+      healthy_threshold   = 4
+      unhealthy_threshold = 4
+      timeout             = 50
+      interval            = 30
+      http_success_codes  = "200-399"
+    }
   }
 }
