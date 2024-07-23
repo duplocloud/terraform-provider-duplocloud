@@ -22,7 +22,7 @@ description: |-
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `secrets` (List of Object) (see [below for nested schema](#nestedatt--secrets))
+- `secrets` (List of Object, Sensitive) (see [below for nested schema](#nestedatt--secrets))
 
 <a id="nestedatt--secrets"></a>
 ### Nested Schema for `secrets`
