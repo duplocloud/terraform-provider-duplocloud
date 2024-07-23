@@ -1,3 +1,9 @@
+## 2024-07-12
+
+### Enhanced
+- Added support for advanced health check configurations in load balancer configurations for Duplo services, including parameters for thresholds, timeouts, intervals, and success codes.
+- Added support for enabling/disabling metrics in ASG resources by introducing the `enabled_metrics` property in the ASG profile schema.
+
 ## 2024-04-29
 
 ### Fixed
