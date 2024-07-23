@@ -35,6 +35,7 @@ Read-Only:
 - `can_scale_from_zero` (Boolean)
 - `capacity` (String)
 - `cloud` (Number)
+- `enabled_metrics` (List of String)
 - `encrypt_disk` (Boolean)
 - `friendly_name` (String)
 - `fullname` (String)

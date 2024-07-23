@@ -16,7 +16,7 @@ type DuploPlan struct {
 	KmsKeyInfos       *[]DuploPlanKmsKeyInfo      `json:"KmsKeyInfos,omitempty"`
 	MetaData          *[]DuploKeyStringValue      `json:"MetaData,omitempty"`
 	PlanConfigData    *[]DuploCustomDataEx        `json:"PlanConfigData,omitempty"`
-	WafInfos          *[]DuploPlanWafInfo         `json:"WafInfos,omitempty"`
+	WafInfos          *[]DuploPlanWAF             `json:"WafInfos,omitempty"`
 	K8ClusterConfigs  *[]DuploPlanK8ClusterConfig `json:"K8ClusterConfigs,omitempty"`
 	CloudPlatforms    *[]DuploPlanCloudPlatform   `json:"CloudPlatforms,omitempty"`
 	DnsConfig         *DuploPlanDnsConfig         `json:"DnsConfig,omitempty"`
@@ -119,7 +119,7 @@ func (c *Client) PlanWAFGet(planID, name string) (*DuploPlanWAF, ClientError) {
 	return &w, nil
 }
 
-func (c *Client) PlanWAF(planID string, wafs *DuploPlanWAF) ClientError {
+func (c *Client) PlanWAF(planID string, wafs DuploPlanWAF) ClientError {
 	rp := &DuploPlanWAF{}
 	return c.postAPI(
 		fmt.Sprintf("PlanWAF(%s)", planID),
@@ -267,9 +267,9 @@ func (c *Client) PlanSetCertificate(planID string, cert DuploPlanCertificate) Cl
 func (c *Client) PlanCreateKMSKey(planID string, kms DuploPlanKmsKeyInfo) ClientError {
 	var rp DuploPlanKmsKeyInfo
 	return c.postAPI(
-		fmt.Sprintf("PlanCreateKMSKey(%s, %s)", planID, kms.KeyName),
+		fmt.Sprintf("PlanCreateKMSKey(%s)", planID),
 		fmt.Sprintf("v3/admin/plans/%s/kmskeys", planID),
-		kms,
+		&kms,
 		&rp)
 }
 
@@ -555,4 +555,71 @@ func (c *Client) PlanSetMetadata(planID string, item DuploKeyStringValue) Client
 		fmt.Sprintf("v3/admin/plans/%s/metadata", planID),
 		&item,
 		&rp)
+}
+
+func (c *Client) PlanReplaceKmsKeys(planID string, existing, newKeys *[]DuploPlanKmsKeyInfo) ClientError {
+
+	return c.PlanChangeKmsKeys(planID, existing, newKeys)
+}
+
+// PlanChangeCertificates changes plan certificates via the Duplo API, using the supplied
+// oldConfig and newConfig, for the given planID.
+func (c *Client) PlanChangeKmsKeys(planID string, oldKeys, newKeys *[]DuploPlanKmsKeyInfo) ClientError {
+
+	// Next, update all certs that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if newKeys != nil {
+		for _, pc := range *newKeys {
+			if err := c.PlanCreateKMSKey(planID, pc); err != nil {
+				return err
+			}
+			present[pc.KeyName] = struct{}{}
+		}
+	}
+
+	// Finally, delete any certs that are no longer present.
+	if oldKeys != nil {
+		for _, pc := range *oldKeys {
+			if _, ok := present[pc.KeyName]; !ok {
+				if err := c.PlanKMSDelete(planID, pc.KeyName); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) PlanReplaceWafs(planID string, existing, newCerts *[]DuploPlanWAF) ClientError {
+	return c.PlanChangeWafs(planID, existing, newCerts)
+}
+
+// PlanChangeWafs changes plan wafs via the Duplo API, using the supplied
+// oldConfig and newConfig, for the given planID.
+func (c *Client) PlanChangeWafs(planID string, oldWafs, newWafs *[]DuploPlanWAF) ClientError {
+
+	// Next, update all certs that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if newWafs != nil {
+		for _, pc := range *newWafs {
+			if err := c.PlanWAF(planID, pc); err != nil {
+				return err
+			}
+			present[pc.WebAclName] = struct{}{}
+		}
+	}
+
+	// Finally, delete any certs that are no longer present.
+	if oldWafs != nil {
+		for _, pc := range *oldWafs {
+			if _, ok := present[pc.WebAclName]; !ok {
+				if err := c.PlanWafDelete(planID, pc.WebAclName); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }
