@@ -44,11 +44,21 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"comment": {
-			Description:  "Any comments you want to include about the distribution.",
-			Type:         schema.TypeString,
-			Optional:     true,
-			Computed:     true,
-			ValidateFunc: validation.StringLenBetween(0, 128),
+			Description:   "Any comments you want to include about the distribution.",
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			ValidateFunc:  validation.StringLenBetween(0, 128),
+			Deprecated:    "comment has been deprecated instead use name",
+			ConflictsWith: []string{"name"},
+		},
+		"name": {
+			Description:   "Name of the distribution",
+			Type:          schema.TypeString,
+			ValidateFunc:  validation.StringLenBetween(0, 128),
+			Optional:      true,
+			Computed:      true,
+			ConflictsWith: []string{"comment"},
 		},
 		"default_root_object": {
 			Description: "The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.",
@@ -866,7 +876,6 @@ func resourceAwsCloudfrontDistributionRead(ctx context.Context, d *schema.Resour
 	d.Set("arn", duplo.Distribution.ARN)
 	d.Set("tenant_id", tenantID)
 	d.Set("hosted_zone_id", duplosdk.CloudFrontRoute53ZoneID)
-
 	log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end", tenantID, cfdId)
 	return nil
 }
@@ -1021,8 +1030,9 @@ func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData) *duplosdk.Dup
 	distributionConfig := &duplosdk.DuploAwsCloudfrontDistributionConfig{
 		DefaultCacheBehavior: expandAwsCloudfrontDistributionDefaultCacheBehavior(d.Get("default_cache_behavior").([]interface{})[0].(map[string]interface{})),
 
-		CacheBehaviors:       expandAwsCloudfrontDistributionCacheBehaviorAll(d.Get("ordered_cache_behavior").([]interface{})),
-		Comment:              d.Get("comment").(string),
+		CacheBehaviors: expandAwsCloudfrontDistributionCacheBehaviorAll(d.Get("ordered_cache_behavior").([]interface{})),
+		Comment:        d.Get("comment").(string),
+
 		CustomErrorResponses: expandCustomErrorResponses(d.Get("custom_error_response").(*schema.Set)),
 		DefaultRootObject:    d.Get("default_root_object").(string),
 		Enabled:              d.Get("enabled").(bool),
@@ -1031,6 +1041,11 @@ func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData) *duplosdk.Dup
 		Origins:              expandAwsCloudfrontDistributionOrigins(d.Get("origin").(*schema.Set)),
 		PriceClass:           &duplosdk.DuploStringValue{Value: d.Get("price_class").(string)},
 		WebACLId:             d.Get("web_acl_id").(string),
+	}
+	if v, ok := d.GetOk("name"); ok {
+		distributionConfig.Comment = v.(string)
+	} else if v, ok := d.GetOk("comment"); ok {
+		distributionConfig.Comment = v.(string)
 	}
 
 	if v, ok := d.GetOk("logging_config"); ok {
@@ -1609,6 +1624,7 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 
 	if duplo.Comment != "" {
 		d.Set("comment", duplo.Comment)
+		d.Set("name", duplo.Comment)
 	}
 
 	if duplo.DefaultRootObject != "" {
