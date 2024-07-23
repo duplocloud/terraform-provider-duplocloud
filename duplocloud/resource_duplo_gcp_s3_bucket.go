@@ -139,18 +139,6 @@ func resourceGCPS3BucketRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.Errorf("resourceGCPS3BucketRead: Unable to retrieve s3 bucket (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 
-	// **** fallback on older api ****
-	if err != nil && err.PossibleMissingAPI() {
-		duplo, err = c.TenantGetS3BucketSettings(tenantID, name)
-		if duplo == nil {
-			d.SetId("") // object missing
-			return nil
-		}
-		if err != nil {
-			return diag.Errorf("resourceGCPS3BucketRead: Unable to retrieve s3 bucket settings (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
-		}
-	}
-
 	// Set simple fields first.
 	resourceGcpS3BucketSetData(d, tenantID, name, duplo)
 
@@ -214,11 +202,11 @@ func resourceGCPS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m in
 	name := d.Get("name").(string)
 
 	// Create the request object.
-	duploObject := duplosdk.DuploS3BucketSettingsRequest{
+	duploObject := duplosdk.DuploGCPBucket{
 		Name: fullname,
 	}
 
-	errName := fillS3BucketRequest(&duploObject, d)
+	errName := fillGCPBucketRequest(&duploObject, d)
 	if errName != nil {
 		return diag.FromErr(errName)
 	}
@@ -273,7 +261,7 @@ func resourceGcpS3BucketSetData(d *schema.ResourceData, tenantID string, name st
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("fullname", duplo.Name)
-	d.Set("domain_name", duplo.SelfLink)
+	d.Set("domain_name", duplo.DomainName)
 	d.Set("enable_versioning", duplo.EnableVersioning)
 	d.Set("allow_public_access", duplo.AllowPublicAccess)
 	d.Set("default_encryption", []map[string]interface{}{{
