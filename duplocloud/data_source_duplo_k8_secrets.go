@@ -25,6 +25,7 @@ func dataSourceK8Secrets() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: k8sSecretSchemaComputed(),
 				},
+				Sensitive: true,
 			},
 		},
 	}
@@ -85,9 +86,9 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 		}
 		// Next, set the JSON encoded strings.
 		toJsonStringField("secret_data", duplo.SecretData, sc)
-
 		list = append(list, sc)
 	}
+	log.Printf("[TRACE] K8SecretGetList(%s): received response: %s", tenantID, list)
 
 	if err := d.Set("secrets", list); err != nil {
 		return diag.FromErr(err)
