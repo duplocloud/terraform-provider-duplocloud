@@ -25,6 +25,7 @@ func dataSourceK8Secrets() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: k8sSecretSchemaComputed(),
 				},
+				Sensitive: true,
 			},
 		},
 	}
