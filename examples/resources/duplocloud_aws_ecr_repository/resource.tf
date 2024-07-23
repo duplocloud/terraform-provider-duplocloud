@@ -8,5 +8,4 @@ resource "duplocloud_aws_ecr_repository" "test-ecr" {
   name                      = "test-ecr"
   enable_scan_image_on_push = true
   enable_tag_immutability   = true
-  force_delete              = false
 }
