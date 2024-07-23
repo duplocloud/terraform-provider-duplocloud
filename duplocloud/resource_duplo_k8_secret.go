@@ -223,6 +223,8 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret, re
 	// Finally, set the map
 	d.Set("secret_annotations", duplo.SecretAnnotations)
 	d.Set("secret_labels", duplo.SecretLabels)
+	log.Printf("[TRACE] K8SecretGetList(%s): received response: %s", duplo.TenantID, duplo)
+
 }
 
 func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
