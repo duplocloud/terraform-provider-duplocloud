@@ -16,11 +16,11 @@ func resourcePlanWaf() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_plan_waf` manages the list of waf's avaialble to a plan in Duplo.\n\n" +
 			"This resource allows you take control of individual waf's for a specific plan.",
-
-		ReadContext:   resourcePlanWafRead,
-		CreateContext: resourcePlanWafCreateOrUpdate,
-		UpdateContext: resourcePlanWafCreateOrUpdate,
-		DeleteContext: resourcePlanWafDelete,
+		DeprecationMessage: "duplocloud_plan_waf is deprecated. Use duplocloud_plan_waf_v2 instead.",
+		ReadContext:        resourcePlanWafRead,
+		CreateContext:      resourcePlanWafCreateOrUpdate,
+		UpdateContext:      resourcePlanWafCreateOrUpdate,
+		DeleteContext:      resourcePlanWafDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -90,14 +90,14 @@ func resourcePlanWafCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 		DashboardUrl: d.Get("dashboard_url").(string),
 	}
 
-	err := c.PlanWAF(planID, &rq)
+	err := c.PlanWAF(planID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating plan wafs for '%s': %s", planID, err)
 	}
 	id := planID + "/" + rq.WebAclName
 	d.SetId(id)
 
-	diags := resourcePlanConfigsRead(ctx, d, m)
+	diags := resourcePlanWafRead(ctx, d, m)
 	log.Printf("[TRACE] resourcePlanWafCreateOrUpdate(%s): end", planID)
 	return diags
 }

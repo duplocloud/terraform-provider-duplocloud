@@ -3,12 +3,12 @@
 page_title: "duplocloud_plan_wafs Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_plans retrieves a list of plans from Duplo.
+  duplocloud_plan_wafs retrieves a list of web acls from Duplo.
 ---
 
 # duplocloud_plan_wafs (Data Source)
 
-`duplocloud_plans` retrieves a list of plans from Duplo.
+`duplocloud_plan_wafs` retrieves a list of web acls from Duplo.
 
 
 
