@@ -93,6 +93,18 @@ type DuploS3Bucket struct {
 	Tags              *[]DuploKeyStringValue `json:"Tags,omitempty"`
 }
 
+type DuploGCPBucket struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-"`
+
+	Name                  string `json:"Name,omitempty"`
+	DomainName            string `json:"SelfLink,omitempty"`
+	Location              string `json:"Location,omitempty"`
+	EnableVersioning      bool   `json:"EnableVersioning,omitempty"`
+	AllowPublicAccess     bool   `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryptionType int    `json:"DefaultEncryptionType,omitempty"`
+}
+
 // DuploApplicationLB represents an AWS application load balancer resource for a Duplo tenant
 type DuploApplicationLB struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
@@ -571,8 +583,8 @@ func (c *Client) TenantGetV3S3Bucket(tenantID string, name string) (*DuploS3Buck
 	return &rp, err
 }
 
-func (c *Client) GCPTenantGetV3S3Bucket(tenantID string, name string) (*DuploS3Bucket, ClientError) {
-	rp := DuploS3Bucket{}
+func (c *Client) GCPTenantGetV3S3Bucket(tenantID string, name string) (*DuploGCPBucket, ClientError) {
+	rp := DuploGCPBucket{}
 	err := c.getAPI(fmt.Sprintf("GCPTenantGetV3S3Bucket(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, name),
 		&rp)
@@ -604,10 +616,10 @@ func (c *Client) TenantUpdateV3S3Bucket(tenantID string, duplo DuploS3BucketSett
 	return &rp, nil
 }
 
-func (c *Client) GCPTenantUpdateV3S3Bucket(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
+func (c *Client) GCPTenantUpdateV3S3Bucket(tenantID string, duplo DuploGCPBucket) (*DuploGCPBucket, ClientError) {
 	// Apply the settings via Duplo.
 	apiName := fmt.Sprintf("TenantUpdateV3S3Bucket(%s, %s)", tenantID, duplo.Name)
-	rp := DuploS3Bucket{}
+	rp := DuploGCPBucket{}
 	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, duplo.Name), &duplo, &rp)
 	if err != nil {
 		return nil, err

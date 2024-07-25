@@ -470,3 +470,33 @@ func fillS3BucketRequest(duploObject *duplosdk.DuploS3BucketSettingsRequest, d *
 	log.Printf("[TRACE] fillS3BucketRequest ******** end")
 	return nil
 }
+
+func fillGCPBucketRequest(duploObject *duplosdk.DuploGCPBucket, d *schema.ResourceData) error {
+	log.Printf("[TRACE] fillS3BucketRequest ******** start")
+
+	// Set the object versioning
+	if v, ok := d.GetOk("enable_versioning"); ok && v != nil {
+		duploObject.EnableVersioning = v.(bool)
+	}
+
+	// Set the public access block.
+	if v, ok := d.GetOk("allow_public_access"); ok && v != nil {
+		duploObject.AllowPublicAccess = v.(bool)
+	}
+
+	// Set the default encryption.
+	defaultEncryption, err := getOptionalBlockAsMap(d, "default_encryption")
+	if err != nil {
+		return err
+	}
+	if v, ok := defaultEncryption["method"]; ok && v != nil {
+		duploObject.DefaultEncryptionType = decodeEncryption(v.(string))
+	}
+
+	if v, ok := d.GetOk("location"); ok && v != nil {
+		duploObject.Location = v.(string)
+	}
+
+	log.Printf("[TRACE] fillS3BucketRequest ******** end")
+	return nil
+}
