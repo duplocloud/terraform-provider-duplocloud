@@ -624,7 +624,7 @@ Not supported for july 2024 release
 		return diags
 	}
 */
-func updatePointInTimeRecovery(c *duplosdk.Client, d *schema.ResourceData, tenantID, fullname string) diag.Diagnostics {
+/*func updatePointInTimeRecovery(c *duplosdk.Client, d *schema.ResourceData, tenantID, fullname string) diag.Diagnostics {
 	if d.HasChange("is_point_in_time_recovery") {
 		targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
 		_, err := c.DynamoDBTableV2PointInRecovery(tenantID, fullname, targetPITRStatus)
@@ -648,7 +648,7 @@ func updateDeleteProtection(c *duplosdk.Client, d *schema.ResourceData, tenantID
 		}
 	}
 	return nil
-}
+}*/
 
 func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
@@ -1089,6 +1089,7 @@ func dynamodbWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID st
 	return err
 }
 
+/*
 func dynamodbWaitUntilGSIReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration, indexName string) error {
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
@@ -1251,7 +1252,8 @@ func globalIndexUpdateAction(c *duplosdk.Client, existing *duplosdk.DuploDynamoD
 	}
 	return nil
 }
-
+*/
+/* Uncomment after July 2024 release updation
 // shouldUpdateThroughput compares the DuploDynamoDBProvisionedThroughput of
 // the existing table and updated table. Returns true if a change is detected.
 func shouldUpdateThroughput(
@@ -1325,5 +1327,121 @@ func flattenDynoamoTag(tag []duplosdk.DuploKeyStringValue) []interface{} {
 	}
 	return output
 }
+*/
+//============================To be removed after july 2024 release uppdation
 
-//============================
+func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("name").(string)
+	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
+
+	c := m.(*duplosdk.Client)
+
+	// Expand the resource data into the SDK's DynamoDB table request struct.
+	//rq, err := expandDynamoDBTable(d)
+	//if err != nil {
+	//	return diag.FromErr(err)
+	//}
+
+	// Fetch the existing table for compairson
+	existing, err := c.DynamoDBTableGetV2(tenantID, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Updating Point In Time Recovery status
+	isPITREnabled := existing.PointInTimeRecoveryStatus == "ENABLED"
+	targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
+	if isPITREnabled != targetPITRStatus {
+		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, name, targetPITRStatus)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	//if setDeleteProtection(d) {
+	//	tableName := rq.TableName
+	//	status := rq.DeletionProtectionEnabled
+	//	rq = &duplosdk.DuploDynamoDBTableRequestV2{
+	//		DeletionProtectionEnabled: status,
+	//		TableName:                 tableName,
+	//	}
+	//	_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+	//	if err != nil {
+	//		e := "Error updating tenant %s DynamoDB table '%s': %s"
+	//		return diag.Errorf(e, tenantID, name, err)
+	//	}
+	//	return nil
+	//}
+	// Updating Global Secondary Indexes and Throughput
+	//if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) {
+	//	log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
+	//	_, err = c.DynamoDBTableUpdateV2(tenantID, rq)  //update api not supported in july 2024 release
+	//	if err != nil {
+	//		e := "Error updating tenant %s DynamoDB table '%s': %s"
+	//		return diag.Errorf(e, tenantID, name, err)
+	//	}
+	//}
+
+	// Generate the ID for the resource and set it.
+	id := fmt.Sprintf("%s/%s", tenantID, name)
+
+	err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("update"))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(id)
+
+	// wait until the cache instances to be healthy.
+	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
+		err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// Perform a read after update to sync state.
+	diags := resourceAwsDynamoDBTableReadV2(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsDynamoDBTableUpdateV2(%s, %s): end", tenantID, name)
+
+	return diags
+}
+
+func setDeleteProtection(d *schema.ResourceData) bool {
+	return d.HasChange("deletion_protection_enabled")
+}
+
+func shouldUpdateGSI(
+	table *duplosdk.DuploDynamoDBTableV2Response,
+	request *duplosdk.DuploDynamoDBTableRequestV2,
+) bool {
+	if table.GlobalSecondaryIndexes == nil || request.GlobalSecondaryIndexes == nil {
+		return true
+	}
+	if len(*table.GlobalSecondaryIndexes) != len(*request.GlobalSecondaryIndexes) {
+		return true
+	}
+
+	for i, aIndex := range *table.GlobalSecondaryIndexes {
+		bIndex := (*request.GlobalSecondaryIndexes)[i]
+
+		isDeepEqual := reflect.DeepEqual(
+			aIndex.ProvisionedThroughput,
+			bIndex.ProvisionedThroughput,
+		)
+		if aIndex.IndexName != bIndex.IndexName || !isDeepEqual {
+			return true
+		}
+	}
+
+	return false
+}
+
+func shouldUpdateThroughput(
+	table *duplosdk.DuploDynamoDBTableV2Response,
+	request *duplosdk.DuploDynamoDBTableRequestV2,
+) bool {
+	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
+}
