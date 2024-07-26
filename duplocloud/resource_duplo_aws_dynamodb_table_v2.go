@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"reflect"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -506,7 +505,7 @@ func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceD
 	return nil
 }
 
-func tagDynamoDBtTableV2(
+/*func tagDynamoDBtTableV2(
 	tenantId, name string,
 	rq *duplosdk.DuploDynamoDBTagResource,
 	m interface{},
@@ -518,7 +517,7 @@ func tagDynamoDBtTableV2(
 	}
 	return resp, nil
 }
-
+*/
 /*
 Not supported for july 2024 release
 
@@ -1409,6 +1408,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
+/*
 func setDeleteProtection(d *schema.ResourceData) bool {
 	return d.HasChange("deletion_protection_enabled")
 }
@@ -1445,3 +1445,4 @@ func shouldUpdateThroughput(
 ) bool {
 	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
 }
+*/
