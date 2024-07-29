@@ -64,12 +64,10 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	if infra != nil && planID != "default" {
 		if !infra.EnableK8Cluster && infra.Cloud != 2 {
 			return fmt.Errorf("no kubernetes cluster for this plan %s", planID)
-		} else if infra.Cloud == 2 {
-			// Check for AksConfig only if Cloud is 2 (relevant scenario)
-			if infra.AksConfig == nil || !infra.AksConfig.CreateAndManage {
-				return fmt.Errorf("no kubernetes cluster for plan %s", planID)
-			}
+		} else if infra.Cloud == 2 && (infra.AksConfig == nil || !infra.AksConfig.CreateAndManage) {
+			return fmt.Errorf("no kubernetes cluster for plan %s", planID)
 		}
+
 		k8sConfig, err = c.GetPlanK8sJitAccess(planID)
 		if err != nil && !err.PossibleMissingAPI() {
 			return fmt.Errorf("failed to get plan %s kubernetes JIT access: %s", planID, err)
