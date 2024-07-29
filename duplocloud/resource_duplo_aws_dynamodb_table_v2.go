@@ -325,16 +325,9 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
 	reservedFullname := d.Get("fullname").(string)
 	c := m.(*duplosdk.Client)
-	prefix, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, "")
-	if errname != nil {
-		return diag.Errorf("resourceAwsDynamoDBTableReadV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
-	}
+
 	var fullName string
-	if !strings.Contains(name, prefix) {
-		fullName = prefix + name
-	} else {
-		fullName = name
-	}
+
 	if fullName != reservedFullname && reservedFullname != "" {
 		fullName = reservedFullname
 	}
@@ -428,12 +421,19 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	prefix, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, "")
+	if errname != nil {
+		return diag.Errorf("resourceAwsDynamoDBTableCreateV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
+	}
+	//Workaround for backend issue july2024 release since some backend API always expects duplo prefixed name
+	if !strings.Contains(name, prefix) {
+		rq.TableName = prefix + name
+	}
 	rp, err := c.DynamoDBTableCreateV2(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s dynamodb table '%s': %s", tenantID, name, err)
 	}
-	d.Set("fullname", rp.TableName)
+
 	time.Sleep(time.Duration(10) * time.Second)
 
 	// Wait for Duplo to be able to return the table's details.
@@ -459,6 +459,13 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 			return diag.FromErr(err)
 		}
 	}
+	//var fullName string
+	//prefix, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, "")
+	//if errname != nil {
+	//	return diag.Errorf("resourceAwsDynamoDBTableCreateV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
+	//}
+
+	d.Set("fullname", rp.TableName)
 
 	diags = updateDynamoDBTableV2PointInRecovery(ctx, d, m)
 	if diags != nil {
@@ -1333,7 +1340,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
-	name := d.Get("name").(string)
+	name := d.Get("fullname").(string)
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
