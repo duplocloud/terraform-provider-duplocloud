@@ -48,6 +48,29 @@ type DuploDynamoDBTableV2 struct {
 	TtlStatus                 string                                      `json:"TtlStatus,omitempty"`
 }
 
+type DuploDynamoDBTableV2Old struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-"`
+
+	TableName                 string                                      `json:"TableName"`
+	TableId                   string                                      `json:"TableId"`
+	TableArn                  string                                      `json:"TableArn,omitempty"`
+	DeletionProtectionEnabled bool                                        `json:"DeletionProtectionEnabled,omitempty"`
+	PointInTimeRecoveryStatus string                                      `json:"PointInTimeRecoveryStatus,omitempty"`
+	KeySchema                 *[]DuploDynamoDBKeySchema                   `json:"KeySchema,omitempty"`
+	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinion           `json:"AttributeDefinitions,omitempty"`
+	TableStatus               *DuploStringValue                           `json:"TableStatus,omitempty"`
+	TableSizeBytes            int                                         `json:"TableSizeBytes,omitempty"`
+	LocalSecondaryIndexes     *[]DuploDynamoDBTableV2LocalSecondaryIndex  `json:"LocalSecondaryIndexes,omitempty"`
+	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexes,omitempty"`
+	LatestStreamArn           string                                      `json:"LatestStreamArn,omitempty"`
+	LatestStreamLabel         string                                      `json:"LatestStreamLabel,omitempty"`
+	ProvisionedThroughput     *DuploDynamoDBProvisionedThroughput         `json:"ProvisionedThroughput,omitempty"`
+	SSEDescription            *DuploDynamoDBTableV2SSESpecification       `json:"SSEDescription,omitempty"`
+	StreamSpecification       *DuploDynamoDBTableV2StreamSpecification    `json:"StreamSpecification,omitempty"`
+	BillingModeSummary        *DuploDynamoDBTableV2BillingModeSummary     `json:"BillingModeSummary,omitempty"`
+}
+
 type DuploDynamoDBTableV2Response struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-"`
@@ -456,4 +479,15 @@ type Delete struct {
 type Update struct {
 	IndexName             string                             `json:"IndexName"`
 	ProvisionedThroughput DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput"`
+}
+
+// remove after july 2024 release updation
+func (c *Client) DynamoDBTableGetV2Old(tenantID string, name string) (*DuploDynamoDBTableV2Old, ClientError) {
+	rp := DuploDynamoDBTableV2Old{}
+	err := c.getAPI(
+		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, name),
+		&rp)
+	rp.TenantID = tenantID
+	return &rp, err
 }
