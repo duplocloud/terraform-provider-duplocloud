@@ -50,7 +50,7 @@ func resourceInfrastructureSetting() *schema.Resource {
                 | AWS       | EnableAwsAlbIngress          | bool                                                    |
                 | AWS       | EnableAWSEfsVolumes          | bool                                                    |
                 | AWS       | EnableDefaultEbsEncryption   | bool                                                    |
-                | AWS       | EksEndpointVisibility        | Public, Private, Both Public and Private                |
+                | AWS       | EksEndpointVisibility        | Public, Private, Both                |
                 | AWS       | DefaultK8sStorageClass       | gp3                                                     |
                 | AWS       | EksControlplaneLogs          | api, audit, authenticator, controllerManager, scheduler | 
                 | Azure     | AzurePortalLink              | string                                                  |
