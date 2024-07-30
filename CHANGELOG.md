@@ -1,3 +1,23 @@
+## 2024-07-23
+
+### Enhanced
+- Added `force_delete` option to ECR resource, allowing forced deletion of ECR repositories in DuploCloud provider.
+
+## 2024-07-17
+
+### Enhanced
+- Added `force_delete` option to ECR resource, allowing forced deletion of ECR repositories in DuploCloud provider.
+
+## 2024-04-29
+
+### Fixed
+- Fixed an issue with handling slashes in `keyType` for `duplocloud_admin_system_setting` resource ID creation and parsing.
+
+### Enhanced
+- Added utility functions to encode and decode slashes in identifiers, improving handling of special characters in resource IDs.
+- Updated build script to include documentation generation and modified import script to guide users on handling slashes in identifiers.
+
+
 ## 2024-07-12
 
 ### Enhanced
@@ -12,7 +32,6 @@
 ### Enhanced
 - Added utility functions to encode and decode slashes in identifiers, improving handling of special characters in resource IDs.
 - Updated build script to include documentation generation and modified import script to guide users on handling slashes in identifiers.
-
 
 ## 2024-04-15
 

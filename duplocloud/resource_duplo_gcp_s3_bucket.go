@@ -46,13 +46,8 @@ func gcpS3BucketSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		"arn": {
-			Description: "The ARN of the S3 bucket.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
 		"domain_name": {
-			Description: "The domain name of the S3 bucket.",
+			Description: "Bucket self link.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -62,12 +57,7 @@ func gcpS3BucketSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
-		"enable_access_logs": {
-			Description: "Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Computed:    true,
-		},
+
 		"allow_public_access": {
 			Description: "Whether or not to remove the public access block from the bucket.",
 			Type:        schema.TypeBool,
@@ -98,32 +88,12 @@ func gcpS3BucketSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"region": {
-			Description: "The region of the S3 bucket.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-		},
-		"managed_policies": {
-			Description: "Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:\n\n" +
-				" - `\"ssl\"`: Require SSL / HTTPS when accessing the bucket.\n" +
-				" - `\"ignore\"`: If this key is present, Duplo will not manage your bucket policy.\n",
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			Elem:     &schema.Schema{Type: schema.TypeString},
-		},
-		"tags": awsTagsKeyValueSchemaComputed(),
 		"location": {
-			Description: "The location is to set multi region, applicable for gcp cloud.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-			ValidateFunc: validation.StringInSlice([]string{
-				"Asia",
-				"EU",
-				"US",
-			}, false),
+			Description:      "The location is to set region/multi region, applicable for gcp cloud.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 	}
 }
@@ -167,18 +137,6 @@ func resourceGCPS3BucketRead(ctx context.Context, d *schema.ResourceData, m inte
 	duplo, err := c.GCPTenantGetV3S3Bucket(tenantID, fullName)
 	if err != nil && !err.PossibleMissingAPI() {
 		return diag.Errorf("resourceGCPS3BucketRead: Unable to retrieve s3 bucket (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
-	}
-
-	// **** fallback on older api ****
-	if err != nil && err.PossibleMissingAPI() {
-		duplo, err = c.TenantGetS3BucketSettings(tenantID, name)
-		if duplo == nil {
-			d.SetId("") // object missing
-			return nil
-		}
-		if err != nil {
-			return diag.Errorf("resourceGCPS3BucketRead: Unable to retrieve s3 bucket settings (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
-		}
 	}
 
 	// Set simple fields first.
@@ -244,11 +202,11 @@ func resourceGCPS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m in
 	name := d.Get("name").(string)
 
 	// Create the request object.
-	duploObject := duplosdk.DuploS3BucketSettingsRequest{
+	duploObject := duplosdk.DuploGCPBucket{
 		Name: fullname,
 	}
 
-	errName := fillS3BucketRequest(&duploObject, d)
+	errName := fillGCPBucketRequest(&duploObject, d)
 	if errName != nil {
 		return diag.FromErr(errName)
 	}
@@ -299,20 +257,35 @@ func resourceGCPS3BucketDelete(ctx context.Context, d *schema.ResourceData, m in
 	return nil
 }
 
-func resourceGcpS3BucketSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploS3Bucket) {
+func resourceGcpS3BucketSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploGCPBucket) {
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("fullname", duplo.Name)
 	d.Set("domain_name", duplo.DomainName)
-	d.Set("arn", duplo.Arn)
 	d.Set("enable_versioning", duplo.EnableVersioning)
-	d.Set("enable_access_logs", duplo.EnableAccessLogs)
 	d.Set("allow_public_access", duplo.AllowPublicAccess)
 	d.Set("default_encryption", []map[string]interface{}{{
-		"method": duplo.DefaultEncryption,
+		"method": encodeEncryption(duplo.DefaultEncryptionType),
 	}})
-	d.Set("managed_policies", duplo.Policies)
-	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("region", duplo.Region)
 	d.Set("location", duplo.Location)
+}
+
+func encodeEncryption(i int) string {
+	m := map[int]string{
+		0: "None",
+		2: "Sse",
+		3: "AwsKms",
+		4: "TenantKms",
+	}
+	return m[i]
+}
+
+func decodeEncryption(i string) int {
+	m := map[string]int{
+		"None":      0,
+		"Sse":       2,
+		"AwsKms":    3,
+		"TenantKms": 4,
+	}
+	return m[i]
 }
