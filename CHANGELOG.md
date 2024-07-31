@@ -1,3 +1,8 @@
+## 2024-07-31
+
+### Fixed
+- Adjusted URL path construction for force delete ECR operations to reflect changes in the data contract.
+
 ## 2024-07-23
 
 ### Enhanced
