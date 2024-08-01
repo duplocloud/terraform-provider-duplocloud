@@ -38,7 +38,28 @@ func resourceInfrastructureSetting() *schema.Resource {
 				ForceNew:    true,
 			},
 			"setting": {
-				Description:   "A list of configuration settings to manage, expressed as key / value pairs.",
+				Description: `A list of configuration settings to manage, expressed as key / value pairs.
+
+                | Cloud     | Key (string)                 | Value (string)                                          |
+                |-----------|------------------------------|---------------------------------------------------------| 
+                | All Cloud | MaximumK8sSessionDuration    | int                                                     | 
+                | AWS       | EnableClusterAutoscaler      | bool                                                    |
+                | AWS       | AlertPriorAutoscaling        | bool                                                    |
+                | AWS       | EnableHaNatGateway           | bool                                                    |
+                | AWS       | EnableSecretCsiDriver        | bool                                                    |
+                | AWS       | EnableAwsAlbIngress          | bool                                                    |
+                | AWS       | EnableAWSEfsVolumes          | bool                                                    |
+                | AWS       | EnableDefaultEbsEncryption   | bool                                                    |
+                | AWS       | EksEndpointVisibility        | Public, Private, Both                |
+                | AWS       | DefaultK8sStorageClass       | gp3                                                     |
+                | AWS       | EksControlplaneLogs          | api, audit, authenticator, controllerManager, scheduler | 
+                | Azure     | AzurePortalLink              | string                                                  |
+                | Azure     | Shared Image Gallery         | string                                                  |
+                | Azure     | EnableAzureAppGatewayIngress | bool                                                    |
+                | GCP       | GkeMinPortsPerVm             | int                                                     | 
+                
+				*Note: EksControlplaneLogs value can be set with combination of settings separated by ; with no spaces*
+				`,
 				Type:          schema.TypeList,
 				Optional:      true,
 				Elem:          KeyValueSchema(),
