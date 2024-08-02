@@ -183,7 +183,7 @@ func suppressAzureManagedTags(k, old, new string, d *schema.ResourceData) bool {
 
 	for _, mp := range tags.([]interface{}) {
 		keyval := mp.(map[string]interface{})
-		for key, _ := range keyval {
+		for key := range keyval {
 			if Contains(suppressTagKeys, key) {
 				return true
 			}
