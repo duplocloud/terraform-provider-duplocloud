@@ -176,3 +176,20 @@ func diffStringMaps(oldMap, newMap map[string]interface{}) (map[string]*string, 
 
 	return create, remove
 }
+
+func suppressAzureManagedTags(k, old, new string, d *schema.ResourceData) bool {
+	_, tags := d.GetChange("tags")
+	suppressTagKeys := DuploManagedAzureTags()
+
+	for _, mp := range tags.([]interface{}) {
+		keyval := mp.(map[string]interface{})
+		for key, _ := range keyval {
+			if Contains(suppressTagKeys, key) {
+				return true
+			}
+
+		}
+	}
+
+	return false
+}

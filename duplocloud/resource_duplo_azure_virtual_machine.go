@@ -160,10 +160,11 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"tags": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			Elem:     KeyValueSchema(),
+			Type:             schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem:             KeyValueSchema(),
+			DiffSuppressFunc: suppressAzureManagedTags,
 		},
 		"minion_tags": {
 			Description: "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.",
