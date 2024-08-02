@@ -73,11 +73,11 @@ func (c *Client) AwsEcrRepositoryDelete(tenantID string, name string, forceDelet
 	forceDeletePostfix := ""
 
 	if forceDelete {
-		forceDeletePostfix = "/force"
+		forceDeletePostfix = "force/"
 	}
 	return c.deleteAPI(
 		fmt.Sprintf("AwsEcrRepositoryDelete(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/ecrRepository/%s%s", tenantID, name, forceDeletePostfix),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecrRepository/%s%s", tenantID, forceDeletePostfix, name),
 		nil,
 	)
 }
