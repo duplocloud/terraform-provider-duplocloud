@@ -160,10 +160,11 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"tags": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			Elem:     KeyValueSchema(),
+			Type:             schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem:             KeyValueSchema(),
+			DiffSuppressFunc: suppressAzureManagedTags,
 		},
 		"minion_tags": {
 			Description: "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.",
@@ -205,6 +206,17 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 					},
 				},
 			},
+		},
+		"disk_control_type": {
+			Description: "disk control types refer to the different levels of management and performance control provided for disks attached to virtual machines (VMs)",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"NVMe",
+				"SCSI",
+			}, true),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"wait_until_ready": {
 			Description: "Whether or not to wait until azure virtual machine to be ready, after creation.",
@@ -486,6 +498,7 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 				SubnetID: d.Get("subnet_id").(string),
 			},
 		},
+		DiskControlType: d.Get("disk_control_type").(string),
 	}
 }
 
@@ -542,6 +555,7 @@ func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNat
 	d.Set("status", duplo.Status)
 	d.Set("user_account", duplo.UserAccount)
 	d.Set("tags", flattenTags(duplo.TagsEx))
+	d.Set("disk_control_type", duplo.DiskControlType)
 }
 
 func flattenTags(tags *[]duplosdk.DuploKeyStringValue) []interface{} {
