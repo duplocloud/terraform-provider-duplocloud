@@ -240,6 +240,14 @@ type DuploS3BucketSettingsRequest struct {
 	Policies          []string `json:"Policies,omitempty"`
 }
 
+type DuploS3BucketReplication struct {
+	Rule                    string `json:"Name"`
+	DestinationBucket       string `json:"DestinationBucket"`
+	SourceBucket            string `json:"SourceBucket"`
+	Priority                int    `json:"priority"`
+	DeleteMarkerReplication bool   `json:"DeleteMarkerReplication"`
+}
+
 // DuploKafkaEbsStorageInfo represents a Kafka cluster's EBS storage info
 type DuploKafkaEbsStorageInfo struct {
 	VolumeSize int `json:"VolumeSize"`
@@ -526,22 +534,18 @@ func (c *Client) TenantGetApplicationLB(tenantID string, name string) (*DuploApp
 }
 
 // TenantCreateV3S3Bucket creates an S3 bucket resource via V3 Duplo Api.
-func (c *Client) TenantCreateV3S3Bucket(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
+func (c *Client) TenantCreateV3S3BucketReplication(tenantID string, duplo DuploS3BucketReplication) (*DuploS3BucketReplication, ClientError) {
 
-	resp := DuploS3Bucket{}
+	resp := DuploS3BucketReplication{}
 
 	// Create the bucket via Duplo.
 	err := c.postAPI(
-		fmt.Sprintf("TenantCreateV3S3Bucket(%s, %s)", tenantID, duplo.Name),
-		//  fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
-		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket", tenantID),
+		fmt.Sprintf("TenantCreateV3S3BucketReplication(%s, %s)", tenantID, duplo.SourceBucket),
+		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/replication", tenantID, duplo.SourceBucket),
 		&duplo,
 		&resp)
 
-	if err != nil || resp.Name == "" {
-		return nil, err
-	}
-	return &resp, nil
+	return &resp, err
 }
 
 func (c *Client) GCPTenantCreateV3S3Bucket(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
