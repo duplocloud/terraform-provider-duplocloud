@@ -67,6 +67,7 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 - `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
 - `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
 - `base64_user_data` (String) Base64 encoded user data to associated with the host.
+- `disk_control_type` (String) disk control types refer to the different levels of management and performance control provided for disks attached to virtual machines (VMs)
 - `disk_size_gb` (Number) Specifies the size of the OS Disk in gigabytes Defaults to `128`.
 - `enable_encrypt_at_host` (Boolean) Defaults to `false`.
 - `enable_log_analytics` (Boolean) Enable log analytics on virtual machine. Defaults to `false`.

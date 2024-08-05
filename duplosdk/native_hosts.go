@@ -50,6 +50,7 @@ type DuploNativeHost struct {
 	IsEncryptAtHost    bool                               `json:"IsEncryptAtHost"`
 	IsSecureBoot       bool                               `json:"IsSecureBoot"`
 	IsvTPM             bool                               `json:"IsvTPM"`
+	DiskControlType    string                             `json:"DiskControllerType,omitempty"`
 }
 
 // DuploNativeHostNetworkInterface is a Duplo SDK object that represents a network interface of a native host
