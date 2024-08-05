@@ -37,6 +37,8 @@ resource "duplocloud_azure_k8s_cluster" "cluster" {
 ### Required
 
 - `infra_name` (String) The name of the infrastructure.
+- `name` (String) The name of the aks.
+- `resource_group_name` (String) The name of the aks resource group.
 
 ### Optional
 
