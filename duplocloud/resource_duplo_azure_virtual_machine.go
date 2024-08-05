@@ -160,10 +160,11 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"tags": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			Elem:     KeyValueSchema(),
+			Type:             schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem:             KeyValueSchema(),
+			DiffSuppressFunc: suppressAzureManagedTags,
 		},
 		"minion_tags": {
 			Description: "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.",
@@ -206,8 +207,48 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"disk_control_type": {
+			Description: "disk control types refer to the different levels of management and performance control provided for disks attached to virtual machines (VMs)",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"NVMe",
+				"SCSI",
+			}, true),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
 		"wait_until_ready": {
 			Description: "Whether or not to wait until azure virtual machine to be ready, after creation.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     true,
+		},
+		"enable_encrypt_at_host": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  false,
+		},
+		"security_type": {
+			Description: `Select "Standard" or "Trusted Launch" security type. Defaults to "Standard".
+			Use Trusted Launch for the security of "Generation 2" virtual machines (VMs). [Supported Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/trusted-launch#virtual-machines-sizes)
+			`,
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  "Standard",
+			ValidateFunc: validation.StringInSlice([]string{
+				"Standard",
+				"TrustedLaunch",
+			}, false),
+		},
+		"enable_security_boot": {
+			Description: "Select to enable Secure Boot for your VM. Used with security_type=TrustedLaunch, default to true",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     true,
+		},
+		"enable_vtpm": {
+			Description: "Select to enable virtual Trusted Platform Module (vTPM) for Azure VM.. Used with security_type=TrustedLaunch, default to true",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     true,
@@ -465,7 +506,7 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 			Value: v.(string),
 		})
 	}
-	return &duplosdk.DuploNativeHost{
+	data := &duplosdk.DuploNativeHost{
 		TenantID:          d.Get("tenant_id").(string),
 		InstanceID:        d.Get("instance_id").(string),
 		FriendlyName:      d.Get("friendly_name").(string),
@@ -486,7 +527,15 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 				SubnetID: d.Get("subnet_id").(string),
 			},
 		},
+		SecurityType:    d.Get("security_type").(string),
+		IsEncryptAtHost: d.Get("enable_encrypt_at_host").(bool),
+		DiskControlType: d.Get("disk_control_type").(string),
 	}
+	if data.SecurityType == "TrustedLaunch" {
+		data.IsSecureBoot = d.Get("enable_security_boot").(bool)
+		data.IsvTPM = d.Get("enable_vtpm").(bool)
+	}
+	return data
 }
 
 func expandAzureNativeHostVolumes(key string, d *schema.ResourceData) *[]duplosdk.DuploNativeHostVolume {
@@ -542,6 +591,13 @@ func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNat
 	d.Set("status", duplo.Status)
 	d.Set("user_account", duplo.UserAccount)
 	d.Set("tags", flattenTags(duplo.TagsEx))
+	d.Set("security_type", duplo.SecurityType)
+	if duplo.SecurityType == "TrustedLaunch" {
+		d.Set("enable_security_boot", duplo.IsSecureBoot)
+		d.Set("enable_vtpm", duplo.IsvTPM)
+	}
+	d.Set("enable_encrypt_at_host", duplo.IsEncryptAtHost)
+	d.Set("disk_control_type", duplo.DiskControlType)
 }
 
 func flattenTags(tags *[]duplosdk.DuploKeyStringValue) []interface{} {
