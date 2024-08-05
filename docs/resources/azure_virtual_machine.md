@@ -71,8 +71,8 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 - `disk_size_gb` (Number) Specifies the size of the OS Disk in gigabytes Defaults to `128`.
 - `enable_encrypt_at_host` (Boolean) Defaults to `false`.
 - `enable_log_analytics` (Boolean) Enable log analytics on virtual machine. Defaults to `false`.
-- `enable_security_boot` (Boolean) Select to enable Secure Boot for your VM. Used with security_type=TrustedLaunch, default to true Defaults to `true`.
-- `enable_vtpm` (Boolean) Select to enable virtual Trusted Platform Module (vTPM) for Azure VM.. Used with security_type=TrustedLaunch, default to true Defaults to `true`.
+- `enable_security_boot` (Boolean) Select to enable Secure Boot for your VM. Used with security_type=TrustedLaunch Defaults to `true`.
+- `enable_vtpm` (Boolean) Select to enable virtual Trusted Platform Module (vTPM) for Azure VM. Used with security_type=TrustedLaunch Defaults to `true`.
 - `encrypt_disk` (Boolean) Defaults to `false`.
 - `is_minion` (Boolean) Defaults to `true`.
 - `join_domain` (Boolean) Join a Windows Server virtual machine to an Azure Active Directory Domain Services. Defaults to `false`.
