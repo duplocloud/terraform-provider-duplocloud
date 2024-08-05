@@ -242,13 +242,13 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			}, false),
 		},
 		"enable_security_boot": {
-			Description: "Select to enable Secure Boot for your VM. Used with security_type=TrustedLaunch, default to true",
+			Description: "Select to enable Secure Boot for your VM. Used with security_type=TrustedLaunch",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     true,
 		},
 		"enable_vtpm": {
-			Description: "Select to enable virtual Trusted Platform Module (vTPM) for Azure VM.. Used with security_type=TrustedLaunch, default to true",
+			Description: "Select to enable virtual Trusted Platform Module (vTPM) for Azure VM. Used with security_type=TrustedLaunch",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     true,
