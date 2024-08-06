@@ -5,7 +5,7 @@ resource "duplocloud_tenant" "myapp" {
 
 resource "duplocloud_aws_lambda_function" "myfunction" {
 
-  tenant_id   = duplocloud_tenant.this.tenant_id
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
   name        = "myfunction"
   description = "A description of my function"
 
@@ -25,7 +25,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 }
 
 resource "duplocloud_aws_sqs_queue" "failure_queue" {
-  tenant_id                   = duplocloud_tenant.this.tenant_id
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
   name                        = "failure_queue"
   fifo_queue                  = false
   message_retention_seconds   = 345600
@@ -35,7 +35,7 @@ resource "duplocloud_aws_sqs_queue" "failure_queue" {
 }
 
 resource "duplocloud_aws_sqs_queue" "success_queue" {
-  tenant_id                   = duplocloud_tenant.this.tenant_id
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
   name                        = "success_queue"
   fifo_queue                  = false
   message_retention_seconds   = 345600
@@ -45,12 +45,12 @@ resource "duplocloud_aws_sqs_queue" "success_queue" {
 }
 
 resource "duplocloud_aws_lambda_function_event_config" "event-invoke-config" {
-  tenant_id                 = duplocloud_tenant.this.tenant_id
-  function_name             = duplocloud_aws_lambda_function.myfunction.fullname
-  max_retry_attempts = 1
-  max_event_age_in_seconds   = 100
+  tenant_id                = duplocloud_tenant.myapp.tenant_id
+  function_name            = duplocloud_aws_lambda_function.myfunction.fullname
+  max_retry_attempts       = 1
+  max_event_age_in_seconds = 100
 
-  
+
   destination_config {
     on_failure {
       destination = duplocloud_aws_sqs_queue.failure_queue.arn
