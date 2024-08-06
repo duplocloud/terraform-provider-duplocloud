@@ -194,8 +194,9 @@ func (c *Client) doAPI(verb string, apiName string, apiPath string, rp interface
 		return httpErr
 	}
 	bodyString := string(body)
-	log.Printf("[TRACE] %s: received response: %s", apiName, bodyString)
-
+	if !strings.Contains(apiName, "K8SecretGetList") {
+		log.Printf("[TRACE] %s: received response: %s", apiName, bodyString)
+	}
 	// Check for an expected "null" response.
 	if rp == nil {
 		log.Printf("[TRACE] %s: expected null response", apiName)

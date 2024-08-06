@@ -56,6 +56,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
 - `can_scale_from_zero` (Boolean) Whether or not ASG should leverage duplocloud's scale from 0 feature
 - `cloud` (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
+- `enabled_metrics` (List of String) List of metrics to collect for the ASG
 - `encrypt_disk` (Boolean) Defaults to `false`.
 - `instance_count` (Number) The number of instances that should be running in the group.
 - `is_cluster_autoscaled` (Boolean) Whether or not to enable cluster autoscaler.

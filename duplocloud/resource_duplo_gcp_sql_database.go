@@ -83,6 +83,16 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"ip_address": {
+			Description: "IP address of the database.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"connection_name": {
+			Description: "Connection name  of the database.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
@@ -312,6 +322,8 @@ func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name strin
 	d.Set("tier", duplo.Tier)
 	d.Set("database_version", reverseGcpSQLDBVersionsMap()[duplo.DatabaseVersion])
 	d.Set("disk_size", duplo.DataDiskSizeGb)
+	d.Set("ip_address", duplo.IPAddress)
+	d.Set("connection_name", duplo.ConnectionName)
 	flattenGcpLabels(d, duplo.Labels)
 }
 
