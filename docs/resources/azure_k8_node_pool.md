@@ -46,6 +46,7 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 
 - `allocation_tag` (String) Allocation tags for this node pool.
 - `enable_auto_scaling` (Boolean) Whether to enable auto-scaler.
+- `scale_priority` (Block List, Max: 1) specify the priority for scaling operations,supported priority Regular or Spot (see [below for nested schema](#nestedblock--scale_priority))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `wait_until_ready` (Boolean) Whether or not to wait until node pool to be ready, after creation. Defaults to `true`.
 
@@ -53,6 +54,16 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 
 - `id` (String) The ID of this resource.
 - `name` (String) The Duplo generated name of the node pool.
+
+<a id="nestedblock--scale_priority"></a>
+### Nested Schema for `scale_priority`
+
+Optional:
+
+- `eviction_policy` (String) eviction policies Delete/Deallocate
+- `priority` (String) priority levels Regular/Spot
+- `spot_max_price` (String) for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
