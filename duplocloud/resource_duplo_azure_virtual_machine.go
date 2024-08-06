@@ -230,8 +230,9 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Default:  false,
 		},
 		"security_type": {
-			Description: `Specify "Standard" or "Trusted Launch" security type. Defaults to "Standard".
-			Use Trusted Launch for the security of "Generation 2" virtual machines (VMs). [Supported Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/trusted-launch#virtual-machines-sizes)
+			Description: `Specify "Standard" or "TrustedLaunch" security type. Defaults to "Standard". 
+			Use TrustedLaunch for the security of "Generation 2" virtual machines (VMs). 
+			[Supported Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/trusted-launch#virtual-machines-sizes)
 			`,
 			Type:     schema.TypeString,
 			Optional: true,
