@@ -21,6 +21,19 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"name": {
+			Description: "The name of the aks.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+		},
+		"resource_group_name": {
+			Description: "The name of the aks resource group.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+		},
+
 		"vm_size": {
 			Description: "The size of the Virtual Machine.",
 			Type:        schema.TypeString,
@@ -103,6 +116,7 @@ func resourceAzureK8sClusterRead(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	flattenAzureK8sCluster(d, config.AksConfig)
+	d.Set("infra_name", name)
 	log.Printf("[TRACE] resourceAzureK8sClusterRead(%s): end", name)
 	return nil
 }
@@ -150,21 +164,23 @@ func resourceAzureK8sClusterDelete(ctx context.Context, d *schema.ResourceData, 
 
 func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.AksConfig {
 	return &duplosdk.AksConfig{
-		Name:            d.Get("infra_name").(string),
-		PrivateCluster:  d.Get("private_cluster_enabled").(bool),
-		K8sVersion:      d.Get("kubernetes_version").(string),
-		VmSize:          d.Get("vm_size").(string),
-		NetworkPlugin:   d.Get("network_plugin").(string),
-		OutboundType:    d.Get("outbound_type").(string),
-		CreateAndManage: true,
+		Name:              d.Get("name").(string),
+		PrivateCluster:    d.Get("private_cluster_enabled").(bool),
+		K8sVersion:        d.Get("kubernetes_version").(string),
+		VmSize:            d.Get("vm_size").(string),
+		NetworkPlugin:     d.Get("network_plugin").(string),
+		OutboundType:      d.Get("outbound_type").(string),
+		NodeResourceGroup: d.Get("resource_group_name").(string),
+		CreateAndManage:   true,
 	}
 }
 
 func flattenAzureK8sCluster(d *schema.ResourceData, duplo *duplosdk.AksConfig) {
-	d.Set("infra_name", duplo.Name)
+	d.Set("name", duplo.Name)
 	d.Set("private_cluster_enabled", duplo.PrivateCluster)
 	d.Set("kubernetes_version", duplo.K8sVersion)
 	d.Set("vm_size", duplo.VmSize)
 	d.Set("network_plugin", duplo.NetworkPlugin)
 	d.Set("outbound_type", duplo.OutboundType)
+	d.Set("resource_group_name", duplo.NodeResourceGroup)
 }
