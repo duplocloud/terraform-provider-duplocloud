@@ -95,6 +95,13 @@ func gcpS3BucketSchema() map[string]*schema.Schema {
 			Computed:         true,
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
+		"labels": {
+			Description: "The labels assigned to this storage bucket.",
+			Type:        schema.TypeMap,
+			Optional:    true,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 	}
 }
 
@@ -155,10 +162,10 @@ func resourceGCPS3BucketCreate(ctx context.Context, d *schema.ResourceData, m in
 	tenantID := d.Get("tenant_id").(string)
 
 	// Create the request object.
-	duploObject := duplosdk.DuploS3BucketSettingsRequest{
+	duploObject := duplosdk.DuploGCPBucket{
 		Name: name,
 	}
-	errFill := fillS3BucketRequest(&duploObject, d)
+	errFill := fillGCPBucketRequest(&duploObject, d)
 	if errFill != nil {
 		return diag.FromErr(errFill)
 	}
@@ -268,6 +275,7 @@ func resourceGcpS3BucketSetData(d *schema.ResourceData, tenantID string, name st
 		"method": encodeEncryption(duplo.DefaultEncryptionType),
 	}})
 	d.Set("location", duplo.Location)
+	flattenGcpLabels(d, duplo.Labels)
 }
 
 func encodeEncryption(i int) string {
@@ -288,4 +296,35 @@ func decodeEncryption(i string) int {
 		"TenantKms": 4,
 	}
 	return m[i]
+}
+
+func fillGCPBucketRequest(duploObject *duplosdk.DuploGCPBucket, d *schema.ResourceData) error {
+	log.Printf("[TRACE] fillS3BucketRequest ******** start")
+
+	// Set the object versioning
+	if v, ok := d.GetOk("enable_versioning"); ok && v != nil {
+		duploObject.EnableVersioning = v.(bool)
+	}
+
+	// Set the public access block.
+	if v, ok := d.GetOk("allow_public_access"); ok && v != nil {
+		duploObject.AllowPublicAccess = v.(bool)
+	}
+
+	// Set the default encryption.
+	defaultEncryption, err := getOptionalBlockAsMap(d, "default_encryption")
+	if err != nil {
+		return err
+	}
+	if v, ok := defaultEncryption["method"]; ok && v != nil {
+		duploObject.DefaultEncryptionType = decodeEncryption(v.(string))
+	}
+
+	if v, ok := d.GetOk("location"); ok && v != nil {
+		duploObject.Location = v.(string)
+	}
+
+	duploObject.Labels = expandAsStringMap("labels", d)
+	log.Printf("[TRACE] fillS3BucketRequest ******** end")
+	return nil
 }
