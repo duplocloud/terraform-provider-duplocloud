@@ -39,6 +39,7 @@ func resourceInfrastructureSetting() *schema.Resource {
 			},
 			"setting": {
 				Description: `A list of configuration settings to manage, expressed as key / value pairs.
+				
 | Cloud     | Key (string)                 | Value (string)                                          |
 |-----------|------------------------------|---------------------------------------------------------| 
 | All Cloud | MaximumK8sSessionDuration    | int                                                     | 
@@ -56,7 +57,8 @@ func resourceInfrastructureSetting() *schema.Resource {
 | Azure     | Shared Image Gallery         | string                                                  |
 | Azure     | EnableAzureAppGatewayIngress | bool                                                    |
 | GCP       | GkeMinPortsPerVm             | int                                                     |
-*Note: EksControlplaneLogs value can be set with combination of settings separated by ; with no spaces*`,
+
+Note: EksControlplaneLogs value can be set with combination of settings separated by ; with no spaces`,
 				Type:          schema.TypeList,
 				Optional:      true,
 				Elem:          KeyValueSchema(),
