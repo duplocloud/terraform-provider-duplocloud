@@ -78,8 +78,9 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 - `join_domain` (Boolean) Join a Windows Server virtual machine to an Azure Active Directory Domain Services. Defaults to `false`.
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - `os_disk_type` (String) Specifies the type of managed disk to create. Possible values are either `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_ZRS` or `UltraSSD_LRS`.
-- `security_type` (String) Specify "Standard" or "Trusted Launch" security type. Defaults to "Standard".
-			Use Trusted Launch for the security of "Generation 2" virtual machines (VMs). [Supported Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/trusted-launch#virtual-machines-sizes)
+- `security_type` (String) Specify "Standard" or "TrustedLaunch" security type. Defaults to "Standard". 
+			Use TrustedLaunch for the security of "Generation 2" virtual machines (VMs). 
+			[Supported Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/trusted-launch#virtual-machines-sizes)
 			 Defaults to `Standard`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
