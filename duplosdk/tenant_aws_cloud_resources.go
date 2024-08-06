@@ -97,12 +97,13 @@ type DuploGCPBucket struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-"`
 
-	Name                  string `json:"Name,omitempty"`
-	DomainName            string `json:"SelfLink,omitempty"`
-	Location              string `json:"Location,omitempty"`
-	EnableVersioning      bool   `json:"EnableVersioning,omitempty"`
-	AllowPublicAccess     bool   `json:"AllowPublicAccess,omitempty"`
-	DefaultEncryptionType int    `json:"DefaultEncryptionType,omitempty"`
+	Name                  string            `json:"Name,omitempty"`
+	DomainName            string            `json:"SelfLink,omitempty"`
+	Location              string            `json:"Location,omitempty"`
+	EnableVersioning      bool              `json:"EnableVersioning,omitempty"`
+	AllowPublicAccess     bool              `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryptionType int               `json:"DefaultEncryptionType,omitempty"`
+	Labels                map[string]string `json:"Labels,omitempty"`
 }
 
 // DuploApplicationLB represents an AWS application load balancer resource for a Duplo tenant
@@ -544,7 +545,7 @@ func (c *Client) TenantCreateV3S3Bucket(tenantID string, duplo DuploS3BucketSett
 	return &resp, nil
 }
 
-func (c *Client) GCPTenantCreateV3S3Bucket(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
+func (c *Client) GCPTenantCreateV3S3Bucket(tenantID string, duplo DuploGCPBucket) (*DuploS3Bucket, ClientError) {
 
 	resp := DuploS3Bucket{}
 
