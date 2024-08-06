@@ -22,16 +22,16 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"name": {
-			Description: "The name of the aks.",
+			Description: "The name of the aks. If not specified default name would be infra name",
 			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Optional:    true,
+			Computed:    true,
 		},
 		"resource_group_name": {
 			Description: "The name of the aks resource group.",
 			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Optional:    true,
+			Computed:    true,
 		},
 
 		"vm_size": {
@@ -163,7 +163,7 @@ func resourceAzureK8sClusterDelete(ctx context.Context, d *schema.ResourceData, 
 }
 
 func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.AksConfig {
-	return &duplosdk.AksConfig{
+	body := &duplosdk.AksConfig{
 		Name:              d.Get("name").(string),
 		PrivateCluster:    d.Get("private_cluster_enabled").(bool),
 		K8sVersion:        d.Get("kubernetes_version").(string),
@@ -173,6 +173,11 @@ func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.AksConfig {
 		NodeResourceGroup: d.Get("resource_group_name").(string),
 		CreateAndManage:   true,
 	}
+	if body.Name == "" {
+		body.Name = d.Get("infra_name").(string)
+	}
+
+	return body
 }
 
 func flattenAzureK8sCluster(d *schema.ResourceData, duplo *duplosdk.AksConfig) {

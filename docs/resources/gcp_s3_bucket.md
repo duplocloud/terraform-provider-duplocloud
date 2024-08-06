@@ -87,6 +87,7 @@ resource "duplocloud_gcp_s3_bucket" "mydata" {
 - `allow_public_access` (Boolean) Whether or not to remove the public access block from the bucket.
 - `default_encryption` (Block List, Max: 1) Default encryption settings for objects uploaded to the bucket. (see [below for nested schema](#nestedblock--default_encryption))
 - `enable_versioning` (Boolean) Whether or not to enable versioning.
+- `labels` (Map of String) The labels assigned to this storage bucket.
 - `location` (String) The location is to set region/multi region, applicable for gcp cloud.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

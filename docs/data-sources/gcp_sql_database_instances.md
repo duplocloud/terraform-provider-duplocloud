@@ -29,8 +29,10 @@ description: |-
 
 Read-Only:
 
+- `connection_name` (String)
 - `database_version` (String)
 - `disk_size` (Number)
+- `ip_address` (String)
 - `labels` (Map of String)
 - `name` (String)
 - `self_link` (String)
