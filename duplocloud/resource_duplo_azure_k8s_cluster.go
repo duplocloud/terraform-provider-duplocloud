@@ -22,7 +22,7 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"name": {
-			Description: "The name of the aks.",
+			Description: "The name of the aks. If not specified default name would be infra name",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
@@ -177,9 +177,6 @@ func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.AksConfig {
 		body.Name = d.Get("infra_name").(string)
 	}
 
-	if body.NodeResourceGroup == "" {
-		body.Name = d.Get("infra_name").(string)
-	}
 	return body
 }
 
