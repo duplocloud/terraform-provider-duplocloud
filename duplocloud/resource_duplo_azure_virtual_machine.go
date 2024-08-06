@@ -230,8 +230,9 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Default:  false,
 		},
 		"security_type": {
-			Description: `Select "Standard" or "Trusted Launch" security type. Defaults to "Standard".
-			Use Trusted Launch for the security of "Generation 2" virtual machines (VMs). [Supported Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/trusted-launch#virtual-machines-sizes)
+			Description: `Specify "Standard" or "TrustedLaunch" security type. Defaults to "Standard". 
+			Use TrustedLaunch for the security of "Generation 2" virtual machines (VMs). 
+			[Supported Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/trusted-launch#virtual-machines-sizes)
 			`,
 			Type:     schema.TypeString,
 			Optional: true,
@@ -242,13 +243,13 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			}, false),
 		},
 		"enable_security_boot": {
-			Description: "Select to enable Secure Boot for your VM. Used with security_type=TrustedLaunch, default to true",
+			Description: "Specify to enable Secure Boot for your VM. Used with security_type=TrustedLaunch",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     true,
 		},
 		"enable_vtpm": {
-			Description: "Select to enable virtual Trusted Platform Module (vTPM) for Azure VM.. Used with security_type=TrustedLaunch, default to true",
+			Description: "Specify to enable virtual Trusted Platform Module (vTPM) for Azure VM. Used with security_type=TrustedLaunch",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     true,

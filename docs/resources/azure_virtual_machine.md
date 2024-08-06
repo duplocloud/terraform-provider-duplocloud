@@ -71,15 +71,16 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 - `disk_size_gb` (Number) Specifies the size of the OS Disk in gigabytes Defaults to `128`.
 - `enable_encrypt_at_host` (Boolean) Defaults to `false`.
 - `enable_log_analytics` (Boolean) Enable log analytics on virtual machine. Defaults to `false`.
-- `enable_security_boot` (Boolean) Select to enable Secure Boot for your VM. Used with security_type=TrustedLaunch, default to true Defaults to `true`.
-- `enable_vtpm` (Boolean) Select to enable virtual Trusted Platform Module (vTPM) for Azure VM.. Used with security_type=TrustedLaunch, default to true Defaults to `true`.
+- `enable_security_boot` (Boolean) Specify to enable Secure Boot for your VM. Used with security_type=TrustedLaunch Defaults to `true`.
+- `enable_vtpm` (Boolean) Specify to enable virtual Trusted Platform Module (vTPM) for Azure VM. Used with security_type=TrustedLaunch Defaults to `true`.
 - `encrypt_disk` (Boolean) Defaults to `false`.
 - `is_minion` (Boolean) Defaults to `true`.
 - `join_domain` (Boolean) Join a Windows Server virtual machine to an Azure Active Directory Domain Services. Defaults to `false`.
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - `os_disk_type` (String) Specifies the type of managed disk to create. Possible values are either `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_ZRS` or `UltraSSD_LRS`.
-- `security_type` (String) Select "Standard" or "Trusted Launch" security type. Defaults to "Standard".
-			Use Trusted Launch for the security of "Generation 2" virtual machines (VMs). [Supported Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/trusted-launch#virtual-machines-sizes)
+- `security_type` (String) Specify "Standard" or "TrustedLaunch" security type. Defaults to "Standard". 
+			Use TrustedLaunch for the security of "Generation 2" virtual machines (VMs). 
+			[Supported Sizes](https://learn.microsoft.com/en-us/azure/virtual-machines/trusted-launch#virtual-machines-sizes)
 			 Defaults to `Standard`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
