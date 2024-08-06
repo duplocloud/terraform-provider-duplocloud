@@ -95,7 +95,7 @@ func awsLambdaFunctionEventInvokeConfigSchema() map[string]*schema.Schema {
 // Resource for managing an AWS lambda function
 func resourceAwsLambdaEventInvokeConfigFunction() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_aws_lambda_function` manages an AWS lambda function in Duplo.",
+		Description: "`duplocloud_aws_lambda_function_event_config` manages an AWS lambda function in Duplo.",
 
 		ReadContext:   resourceAwsLambdaFunctionEventInvokeConfigRead,
 		CreateContext: resourceAwsLambdaFunctionEventInvokeConfigCreate,
