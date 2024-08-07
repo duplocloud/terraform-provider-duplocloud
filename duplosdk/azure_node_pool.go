@@ -5,13 +5,16 @@ import (
 )
 
 type DuploAzureK8NodePoolRequest struct {
-	MinSize           int                    `json:"MinSize"`
-	MaxSize           int                    `json:"MaxSize"`
-	DesiredCapacity   int                    `json:"DesiredCapacity"`
-	EnableAutoScaling bool                   `json:"EnableAutoScaling"`
-	FriendlyName      string                 `json:"FriendlyName"`
-	Capacity          string                 `json:"Capacity"`
-	CustomDataTags    *[]DuploKeyStringValue `json:"CustomDataTags"`
+	MinSize                int                    `json:"MinSize"`
+	MaxSize                int                    `json:"MaxSize"`
+	DesiredCapacity        int                    `json:"DesiredCapacity"`
+	EnableAutoScaling      bool                   `json:"EnableAutoScaling"`
+	FriendlyName           string                 `json:"FriendlyName"`
+	Capacity               string                 `json:"Capacity"`
+	CustomDataTags         *[]DuploKeyStringValue `json:"CustomDataTags"`
+	ScaleSetPriority       string                 `json:"ScaleSetPriority,omitempty"`
+	ScaleSetEvictionPolicy string                 `json:"ScaleSetEvictionPolicy,omitempty"`
+	SpotMaxPrice           float32                `json:"SpotMaxPrice,omitempty"`
 }
 
 type DuploAzureK8NodePoolDeleteRequest struct {
@@ -24,26 +27,29 @@ type DuploAzureK8NodePool struct {
 		Key   string `json:"Key"`
 		Value string `json:"Value"`
 	} `json:"CustomDataTags"`
-	FriendlyName      string        `json:"FriendlyName"`
-	Capacity          string        `json:"Capacity"`
-	IsMinion          bool          `json:"IsMinion"`
-	Zone              int           `json:"Zone"`
-	Volumes           []interface{} `json:"Volumes"`
-	Tags              []interface{} `json:"Tags"`
-	TagsEx            []interface{} `json:"TagsEx"`
-	AgentPlatform     int           `json:"AgentPlatform"`
-	IsEbsOptimized    bool          `json:"IsEbsOptimized"`
-	Cloud             int           `json:"Cloud"`
-	AllocatedPublicIP bool          `json:"AllocatedPublicIp"`
-	NetworkInterfaces []interface{} `json:"NetworkInterfaces"`
-	MetaData          []interface{} `json:"MetaData"`
-	MinionTags        []interface{} `json:"MinionTags"`
-	EncryptDisk       bool          `json:"EncryptDisk"`
-	ProvisioningState string        `json:"ProvisioningState"`
-	DesiredCapacity   int           `json:"DesiredCapacity"`
-	MaxSize           int           `json:"MaxSize"`
-	MinSize           int           `json:"MinSize"`
-	EnableAutoScaling bool          `json:"EnableAutoScaling"`
+	FriendlyName           string        `json:"FriendlyName"`
+	Capacity               string        `json:"Capacity"`
+	IsMinion               bool          `json:"IsMinion"`
+	Zone                   int           `json:"Zone"`
+	Volumes                []interface{} `json:"Volumes"`
+	Tags                   []interface{} `json:"Tags"`
+	TagsEx                 []interface{} `json:"TagsEx"`
+	AgentPlatform          int           `json:"AgentPlatform"`
+	IsEbsOptimized         bool          `json:"IsEbsOptimized"`
+	Cloud                  int           `json:"Cloud"`
+	AllocatedPublicIP      bool          `json:"AllocatedPublicIp"`
+	NetworkInterfaces      []interface{} `json:"NetworkInterfaces"`
+	MetaData               []interface{} `json:"MetaData"`
+	MinionTags             []interface{} `json:"MinionTags"`
+	EncryptDisk            bool          `json:"EncryptDisk"`
+	ProvisioningState      string        `json:"ProvisioningState"`
+	DesiredCapacity        int           `json:"DesiredCapacity"`
+	MaxSize                int           `json:"MaxSize"`
+	MinSize                int           `json:"MinSize"`
+	EnableAutoScaling      bool          `json:"EnableAutoScaling"`
+	ScaleSetPriority       string        `json:"ScaleSetPriority,omitempty"`
+	ScaleSetEvictionPolicy string        `json:"ScaleSetEvictionPolicy,omitempty"`
+	SpotMaxPrice           float32       `json:"SpotMaxPrice,omitempty"`
 }
 
 func (c *Client) AzureK8NodePoolCreate(tenantID string, rq *DuploAzureK8NodePoolRequest) (*string, ClientError) {

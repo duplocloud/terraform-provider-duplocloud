@@ -86,23 +86,16 @@ resource "duplocloud_gcp_s3_bucket" "mydata" {
 
 - `allow_public_access` (Boolean) Whether or not to remove the public access block from the bucket.
 - `default_encryption` (Block List, Max: 1) Default encryption settings for objects uploaded to the bucket. (see [below for nested schema](#nestedblock--default_encryption))
-- `enable_access_logs` (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan.
 - `enable_versioning` (Boolean) Whether or not to enable versioning.
-- `location` (String) The location is to set multi region, applicable for gcp cloud.
-- `managed_policies` (List of String) Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:
-
- - `"ssl"`: Require SSL / HTTPS when accessing the bucket.
- - `"ignore"`: If this key is present, Duplo will not manage your bucket policy.
-- `region` (String) The region of the S3 bucket.
+- `labels` (Map of String) The labels assigned to this storage bucket.
+- `location` (String) The location is to set region/multi region, applicable for gcp cloud.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- `arn` (String) The ARN of the S3 bucket.
-- `domain_name` (String) The domain name of the S3 bucket.
+- `domain_name` (String) Bucket self link.
 - `fullname` (String) The full name of the S3 bucket.
 - `id` (String) The ID of this resource.
-- `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedblock--default_encryption"></a>
 ### Nested Schema for `default_encryption`
@@ -119,15 +112,6 @@ Optional:
 
 - `create` (String)
 - `delete` (String)
-
-
-<a id="nestedatt--tags"></a>
-### Nested Schema for `tags`
-
-Read-Only:
-
-- `key` (String)
-- `value` (String)
 
 ## Import
 
