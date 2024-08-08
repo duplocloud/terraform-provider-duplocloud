@@ -56,6 +56,7 @@ resource "duplocloud_infrastructure_setting" "settings" {
 - `custom_data` (Block List, Deprecated) A complete list of configuration settings for this infrastructure, even ones not being managed by this resource. The custom_data argument is only applied on creation, and is deprecated in favor of the settings argument. (see [below for nested schema](#nestedblock--custom_data))
 - `delete_unspecified_settings` (Boolean) Whether or not this resource should delete any settings not specified by this resource. **WARNING:**  It is not recommended to change the default value of `false`. Defaults to `false`.
 - `setting` (Block List) A list of configuration settings to manage, expressed as key / value pairs.
+				
 | Cloud     | Key (string)                 | Value (string)                                          |
 |-----------|------------------------------|---------------------------------------------------------| 
 | All Cloud | MaximumK8sSessionDuration    | int                                                     | 
@@ -73,7 +74,8 @@ resource "duplocloud_infrastructure_setting" "settings" {
 | Azure     | Shared Image Gallery         | string                                                  |
 | Azure     | EnableAzureAppGatewayIngress | bool                                                    |
 | GCP       | GkeMinPortsPerVm             | int                                                     |
-*Note: EksControlplaneLogs value can be set with combination of settings separated by ; with no spaces* (see [below for nested schema](#nestedblock--setting))
+
+Note: EksControlplaneLogs value can be set with combination of settings separated by ; with no spaces (see [below for nested schema](#nestedblock--setting))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only

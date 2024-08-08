@@ -45,7 +45,7 @@ resource "duplocloud_aws_ecr_repository" "test-ecr" {
 
 ### Read-Only
 
-- `arn` (String) Full ARN of the repository.
+- `arn` (String) Full ARN of the ECR repository.
 - `id` (String) The ID of this resource.
 - `registry_id` (String) The registry ID where the repository was created.
 - `repository_url` (String) The URL of the repository.
