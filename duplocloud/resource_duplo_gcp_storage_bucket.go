@@ -63,7 +63,8 @@ func gcpStorageBucketSchema() map[string]*schema.Schema {
 // Resource for managing a GCP storage bucket
 func resourceGcpStorageBucket() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_gcp_storage_bucket` manages a GCP storage bucket in Duplo.",
+		Description:        "`duplocloud_gcp_storage_bucket` manages a GCP storage bucket in Duplo.",
+		DeprecationMessage: "duplocloud_gcp_storage_bucket is deprecated. Use duplocloud_gcp_s3_bucket instead.",
 
 		ReadContext:   resourceGcpStorageBucketRead,
 		CreateContext: resourceGcpStorageBucketCreate,
