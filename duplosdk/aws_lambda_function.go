@@ -164,6 +164,27 @@ type DuploLambdaPermissionRequest struct {
 	RevisionId       string `json:"RevisionId,omitempty"`
 }
 
+type LambdaFunctionEventInvokeConfiguration struct {
+	DestinationConfig        *DestinationConfiguration `json:"DestinationConfig,omitempty"`
+	FunctionName             string                    `json:"FunctionName,omitempty"`
+	MaximumEventAgeInSeconds int                       `json:"MaximumEventAgeInSeconds,omitempty"`
+	MaximumRetryAttempts     int                       `json:"MaximumRetryAttempts,omitempty"`
+}
+
+type PutLambdaFunctionEventInvokeConfiguration struct {
+	LambdaFunctionEventInvokeConfiguration
+	Qualifier string `json:"Qualifier,omitempty"`
+}
+
+type DestinationConfiguration struct {
+	OnSuccess *DestinationTarget `json:"OnSuccess,omitempty"`
+	OnFailure *DestinationTarget `json:"OnFailure,omitempty"`
+}
+
+type DestinationTarget struct {
+	Destination string `json:"Destination,omitempty"`
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -298,4 +319,36 @@ func (c *Client) LambdaStatusCheck(tenantID string, functionName string) (*Duplo
 		return nil, err
 	}
 	return &rp, nil
+}
+
+func (c *Client) LambdaEventInvokeConfigGet(tenantID string, functionName string) (*LambdaFunctionEventInvokeConfiguration, ClientError) {
+	rp := LambdaFunctionEventInvokeConfiguration{}
+	err := c.getAPI(
+		fmt.Sprintf("LambdaEventInvokeConfigGet(%s, %s)", tenantID, functionName),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s/configuration/event", tenantID, functionName),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+func (c *Client) LambdaEventInvokeConfigCreateOrUpdate(tenantID string, functionName string, request PutLambdaFunctionEventInvokeConfiguration) ClientError {
+	err := c.putAPI(
+		fmt.Sprintf("LambdaEventInvokeConfigCreateOrUpdate(%s, %s)", tenantID, functionName),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s/configuration/event", tenantID, functionName),
+		&request,
+		nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) LambdaEventInvokeConfigDelete(tenantID string, functionName string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("LambdaEventInvokeConfigDelete(%s, %s)", tenantID, functionName),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s/configuration/event", tenantID, functionName),
+		nil,
+	)
 }
