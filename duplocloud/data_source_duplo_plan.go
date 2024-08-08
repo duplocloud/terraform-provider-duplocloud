@@ -365,7 +365,7 @@ func flattenPlanCloudConfig(plan map[string]interface{}, duplo *duplosdk.DuploPl
 	}
 
 	if duplo.KmsKeyInfos != nil && len(*duplo.KmsKeyInfos) > 0 {
-		plan["kms_keys"] = flattenPlanKmsKeys(duplo.KmsKeyInfos)
+		plan["kms_keys"] = flattenPlanKmsKeysV2(duplo.KmsKeyInfos)
 	}
 
 	if duplo.K8ClusterConfigs != nil && len(*duplo.K8ClusterConfigs) > 0 {
@@ -403,27 +403,14 @@ func flattenPlanCertificates(list *[]duplosdk.DuploPlanCertificate) []interface{
 	return result
 }
 
-func flattenPlanWafs(list *[]duplosdk.DuploPlanWafInfo) []interface{} {
+func flattenPlanWafs(list *[]duplosdk.DuploPlanWAF) []interface{} {
 	result := make([]interface{}, 0, len(*list))
 
 	for _, waf := range *list {
 		result = append(result, map[string]interface{}{
-			"name": waf.WebAclName,
-			"id":   waf.WebAclId,
-		})
-	}
-
-	return result
-}
-
-func flattenPlanKmsKeys(list *[]duplosdk.DuploPlanKmsKeyInfo) []interface{} {
-	result := make([]interface{}, 0, len(*list))
-
-	for _, kms := range *list {
-		result = append(result, map[string]interface{}{
-			"name": kms.KeyName,
-			"id":   kms.KeyId,
-			"arn":  kms.KeyArn,
+			"name":          waf.WebAclName,
+			"arn":           waf.WebAclId,
+			"dashboard_url": waf.DashboardUrl,
 		})
 	}
 

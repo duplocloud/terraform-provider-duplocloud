@@ -82,6 +82,7 @@ type DuploS3Bucket struct {
 	Name              string                 `json:"Name,omitempty"`
 	DomainName        string                 `json:"DomainName,omitempty"`
 	Region            string                 `json:"Region,omitempty"`
+	Location          string                 `json:"Location,omitempty"`
 	Arn               string                 `json:"Arn,omitempty"`
 	MetaData          string                 `json:"MetaData,omitempty"`
 	EnableVersioning  bool                   `json:"EnableVersioning,omitempty"`
@@ -90,6 +91,19 @@ type DuploS3Bucket struct {
 	DefaultEncryption string                 `json:"DefaultEncryption,omitempty"`
 	Policies          []string               `json:"Policies,omitempty"`
 	Tags              *[]DuploKeyStringValue `json:"Tags,omitempty"`
+}
+
+type DuploGCPBucket struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-"`
+
+	Name                  string            `json:"Name,omitempty"`
+	DomainName            string            `json:"SelfLink,omitempty"`
+	Location              string            `json:"Location,omitempty"`
+	EnableVersioning      bool              `json:"EnableVersioning,omitempty"`
+	AllowPublicAccess     bool              `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryptionType int               `json:"DefaultEncryptionType,omitempty"`
+	Labels                map[string]string `json:"Labels,omitempty"`
 }
 
 // DuploApplicationLB represents an AWS application load balancer resource for a Duplo tenant
@@ -219,6 +233,7 @@ type DuploS3BucketRequest struct {
 type DuploS3BucketSettingsRequest struct {
 	Name              string   `json:"Name,omitempty"`
 	Region            string   `json:"Region,omitempty"`
+	Location          string   `json:"Location,omitempty"`
 	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
 	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
 	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
@@ -530,6 +545,24 @@ func (c *Client) TenantCreateV3S3Bucket(tenantID string, duplo DuploS3BucketSett
 	return &resp, nil
 }
 
+func (c *Client) GCPTenantCreateV3S3Bucket(tenantID string, duplo DuploGCPBucket) (*DuploS3Bucket, ClientError) {
+
+	resp := DuploS3Bucket{}
+
+	// Create the bucket via Duplo.
+	err := c.postAPI(
+		fmt.Sprintf("TenantCreateV3S3Bucket(%s, %s)", tenantID, duplo.Name),
+		//  fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket", tenantID),
+		&duplo,
+		&resp)
+
+	if err != nil || resp.Name == "" {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // TenantDeleteV3S3Bucket deletes an S3 bucket resource via V3 Duplo Api.
 func (c *Client) TenantDeleteV3S3Bucket(tenantID string, fullname string) ClientError {
 	// Delete the bucket via Duplo.
@@ -551,12 +584,44 @@ func (c *Client) TenantGetV3S3Bucket(tenantID string, name string) (*DuploS3Buck
 	return &rp, err
 }
 
+func (c *Client) GCPTenantGetV3S3Bucket(tenantID string, name string) (*DuploGCPBucket, ClientError) {
+	rp := DuploGCPBucket{}
+	err := c.getAPI(fmt.Sprintf("GCPTenantGetV3S3Bucket(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, name),
+		&rp)
+	if err != nil { //|| rp.Arn == "" {
+		return nil, err
+	}
+	return &rp, err
+}
+
 // TenantUpdateV3S3Bucket applies settings to an S3 bucket resource V3 Duplo Api.
 func (c *Client) TenantUpdateV3S3Bucket(tenantID string, duplo DuploS3BucketSettingsRequest) (*DuploS3Bucket, ClientError) {
 	// Apply the settings via Duplo.
 	apiName := fmt.Sprintf("TenantUpdateV3S3Bucket(%s, %s)", tenantID, duplo.Name)
 	rp := DuploS3Bucket{}
 	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s", tenantID, duplo.Name), &duplo, &rp)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deal with a missing response.
+	if rp.Name == "" {
+		message := fmt.Sprintf("%s: unexpected missing response from backend", apiName)
+		log.Printf("[TRACE] %s", message)
+		return nil, newClientError(message)
+	}
+
+	// Return the response.
+	rp.TenantID = tenantID
+	return &rp, nil
+}
+
+func (c *Client) GCPTenantUpdateV3S3Bucket(tenantID string, duplo DuploGCPBucket) (*DuploGCPBucket, ClientError) {
+	// Apply the settings via Duplo.
+	apiName := fmt.Sprintf("TenantUpdateV3S3Bucket(%s, %s)", tenantID, duplo.Name)
+	rp := DuploGCPBucket{}
+	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, duplo.Name), &duplo, &rp)
 	if err != nil {
 		return nil, err
 	}
@@ -604,6 +669,15 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError 
 		fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
 		&DuploS3BucketRequest{Type: ResourceTypeS3Bucket, Name: fullName, State: "delete"},
 		nil)
+}
+
+func (c *Client) GCPTenantDeleteS3Bucket(tenantID string, name, fullName string) ClientError {
+
+	// Delete the bucket via Duplo.
+	return c.deleteAPI(fmt.Sprintf("NativeHostDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, fullName),
+		nil)
+
 }
 
 // TenantGetS3BucketSettings gets a non-cached view of the  S3 buckets's settings via Duplo.

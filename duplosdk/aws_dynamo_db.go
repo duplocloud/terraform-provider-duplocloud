@@ -2,7 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
-	"time"
+	"net/url"
 )
 
 const DynamoDBProvisionedThroughputMinValue = 1
@@ -48,19 +48,67 @@ type DuploDynamoDBTableV2 struct {
 	TtlStatus                 string                                      `json:"TtlStatus,omitempty"`
 }
 
+type DuploDynamoDBTableV2Old struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-"`
+
+	TableName                 string                                      `json:"TableName"`
+	TableId                   string                                      `json:"TableId"`
+	TableArn                  string                                      `json:"TableArn,omitempty"`
+	DeletionProtectionEnabled bool                                        `json:"DeletionProtectionEnabled,omitempty"`
+	PointInTimeRecoveryStatus string                                      `json:"PointInTimeRecoveryStatus,omitempty"`
+	KeySchema                 *[]DuploDynamoDBKeySchema                   `json:"KeySchema,omitempty"`
+	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinion           `json:"AttributeDefinitions,omitempty"`
+	TableStatus               *DuploStringValue                           `json:"TableStatus,omitempty"`
+	TableSizeBytes            int                                         `json:"TableSizeBytes,omitempty"`
+	LocalSecondaryIndexes     *[]DuploDynamoDBTableV2LocalSecondaryIndex  `json:"LocalSecondaryIndexes,omitempty"`
+	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexes,omitempty"`
+	LatestStreamArn           string                                      `json:"LatestStreamArn,omitempty"`
+	LatestStreamLabel         string                                      `json:"LatestStreamLabel,omitempty"`
+	ProvisionedThroughput     *DuploDynamoDBProvisionedThroughput         `json:"ProvisionedThroughput,omitempty"`
+	SSEDescription            *DuploDynamoDBTableV2SSESpecification       `json:"SSEDescription,omitempty"`
+	StreamSpecification       *DuploDynamoDBTableV2StreamSpecification    `json:"StreamSpecification,omitempty"`
+	BillingModeSummary        *DuploDynamoDBTableV2BillingModeSummary     `json:"BillingModeSummary,omitempty"`
+}
+
+type DuploDynamoDBTableV2Response struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-"`
+
+	TableName                 string                                              `json:"TableName"`
+	TableId                   string                                              `json:"TableId"`
+	TableArn                  string                                              `json:"TableArn,omitempty"`
+	DeletionProtectionEnabled bool                                                `json:"DeletionProtectionEnabled,omitempty"`
+	PointInTimeRecoveryStatus string                                              `json:"PointInTimeRecoveryStatus,omitempty"`
+	KeySchema                 *[]DuploDynamoDBKeySchemaResponse                   `json:"KeySchema,omitempty"`
+	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinion                   `json:"AttributeDefinitions,omitempty"`
+	TableStatus               *DuploStringValue                                   `json:"TableStatus,omitempty"`
+	TableSizeBytes            int                                                 `json:"TableSizeBytes,omitempty"`
+	LocalSecondaryIndexes     *[]DuploDynamoDBTableV2LocalSecondaryIndexResponse  `json:"LocalSecondaryIndexes,omitempty"`
+	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndexResponse `json:"GlobalSecondaryIndexes,omitempty"`
+	LatestStreamArn           string                                              `json:"LatestStreamArn,omitempty"`
+	LatestStreamLabel         string                                              `json:"LatestStreamLabel,omitempty"`
+	ProvisionedThroughput     *DuploDynamoDBProvisionedThroughput                 `json:"ProvisionedThroughput,omitempty"`
+	SSEDescription            *DuploDynamoDBTableV2SSESpecificationResponse       `json:"SSEDescription,omitempty"`
+	StreamSpecification       *DuploDynamoDBTableV2StreamSpecification            `json:"StreamSpecification,omitempty"`
+	BillingModeSummary        *DuploDynamoDBTableV2BillingModeSummary             `json:"BillingModeSummary,omitempty"`
+	TtlAttributeName          string                                              `json:"TtlAttributeName,omitempty"`
+	TtlStatus                 string                                              `json:"TtlStatus,omitempty"`
+}
+
 type DuploDynamoDBTableV2TimeInRecovery struct {
 	IsPointInTimeRecovery bool `json:"IsPointInTimeRecovery,omitempty"`
 }
 
 type DuploDynamoDBTableV2ContinuousBackupsDescription struct {
-	LatestRestorableDateTime time.Time `json:"LatestRestorableDateTime,omitempty"`
+	//LatestRestorableDateTime time.Time `json:"LatestRestorableDateTime,omitempty"`
 
 	ContinuousBackupsStatus struct {
 		Value string `json:"Value,omitempty"`
 	} `json:"ContinuousBackupsStatus,omitempty"`
 
 	PointInTimeRecoveryDescription struct {
-		EarliestRestorableDateTime time.Time `json:"EarliestRestorableDateTime,omitempty"`
+		EarliestRestorableDateTime string `json:"EarliestRestorableDateTime,omitempty"`
 	} `json:"PointInTimeRecoveryDescription,omitempty"`
 
 	PointInTimeRecoveryStatus struct {
@@ -76,8 +124,13 @@ type DuploDynamoDBProvisionedThroughput struct {
 
 // DuploDynamoDBKeySchema is a Duplo SDK object that represents a dynamodb key schema
 type DuploDynamoDBKeySchema struct {
-	AttributeName string            `json:"AttributeName"`
-	KeyType       *DuploStringValue `json:"KeyType,omitempty"`
+	AttributeName string `json:"AttributeName"`
+	KeyType       string `json:"KeyType,omitempty"`
+}
+
+type DuploDynamoDBKeySchemaResponse struct {
+	AttributeName string           `json:"AttributeName"`
+	KeyType       DuploStringValue `json:"KeyType,omitempty"`
 }
 
 type DuploDynamoDBKeySchemaV2 struct {
@@ -118,7 +171,19 @@ type DuploDynamoDBTableV2SSESpecification struct {
 	KMSMasterKeyArn string            `json:"KMSMasterKeyArn,omitempty"`
 }
 
+type DuploDynamoDBTableV2SSESpecificationResponse struct {
+	Status          DuploStringValue  `json:"Status,omitempty"`
+	KMSMasterKeyId  string            `json:"KMSMasterKeyId,omitempty"`
+	SSEType         *DuploStringValue `json:"SSEType,omitempty"`
+	KMSMasterKeyArn string            `json:"KMSMasterKeyArn,omitempty"`
+}
+
 type DuploDynamoDBTableV2Projection struct {
+	NonKeyAttributes []string `json:"NonKeyAttributes,omitempty"`
+	ProjectionType   string   `json:"ProjectionType,omitempty"`
+}
+
+type DuploDynamoDBTableV2ProjectionResponse struct {
 	NonKeyAttributes []string          `json:"NonKeyAttributes,omitempty"`
 	ProjectionType   *DuploStringValue `json:"ProjectionType,omitempty"`
 }
@@ -129,6 +194,12 @@ type DuploDynamoDBTableV2LocalSecondaryIndex struct {
 	KeySchema  *[]DuploDynamoDBKeySchema       `json:"KeySchema,omitempty"`
 }
 
+type DuploDynamoDBTableV2LocalSecondaryIndexResponse struct {
+	IndexName  string                                  `json:"IndexName"`
+	Projection *DuploDynamoDBTableV2ProjectionResponse `json:"Projection,omitempty"`
+	KeySchema  *[]DuploDynamoDBKeySchemaResponse       `json:"KeySchema,omitempty"`
+}
+
 type DuploDynamoDBTableV2GlobalSecondaryIndex struct {
 	IndexName             string                              `json:"IndexName"`
 	Projection            *DuploDynamoDBTableV2Projection     `json:"Projection,omitempty"`
@@ -136,6 +207,19 @@ type DuploDynamoDBTableV2GlobalSecondaryIndex struct {
 	ProvisionedThroughput *DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput,omitempty"`
 }
 
+type DuploDynamoDBTableV2GlobalSecondaryIndexResponse struct {
+	IndexName             string                                  `json:"IndexName"`
+	Projection            *DuploDynamoDBTableV2ProjectionResponse `json:"Projection,omitempty"`
+	KeySchema             *[]DuploDynamoDBKeySchemaResponse       `json:"KeySchema,omitempty"`
+	ProvisionedThroughput *DuploDynamoDBProvisionedThroughput     `json:"ProvisionedThroughput,omitempty"`
+	IndexStatus           *DuploStringValue                       `json:"IndexStatus,omitempty"`
+}
+type UpdateGSIReq struct {
+	UpdateGSI UpdateGSI `json:"Update"`
+}
+type UpdateGSI struct {
+	GlobalSecondaryIndexes *[]DuploDynamoDBTableV2GlobalSecondaryIndex
+}
 type DuploDynamoDBTableV2BillingModeSummary struct {
 	BillingMode *DuploStringValue `json:"BillingMode,omitempty"`
 }
@@ -148,8 +232,8 @@ type DuploDynamoDBTableV2TTl struct {
 type DuploDynamoDBTableRequestV2 struct {
 	TableName                 string                                      `json:"TableName"`
 	BillingMode               string                                      `json:"BillingMode,omitempty"`
-	DeletionProtectionEnabled *bool                                       `json:"DeletionProtectionEnabled"`
-	Tags                      *[]DuploKeyStringValue                      `json:"Tags,omitempty"`
+	DeletionProtectionEnabled *bool                                       `json:"DeletionProtectionEnabled,omitempty"`
+	Tags                      *[]DyanmoDbV2Tag                            `json:"Tags,omitempty"`
 	KeySchema                 *[]DuploDynamoDBKeySchemaV2                 `json:"KeySchema,omitempty"`
 	AttributeDefinitions      *[]DuploDynamoDBAttributeDefinionV2         `json:"AttributeDefinitions,omitempty"`
 	ProvisionedThroughput     *DuploDynamoDBProvisionedThroughput         `json:"ProvisionedThroughput,omitempty"`
@@ -159,9 +243,15 @@ type DuploDynamoDBTableRequestV2 struct {
 	GlobalSecondaryIndexes    *[]DuploDynamoDBTableV2GlobalSecondaryIndex `json:"GlobalSecondaryIndexes,omitempty"`
 }
 
-type DuploDynamoDBTagResourceRequest struct {
-	ResourceArn string                 `json:"ResourceArn,omitempty"` // The ARN of the resource to tag
+type DyanmoDbV2Tag struct {
+	Key       string `json:"Key"`
+	Value     string `json:"Value,omitempty"`
+	DeleteTag bool   `json:"-"`
+}
+type DuploDynamoDBTagResource struct {
+	ResourceArn string                 `json:"Arn,omitempty"`         // The ARN of the resource to tag
 	Tags        *[]DuploKeyStringValue `json:"Tags,omitempty"`        // A list of tags to associate with the resource
+	DeleteTags  []string               `json:"DeletedTags,omitempty"` //A list of tags to be deleted
 }
 
 type DuploDynamoDBTagResourceResponse struct {
@@ -194,10 +284,10 @@ func (c *Client) DynamoDBTableCreate(
 func (c *Client) DynamoDBTableCreateV2(
 	tenantID string,
 	rq *DuploDynamoDBTableRequestV2,
-) (*DuploDynamoDBTableV2, ClientError) {
+) (*DuploDynamoDBTableV2Response, ClientError) {
 	fmt.Println("calling DynamoDBTableCreateV2")
 
-	rp := DuploDynamoDBTableV2{}
+	rp := DuploDynamoDBTableV2Response{}
 	err := c.postAPI(
 		fmt.Sprintf("DynamoDBTableCreate(%s, %s)", tenantID, rq.TableName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2", tenantID),
@@ -223,15 +313,46 @@ func (c *Client) DynamoDBTableUpdateV2(
 	return &rp, err
 }
 
-func (c *Client) DynamoDBTableUpdateTagsV2(
-	tenantId string,
-	rq *DuploDynamoDBTagResourceRequest) (*DuploDynamoDBTagResourceResponse, ClientError) {
-	rp := DuploDynamoDBTagResourceResponse{}
+func (c *Client) DynamoDBTableUpdateGSIV2(
+	tenantID string,
+	rq *ModifyGSI) (*DuploDynamoDBTableV2, ClientError) {
+	rp := DuploDynamoDBTableV2{}
+
 	err := c.putAPI(
-		fmt.Sprintf("DynamoDBTableUpdateTags(%s, %s)", tenantId, rq.ResourceArn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/tag-resource", tenantId),
+		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
 		&rq,
 		&rp,
+	)
+	rp.TenantID = tenantID
+	return &rp, err
+}
+
+func (c *Client) DynamoDBTableUpdateV21(
+	tenantID string,
+	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+	rp := DuploDynamoDBTableV2{}
+	//rs := &[]DuploDynamoDBTableV2GlobalSecondaryIndex{}
+	//rs = rq.GlobalSecondaryIndexes
+	err := c.putAPI(
+		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
+		rq,
+		&rp,
+	)
+	rp.TenantID = tenantID
+	return &rp, err
+}
+
+func (c *Client) DynamoDBTableUpdateTagsV2(
+	tenantId, name string,
+	rq *DuploDynamoDBTagResource) (*DuploDynamoDBTagResource, ClientError) {
+	rp := DuploDynamoDBTagResource{}
+	err := c.postAPI(
+		fmt.Sprintf("DynamoDBTableUpdateTags(%s, %s)", tenantId, rq.ResourceArn),
+		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/manage", tenantId, name),
+		&rq,
+		nil,
 	)
 	return &rp, err
 }
@@ -262,8 +383,17 @@ func (c *Client) DynamoDBTableGet(tenantID string, name string) (*DuploDynamoDBT
 	return &rp, err
 }
 
-func (c *Client) DynamoDBTableGetV2(tenantID string, name string) (*DuploDynamoDBTableV2, ClientError) {
-	rp := DuploDynamoDBTableV2{}
+func (c *Client) DynamoDBTableGetTags(tenantID string, arn string) ([]DuploKeyStringValue, ClientError) {
+	rp := []DuploKeyStringValue{}
+	err := c.getAPI(
+		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, arn), // triple encoding needed to fetch the data
+		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s", tenantID, url.PathEscape(url.PathEscape(url.PathEscape(arn)))),
+		&rp)
+	return rp, err
+}
+
+func (c *Client) DynamoDBTableGetV2(tenantID string, name string) (*DuploDynamoDBTableV2Response, ClientError) {
+	rp := DuploDynamoDBTableV2Response{}
 	err := c.getAPI(
 		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, name),
@@ -326,12 +456,38 @@ func (c *Client) DuploDynamoDBTableV2UpdateSSESpecification(
 // "DeletionProtection modification must be the only operation in the request"
 func (c *Client) DuploDynamoDBTableV2UpdateDeletionProtection(
 	tenantID string,
-	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+	r *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
 
-	r := DuploDynamoDBTableRequestV2{}
+	return c.DynamoDBTableUpdateV2(tenantID, r)
+}
 
-	r.TableName = rq.TableName
-	r.DeletionProtectionEnabled = rq.DeletionProtectionEnabled
+type ModifyGSI struct {
+	TableName                   string                             `json:"TableName"`
+	AttributeDefinitions        []DuploDynamoDBAttributeDefinionV2 `json:"AttributeDefinitions,omitempty"`
+	GlobalSecondaryIndexUpdates []GlobalSecondaryIndexUpdates
+}
+type GlobalSecondaryIndexUpdates struct {
+	Create *DuploDynamoDBTableV2GlobalSecondaryIndex `json:"Create,omitempty"`
+	Delete *Delete                                   `json:"Delete,omitempty"`
+	Update *Update                                   `json:"Update,omitempty"`
+}
 
-	return c.DynamoDBTableUpdateV2(tenantID, &r)
+type Delete struct {
+	IndexName string `json:"IndexName"`
+}
+
+type Update struct {
+	IndexName             string                             `json:"IndexName"`
+	ProvisionedThroughput DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput"`
+}
+
+// remove after july 2024 release updation
+func (c *Client) DynamoDBTableGetV2Old(tenantID string, name string) (*DuploDynamoDBTableV2Old, ClientError) {
+	rp := DuploDynamoDBTableV2Old{}
+	err := c.getAPI(
+		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, name),
+		&rp)
+	rp.TenantID = tenantID
+	return &rp, err
 }

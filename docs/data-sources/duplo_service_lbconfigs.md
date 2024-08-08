@@ -57,6 +57,7 @@ Read-Only:
 - `external_traffic_policy` (String)
 - `extra_selector_label` (List of Object) (see [below for nested schema](#nestedobjatt--services--lbconfigs--extra_selector_label))
 - `frontend_ip` (String)
+- `health_check` (List of Object) (see [below for nested schema](#nestedobjatt--services--lbconfigs--health_check))
 - `health_check_url` (String)
 - `host_name` (String)
 - `host_port` (Number)
@@ -80,3 +81,16 @@ Read-Only:
 
 - `key` (String)
 - `value` (String)
+
+
+<a id="nestedobjatt--services--lbconfigs--health_check"></a>
+### Nested Schema for `services.lbconfigs.health_check`
+
+Read-Only:
+
+- `grpc_success_codes` (String)
+- `healthy_threshold` (Number)
+- `http_success_codes` (String)
+- `interval` (Number)
+- `timeout` (Number)
+- `unhealthy_threshold` (Number)

@@ -121,13 +121,14 @@ type DuploInfrastructureConfig struct {
 }
 
 type AksConfig struct {
-	Name            string `json:"Name"`
-	CreateAndManage bool   `json:"CreateAndManage"`
-	PrivateCluster  bool   `json:"PrivateCluster"`
-	K8sVersion      string `json:"K8sVersion,omitempty"`
-	VmSize          string `json:"VmSize,omitempty"`
-	NetworkPlugin   string `json:"NetworkPlugin,omitempty"`
-	OutboundType    string `json:"OutboundType,omitempty"`
+	Name              string `json:"Name"`
+	CreateAndManage   bool   `json:"CreateAndManage"`
+	PrivateCluster    bool   `json:"PrivateCluster"`
+	K8sVersion        string `json:"K8sVersion,omitempty"`
+	VmSize            string `json:"VmSize,omitempty"`
+	NetworkPlugin     string `json:"NetworkPlugin,omitempty"`
+	OutboundType      string `json:"OutboundType,omitempty"`
+	NodeResourceGroup string `json:"NodeResourceGroup"`
 }
 
 type DuploAzureLogAnalyticsWorkspace struct {

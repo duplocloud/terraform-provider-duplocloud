@@ -68,6 +68,43 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"scale_priority": {
+			Description: "specify the priority for scaling operations,supported priority Regular or Spot",
+			Optional:    true,
+			Computed:    true,
+			MaxItems:    1,
+			Type:        schema.TypeList,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"priority": {
+						Description: "priority levels Regular/Spot",
+						Optional:    true,
+						Computed:    true,
+						Type:        schema.TypeString,
+						ValidateFunc: validation.StringInSlice([]string{
+							"Regular",
+							"Spot",
+						}, false),
+					},
+					"eviction_policy": {
+						Description: "eviction policies Delete/Deallocate",
+						Optional:    true,
+						Computed:    true,
+						Type:        schema.TypeString,
+						ValidateFunc: validation.StringInSlice([]string{
+							"Standard",
+							"Spot",
+						}, false),
+					},
+					"spot_max_price": {
+						Description: " for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.",
+						Optional:    true,
+						Computed:    true,
+						Type:        schema.TypeString,
+					},
+				},
+			},
+		},
 		"wait_until_ready": {
 			Description: "Whether or not to wait until node pool to be ready, after creation.",
 			Type:        schema.TypeBool,
@@ -132,7 +169,10 @@ func resourceAgentK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("[TRACE] resourceAgentK8NodePoolCreate(%s, %v): start", tenantID, identifier)
 	c := m.(*duplosdk.Client)
 
-	rq := expandAgentK8NodePool(d)
+	rq, err := expandAgentK8NodePool(d)
+	if err != nil {
+		return diag.Errorf("Error creating tenant %s azure node pool '%v': %s", tenantID, identifier, err)
+	}
 	friendlyName, err := c.AzureK8NodePoolCreate(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s azure node pool '%v': %s", tenantID, identifier, err)
@@ -195,7 +235,7 @@ func resourceAgentK8NodePoolDelete(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-func expandAgentK8NodePool(d *schema.ResourceData) *duplosdk.DuploAzureK8NodePoolRequest {
+func expandAgentK8NodePool(d *schema.ResourceData) (*duplosdk.DuploAzureK8NodePoolRequest, error) {
 	nodePool := &duplosdk.DuploAzureK8NodePoolRequest{
 		MinSize:           d.Get("min_capacity").(int),
 		MaxSize:           d.Get("max_capacity").(int),
@@ -213,8 +253,22 @@ func expandAgentK8NodePool(d *schema.ResourceData) *duplosdk.DuploAzureK8NodePoo
 			},
 		}
 	}
-
-	return nodePool
+	if v, ok := d.GetOk("scale_priority"); ok {
+		scalePriority := v.([]interface{})
+		if len(scalePriority) > 0 {
+			for _, mp := range scalePriority {
+				data := mp.(map[string]interface{})
+				nodePool.ScaleSetPriority = data["priority"].(string)
+				nodePool.ScaleSetEvictionPolicy = data["eviction_policy"].(string)
+				price, err := strconv.ParseFloat(data["spot_max_price"].(string), 32)
+				if err != nil {
+					return nil, err
+				}
+				nodePool.SpotMaxPrice = float32(price)
+			}
+		}
+	}
+	return nodePool, nil
 }
 
 func parseAgentK8NodePoolIdParts(id string) (tenantID, name string, err error) {
@@ -247,6 +301,12 @@ func flattenAgentK8NodePool(d *schema.ResourceData, duplo *duplosdk.DuploAzureK8
 				break
 			}
 		}
+	}
+	if duplo.ScaleSetPriority != "" {
+		mp := map[string]interface{}{}
+		mp["priority"] = duplo.ScaleSetPriority
+		mp["eviction_policy"] = duplo.ScaleSetEvictionPolicy
+		mp["spot_max_price"] = duplo.SpotMaxPrice
 	}
 
 }

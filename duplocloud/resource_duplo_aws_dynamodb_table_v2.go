@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"reflect"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -15,38 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-/*
-//creating conflicts with name set up
-
-	func BeforeHook(fn func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics) func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-		return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-			c := m.(*duplosdk.Client)
-
-			err := prefixName(c, d)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			return fn(ctx, d, m)
-		}
-	}
-
-	func prefixName(c *duplosdk.Client, d *schema.ResourceData) duplosdk.ClientError {
-		tenantId, name := d.Get("tenant_id").(string), d.Get("name").(string)
-
-		prefix, err := c.GetDuploServicesPrefix(tenantId)
-		if err != nil {
-			return err
-		}
-
-		if !strings.HasPrefix(name, prefix) {
-			name = fmt.Sprintf("%s-%s", prefix, name)
-			d.Set("name", name)
-		}
-
-		return nil
-	}
-*/
 func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
@@ -113,13 +80,12 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
-			Elem:     KeyValueSchema(),
+			Elem:     KeyValueSchema(), //DynamoDbV2TagSchema(),
 		},
 
 		"attribute": {
 			Type:     schema.TypeSet,
-			Optional: true,
-			Computed: true,
+			Required: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"name": {
@@ -138,8 +104,7 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 
 		"key_schema": {
 			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
+			Required: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"attribute_name": {
@@ -206,9 +171,10 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			},
 		},
 		"local_secondary_index": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			ForceNew: true,
+			Type:             schema.TypeSet,
+			Optional:         true,
+			ForceNew:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"name": {
@@ -216,6 +182,11 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 						Type:        schema.TypeString,
 						Required:    true,
 						ForceNew:    true,
+					},
+					"hash_key": {
+						Description: "The name of the hash key in the index; must be defined as an attribute in the resource.",
+						Type:        schema.TypeString,
+						Required:    true,
 					},
 					"non_key_attributes": {
 						Description: "Only required with `INCLUDE` as a projection type; a list of attributes to project into the index. These do not need to be defined as attributes on the table.",
@@ -354,11 +325,10 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
 	reservedFullname := d.Get("fullname").(string)
 	c := m.(*duplosdk.Client)
-	fullName, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, name)
-	if errname != nil {
-		return diag.Errorf("resourceAwsDynamoDBTableReadV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
-	}
-	if fullName != reservedFullname {
+
+	var fullName string
+
+	if fullName != reservedFullname && reservedFullname != "" {
 		fullName = reservedFullname
 	}
 	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
@@ -427,6 +397,14 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 
 	}
+	//tag, err := c.DynamoDBTableGetTags(tenantID, duplo.TableArn)
+	//if err != nil {
+	//	return diag.FromErr(err)
+	//}
+	//if err := d.Set("tag", flattenDynoamoTag(tag)); err != nil {
+	//	return diag.FromErr(err)
+	//}
+
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -443,12 +421,19 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	prefix, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, "")
+	if errname != nil {
+		return diag.Errorf("resourceAwsDynamoDBTableCreateV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
+	}
+	//Workaround for backend issue july2024 release since some backend API always expects duplo prefixed name
+	if !strings.Contains(name, prefix) {
+		rq.TableName = prefix + name
+	}
 	rp, err := c.DynamoDBTableCreateV2(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s dynamodb table '%s': %s", tenantID, name, err)
 	}
-	d.Set("fullname", rp.TableName)
+
 	time.Sleep(time.Duration(10) * time.Second)
 
 	// Wait for Duplo to be able to return the table's details.
@@ -474,6 +459,13 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 			return diag.FromErr(err)
 		}
 	}
+	//var fullName string
+	//prefix, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, "")
+	//if errname != nil {
+	//	return diag.Errorf("resourceAwsDynamoDBTableCreateV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
+	//}
+
+	d.Set("fullname", rp.TableName)
 
 	diags = updateDynamoDBTableV2PointInRecovery(ctx, d, m)
 	if diags != nil {
@@ -520,129 +512,159 @@ func updateDynamoDBTableV2PointInRecovery(_ context.Context, d *schema.ResourceD
 	return nil
 }
 
-func tagDynamoDBtTableV2(
-	tenantId string,
-	rq *duplosdk.DuploDynamoDBTagResourceRequest,
+/*func tagDynamoDBtTableV2(
+	tenantId, name string,
+	rq *duplosdk.DuploDynamoDBTagResource,
 	m interface{},
-) (*duplosdk.DuploDynamoDBTagResourceResponse, duplosdk.ClientError) {
+) (*duplosdk.DuploDynamoDBTagResource, duplosdk.ClientError) {
 	c := m.(*duplosdk.Client)
-	resp, err := c.DynamoDBTableUpdateTagsV2(tenantId, rq)
+	resp, err := c.DynamoDBTableUpdateTagsV2(tenantId, name, rq)
 	if err != nil {
 		return nil, err
 	}
 	return resp, nil
 }
+*/
+/*
+Not supported for july 2024 release
 
-func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var err error
-
-	tenantID := d.Get("tenant_id").(string)
-	fullname := d.Get("fullname").(string)
-	_, name, err := parseAwsDynamoDBTableIdParts(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
-
-	c := m.(*duplosdk.Client)
-
-	// Expand the resource data into the SDK's DynamoDB table request struct.
-	rq, err := expandDynamoDBTable(d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Fetch the existing table for compairson
-	existing, err := c.DynamoDBTableGetV2(tenantID, fullname)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	tagReq := &duplosdk.DuploDynamoDBTagResourceRequest{
-		ResourceArn: existing.TableArn,
-		Tags:        rq.Tags,
-	}
-	_, err = tagDynamoDBtTableV2(tenantID, tagReq, m)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Updating Point In Time Recovery status
-	isPITREnabled := existing.PointInTimeRecoveryStatus == "ENABLED"
-	targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
-
-	switch {
-	case isPITREnabled != targetPITRStatus:
-		log.Printf("[INFO] Updating Point In Recovery for DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, fullname, targetPITRStatus)
+	func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+		var err error
+		tenantID := d.Get("tenant_id").(string)
+		fullname := d.Get("fullname").(string)
+		_, name, err := parseAwsDynamoDBTableIdParts(d.Id())
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		fallthrough
-	case rq.DeletionProtectionEnabled != nil && existing.DeletionProtectionEnabled != *rq.DeletionProtectionEnabled:
-		log.Printf("[INFO] Updating Deletion Protection for DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err := c.DuploDynamoDBTableV2UpdateDeletionProtection(tenantID, rq)
+		log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
+
+		c := m.(*duplosdk.Client)
+
+		// Expand the resource data into the SDK's DynamoDB table request struct.
+		rq, err := expandDynamoDBTable(d)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		fallthrough
-	case shouldUpdateSSESepecification(existing, rq):
-		log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
+
+		// Fetch the existing table for compairson
+		existing, err := c.DynamoDBTableGetV2(tenantID, fullname)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		fallthrough
-	case shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq):
-		// SSESpecification & DeletionProtectionEnabled must be updated alone.
-		// Passing these values with the rest of the update table request willcause
-		// cause a error. (Per .NET AWS SDK@3.7)
-		rq.SSESpecification, rq.DeletionProtectionEnabled = nil, nil
 
-		log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
-		_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
-		if err != nil {
-			e := "Error updating tenant %s DynamoDB table '%s': %s"
-			return diag.Errorf(e, tenantID, name, err)
+		tagsToUpdate := []duplosdk.DuploKeyStringValue{}
+		for _, v := range *rq.Tags {
+			tagsToUpdate = append(tagsToUpdate, duplosdk.DuploKeyStringValue{
+				Key:   v.Key,
+				Value: v.Value,
+			})
 		}
-	}
 
-	// Generate the ID for the resource and set it.
-	id := fmt.Sprintf("%s/%s", tenantID, name)
-	getResource := func() (interface{}, duplosdk.ClientError) {
-		return c.DynamoDBTableGet(tenantID, fullname)
-	}
-	diags := waitForResourceToBePresentAfterUpdate(ctx, d, "dynamodb table", id, getResource)
+		prevTag, err := c.DynamoDBTableGetTags(tenantID, existing.TableArn)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		toDel := removeTags(tagsToUpdate, prevTag)
+		tagReq := &duplosdk.DuploDynamoDBTagResource{
+			ResourceArn: existing.TableArn,
+			Tags:        &tagsToUpdate,
+			DeleteTags:  toDel,
+		}
+		_, err = tagDynamoDBtTableV2(tenantID, fullname, tagReq, m) //taging and untaging dynamodb
+		if err != nil {
+			return diag.FromErr(err)
+		}
 
-	// If there are diagnostics from waiting, return them.
-	if diags != nil {
+		diagErr := updatePointInTimeRecovery(c, d, tenantID, fullname)
+		if diagErr != nil {
+			return diagErr
+		}
+
+		diagErr = updateDeleteProtection(c, d, tenantID, fullname)
+		if diagErr != nil {
+			return diagErr
+		}
+		diagErr = globalIndexUpdateAction(c, existing, rq, tenantID, fullname, d)
+		if diagErr != nil {
+			return diagErr
+		}
+
+		if shouldUpdateThroughput(existing, rq) {
+			rq.SSESpecification, rq.DeletionProtectionEnabled = nil, nil
+			//
+			log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
+			_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+			if err != nil {
+				e := "Error updating tenant %s DynamoDB table '%s': %s"
+				return diag.Errorf(e, tenantID, name, err)
+			}
+		}
+
+		isSSESUpdatable := shouldUpdateSSESepecification(existing, rq)
+		if isSSESUpdatable {
+			rq := &duplosdk.DuploDynamoDBTableRequestV2{
+				TableName: fullname,
+				SSESpecification: &duplosdk.DuploDynamoDBTableV2SSESpecification{
+					Enabled: rq.SSESpecification.Enabled,
+				},
+			}
+			log.Printf("[INFO] Updating SSE Specification for DynamoDB table '%s' in tenant '%s'", name, tenantID)
+			_, err := c.DuploDynamoDBTableV2UpdateSSESpecification(tenantID, rq)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+		err = dynamodbWaitUntilReady(ctx, c, tenantID, fullname, d.Timeout("update"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		//// Generate the ID for the resource and set it.
+		id := fmt.Sprintf("%s/%s", tenantID, name)
+
+		d.SetId(id)
+
+		// Perform a read after update to sync state.
+		diags := resourceAwsDynamoDBTableReadV2(ctx, d, m)
+		log.Printf("[TRACE] resourceAwsDynamoDBTableUpdateV2(%s, %s): end", tenantID, name)
+
 		return diags
 	}
-	d.SetId(id)
-
-	// wait until the cache instances to be healthy.
-	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-		err = dynamodbWaitUntilReady(ctx, c, tenantID, fullname, d.Timeout("create"))
+*/
+/*func updatePointInTimeRecovery(c *duplosdk.Client, d *schema.ResourceData, tenantID, fullname string) diag.Diagnostics {
+	if d.HasChange("is_point_in_time_recovery") {
+		targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
+		_, err := c.DynamoDBTableV2PointInRecovery(tenantID, fullname, targetPITRStatus)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
-
-	// Perform a read after update to sync state.
-	diags = resourceAwsDynamoDBTableReadV2(ctx, d, m)
-	log.Printf("[TRACE] resourceAwsDynamoDBTableUpdateV2(%s, %s): end", tenantID, name)
-
-	return diags
+	return nil
 }
+func updateDeleteProtection(c *duplosdk.Client, d *schema.ResourceData, tenantID, fullname string) diag.Diagnostics {
+	r := duplosdk.DuploDynamoDBTableRequestV2{}
+	if d.HasChange("deletion_protection_enabled") {
+		state := d.Get("deletion_protection_enabled").(bool)
+		r.DeletionProtectionEnabled = &state
+
+		r.TableName = fullname
+
+		_, err := c.DuploDynamoDBTableV2UpdateDeletionProtection(tenantID, &r)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	return nil
+}*/
 
 func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
+	tenantID, _, err := parseAwsDynamoDBTableIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAwsDynamoDBTableDeleteV2(%s, %s): start", tenantID, name)
+	name := d.Get("fullname").(string)
 
+	log.Printf("[TRACE] resourceAwsDynamoDBTableDeleteV2(%s, %s): start", tenantID, name)
 	// Delete the function.
 	c := m.(*duplosdk.Client)
 	clientErr := c.DynamoDBTableDeleteV2(tenantID, name)
@@ -665,18 +687,33 @@ func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
+func expandTags(fieldName string, d *schema.ResourceData) *[]duplosdk.DyanmoDbV2Tag {
+	var ary []duplosdk.DyanmoDbV2Tag
+
+	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
+		kvs := v.([]interface{})
+		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
+		ary = make([]duplosdk.DyanmoDbV2Tag, 0, len(kvs))
+		for _, raw := range kvs {
+			kv := raw.(map[string]interface{})
+			ary = append(ary, duplosdk.DyanmoDbV2Tag{
+				Key:   kv["key"].(string),
+				Value: kv["value"].(string),
+				//				DeleteTag: kv["delete_tag"].(bool),
+			})
+		}
+	}
+
+	return &ary
+}
+
 func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRequestV2, error) {
 
 	req := &duplosdk.DuploDynamoDBTableRequestV2{
 		TableName:   d.Get("name").(string),
 		BillingMode: d.Get("billing_mode").(string),
-		Tags:        keyValueFromState("tag", d),
+		Tags:        expandTags("tag", d),
 		KeySchema:   expandDynamoDBKeySchema(d),
-	}
-
-	if v, ok := d.GetOk("deletion_protection_enabled"); ok {
-		state := v.(bool)
-		req.DeletionProtectionEnabled = &state
 	}
 
 	if v, ok := d.GetOk("attribute"); ok {
@@ -760,7 +797,7 @@ func expandDynamoDBKeySchema(d *schema.ResourceData) *[]duplosdk.DuploDynamoDBKe
 	return &ary
 }
 
-func flattenTableGlobalSecondaryIndex(gsi *[]duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndex) []interface{} {
+func flattenTableGlobalSecondaryIndex(gsi *[]duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndexResponse) []interface{} {
 	if len(*gsi) == 0 {
 		return []interface{}{}
 	}
@@ -813,14 +850,14 @@ func expandKeySchema(data map[string]interface{}) *[]duplosdk.DuploDynamoDBKeySc
 	if v, ok := data["hash_key"]; ok && v != nil && v != "" {
 		keySchema = append(keySchema, duplosdk.DuploDynamoDBKeySchema{
 			AttributeName: v.(string),
-			KeyType:       &duplosdk.DuploStringValue{Value: "HASH"},
+			KeyType:       "HASH",
 		})
 	}
 
 	if v, ok := data["range_key"]; ok && v != nil && v != "" {
 		keySchema = append(keySchema, duplosdk.DuploDynamoDBKeySchema{
 			AttributeName: v.(string),
-			KeyType:       &duplosdk.DuploStringValue{Value: "RANGE"},
+			KeyType:       "RANGE",
 		})
 	}
 	return &keySchema
@@ -828,7 +865,7 @@ func expandKeySchema(data map[string]interface{}) *[]duplosdk.DuploDynamoDBKeySc
 
 func expandProjection(data map[string]interface{}) *duplosdk.DuploDynamoDBTableV2Projection {
 	projection := &duplosdk.DuploDynamoDBTableV2Projection{
-		ProjectionType: &duplosdk.DuploStringValue{Value: data["projection_type"].(string)},
+		ProjectionType: data["projection_type"].(string),
 	}
 
 	if v, ok := data["non_key_attributes"].([]interface{}); ok && len(v) > 0 {
@@ -867,7 +904,7 @@ func expandProvisionedThroughputField(id string, data map[string]interface{}, ke
 	return v
 }
 
-func flattenTableLocalSecondaryIndex(lsi *[]duplosdk.DuploDynamoDBTableV2LocalSecondaryIndex) []interface{} {
+func flattenTableLocalSecondaryIndex(lsi *[]duplosdk.DuploDynamoDBTableV2LocalSecondaryIndexResponse) []interface{} {
 	if len(*lsi) == 0 {
 		return []interface{}{}
 	}
@@ -911,14 +948,14 @@ func expandLocalSecondaryIndexes(cfg []interface{}) *[]duplosdk.DuploDynamoDBTab
 	return &indexes
 }
 
-func flattenDynamoDBTableServerSideEncryption(spec *duplosdk.DuploDynamoDBTableV2SSESpecification) []interface{} {
+func flattenDynamoDBTableServerSideEncryption(spec *duplosdk.DuploDynamoDBTableV2SSESpecificationResponse) []interface{} {
 	if spec == nil {
 		return []interface{}{}
 	}
 
 	m := map[string]interface{}{
-		"enabled":     spec.Enabled,
-		"kms_key_arn": spec.KMSMasterKeyId,
+		"enabled":     spec.Status.Value == "ENABLED",
+		"kms_key_arn": spec.KMSMasterKeyArn,
 	}
 
 	return []interface{}{m}
@@ -1058,10 +1095,333 @@ func dynamodbWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID st
 	return err
 }
 
-// shouldUpdateGSI compares the DuploDynamoDBTableV2LocalSecondaryIndex  of the
-// existing table with the updated table. Returns true if a change is detected.
+/*
+func dynamodbWaitUntilGSIReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration, indexName string) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.DynamoDBTableGetV2(tenantID, name)
+			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
+			status := "pending"
+			for _, gsi := range *rp.GlobalSecondaryIndexes {
+				if err == nil {
+					if gsi.IndexName == indexName {
+						if gsi.IndexStatus.Value == "ACTIVE" {
+							status = "ready"
+						} else {
+							status = "pending"
+						}
+						break
+					}
+
+				}
+			}
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] dynamodbWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+func globalIndexUpdateAction(c *duplosdk.Client, existing *duplosdk.DuploDynamoDBTableV2Response,
+	request *duplosdk.DuploDynamoDBTableRequestV2,
+	tenantID, name string, d *schema.ResourceData) diag.Diagnostics {
+
+	existingIndex := make(map[string]duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndexResponse)
+	rqIndex := make(map[string]duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndex)
+
+	gsiu := []duplosdk.GlobalSecondaryIndexUpdates{}
+	if existing != nil && d.HasChange("global_secondary_index") {
+		for _, e := range *existing.GlobalSecondaryIndexes {
+			existingIndex[e.IndexName] = e
+		}
+		for _, ne := range *request.GlobalSecondaryIndexes {
+			rqIndex[ne.IndexName] = ne
+		}
+		//remove non staged gsi
+		for _, r := range *existing.GlobalSecondaryIndexes {
+			if rs, ok := rqIndex[r.IndexName]; !ok {
+				del := duplosdk.GlobalSecondaryIndexUpdates{
+					Delete: &duplosdk.Delete{
+						IndexName: r.IndexName,
+					},
+				}
+				gsiu = append(gsiu, del)
+				req := &duplosdk.ModifyGSI{
+					TableName:                   name,
+					GlobalSecondaryIndexUpdates: gsiu,
+					AttributeDefinitions:        *request.AttributeDefinitions,
+				}
+				//only one gsi can be deleted per update request
+				_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
+				if err != nil {
+					e := "Error updating tenant %s DynamoDB table '%s': %s"
+					return diag.Errorf(e, tenantID, name, err)
+				}
+				gsictx := context.Background()
+				er := dynamodbWaitUntilReady(gsictx, c, tenantID, name, d.Timeout("update"))
+				if er != nil {
+					return diag.FromErr(err)
+				}
+				gsiu = nil
+			} else if (r.Projection.ProjectionType.Value != rs.Projection.ProjectionType) ||
+				(!reflect.DeepEqual(r.KeySchema, rs.KeySchema)) ||
+				(!reflect.DeepEqual(r.Projection.NonKeyAttributes, rs.Projection.NonKeyAttributes)) {
+				del := duplosdk.GlobalSecondaryIndexUpdates{
+					Delete: &duplosdk.Delete{
+						IndexName: r.IndexName,
+					},
+				}
+				gsiu = append(gsiu, del)
+				delete(existingIndex, r.IndexName)
+				//removing gsi for attribute change which is not supported for updation and provisioning for recreation.
+				req := &duplosdk.ModifyGSI{
+					TableName:                   name,
+					GlobalSecondaryIndexUpdates: gsiu,
+					AttributeDefinitions:        *request.AttributeDefinitions,
+				}
+
+				_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
+				if err != nil {
+					e := "Error updating tenant %s DynamoDB table '%s': %s"
+					return diag.Errorf(e, tenantID, name, err)
+				}
+				gsictx := context.Background()
+				er := dynamodbWaitUntilReady(gsictx, c, tenantID, name, d.Timeout("update"))
+				if er != nil {
+					return diag.FromErr(err)
+				}
+				gsiu = nil
+			}
+		}
+		for _, r := range *request.GlobalSecondaryIndexes {
+			if ev, ok := existingIndex[r.IndexName]; !ok {
+				t := duplosdk.DuploDynamoDBTableV2GlobalSecondaryIndex{
+					IndexName:             r.IndexName,
+					Projection:            r.Projection,
+					KeySchema:             r.KeySchema,
+					ProvisionedThroughput: r.ProvisionedThroughput,
+				}
+				cr := duplosdk.GlobalSecondaryIndexUpdates{
+					Create: &t,
+				}
+				gsiu = append(gsiu, cr)
+				req := &duplosdk.ModifyGSI{
+					TableName:                   name,
+					GlobalSecondaryIndexUpdates: gsiu,
+					AttributeDefinitions:        *request.AttributeDefinitions,
+				}
+
+				//only one gsi can be created per update request
+				_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
+				if err != nil {
+					e := "Error updating tenant %s DynamoDB table '%s': %s"
+					return diag.Errorf(e, tenantID, name, err)
+				}
+				gsictx := context.Background()
+				er := dynamodbWaitUntilGSIReady(gsictx, c, tenantID, name, d.Timeout("update"), r.IndexName)
+				if er != nil {
+					return diag.FromErr(err)
+				}
+				gsiu = nil
+			} else {
+				ev = existingIndex[r.IndexName]
+				if (ev.ProvisionedThroughput.ReadCapacityUnits != r.ProvisionedThroughput.ReadCapacityUnits) || (ev.ProvisionedThroughput.WriteCapacityUnits != r.ProvisionedThroughput.WriteCapacityUnits) {
+					up := duplosdk.GlobalSecondaryIndexUpdates{
+						Update: &duplosdk.Update{
+							IndexName:             r.IndexName,
+							ProvisionedThroughput: *r.ProvisionedThroughput,
+						},
+					}
+					gsiu = append(gsiu, up)
+				}
+			}
+		}
+		if len(gsiu) > 0 {
+			req := &duplosdk.ModifyGSI{
+				TableName:                   name,
+				GlobalSecondaryIndexUpdates: gsiu,
+				AttributeDefinitions:        *request.AttributeDefinitions,
+			}
+			_, err := c.DynamoDBTableUpdateGSIV2(tenantID, req)
+			if err != nil {
+				e := "Error updating tenant %s DynamoDB table '%s': %s"
+				return diag.Errorf(e, tenantID, name, err)
+			}
+		}
+
+	}
+	return nil
+}
+*/
+/* Uncomment after July 2024 release updation
+// shouldUpdateThroughput compares the DuploDynamoDBProvisionedThroughput of
+// the existing table and updated table. Returns true if a change is detected.
+func shouldUpdateThroughput(
+	table *duplosdk.DuploDynamoDBTableV2Response,
+	request *duplosdk.DuploDynamoDBTableRequestV2,
+) bool {
+	if (table.ProvisionedThroughput.ReadCapacityUnits != request.ProvisionedThroughput.ReadCapacityUnits) || (table.ProvisionedThroughput.WriteCapacityUnits != request.ProvisionedThroughput.WriteCapacityUnits) {
+		return true
+	}
+	return false
+}
+
+// shouldUpdateSSESepecification compares the DuploDynamoDBTableV2SSESpecification of
+// the existing table and updated table. Returns true if a change is detected.
+func shouldUpdateSSESepecification(
+	table *duplosdk.DuploDynamoDBTableV2Response,
+	request *duplosdk.DuploDynamoDBTableRequestV2,
+) bool {
+	if table.SSEDescription == nil && request.SSESpecification == nil {
+		return false
+	} else if table.SSEDescription == nil && request.SSESpecification != nil {
+		return request.SSESpecification.Enabled
+	}
+	status := "DISABLED"
+	if request.SSESpecification.Enabled {
+		status = "ENABLED"
+	}
+	return !(table.SSEDescription.Status.Value == status)
+}
+
+func removeTags(desired, previous []duplosdk.DuploKeyStringValue) []string {
+	del := []string{}
+	newMap := make(map[string]string)
+
+	for _, new := range desired {
+		newMap[new.Key] = new.Value
+	}
+	filtered := filterDuploDefinedTags(previous)
+	for _, old := range filtered {
+		if _, ok := newMap[old.Key]; !ok {
+			del = append(del, old.Key)
+		}
+	}
+	return del
+}
+
+func filterDuploDefinedTags(tag []duplosdk.DuploKeyStringValue) []duplosdk.DuploKeyStringValue {
+	duploTag := map[string]struct{}{
+		"duplo-project":         {},
+		"TENANT_NAME":           {},
+		"duplo_lifecycle_owner": {},
+	}
+	filtered := []duplosdk.DuploKeyStringValue{}
+	for _, v := range tag {
+		if _, ok := duploTag[v.Key]; !ok {
+			filtered = append(filtered, v)
+		}
+	}
+	return filtered
+}
+
+func flattenDynoamoTag(tag []duplosdk.DuploKeyStringValue) []interface{} {
+	filtered := filterDuploDefinedTags(tag)
+	output := make([]interface{}, 0, len(filtered))
+	for _, t := range filtered {
+		mp := map[string]string{
+			"key":   t.Key,
+			"value": t.Value,
+		}
+		output = append(output, mp)
+	}
+	return output
+}
+*/
+//============================To be removed after july 2024 release uppdation
+
+func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+
+	tenantID := d.Get("tenant_id").(string)
+	name := d.Get("fullname").(string)
+	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
+
+	c := m.(*duplosdk.Client)
+
+	// Expand the resource data into the SDK's DynamoDB table request struct.
+	//rq, err := expandDynamoDBTable(d)
+	//if err != nil {
+	//	return diag.FromErr(err)
+	//}
+
+	// Fetch the existing table for compairson
+	existing, err := c.DynamoDBTableGetV2(tenantID, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Updating Point In Time Recovery status
+	isPITREnabled := existing.PointInTimeRecoveryStatus == "ENABLED"
+	targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
+	if isPITREnabled != targetPITRStatus {
+		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, name, targetPITRStatus)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	//if setDeleteProtection(d) {
+	//	tableName := rq.TableName
+	//	status := rq.DeletionProtectionEnabled
+	//	rq = &duplosdk.DuploDynamoDBTableRequestV2{
+	//		DeletionProtectionEnabled: status,
+	//		TableName:                 tableName,
+	//	}
+	//	_, err = c.DynamoDBTableUpdateV2(tenantID, rq)
+	//	if err != nil {
+	//		e := "Error updating tenant %s DynamoDB table '%s': %s"
+	//		return diag.Errorf(e, tenantID, name, err)
+	//	}
+	//	return nil
+	//}
+	// Updating Global Secondary Indexes and Throughput
+	//if shouldUpdateGSI(existing, rq) || shouldUpdateThroughput(existing, rq) {
+	//	log.Printf("[INFO] Updating DynamoDB table '%s' in tenant '%s'", name, tenantID)
+	//	_, err = c.DynamoDBTableUpdateV2(tenantID, rq)  //update api not supported in july 2024 release
+	//	if err != nil {
+	//		e := "Error updating tenant %s DynamoDB table '%s': %s"
+	//		return diag.Errorf(e, tenantID, name, err)
+	//	}
+	//}
+
+	// Generate the ID for the resource and set it.
+	id := fmt.Sprintf("%s/%s", tenantID, name)
+
+	err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("update"))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(id)
+
+	// wait until the cache instances to be healthy.
+	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
+		err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// Perform a read after update to sync state.
+	diags := resourceAwsDynamoDBTableReadV2(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsDynamoDBTableUpdateV2(%s, %s): end", tenantID, name)
+
+	return diags
+}
+
+/*
+func setDeleteProtection(d *schema.ResourceData) bool {
+	return d.HasChange("deletion_protection_enabled")
+}
+
 func shouldUpdateGSI(
-	table *duplosdk.DuploDynamoDBTableV2,
+	table *duplosdk.DuploDynamoDBTableV2Response,
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 ) bool {
 	if table.GlobalSecondaryIndexes == nil || request.GlobalSecondaryIndexes == nil {
@@ -1086,20 +1446,10 @@ func shouldUpdateGSI(
 	return false
 }
 
-// shouldUpdateThroughput compares the DuploDynamoDBProvisionedThroughput of
-// the existing table and updated table. Returns true if a change is detected.
 func shouldUpdateThroughput(
-	table *duplosdk.DuploDynamoDBTableV2,
+	table *duplosdk.DuploDynamoDBTableV2Response,
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 ) bool {
 	return !reflect.DeepEqual(table.ProvisionedThroughput, request.ProvisionedThroughput)
 }
-
-// shouldUpdateSSESepecification compares the DuploDynamoDBTableV2SSESpecification of
-// the existing table and updated table. Returns true if a change is detected.
-func shouldUpdateSSESepecification(
-	table *duplosdk.DuploDynamoDBTableV2,
-	request *duplosdk.DuploDynamoDBTableRequestV2,
-) bool {
-	return !reflect.DeepEqual(table.SSEDescription, request.SSESpecification)
-}
+*/
