@@ -26,4 +26,5 @@ provider "duplocloud" {
 
 - `duplo_host` (String) This is the base URL to the Duplo REST API.  It must be provided, but it can also be sourced from the `duplo_host` environment variable.
 - `duplo_token` (String, Sensitive) This is a bearer token used to authenticate to the Duplo REST API.  It must be provided, but it can also be sourced from the `duplo_token` environment variable.
+- `http_timeout` (Number) Timeout for HTTP requests in seconds. Defaults to `30`.
 - `ssl_no_verify` (Boolean) Disable SSL certificate verification. Defaults to `false`.
