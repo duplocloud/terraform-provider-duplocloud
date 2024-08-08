@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -48,6 +50,12 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+			},
+			"http_timeout": {
+				Description: "Timeout for HTTP requests in seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     30,
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
@@ -263,9 +271,16 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	}
 
 	if sslNoVerify, ok := d.GetOk("ssl_no_verify"); ok && sslNoVerify.(bool) {
+		log.Printf("[TRACE] ssl_no_verify provided in the provider configuration.")
 		c.HTTPClient.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
+	}
+
+	if httpTimeout, ok := d.GetOk("http_timeout"); ok {
+		timout := time.Duration(httpTimeout.(int)) * time.Second
+		log.Printf("[TRACE] http_timeout provided in the provider configuration. Timeout : %s", timout)
+		c.HTTPClient.Timeout = timout * time.Second
 	}
 
 	return c, diags

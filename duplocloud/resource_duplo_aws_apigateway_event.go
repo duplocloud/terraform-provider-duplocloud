@@ -80,6 +80,16 @@ func AwsApiGatewayEventSchema() map[string]*schema.Schema {
 				"COGNITO_USER_POOLS",
 			}, false),
 		},
+		"content_handling": {
+			Description: "How to handle request payload content type conversions. Supported values are `CONVERT_TO_BINARY` and `CONVERT_TO_TEXT`. If this property is not defined, the request payload will be passed through from the method request to integration request without modification, provided that the passthroughBehaviors is configured to support payload pass-through.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"CONVERT_TO_TEXT",
+				"CONVERT_TO_BINARY",
+			}, false),
+		},
 		"integration": {
 			Description: "Specify API gateway integration.",
 			Type:        schema.TypeList,
@@ -165,6 +175,7 @@ func resourceAwsApiGatewayEventRead(ctx context.Context, d *schema.ResourceData,
 	d.Set("api_key_required", duplo.ApiKeyRequired)
 	d.Set("authorizer_id", duplo.AuthorizerId)
 	d.Set("authorization_type", duplo.AuthorizationType)
+	d.Set("content_handling", duplo.ContentHandling)
 	if duplo.Integration != nil {
 		d.Set("integration", []interface{}{
 			map[string]interface{}{
@@ -202,6 +213,9 @@ func resourceAwsApiGatewayEventCreate(ctx context.Context, d *schema.ResourceDat
 	}
 	if v, ok := d.GetOk("authorization_type"); ok && v != nil {
 		rq.AuthorizationType = v.(string)
+	}
+	if v, ok := d.GetOk("content_handling"); ok && v != nil {
+		rq.ContentHandling = v.(string)
 	}
 	if v, ok := d.GetOk("integration"); ok {
 		if s := v.([]interface{}); len(s) > 0 {
@@ -255,6 +269,9 @@ func resourceAwsApiGatewayEventUpdate(ctx context.Context, d *schema.ResourceDat
 	}
 	if v, ok := d.GetOk("authorization_type"); ok && v != nil {
 		rq.AuthorizationType = v.(string)
+	}
+	if v, ok := d.GetOk("content_handling"); ok && v != nil {
+		rq.ContentHandling = v.(string)
 	}
 	if v, ok := d.GetOk("integration"); ok {
 		if s := v.([]interface{}); len(s) > 0 {
