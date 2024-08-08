@@ -114,7 +114,7 @@ func resourcePlanCertificatesRead(ctx context.Context, d *schema.ResourceData, m
 
 	// Set the simple fields first.
 	d.Set("certificates", flattenPlanCertificates(duplo))
-
+	d.Set("plan_id", planID)
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_certificates"); ok && v != nil {
 		d.Set("certificate", flattenPlanCertificates(selectPlanCertificates(duplo, *v)))
