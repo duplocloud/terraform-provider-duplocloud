@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -14,35 +13,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func gcpS3BucketSchema() map[string]*schema.Schema {
+func gcpStorageBucketV2Schema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the S3 bucket will be created in.",
+			Description:  "The GUID of the tenant that the storage bucket will be created in.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "The short name of the S3 bucket.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
+			Description: "The short name of the storage bucket.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
-			ValidateFunc: validation.All(
-				validation.StringMatch(regexp.MustCompile(`^[a-z0-9._-]*$`), "Invalid S3 bucket name"),
-
-				// NOTE: some validations are moot, because Duplo provides a prefix and suffix for the name:
-				//
-				// - Bucket names must begin and end with a letter or number.
-				// - Bucket names must not be formatted as an IP address (for example, 192.168.5.4).
-				// - Bucket names must not start with the prefix xn--.
-				// - Bucket names must not end with the suffix -s3alias.
-				//
-				// Because Duplo automatically prefixes and suffixes bucket names, it is impossible to break any of the rules in the above bulleted list.
-			),
 		},
 		"fullname": {
-			Description: "The full name of the S3 bucket.",
+			Description: "The full name of the storage bucket.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -106,12 +93,12 @@ func gcpS3BucketSchema() map[string]*schema.Schema {
 }
 
 // Resource for managing an AWS ElasticSearch instance
-func resourceGCPS3Bucket() *schema.Resource {
+func resourceGCPStorageBucketV2() *schema.Resource {
 	return &schema.Resource{
-		ReadContext:   resourceGCPS3BucketRead,
-		CreateContext: resourceGCPS3BucketCreate,
-		UpdateContext: resourceGCPS3BucketUpdate,
-		DeleteContext: resourceGCPS3BucketDelete,
+		ReadContext:   resourceGCPStorageBucketV2Read,
+		CreateContext: resourceGCPStorageBucketV2Create,
+		UpdateContext: resourceGCPStorageBucketV2Update,
+		DeleteContext: resourceGCPStorageBucketV2Delete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -119,19 +106,19 @@ func resourceGCPS3Bucket() *schema.Resource {
 			Create: schema.DefaultTimeout(5 * time.Minute),
 			Delete: schema.DefaultTimeout(2 * time.Minute),
 		},
-		Schema: gcpS3BucketSchema(),
+		Schema: gcpStorageBucketV2Schema(),
 	}
 }
 
 // READ resource
-func resourceGCPS3BucketRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGCPS3BucketRead ******** start")
+func resourceGCPStorageBucketV2Read(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceGCPStorageBucketV2Read ******** start")
 
 	// Parse the identifying attributes
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) < 2 {
-		return diag.Errorf("resourceGCPS3BucketRead: Invalid resource (ID: %s)", id)
+		return diag.Errorf("resourceGCPStorageBucketV2Read: Invalid resource (ID: %s)", id)
 	}
 	tenantID, name := idParts[0], idParts[1]
 
@@ -141,21 +128,21 @@ func resourceGCPS3BucketRead(ctx context.Context, d *schema.ResourceData, m inte
 	fullName := d.Get("fullname").(string)
 
 	// Get the object from Duplo
-	duplo, err := c.GCPTenantGetV3S3Bucket(tenantID, fullName)
+	duplo, err := c.GCPTenantGetV3StorageBucketV2(tenantID, fullName)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceGCPS3BucketRead: Unable to retrieve s3 bucket (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
+		return diag.Errorf("resourceGCPStorageBucketV2Read: Unable to retrieve storage bucket (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 
 	// Set simple fields first.
-	resourceGcpS3BucketSetData(d, tenantID, name, duplo)
+	resourceGCPStorageBucketV2SetData(d, tenantID, name, duplo)
 
-	log.Printf("[TRACE] resourceGCPS3BucketRead ******** end")
+	log.Printf("[TRACE] resourceGCPStorageBucketV2Read ******** end")
 	return nil
 }
 
 // CREATE resource
-func resourceGCPS3BucketCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGCPS3BucketCreate ******** start")
+func resourceGCPStorageBucketV2Create(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceGCPStorageBucketV2Create ******** start")
 	name := d.Get("name").(string)
 	c := m.(*duplosdk.Client)
 
@@ -171,39 +158,39 @@ func resourceGCPS3BucketCreate(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	// Post the object to Duplo
-	resp, err := c.GCPTenantCreateV3S3Bucket(tenantID, duploObject)
+	resp, err := c.GCPTenantCreateV3StorageBucketV2(tenantID, duploObject)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceGCPS3BucketCreate: Unable to create s3 bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
+		return diag.Errorf("resourceGCPStorageBucketV2Create: Unable to create storage bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
 	}
 
 	fullName := resp.Name
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "S3 bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.GCPTenantGetV3S3Bucket(tenantID, fullName)
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "storage bucket", id, func() (interface{}, duplosdk.ClientError) {
+		return c.GCPTenantGetV3StorageBucketV2(tenantID, fullName)
 	})
 	if diags != nil {
 		return diags
 	}
-	duplo, err := c.GCPTenantGetV3S3Bucket(tenantID, fullName)
+	duplo, err := c.GCPTenantGetV3StorageBucketV2(tenantID, fullName)
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
 	}
 	if err != nil {
-		return diag.Errorf("resourceGCPS3BucketCreate: Unable to retrieve s3 bucket details using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
+		return diag.Errorf("resourceGCPStorageBucketV2Create: Unable to retrieve storage bucket details using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 	d.SetId(id)
 
 	// Set simple fields first.
-	resourceGcpS3BucketSetData(d, tenantID, name, duplo)
-	log.Printf("[TRACE] resourceGCPS3BucketCreate ******** end")
+	resourceGCPStorageBucketV2SetData(d, tenantID, name, duplo)
+	log.Printf("[TRACE] resourceGCPStorageBucketV2Create ******** end")
 	return nil
 }
 
 // UPDATE resource
-func resourceGCPS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGCPS3BucketUpdate ******** start")
+func resourceGCPStorageBucketV2Update(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceGCPStorageBucketV2Update ******** start")
 
 	fullname := d.Get("fullname").(string)
 	name := d.Get("name").(string)
@@ -221,37 +208,37 @@ func resourceGCPS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m in
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	resource, err := c.GCPTenantUpdateV3S3Bucket(tenantID, duploObject)
+	resource, err := c.GCPTenantUpdateV3StorageBucketV2(tenantID, duploObject)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceGCPS3BucketUpdate: Unable to update s3 bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
+		return diag.Errorf("GCPTenantUpdateV3StorageBucketV2: Unable to update storage bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
 	}
 
-	resourceGcpS3BucketSetData(d, tenantID, name, resource)
+	resourceGCPStorageBucketV2SetData(d, tenantID, name, resource)
 
-	log.Printf("[TRACE] resourceGCPS3BucketUpdate ******** end")
+	log.Printf("[TRACE] GCPTenantUpdateV3StorageBucketV2 ******** end")
 	return nil
 }
 
 // DELETE resource
-func resourceGCPS3BucketDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGCPS3BucketDelete ******** start")
+func resourceGCPStorageBucketV2Delete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceGCPStorageBucketV2Delete ******** start")
 
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) < 2 {
-		return diag.Errorf("resourceGCPS3BucketDelete: Invalid resource (ID: %s)", id)
+		return diag.Errorf("resourceGCPStorageBucketV2Delete: Invalid resource (ID: %s)", id)
 	}
 	fullName := d.Get("fullname").(string)
-	err := c.GCPTenantDeleteS3Bucket(idParts[0], idParts[1], fullName)
+	err := c.GCPTenantDeleteStorageBucketV2(idParts[0], idParts[1], fullName)
 	if err != nil {
-		return diag.Errorf("resourceGCPS3BucketDelete: Unable to delete bucket (name:%s, error: %s)", id, err)
+		return diag.Errorf("GCPTenantDeleteStorageBucketV2: Unable to delete bucket (name:%s, error: %s)", id, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the bucket.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.GCPTenantGetV3S3Bucket(idParts[0], fullName)
+		return c.GCPTenantGetV3StorageBucketV2(idParts[0], fullName)
 	})
 	if diag != nil {
 		return diag
@@ -260,11 +247,11 @@ func resourceGCPS3BucketDelete(ctx context.Context, d *schema.ResourceData, m in
 	// Wait 10 more seconds to deal with consistency issues.
 	time.Sleep(10 * time.Second)
 
-	log.Printf("[TRACE] resourceGCPS3BucketDelete ******** end")
+	log.Printf("[TRACE] resourceGCPStorageBucketV2Delete ******** end")
 	return nil
 }
 
-func resourceGcpS3BucketSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploGCPBucket) {
+func resourceGCPStorageBucketV2SetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploGCPBucket) {
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("fullname", duplo.Name)
@@ -299,7 +286,7 @@ func decodeEncryption(i string) int {
 }
 
 func fillGCPBucketRequest(duploObject *duplosdk.DuploGCPBucket, d *schema.ResourceData) error {
-	log.Printf("[TRACE] fillS3BucketRequest ******** start")
+	log.Printf("[TRACE] fillGCPBucketRequest ******** start")
 
 	// Set the object versioning
 	if v, ok := d.GetOk("enable_versioning"); ok && v != nil {
@@ -325,6 +312,6 @@ func fillGCPBucketRequest(duploObject *duplosdk.DuploGCPBucket, d *schema.Resour
 	}
 
 	duploObject.Labels = expandAsStringMap("labels", d)
-	log.Printf("[TRACE] fillS3BucketRequest ******** end")
+	log.Printf("[TRACE] fillGCPBucketRequest ******** end")
 	return nil
 }

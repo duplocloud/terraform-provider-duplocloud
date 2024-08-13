@@ -164,7 +164,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_kms":                         resourcePlanKMS(),
 			"duplocloud_plan_kms_v2":                      resourcePlanKMSV2(),
 			"duplocloud_aws_apigateway_event":             resourceAwsApiGatewayEvent(),
-			"duplocloud_gcp_storage_bucket_v2":            resourceGCPS3Bucket(),
+			"duplocloud_gcp_storage_bucket_v2":            resourceGCPStorageBucketV2(),
 			"duplocloud_aws_lambda_function_event_config": resourceAwsLambdaEventInvokeConfigFunction(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{

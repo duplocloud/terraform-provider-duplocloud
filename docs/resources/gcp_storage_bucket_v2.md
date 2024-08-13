@@ -72,8 +72,8 @@ resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
 
 ### Required
 
-- `name` (String) The short name of the S3 bucket.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- `tenant_id` (String) The GUID of the tenant that the S3 bucket will be created in.
+- `name` (String) The short name of the storage bucket.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
+- `tenant_id` (String) The GUID of the tenant that the storage bucket will be created in.
 
 ### Optional
 
@@ -87,7 +87,7 @@ resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
 ### Read-Only
 
 - `domain_name` (String) Bucket self link.
-- `fullname` (String) The full name of the S3 bucket.
+- `fullname` (String) The full name of the storage bucket.
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--default_encryption"></a>
