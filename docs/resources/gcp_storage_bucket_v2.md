@@ -18,7 +18,7 @@ resource "duplocloud_tenant" "myapp" {
   plan_id      = "default"
 }
 
-# Simple Example 1:  Deploy an S3 bucket with hardened security settings.
+# Simple Example 1:  Deploy an storage bucket with hardened security settings.
 resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "mydata"
@@ -30,7 +30,7 @@ resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
   }
 }
 
-# Simple Example 2:  Deploy a hardened S3 bucket suitable for public website hosting.
+# Simple Example 2:  Deploy a hardened storage bucket suitable for public website hosting.
 resource "duplocloud_gcp_storage_bucket_v2" "www" {
   tenant_id           = duplocloud_tenant.myapp.tenant_id
   name                = "website"
@@ -42,7 +42,7 @@ resource "duplocloud_gcp_storage_bucket_v2" "www" {
 }
 
 
-# Simple Example 3:  Deploy an S3 bucket to dersired region.
+# Simple Example 3:  Deploy an storage bucket to dersired region.
 resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "mydata"
@@ -52,7 +52,7 @@ resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
 
 }
 
-# Simple Example 4:  Deploy an S3 bucket with multiple region.
+# Simple Example 4:  Deploy an storage bucket with multiple region.
 
 resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
