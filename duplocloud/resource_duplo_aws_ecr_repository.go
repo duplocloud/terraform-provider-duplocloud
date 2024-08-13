@@ -29,7 +29,7 @@ func duploAwsEcrRepositorySchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"arn": {
-			Description: "Full ARN of the repository.",
+			Description: "Full ARN of the ECR repository.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},

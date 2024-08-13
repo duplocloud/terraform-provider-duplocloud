@@ -12,6 +12,7 @@ type DuploApiGatewayEvent struct {
 	ApiKeyRequired    bool                             `json:"ApiKeyRequired,omitempty"`
 	AuthorizerId      string                           `json:"AuthorizerId,omitempty"`
 	AuthorizationType string                           `json:"AuthorizationType,omitempty"`
+	ContentHandling   string                           `json:"ContentHandling,omitempty"`
 	Integration       *DuploApiGatewayEventIntegration `json:"Integration"`
 }
 

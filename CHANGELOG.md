@@ -8,6 +8,12 @@
 ### Enhanced
 - Added `force_delete` option to ECR resource, allowing forced deletion of ECR repositories in DuploCloud provider.
 
+## 2024-07-22
+
+### Added
+- Introduced support for managing AWS Lambda function event invoke configurations in the DuploCloud provider.
+- Added a new resource `duplocloud_aws_lambda_function_event_config` to handle asynchronous invocation settings for AWS Lambda functions.
+
 ## 2024-07-17
 
 ### Enhanced

@@ -51,6 +51,7 @@ resource "duplocloud_aws_apigateway_event" "apigateway_event" {
 - `api_key_required` (Boolean) Specify if the method requires an API key.
 - `authorization_type` (String) Type of authorization used for the method. (`NONE`, `CUSTOM`, `AWS_IAM`, `COGNITO_USER_POOLS`)
 - `authorizer_id` (String) Authorizer id to be used when the authorization is `CUSTOM` or `COGNITO_USER_POOLS`.
+- `content_handling` (String) How to handle request payload content type conversions. Supported values are `CONVERT_TO_BINARY` and `CONVERT_TO_TEXT`. If this property is not defined, the request payload will be passed through from the method request to integration request without modification, provided that the passthroughBehaviors is configured to support payload pass-through.
 - `cors` (Boolean) Enable handling of preflight requests.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
