@@ -2,4 +2,4 @@
 #  - *TENANT_ID* is the tenant GUID
 #  - *SHORTNAME* is the short name of the S3 bucket (without the duploservices prefix)
 #
-terraform import duplocloud_gcp_s3_bucket.mybucket *TENANT_ID*/*SHORTNAME*
+terraform import duplocloud_gcp_storage_bucket_v2.mybucket *TENANT_ID*/*SHORTNAME*

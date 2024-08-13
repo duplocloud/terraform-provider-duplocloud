@@ -69,7 +69,6 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_load_balancer":                resourceAwsLoadBalancer(),
 			"duplocloud_aws_load_balancer_listener":       resourceAwsLoadBalancerListener(),
 			"duplocloud_aws_kafka_cluster":                resourceAwsKafkaCluster(),
-			"duplocloud_aws_lambda_function_event_config": resourceAwsLambdaEventInvokeConfigFunction(),
 			"duplocloud_aws_lambda_function":              resourceAwsLambdaFunction(),
 			"duplocloud_aws_ssm_parameter":                resourceAwsSsmParameter(),
 			"duplocloud_duplo_service":                    resourceDuploService(),
@@ -165,7 +164,8 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_kms":                         resourcePlanKMS(),
 			"duplocloud_plan_kms_v2":                      resourcePlanKMSV2(),
 			"duplocloud_aws_apigateway_event":             resourceAwsApiGatewayEvent(),
-			"duplocloud_gcp_s3_bucket":                    resourceGCPS3Bucket(),
+			"duplocloud_gcp_storage_bucket_v2":            resourceGCPStorageBucketV2(),
+			"duplocloud_aws_lambda_function_event_config": resourceAwsLambdaEventInvokeConfigFunction(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
