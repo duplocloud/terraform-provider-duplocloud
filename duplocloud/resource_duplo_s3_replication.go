@@ -26,27 +26,30 @@ func s3BucketReplicationSchema() map[string]*schema.Schema {
 			Description: "replication rule name for s3 source bucket",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    false,
 		},
 		"destination_bucket": {
 			Description: "name of destination bucket.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    false,
 		},
 		"source_bucket": {
 			Description: "name of source bucket.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    false,
 		},
 		"priority": {
 			Description: "replication priority. Priority must be unique between multiple rules.",
 			Type:        schema.TypeInt,
 			Required:    true,
+			ForceNew:    false,
 		},
 		"delete_marker_replication": {
 			Description: "Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Computed:    true,
 			Default:     false,
 		},
 		"storage_class": {
@@ -73,8 +76,8 @@ func resourceS3BucketReplication() *schema.Resource {
 	return &schema.Resource{
 		ReadContext:   resourceS3BucketReplicationRead,
 		CreateContext: resourceS3BucketReplicationCreate,
-		//		UpdateContext: resourceS3BucketReplicationUpdate,
-		//		DeleteContext: resourceS3BucketReplicationDelete,
+		UpdateContext: resourceS3BucketReplicationUpdate,
+		DeleteContext: resourceS3BucketReplicationDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -180,7 +183,7 @@ func resourceS3BucketReplicationUpdate(ctx context.Context, d *schema.ResourceDa
 }
 
 // DELETE resource
-func resourceS3BucketReplecationDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceS3BucketReplicationDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketDelete ******** start")
 
 	// Delete the object with Duplo

@@ -245,7 +245,7 @@ type DuploS3BucketReplication struct {
 	Rule                    string `json:"Name"`
 	DestinationBucket       string `json:"DestinationBucket"`
 	SourceBucket            string `json:"SourceBucket"`
-	Priority                int    `json:"priority"`
+	Priority                int    `json:"Priority"`
 	DeleteMarkerReplication bool   `json:"DeleteMarkerReplication"`
 	StorageClass            string `json:"StorageClass"`
 }

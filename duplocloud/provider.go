@@ -87,7 +87,6 @@ func Provider() *schema.Provider {
 			"duplocloud_rds_instance":                    resourceDuploRdsInstance(),
 			"duplocloud_rds_read_replica":                resourceDuploRdsReadReplica(),
 			"duplocloud_s3_bucket":                       resourceS3Bucket(),
-			"duplocloud_s3_bucket_replication":           resourceS3BucketReplication(),
 			"duplocloud_tenant":                          resourceTenant(),
 			"duplocloud_tenant_cleanup_timers":           resourceTenantCleanUpTimers(),
 			"duplocloud_user":                            resourceUser(),
@@ -158,6 +157,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_kms_v2":                     resourcePlanKMSV2(),
 			"duplocloud_aws_apigateway_event":            resourceAwsApiGatewayEvent(),
 			"duplocloud_gcp_s3_bucket":                   resourceGCPS3Bucket(),
+			"duplocloud_s3_bucket_replication":           resourceS3BucketReplication(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
