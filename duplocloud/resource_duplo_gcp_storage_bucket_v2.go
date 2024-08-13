@@ -89,11 +89,11 @@ func gcpS3BucketSchema() map[string]*schema.Schema {
 			},
 		},
 		"location": {
-			Description:      "The location is to set region/multi region, applicable for gcp cloud.",
-			Type:             schema.TypeString,
-			Optional:         true,
-			Computed:         true,
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Description: "The location is to set region/multi region, applicable for gcp cloud.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true,
 		},
 		"labels": {
 			Description: "The labels assigned to this storage bucket.",
@@ -274,7 +274,7 @@ func resourceGcpS3BucketSetData(d *schema.ResourceData, tenantID string, name st
 	d.Set("default_encryption", []map[string]interface{}{{
 		"method": encodeEncryption(duplo.DefaultEncryptionType),
 	}})
-	d.Set("location", duplo.Location)
+	d.Set("location", strings.ToLower(duplo.Location))
 	flattenGcpLabels(d, duplo.Labels)
 }
 
