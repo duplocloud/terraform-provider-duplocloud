@@ -4,7 +4,7 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 # Simple Example 1:  Deploy an S3 bucket with hardened security settings.
-resource "duplocloud_gcp_s3_bucket" "mydata" {
+resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "mydata"
 
@@ -18,7 +18,7 @@ resource "duplocloud_gcp_s3_bucket" "mydata" {
 }
 
 # Simple Example 2:  Deploy a hardened S3 bucket suitable for public website hosting.
-resource "duplocloud_gcp_s3_bucket" "www" {
+resource "duplocloud_gcp_storage_bucket_v2" "www" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "website"
 
@@ -33,18 +33,18 @@ resource "duplocloud_gcp_s3_bucket" "www" {
 
 
 # Simple Example 3:  Deploy an S3 bucket to dersired region.
-resource "duplocloud_s3_bucket" "mydata" {
+resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "mydata"
 
   # optional, if not provided, tenant region will be used
-  region = "us-west-2"
+  location = "us-west-2"
 
 }
 
 # Simple Example 4:  Deploy an S3 bucket with multiple region.
 
-resource "duplocloud_gcp_s3_bucket" "mydata" {
+resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "mydata"
 
@@ -53,7 +53,7 @@ resource "duplocloud_gcp_s3_bucket" "mydata" {
   enable_versioning   = true
   managed_policies    = ["ssl"]
   default_encryption {
-    method = "Sse" # For even stricter security, use "TenantKms" here.
+    method = "Sse" 
   }
   location = "Asia" #pass region value (Asia/EU/US)to location to enable multi region
 }
