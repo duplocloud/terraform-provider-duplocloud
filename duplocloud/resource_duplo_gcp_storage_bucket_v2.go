@@ -253,16 +253,16 @@ func resourceGCPStorageBucketV2Delete(ctx context.Context, d *schema.ResourceDat
 }
 
 func resourceGCPStorageBucketV2SetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploGCPBucket) {
-	_ = d.Set("tenant_id", tenantID)
-	_ = d.Set("name", name)
-	_ = d.Set("fullname", duplo.Name)
-	_ = d.Set("domain_name", duplo.DomainName)
-	_ = d.Set("enable_versioning", duplo.EnableVersioning)
-	_ = d.Set("allow_public_access", duplo.AllowPublicAccess)
-	_ = d.Set("default_encryption", []map[string]interface{}{{
+	d.Set("tenant_id", tenantID)
+	d.Set("name", name)
+	d.Set("fullname", duplo.Name)
+	d.Set("domain_name", duplo.DomainName)
+	d.Set("enable_versioning", duplo.EnableVersioning)
+	d.Set("allow_public_access", duplo.AllowPublicAccess)
+	d.Set("default_encryption", []map[string]interface{}{{
 		"method": encodeEncryption(duplo.DefaultEncryptionType),
 	}})
-	_ = d.Set("location", duplo.Location)
+	d.Set("location", duplo.Location)
 	flattenGcpLabels(d, duplo.Labels)
 }
 
