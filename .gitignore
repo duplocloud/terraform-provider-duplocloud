@@ -31,3 +31,5 @@ __debug_bin*
 
 my-test/
 .terraform.tfstate.lock.info
+.golangci.yml
+.vscode
