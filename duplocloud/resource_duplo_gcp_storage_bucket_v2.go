@@ -131,7 +131,7 @@ func resourceGCPStorageBucketV2Read(ctx context.Context, d *schema.ResourceData,
 	// Get the object from Duplo
 	duplo, err := c.GCPTenantGetV3StorageBucketV2(tenantID, fullName)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceGCPStorageBucketV2Read: Unable to retrieve storage bucket (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
+		return diag.Errorf("resourceGCPStorageBucketV2Read: Unable to retrieve storage bucket (tenant: %s, bucket: %s, error: %s)", tenantID, name, err)
 	}
 
 	// Set simple fields first.
@@ -253,16 +253,16 @@ func resourceGCPStorageBucketV2Delete(ctx context.Context, d *schema.ResourceDat
 }
 
 func resourceGCPStorageBucketV2SetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploGCPBucket) {
-	d.Set("tenant_id", tenantID)
-	d.Set("name", name)
-	d.Set("fullname", duplo.Name)
-	d.Set("domain_name", duplo.DomainName)
-	d.Set("enable_versioning", duplo.EnableVersioning)
-	d.Set("allow_public_access", duplo.AllowPublicAccess)
-	d.Set("default_encryption", []map[string]interface{}{{
+	_ = d.Set("tenant_id", tenantID)
+	_ = d.Set("name", name)
+	_ = d.Set("fullname", duplo.Name)
+	_ = d.Set("domain_name", duplo.DomainName)
+	_ = d.Set("enable_versioning", duplo.EnableVersioning)
+	_ = d.Set("allow_public_access", duplo.AllowPublicAccess)
+	_ = d.Set("default_encryption", []map[string]interface{}{{
 		"method": encodeEncryption(duplo.DefaultEncryptionType),
 	}})
-	d.Set("location", duplo.Location)
+	_ = d.Set("location", duplo.Location)
 	flattenGcpLabels(d, duplo.Labels)
 }
 
