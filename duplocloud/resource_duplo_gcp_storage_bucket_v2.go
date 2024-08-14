@@ -76,11 +76,12 @@ func gcpStorageBucketV2Schema() map[string]*schema.Schema {
 			},
 		},
 		"location": {
-			Description: "The location is to set region/multi region, applicable for gcp cloud.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-			ForceNew:    true,
+			Description:      "The location is to set region/multi region, applicable for gcp cloud.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ForceNew:         true,
+			DiffSuppressFunc: diffIgnoreIfCaseSensitive,
 		},
 		"labels": {
 			Description: "The labels assigned to this storage bucket.",
@@ -261,7 +262,7 @@ func resourceGCPStorageBucketV2SetData(d *schema.ResourceData, tenantID string, 
 	d.Set("default_encryption", []map[string]interface{}{{
 		"method": encodeEncryption(duplo.DefaultEncryptionType),
 	}})
-	d.Set("location", strings.ToLower(duplo.Location))
+	d.Set("location", duplo.Location)
 	flattenGcpLabels(d, duplo.Labels)
 }
 

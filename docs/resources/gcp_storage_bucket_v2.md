@@ -42,13 +42,13 @@ resource "duplocloud_gcp_storage_bucket_v2" "www" {
 }
 
 
-# Simple Example 3:  Deploy an storage bucket to dersired region.
+# Simple Example 3:  Deploy an storage bucket to desired region.
 resource "duplocloud_gcp_storage_bucket_v2" "mydata" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "mydata"
 
   # optional, if not provided, multi-region US will be used
-  location = "us-west-2"
+  location = "us-west2"
 
 }
 
