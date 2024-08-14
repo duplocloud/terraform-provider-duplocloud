@@ -153,7 +153,7 @@ func getS3BucketReplication(c *duplosdk.Client, tenantID, name string) ([]map[st
 	if err != nil {
 		return nil, err
 	}
-	if duplo == nil || len(duplo.Rule) == 0 {
+	if len(duplo.Rule) == 0 {
 		return nil, nil
 	}
 	tenantInfo, err := c.TenantGetV2(tenantID)
@@ -238,7 +238,7 @@ func resourceS3BucketReplicationUpdate(ctx context.Context, d *schema.ResourceDa
 		// Post the object to Duplo
 		err := c.TenantUpdateV3S3BucketReplication(tenantID, ruleFullname, duploObject)
 		if err != nil {
-			return diag.Errorf("resourceS3BucketReplicationUpdate: Unable to update s3 bucket using v3 api (tenant: %s, bucket: %s: rule: %s,error: %s)", tenantID, duploObject.SourceBucket, ruleFullname, err)
+			return diag.Errorf("resourceS3BucketReplicationUpdate: Unable to update s3 bucket using v3 api (tenant: %s, bucket: %s, rule: %s, error: %s)", tenantID, duploObject.SourceBucket, ruleFullname, err)
 		}
 	}
 	diags := resourceS3BucketReplicationRead(ctx, d, m)
