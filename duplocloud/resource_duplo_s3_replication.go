@@ -13,60 +13,85 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+func ruleSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"destination_bucket": {
+				Description: "name of destination bucket.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    false,
+			},
+			"name": {
+				Description: "replication rule name for s3 source bucket",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"fullname": {
+				Description: "replication rule fullname for s3 source bucket",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"destination_arn": {
+				Description: "destination bucket arn",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"priority": {
+				Description: "replication priority. Priority must be unique between multiple rules.",
+				Type:        schema.TypeInt,
+				Required:    true,
+				ForceNew:    false,
+			},
+			"delete_marker_replication": {
+				Description:      "Whether or not to enable delete marker on replication. Can be set only during creation.",
+				Type:             schema.TypeBool,
+				Optional:         true,
+				Default:          false,
+				DiffSuppressFunc: diffSuppressWhenNotCreating,
+			},
+			"storage_class": {
+				Description: "storage_class type: Standard, IntelligentTiering, StandardInfrequentAccess, OneZoneInfrequentAccess, GlacierInstantRetrieval, Glacier, DeepArchive, ReducedRedundancy. Can be set only during creation",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"Standard",
+					"IntelligentTiering",
+					"StandardInfrequentAccess",
+					"OneZoneInfrequentAccess",
+					"GlacierInstantRetrieval",
+					"Glacier",
+					"DeepArchive",
+					"ReducedRedundancy",
+				}, false),
+				DiffSuppressFunc: diffSuppressWhenNotCreating,
+			},
+		},
+	}
+}
 func s3BucketReplicationSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the S3 bucket will be created in.",
+			Description:  "The GUID of the tenant that the S3 bucket replication rule will be created in.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
-		"rule": {
-			Description: "replication rule name for s3 source bucket",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    false,
+		"rules": {
+			Description: "replication rules for source bucket",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem:        ruleSchema(),
 		},
-		"destination_bucket": {
-			Description: "name of destination bucket.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    false,
-		},
+
 		"source_bucket": {
 			Description: "name of source bucket.",
 			Type:        schema.TypeString,
 			Required:    true,
-			ForceNew:    false,
-		},
-		"priority": {
-			Description: "replication priority. Priority must be unique between multiple rules.",
-			Type:        schema.TypeInt,
-			Required:    true,
-			ForceNew:    false,
-		},
-		"delete_marker_replication": {
-			Description: "Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"storage_class": {
-			Description: "storage_class type: Standard, IntelligentTiering, StandardInfrequentAccess, OneZoneInfrequentAccess, GlacierInstantRetrieval, Glacier, DeepArchive, ReducedRedundancy",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-			ValidateFunc: validation.StringInSlice([]string{
-				"Standard",
-				"IntelligentTiering",
-				"StandardInfrequentAccess",
-				"OneZoneInfrequentAccess",
-				"GlacierInstantRetrieval",
-				"Glacier",
-				"DeepArchive",
-				"ReducedRedundancy",
-			}, false),
+			ForceNew:    true,
 		},
 	}
 }
@@ -74,6 +99,7 @@ func s3BucketReplicationSchema() map[string]*schema.Schema {
 // Resource for managing an S3 replication
 func resourceS3BucketReplication() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Resource duplocloud_s3_bucket_replication is dependent on duplocloud_s3_bucket. This resource sets replication rules for source bucket",
 		ReadContext:   resourceS3BucketReplicationRead,
 		CreateContext: resourceS3BucketReplicationCreate,
 		UpdateContext: resourceS3BucketReplicationUpdate,
@@ -83,7 +109,7 @@ func resourceS3BucketReplication() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(5 * time.Minute),
-			Delete: schema.DefaultTimeout(2 * time.Minute),
+			Delete: schema.DefaultTimeout(5 * time.Minute),
 		},
 		Schema: s3BucketReplicationSchema(),
 	}
@@ -102,18 +128,19 @@ func resourceS3BucketReplicationRead(ctx context.Context, d *schema.ResourceData
 	tenantID, name := idParts[0], idParts[1]
 
 	c := m.(*duplosdk.Client)
-
-	// Get the object from Duplo
-	duplo, err := c.TenantGetV3S3BucketReplication(tenantID, name)
+	duplo, err := getS3BucketReplication(c, tenantID, name)
 	if err != nil {
+		d.SetId("")
 		return diag.Errorf("resourceS3BucketReplicationRead: Unable to retrieve s3 bucket (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
+
 	}
-	d.Set("source_bucket", duplo.SourceBucket)
-	d.Set("destination_bucket", duplo.DestinationBucket)
-	d.Set("priority", duplo.Priority)
-	d.Set("rule", duplo.Rule)
-	d.Set("delete_marker_replication", duplo.DeleteMarkerReplication)
-	d.Set("storage_class", duplo.StorageClass)
+	if duplo == nil {
+		d.SetId("")
+		return nil
+	}
+	// Get the object from Duplo
+	d.Set("rules", duplo)
+	d.Set("source_bucket", name)
 
 	// Set simple fields first.
 
@@ -121,28 +148,62 @@ func resourceS3BucketReplicationRead(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
+func getS3BucketReplication(c *duplosdk.Client, tenantID, name string) ([]map[string]interface{}, error) {
+	duplo, err := c.TenantGetV3S3BucketReplication(tenantID, name)
+	if err != nil {
+		return nil, err
+	}
+	if duplo == nil || len(duplo.Rule) == 0 {
+		return nil, nil
+	}
+	tenantInfo, err := c.TenantGetV2(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	rules := make([]map[string]interface{}, 0, len(duplo.Rule))
+	for _, data := range duplo.Rule {
+		kv := make(map[string]interface{})
+		kv["fullname"] = data.Rule
+		kv["priority"] = data.Priority
+		kv["delete_marker_replication"] = data.DeleteMarkerReplication.Status.Value == "Enabled"
+		kv["destination_arn"] = data.DestinationBucket.BucketArn
+		destTokens := strings.Split(data.DestinationBucket.BucketArn, ":")
+		kv["destination_bucket"] = destTokens[len(destTokens)-1]
+		ruleName := strings.Split(data.Rule, tenantInfo.AccountName+"-")
+		kv["name"] = ruleName[len(ruleName)-1]
+		kv["storage_class"] = data.StorageClass
+		rules = append(rules, kv)
+	}
+	return rules, nil
+}
+
 // CREATE resource
 func resourceS3BucketReplicationCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketReplicationCreate ******** start")
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
-
+	rules := d.Get("rules").([]interface{})
+	sourceBucket := d.Get("source_bucket").(string)
 	// Create the request object.
-	duploObject := duplosdk.DuploS3BucketReplication{
-		Rule:                    d.Get("rule").(string),
-		DestinationBucket:       d.Get("destination_bucket").(string),
-		SourceBucket:            d.Get("source_bucket").(string),
-		Priority:                d.Get("priority").(int),
-		DeleteMarkerReplication: d.Get("delete_marker_replication").(bool),
+	for _, rule := range rules {
+		kv := rule.(map[string]interface{})
+
+		duploObject := duplosdk.DuploS3BucketReplication{
+			Rule:                    kv["name"].(string),
+			DestinationBucket:       kv["destination_bucket"].(string),
+			SourceBucket:            sourceBucket,
+			Priority:                kv["priority"].(int),
+			DeleteMarkerReplication: kv["delete_marker_replication"].(bool),
+		}
+
+		// Post the object to Duplo
+		err := c.TenantCreateV3S3BucketReplication(tenantID, duploObject)
+		if err != nil {
+			return diag.Errorf("resourceS3BucketReplicationCreate: Unable to create s3 bucket replication for (tenant: %s, source bucket: %s: error: %s)", tenantID, duploObject.SourceBucket, err)
+		}
 	}
 
-	// Post the object to Duplo
-	_, err := c.TenantCreateV3S3BucketReplication(tenantID, duploObject)
-	if err != nil {
-		return diag.Errorf("resourceS3BucketReplicationCreate: Unable to create s3 bucket replication for (tenant: %s, source bucket: %s: error: %s)", tenantID, duploObject.SourceBucket, err)
-	}
-
-	id := fmt.Sprintf("%s/%s", tenantID, duploObject.SourceBucket)
+	id := fmt.Sprintf("%s/%s", tenantID, sourceBucket)
 	d.SetId(id)
 	diags := resourceS3BucketReplicationRead(ctx, d, m)
 	log.Printf("[TRACE] resourceS3BucketReplicationCreate ******** end")
@@ -159,22 +220,26 @@ func resourceS3BucketReplicationUpdate(ctx context.Context, d *schema.ResourceDa
 		return diag.Errorf("resourceS3BucketReplicationUpdate: Invalid resource (ID: %s)", id)
 	}
 	tenantID := idParts[0]
-
-	// Create the request object.
-	duploObject := duplosdk.DuploS3BucketReplication{
-		Rule:                    d.Get("rule").(string),
-		DestinationBucket:       d.Get("destination_bucket").(string),
-		SourceBucket:            d.Get("source_bucket").(string),
-		Priority:                d.Get("priority").(int),
-		DeleteMarkerReplication: d.Get("delete_marker_replication").(bool),
-	}
-
 	c := m.(*duplosdk.Client)
 
-	// Post the object to Duplo
-	_, err := c.TenantUpdateV3S3BucketReplication(tenantID, duploObject)
-	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceS3BucketUpdate: Unable to update s3 bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.SourceBucket, err)
+	rules := d.Get("rules").([]interface{})
+
+	for _, rule := range rules {
+		kv := rule.(map[string]interface{})
+
+		duploObject := duplosdk.DuploS3BucketReplication{
+			Rule:                    kv["name"].(string),
+			DestinationBucket:       kv["destination_bucket"].(string),
+			SourceBucket:            d.Get("source_bucket").(string),
+			Priority:                kv["priority"].(int),
+			DeleteMarkerReplication: kv["delete_marker_replication"].(bool),
+		}
+		ruleFullname := kv["fullname"].(string)
+		// Post the object to Duplo
+		err := c.TenantUpdateV3S3BucketReplication(tenantID, ruleFullname, duploObject)
+		if err != nil {
+			return diag.Errorf("resourceS3BucketReplicationUpdate: Unable to update s3 bucket using v3 api (tenant: %s, bucket: %s: rule: %s,error: %s)", tenantID, duploObject.SourceBucket, ruleFullname, err)
+		}
 	}
 	diags := resourceS3BucketReplicationRead(ctx, d, m)
 
@@ -184,30 +249,29 @@ func resourceS3BucketReplicationUpdate(ctx context.Context, d *schema.ResourceDa
 
 // DELETE resource
 func resourceS3BucketReplicationDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceS3BucketDelete ******** start")
+	log.Printf("[TRACE] resourceS3BucketReplicationDelete ******** start")
 
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) < 2 {
-		return diag.Errorf("resourceS3BucketDelete: Invalid resource (ID: %s)", id)
+		return diag.Errorf("resourceS3BucketReplicationDelete: Invalid resource (ID: %s)", id)
 	}
-	err := c.TenantDeleteS3Bucket(idParts[0], idParts[1])
-	if err != nil {
-		return diag.Errorf("resourceS3BucketDelete: Unable to delete bucket (name:%s, error: %s)", id, err)
-	}
+	rules := d.Get("rules").([]interface{})
 
-	// Wait up to 60 seconds for Duplo to delete the bucket.
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenantGetS3Bucket(idParts[0], idParts[1])
-	})
-	if diag != nil {
-		return diag
+	for _, rule := range rules {
+		kv := rule.(map[string]interface{})
+		ruleName := kv["fullname"].(string)
+		err := c.TenantDeleteV3S3BucketReplication(idParts[0], idParts[1], ruleName)
+		if err != nil {
+			return diag.Errorf("resourceS3BucketReplicationDelete: Unable to delete bucket replication rule (name:%s, error: %s)", ruleName, err)
+		}
+		// Wait up to 60 seconds for Duplo to delete the bucket replication.
+		time.Sleep(60 * time.Second)
 	}
 
 	// Wait 10 more seconds to deal with consistency issues.
-	time.Sleep(10 * time.Second)
 
 	log.Printf("[TRACE] resourceS3BucketDelete ******** end")
 	return nil
