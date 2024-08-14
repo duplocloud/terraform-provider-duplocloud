@@ -57,11 +57,11 @@ func dataSourceAdminAwsCredentialsRead(d *schema.ResourceData, m interface{}) er
 	}
 
 	// Set the Terraform resource data
-	d.Set("console_url", creds.ConsoleURL)
-	d.Set("access_key_id", creds.AccessKeyID)
-	d.Set("secret_access_key", creds.SecretAccessKey)
-	d.Set("session_token", creds.SessionToken)
-	d.Set("region", creds.Region)
+	_ = d.Set("console_url", creds.ConsoleURL)
+	_ = d.Set("access_key_id", creds.AccessKeyID)
+	_ = d.Set("secret_access_key", creds.SecretAccessKey)
+	_ = d.Set("session_token", creds.SessionToken)
+	_ = d.Set("region", creds.Region)
 
 	log.Printf("[TRACE] dataSourceAdminAwsCredentialsRead ******** end")
 	return nil

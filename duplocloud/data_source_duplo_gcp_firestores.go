@@ -119,7 +119,7 @@ func dataSourceGcpFirestoreList(ctx context.Context, d *schema.ResourceData, m i
 	for _, duplo := range *list {
 		firestores = append(firestores, setFirestoreFieldList(duplo))
 	}
-	d.Set("firestores", firestores)
+	_ = d.Set("firestores", firestores)
 	log.Printf("[TRACE] dataSourceGcpFirestoreRead ******** end")
 	return nil
 }

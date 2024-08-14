@@ -65,7 +65,7 @@ func dataSourceTenantsRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.SetId("user-tenants")
-	d.Set("tenants", tenants)
+	_ = d.Set("tenants", tenants)
 
 	log.Printf("[TRACE] dataSourceTenantsRead ******** end")
 	return nil

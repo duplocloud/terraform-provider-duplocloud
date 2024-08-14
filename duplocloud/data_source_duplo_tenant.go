@@ -99,17 +99,17 @@ func dataSourceTenantRead(d *schema.ResourceData, m interface{}) error {
 
 	// Set the Terraform resource data
 	d.SetId(duploTenant.TenantID)
-	d.Set("id", duploTenant.TenantID)
-	d.Set("name", duploTenant.AccountName)
-	d.Set("plan_id", duploTenant.PlanID)
-	d.Set("infra_owner", duploTenant.InfraOwner)
+	_ = d.Set("id", duploTenant.TenantID)
+	_ = d.Set("name", duploTenant.AccountName)
+	_ = d.Set("plan_id", duploTenant.PlanID)
+	_ = d.Set("infra_owner", duploTenant.InfraOwner)
 	if duploTenant.TenantPolicy != nil {
-		d.Set("policy", []map[string]interface{}{{
+		_ = d.Set("policy", []map[string]interface{}{{
 			"allow_volume_mapping": duploTenant.TenantPolicy.AllowVolumeMapping,
 			"block_external_ep":    duploTenant.TenantPolicy.BlockExternalEp,
 		}})
 	}
-	d.Set("tags", keyValueToState("tags", duploTenant.Tags))
+	_ = d.Set("tags", keyValueToState("tags", duploTenant.Tags))
 
 	log.Printf("[TRACE] dataSourceTenantRead(): end")
 	return nil

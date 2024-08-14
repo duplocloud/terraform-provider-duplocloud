@@ -104,12 +104,12 @@ func dataSourceTenantSecretRead(d *schema.ResourceData, m interface{}) error {
 
 		if (arn != "" && duploSecret.Arn == arn) || (name != "" && duploSecret.Name == name) || (nameSuffix != "" && objNameSuffix == nameSuffix) {
 			d.SetId(fmt.Sprintf("%s/%s", tenantID, arn))
-			d.Set("tenant_id", tenantID)
-			d.Set("arn", duploSecret.Arn)
-			d.Set("name", duploSecret.Name)
-			d.Set("name_suffix", objNameSuffix)
-			d.Set("rotation_enabled", duploSecret.RotationEnabled)
-			d.Set("tags", keyValueToState("tags", duploSecret.Tags))
+			_ = d.Set("tenant_id", tenantID)
+			_ = d.Set("arn", duploSecret.Arn)
+			_ = d.Set("name", duploSecret.Name)
+			_ = d.Set("name_suffix", objNameSuffix)
+			_ = d.Set("rotation_enabled", duploSecret.RotationEnabled)
+			_ = d.Set("tags", keyValueToState("tags", duploSecret.Tags))
 
 			if firstMatch {
 				break

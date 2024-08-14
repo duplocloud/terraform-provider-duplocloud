@@ -83,7 +83,7 @@ func dataSourcePlanImagesRead(ctx context.Context, d *schema.ResourceData, m int
 	}
 
 	// Populate the results from the list.
-	d.Set("images", flattenPlanImages(all))
+	_ = d.Set("images", flattenPlanImages(all))
 
 	d.SetId(planID)
 
@@ -108,10 +108,10 @@ func dataSourcePlanImageRead(ctx context.Context, d *schema.ResourceData, m inte
 	d.SetId(fmt.Sprintf("%s/%s", planID, name))
 
 	// Populate the results
-	d.Set("image_id", image.ImageId)
-	d.Set("os", image.OS)
-	d.Set("username", image.Username)
-	d.Set("tags", keyValueToState("images[].tags", image.Tags))
+	_ = d.Set("image_id", image.ImageId)
+	_ = d.Set("os", image.OS)
+	_ = d.Set("username", image.Username)
+	_ = d.Set("tags", keyValueToState("images[].tags", image.Tags))
 
 	log.Printf("[TRACE] dataSourcePlanImageRead(): end")
 	return nil

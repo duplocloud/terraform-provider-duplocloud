@@ -2,9 +2,10 @@ package duplocloud
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"terraform-provider-duplocloud/duplosdk"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func tenantCleanUpTimersSchema() map[string]*schema.Schema {
@@ -51,8 +52,8 @@ func dataSourceTenantCleanUpTimersRead(d *schema.ResourceData, m interface{}) er
 	}
 
 	d.SetId(tenantId)
-	d.Set("expiry_time", tenantCleanUpTimers.ExpiryTime)
-	d.Set("pause_time", tenantCleanUpTimers.PauseTime)
+	_ = d.Set("expiry_time", tenantCleanUpTimers.ExpiryTime)
+	_ = d.Set("pause_time", tenantCleanUpTimers.PauseTime)
 
 	log.Printf("[TRACE] dataSourceTenantCleanUpTimersRead(%s): end", tenantId)
 	return nil

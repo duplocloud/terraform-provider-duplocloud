@@ -302,7 +302,7 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	// Apply the data
 	asgProfileToState(d, profile)
-	d.Set("tenant_id", tenantID)
+	_ = d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceAwsASGRead(%s): end", id)
 	return nil
 }
@@ -358,27 +358,27 @@ func asgProfileIdParts(id string) (tenantID, name string, err error) {
 }
 
 func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) {
-	d.Set("instance_count", duplo.DesiredCapacity)
-	d.Set("min_instance_count", duplo.MinSize)
-	d.Set("max_instance_count", duplo.MaxSize)
-	d.Set("use_spot_instances", duplo.UseSpotInstances)
-	d.Set("max_spot_price", duplo.MaxSpotPrice)
-	d.Set("fullname", duplo.FriendlyName)
-	d.Set("capacity", duplo.Capacity)
-	d.Set("is_minion", duplo.IsMinion)
-	d.Set("image_id", duplo.ImageID)
-	d.Set("base64_user_data", duplo.Base64UserData)
-	d.Set("prepend_user_data", duplo.PrependUserData)
-	d.Set("agent_platform", duplo.AgentPlatform)
-	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
-	d.Set("is_cluster_autoscaled", duplo.IsClusterAutoscaled)
-	d.Set("can_scale_from_zero", duplo.CanScaleFromZero)
-	d.Set("cloud", duplo.Cloud)
-	d.Set("keypair_type", duplo.KeyPairType)
-	d.Set("encrypt_disk", duplo.EncryptDisk)
-	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("minion_tags", keyValueToState("minion_tags", duplo.CustomDataTags))
-	d.Set("enabled_metrics", duplo.EnabledMetrics)
+	_ = d.Set("instance_count", duplo.DesiredCapacity)
+	_ = d.Set("min_instance_count", duplo.MinSize)
+	_ = d.Set("max_instance_count", duplo.MaxSize)
+	_ = d.Set("use_spot_instances", duplo.UseSpotInstances)
+	_ = d.Set("max_spot_price", duplo.MaxSpotPrice)
+	_ = d.Set("fullname", duplo.FriendlyName)
+	_ = d.Set("capacity", duplo.Capacity)
+	_ = d.Set("is_minion", duplo.IsMinion)
+	_ = d.Set("image_id", duplo.ImageID)
+	_ = d.Set("base64_user_data", duplo.Base64UserData)
+	_ = d.Set("prepend_user_data", duplo.PrependUserData)
+	_ = d.Set("agent_platform", duplo.AgentPlatform)
+	_ = d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
+	_ = d.Set("is_cluster_autoscaled", duplo.IsClusterAutoscaled)
+	_ = d.Set("can_scale_from_zero", duplo.CanScaleFromZero)
+	_ = d.Set("cloud", duplo.Cloud)
+	_ = d.Set("keypair_type", duplo.KeyPairType)
+	_ = d.Set("encrypt_disk", duplo.EncryptDisk)
+	_ = d.Set("tags", keyValueToState("tags", duplo.Tags))
+	_ = d.Set("minion_tags", keyValueToState("minion_tags", duplo.CustomDataTags))
+	_ = d.Set("enabled_metrics", duplo.EnabledMetrics)
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {

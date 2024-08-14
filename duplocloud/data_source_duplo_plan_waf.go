@@ -128,9 +128,9 @@ func dataSourcePlanWafRead(ctx context.Context, d *schema.ResourceData, m interf
 	if err != nil {
 		return diag.Errorf("failed to retrieve plan waf for '%s': %s", planID, err)
 	}
-	d.Set("waf_name", duplo.WebAclName)
-	d.Set("waf_arn", duplo.WebAclId)
-	d.Set("dashboard_url", duplo.DashboardUrl)
+	_ = d.Set("waf_name", duplo.WebAclName)
+	_ = d.Set("waf_arn", duplo.WebAclId)
+	_ = d.Set("dashboard_url", duplo.DashboardUrl)
 	log.Printf("[TRACE] dataSourcePlanWafRead(%s): end", planID)
 	return nil
 }

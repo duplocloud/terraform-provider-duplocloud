@@ -92,7 +92,7 @@ func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
 		})
 	}
 
-	d.Set("secrets", secrets)
+	_ = d.Set("secrets", secrets)
 
 	log.Printf("[TRACE] dataSourceTenantSecretsRead(%s): end", tenantID)
 	return nil

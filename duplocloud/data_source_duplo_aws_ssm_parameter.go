@@ -75,13 +75,13 @@ func dataSourceSsmParameterRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.SetId(id)
-	d.Set("type", ssmParam.Type)
-	d.Set("value", ssmParam.Value)
-	d.Set("key_id", ssmParam.KeyId)
-	d.Set("description", ssmParam.Description)
-	d.Set("allowed_pattern", ssmParam.AllowedPattern)
-	d.Set("last_modified_user", ssmParam.LastModifiedUser)
-	d.Set("last_modified_date", ssmParam.LastModifiedDate)
+	_ = d.Set("type", ssmParam.Type)
+	_ = d.Set("value", ssmParam.Value)
+	_ = d.Set("key_id", ssmParam.KeyId)
+	_ = d.Set("description", ssmParam.Description)
+	_ = d.Set("allowed_pattern", ssmParam.AllowedPattern)
+	_ = d.Set("last_modified_user", ssmParam.LastModifiedUser)
+	_ = d.Set("last_modified_date", ssmParam.LastModifiedDate)
 
 	log.Printf("[TRACE] dataSourceSsmParameterRead(%s, %s): end", tenantID, name)
 	return nil

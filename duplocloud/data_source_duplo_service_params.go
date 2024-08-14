@@ -112,7 +112,7 @@ func dataSourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceDat
 	// Apply the result
 	dumpParams, _ := json.Marshal(selectedParams)
 	log.Printf("[TRACE] dataSourceDuploServiceParamsRead(%s): dump: %s", tenantID, dumpParams)
-	d.Set("result", selectedParams)
+	_ = d.Set("result", selectedParams)
 
 	log.Printf("[TRACE] dataSourceDuploServiceParamsRead(%s): end", tenantID)
 

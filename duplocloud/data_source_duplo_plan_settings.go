@@ -95,10 +95,10 @@ func dataSourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m i
 
 	// Set the simple fields first.
 	d.SetId(planID)
-	d.Set("metadata", keyValueToState("metadata", allMetadata))
-	d.Set("unrestricted_ext_lb", settings.UnrestrictedExtLB)
+	_ = d.Set("metadata", keyValueToState("metadata", allMetadata))
+	_ = d.Set("unrestricted_ext_lb", settings.UnrestrictedExtLB)
 	if dns != nil {
-		d.Set("dns_setting", flattenDnsSetting(dns))
+		_ = d.Set("dns_setting", flattenDnsSetting(dns))
 	}
 
 	log.Printf("[TRACE] dataSourcePlanSettingsRead(%s): end", planID)

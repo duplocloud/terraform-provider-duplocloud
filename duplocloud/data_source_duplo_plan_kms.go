@@ -77,7 +77,7 @@ func dataSourcePlanKMSReadList(ctx context.Context, d *schema.ResourceData, m in
 		}
 		data = append(data, val)
 	}
-	d.Set("data", data)
+	_ = d.Set("data", data)
 	// Build a list of current state, to replace the user-supplied settings.
 	d.SetId(planID)
 

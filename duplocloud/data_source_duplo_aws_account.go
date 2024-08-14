@@ -50,7 +50,7 @@ func dataSourceAwsAccountRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Set the Terraform resource data
-	d.Set("account_id", awsAccountID)
+	_ = d.Set("account_id", awsAccountID)
 
 	log.Printf("[TRACE] dataSourceAwsAccountRead ******** end")
 	return nil

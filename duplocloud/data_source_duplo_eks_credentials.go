@@ -99,16 +99,16 @@ func dataSourceEksCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(planID)
 
 	// Set the Terraform resource data
-	d.Set("plan_id", planID)
-	d.Set("name", k8sConfig.Name)
-	d.Set("endpoint", k8sConfig.APIServer)
-	d.Set("token", k8sConfig.Token)
-	d.Set("region", k8sConfig.AwsRegion)
-	d.Set("version", k8sConfig.K8sVersion)
+	_ = d.Set("plan_id", planID)
+	_ = d.Set("name", k8sConfig.Name)
+	_ = d.Set("endpoint", k8sConfig.APIServer)
+	_ = d.Set("token", k8sConfig.Token)
+	_ = d.Set("region", k8sConfig.AwsRegion)
+	_ = d.Set("version", k8sConfig.K8sVersion)
 
 	bytes, err64 := base64.StdEncoding.DecodeString(k8sConfig.CertificateAuthorityDataBase64)
 	if err64 == nil {
-		d.Set("ca_certificate_data", string(bytes))
+		_ = d.Set("ca_certificate_data", string(bytes))
 	}
 
 	log.Printf("[TRACE] dataSourceEksCredentialsRead ******** end")

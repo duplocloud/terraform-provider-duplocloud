@@ -55,7 +55,7 @@ func dataSourceTenantInternalSubnetsRead(ctx context.Context, d *schema.Resource
 		return diag.Errorf("failed to list subnets: %s", err)
 	}
 	d.SetId(tenantID)
-	d.Set("subnet_ids", subnetIDs)
+	_ = d.Set("subnet_ids", subnetIDs)
 
 	log.Printf("[TRACE] dataSourceTenantInternalSubnetsRead(%s): end", tenantID)
 	return nil
@@ -73,7 +73,7 @@ func dataSourceTenantExternalSubnetsRead(ctx context.Context, d *schema.Resource
 		return diag.Errorf("failed to list subnets: %s", err)
 	}
 	d.SetId(tenantID)
-	d.Set("subnet_ids", subnetIDs)
+	_ = d.Set("subnet_ids", subnetIDs)
 
 	log.Printf("[TRACE] dataSourceTenantExternalSubnetsRead(%s): end", tenantID)
 	return nil

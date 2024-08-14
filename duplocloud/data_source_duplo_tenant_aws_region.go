@@ -40,8 +40,8 @@ func dataSourceTenantAwsRegionRead(d *schema.ResourceData, m interface{}) error 
 	}
 
 	// Set the Terraform resource data
-	d.Set("tenant_id", tenantID)
-	d.Set("aws_region", awsRegion)
+	_ = d.Set("tenant_id", tenantID)
+	_ = d.Set("aws_region", awsRegion)
 
 	log.Printf("[TRACE] dataSourceTenantAwsRegionRead ******** end")
 	return nil

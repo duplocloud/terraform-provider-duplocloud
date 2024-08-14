@@ -80,7 +80,7 @@ func dataSourcePlanKmsKeysReadV2(ctx context.Context, d *schema.ResourceData, m 
 		return err
 	}
 	// Populate the results from the list.
-	d.Set("kms_keys", flattenPlanKmsKeysV2(all))
+	_ = d.Set("kms_keys", flattenPlanKmsKeysV2(all))
 
 	d.SetId(planID + "/kms")
 
@@ -103,9 +103,9 @@ func dataSourcePlanKmsReadV2(ctx context.Context, d *schema.ResourceData, m inte
 		return diags
 	}
 	d.SetId(planID + "/kms/" + kms.KeyName)
-	d.Set("name", kms.KeyName)
-	d.Set("id", kms.KeyId)
-	d.Set("arn", kms.KeyArn)
+	_ = d.Set("name", kms.KeyName)
+	_ = d.Set("id", kms.KeyId)
+	_ = d.Set("arn", kms.KeyArn)
 
 	log.Printf("[TRACE] dataSourcePlanKmsRead(): end")
 	return nil

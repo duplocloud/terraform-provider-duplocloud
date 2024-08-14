@@ -109,7 +109,7 @@ func dataSourcePlanNgwsRead(ctx context.Context, d *schema.ResourceData, m inter
 	if err != nil {
 		return diag.Errorf("failed to read NAT gateway for plan: %s", err)
 	}
-	d.Set("nat_gateways", flattenPlanNgws(all))
+	_ = d.Set("nat_gateways", flattenPlanNgws(all))
 
 	d.SetId(planID)
 

@@ -62,12 +62,12 @@ func dataSourceTenantAwsCredentialsRead(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Set the Terraform resource data
-	d.Set("tenant_id", tenantID)
-	d.Set("console_url", creds.ConsoleURL)
-	d.Set("access_key_id", creds.AccessKeyID)
-	d.Set("secret_access_key", creds.SecretAccessKey)
-	d.Set("session_token", creds.SessionToken)
-	d.Set("region", creds.Region)
+	_ = d.Set("tenant_id", tenantID)
+	_ = d.Set("console_url", creds.ConsoleURL)
+	_ = d.Set("access_key_id", creds.AccessKeyID)
+	_ = d.Set("secret_access_key", creds.SecretAccessKey)
+	_ = d.Set("session_token", creds.SessionToken)
+	_ = d.Set("region", creds.Region)
 
 	log.Printf("[TRACE] dataSourceTenantAwsCredentialsRead ******** end")
 	return nil

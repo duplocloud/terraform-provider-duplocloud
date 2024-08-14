@@ -119,7 +119,7 @@ func dataSourceNativeHostImagesRead(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// Populate the results from the list.
-	d.Set("images", flattenNativeHostImages(all))
+	_ = d.Set("images", flattenNativeHostImages(all))
 
 	d.SetId(tenantID)
 
@@ -146,15 +146,15 @@ func dataSourceNativeHostImageRead(ctx context.Context, d *schema.ResourceData, 
 	d.SetId(tenantID)
 
 	// Populate the results
-	d.Set("name", image.Name)
-	d.Set("image_id", image.ImageId)
-	d.Set("os", image.OS)
-	d.Set("username", image.Username)
-	d.Set("region", image.Region)
-	d.Set("k8s_version", image.K8sVersion)
-	d.Set("arch", image.Arch)
-	d.Set("is_kubernetes", image.K8sVersion != "")
-	d.Set("tags", keyValueToState("images[].tags", image.Tags))
+	_ = d.Set("name", image.Name)
+	_ = d.Set("image_id", image.ImageId)
+	_ = d.Set("os", image.OS)
+	_ = d.Set("username", image.Username)
+	_ = d.Set("region", image.Region)
+	_ = d.Set("k8s_version", image.K8sVersion)
+	_ = d.Set("arch", image.Arch)
+	_ = d.Set("is_kubernetes", image.K8sVersion != "")
+	_ = d.Set("tags", keyValueToState("images[].tags", image.Tags))
 
 	log.Printf("[TRACE] dataSourcePlanImageRead(): end")
 	return nil

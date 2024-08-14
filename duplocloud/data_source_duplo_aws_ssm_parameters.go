@@ -91,7 +91,7 @@ func dataSourceSsmParametersRead(d *schema.ResourceData, m interface{}) error {
 		})
 	}
 
-	d.Set("parameters", list)
+	_ = d.Set("parameters", list)
 
 	log.Printf("[TRACE] dataSourceSsmParametersRead(%s): end", tenantID)
 	return nil

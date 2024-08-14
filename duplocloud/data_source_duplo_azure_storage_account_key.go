@@ -54,8 +54,8 @@ func dataSourceAzureStorageAccountKeyRead(d *schema.ResourceData, m interface{})
 	}
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, storageAccountName))
 
-	d.Set("key_name", keyValue.Key)
-	d.Set("key_value", keyValue.Value)
+	_ = d.Set("key_name", keyValue.Key)
+	_ = d.Set("key_value", keyValue.Value)
 
 	log.Printf("[TRACE] dataSourceAzureStorageAccountKeyRead ******** end")
 	return nil

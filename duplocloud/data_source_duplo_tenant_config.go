@@ -52,7 +52,7 @@ func dataSourceTenantConfigRead(d *schema.ResourceData, m interface{}) error {
 
 	// Set the fields
 	d.SetId(duplo.TenantID)
-	d.Set("metadata", keyValueToState("metadata", duplo.Metadata))
+	_ = d.Set("metadata", keyValueToState("metadata", duplo.Metadata))
 
 	log.Printf("[TRACE] dataSourceTenantConfigRead(%s): end", tenantID)
 	return nil

@@ -90,14 +90,14 @@ func dataSourceTenantEksCredentialsRead(d *schema.ResourceData, m interface{}) e
 	d.SetId(tenantID)
 
 	// Set the Terraform resource data
-	d.Set("tenant_id", tenantID)
-	d.Set("name", k8sConfig.Name)
-	d.Set("endpoint", k8sConfig.APIServer)
-	d.Set("region", k8sConfig.AwsRegion)
-	d.Set("version", k8sConfig.K8sVersion)
-	d.Set("token", k8sConfig.Token)
-	d.Set("ca_certificate_data", caCertificateData)
-	d.Set("namespace", k8sConfig.DefaultNamespace)
+	_ = d.Set("tenant_id", tenantID)
+	_ = d.Set("name", k8sConfig.Name)
+	_ = d.Set("endpoint", k8sConfig.APIServer)
+	_ = d.Set("region", k8sConfig.AwsRegion)
+	_ = d.Set("version", k8sConfig.K8sVersion)
+	_ = d.Set("token", k8sConfig.Token)
+	_ = d.Set("ca_certificate_data", caCertificateData)
+	_ = d.Set("namespace", k8sConfig.DefaultNamespace)
 
 	log.Printf("[TRACE] dataSourceTenantEksCredentialsRead ******** end")
 	return nil

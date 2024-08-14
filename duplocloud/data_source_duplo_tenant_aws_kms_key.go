@@ -55,9 +55,9 @@ func dataSourceTenantAwsKmsKeyRead(d *schema.ResourceData, m interface{}) error 
 		return err
 	}
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, kmsKey.KeyID))
-	d.Set("key_id", kmsKey.KeyID)
-	d.Set("key_name", kmsKey.KeyName)
-	d.Set("key_arn", kmsKey.KeyArn)
+	_ = d.Set("key_id", kmsKey.KeyID)
+	_ = d.Set("key_name", kmsKey.KeyName)
+	_ = d.Set("key_arn", kmsKey.KeyArn)
 
 	log.Printf("[TRACE] dataSourceTenantAwsKmsKeyRead ******** end")
 	return nil

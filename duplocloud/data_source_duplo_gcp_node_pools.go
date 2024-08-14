@@ -388,7 +388,7 @@ func dataSourceGCPNodePoolList(ctx context.Context, d *schema.ResourceData, m in
 		nodepool := setGCPNodePoolStateFieldList(&duplo)
 		list = append(list, nodepool)
 	}
-	d.Set("node_pools", list)
+	_ = d.Set("node_pools", list)
 
 	log.Printf("[TRACE] dataSourceGCPNodePoolList ******** end")
 	return nil

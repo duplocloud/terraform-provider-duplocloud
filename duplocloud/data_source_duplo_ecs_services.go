@@ -77,7 +77,7 @@ func dataSourceDuploEcsServicesRead(ctx context.Context, d *schema.ResourceData,
 			if err != nil {
 				return diag.FromErr(err)
 			}
-			d.Set("load_balancer", loadBalancers)
+			_ = d.Set("load_balancer", loadBalancers)
 
 			services = append(services, service)
 		}

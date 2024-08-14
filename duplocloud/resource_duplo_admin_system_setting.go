@@ -161,7 +161,7 @@ func parseAdminSystemSettingIdParts(id string) (keyType, key string, err error) 
 }
 
 func flattenAdminSystemSetting(d *schema.ResourceData, duplo *duplosdk.DuploCustomDataEx) {
-	d.Set("key", duplo.Key)
-	d.Set("value", duplo.Value)
-	d.Set("type", duplo.Type)
+	_ = d.Set("key", duplo.Key)
+	_ = d.Set("value", duplo.Value)
+	_ = d.Set("type", duplo.Type)
 }

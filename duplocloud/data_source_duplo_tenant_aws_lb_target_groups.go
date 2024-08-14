@@ -182,7 +182,7 @@ func dataSourceTenantAwsLbTargetGroupsRead(d *schema.ResourceData, m interface{}
 	// Apply the result
 	dump, _ := json.Marshal(targetGroups)
 	log.Printf("[TRACE] dataSourceTenantAwsLbTargetGroupsRead ******** 2 dump: %s", dump)
-	d.Set("target_groups", targetGroups)
+	_ = d.Set("target_groups", targetGroups)
 
 	log.Printf("[TRACE] dataSourceTenantAwsLbTargetGroupsRead ******** 3 end")
 	return nil

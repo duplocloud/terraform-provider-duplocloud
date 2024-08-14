@@ -81,8 +81,8 @@ func dataSourcePlanCertsRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diags
 	}
 	// Populate the results from the list.
-	d.Set("certificates", flattenPlanCerts(all))
-	d.Set("plan_id", planID)
+	_ = d.Set("certificates", flattenPlanCerts(all))
+	_ = d.Set("plan_id", planID)
 	d.SetId(planID)
 
 	log.Printf("[TRACE] dataSourcePlanCertsRead(%s): end", planID)
@@ -104,9 +104,9 @@ func dataSourcePlanCertRead(ctx context.Context, d *schema.ResourceData, m inter
 		return diags
 	}
 	d.SetId(cert.CertificateArn)
-	d.Set("name", cert.CertificateName)
-	d.Set("arn", cert.CertificateArn)
-	d.Set("plan_id", planID)
+	_ = d.Set("name", cert.CertificateName)
+	_ = d.Set("arn", cert.CertificateArn)
+	_ = d.Set("plan_id", planID)
 
 	log.Printf("[TRACE] dataSourcePlanCertRead(): end")
 	return nil

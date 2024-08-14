@@ -163,7 +163,7 @@ func dataSourceTenantAwsLbListenersRead(d *schema.ResourceData, m interface{}) e
 	// Apply the result
 	dump, _ := json.Marshal(listeners)
 	log.Printf("[TRACE] dataSourceTenantAwsLbListenersRead ******** 2 dump: %s", dump)
-	d.Set("listeners", listeners)
+	_ = d.Set("listeners", listeners)
 
 	log.Printf("[TRACE] dataSourceTenantAwsLbListenersRead ******** 3 end")
 	return nil

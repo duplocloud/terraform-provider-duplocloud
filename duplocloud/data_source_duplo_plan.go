@@ -302,7 +302,7 @@ func dataSourcePlanRead(ctx context.Context, d *schema.ResourceData, m interface
 	attrs := map[string]interface{}{}
 	flattenPlanCloudConfig(attrs, plan)
 	for k, v := range attrs {
-		d.Set(k, v)
+		_ = d.Set(k, v)
 	}
 
 	log.Printf("[TRACE] dataSourcePlanRead(): end")
@@ -327,7 +327,7 @@ func flattenPlanCloudConfig(plan map[string]interface{}, duplo *duplosdk.DuploPl
 			plan["region"] = cp.GoogleConfig["GcpRegion"]
 		}
 
-	} else if duplo.AwsConfig != nil && len(duplo.AwsConfig) > 0 {
+	} else if len(duplo.AwsConfig) > 0 {
 		region := duplo.AwsConfig["AwsRegion"]
 		plan["cloud"] = 0
 		plan["cloud_config"] = duplo.AwsConfig

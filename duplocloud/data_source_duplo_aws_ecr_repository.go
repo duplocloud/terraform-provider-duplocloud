@@ -78,12 +78,12 @@ func dataSourceEcrRepositoryRead(_ context.Context, d *schema.ResourceData, m in
 
 func flattenEcrRepository(d *schema.ResourceData, duplo *duplosdk.DuploAwsEcrRepository, tenantID string) {
 	log.Printf("[TRACE] dataSourceEmrClusterRead(%s): end", tenantID)
-	d.Set("tenant_id", tenantID)
-	d.Set("registry_id", duplo.RegistryId)
-	d.Set("name", duplo.Name)
-	d.Set("repository_url", duplo.RepositoryUri)
-	d.Set("arn", duplo.Arn)
-	d.Set("enable_tag_immutability", duplo.EnableTagImmutability)
-	d.Set("enable_scan_image_on_push", duplo.EnableScanImageOnPush)
-	d.Set("kms_encryption_key", duplo.KmsEncryption)
+	_ = d.Set("tenant_id", tenantID)
+	_ = d.Set("registry_id", duplo.RegistryId)
+	_ = d.Set("name", duplo.Name)
+	_ = d.Set("repository_url", duplo.RepositoryUri)
+	_ = d.Set("arn", duplo.Arn)
+	_ = d.Set("enable_tag_immutability", duplo.EnableTagImmutability)
+	_ = d.Set("enable_scan_image_on_push", duplo.EnableScanImageOnPush)
+	_ = d.Set("kms_encryption_key", duplo.KmsEncryption)
 }

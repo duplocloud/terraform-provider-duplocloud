@@ -121,7 +121,7 @@ func dataSourceGCPSQLCloudList(ctx context.Context, d *schema.ResourceData, m in
 		}
 		list = append(list, sql)
 	}
-	d.Set("databases", list)
+	_ = d.Set("databases", list)
 	log.Printf("[TRACE] dataSourceGCPSQLCloudList ******** end")
 	return nil
 

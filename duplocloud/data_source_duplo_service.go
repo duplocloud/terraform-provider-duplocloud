@@ -168,27 +168,27 @@ func dataSourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m i
 func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicationController) {
 
 	// Apply TF state
-	d.Set("name", duplo.Name)
-	d.Set("volumes", duplo.Template.Volumes)
-	d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
-	d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
-	d.Set("replica_collocation_allowed", duplo.IsReplicaCollocationAllowed)
-	d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
-	d.Set("is_daemonset", duplo.IsDaemonset)
-	d.Set("is_unique_k8s_node_required", duplo.IsUniqueK8sNodeRequired)
-	d.Set("should_spread_across_zones", duplo.ShouldSpreadAcrossZones)
-	d.Set("force_stateful_set", duplo.ForceStatefulSet)
-	d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
-	d.Set("replicas", duplo.Replicas)
-	d.Set("index", duplo.Index)
-	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("fqdn", duplo.Fqdn)
-	d.Set("parent_domain", duplo.ParentDomain)
-	d.Set("fqdn_ex", duplo.FqdnEx)
+	_ = d.Set("name", duplo.Name)
+	_ = d.Set("volumes", duplo.Template.Volumes)
+	_ = d.Set("lb_synced_deployment", duplo.IsLBSyncedDeployment)
+	_ = d.Set("any_host_allowed", duplo.IsAnyHostAllowed)
+	_ = d.Set("replica_collocation_allowed", duplo.IsReplicaCollocationAllowed)
+	_ = d.Set("cloud_creds_from_k8s_service_account", duplo.IsCloudCredsFromK8sServiceAccount)
+	_ = d.Set("is_daemonset", duplo.IsDaemonset)
+	_ = d.Set("is_unique_k8s_node_required", duplo.IsUniqueK8sNodeRequired)
+	_ = d.Set("should_spread_across_zones", duplo.ShouldSpreadAcrossZones)
+	_ = d.Set("force_stateful_set", duplo.ForceStatefulSet)
+	_ = d.Set("replicas_matching_asg_name", duplo.ReplicasMatchingAsgName)
+	_ = d.Set("replicas", duplo.Replicas)
+	_ = d.Set("index", duplo.Index)
+	_ = d.Set("tags", keyValueToState("tags", duplo.Tags))
+	_ = d.Set("fqdn", duplo.Fqdn)
+	_ = d.Set("parent_domain", duplo.ParentDomain)
+	_ = d.Set("fqdn_ex", duplo.FqdnEx)
 	if duplo.FqdnEx != "" {
-		d.Set("domain", duplo.FqdnEx)
+		_ = d.Set("domain", duplo.FqdnEx)
 	} else {
-		d.Set("domain", duplo.Fqdn)
+		_ = d.Set("domain", duplo.Fqdn)
 	}
 	if len(duplo.HPASpecs) > 0 {
 		flattenHPASpecs("hpa_specs", duplo.HPASpecs, d)
@@ -196,17 +196,17 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 
 	// If we have a pod template, read data from it
 	if duplo.Template != nil {
-		d.Set("agent_platform", duplo.Template.AgentPlatform)
-		d.Set("cloud", duplo.Template.Cloud)
-		d.Set("other_docker_host_config", duplo.Template.OtherDockerHostConfig)
-		d.Set("other_docker_config", duplo.Template.OtherDockerConfig)
-		d.Set("allocation_tags", duplo.Template.AllocationTags)
-		d.Set("extra_config", duplo.Template.ExtraConfig)
-		d.Set("commands", duplo.Template.Commands)
+		_ = d.Set("agent_platform", duplo.Template.AgentPlatform)
+		_ = d.Set("cloud", duplo.Template.Cloud)
+		_ = d.Set("other_docker_host_config", duplo.Template.OtherDockerHostConfig)
+		_ = d.Set("other_docker_config", duplo.Template.OtherDockerConfig)
+		_ = d.Set("allocation_tags", duplo.Template.AllocationTags)
+		_ = d.Set("extra_config", duplo.Template.ExtraConfig)
+		_ = d.Set("commands", duplo.Template.Commands)
 
 		// If there is at least one container, get the first docker image from it.
 		if duplo.Template.Containers != nil && len(*duplo.Template.Containers) > 0 {
-			d.Set("docker_image", (*duplo.Template.Containers)[0].Image)
+			_ = d.Set("docker_image", (*duplo.Template.Containers)[0].Image)
 		}
 	}
 }
