@@ -38,12 +38,10 @@ type File struct {
 	Module    *Module
 	Go        *Go
 	Toolchain *Toolchain
-	Godebug   []*Godebug
 	Require   []*Require
 	Exclude   []*Exclude
 	Replace   []*Replace
 	Retract   []*Retract
-	Tool      []*Tool
 
 	Syntax *FileSyntax
 }
@@ -67,13 +65,6 @@ type Toolchain struct {
 	Syntax *Line
 }
 
-// A Godebug is a single godebug key=value statement.
-type Godebug struct {
-	Key    string
-	Value  string
-	Syntax *Line
-}
-
 // An Exclude is a single exclude statement.
 type Exclude struct {
 	Mod    module.Version
@@ -92,12 +83,6 @@ type Retract struct {
 	VersionInterval
 	Rationale string
 	Syntax    *Line
-}
-
-// A Tool is a single tool statement.
-type Tool struct {
-	Path   string
-	Syntax *Line
 }
 
 // A VersionInterval represents a range of versions with upper and lower bounds.
@@ -304,7 +289,7 @@ func parseToFile(file string, data []byte, fix VersionFixer, strict bool) (parse
 					})
 				}
 				continue
-			case "module", "godebug", "require", "exclude", "replace", "retract", "tool":
+			case "module", "require", "exclude", "replace", "retract":
 				for _, l := range x.Line {
 					f.add(&errs, x, l, x.Token[0], l.Token, fix, strict)
 				}
@@ -323,9 +308,6 @@ var laxGoVersionRE = lazyregexp.New(`^v?(([1-9][0-9]*)\.(0|[1-9][0-9]*))([^0-9].
 
 // Toolchains must be named beginning with `go1`,
 // like "go1.20.3" or "go1.20.3-gccgo". As a special case, "default" is also permitted.
-// Note that this regexp is a much looser condition than go/version.IsValid,
-// for forward compatibility.
-// (This code has to be work to identify new toolchains even if we tweak the syntax in the future.)
 var ToolchainRE = lazyregexp.New(`^default$|^go1($|\.)`)
 
 func (f *File) add(errs *ErrorList, block *LineBlock, line *Line, verb string, args []string, fix VersionFixer, strict bool) {
@@ -401,8 +383,8 @@ func (f *File) add(errs *ErrorList, block *LineBlock, line *Line, verb string, a
 		if len(args) != 1 {
 			errorf("toolchain directive expects exactly one argument")
 			return
-		} else if !ToolchainRE.MatchString(args[0]) {
-			errorf("invalid toolchain version '%s': must match format go1.23.0 or default", args[0])
+		} else if strict && !ToolchainRE.MatchString(args[0]) {
+			errorf("invalid toolchain version '%s': must match format go1.23.0 or local", args[0])
 			return
 		}
 		f.Toolchain = &Toolchain{Syntax: line}
@@ -428,22 +410,6 @@ func (f *File) add(errs *ErrorList, block *LineBlock, line *Line, verb string, a
 			return
 		}
 		f.Module.Mod = module.Version{Path: s}
-
-	case "godebug":
-		if len(args) != 1 || strings.ContainsAny(args[0], "\"`',") {
-			errorf("usage: godebug key=value")
-			return
-		}
-		key, value, ok := strings.Cut(args[0], "=")
-		if !ok {
-			errorf("usage: godebug key=value")
-			return
-		}
-		f.Godebug = append(f.Godebug, &Godebug{
-			Key:    key,
-			Value:  value,
-			Syntax: line,
-		})
 
 	case "require", "exclude":
 		if len(args) != 2 {
@@ -516,21 +482,6 @@ func (f *File) add(errs *ErrorList, block *LineBlock, line *Line, verb string, a
 			Syntax:          line,
 		}
 		f.Retract = append(f.Retract, retract)
-
-	case "tool":
-		if len(args) != 1 {
-			errorf("tool directive expects exactly one argument")
-			return
-		}
-		s, err := parseString(&args[0])
-		if err != nil {
-			errorf("invalid quoted string: %v", err)
-			return
-		}
-		f.Tool = append(f.Tool, &Tool{
-			Path:   s,
-			Syntax: line,
-		})
 	}
 }
 
@@ -679,7 +630,7 @@ func (f *WorkFile) add(errs *ErrorList, line *Line, verb string, args []string, 
 			errorf("go directive expects exactly one argument")
 			return
 		} else if !GoVersionRE.MatchString(args[0]) {
-			errorf("invalid go version '%s': must match format 1.23.0", args[0])
+			errorf("invalid go version '%s': must match format 1.23", args[0])
 			return
 		}
 
@@ -695,28 +646,12 @@ func (f *WorkFile) add(errs *ErrorList, line *Line, verb string, args []string, 
 			errorf("toolchain directive expects exactly one argument")
 			return
 		} else if !ToolchainRE.MatchString(args[0]) {
-			errorf("invalid toolchain version '%s': must match format go1.23.0 or default", args[0])
+			errorf("invalid toolchain version '%s': must match format go1.23 or local", args[0])
 			return
 		}
 
 		f.Toolchain = &Toolchain{Syntax: line}
 		f.Toolchain.Name = args[0]
-
-	case "godebug":
-		if len(args) != 1 || strings.ContainsAny(args[0], "\"`',") {
-			errorf("usage: godebug key=value")
-			return
-		}
-		key, value, ok := strings.Cut(args[0], "=")
-		if !ok {
-			errorf("usage: godebug key=value")
-			return
-		}
-		f.Godebug = append(f.Godebug, &Godebug{
-			Key:    key,
-			Value:  value,
-			Syntax: line,
-		})
 
 	case "use":
 		if len(args) != 1 {
@@ -993,15 +928,6 @@ func (f *File) Format() ([]byte, error) {
 // Cleanup cleans out all the cleared entries.
 func (f *File) Cleanup() {
 	w := 0
-	for _, g := range f.Godebug {
-		if g.Key != "" {
-			f.Godebug[w] = g
-			w++
-		}
-	}
-	f.Godebug = f.Godebug[:w]
-
-	w = 0
 	for _, r := range f.Require {
 		if r.Mod.Path != "" {
 			f.Require[w] = r
@@ -1048,8 +974,6 @@ func (f *File) AddGoStmt(version string) error {
 		var hint Expr
 		if f.Module != nil && f.Module.Syntax != nil {
 			hint = f.Module.Syntax
-		} else if f.Syntax == nil {
-			f.Syntax = new(FileSyntax)
 		}
 		f.Go = &Go{
 			Version: version,
@@ -1098,45 +1022,6 @@ func (f *File) AddToolchainStmt(name string) error {
 		f.Syntax.updateLine(f.Toolchain.Syntax, "toolchain", name)
 	}
 	return nil
-}
-
-// AddGodebug sets the first godebug line for key to value,
-// preserving any existing comments for that line and removing all
-// other godebug lines for key.
-//
-// If no line currently exists for key, AddGodebug adds a new line
-// at the end of the last godebug block.
-func (f *File) AddGodebug(key, value string) error {
-	need := true
-	for _, g := range f.Godebug {
-		if g.Key == key {
-			if need {
-				g.Value = value
-				f.Syntax.updateLine(g.Syntax, "godebug", key+"="+value)
-				need = false
-			} else {
-				g.Syntax.markRemoved()
-				*g = Godebug{}
-			}
-		}
-	}
-
-	if need {
-		f.addNewGodebug(key, value)
-	}
-	return nil
-}
-
-// addNewGodebug adds a new godebug key=value line at the end
-// of the last godebug block, regardless of any existing godebug lines for key.
-func (f *File) addNewGodebug(key, value string) {
-	line := f.Syntax.addLine(nil, "godebug", key+"="+value)
-	g := &Godebug{
-		Key:    key,
-		Value:  value,
-		Syntax: line,
-	}
-	f.Godebug = append(f.Godebug, g)
 }
 
 // AddRequire sets the first require line for path to version vers,
@@ -1446,16 +1331,6 @@ func (f *File) SetRequireSeparateIndirect(req []*Require) {
 	f.SortBlocks()
 }
 
-func (f *File) DropGodebug(key string) error {
-	for _, g := range f.Godebug {
-		if g.Key == key {
-			g.Syntax.markRemoved()
-			*g = Godebug{}
-		}
-	}
-	return nil
-}
-
 func (f *File) DropRequire(path string) error {
 	for _, r := range f.Require {
 		if r.Mod.Path == path {
@@ -1589,36 +1464,6 @@ func (f *File) DropRetract(vi VersionInterval) error {
 	return nil
 }
 
-// AddTool adds a new tool directive with the given path.
-// It does nothing if the tool line already exists.
-func (f *File) AddTool(path string) error {
-	for _, t := range f.Tool {
-		if t.Path == path {
-			return nil
-		}
-	}
-
-	f.Tool = append(f.Tool, &Tool{
-		Path:   path,
-		Syntax: f.Syntax.addLine(nil, "tool", path),
-	})
-
-	f.SortBlocks()
-	return nil
-}
-
-// RemoveTool removes a tool directive with the given path.
-// It does nothing if no such tool directive exists.
-func (f *File) DropTool(path string) error {
-	for _, t := range f.Tool {
-		if t.Path == path {
-			t.Syntax.markRemoved()
-			*t = Tool{}
-		}
-	}
-	return nil
-}
-
 func (f *File) SortBlocks() {
 	f.removeDups() // otherwise sorting is unsafe
 
@@ -1645,9 +1490,9 @@ func (f *File) SortBlocks() {
 	}
 }
 
-// removeDups removes duplicate exclude, replace and tool directives.
+// removeDups removes duplicate exclude and replace directives.
 //
-// Earlier exclude and tool directives take priority.
+// Earlier exclude directives take priority.
 //
 // Later replace directives take priority.
 //
@@ -1657,10 +1502,10 @@ func (f *File) SortBlocks() {
 // retract directives are not de-duplicated since comments are
 // meaningful, and versions may be retracted multiple times.
 func (f *File) removeDups() {
-	removeDups(f.Syntax, &f.Exclude, &f.Replace, &f.Tool)
+	removeDups(f.Syntax, &f.Exclude, &f.Replace)
 }
 
-func removeDups(syntax *FileSyntax, exclude *[]*Exclude, replace *[]*Replace, tool *[]*Tool) {
+func removeDups(syntax *FileSyntax, exclude *[]*Exclude, replace *[]*Replace) {
 	kill := make(map[*Line]bool)
 
 	// Remove duplicate excludes.
@@ -1700,24 +1545,6 @@ func removeDups(syntax *FileSyntax, exclude *[]*Exclude, replace *[]*Replace, to
 		}
 	}
 	*replace = repl
-
-	if tool != nil {
-		haveTool := make(map[string]bool)
-		for _, t := range *tool {
-			if haveTool[t.Path] {
-				kill[t.Syntax] = true
-				continue
-			}
-			haveTool[t.Path] = true
-		}
-		var newTool []*Tool
-		for _, t := range *tool {
-			if !kill[t.Syntax] {
-				newTool = append(newTool, t)
-			}
-		}
-		*tool = newTool
-	}
 
 	// Duplicate require and retract directives are not removed.
 

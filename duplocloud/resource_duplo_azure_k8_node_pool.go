@@ -92,8 +92,8 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 						Computed:    true,
 						Type:        schema.TypeString,
 						ValidateFunc: validation.StringInSlice([]string{
-							"Delete",
-							"Deallocate",
+							"Standard",
+							"Spot",
 						}, false),
 					},
 					"spot_max_price": {
@@ -260,16 +260,9 @@ func expandAgentK8NodePool(d *schema.ResourceData) (*duplosdk.DuploAzureK8NodePo
 				data := mp.(map[string]interface{})
 				nodePool.ScaleSetPriority = data["priority"].(string)
 				nodePool.ScaleSetEvictionPolicy = data["eviction_policy"].(string)
-				spotMaxPrice := data["spot_max_price"].(string)
-				var (
-					price float64
-					err   error
-				)
-				if spotMaxPrice != "" {
-					price, err = strconv.ParseFloat(spotMaxPrice, 32)
-					if err != nil {
-						return nil, err
-					}
+				price, err := strconv.ParseFloat(data["spot_max_price"].(string), 32)
+				if err != nil {
+					return nil, err
 				}
 				nodePool.SpotMaxPrice = float32(price)
 			}
