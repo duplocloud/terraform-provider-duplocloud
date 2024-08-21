@@ -4,7 +4,7 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 resource "duplocloud_azure_k8_node_pool" "node_pool" {
-  tenant_id        = "d60ea93e-3924-4507-8656-73571d99ae42"
+  tenant_id        = duplocloud_tenant.myapp.tenant_id
   identifier       = 2
   min_capacity     = 1
   max_capacity     = 1
