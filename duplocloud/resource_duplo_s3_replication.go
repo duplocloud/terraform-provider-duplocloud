@@ -172,7 +172,10 @@ func getS3BucketReplication(c *duplosdk.Client, tenantID, name string) ([]map[st
 		kv["destination_bucket"] = destTokens[len(destTokens)-1]
 		ruleName := strings.Split(data.Rule, tenantInfo.AccountName+"-")
 		kv["name"] = ruleName[len(ruleName)-1]
-		kv["storage_class"] = data.StorageClass
+		kv["storage_class"] = "STANDARD"
+		if data.DestinationBucket.StorageClass != nil && data.DestinationBucket.StorageClass.Value != "" {
+			kv["storage_class"] = data.DestinationBucket.StorageClass.Value
+		}
 		rules = append(rules, kv)
 	}
 	return rules, nil
@@ -234,6 +237,7 @@ func resourceS3BucketReplicationUpdate(ctx context.Context, d *schema.ResourceDa
 			SourceBucket:            d.Get("source_bucket").(string),
 			Priority:                kv["priority"].(int),
 			DeleteMarkerReplication: kv["delete_marker_replication"].(bool),
+			StorageClass:            kv["storage_class"].(string),
 		}
 		ruleFullname := kv["fullname"].(string)
 		// Post the object to Duplo

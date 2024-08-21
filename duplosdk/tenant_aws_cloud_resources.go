@@ -256,12 +256,12 @@ type DuploS3BucketReplicationRule struct {
 	Priority          int              `json:"Priority"`
 	Status            DuploStringValue `json:"Status"`
 	DestinationBucket struct {
-		BucketArn string `json:"BucketArn"`
+		BucketArn    string            `json:"BucketArn"`
+		StorageClass *DuploStringValue `json:"StorageClass,omitempty"`
 	} `json:"Destination"`
 	DeleteMarkerReplication struct {
 		Status DuploStringValue `json:"Status"`
 	} `json:"DeleteMarkerReplication"`
-	StorageClass string `json:"StorageClass,omitempty"`
 }
 
 type DuploS3BucketReplicationResponse struct {
