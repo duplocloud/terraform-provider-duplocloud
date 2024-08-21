@@ -51,25 +51,26 @@ func ruleSchema() *schema.Resource {
 				DiffSuppressFunc: diffSuppressWhenNotCreating,
 			},
 			"storage_class": {
-				Description: "storage_class type: Standard, IntelligentTiering, StandardInfrequentAccess, OneZoneInfrequentAccess, GlacierInstantRetrieval, Glacier, DeepArchive, ReducedRedundancy. Can be set only during creation",
+				Description: "storage_class type: STANDARD, INTELLIGENT_TIERING, STANDARD_IA, ONEZONE_IA, GLACIER_IR, GLACIER, DEEP_ARCHIVE, REDUCED_REDUNDANCY. Can be set only during creation",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 				ValidateFunc: validation.StringInSlice([]string{
-					"Standard",
-					"IntelligentTiering",
-					"StandardInfrequentAccess",
-					"OneZoneInfrequentAccess",
-					"GlacierInstantRetrieval",
-					"Glacier",
-					"DeepArchive",
-					"ReducedRedundancy",
+					"STANDARD",
+					"INTELLIGENT_TIERING",
+					"STANDARD_IA",
+					"ONEZONE_IA",
+					"GLACIER_IR",
+					"GLACIER",
+					"DEEP_ARCHIVE",
+					"REDUCED_REDUNDANCY",
 				}, false),
-				DiffSuppressFunc: diffSuppressWhenNotCreating,
+				//DiffSuppressFunc: diffSuppressWhenNotCreating,
 			},
 		},
 	}
 }
+
 func s3BucketReplicationSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
