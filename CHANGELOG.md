@@ -1,3 +1,8 @@
+## 2024-08-21
+
+### Enhanced
+- Added support for configuring dead letter queues in SQS resources within the DuploCloud Terraform provider, allowing specification of target DLQ and maximum message receive attempts.
+
 ## 2024-07-31
 
 ### Fixed
