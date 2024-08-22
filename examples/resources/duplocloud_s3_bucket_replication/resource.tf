@@ -14,7 +14,7 @@ resource "duplocloud_s3_bucket_replication" "rep" {
     destination_bucket        = "duploservices-tenantid-destinationbucket-011071455608"
     priority                  = 2
     delete_marker_replication = false
-    storage_class             = "Standard"
+    storage_class             = "INTELLIGENT_TIERING"
   }
 
 }
