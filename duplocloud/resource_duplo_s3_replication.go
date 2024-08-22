@@ -65,7 +65,6 @@ func ruleSchema() *schema.Resource {
 					"DEEP_ARCHIVE",
 					"REDUCED_REDUNDANCY",
 				}, false),
-				//DiffSuppressFunc: diffSuppressWhenNotCreating,
 			},
 		},
 	}
@@ -172,7 +171,6 @@ func getS3BucketReplication(c *duplosdk.Client, tenantID, name string) ([]map[st
 		kv["destination_bucket"] = destTokens[len(destTokens)-1]
 		ruleName := strings.Split(data.Rule, tenantInfo.AccountName+"-")
 		kv["name"] = ruleName[len(ruleName)-1]
-		kv["storage_class"] = "STANDARD"
 		if data.DestinationBucket.StorageClass != nil && data.DestinationBucket.StorageClass.Value != "" {
 			kv["storage_class"] = data.DestinationBucket.StorageClass.Value
 		}

@@ -64,7 +64,7 @@ Required:
 Optional:
 
 - `delete_marker_replication` (Boolean) Whether or not to enable delete marker on replication. Can be set only during creation. Defaults to `false`.
-- `storage_class` (String) storage_class type: Standard, IntelligentTiering, StandardInfrequentAccess, OneZoneInfrequentAccess, GlacierInstantRetrieval, Glacier, DeepArchive, ReducedRedundancy. Can be set only during creation
+- `storage_class` (String) storage_class type: STANDARD, INTELLIGENT_TIERING, STANDARD_IA, ONEZONE_IA, GLACIER_IR, GLACIER, DEEP_ARCHIVE, REDUCED_REDUNDANCY. Can be set only during creation
 
 Read-Only:
 
