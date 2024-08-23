@@ -57,6 +57,57 @@ type DuploAzurePostgresqlDatabase struct {
 	Type                string `json:"type"`
 }
 
+type DuploAzurePostgresqlFlexibleRequest struct {
+	Name string `json:"name"`
+	Sku  struct {
+		Tier string `json:"tier"`
+		Name string `json:"name"`
+	} `json:"sku"`
+	BackUp struct {
+		RetentionDays      int    `json:"backupRetentionDays"`
+		GeoRedundantBackUp string `json:"geoRedundantBackup"`
+	} `json:"properties.backup"`
+	HighAvailability struct {
+		Mode string `json:"mode"`
+	} `json:"properties.highAvailability"`
+	Storage struct {
+		StorageSize int `json:"storageSizeGB"`
+	} `json:"properties.storage"`
+	Network struct {
+		Subnet string `json:"delegatedSubnetResourceId"`
+	} `json:"properties.network"`
+	RequestMode        string `json:"properties.createMode"`
+	AdminUserName      string `json:"properties.administratorLogin"`
+	AdminLoginPassword string `json:"properties.administratorLoginPassword"`
+	Version            string `json:"properties.version"`
+}
+
+type DuploAzurePostgresqlFlexible struct {
+	Name string `json:"name"`
+	Sku  struct {
+		Tier string `json:"tier"`
+		Name string `json:"name"`
+	} `json:"sku"`
+	BackUp struct {
+		RetentionDays      int    `json:"backupRetentionDays"`
+		GeoRedundantBackUp string `json:"geoRedundantBackup"`
+	} `json:"properties.backup"`
+	HighAvailability struct {
+		Mode string `json:"mode"`
+	} `json:"properties.highAvailability"`
+	Storage struct {
+		StorageSize int `json:"storageSizeGB"`
+	} `json:"properties.storage"`
+
+	Subnet string `json:"id"`
+
+	AdminUserName string                 `json:"properties.administratorLogin"`
+	Location      string                 `json:"location"`
+	Version       string                 `json:"properties.version"`
+	State         string                 `json:"properties.state"`
+	Tags          map[string]interface{} `json:"tags"`
+}
+
 func (c *Client) PostgresqlDatabaseCreate(tenantID string, rq *DuploAzurePostgresqlRequest) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("PostgresqlDatabaseCreate(%s, %s)", tenantID, rq.Name),
@@ -123,6 +174,44 @@ func (c *Client) PostgresqlDatabaseDelete(tenantID string, name string) ClientEr
 		fmt.Sprintf("PostgresqlDatabaseDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("subscriptions/%s/DeletePgSql/%s", tenantID, name),
 		nil,
+		nil,
+	)
+}
+
+func (c *Client) PostgresqlFlexibleDatabaseCreate(tenantID string, rq *DuploAzurePostgresqlFlexibleRequest) (map[string]interface{}, ClientError) {
+	rp := map[string]interface{}{}
+	err := c.postAPI(
+		fmt.Sprintf("PostgresqlFlexibleDatabaseCreate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/postgres/flexiServer", tenantID),
+		&rq,
+		&rp,
+	)
+	return rp, err
+}
+
+func (c *Client) PostgresqlFlexibleDatabaseGet(tenantID, name string) (*DuploAzurePostgresqlFlexible, ClientError) {
+	rp := DuploAzurePostgresqlFlexible{}
+	err := c.getAPI(
+		fmt.Sprintf("PostgresqlFlexibleDatabaseGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/postgres/flexiServer/%s", tenantID, name),
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) PostgresqlFlexibleDatabaseUpdate(tenantID string, rq *DuploAzurePostgresqlFlexibleRequest) ClientError {
+	return c.putAPI(
+		fmt.Sprintf("PostgresqlFlexibleDatabaseUpdate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/postgres/flexiServer/%s", tenantID, rq.Name),
+		&rq,
+		nil,
+	)
+}
+
+func (c *Client) PostgresqlFlexibleDatabaseDelete(tenantID string, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("PostgresqlFlexibleDatabaseDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/postgres/flexiServer/%s", tenantID, name),
 		nil,
 	)
 }
