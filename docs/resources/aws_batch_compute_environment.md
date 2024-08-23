@@ -84,7 +84,7 @@ Required:
 
 Optional:
 
-- `allocation_strategy` (String) The allocation strategy to use for the compute resource in case not enough instances of the best fitting instance type can be allocated.
+- `allocation_strategy` (String) The allocation strategy to use for the compute resource in case not enough instances of the best fitting instance type can be allocated. Available allocation_strategy - `BEST_FIT_PROGRESSIVE`, `SPOT_CAPACITY_OPTIMIZED`, `BEST_FIT`, `SPOT_PRICE_CAPACITY_OPTIMIZED`
 - `bid_percentage` (Number) Integer of maximum percentage that a Spot Instance price can be when compared with the On-Demand price for that instance type before instances are launched.
 - `desired_vcpus` (Number) The desired number of EC2 vCPUS in the compute environment. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.
 - `ec2_configuration` (Block List, Max: 1) Provides information used to select Amazon Machine Images (AMIs) for EC2 instances in the compute environment. (see [below for nested schema](#nestedblock--compute_resources--ec2_configuration))

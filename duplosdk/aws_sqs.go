@@ -6,18 +6,20 @@ import (
 )
 
 type DuploSQSQueue struct {
-	Name                      string `json:"Name"`
-	Arn                       string `json:"Arn,omitempty"`
-	QueueType                 int    `json:"QueueType,omitempty"`
-	State                     string `json:"State,omitempty"`
-	MessageRetentionPeriod    int    `json:"MessageRetentionPeriod,omitempty"`
-	VisibilityTimeout         int    `json:"VisibilityTimeout,omitempty"`
-	Url                       string `json:"Url,omitempty"`
-	ContentBasedDeduplication bool   `json:"ContentBasedDeduplication,omitempty"`
-	DeduplicationScope        int    `json:"DeduplicationScope"`
-	FifoThroughputLimit       int    `json:"FifoThroughputLimit"`
-	ResourceType              int    `json:"ResourceType,omitempty"`
-	DelaySeconds              int    `json:"DelaySeconds,omitempty" validate:"required,gte=0,lte=900"`
+	Name                                         string `json:"Name"`
+	Arn                                          string `json:"Arn,omitempty"`
+	QueueType                                    int    `json:"QueueType,omitempty"`
+	State                                        string `json:"State,omitempty"`
+	MessageRetentionPeriod                       int    `json:"MessageRetentionPeriod,omitempty"`
+	VisibilityTimeout                            int    `json:"VisibilityTimeout,omitempty"`
+	Url                                          string `json:"Url,omitempty"`
+	ContentBasedDeduplication                    bool   `json:"ContentBasedDeduplication,omitempty"`
+	DeduplicationScope                           int    `json:"DeduplicationScope"`
+	FifoThroughputLimit                          int    `json:"FifoThroughputLimit"`
+	ResourceType                                 int    `json:"ResourceType,omitempty"`
+	DelaySeconds                                 int    `json:"DelaySeconds,omitempty" validate:"required,gte=0,lte=900"`
+	DeadLetterTargetQueueName                    string `json:"DeadLetterTargetQueueName,omitempty"`
+	MaxMessageTimesReceivedBeforeDeadLetterQueue int    `json:"MaxMessageTimesReceivedBeforeDeadLetterQueue,omitempty"`
 }
 
 type DuploSQSQueueResource struct {

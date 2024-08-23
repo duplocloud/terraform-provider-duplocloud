@@ -9,6 +9,7 @@ import (
 	"hash/fnv"
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -192,4 +193,9 @@ func suppressAzureManagedTags(k, old, new string, d *schema.ResourceData) bool {
 	}
 
 	return false
+}
+
+func diffIgnoreIfCaseSensitive(k, old, new string, d *schema.ResourceData) bool {
+	newVar, oldVar := d.GetChange(k)
+	return strings.EqualFold(newVar.(string), oldVar.(string))
 }

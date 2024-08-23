@@ -545,7 +545,7 @@ func (c *Client) TenantCreateV3S3Bucket(tenantID string, duplo DuploS3BucketSett
 	return &resp, nil
 }
 
-func (c *Client) GCPTenantCreateV3S3Bucket(tenantID string, duplo DuploGCPBucket) (*DuploS3Bucket, ClientError) {
+func (c *Client) GCPTenantCreateV3StorageBucketV2(tenantID string, duplo DuploGCPBucket) (*DuploS3Bucket, ClientError) {
 
 	resp := DuploS3Bucket{}
 
@@ -584,9 +584,9 @@ func (c *Client) TenantGetV3S3Bucket(tenantID string, name string) (*DuploS3Buck
 	return &rp, err
 }
 
-func (c *Client) GCPTenantGetV3S3Bucket(tenantID string, name string) (*DuploGCPBucket, ClientError) {
+func (c *Client) GCPTenantGetV3StorageBucketV2(tenantID string, name string) (*DuploGCPBucket, ClientError) {
 	rp := DuploGCPBucket{}
-	err := c.getAPI(fmt.Sprintf("GCPTenantGetV3S3Bucket(%s, %s)", tenantID, name),
+	err := c.getAPI(fmt.Sprintf("GCPTenantGetV3StorageBucketV2(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, name),
 		&rp)
 	if err != nil { //|| rp.Arn == "" {
@@ -617,7 +617,7 @@ func (c *Client) TenantUpdateV3S3Bucket(tenantID string, duplo DuploS3BucketSett
 	return &rp, nil
 }
 
-func (c *Client) GCPTenantUpdateV3S3Bucket(tenantID string, duplo DuploGCPBucket) (*DuploGCPBucket, ClientError) {
+func (c *Client) GCPTenantUpdateV3StorageBucketV2(tenantID string, duplo DuploGCPBucket) (*DuploGCPBucket, ClientError) {
 	// Apply the settings via Duplo.
 	apiName := fmt.Sprintf("TenantUpdateV3S3Bucket(%s, %s)", tenantID, duplo.Name)
 	rp := DuploGCPBucket{}
@@ -671,10 +671,10 @@ func (c *Client) TenantDeleteS3Bucket(tenantID string, name string) ClientError 
 		nil)
 }
 
-func (c *Client) GCPTenantDeleteS3Bucket(tenantID string, name, fullName string) ClientError {
+func (c *Client) GCPTenantDeleteStorageBucketV2(tenantID string, name, fullName string) ClientError {
 
 	// Delete the bucket via Duplo.
-	return c.deleteAPI(fmt.Sprintf("NativeHostDelete(%s, %s)", tenantID, name),
+	return c.deleteAPI(fmt.Sprintf("GCPTenantDeleteStorageBucketV2(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/google/bucket/%s", tenantID, fullName),
 		nil)
 
