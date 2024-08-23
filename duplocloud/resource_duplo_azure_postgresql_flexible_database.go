@@ -313,7 +313,7 @@ func flattenAzurePostgresqlFlexibleDatabase(d *schema.ResourceData, duplo *duplo
 	d.Set("backup_retention_days", duplo.BackUp.RetentionDays)
 	d.Set("geo_redundant_backup", duplo.BackUp.GeoRedundantBackUp)
 	d.Set("high_availability", duplo.HighAvailability.Mode)
-	d.Set("subnet", duplo.Subnet)
+	//d.Set("subnet", duplo.)
 	d.Set("tags", duplo.Tags)
 	d.Set("location", duplo.Location)
 
