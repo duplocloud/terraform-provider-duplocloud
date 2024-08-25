@@ -106,6 +106,12 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			Default:     false,
 		},
+		"automatic_failover_enabled": {
+			Description: "Enables automatic failover.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		"encryption_in_transit": {
 			Description: "Enables encryption-in-transit.",
 			Type:        schema.TypeBool,
@@ -244,14 +250,12 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duplo.Name)
 
 	// Perform additional validation.
-	if duplo.EncryptionInTransit {
-		if duplo.AuthToken == "" {
-			return diag.Errorf("Invalid ECache instance '%s': an 'auth_token' is required when 'encryption_in_transit' is true", id)
-		}
-	} else {
-		if duplo.AuthToken != "" {
-			return diag.Errorf("Invalid ECache instance '%s': an 'auth_token' must not be specified when 'encryption_in_transit' is false", id)
-		}
+	if !duplo.EncryptionInTransit && duplo.AuthToken != "" {
+		return diag.Errorf("Invalid ECache instance '%s': an 'auth_token' must not be specified when 'encryption_in_transit' is false", id)
+	}
+
+	if duplo.Replicas < 2 && duplo.AutomaticFailoverEnabled {
+		return diag.Errorf("Invalid Replicas instance '%s': an 'AutomaticFailoverEnabled' must not be specified when 'replicas' less than 2", id)
 	}
 
 	// Post the object to Duplo
@@ -320,22 +324,23 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 // expandEcacheInstance converts resource data respresenting an ECache instance to a Duplo SDK object.
 func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance {
 	data := &duplosdk.DuploEcacheInstance{
-		Name:                   d.Get("name").(string),
-		Identifier:             d.Get("identifier").(string),
-		Arn:                    d.Get("arn").(string),
-		Endpoint:               d.Get("endpoint").(string),
-		CacheType:              d.Get("cache_type").(int),
-		EngineVersion:          d.Get("engine_version").(string),
-		Size:                   d.Get("size").(string),
-		Replicas:               d.Get("replicas").(int),
-		EncryptionAtRest:       d.Get("encryption_at_rest").(bool),
-		EncryptionInTransit:    d.Get("encryption_in_transit").(bool),
-		AuthToken:              d.Get("auth_token").(string),
-		InstanceStatus:         d.Get("instance_status").(string),
-		KMSKeyID:               d.Get("kms_key_id").(string),
-		ParameterGroupName:     d.Get("parameter_group_name").(string),
-		SnapshotName:           d.Get("snapshot_name").(string),
-		SnapshotRetentionLimit: d.Get("snapshot_retention_limit").(int),
+		Name:                     d.Get("name").(string),
+		Identifier:               d.Get("identifier").(string),
+		Arn:                      d.Get("arn").(string),
+		Endpoint:                 d.Get("endpoint").(string),
+		CacheType:                d.Get("cache_type").(int),
+		EngineVersion:            d.Get("engine_version").(string),
+		Size:                     d.Get("size").(string),
+		Replicas:                 d.Get("replicas").(int),
+		EncryptionAtRest:         d.Get("F").(bool),
+		EncryptionInTransit:      d.Get("encryption_in_transit").(bool),
+		AuthToken:                d.Get("auth_token").(string),
+		InstanceStatus:           d.Get("instance_status").(string),
+		KMSKeyID:                 d.Get("kms_key_id").(string),
+		ParameterGroupName:       d.Get("parameter_group_name").(string),
+		SnapshotName:             d.Get("snapshot_name").(string),
+		SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
+		AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
 	}
 
 	for _, val := range d.Get("snapshot_arns").([]interface{}) {
