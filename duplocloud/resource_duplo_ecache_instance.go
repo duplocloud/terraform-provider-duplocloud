@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
@@ -185,6 +186,17 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Computed:     true,
 			ValidateFunc: validation.IntBetween(1, 35),
 		},
+		"log_delivery_configuration": {
+			Description:      "LogDeliveryConfiguration - list of Log Delivery Configuration.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			ForceNew:         true,
+			DiffSuppressFunc: diffIgnoreForLogDeliveryConfiguration,
+		},
+		"log_delivery_configuration_hash": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 	}
 }
 
@@ -246,6 +258,17 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s): start", tenantID)
 
 	duplo := expandEcacheInstance(d)
+
+	jsonString := d.Get("log_delivery_configuration").(string)
+	var logDeliveryConfiguration []*duplosdk.LogDeliveryConfigurationRequest
+	if jsonString != "" {
+		err := json.Unmarshal([]byte(jsonString), &logDeliveryConfiguration)
+		if err != nil {
+			return diag.Errorf("Invalid ECache log_delivery_configuration '%s'", jsonString)
+		}
+		duplo.LogDeliveryConfiguration = logDeliveryConfiguration
+	}
+
 	duplo.Identifier = duplo.Name
 	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duplo.Name)
 
@@ -323,6 +346,7 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 
 // expandEcacheInstance converts resource data respresenting an ECache instance to a Duplo SDK object.
 func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance {
+	setHashForKey("log_delivery_configuration", d)
 	data := &duplosdk.DuploEcacheInstance{
 		Name:                     d.Get("name").(string),
 		Identifier:               d.Get("identifier").(string),
@@ -458,4 +482,20 @@ func removePatchVersion(version string) string {
 		return strings.Join(parts[:2], ".")
 	}
 	return version
+}
+
+func diffIgnoreForLogDeliveryConfiguration(_, _, _ string, d *schema.ResourceData) bool {
+	return diffIgnoreForJsonNonLocalChanges("log_delivery_configuration", d)
+}
+
+func setHashForKey(key string, d *schema.ResourceData) {
+	keyHash := fmt.Sprintf("%s_hash", key)
+	value := d.Get(key).(string)
+	if value == "" {
+		d.Set(keyHash, "0")
+	} else {
+		hash := hashForData(value)
+		d.Set(keyHash, hash)
+	}
+	log.Printf("[TRACE] diffIgnoreForJsonNonLocalChanges %s  ******** 1: hash %s", keyHash, value)
 }
