@@ -323,13 +323,11 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
-	reservedFullname := d.Get("fullname").(string)
+	fullName := d.Get("fullname").(string)
 	c := m.(*duplosdk.Client)
 
-	var fullName string
-
-	if fullName != reservedFullname && reservedFullname != "" {
-		fullName = reservedFullname
+	if fullName == "" {
+		fullName = name
 	}
 	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
 	if clientErr != nil {
