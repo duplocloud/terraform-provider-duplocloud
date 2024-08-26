@@ -337,11 +337,15 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	}
 	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
 	if clientErr != nil {
-		if clientErr.Status() == 404 {
-			d.SetId("")
-			return nil
+		log.Printf("Error: Table %s not found reason : %s, attempting fallback", fullName, clientErr.Error())
+		duplo, clientErr = c.DynamoDBTableGetV2(tenantID, name)
+		if clientErr != nil {
+			if clientErr.Status() == 404 {
+				d.SetId("")
+				return nil
+			}
+			return diag.Errorf("Unable to retrieve tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
 		}
-		return diag.Errorf("Unable to retrieve tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
 	}
 
 	d.Set("tenant_id", tenantID)
@@ -662,7 +666,7 @@ func updateDeleteProtection(c *duplosdk.Client, d *schema.ResourceData, tenantID
 
 func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, _, err := parseAwsDynamoDBTableIdParts(id)
+	tenantID, shortName, err := parseAwsDynamoDBTableIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -673,10 +677,16 @@ func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceDat
 	c := m.(*duplosdk.Client)
 	clientErr := c.DynamoDBTableDeleteV2(tenantID, name)
 	if clientErr != nil {
-		if clientErr.Status() == 404 {
-			return nil
+		log.Printf("Error: Table %s not found err %s, attempting fallback", name, clientErr.Error())
+		clientErr := c.DynamoDBTableDeleteV2(tenantID, shortName)
+		if clientErr != nil {
+
+			if clientErr.Status() == 404 {
+				return nil
+			}
+			return diag.Errorf("Unable to delete tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
 		}
-		return diag.Errorf("Unable to delete tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
+
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the cluster.
@@ -1348,7 +1358,11 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-
+	rsrcId := d.Id()
+	_, shortName, err := parseAwsDynamoDBTableIdParts(rsrcId)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	// Expand the resource data into the SDK's DynamoDB table request struct.
 	//rq, err := expandDynamoDBTable(d)
 	//if err != nil {
@@ -1358,7 +1372,12 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	// Fetch the existing table for compairson
 	existing, err := c.DynamoDBTableGetV2(tenantID, name)
 	if err != nil {
-		return diag.FromErr(err)
+		log.Printf("Error: Table %s not found, reason : %s, attempting fallback", name, err.Error())
+		existing, err = c.DynamoDBTableGetV2(tenantID, shortName)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		name = shortName
 	}
 
 	// Updating Point In Time Recovery status
