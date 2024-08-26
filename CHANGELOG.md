@@ -1,3 +1,9 @@
+## 2024-08-26
+
+### Enhanced
+- Added support for automatic failover in Redis configurations, enabling enhanced reliability for instances with multiple replicas.
+- Introduced log delivery configurations for Redis, allowing logs to be sent to CloudWatch Logs or Kinesis Firehose.
+
 ## 2024-08-21
 
 ### Enhanced
