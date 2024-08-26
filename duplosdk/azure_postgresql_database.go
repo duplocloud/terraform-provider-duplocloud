@@ -199,13 +199,15 @@ func (c *Client) PostgresqlFlexibleDatabaseGet(tenantID, name string) (*DuploAzu
 	return &rp, err
 }
 
-func (c *Client) PostgresqlFlexibleDatabaseUpdate(tenantID string, rq *DuploAzurePostgresqlFlexibleRequest) ClientError {
-	return c.putAPI(
+func (c *Client) PostgresqlFlexibleDatabaseUpdate(tenantID string, rq *DuploAzurePostgresqlFlexibleRequest) (map[string]interface{}, ClientError) {
+	rp := map[string]interface{}{}
+	err := c.putAPI(
 		fmt.Sprintf("PostgresqlFlexibleDatabaseUpdate(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("v3/subscriptions/%s/azure/postgres/flexiServer/%s", tenantID, rq.Name),
 		&rq,
-		nil,
+		&rp,
 	)
+	return rp, err
 }
 
 func (c *Client) PostgresqlFlexibleDatabaseDelete(tenantID string, name string) ClientError {

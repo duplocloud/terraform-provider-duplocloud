@@ -205,7 +205,7 @@ func resourceAzurePostgresqlFlexibleDatabaseCreate(ctx context.Context, d *schem
 		}
 	}
 
-	diags = resourceAzurePostgresqlDatabaseRead(ctx, d, m)
+	diags = resourceAzurePostgresqlFlexibleDatabaseRead(ctx, d, m)
 	//	if !diags.HasError() {
 	//		d.Set("AdminLoginPassword", password)
 	//	}
@@ -227,7 +227,7 @@ func resourceAzurePostgresqlFlexibleDatabaseUpdate(ctx context.Context, d *schem
 	rq := expandAzurePostgresqlFlexibleDatabase(d)
 	rq.RequestMode = "Update"
 	//password := rq.AdminLoginPassword
-	err = c.PostgresqlFlexibleDatabaseUpdate(tenantID, rq)
+	_, err = c.PostgresqlFlexibleDatabaseUpdate(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s azure postgresql database '%s': %s", tenantID, name, err)
 	}
@@ -245,7 +245,7 @@ func resourceAzurePostgresqlFlexibleDatabaseUpdate(ctx context.Context, d *schem
 		}
 	}
 
-	diags = resourceAzurePostgresqlDatabaseRead(ctx, d, m)
+	diags = resourceAzurePostgresqlFlexibleDatabaseRead(ctx, d, m)
 	//if !diags.HasError() {
 	//	d.Set("AdminLoginPassword", password)
 	//}
