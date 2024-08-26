@@ -101,7 +101,7 @@ func duploAwsBatchComputeEnvironmentSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"allocation_strategy": {
-						Description: "The allocation strategy to use for the compute resource in case not enough instances of the best fitting instance type can be allocated.",
+						Description: "The allocation strategy to use for the compute resource in case not enough instances of the best fitting instance type can be allocated. Available allocation_strategy - `BEST_FIT_PROGRESSIVE`, `SPOT_CAPACITY_OPTIMIZED`, `BEST_FIT`, `SPOT_PRICE_CAPACITY_OPTIMIZED`",
 						Type:        schema.TypeString,
 						Optional:    true,
 						ForceNew:    true,
@@ -112,6 +112,7 @@ func duploAwsBatchComputeEnvironmentSchema() map[string]*schema.Schema {
 							"BEST_FIT_PROGRESSIVE",
 							"SPOT_CAPACITY_OPTIMIZED",
 							"BEST_FIT",
+							"SPOT_PRICE_CAPACITY_OPTIMIZED",
 						}, true),
 					},
 					"bid_percentage": {

@@ -48,6 +48,7 @@ func duploAwsEcrRepositorySchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Computed:    true,
 			Optional:    true,
+			ForceNew:    true,
 		},
 		"enable_scan_image_on_push": {
 			Description: "Indicates whether images are scanned after being pushed to the repository (true) or not scanned (false).",

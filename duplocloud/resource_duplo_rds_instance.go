@@ -180,12 +180,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
 		"storage_type": {
-			Description: "Valid values: gp2 | gp3 | io1 | standard. Storage type to be used for RDS instance storage.",
+			Description: "Valid values: gp2 | gp3 | io1 | standard | aurora. Storage type to be used for RDS instance storage.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice(
-				[]string{"gp2", "gp3", "io1", "standard"},
+				[]string{"gp2", "gp3", "io1", "standard", "aurora"},
 				false,
 			),
 		},
