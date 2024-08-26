@@ -111,6 +111,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "Enables automatic failover.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			ForceNew:    true,
 			Default:     false,
 		},
 		"encryption_in_transit": {
@@ -186,14 +187,19 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Computed:     true,
 			ValidateFunc: validation.IntBetween(1, 35),
 		},
-		"log_delivery_configuration": {
-			Description:      "LogDeliveryConfiguration - list of Log Delivery Configuration.",
+		"log_delivery_configurations": {
+			Description: `LogDeliveryConfigurations:
+						  list of Log Delivery Configuration.
+						  LogFormat = text, json
+						  LogType = slow-log, engine-log
+						  DestinationType = cloudwatch-logs, kinesis-firehose
+						  Refer aws: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html`,
 			Type:             schema.TypeString,
 			Optional:         true,
 			ForceNew:         true,
 			DiffSuppressFunc: diffIgnoreForLogDeliveryConfiguration,
 		},
-		"log_delivery_configuration_hash": {
+		"log_delivery_configurations_hash": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
@@ -256,17 +262,16 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	tenantID := d.Get("tenant_id").(string)
 
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s): start", tenantID)
-
 	duplo := expandEcacheInstance(d)
-
-	jsonString := d.Get("log_delivery_configuration").(string)
-	var logDeliveryConfiguration []*duplosdk.LogDeliveryConfigurationRequest
+	setHashForKey("log_delivery_configurations", d)
+	jsonString := d.Get("log_delivery_configurations").(string)
+	var logDeliveryConfiguration []*interface{}
 	if jsonString != "" {
 		err := json.Unmarshal([]byte(jsonString), &logDeliveryConfiguration)
 		if err != nil {
-			return diag.Errorf("Invalid ECache log_delivery_configuration '%s'", jsonString)
+			return diag.Errorf("Invalid ECache log_delivery_configurations '%s'", jsonString)
 		}
-		duplo.LogDeliveryConfiguration = logDeliveryConfiguration
+		duplo.LogDeliveryConfigurations = logDeliveryConfiguration
 	}
 
 	duplo.Identifier = duplo.Name
@@ -344,9 +349,8 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
  * DATA CONVERSIONS to/from duplo/terraform
  */
 
-// expandEcacheInstance converts resource data respresenting an ECache instance to a Duplo SDK object.
+// expand Ecache Instance converts resource data respresenting an ECache instance to a Duplo SDK object.
 func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance {
-	setHashForKey("log_delivery_configuration", d)
 	data := &duplosdk.DuploEcacheInstance{
 		Name:                     d.Get("name").(string),
 		Identifier:               d.Get("identifier").(string),
@@ -356,7 +360,7 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 		EngineVersion:            d.Get("engine_version").(string),
 		Size:                     d.Get("size").(string),
 		Replicas:                 d.Get("replicas").(int),
-		EncryptionAtRest:         d.Get("F").(bool),
+		EncryptionAtRest:         d.Get("encryption_at_rest").(bool),
 		EncryptionInTransit:      d.Get("encryption_in_transit").(bool),
 		AuthToken:                d.Get("auth_token").(string),
 		InstanceStatus:           d.Get("instance_status").(string),
@@ -485,7 +489,7 @@ func removePatchVersion(version string) string {
 }
 
 func diffIgnoreForLogDeliveryConfiguration(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForJsonNonLocalChanges("log_delivery_configuration", d)
+	return diffIgnoreForJsonNonLocalChanges("log_delivery_configurations", d)
 }
 
 func setHashForKey(key string, d *schema.ResourceData) {
