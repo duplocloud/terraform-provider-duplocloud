@@ -322,12 +322,18 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	var fullName string
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
-	fullName := d.Get("fullname").(string)
 	c := m.(*duplosdk.Client)
+	prefix, err := c.GetDuploServicesPrefix(tenantID)
 
-	if fullName == "" {
+	if err != nil {
+		return diag.Errorf("Unable to retrieve duplo service name (name: %s, error: %s)", name, err.Error())
+	}
+	if strings.Contains(name, prefix) {
 		fullName = name
+	} else {
+		fullName = prefix + "-" + name
 	}
 	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
 	if clientErr != nil {
