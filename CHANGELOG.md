@@ -1,3 +1,8 @@
+## 2024-08-26
+
+### Enhanced
+- Reintroduced fallback mechanism for error handling in DynamoDB table operations, improving robustness and error logging.
+
 ## 2024-08-21
 
 ### Enhanced
