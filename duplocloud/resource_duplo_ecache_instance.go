@@ -419,6 +419,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_name", duplo.SnapshotName)
 	d.Set("snapshot_arns", duplo.SnapshotArns)
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
+	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
