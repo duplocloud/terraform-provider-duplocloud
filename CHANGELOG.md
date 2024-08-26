@@ -1,7 +1,7 @@
 ## 2024-08-26
 
-### Fixed
-- Removed fallback mechanism for error handling in DynamoDB table operations, simplifying code and improving maintainability.
+### Enhanced
+- Reintroduced fallback mechanism for error handling in DynamoDB table operations, improving robustness and error logging.
 
 ## 2024-08-21
 
