@@ -75,7 +75,7 @@ resource "duplocloud_s3_bucket" "mydata" {
 - `managed_policies` (List of String) Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:
 
  - `"ssl"`: Require SSL / HTTPS when accessing the bucket.
- - `"ignore"`: If this key is present, Duplo will not manage your bucket policy.
+ - `"ignore"`: If this value is present, Duplo will not manage your bucket policy.
 - `region` (String) The region of the S3 bucket.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
