@@ -104,7 +104,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 - `parameter_group_name` (String) A RDS parameter group name to apply to the RDS instance.
 - `skip_final_snapshot` (Boolean) If the final snapshot should be taken. When set to true, the final snapshot will not be taken when the resource is deleted. Defaults to `false`.
 - `snapshot_id` (String) A database snapshot to initialize the RDS instance from, at launch.
-- `storage_type` (String) Valid values: gp2 | gp3 | io1 | standard. Storage type to be used for RDS instance storage.
+- `storage_type` (String) Valid values: gp2 | gp3 | io1 | standard | aurora. Storage type to be used for RDS instance storage.
 - `store_details_in_secret_manager` (Boolean) Whether or not to store RDS details in the AWS secrets manager.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `v2_scaling_configuration` (Block List, Max: 1) Serverless v2_scaling_configuration min and max scalling capacity. (see [below for nested schema](#nestedblock--v2_scaling_configuration))
