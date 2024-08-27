@@ -339,15 +339,11 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	}
 	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
 	if clientErr != nil {
-		log.Printf("Error: Table %s not found reason : %s, attempting fallback", fullName, clientErr.Error())
-		duplo, clientErr = c.DynamoDBTableGetV2(tenantID, name)
-		if clientErr != nil {
-			if clientErr.Status() == 404 {
-				d.SetId("")
-				return nil
-			}
-			return diag.Errorf("Unable to retrieve tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
+		if clientErr.Status() == 404 {
+			d.SetId("")
+			return nil
 		}
+		return diag.Errorf("Unable to retrieve tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
 	}
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
