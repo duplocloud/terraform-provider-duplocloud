@@ -15,6 +15,7 @@ resource "duplocloud_ecache_instance" "mycache" {
   engine_version             = var.engine_version
 
   /*
+    LogDeliveryConfigurations only supported for engine version above 6.2.0
     LogDeliveryConfigurations:
         list of Log Delivery Configuration.
         LogFormat = text, json

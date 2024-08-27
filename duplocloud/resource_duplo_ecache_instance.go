@@ -272,6 +272,9 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 			return diag.Errorf("Invalid ECache log_delivery_configurations '%s'", jsonString)
 		}
 		duplo.LogDeliveryConfigurations = logDeliveryConfiguration
+		if logDeliveryConfiguration != nil && len(logDeliveryConfiguration) > 0 && !duplosdk.IsAppVersionEqualOrGreater(duplo.EngineVersion, "6.2.0") {
+			return diag.Errorf("Log delivery configurations are not supported for engine version: '%s', engine version must be 6.2 onward.", duplo.EngineVersion)
+		}
 	}
 
 	duplo.Identifier = duplo.Name
