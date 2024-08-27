@@ -325,25 +325,29 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	var fullName string
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
+	features, _ := c.AdminGetSystemFeatures()
+
 	prefix, err := c.GetDuploServicesPrefix(tenantID)
 
 	if err != nil {
 		return diag.Errorf("Unable to retrieve duplo service name (name: %s, error: %s)", name, err.Error())
 	}
-	if strings.Contains(name, prefix) {
+	fullName = prefix + "-" + name
+
+	if features.IsTagsBasedResourceMgmtEnabled {
 		fullName = name
-	} else {
-		fullName = prefix + "-" + name
 	}
 	duplo, clientErr := c.DynamoDBTableGetV2(tenantID, fullName)
 	if clientErr != nil {
-		if clientErr.Status() == 404 {
-			d.SetId("")
-			return nil
+		duplo, clientErr = c.DynamoDBTableGetV2(tenantID, name)
+		if clientErr != nil {
+			if clientErr.Status() == 404 {
+				d.SetId("")
+				return nil
+			}
+			return diag.Errorf("Unable to retrieve tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
 		}
-		return diag.Errorf("Unable to retrieve tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
 	}
-
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("fullname", fullName)
@@ -425,14 +429,11 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	prefix, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, "")
-	if errname != nil {
-		return diag.Errorf("resourceAwsDynamoDBTableCreateV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
-	}
-	//Workaround for backend issue july2024 release since some backend API always expects duplo prefixed name
-	if !strings.Contains(name, prefix) {
-		rq.TableName = prefix + name
-	}
+	//prefix, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, "")
+	//if errname != nil {
+	//	return diag.Errorf("resourceAwsDynamoDBTableCreateV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
+	//}
+
 	rp, err := c.DynamoDBTableCreateV2(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s dynamodb table '%s': %s", tenantID, name, err)
@@ -463,12 +464,16 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 			return diag.FromErr(err)
 		}
 	}
-	//var fullName string
-	//prefix, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, "")
-	//if errname != nil {
-	//	return diag.Errorf("resourceAwsDynamoDBTableCreateV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
-	//}
 
+	//Workaround for backend issue july2024 release since some backend API always expects duplo prefixed name
+	prefix, errname := c.GetDuploServicesNameWithAwsDynamoDbV2(tenantID, "")
+	if errname != nil {
+		return diag.Errorf("resourceAwsDynamoDBTableCreateV2: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
+	}
+
+	if !strings.Contains(name, prefix) {
+		rq.TableName = prefix + name
+	}
 	d.Set("fullname", rp.TableName)
 
 	diags = updateDynamoDBTableV2PointInRecovery(ctx, d, m)
@@ -662,26 +667,33 @@ func updateDeleteProtection(c *duplosdk.Client, d *schema.ResourceData, tenantID
 
 func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, _, err := parseAwsDynamoDBTableIdParts(id)
+	tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	name := d.Get("fullname").(string)
+	fullName := d.Get("fullname").(string)
 
 	log.Printf("[TRACE] resourceAwsDynamoDBTableDeleteV2(%s, %s): start", tenantID, name)
 	// Delete the function.
 	c := m.(*duplosdk.Client)
-	clientErr := c.DynamoDBTableDeleteV2(tenantID, name)
+	clientErr := c.DynamoDBTableDeleteV2(tenantID, fullName)
 	if clientErr != nil {
-		if clientErr.Status() == 404 {
-			return nil
+		log.Printf("Error: Table %s not found err %s, attempting fallback", name, clientErr.Error())
+		clientErr := c.DynamoDBTableDeleteV2(tenantID, name)
+		if clientErr != nil {
+
+			if clientErr.Status() == 404 {
+				return nil
+			}
+			return diag.Errorf("Unable to delete tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
 		}
-		return diag.Errorf("Unable to delete tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)
+		fullName = name
+
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the cluster.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "dynamodb table", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DynamoDBTableGet(tenantID, name)
+		return c.DynamoDBTableGet(tenantID, fullName)
 	})
 	if diag != nil {
 		return diag
@@ -1344,28 +1356,42 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
-	name := d.Get("fullname").(string)
-	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
+	fullName := d.Get("fullname").(string)
 
 	c := m.(*duplosdk.Client)
+	rsrcId := d.Id()
+	_, name, err := parseAwsDynamoDBTableIdParts(rsrcId)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateOrUpdateV2(%s, %s): start", tenantID, name)
 
 	// Expand the resource data into the SDK's DynamoDB table request struct.
 	//rq, err := expandDynamoDBTable(d)
 	//if err != nil {
 	//	return diag.FromErr(err)
 	//}
+	features, _ := c.AdminGetSystemFeatures()
 
-	// Fetch the existing table for compairson
-	existing, err := c.DynamoDBTableGetV2(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	if features.IsTagsBasedResourceMgmtEnabled {
+		fullName = name
 	}
+	// Fetch the existing table for compairson
 
+	existing, err := c.DynamoDBTableGetV2(tenantID, fullName)
+	if err != nil {
+		log.Printf("Error: Table %s not found, reason : %s, attempting fallback", name, err.Error())
+		existing, err = c.DynamoDBTableGetV2(tenantID, name)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		fullName = name
+	}
 	// Updating Point In Time Recovery status
 	isPITREnabled := existing.PointInTimeRecoveryStatus == "ENABLED"
 	targetPITRStatus := d.Get("is_point_in_time_recovery").(bool)
 	if isPITREnabled != targetPITRStatus {
-		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, name, targetPITRStatus)
+		_, err = c.DynamoDBTableV2PointInRecovery(tenantID, fullName, targetPITRStatus)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1397,7 +1423,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	// Generate the ID for the resource and set it.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 
-	err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("update"))
+	err = dynamodbWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1406,7 +1432,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 
 	// wait until the cache instances to be healthy.
 	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-		err = dynamodbWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		err = dynamodbWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("create"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
