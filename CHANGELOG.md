@@ -1,3 +1,8 @@
+## 2024-08-28
+
+### Enhanced
+- Added `availability_zone` field to RDS instance schema, allowing specification of a valid Availability Zone for RDS primary or Aurora writer instances, with validation to prevent conflicts with `multi_az`. Updated documentation with examples for the new field.
+
 ## 2024-08-26
 
 ### Fixed
