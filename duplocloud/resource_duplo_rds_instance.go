@@ -291,7 +291,8 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 		},
 		"availability_zone": {
 			Description: "Specify a valid Availability Zone for the RDS primary instance" +
-				" (when Multi-AZ is disabled) or for the Aurora writer instance.",
+				" (when Multi-AZ is disabled) or for the Aurora writer instance." +
+				" e.g. us-west-2a",
 			Type:     schema.TypeString,
 			Computed: true,
 			Optional: true,

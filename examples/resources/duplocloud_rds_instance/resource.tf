@@ -25,7 +25,7 @@ resource "duplocloud_rds_instance" "mydb" {
   # Specify a valid Availability Zone for
   # the RDS primary instance (when Multi-AZ is disabled)
   # or for the Aurora writer instance.
-  availability_zone = true
+  availability_zone = us-west-2a
 }
 
 
