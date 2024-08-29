@@ -190,6 +190,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Type:     schema.TypeSet,
 			MaxItems: 2,
 			Optional: true,
+			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"log_group": {
