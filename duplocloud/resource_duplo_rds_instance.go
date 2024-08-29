@@ -289,6 +289,38 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:     true,
 			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
 		},
+		"performance_insights": {
+			Description: "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true",
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"enable": {
+						Description: "Enable or Disable Performance Insighta",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+					},
+					"kms_key_id": {
+						Description: "Specify ARN for the KMS key to encrypt Performance Insights data.",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+					},
+					"retention_period": {
+						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Default:     7,
+						ValidateFunc: validation.Any(
+							validation.IntInSlice([]int{7, 31}),
+							validation.IntDivisibleBy(31),
+						),
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -399,18 +431,32 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		}
 
 		if isAuroraDB(d) {
-			err = c.UpdateRdsCluster(tenantID, duplosdk.DuploRdsUpdateCluster{
+			obj := duplosdk.DuploRdsUpdateCluster{
 				DBClusterIdentifier: identifier + "-cluster",
 				DeletionProtection:  deleteProtection,
 				SkipFinalSnapshot:   skipFinalSnapshot,
 				ApplyImmediately:    true,
-			})
+			}
+			pI := expandPerformanceInsight(d)
+			if pI != nil {
+				obj.EnablePerformanceInsights = pI["enable"].(bool)
+				obj.PerformanceInsightsRetentionPeriod = pI["retention_period"].(int)
+				obj.PerformanceInsightsKMSKeyId = pI["kms_key_id"].(string)
+			}
+			err = c.UpdateRdsCluster(tenantID, obj)
 		} else {
-			err = c.UpdateRDSDBInstance(tenantID, duplosdk.DuploRdsUpdateInstance{
+			obj := duplosdk.DuploRdsUpdateInstance{
 				DBInstanceIdentifier: identifier,
 				DeletionProtection:   deleteProtection,
 				SkipFinalSnapshot:    skipFinalSnapshot,
-			})
+			}
+			pI := expandPerformanceInsight(d)
+			if pI != nil {
+				obj.EnablePerformanceInsights = pI["enable"].(bool)
+				obj.PerformanceInsightsRetentionPeriod = pI["retention_period"].(int)
+				obj.PerformanceInsightsKMSKeyId = pI["kms_key_id"].(string)
+			}
+			err = c.UpdateRDSDBInstance(tenantID, obj)
 		}
 
 		if err != nil {
@@ -422,6 +468,17 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** end")
 	return diags
+}
+
+func expandPerformanceInsight(d *schema.ResourceData) map[string]interface{} {
+	performanceInsight := d.Get("performance_insights").([]interface{})
+	if len(performanceInsight) > 0 {
+		val := performanceInsight[0].(map[string]interface{})
+		if val["enable"].(bool) {
+			return val
+		}
+	}
+	return nil
 }
 
 // UPDATE resource
@@ -519,21 +576,36 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 
 		if isAuroraDB(d) {
-			err = c.UpdateRdsCluster(tenantID, duplosdk.DuploRdsUpdateCluster{
+			obj := duplosdk.DuploRdsUpdateCluster{
 				DBClusterIdentifier:   identifier + "-cluster",
 				BackupRetentionPeriod: backupRetentionPeriod,
 				DeletionProtection:    deleteProtection,
 				SkipFinalSnapshot:     skipFinalSnapshot,
 				ApplyImmediately:      true,
-			})
+			}
+			pI := expandPerformanceInsight(d)
+			if pI != nil {
+				obj.EnablePerformanceInsights = pI["enable"].(bool)
+				obj.PerformanceInsightsRetentionPeriod = pI["retention_period"].(int)
+				obj.PerformanceInsightsKMSKeyId = pI["kms_key_id"].(string)
+			}
+			err = c.UpdateRdsCluster(tenantID, obj)
 		} else {
-			err = c.UpdateRDSDBInstance(tenantID, duplosdk.DuploRdsUpdateInstance{
+			obj := duplosdk.DuploRdsUpdateInstance{
 				DBInstanceIdentifier:  identifier,
 				BackupRetentionPeriod: backupRetentionPeriod,
 				DeletionProtection:    deleteProtection,
 				SkipFinalSnapshot:     skipFinalSnapshot,
-			})
+			}
+			pI := expandPerformanceInsight(d)
+			if pI != nil {
+				obj.EnablePerformanceInsights = pI["enable"].(bool)
+				obj.PerformanceInsightsRetentionPeriod = pI["retention_period"].(int)
+				obj.PerformanceInsightsKMSKeyId = pI["kms_key_id"].(string)
+			}
+			err = c.UpdateRDSDBInstance(tenantID, obj)
 		}
+
 	}
 
 	if d.HasChange("enhanced_monitoring") {
@@ -773,6 +845,13 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
 
+	pis := []interface{}{}
+	pi := make(map[string]interface{})
+	pi["enable"] = duploObject.EnablePerformanceInsights
+	pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
+	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
+	pis = append(pis, pi)
+	d.Set("performance_insights", pis)
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
 
