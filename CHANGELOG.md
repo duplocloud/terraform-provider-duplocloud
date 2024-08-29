@@ -1,3 +1,13 @@
+## 2024-08-26
+
+### Fixed
+- Removed fallback mechanism for error handling in DynamoDB table operations, simplifying code and improving maintainability.
+
+## 2024-08-21
+
+### Enhanced
+- Added support for configuring dead letter queues in SQS resources within the DuploCloud Terraform provider, allowing specification of target DLQ and maximum message receive attempts.
+
 ## 2024-07-31
 
 ### Fixed

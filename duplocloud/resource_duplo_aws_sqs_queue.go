@@ -95,6 +95,28 @@ func duploAwsSqsQueueSchema() map[string]*schema.Schema {
 			Optional:     true,
 			ValidateFunc: validation.IntBetween(0, 900),
 		},
+		"dead_letter_queue_configuration": {
+			Description: "SQS configuration for the SQS resource",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"target_sqs_dlq_name": {
+						Description:  "Name of the SQS queue meant to be the target dead letter queue for this SQS resource (queues must belong to same tenant)",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					"max_message_receive_attempts": {
+						Description:  "Maximum number of processing attempts for a given message before it is moved to the dead letter queue",
+						Type:         schema.TypeInt,
+						Required:     true,
+						ValidateFunc: validation.IntBetween(1, 1000),
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -176,6 +198,13 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 			d.Set("fifo_throughput_limit", "perMessageGroupId")
 		}
 	}
+	if queue.DeadLetterTargetQueueName != "" {
+		dlq_config := make(map[string]interface{})
+		dlq_config["target_sqs_dlq_name"] = queue.DeadLetterTargetQueueName
+		dlq_config["max_message_receive_attempts"] = queue.MaxMessageTimesReceivedBeforeDeadLetterQueue
+		d.Set("dead_letter_queue_configuration", []interface{}{dlq_config})
+	}
+
 	name, _ := duplosdk.UnwrapName(prefix, accountID, fullname, true)
 	if queue.QueueType == 1 {
 		name = strings.TrimSuffix(name, ".fifo")
@@ -222,7 +251,7 @@ func resourceAwsSqsQueueCreate(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceAwsSqsQueueUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
-	if d.HasChanges("message_retention_seconds", "visibility_timeout_seconds", "content_based_deduplication", "deduplication_scope", "fifo_throughput_limit", "delay_seconds") {
+	if d.HasChanges("message_retention_seconds", "visibility_timeout_seconds", "content_based_deduplication", "deduplication_scope", "fifo_throughput_limit", "delay_seconds", "dead_letter_queue_configuration") {
 		var err error
 
 		tenantID := d.Get("tenant_id").(string)
@@ -318,6 +347,11 @@ func expandAwsSqsQueue(d *schema.ResourceData) *duplosdk.DuploSQSQueue {
 		} else if v.(string) == "perQueue" {
 			req.FifoThroughputLimit = 0
 		}
+	}
+	if value, ok := d.GetOk("dead_letter_queue_configuration"); ok && len(value.([]interface{})) > 0 {
+		dlqConfig := value.([]interface{})[0].(map[string]interface{})
+		req.DeadLetterTargetQueueName = dlqConfig["target_sqs_dlq_name"].(string)
+		req.MaxMessageTimesReceivedBeforeDeadLetterQueue = dlqConfig["max_message_receive_attempts"].(int)
 	}
 	return req
 }
