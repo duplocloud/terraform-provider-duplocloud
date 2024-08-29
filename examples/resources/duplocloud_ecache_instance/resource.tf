@@ -11,7 +11,7 @@ resource "duplocloud_ecache_instance" "mycache" {
   size                       = "cache.t2.small"
   enable_cluster_mode        = true  // applicable only for redis
   number_of_shards           = 1     // applicable only for redis
-  automatic_failover_enabled = false // enable auto failover
+  automatic_failover_enabled = false // enable auto failover, set replicas to 2 or more
   engine_version             = var.engine_version
 
   log_delivery_configuration {

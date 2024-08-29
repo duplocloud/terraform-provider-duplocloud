@@ -308,7 +308,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if duplo.Replicas < 2 && duplo.AutomaticFailoverEnabled {
-		return diag.Errorf("Invalid Replicas instance '%s': an 'AutomaticFailoverEnabled' must not be specified when 'replicas' less than 2", id)
+		return diag.Errorf("Invalid automatic_failover_enabled '%s': To enable automatic failover, replicas must be 2 or more", id)
 	}
 
 	// Post the object to Duplo
