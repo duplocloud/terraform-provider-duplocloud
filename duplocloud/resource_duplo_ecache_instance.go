@@ -2,7 +2,6 @@ package duplocloud
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
@@ -187,22 +186,6 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Computed:     true,
 			ValidateFunc: validation.IntBetween(1, 35),
 		},
-		"log_delivery_configurations": {
-			Description: `LogDeliveryConfigurations:
-						  list of Log Delivery Configuration.
-						  LogFormat = text, json
-						  LogType = slow-log, engine-log
-						  DestinationType = cloudwatch-logs, kinesis-firehose
-						  Refer aws: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html`,
-			Type:             schema.TypeString,
-			Optional:         true,
-			ForceNew:         true,
-			DiffSuppressFunc: diffIgnoreForLogDeliveryConfiguration,
-		},
-		"log_delivery_configurations_hash": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
 	}
 }
 
@@ -263,19 +246,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s): start", tenantID)
 	duplo := expandEcacheInstance(d)
-	setHashForKey("log_delivery_configurations", d)
-	jsonString := d.Get("log_delivery_configurations").(string)
-	var logDeliveryConfiguration []*interface{}
-	if jsonString != "" {
-		err := json.Unmarshal([]byte(jsonString), &logDeliveryConfiguration)
-		if err != nil {
-			return diag.Errorf("Invalid ECache log_delivery_configurations '%s'", jsonString)
-		}
-		duplo.LogDeliveryConfigurations = logDeliveryConfiguration
-		if len(logDeliveryConfiguration) > 0 && !duplosdk.IsAppVersionEqualOrGreater(duplo.EngineVersion, "6.2.0") {
-			return diag.Errorf("Log delivery configurations are not supported for engine version: '%s', engine version must be 6.2 onward.", duplo.EngineVersion)
-		}
-	}
+	// log_delivery_configurations
 
 	duplo.Identifier = duplo.Name
 	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duplo.Name)
@@ -490,20 +461,4 @@ func removePatchVersion(version string) string {
 		return strings.Join(parts[:2], ".")
 	}
 	return version
-}
-
-func diffIgnoreForLogDeliveryConfiguration(_, _, _ string, d *schema.ResourceData) bool {
-	return diffIgnoreForJsonNonLocalChanges("log_delivery_configurations", d)
-}
-
-func setHashForKey(key string, d *schema.ResourceData) {
-	keyHash := fmt.Sprintf("%s_hash", key)
-	value := d.Get(key).(string)
-	if value == "" {
-		d.Set(keyHash, "0")
-	} else {
-		hash := hashForData(value)
-		d.Set(keyHash, hash)
-	}
-	log.Printf("[TRACE] diffIgnoreForJsonNonLocalChanges %s  ******** 1: hash %s", keyHash, value)
 }

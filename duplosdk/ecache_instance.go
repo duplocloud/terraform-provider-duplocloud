@@ -12,26 +12,26 @@ type DuploEcacheInstance struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`
 
-	Identifier                string         `json:"Identifier"`
-	Arn                       string         `json:"Arn"`
-	Endpoint                  string         `json:"Endpoint,omitempty"`
-	CacheType                 int            `json:"CacheType,omitempty"`
-	EngineVersion             string         `json:"EngineVersion,omitempty"`
-	Size                      string         `json:"Size,omitempty"`
-	Replicas                  int            `json:"Replicas,omitempty"`
-	EncryptionAtRest          bool           `json:"EnableEncryptionAtRest,omitempty"`
-	EncryptionInTransit       bool           `json:"EnableEncryptionAtTransit,omitempty"`
-	KMSKeyID                  string         `json:"KmsKeyId,omitempty"`
-	AuthToken                 string         `json:"AuthToken,omitempty"`
-	ParameterGroupName        string         `json:"ParameterGroupName,omitempty"`
-	InstanceStatus            string         `json:"InstanceStatus,omitempty"`
-	EnableClusterMode         bool           `json:"ClusteringEnabled,omitempty"`
-	AutomaticFailoverEnabled  bool           `json:"AutomaticFailoverEnabled,omitempty"`
-	NumberOfShards            int            `json:"NoOfShards,omitempty"`
-	SnapshotName              string         `json:"SnapshotName,omitempty"`
-	SnapshotArns              []string       `json:"SnapshotArns,omitempty"`
-	SnapshotRetentionLimit    int            `json:"SnapshotRetentionLimit,omitempty"`
-	LogDeliveryConfigurations []*interface{} `json:"LogDeliveryConfigurations,omitempty"`
+	Identifier                string                             `json:"Identifier"`
+	Arn                       string                             `json:"Arn"`
+	Endpoint                  string                             `json:"Endpoint,omitempty"`
+	CacheType                 int                                `json:"CacheType,omitempty"`
+	EngineVersion             string                             `json:"EngineVersion,omitempty"`
+	Size                      string                             `json:"Size,omitempty"`
+	Replicas                  int                                `json:"Replicas,omitempty"`
+	EncryptionAtRest          bool                               `json:"EnableEncryptionAtRest,omitempty"`
+	EncryptionInTransit       bool                               `json:"EnableEncryptionAtTransit,omitempty"`
+	KMSKeyID                  string                             `json:"KmsKeyId,omitempty"`
+	AuthToken                 string                             `json:"AuthToken,omitempty"`
+	ParameterGroupName        string                             `json:"ParameterGroupName,omitempty"`
+	InstanceStatus            string                             `json:"InstanceStatus,omitempty"`
+	EnableClusterMode         bool                               `json:"ClusteringEnabled,omitempty"`
+	AutomaticFailoverEnabled  bool                               `json:"AutomaticFailoverEnabled,omitempty"`
+	NumberOfShards            int                                `json:"NoOfShards,omitempty"`
+	SnapshotName              string                             `json:"SnapshotName,omitempty"`
+	SnapshotArns              []string                           `json:"SnapshotArns,omitempty"`
+	SnapshotRetentionLimit    int                                `json:"SnapshotRetentionLimit,omitempty"`
+	LogDeliveryConfigurations []*LogDeliveryConfigurationRequest `json:"LogDeliveryConfigurations,omitempty"`
 }
 
 // Modeled after the class of the same name in 'RDSConfiguration.cs
@@ -58,6 +58,26 @@ type DuploEcacheInstanceDetails struct {
 	ClusterIdentifier      string        `json:"ClusterIdentifier"`
 	SnapshotArns           []interface{} `json:"SnapshotArns"`
 	SnapshotRetentionLimit int64         `json:"SnapshotRetentionLimit"`
+}
+
+type LogDeliveryConfigurationRequest struct {
+	DestinationType    string             `json:"DestinationType,omitempty"`
+	LogFormat          string             `json:"LogFormat,omitempty"`
+	LogType            string             `json:"LogType,omitempty"`
+	DestinationDetails DestinationDetails `json:"DestinationDetails,omitempty"`
+}
+
+type DestinationDetails struct {
+	CloudWatchLogsDetails  CloudWatchLogsDestinationDetails `json:"CloudWatchLogsDetails,omitempty"`
+	KinesisFirehoseDetails CloudWatchLogsDestinationDetails `json:"KinesisFirehoseDetails,omitempty"`
+}
+
+type CloudWatchLogsDestinationDetails struct {
+	DestinationType string `json:"DestinationType,omitempty"`
+}
+
+type KinesisFirehoseDetails struct {
+	DeliveryStream string `json:"DeliveryStream,omitempty"`
 }
 
 /*************************************************

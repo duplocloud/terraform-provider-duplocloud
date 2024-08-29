@@ -23,6 +23,17 @@ const (
 	DUPLO_RDS_ENGINE_DOCUMENTDB                   = 13
 )
 
+const (
+	REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS  string = "cloudwatch-logs"
+	REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE string = "kinesis-firehose"
+	REDIS_LOG_DELIVERY_LOG_FORMAT_JSON                string = "JSON"
+	REDIS_LOG_DELIVERY_LOG_FORMAT_TEXT                string = "TEXT"
+	REDIS_LOG_DELIVERY_LOG_TYPE_SLOW_LOG              string = "TEXT"
+	REDIS_LOG_DELIVERY_LOG_TYPE_ENGINE_LOG            string = "TEXT"
+)
+
+//"slow-log", "engine-log"
+
 // DuploRdsInstance is a Duplo SDK object that represents an RDS instance
 type DuploRdsInstance struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
