@@ -37,10 +37,7 @@ resource "duplocloud_rds_instance" "mydb" {
 
   encrypt_storage         = true
   backup_retention_period = 1
-  # Specify a valid Availability Zone for
-  # the RDS primary instance (when Multi-AZ is disabled)
-  # or for the Aurora writer instance.
-  availability_zone = us-west-2a
+  availability_zone       = us-west-2a
 }
 
 
@@ -89,7 +86,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 ### Optional
 
 - `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
-- `availability_zone` (String) Specify a valid Availability Zone for the RDS primary instance (when Multi-AZ is disabled) or for the Aurora writer instance.
+- `availability_zone` (String) Specify a valid Availability Zone for the RDS primary instance (when Multi-AZ is disabled) or for the Aurora writer instance. e.g. us-west-2a
 - `backup_retention_period` (Number) Specifies backup retention period between 1 and 35 day(s). Default backup retention period is 1 day. Defaults to `1`.
 - `cluster_parameter_group_name` (String) Parameter group associated with this instance's DB Cluster.
 - `db_name` (String) The name of the database to create when the DB instance is created. This is not applicable for update.

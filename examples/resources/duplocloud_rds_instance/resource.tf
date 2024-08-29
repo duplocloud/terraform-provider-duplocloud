@@ -22,10 +22,7 @@ resource "duplocloud_rds_instance" "mydb" {
 
   encrypt_storage         = true
   backup_retention_period = 1
-  # Specify a valid Availability Zone for
-  # the RDS primary instance (when Multi-AZ is disabled)
-  # or for the Aurora writer instance.
-  availability_zone = us-west-2a
+  availability_zone       = us-west-2a
 }
 
 
