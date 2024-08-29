@@ -322,7 +322,7 @@ func azureK8NodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tena
 			rp, err := c.AzureK8NodePoolGet(tenantID, name)
 			status := "pending"
 			if err == nil {
-				if rp.ProvisioningState == "Succeeded" {
+				if rp != nil && rp.ProvisioningState == "Succeeded" {
 					status = "ready"
 				} else {
 					status = "pending"
