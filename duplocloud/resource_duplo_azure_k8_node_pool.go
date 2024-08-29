@@ -320,7 +320,6 @@ func azureK8NodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tena
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			rp, err := c.AzureK8NodePoolGet(tenantID, name)
-			log.Printf("[TRACE] Node pool provisioning state is (%s).", rp.ProvisioningState)
 			status := "pending"
 			if err == nil {
 				if rp.ProvisioningState == "Succeeded" {
