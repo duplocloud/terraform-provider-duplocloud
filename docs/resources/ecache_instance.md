@@ -29,37 +29,19 @@ resource "duplocloud_ecache_instance" "mycache" {
   automatic_failover_enabled = false // enable auto failover
   engine_version             = var.engine_version
 
-  /*
-    LogDeliveryConfigurations:
-        list of Log Delivery Configuration.
-        LogFormat = text, json
-        LogType = slow-log, engine-log
-        DestinationType = cloudwatch-logs, kinesis-firehose
-    Refer aws: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html
-  */
-  log_delivery_configuration = jsonencode([
-    {
-      DestinationDetails : {
-        "CloudWatchLogsDetails" : {
-          "LogGroup" : "/aws/elasticache/redis/UNIQUE_NAME"
-        }
-      },
-      DestinationType : "cloudwatch-logs",
-      LogFormat : "TEXT",
-      LogType : "engine-log"
-    },
-    {
-      DestinationDetails : {
-        "CloudWatchLogsDetails" : {
-          "LogGroup" : "/aws/elasticache/redis/UNIQUE_NAME"
-        }
-      },
-      DestinationType : "cloudwatch-logs",
-      LogFormat : "TEXT",
-      LogType : "slow-log"
-    }
-  ])
+  log_delivery_configuration {
+    log_group        = "/elasticache/redis"
+    destination_type = "cloudwatch-logs"
+    log_format       = "text"
+    log_type         = "slow-log"
+  }
 
+  log_delivery_configuration {
+    log_group        = "/elasticache/redis"
+    destination_type = "cloudwatch-logs"
+    log_format       = "json"
+    log_type         = "engine-log"
+  }
 
 }
 ```
@@ -93,12 +75,7 @@ Should be one of:
 - `engine_version` (String) The engine version of the elastic instance.
 See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).
 - `kms_key_id` (String) The globally unique identifier for the key.
-- `log_delivery_configurations` (String) LogDeliveryConfigurations:
-						  list of Log Delivery Configuration.
-						  LogFormat = text, json
-						  LogType = slow-log, engine-log
-						  DestinationType = cloudwatch-logs, kinesis-firehose
-						  Refer aws: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html
+- `log_delivery_configuration` (Block Set, Max: 2) (see [below for nested schema](#nestedblock--log_delivery_configuration))
 - `number_of_shards` (Number) The number of shards to create.
 - `parameter_group_name` (String) The REDIS parameter group to supply.
 - `replicas` (Number) The number of replicas to create. Defaults to `1`.
@@ -115,8 +92,22 @@ See AWS documentation for the [available Redis instance types](https://docs.aws.
 - `id` (String) The ID of this resource.
 - `identifier` (String) The full name of the elasticache instance.
 - `instance_status` (String) The status of the elasticache instance.
-- `log_delivery_configurations_hash` (String)
 - `port` (Number) The listening port of the elasticache instance.
+
+<a id="nestedblock--log_delivery_configuration"></a>
+### Nested Schema for `log_delivery_configuration`
+
+Required:
+
+- `destination_type` (String) Select the snapshot/backup you want to use for creating redis.
+- `log_format` (String)
+- `log_type` (String)
+
+Optional:
+
+- `delivery_stream` (String) provide delivery_stream for destination_type = kinesis-firehose
+- `log_group` (String) provide log_group for destination_type = cloudwatch-logs
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

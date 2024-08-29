@@ -186,6 +186,50 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Computed:     true,
 			ValidateFunc: validation.IntBetween(1, 35),
 		},
+		"log_delivery_configuration": {
+			Type:     schema.TypeSet,
+			MaxItems: 2,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"log_group": {
+						Description: "provide log_group for destination_type = cloudwatch-logs",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+					"delivery_stream": {
+						Description: "provide delivery_stream for destination_type = kinesis-firehose",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+					"destination_type": {
+						Description: "Select the snapshot/backup you want to use for creating redis.",
+						Type:        schema.TypeString,
+						Required:    true,
+						ValidateFunc: validation.StringInSlice([]string{
+							duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS,
+							duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE,
+						}, false),
+					},
+					"log_format": {
+						Type:     schema.TypeString,
+						Required: true,
+						ValidateFunc: validation.StringInSlice([]string{
+							duplosdk.REDIS_LOG_DELIVERY_LOG_FORMAT_JSON,
+							duplosdk.REDIS_LOG_DELIVERY_LOG_FORMAT_TEXT,
+						}, false),
+					},
+					"log_type": {
+						Type:     schema.TypeString,
+						Required: true,
+						ValidateFunc: validation.StringInSlice([]string{
+							duplosdk.REDIS_LOG_DELIVERY_LOG_TYPE_SLOW_LOG,
+							duplosdk.REDIS_LOG_DELIVERY_LOG_TYPE_ENGINE_LOG,
+						}, false),
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -247,6 +291,13 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s): start", tenantID)
 	duplo := expandEcacheInstance(d)
 	// log_delivery_configurations
+	if v, ok := d.Get("log_delivery_configurations").([]interface{}); ok {
+		logDelConfig, err := expandLogDeliveryConfigurations(v)
+		if err != nil {
+			return err
+		}
+		duplo.LogDeliveryConfigurations = logDelConfig
+	}
 
 	duplo.Identifier = duplo.Name
 	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duplo.Name)
@@ -322,6 +373,92 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 /*************************************************
  * DATA CONVERSIONS to/from duplo/terraform
  */
+
+func expandLogDeliveryConfigurations(s []interface{}) (*[]duplosdk.LogDeliveryConfigurationRequest, diag.Diagnostics) {
+	if len(s) == 0 {
+		return nil, nil
+	}
+	items := make([]duplosdk.LogDeliveryConfigurationRequest, 0, len(s))
+	for _, i := range s {
+		item, error := expandLogDeliveryConfiguration(i.(map[string]interface{}))
+		if error != nil {
+			return nil, error
+		}
+		items = append(items, *item)
+	}
+	return &items, nil
+}
+
+func expandLogDeliveryConfiguration(logDelConfig map[string]interface{}) (*duplosdk.LogDeliveryConfigurationRequest, diag.Diagnostics) {
+	if logDelConfig == nil {
+		return nil, nil
+	}
+
+	error := validateLogDeliveryConfiguration(logDelConfig)
+	if error != nil {
+		return nil, error
+	}
+
+	duplo := &duplosdk.LogDeliveryConfigurationRequest{
+		DestinationType: logDelConfig["destination_type"].(string),
+		LogFormat:       logDelConfig["log_format"].(string),
+		LogType:         logDelConfig["log_type"].(string),
+	}
+
+	if duplo.DestinationType == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS {
+		cloudwatch := &duplosdk.CloudWatchLogsDestinationDetails{
+			LogGroup: logDelConfig["log_group"].(string),
+		}
+		duplo.DestinationDetails = &duplosdk.DestinationDetails{
+			CloudWatchLogsDetails: cloudwatch,
+		}
+	}
+
+	if duplo.DestinationType == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE {
+		firhose := &duplosdk.KinesisFirehoseDetails{
+			DeliveryStream: logDelConfig["delivery_stream"].(string),
+		}
+		duplo.DestinationDetails = &duplosdk.DestinationDetails{
+			KinesisFirehoseDetails: firhose,
+		}
+	}
+
+	return duplo, nil
+}
+
+func validateLogDeliveryConfiguration(m map[string]interface{}) diag.Diagnostics {
+	if m == nil {
+		return nil
+	}
+
+	destination_type := m["destination_type"].(string)
+	log_group := m["log_group"].(string)
+	delivery_stream := m["delivery_stream"].(string)
+	log_format := m["log_format"].(string)
+	log_type := m["log_format"].(string)
+
+	if destination_type == "" {
+		diag.Errorf("log_delivery_configuration: log_group mut be in (%s, %s)", duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS, duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE)
+	}
+
+	if log_format == "" {
+		diag.Errorf("log_delivery_configuration: log_format must be provided.")
+	}
+
+	if log_type == "" {
+		diag.Errorf("log_delivery_configuration: log_type must be provided.")
+	}
+
+	if destination_type == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS && log_group == "" {
+		diag.Errorf("log_delivery_configuration: log_group mut be defined for destination_type=%s", duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS)
+	}
+
+	if destination_type == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE && delivery_stream == "" {
+		diag.Errorf("log_delivery_configuration: delivery_stream mut be defined for destination_type=%s", duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE)
+	}
+
+	return nil
+}
 
 // expand Ecache Instance converts resource data respresenting an ECache instance to a Duplo SDK object.
 func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance {

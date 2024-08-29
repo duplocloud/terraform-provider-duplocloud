@@ -31,7 +31,7 @@ type DuploEcacheInstance struct {
 	SnapshotName              string                             `json:"SnapshotName,omitempty"`
 	SnapshotArns              []string                           `json:"SnapshotArns,omitempty"`
 	SnapshotRetentionLimit    int                                `json:"SnapshotRetentionLimit,omitempty"`
-	LogDeliveryConfigurations []*LogDeliveryConfigurationRequest `json:"LogDeliveryConfigurations,omitempty"`
+	LogDeliveryConfigurations *[]LogDeliveryConfigurationRequest `json:"LogDeliveryConfigurations,omitempty"`
 }
 
 // Modeled after the class of the same name in 'RDSConfiguration.cs
@@ -61,19 +61,19 @@ type DuploEcacheInstanceDetails struct {
 }
 
 type LogDeliveryConfigurationRequest struct {
-	DestinationType    string             `json:"DestinationType,omitempty"`
-	LogFormat          string             `json:"LogFormat,omitempty"`
-	LogType            string             `json:"LogType,omitempty"`
-	DestinationDetails DestinationDetails `json:"DestinationDetails,omitempty"`
+	DestinationType    string              `json:"DestinationType,omitempty"`
+	LogFormat          string              `json:"LogFormat,omitempty"`
+	LogType            string              `json:"LogType,omitempty"`
+	DestinationDetails *DestinationDetails `json:"DestinationDetails,omitempty"`
 }
 
 type DestinationDetails struct {
-	CloudWatchLogsDetails  CloudWatchLogsDestinationDetails `json:"CloudWatchLogsDetails,omitempty"`
-	KinesisFirehoseDetails CloudWatchLogsDestinationDetails `json:"KinesisFirehoseDetails,omitempty"`
+	CloudWatchLogsDetails  *CloudWatchLogsDestinationDetails `json:"CloudWatchLogsDetails,omitempty"`
+	KinesisFirehoseDetails *KinesisFirehoseDetails           `json:"KinesisFirehoseDetails,omitempty"`
 }
 
 type CloudWatchLogsDestinationDetails struct {
-	DestinationType string `json:"DestinationType,omitempty"`
+	LogGroup string `json:"LogGroup,omitempty"`
 }
 
 type KinesisFirehoseDetails struct {

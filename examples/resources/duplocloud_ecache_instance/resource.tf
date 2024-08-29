@@ -14,37 +14,18 @@ resource "duplocloud_ecache_instance" "mycache" {
   automatic_failover_enabled = false // enable auto failover
   engine_version             = var.engine_version
 
-  /*
-    LogDeliveryConfigurations only supported for engine version above 6.2.0
-    LogDeliveryConfigurations:
-        list of Log Delivery Configuration.
-        LogFormat = text, json
-        LogType = slow-log, engine-log
-        DestinationType = cloudwatch-logs, kinesis-firehose
-    Refer aws: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html
-  */
-  log_delivery_configuration = jsonencode([
-    {
-      DestinationDetails : {
-        "CloudWatchLogsDetails" : {
-          "LogGroup" : "/aws/elasticache/redis/UNIQUE_NAME"
-        }
-      },
-      DestinationType : "cloudwatch-logs",
-      LogFormat : "TEXT",
-      LogType : "engine-log"
-    },
-    {
-      DestinationDetails : {
-        "CloudWatchLogsDetails" : {
-          "LogGroup" : "/aws/elasticache/redis/UNIQUE_NAME"
-        }
-      },
-      DestinationType : "cloudwatch-logs",
-      LogFormat : "TEXT",
-      LogType : "slow-log"
-    }
-  ])
+  log_delivery_configuration {
+    log_group        = "/elasticache/redis"
+    destination_type = "cloudwatch-logs"
+    log_format       = "text"
+    log_type         = "slow-log"
+  }
 
+  log_delivery_configuration {
+    log_group        = "/elasticache/redis"
+    destination_type = "cloudwatch-logs"
+    log_format       = "json"
+    log_type         = "engine-log"
+  }
 
 }
