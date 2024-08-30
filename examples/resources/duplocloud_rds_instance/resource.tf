@@ -22,6 +22,7 @@ resource "duplocloud_rds_instance" "mydb" {
 
   encrypt_storage         = true
   backup_retention_period = 1
+  availability_zone       = "us-west-2a"
 }
 
 

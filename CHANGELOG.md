@@ -1,8 +1,10 @@
+
 ## 2024-08-26
 
 ### Enhanced
 - Added support for automatic failover in Redis configurations, enabling enhanced reliability for instances with multiple replicas.
 - Introduced log delivery configurations for Redis, allowing logs to be sent to CloudWatch Logs or Kinesis Firehose.
+- Added `availability_zone` field to RDS instance schema, allowing specification of a valid Availability Zone for RDS primary or Aurora writer instances, with validation to prevent conflicts with `multi_az`. Updated documentation with examples for the new field.
 
 ### Fixed
 - Removed fallback mechanism for error handling in DynamoDB table operations, simplifying code and improving maintainability.
