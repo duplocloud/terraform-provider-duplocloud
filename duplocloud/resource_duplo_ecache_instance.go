@@ -311,10 +311,10 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 
 	// Perform additional validation.
 	if !duplo.EncryptionInTransit && duplo.AuthToken != "" {
-		return diag.Errorf("Invalid ECache instance '%s': an 'auth_token' must not be specified when 'encryption_in_transit' is false", id)
+		return diag.Errorf("Invalid ECache instance '%s': 'auth_token' must not be specified when 'encryption_in_transit' is false", id)
 	}
 
-	if len(*duplo.LogDeliveryConfigurations) > 0 && duplosdk.IsAppVersionEqualOrGreater(duplo.EngineVersion, "6.2.0") {
+	if len(*duplo.LogDeliveryConfigurations) > 0 && !duplosdk.IsAppVersionEqualOrGreater(duplo.EngineVersion, "6.2.0") {
 		return diag.Errorf("log_delivery_configuration can not be used with engine_version '%s', Please use engine_version '6.2.0' or above.", duplo.EngineVersion)
 	}
 
