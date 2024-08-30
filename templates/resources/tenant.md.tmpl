@@ -11,7 +11,7 @@
 
 ### Create a DuploCloud tenant named 'prod'.
 
-```
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0             # AWS Cloud
@@ -27,7 +27,8 @@ resource "duplocloud_tenant" "tenant" {
 ```
 
 ### Create a DuploCloud tenant named 'prod' inside the following prod infra.
-```
+
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0             # AWS Cloud
@@ -36,7 +37,8 @@ resource "duplocloud_infrastructure" "infra" {
   address_prefix    = "10.11.0.0/16"
 }
 ```
-```
+
+```terraform
 resource "duplocloud_tenant" "tenant" {
  account_name = "prod"
  plan_id      = duplocloud_infrastructure.infra.infra_name
@@ -45,7 +47,7 @@ resource "duplocloud_tenant" "tenant" {
 
 ### Create a DuploCloud tenant named 'dev' within the nonprod infrastructure.
 
-```
+```terraform
 data "duplocloud_infrastructure" "infra" {
  infra_name = "nonprod"
 }
@@ -58,7 +60,7 @@ resource "duplocloud_tenant" "tenant" {
 
 ### Create a DuploCloud tenant named 'dev' with infra name variable and tenant id as output.
 
-```
+```terraform
 variable "infra_name" {
   type    = string
   default = "nonprod"
@@ -77,7 +79,7 @@ output "tenant_id" {
 
 ### Create a duplocloud tenant named dev with AWS Cognito power user access in the nonprod infrastructure.
 
-```
+```terraform
 data "duplocloud_infrastructure" "infra" {
  infra_name = "nonprod"
 }
@@ -97,7 +99,7 @@ resource "aws_iam_role_policy_attachment" "AmazonCognitoPowerUser" {
 
 ### Create a DuploCloud tenant named 'qa' with full access to invoke AWS API Gateway in the nonprod infrastructure.
 
-```
+```terraform
 data "duplocloud_infrastructure" "infra" {
  infra_name = "nonprod"
 }
@@ -116,7 +118,7 @@ resource "aws_iam_role_policy_attachment" "AmazonAPIGatewayInvokeFullAccess" {
 
 ### Create duplocloud tenant named dev with security group rule to allow access from 10.220.0.0/16 on port 5432 in nonprod infra’
 
-```
+```terraform
 data "duplocloud_infrastructure" "infra" {
  infra_name = "nonprod"
 }
@@ -138,7 +140,7 @@ resource "duplocloud_tenant_network_security_rule" "allow_from_vpn" {
 
 ### Setup duplocloud tenant named dev with security group rule to allow access from 10.220.0.0/16 on port 22 in nonprod infra’
 
-```
+```terraform
 data "duplocloud_infrastructure" "infra" {
  infra_name = "nonprod"
 }
@@ -160,7 +162,7 @@ resource "duplocloud_tenant_network_security_rule" "allow_from_vpn" {
 
 ### Create a tenant test with under test infrastructure
 
-```
+```terraform
 data "duplocloud_infrastructure" "infra" {
  infra_name = "test"
 }
@@ -173,7 +175,7 @@ resource "duplocloud_tenant" "tenant" {
 
 ### Provision a tenant named 'myapp' with the infrastructure 'myinfra' and deletion protection disabled.
 
-```
+```terraform
 data "duplocloud_infrastructure" "infra" {
  infra_name = "myinfra"
 }

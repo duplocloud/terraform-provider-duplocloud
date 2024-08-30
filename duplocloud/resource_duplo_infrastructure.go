@@ -124,7 +124,10 @@ func infrastructureVnetSubnetSchema() *schema.Resource {
 // SCHEMA for resource crud
 func resourceInfrastructure() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_infrastructure` manages an infrastructure in Duplo.",
+		Description: "`duplocloud_infrastructure` manages an infrastructure in Duplo." +
+			"<p>**DuploCloud infrastructure** refers to the cloud resources and configurations managed within the DuploCloud platform." +
+			"It includes the setup, organization, and management of cloud services like networks, compute instances, databases, and other cloud-native services within a specific environment or tenant." +
+			"</p>",
 
 		ReadContext:   resourceInfrastructureRead,
 		CreateContext: resourceInfrastructureCreate,

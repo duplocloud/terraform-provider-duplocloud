@@ -11,7 +11,7 @@
 
 ### Create a DuploCloud infrastructure named nonprod
 
-```
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "nonprod"
   cloud             = 0             # AWS Cloud
@@ -24,7 +24,7 @@ resource "duplocloud_infrastructure" "infra" {
 
 ### Setup prod DuploCloud infrastructure
 
-```
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0             # AWS Cloud
@@ -36,7 +36,7 @@ resource "duplocloud_infrastructure" "infra" {
 
 ### Create a DuploCloud infrastructure named nonprod with cidr 10.34.0.0/16 in us-west-2 region
 
-```
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "nonprod"
   cloud             = 0             # AWS Cloud
@@ -48,7 +48,7 @@ resource "duplocloud_infrastructure" "infra" {
 
 ### Create a DuploCloud infrastructure named nonprod with cidr 10.30.0.0/16 in us-east-1 region with EKS cluster
 
-```
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "nonprod"
   cloud             = 0             # AWS Cloud
@@ -61,7 +61,7 @@ resource "duplocloud_infrastructure" "infra" {
 
 ### Create a DuploCloud infrastructure named 'preprod' in the us-east-2 region, with a VPC CIDR of 10.30.0.0/16, a subnet mask of 24, and EKS cluster enabled
 
-```
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "preprod"
   cloud             = 0             # AWS Cloud
@@ -75,7 +75,7 @@ resource "duplocloud_infrastructure" "infra" {
 
 ### Create a DuploCloud infrastructure named 'prod' in the us-east-2 region, with a VPC CIDR of 10.30.0.0/16, a subnet mask of 24, and EKS cluster enabled
 
-```
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0             # AWS Cloud
@@ -89,7 +89,7 @@ resource "duplocloud_infrastructure" "infra" {
 
 ### Create a DuploCloud infrastructure named 'prod' in the us-east-2 region, with a VPC CIDR of 10.30.0.0/16, a subnet mask of 24, and an EKS cluster enabled with an ingress controller
 
-```
+```terraform
 resource "duplocloud_infrastructure" "prod_infra" {
   infra_name        = "prod"
   cloud             = 0             # AWS Cloud
@@ -113,7 +113,7 @@ resource "duplocloud_infrastructure_setting" "settings" {
 
 ### Create a DuploCloud infrastructure named 'nonprod' in the us-west-2 region, with a VPC CIDR of 10.60.0.0/16, a subnet mask of 24, and an EKS cluster enabled with an autoscaler
 
-```
+```terraform
 resource "duplocloud_infrastructure" "nonprod_infra" {
   infra_name        = "nonprod"
   cloud             = 0             # AWS Cloud
@@ -137,7 +137,7 @@ resource "duplocloud_infrastructure_setting" "nonprod_settings" {
 
 ### Create a DuploCloud infrastructure named 'nonprod' in the us-west-2 region, with a VPC CIDR of 10.60.0.0/16, a subnet mask of 24, and an EKS cluster enabled with an autoscaler, ingress controller, and Secrets Store CSI Driver
 
-```
+```terraform
 resource "duplocloud_infrastructure" "nonprod_infra" {
   infra_name        = "nonprod"
   cloud             = 0             # AWS Cloud
@@ -169,7 +169,7 @@ resource "duplocloud_infrastructure_setting" "nonprod_settings" {
 
 ### Create a DuploCloud infrastructure named 'prod' in the us-east-2 region, with a VPC CIDR of 10.50.0.0/16, a subnet mask of 22, and ECS cluster enabled
 
-```
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0             # AWS Cloud
@@ -183,7 +183,7 @@ resource "duplocloud_infrastructure" "infra" {
 
 ### Create a DuploCloud infrastructure named 'prod' in the us-east-2 region, with a VPC CIDR of 10.49.0.0/16, a subnet mask of 24, and EKS, ECS cluster enabled
 
-```
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0             # AWS Cloud
@@ -198,7 +198,7 @@ resource "duplocloud_infrastructure" "infra" {
 
 ### Set up a DuploCloud infrastructure named 'nonprod' in the us-west-2 region, with a VPC CIDR of 10.60.0.0/16, a subnet mask of 24, and an EKS cluster configured with an autoscaler, ingress controller, and Secrets Store CSI Driver.
 
-```
+```terraform
 variable "infra_settings" {
   type = list(object({
     key   = string
@@ -246,7 +246,7 @@ resource "duplocloud_infrastructure_setting" "nonprod_settings" {
 
 ### Provision a DuploCloud infrastructure named 'prod' in the us-east-2 region, with a VPC CIDR of 10.49.0.0/16, a subnet mask of 24, and enable EKS and ECS clusters.
 
-```
+```terraform
 variable "infra_config" {
   type = object({
     name           = string

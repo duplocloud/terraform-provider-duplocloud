@@ -11,7 +11,7 @@
 
 ### Create a S3 bucket named static_assets in DuploCloud
 
-```
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0 # AWS Cloud
@@ -40,7 +40,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 
 ### Provision an S3 bucket within the dev tenant in DuploCloud
 
-```
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "dev"
 }
@@ -60,7 +60,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 
 ### Create an S3 bucket in the dev tenant within DuploCloud, with public access enabled
 
-```
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "dev"
 }
@@ -80,7 +80,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 
 ### Create an S3 bucket in the dev tenant within DuploCloud, with versioning disabled
 
-```
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "dev"
 }
@@ -100,7 +100,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 
 ### Setup an S3 bucket in the qa tenant within duplo, with access logs disabled
 
-```
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "qa"
 }
@@ -120,7 +120,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 
 ### Configure an S3 bucket in the QA tenant within DuploCloud, enabling public access while disabling versioning and access logs
 
-```
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "qa"
 }
@@ -140,7 +140,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 
 ### Create an S3 bucket named data in the preprod tenant within duplo, with tenant kms enabled
 
-```
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "preprod"
 }
@@ -165,7 +165,7 @@ resource "duplocloud_tenant" "myapp" {
 
 ### Deploy an S3 bucket with hardened security settings
 
-```
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "test"
 }
@@ -186,7 +186,7 @@ resource "duplocloud_s3_bucket" "mydata" {
 
 ###  Deploy a hardened S3 bucket suitable for public website hosting in test tenant
 
-```
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "test"
 }
@@ -207,7 +207,7 @@ resource "duplocloud_s3_bucket" "www" {
 
 ###  Deploy an S3 bucket to us-east-1 region
 
-```
+```terraform
 data "aws_region" "region" {
   name = "us-east-1"
 }
