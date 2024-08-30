@@ -86,15 +86,25 @@ type DuploRdsUpdatePayload struct {
 }
 
 type DuploRdsUpdateInstance struct {
-	DBInstanceIdentifier               string `json:"DBInstanceIdentifier"`
-	DeletionProtection                 *bool  `json:"DeletionProtection,omitempty"`
-	BackupRetentionPeriod              int    `json:"BackupRetentionPeriod,omitempty"`
-	SkipFinalSnapshot                  bool   `json:"SkipFinalSnapshot"`
-	EnablePerformanceInsights          bool   `json:"EnablePerformanceInsights,omitempty"`
+	DBInstanceIdentifier  string `json:"DBInstanceIdentifier"`
+	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
+	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
+	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot"`
+}
+
+type DuploRdsUpdatePerformanceInsights struct {
+	DBInstanceIdentifier string `json:"DBInstanceIdentifier"`
+	Enable               *PerformanceInsightEnable
+	Disable              *PerformanceInsightDisable
+}
+type PerformanceInsightEnable struct {
+	EnablePerformanceInsights          bool   `json:"EnablePerformanceInsights"`
 	PerformanceInsightsRetentionPeriod int    `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string `json:"PerformanceInsightsKMSKeyId,omitempty"`
 }
-
+type PerformanceInsightDisable struct {
+	EnablePerformanceInsights bool `json:"EnablePerformanceInsights"`
+}
 type DuploRdsUpdateCluster struct {
 	DBClusterIdentifier                string `json:"DBClusterIdentifier"`
 	ApplyImmediately                   bool   `json:"ApplyImmediately"`
@@ -263,6 +273,25 @@ func (c *Client) UpdateRDSDBInstance(tenantID string, duploObject DuploRdsUpdate
 		&duploObject,
 		nil,
 	)
+}
+
+func (c *Client) UpdateDBInstancePerformanceInsight(tenantID string, duploObject DuploRdsUpdatePerformanceInsights) ClientError {
+	if duploObject.Enable != nil {
+		err := c.putAPI(
+			fmt.Sprintf("UpdateDBInstancePerformanceInsight(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+			fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
+			duploObject.Enable,
+			nil,
+		)
+		return err
+	}
+	err := c.putAPI(
+		fmt.Sprintf("UpdateDBInstancePerformanceInsight(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
+		duploObject.Disable,
+		nil,
+	)
+	return err
 }
 
 func (c *Client) UpdateRdsCluster(tenantID string, duploObject DuploRdsUpdateCluster) ClientError {
