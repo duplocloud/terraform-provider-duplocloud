@@ -20,12 +20,44 @@ func dataSourceK8Secrets() *schema.Resource {
 				Required: true,
 			},
 			"secrets": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: k8sSecretSchemaComputed(),
-				},
+				Type:      schema.TypeList,
+				Computed:  true,
 				Sensitive: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"secret_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"secret_type": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"client_secret_version": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"secret_version": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"secret_data": {
+							Type:      schema.TypeString,
+							Computed:  true,
+							Sensitive: true,
+						},
+						"secret_annotations": {
+							Type:     schema.TypeMap,
+							Computed: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
+						"secret_labels": {
+							Type:     schema.TypeMap,
+							Computed: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -73,11 +105,11 @@ func dataSourceK8SecretsRead(ctx context.Context, d *schema.ResourceData, m inte
 
 		// First, set the simple fields.
 		sc := map[string]interface{}{
-			"tenant_id":          duplo.TenantID,
 			"secret_name":        duplo.SecretName,
 			"secret_type":        duplo.SecretType,
 			"secret_version":     duplo.SecretVersion,
 			"secret_annotations": duplo.SecretAnnotations,
+			"secret_labels":      duplo.SecretLabels,
 		}
 		if usrResp.IsReadOnly {
 			for key := range duplo.SecretData {
