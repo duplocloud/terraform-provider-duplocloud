@@ -120,6 +120,7 @@ func s3BucketSchema() map[string]*schema.Schema {
 // Resource for managing an AWS ElasticSearch instance
 func resourceS3Bucket() *schema.Resource {
 	return &schema.Resource{
+		Description:   "`duplocloud_s3_bucket` manages an s3 bucket in Duplo.",
 		ReadContext:   resourceS3BucketRead,
 		CreateContext: resourceS3BucketCreate,
 		UpdateContext: resourceS3BucketUpdate,

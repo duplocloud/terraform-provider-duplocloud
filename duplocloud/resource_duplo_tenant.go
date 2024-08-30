@@ -16,7 +16,9 @@ import (
 
 func resourceTenant() *schema.Resource {
 	return &schema.Resource{
-		Description:   "`duplocloud_tenant` manages a tenant in Duplo.",
+		Description: "`duplocloud_tenant` manages a tenant in Duplo." +
+			"<p>A **DuploCloud tenant** is an isolated environment within the DuploCloud platform where you can manage and provision cloud resources." +
+			" It essentially represents a distinct organizational unit or environment for deploying and managing infrastructure and applications.</p>",
 		ReadContext:   resourceTenantRead,
 		CreateContext: resourceTenantCreate,
 		UpdateContext: resourceTenantRead, // NO-OP
