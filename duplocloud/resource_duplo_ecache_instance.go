@@ -314,10 +314,13 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 		return diag.Errorf("Invalid ECache instance '%s': an 'auth_token' must not be specified when 'encryption_in_transit' is false", id)
 	}
 
+	if len(*duplo.LogDeliveryConfigurations) > 0 && duplosdk.IsAppVersionEqualOrGreater(duplo.EngineVersion, "6.2.0") {
+		return diag.Errorf("log_delivery_configuration can not be used with engine_version '%s', Please use engine_version '6.2.0' or above.", duplo.EngineVersion)
+	}
+
 	if duplo.Replicas < 2 && duplo.AutomaticFailoverEnabled {
 		return diag.Errorf("Invalid automatic_failover_enabled '%s': To enable automatic failover, replicas must be 2 or more", id)
 	}
-
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
 	_, err = c.EcacheInstanceCreate(tenantID, duplo)
