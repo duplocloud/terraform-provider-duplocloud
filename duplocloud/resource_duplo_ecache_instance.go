@@ -193,16 +193,6 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"log_group": {
-						Description: "provide log_group for destination_type = cloudwatch-logs",
-						Type:        schema.TypeString,
-						Optional:    true,
-					},
-					"delivery_stream": {
-						Description: "provide delivery_stream for destination_type = kinesis-firehose",
-						Type:        schema.TypeString,
-						Optional:    true,
-					},
 					"destination_type": {
 						Description: "Select the snapshot/backup you want to use for creating redis.",
 						Type:        schema.TypeString,
@@ -228,6 +218,16 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 							duplosdk.REDIS_LOG_DELIVERY_LOG_TYPE_ENGINE_LOG,
 						}, false),
 					},
+					"log_group": {
+						Description: "provide log_group for destination_type = cloudwatch-logs",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+					"delivery_stream": {
+						Description: "provide delivery_stream for destination_type = kinesis-firehose",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
 				},
 			},
 		},
@@ -246,7 +246,7 @@ func resourceDuploEcacheInstance() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(15 * time.Minute),
+			Create: schema.DefaultTimeout(29 * time.Minute),
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
@@ -288,18 +288,24 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
-
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s): start", tenantID)
-	duplo := expandEcacheInstance(d)
-	// log_delivery_configurations
-	if v, ok := d.Get("log_delivery_configuration").([]interface{}); ok {
-		logDelConfig, err := expandLogDeliveryConfigurations(v)
-		if err != nil {
-			return err
+
+	duploInstance := expandEcacheInstance(d)
+	duplo := &duplosdk.AddDuploEcacheInstanceRequest{
+		DuploEcacheInstance: *duploInstance,
+	}
+	if ds, ok := d.Get("log_delivery_configuration").(*schema.Set); ok {
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceCreate log_delivery_configuration found count: %d", len(ds.List()))
+		logDelConfig, diagErr := expandLogDeliveryConfigurations(ds.List())
+		if diagErr != nil {
+			return diagErr
 		}
-		duplo.LogDeliveryConfigurations = logDelConfig
+		duplo.LogDeliveryConfigurations = &logDelConfig
+	} else {
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceCreate log_delivery_configuration not found.")
 	}
 
+	// Assign the identifier and ID
 	duplo.Identifier = duplo.Name
 	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duplo.Name)
 
@@ -334,6 +340,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 		return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
 	}
 
+	// Read the resource state
 	diags = resourceDuploEcacheInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s, %s): end", tenantID, duplo.Name)
 	return diags
@@ -375,26 +382,40 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
  * DATA CONVERSIONS to/from duplo/terraform
  */
 
-func expandLogDeliveryConfigurations(s []interface{}) (*[]duplosdk.LogDeliveryConfigurationRequest, diag.Diagnostics) {
+func expandLogDeliveryConfigurations(s []interface{}) ([]duplosdk.LogDeliveryConfigurationRequest, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	if len(s) == 0 {
-		return nil, nil
+		return nil, diags
 	}
+
 	items := make([]duplosdk.LogDeliveryConfigurationRequest, 0, len(s))
 	for _, i := range s {
-		item, error := expandLogDeliveryConfiguration(i.(map[string]interface{}))
-		if error != nil {
-			return nil, error
+		itemMap, ok := i.(map[string]interface{})
+		if !ok {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Type assertion failed",
+				Detail:   "Expected map[string]interface{} but got something else",
+			})
+			continue
+		}
+		item, diagErr := expandLogDeliveryConfiguration(itemMap)
+		if diagErr != nil {
+			diags = append(diags, diagErr...)
+			continue
 		}
 		items = append(items, *item)
 	}
-	return &items, nil
+	return items, diags
 }
 
 func expandLogDeliveryConfiguration(logDelConfig map[string]interface{}) (*duplosdk.LogDeliveryConfigurationRequest, diag.Diagnostics) {
+	var diags diag.Diagnostics
 
-	error := validateLogDeliveryConfiguration(logDelConfig)
-	if error != nil {
-		return nil, error
+	if err := validateLogDeliveryConfiguration(logDelConfig); err != nil {
+		diags = append(diags, err...)
+		return nil, diags
 	}
 
 	duplo := &duplosdk.LogDeliveryConfigurationRequest{
@@ -403,42 +424,66 @@ func expandLogDeliveryConfiguration(logDelConfig map[string]interface{}) (*duplo
 		LogType:         logDelConfig["log_type"].(string),
 	}
 
-	if duplo.DestinationType == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS {
+	switch duplo.DestinationType {
+	case duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS:
 		cloudwatch := &duplosdk.CloudWatchLogsDestinationDetails{
 			LogGroup: logDelConfig["log_group"].(string),
 		}
 		duplo.DestinationDetails = &duplosdk.DestinationDetails{
 			CloudWatchLogsDetails: cloudwatch,
 		}
-	}
-
-	if duplo.DestinationType == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE {
+	case duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE:
 		firhose := &duplosdk.KinesisFirehoseDetails{
 			DeliveryStream: logDelConfig["delivery_stream"].(string),
 		}
 		duplo.DestinationDetails = &duplosdk.DestinationDetails{
 			KinesisFirehoseDetails: firhose,
 		}
+	default:
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unsupported destination type",
+			Detail:   "Unsupported destination_type: " + duplo.DestinationType,
+		})
 	}
 
-	return duplo, nil
+	return duplo, diags
 }
 
 func validateLogDeliveryConfiguration(m map[string]interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
 
-	destination_type := m["destination_type"].(string)
-	log_group := m["log_group"].(string)
-	delivery_stream := m["delivery_stream"].(string)
-
-	if destination_type == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS && log_group == "" {
-		diag.Errorf("log_delivery_configuration: log_group mut be defined for destination_type=%s", duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS)
+	destinationType, ok := m["destination_type"].(string)
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Invalid destination_type",
+			Detail:   "destination_type must be a string",
+		})
+		return diags
 	}
 
-	if destination_type == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE && delivery_stream == "" {
-		diag.Errorf("log_delivery_configuration: delivery_stream mut be defined for destination_type=%s", duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE)
+	if destinationType == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS {
+		if logGroup, ok := m["log_group"].(string); !ok || logGroup == "" {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Missing log_group",
+				Detail:   "log_group must be defined for destination_type=" + duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS,
+			})
+		}
 	}
 
-	return nil
+	if destinationType == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE {
+		if deliveryStream, ok := m["delivery_stream"].(string); !ok || deliveryStream == "" {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Missing delivery_stream",
+				Detail:   "delivery_stream must be defined for destination_type=" + duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE,
+			})
+		}
+	}
+
+	return diags
 }
 
 // expand Ecache Instance converts resource data respresenting an ECache instance to a Duplo SDK object.

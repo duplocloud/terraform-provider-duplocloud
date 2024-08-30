@@ -12,25 +12,29 @@ type DuploEcacheInstance struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`
 
-	Identifier                string                             `json:"Identifier"`
-	Arn                       string                             `json:"Arn"`
-	Endpoint                  string                             `json:"Endpoint,omitempty"`
-	CacheType                 int                                `json:"CacheType,omitempty"`
-	EngineVersion             string                             `json:"EngineVersion,omitempty"`
-	Size                      string                             `json:"Size,omitempty"`
-	Replicas                  int                                `json:"Replicas,omitempty"`
-	EncryptionAtRest          bool                               `json:"EnableEncryptionAtRest,omitempty"`
-	EncryptionInTransit       bool                               `json:"EnableEncryptionAtTransit,omitempty"`
-	KMSKeyID                  string                             `json:"KmsKeyId,omitempty"`
-	AuthToken                 string                             `json:"AuthToken,omitempty"`
-	ParameterGroupName        string                             `json:"ParameterGroupName,omitempty"`
-	InstanceStatus            string                             `json:"InstanceStatus,omitempty"`
-	EnableClusterMode         bool                               `json:"ClusteringEnabled,omitempty"`
-	AutomaticFailoverEnabled  bool                               `json:"AutomaticFailoverEnabled,omitempty"`
-	NumberOfShards            int                                `json:"NoOfShards,omitempty"`
-	SnapshotName              string                             `json:"SnapshotName,omitempty"`
-	SnapshotArns              []string                           `json:"SnapshotArns,omitempty"`
-	SnapshotRetentionLimit    int                                `json:"SnapshotRetentionLimit,omitempty"`
+	Identifier               string   `json:"Identifier"`
+	Arn                      string   `json:"Arn"`
+	Endpoint                 string   `json:"Endpoint,omitempty"`
+	CacheType                int      `json:"CacheType,omitempty"`
+	EngineVersion            string   `json:"EngineVersion,omitempty"`
+	Size                     string   `json:"Size,omitempty"`
+	Replicas                 int      `json:"Replicas,omitempty"`
+	EncryptionAtRest         bool     `json:"EnableEncryptionAtRest,omitempty"`
+	EncryptionInTransit      bool     `json:"EnableEncryptionAtTransit,omitempty"`
+	KMSKeyID                 string   `json:"KmsKeyId,omitempty"`
+	AuthToken                string   `json:"AuthToken,omitempty"`
+	ParameterGroupName       string   `json:"ParameterGroupName,omitempty"`
+	InstanceStatus           string   `json:"InstanceStatus,omitempty"`
+	EnableClusterMode        bool     `json:"ClusteringEnabled,omitempty"`
+	AutomaticFailoverEnabled bool     `json:"AutomaticFailoverEnabled,omitempty"`
+	NumberOfShards           int      `json:"NoOfShards,omitempty"`
+	SnapshotName             string   `json:"SnapshotName,omitempty"`
+	SnapshotArns             []string `json:"SnapshotArns,omitempty"`
+	SnapshotRetentionLimit   int      `json:"SnapshotRetentionLimit,omitempty"`
+}
+
+type AddDuploEcacheInstanceRequest struct {
+	DuploEcacheInstance                                          // Embedded struct
 	LogDeliveryConfigurations *[]LogDeliveryConfigurationRequest `json:"LogDeliveryConfigurations,omitempty"`
 }
 
@@ -85,17 +89,17 @@ type KinesisFirehoseDetails struct {
  */
 
 // EcacheInstanceCreate creates an ECache instance via the Duplo API.
-func (c *Client) EcacheInstanceCreate(tenantID string, duploObject *DuploEcacheInstance) (*DuploEcacheInstance, ClientError) {
+func (c *Client) EcacheInstanceCreate(tenantID string, duploObject *AddDuploEcacheInstanceRequest) (*DuploEcacheInstance, ClientError) {
 	return c.EcacheInstanceCreateOrUpdate(tenantID, duploObject, false)
 }
 
 // EcacheInstanceUpdate updates an ECache instance via the Duplo API.
-func (c *Client) EcacheInstanceUpdate(tenantID string, duploObject *DuploEcacheInstance) (*DuploEcacheInstance, ClientError) {
+func (c *Client) EcacheInstanceUpdate(tenantID string, duploObject *AddDuploEcacheInstanceRequest) (*DuploEcacheInstance, ClientError) {
 	return c.EcacheInstanceCreateOrUpdate(tenantID, duploObject, true)
 }
 
 // EcacheInstanceCreateOrUpdate creates or updates an ECache instance via the Duplo API.
-func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *DuploEcacheInstance, updating bool) (*DuploEcacheInstance, ClientError) {
+func (c *Client) EcacheInstanceCreateOrUpdate(tenantID string, duploObject *AddDuploEcacheInstanceRequest, updating bool) (*DuploEcacheInstance, ClientError) {
 
 	// Build the request
 	verb := "POST"
