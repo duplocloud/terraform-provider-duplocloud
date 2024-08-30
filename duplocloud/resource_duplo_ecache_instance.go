@@ -292,7 +292,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s): start", tenantID)
 	duplo := expandEcacheInstance(d)
 	// log_delivery_configurations
-	if v, ok := d.Get("log_delivery_configurations").([]interface{}); ok {
+	if v, ok := d.Get("log_delivery_configuration").([]interface{}); ok {
 		logDelConfig, err := expandLogDeliveryConfigurations(v)
 		if err != nil {
 			return err
