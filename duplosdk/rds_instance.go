@@ -26,10 +26,10 @@ const (
 const (
 	REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS  string = "cloudwatch-logs"
 	REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE string = "kinesis-firehose"
-	REDIS_LOG_DELIVERY_LOG_FORMAT_JSON                string = "JSON"
-	REDIS_LOG_DELIVERY_LOG_FORMAT_TEXT                string = "TEXT"
-	REDIS_LOG_DELIVERY_LOG_TYPE_SLOW_LOG              string = "TEXT"
-	REDIS_LOG_DELIVERY_LOG_TYPE_ENGINE_LOG            string = "TEXT"
+	REDIS_LOG_DELIVERY_LOG_FORMAT_JSON                string = "json"
+	REDIS_LOG_DELIVERY_LOG_FORMAT_TEXT                string = "text"
+	REDIS_LOG_DELIVERY_LOG_TYPE_SLOW_LOG              string = "slow-log"
+	REDIS_LOG_DELIVERY_LOG_TYPE_ENGINE_LOG            string = "engine-log"
 )
 
 //"slow-log", "engine-log"
