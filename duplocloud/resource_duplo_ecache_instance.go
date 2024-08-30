@@ -290,22 +290,11 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	tenantID := d.Get("tenant_id").(string)
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s): start", tenantID)
 
-	duploInstance := expandEcacheInstance(d)
-	duplo := &duplosdk.AddDuploEcacheInstanceRequest{
-		DuploEcacheInstance: *duploInstance,
-	}
-	if ds, ok := d.Get("log_delivery_configuration").(*schema.Set); ok {
-		log.Printf("[DEBUG] resourceDuploEcacheInstanceCreate log_delivery_configuration found count: %d", len(ds.List()))
-		logDelConfig, diagErr := expandLogDeliveryConfigurations(ds.List())
-		if diagErr != nil {
-			return diagErr
-		}
-		duplo.LogDeliveryConfigurations = &logDelConfig
-	} else {
-		log.Printf("[DEBUG] resourceDuploEcacheInstanceCreate log_delivery_configuration not found.")
+	duplo, diagErr := expandEcacheInstance(d)
+	if diagErr != nil {
+		return diagErr
 	}
 
-	// Assign the identifier and ID
 	duplo.Identifier = duplo.Name
 	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duplo.Name)
 
@@ -321,6 +310,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	if duplo.Replicas < 2 && duplo.AutomaticFailoverEnabled {
 		return diag.Errorf("Invalid automatic_failover_enabled '%s': To enable automatic failover, replicas must be 2 or more", id)
 	}
+
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
 	_, err = c.EcacheInstanceCreate(tenantID, duplo)
@@ -490,25 +480,35 @@ func validateLogDeliveryConfiguration(m map[string]interface{}) diag.Diagnostics
 }
 
 // expand Ecache Instance converts resource data respresenting an ECache instance to a Duplo SDK object.
-func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance {
-	data := &duplosdk.DuploEcacheInstance{
-		Name:                     d.Get("name").(string),
-		Identifier:               d.Get("identifier").(string),
-		Arn:                      d.Get("arn").(string),
-		Endpoint:                 d.Get("endpoint").(string),
-		CacheType:                d.Get("cache_type").(int),
-		EngineVersion:            d.Get("engine_version").(string),
-		Size:                     d.Get("size").(string),
-		Replicas:                 d.Get("replicas").(int),
-		EncryptionAtRest:         d.Get("encryption_at_rest").(bool),
-		EncryptionInTransit:      d.Get("encryption_in_transit").(bool),
-		AuthToken:                d.Get("auth_token").(string),
-		InstanceStatus:           d.Get("instance_status").(string),
-		KMSKeyID:                 d.Get("kms_key_id").(string),
-		ParameterGroupName:       d.Get("parameter_group_name").(string),
-		SnapshotName:             d.Get("snapshot_name").(string),
-		SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
-		AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
+func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInstanceRequest, diag.Diagnostics) {
+	data := &duplosdk.AddDuploEcacheInstanceRequest{
+		DuploEcacheInstance: duplosdk.DuploEcacheInstance{
+			Name:                     d.Get("name").(string),
+			Identifier:               d.Get("identifier").(string),
+			Arn:                      d.Get("arn").(string),
+			Endpoint:                 d.Get("endpoint").(string),
+			CacheType:                d.Get("cache_type").(int),
+			EngineVersion:            d.Get("engine_version").(string),
+			Size:                     d.Get("size").(string),
+			Replicas:                 d.Get("replicas").(int),
+			EncryptionAtRest:         d.Get("encryption_at_rest").(bool),
+			EncryptionInTransit:      d.Get("encryption_in_transit").(bool),
+			AuthToken:                d.Get("auth_token").(string),
+			InstanceStatus:           d.Get("instance_status").(string),
+			KMSKeyID:                 d.Get("kms_key_id").(string),
+			ParameterGroupName:       d.Get("parameter_group_name").(string),
+			SnapshotName:             d.Get("snapshot_name").(string),
+			SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
+			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
+		},
+	}
+	if ds, ok := d.Get("log_delivery_configuration").(*schema.Set); ok {
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceCreate log_delivery_configuration found count: %d", len(ds.List()))
+		logDelConfig, diagErr := expandLogDeliveryConfigurations(ds.List())
+		if diagErr != nil {
+			return nil, diagErr
+		}
+		data.LogDeliveryConfigurations = &logDelConfig
 	}
 
 	for _, val := range d.Get("snapshot_arns").([]interface{}) {
@@ -526,7 +526,7 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 			data.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
 		}
 	}
-	return data
+	return data, nil
 }
 
 // flattenEcacheInstance converts a Duplo SDK object respresenting an ECache instance to terraform resource data.
