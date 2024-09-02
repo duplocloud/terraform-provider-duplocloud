@@ -196,7 +196,7 @@ resource "duplocloud_tenant_config" "tenant_config" {
 
   setting {
     key   = "delete_protection"
-    value = "true"
+    value = "false"
   }
 }
 
