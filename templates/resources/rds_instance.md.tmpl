@@ -110,7 +110,7 @@ resource "duplocloud_rds_instance" "aurora-postgres-db" {
 }
 ```
 
-### Create an Aurora serverless RDS instance using the PostgreSQL engine named postgres-serverless-db with engine version 15.5, minimum capacity of 0.5, maximum capacity of 2, with deletion protection enabled and store the DB credentials in AWS secrets manager.
+### Create an Aurora serverless RDS instance using the PostgreSQL engine named aurora-postgres with engine version 15.5, minimum capacity of 0.5, maximum capacity of 2, with deletion protection enabled and store the DB credentials in AWS secrets manager. Also create a read replica for this database.
 
 ```terraform
 # Ensure the 'dev' tenant is already created before creating the RDS instance.
@@ -124,9 +124,9 @@ resource "random_password" "mypassword" {
   special = false
 }
 
-resource "duplocloud_rds_instance" "postgres-serverless-db" {
+resource "duplocloud_rds_instance" "aurora-serverless" {
   tenant_id      = data.duplocloud_tenant.tenant.id
-  name           = "postgres-serverless-db"
+  name           = "aurora-postgres"
   engine         = 12 # AuroraDB serverless PostgreSQL engine
   engine_version = "15.5"
   size           = "db.serverless"
@@ -144,6 +144,14 @@ resource "duplocloud_rds_instance" "postgres-serverless-db" {
 
   store_details_in_secret_manager = true
   deletion_protection             = true
+}
+
+resource "duplocloud_rds_read_replica" "read-replica" {
+  tenant_id          = data.duplocloud_tenant.tenant.id
+  name               = "aurora-postgres-read-replica"
+  size               = "db.serverless"
+  cluster_identifier = duplocloud_rds_instance.aurora-serverless.cluster_identifier
+  depends_on         = [duplocloud_rds_instance.aurora-serverless]
 }
 ```
 
@@ -165,7 +173,7 @@ resource "random_password" "mypassword" {
 resource "duplocloud_rds_instance" "dev-db" {
   tenant_id      = data.duplocloud_tenant.tenant.id
   name           = "dev-db"
-  engine         = 0              # min_capacitySQL DB engine
+  engine         = 0              # SQL DB engine
   engine_version = "8.0.32"       # MySQL DB engine version
   size           = "db.t3.medium" # RDS instance size/class
 
@@ -174,6 +182,39 @@ resource "duplocloud_rds_instance" "dev-db" {
 
   encrypt_storage         = true
   backup_retention_period = 7
+}
+```
+
+### Provision an RDS instance using the MySQL engine named dev-db with engine version 5.7, allocated storage 50 GB and enable IAM auth and logging for this DB in DuploCloud platform.
+
+```terraform
+# Ensure the 'dev' tenant is already created before creating the RDS instance.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Generate a random password for the RDS instance.
+resource "random_password" "mypassword" {
+  length  = 16
+  special = false
+}
+
+// Create an RDS instance.
+resource "duplocloud_rds_instance" "dev-db" {
+  tenant_id      = data.duplocloud_tenant.tenant.id
+  name           = "dev-db"
+  engine         = 0              # SQL DB engine
+  engine_version = "5.7.44"       # MySQL DB engine version
+  size           = "db.t3.medium" # RDS instance size/class
+
+  master_username = "mysql_user1"
+  master_password = random_password.mypassword.result
+
+  encrypt_storage         = true
+  backup_retention_period = 7
+  allocated_storage       = 50
+  enable_iam_auth         = true
+  enable_logging          = true
 }
 ```
 
