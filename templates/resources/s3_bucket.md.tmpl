@@ -9,7 +9,7 @@
 
 ## Example Usage
 
-### Create a S3 bucket named static_assets in DuploCloud
+### Create a S3 bucket named static_assets
 
 ```terraform
 # Before creating a tenant, you must first set up the infrastructure. Below is the resource for creating the infrastructure.
@@ -41,7 +41,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 }
 ```
 
-### Provision an S3 bucket within the dev tenant in DuploCloud
+### Provision an S3 bucket within the dev tenant
 
 ```terraform
 # Ensure the 'dev' tenant is already created before setting up the s3 bucket.
@@ -62,7 +62,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 }
 ```
 
-### Create an S3 bucket in the dev tenant within DuploCloud, with public access enabled
+### Create an S3 bucket in the dev tenant, with public access enabled
 
 ```terraform
 # Ensure the 'dev' tenant is already created before setting up the s3 bucket.
@@ -103,7 +103,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 }
 ```
 
-### Setup an S3 bucket in the qa tenant within duplo, with access logs disabled
+### Setup an S3 bucket in the qa tenant, with access logs disabled
 
 ```terraform
 data "duplocloud_tenant" "tenant" {
@@ -123,7 +123,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 }
 ```
 
-### Configure an S3 bucket in the QA tenant within DuploCloud, enabling public access while disabling versioning and access logs
+### Configure an S3 bucket in the QA tenant, enabling public access while disabling versioning and access logs
 
 ```terraform
 data "duplocloud_tenant" "tenant" {
@@ -143,7 +143,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 }
 ```
 
-### Create an S3 bucket named data in the preprod tenant within duplo, with tenant kms enabled
+### Create an S3 bucket named data in the preprod tenant, with tenant kms enabled
 
 ```terraform
 data "duplocloud_tenant" "tenant" {
