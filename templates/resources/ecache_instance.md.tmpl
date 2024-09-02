@@ -39,27 +39,38 @@ resource "duplocloud_ecache_instance" "redis_cache" {
 }
 ```
 
+### Create an Amazon ElastiCache cluster of type Redis with 2 replicas of type cache.t2.small in dev tenant.
+
+```terraform
+# Assuming the 'dev' tenant is already created, use a data source to fetch the tenant ID.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Use the tenant_id from the duplocloud_tenant, which will be populated after the tenant resource is created, when setting up the Redis ElastiCache cluster.
+resource "duplocloud_ecache_instance" "redis_cache" {
+  tenant_id           = data.duplocloud_tenant.tenant.id
+  name                = "mycache"
+  cache_type          = 0 # 0: Redis, 1: Memcache
+  replicas            = 2
+  size                = "cache.t2.small"
+  enable_cluster_mode = true # applicable only for Redis
+  number_of_shards    = 1    # applicable only for Redis
+}
+```
+
 ### Create an Amazon ElastiCache cluster of type Memcached in DuploCloud.
 
 ```terraform
-# Before creating a ElastiCache cluster, you must first set up the infrastructure and tenant. Below is the resource for creating the infrastructure.
-resource "duplocloud_infrastructure" "infra" {
-  infra_name        = "prod"
-  cloud             = 0 # AWS Cloud
-  region            = "us-west-2"
-  enable_k8_cluster = false
-  address_prefix    = "10.11.0.0/16"
+
+# Assuming the 'dev' tenant is already created, use a data source to fetch the tenant ID.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
 }
 
-# Use the infrastructure name as the 'plan_id' from the 'duplocloud_infrastructure' resource while creating tenant.
-resource "duplocloud_tenant" "tenant" {
-  account_name = "prod"
-  plan_id      = duplocloud_infrastructure.infra.infra_name
-}
-
-# Use the tenant_id from the duplocloud_tenant, which will be populated after the tenant resource is created, when setting up the Memcached ElastiCache cluster.
+# Use the tenant_id from the duplocloud_tenant data source, which will be populated after the tenant data source is created, when setting up the Memcached ElastiCache cluster.
 resource "duplocloud_ecache_instance" "mem_cache" {
-  tenant_id           = duplocloud_tenant.tenant.tenant_id
+  tenant_id           = data.duplocloud_tenant.tenant.id
   name                = "mycache"
   cache_type          = 1 # 0: Redis, 1: Memcache
   replicas            = 1
