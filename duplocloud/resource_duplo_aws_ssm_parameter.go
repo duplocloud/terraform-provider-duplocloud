@@ -107,6 +107,7 @@ func resourceAwsSsmParameterRead(ctx context.Context, d *schema.ResourceData, m 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	body, clientErr := c.SsmParameterGet(tenantID, name)
+	logBody := *body
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("") // object missing
@@ -116,9 +117,9 @@ func resourceAwsSsmParameterRead(ctx context.Context, d *schema.ResourceData, m 
 	}
 	ssmParam := body
 	if ssmParam.Type == "SecureString" {
-		body.Value = "**********"
+		logBody.Value = "**********"
 	}
-	log.Printf("[TRACE] SsmParameterGet: received response: %+v", body)
+	log.Printf("[TRACE] SsmParameterGet: received response: %+v", logBody)
 
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
