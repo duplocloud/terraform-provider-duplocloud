@@ -1,6 +1,17 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
 ### Create a S3 bucket named static_assets in DuploCloud
 
-#### Solution:
+```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0 # AWS Cloud
@@ -25,11 +36,11 @@ resource "duplocloud_s3_bucket" "bucket" {
     method = "Sse" # For even stricter security, use "TenantKms" here.
   }
 }
-
+```
 
 ### Provision an S3 bucket within the dev tenant in DuploCloud
 
-#### Solution:
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "dev"
 }
@@ -45,11 +56,11 @@ resource "duplocloud_s3_bucket" "bucket" {
     method = "Sse" # For even stricter security, use "TenantKms" here.
   }
 }
-
+```
 
 ### Create an S3 bucket in the dev tenant within DuploCloud, with public access enabled
 
-#### Solution:
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "dev"
 }
@@ -65,11 +76,11 @@ resource "duplocloud_s3_bucket" "bucket" {
     method = "Sse" # For even stricter security, use "TenantKms" here.
   }
 }
-
+```
 
 ### Create an S3 bucket in the dev tenant within DuploCloud, with versioning disabled
 
-#### Solution:
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "dev"
 }
@@ -85,11 +96,11 @@ resource "duplocloud_s3_bucket" "bucket" {
     method = "Sse" # For even stricter security, use "TenantKms" here.
   }
 }
-
+```
 
 ### Setup an S3 bucket in the qa tenant within duplo, with access logs disabled
 
-#### Solution:
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "qa"
 }
@@ -105,11 +116,11 @@ resource "duplocloud_s3_bucket" "bucket" {
     method = "Sse" # For even stricter security, use "TenantKms" here.
   }
 }
-
+```
 
 ### Configure an S3 bucket in the QA tenant within DuploCloud, enabling public access while disabling versioning and access logs
 
-#### Solution:
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "qa"
 }
@@ -125,11 +136,11 @@ resource "duplocloud_s3_bucket" "bucket" {
     method = "Sse" # For even stricter security, use "TenantKms" here.
   }
 }
-
+```
 
 ### Create an S3 bucket named data in the preprod tenant within duplo, with tenant kms enabled
 
-#### Solution:
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "preprod"
 }
@@ -150,9 +161,11 @@ resource "duplocloud_tenant" "myapp" {
   account_name = "myapp"
   plan_id      = "default"
 }
+```
+
 ### Deploy an S3 bucket with hardened security settings
 
-#### Solution:
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "test"
 }
@@ -169,10 +182,11 @@ resource "duplocloud_s3_bucket" "mydata" {
     method = "Sse" # For even stricter security, use "TenantKms" here.
   }
 }
+```
 
 ###  Deploy a hardened S3 bucket suitable for public website hosting in test tenant
 
-#### Solution:
+```terraform
 data "duplocloud_tenant" "tenant" {
   name = "test"
 }
@@ -189,10 +203,11 @@ resource "duplocloud_s3_bucket" "www" {
     method = "Sse"
   }
 }
+```
 
 ###  Deploy an S3 bucket to us-east-1 region
 
-#### Solution:
+```terraform
 data "aws_region" "region" {
   name = "us-east-1"
 }
@@ -208,3 +223,18 @@ resource "duplocloud_s3_bucket" "mydata" {
   # optional, if not provided, tenant region will be used
   region = data.aws_region.region.name
 }
+```
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Import is supported using the following syntax:
+
+```
+# Example: Importing an existing S3 bucket
+#  - *TENANT_ID* is the tenant GUID
+#  - *SHORTNAME* is the short name of the S3 bucket (without the duploservices prefix)
+#
+terraform import duplocloud_s3_bucket.mybucket *TENANT_ID*/*SHORTNAME*
+```
