@@ -27,6 +27,7 @@ resource "duplocloud_tenant" "tenant" {
   plan_id      = duplocloud_infrastructure.infra.infra_name
 }
 
+# Use the tenant_id from the duplocloud_tenant, which will be populated after the tenant resource is created, when setting up the S3 bucket.
 resource "duplocloud_s3_bucket" "bucket" {
   tenant_id           = duplocloud_tenant.tenant.tenant_id
   name                = "static_assets"
