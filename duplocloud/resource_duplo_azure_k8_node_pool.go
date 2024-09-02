@@ -111,6 +111,15 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     true,
 		},
+		"availability_zones": {
+			Description: "availability zones of node pool",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			Computed:    true,
+			Elem: &schema.Schema{Type: schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"1", "2", "3"}, true),
+			},
+		},
 	}
 }
 
@@ -271,6 +280,12 @@ func expandAgentK8NodePool(d *schema.ResourceData) (*duplosdk.DuploAzureK8NodePo
 			}
 		}
 	}
+	if v, ok := d.GetOk("availability_zones"); ok {
+		azs := v.(*schema.Set)
+		for _, v := range azs.List() {
+			nodePool.AvailabilityZones = append(nodePool.AvailabilityZones, v.(string))
+		}
+	}
 	return nodePool, nil
 }
 
@@ -311,7 +326,9 @@ func flattenAgentK8NodePool(d *schema.ResourceData, duplo *duplosdk.DuploAzureK8
 		mp["eviction_policy"] = duplo.ScaleSetEvictionPolicy
 		mp["spot_max_price"] = duplo.SpotMaxPrice
 	}
-
+	if len(duplo.AvailabilityZones) > 0 {
+		d.Set("availability_zones", duplo.AvailabilityZones)
+	}
 }
 
 func azureK8NodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
