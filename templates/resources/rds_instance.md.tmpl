@@ -126,7 +126,7 @@ resource "random_password" "mypassword" {
 
 resource "duplocloud_rds_instance" "postgres-serverless-db" {
   tenant_id      = data.duplocloud_tenant.tenant.id
-  name           = "postgres-serverless-db" 
+  name           = "postgres-serverless-db"
   engine         = 12 # AuroraDB serverless PostgreSQL engine
   engine_version = "15.5"
   size           = "db.serverless"
