@@ -49,7 +49,7 @@ resource "duplocloud_rds_instance" "dev-db" {
 }
 ```
 
-### Provision an RDS instance using the PostgreSQL engine named dev-db with deletion protection enabled and multi-az enabled in DuploCloud platform.
+### Provision an RDS instance using the PostgreSQL engine named dev-db with deletion protection enabled and multi-az enabled.
 
 ```terraform
 # Ensure the 'dev' tenant is already created before creating the RDS instance.
@@ -81,7 +81,7 @@ resource "duplocloud_rds_instance" "dev-db" {
 }
 ```
 
-### Create an RDS instance using the Aurora-PostgreSQL engine named aurora-postgres-db with instance class db.m5.large in DuploCloud platform.
+### Create an RDS instance using the Aurora-PostgreSQL engine named aurora-postgres-db with instance class db.m5.large.
 
 ```terraform
 # Ensure the 'dev' tenant is already created before creating the RDS instance.
@@ -185,7 +185,7 @@ resource "duplocloud_rds_instance" "dev-db" {
 }
 ```
 
-### Provision an RDS instance using the MySQL engine named dev-db with engine version 5.7, allocated storage 50 GB and enable IAM auth and logging for this DB in DuploCloud platform.
+### Provision an RDS instance using the MySQL engine named dev-db with engine version 5.7, allocated storage 50 GB and enable IAM auth and logging for this DB.
 
 ```terraform
 # Ensure the 'dev' tenant is already created before creating the RDS instance.
