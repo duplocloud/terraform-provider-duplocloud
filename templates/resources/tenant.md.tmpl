@@ -12,6 +12,7 @@
 ### Create a DuploCloud tenant named 'prod'.
 
 ```terraform
+# Before creating a tenant, you must first set up the infrastructure. Below is the resource for creating the infrastructure.
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0             # AWS Cloud
@@ -20,6 +21,7 @@ resource "duplocloud_infrastructure" "infra" {
   address_prefix    = "10.11.0.0/16"
 }
 
+# Use the infrastructure name as the 'plan_id' from the 'duplocloud_infrastructure' resource while creating tenant.
 resource "duplocloud_tenant" "tenant" {
  account_name = "prod"
  plan_id      = duplocloud_infrastructure.infra.infra_name
@@ -39,15 +41,17 @@ resource "duplocloud_infrastructure" "infra" {
 ```
 
 ```terraform
+# Use the infrastructure name as the 'plan_id' from the 'duplocloud_infrastructure' resource.
 resource "duplocloud_tenant" "tenant" {
  account_name = "prod"
  plan_id      = duplocloud_infrastructure.infra.infra_name
 }
 ```
 
-### Create a DuploCloud tenant named 'dev' within the nonprod infrastructure.
+### Create a DuploCloud tenant named 'dev' within the 'nonprod' infrastructure.
 
 ```terraform
+# Ensure the 'nonprod' infrastructure is already created before setting up the tenant.
 data "duplocloud_infrastructure" "infra" {
  infra_name = "nonprod"
 }
@@ -66,9 +70,14 @@ variable "infra_name" {
   default = "nonprod"
 }
 
+# Ensure the 'nonprod' infrastructure is already created before setting up the tenant.
+data "duplocloud_infrastructure" "infra" {
+ infra_name = "nonprod"
+}
+
 resource "duplocloud_tenant" "tenant" {
  account_name = "dev"
- plan_id      = var.infra_name
+ plan_id      = data.duplocloud_infrastructure.infra.infra_name
 }
 
 output "tenant_id" {
@@ -80,16 +89,19 @@ output "tenant_id" {
 ### Create a duplocloud tenant named dev with AWS Cognito power user access in the nonprod infrastructure.
 
 ```terraform
+
+# A prerequisite for creating a tenant is having an existing infrastructure. Here’s how you can reference an existing infrastructure.
 data "duplocloud_infrastructure" "infra" {
  infra_name = "nonprod"
 }
 
+# Here’s how to create a tenant by providing the infrastructure name for the plan_id field.
 resource "duplocloud_tenant" "tenant" {
  account_name = "dev"
  plan_id      = data.duplocloud_infrastructure.infra.infra_name
 }
 
-
+# Attaches a managed IAM policy to an IAM role.
 resource "aws_iam_role_policy_attachment" "AmazonCognitoPowerUser" {
  role       = "duploservices-${duplocloud_tenant.tenant.account_name}"
  policy_arn = "arn:aws:iam::aws:policy/AmazonCognitoPowerUser"
@@ -100,15 +112,18 @@ resource "aws_iam_role_policy_attachment" "AmazonCognitoPowerUser" {
 ### Create a DuploCloud tenant named 'qa' with full access to invoke AWS API Gateway in the nonprod infrastructure.
 
 ```terraform
+# A prerequisite for creating a tenant is having an existing infrastructure. Here’s how you can reference an existing infrastructure.
 data "duplocloud_infrastructure" "infra" {
  infra_name = "nonprod"
 }
 
+# Here’s how to create a tenant by providing the infrastructure name for the plan_id field.
 resource "duplocloud_tenant" "tenant" {
  account_name = "qa"
  plan_id      = data.duplocloud_infrastructure.infra.infra_name
 }
 
+# Attaches a managed IAM policy to an IAM role.
 resource "aws_iam_role_policy_attachment" "AmazonAPIGatewayInvokeFullAccess" {
  role       = "duploservices-${duplocloud_tenant.tenant.account_name}"
  policy_arn = "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"
@@ -128,6 +143,7 @@ resource "duplocloud_tenant" "tenant" {
  plan_id      = data.duplocloud_infrastructure.infra.infra_name
 }
 
+# Allow communication on port 5432 for the PostgreSQL database from the 10.220.0.0/16 subnet
 resource "duplocloud_tenant_network_security_rule" "allow_from_vpn" {
  tenant_id      = duplocloud_tenant.tenant.tenant_id
  source_address = "10.220.0.0/16"
@@ -150,6 +166,7 @@ resource "duplocloud_tenant" "tenant" {
  plan_id      = data.duplocloud_infrastructure.infra.infra_name
 }
 
+# Allow communication on port 22 from the 10.220.0.0/16 subnet.
 resource "duplocloud_tenant_network_security_rule" "allow_from_vpn" {
  tenant_id      = duplocloud_tenant.tenant.tenant_id
  source_address = "10.220.0.0/16"
@@ -160,20 +177,7 @@ resource "duplocloud_tenant_network_security_rule" "allow_from_vpn" {
 }
 ```
 
-### Create a tenant test with under test infrastructure
-
-```terraform
-data "duplocloud_infrastructure" "infra" {
- infra_name = "test"
-}
-
-resource "duplocloud_tenant" "tenant" {
- account_name = "test"
- plan_id      = data.duplocloud_infrastructure.infra.infra_name
-}
-```
-
-### Provision a tenant named 'myapp' with the infrastructure 'myinfra' and deletion protection disabled.
+### Provision a tenant named 'myapp' within the infrastructure 'myinfra' and disable deletion protection.
 
 ```terraform
 data "duplocloud_infrastructure" "infra" {
@@ -186,11 +190,44 @@ resource "duplocloud_tenant" "tenant" {
  allow_deletion = true
 }
 
+# Reference the tenant_id field from the duplocloud_tenant resource.
 resource "duplocloud_tenant_config" "tenant_config" {
   tenant_id = duplocloud_tenant.tenant.tenant_id
 
   setting {
     key   = "delete_protection"
+    value = "true"
+  }
+}
+
+```
+
+### Provision a tenant named 'myapp' within the infrastructure 'myinfra', and ensure that the S3 bucket has public access blocked and SSL enforcement enabled in the S3 bucket policy.
+
+```terraform
+data "duplocloud_infrastructure" "infra" {
+ infra_name = "myinfra"
+}
+
+resource "duplocloud_tenant" "tenant" {
+ account_name = "myapp"
+ plan_id      = data.duplocloud_infrastructure.infra.infra_name
+ allow_deletion = true
+}
+
+# Reference the tenant_id field from the duplocloud_tenant resource.
+resource "duplocloud_tenant_config" "tenant_config" {
+  tenant_id = duplocloud_tenant.tenant.tenant_id
+
+  // This turns on a default public access block for S3 buckets.
+  setting {
+    key   = "block_public_access_to_s3"
+    value = "true"
+  }
+
+  // This turns on a default SSL enforcement S3 bucket policy.
+  setting {
+    key   = "enforce_ssl_for_s3"
     value = "true"
   }
 }

@@ -12,6 +12,7 @@
 ### Create a S3 bucket named static_assets in DuploCloud
 
 ```terraform
+# Before creating a tenant, you must first set up the infrastructure. Below is the resource for creating the infrastructure.
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0 # AWS Cloud
@@ -20,6 +21,7 @@ resource "duplocloud_infrastructure" "infra" {
   address_prefix    = "10.11.0.0/16"
 }
 
+# Use the infrastructure name as the 'plan_id' from the 'duplocloud_infrastructure' resource while creating tenant.
 resource "duplocloud_tenant" "tenant" {
   account_name = "prod"
   plan_id      = duplocloud_infrastructure.infra.infra_name
@@ -41,6 +43,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 ### Provision an S3 bucket within the dev tenant in DuploCloud
 
 ```terraform
+# Ensure the 'dev' tenant is already created before setting up the s3 bucket.
 data "duplocloud_tenant" "tenant" {
   name = "dev"
 }
@@ -61,6 +64,7 @@ resource "duplocloud_s3_bucket" "bucket" {
 ### Create an S3 bucket in the dev tenant within DuploCloud, with public access enabled
 
 ```terraform
+# Ensure the 'dev' tenant is already created before setting up the s3 bucket.
 data "duplocloud_tenant" "tenant" {
   name = "dev"
 }
@@ -208,20 +212,24 @@ resource "duplocloud_s3_bucket" "www" {
 ###  Deploy an S3 bucket to us-east-1 region
 
 ```terraform
-data "aws_region" "region" {
-  name = "us-east-1"
-}
-
+# Ensure the 'test' tenant is already created before creating the s3 bucket.
 data "duplocloud_tenant" "tenant" {
   name = "test"
 }
 
-resource "duplocloud_s3_bucket" "mydata" {
-  tenant_id = duplocloud_tenant.myapp.tenant_id
-  name      = "mydata"
+resource "duplocloud_s3_bucket" "static_assets" {
+  tenant_id           = data.duplocloud_tenant.tenant.id
+  name                = "static_assets"
+  allow_public_access = false
+  enable_access_logs  = true
+  enable_versioning   = true
+  managed_policies    = ["ssl"]
+  default_encryption {
+    method = "Sse" # For even stricter security, use "TenantKms" here.
+  }
 
-  # optional, if not provided, tenant region will be used
-  region = data.aws_region.region.name
+  # Optional, if not provided, tenant region will be used
+  region = "us-east-1"
 }
 ```
 
