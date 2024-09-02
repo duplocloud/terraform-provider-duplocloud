@@ -107,7 +107,7 @@ func s3BucketSchema() map[string]*schema.Schema {
 		"managed_policies": {
 			Description: "Duplo can manage your S3 bucket policy for you, based on simple list of policy keywords:\n\n" +
 				" - `\"ssl\"`: Require SSL / HTTPS when accessing the bucket.\n" +
-				" - `\"ignore\"`: If this key is present, Duplo will not manage your bucket policy.\n",
+				" - `\"ignore\"`: If this value is present, Duplo will not manage your bucket policy.\n",
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
@@ -120,6 +120,7 @@ func s3BucketSchema() map[string]*schema.Schema {
 // Resource for managing an AWS ElasticSearch instance
 func resourceS3Bucket() *schema.Resource {
 	return &schema.Resource{
+		Description:   "`duplocloud_s3_bucket` manages an s3 bucket in Duplo.",
 		ReadContext:   resourceS3BucketRead,
 		CreateContext: resourceS3BucketCreate,
 		UpdateContext: resourceS3BucketUpdate,

@@ -289,6 +289,14 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:     true,
 			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
 		},
+		"availability_zone": {
+			Description: "Specify a valid Availability Zone for the RDS primary instance" +
+				" (when Multi-AZ is disabled) or for the Aurora writer instance." +
+				" e.g. us-west-2a",
+			Type:     schema.TypeString,
+			Computed: true,
+			Optional: true,
+		},
 	}
 }
 
@@ -664,6 +672,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.MasterPassword = d.Get("master_password").(string)
 	duploObject.Engine = d.Get("engine").(int)
 	duploObject.EngineVersion = d.Get("engine_version").(string)
+	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
 	if isClusterGroupParameterSupportDb(duploObject.Engine) {
 		duploObject.ClusterParameterGroupName = d.Get("cluster_parameter_group_name").(string)
@@ -691,6 +700,9 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	}
 	if duploObject.SizeEx == "db.serverless" && duploObject.V2ScalingConfiguration == nil {
 		return nil, errors.New("v2_scaling_configuration: min_capacity and max_capacity must be provided")
+	}
+	if duploObject.MultiAZ && duploObject.AvailabilityZone != "" {
+		return nil, errors.New("multi_az and availability_zone can not be set together.")
 	}
 	duploObject.DatabaseName = d.Get("db_name").(string)
 	return duploObject, nil
@@ -747,6 +759,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["master_password"] = duploObject.MasterPassword
 	jo["engine"] = duploObject.Engine
 	jo["engine_version"] = duploObject.EngineVersion
+	jo["availability_zone"] = duploObject.AvailabilityZone
 	jo["snapshot_id"] = duploObject.SnapshotID
 	jo["parameter_group_name"] = duploObject.DBParameterGroupName
 	jo["cluster_parameter_group_name"] = duploObject.ClusterParameterGroupName
