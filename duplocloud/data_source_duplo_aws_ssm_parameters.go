@@ -75,10 +75,17 @@ func dataSourceSsmParametersRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("failed to list SSM parameters: %s", err)
 	}
 	d.SetId(tenantID)
-
+	resp := *rp
 	// Set the Terraform resource data
 	list := make([]map[string]interface{}, 0, len(*rp))
-	for _, ssmParam := range *rp {
+	for i, body := range resp {
+		ssmParam := body
+		if ssmParam.Type == "SecureString" {
+			resp[i].Value = "**********"
+		}
+		if i == len(resp)-1 {
+			log.Printf("[TRACE] SsmParameterGet: received response: %+v", resp)
+		}
 		list = append(list, map[string]interface{}{
 			"tenant_id":          tenantID,
 			"name":               ssmParam.Name,
