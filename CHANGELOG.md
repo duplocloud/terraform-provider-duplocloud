@@ -1,3 +1,5 @@
+The changes introduced in this PR have already been documented in the current CHANGELOG.md under the date 2024-09-03. No further updates are necessary.
+
 ## 2024-09-03
 
 ### Fixed
