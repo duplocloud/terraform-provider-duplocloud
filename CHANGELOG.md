@@ -1,3 +1,11 @@
+## 2024-09-03
+
+### Enhanced
+- Implemented a diff suppression function for Kubernetes secrets to handle JSON objects as string key-value pairs, improving accuracy in change detection.
+
+### Fixed
+- Added a nil check in SSM parameter reading to prevent potential nil pointer exceptions, enhancing stability.
+
 
 ## 2024-08-26
 
