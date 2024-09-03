@@ -1,3 +1,11 @@
+## 2024-09-03
+
+### Enhanced
+- Improved descriptions for `duplocloud_ecache_instance`, `duplocloud_rds_instance`, and `duplocloud_duplo_service` resources.
+- Updated documentation for ElastiCache, RDS, S3 bucket, and tenant resources with detailed examples and usage instructions.
+- Added new templates for resource documentation, including structured examples and import instructions.
+- Clarified cloud provider codes in infrastructure documentation and templates.
+
 
 ## 2024-08-26
 
