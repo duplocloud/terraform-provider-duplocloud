@@ -14,7 +14,7 @@
 ```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "nonprod"
-  cloud             = 0             # 0-AWS, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-west-2"
   enable_k8_cluster = false
   address_prefix    = "10.11.0.0/16"
@@ -26,7 +26,7 @@ resource "duplocloud_infrastructure" "infra" {
 ```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "nonprod"
-  cloud             = 0             # 0-AWS, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-west-2"
   enable_k8_cluster = false
   address_prefix    = "10.34.0.0/16"
@@ -38,7 +38,7 @@ resource "duplocloud_infrastructure" "infra" {
 ```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "nonprod"
-  cloud             = 0             # 0-AWS, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-east-1"
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
@@ -51,7 +51,7 @@ resource "duplocloud_infrastructure" "infra" {
 ```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
-  cloud             = 0             # 0-AWS, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-east-2"
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
@@ -65,7 +65,7 @@ resource "duplocloud_infrastructure" "infra" {
 ```terraform
 resource "duplocloud_infrastructure" "prod_infra" {
   infra_name        = "prod"
-  cloud             = 0             # 0-AWS, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-east-2"
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
@@ -89,7 +89,7 @@ resource "duplocloud_infrastructure_setting" "settings" {
 ```terraform
 resource "duplocloud_infrastructure" "nonprod_infra" {
   infra_name        = "nonprod"
-  cloud             = 0             # 0-AWS, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-west-2"
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
@@ -113,7 +113,7 @@ resource "duplocloud_infrastructure_setting" "nonprod_settings" {
 ```terraform
 resource "duplocloud_infrastructure" "nonprod_infra" {
   infra_name        = "nonprod"
-  cloud             = 0             # 0-AWS, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-west-2"
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
@@ -145,7 +145,7 @@ resource "duplocloud_infrastructure_setting" "nonprod_settings" {
 ```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
-  cloud             = 0             # 0-AWS, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-east-2"
   azcount           = 2             # The number of availability zones.
   enable_ecs_cluster = true
@@ -159,7 +159,7 @@ resource "duplocloud_infrastructure" "infra" {
 ```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
-  cloud             = 0             # 0-AWS, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-east-2"
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
@@ -195,7 +195,7 @@ variable "infra_settings" {
 
 resource "duplocloud_infrastructure" "nonprod_infra" {
   infra_name        = "nonprod"
-  cloud             = 0             # 0-AWS, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-west-2"
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
