@@ -161,11 +161,6 @@ resource "duplocloud_s3_bucket" "bucket" {
     method = "TenantKms"
   }
 }
-
-resource "duplocloud_tenant" "myapp" {
-  account_name = "myapp"
-  plan_id      = "default"
-}
 ```
 
 ### Deploy an S3 bucket with hardened security settings
