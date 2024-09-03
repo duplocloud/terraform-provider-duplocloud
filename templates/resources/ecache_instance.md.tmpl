@@ -9,7 +9,7 @@
 
 ## Example Usage
 
-### Create an Amazon ElastiCache cluster of type Redis in DuploCloud.
+### Create an Amazon ElastiCache cluster of type Redis.
 
 ```terraform
 # Before creating a ElastiCache cluster, you must first set up the infrastructure and tenant. Below is the resource for creating the infrastructure.
@@ -59,7 +59,27 @@ resource "duplocloud_ecache_instance" "redis_cache" {
 }
 ```
 
-### Create an Amazon ElastiCache cluster of type Memcached in DuploCloud.
+### Set up an ElastiCache Redis cluster with 2 shards and 2 cache.t2.small replicas in the dev tenant.
+
+```terraform
+# Assuming the 'dev' tenant is already created, use a data source to fetch the tenant ID.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Use the tenant_id from the duplocloud_tenant, which will be populated after the tenant resource is created, when setting up the Redis ElastiCache cluster.
+resource "duplocloud_ecache_instance" "redis_cache" {
+  tenant_id           = data.duplocloud_tenant.tenant.id
+  name                = "mycache"
+  cache_type          = 0 # 0: Redis, 1: Memcache
+  replicas            = 2
+  size                = "cache.t2.small"
+  enable_cluster_mode = true # applicable only for Redis
+  number_of_shards    = 2    # applicable only for Redis
+}
+```
+
+### Create an Amazon ElastiCache cluster of type Memcached.
 
 ```terraform
 
