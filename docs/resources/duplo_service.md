@@ -11,7 +11,7 @@ NOTE: For Amazon ECS services, see the `duplocloud_ecs_service` resource.
 
 ## Example Usage
 
-### Deploy NGINX using Duplo's native container agent
+### Deploy NGINX service using DuploCloud Platform's native container agent.
 
 ```terraform
 # Before creating an NGINX service, you must first set up the infrastructure and tenant. Below is the resource for creating the infrastructure.
@@ -29,13 +29,42 @@ resource "duplocloud_tenant" "tenant" {
  plan_id      = duplocloud_infrastructure.infra.infra_name
 }
 
-resource "duplocloud_duplo_service" "nginx" {
+resource "duplocloud_duplo_service" "myservice" {
   tenant_id = duplocloud_tenant.tenant.tenant_id
 
-  name           = "nginx"
+  name           = "myservice"
   agent_platform = 0 # Duplo native container agent
   docker_image   = "nginx:latest"
   replicas       = 1
+}
+```
+
+### Deploy NGINX service using DuploCloud Platform's native container agent with host networking and the environment variables - NGINX_HOST and NGINX_PORT
+
+```terraform
+# Ensure the 'dev' tenant is already created before creating the RDS instance.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+resource "duplocloud_duplo_service" "myservice" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  name           = "myservice"
+  agent_platform = 0 # Duplo native container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+
+  extra_config = jsonencode({
+    "NGINX_HOST" = "foo",
+    "NGINX_PORT" = "8080"
+  })
+
+  // Enables host networking, and listening on ports < 1000
+  other_docker_host_config = jsonencode({
+    NetworkMode = "host",
+    CapAdd      = ["NET_ADMIN"]
+  })
 }
 ```
 
