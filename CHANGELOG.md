@@ -1,3 +1,9 @@
+## 2024-09-03
+
+### Fixed
+- Resolved an issue with `duplocloud_k8_secret` resource to correctly handle JSON value comparisons, preventing unnecessary diffs.
+- Added a nil check in the SSM resource logic to avoid potential nil pointer exceptions during read operations.
+
 
 ## 2024-08-26
 
