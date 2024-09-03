@@ -33,7 +33,7 @@ resource "random_password" "password" {
   special = false
 }
 
-// Create an RDS instance.
+# Create an RDS instance.
 resource "duplocloud_rds_instance" "dev-db" {
   tenant_id      = duplocloud_tenant.tenant.tenant_id
   name           = "dev-db"
@@ -169,11 +169,11 @@ resource "random_password" "mypassword" {
   special = false
 }
 
-// Create an RDS instance.
+# Create an RDS instance.
 resource "duplocloud_rds_instance" "dev-db" {
   tenant_id      = data.duplocloud_tenant.tenant.id
   name           = "dev-db"
-  engine         = 0              # SQL DB engine
+  engine         = 0              # MySQL DB engine
   engine_version = "8.0.32"       # MySQL DB engine version
   size           = "db.t3.medium" # RDS instance size/class
 
@@ -199,11 +199,11 @@ resource "random_password" "mypassword" {
   special = false
 }
 
-// Create an RDS instance.
+# Create an RDS instance.
 resource "duplocloud_rds_instance" "dev-db" {
   tenant_id      = data.duplocloud_tenant.tenant.id
   name           = "dev-db"
-  engine         = 0              # SQL DB engine
+  engine         = 0              # MySQL DB engine
   engine_version = "5.7.44"       # MySQL DB engine version
   size           = "db.t3.medium" # RDS instance size/class
 
@@ -215,6 +215,42 @@ resource "duplocloud_rds_instance" "dev-db" {
   allocated_storage       = 50
   enable_iam_auth         = true
   enable_logging          = true
+}
+```
+
+### Create an RDS instance using the Aurora MySQL engine named mysql-db with engine version 5.7, allocated storage 100 GB and storage type io1 with number of iops 6000. It should skip the final snapshot and store the credentials in secrets manager.
+
+```terraform
+# Ensure the 'dev' tenant is already created before creating the RDS instance.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Generate a random password for the RDS instance.
+resource "random_password" "mypassword" {
+  length  = 16
+  special = false
+}
+
+# Create an RDS instance.
+resource "duplocloud_rds_instance" "mysql-db" {
+  tenant_id      = data.duplocloud_tenant.tenant.id
+  name           = "mysql-db"
+  engine         = 8                         # Aurora MySQL DB engine
+  engine_version = "5.7.mysql_aurora.2.11.6" # MySQL DB engine version
+  size           = "db.t3.medium"            # RDS instance size/class
+
+  master_username = "mysql_user1"
+  master_password = random_password.mypassword.result
+
+  encrypt_storage         = true
+  backup_retention_period = 7
+  allocated_storage       = 100
+  storage_type            = "io1"
+  iops                    = 6000
+  skip_final_snapshot     = true
+
+  store_details_in_secret_manager = true
 }
 ```
 
