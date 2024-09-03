@@ -192,52 +192,63 @@ func resourceAwsApiGatewayEventRead(ctx context.Context, d *schema.ResourceData,
 // CREATE resource
 func resourceAwsApiGatewayEventCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
-
+	var diags diag.Diagnostics
 	tenantID := d.Get("tenant_id").(string)
 	apigatewayid := d.Get("api_gateway_id").(string)
 	method := d.Get("method").(string)
 	path := d.Get("path").(string)
+	id := fmt.Sprintf("%s/%s/%s/%s", tenantID, apigatewayid, method, path)
+
+	c := m.(*duplosdk.Client)
 
 	log.Printf("[TRACE] resourceAwsApiGatewayEventCreate(%s, %s): start", tenantID, apigatewayid+"--"+method+"--"+path)
 
-	// Create the request object.
-	rq := duplosdk.DuploApiGatewayEvent{
-		APIGatewayID:   apigatewayid,
-		Method:         method,
-		Path:           path,
-		Cors:           d.Get("cors").(bool),
-		ApiKeyRequired: d.Get("api_key_required").(bool),
+	resourceExist := false
+	// Check if resource is already Exist.
+	duplo, _ := c.ApiGatewayEventGet(tenantID, apigatewayid, method, path)
+	if duplo != nil {
+		resourceExist = true
 	}
-	if v, ok := d.GetOk("authorizer_id"); ok && v != nil {
-		rq.AuthorizerId = v.(string)
-	}
-	if v, ok := d.GetOk("authorization_type"); ok && v != nil {
-		rq.AuthorizationType = v.(string)
-	}
-	if v, ok := d.GetOk("content_handling"); ok && v != nil {
-		rq.ContentHandling = v.(string)
-	}
-	if v, ok := d.GetOk("integration"); ok {
-		if s := v.([]interface{}); len(s) > 0 {
-			rq.Integration = expandAwsApiGatewayEventIntegration(s[0].(map[string]interface{}))
+
+	if !resourceExist {
+		// Create the request object.
+		rq := duplosdk.DuploApiGatewayEvent{
+			APIGatewayID:   apigatewayid,
+			Method:         method,
+			Path:           path,
+			Cors:           d.Get("cors").(bool),
+			ApiKeyRequired: d.Get("api_key_required").(bool),
+		}
+		if v, ok := d.GetOk("authorizer_id"); ok && v != nil {
+			rq.AuthorizerId = v.(string)
+		}
+		if v, ok := d.GetOk("authorization_type"); ok && v != nil {
+			rq.AuthorizationType = v.(string)
+		}
+		if v, ok := d.GetOk("content_handling"); ok && v != nil {
+			rq.ContentHandling = v.(string)
+		}
+		if v, ok := d.GetOk("integration"); ok {
+			if s := v.([]interface{}); len(s) > 0 {
+				rq.Integration = expandAwsApiGatewayEventIntegration(s[0].(map[string]interface{}))
+			}
+		}
+
+		// Post the object to Duplo
+		_, err = c.ApiGatewayEventCreate(tenantID, &rq)
+		if err != nil {
+			return diag.Errorf("Error creating tenant %s API Gateway Event '%s': %s", tenantID, apigatewayid+"--"+method+"--"+path, err)
+		}
+
+		// Wait for Duplo to be able to return the table's details.
+		diags = waitForResourceToBePresentAfterCreate(ctx, d, "API Gateway Event", id, func() (interface{}, duplosdk.ClientError) {
+			return c.ApiGatewayEventGet(tenantID, apigatewayid, method, path)
+		})
+		if diags != nil {
+			return diags
 		}
 	}
-	c := m.(*duplosdk.Client)
 
-	// Post the object to Duplo
-	_, err = c.ApiGatewayEventCreate(tenantID, &rq)
-	if err != nil {
-		return diag.Errorf("Error creating tenant %s API Gateway Event '%s': %s", tenantID, apigatewayid+"--"+method+"--"+path, err)
-	}
-
-	// Wait for Duplo to be able to return the table's details.
-	id := fmt.Sprintf("%s/%s/%s/%s", tenantID, apigatewayid, method, path)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "API Gateway Event", id, func() (interface{}, duplosdk.ClientError) {
-		return c.ApiGatewayEventGet(tenantID, apigatewayid, method, path)
-	})
-	if diags != nil {
-		return diags
-	}
 	d.SetId(id)
 
 	diags = resourceAwsApiGatewayEventRead(ctx, d, m)
@@ -307,7 +318,23 @@ func resourceAwsApiGatewayEventDelete(ctx context.Context, d *schema.ResourceDat
 
 	// Delete the function.
 	c := m.(*duplosdk.Client)
-	clientErr := c.ApiGatewayEventDelete(tenantID, apigatewayid, method, path)
+
+	// Check if resource is already Exist.
+	duplo, clientErr := c.ApiGatewayEventGet(tenantID, apigatewayid, method, path)
+
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve API Gateway Event '%s': %s", apigatewayid+"--"+method+"--"+path, clientErr)
+	}
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
+	}
+
+	clientErr = c.ApiGatewayEventDelete(tenantID, apigatewayid, method, path)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil
