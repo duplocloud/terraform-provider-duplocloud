@@ -303,7 +303,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 // SCHEMA for resource crud
 func resourceDuploRdsInstance() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_rds_instance` manages an AWS RDS instance in Duplo.",
+		Description: "The `duplocloud_rds_instance` resource in DuploCloud manages the lifecycle of an RDS (Relational Database Service) instance within a cloud environment. It allows you to define, provision, and maintain database instances with customizable configurations, such as engine type, storage, and instance class, all within DuploCloud's automated infrastructure management.",
 
 		ReadContext:   resourceDuploRdsInstanceRead,
 		CreateContext: resourceDuploRdsInstanceCreate,

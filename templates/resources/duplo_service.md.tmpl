@@ -1,0 +1,81 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Deploy NGINX service using DuploCloud Platform's native container agent.
+
+```terraform
+# Before creating an NGINX service, you must first set up the infrastructure and tenant. Below is the resource for creating the infrastructure.
+resource "duplocloud_infrastructure" "infra" {
+  infra_name        = "dev"
+  cloud             = 0 # AWS Cloud
+  region            = "us-east-1"
+  enable_k8_cluster = false
+  address_prefix    = "10.13.0.0/16"
+}
+
+# Use the infrastructure name as the 'plan_id' from the 'duplocloud_infrastructure' resource while creating tenant.
+resource "duplocloud_tenant" "tenant" {
+ account_name = "dev"
+ plan_id      = duplocloud_infrastructure.infra.infra_name
+}
+
+resource "duplocloud_duplo_service" "myservice" {
+  tenant_id = duplocloud_tenant.tenant.tenant_id
+
+  name           = "myservice"
+  agent_platform = 0 # Duplo native container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+}
+```
+
+### Deploy NGINX service using DuploCloud Platform's native container agent with host networking and the environment variables - NGINX_HOST and NGINX_PORT
+
+```terraform
+# Ensure the 'dev' tenant is already created before creating the RDS instance.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+resource "duplocloud_duplo_service" "myservice" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  name           = "myservice"
+  agent_platform = 0 # Duplo native container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+
+  extra_config = jsonencode({
+    "NGINX_HOST" = "foo",
+    "NGINX_PORT" = "8080"
+  })
+
+  // Enables host networking, and listening on ports < 1000
+  other_docker_host_config = jsonencode({
+    NetworkMode = "host",
+    CapAdd      = ["NET_ADMIN"]
+  })
+}
+```
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+# Example: Importing an existing service
+#  - *TENANT_ID* is the tenant GUID
+#  - *NAME* is the name of the service
+#
+terraform import duplocloud_duplo_service.myservice v2/subscriptions/*TENANT_ID*/ReplicationControllerApiV2/*NAME*
+```

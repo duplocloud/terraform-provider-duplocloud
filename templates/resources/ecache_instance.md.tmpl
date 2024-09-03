@@ -1,0 +1,113 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Create an Amazon ElastiCache cluster of type Redis.
+
+```terraform
+# Before creating a ElastiCache cluster, you must first set up the infrastructure and tenant. Below is the resource for creating the infrastructure.
+resource "duplocloud_infrastructure" "infra" {
+  infra_name        = "prod"
+  cloud             = 0 # AWS Cloud
+  region            = "us-west-2"
+  enable_k8_cluster = false
+  address_prefix    = "10.11.0.0/16"
+}
+
+# Use the infrastructure name as the 'plan_id' from the 'duplocloud_infrastructure' resource while creating tenant.
+resource "duplocloud_tenant" "tenant" {
+  account_name = "prod"
+  plan_id      = duplocloud_infrastructure.infra.infra_name
+}
+
+# Use the tenant_id from the duplocloud_tenant, which will be populated after the tenant resource is created, when setting up the Redis ElastiCache cluster.
+resource "duplocloud_ecache_instance" "redis_cache" {
+  tenant_id           = duplocloud_tenant.tenant.tenant_id
+  name                = "mycache"
+  cache_type          = 0 # 0: Redis, 1: Memcache
+  replicas            = 1
+  size                = "cache.t2.small"
+  enable_cluster_mode = true # applicable only for Redis
+  number_of_shards    = 1    # applicable only for Redis
+}
+```
+
+### Create an Amazon ElastiCache cluster of type Redis with 2 replicas of type cache.t2.small in dev tenant.
+
+```terraform
+# Assuming the 'dev' tenant is already created, use a data source to fetch the tenant ID.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Use the tenant_id from the duplocloud_tenant, which will be populated after the tenant resource is created, when setting up the Redis ElastiCache cluster.
+resource "duplocloud_ecache_instance" "redis_cache" {
+  tenant_id           = data.duplocloud_tenant.tenant.id
+  name                = "mycache"
+  cache_type          = 0 # 0: Redis, 1: Memcache
+  replicas            = 2
+  size                = "cache.t2.small"
+  enable_cluster_mode = true # applicable only for Redis
+  number_of_shards    = 1    # applicable only for Redis
+}
+```
+
+### Set up an ElastiCache Redis cluster with 2 shards and 2 cache.t2.small replicas in the dev tenant.
+
+```terraform
+# Assuming the 'dev' tenant is already created, use a data source to fetch the tenant ID.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Use the tenant_id from the duplocloud_tenant, which will be populated after the tenant resource is created, when setting up the Redis ElastiCache cluster.
+resource "duplocloud_ecache_instance" "redis_cache" {
+  tenant_id           = data.duplocloud_tenant.tenant.id
+  name                = "mycache"
+  cache_type          = 0 # 0: Redis, 1: Memcache
+  replicas            = 2
+  size                = "cache.t2.small"
+  enable_cluster_mode = true # applicable only for Redis
+  number_of_shards    = 2    # applicable only for Redis
+}
+```
+
+### Create an Amazon ElastiCache cluster of type Memcached.
+
+```terraform
+
+# Assuming the 'dev' tenant is already created, use a data source to fetch the tenant ID.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Use the tenant_id from the duplocloud_tenant data source, which will be populated after the tenant data source is created, when setting up the Memcached ElastiCache cluster.
+resource "duplocloud_ecache_instance" "mem_cache" {
+  tenant_id           = data.duplocloud_tenant.tenant.id
+  name                = "mycache"
+  cache_type          = 1 # 0: Redis, 1: Memcache
+  replicas            = 1
+  size                = "cache.t2.small"
+}
+```
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Import is supported using the following syntax:
+
+```
+# Example: Importing an existing AWS ElastiCache cluster
+#  - *TENANT_ID* is the tenant GUID
+#  - *SHORT_NAME* is the short name of the AWS ElastiCache cluster
+#
+terraform import duplocloud_ecache_instance.mycluster v2/subscriptions/*TENANT_ID*/ECacheDBInstance/*SHORT_NAME*
+```

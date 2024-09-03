@@ -237,7 +237,9 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 // SCHEMA for resource crud
 func resourceDuploEcacheInstance() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_ecache_instance` manages an ElastiCache instance in Duplo.",
+		Description: "`duplocloud_ecache_instance` used to manage Amazon ElastiCache instances within a DuploCloud-managed environment. " +
+			"<p>This resource allows you to define and manage Redis or Memcached instances on AWS through Terraform, with DuploCloud handling the underlying infrastructure and integration aspects." +
+			"</p>",
 
 		ReadContext:   resourceDuploEcacheInstanceRead,
 		CreateContext: resourceDuploEcacheInstanceCreate,

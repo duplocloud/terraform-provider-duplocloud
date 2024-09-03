@@ -223,7 +223,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 // SCHEMA for resource crud
 func resourceDuploService() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_duplo_service` manages a container-based service in Duplo.\n\n" +
+		Description: "A Duplo service is a microservice managed by the DuploCloud platform, which automates cloud infrastructure management. It abstracts complexities, allowing users to deploy, scale, and monitor cloud-native applications with minimal manual effort.\n\n" +
 			"NOTE: For Amazon ECS services, see the `duplocloud_ecs_service` resource.",
 
 		ReadContext:   resourceDuploServiceRead,
