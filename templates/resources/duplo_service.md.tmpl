@@ -28,7 +28,6 @@ resource "duplocloud_tenant" "tenant" {
 }
 
 # You will need a DuploCloud host to launch the Duplo service, so create a host using following resource configuration.
-
 data "duplocloud_native_host_image" "image" {
   tenant_id     = duplocloud_tenant.tenant.tenant_id
   is_kubernetes = true
@@ -64,6 +63,24 @@ data "duplocloud_tenant" "tenant" {
   name = "dev"
 }
 
+# You will need a DuploCloud host to launch the Duplo service, so create a host using following resource configuration.
+data "duplocloud_native_host_image" "image" {
+  tenant_id     = data.duplocloud_tenant.tenant.id
+  is_kubernetes = false
+}
+
+resource "duplocloud_aws_host" "host" {
+  tenant_id     = data.duplocloud_tenant.tenant.id
+  friendly_name = "host01"
+
+  image_id       = data.duplocloud_native_host_image.image.image_id # get the image_id from the data source
+  capacity       = "t3a.small"
+  agent_platform = 7 # Duplo EKS container agent
+  zone           = 0 # Zone A
+  user_account   = data.duplocloud_tenant.tenant.name
+  keypair_type   = 1
+}
+
 resource "duplocloud_duplo_service" "myservice" {
   tenant_id = data.duplocloud_tenant.tenant.id
 
@@ -77,10 +94,84 @@ resource "duplocloud_duplo_service" "myservice" {
     "NGINX_PORT" = "8080"
   })
 
-  // Enables host networking, and listening on ports < 1000
+  # Enables host networking, and listening on ports < 1000
   other_docker_host_config = jsonencode({
     NetworkMode = "host",
     CapAdd      = ["NET_ADMIN"]
+  })
+}
+```
+
+### Deploy NGINX service named nginx and set the resource requests and limits. Set cpu requests and limits to 200m and 300m respectively and set memory requests and limits to 100Mi and 300Mi respectively
+
+```terraform
+# Ensure the 'dev' tenant is already created before creating the RDS instance.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Ensure that the host is also created in the tenant
+resource "duplocloud_duplo_service" "nginx" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  name           = "nginx"
+  agent_platform = 7 # Duplo EKS container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+
+  other_docker_config = jsonencode({
+    Resources = {
+      limits = {
+        cpu    = "200m"
+        memory = "100Mi"
+      },
+      requests = {
+        cpu    = "300m"
+        memory = "300Mi"
+      }
+    }
+  })
+}
+```
+
+### Deploy an Nginx service named nginx and mount these environment variables from the kubernetes secrets - 1. FOO: bar 2. PING: pong
+
+```terraform
+# Ensure the 'dev' tenant is already created before creating the RDS instance.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Create a secret with the env vars values 1. FOO: bar 2. PING: pong if it does not exists
+
+resource "duplocloud_k8_secret" "nginx" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  secret_name = "nginx-secret"
+  secret_type = "Opaque"
+  secret_data = jsonencode({
+    FOO = "bar",
+    PING = "pong"
+  })
+}
+
+# Ensure that the host is also created in the tenant.
+resource "duplocloud_duplo_service" "nginx" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  name           = "nginx"
+  agent_platform = 7 # Duplo EKS container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+
+  other_docker_config = jsonencode({
+    EnvFrom = [
+      {
+        secretRef = {
+          name = duplocloud_k8_secret.nginx.secret_name,
+        }
+      }
+    ]
   })
 }
 ```
