@@ -297,7 +297,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"enable": {
-						Description: "Enable or Disable Performance Insighta",
+						Description: "Enable or Disable Performance Insights",
 						Type:        schema.TypeBool,
 						Optional:    true,
 						Default:     false,

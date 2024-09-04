@@ -150,7 +150,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 
 Optional:
 
-- `enable` (Boolean) Enable or Disable Performance Insighta Defaults to `false`.
+- `enable` (Boolean) Enable or Disable Performance Insights Defaults to `false`.
 - `kms_key_id` (String) Specify ARN for the KMS key to encrypt Performance Insights data.
 - `retention_period` (Number) Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31
 
