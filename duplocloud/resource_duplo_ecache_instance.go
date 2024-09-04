@@ -194,37 +194,34 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"destination_type": {
-						Description: "Select the snapshot/backup you want to use for creating redis.",
-						Type:        schema.TypeString,
-						Required:    true,
+						Description: "destination type : must be cloudwatch-logs.\n" +
+							"Refer: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html",
+						Type:     schema.TypeString,
+						Required: true,
 						ValidateFunc: validation.StringInSlice([]string{
 							duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS,
-							duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE,
 						}, false),
 					},
 					"log_format": {
-						Type:     schema.TypeString,
-						Required: true,
+						Type:        schema.TypeString,
+						Description: "log_format: Value must be one of the ['json', 'text']",
+						Required:    true,
 						ValidateFunc: validation.StringInSlice([]string{
 							duplosdk.REDIS_LOG_DELIVERY_LOG_FORMAT_JSON,
 							duplosdk.REDIS_LOG_DELIVERY_LOG_FORMAT_TEXT,
 						}, true),
 					},
 					"log_type": {
-						Type:     schema.TypeString,
-						Required: true,
+						Type:        schema.TypeString,
+						Description: "log_format: Value must be one of the ['slow-log', 'engine-log']",
+						Required:    true,
 						ValidateFunc: validation.StringInSlice([]string{
 							duplosdk.REDIS_LOG_DELIVERY_LOG_TYPE_SLOW_LOG,
 							duplosdk.REDIS_LOG_DELIVERY_LOG_TYPE_ENGINE_LOG,
 						}, false),
 					},
 					"log_group": {
-						Description: "provide log_group for destination_type = cloudwatch-logs",
-						Type:        schema.TypeString,
-						Optional:    true,
-					},
-					"delivery_stream": {
-						Description: "provide delivery_stream for destination_type = kinesis-firehose",
+						Description: "cloudwatch log_group",
 						Type:        schema.TypeString,
 						Optional:    true,
 					},
@@ -307,6 +304,11 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 		return diag.Errorf("log_delivery_configuration can not be used with engine_version '%s', Please use engine_version '6.2.0' or above.", duplo.EngineVersion)
 	}
 
+	logType := getDuplicateLogTypeIfExists(*duplo.LogDeliveryConfigurations)
+	if logType != "" {
+		return diag.Errorf("log_delivery_configuration: Duplicate LogType found %s", logType)
+	}
+
 	if duplo.Replicas < 2 && duplo.AutomaticFailoverEnabled {
 		return diag.Errorf("Invalid automatic_failover_enabled '%s': To enable automatic failover, replicas must be 2 or more", id)
 	}
@@ -337,6 +339,20 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	diags = resourceDuploEcacheInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s, %s): end", tenantID, duplo.Name)
 	return diags
+}
+
+func getDuplicateLogTypeIfExists(configs []duplosdk.LogDeliveryConfigurationRequest) string {
+	if len(configs) == 0 {
+		return ""
+	}
+	seen := make(map[string]bool)
+	for _, config := range configs {
+		if _, exists := seen[config.LogType]; exists {
+			return config.LogType // Duplicate found
+		}
+		seen[config.LogType] = true
+	}
+	return ""
 }
 
 // DELETE resource
