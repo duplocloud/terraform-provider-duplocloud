@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -129,7 +130,8 @@ func resourceAzureK8NodePool() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAgentK8NodePoolSchema(),
+		Schema:        duploAgentK8NodePoolSchema(),
+		CustomizeDiff: validateScalePriorityAttribute,
 	}
 }
 
@@ -338,4 +340,14 @@ func azureK8NodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tena
 	log.Printf("[DEBUG] azureK8NodePoolWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func validateScalePriorityAttribute(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	scalePriority := diff.Get("scale_priority").([]interface{})
+	mp := scalePriority[0].(map[string]interface{})
+	if mp["priority"].(string) == "Regular" && mp["spot_max_price"].(string) != "" {
+		return errors.New("Scale Priority of type Regular does not support Spot max price")
+	}
+
+	return nil
 }
