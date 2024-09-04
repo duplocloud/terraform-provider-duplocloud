@@ -1,3 +1,8 @@
+## 2024-09-04
+
+### Enhanced
+- Implemented validation to ensure `eviction_policy` and `spot_max_price` are not set for `Regular` priority type in `duplocloud_azure_k8_node_pool` resource, enhancing error handling during the plan phase.
+
 
 ## 2024-08-26
 
