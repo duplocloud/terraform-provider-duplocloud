@@ -1,3 +1,8 @@
+## 2024-09-04
+
+### Enhanced
+- Implemented validation to ensure `spot_max_price` is not set when `scale_priority` is `Regular` in Azure Kubernetes Node Pool configurations, enhancing error handling during the plan phase.
+
 
 ## 2024-08-26
 
