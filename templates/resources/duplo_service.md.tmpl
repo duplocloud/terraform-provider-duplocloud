@@ -17,7 +17,7 @@ resource "duplocloud_infrastructure" "infra" {
   infra_name        = "dev"
   cloud             = 0 # AWS Cloud
   region            = "us-east-1"
-  enable_k8_cluster = false
+  enable_k8_cluster = true
   address_prefix    = "10.13.0.0/16"
 }
 
@@ -25,6 +25,25 @@ resource "duplocloud_infrastructure" "infra" {
 resource "duplocloud_tenant" "tenant" {
  account_name = "dev"
  plan_id      = duplocloud_infrastructure.infra.infra_name
+}
+
+# You will need a DuploCloud host to launch the Duplo service, so create a host using following resource configuration.
+
+data "duplocloud_native_host_image" "image" {
+  tenant_id     = duplocloud_tenant.tenant.tenant_id
+  is_kubernetes = true
+}
+
+resource "duplocloud_aws_host" "host" {
+  tenant_id     = duplocloud_tenant.tenant.tenant_id
+  friendly_name = "host01"
+
+  image_id       = data.duplocloud_native_host_image.image.image_id # get the image_id from the data source
+  capacity       = "t3a.small"
+  agent_platform = 7 # Duplo EKS container agent
+  zone           = 0 # Zone A
+  user_account   = duplocloud_tenant.tenant.account_name
+  keypair_type   = 1
 }
 
 resource "duplocloud_duplo_service" "myservice" {

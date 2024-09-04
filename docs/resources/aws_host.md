@@ -72,7 +72,7 @@ data "duplocloud_native_host_image" "image" {
   is_kubernetes = true
 }
 
-resource "duplocloud_aws_host" "native" {
+resource "duplocloud_aws_host" "host" {
   tenant_id     = duplocloud_tenant.tenant.tenant_id
   friendly_name = "host02"
 
