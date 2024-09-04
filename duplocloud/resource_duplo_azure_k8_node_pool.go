@@ -88,7 +88,7 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 						}, false),
 					},
 					"eviction_policy": {
-						Description: "eviction policies Delete/Deallocate",
+						Description: "eviction policies Delete/Deallocate. Default value is Delete",
 						Optional:    true,
 						Computed:    true,
 						Type:        schema.TypeString,
@@ -350,6 +350,18 @@ func validateScalePriorityAttribute(ctx context.Context, diff *schema.ResourceDi
 	}
 	if mp["priority"].(string) == "Regular" && mp["eviction_policy"].(string) != "" {
 		return errors.New("Scale Priority of type Regular does not support Eviction Policy")
+	}
+	if mp["priority"].(string) == "Spot" && mp["eviction_policy"].(string) == "" {
+		smp := make(map[string]interface{})
+		smp["eviction_policy"] = "Delete"
+		smp["priority"] = "Spot"
+		smp["spot_max_price"] = mp["spot_max_price"]
+		p := make([]interface{}, 1, 1)
+		p = append(p, smp)
+		err := diff.SetNew("scale_priority", p)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
