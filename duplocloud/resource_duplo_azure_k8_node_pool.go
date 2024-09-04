@@ -348,6 +348,9 @@ func validateScalePriorityAttribute(ctx context.Context, diff *schema.ResourceDi
 	if mp["priority"].(string) == "Regular" && mp["spot_max_price"].(string) != "" {
 		return errors.New("Scale Priority of type Regular does not support Spot max price")
 	}
+	if mp["priority"].(string) == "Regular" && mp["eviction_policy"].(string) != "" {
+		return errors.New("Scale Priority of type Regular does not support Eviction Policy")
+	}
 
 	return nil
 }
