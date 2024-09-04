@@ -1,6 +1,11 @@
 ## 2024-09-04
 
 ### Enhanced
+- Updated `spot_max_price` data type to float and added validation to ensure it is at least 0.00001 in `duplocloud_azure_k8_node_pool` resource.
+
+## 2024-09-04
+
+### Enhanced
 - Set default value for `eviction_policy` to "Delete" for Spot priority in `duplocloud_azure_k8_node_pool` resource.
 - Added custom diff validator to ensure proper handling of `scale_priority` attributes, preventing unsupported configurations.
 
