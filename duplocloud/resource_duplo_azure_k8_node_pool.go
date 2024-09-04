@@ -85,6 +85,7 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 							"Regular",
 							"Spot",
 						}, false),
+						ForceNew: true,
 					},
 					"eviction_policy": {
 						Description: "eviction policies Delete/Deallocate",
