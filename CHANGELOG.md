@@ -1,3 +1,9 @@
+## 2024-09-04
+
+### Enhanced
+- Set default value for `eviction_policy` to "Delete" for Spot priority in `duplocloud_azure_k8_node_pool` resource.
+- Added custom diff validator to ensure proper handling of `scale_priority` attributes, preventing unsupported configurations.
+
 
 ## 2024-08-26
 
