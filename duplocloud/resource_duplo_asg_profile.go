@@ -92,7 +92,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	}
 
 	awsASGSchema["enabled_metrics"] = &schema.Schema{
-		Description: "List of metrics to collect for the ASG Specify one or more of the following metrics.`GroupMinSize`,`GroupMaxSize`,`GroupDesiredCapacity`,`GroupInServiceInstances`,`GroupPendingInstances`,`GroupStandbyInstances`,`GroupTerminatingInstances`,`GroupTotalInstances`,`GroupInServiceCapacity`,`GroupPendingCapacity`,`GroupStandbyCapacity`,`GroupTerminatingCapacity`,`GroupTotalCapacity`,`WarmPoolDesiredCapacity`,`WarmPoolWarmedCapacity`,`WarmPoolPendingCapacity`,`WarmPoolTerminatingCapacity`,`WarmPoolTotalCapacity`,`GroupAndWarmPoolDesiredCapacity`,`GroupAndWarmPoolTotalCapacity`",
+		Description: "List of metrics to collect for the ASG Specify one or more of the following metrics.`GroupMinSize`,`GroupMaxSize`,`GroupDesiredCapacity`,`GroupInServiceInstances`,`GroupPendingInstances`,`GroupStandbyInstances`,`GroupTerminatingInstances`,`GroupTotalInstances`,`GroupInServiceCapacity`,`GroupPendingCapacity`,`GroupStandbyCapacity`,`GroupTerminatingCapacity`,`GroupTotalCapacity`,`WarmPoolDesiredCapacity`,`WarmPoolWarmedCapacity`,`WarmPoolPendingCapacity`,`WarmPoolTerminatingCapacity`,`WarmPoolTotalCapacity`,`GroupAndWarmPoolDesiredCapacity`,`GroupAndWarmPoolTotalCapacity`.",
 		Type:        schema.TypeList,
 		Optional:    true,
 		Elem: &schema.Schema{
@@ -420,6 +420,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		MaxSize:             d.Get("max_instance_count").(int),
 		UseSpotInstances:    d.Get("use_spot_instances").(bool),
 		MaxSpotPrice:        d.Get("max_spot_price").(string),
+		ExtraNodeLabels:     keyValueFromMap(d.Get("custom_node_labels").(map[string]interface{})),
 	}
 
 	if v, ok := d.GetOk("enabled_metrics"); ok && len(v.([]interface{})) > 0 {

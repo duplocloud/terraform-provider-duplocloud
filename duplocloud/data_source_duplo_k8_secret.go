@@ -26,6 +26,9 @@ func k8sSecretSchemaComputed() map[string]*schema.Schema {
 			//nolint:staticcheck // even though it is deprecated, we still must nil it
 			v.ValidateFunc = nil
 		}
+		if k == "secret_data" {
+			v.Sensitive = true
+		}
 	}
 
 	return schema

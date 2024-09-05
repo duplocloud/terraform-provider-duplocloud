@@ -255,6 +255,14 @@ func nativeHostSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"custom_node_labels": {
+			Description:      "Specify the labels to attach to the nodes.",
+			Type:             schema.TypeMap,
+			Optional:         true,
+			Computed:         true,
+			Elem:             &schema.Schema{Type: schema.TypeString},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
 	}
 }
 
@@ -545,6 +553,7 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		MinionTags:        keyValueFromState("minion_tags", d),
 		Volumes:           expandNativeHostVolumes("volume", d),
 		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
+		ExtraNodeLabels:   keyValueFromMap(d.Get("custom_node_labels").(map[string]interface{})),
 	}
 }
 

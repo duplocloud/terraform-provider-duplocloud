@@ -37,6 +37,7 @@ resource "duplocloud_rds_instance" "mydb" {
 
   encrypt_storage         = true
   backup_retention_period = 1
+  availability_zone       = "us-west-2a"
 }
 
 
@@ -54,6 +55,28 @@ resource "duplocloud_rds_instance" "aurora-mydb" {
 
   encrypt_storage         = true
   backup_retention_period = 1
+}
+
+//performance insights example
+resource "duplocloud_rds_instance" "mydb" {
+  tenant_id      = "5d3171c2-0fbc-4195-bb5e-05cd757ef786"
+  name           = "mydb1psql"
+  engine         = 1 // PostgreSQL
+  engine_version = "14.11"
+  size           = "db.t3.micro"
+
+  master_username = "myuser"
+  master_password = "Qaazwedd#1"
+
+  encrypt_storage                 = true
+  store_details_in_secret_manager = true
+  enhanced_monitoring             = 0
+  storage_type                    = "gp2"
+  # parameter_group_name = "psql-group"
+  performance_insights {
+    enable           = false
+    retention_period = 7
+  }
 }
 ```
 
@@ -85,6 +108,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 ### Optional
 
 - `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
+- `availability_zone` (String) Specify a valid Availability Zone for the RDS primary instance (when Multi-AZ is disabled) or for the Aurora writer instance. e.g. us-west-2a
 - `backup_retention_period` (Number) Specifies backup retention period between 1 and 35 day(s). Default backup retention period is 1 day. Defaults to `1`.
 - `cluster_parameter_group_name` (String) Parameter group associated with this instance's DB Cluster.
 - `db_name` (String) The name of the database to create when the DB instance is created. This is not applicable for update.
@@ -102,6 +126,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 - `master_username` (String) The master username of the RDS instance.
 - `multi_az` (Boolean) Specifies if the RDS instance is multi-AZ.
 - `parameter_group_name` (String) A RDS parameter group name to apply to the RDS instance.
+- `performance_insights` (Block List, Max: 1) Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. Not applicable for Cluster Db (see [below for nested schema](#nestedblock--performance_insights))
 - `skip_final_snapshot` (Boolean) If the final snapshot should be taken. When set to true, the final snapshot will not be taken when the resource is deleted. Defaults to `false`.
 - `snapshot_id` (String) A database snapshot to initialize the RDS instance from, at launch.
 - `storage_type` (String) Valid values: gp2 | gp3 | io1 | standard | aurora. Storage type to be used for RDS instance storage.
@@ -119,6 +144,16 @@ If you don't know the available engine versions for your RDS instance, you can u
 - `identifier` (String) The full name of the RDS instance.
 - `instance_status` (String) The current status of the RDS instance.
 - `port` (Number) The listening port of the RDS instance.
+
+<a id="nestedblock--performance_insights"></a>
+### Nested Schema for `performance_insights`
+
+Optional:
+
+- `enable` (Boolean) Enable or Disable Performance Insights Defaults to `false`.
+- `kms_key_id` (String) Specify ARN for the KMS key to encrypt Performance Insights data.
+- `retention_period` (Number) Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
