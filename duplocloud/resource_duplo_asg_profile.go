@@ -420,6 +420,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		MaxSize:             d.Get("max_instance_count").(int),
 		UseSpotInstances:    d.Get("use_spot_instances").(bool),
 		MaxSpotPrice:        d.Get("max_spot_price").(string),
+		ExtraNodeLabels:     keyValueFromMap(d.Get("custom_node_labels").(map[string]interface{})),
 	}
 
 	if v, ok := d.GetOk("enabled_metrics"); ok && len(v.([]interface{})) > 0 {
