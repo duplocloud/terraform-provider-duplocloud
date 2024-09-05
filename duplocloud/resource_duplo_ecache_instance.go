@@ -213,7 +213,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 					},
 					"log_type": {
 						Type:        schema.TypeString,
-						Description: "log_format: Value must be one of the ['slow-log', 'engine-log']",
+						Description: "log_type: Value must be one of the ['slow-log', 'engine-log']",
 						Required:    true,
 						ValidateFunc: validation.StringInSlice([]string{
 							duplosdk.REDIS_LOG_DELIVERY_LOG_TYPE_SLOW_LOG,
