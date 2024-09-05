@@ -1,6 +1,11 @@
 ## 2024-09-05
 
 ### Enhanced
+- Added validation to the `enabled_metrics` attribute in the Auto Scaling Group profile to ensure only specified metrics are allowed, improving configuration accuracy.
+
+## 2024-09-05
+
+### Enhanced
 - Improved log delivery configuration with updated documentation and validation to prevent duplicate log types.
 - Implemented version checks for log types to ensure compatibility with specified engine versions.
 
