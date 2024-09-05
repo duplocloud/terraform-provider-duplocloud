@@ -4,6 +4,11 @@
 - Improved logging for AWS SSM parameters to securely handle sensitive data by masking values for `SecureString` type.
 - Added `ForceNew` to the `eviction_policy` attribute in Azure K8s node pool resources to ensure proper resource replacement when the policy changes.
 
+## 2024-09-05
+
+### Enhanced
+- Improved log delivery configuration with updated documentation and validation to prevent duplicate log types.
+- Implemented version checks for log types to ensure compatibility with specified engine versions.
 
 ## 2024-08-26
 
