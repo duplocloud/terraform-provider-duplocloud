@@ -29,9 +29,14 @@
 
 ### Enhanced
 - Implemented a diff suppression function for Kubernetes secrets to handle JSON objects as string key-value pairs, improving accuracy in change detection.
+- Improved descriptions for `duplocloud_ecache_instance`, `duplocloud_rds_instance`, and `duplocloud_duplo_service` resources.
+- Updated documentation for ElastiCache, RDS, S3 bucket, and tenant resources with detailed examples and usage instructions.
+- Added new templates for resource documentation, including structured examples and import instructions.
+- Clarified cloud provider codes in infrastructure documentation and templates.
 
 ### Fixed
 - Added a nil check in SSM parameter reading to prevent potential nil pointer exceptions, enhancing stability.
+
 
 ## 2024-08-26
 

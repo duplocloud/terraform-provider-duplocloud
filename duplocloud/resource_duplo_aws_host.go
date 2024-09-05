@@ -298,7 +298,7 @@ func resourceAwsHost() *schema.Resource {
 	}
 
 	return &schema.Resource{
-		Description: "`duplocloud_aws_host` manages a native AWS host in Duplo.",
+		Description: "The duplocloud_aws_host represents an AWS resource, such as an EC2 instance, that is managed and automated through DuploCloud. It provides seamless integration and governance within AWS, enabling efficient deployment, management, and scaling of cloud infrastructure through DuploCloud’s platform.",
 
 		ReadContext:   resourceAwsHostRead,
 		CreateContext: resourceAwsHostCreate,
