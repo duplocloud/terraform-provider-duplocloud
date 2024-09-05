@@ -360,6 +360,9 @@ func azureK8NodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tena
 
 func validateScalePriorityAttribute(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
 	scalePriority := diff.Get("scale_priority").([]interface{})
+	if len(scalePriority) == 0 {
+		return nil
+	}
 	mp := scalePriority[0].(map[string]interface{})
 	if mp["priority"].(string) == "Regular" && mp["spot_max_price"].(float64) != 0 {
 		return errors.New("Scale Priority of type Regular does not support Spot max price")
