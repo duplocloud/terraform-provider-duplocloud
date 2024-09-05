@@ -1,3 +1,9 @@
+## 2024-09-05
+
+### Enhanced
+- Improved log delivery configuration with updated documentation and validation to prevent duplicate log types.
+- Implemented version checks for log types to ensure compatibility with specified engine versions.
+
 
 ## 2024-08-26
 
