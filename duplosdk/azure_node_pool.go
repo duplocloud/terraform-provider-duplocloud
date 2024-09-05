@@ -15,6 +15,7 @@ type DuploAzureK8NodePoolRequest struct {
 	ScaleSetPriority       string                 `json:"ScaleSetPriority,omitempty"`
 	ScaleSetEvictionPolicy string                 `json:"ScaleSetEvictionPolicy,omitempty"`
 	SpotMaxPrice           float32                `json:"SpotMaxPrice,omitempty"`
+	AvailabilityZones      []string               `json:"AvailabilityZones,omitempty"`
 }
 
 type DuploAzureK8NodePoolDeleteRequest struct {
@@ -50,6 +51,7 @@ type DuploAzureK8NodePool struct {
 	ScaleSetPriority       string        `json:"ScaleSetPriority,omitempty"`
 	ScaleSetEvictionPolicy string        `json:"ScaleSetEvictionPolicy,omitempty"`
 	SpotMaxPrice           float32       `json:"SpotMaxPrice,omitempty"`
+	AvailabilityZones      []string      `json:"AvailabilityZones,omitempty"`
 }
 
 func (c *Client) AzureK8NodePoolCreate(tenantID string, rq *DuploAzureK8NodePoolRequest) (*string, ClientError) {
