@@ -59,7 +59,7 @@ resource "duplocloud_rds_instance" "mydb" {
   storage_type                    = "gp2"
   # parameter_group_name = "psql-group"
   performance_insights {
-    enable           = false
+    enabled          = false
     retention_period = 7
   }
 }
