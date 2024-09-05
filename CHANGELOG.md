@@ -1,5 +1,10 @@
 ## 2024-09-05
 
+### Enhanced
+- Renamed the `enable` field to `enabled` in the RDS instance schema and related logic, improving consistency in configuration.
+
+## 2024-09-05
+
 ### Fixed
 - Resolved a regression issue in `duplocloud_azure_k8_node_pool` by adding a length check for the `scale_priority` slice to prevent crashes when the scale set priority is not specified.
 
