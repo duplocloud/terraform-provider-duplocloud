@@ -1,9 +1,13 @@
+## 2024-09-04
+
+### Enhanced
+- Updated `duplocloud_azure_k8_node_pool` resource to enforce recreation when the `priority` attribute is modified, improving resource management.
+
 ## 2024-09-05
 
 ### Enhanced
 - Improved log delivery configuration with updated documentation and validation to prevent duplicate log types.
 - Implemented version checks for log types to ensure compatibility with specified engine versions.
-
 
 ## 2024-08-26
 
