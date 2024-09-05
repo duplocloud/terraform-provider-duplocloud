@@ -106,6 +106,13 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			Default:     false,
 		},
+		"automatic_failover_enabled": {
+			Description: "Enables automatic failover.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true,
+			Default:     false,
+		},
 		"encryption_in_transit": {
 			Description: "Enables encryption-in-transit.",
 			Type:        schema.TypeBool,
@@ -179,6 +186,48 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Computed:     true,
 			ValidateFunc: validation.IntBetween(1, 35),
 		},
+		"log_delivery_configuration": {
+			Type:     schema.TypeSet,
+			MaxItems: 2,
+			Optional: true,
+			ForceNew: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"destination_type": {
+						Description: "destination type : must be cloudwatch-logs.\n" +
+							"Refer: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html",
+						Type:     schema.TypeString,
+						Required: true,
+						ValidateFunc: validation.StringInSlice([]string{
+							duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS,
+						}, false),
+					},
+					"log_format": {
+						Type:        schema.TypeString,
+						Description: "log_format: Value must be one of the ['json', 'text']",
+						Required:    true,
+						ValidateFunc: validation.StringInSlice([]string{
+							duplosdk.REDIS_LOG_DELIVERY_LOG_FORMAT_JSON,
+							duplosdk.REDIS_LOG_DELIVERY_LOG_FORMAT_TEXT,
+						}, true),
+					},
+					"log_type": {
+						Type:        schema.TypeString,
+						Description: "log_type: Value must be one of the ['slow-log', 'engine-log']",
+						Required:    true,
+						ValidateFunc: validation.StringInSlice([]string{
+							duplosdk.REDIS_LOG_DELIVERY_LOG_TYPE_SLOW_LOG,
+							duplosdk.REDIS_LOG_DELIVERY_LOG_TYPE_ENGINE_LOG,
+						}, false),
+					},
+					"log_group": {
+						Description: "cloudwatch log_group",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -194,7 +243,7 @@ func resourceDuploEcacheInstance() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(15 * time.Minute),
+			Create: schema.DefaultTimeout(29 * time.Minute),
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
@@ -236,22 +285,32 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
-
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s): start", tenantID)
 
-	duplo := expandEcacheInstance(d)
+	duplo, diagErr := expandEcacheInstance(d)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	duplo.Identifier = duplo.Name
 	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duplo.Name)
 
 	// Perform additional validation.
-	if duplo.EncryptionInTransit {
-		if duplo.AuthToken == "" {
-			return diag.Errorf("Invalid ECache instance '%s': an 'auth_token' is required when 'encryption_in_transit' is true", id)
-		}
-	} else {
-		if duplo.AuthToken != "" {
-			return diag.Errorf("Invalid ECache instance '%s': an 'auth_token' must not be specified when 'encryption_in_transit' is false", id)
-		}
+	if !duplo.EncryptionInTransit && duplo.AuthToken != "" {
+		return diag.Errorf("Invalid ECache instance '%s': 'auth_token' must not be specified when 'encryption_in_transit' is false", id)
+	}
+
+	if duplicateLogType, found := hasDuplicateLogTypes(*duplo.LogDeliveryConfigurations); found {
+		return diag.Errorf("log_delivery_configuration: Duplicate log_type are not allowed. Found '%s' log_type repeated.", duplicateLogType)
+	}
+
+	errDiag := validateLogDeliveryConfigurations(duplo.EngineVersion, *duplo.LogDeliveryConfigurations)
+	if errDiag != nil {
+		return errDiag
+	}
+
+	if duplo.Replicas < 2 && duplo.AutomaticFailoverEnabled {
+		return diag.Errorf("Invalid automatic_failover_enabled '%s': To enable automatic failover, replicas must be 2 or more", id)
 	}
 
 	// Post the object to Duplo
@@ -276,9 +335,44 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 		return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
 	}
 
+	// Read the resource state
 	diags = resourceDuploEcacheInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s, %s): end", tenantID, duplo.Name)
 	return diags
+}
+
+func validateLogDeliveryConfigurations(engineVersion string, configs []duplosdk.LogDeliveryConfigurationRequest) diag.Diagnostics {
+	if engineVersion == "" || len(configs) == 0 {
+		return nil
+	}
+	for _, config := range configs {
+		switch config.LogType {
+		case "engine-log":
+			if !duplosdk.IsAppVersionEqualOrGreater(engineVersion, "6.2.0") {
+				return diag.Errorf("log_delivery_configuration with log_type 'engine-log' cannot be used with engine_version '%s'. Please use engine_version '6.2.0' or above.", engineVersion)
+			}
+		case "slow-log":
+			if !duplosdk.IsAppVersionEqualOrGreater(engineVersion, "6.0.0") {
+				return diag.Errorf("log_delivery_configuration with log_type 'slow-log' cannot be used with engine_version '%s'. Please use engine_version '6.0.0' or above.", engineVersion)
+			}
+		default:
+			return nil
+		}
+	}
+	return nil
+}
+
+func hasDuplicateLogTypes(configs []duplosdk.LogDeliveryConfigurationRequest) (string, bool) {
+	seen := make(map[string]bool)
+
+	for _, config := range configs {
+		if _, exists := seen[config.LogType]; exists {
+			return config.LogType, true // Duplicate found
+		}
+		seen[config.LogType] = true
+	}
+
+	return "", false // No duplicates
 }
 
 // DELETE resource
@@ -317,25 +411,140 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
  * DATA CONVERSIONS to/from duplo/terraform
  */
 
-// expandEcacheInstance converts resource data respresenting an ECache instance to a Duplo SDK object.
-func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance {
-	data := &duplosdk.DuploEcacheInstance{
-		Name:                   d.Get("name").(string),
-		Identifier:             d.Get("identifier").(string),
-		Arn:                    d.Get("arn").(string),
-		Endpoint:               d.Get("endpoint").(string),
-		CacheType:              d.Get("cache_type").(int),
-		EngineVersion:          d.Get("engine_version").(string),
-		Size:                   d.Get("size").(string),
-		Replicas:               d.Get("replicas").(int),
-		EncryptionAtRest:       d.Get("encryption_at_rest").(bool),
-		EncryptionInTransit:    d.Get("encryption_in_transit").(bool),
-		AuthToken:              d.Get("auth_token").(string),
-		InstanceStatus:         d.Get("instance_status").(string),
-		KMSKeyID:               d.Get("kms_key_id").(string),
-		ParameterGroupName:     d.Get("parameter_group_name").(string),
-		SnapshotName:           d.Get("snapshot_name").(string),
-		SnapshotRetentionLimit: d.Get("snapshot_retention_limit").(int),
+func expandLogDeliveryConfigurations(s []interface{}) ([]duplosdk.LogDeliveryConfigurationRequest, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if len(s) == 0 {
+		return nil, diags
+	}
+
+	items := make([]duplosdk.LogDeliveryConfigurationRequest, 0, len(s))
+	for _, i := range s {
+		itemMap, ok := i.(map[string]interface{})
+		if !ok {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Type assertion failed",
+				Detail:   "Expected map[string]interface{} but got something else",
+			})
+			continue
+		}
+		item, diagErr := expandLogDeliveryConfiguration(itemMap)
+		if diagErr != nil {
+			diags = append(diags, diagErr...)
+			continue
+		}
+		items = append(items, *item)
+	}
+	return items, diags
+}
+
+func expandLogDeliveryConfiguration(logDelConfig map[string]interface{}) (*duplosdk.LogDeliveryConfigurationRequest, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if err := validateLogDeliveryConfiguration(logDelConfig); err != nil {
+		diags = append(diags, err...)
+		return nil, diags
+	}
+
+	duplo := &duplosdk.LogDeliveryConfigurationRequest{
+		DestinationType: logDelConfig["destination_type"].(string),
+		LogFormat:       logDelConfig["log_format"].(string),
+		LogType:         logDelConfig["log_type"].(string),
+	}
+
+	switch duplo.DestinationType {
+	case duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS:
+		cloudwatch := &duplosdk.CloudWatchLogsDestinationDetails{
+			LogGroup: logDelConfig["log_group"].(string),
+		}
+		duplo.DestinationDetails = &duplosdk.DestinationDetails{
+			CloudWatchLogsDetails: cloudwatch,
+		}
+	case duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE:
+		firhose := &duplosdk.KinesisFirehoseDetails{
+			DeliveryStream: logDelConfig["delivery_stream"].(string),
+		}
+		duplo.DestinationDetails = &duplosdk.DestinationDetails{
+			KinesisFirehoseDetails: firhose,
+		}
+	default:
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unsupported destination type",
+			Detail:   "Unsupported destination_type: " + duplo.DestinationType,
+		})
+	}
+
+	return duplo, diags
+}
+
+func validateLogDeliveryConfiguration(m map[string]interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	destinationType, ok := m["destination_type"].(string)
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Invalid destination_type",
+			Detail:   "destination_type must be a string",
+		})
+		return diags
+	}
+
+	if destinationType == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS {
+		if logGroup, ok := m["log_group"].(string); !ok || logGroup == "" {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Missing log_group",
+				Detail:   "log_group must be defined for destination_type=" + duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS,
+			})
+		}
+	}
+
+	if destinationType == duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE {
+		if deliveryStream, ok := m["delivery_stream"].(string); !ok || deliveryStream == "" {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Missing delivery_stream",
+				Detail:   "delivery_stream must be defined for destination_type=" + duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE,
+			})
+		}
+	}
+
+	return diags
+}
+
+// expand Ecache Instance converts resource data respresenting an ECache instance to a Duplo SDK object.
+func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInstanceRequest, diag.Diagnostics) {
+	data := &duplosdk.AddDuploEcacheInstanceRequest{
+		DuploEcacheInstance: duplosdk.DuploEcacheInstance{
+			Name:                     d.Get("name").(string),
+			Identifier:               d.Get("identifier").(string),
+			Arn:                      d.Get("arn").(string),
+			Endpoint:                 d.Get("endpoint").(string),
+			CacheType:                d.Get("cache_type").(int),
+			EngineVersion:            d.Get("engine_version").(string),
+			Size:                     d.Get("size").(string),
+			Replicas:                 d.Get("replicas").(int),
+			EncryptionAtRest:         d.Get("encryption_at_rest").(bool),
+			EncryptionInTransit:      d.Get("encryption_in_transit").(bool),
+			AuthToken:                d.Get("auth_token").(string),
+			InstanceStatus:           d.Get("instance_status").(string),
+			KMSKeyID:                 d.Get("kms_key_id").(string),
+			ParameterGroupName:       d.Get("parameter_group_name").(string),
+			SnapshotName:             d.Get("snapshot_name").(string),
+			SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
+			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
+		},
+	}
+	if ds, ok := d.Get("log_delivery_configuration").(*schema.Set); ok {
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceCreate log_delivery_configuration found count: %d", len(ds.List()))
+		logDelConfig, diagErr := expandLogDeliveryConfigurations(ds.List())
+		if diagErr != nil {
+			return nil, diagErr
+		}
+		data.LogDeliveryConfigurations = &logDelConfig
 	}
 
 	for _, val := range d.Get("snapshot_arns").([]interface{}) {
@@ -353,7 +562,7 @@ func expandEcacheInstance(d *schema.ResourceData) *duplosdk.DuploEcacheInstance 
 			data.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
 		}
 	}
-	return data
+	return data, nil
 }
 
 // flattenEcacheInstance converts a Duplo SDK object respresenting an ECache instance to terraform resource data.
@@ -386,6 +595,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_name", duplo.SnapshotName)
 	d.Set("snapshot_arns", duplo.SnapshotArns)
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
+	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.

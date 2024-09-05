@@ -19,13 +19,30 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 resource "duplocloud_ecache_instance" "mycache" {
-  tenant_id           = duplocloud_tenant.myapp.tenant_id
-  name                = "mycache"
-  cache_type          = 0 // Redis
-  replicas            = 1
-  size                = "cache.t2.small"
-  enable_cluster_mode = true // applicable only for redis
-  number_of_shards    = 1    // applicable only for redis
+  tenant_id                  = duplocloud_tenant.myapp.tenant_id
+  name                       = "mycache"
+  cache_type                 = 0 // Redis
+  replicas                   = 1
+  size                       = "cache.t2.small"
+  enable_cluster_mode        = true  // applicable only for redis
+  number_of_shards           = 1     // applicable only for redis
+  automatic_failover_enabled = false // enable auto failover, set replicas to 2 or more
+  engine_version             = var.engine_version
+
+  log_delivery_configuration {
+    log_group        = "/elasticache/redis"
+    destination_type = "cloudwatch-logs"
+    log_format       = "text"
+    log_type         = "slow-log"
+  }
+
+  log_delivery_configuration {
+    log_group        = "/elasticache/redis"
+    destination_type = "cloudwatch-logs"
+    log_format       = "json"
+    log_type         = "engine-log"
+  }
+
 }
 ```
 
@@ -44,6 +61,7 @@ See AWS documentation for the [available instance types](https://docs.aws.amazon
 - `auth_token` (String) Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.
 
 See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.
+- `automatic_failover_enabled` (Boolean) Enables automatic failover. Defaults to `false`.
 - `cache_type` (Number) The numerical index of elasticache instance type.
 Should be one of:
 
@@ -57,6 +75,7 @@ Should be one of:
 - `engine_version` (String) The engine version of the elastic instance.
 See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).
 - `kms_key_id` (String) The globally unique identifier for the key.
+- `log_delivery_configuration` (Block Set, Max: 2) (see [below for nested schema](#nestedblock--log_delivery_configuration))
 - `number_of_shards` (Number) The number of shards to create.
 - `parameter_group_name` (String) The REDIS parameter group to supply.
 - `replicas` (Number) The number of replicas to create. Defaults to `1`.
@@ -74,6 +93,21 @@ See AWS documentation for the [available Redis instance types](https://docs.aws.
 - `identifier` (String) The full name of the elasticache instance.
 - `instance_status` (String) The status of the elasticache instance.
 - `port` (Number) The listening port of the elasticache instance.
+
+<a id="nestedblock--log_delivery_configuration"></a>
+### Nested Schema for `log_delivery_configuration`
+
+Required:
+
+- `destination_type` (String) destination type : must be cloudwatch-logs.
+Refer: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html
+- `log_format` (String) log_format: Value must be one of the ['json', 'text']
+- `log_type` (String) log_type: Value must be one of the ['slow-log', 'engine-log']
+
+Optional:
+
+- `log_group` (String) cloudwatch log_group
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
