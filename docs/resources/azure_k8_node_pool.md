@@ -81,9 +81,9 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 
 Optional:
 
-- `eviction_policy` (String) eviction policies Delete/Deallocate
+- `eviction_policy` (String) eviction policies Delete/Deallocate. Default value is Delete
 - `priority` (String) priority levels Regular/Spot
-- `spot_max_price` (String) for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.
+- `spot_max_price` (Number) for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.
 
 
 <a id="nestedblock--timeouts"></a>
