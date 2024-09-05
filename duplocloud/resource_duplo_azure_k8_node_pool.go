@@ -86,9 +86,10 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 							"Regular",
 							"Spot",
 						}, false),
+						ForceNew: true,
 					},
 					"eviction_policy": {
-						Description: "eviction policies Delete/Deallocate",
+						Description: "eviction policies Delete/Deallocate. Default value is Delete",
 						Optional:    true,
 						Computed:    true,
 						Type:        schema.TypeString,
@@ -96,12 +97,14 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 							"Delete",
 							"Deallocate",
 						}, false),
+						ForceNew: true,
 					},
 					"spot_max_price": {
-						Description: " for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.",
-						Optional:    true,
-						Computed:    true,
-						Type:        schema.TypeString,
+						Description:  " for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.",
+						Optional:     true,
+						Computed:     true,
+						Type:         schema.TypeFloat,
+						ValidateFunc: validation.FloatAtLeast(0.00001),
 					},
 				},
 			},
@@ -262,13 +265,9 @@ func expandAgentK8NodePool(d *schema.ResourceData) (*duplosdk.DuploAzureK8NodePo
 				data := mp.(map[string]interface{})
 				nodePool.ScaleSetPriority = data["priority"].(string)
 				nodePool.ScaleSetEvictionPolicy = data["eviction_policy"].(string)
-				spotPrice := data["spot_max_price"].(string)
-				if spotPrice != "" {
-					price, err := strconv.ParseFloat(spotPrice, 32)
-					if err != nil {
-						return nil, err
-					}
-					nodePool.SpotMaxPrice = float32(price)
+				spotPrice := data["spot_max_price"].(float64)
+				if spotPrice > 0 {
+					nodePool.SpotMaxPrice = float32(spotPrice)
 				}
 			}
 		}
@@ -345,8 +344,23 @@ func azureK8NodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tena
 func validateScalePriorityAttribute(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
 	scalePriority := diff.Get("scale_priority").([]interface{})
 	mp := scalePriority[0].(map[string]interface{})
-	if mp["priority"].(string) == "Regular" && mp["spot_max_price"].(string) != "" {
+	if mp["priority"].(string) == "Regular" && mp["spot_max_price"].(float64) != 0 {
 		return errors.New("Scale Priority of type Regular does not support Spot max price")
+	}
+	if mp["priority"].(string) == "Regular" && mp["eviction_policy"].(string) != "" {
+		return errors.New("Scale Priority of type Regular does not support Eviction Policy")
+	}
+	if mp["priority"].(string) == "Spot" && mp["eviction_policy"].(string) == "" {
+		smp := make(map[string]interface{})
+		smp["eviction_policy"] = "Delete"
+		smp["priority"] = "Spot"
+		smp["spot_max_price"] = mp["spot_max_price"]
+		p := make([]interface{}, 1)
+		p = append(p, smp)
+		err := diff.SetNew("scale_priority", p)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
