@@ -300,13 +300,13 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 		return diag.Errorf("Invalid ECache instance '%s': 'auth_token' must not be specified when 'encryption_in_transit' is false", id)
 	}
 
-	if len(*duplo.LogDeliveryConfigurations) > 0 && !duplosdk.IsAppVersionEqualOrGreater(duplo.EngineVersion, "6.2.0") {
-		return diag.Errorf("log_delivery_configuration can not be used with engine_version '%s', Please use engine_version '6.2.0' or above.", duplo.EngineVersion)
+	if duplicateLogType, found := hasDuplicateLogTypes(*duplo.LogDeliveryConfigurations); found {
+		return diag.Errorf("log_delivery_configuration: Duplicate log_type are not allowed. Found '%s' log_type repeated.", duplicateLogType)
 	}
 
-	logType := getDuplicateLogTypeIfExists(*duplo.LogDeliveryConfigurations)
-	if logType != "" {
-		return diag.Errorf("log_delivery_configuration: Duplicate LogType found %s", logType)
+	errDiag := validateLogDeliveryConfigurations(duplo.EngineVersion, *duplo.LogDeliveryConfigurations)
+	if errDiag != nil {
+		return errDiag
 	}
 
 	if duplo.Replicas < 2 && duplo.AutomaticFailoverEnabled {
@@ -341,18 +341,38 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	return diags
 }
 
-func getDuplicateLogTypeIfExists(configs []duplosdk.LogDeliveryConfigurationRequest) string {
-	if len(configs) == 0 {
-		return ""
+func validateLogDeliveryConfigurations(engineVersion string, configs []duplosdk.LogDeliveryConfigurationRequest) diag.Diagnostics {
+	if engineVersion == "" || len(configs) == 0 {
+		return nil
 	}
+	for _, config := range configs {
+		switch config.LogType {
+		case "engine-log":
+			if !duplosdk.IsAppVersionEqualOrGreater(engineVersion, "6.2.0") {
+				return diag.Errorf("log_delivery_configuration with log_type 'engine-log' cannot be used with engine_version '%s'. Please use engine_version '6.2.0' or above.", engineVersion)
+			}
+		case "slow-log":
+			if !duplosdk.IsAppVersionEqualOrGreater(engineVersion, "6.0.0") {
+				return diag.Errorf("log_delivery_configuration with log_type 'slow-log' cannot be used with engine_version '%s'. Please use engine_version '6.0.0' or above.", engineVersion)
+			}
+		default:
+			return nil
+		}
+	}
+	return nil
+}
+
+func hasDuplicateLogTypes(configs []duplosdk.LogDeliveryConfigurationRequest) (string, bool) {
 	seen := make(map[string]bool)
+
 	for _, config := range configs {
 		if _, exists := seen[config.LogType]; exists {
-			return config.LogType // Duplicate found
+			return config.LogType, true // Duplicate found
 		}
 		seen[config.LogType] = true
 	}
-	return ""
+
+	return "", false // No duplicates
 }
 
 // DELETE resource
