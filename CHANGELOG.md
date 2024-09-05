@@ -1,18 +1,18 @@
 ## 2024-09-05
 
-### Enhanced
-- Updated GitHub Actions workflows to use `DUPLO_TF_GITHUB_TOKEN` for improved security and consistency.
-- Removed duplicate examples and outdated content from AWS host and RDS instance documentation, enhancing clarity and accuracy.
-
-## 2024-09-05
-
 ### Fixed
 - Resolved a regression issue in `duplocloud_azure_k8_node_pool` by adding a length check for the `scale_priority` slice to prevent crashes when the scale set priority is not specified.
-- 
+
 ### Enhanced
 - Added validation to the `enabled_metrics` attribute in the Auto Scaling Group profile to ensure only specified metrics are allowed, improving configuration accuracy.
 - Improved log delivery configuration with updated documentation and validation to prevent duplicate log types.
 - Implemented version checks for log types to ensure compatibility with specified engine versions.
+- Updated GitHub Actions workflows to use `DUPLO_TF_GITHUB_TOKEN` for improved security and consistency.
+- Removed duplicate examples and outdated content from AWS host and RDS instance documentation, enhancing clarity and accuracy.
+- Introduced support for S3 bucket replication, enabling cross-region replication configurations.
+- Added performance insights configuration for RDS instances, allowing enhanced monitoring and tuning capabilities.
+- Implemented failover and logging configurations for ElastiCache instances, improving reliability and observability.
+- Updated Terraform provider version to 0.10.42 across multiple integration examples, ensuring compatibility with the latest features and improvements.
 
 ## 2024-09-04
 
