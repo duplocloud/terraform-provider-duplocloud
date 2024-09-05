@@ -1,6 +1,11 @@
 ## 2024-09-05
 
 ### Fixed
+- Corrected duplicate initialization of `scale_priority` in `duplocloud_azure_k8_node_pool` by adjusting slice capacity and length definition to prevent errors.
+
+## 2024-09-05
+
+### Fixed
 - Resolved a regression issue in `duplocloud_azure_k8_node_pool` by adding a length check for the `scale_priority` slice to prevent crashes when the scale set priority is not specified.
 - 
 ### Enhanced
