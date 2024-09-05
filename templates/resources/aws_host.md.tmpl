@@ -12,7 +12,7 @@
 ### Deploy a host which will be used for DuploCloud platform's native container agent to deploy native containers
 
 ```terraform
-# Before creating a host, you must first set up the infrastructure and tenant. Below is the resource for creating the infrastructure.
+# Before creating a host, you must first set up the infrastructure without an eks cluster. Then, you must create a tenant inside the infra. Below is the resource for creating the infrastructure.
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "dev"
   cloud             = 0 # AWS Cloud
@@ -27,9 +27,10 @@ resource "duplocloud_tenant" "tenant" {
   plan_id      = duplocloud_infrastructure.infra.infra_name
 }
 
+# Create a data source to retrieve the Machine Image ID to be used by the host
 data "duplocloud_native_host_image" "image" {
   tenant_id     = duplocloud_tenant.tenant.tenant_id
-  is_kubernetes = false
+  is_kubernetes = false  # for native container agent
 }
 
 resource "duplocloud_aws_host" "native" {
@@ -49,10 +50,10 @@ resource "duplocloud_aws_host" "native" {
 }
 ```
 
-### Create an EKS worker node for deployment of the Kubernetes applications
+### Create an EKS worker node for deployment of the Kubernetes applications 
 
 ```terraform
-# Before creating the EKS worker node, you must first set up the infrastructure with EKS cluster and tenant. Below is the resource for creating the infrastructure.
+# Before creating the EKS worker node, you must first set up the infrastructure with EKS cluster enabled and a tenant. Below is the resource for creating the infrastructure.
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "dev"
   cloud             = 0 # AWS Cloud
@@ -67,9 +68,10 @@ resource "duplocloud_tenant" "tenant" {
   plan_id      = duplocloud_infrastructure.infra.infra_name
 }
 
+# Create a data source to retrieve the Machine Image ID to be used by the host
 data "duplocloud_native_host_image" "image" {
   tenant_id     = duplocloud_tenant.tenant.tenant_id
-  is_kubernetes = true
+  is_kubernetes = true # for EKS agent
 }
 
 resource "duplocloud_aws_host" "host" {
@@ -85,7 +87,7 @@ resource "duplocloud_aws_host" "host" {
 }
 ```
 
-### Create an EKS worker node for deployment of the Kubernetes applications, with instance metadata service
+### Create an EKS worker node inside the 'dev' tenant for deployment of the Kubernetes applications, with instance metadata service
 
 ```terraform
 # Ensure the 'dev' tenant is already created before setting up the EKS worker node.
@@ -95,7 +97,7 @@ data "duplocloud_tenant" "tenant" {
 
 data "duplocloud_native_host_image" "image" {
   tenant_id     = data.duplocloud_tenant.tenant.id
-  is_kubernetes = true
+  is_kubernetes = true # for EKS agent
 }
 
 resource "duplocloud_aws_host" "host" {
