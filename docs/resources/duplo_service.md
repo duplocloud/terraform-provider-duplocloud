@@ -19,7 +19,7 @@ resource "duplocloud_infrastructure" "infra" {
   infra_name        = "dev"
   cloud             = 0 # AWS Cloud
   region            = "us-east-1"
-  enable_k8_cluster = true
+  enable_k8_cluster = false # for native container agent
   address_prefix    = "10.13.0.0/16"
 }
 
@@ -32,7 +32,7 @@ resource "duplocloud_tenant" "tenant" {
 # You will need a DuploCloud host to launch the Duplo service, so create a host using following resource configuration.
 data "duplocloud_native_host_image" "image" {
   tenant_id     = duplocloud_tenant.tenant.tenant_id
-  is_kubernetes = true
+  is_kubernetes = false # for native container agent
 }
 
 resource "duplocloud_aws_host" "host" {
@@ -41,7 +41,7 @@ resource "duplocloud_aws_host" "host" {
 
   image_id       = data.duplocloud_native_host_image.image.image_id # get the image_id from the data source
   capacity       = "t3a.small"
-  agent_platform = 7 # Duplo EKS container agent
+  agent_platform = 0 # Duplo native container agent
   zone           = 0 # Zone A
   user_account   = duplocloud_tenant.tenant.account_name
   keypair_type   = 1
@@ -57,18 +57,20 @@ resource "duplocloud_duplo_service" "myservice" {
 }
 ```
 
-### Deploy NGINX service using DuploCloud Platform's native container agent with host networking and the environment variables - NGINX_HOST and NGINX_PORT
+### Deploy NGINX service inside the 'nonprod' tenant using DuploCloud Platform's native container agent with host networking and the environment variables - NGINX_HOST and NGINX_PORT
 
 ```terraform
-# Ensure the 'dev' tenant is already created before creating the RDS instance.
+# Ensure the 'nonprod' tenant is already created before deploying the Nginx duplo service.
 data "duplocloud_tenant" "tenant" {
-  name = "dev"
+  name = "nonprod"
 }
 
-# You will need a DuploCloud host to launch the Duplo service, so create a host using following resource configuration.
+# You will need a DuploCloud host to launch the Duplo service, so create a host
+
+# Create a data source to retrieve the Machine Image ID to be used by the host
 data "duplocloud_native_host_image" "image" {
   tenant_id     = data.duplocloud_tenant.tenant.id
-  is_kubernetes = false
+  is_kubernetes = false # for native container agent
 }
 
 resource "duplocloud_aws_host" "host" {
@@ -77,12 +79,13 @@ resource "duplocloud_aws_host" "host" {
 
   image_id       = data.duplocloud_native_host_image.image.image_id # get the image_id from the data source
   capacity       = "t3a.small"
-  agent_platform = 7 # Duplo EKS container agent
+  agent_platform = 0 # Duplo native container agent
   zone           = 0 # Zone A
   user_account   = data.duplocloud_tenant.tenant.name
   keypair_type   = 1
 }
 
+# Create the DuploCloud service
 resource "duplocloud_duplo_service" "myservice" {
   tenant_id = data.duplocloud_tenant.tenant.id
 
@@ -104,15 +107,15 @@ resource "duplocloud_duplo_service" "myservice" {
 }
 ```
 
-### Deploy NGINX service named nginx and set the resource requests and limits. Set cpu requests and limits to 200m and 300m respectively and set memory requests and limits to 100Mi and 300Mi respectively
+### Deploy NGINX service named nginx inside the 'dev' tenant and set the resource requests and limits. Set cpu requests and limits to 200m and 300m respectively and set memory requests and limits to 100Mi and 300Mi respectively
 
 ```terraform
-# Ensure the 'dev' tenant is already created before creating the RDS instance.
+# Ensure the 'dev' tenant is already created before deploying the Nginx duplo service.
 data "duplocloud_tenant" "tenant" {
   name = "dev"
 }
 
-# Ensure that the host is also created in the tenant
+# Assuming that a host already exists in the tenant, create a service
 resource "duplocloud_duplo_service" "nginx" {
   tenant_id = data.duplocloud_tenant.tenant.id
 
@@ -123,11 +126,11 @@ resource "duplocloud_duplo_service" "nginx" {
 
   other_docker_config = jsonencode({
     Resources = {
-      limits = {
+      requests = {
         cpu    = "200m"
         memory = "100Mi"
       },
-      requests = {
+      limits = {
         cpu    = "300m"
         memory = "300Mi"
       }
@@ -136,15 +139,15 @@ resource "duplocloud_duplo_service" "nginx" {
 }
 ```
 
-### Deploy an Nginx service named nginx and mount these environment variables from the kubernetes secrets - 1. FOO: bar 2. PING: pong
+### Deploy an Nginx service named nginx inside the prod tenant and mount these environment variables from the kubernetes secrets - 1. FOO: bar 2. PING: pong
 
 ```terraform
-# Ensure the 'dev' tenant is already created before creating the RDS instance.
+# Ensure the 'prod' tenant is already created before deploying the Nginx duplo service.
 data "duplocloud_tenant" "tenant" {
-  name = "dev"
+  name = "prod"
 }
 
-# Create a secret with the env vars values 1. FOO: bar 2. PING: pong if it does not exists
+# Create a secret with the env vars values 1. FOO: bar 2. PING: pong if it does not exist
 
 resource "duplocloud_k8_secret" "nginx" {
   tenant_id = data.duplocloud_tenant.tenant.id
@@ -157,7 +160,7 @@ resource "duplocloud_k8_secret" "nginx" {
   })
 }
 
-# Ensure that the host is also created in the tenant.
+# Assuming that a host exists in the tenant.
 resource "duplocloud_duplo_service" "nginx" {
   tenant_id = data.duplocloud_tenant.tenant.id
 
@@ -174,6 +177,97 @@ resource "duplocloud_duplo_service" "nginx" {
         }
       }
     ]
+  })
+}
+```
+
+### Deploy an Nginx service named nginx inside the dev tenant, and mount these environment variables from the kubernetes configmap - 1. FOO: bar 2. PING: pong
+
+```terraform
+# Ensure the 'dev' tenant is already created before deploying the Nginx duplo service.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Create a configmap with the env vars values 1. FOO: bar 2. PING: pong if it does not exists
+
+resource "duplocloud_k8_config_map" "nginx" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  name = "nginx-cm"
+  data = jsonencode({
+    FOO  = "bar",
+    PING = "pong"
+  })
+}
+
+# Ensure that the host is also created in the tenant.
+resource "duplocloud_duplo_service" "nginx" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  name           = "nginx"
+  agent_platform = 7 # Duplo EKS container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+
+  other_docker_config = jsonencode({
+    EnvFrom = [
+      {
+        configMapRef = {
+          name = duplocloud_k8_config_map.nginx.name,
+        }
+      }
+    ]
+  })
+}
+```
+
+### Deploy an Nginx service named nginx inside the dev tenant, and set the replica count to 5
+
+```terraform
+# Ensure the 'dev' tenant is already created before deploying the Nginx duplo service.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Ensure that the host is also created in the tenant.
+resource "duplocloud_duplo_service" "nginx" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  name           = "nginx"
+  agent_platform = 7 # Duplo EKS container agent
+  docker_image   = "nginx:latest"
+  replicas       = 5
+}
+```
+
+### Deploy an Nginx service named nginx with liveliness probe. Create it inside the dev tenant which already exists.
+
+```terraform
+# Ensure the 'dev' tenant is already created before deploying the Nginx duplo service.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Assuming a host already exists in the tenant, create the duplo service
+resource "duplocloud_duplo_service" "nginx" {
+  tenant_id      = data.duplocloud_tenant.tenant.id
+  name           = "nginx"
+  agent_platform = 7 # Duplo EKS container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+
+  other_docker_config = jsonencode({
+    # Liveness probe to ensure container is alive
+    "LivenessProbe" : {
+      "initialDelaySeconds" : 10,
+      "periodSeconds" : 30,
+      "successThreshold" : 1,
+      "httpGet" : {
+        "path" : "/health",
+        "port" : 80
+      }
+    }
   })
 }
 ```
