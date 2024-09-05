@@ -46,7 +46,7 @@ jobs:
       - name: Start gitflow release
         uses: duplocloud/ghactions-start-gitflow-release@master
         with:
-          github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
+          github_token: ${{ secrets.DUPLO_TF_GITHUB_TOKEN }}
           version: "${{ steps.version.outputs.release }}"
           precommit_run: |
             # Fail on errors
