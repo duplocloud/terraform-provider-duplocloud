@@ -1,5 +1,11 @@
 ## 2024-09-05
 
+### Enhanced
+- Updated GitHub Actions workflows to use `DUPLO_TF_GITHUB_TOKEN` for improved security and consistency.
+- Removed duplicate examples and outdated content from AWS host and RDS instance documentation, enhancing clarity and accuracy.
+
+## 2024-09-05
+
 ### Fixed
 - Resolved a regression issue in `duplocloud_azure_k8_node_pool` by adding a length check for the `scale_priority` slice to prevent crashes when the scale set priority is not specified.
 - 
