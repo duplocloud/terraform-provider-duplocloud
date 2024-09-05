@@ -14,6 +14,7 @@
 - Added `ForceNew` to the `eviction_policy` attribute in Azure K8s node pool resources to ensure proper resource replacement when the policy changes.
 - Updated `duplocloud_azure_k8_node_pool` resource to enforce recreation when the `priority` attribute is modified, improving resource management.
 - Implemented validation to ensure `eviction_policy` and `spot_max_price` are not set for `Regular` priority type in `duplocloud_azure_k8_node_pool` resource, enhancing error handling during the plan phase.
+- Implemented validation to ensure `spot_max_price` is not set when `scale_priority` is `Regular` in Azure Kubernetes Node Pool configurations, enhancing error handling during the plan phase.
 
 ## 2024-09-03
 
