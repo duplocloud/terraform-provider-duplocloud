@@ -1,5 +1,13 @@
 ## 2024-09-05
 
+### Enhanced
+- Introduced support for S3 bucket replication, enabling cross-region replication configurations.
+- Added performance insights configuration for RDS instances, allowing enhanced monitoring and tuning capabilities.
+- Implemented failover and logging configurations for ElastiCache instances, improving reliability and observability.
+- Updated Terraform provider version to 0.10.42 across multiple integration examples, ensuring compatibility with the latest features and improvements.
+
+## 2024-09-05
+
 ### Fixed
 - Resolved a regression issue in `duplocloud_azure_k8_node_pool` by adding a length check for the `scale_priority` slice to prevent crashes when the scale set priority is not specified.
 - 
