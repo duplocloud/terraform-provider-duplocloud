@@ -1,13 +1,26 @@
+## 2024-09-05
+
+### Enhanced
+- Improved log delivery configuration with updated documentation and validation to prevent duplicate log types.
+- Implemented version checks for log types to ensure compatibility with specified engine versions.
+
 ## 2024-09-04
 
 ### Enhanced
 - Updated `spot_max_price` data type to float and added validation to ensure it is at least 0.00001 in `duplocloud_azure_k8_node_pool` resource.
-
-## 2024-09-04
-
-### Enhanced
 - Set default value for `eviction_policy` to "Delete" for Spot priority in `duplocloud_azure_k8_node_pool` resource.
 - Added custom diff validator to ensure proper handling of `scale_priority` attributes, preventing unsupported configurations.
+- Improved logging for AWS SSM parameters to securely handle sensitive data by masking values for `SecureString` type.
+- Added `ForceNew` to the `eviction_policy` attribute in Azure K8s node pool resources to ensure proper resource replacement when the policy changes.
+- Updated `duplocloud_azure_k8_node_pool` resource to enforce recreation when the `priority` attribute is modified, improving resource management.
+
+## 2024-09-03
+
+### Enhanced
+- Implemented a diff suppression function for Kubernetes secrets to handle JSON objects as string key-value pairs, improving accuracy in change detection.
+
+### Fixed
+- Added a nil check in SSM parameter reading to prevent potential nil pointer exceptions, enhancing stability.
 
 
 ## 2024-08-26

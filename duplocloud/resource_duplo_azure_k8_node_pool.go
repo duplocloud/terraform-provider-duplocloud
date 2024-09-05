@@ -86,6 +86,7 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 							"Regular",
 							"Spot",
 						}, false),
+						ForceNew: true,
 					},
 					"eviction_policy": {
 						Description: "eviction policies Delete/Deallocate. Default value is Delete",
@@ -96,6 +97,7 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 							"Delete",
 							"Deallocate",
 						}, false),
+						ForceNew: true,
 					},
 					"spot_max_price": {
 						Description:  " for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.",
