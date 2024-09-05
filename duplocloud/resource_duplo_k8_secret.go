@@ -48,11 +48,11 @@ func k8sSecretSchema() map[string]*schema.Schema {
 		"secret_data": {
 			Description: "A JSON encoded string representing the secret metadata. " +
 				"You can use the `jsonencode()` function to convert map or object data, if needed. You can use the `jsondecode()` function to read data.",
-			Type:         schema.TypeString,
-			Optional:     true,
-			Sensitive:    true,
-			ValidateFunc: ValidateJSONObjectString,
-			//DiffSuppressFunc: diffIgnoreIfSameHash,
+			Type:             schema.TypeString,
+			Optional:         true,
+			Sensitive:        true,
+			ValidateFunc:     ValidateJSONObjectString,
+			DiffSuppressFunc: secretDataDiff,
 		},
 		"secret_annotations": {
 			Description: "Annotations for the secret",
@@ -276,4 +276,40 @@ func secretLabelValidationError(name, value string) error {
 	be an empty string or consist of alphanumeric characters, '-', '', or '.', and must start and end with an alphanumeric 
 	character (e.g. 'MyValue', or 'my_value', or '12345',
 	 regex used for validation is '((A-Za-z0-9][-A-Za-z0-9.]*)?[A-Za-z0-9])?').`, name, value)
+}
+
+func secretDataDiff(k, old, new string, d *schema.ResourceData) bool {
+	state, err := secretDataCompare(old, new)
+	if err != nil {
+		log.Printf("TRACE secretDataCompare : %s", err.Error())
+		return state
+	}
+	return state
+}
+func secretDataCompare(old, new string) (bool, error) {
+	var obj1, obj2 map[string]interface{}
+
+	// Unmarshal the first JSON string into a map
+	if err := json.Unmarshal([]byte(old), &obj1); err != nil {
+		return false, fmt.Errorf("error unmarshalling JSON 1: %v", err)
+	}
+
+	// Unmarshal the second JSON string into a map
+	if err := json.Unmarshal([]byte(new), &obj2); err != nil {
+		return false, fmt.Errorf("error unmarshalling JSON 2: %v", err)
+	}
+	if len(obj1) != len(obj2) {
+		return false, nil
+	}
+	for k, v := range obj2 {
+		if v1, ok := obj1[k]; !ok {
+			return false, nil
+		} else {
+			s := fmt.Sprintf("%v", v)
+			if v1 != s {
+				return false, nil
+			}
+		}
+	}
+	return true, nil
 }
