@@ -1,11 +1,10 @@
 ## 2024-09-05
 
+### Fixed
+- Resolved a regression issue in `duplocloud_azure_k8_node_pool` by adding a length check for the `scale_priority` slice to prevent crashes when the scale set priority is not specified.
+- 
 ### Enhanced
 - Added validation to the `enabled_metrics` attribute in the Auto Scaling Group profile to ensure only specified metrics are allowed, improving configuration accuracy.
-
-## 2024-09-05
-
-### Enhanced
 - Improved log delivery configuration with updated documentation and validation to prevent duplicate log types.
 - Implemented version checks for log types to ensure compatibility with specified engine versions.
 
