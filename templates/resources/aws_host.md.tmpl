@@ -71,7 +71,7 @@ resource "duplocloud_tenant" "tenant" {
 # Create a data source to retrieve the Machine Image ID to be used by the host
 data "duplocloud_native_host_image" "image" {
   tenant_id     = duplocloud_tenant.tenant.tenant_id
-  is_kubernetes = true # for EKS container agent
+  is_kubernetes = true # for EKS agent
 }
 
 resource "duplocloud_aws_host" "host" {
@@ -97,7 +97,7 @@ data "duplocloud_tenant" "tenant" {
 
 data "duplocloud_native_host_image" "image" {
   tenant_id     = data.duplocloud_tenant.tenant.id
-  is_kubernetes = true
+  is_kubernetes = true # for EKS agent
 }
 
 resource "duplocloud_aws_host" "host" {
