@@ -14,9 +14,9 @@
 ```terraform
 resource "duplocloud_infrastructure" "infra" {
   infra_name        = "nonprod"
-  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google; Defaults to 0
   region            = "us-west-2"
-  enable_k8_cluster = false
+  enable_k8_cluster = true
   address_prefix    = "10.11.0.0/16"
 }
 ```
@@ -28,7 +28,7 @@ resource "duplocloud_infrastructure" "infra" {
   infra_name        = "nonprod"
   cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-west-2"
-  enable_k8_cluster = false
+  enable_k8_cluster = true
   address_prefix    = "10.34.0.0/16"
 }
 ```
@@ -60,7 +60,7 @@ resource "duplocloud_infrastructure" "infra" {
 }
 ```
 
-### Create a DuploCloud infrastructure named 'prod' in the us-east-2 region, with a VPC CIDR of 10.30.0.0/16, a subnet mask of 24, and an EKS cluster enabled with an ingress controller
+### Create a DuploCloud infrastructure named 'prod' in the us-east-2 region, with a VPC CIDR of 10.30.0.0/16, a subnet mask of 24, and an EKS cluster disabled with an ingress controller
 
 ```terraform
 resource "duplocloud_infrastructure" "prod_infra" {
@@ -68,7 +68,7 @@ resource "duplocloud_infrastructure" "prod_infra" {
   cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-east-2"
   azcount           = 2             # The number of availability zones.
-  enable_k8_cluster = true
+  enable_k8_cluster = false
   address_prefix    = "10.30.0.0/16"
   subnet_cidr       = 24
 }
