@@ -99,14 +99,14 @@ See AWS documentation for the [available Redis instance types](https://docs.aws.
 
 Required:
 
-- `destination_type` (String) Select the snapshot/backup you want to use for creating redis.
-- `log_format` (String)
-- `log_type` (String)
+- `destination_type` (String) destination type : must be cloudwatch-logs.
+Refer: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html
+- `log_format` (String) log_format: Value must be one of the ['json', 'text']
+- `log_type` (String) log_type: Value must be one of the ['slow-log', 'engine-log']
 
 Optional:
 
-- `delivery_stream` (String) provide delivery_stream for destination_type = kinesis-firehose
-- `log_group` (String) provide log_group for destination_type = cloudwatch-logs
+- `log_group` (String) cloudwatch log_group
 
 
 <a id="nestedblock--timeouts"></a>
