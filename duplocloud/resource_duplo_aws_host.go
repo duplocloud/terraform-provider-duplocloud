@@ -255,6 +255,14 @@ func nativeHostSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"custom_node_labels": {
+			Description:      "Specify the labels to attach to the nodes.",
+			Type:             schema.TypeMap,
+			Optional:         true,
+			Computed:         true,
+			Elem:             &schema.Schema{Type: schema.TypeString},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
 	}
 }
 
@@ -290,7 +298,7 @@ func resourceAwsHost() *schema.Resource {
 	}
 
 	return &schema.Resource{
-		Description: "`duplocloud_aws_host` manages a native AWS host in Duplo.",
+		Description: "The duplocloud_aws_host represents an AWS resource, such as an EC2 instance, that is managed and automated through DuploCloud. It provides seamless integration and governance within AWS, enabling efficient deployment, management, and scaling of cloud infrastructure through DuploCloud’s platform.",
 
 		ReadContext:   resourceAwsHostRead,
 		CreateContext: resourceAwsHostCreate,
@@ -545,6 +553,7 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		MinionTags:        keyValueFromState("minion_tags", d),
 		Volumes:           expandNativeHostVolumes("volume", d),
 		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
+		ExtraNodeLabels:   keyValueFromMap(d.Get("custom_node_labels").(map[string]interface{})),
 	}
 }
 

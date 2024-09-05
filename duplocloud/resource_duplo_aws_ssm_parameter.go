@@ -106,7 +106,7 @@ func resourceAwsSsmParameterRead(ctx context.Context, d *schema.ResourceData, m 
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	ssmParam, clientErr := c.SsmParameterGet(tenantID, name)
+	body, clientErr := c.SsmParameterGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("") // object missing
@@ -114,7 +114,14 @@ func resourceAwsSsmParameterRead(ctx context.Context, d *schema.ResourceData, m 
 		}
 		return diag.Errorf("Unable to retrieve tenant %s SSM parameter '%s': %s", tenantID, name, clientErr)
 	}
-
+	ssmParam := body
+	if body != nil {
+		logBody := *body
+		if ssmParam.Type == "SecureString" {
+			logBody.Value = "**********"
+		}
+		log.Printf("[TRACE] SsmParameterGet: received response: %+v", logBody)
+	}
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("type", ssmParam.Type)
