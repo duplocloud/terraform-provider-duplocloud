@@ -296,7 +296,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"enable": {
+					"enabled": {
 						Description: "Enable or Disable Performance Insights",
 						Type:        schema.TypeBool,
 						Optional:    true,
@@ -474,12 +474,12 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 
 			period := pI["retention_period"].(int)
 			kmsid := pI["kms_key_id"].(string)
-			enable := duplosdk.PerformanceInsightEnable{
-				EnablePerformanceInsights:          pI["enable"].(bool),
+			enabled := duplosdk.PerformanceInsightEnable{
+				EnablePerformanceInsights:          pI["enabled"].(bool),
 				PerformanceInsightsRetentionPeriod: period,
 				PerformanceInsightsKMSKeyId:        kmsid,
 			}
-			obj.Enable = &enable
+			obj.Enable = &enabled
 			obj.DBInstanceIdentifier = identifier
 		}
 		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
@@ -500,7 +500,7 @@ func expandPerformanceInsight(d *schema.ResourceData) map[string]interface{} {
 	performanceInsight := d.Get("performance_insights").([]interface{})
 	if len(performanceInsight) > 0 {
 		val := performanceInsight[0].(map[string]interface{})
-		if val["enable"].(bool) {
+		if val["enabled"].(bool) {
 			return val
 		}
 	}
@@ -641,12 +641,12 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		if pI != nil {
 			period := pI["retention_period"].(int)
 			kmsid := pI["kms_key_id"].(string)
-			enable := duplosdk.PerformanceInsightEnable{
-				EnablePerformanceInsights:          pI["enable"].(bool),
+			enabled := duplosdk.PerformanceInsightEnable{
+				EnablePerformanceInsights:          pI["enabled"].(bool),
 				PerformanceInsightsRetentionPeriod: period,
 				PerformanceInsightsKMSKeyId:        kmsid,
 			}
-			obj.Enable = &enable
+			obj.Enable = &enabled
 		} else {
 			disable := duplosdk.PerformanceInsightDisable{
 				EnablePerformanceInsights: false,
@@ -894,7 +894,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 
 	pis := []interface{}{}
 	pi := make(map[string]interface{})
-	pi["enable"] = duploObject.EnablePerformanceInsights
+	pi["enabled"] = duploObject.EnablePerformanceInsights
 	if duploObject.EnablePerformanceInsights {
 		pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
 		pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
