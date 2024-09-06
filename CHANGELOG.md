@@ -1,5 +1,10 @@
 ## 2024-09-06
 
+### Fixed
+- Enabled performance insights configuration for Aurora DB instances, ensuring consistent application across all RDS types.
+
+## 2024-09-06
+
 ### Enhanced
 
 - Updated GitHub Actions workflows with new user and email configurations for improved consistency and management.
