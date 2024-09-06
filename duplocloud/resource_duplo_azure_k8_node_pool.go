@@ -375,7 +375,7 @@ func validateScalePriorityAttribute(ctx context.Context, diff *schema.ResourceDi
 		smp["eviction_policy"] = "Delete"
 		smp["priority"] = "Spot"
 		smp["spot_max_price"] = mp["spot_max_price"]
-		p := make([]interface{}, 1)
+		p := make([]interface{}, 0, 1)
 		p = append(p, smp)
 		err := diff.SetNew("scale_priority", p)
 		if err != nil {
