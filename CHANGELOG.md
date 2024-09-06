@@ -2,6 +2,12 @@
 
 ### Enhanced
 
+- Bumped Terraform provider version to 0.10.44 across various example configurations.
+
+## 2024-09-06
+
+### Enhanced
+
 - Masked sensitive information in Terraform logs by marking SSM parameter values as sensitive.
 - Updated documentation to reflect changes in sensitivity for SSM parameter values.
 
