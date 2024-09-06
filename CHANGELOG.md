@@ -1,6 +1,12 @@
 ## 2024-09-06
 
 ### Enhanced
+- Added a new README file with instructions for development and debugging.
+- Updated Terraform provider version to 0.10.43 across various example configurations.
+
+## 2024-09-06
+
+### Enhanced
 - Renamed the `enable` attribute to `enabled` for performance insights in RDS instances, improving clarity and consistency.
 - Updated documentation to reflect changes in performance insights configuration for RDS instances.
 
