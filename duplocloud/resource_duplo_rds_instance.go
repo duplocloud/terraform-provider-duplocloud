@@ -349,7 +349,8 @@ func resourceDuploRdsInstance() *schema.Resource {
 			Update: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
-		Schema: rdsInstanceSchema(),
+		Schema:        rdsInstanceSchema(),
+		CustomizeDiff: nonSupportPerformanceInsight,
 	}
 }
 
@@ -970,4 +971,59 @@ func isClusterGroupParameterSupportDb(db int) bool {
 		16: true,
 	}
 	return clusterDb[db]
+}
+
+func nonSupportPerformanceInsight(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	nonsup := map[int]map[string]struct{}{
+		14: {
+			"db.t2.micro":  {},
+			"db.t2.small":  {},
+			"db.t3.micro":  {},
+			"db.t3.small":  {},
+			"db.t4g.micro": {},
+			"db.t4g.small": {},
+		},
+		0: {
+			"db.t2.micro":  {},
+			"db.t2.small":  {},
+			"db.t3.micro":  {},
+			"db.t3.small":  {},
+			"db.t4g.micro": {},
+			"db.t4g.small": {},
+		},
+		8: {
+			"db.t2.micro":  {},
+			"db.t2.medium": {},
+			"db.t2.small":  {},
+			"db.t2.large":  {},
+			"db.t3.micro":  {},
+			"db.t3.medium": {},
+			"db.t3.small":  {},
+			"db.t3.large":  {},
+			"db.t4g.micro": {},
+			"db.t4g.small": {},
+		},
+	}
+	engines := map[int]string{
+		0:  "MySQL",
+		1:  "PostgreSQL",
+		2:  "MsftSQL-Express",
+		3:  "MsftSQL-Standard",
+		8:  "Aurora-MySQL",
+		9:  "Aurora-PostgreSQL",
+		10: "MsftSQL-Web",
+		11: "Aurora-Serverless-MySql",
+		12: "Aurora-Serverless-PostgreSql",
+		13: "DocumentDB",
+		14: "MariaDB",
+		16: "Aurora",
+	}
+	eng := diff.Get("engine").(int)
+	if v, ok := nonsup[eng]; ok {
+		ev := diff.Get("engine_version").(string)
+		if v1, ok := v[ev]; ok {
+			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], v1)
+		}
+	}
+	return nil
 }
