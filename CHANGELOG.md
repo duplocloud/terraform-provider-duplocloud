@@ -1,3 +1,9 @@
+## 2024-09-06
+
+### Enhanced
+- Renamed the `enable` attribute to `enabled` for performance insights in RDS instances, improving clarity and consistency.
+- Updated documentation to reflect changes in performance insights configuration for RDS instances.
+
 ## 2024-09-05
 
 ### Fixed
