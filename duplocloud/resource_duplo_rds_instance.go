@@ -296,8 +296,8 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"enable": {
-						Description: "Enable or Disable Performance Insights",
+					"enabled": {
+						Description: "Turn on or off Performance Insights",
 						Type:        schema.TypeBool,
 						Optional:    true,
 						Default:     false,
@@ -467,29 +467,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		}
 
 	}
-	if !isAuroraDB(d) {
-		obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
-		pI := expandPerformanceInsight(d)
-		if pI != nil {
 
-			period := pI["retention_period"].(int)
-			kmsid := pI["kms_key_id"].(string)
-			enable := duplosdk.PerformanceInsightEnable{
-				EnablePerformanceInsights:          pI["enable"].(bool),
-				PerformanceInsightsRetentionPeriod: period,
-				PerformanceInsightsKMSKeyId:        kmsid,
-			}
-			obj.Enable = &enable
-			obj.DBInstanceIdentifier = identifier
-		}
-		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(err)
-
-		}
-		_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 120*time.Second)
-
-	}
 	diags = resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** end")
@@ -500,7 +478,7 @@ func expandPerformanceInsight(d *schema.ResourceData) map[string]interface{} {
 	performanceInsight := d.Get("performance_insights").([]interface{})
 	if len(performanceInsight) > 0 {
 		val := performanceInsight[0].(map[string]interface{})
-		if val["enable"].(bool) {
+		if val["enabled"].(bool) {
 			return val
 		}
 	}
@@ -642,7 +620,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			period := pI["retention_period"].(int)
 			kmsid := pI["kms_key_id"].(string)
 			enable := duplosdk.PerformanceInsightEnable{
-				EnablePerformanceInsights:          pI["enable"].(bool),
+				EnablePerformanceInsights:          pI["enabled"].(bool),
 				PerformanceInsightsRetentionPeriod: period,
 				PerformanceInsightsKMSKeyId:        kmsid,
 			}
@@ -811,6 +789,19 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 		return nil, errors.New("multi_az and availability_zone can not be set together.")
 	}
 	duploObject.DatabaseName = d.Get("db_name").(string)
+	if !isAuroraDB(d) {
+		pI := expandPerformanceInsight(d)
+		if pI != nil {
+
+			period := pI["retention_period"].(int)
+			kmsid := pI["kms_key_id"].(string)
+			duploObject.EnablePerformanceInsights = pI["enabled"].(bool)
+			duploObject.PerformanceInsightsRetentionPeriod = period
+			duploObject.PerformanceInsightsKMSKeyId = kmsid
+
+		}
+
+	}
 	return duploObject, nil
 }
 
@@ -894,7 +885,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 
 	pis := []interface{}{}
 	pi := make(map[string]interface{})
-	pi["enable"] = duploObject.EnablePerformanceInsights
+	pi["enabled"] = duploObject.EnablePerformanceInsights
 	if duploObject.EnablePerformanceInsights {
 		pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
 		pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId

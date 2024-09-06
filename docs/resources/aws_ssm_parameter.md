@@ -34,7 +34,7 @@ resource "duplocloud_aws_ssm_parameter" "ssm_param" {
 - `name` (String) The name of the SSM parameter.
 - `tenant_id` (String) The GUID of the tenant that the SSM parameter will be created in.
 - `type` (String) The type of the SSM parameter. Valid values are `String`, `StringList`, and `SecureString`.
-- `value` (String) The value of the SSM parameter.
+- `value` (String, Sensitive) The value of the SSM parameter.
 
 ### Optional
 
