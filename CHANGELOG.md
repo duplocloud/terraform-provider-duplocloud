@@ -3,9 +3,17 @@
 ### Fixed
 - Corrected duplicate initialization of `scale_priority` in the Azure Kubernetes node pool resource by adjusting slice capacity and length definition to prevent errors.
 
+
 ### Documentation
 - Updated the CHANGELOG to include details of recent bug fixes and enhancements.
+- Bumped Terraform provider version to 0.10.44 across various example configurations.
 
+## 2024-09-06
+
+### Enhanced
+
+- Masked sensitive information in Terraform logs by marking SSM parameter values as sensitive.
+- Updated documentation to reflect changes in sensitivity for SSM parameter values.
 
 ## 2024-09-05
 
