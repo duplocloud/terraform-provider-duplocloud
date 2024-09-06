@@ -789,17 +789,14 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 		return nil, errors.New("multi_az and availability_zone can not be set together.")
 	}
 	duploObject.DatabaseName = d.Get("db_name").(string)
-	if !isAuroraDB(d) {
-		pI := expandPerformanceInsight(d)
-		if pI != nil {
+	pI := expandPerformanceInsight(d)
+	if pI != nil {
 
-			period := pI["retention_period"].(int)
-			kmsid := pI["kms_key_id"].(string)
-			duploObject.EnablePerformanceInsights = pI["enabled"].(bool)
-			duploObject.PerformanceInsightsRetentionPeriod = period
-			duploObject.PerformanceInsightsKMSKeyId = kmsid
-
-		}
+		period := pI["retention_period"].(int)
+		kmsid := pI["kms_key_id"].(string)
+		duploObject.EnablePerformanceInsights = pI["enabled"].(bool)
+		duploObject.PerformanceInsightsRetentionPeriod = period
+		duploObject.PerformanceInsightsKMSKeyId = kmsid
 
 	}
 	return duploObject, nil
