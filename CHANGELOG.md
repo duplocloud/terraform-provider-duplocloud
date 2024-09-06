@@ -1,3 +1,10 @@
+
+## 2024-09-05
+
+### Fixed
+- Corrected duplicate initialization of `scale_priority` in `duplocloud_azure_k8_node_pool` by adjusting slice capacity and length definition to prevent errors.
+
+
 ## 2024-09-06
 
 ### Enhanced
@@ -14,7 +21,7 @@
 - Updated Terraform provider version to 0.10.43 across various example configurations.
 - Renamed the `enable` attribute to `enabled` for performance insights in RDS instances, improving clarity and consistency.
 - Updated documentation to reflect changes in performance insights configuration for RDS instances.
-
+- 
 ## 2024-09-05
 
 ### Fixed
