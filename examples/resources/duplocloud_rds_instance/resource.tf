@@ -44,7 +44,7 @@ resource "duplocloud_rds_instance" "aurora-mydb" {
 
 //performance insights example
 resource "duplocloud_rds_instance" "mydb" {
-  tenant_id      = "5d3171c2-0fbc-4195-bb5e-05cd757ef786"
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
   name           = "mydb1psql"
   engine         = 1 // PostgreSQL
   engine_version = "14.11"
@@ -57,9 +57,8 @@ resource "duplocloud_rds_instance" "mydb" {
   store_details_in_secret_manager = true
   enhanced_monitoring             = 0
   storage_type                    = "gp2"
-  # parameter_group_name = "psql-group"
   performance_insights {
-    enable           = false
+    enabled          = true
     retention_period = 7
   }
 }
