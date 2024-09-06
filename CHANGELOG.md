@@ -1,5 +1,14 @@
 ## 2024-09-06
 
+### Enhanced
+
+- Improved RDS instance validation with a new `CustomizeDiff` function to ensure compatibility of engine and instance size combinations.
+- Streamlined performance insights handling for RDS instances, enhancing the enabling and disabling process.
+- Added validation for Aurora database storage types to ensure correct configuration.
+- Included a new example in the documentation for configuring performance insights on a cluster RDS instance.
+
+## 2024-09-06
+
 ### Fixed
 - Corrected duplicate initialization of `scale_priority` in the Azure Kubernetes node pool resource by adjusting slice capacity and length definition to prevent errors.
 

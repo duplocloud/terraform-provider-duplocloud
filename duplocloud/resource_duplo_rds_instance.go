@@ -349,7 +349,8 @@ func resourceDuploRdsInstance() *schema.Resource {
 			Update: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
-		Schema: rdsInstanceSchema(),
+		Schema:        rdsInstanceSchema(),
+		CustomizeDiff: validateRDSParameters,
 	}
 }
 
@@ -613,30 +614,27 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	if !isAuroraDB(d) {
-		obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
-		pI := expandPerformanceInsight(d)
-		if pI != nil {
-			period := pI["retention_period"].(int)
-			kmsid := pI["kms_key_id"].(string)
-			enable := duplosdk.PerformanceInsightEnable{
-				EnablePerformanceInsights:          pI["enabled"].(bool),
-				PerformanceInsightsRetentionPeriod: period,
-				PerformanceInsightsKMSKeyId:        kmsid,
-			}
-			obj.Enable = &enable
-		} else {
-			disable := duplosdk.PerformanceInsightDisable{
-				EnablePerformanceInsights: false,
-			}
-			obj.Disable = &disable
+	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
+	pI := expandPerformanceInsight(d)
+	if pI != nil {
+		period := pI["retention_period"].(int)
+		kmsid := pI["kms_key_id"].(string)
+		enable := duplosdk.PerformanceInsightEnable{
+			EnablePerformanceInsights:          pI["enabled"].(bool),
+			PerformanceInsightsRetentionPeriod: period,
+			PerformanceInsightsKMSKeyId:        kmsid,
 		}
-		obj.DBInstanceIdentifier = identifier
-		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(err)
-
+		obj.Enable = &enable
+	} else {
+		disable := duplosdk.PerformanceInsightDisable{
+			EnablePerformanceInsights: false,
 		}
+		obj.Disable = &disable
+	}
+	obj.DBInstanceIdentifier = identifier
+	insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+	if insightErr != nil {
+		return diag.FromErr(err)
 
 	}
 
@@ -789,19 +787,17 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 		return nil, errors.New("multi_az and availability_zone can not be set together.")
 	}
 	duploObject.DatabaseName = d.Get("db_name").(string)
-	if !isAuroraDB(d) {
-		pI := expandPerformanceInsight(d)
-		if pI != nil {
+	pI := expandPerformanceInsight(d)
+	if pI != nil {
 
-			period := pI["retention_period"].(int)
-			kmsid := pI["kms_key_id"].(string)
-			duploObject.EnablePerformanceInsights = pI["enabled"].(bool)
-			duploObject.PerformanceInsightsRetentionPeriod = period
-			duploObject.PerformanceInsightsKMSKeyId = kmsid
-
-		}
+		period := pI["retention_period"].(int)
+		kmsid := pI["kms_key_id"].(string)
+		duploObject.EnablePerformanceInsights = pI["enabled"].(bool)
+		duploObject.PerformanceInsightsRetentionPeriod = period
+		duploObject.PerformanceInsightsKMSKeyId = kmsid
 
 	}
+
 	return duploObject, nil
 }
 
@@ -961,4 +957,70 @@ func isClusterGroupParameterSupportDb(db int) bool {
 		16: true,
 	}
 	return clusterDb[db]
+}
+
+func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	nonsup := map[int]map[string]struct{}{
+		14: {
+			"db.t2.micro":  {},
+			"db.t2.small":  {},
+			"db.t3.micro":  {},
+			"db.t3.small":  {},
+			"db.t4g.micro": {},
+			"db.t4g.small": {},
+		},
+		0: {
+			"db.t2.micro":  {},
+			"db.t2.small":  {},
+			"db.t3.micro":  {},
+			"db.t3.small":  {},
+			"db.t4g.micro": {},
+			"db.t4g.small": {},
+		},
+		8: {
+			"db.t2.micro":  {},
+			"db.t2.medium": {},
+			"db.t2.small":  {},
+			"db.t2.large":  {},
+			"db.t3.micro":  {},
+			"db.t3.medium": {},
+			"db.t3.small":  {},
+			"db.t3.large":  {},
+			"db.t4g.micro": {},
+			"db.t4g.small": {},
+		},
+		13: {"ALL": {}},
+	}
+	engines := map[int]string{
+		0:  "MySQL",
+		1:  "PostgreSQL",
+		2:  "MsftSQL-Express",
+		3:  "MsftSQL-Standard",
+		8:  "Aurora-MySQL",
+		9:  "Aurora-PostgreSQL",
+		10: "MsftSQL-Web",
+		11: "Aurora-Serverless-MySql",
+		12: "Aurora-Serverless-PostgreSql",
+		13: "DocumentDB",
+		14: "MariaDB",
+		16: "Aurora",
+	}
+	eng := diff.Get("engine").(int)
+	if v, ok := nonsup[eng]; ok {
+		s := diff.Get("size").(string)
+		if _, ok := v[s]; ok {
+			if engines[eng] == "DocumentDB" {
+				return fmt.Errorf("RDS engine %s do not support Performance Insights at cluster level.", engines[eng])
+			}
+			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
+		}
+	}
+	if eng == 8 || eng == 9 || eng == 16 || eng == 13 || eng == 11 || eng == 12 {
+		st := diff.Get("storage_type").(string)
+		if st != "aurora" {
+			return fmt.Errorf("RDS engine %s invalid storage type %s valid value is aurora", engines[eng], st)
+
+		}
+	}
+	return nil
 }
