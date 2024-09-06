@@ -17,7 +17,7 @@ resource "duplocloud_infrastructure" "infra" {
   infra_name        = "prod"
   cloud             = 0             # AWS Cloud
   region            = "us-west-2"
-  enable_k8_cluster = false
+  enable_k8_cluster = true
   address_prefix    = "10.11.0.0/16"
 }
 
@@ -48,7 +48,7 @@ resource "duplocloud_tenant" "tenant" {
 }
 ```
 
-### Create a DuploCloud tenant named 'dev' within the 'nonprod' infrastructure.
+### Create a DuploCloud tenant named 'dev' within the 'nonprod' infrastructure. Use a data source to retrieve the info about the nonprod infra.
 
 ```terraform
 # Ensure the 'nonprod' infrastructure is already created before setting up the tenant.
@@ -86,8 +86,7 @@ output "tenant_id" {
 } 
 ```
 
-### Create a duplocloud tenant named dev with AWS Cognito power user access in the nonprod infrastructure.
-
+### Create a duplocloud tenant named dev with AWS Cognito power user access in an existing infrastructure called nonprod.
 ```terraform
 
 # A prerequisite for creating a tenant is having an existing infrastructure. Here’s how you can reference an existing infrastructure.
@@ -109,7 +108,7 @@ resource "aws_iam_role_policy_attachment" "AmazonCognitoPowerUser" {
 
 ```
 
-### Create a DuploCloud tenant named 'qa' with full access to invoke AWS API Gateway in the nonprod infrastructure.
+### Create a DuploCloud tenant named 'qa' with full access to invoke AWS API Gateway in an existing infra named nonprod.
 
 ```terraform
 # A prerequisite for creating a tenant is having an existing infrastructure. Here’s how you can reference an existing infrastructure.
@@ -131,7 +130,7 @@ resource "aws_iam_role_policy_attachment" "AmazonAPIGatewayInvokeFullAccess" {
 
 ```
 
-### Create duplocloud tenant named dev with security group rule to allow access from 10.220.0.0/16 on port 5432 in nonprod infra’
+### Create duplocloud tenant named dev with security group rule to allow access from 10.220.0.0/16 on port 5432 in the nonprod infrastructure which has already been created
 
 ```terraform
 data "duplocloud_infrastructure" "infra" {
@@ -154,7 +153,7 @@ resource "duplocloud_tenant_network_security_rule" "allow_from_vpn" {
 }
 ```
 
-### Setup duplocloud tenant named dev with security group rule to allow access from 10.220.0.0/16 on port 22 in nonprod infra’
+### Setup duplocloud tenant named dev with security group rule to allow access from 10.220.0.0/16 on port 22 in an infra called nonprod, nonprod infra has already been created.
 
 ```terraform
 data "duplocloud_infrastructure" "infra" {
@@ -180,13 +179,19 @@ resource "duplocloud_tenant_network_security_rule" "allow_from_vpn" {
 ### Provision a tenant named 'myapp' within the infrastructure 'myinfra' and disable deletion protection.
 
 ```terraform
-data "duplocloud_infrastructure" "infra" {
- infra_name = "myinfra"
+#Create the infrastructure first before creating the tenant, if it doesn't exist already
+resource "duplocloud_infrastructure" "infra" {
+  infra_name        = "myinfra"
+  cloud             = 0             # AWS Cloud
+  region            = "us-west-2"
+  enable_k8_cluster = true
+  address_prefix    = "10.11.0.0/16"
 }
 
+#Now create the tenant within the infra
 resource "duplocloud_tenant" "tenant" {
  account_name = "myapp"
- plan_id      = data.duplocloud_infrastructure.infra.infra_name
+ plan_id      = duplocloud_infrastructure.infra.infra_name
  allow_deletion = true
 }
 
@@ -202,16 +207,22 @@ resource "duplocloud_tenant_config" "tenant_config" {
 
 ```
 
-### Provision a tenant named 'myapp' within the infrastructure 'myinfra', and ensure that the S3 bucket has public access blocked and SSL enforcement enabled in the S3 bucket policy.
+### Provision a tenant named 'myapp' with delete protection disabled, within the infrastructure 'myinfra', and ensure that the S3 bucket has public access blocked and SSL enforcement enabled in the S3 bucket policy.
 
 ```terraform
-data "duplocloud_infrastructure" "infra" {
- infra_name = "myinfra"
+#Create the infrastructure first before creating the tenant, if it doesn't exist already
+resource "duplocloud_infrastructure" "infra" {
+  infra_name        = "myinfra"
+  cloud             = 0             # AWS Cloud
+  region            = "us-west-2"
+  enable_k8_cluster = true
+  address_prefix    = "10.11.0.0/16"
 }
 
+#Now create the tenant within the infra
 resource "duplocloud_tenant" "tenant" {
  account_name = "myapp"
- plan_id      = data.duplocloud_infrastructure.infra.infra_name
+ plan_id      = duplocloud_infrastructure.infra.infra_name
  allow_deletion = true
 }
 
