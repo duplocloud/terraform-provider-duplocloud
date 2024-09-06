@@ -1,3 +1,11 @@
+## 2024-09-06
+
+### Fixed
+- Corrected duplicate initialization of `scale_priority` in the Azure Kubernetes node pool resource by adjusting slice capacity and length definition to prevent errors.
+
+### Documentation
+- Updated the CHANGELOG to include details of recent bug fixes and enhancements.
+
 
 ## 2024-09-05
 
