@@ -27,8 +27,9 @@ func dataSourceAwsSsmParameter() *schema.Resource {
 				Computed: true,
 			},
 			"value": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:      schema.TypeString,
+				Computed:  true,
+				Sensitive: true,
 			},
 			"key_id": {
 				Type:     schema.TypeString,

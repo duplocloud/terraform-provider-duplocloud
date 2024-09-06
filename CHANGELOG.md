@@ -2,6 +2,13 @@
 
 ### Enhanced
 
+- Masked sensitive information in Terraform logs by marking SSM parameter values as sensitive.
+- Updated documentation to reflect changes in sensitivity for SSM parameter values.
+
+## 2024-09-06
+
+### Enhanced
+
 - Updated GitHub Actions workflows with new user and email configurations for improved consistency and management.
 - Added a new README file with instructions for development and debugging.
 - Updated Terraform provider version to 0.10.43 across various example configurations.

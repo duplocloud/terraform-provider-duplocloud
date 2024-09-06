@@ -29,4 +29,4 @@ description: |-
 - `last_modified_date` (String)
 - `last_modified_user` (String)
 - `type` (String)
-- `value` (String)
+- `value` (String, Sensitive)
