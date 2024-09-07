@@ -59,6 +59,41 @@ resource "duplocloud_ecache_instance" "redis_cache" {
 }
 ```
 
+### Create an Amazon ElastiCache of type Redis with log delivery configuration and automatic failover enabled in dev tenant.
+
+
+```terraform
+# Assuming the 'dev' tenant is already created, use a data source to fetch the tenant ID.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Use the tenant_id from the duplocloud_tenant, which will be populated after the tenant resource is created, when setting up the Redis ElastiCache.
+resource "duplocloud_ecache_instance" "redis_cache" {
+  tenant_id           = data.duplocloud_tenant.tenant.id
+  name                = "mycache"
+  cache_type          = 0 # 0: Redis, 1: Memcache
+  replicas            = 2
+  size                = "cache.t2.small"
+  automatic_failover_enabled = true # minimum 2 replicas or enable_cluster_mode is true
+
+  log_delivery_configuration {
+    log_group        = "/elasticache/redis" # cloudwatch log group
+    destination_type = "cloudwatch-logs"
+    log_format       = "text" # log_format in text format.
+    log_type         = "slow-log"  # log_type of type low-log
+  }
+
+  log_delivery_configuration {
+    log_group        = "/elasticache/redis" # cloudwatch log group
+    destination_type = "cloudwatch-logs"
+    log_format       = "json" # log_format in json format.
+    log_type         = "engine-log" # log_type of type low-log
+  }
+}
+
+```
+
 ### Set up an ElastiCache Redis cluster with 2 shards and 2 cache.t2.small replicas in the dev tenant.
 
 ```terraform
@@ -152,7 +187,6 @@ See AWS documentation for the [available Redis instance types](https://docs.aws.
 Required:
 
 - `destination_type` (String) destination type : must be cloudwatch-logs.
-Refer: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html
 - `log_format` (String) log_format: Value must be one of the ['json', 'text']
 - `log_type` (String) log_type: Value must be one of the ['slow-log', 'engine-log']
 

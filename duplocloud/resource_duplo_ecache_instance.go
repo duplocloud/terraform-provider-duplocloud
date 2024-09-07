@@ -194,10 +194,9 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"destination_type": {
-						Description: "destination type : must be cloudwatch-logs.\n" +
-							"Refer: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CLI_Log.html",
-						Type:     schema.TypeString,
-						Required: true,
+						Description: "destination type : must be cloudwatch-logs.",
+						Type:        schema.TypeString,
+						Required:    true,
 						ValidateFunc: validation.StringInSlice([]string{
 							duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS,
 						}, false),
