@@ -631,11 +631,19 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 		obj.Disable = &disable
 	}
-	obj.DBInstanceIdentifier = identifier
-	insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-	if insightErr != nil {
-		return diag.FromErr(err)
+	obj.DBInstanceIdentifier = identifier + "-cluster"
+	if isAuroraDB(d) {
+		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
+		if insightErr != nil {
+			return diag.FromErr(err)
 
+		}
+	} else {
+		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+		if insightErr != nil {
+			return diag.FromErr(err)
+
+		}
 	}
 
 	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
@@ -1017,10 +1025,11 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 	}
 	if eng == 8 || eng == 9 || eng == 16 || eng == 13 || eng == 11 || eng == 12 {
 		st := diff.Get("storage_type").(string)
-		if st != "aurora" {
+		if st != "" && st != "aurora" {
 			return fmt.Errorf("RDS engine %s invalid storage type %s valid value is aurora", engines[eng], st)
 
 		}
+
 	}
 	return nil
 }
