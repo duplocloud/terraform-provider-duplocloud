@@ -1,5 +1,11 @@
 ## 2024-09-09
 
+### Enhanced
+
+- Added `ForceNew` property to `availability_zones` in `duplocloud_azure_k8_node_pool` to ensure resource replacement on updates.
+
+## 2024-09-09
+
 ### Configuration
 
 - Updated GitHub bot user email and credentials in multiple workflow files.
