@@ -6,6 +6,12 @@
 
 ## 2024-09-09
 
+### Documentation
+
+- Removed duplicate date entry for 2024-09-09 and reorganized sections for improved clarity and consistency.
+
+## 2024-09-09
+
 ### Enhanced
 
 - Added `ForceNew` property to `availability_zones` in `duplocloud_azure_k8_node_pool` to ensure resource replacement on updates.
