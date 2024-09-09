@@ -194,37 +194,33 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"destination_type": {
-						Description: "Select the snapshot/backup you want to use for creating redis.",
+						Description: "destination type : must be cloudwatch-logs.",
 						Type:        schema.TypeString,
 						Required:    true,
 						ValidateFunc: validation.StringInSlice([]string{
 							duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS,
-							duplosdk.REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE,
 						}, false),
 					},
 					"log_format": {
-						Type:     schema.TypeString,
-						Required: true,
+						Type:        schema.TypeString,
+						Description: "log_format: Value must be one of the ['json', 'text']",
+						Required:    true,
 						ValidateFunc: validation.StringInSlice([]string{
 							duplosdk.REDIS_LOG_DELIVERY_LOG_FORMAT_JSON,
 							duplosdk.REDIS_LOG_DELIVERY_LOG_FORMAT_TEXT,
 						}, true),
 					},
 					"log_type": {
-						Type:     schema.TypeString,
-						Required: true,
+						Type:        schema.TypeString,
+						Description: "log_type: Value must be one of the ['slow-log', 'engine-log']",
+						Required:    true,
 						ValidateFunc: validation.StringInSlice([]string{
 							duplosdk.REDIS_LOG_DELIVERY_LOG_TYPE_SLOW_LOG,
 							duplosdk.REDIS_LOG_DELIVERY_LOG_TYPE_ENGINE_LOG,
 						}, false),
 					},
 					"log_group": {
-						Description: "provide log_group for destination_type = cloudwatch-logs",
-						Type:        schema.TypeString,
-						Optional:    true,
-					},
-					"delivery_stream": {
-						Description: "provide delivery_stream for destination_type = kinesis-firehose",
+						Description: "cloudwatch log_group",
 						Type:        schema.TypeString,
 						Optional:    true,
 					},
@@ -237,7 +233,9 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 // SCHEMA for resource crud
 func resourceDuploEcacheInstance() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_ecache_instance` manages an ElastiCache instance in Duplo.",
+		Description: "`duplocloud_ecache_instance` used to manage Amazon ElastiCache instances within a DuploCloud-managed environment. " +
+			"<p>This resource allows you to define and manage Redis or Memcached instances on AWS through Terraform, with DuploCloud handling the underlying infrastructure and integration aspects." +
+			"</p>",
 
 		ReadContext:   resourceDuploEcacheInstanceRead,
 		CreateContext: resourceDuploEcacheInstanceCreate,
@@ -303,8 +301,13 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 		return diag.Errorf("Invalid ECache instance '%s': 'auth_token' must not be specified when 'encryption_in_transit' is false", id)
 	}
 
-	if len(*duplo.LogDeliveryConfigurations) > 0 && !duplosdk.IsAppVersionEqualOrGreater(duplo.EngineVersion, "6.2.0") {
-		return diag.Errorf("log_delivery_configuration can not be used with engine_version '%s', Please use engine_version '6.2.0' or above.", duplo.EngineVersion)
+	if duplicateLogType, found := hasDuplicateLogTypes(*duplo.LogDeliveryConfigurations); found {
+		return diag.Errorf("log_delivery_configuration: Duplicate log_type are not allowed. Found '%s' log_type repeated.", duplicateLogType)
+	}
+
+	errDiag := validateLogDeliveryConfigurations(duplo.EngineVersion, *duplo.LogDeliveryConfigurations)
+	if errDiag != nil {
+		return errDiag
 	}
 
 	if duplo.Replicas < 2 && duplo.AutomaticFailoverEnabled {
@@ -337,6 +340,40 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	diags = resourceDuploEcacheInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s, %s): end", tenantID, duplo.Name)
 	return diags
+}
+
+func validateLogDeliveryConfigurations(engineVersion string, configs []duplosdk.LogDeliveryConfigurationRequest) diag.Diagnostics {
+	if engineVersion == "" || len(configs) == 0 {
+		return nil
+	}
+	for _, config := range configs {
+		switch config.LogType {
+		case "engine-log":
+			if !duplosdk.IsAppVersionEqualOrGreater(engineVersion, "6.2.0") {
+				return diag.Errorf("log_delivery_configuration with log_type 'engine-log' cannot be used with engine_version '%s'. Please use engine_version '6.2.0' or above.", engineVersion)
+			}
+		case "slow-log":
+			if !duplosdk.IsAppVersionEqualOrGreater(engineVersion, "6.0.0") {
+				return diag.Errorf("log_delivery_configuration with log_type 'slow-log' cannot be used with engine_version '%s'. Please use engine_version '6.0.0' or above.", engineVersion)
+			}
+		default:
+			return nil
+		}
+	}
+	return nil
+}
+
+func hasDuplicateLogTypes(configs []duplosdk.LogDeliveryConfigurationRequest) (string, bool) {
+	seen := make(map[string]bool)
+
+	for _, config := range configs {
+		if _, exists := seen[config.LogType]; exists {
+			return config.LogType, true // Duplicate found
+		}
+		seen[config.LogType] = true
+	}
+
+	return "", false // No duplicates
 }
 
 // DELETE resource

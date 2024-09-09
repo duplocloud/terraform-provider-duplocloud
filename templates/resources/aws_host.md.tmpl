@@ -1,0 +1,139 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Deploy a host which will be used for DuploCloud platform's native container agent to deploy native containers
+
+```terraform
+# Before creating a host, you must first set up the infrastructure without an eks cluster. Then, you must create a tenant inside the infra. Below is the resource for creating the infrastructure.
+resource "duplocloud_infrastructure" "infra" {
+  infra_name        = "dev"
+  cloud             = 0 # AWS Cloud
+  region            = "us-east-1"
+  enable_k8_cluster = false
+  address_prefix    = "10.13.0.0/16"
+}
+
+# Use the infrastructure name as the 'plan_id' from the 'duplocloud_infrastructure' resource while creating tenant.
+resource "duplocloud_tenant" "tenant" {
+  account_name = "dev"
+  plan_id      = duplocloud_infrastructure.infra.infra_name
+}
+
+# Create a data source to retrieve the Machine Image ID to be used by the host
+data "duplocloud_native_host_image" "image" {
+  tenant_id     = duplocloud_tenant.tenant.tenant_id
+  is_kubernetes = false  # for native container agent
+}
+
+resource "duplocloud_aws_host" "native" {
+  tenant_id     = duplocloud_tenant.tenant.tenant_id
+  friendly_name = "host01"
+
+  image_id       = data.duplocloud_native_host_image.image.image_id # get the image_id from the data source
+  capacity       = "t3a.medium"
+  agent_platform = 0 # Duplo native container agent
+  zone           = 0 # Zone A
+  user_account   = duplocloud_tenant.tenant.account_name
+
+  metadata {
+    key   = "OsDiskSize" # <== This is the size of the OS disk in GB
+    value = "20"
+  }
+}
+```
+
+### Create an EKS worker node for deployment of the Kubernetes applications 
+
+```terraform
+# Before creating the EKS worker node, you must first set up the infrastructure with EKS cluster enabled and a tenant. Below is the resource for creating the infrastructure.
+resource "duplocloud_infrastructure" "infra" {
+  infra_name        = "dev"
+  cloud             = 0 # AWS Cloud
+  region            = "us-east-1"
+  enable_k8_cluster = true
+  address_prefix    = "10.13.0.0/16"
+}
+
+# Use the infrastructure name as the 'plan_id' from the 'duplocloud_infrastructure' resource while creating tenant.
+resource "duplocloud_tenant" "tenant" {
+  account_name = "dev"
+  plan_id      = duplocloud_infrastructure.infra.infra_name
+}
+
+# Create a data source to retrieve the Machine Image ID to be used by the host
+data "duplocloud_native_host_image" "image" {
+  tenant_id     = duplocloud_tenant.tenant.tenant_id
+  is_kubernetes = true # for EKS agent
+}
+
+resource "duplocloud_aws_host" "host" {
+  tenant_id     = duplocloud_tenant.tenant.tenant_id
+  friendly_name = "host02"
+
+  image_id       = data.duplocloud_native_host_image.image.image_id # get the image_id from the data source
+  capacity       = "t3a.small"
+  agent_platform = 7 # Duplo EKS container agent
+  zone           = 0 # Zone A
+  user_account   = duplocloud_tenant.tenant.account_name
+  keypair_type   = 1
+}
+```
+
+### Create an EKS worker node inside the 'dev' tenant for deployment of the Kubernetes applications, with instance metadata service
+
+```terraform
+# Ensure the 'dev' tenant is already created before setting up the EKS worker node.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+data "duplocloud_native_host_image" "image" {
+  tenant_id     = data.duplocloud_tenant.tenant.id
+  is_kubernetes = true # for EKS agent
+}
+
+resource "duplocloud_aws_host" "host" {
+  tenant_id     = data.duplocloud_tenant.tenant.id
+  friendly_name = "host03"
+
+  image_id       = data.duplocloud_native_host_image.image.image_id # get the image id from the data source
+  capacity       = "t3.small"
+  agent_platform = 7 # Duplo EKS agent
+  zone           = 0 # Zone A
+  user_account   = data.duplocloud_tenant.tenant.name
+  keypair_type   = "1"
+
+  metadata {
+    key   = "OsDiskSize" # <== This is the size of the OS disk in GB
+    value = "20"
+  }
+
+  # Create a host with instance metadata v2 only
+  metadata {
+    key   = "MetadataServiceOption"
+    value = "enabled_v2_only"
+  }
+}
+```
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+# Example: Importing an existing service
+#  - *TENANT_ID* is the tenant GUID
+#  - *NAME* is the name of the service
+#
+terraform import duplocloud_duplo_service.myservice v2/subscriptions/*TENANT_ID*/ReplicationControllerApiV2/*NAME*
+```

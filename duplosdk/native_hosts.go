@@ -51,6 +51,7 @@ type DuploNativeHost struct {
 	IsSecureBoot       bool                               `json:"IsSecureBoot"`
 	IsvTPM             bool                               `json:"IsvTPM"`
 	DiskControlType    string                             `json:"DiskControllerType,omitempty"`
+	ExtraNodeLabels    *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
 }
 
 // DuploNativeHostNetworkInterface is a Duplo SDK object that represents a network interface of a native host

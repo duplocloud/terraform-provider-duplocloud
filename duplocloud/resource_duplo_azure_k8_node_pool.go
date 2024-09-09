@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -85,9 +86,10 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 							"Regular",
 							"Spot",
 						}, false),
+						ForceNew: true,
 					},
 					"eviction_policy": {
-						Description: "eviction policies Delete/Deallocate",
+						Description: "eviction policies Delete/Deallocate. Default value is Delete",
 						Optional:    true,
 						Computed:    true,
 						Type:        schema.TypeString,
@@ -95,12 +97,14 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 							"Delete",
 							"Deallocate",
 						}, false),
+						ForceNew: true,
 					},
 					"spot_max_price": {
-						Description: " for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.",
-						Optional:    true,
-						Computed:    true,
-						Type:        schema.TypeString,
+						Description:  " for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.",
+						Optional:     true,
+						Computed:     true,
+						Type:         schema.TypeFloat,
+						ValidateFunc: validation.FloatAtLeast(0.00001),
 					},
 				},
 			},
@@ -110,6 +114,15 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     true,
+		},
+		"availability_zones": {
+			Description: "availability zones of node pool",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			Computed:    true,
+			Elem: &schema.Schema{Type: schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"1", "2", "3"}, true),
+			},
 		},
 	}
 }
@@ -129,7 +142,8 @@ func resourceAzureK8NodePool() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAgentK8NodePoolSchema(),
+		Schema:        duploAgentK8NodePoolSchema(),
+		CustomizeDiff: validateScalePriorityAttribute,
 	}
 }
 
@@ -260,15 +274,17 @@ func expandAgentK8NodePool(d *schema.ResourceData) (*duplosdk.DuploAzureK8NodePo
 				data := mp.(map[string]interface{})
 				nodePool.ScaleSetPriority = data["priority"].(string)
 				nodePool.ScaleSetEvictionPolicy = data["eviction_policy"].(string)
-				spotPrice := data["spot_max_price"].(string)
-				if spotPrice != "" {
-					price, err := strconv.ParseFloat(spotPrice, 32)
-					if err != nil {
-						return nil, err
-					}
-					nodePool.SpotMaxPrice = float32(price)
+				spotPrice := data["spot_max_price"].(float64)
+				if spotPrice > 0 {
+					nodePool.SpotMaxPrice = float32(spotPrice)
 				}
 			}
+		}
+	}
+	if v, ok := d.GetOk("availability_zones"); ok {
+		azs := v.(*schema.Set)
+		for _, v := range azs.List() {
+			nodePool.AvailabilityZones = append(nodePool.AvailabilityZones, v.(string))
 		}
 	}
 	return nodePool, nil
@@ -311,7 +327,9 @@ func flattenAgentK8NodePool(d *schema.ResourceData, duplo *duplosdk.DuploAzureK8
 		mp["eviction_policy"] = duplo.ScaleSetEvictionPolicy
 		mp["spot_max_price"] = duplo.SpotMaxPrice
 	}
-
+	if len(duplo.AvailabilityZones) > 0 {
+		d.Set("availability_zones", duplo.AvailabilityZones)
+	}
 }
 
 func azureK8NodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
@@ -338,4 +356,32 @@ func azureK8NodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tena
 	log.Printf("[DEBUG] azureK8NodePoolWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func validateScalePriorityAttribute(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	scalePriority := diff.Get("scale_priority").([]interface{})
+	if len(scalePriority) == 0 {
+		return nil
+	}
+	mp := scalePriority[0].(map[string]interface{})
+	if mp["priority"].(string) == "Regular" && mp["spot_max_price"].(float64) != 0 {
+		return errors.New("Scale Priority of type Regular does not support Spot max price")
+	}
+	if mp["priority"].(string) == "Regular" && mp["eviction_policy"].(string) != "" {
+		return errors.New("Scale Priority of type Regular does not support Eviction Policy")
+	}
+	if mp["priority"].(string) == "Spot" && mp["eviction_policy"].(string) == "" {
+		smp := make(map[string]interface{})
+		smp["eviction_policy"] = "Delete"
+		smp["priority"] = "Spot"
+		smp["spot_max_price"] = mp["spot_max_price"]
+		p := make([]interface{}, 0, 1)
+		p = append(p, smp)
+		err := diff.SetNew("scale_priority", p)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -7,7 +7,7 @@ on:
       - master
 env:
   git_user: duplo-bot
-  git_email: joe+github-bot@duplocloud.net
+  git_email: tahir+github-bot@duplocloud.net
 jobs:
   finish-release:
     if: github.event.pull_request.merged == true && (startsWith(github.head_ref, 'refs/heads/release/') || startsWith(github.head_ref, 'release/'))

@@ -41,3 +41,46 @@ resource "duplocloud_rds_instance" "aurora-mydb" {
   encrypt_storage         = true
   backup_retention_period = 1
 }
+
+//performance insights example
+resource "duplocloud_rds_instance" "mydb" {
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
+  name           = "mydb1psql"
+  engine         = 1 // PostgreSQL
+  engine_version = "14.11"
+  size           = "db.t3.micro"
+
+  master_username = "myuser"
+  master_password = "Qaazwedd#1"
+
+  encrypt_storage                 = true
+  store_details_in_secret_manager = true
+  enhanced_monitoring             = 0
+  storage_type                    = "gp2"
+  performance_insights {
+    enabled          = true
+    retention_period = 7
+  }
+}
+
+#performance insigts example for cluster
+
+resource "duplocloud_rds_instance" "mydb" {
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
+  name           = "clust"
+  engine         = 8
+  engine_version = "8.0.mysql_aurora.3.07.1"
+  size           = "db.r5.large"
+
+  master_username = "myuser"
+  master_password = "Qaazwedd#1"
+
+  encrypt_storage                 = true
+  store_details_in_secret_manager = true
+  enhanced_monitoring             = 0
+  storage_type                    = "aurora"
+  performance_insights {
+    enabled          = true
+    retention_period = 7
+  }
+}
