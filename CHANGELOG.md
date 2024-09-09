@@ -3,6 +3,7 @@
 ### Enhanced
 
 - Added `ForceNew` property to `availability_zones` in `duplocloud_azure_k8_node_pool` to ensure resource replacement on updates.
+- Bumped the provider version to 0.10.46 across multiple example files.
 - Improved RDS instance update logic to handle Aurora DB clusters separately, including performance insights updates.
 - Modified storage type validation to allow empty values for Aurora DBs.
 - Updated GitHub bot user email and credentials in multiple workflow files.
