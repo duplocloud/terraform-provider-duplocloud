@@ -1,5 +1,16 @@
 ## 2024-09-09
 
+### Enhanced
+
+- Added support for managing Azure Availability Sets with new resource `duplocloud_azure_availability_set`.
+- Introduced a new data source `duplocloud_azure_availability_set` for retrieving Azure Availability Sets.
+
+### Documentation
+
+- Updated documentation with examples and schema details for Azure Availability Sets resource and data source.
+
+## 2024-09-09
+
 ### Configuration
 
 - Updated GitHub bot user email and credentials in multiple workflow files.
