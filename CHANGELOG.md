@@ -2,6 +2,12 @@
 
 ### Enhanced
 
+- Bumped the provider version to 0.10.46 across multiple example files.
+
+## 2024-09-09
+
+### Enhanced
+
 - Improved RDS instance update logic to handle Aurora DB clusters separately, including performance insights updates.
 - Modified storage type validation to allow empty values for Aurora DBs.
 
