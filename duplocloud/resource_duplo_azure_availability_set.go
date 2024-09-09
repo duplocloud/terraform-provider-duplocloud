@@ -34,9 +34,10 @@ func duploAzureAvailablitySetSchema() map[string]*schema.Schema {
 			Required:    true,
 		},
 		"platform_fault_domain_count": {
-			Description: "The full name of the host.",
-			Type:        schema.TypeInt,
-			Required:    true,
+			Description:  "The full name of the host.",
+			Type:         schema.TypeInt,
+			Required:     true,
+			ValidateFunc: validation.IntBetween(1, 3),
 		},
 		"sku_name": {
 			Description: "The full name of the host.",
@@ -51,12 +52,27 @@ func duploAzureAvailablitySetSchema() map[string]*schema.Schema {
 			Type:     schema.TypeMap,
 			Computed: true,
 		},
+		"virtual_machines": {
+			Type: schema.TypeList,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+			Computed: true,
+		},
+		"availability_set_id": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"type": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 	}
 }
 
 func resourceAzureAvailabilitySet() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_virtual_machine` manages an Azure virtual machine in Duplo.",
+		Description: "`duplocloud_azure_availability_set` manages logical groupings of VMs that enhance reliability by placing VMs in different fault domains to minimize correlated failures, offering improved VM-to-VM latency and high availability, with no extra cost beyond the VM instances themselves, though they may still be affected by shared infrastructure failures.",
 
 		ReadContext:   resourceAzureAvailabilitySetRead,
 		CreateContext: resourceAzureAvailabilitySetCreate,
@@ -69,7 +85,7 @@ func resourceAzureAvailabilitySet() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAzureVirtualMachineSchema(),
+		Schema: duploAzureAvailablitySetSchema(),
 	}
 }
 
@@ -114,10 +130,14 @@ func resourceAzureAvailabilitySetCreate(ctx context.Context, d *schema.ResourceD
 	}
 
 	id := fmt.Sprintf("%s/availability-set/%s", tenantID, name)
-
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "Availability Set", id, func() (interface{}, duplosdk.ClientError) {
+		return c.AzureAvailabilitySetGet(tenantID, name)
+	})
+	if diags != nil {
+		return diags
+	}
 	d.SetId(id)
-
-	diags := resourceAzureAvailabilitySetRead(ctx, d, m)
+	diags = resourceAzureAvailabilitySetRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzureAvailabilitySetCreate(%s, %s): end", tenantID, name)
 	return diags
 }
@@ -149,7 +169,7 @@ func expandAzureAvailabilitySet(d *schema.ResourceData) *duplosdk.DuploAvailabil
 	if v, ok := d.GetOk("platform_update_domain_count"); ok {
 		req.PlatformUpdateDomainCount = v.(int)
 	}
-	if v, ok := d.GetOk("platform_fault_domain_count"); ok && v != nil && v.(string) != "" {
+	if v, ok := d.GetOk("platform_fault_domain_count"); ok {
 		req.PlatformFaultDomainCount = v.(int)
 	}
 	if v, ok := d.GetOk("sku_name"); ok && v != nil && v.(string) != "" {
@@ -170,4 +190,6 @@ func flattenAzureAvailabilitySet(d *schema.ResourceData, duplo *duplosdk.DuploAv
 	d.Set("location", duplo.Location)
 	d.Set("tags", duplo.Tags)
 	d.Set("type", duplo.Type)
+	d.Set("virtual_machines", duplo.VirtualMachines)
+	d.Set("availability_set_id", duplo.AvailabilitySetId)
 }

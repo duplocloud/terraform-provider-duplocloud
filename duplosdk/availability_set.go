@@ -3,12 +3,12 @@ package duplosdk
 import "fmt"
 
 type DuploAvailabilitySet struct {
-	Name string `json:"name"`
+	Name string `json:"Name"`
 	Sku  struct {
-		Name string `json:"name"`
-	} `json:"sku"`
-	PlatformUpdateDomainCount int `json:"properties.platformUpdateDomainCount"`
-	PlatformFaultDomainCount  int `json:"properties.platformFaultDomainCount"`
+		Name string `json:"Name"`
+	} `json:"Sku"`
+	PlatformUpdateDomainCount int `json:"PlatformUpdateDomainCount"`
+	PlatformFaultDomainCount  int `json:"PlatformFaultDomainCount"`
 }
 
 type DuploAvailabilitySetResponse struct {
@@ -21,6 +21,8 @@ type DuploAvailabilitySetResponse struct {
 	Tags                      map[string]interface{} `json:"tags"`
 	Type                      string                 `json:"type"`
 	Location                  string                 `json:"location"`
+	AvailabilitySetId         string                 `json:"id"`
+	VirtualMachines           []string               `json:"properties.virtualMachines"`
 }
 
 func (c *Client) AzureAvailabilitySetCreate(tenantID string, rq *DuploAvailabilitySet) ClientError {
