@@ -32,10 +32,10 @@ resource "duplocloud_azure_availability_set" "st" {
 
 ### Required
 
-- `name` (String) The short name of the host.
-- `platform_fault_domain_count` (Number) The full name of the host.
-- `platform_update_domain_count` (Number) The full name of the host.
-- `sku_name` (String) The full name of the host.
+- `name` (String) The name for availability set
+- `platform_fault_domain_count` (Number) Specify platform fault domain count for availability set
+- `platform_update_domain_count` (Number) Specify platform update domain count for availability set.
+- `sku_name` (String) Specify sku name for availability set.
 - `tenant_id` (String) The GUID of the tenant that the host will be created in.
 
 ### Optional

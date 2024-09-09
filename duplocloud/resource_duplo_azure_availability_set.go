@@ -23,26 +23,29 @@ func duploAzureAvailablitySetSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "The short name of the host.",
+			Description: "The name for availability set",
 			Type:        schema.TypeString,
 			Required:    true,
-			ForceNew:    true, // relaunch instance
+			ForceNew:    true,
 		},
 		"platform_update_domain_count": {
-			Description: "The full name of the host.",
+			Description: "Specify platform update domain count for availability set.",
 			Type:        schema.TypeInt,
 			Required:    true,
+			ForceNew:    true,
 		},
 		"platform_fault_domain_count": {
-			Description:  "The full name of the host.",
+			Description:  "Specify platform fault domain count for availability set",
 			Type:         schema.TypeInt,
 			Required:     true,
 			ValidateFunc: validation.IntBetween(1, 3),
+			ForceNew:     true,
 		},
 		"sku_name": {
-			Description: "The full name of the host.",
+			Description: "Specify sku name for availability set.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 		},
 		"location": {
 			Type:     schema.TypeString,
