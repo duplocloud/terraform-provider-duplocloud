@@ -1,3 +1,10 @@
+## 2024-09-09
+
+### Configuration
+
+- Updated GitHub bot user email and credentials in multiple workflow files.
+- Changed GitHub token secret name in workflows for improved consistency.
+
 ## 2024-09-07
 
 ### Documentation
