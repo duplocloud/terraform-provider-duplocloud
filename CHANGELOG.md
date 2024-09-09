@@ -1,11 +1,5 @@
 ## 2024-09-09
 
-### Fixed
-
-- Applied Aurora performance insights validation only when performance insights are enabled, preventing unnecessary validation errors.
-
-## 2024-09-09
-
 ### Enhanced
 
 - Added `ForceNew` property to `availability_zones` in `duplocloud_azure_k8_node_pool` to ensure resource replacement on updates.
@@ -15,15 +9,10 @@
 - Updated GitHub bot user email and credentials in multiple workflow files.
 - Changed GitHub token secret name in workflows for improved consistency.
 
-## 2024-09-09
+### Fixed
 
-### Enhanced
+- Applied Aurora performance insights validation only when performance insights are enabled, preventing unnecessary validation errors.
 
-- Added `ForceNew` property to `availability_zones` in `duplocloud_azure_k8_node_pool` to ensure resource replacement on updates.
-- Improved RDS instance update logic to handle Aurora DB clusters separately, including performance insights updates.
-- Modified storage type validation to allow empty values for Aurora DBs.
-- Updated GitHub bot user email and credentials in multiple workflow files.
-- Changed GitHub token secret name in workflows for improved consistency.
 
 ## 2024-09-07
 
