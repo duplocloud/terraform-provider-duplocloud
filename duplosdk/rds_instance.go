@@ -305,6 +305,25 @@ func (c *Client) UpdateDBInstancePerformanceInsight(tenantID string, duploObject
 	return err
 }
 
+func (c *Client) UpdateDBClusterPerformanceInsight(tenantID string, duploObject DuploRdsUpdatePerformanceInsights) ClientError {
+	if duploObject.Enable != nil {
+		err := c.putAPI(
+			fmt.Sprintf("UpdateDBClusterPerformanceInsight(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+			fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, duploObject.DBInstanceIdentifier),
+			duploObject.Enable,
+			nil,
+		)
+		return err
+	}
+	err := c.putAPI(
+		fmt.Sprintf("UpdateDBClusterPerformanceInsight(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, duploObject.DBInstanceIdentifier),
+		duploObject.Disable,
+		nil,
+	)
+	return err
+}
+
 func (c *Client) UpdateRdsCluster(tenantID string, duploObject DuploRdsUpdateCluster) ClientError {
 	return c.putAPI(
 		fmt.Sprintf("UpdateRdsCluster(%s, %s)", tenantID, duploObject.DBClusterIdentifier),
