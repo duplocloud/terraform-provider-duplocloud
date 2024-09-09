@@ -1,3 +1,9 @@
+## 2024-09-09
+
+### Enhanced
+
+- Updated provider version to 0.10.45 across multiple examples.
+
 ## 2024-09-07
 
 ### Documentation
