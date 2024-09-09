@@ -120,7 +120,6 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			Type:        schema.TypeSet,
 			Optional:    true,
 			Computed:    true,
-			ForceNew:    true,
 			Elem: &schema.Schema{Type: schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{"1", "2", "3"}, true),
 			},
