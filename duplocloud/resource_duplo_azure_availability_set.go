@@ -79,7 +79,7 @@ func resourceAzureAvailabilitySet() *schema.Resource {
 
 		ReadContext:   resourceAzureAvailabilitySetRead,
 		CreateContext: resourceAzureAvailabilitySetCreate,
-		UpdateContext: resourceAzureAvailabilitySetUpdate,
+		//	UpdateContext: resourceAzureAvailabilitySetUpdate,
 		DeleteContext: resourceAzureAvailabilitySetDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -145,9 +145,9 @@ func resourceAzureAvailabilitySetCreate(ctx context.Context, d *schema.ResourceD
 	return diags
 }
 
-func resourceAzureAvailabilitySetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+/*func resourceAzureAvailabilitySetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return nil
-}
+}*/
 
 func resourceAzureAvailabilitySetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
