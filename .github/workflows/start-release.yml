@@ -7,8 +7,8 @@ on:
         required: false
         default: '' # default to current version
 env:
-  git_user: tahir-duplo
-  git_email: tahir@duplocloud.net
+  git_user: duplo-bot
+  git_email: tahir+github-bot@duplocloud.net
 jobs:
   start-release:
     runs-on: ubuntu-latest
@@ -46,7 +46,7 @@ jobs:
       - name: Start gitflow release
         uses: duplocloud/ghactions-start-gitflow-release@master
         with:
-          github_token: ${{ secrets.DUPLO_TF_GITHUB_TOKEN }}
+          github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
           version: "${{ steps.version.outputs.release }}"
           precommit_run: |
             # Fail on errors
