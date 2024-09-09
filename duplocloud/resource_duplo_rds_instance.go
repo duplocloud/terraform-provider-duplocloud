@@ -1014,7 +1014,13 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		16: "Aurora",
 	}
 	eng := diff.Get("engine").(int)
-	if v, ok := nonsup[eng]; ok {
+	perf_insights_enabled := false
+	perf_insights_configuration_list := diff.Get("performance_insights").([]interface{})
+	if len(perf_insights_configuration_list) > 0 {
+		perf_insights_configuration := perf_insights_configuration_list[0].(map[string]interface{})
+		perf_insights_enabled = perf_insights_configuration["enabled"].(bool)
+	}
+	if v, ok := nonsup[eng]; perf_insights_enabled && ok {
 		s := diff.Get("size").(string)
 		if _, ok := v[s]; ok {
 			if engines[eng] == "DocumentDB" {
