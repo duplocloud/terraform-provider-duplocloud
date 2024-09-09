@@ -1,5 +1,21 @@
 ## 2024-09-09
 
+### Fixed
+
+- Applied Aurora performance insights validation only when performance insights are enabled, preventing unnecessary validation errors.
+
+### Enhanced
+
+- Bumped the provider version to 0.10.47 across multiple example files.
+
+## 2024-09-09
+
+### Fixed
+
+- Applied Aurora performance insights validation only when performance insights are enabled, preventing unnecessary validation errors.
+
+## 2024-09-09
+
 ### Enhanced
 
 - Added `ForceNew` property to `availability_zones` in `duplocloud_azure_k8_node_pool` to ensure resource replacement on updates.
