@@ -6,8 +6,8 @@ on:
     branches:
       - master
 env:
-  git_user: tahir-duplo
-  git_email: tahir@duplocloud.net
+  git_user: duplo-bot
+  git_email: tahir+github-bot@duplocloud.net
 jobs:
   finish-release:
     if: github.event.pull_request.merged == true && (startsWith(github.head_ref, 'refs/heads/release/') || startsWith(github.head_ref, 'release/'))
@@ -33,7 +33,7 @@ jobs:
         with:
           validate_merge: false
           delete_branch: false
-          github_token: ${{ secrets.DUPLO_TF_GITHUB_TOKEN }}
+          github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
 
   version-bump:
     runs-on: ubuntu-latest
@@ -73,5 +73,5 @@ jobs:
       - name: Push develop
         uses: ad-m/github-push-action@master
         with:
-          github_token: ${{ secrets.DUPLO_TF_GITHUB_TOKEN }}
+          github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
           branch: develop
