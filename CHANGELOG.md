@@ -1,3 +1,25 @@
+## 2024-09-09
+
+### Enhanced
+
+- Updated provider version to 0.10.45 across multiple examples.
+
+## 2024-09-07
+
+### Documentation
+
+- Added examples for configuring Redis logging and automatic failover in Amazon ElastiCache documentation.
+- Updated schema description for `destination_type` in Redis configuration, removing outdated reference links.
+
+## 2024-09-06
+
+### Enhanced
+
+- Improved RDS instance validation with a new `CustomizeDiff` function to ensure compatibility of engine and instance size combinations.
+- Streamlined performance insights handling for RDS instances, enhancing the enabling and disabling process.
+- Added validation for Aurora database storage types to ensure correct configuration.
+- Included a new example in the documentation for configuring performance insights on a cluster RDS instance.
+
 ## 2024-09-06
 
 ### Fixed
