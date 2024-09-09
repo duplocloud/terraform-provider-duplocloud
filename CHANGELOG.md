@@ -1,3 +1,10 @@
+## 2024-09-07
+
+### Documentation
+
+- Added examples for configuring Redis logging and automatic failover in Amazon ElastiCache documentation.
+- Updated schema description for `destination_type` in Redis configuration, removing outdated reference links.
+
 ## 2024-09-06
 
 ### Enhanced
