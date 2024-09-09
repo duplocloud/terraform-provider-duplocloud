@@ -1,5 +1,12 @@
 ## 2024-09-09
 
+### Enhanced
+
+- Added new Airflow versions and removed deprecated ones in the MWAA environment schema.
+- Introduced new instance sizes for MWAA environments.
+
+## 2024-09-09
+
 ### Documentation
 
 - Removed duplicate date entry for 2024-09-09 and reorganized sections for improved clarity and consistency.
