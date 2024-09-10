@@ -6,9 +6,16 @@ import (
 
 type DuploAwsEcrRepositoryRequest struct {
 	KmsEncryption         string `json:"KmsEncryption,omitempty"`
-	EnableTagImmutability bool   `json:"EnableTagImmutability,omitempty"`
-	EnableScanImageOnPush bool   `json:"EnableScanImageOnPush,omitempty"`
+	EnableTagImmutability bool   `json:"EnableTagImmutability"`
+	EnableScanImageOnPush bool   `json:"EnableScanImageOnPush"`
 	Name                  string `json:"Name"`
+}
+
+type DuploAwsEcrRepositoryUpdateRequest struct {
+	EnableTagImmutability bool   `json:"EnableTagImmutability"`
+	EnableScanImageOnPush bool   `json:"EnableScanImageOnPush"`
+	Name                  string `json:"Name"`
+	ResourceType          int    `json:"ResourceType"`
 }
 
 type DuploAwsEcrRepository struct {
@@ -78,6 +85,15 @@ func (c *Client) AwsEcrRepositoryDelete(tenantID string, name string, forceDelet
 	return c.deleteAPI(
 		fmt.Sprintf("AwsEcrRepositoryDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/ecrRepository/%s%s", tenantID, forceDeletePostfix, name),
+		nil,
+	)
+}
+
+func (c *Client) AwsEcrRepositoryUpdate(tenantID string, rq *DuploAwsEcrRepositoryUpdateRequest) ClientError {
+	return c.putAPI(
+		fmt.Sprintf("AwsEcrRepositoryUpdate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecrRepository/%s", tenantID, rq.Name),
+		&rq,
 		nil,
 	)
 }
