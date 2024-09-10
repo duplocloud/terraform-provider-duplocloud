@@ -2,6 +2,14 @@
 
 ### Enhanced
 
+- Enabled performance insights for DocumentDB in RDS instances by updating the create and update context logic.
+- Modified validation logic for RDS parameters to support DocumentDB performance insights.
+- Added `ApplyImmediately` option for performance insights updates to apply changes immediately.
+
+## 2024-09-10
+
+### Enhanced
+
 
 - Updated GitHub Actions workflows to use `actions/checkout` version v3 for improved consistency and potential enhancements.
 - Added new Airflow versions and removed deprecated ones in the MWAA environment schema.
