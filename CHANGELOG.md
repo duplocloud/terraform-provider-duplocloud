@@ -2,12 +2,15 @@
 
 ### Enhanced
 
+
+- Updated GitHub Actions workflows to use `actions/checkout` version v3 for improved consistency and potential enhancements.
 - Added new Airflow versions and removed deprecated ones in the MWAA environment schema.
 - Introduced new instance sizes for MWAA environments.
 
 ### Documentation
 
 - Updated documentation to reflect changes in the MWAA environment schema.
+
 
 ## 2024-09-09
 
