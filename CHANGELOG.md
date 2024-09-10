@@ -1,3 +1,16 @@
+## 2024-09-10
+
+### Enhanced
+
+
+- Updated GitHub Actions workflows to use `actions/checkout` version v3 for improved consistency and potential enhancements.
+- Added new Airflow versions and removed deprecated ones in the MWAA environment schema.
+- Introduced new instance sizes for MWAA environments.
+
+### Documentation
+
+- Updated documentation to reflect changes in the MWAA environment schema.
+
 ## 2024-09-09
 
 ### Enhanced
@@ -18,10 +31,48 @@
 
 ## 2024-09-09
 
-### Configuration
+### Enhanced
 
+- Added new Airflow versions and removed deprecated ones in the MWAA environment schema.
+- Introduced new instance sizes for MWAA environments.
+
+## 2024-09-09
+
+### Documentation
+
+- Removed duplicate date entry for 2024-09-09 and reorganized sections for improved clarity and consistency.
+
+## 2024-09-09
+
+### Documentation
+
+- Removed duplicate date entry for 2024-09-09 and reorganized sections for improved clarity and consistency.
+
+### Enhanced
+
+- Bumped the provider version to 0.10.47 across multiple example files.
+
+## 2024-09-09
+
+### Fixed
+
+- Applied Aurora performance insights validation only when performance insights are enabled, preventing unnecessary validation errors.
+
+## 2024-09-09
+
+### Enhanced
+
+- Added `ForceNew` property to `availability_zones` in `duplocloud_azure_k8_node_pool` to ensure resource replacement on updates.
+- Bumped the provider version to 0.10.46 across multiple example files.
+- Improved RDS instance update logic to handle Aurora DB clusters separately, including performance insights updates.
+- Modified storage type validation to allow empty values for Aurora DBs.
 - Updated GitHub bot user email and credentials in multiple workflow files.
 - Changed GitHub token secret name in workflows for improved consistency.
+
+### Fixed
+
+- Applied Aurora performance insights validation only when performance insights are enabled, preventing unnecessary validation errors.
+
 
 ## 2024-09-07
 

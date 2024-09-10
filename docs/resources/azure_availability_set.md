@@ -49,7 +49,7 @@ resource "duplocloud_azure_availability_set" "st" {
 - `location` (String)
 - `tags` (Map of String)
 - `type` (String)
-- `virtual_machines` (List of String)
+- `virtual_machines` (List of Object) (see [below for nested schema](#nestedatt--virtual_machines))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -58,6 +58,14 @@ Optional:
 
 - `create` (String)
 - `delete` (String)
+
+
+<a id="nestedatt--virtual_machines"></a>
+### Nested Schema for `virtual_machines`
+
+Read-Only:
+
+- `id` (String)
 
 ## Import
 

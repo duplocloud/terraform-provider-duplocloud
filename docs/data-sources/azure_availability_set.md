@@ -44,4 +44,11 @@ output "out" {
 - `sku_name` (String)
 - `tags` (String)
 - `type` (String)
-- `virtual_machines` (List of String)
+- `virtual_machines` (List of Object) (see [below for nested schema](#nestedatt--virtual_machines))
+
+<a id="nestedatt--virtual_machines"></a>
+### Nested Schema for `virtual_machines`
+
+Read-Only:
+
+- `id` (String)
