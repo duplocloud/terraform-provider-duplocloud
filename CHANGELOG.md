@@ -2,7 +2,15 @@
 
 ### Enhanced
 
+
 - Updated GitHub Actions workflows to use `actions/checkout` version v3 for improved consistency and potential enhancements.
+- Added new Airflow versions and removed deprecated ones in the MWAA environment schema.
+- Introduced new instance sizes for MWAA environments.
+
+### Documentation
+
+- Updated documentation to reflect changes in the MWAA environment schema.
+
 
 ## 2024-09-09
 
@@ -16,6 +24,22 @@
 ### Documentation
 
 - Removed duplicate date entry for 2024-09-09 and reorganized sections for improved clarity and consistency.
+
+## 2024-09-09
+
+### Documentation
+
+- Removed duplicate date entry for 2024-09-09 and reorganized sections for improved clarity and consistency.
+
+### Enhanced
+
+- Bumped the provider version to 0.10.47 across multiple example files.
+
+## 2024-09-09
+
+### Fixed
+
+- Applied Aurora performance insights validation only when performance insights are enabled, preventing unnecessary validation errors.
 
 ## 2024-09-09
 
