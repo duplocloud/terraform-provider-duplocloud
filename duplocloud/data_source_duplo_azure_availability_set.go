@@ -42,11 +42,16 @@ func dataSourceAzureAvailabilitySet() *schema.Resource {
 				Computed: true,
 			},
 			"virtual_machines": {
-				Type: schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
+				Type:     schema.TypeList,
 				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
 			},
 			"availability_set_id": {
 				Type:     schema.TypeString,
@@ -93,7 +98,7 @@ func dataSourceAzureAvailabilitySetRead(d *schema.ResourceData, m interface{}) e
 	d.Set("location", duplo.Location)
 	d.Set("tags", duplo.Tags)
 	d.Set("type", duplo.Type)
-	d.Set("virtual_machines", duplo.VirtualMachines)
+	d.Set("virtual_machines", flattenVMIds(&duplo.VirtualMachines))
 	d.Set("availability_set_id", duplo.AvailabilitySetId)
 	log.Printf("[TRACE] dataSourceAzureAvailabilitySetRead(%s, %s): end", tenantID, name)
 	return nil

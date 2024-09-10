@@ -56,11 +56,16 @@ func duploAzureAvailablitySetSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"virtual_machines": {
-			Type: schema.TypeList,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
+			Type:     schema.TypeList,
 			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"id": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+			},
 		},
 		"availability_set_id": {
 			Type:     schema.TypeString,
@@ -193,6 +198,20 @@ func flattenAzureAvailabilitySet(d *schema.ResourceData, duplo *duplosdk.DuploAv
 	d.Set("location", duplo.Location)
 	d.Set("tags", duplo.Tags)
 	d.Set("type", duplo.Type)
-	d.Set("virtual_machines", duplo.VirtualMachines)
+	d.Set("virtual_machines", flattenVMIds(&duplo.VirtualMachines))
 	d.Set("availability_set_id", duplo.AvailabilitySetId)
+}
+func flattenVMIds(duplo *[]duplosdk.VMIds) []interface{} {
+	if duplo == nil {
+		return []interface{}{}
+	}
+
+	list := make([]interface{}, 0, len(*duplo))
+	for _, item := range *duplo {
+		list = append(list, map[string]interface{}{
+			"id": item.Id,
+		})
+	}
+
+	return list
 }

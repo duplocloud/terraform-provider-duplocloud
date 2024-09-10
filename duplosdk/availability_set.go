@@ -22,7 +22,11 @@ type DuploAvailabilitySetResponse struct {
 	Type                      string                 `json:"type"`
 	Location                  string                 `json:"location"`
 	AvailabilitySetId         string                 `json:"id"`
-	VirtualMachines           []string               `json:"properties.virtualMachines"`
+	VirtualMachines           []VMIds                `json:"properties.virtualMachines"`
+}
+
+type VMIds struct {
+	Id string `json:"id,omitempty"`
 }
 
 func (c *Client) AzureAvailabilitySetCreate(tenantID string, rq *DuploAvailabilitySet) ClientError {
