@@ -635,13 +635,13 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	if isAuroraDB(d) {
 		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
 		if insightErr != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(insightErr)
 
 		}
 	} else {
 		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
 		if insightErr != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(insightErr)
 
 		}
 	}

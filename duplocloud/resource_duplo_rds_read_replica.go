@@ -123,6 +123,38 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"performance_insights": {
+			Description: "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. Not applicable for Cluster Db",
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"enabled": {
+						Description: "Turn on or off Performance Insights",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+					},
+					"kms_key_id": {
+						Description: "Specify ARN for the KMS key to encrypt Performance Insights data.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
+					},
+					"retention_period": {
+						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+						ValidateFunc: validation.Any(
+							validation.IntInSlice([]int{7, 731}),
+							validation.IntDivisibleBy(31),
+						),
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -143,7 +175,8 @@ func resourceDuploRdsReadReplica() *schema.Resource {
 			Update: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
-		Schema: rdsReadReplicaSchema(),
+		Schema:        rdsReadReplicaSchema(),
+		CustomizeDiff: validateRDSParameters,
 	}
 }
 
@@ -238,7 +271,58 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 
 // UPDATE resource
 func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	var err error
+
+	c := m.(*duplosdk.Client)
+	tenantID := d.Get("tenant_id").(string)
+	id := d.Id()
+	identifier := d.Get("identifier").(string)
+
+	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
+	pI := expandPerformanceInsight(d)
+	if pI != nil {
+		period := pI["retention_period"].(int)
+		kmsid := pI["kms_key_id"].(string)
+		enable := duplosdk.PerformanceInsightEnable{
+			EnablePerformanceInsights:          pI["enabled"].(bool),
+			PerformanceInsightsRetentionPeriod: period,
+			PerformanceInsightsKMSKeyId:        kmsid,
+		}
+		obj.Enable = &enable
+	} else {
+		disable := duplosdk.PerformanceInsightDisable{
+			EnablePerformanceInsights: false,
+		}
+		obj.Disable = &disable
+	}
+	obj.DBInstanceIdentifier = identifier + "-cluster"
+	if isAuroraDB(d) {
+		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
+		if insightErr != nil {
+			return diag.FromErr(insightErr)
+
+		}
+	} else {
+		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+		if insightErr != nil {
+			return diag.FromErr(insightErr)
+
+		}
+	}
+
+	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
+	_ = readReplicaInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+
+	// Wait for the instance to become available.
+	err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+	if err != nil {
+		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+	}
+
+	diags := resourceDuploRdsReadReplicaRead(ctx, d, m)
+
+	log.Printf("[TRACE] resourceDuploRdsReadReplicaUpdate ******** end")
+	return diags
 }
 
 // DELETE resource
@@ -295,6 +379,36 @@ func rdsReadReplicaWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, i
 	return err
 }
 
+// ReadReplicaInstanceWaitUntilUnavailable waits until an RDS instance is unavailable.
+//
+// It should be usable post-modification.
+func readReplicaInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, id string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Target: []string{
+			"processing", "backing-up", "backtracking", "configuring-enhanced-monitoring", "configuring-iam-database-auth", "configuring-log-exports", "creating",
+			"maintenance", "modifying", "moving-to-vpc", "rebooting", "renaming",
+			"resetting-master-credentials", "starting", "stopping", "storage-optimization", "upgrading",
+		},
+		Pending:      []string{"available"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.InstanceStatus == "" {
+				resp.InstanceStatus = "available"
+			}
+			return resp, resp.InstanceStatus, nil
+		},
+	}
+	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
 // RdsInstanceFromState converts resource data respresenting an RDS read replica to a Duplo SDK object.
 func rdsReadReplicaFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, error) {
 	duploObject := new(duplosdk.DuploRdsInstance)
@@ -302,6 +416,16 @@ func rdsReadReplicaFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance
 	duploObject.Identifier = d.Get("name").(string)
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
+	pI := expandPerformanceInsight(d)
+	if pI != nil {
+
+		period := pI["retention_period"].(int)
+		kmsid := pI["kms_key_id"].(string)
+		duploObject.EnablePerformanceInsights = pI["enabled"].(bool)
+		duploObject.PerformanceInsightsRetentionPeriod = period
+		duploObject.PerformanceInsightsKMSKeyId = kmsid
+
+	}
 	return duploObject, nil
 }
 
@@ -342,6 +466,15 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 		clusterIdentifier = duploObject.ReplicationSourceIdentifier
 	}
 	jo["cluster_identifier"] = clusterIdentifier
+	pis := []interface{}{}
+	pi := make(map[string]interface{})
+	pi["enabled"] = duploObject.EnablePerformanceInsights
+	if duploObject.EnablePerformanceInsights {
+		pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
+		pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
+	}
+	pis = append(pis, pi)
+	jo["performance_insights"] = pis
 
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
