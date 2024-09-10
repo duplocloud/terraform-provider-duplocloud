@@ -300,7 +300,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 - `master_username` (String) The master username of the RDS instance.
 - `multi_az` (Boolean) Specifies if the RDS instance is multi-AZ.
 - `parameter_group_name` (String) A RDS parameter group name to apply to the RDS instance.
-- `performance_insights` (Block List, Max: 1) Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. Not applicable for Cluster Db (see [below for nested schema](#nestedblock--performance_insights))
+- `performance_insights` (Block List, Max: 1) Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. (see [below for nested schema](#nestedblock--performance_insights))
 - `skip_final_snapshot` (Boolean) If the final snapshot should be taken. When set to true, the final snapshot will not be taken when the resource is deleted. Defaults to `false`.
 - `snapshot_id` (String) A database snapshot to initialize the RDS instance from, at launch.
 - `storage_type` (String) Valid values: gp2 | gp3 | io1 | standard | aurora. Storage type to be used for RDS instance storage.
