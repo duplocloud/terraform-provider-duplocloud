@@ -89,7 +89,7 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			}, false),
 		},
 		"environment_class": {
-			Description: "Environment class for the cluster. Possible options are `mw1.small`, `mw1.medium`, `mw1.large`.",
+			Description: "Environment class for the cluster. Possible options are `mw1.small`, `mw1.medium`, `mw1.large`, `mw1.xlarge`, `mw1.2xlarge`.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
