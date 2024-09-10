@@ -63,14 +63,34 @@ resource "duplocloud_rds_instance" "mydb" {
   }
 }
 
-#performance insigts example for cluster
-
+//performance insights cluster example
 resource "duplocloud_rds_instance" "mydb" {
   tenant_id      = duplocloud_tenant.myapp.tenant_id
   name           = "clust"
-  engine         = 8
+  engine         = 8 // PostgreSQL
   engine_version = "8.0.mysql_aurora.3.07.1"
   size           = "db.r5.large"
+
+  master_username = "myuser"
+  master_password = "Qaazwedd#1"
+
+  encrypt_storage                 = true
+  store_details_in_secret_manager = true
+  enhanced_monitoring             = 0
+  performance_insights {
+    enabled          = true
+    retention_period = 7
+  }
+}
+
+//performance insights document db example
+
+resource "duplocloud_rds_instance" "mydb" {
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
+  name           = "doc"
+  engine         = 13
+  engine_version = "3.6.0"
+  size           = "db.t3.medium"
 
   master_username = "myuser"
   master_password = "Qaazwedd#1"
