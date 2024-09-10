@@ -1,5 +1,12 @@
 ## 2024-09-10
 
+### Documentation
+
+- Updated RDS instance documentation to clarify performance insights configuration and defaults.
+- Revised examples to include DocumentDB with performance insights.
+
+## 2024-09-10
+
 ### Enhanced
 
 - Enabled performance insights for DocumentDB in RDS instances by updating the create and update context logic.
