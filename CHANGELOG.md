@@ -1,3 +1,9 @@
+## 2024-09-10
+
+### Enhanced
+
+- Updated GitHub Actions workflows to use `actions/checkout` version v3 for improved consistency and potential enhancements.
+
 ## 2024-09-09
 
 ### Enhanced
