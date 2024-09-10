@@ -15,7 +15,7 @@ type DuploAwsEcrRepositoryUpdateRequest struct {
 	EnableTagImmutability bool   `json:"EnableTagImmutability"`
 	EnableScanImageOnPush bool   `json:"EnableScanImageOnPush"`
 	Name                  string `json:"Name"`
-	ResourceType          int    `json:"ResourceType"`
+	//ResourceType          int    `json:"ResourceType"`
 }
 
 type DuploAwsEcrRepository struct {
