@@ -2,6 +2,12 @@
 
 ### Enhanced
 
+- Implemented update functionality for `duplocloud_aws_ecr_repository`, allowing ECR settings to be changed without recreating the resource.
+
+## 2024-09-10
+
+### Enhanced
+
 
 - Updated GitHub Actions workflows to use `actions/checkout` version v3 for improved consistency and potential enhancements.
 - Added new Airflow versions and removed deprecated ones in the MWAA environment schema.
