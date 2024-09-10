@@ -78,7 +78,6 @@ resource "duplocloud_rds_instance" "mydb" {
   encrypt_storage                 = true
   store_details_in_secret_manager = true
   enhanced_monitoring             = 0
-  storage_type                    = "aurora"
   performance_insights {
     enabled          = true
     retention_period = 7
