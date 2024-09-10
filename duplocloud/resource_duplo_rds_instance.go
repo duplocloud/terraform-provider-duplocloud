@@ -431,20 +431,11 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	identifier := createdRds.Identifier
 	pI := expandPerformanceInsight(d)
 	if pI != nil && duplo.Engine == 13 {
-		obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
-		period := pI["retention_period"].(int)
-		kmsid := pI["kms_key_id"].(string)
-		enable := duplosdk.PerformanceInsightEnable{
-			EnablePerformanceInsights:          pI["enabled"].(bool),
-			PerformanceInsightsRetentionPeriod: period,
-			PerformanceInsightsKMSKeyId:        kmsid,
-			ApplyImmediately:                   true,
-		}
-		obj.Enable = &enable
+		obj := enablePerformanceInstanceObject(pI)
 		obj.DBInstanceIdentifier = identifier
 		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
 		if insightErr != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(insightErr)
 
 		}
 	}
@@ -635,15 +626,8 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
 	pI := expandPerformanceInsight(d)
 	if pI != nil {
-		period := pI["retention_period"].(int)
-		kmsid := pI["kms_key_id"].(string)
-		enable := duplosdk.PerformanceInsightEnable{
-			EnablePerformanceInsights:          pI["enabled"].(bool),
-			PerformanceInsightsRetentionPeriod: period,
-			PerformanceInsightsKMSKeyId:        kmsid,
-			ApplyImmediately:                   true,
-		}
-		obj.Enable = &enable
+		obj = enablePerformanceInstanceObject(pI)
+
 	} else {
 		disable := duplosdk.PerformanceInsightDisable{
 			EnablePerformanceInsights: false,
@@ -655,13 +639,13 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		obj.DBInstanceIdentifier = identifier + "-cluster"
 		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
 		if insightErr != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(insightErr)
 
 		}
 	} else {
 		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
 		if insightErr != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(insightErr)
 
 		}
 	}
@@ -1055,4 +1039,18 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 
 	}
 	return nil
+}
+
+func enablePerformanceInstanceObject(pI map[string]interface{}) duplosdk.DuploRdsUpdatePerformanceInsights {
+	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
+	period := pI["retention_period"].(int)
+	kmsid := pI["kms_key_id"].(string)
+	enable := duplosdk.PerformanceInsightEnable{
+		EnablePerformanceInsights:          pI["enabled"].(bool),
+		PerformanceInsightsRetentionPeriod: period,
+		PerformanceInsightsKMSKeyId:        kmsid,
+		ApplyImmediately:                   true,
+	}
+	obj.Enable = &enable
+	return obj
 }
