@@ -134,7 +134,7 @@ func resourceAzureAvailabilitySetCreate(ctx context.Context, d *schema.ResourceD
 	rq := expandAzureAvailabilitySet(d)
 	err = c.AzureAvailabilitySetCreate(tenantID, rq)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure virtual machine '%s': %s", tenantID, name, err)
+		return diag.Errorf("Error creating tenant %s azure availability set '%s': %s", tenantID, name, err)
 	}
 
 	id := fmt.Sprintf("%s/availability-set/%s", tenantID, name)

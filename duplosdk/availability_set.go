@@ -31,7 +31,7 @@ type VMIds struct {
 
 func (c *Client) AzureAvailabilitySetCreate(tenantID string, rq *DuploAvailabilitySet) ClientError {
 	err := c.postAPI(
-		fmt.Sprintf("AzureAvailabilityZoneCreate(%s)", tenantID),
+		fmt.Sprintf("AzureAvailabilitySetCreate(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/azure/host/availabilityset", tenantID),
 		&rq,
 		nil,
@@ -42,7 +42,7 @@ func (c *Client) AzureAvailabilitySetCreate(tenantID string, rq *DuploAvailabili
 func (c *Client) AzureAvailabilitySetList(tenantID string) (*[]DuploAvailabilitySet, ClientError) {
 	rp := []DuploAvailabilitySet{}
 	err := c.getAPI(
-		fmt.Sprintf("AzureAvailabilityZoneCreate(%s)", tenantID),
+		fmt.Sprintf("AzureAvailabilitySetList(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/azure/host/availabilityset", tenantID),
 		&rp,
 	)
@@ -52,7 +52,7 @@ func (c *Client) AzureAvailabilitySetList(tenantID string) (*[]DuploAvailability
 func (c *Client) AzureAvailabilitySetGet(tenantID, name string) (*DuploAvailabilitySetResponse, ClientError) {
 	rp := DuploAvailabilitySetResponse{}
 	err := c.getAPI(
-		fmt.Sprintf("AzureAvailabilityZoneGet(%s,%s)", tenantID, name),
+		fmt.Sprintf("AzureAvailabilitySetGet(%s,%s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/azure/host/availabilityset/%s", tenantID, name),
 		&rp,
 	)
@@ -61,7 +61,7 @@ func (c *Client) AzureAvailabilitySetGet(tenantID, name string) (*DuploAvailabil
 
 func (c *Client) AzureAvailabilitySetDelete(tenantID, name string) ClientError {
 	err := c.deleteAPI(
-		fmt.Sprintf("AzureAvailabilityZoneDelete(%s,%s)", tenantID, name),
+		fmt.Sprintf("AzureAvailabilitySetDelete(%s,%s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/azure/host/availabilityset/%s", tenantID, name),
 		nil,
 	)
