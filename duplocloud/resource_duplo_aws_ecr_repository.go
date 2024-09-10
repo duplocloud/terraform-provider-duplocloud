@@ -151,13 +151,13 @@ func resourceAwsEcrRepositoryUpdate(ctx context.Context, d *schema.ResourceData,
 		Name:                  name,
 		EnableTagImmutability: d.Get("enable_tag_immutability").(bool),
 		EnableScanImageOnPush: d.Get("enable_scan_image_on_push").(bool),
-		ResourceType:          17,
+		//	ResourceType:          17,
 	}
 	c := m.(*duplosdk.Client)
 
 	err = c.AwsEcrRepositoryUpdate(tenantID, &req)
 	if err != nil {
-		diag.Errorf(err.Error())
+		return diag.Errorf(err.Error())
 	}
 	time.Sleep(5 * time.Minute)
 	return nil
