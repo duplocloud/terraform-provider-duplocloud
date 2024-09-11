@@ -1022,6 +1022,7 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		14: "MariaDB",
 		16: "Aurora",
 	}
+
 	eng := diff.Get("engine").(int)
 	perf_insights_enabled := false
 	perf_insights_configuration_list := diff.Get("performance_insights").([]interface{})
@@ -1035,14 +1036,16 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
 		}
 	}
-	if eng == 8 || eng == 9 || eng == 16 || eng == 11 || eng == 12 {
-		st := diff.Get("storage_type").(string)
-		if st != "" && st != "aurora" {
-			return fmt.Errorf("RDS engine %s invalid storage type %s valid value is aurora", engines[eng], st)
-
-		}
-
-	}
+	//if eng == 8 || eng == 9 || eng == 16 || eng == 11 || eng == 12 {
+	//	//st := diff.Get("storage_type").(string)
+	//	new, _ := diff.GetChange("storage_type")
+	//	st := new.(string)
+	//	if st != "" && st != "aurora" {
+	//		return fmt.Errorf("RDS engine %s invalid storage type %s valid value is aurora", engines[eng], st)
+	//
+	//	}
+	//
+	//}
 	return nil
 }
 
