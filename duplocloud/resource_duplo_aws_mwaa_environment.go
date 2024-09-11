@@ -298,7 +298,7 @@ func resourceMwaaAirflow() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(60 * time.Minute),
 		},
 		Schema: duploMwaaAirflowSchema(),
 	}
