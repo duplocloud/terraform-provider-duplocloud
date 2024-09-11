@@ -1076,7 +1076,7 @@ func performanceInsightsWaitUntilEnabled(ctx context.Context, c *duplosdk.Client
 			if err != nil {
 				return 0, "", err
 			}
-			if resp.EnablePerformanceInsights == true {
+			if resp.EnablePerformanceInsights {
 				status = "true"
 			}
 			return resp, status, nil
