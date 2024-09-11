@@ -1,11 +1,19 @@
 ## 2024-09-10
 
+### Documentation
+
+- Updated RDS instance documentation to clarify performance insights configuration and defaults.
+- Revised examples to include DocumentDB with performance insights.
+
+## 2024-09-10
+
 ### Enhanced
 
 - Enabled performance insights for DocumentDB in RDS instances by updating the create and update context logic.
 - Modified validation logic for RDS parameters to support DocumentDB performance insights.
 - Added `ApplyImmediately` option for performance insights updates to apply changes immediately.
 - Increased the delete timeout for MWAA environments to 60 minutes to accommodate longer deletion times.
+
 ## 2024-09-10
 
 ### Enhanced
