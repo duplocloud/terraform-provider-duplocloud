@@ -146,7 +146,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31",
 						Type:        schema.TypeInt,
 						Optional:    true,
-						Computed:    true,
+						Default:     7,
 						ValidateFunc: validation.Any(
 							validation.IntInSlice([]int{7, 731}),
 							validation.IntDivisibleBy(31),
@@ -243,7 +243,7 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 		return errorsToDiagnostics(fmt.Sprintf("Cannot create RDS DB read replica: %s: ", id), errors)
 	}
 
-	_, err = c.RdsInstanceCreate(tenantID, duplo)
+	instResp, err := c.RdsInstanceCreate(tenantID, duplo)
 	if err != nil {
 		return diag.Errorf("Error creating RDS DB read replica '%s': %s", id, err)
 	}
@@ -256,11 +256,26 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	if diags != nil {
 		return diags
 	}
-
 	// Wait for the instance to become available.
 	err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("create"))
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB read replica '%s' to be available: %s", id, err)
+	}
+	pI := expandPerformanceInsight(d)
+	//performance insights update for document db specific
+	if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
+		obj := enablePerformanceInstanceObject(pI)
+		obj.DBInstanceIdentifier = instResp.Identifier
+		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+		if insightErr != nil {
+			return diag.FromErr(insightErr)
+
+		}
+		err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+		}
+
 	}
 
 	diags = resourceDuploRdsReadReplicaRead(ctx, d, m)
@@ -295,8 +310,10 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 		}
 		obj.Disable = &disable
 	}
-	obj.DBInstanceIdentifier = identifier + "-cluster"
+	obj.DBInstanceIdentifier = identifier
 	if isAuroraDB(d) {
+		obj.DBInstanceIdentifier = identifier + "-cluster"
+
 		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
 		if insightErr != nil {
 			return diag.FromErr(insightErr)
@@ -417,7 +434,7 @@ func rdsReadReplicaFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
 	pI := expandPerformanceInsight(d)
-	if pI != nil {
+	if pI != nil && d.Get("engine").(int) != RDS_DOCUMENT_DB_ENGINE {
 
 		period := pI["retention_period"].(int)
 		kmsid := pI["kms_key_id"].(string)
