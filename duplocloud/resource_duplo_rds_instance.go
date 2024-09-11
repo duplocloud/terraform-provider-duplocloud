@@ -312,7 +312,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31",
 						Type:        schema.TypeInt,
 						Optional:    true,
-						Computed:    true,
+						Default:     7,
 						ValidateFunc: validation.Any(
 							validation.IntInSlice([]int{7, 731}),
 							validation.IntDivisibleBy(31),
@@ -429,7 +429,16 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	identifier := createdRds.Identifier
+	pI := expandPerformanceInsight(d)
+	if pI != nil && duplo.Engine == 13 {
+		obj := enablePerformanceInstanceObject(pI)
+		obj.DBInstanceIdentifier = identifier
+		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+		if insightErr != nil {
+			return diag.FromErr(insightErr)
 
+		}
+	}
 	if d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
 		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
 		deleteProtection := new(bool)
@@ -617,22 +626,17 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
 	pI := expandPerformanceInsight(d)
 	if pI != nil {
-		period := pI["retention_period"].(int)
-		kmsid := pI["kms_key_id"].(string)
-		enable := duplosdk.PerformanceInsightEnable{
-			EnablePerformanceInsights:          pI["enabled"].(bool),
-			PerformanceInsightsRetentionPeriod: period,
-			PerformanceInsightsKMSKeyId:        kmsid,
-		}
-		obj.Enable = &enable
+		obj = enablePerformanceInstanceObject(pI)
+
 	} else {
 		disable := duplosdk.PerformanceInsightDisable{
 			EnablePerformanceInsights: false,
 		}
 		obj.Disable = &disable
 	}
-	obj.DBInstanceIdentifier = identifier + "-cluster"
+	obj.DBInstanceIdentifier = identifier
 	if isAuroraDB(d) {
+		obj.DBInstanceIdentifier = identifier + "-cluster"
 		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
 		if insightErr != nil {
 			return diag.FromErr(insightErr)
@@ -659,6 +663,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
 	return diags
+
 }
 
 // DELETE resource
@@ -796,7 +801,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	}
 	duploObject.DatabaseName = d.Get("db_name").(string)
 	pI := expandPerformanceInsight(d)
-	if pI != nil {
+	if pI != nil && d.Get("engine").(int) != 13 {
 
 		period := pI["retention_period"].(int)
 		kmsid := pI["kms_key_id"].(string)
@@ -997,7 +1002,6 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			"db.t4g.micro": {},
 			"db.t4g.small": {},
 		},
-		13: {"ALL": {}},
 	}
 	engines := map[int]string{
 		0:  "MySQL",
@@ -1023,13 +1027,10 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 	if v, ok := nonsup[eng]; perf_insights_enabled && ok {
 		s := diff.Get("size").(string)
 		if _, ok := v[s]; ok {
-			if engines[eng] == "DocumentDB" {
-				return fmt.Errorf("RDS engine %s do not support Performance Insights at cluster level.", engines[eng])
-			}
 			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
 		}
 	}
-	if eng == 8 || eng == 9 || eng == 16 || eng == 13 || eng == 11 || eng == 12 {
+	if eng == 8 || eng == 9 || eng == 16 || eng == 11 || eng == 12 {
 		st := diff.Get("storage_type").(string)
 		if st != "" && st != "aurora" {
 			return fmt.Errorf("RDS engine %s invalid storage type %s valid value is aurora", engines[eng], st)
@@ -1038,4 +1039,18 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 
 	}
 	return nil
+}
+
+func enablePerformanceInstanceObject(pI map[string]interface{}) duplosdk.DuploRdsUpdatePerformanceInsights {
+	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
+	period := pI["retention_period"].(int)
+	kmsid := pI["kms_key_id"].(string)
+	enable := duplosdk.PerformanceInsightEnable{
+		EnablePerformanceInsights:          pI["enabled"].(bool),
+		PerformanceInsightsRetentionPeriod: period,
+		PerformanceInsightsKMSKeyId:        kmsid,
+		ApplyImmediately:                   true,
+	}
+	obj.Enable = &enable
+	return obj
 }

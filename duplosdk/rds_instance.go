@@ -112,6 +112,7 @@ type PerformanceInsightEnable struct {
 	EnablePerformanceInsights          bool   `json:"EnablePerformanceInsights"`
 	PerformanceInsightsRetentionPeriod int    `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string `json:"PerformanceInsightsKMSKeyId,omitempty"`
+	ApplyImmediately                   bool   `json:"ApplyImmediately"`
 }
 type PerformanceInsightDisable struct {
 	EnablePerformanceInsights bool `json:"EnablePerformanceInsights"`
