@@ -484,16 +484,16 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 		clusterIdentifier = duploObject.ReplicationSourceIdentifier
 	}
 	jo["cluster_identifier"] = clusterIdentifier
-	pis := []interface{}{}
-	pi := make(map[string]interface{})
-	pi["enabled"] = duploObject.EnablePerformanceInsights
 	if duploObject.EnablePerformanceInsights {
+
+		pis := []interface{}{}
+		pi := make(map[string]interface{})
+		pi["enabled"] = duploObject.EnablePerformanceInsights
 		pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
 		pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
+		pis = append(pis, pi)
+		jo["performance_insights"] = pis
 	}
-	pis = append(pis, pi)
-	jo["performance_insights"] = pis
-
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
 

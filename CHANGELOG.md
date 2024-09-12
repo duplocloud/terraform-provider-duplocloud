@@ -1,3 +1,10 @@
+## 2024-09-12
+
+### Enhanced
+
+- Added `ForceNew` property to the `availability_zone` attribute in RDS instances to ensure replacement on change.
+- Improved handling of performance insights attributes by setting them only when enabled, preventing unnecessary diffs.
+
 ## 2024-09-11
 
 ### Enhanced
