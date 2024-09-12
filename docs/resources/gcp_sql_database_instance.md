@@ -54,7 +54,7 @@ resource "duplocloud_gcp_sql_database_instance" "sql_instance" {
 - `connection_name` (String) Connection name  of the database.
 - `fullname` (String) The full name of the sql database.
 - `id` (String) The ID of this resource.
-- `ip_address` (String) IP address of the database.
+- `ip_address` (List of String) IP address of the database.
 - `self_link` (String) The SelfLink of the sql database.
 
 <a id="nestedblock--timeouts"></a>

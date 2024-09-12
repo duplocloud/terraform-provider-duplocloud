@@ -69,8 +69,9 @@ func dataSourceGCPCloudSQLs() *schema.Resource {
 						},
 						"ip_address": {
 							Description: "IP address of the database.",
-							Type:        schema.TypeString,
+							Type:        schema.TypeList,
 							Computed:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 						"connection_name": {
 							Description: "Connection name  of the database.",
@@ -116,7 +117,7 @@ func dataSourceGCPSQLCloudList(ctx context.Context, d *schema.ResourceData, m in
 			"database_version": reverseGcpSQLDBVersionsMap()[duplo.DatabaseVersion],
 			"disk_size":        duplo.DataDiskSizeGb,
 			"labels":           flattenStringMap(duplo.Labels),
-			"ip_address":       duplo.IPAddress,
+			"ip_address":       flattenStringList(duplo.IPAddress),
 			"connection_name":  duplo.ConnectionName,
 		}
 		list = append(list, sql)
