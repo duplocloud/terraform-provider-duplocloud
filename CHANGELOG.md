@@ -1,5 +1,15 @@
 ## 2024-09-12
 
+### Bug Fixes
+
+- Fixed an issue with IP address unmarshalling in GCP SQL database instances by changing the `ip_address` field type from `string` to `list`.
+
+### Documentation
+
+- Updated documentation to reflect the change in `ip_address` type to a list of strings for GCP SQL database instances.
+
+## 2024-09-12
+
 ### Enhanced
 
 - Added `ForceNew` property to the `availability_zone` attribute in RDS instances to ensure replacement on change.
