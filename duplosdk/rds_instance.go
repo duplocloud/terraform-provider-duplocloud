@@ -73,7 +73,7 @@ type DuploRdsInstance struct {
 	EnableIamAuth                      bool                    `json:"EnableIamAuth"`
 	MonitoringInterval                 int                     `json:"MonitoringInterval"`
 	DatabaseName                       string                  `json:"DatabaseName,omitempty"`
-	EnablePerformanceInsights          bool                    `json:"EnablePerformanceInsights,omitempty"`
+	EnablePerformanceInsights          bool                    `json:"EnablePerformanceInsights"`
 	PerformanceInsightsRetentionPeriod int                     `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string                  `json:"PerformanceInsightsKMSKeyId,omitempty"`
 }

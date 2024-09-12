@@ -368,13 +368,13 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 		d.SetId("")
 		return nil
 	}
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 
 	// Convert the object into Terraform resource data
 	jo := rdsInstanceToState(duplo, d)
-	for key := range jo {
-		d.Set(key, jo[key])
+	for key, val := range jo {
+		d.Set(key, val) //jo[key])
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceRead ******** end")
 	return nil
@@ -430,7 +430,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 
 	identifier := createdRds.Identifier
 	pI := expandPerformanceInsight(d)
-	if pI != nil && duplo.Engine == 13 {
+	if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
 		obj := enablePerformanceInstanceObject(pI)
 		obj.DBInstanceIdentifier = identifier
 		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
@@ -438,6 +438,11 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 			return diag.FromErr(insightErr)
 
 		}
+		err = performanceInsightsWaitUntilEnabled(ctx, c, id)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance  '%s' performance insights : %s", id, err)
+		}
+
 	}
 	if d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
 		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
@@ -801,7 +806,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	}
 	duploObject.DatabaseName = d.Get("db_name").(string)
 	pI := expandPerformanceInsight(d)
-	if pI != nil && d.Get("engine").(int) != 13 {
+	if pI != nil && d.Get("engine").(int) != RDS_DOCUMENT_DB_ENGINE {
 
 		period := pI["retention_period"].(int)
 		kmsid := pI["kms_key_id"].(string)
@@ -902,7 +907,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	pis = append(pis, pi)
 	jo["performance_insights"] = pis
 	jsonData2, _ := json.Marshal(jo)
-	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
+	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", string(jsonData2))
 
 	return jo
 }
@@ -957,7 +962,7 @@ func isAuroraDB(d *schema.ResourceData) bool {
 
 func isDeleteProtectionSupported(d *schema.ResourceData) bool {
 	// Avoid setting delete protection for document DB
-	return d.Get("engine").(int) != 13
+	return d.Get("engine").(int) != RDS_DOCUMENT_DB_ENGINE
 }
 
 func isClusterGroupParameterSupportDb(db int) bool {
@@ -1017,6 +1022,7 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		14: "MariaDB",
 		16: "Aurora",
 	}
+
 	eng := diff.Get("engine").(int)
 	perf_insights_enabled := false
 	perf_insights_configuration_list := diff.Get("performance_insights").([]interface{})
@@ -1030,14 +1036,16 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
 		}
 	}
-	if eng == 8 || eng == 9 || eng == 16 || eng == 11 || eng == 12 {
-		st := diff.Get("storage_type").(string)
-		if st != "" && st != "aurora" {
-			return fmt.Errorf("RDS engine %s invalid storage type %s valid value is aurora", engines[eng], st)
-
-		}
-
-	}
+	//if eng == 8 || eng == 9 || eng == 16 || eng == 11 || eng == 12 {
+	//	//st := diff.Get("storage_type").(string)
+	//	new, _ := diff.GetChange("storage_type")
+	//	st := new.(string)
+	//	if st != "" && st != "aurora" {
+	//		return fmt.Errorf("RDS engine %s invalid storage type %s valid value is aurora", engines[eng], st)
+	//
+	//	}
+	//
+	//}
 	return nil
 }
 
@@ -1053,4 +1061,28 @@ func enablePerformanceInstanceObject(pI map[string]interface{}) duplosdk.DuploRd
 	}
 	obj.Enable = &enable
 	return obj
+}
+
+func performanceInsightsWaitUntilEnabled(ctx context.Context, c *duplosdk.Client, id string) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:      []string{"false"},
+		Target:       []string{"true"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			status := "false"
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.EnablePerformanceInsights {
+				status = "true"
+			}
+			return resp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] performanceInsightsWaitUntilAvailable (%s)", id)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
