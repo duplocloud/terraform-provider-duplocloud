@@ -328,6 +328,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 			Optional: true,
+			ForceNew: true,
 		},
 	}
 }
@@ -897,15 +898,15 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
 
-	pis := []interface{}{}
-	pi := make(map[string]interface{})
-	pi["enabled"] = duploObject.EnablePerformanceInsights
 	if duploObject.EnablePerformanceInsights {
+		pis := []interface{}{}
+		pi := make(map[string]interface{})
+		pi["enabled"] = duploObject.EnablePerformanceInsights
 		pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
 		pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
+		pis = append(pis, pi)
+		jo["performance_insights"] = pis
 	}
-	pis = append(pis, pi)
-	jo["performance_insights"] = pis
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", string(jsonData2))
 
