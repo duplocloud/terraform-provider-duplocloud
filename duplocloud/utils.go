@@ -740,6 +740,15 @@ func flattenGcpLabels(d *schema.ResourceData, duplo map[string]string) {
 	d.Set("labels", flattenStringMap(duplo))
 }
 
+func flattenIPAddress(d *schema.ResourceData, ipAddresses []string) {
+	ips := make([]interface{}, 0, len(ipAddresses))
+	for _, v := range ipAddresses {
+		ips = append(ips, v)
+	}
+
+	d.Set("ip_address", ips)
+}
+
 func expandAsStringMap(fieldName string, d *schema.ResourceData) map[string]string {
 	m := map[string]string{}
 
