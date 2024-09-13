@@ -179,7 +179,7 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.Errorf("Unable to retrieve duplo infrastructure '%s': %s", rq.PlanID, err)
 	}
-	if infra.Cloud == GCP_CLOUD && strings.Contains(rq.AccountName, "google") {
+	if infra.Cloud == GCP_CLOUD && strings.Contains(strings.ToLower(rq.AccountName), "google") {
 		return diag.Errorf("Use of reserved keyword 'google', not allowed to create tenant in gcp cloud")
 	}
 	if infra.Cloud == 2 {
