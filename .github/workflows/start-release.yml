@@ -8,13 +8,13 @@ on:
         default: '' # default to current version
 env:
   git_user: duplo-bot
-  git_email: joe+github-bot@duplocloud.net
+  git_email: tahir+github-bot@duplocloud.net
 jobs:
   start-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           ref: develop                # Always release from develop
           fetch-depth: 0

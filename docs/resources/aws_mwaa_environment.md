@@ -91,7 +91,7 @@ resource "duplocloud_aws_mwaa_environment" "my-mwaa" {
 
 - `airflow_configuration_options` (Map of String, Sensitive) The `airflow_configuration_options` parameter specifies airflow override options
 - `airflow_version` (String) Airflow version of your environment, will be set by default to the latest version that MWAA supports.
-- `environment_class` (String) Environment class for the cluster. Possible options are `mw1.small`, `mw1.medium`, `mw1.large`.
+- `environment_class` (String) Environment class for the cluster. Possible options are `mw1.small`, `mw1.medium`, `mw1.large`, `mw1.xlarge`, `mw1.2xlarge`.
 - `execution_role_arn` (String) The Execution Role ARN of the Amazon MWAA Environment
 - `kms_key` (String) The Amazon Resource Name (ARN) of your KMS key that you want to use for encryption. Will be set to the ARN of the managed KMS key aws/airflow by default.
 - `logging_configuration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--logging_configuration))

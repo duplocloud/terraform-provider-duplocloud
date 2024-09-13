@@ -83,14 +83,18 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 			Optional:    true,
+			ForceNew:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"2.4.3", "2.5.1", "2.6.3", "2.7.2", "2.8.1", "2.9.2",
+			}, false),
 		},
 		"environment_class": {
-			Description: "Environment class for the cluster. Possible options are `mw1.small`, `mw1.medium`, `mw1.large`.",
+			Description: "Environment class for the cluster. Possible options are `mw1.small`, `mw1.medium`, `mw1.large`, `mw1.xlarge`, `mw1.2xlarge`.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice([]string{
-				"mw1.small", "mw1.medium", "mw1.large",
+				"mw1.small", "mw1.medium", "mw1.large", "mw1.xlarge", "mw1.2xlarge",
 			}, false),
 		},
 		"source_bucket_arn": {
@@ -294,7 +298,7 @@ func resourceMwaaAirflow() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(60 * time.Minute),
 		},
 		Schema: duploMwaaAirflowSchema(),
 	}

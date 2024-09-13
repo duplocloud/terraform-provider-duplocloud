@@ -34,6 +34,7 @@ Read-Only:
 - `base64_user_data` (String)
 - `capacity` (String)
 - `cloud` (Number)
+- `custom_node_labels` (Map of String)
 - `encrypt_disk` (Boolean)
 - `friendly_name` (String)
 - `identity_role` (String)

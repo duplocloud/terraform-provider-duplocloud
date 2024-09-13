@@ -24,9 +24,29 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
   min_capacity     = 1
   max_capacity     = 1
   desired_capacity = 1
-  vm_size          = "Standard_E16_v5"
+  vm_size          = "Standard_D2s_v3"
+  wait_until_ready = true
+  allocation_tag   = "aks-test"
+  scale_priority {
+    eviction_policy = "Delete"
+    priority        = "Spot"
+  }
+}
+
+resource "duplocloud_azure_k8_node_pool" "node_pool" {
+  tenant_id        = duplocloud_tenant.myapp.tenant_id
+  identifier       = 2
+  min_capacity     = 1
+  max_capacity     = 1
+  desired_capacity = 1
+  vm_size          = "Standard_D2s_v3"
   wait_until_ready = false
   allocation_tag   = "aks-test"
+  scale_priority {
+    eviction_policy = "Delete"
+    priority        = "Spot"
+  }
+  availability_zones = ["1", "2"]
 }
 ```
 
@@ -45,6 +65,7 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 ### Optional
 
 - `allocation_tag` (String) Allocation tags for this node pool.
+- `availability_zones` (Set of String) availability zones of node pool
 - `enable_auto_scaling` (Boolean) Whether to enable auto-scaler.
 - `scale_priority` (Block List, Max: 1) specify the priority for scaling operations,supported priority Regular or Spot (see [below for nested schema](#nestedblock--scale_priority))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -60,9 +81,9 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 
 Optional:
 
-- `eviction_policy` (String) eviction policies Delete/Deallocate
+- `eviction_policy` (String) eviction policies Delete/Deallocate. Default value is Delete
 - `priority` (String) priority levels Regular/Spot
-- `spot_max_price` (String) for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.
+- `spot_max_price` (Number) for spot VMs sets the maximum price you're willing to pay, controlling costs, while priority.spot determines the scaling order of spot VM pools.
 
 
 <a id="nestedblock--timeouts"></a>

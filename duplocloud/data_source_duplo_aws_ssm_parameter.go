@@ -27,8 +27,9 @@ func dataSourceAwsSsmParameter() *schema.Resource {
 				Computed: true,
 			},
 			"value": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:      schema.TypeString,
+				Computed:  true,
+				Sensitive: true,
 			},
 			"key_id": {
 				Type:     schema.TypeString,
@@ -64,15 +65,20 @@ func dataSourceSsmParameterRead(d *schema.ResourceData, m interface{}) error {
 	// Get the object from Duplo.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	c := m.(*duplosdk.Client)
-	ssmParam, err := c.SsmParameterGet(tenantID, name)
+	body, err := c.SsmParameterGet(tenantID, name)
 	if err != nil {
 		return fmt.Errorf("failed to get SSM parameter: %s: %s", id, err)
 	}
 
 	// Check for missing result
-	if ssmParam == nil {
+	if body == nil {
 		return fmt.Errorf("SSM parameter '%s' not found", id)
 	}
+	ssmParam := body
+	if ssmParam.Type == "SecureString" {
+		body.Value = "**********"
+	}
+	log.Printf("[TRACE] SsmParameterGet: received response: %+v", body)
 
 	d.SetId(id)
 	d.Set("type", ssmParam.Type)

@@ -180,12 +180,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
 		"storage_type": {
-			Description: "Valid values: gp2 | gp3 | io1 | standard. Storage type to be used for RDS instance storage.",
+			Description: "Valid values: gp2 | gp3 | io1 | standard | aurora. Storage type to be used for RDS instance storage.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice(
-				[]string{"gp2", "gp3", "io1", "standard"},
+				[]string{"gp2", "gp3", "io1", "standard", "aurora", "aurora-iopt1"},
 				false,
 			),
 		},
@@ -289,13 +289,54 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:     true,
 			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
 		},
+		"performance_insights": {
+			Description: "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true.",
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"enabled": {
+						Description: "Turn on or off Performance Insights",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+					},
+					"kms_key_id": {
+						Description: "Specify ARN for the KMS key to encrypt Performance Insights data.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
+					},
+					"retention_period": {
+						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Default:     7,
+						ValidateFunc: validation.Any(
+							validation.IntInSlice([]int{7, 731}),
+							validation.IntDivisibleBy(31),
+						),
+					},
+				},
+			},
+		},
+		"availability_zone": {
+			Description: "Specify a valid Availability Zone for the RDS primary instance" +
+				" (when Multi-AZ is disabled) or for the Aurora writer instance." +
+				" e.g. us-west-2a",
+			Type:     schema.TypeString,
+			Computed: true,
+			Optional: true,
+			ForceNew: true,
+		},
 	}
 }
 
 // SCHEMA for resource crud
 func resourceDuploRdsInstance() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_rds_instance` manages an AWS RDS instance in Duplo.",
+		Description: "The `duplocloud_rds_instance` resource in DuploCloud manages the lifecycle of an RDS (Relational Database Service) instance within a cloud environment. It allows you to define, provision, and maintain database instances with customizable configurations, such as engine type, storage, and instance class, all within DuploCloud's automated infrastructure management.",
 
 		ReadContext:   resourceDuploRdsInstanceRead,
 		CreateContext: resourceDuploRdsInstanceCreate,
@@ -309,7 +350,8 @@ func resourceDuploRdsInstance() *schema.Resource {
 			Update: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
-		Schema: rdsInstanceSchema(),
+		Schema:        rdsInstanceSchema(),
+		CustomizeDiff: validateRDSParameters,
 	}
 }
 
@@ -327,13 +369,13 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 		d.SetId("")
 		return nil
 	}
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 
 	// Convert the object into Terraform resource data
 	jo := rdsInstanceToState(duplo, d)
-	for key := range jo {
-		d.Set(key, jo[key])
+	for key, val := range jo {
+		d.Set(key, val) //jo[key])
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceRead ******** end")
 	return nil
@@ -388,7 +430,21 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	identifier := createdRds.Identifier
+	pI := expandPerformanceInsight(d)
+	if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
+		obj := enablePerformanceInstanceObject(pI)
+		obj.DBInstanceIdentifier = identifier
+		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+		if insightErr != nil {
+			return diag.FromErr(insightErr)
 
+		}
+		err = performanceInsightsWaitUntilEnabled(ctx, c, id)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance  '%s' performance insights : %s", id, err)
+		}
+
+	}
 	if d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
 		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
 		deleteProtection := new(bool)
@@ -399,29 +455,50 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		}
 
 		if isAuroraDB(d) {
-			err = c.UpdateRdsCluster(tenantID, duplosdk.DuploRdsUpdateCluster{
+			obj := duplosdk.DuploRdsUpdateCluster{
 				DBClusterIdentifier: identifier + "-cluster",
 				DeletionProtection:  deleteProtection,
 				SkipFinalSnapshot:   skipFinalSnapshot,
 				ApplyImmediately:    true,
-			})
+			}
+
+			err = c.UpdateRdsCluster(tenantID, obj)
 		} else {
-			err = c.UpdateRDSDBInstance(tenantID, duplosdk.DuploRdsUpdateInstance{
+			obj := duplosdk.DuploRdsUpdateInstance{
 				DBInstanceIdentifier: identifier,
 				DeletionProtection:   deleteProtection,
 				SkipFinalSnapshot:    skipFinalSnapshot,
-			})
+			}
+
+			err = c.UpdateRDSDBInstance(tenantID, obj)
 		}
 
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+		}
+
 	}
 
 	diags = resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** end")
 	return diags
+}
+
+func expandPerformanceInsight(d *schema.ResourceData) map[string]interface{} {
+	performanceInsight := d.Get("performance_insights").([]interface{})
+	if len(performanceInsight) > 0 {
+		val := performanceInsight[0].(map[string]interface{})
+		if val["enabled"].(bool) {
+			return val
+		}
+	}
+	return nil
 }
 
 // UPDATE resource
@@ -508,7 +585,8 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	if d.HasChange("backup_retention_period") || d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
+	if d.HasChange("backup_retention_period") || d.HasChange("deletion_protection") ||
+		d.HasChange("skip_final_snapshot") {
 		backupRetentionPeriod := d.Get("backup_retention_period").(int)
 		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
 		deleteProtection := new(bool)
@@ -519,21 +597,24 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 
 		if isAuroraDB(d) {
-			err = c.UpdateRdsCluster(tenantID, duplosdk.DuploRdsUpdateCluster{
+			obj := duplosdk.DuploRdsUpdateCluster{
 				DBClusterIdentifier:   identifier + "-cluster",
 				BackupRetentionPeriod: backupRetentionPeriod,
 				DeletionProtection:    deleteProtection,
 				SkipFinalSnapshot:     skipFinalSnapshot,
 				ApplyImmediately:      true,
-			})
+			}
+			err = c.UpdateRdsCluster(tenantID, obj)
 		} else {
-			err = c.UpdateRDSDBInstance(tenantID, duplosdk.DuploRdsUpdateInstance{
+			obj := duplosdk.DuploRdsUpdateInstance{
 				DBInstanceIdentifier:  identifier,
 				BackupRetentionPeriod: backupRetentionPeriod,
 				DeletionProtection:    deleteProtection,
 				SkipFinalSnapshot:     skipFinalSnapshot,
-			})
+			}
+			err = c.UpdateRDSDBInstance(tenantID, obj)
 		}
+
 	}
 
 	if d.HasChange("enhanced_monitoring") {
@@ -546,6 +627,33 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
+	pI := expandPerformanceInsight(d)
+	if pI != nil {
+		obj = enablePerformanceInstanceObject(pI)
+
+	} else {
+		disable := duplosdk.PerformanceInsightDisable{
+			EnablePerformanceInsights: false,
+		}
+		obj.Disable = &disable
+	}
+	obj.DBInstanceIdentifier = identifier
+	if isAuroraDB(d) {
+		obj.DBInstanceIdentifier = identifier + "-cluster"
+		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
+		if insightErr != nil {
+			return diag.FromErr(insightErr)
+
+		}
+	} else {
+		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+		if insightErr != nil {
+			return diag.FromErr(insightErr)
+
+		}
 	}
 
 	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
@@ -561,6 +669,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
 	return diags
+
 }
 
 // DELETE resource
@@ -664,6 +773,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.MasterPassword = d.Get("master_password").(string)
 	duploObject.Engine = d.Get("engine").(int)
 	duploObject.EngineVersion = d.Get("engine_version").(string)
+	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
 	if isClusterGroupParameterSupportDb(duploObject.Engine) {
 		duploObject.ClusterParameterGroupName = d.Get("cluster_parameter_group_name").(string)
@@ -692,7 +802,21 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	if duploObject.SizeEx == "db.serverless" && duploObject.V2ScalingConfiguration == nil {
 		return nil, errors.New("v2_scaling_configuration: min_capacity and max_capacity must be provided")
 	}
+	if duploObject.MultiAZ && duploObject.AvailabilityZone != "" {
+		return nil, errors.New("multi_az and availability_zone can not be set together.")
+	}
 	duploObject.DatabaseName = d.Get("db_name").(string)
+	pI := expandPerformanceInsight(d)
+	if pI != nil && d.Get("engine").(int) != RDS_DOCUMENT_DB_ENGINE {
+
+		period := pI["retention_period"].(int)
+		kmsid := pI["kms_key_id"].(string)
+		duploObject.EnablePerformanceInsights = pI["enabled"].(bool)
+		duploObject.PerformanceInsightsRetentionPeriod = period
+		duploObject.PerformanceInsightsKMSKeyId = kmsid
+
+	}
+
 	return duploObject, nil
 }
 
@@ -747,6 +871,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["master_password"] = duploObject.MasterPassword
 	jo["engine"] = duploObject.Engine
 	jo["engine_version"] = duploObject.EngineVersion
+	jo["availability_zone"] = duploObject.AvailabilityZone
 	jo["snapshot_id"] = duploObject.SnapshotID
 	jo["parameter_group_name"] = duploObject.DBParameterGroupName
 	jo["cluster_parameter_group_name"] = duploObject.ClusterParameterGroupName
@@ -773,8 +898,17 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
 
+	if duploObject.EnablePerformanceInsights {
+		pis := []interface{}{}
+		pi := make(map[string]interface{})
+		pi["enabled"] = duploObject.EnablePerformanceInsights
+		pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
+		pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
+		pis = append(pis, pi)
+		jo["performance_insights"] = pis
+	}
 	jsonData2, _ := json.Marshal(jo)
-	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
+	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", string(jsonData2))
 
 	return jo
 }
@@ -829,7 +963,7 @@ func isAuroraDB(d *schema.ResourceData) bool {
 
 func isDeleteProtectionSupported(d *schema.ResourceData) bool {
 	// Avoid setting delete protection for document DB
-	return d.Get("engine").(int) != 13
+	return d.Get("engine").(int) != RDS_DOCUMENT_DB_ENGINE
 }
 
 func isClusterGroupParameterSupportDb(db int) bool {
@@ -842,4 +976,114 @@ func isClusterGroupParameterSupportDb(db int) bool {
 		16: true,
 	}
 	return clusterDb[db]
+}
+
+func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	nonsup := map[int]map[string]struct{}{
+		14: {
+			"db.t2.micro":  {},
+			"db.t2.small":  {},
+			"db.t3.micro":  {},
+			"db.t3.small":  {},
+			"db.t4g.micro": {},
+			"db.t4g.small": {},
+		},
+		0: {
+			"db.t2.micro":  {},
+			"db.t2.small":  {},
+			"db.t3.micro":  {},
+			"db.t3.small":  {},
+			"db.t4g.micro": {},
+			"db.t4g.small": {},
+		},
+		8: {
+			"db.t2.micro":  {},
+			"db.t2.medium": {},
+			"db.t2.small":  {},
+			"db.t2.large":  {},
+			"db.t3.micro":  {},
+			"db.t3.medium": {},
+			"db.t3.small":  {},
+			"db.t3.large":  {},
+			"db.t4g.micro": {},
+			"db.t4g.small": {},
+		},
+	}
+	engines := map[int]string{
+		0:  "MySQL",
+		1:  "PostgreSQL",
+		2:  "MsftSQL-Express",
+		3:  "MsftSQL-Standard",
+		8:  "Aurora-MySQL",
+		9:  "Aurora-PostgreSQL",
+		10: "MsftSQL-Web",
+		11: "Aurora-Serverless-MySql",
+		12: "Aurora-Serverless-PostgreSql",
+		13: "DocumentDB",
+		14: "MariaDB",
+		16: "Aurora",
+	}
+
+	eng := diff.Get("engine").(int)
+	perf_insights_enabled := false
+	perf_insights_configuration_list := diff.Get("performance_insights").([]interface{})
+	if len(perf_insights_configuration_list) > 0 {
+		perf_insights_configuration := perf_insights_configuration_list[0].(map[string]interface{})
+		perf_insights_enabled = perf_insights_configuration["enabled"].(bool)
+	}
+	if v, ok := nonsup[eng]; perf_insights_enabled && ok {
+		s := diff.Get("size").(string)
+		if _, ok := v[s]; ok {
+			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
+		}
+	}
+	//if eng == 8 || eng == 9 || eng == 16 || eng == 11 || eng == 12 {
+	//	//st := diff.Get("storage_type").(string)
+	//	new, _ := diff.GetChange("storage_type")
+	//	st := new.(string)
+	//	if st != "" && st != "aurora" {
+	//		return fmt.Errorf("RDS engine %s invalid storage type %s valid value is aurora", engines[eng], st)
+	//
+	//	}
+	//
+	//}
+	return nil
+}
+
+func enablePerformanceInstanceObject(pI map[string]interface{}) duplosdk.DuploRdsUpdatePerformanceInsights {
+	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
+	period := pI["retention_period"].(int)
+	kmsid := pI["kms_key_id"].(string)
+	enable := duplosdk.PerformanceInsightEnable{
+		EnablePerformanceInsights:          pI["enabled"].(bool),
+		PerformanceInsightsRetentionPeriod: period,
+		PerformanceInsightsKMSKeyId:        kmsid,
+		ApplyImmediately:                   true,
+	}
+	obj.Enable = &enable
+	return obj
+}
+
+func performanceInsightsWaitUntilEnabled(ctx context.Context, c *duplosdk.Client, id string) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:      []string{"false"},
+		Target:       []string{"true"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			status := "false"
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.EnablePerformanceInsights {
+				status = "true"
+			}
+			return resp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] performanceInsightsWaitUntilAvailable (%s)", id)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }

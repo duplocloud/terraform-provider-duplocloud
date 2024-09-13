@@ -23,6 +23,17 @@ const (
 	DUPLO_RDS_ENGINE_DOCUMENTDB                   = 13
 )
 
+const (
+	REDIS_LOG_DELIVERYDIST_DEST_TYPE_CLOUDWATCH_LOGS  string = "cloudwatch-logs"
+	REDIS_LOG_DELIVERYDIST_DEST_TYPE_KINESIS_FIREHOSE string = "kinesis-firehose"
+	REDIS_LOG_DELIVERY_LOG_FORMAT_JSON                string = "json"
+	REDIS_LOG_DELIVERY_LOG_FORMAT_TEXT                string = "text"
+	REDIS_LOG_DELIVERY_LOG_TYPE_SLOW_LOG              string = "slow-log"
+	REDIS_LOG_DELIVERY_LOG_TYPE_ENGINE_LOG            string = "engine-log"
+)
+
+//"slow-log", "engine-log"
+
 // DuploRdsInstance is a Duplo SDK object that represents an RDS instance
 type DuploRdsInstance struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
@@ -31,37 +42,40 @@ type DuploRdsInstance struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name"`
 
-	Identifier                  string                  `json:"Identifier"`
-	ClusterIdentifier           string                  `json:"ClusterIdentifier,omitempty"`
-	ReplicationSourceIdentifier string                  `json:"ReplicationSourceIdentifier,omitempty"`
-	Arn                         string                  `json:"Arn"`
-	Endpoint                    string                  `json:"Endpoint,omitempty"`
-	MasterUsername              string                  `json:"MasterUsername,omitempty"`
-	MasterPassword              string                  `json:"MasterPassword,omitempty"`
-	Engine                      int                     `json:"Engine,omitempty"`
-	EngineVersion               string                  `json:"EngineVersion,omitempty"`
-	SnapshotID                  string                  `json:"SnapshotId,omitempty"`
-	DBParameterGroupName        string                  `json:"DBParameterGroupName,omitempty"`
-	ClusterParameterGroupName   string                  `json:"ClusterParameterGroupName,omitempty"`
-	StoreDetailsInSecretManager bool                    `json:"StoreDetailsInSecretManager,omitempty"`
-	Cloud                       int                     `json:"Cloud,omitempty"`
-	SizeEx                      string                  `json:"SizeEx,omitempty"`
-	EncryptStorage              bool                    `json:"EncryptStorage,omitempty"`
-	StorageType                 string                  `json:"StorageType,omitempty"`
-	Iops                        int                     `json:"Iops,omitempty"`
-	AllocatedStorage            int                     `json:"AllocatedStorage,omitempty"`
-	EncryptionKmsKeyId          string                  `json:"EncryptionKmsKeyId,omitempty"`
-	EnableLogging               bool                    `json:"EnableLogging,omitempty"`
-	BackupRetentionPeriod       int                     `json:"BackupRetentionPeriod,omitempty"`
-	SkipFinalSnapshot           bool                    `json:"SkipFinalSnapshot,omitempty"`
-	MultiAZ                     bool                    `json:"MultiAZ,omitempty"`
-	InstanceStatus              string                  `json:"InstanceStatus,omitempty"`
-	DBSubnetGroupName           string                  `json:"DBSubnetGroupName,omitempty"`
-	V2ScalingConfiguration      *V2ScalingConfiguration `json:"V2ScalingConfiguration,omitempty"`
-	AvailabilityZone            string                  `json:"AvailabilityZone,omitempty"`
-	EnableIamAuth               bool                    `json:"EnableIamAuth"`
-	MonitoringInterval          int                     `json:"MonitoringInterval"`
-	DatabaseName                string                  `json:"DatabaseName,omitempty"`
+	Identifier                         string                  `json:"Identifier"`
+	ClusterIdentifier                  string                  `json:"ClusterIdentifier,omitempty"`
+	ReplicationSourceIdentifier        string                  `json:"ReplicationSourceIdentifier,omitempty"`
+	Arn                                string                  `json:"Arn"`
+	Endpoint                           string                  `json:"Endpoint,omitempty"`
+	MasterUsername                     string                  `json:"MasterUsername,omitempty"`
+	MasterPassword                     string                  `json:"MasterPassword,omitempty"`
+	Engine                             int                     `json:"Engine,omitempty"`
+	EngineVersion                      string                  `json:"EngineVersion,omitempty"`
+	SnapshotID                         string                  `json:"SnapshotId,omitempty"`
+	DBParameterGroupName               string                  `json:"DBParameterGroupName,omitempty"`
+	ClusterParameterGroupName          string                  `json:"ClusterParameterGroupName,omitempty"`
+	StoreDetailsInSecretManager        bool                    `json:"StoreDetailsInSecretManager,omitempty"`
+	Cloud                              int                     `json:"Cloud,omitempty"`
+	SizeEx                             string                  `json:"SizeEx,omitempty"`
+	EncryptStorage                     bool                    `json:"EncryptStorage,omitempty"`
+	StorageType                        string                  `json:"StorageType,omitempty"`
+	Iops                               int                     `json:"Iops,omitempty"`
+	AllocatedStorage                   int                     `json:"AllocatedStorage,omitempty"`
+	EncryptionKmsKeyId                 string                  `json:"EncryptionKmsKeyId,omitempty"`
+	EnableLogging                      bool                    `json:"EnableLogging,omitempty"`
+	BackupRetentionPeriod              int                     `json:"BackupRetentionPeriod,omitempty"`
+	SkipFinalSnapshot                  bool                    `json:"SkipFinalSnapshot,omitempty"`
+	MultiAZ                            bool                    `json:"MultiAZ,omitempty"`
+	InstanceStatus                     string                  `json:"InstanceStatus,omitempty"`
+	DBSubnetGroupName                  string                  `json:"DBSubnetGroupName,omitempty"`
+	V2ScalingConfiguration             *V2ScalingConfiguration `json:"V2ScalingConfiguration,omitempty"`
+	AvailabilityZone                   string                  `json:"AvailabilityZone,omitempty"`
+	EnableIamAuth                      bool                    `json:"EnableIamAuth"`
+	MonitoringInterval                 int                     `json:"MonitoringInterval"`
+	DatabaseName                       string                  `json:"DatabaseName,omitempty"`
+	EnablePerformanceInsights          bool                    `json:"EnablePerformanceInsights"`
+	PerformanceInsightsRetentionPeriod int                     `json:"PerformanceInsightsRetentionPeriod,omitempty"`
+	PerformanceInsightsKMSKeyId        string                  `json:"PerformanceInsightsKMSKeyId,omitempty"`
 }
 
 type V2ScalingConfiguration struct {
@@ -89,12 +103,29 @@ type DuploRdsUpdateInstance struct {
 	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot"`
 }
 
+type DuploRdsUpdatePerformanceInsights struct {
+	DBInstanceIdentifier string `json:"DBInstanceIdentifier"`
+	Enable               *PerformanceInsightEnable
+	Disable              *PerformanceInsightDisable
+}
+type PerformanceInsightEnable struct {
+	EnablePerformanceInsights          bool   `json:"EnablePerformanceInsights"`
+	PerformanceInsightsRetentionPeriod int    `json:"PerformanceInsightsRetentionPeriod,omitempty"`
+	PerformanceInsightsKMSKeyId        string `json:"PerformanceInsightsKMSKeyId,omitempty"`
+	ApplyImmediately                   bool   `json:"ApplyImmediately"`
+}
+type PerformanceInsightDisable struct {
+	EnablePerformanceInsights bool `json:"EnablePerformanceInsights"`
+}
 type DuploRdsUpdateCluster struct {
-	DBClusterIdentifier   string `json:"DBClusterIdentifier"`
-	ApplyImmediately      bool   `json:"ApplyImmediately"`
-	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
-	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
-	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot"`
+	DBClusterIdentifier                string `json:"DBClusterIdentifier"`
+	ApplyImmediately                   bool   `json:"ApplyImmediately"`
+	DeletionProtection                 *bool  `json:"DeletionProtection,omitempty"`
+	BackupRetentionPeriod              int    `json:"BackupRetentionPeriod,omitempty"`
+	SkipFinalSnapshot                  bool   `json:"SkipFinalSnapshot"`
+	EnablePerformanceInsights          bool   `json:"EnablePerformanceInsights,omitempty"`
+	PerformanceInsightsRetentionPeriod int    `json:"PerformanceInsightsRetentionPeriod,omitempty"`
+	PerformanceInsightsKMSKeyId        string `json:"PerformanceInsightsKMSKeyId,omitempty"`
 }
 
 type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
@@ -254,6 +285,44 @@ func (c *Client) UpdateRDSDBInstance(tenantID string, duploObject DuploRdsUpdate
 		&duploObject,
 		nil,
 	)
+}
+
+func (c *Client) UpdateDBInstancePerformanceInsight(tenantID string, duploObject DuploRdsUpdatePerformanceInsights) ClientError {
+	if duploObject.Enable != nil {
+		err := c.putAPI(
+			fmt.Sprintf("UpdateDBInstancePerformanceInsight(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+			fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
+			duploObject.Enable,
+			nil,
+		)
+		return err
+	}
+	err := c.putAPI(
+		fmt.Sprintf("UpdateDBInstancePerformanceInsight(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, duploObject.DBInstanceIdentifier),
+		duploObject.Disable,
+		nil,
+	)
+	return err
+}
+
+func (c *Client) UpdateDBClusterPerformanceInsight(tenantID string, duploObject DuploRdsUpdatePerformanceInsights) ClientError {
+	if duploObject.Enable != nil {
+		err := c.putAPI(
+			fmt.Sprintf("UpdateDBClusterPerformanceInsight(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+			fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, duploObject.DBInstanceIdentifier),
+			duploObject.Enable,
+			nil,
+		)
+		return err
+	}
+	err := c.putAPI(
+		fmt.Sprintf("UpdateDBClusterPerformanceInsight(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, duploObject.DBInstanceIdentifier),
+		duploObject.Disable,
+		nil,
+	)
+	return err
 }
 
 func (c *Client) UpdateRdsCluster(tenantID string, duploObject DuploRdsUpdateCluster) ClientError {

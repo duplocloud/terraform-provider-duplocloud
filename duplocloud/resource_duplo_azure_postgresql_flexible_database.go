@@ -231,21 +231,15 @@ func resourceAzurePostgresqlFlexibleDatabaseUpdate(ctx context.Context, d *schem
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s azure postgresql database '%s': %s", tenantID, name, err)
 	}
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure postgresql database", id, func() (interface{}, duplosdk.ClientError) {
-		return c.PostgresqlServerGet(tenantID, name)
-	})
-	if diags != nil {
-		return diags
-	}
 
 	if d.Get("wait_until_ready").(bool) {
-		err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("update"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	diags = resourceAzurePostgresqlFlexibleDatabaseRead(ctx, d, m)
+	diags := resourceAzurePostgresqlFlexibleDatabaseRead(ctx, d, m)
 	//if !diags.HasError() {
 	//	d.Set("AdminLoginPassword", password)
 	//}

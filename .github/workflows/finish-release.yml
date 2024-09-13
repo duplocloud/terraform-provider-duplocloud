@@ -7,14 +7,14 @@ on:
       - master
 env:
   git_user: duplo-bot
-  git_email: joe+github-bot@duplocloud.net
+  git_email: tahir+github-bot@duplocloud.net
 jobs:
   finish-release:
     if: github.event.pull_request.merged == true && (startsWith(github.head_ref, 'refs/heads/release/') || startsWith(github.head_ref, 'release/'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           ref: master                 # Always finish releases from the "merged to" master
           fetch-depth: 0
@@ -41,7 +41,7 @@ jobs:
       - finish-release
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           ref: develop
           fetch-depth: 0

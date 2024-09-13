@@ -13,7 +13,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
       -
         name: Set up Go
         uses: actions/setup-go@v5
@@ -26,12 +26,13 @@ jobs:
         with:
           only-new-issues: true  # Only show new issues for pull requests.
           args: --timeout=5m
+          version: v1.59
   format:
     runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
       -
         name: Set up Go
         uses: actions/setup-go@v5
@@ -55,7 +56,7 @@ jobs:
         if: env.modified == 'true'
         run: |
           git config --global user.name 'Duplo Githug Bot'
-          git config --global user.email 'joe+github-bot@duplocloud.net'
+          git config --global user.email 'tahir+github-bot@duplocloud.net'
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git commit -am "lint: go fmt"
           git push
