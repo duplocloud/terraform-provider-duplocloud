@@ -1,3 +1,14 @@
+## 2024-09-13
+
+### Enhanced
+
+- Added `DiffSuppressFunc` to suppress diffs for `performance_insights` when disabled in RDS instance and read replica schemas.
+- Modified logic to always set `performance_insights` state, regardless of enablement status.
+
+### Documentation
+
+- Updated documentation to specify that the retention period for DocumentDB is 7 days.
+
 ## 2024-09-12
 
 ### Enhanced
