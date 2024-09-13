@@ -238,11 +238,6 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	id := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, duplo.Name)
 
-	// Validate the RDS instance.
-	errors := validateRdsInstance(duplo)
-	if len(errors) > 0 {
-		return errorsToDiagnostics(fmt.Sprintf("Cannot create RDS DB read replica: %s: ", id), errors)
-	}
 	pI := expandPerformanceInsight(d)
 
 	if pI != nil && duplo.Engine != RDS_DOCUMENT_DB_ENGINE {
@@ -253,6 +248,17 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 		duplo.PerformanceInsightsRetentionPeriod = period
 		duplo.PerformanceInsightsKMSKeyId = kmsid
 
+	}
+
+	// Validate the RDS instance.
+	errors := validateRdsInstance(duplo)
+	if len(errors) > 0 {
+		return errorsToDiagnostics(fmt.Sprintf("Cannot create RDS DB read replica: %s: ", id), errors)
+	}
+	// Validate read replica
+	replicaValidationErrors := validateReplicaPerformanceInsightsConfiguration(duplo.Engine, d)
+	if len(replicaValidationErrors) > 0 {
+		return errorsToDiagnostics(fmt.Sprintf("Cannot create RDS DB read replica: %s: ", id), replicaValidationErrors)
 	}
 
 	instResp, err := c.RdsInstanceCreate(tenantID, duplo)
@@ -322,6 +328,11 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 		obj.Disable = &disable
 	}
 	obj.DBInstanceIdentifier = identifier
+	// Validate read replica
+	replicaValidationErrors := validateReplicaPerformanceInsightsConfiguration(d.Get("engine").(int), d)
+	if len(replicaValidationErrors) > 0 {
+		return errorsToDiagnostics(fmt.Sprintf("Cannot update RDS DB read replica: %s: ", id), replicaValidationErrors)
+	}
 	if isAuroraDB(d) {
 		obj.DBInstanceIdentifier = identifier + "-cluster"
 
@@ -497,4 +508,32 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
 
 	return jo
+}
+
+func validateReplicaPerformanceInsightsConfiguration(engineCode int, tfSpecification *schema.ResourceData) (errors []error) {
+	if isEngineAuroraType(engineCode) && hasPerformanceInsightConfigurations(tfSpecification) {
+		errors = append(errors,
+			fmt.Errorf("Performance insight configurations are currently applied cluster wide for Aurora instances and should be declared in the primary database only"),
+		)
+	}
+	return errors
+}
+
+func isEngineAuroraType(engineCode int) bool {
+	engineNameByCode := map[int]string{
+		8:  "AuroraMySql",
+		9:  "AuroraPostgreSql",
+		11: "AuroraServerlessMySql",
+		12: "AuroraServerlessPostgreSql",
+		16: "Aurora",
+	}
+
+	value, ok := engineNameByCode[engineCode]
+
+	return ok && strings.HasPrefix(value, "Aurora")
+}
+
+func hasPerformanceInsightConfigurations(tfRdsReplicaSpecification *schema.ResourceData) bool {
+	configuration := tfRdsReplicaSpecification.Get("performance_insights").([]interface{})
+	return len(configuration) > 0
 }

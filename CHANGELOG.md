@@ -4,6 +4,7 @@
 
 - Added `DiffSuppressFunc` to suppress diffs for `performance_insights` when disabled in RDS instance and read replica schemas.
 - Modified logic to always set `performance_insights` state, regardless of enablement status.
+- Implemented validation to prevent Aurora read replicas from having performance insights configurations, as these are managed at the cluster level.
 
 ### Documentation
 
