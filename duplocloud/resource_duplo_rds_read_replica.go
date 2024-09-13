@@ -124,10 +124,11 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"performance_insights": {
-			Description: "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. Not applicable for Cluster Db",
-			Type:        schema.TypeList,
-			MaxItems:    1,
-			Optional:    true,
+			Description:      "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. Not applicable for Cluster Db",
+			Type:             schema.TypeList,
+			MaxItems:         1,
+			Optional:         true,
+			DiffSuppressFunc: suppressIfPerformanceInsightsDisabled,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"enabled": {
@@ -143,7 +144,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 						Computed:    true,
 					},
 					"retention_period": {
-						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31",
+						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31. For Document DB retention period is 7",
 						Type:        schema.TypeInt,
 						Optional:    true,
 						Default:     7,
@@ -484,16 +485,14 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 		clusterIdentifier = duploObject.ReplicationSourceIdentifier
 	}
 	jo["cluster_identifier"] = clusterIdentifier
-	if duploObject.EnablePerformanceInsights {
+	pis := []interface{}{}
+	pi := make(map[string]interface{})
+	pi["enabled"] = duploObject.EnablePerformanceInsights
+	pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
+	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
+	pis = append(pis, pi)
+	jo["performance_insights"] = pis
 
-		pis := []interface{}{}
-		pi := make(map[string]interface{})
-		pi["enabled"] = duploObject.EnablePerformanceInsights
-		pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
-		pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
-		pis = append(pis, pi)
-		jo["performance_insights"] = pis
-	}
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
 
