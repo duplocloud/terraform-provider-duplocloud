@@ -1,3 +1,9 @@
+## 2024-09-13
+
+### Enhanced
+
+- Implemented validation to restrict tenant creation in GCP cloud if the tenant name contains the keyword 'google'.
+
 ## 2024-09-12
 
 ### Enhanced
