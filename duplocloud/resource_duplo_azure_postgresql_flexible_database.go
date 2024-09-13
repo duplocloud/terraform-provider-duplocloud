@@ -94,7 +94,7 @@ func duploAzurePostgresqlFlexibleDatabaseSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IntBetween(7, 35),
 		},
 		"geo_redundant_backup": {
-			Description: "Turn Geo-redundant server backups Enabled/Disabled.",
+			Description: "Turn Geo-redundant server backups Enabled/Disabled.To enable or disable geo_redundant_backup resource need to be recreated",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
@@ -102,6 +102,7 @@ func duploAzurePostgresqlFlexibleDatabaseSchema() map[string]*schema.Schema {
 				"Enabled",
 				"Disabled",
 			}, false),
+			ForceNew: true,
 		},
 		"subnet": {
 			Type:     schema.TypeString,
@@ -142,7 +143,8 @@ func resourceAzurePostgresqlFlexibleDatabase() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAzurePostgresqlFlexibleDatabaseSchema(),
+		Schema:        duploAzurePostgresqlFlexibleDatabaseSchema(),
+		CustomizeDiff: verifyPSQLParameters,
 	}
 }
 
@@ -338,4 +340,21 @@ func postgresqlFlexibleDBWaitUntilReady(ctx context.Context, c *duplosdk.Client,
 	log.Printf("[DEBUG] postgresqlSeverWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func verifyPSQLParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	serviceTier := diff.Get("service_tier").(string)
+	highAvailability := diff.Get("high_availability").(string)
+	if serviceTier == "Burstable" && highAvailability != "" {
+		return fmt.Errorf("high_availability not supported with Burstable compute/service tier")
+	}
+	old, new := diff.GetChange("storage_gb")
+	if new.(int) < old.(int) {
+		return fmt.Errorf("storage downgrade not allowed.")
+	}
+	oldR, newR := diff.GetChange("backup_retention_days")
+	if newR.(int) < oldR.(int) {
+		return fmt.Errorf("Reducing the value of backup_retention_days is not allowed.")
+	}
+	return nil
 }
