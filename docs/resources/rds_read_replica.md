@@ -88,10 +88,12 @@ resource "duplocloud_rds_read_replica" "replica" {
   name               = "read-replica"
   size               = "db.r5.large"
   cluster_identifier = duplocloud_rds_instance.rds.cluster_identifier
-  performance_insights {
-    enabled          = true
-    retention_period = 7
-  }
+
+  // aurora db read replicas inherit performance insight configurations from its cluster's primary
+  // performance_insights {
+  //   enabled          = true
+  //   retention_period = 7
+  // }
 }
 
 //Performance insight example for instance db read replica
