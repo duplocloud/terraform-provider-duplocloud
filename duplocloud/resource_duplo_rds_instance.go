@@ -1090,9 +1090,9 @@ func performanceInsightsWaitUntilEnabled(ctx context.Context, c *duplosdk.Client
 func suppressIfPerformanceInsightsDisabled(k, old, new string, d *schema.ResourceData) bool {
 	// Check if the `enable` field is set to false
 	oldPI, newPI := d.GetChange("performance_insights.0.enabled")
-	if oldPI.(bool) == false && newPI.(bool) == false {
+	if !oldPI.(bool) && !newPI.(bool) {
 		return true
-	} else if oldPI.(bool) == true && newPI.(bool) == true {
+	} else if oldPI.(bool) && newPI.(bool) {
 		if d.HasChange("performance_insights.0.kms_key_id") || d.HasChange("performance_insights.0.retention_period") {
 			return false
 		}
