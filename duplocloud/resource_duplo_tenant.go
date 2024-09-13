@@ -179,7 +179,9 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.Errorf("Unable to retrieve duplo infrastructure '%s': %s", rq.PlanID, err)
 	}
-
+	if infra.Cloud == GCP_CLOUD && strings.Contains(rq.AccountName, "google") {
+		return diag.Errorf("Restricted use of keyword google in account_name for gcp cloud")
+	}
 	if infra.Cloud == 2 {
 		_, err = c.TenantCreateAzure(rq)
 	} else {

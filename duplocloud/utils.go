@@ -27,6 +27,7 @@ const (
 	MAX_DUPLOSERVICES_LENGTH            = len("duploservices-1234567890ab-")
 	MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH = len("duploservices-1234567890ab--1234567890ab")
 	RDS_DOCUMENT_DB_ENGINE              = 13
+	GCP_CLOUD                           = 3
 )
 
 // Utility function to make a single schema element computed.
