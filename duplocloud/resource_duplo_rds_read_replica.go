@@ -198,6 +198,12 @@ func resourceDuploRdsReadReplicaRead(ctx context.Context, d *schema.ResourceData
 
 	// Convert the object into Terraform resource data
 	jo := rdsReadReplicaToState(duplo, d)
+
+	// in aurora, replica performance insights inherits that of the primary and changes to primary auto-reflect in replica
+	// ignore instance specific block for aurora replica as it is not applicable
+	if isAuroraDB(d) {
+		jo["performance_insights"] = []interface{}{}
+	}
 	for key := range jo {
 		d.Set(key, jo[key])
 	}
@@ -334,18 +340,12 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 		return errorsToDiagnostics(fmt.Sprintf("Cannot update RDS DB read replica: %s: ", id), replicaValidationErrors)
 	}
 	if isAuroraDB(d) {
-		obj.DBInstanceIdentifier = identifier + "-cluster"
-
-		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(insightErr)
-
-		}
+		// we will not update replica perf insights because it will be handled by the primary configuration for aurora
+		return diag.FromErr(fmt.Errorf("Performance insights configuration on Aurora replicas follow the primary's configuration. Change primary instead"))
 	} else {
 		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
 		if insightErr != nil {
 			return diag.FromErr(insightErr)
-
 		}
 	}
 
