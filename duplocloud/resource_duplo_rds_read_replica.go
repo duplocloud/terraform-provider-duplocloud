@@ -180,7 +180,7 @@ func resourceDuploRdsReadReplica() *schema.Resource {
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema:        rdsReadReplicaSchema(),
-		CustomizeDiff: customdiff.All(validateRDSParameters), //, suppressClusterPerformanceInsightInReplica),
+		CustomizeDiff: customdiff.All(validateRDSParameters),
 	}
 }
 
@@ -540,20 +540,4 @@ func isEngineAuroraType(engineCode int) bool {
 func hasPerformanceInsightConfigurations(tfRdsReplicaSpecification *schema.ResourceData) bool {
 	configuration := tfRdsReplicaSpecification.Get("performance_insights").([]interface{})
 	return len(configuration) > 0
-}
-
-func suppressClusterPerformanceInsightInReplica(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
-
-	eng := diff.Get("engine").(int)
-	if eng == 8 || eng == 9 || eng == 16 || eng == 11 || eng == 12 {
-		oldPI, _ := diff.GetChange("performance_insights")
-		list := oldPI.([]interface{})
-		if len(list) > 0 {
-			diff.SetNewComputed("performance_insights.0.enabled")
-			diff.SetNewComputed("performance_insights.0.retention_period")
-			diff.SetNewComputed("performance_insights.0.kms_key_id")
-
-		}
-	}
-	return nil
 }
