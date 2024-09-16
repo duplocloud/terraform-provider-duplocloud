@@ -1,3 +1,10 @@
+## 2024-09-16
+
+### Fixed
+
+- Ignored backend values for Aurora replica performance insights configuration, ensuring they follow the primary's configuration.
+- Removed primary-specific code from the read replica resource to simplify Terraform operations.
+
 ## 2024-09-13
 
 ### Enhanced
