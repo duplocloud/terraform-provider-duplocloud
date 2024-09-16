@@ -201,7 +201,7 @@ func resourceAzurePostgresqlFlexibleDatabaseCreate(ctx context.Context, d *schem
 	d.SetId(id)
 
 	if d.Get("wait_until_ready").(bool) {
-		err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
+		err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"), "create")
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -235,7 +235,7 @@ func resourceAzurePostgresqlFlexibleDatabaseUpdate(ctx context.Context, d *schem
 	}
 
 	if d.Get("wait_until_ready").(bool) {
-		err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("update"))
+		err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("update"), "update")
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -315,19 +315,25 @@ func flattenAzurePostgresqlFlexibleDatabase(d *schema.ResourceData, duplo *duplo
 
 }
 
-func postgresqlFlexibleDBWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+func postgresqlFlexibleDBWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration, action string) error {
+	flag := false
+	if action == "update" {
+		flag = true
+	}
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			rp, err := c.PostgresqlFlexibleDatabaseGet(tenantID, name)
 			log.Printf("[TRACE] postgresql server user visible state is (%s).", rp.State)
+
 			status := "pending"
 			if err == nil {
-				if rp.State == "Ready" {
+				if rp.State == "Ready" && !flag {
 					status = "ready"
 				} else {
 					status = "pending"
+					flag = false
 				}
 			}
 
