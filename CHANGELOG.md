@@ -1,3 +1,14 @@
+## 2024-09-16
+
+### Enhanced
+
+- Improved handling of Performance Insights configuration for RDS read replicas, particularly for Aurora clusters.
+- Enhanced RDS instance and read replica schemas by adding `DiffSuppressFunc` to suppress changes when Performance Insights is disabled.
+
+### Documentation
+
+- Updated documentation and examples to reflect changes in Performance Insights configuration, providing clearer guidance on referencing from primary resources.
+
 ## 2024-09-13
 
 ### Enhanced
