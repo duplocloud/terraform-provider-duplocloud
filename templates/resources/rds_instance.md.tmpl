@@ -49,7 +49,7 @@ resource "duplocloud_rds_instance" "dev-db" {
 }
 ```
 
-### Provision an RDS instance using the PostgreSQL engine named dev-db with deletion protection enabled and multi-az enabled.
+### Provision an RDS instance in the dev tenant using the PostgreSQL engine named dev-db with deletion protection enabled and multi-az enabled.
 
 ```terraform
 # Ensure the 'dev' tenant is already created before creating the RDS instance.
@@ -81,12 +81,12 @@ resource "duplocloud_rds_instance" "dev-db" {
 }
 ```
 
-### Create an RDS instance using the Aurora-PostgreSQL engine named aurora-postgres-db with instance class db.m5.large.
+### Create an RDS instance in the nonprod using the Aurora-PostgreSQL engine named aurora-postgres-db with instance class db.m5.large.
 
 ```terraform
-# Ensure the 'dev' tenant is already created before creating the RDS instance.
+# Ensure the 'nonprod' tenant is already created before creating the RDS instance.
 data "duplocloud_tenant" "tenant" {
-  name = "dev"
+  name = "nonprod"
 }
 
 # Generate a random password for the RDS instance.
@@ -110,12 +110,12 @@ resource "duplocloud_rds_instance" "aurora-postgres-db" {
 }
 ```
 
-### Create an Aurora serverless RDS instance using the PostgreSQL engine named aurora-postgres with engine version 15.5, minimum capacity of 0.5, maximum capacity of 2, with deletion protection enabled and store the DB credentials in AWS secrets manager. Also create a read replica for this database.
+### Create an Aurora serverless RDS instance in the prod tenant, using the PostgreSQL engine named aurora-postgres with engine version 15.5, minimum capacity of 0.5, maximum capacity of 2, with deletion protection enabled and store the DB credentials in AWS secrets manager. Also create a read replica for this database.
 
 ```terraform
-# Ensure the 'dev' tenant is already created before creating the RDS instance.
+# Ensure the 'prod' tenant is already created before creating the RDS instance.
 data "duplocloud_tenant" "tenant" {
-  name = "dev"
+  name = "prod"
 }
 
 # Generate a random password for the RDS instance.
@@ -155,7 +155,7 @@ resource "duplocloud_rds_read_replica" "read-replica" {
 }
 ```
 
-### Provision an RDS instance using the MySQL engine named dev-db, with username mysql_user1 in DuploCloud platform.
+### Provision an RDS instance named dev-db in the dev tenant using the MySQL engine, with username mysql_user1 in DuploCloud platform.
 
 ```terraform
 # Ensure the 'dev' tenant is already created before creating the RDS instance.
@@ -185,7 +185,7 @@ resource "duplocloud_rds_instance" "dev-db" {
 }
 ```
 
-### Provision an RDS instance using the MySQL engine named dev-db with engine version 5.7, allocated storage 50 GB and enable IAM auth and logging for this DB.
+### Provision an RDS instance named dev-db in the dev tenant, using the MySQL engine  with engine version 5.7, allocated storage 50 GB and enable IAM auth and logging for this DB.
 
 ```terraform
 # Ensure the 'dev' tenant is already created before creating the RDS instance.
@@ -218,7 +218,7 @@ resource "duplocloud_rds_instance" "dev-db" {
 }
 ```
 
-### Create an RDS instance using the Aurora MySQL engine named mysql-db with engine version 5.7, allocated storage 100 GB and storage type io1 with number of iops 6000. It should skip the final snapshot and store the credentials in secrets manager.
+### Create an RDS instance in the dev tenant using the Aurora MySQL engine named mysql-db with engine version 5.7, allocated storage 100 GB and storage type io1 with number of iops 6000. It should skip the final snapshot and store the credentials in secrets manager.
 
 ```terraform
 # Ensure the 'dev' tenant is already created before creating the RDS instance.
