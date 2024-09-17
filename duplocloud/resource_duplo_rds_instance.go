@@ -304,10 +304,11 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 						Default:     false,
 					},
 					"kms_key_id": {
-						Description: "Specify ARN for the KMS key to encrypt Performance Insights data.",
-						Type:        schema.TypeString,
-						Optional:    true,
-						Computed:    true,
+						Description:      "Specify ARN for the KMS key to encrypt Performance Insights data.",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressKmsIfPerformanceInsightsDisabled,
 					},
 					"retention_period": {
 						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31. For Document DB retention period is 7",
@@ -318,6 +319,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 							validation.IntInSlice([]int{7, 731}),
 							validation.IntDivisibleBy(31),
 						),
+						DiffSuppressFunc: suppressRetentionPeriodIfPerformanceInsightsDisabled,
 					},
 				},
 			},
@@ -1090,13 +1092,35 @@ func performanceInsightsWaitUntilEnabled(ctx context.Context, c *duplosdk.Client
 func suppressIfPerformanceInsightsDisabled(k, old, new string, d *schema.ResourceData) bool {
 	// Check if the `enable` field is set to false
 	oldPI, newPI := d.GetChange("performance_insights.0.enabled")
-	if !oldPI.(bool) && !newPI.(bool) {
+	if !oldPI.(bool) && !newPI.(bool) { //both false return no change
 		return true
-	} else if oldPI.(bool) && newPI.(bool) {
+	} else if oldPI.(bool) && newPI.(bool) { //both true check if kms and retention period has change
 		if d.HasChange("performance_insights.0.kms_key_id") || d.HasChange("performance_insights.0.retention_period") {
 			return false
 		}
 		return true
 	}
 	return false
+}
+
+func suppressKmsIfPerformanceInsightsDisabled(k, old, new string, d *schema.ResourceData) bool {
+	oldPI, newPI := d.GetChange("performance_insights.0.enabled")
+	if oldPI.(bool) && !newPI.(bool) {
+		if d.HasChange("performance_insights.0.kms_key_id") {
+			return true
+		}
+	}
+	return false
+
+}
+
+func suppressRetentionPeriodIfPerformanceInsightsDisabled(k, old, new string, d *schema.ResourceData) bool {
+	oldPI, newPI := d.GetChange("performance_insights.0.enabled")
+	if oldPI.(bool) && !newPI.(bool) {
+		if d.HasChange("performance_insights.0.retention_period") {
+			return true
+		}
+	}
+	return false
+
 }
