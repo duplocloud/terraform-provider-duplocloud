@@ -1,3 +1,10 @@
+## 2024-09-17
+
+### Enhanced
+
+- Updated `duplocloud_gcp_sql_database_instance` to handle `ip_address` as a list of strings.
+- Improved formatting and corrected typos in the `database_version` field description.
+
 ## 2024-09-16
 
 ### Enhanced
