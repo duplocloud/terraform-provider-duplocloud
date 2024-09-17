@@ -18,7 +18,8 @@ resource "duplocloud_infrastructure" "infra" {
   region            = "us-west-2"
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
-  address_prefix    = "10.11.0.0/16"
+  address_prefix    = "10.11.0.0/16"  
+  subnet_cidr       = 24
 }
 ```
 
@@ -32,6 +33,7 @@ resource "duplocloud_infrastructure" "infra" {
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
   address_prefix    = "10.34.0.0/16"
+  subnet_cidr       = 24
 }
 ```
 
@@ -45,6 +47,7 @@ resource "duplocloud_infrastructure" "infra" {
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
   address_prefix    = "10.30.0.0/16"
+  subnet_cidr       = 24
 }
 ```
 

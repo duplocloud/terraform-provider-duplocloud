@@ -20,6 +20,7 @@ resource "duplocloud_infrastructure" "infra" {
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
   address_prefix    = "10.11.0.0/16"
+  subnet_cidr       = 24
 }
 
 # Use the infrastructure name as the 'plan_id' from the 'duplocloud_infrastructure' resource while creating tenant.
@@ -39,6 +40,7 @@ resource "duplocloud_infrastructure" "infra" {
   azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
   address_prefix    = "10.11.0.0/16"
+  subnet_cidr       = 24
 }
 ```
 
