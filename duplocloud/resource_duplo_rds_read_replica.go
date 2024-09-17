@@ -326,27 +326,6 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 		obj.Disable = &disable
 	}
 	obj.DBInstanceIdentifier = identifier
-	// Validate read replica
-	////replicaValidationErrors := validateReplicaPerformanceInsightsConfiguration(d.Get("engine").(int), d)
-	////if len(replicaValidationErrors) > 0 {
-	////	return errorsToDiagnostics(fmt.Sprintf("Cannot update RDS DB read replica: %s: ", id), replicaValidationErrors)
-	////}
-	//if isAuroraDB(d) {
-	//		obj.DBInstanceIdentifier = identifier + "-cluster"
-	//
-	//		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
-	//		if insightErr != nil {
-	//			return diag.FromErr(insightErr)
-	//
-	//		}
-	//
-	//} else {
-	//	insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-	//	if insightErr != nil {
-	//		return diag.FromErr(insightErr)
-	//
-	//	}
-	//}
 	if !isAuroraDB(d) {
 		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
 		if insightErr != nil {

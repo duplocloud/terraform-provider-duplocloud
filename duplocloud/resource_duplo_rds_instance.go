@@ -1099,11 +1099,7 @@ func suppressIfPerformanceInsightsDisabled(k, old, new string, d *schema.Resourc
 			return false
 		}
 		return true
-	} //else if oldPI.(bool) && !newPI.(bool) {
-	//	if d.HasChange("performance_insights.0.kms_key_id") || d.HasChange("performance_insights.0.retention_period") {
-	//		return true
-	//	}
-	//}
+	}
 	return false
 }
 
