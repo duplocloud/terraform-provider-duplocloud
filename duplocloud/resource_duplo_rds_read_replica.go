@@ -125,7 +125,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"performance_insights": {
-			Description:      "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. Not applicable for Cluster Db",
+			Description:      "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true.",
 			Type:             schema.TypeList,
 			MaxItems:         1,
 			Optional:         true,

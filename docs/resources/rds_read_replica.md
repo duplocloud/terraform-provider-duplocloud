@@ -162,7 +162,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 ### Optional
 
 - `availability_zone` (String) The AZ for the RDS instance.
-- `performance_insights` (Block List, Max: 1) Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. Not applicable for Cluster Db (see [below for nested schema](#nestedblock--performance_insights))
+- `performance_insights` (Block List, Max: 1) Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. (see [below for nested schema](#nestedblock--performance_insights))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
