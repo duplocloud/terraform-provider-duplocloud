@@ -17,6 +17,7 @@ resource "duplocloud_infrastructure" "infra" {
   infra_name        = "dev"
   cloud             = 0 # AWS Cloud
   region            = "us-east-1"
+  azcount           = 2             # The number of availability zones.
   enable_k8_cluster = false
   address_prefix    = "10.13.0.0/16"
 }
@@ -81,7 +82,7 @@ resource "duplocloud_rds_instance" "dev-db" {
 }
 ```
 
-### Create an RDS instance in the nonprod using the Aurora-PostgreSQL engine named aurora-postgres-db with instance class db.m5.large.
+### Create an RDS instance in the nonprod tenant using the Aurora-PostgreSQL engine named aurora-postgres-db with instance class db.m5.large.
 
 ```terraform
 # Ensure the 'nonprod' tenant is already created before creating the RDS instance.

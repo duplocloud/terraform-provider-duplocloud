@@ -17,6 +17,7 @@ resource "duplocloud_infrastructure" "infra" {
   infra_name        = "dev"
   cloud             = 0 # AWS Cloud
   region            = "us-east-1"
+  azcount           = 2             # The number of availability zones.
   enable_k8_cluster = false
   address_prefix    = "10.13.0.0/16"
 }
@@ -58,6 +59,7 @@ resource "duplocloud_infrastructure" "infra" {
   infra_name        = "dev"
   cloud             = 0 # AWS Cloud
   region            = "us-east-1"
+  azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
   address_prefix    = "10.13.0.0/16"
 }

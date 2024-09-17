@@ -16,6 +16,7 @@ resource "duplocloud_infrastructure" "infra" {
   infra_name        = "nonprod"
   cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google; Defaults to 0
   region            = "us-west-2"
+  azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
   address_prefix    = "10.11.0.0/16"
 }
@@ -28,6 +29,7 @@ resource "duplocloud_infrastructure" "infra" {
   infra_name        = "nonprod"
   cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google
   region            = "us-west-2"
+  azcount           = 2             # The number of availability zones.
   enable_k8_cluster = true
   address_prefix    = "10.34.0.0/16"
 }
