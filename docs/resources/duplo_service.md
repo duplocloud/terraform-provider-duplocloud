@@ -2,9 +2,12 @@
 
 # Resource: duplocloud_duplo_service
 
+
+
 A Duplo service is a microservice managed by the DuploCloud platform, which automates cloud infrastructure management. It abstracts complexities, allowing users to deploy, scale, and monitor cloud-native applications with minimal manual effort.
 
 NOTE: For Amazon ECS services, see the `duplocloud_ecs_service` resource.
+
 
 ## Example Usage
 
