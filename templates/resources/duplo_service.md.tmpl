@@ -9,6 +9,62 @@
 
 ## Example Usage
 
+### Deploy an nginx service in the dev tenant
+
+```terraform
+# Ensure the 'dev' tenant is already created before deploying the Nginx duplo service.
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+# Ensure that the host is also created in the tenant.
+resource "duplocloud_duplo_service" "nginx" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  name           = "nginx"
+  agent_platform = 7 # Duplo EKS container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+}
+```
+
+### Create an nginx service with 2 replicas in the prod tenant
+
+```terraform
+# Ensure the 'dev' tenant is already created before deploying the Nginx duplo service.
+data "duplocloud_tenant" "tenant" {
+  name = "prod"
+}
+
+# Ensure that the host is also created in the tenant.
+resource "duplocloud_duplo_service" "nginx" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  name           = "nginx"
+  agent_platform = 7 # Duplo EKS container agent
+  docker_image   = "nginx:latest"
+  replicas       = 2
+}
+```
+
+### Deploy an nginx service in kubernetes
+```terraform
+# Ensure the 'dev' tenant is already created before deploying the Nginx duplo service.
+data "duplocloud_tenant" "tenant" {
+  name = "prod"
+}
+
+# Ensure that the host is also created in the tenant.
+resource "duplocloud_duplo_service" "nginx" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+
+  name           = "nginx"
+  agent_platform = 7 # Duplo EKS container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+}
+```
+
 ### Deploy NGINX service using DuploCloud Platform's native container agent.
 
 ```terraform
