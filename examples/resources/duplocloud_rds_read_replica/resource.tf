@@ -53,6 +53,7 @@ resource "duplocloud_rds_read_replica" "replica" {
 
 
 //Performance insight example for cluster db read replica
+//Performance insight for aurora cluster db is applied at cluster level
 resource "duplocloud_rds_instance" "rds" {
   tenant_id      = duplocloud_tenant.myapp.tenant_id
   name           = "clust"
@@ -65,19 +66,39 @@ resource "duplocloud_rds_instance" "rds" {
   encrypt_storage                 = true
   store_details_in_secret_manager = true
   enhanced_monitoring             = 0
-
+  performance_insights {
+    enabled          = false
+    retention_period = 31
+    kms_key_id       = "arn:aws:kms:us-west-2:182680712604:key/6b8dc967-92bf-43de-a850-ee7b945260f8"
+  }
 }
-
+//referencing performance insights block from writer or primary resource is must, 
+//to maintain tfstate to be in sync for performance insights block.
 resource "duplocloud_rds_read_replica" "replica" {
   tenant_id          = duplocloud_rds_instance.rds.tenant_id
   name               = "read-replica"
   size               = "db.r5.large"
   cluster_identifier = duplocloud_rds_instance.rds.cluster_identifier
   performance_insights {
-    enabled          = true
-    retention_period = 7
+    enabled          = duplocloud_rds_instance.rds.performance_insights.0.enabled
+    retention_period = duplocloud_rds_instance.rds.performance_insights.0.retention_period
+    kms_key_id       = duplocloud_rds_instance.rds.performance_insights.0.kms_key_id
   }
 }
+
+resource "duplocloud_rds_read_replica" "replica2" {
+  tenant_id          = duplocloud_rds_instance.rds.tenant_id
+  name               = "read-replica2"
+  size               = "db.r5.large"
+  cluster_identifier = duplocloud_rds_instance.rds.cluster_identifier
+  performance_insights {
+    enabled          = duplocloud_rds_instance.rds.performance_insights.0.enabled
+    retention_period = duplocloud_rds_instance.rds.performance_insights.0.retention_period
+    kms_key_id       = duplocloud_rds_instance.rds.performance_insights.0.kms_key_id
+  }
+
+}
+
 
 //Performance insight example for instance db read replica
 resource "duplocloud_rds_instance" "mydb" {
