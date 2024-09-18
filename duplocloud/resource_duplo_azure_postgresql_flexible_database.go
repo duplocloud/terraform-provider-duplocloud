@@ -45,7 +45,7 @@ func duploAzurePostgresqlFlexibleDatabaseSchema() map[string]*schema.Schema {
 			Description: "High availability options— Disabled, SameZone, and ZoneRedundant — are applicable if the service tier is set to GeneralPurpose or MemoryOptimized.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Computed:    true,
+			Default:     "Disabled",
 			ValidateFunc: validation.StringInSlice([]string{
 				"Disabled",
 				"SameZone",
@@ -349,9 +349,10 @@ func postgresqlFlexibleDBWaitUntilReady(ctx context.Context, c *duplosdk.Client,
 }
 
 func verifyPSQLParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
-	serviceTier := diff.Get("service_tier").(string)
-	highAvailability := diff.Get("high_availability").(string)
-	if serviceTier == "Burstable" && highAvailability != "" {
+	_, newS := diff.GetChange("service_tier")
+	oldH, newH := diff.GetChange("high_availability")
+	newHA := newH.(string)
+	if newS == "Burstable" && newHA != "Disabled" {
 		return fmt.Errorf("high_availability not supported with Burstable compute/service tier")
 	}
 	old, new := diff.GetChange("storage_gb")
@@ -361,6 +362,9 @@ func verifyPSQLParameters(ctx context.Context, diff *schema.ResourceDiff, m inte
 	oldR, newR := diff.GetChange("backup_retention_days")
 	if newR.(int) < oldR.(int) {
 		return fmt.Errorf("Reducing the value of backup_retention_days is not allowed.")
+	}
+	if oldH.(string) != "Disabled" && newS.(string) == "Burstable" {
+		return fmt.Errorf("disable high_availability before updating to Burstable compute/service tier")
 	}
 	return nil
 }
