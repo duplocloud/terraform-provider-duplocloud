@@ -180,12 +180,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
 		"storage_type": {
-			Description: "Valid values: gp2 | gp3 | io1 | standard | aurora. Storage type to be used for RDS instance storage.",
+			Description: "Valid values: gp2 | gp3 | io1 | standard | aurora | aurora-iopt1. Storage type to be used for RDS instance storage.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice(
-				[]string{"gp2", "gp3", "io1", "standard", "aurora"},
+				[]string{"gp2", "gp3", "io1", "standard", "aurora", "aurora-iopt1"},
 				false,
 			),
 		},
@@ -1038,16 +1038,20 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
 		}
 	}
-	//if eng == 8 || eng == 9 || eng == 16 || eng == 11 || eng == 12 {
-	//	//st := diff.Get("storage_type").(string)
-	//	new, _ := diff.GetChange("storage_type")
-	//	st := new.(string)
-	//	if st != "" && st != "aurora" {
-	//		return fmt.Errorf("RDS engine %s invalid storage type %s valid value is aurora", engines[eng], st)
-	//
-	//	}
-	//
-	//}
+	st := diff.Get("storage_type").(string)
+	if st == "aurora-iopt1" {
+		ev := diff.Get("engine_version").(string)
+		if (eng == 8 || eng == 11) && compareEngineVersion(ev, "3.03.1") == -1 {
+			return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 3.03.1", engines[eng], st)
+		}
+		if (eng == 9 || eng == 12) && compareEngineVersion(ev, "13.10") == -1 {
+			return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 13.10", engines[eng], st)
+		}
+		if eng != 8 && eng != 9 && eng != 11 && eng != 12 {
+			return fmt.Errorf("RDS engine %s  do not support storage_type %s ", engines[eng], st)
+		}
+	}
+
 	return nil
 }
 
