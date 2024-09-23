@@ -30,7 +30,7 @@ func duploAzurePostgresqlFlexibleDatabaseSchema() map[string]*schema.Schema {
 		},
 
 		"service_tier": {
-			Description: "Specify service_tier among `Burstable`, `GeneralPurpose` or `MemoryOptimized`",
+			Description: "Specify service_tier among `Burstable`, `GeneralPurpose` or `MemoryOptimized`. Note: should disable high_availability before updating to Burstable",
 			Type:        schema.TypeString,
 			Required:    true,
 			ValidateFunc: validation.StringInSlice([]string{"Burstable", "GeneralPurpose", "MemoryOptimized"},
@@ -66,7 +66,7 @@ func duploAzurePostgresqlFlexibleDatabaseSchema() map[string]*schema.Schema {
 			Sensitive:   true,
 		},
 		"storage_gb": {
-			Description:  "Max storage allowed for a server. Possible values are `32`,`64`,`128`,`256`,`512`,`1024`,`2048`,`4096`,`8192`,`16384`,`32768` GB",
+			Description:  "Max storage allowed for a server. Possible values are `32`,`64`,`128`,`256`,`512`,`1024`,`2048`,`4096`,`8192`,`16384`,`32768` GB. Note: Updation allowed on updating with higher storage size from current",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			Computed:     true,
@@ -87,14 +87,14 @@ func duploAzurePostgresqlFlexibleDatabaseSchema() map[string]*schema.Schema {
 			ForceNew: true,
 		},
 		"backup_retention_days": {
-			Description:  "Backup retention days for the server, supported values are between `7` and `35` days.",
+			Description:  "Backup retention days for the server, supported values are between `7` and `35` days. Note: Updation allowed on updating with higher retention days value from current",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			Computed:     true,
 			ValidateFunc: validation.IntBetween(7, 35),
 		},
 		"geo_redundant_backup": {
-			Description: "Turn Geo-redundant server backups Enabled/Disabled.To enable or disable geo_redundant_backup resource need to be recreated",
+			Description: "Turn Geo-redundant server backups Enabled/Disabled. To enable or disable geo_redundant_backup resource need to be recreated",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
