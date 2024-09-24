@@ -167,6 +167,7 @@ func Provider() *schema.Provider {
 			"duplocloud_s3_bucket_replication":            resourceS3BucketReplication(),
 			"duplocloud_gcp_storage_bucket_v2":            resourceGCPStorageBucketV2(),
 			"duplocloud_aws_lambda_function_event_config": resourceAwsLambdaEventInvokeConfigFunction(),
+			"duplocloud_gcp_pubsub_subscription":          resourceGCPPubSubSubscription(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
