@@ -290,10 +290,11 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
 		},
 		"performance_insights": {
-			Description: "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true.",
-			Type:        schema.TypeList,
-			MaxItems:    1,
-			Optional:    true,
+			Description:      "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true.",
+			Type:             schema.TypeList,
+			MaxItems:         1,
+			Optional:         true,
+			DiffSuppressFunc: suppressIfPerformanceInsightsDisabled,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"enabled": {
@@ -303,13 +304,14 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 						Default:     false,
 					},
 					"kms_key_id": {
-						Description: "Specify ARN for the KMS key to encrypt Performance Insights data.",
-						Type:        schema.TypeString,
-						Optional:    true,
-						Computed:    true,
+						Description:      "Specify ARN for the KMS key to encrypt Performance Insights data.",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressKmsIfPerformanceInsightsDisabled,
 					},
 					"retention_period": {
-						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31",
+						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31. For Document DB retention period is 7",
 						Type:        schema.TypeInt,
 						Optional:    true,
 						Default:     7,
@@ -317,6 +319,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 							validation.IntInSlice([]int{7, 731}),
 							validation.IntDivisibleBy(31),
 						),
+						DiffSuppressFunc: suppressRetentionPeriodIfPerformanceInsightsDisabled,
 					},
 				},
 			},
@@ -898,15 +901,13 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
 
-	if duploObject.EnablePerformanceInsights {
-		pis := []interface{}{}
-		pi := make(map[string]interface{})
-		pi["enabled"] = duploObject.EnablePerformanceInsights
-		pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
-		pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
-		pis = append(pis, pi)
-		jo["performance_insights"] = pis
-	}
+	pis := []interface{}{}
+	pi := make(map[string]interface{})
+	pi["enabled"] = duploObject.EnablePerformanceInsights
+	pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
+	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
+	pis = append(pis, pi)
+	jo["performance_insights"] = pis
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", string(jsonData2))
 
@@ -1086,4 +1087,40 @@ func performanceInsightsWaitUntilEnabled(ctx context.Context, c *duplosdk.Client
 	log.Printf("[DEBUG] performanceInsightsWaitUntilAvailable (%s)", id)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func suppressIfPerformanceInsightsDisabled(k, old, new string, d *schema.ResourceData) bool {
+	// Check if the `enable` field is set to false
+	oldPI, newPI := d.GetChange("performance_insights.0.enabled")
+	if !oldPI.(bool) && !newPI.(bool) { //both false return no change
+		return true
+	} else if oldPI.(bool) && newPI.(bool) { //both true check if kms and retention period has change
+		if d.HasChange("performance_insights.0.kms_key_id") || d.HasChange("performance_insights.0.retention_period") {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+func suppressKmsIfPerformanceInsightsDisabled(k, old, new string, d *schema.ResourceData) bool {
+	oldPI, newPI := d.GetChange("performance_insights.0.enabled")
+	if oldPI.(bool) && !newPI.(bool) {
+		if d.HasChange("performance_insights.0.kms_key_id") {
+			return true
+		}
+	}
+	return false
+
+}
+
+func suppressRetentionPeriodIfPerformanceInsightsDisabled(k, old, new string, d *schema.ResourceData) bool {
+	oldPI, newPI := d.GetChange("performance_insights.0.enabled")
+	if oldPI.(bool) && !newPI.(bool) {
+		if d.HasChange("performance_insights.0.retention_period") {
+			return true
+		}
+	}
+	return false
+
 }
