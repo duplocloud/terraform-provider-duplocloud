@@ -27,7 +27,7 @@ description: |-
 - `disk_size` (Number) The size of data disk, in GB. Size of a running instance cannot be reduced but can be increased. The minimum value is 10GB.
 - `fullname` (String) The full name of the sql database.
 - `id` (String) The ID of this resource.
-- `ip_address` (String) IP address of the database.
+- `ip_address` (List of String) IP address of the database.
 - `labels` (Map of String) Map of string keys and values that can be used to organize and categorize this resource.
 - `self_link` (String) The SelfLink of the sql database.
 - `tier` (String) The machine type to use. See tiers for more details and supported versions. Postgres supports only shared-core machine types, and custom machine types such as `db-custom-2-13312`.See the [Custom Machine Type Documentation](https://cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type#create) to learn about specifying custom machine types.
