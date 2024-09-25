@@ -1,3 +1,24 @@
+## 2024-09-13
+
+### Enhanced
+
+- Implemented validation to restrict tenant creation in GCP cloud if the tenant name contains the keyword 'google'.
+
+## 2024-09-12
+
+### Enhanced
+
+- Added `ForceNew` property to the `availability_zone` attribute in RDS instances to ensure replacement on change.
+- Improved handling of performance insights attributes by setting them only when enabled, preventing unnecessary diffs.
+
+## 2024-09-11
+
+### Enhanced
+
+- Added performance insights configuration to RDS read replica resources, allowing for improved database performance monitoring and tuning.
+- Implemented logic to handle performance insights for both primary and read replica RDS instances, including waiting for insights to be enabled.
+- Updated validation and update processes to support performance insights for read replicas, ensuring consistent application of settings.
+
 ## 2024-09-17
 
 ### Enhanced
