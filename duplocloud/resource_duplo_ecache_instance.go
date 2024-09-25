@@ -186,6 +186,13 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Computed:     true,
 			ValidateFunc: validation.IntBetween(1, 35),
 		},
+		"snapshot_window": {
+			Description:  "Specify snapshot window limit The daily time range (in UTC) during which ElastiCache begins taking a daily snapshot of your node group (shard). Example: 05:00-09:00. If you do not specify this parameter, ElastiCache automatically chooses an appropriate time range.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: isValidSnapshotWindow(),
+		},
 		"log_delivery_configuration": {
 			Type:     schema.TypeSet,
 			MaxItems: 2,
@@ -537,6 +544,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			SnapshotName:             d.Get("snapshot_name").(string),
 			SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
 			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
+			SnapshotWindow:           d.Get("snapshot_window").(string),
 		},
 	}
 	if ds, ok := d.Get("log_delivery_configuration").(*schema.Set); ok {
@@ -596,7 +604,9 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_name", duplo.SnapshotName)
 	d.Set("snapshot_arns", duplo.SnapshotArns)
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
+	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
+
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
@@ -664,4 +674,43 @@ func removePatchVersion(version string) string {
 		return strings.Join(parts[:2], ".")
 	}
 	return version
+}
+
+func isValidSnapshotWindow() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (warnings []string, errors []error) {
+		if i == nil {
+			return warnings, errors
+		}
+
+		v, ok := i.(string)
+		if !ok {
+			errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
+			return warnings, errors
+		}
+
+		if v == "" {
+			return warnings, errors
+		}
+
+		times := strings.Split(v, "-")
+		if len(times) != 2 {
+			errors = append(errors, fmt.Errorf("expected %s in format '05:00-09:00'", k))
+			return warnings, errors
+		}
+
+		startTime, err1 := time.Parse("15:04", times[0])
+		endTime, err2 := time.Parse("15:04", times[1])
+		if err1 != nil || err2 != nil {
+			errors = append(errors, fmt.Errorf("expected %s in format '05:00-09:00'", k))
+			return warnings, errors
+		}
+
+		// Check if the input time is within the range
+		if !endTime.After(startTime) {
+			errors = append(errors, fmt.Errorf("expected %s of start-time should be smaller than end-time.", k))
+			return warnings, errors
+		}
+
+		return warnings, errors
+	}
 }
