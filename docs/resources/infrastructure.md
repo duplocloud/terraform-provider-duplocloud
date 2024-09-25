@@ -23,6 +23,21 @@ resource "duplocloud_infrastructure" "infra" {
 }
 ```
 
+#### Change the region to us-east-2
+
+```terraform
+resource "duplocloud_infrastructure" "infra" {
+  infra_name        = "nonprod"
+  cloud             = 0             # 0-AWS, 1- Oracle, 2- Azure, 3-Google; Defaults to 0
+  region            = "us-west-2"
+  azcount           = 2             # The number of availability zones.
+  enable_k8_cluster = true
+  address_prefix    = "10.11.0.0/16"  
+  subnet_cidr       = 24
+}
+```
+
+
 ### Create a DuploCloud infrastructure named nonprod with cidr 10.34.0.0/16 in us-west-2 region
 
 ```terraform
