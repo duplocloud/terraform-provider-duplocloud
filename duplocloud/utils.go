@@ -1077,3 +1077,23 @@ func validateDurationBetween(min, max time.Duration, maxFractionDigits int) func
 		return
 	}
 }
+
+func validateStringFormatedInt64Atleast(min string) func(value interface{}, key string) (ws []string, es []error) {
+	return func(value interface{}, key string) (ws []string, es []error) {
+		atleast, err := strconv.ParseInt(min, 10, 64)
+		if err != nil {
+			es = append(es, fmt.Errorf("Error converting string to int64: %s", err.Error()))
+			return
+		}
+		v, err := strconv.ParseInt(value.(string), 10, 64)
+		if err != nil {
+			es = append(es, fmt.Errorf("Error converting string to int64: %s", err.Error()))
+			return
+		}
+		if v < atleast {
+			es = append(es, fmt.Errorf("Value cannot be less than : %d", atleast))
+			return
+		}
+		return
+	}
+}
