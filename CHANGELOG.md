@@ -1,3 +1,61 @@
+## 2024-09-13
+
+### Enhanced
+
+- Implemented validation to restrict tenant creation in GCP cloud if the tenant name contains the keyword 'google'.
+
+## 2024-09-12
+
+### Enhanced
+
+- Added `ForceNew` property to the `availability_zone` attribute in RDS instances to ensure replacement on change.
+- Improved handling of performance insights attributes by setting them only when enabled, preventing unnecessary diffs.
+
+## 2024-09-11
+
+### Enhanced
+
+- Added performance insights configuration to RDS read replica resources, allowing for improved database performance monitoring and tuning.
+- Implemented logic to handle performance insights for both primary and read replica RDS instances, including waiting for insights to be enabled.
+- Updated validation and update processes to support performance insights for read replicas, ensuring consistent application of settings.
+
+## 2024-09-17
+
+### Enhanced
+
+- Updated `duplocloud_gcp_sql_database_instance` to handle `ip_address` as a list of strings.
+- Improved formatting and corrected typos in the `database_version` field description.
+
+## 2024-09-16
+
+### Enhanced
+
+- Improved handling of Performance Insights configuration for RDS read replicas, particularly for Aurora clusters.
+- Enhanced RDS instance and read replica schemas by adding `DiffSuppressFunc` to suppress changes when Performance Insights is disabled.
+
+### Documentation
+
+- Updated documentation and examples to reflect changes in Performance Insights configuration, providing clearer guidance on referencing from primary resources.
+
+## 2024-09-13
+
+### Enhanced
+
+- Added `DiffSuppressFunc` to suppress diffs for `performance_insights` when disabled in RDS instance and read replica schemas.
+- Modified logic to always set `performance_insights` state, regardless of enablement status.
+- Implemented validation to prevent Aurora read replicas from having performance insights configurations, as these are managed at the cluster level.
+
+### Documentation
+
+- Updated documentation to specify that the retention period for DocumentDB is 7 days.
+
+## 2024-09-12
+
+### Enhanced
+
+- Added `ForceNew` property to the `availability_zone` attribute in RDS instances to ensure replacement on change.
+- Improved handling of performance insights attributes by setting them only when enabled, preventing unnecessary diffs.
+
 ## 2024-09-12
 
 ### Bug Fixes
@@ -14,6 +72,14 @@
 
 - Added `ForceNew` property to the `availability_zone` attribute in RDS instances to ensure replacement on change.
 - Improved handling of performance insights attributes by setting them only when enabled, preventing unnecessary diffs.
+
+## 2024-09-11
+
+### Enhanced
+
+- Added performance insights configuration to RDS read replica resources, allowing for improved database performance monitoring and tuning.
+- Implemented logic to handle performance insights for both primary and read replica RDS instances, including waiting for insights to be enabled.
+- Updated validation and update processes to support performance insights for read replicas, ensuring consistent application of settings.
 
 ## 2024-09-11
 

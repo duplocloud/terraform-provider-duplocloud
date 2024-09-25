@@ -41,11 +41,11 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"database_version": {
-			Description: "The MySQL, PostgreSQL orSQL Server version to use." +
+			Description: "The MySQL, PostgreSQL or SQL Server version to use." +
 				"Supported values include `MYSQL_5_6`,`MYSQL_5_7`, `MYSQL_8_0`, `POSTGRES_9_6`,`POSTGRES_10`," +
 				"`POSTGRES_11`,`POSTGRES_12`, `POSTGRES_13`, `POSTGRES_14`, `POSTGRES_15`, `SQLSERVER_2017_STANDARD`,`SQLSERVER_2017_ENTERPRISE`," +
-				"`SQLSERVER_2017_EXPRESS`, `SQLSERVER_2017_WEB`.`SQLSERVER_2019_STANDARD`, `SQLSERVER_2019_ENTERPRISE`, `SQLSERVER_2019_EXPRESS`," +
-				"`SQLSERVER_2019_WEB`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions)includes an up-to-date reference of supported versions.",
+				"`SQLSERVER_2017_EXPRESS`, `SQLSERVER_2017_WEB`,`SQLSERVER_2019_STANDARD`, `SQLSERVER_2019_ENTERPRISE`, `SQLSERVER_2019_EXPRESS`," +
+				"`SQLSERVER_2019_WEB`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions) includes an up-to-date reference of supported versions.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringInSlice(supportedGcpSQLDBVersions(), false),
@@ -84,13 +84,17 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"ip_address": {
+<<<<<<< HEAD
 			Description: "IP address of the database.",
+=======
+			Description: "List of IP addresses of the database.",
+>>>>>>> develop
 			Type:        schema.TypeList,
 			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"connection_name": {
-			Description: "Connection name  of the database.",
+			Description: "Connection name of the database.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -100,7 +104,6 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 func checkPasswordNeeded(d *schema.ResourceData) bool {
 
 	// Check the value of dependent_field
-
 	dependentFieldValue := d.Get("database_version").(string)
 	mp := map[string]bool{
 		"SQLSERVER_2017_STANDARD":   true,
@@ -114,6 +117,7 @@ func checkPasswordNeeded(d *schema.ResourceData) bool {
 	}
 	return mp[dependentFieldValue]
 }
+
 func resourceGcpSqlDBInstance() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_gcp_sql_database_instance` manages a GCP SQL Database Instance in Duplo.",
@@ -323,6 +327,10 @@ func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name strin
 	d.Set("tier", duplo.Tier)
 	d.Set("database_version", reverseGcpSQLDBVersionsMap()[duplo.DatabaseVersion])
 	d.Set("disk_size", duplo.DataDiskSizeGb)
+<<<<<<< HEAD
+=======
+	d.Set("ip_address", flattenStringList(duplo.IPAddress))
+>>>>>>> develop
 	d.Set("connection_name", duplo.ConnectionName)
 	flattenGcpLabels(d, duplo.Labels)
 	flattenIPAddress(d, duplo.IPAddress)

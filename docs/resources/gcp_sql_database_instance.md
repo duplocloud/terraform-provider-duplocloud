@@ -36,7 +36,7 @@ resource "duplocloud_gcp_sql_database_instance" "sql_instance" {
 
 ### Required
 
-- `database_version` (String) The MySQL, PostgreSQL orSQL Server version to use.Supported values include `MYSQL_5_6`,`MYSQL_5_7`, `MYSQL_8_0`, `POSTGRES_9_6`,`POSTGRES_10`,`POSTGRES_11`,`POSTGRES_12`, `POSTGRES_13`, `POSTGRES_14`, `POSTGRES_15`, `SQLSERVER_2017_STANDARD`,`SQLSERVER_2017_ENTERPRISE`,`SQLSERVER_2017_EXPRESS`, `SQLSERVER_2017_WEB`.`SQLSERVER_2019_STANDARD`, `SQLSERVER_2019_ENTERPRISE`, `SQLSERVER_2019_EXPRESS`,`SQLSERVER_2019_WEB`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions)includes an up-to-date reference of supported versions.
+- `database_version` (String) The MySQL, PostgreSQL or SQL Server version to use.Supported values include `MYSQL_5_6`,`MYSQL_5_7`, `MYSQL_8_0`, `POSTGRES_9_6`,`POSTGRES_10`,`POSTGRES_11`,`POSTGRES_12`, `POSTGRES_13`, `POSTGRES_14`, `POSTGRES_15`, `SQLSERVER_2017_STANDARD`,`SQLSERVER_2017_ENTERPRISE`,`SQLSERVER_2017_EXPRESS`, `SQLSERVER_2017_WEB`,`SQLSERVER_2019_STANDARD`, `SQLSERVER_2019_ENTERPRISE`, `SQLSERVER_2019_EXPRESS`,`SQLSERVER_2019_WEB`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions) includes an up-to-date reference of supported versions.
 - `name` (String) The short name of the sql database.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
 - `tenant_id` (String) The GUID of the tenant that the sql database will be created in.
 - `tier` (String) The machine type to use. See tiers for more details and supported versions. Postgres supports only shared-core machine types, and custom machine types such as `db-custom-2-13312`.See the [Custom Machine Type Documentation](https://cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type#create) to learn about specifying custom machine types.
@@ -51,10 +51,14 @@ resource "duplocloud_gcp_sql_database_instance" "sql_instance" {
 
 ### Read-Only
 
-- `connection_name` (String) Connection name  of the database.
+- `connection_name` (String) Connection name of the database.
 - `fullname` (String) The full name of the sql database.
 - `id` (String) The ID of this resource.
+<<<<<<< HEAD
 - `ip_address` (List of String) IP address of the database.
+=======
+- `ip_address` (List of String) List of IP addresses of the database.
+>>>>>>> develop
 - `self_link` (String) The SelfLink of the sql database.
 
 <a id="nestedblock--timeouts"></a>

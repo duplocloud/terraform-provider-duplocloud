@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -124,10 +125,11 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"performance_insights": {
-			Description: "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. Not applicable for Cluster Db",
-			Type:        schema.TypeList,
-			MaxItems:    1,
-			Optional:    true,
+			Description:      "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true.",
+			Type:             schema.TypeList,
+			MaxItems:         1,
+			Optional:         true,
+			DiffSuppressFunc: suppressIfPerformanceInsightsDisabled,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"enabled": {
@@ -137,13 +139,14 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 						Default:     false,
 					},
 					"kms_key_id": {
-						Description: "Specify ARN for the KMS key to encrypt Performance Insights data.",
-						Type:        schema.TypeString,
-						Optional:    true,
-						Computed:    true,
+						Description:      "Specify ARN for the KMS key to encrypt Performance Insights data.",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressKmsIfPerformanceInsightsDisabled,
 					},
 					"retention_period": {
-						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31",
+						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31. For Document DB retention period is 7",
 						Type:        schema.TypeInt,
 						Optional:    true,
 						Default:     7,
@@ -151,6 +154,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 							validation.IntInSlice([]int{7, 731}),
 							validation.IntDivisibleBy(31),
 						),
+						DiffSuppressFunc: suppressRetentionPeriodIfPerformanceInsightsDisabled,
 					},
 				},
 			},
@@ -175,8 +179,8 @@ func resourceDuploRdsReadReplica() *schema.Resource {
 			Update: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
-		Schema: rdsReadReplicaSchema(),
-		//CustomizeDiff: validateRDSParameters,
+		Schema:        rdsReadReplicaSchema(),
+		CustomizeDiff: customdiff.All(validateRDSParameters),
 	}
 }
 
@@ -237,14 +241,9 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	id := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, duplo.Name)
 
-	// Validate the RDS instance.
-	errors := validateRdsInstance(duplo)
-	if len(errors) > 0 {
-		return errorsToDiagnostics(fmt.Sprintf("Cannot create RDS DB read replica: %s: ", id), errors)
-	}
 	pI := expandPerformanceInsight(d)
 
-	if pI != nil && duplo.Engine != RDS_DOCUMENT_DB_ENGINE {
+	if pI != nil && duplo.Engine != RDS_DOCUMENT_DB_ENGINE && !validateReplicaPerformanceInsightsConfigurationAuroaDB(duplo.Engine, d) {
 
 		period := pI["retention_period"].(int)
 		kmsid := pI["kms_key_id"].(string)
@@ -252,6 +251,12 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 		duplo.PerformanceInsightsRetentionPeriod = period
 		duplo.PerformanceInsightsKMSKeyId = kmsid
 
+	}
+
+	// Validate the RDS instance.
+	errors := validateRdsInstance(duplo)
+	if len(errors) > 0 {
+		return errorsToDiagnostics(fmt.Sprintf("Cannot create RDS DB read replica: %s: ", id), errors)
 	}
 
 	instResp, err := c.RdsInstanceCreate(tenantID, duplo)
@@ -321,22 +326,14 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 		obj.Disable = &disable
 	}
 	obj.DBInstanceIdentifier = identifier
-	if isAuroraDB(d) {
-		obj.DBInstanceIdentifier = identifier + "-cluster"
-
-		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(insightErr)
-
-		}
-	} else {
+	if !isAuroraDB(d) {
 		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
 		if insightErr != nil {
 			return diag.FromErr(insightErr)
 
 		}
-	}
 
+	}
 	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
 	_ = readReplicaInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
 
@@ -484,18 +481,42 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 		clusterIdentifier = duploObject.ReplicationSourceIdentifier
 	}
 	jo["cluster_identifier"] = clusterIdentifier
-	if duploObject.EnablePerformanceInsights {
+	pis := []interface{}{}
+	pi := make(map[string]interface{})
+	pi["enabled"] = duploObject.EnablePerformanceInsights
+	pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
+	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
+	pis = append(pis, pi)
+	jo["performance_insights"] = pis
 
-		pis := []interface{}{}
-		pi := make(map[string]interface{})
-		pi["enabled"] = duploObject.EnablePerformanceInsights
-		pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
-		pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
-		pis = append(pis, pi)
-		jo["performance_insights"] = pis
-	}
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
 
 	return jo
+}
+
+func validateReplicaPerformanceInsightsConfigurationAuroaDB(engineCode int, tfSpecification *schema.ResourceData) bool {
+	if isEngineAuroraType(engineCode) && hasPerformanceInsightConfigurations(tfSpecification) {
+		return true
+	}
+	return false
+}
+
+func isEngineAuroraType(engineCode int) bool {
+	engineNameByCode := map[int]string{
+		8:  "AuroraMySql",
+		9:  "AuroraPostgreSql",
+		11: "AuroraServerlessMySql",
+		12: "AuroraServerlessPostgreSql",
+		16: "Aurora",
+	}
+
+	value, ok := engineNameByCode[engineCode]
+
+	return ok && strings.HasPrefix(value, "Aurora")
+}
+
+func hasPerformanceInsightConfigurations(tfRdsReplicaSpecification *schema.ResourceData) bool {
+	configuration := tfRdsReplicaSpecification.Get("performance_insights").([]interface{})
+	return len(configuration) > 0
 }
