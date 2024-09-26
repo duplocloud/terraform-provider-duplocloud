@@ -70,8 +70,32 @@ type DuploPubSubSubscription struct {
 	Labels                    map[string]string              `json:"labels"`
 }
 
+type DuploPubSubSubscriptionResponse struct {
+	Name                      string                               `json:"name"`
+	Topic                     string                               `json:"topic"`
+	BigQuery                  *DuploPubSubBigQuery                 `json:"bigqueryConfig"`
+	CloudStorageConfig        *DuploPubSubCloudStorageConfig       `json:"cloudStorageConfig"`
+	PushConfig                *DuploPubSubPushConfig               `json:"pushConfig"`
+	AckDeadlineSeconds        int                                  `json:"ackDeadlineSeconds"`
+	MessageRetentionDuration  string                               `json:"messageRetentionDuration"`
+	RetainAckedMessages       bool                                 `json:"retainAckedMessages"`
+	Filter                    string                               `json:"filter"`
+	EnableMessageOrdering     bool                                 `json:"enableMessageOrdering"`
+	EnableExactlyOnceDelivery bool                                 `json:"enableExactlyOnceDelivery"`
+	ExpirationPolicy          *DuploPubSubExpirationPolicyResponse `json:"expirationPolicy"`
+	DeadLetterPolicy          *DuploPubSubDeadLetterPolicy         `json:"deadLetterPolicy"`
+	RetryPolicy               *DuploPubSubRetryPolicy              `json:"retryPolicy"`
+	Labels                    map[string]string                    `json:"labels"`
+}
+
 type DuploPubSubExpirationPolicy struct {
 	Ttl string `json:"ttl"`
+}
+
+type DuploPubSubExpirationPolicyResponse struct {
+	Ttl struct {
+		Seconds int `json:"seconds"`
+	} `json:"ttl"`
 }
 
 type DuploPubSubDeadLetterPolicy struct {
@@ -84,15 +108,14 @@ type DuploPubSubRetryPolicy struct {
 	MaximumBackoff string `json:"maximumBackoff"`
 }
 
-func (c *Client) GCPTenantCreatePubSubSubscription(tenantID string, duplo DuploPubSubSubscription) (*DuploS3Bucket, ClientError) {
+func (c *Client) GCPTenantCreatePubSubSubscription(tenantID string, duplo DuploPubSubSubscription) (*DuploPubSubSubscription, ClientError) {
 
-	resp := DuploS3Bucket{}
+	resp := DuploPubSubSubscription{}
 
 	// Create the bucket via Duplo.
 	err := c.postAPI(
 		fmt.Sprintf("GCPTenantCreatePubSubSubscription(%s, %s)", tenantID, duplo.Name),
-		//  fmt.Sprintf("subscriptions/%s/S3BucketUpdate", tenantID),
-		fmt.Sprintf("v3/subscriptions/%s/google/bucket", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/google/subscription/%s", tenantID, duplo.Topic),
 		&duplo,
 		&resp)
 
@@ -100,4 +123,36 @@ func (c *Client) GCPTenantCreatePubSubSubscription(tenantID string, duplo DuploP
 		return nil, err
 	}
 	return &resp, nil
+}
+
+func (c *Client) GCPTenantGetPubSubSubscription(tenantID string, topic string) (*DuploPubSubSubscription, ClientError) {
+	rp := DuploPubSubSubscription{}
+	err := c.getAPI(fmt.Sprintf("GCPTenantGetPubSubSubscription(%s, %s)", tenantID, topic),
+		fmt.Sprintf("v3/subscriptions/%s/google/subscription/%s", tenantID, topic),
+		&rp)
+	if err != nil { //|| rp.Arn == "" {
+		return nil, err
+	}
+	return &rp, err
+}
+
+func (c *Client) GCPTenantDeletePubSubSubscription(tenantID string, name string) ClientError {
+
+	// Delete the bucket via Duplo.
+	return c.deleteAPI(fmt.Sprintf("GCPTenantDeletePubSubSubscription(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/subscription/%s", tenantID, name),
+		nil)
+
+}
+
+func (c *Client) GCPTenantUpdatePubSubSubscription(tenantID string, duplo DuploPubSubSubscription) (*DuploPubSubSubscription, ClientError) {
+	// Apply the settings via Duplo.
+	apiName := fmt.Sprintf("GCPTenantUpdatePubSubSubscription(%s, %s)", tenantID, duplo.Name)
+	rp := DuploPubSubSubscription{}
+	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/google/subscription/%s", tenantID, duplo.Topic), &duplo, &rp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rp, nil
 }

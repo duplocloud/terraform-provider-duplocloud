@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -67,7 +68,7 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 					},
 					"service_account_email": {
 						Description: "The service account to use to write to BigQuery. If not specified, the Pub/Sub service agent, service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com, is used.",
-						Type:        schema.TypeBool,
+						Type:        schema.TypeString,
 						Optional:    true,
 						Computed:    true,
 					},
@@ -165,7 +166,7 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 					},
 					"service_account_email": {
 						Description: "The service account to use to write to BigQuery. If not specified, the Pub/Sub service agent, service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com, is used.",
-						Type:        schema.TypeBool,
+						Type:        schema.TypeString,
 						Optional:    true,
 						Computed:    true,
 					},
@@ -198,7 +199,7 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 						MaxItems: 1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
-								"service_account_email ": {
+								"service_account_email": {
 									Description: "Service account email to be used for generating the OIDC token.",
 									Type:        schema.TypeString,
 									Required:    true,
@@ -283,7 +284,6 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 						Description: "Specifies the 'time-to-live' duration for an associated resource. The resource expires if it is not active for a period of ttl. If ttl is empty string, the associated resource never expires.  A duration in seconds with up to nine fractional digits, terminated by 's'. Example - '3.5s'.",
 						Type:        schema.TypeString,
 						Required:    true,
-						Default:     "",
 					},
 				},
 			},
@@ -381,16 +381,14 @@ func resourceGCPPubSubSubscriptionRead(ctx context.Context, d *schema.ResourceDa
 	c := m.(*duplosdk.Client)
 
 	// Figure out the full resource name.
-	fullName := d.Get("fullname").(string)
 
 	// Get the object from Duplo
-	duplo, err := c.GCPTenantGetV3StorageBucketV2(tenantID, fullName)
+	duplo, err := c.GCPTenantGetPubSubSubscription(tenantID, name)
 	if err != nil && !err.PossibleMissingAPI() {
 		return diag.Errorf("resourceGCPStorageBucketV2Read: Unable to retrieve storage bucket (tenant: %s, bucket: %s, error: %s)", tenantID, name, err)
 	}
 
-	// Set simple fields first.
-	resourceGCPStorageBucketV2SetData(d, tenantID, name, duplo)
+	flattenPubSubSubscription(duplo, d)
 
 	log.Printf("[TRACE] resourceGCPStorageBucketV2Read ******** end")
 	return nil
@@ -399,7 +397,6 @@ func resourceGCPPubSubSubscriptionRead(ctx context.Context, d *schema.ResourceDa
 // CREATE resource
 func resourceGCPPubSubSubscriptionCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGCPStorageBucketV2Create ******** start")
-	name := d.Get("name").(string)
 	c := m.(*duplosdk.Client)
 
 	tenantID := d.Get("tenant_id").(string)
@@ -408,96 +405,76 @@ func resourceGCPPubSubSubscriptionCreate(ctx context.Context, d *schema.Resource
 	reqBody := expandPubSubSubscription(d)
 
 	// Post the object to Duplo
-	resp, err := c.GCPTenantCreateV3StorageBucketV2(tenantID, duploObject)
-	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceGCPStorageBucketV2Create: Unable to create storage bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
+	resp, err := c.GCPTenantCreatePubSubSubscription(tenantID, *reqBody)
+	if err != nil || !err.PossibleMissingAPI() {
+		return diag.Errorf("resourceGCPPubSubSubscriptionCreate: Unable to create pubsub subscription (tenant: %s, topic: %s: error: %s)", tenantID, reqBody.Name, err)
 	}
 
-	fullName := resp.Name
-	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
-	id := fmt.Sprintf("%s/%s", tenantID, name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "storage bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.GCPTenantGetV3StorageBucketV2(tenantID, fullName)
+	id := fmt.Sprintf("%s/%s", tenantID, resp.Name)
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "pubsub subscription", id, func() (interface{}, duplosdk.ClientError) {
+		return c.GCPTenantGetPubSubSubscription(tenantID, resp.Name)
 	})
 	if diags != nil {
 		return diags
 	}
-	duplo, err := c.GCPTenantGetV3StorageBucketV2(tenantID, fullName)
-	if duplo == nil {
-		d.SetId("") // object missing
-		return nil
-	}
-	if err != nil {
-		return diag.Errorf("resourceGCPStorageBucketV2Create: Unable to retrieve storage bucket details using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
-	}
 	d.SetId(id)
 
 	// Set simple fields first.
-	resourceGCPStorageBucketV2SetData(d, tenantID, name, duplo)
+	resourceGCPPubSubSubscriptionRead(ctx, d, m)
 	log.Printf("[TRACE] resourceGCPStorageBucketV2Create ******** end")
 	return nil
 }
 
 // UPDATE resource
 func resourceGCPPubSubSubscriptionUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGCPStorageBucketV2Update ******** start")
+	log.Printf("[TRACE] resourceGCPPubSubSubscriptionUpdate ******** start")
 
-	fullname := d.Get("fullname").(string)
-	name := d.Get("name").(string)
-
-	// Create the request object.
-	duploObject := duplosdk.DuploGCPBucket{
-		Name: fullname,
+	id := d.Id()
+	idParts := strings.SplitN(id, "/", 2)
+	if len(idParts) < 2 {
+		return diag.Errorf("resourceGCPPubSubSubscriptionUpdate: Invalid resource (ID: %s)", id)
 	}
 
-	errName := fillGCPBucketRequest(&duploObject, d)
-	if errName != nil {
-		return diag.FromErr(errName)
-	}
+	reqBody := expandPubSubSubscription(d)
+
 	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	resource, err := c.GCPTenantUpdateV3StorageBucketV2(tenantID, duploObject)
+	_, err := c.GCPTenantUpdatePubSubSubscription(idParts[0], *reqBody)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("GCPTenantUpdateV3StorageBucketV2: Unable to update storage bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
+		return diag.Errorf("resourceGCPPubSubSubscriptionUpdate: Unable to update storage bucket using v3 api (tenant: %s, bucket: %s: error: %s)", idParts[0], reqBody.Name, err)
 	}
+	resourceGCPPubSubSubscriptionRead(ctx, d, m)
 
-	resourceGCPStorageBucketV2SetData(d, tenantID, name, resource)
-
-	log.Printf("[TRACE] GCPTenantUpdateV3StorageBucketV2 ******** end")
+	log.Printf("[TRACE] resourceGCPPubSubSubscriptionUpdate ******** end")
 	return nil
 }
 
 // DELETE resource
 func resourceGCPPubSubSubscriptionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGCPStorageBucketV2Delete ******** start")
+	log.Printf("[TRACE] resourceGCPPubSubSubscriptionDelete ******** start")
 
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) < 2 {
-		return diag.Errorf("resourceGCPStorageBucketV2Delete: Invalid resource (ID: %s)", id)
+		return diag.Errorf("resourceGCPPubSubSubscriptionDelete: Invalid resource (ID: %s)", id)
 	}
-	fullName := d.Get("fullname").(string)
-	err := c.GCPTenantDeleteStorageBucketV2(idParts[0], idParts[1], fullName)
+	err := c.GCPTenantDeletePubSubSubscription(idParts[0], idParts[1])
 	if err != nil {
-		return diag.Errorf("GCPTenantDeleteStorageBucketV2: Unable to delete bucket (name:%s, error: %s)", id, err)
+		return diag.Errorf("resourceGCPPubSubSubscriptionDelete: Unable to delete bucket (name:%s, error: %s)", id, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the bucket.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.GCPTenantGetV3StorageBucketV2(idParts[0], fullName)
+		return c.GCPTenantGetV3StorageBucketV2(idParts[0], idParts[1])
 	})
 	if diag != nil {
 		return diag
 	}
 
-	// Wait 10 more seconds to deal with consistency issues.
-	time.Sleep(10 * time.Second)
-
-	log.Printf("[TRACE] resourceGCPStorageBucketV2Delete ******** end")
+	log.Printf("[TRACE] resourceGCPPubSubSubscriptionDelete ******** end")
 	return nil
 }
 
@@ -574,20 +551,20 @@ func flattenCloudStorageConfig(rb *duplosdk.DuploPubSubCloudStorageConfig) []int
 
 func expandPushConfig(d *schema.ResourceData) *duplosdk.DuploPubSubPushConfig {
 	return &duplosdk.DuploPubSubPushConfig{
-		PushEndpoint: d.Get("push_endpoint").(string),
-		Attributes:   expandAsStringMap("attributes", d),
+		PushEndpoint: d.Get("push_config.0.push_endpoint").(string),
+		Attributes:   expandAsStringMap("push_config.0.attributes", d),
 		OidcToken: struct {
 			ServiceAccountEmail string `json:"serviceAccountEmail"`
 			Audience            string `json:"audience"`
 		}{
-			ServiceAccountEmail: d.Get("oidc_token.0.service_account_email").(string),
-			Audience:            d.Get("oidc_token.0.audience").(string),
+			ServiceAccountEmail: d.Get("push_config.0.oidc_token.0.service_account_email").(string),
+			Audience:            d.Get("push_config.0.oidc_token.0.audience").(string),
 		},
 
 		NoWrapper: struct {
 			WriteMetadata bool `json:"writeMetadata"`
 		}{
-			WriteMetadata: d.Get("no_wrapper.0.write_metadata").(bool),
+			WriteMetadata: d.Get("push_config.0.no_wrapper.0.write_metadata").(bool),
 		},
 	}
 }
@@ -617,25 +594,39 @@ func flattenPushConfig(rb *duplosdk.DuploPubSubPushConfig) []interface{} {
 }
 
 func expandPubSubSubscription(d *schema.ResourceData) *duplosdk.DuploPubSubSubscription {
-	return &duplosdk.DuploPubSubSubscription{
+
+	obj := &duplosdk.DuploPubSubSubscription{
 		Name:                      d.Get("name").(string),
 		Topic:                     d.Get("topic").(string),
-		BigQuery:                  expandBigQuery(d),
-		CloudStorageConfig:        expandCloudStorageConfig(d),
-		PushConfig:                expandPushConfig(d),
 		AckDeadlineSeconds:        d.Get("ack_deadline_seconds").(int),
 		MessageRetentionDuration:  d.Get("message_retention_duration").(string),
 		RetainAckedMessages:       d.Get("retain_acked_messages").(bool),
 		Filter:                    d.Get("filter").(string),
 		EnableMessageOrdering:     d.Get("enable_message_ordering").(bool),
 		EnableExactlyOnceDelivery: d.Get("enable_exactly_once_delivery").(bool),
-		ExpirationPolicy:          expandExpirationPolicy(d),
-		DeadLetterPolicy:          expandDeadLetterPolicy(d),
-		RetryPolicy:               expandRetryPolicy(d),
 		Labels:                    expandAsStringMap("labels", d),
 	}
+	if _, ok := d.GetOk("big_query"); ok {
+		obj.BigQuery = expandBigQuery(d)
+	}
+	if _, ok := d.GetOk("cloud_storage_config"); ok {
+		obj.CloudStorageConfig = expandCloudStorageConfig(d)
+	}
+	if _, ok := d.GetOk("push_config"); ok {
+		obj.PushConfig = expandPushConfig(d)
+	}
+	if _, ok := d.GetOk("expiration_policy"); ok {
+		obj.ExpirationPolicy = expandExpirationPolicy(d)
+	}
+	if _, ok := d.GetOk("retry_policy"); ok {
+		obj.DeadLetterPolicy = expandDeadLetterPolicy(d)
+	}
+	if _, ok := d.GetOk("dead_letter_policy"); ok {
+		obj.RetryPolicy = expandRetryPolicy(d)
+	}
+	return obj
 }
-func flattenPubSubSubscription(rb *duplosdk.DuploPubSubSubscription) []interface{} {
+func flattenPubSubSubscription(rb *duplosdk.DuploPubSubSubscriptionResponse, d *schema.ResourceData) {
 	mp := map[string]interface{}{
 		"name":                         rb.Name,
 		"topic":                        rb.Topic,
@@ -653,34 +644,36 @@ func flattenPubSubSubscription(rb *duplosdk.DuploPubSubSubscription) []interface
 		"retry_policy":                 flattenRetryPolicy(rb.RetryPolicy),
 		"labels":                       flattenStringMap(rb.Labels),
 	}
-	p := make([]interface{}, 0, 1)
-	p = append(p, mp)
-	return p
+	for k, v := range mp {
+		d.Set(k, v)
+	}
+
 }
 
-func expandExpirationPolicy(d *schema.ResourceData) *duplosdk.DuplocloudPubSubExpirationPolicy {
-	return &duplosdk.DuplocloudPubSubExpirationPolicy{
+func expandExpirationPolicy(d *schema.ResourceData) *duplosdk.DuploPubSubExpirationPolicy {
+	return &duplosdk.DuploPubSubExpirationPolicy{
 		Ttl: d.Get("expiration_policy.0.ttl").(string),
 	}
 }
 
-func flattenExpirationPolicy(rb *duplosdk.DuplocloudPubSubExpirationPolicy) []interface{} {
+func flattenExpirationPolicy(rb *duplosdk.DuploPubSubExpirationPolicyResponse) []interface{} {
+	ttl := strconv.Itoa(rb.Ttl.Seconds) + "s"
 	mp := map[string]interface{}{
-		"ttl": rb.Ttl,
+		"ttl": ttl,
 	}
 	p := make([]interface{}, 0, 1)
 	p = append(p, mp)
 	return p
 }
 
-func expandDeadLetterPolicy(d *schema.ResourceData) *duplosdk.DuplocloudPubSubDeadLetterPolicy {
-	return &duplosdk.DuplocloudPubSubDeadLetterPolicy{
+func expandDeadLetterPolicy(d *schema.ResourceData) *duplosdk.DuploPubSubDeadLetterPolicy {
+	return &duplosdk.DuploPubSubDeadLetterPolicy{
 		DeadLetterTopic:     d.Get("dead_letter_policy.0.dead_letter_topic").(string),
 		MaxDeliveryAttempts: d.Get("dead_letter_policy.0.max_delivery_attempts").(int),
 	}
 }
 
-func flattenDeadLetterPolicy(rb *duplosdk.DuplocloudPubSubDeadLetterPolicy) []interface{} {
+func flattenDeadLetterPolicy(rb *duplosdk.DuploPubSubDeadLetterPolicy) []interface{} {
 	mp := map[string]interface{}{
 		"dead_letter_topic":     rb.DeadLetterTopic,
 		"max_delivery_attempts": rb.MaxDeliveryAttempts,
@@ -690,14 +683,14 @@ func flattenDeadLetterPolicy(rb *duplosdk.DuplocloudPubSubDeadLetterPolicy) []in
 	return p
 }
 
-func expandRetryPolicy(d *schema.ResourceData) *duplosdk.DuplocloudPubSubRetryPolicy {
-	return &duplosdk.DuplocloudPubSubRetryPolicy{
+func expandRetryPolicy(d *schema.ResourceData) *duplosdk.DuploPubSubRetryPolicy {
+	return &duplosdk.DuploPubSubRetryPolicy{
 		MinimumBackoff: d.Get("minimum_backoff").(string),
 		MaximumBackoff: d.Get("maximum_backoff").(string),
 	}
 }
 
-func flattenRetryPolicy(rb *duplosdk.DuplocloudPubSubRetryPolicy) []interface{} {
+func flattenRetryPolicy(rb *duplosdk.DuploPubSubRetryPolicy) []interface{} {
 	mp := map[string]interface{}{
 		"minimum_backoff": rb.MinimumBackoff,
 		"maximum_backoff": rb.MaximumBackoff,
