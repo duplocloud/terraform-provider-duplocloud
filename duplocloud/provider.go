@@ -167,6 +167,7 @@ func Provider() *schema.Provider {
 			"duplocloud_s3_bucket_replication":            resourceS3BucketReplication(),
 			"duplocloud_gcp_storage_bucket_v2":            resourceGCPStorageBucketV2(),
 			"duplocloud_aws_lambda_function_event_config": resourceAwsLambdaEventInvokeConfigFunction(),
+			"duplocloud_azure_availability_set":           resourceAzureAvailabilitySet(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
@@ -235,6 +236,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_kms_key":               dataSourcePlanKMSList(),
 			"duplocloud_plan_kms_v2":                dataSourcePlanKMSV2(),
 			"duplocloud_plan_kms_key_v2":            dataSourcePlanKMSListV2(),
+			"duplocloud_azure_availability_set":     dataSourceAzureAvailabilitySet(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
