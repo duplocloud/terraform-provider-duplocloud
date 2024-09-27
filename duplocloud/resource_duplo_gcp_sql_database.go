@@ -326,6 +326,8 @@ func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name strin
 	d.Set("ip_address", flattenStringList(duplo.IPAddress))
 	d.Set("connection_name", duplo.ConnectionName)
 	flattenGcpLabels(d, duplo.Labels)
+	flattenIPAddress(d, duplo.IPAddress)
+
 }
 
 func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInstance {
