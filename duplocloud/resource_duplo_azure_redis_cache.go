@@ -249,6 +249,7 @@ func expandAzureRedisCache(d *schema.ResourceData) *duplosdk.DuploAzureRedisCach
 				Family:   d.Get("family").(string),
 				Capacity: d.Get("capacity").(int),
 			},
+			PublicNetworkAccess: "Disabled",
 		},
 	}
 }
