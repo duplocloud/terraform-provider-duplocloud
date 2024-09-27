@@ -51,7 +51,6 @@ func resourceTenantAccessGrant() *schema.Resource {
 
 		ReadContext:   resourceTenantAccessGrantRead,
 		CreateContext: resourceTenantAccessGrantCreate,
-		UpdateContext: resourceTenantAccessGrantUpdate,
 		DeleteContext: resourceTenantAccessGrantDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -89,6 +88,10 @@ func resourceTenantAccessGrantRead(ctx context.Context, d *schema.ResourceData, 
 		return nil
 	}
 
+	// d.Set("grantor_tenant_id", rp.GrantorTenantId)
+	// d.Set("grantee_tenant_id", d.Get("grantee_tenant_id"))
+	// d.Set("granted_area", rp.GrantedArea)
+
 	// if no 404, nothing to update in TF state
 	return nil
 }
@@ -125,22 +128,15 @@ func resourceTenantAccessGrantCreate(ctx context.Context, d *schema.ResourceData
 		}
 		return resp, nil
 	})
-	if diags != nil {
-		return diags
-	}
 
 	d.SetId(id)
 
-	diags = resourceTargetGroupRead(ctx, d, m)
+	diags = resourceTenantAccessGrantRead(ctx, d, m)
 	log.Printf("[TRACE] resourceTenantAccessGrantCreate(%s, %s, %s): end", granteeTenantId, grantorTenantId, grantedArea)
 	return diags
 }
 
-// UPDATE resource
-func resourceTenantAccessGrantUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	// NO-OP, all tenant access grant properties are force new
-	return nil
-}
+// UPDATE is NO-OP, all tenant access grant properties are force new
 
 // DELETE resource
 func resourceTenantAccessGrantDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

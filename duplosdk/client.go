@@ -45,6 +45,10 @@ type CustomError struct {
 	response map[string]interface{}
 }
 
+func (e CustomError) Status() int {
+	return e.status
+}
+
 func NewCustomError(message string, status int) CustomError {
 	return CustomError{
 		message:  message,
