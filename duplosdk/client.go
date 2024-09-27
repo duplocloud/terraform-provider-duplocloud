@@ -37,6 +37,23 @@ func (e clientError) Response() map[string]interface{} {
 	return e.response
 }
 
+type CustomError struct {
+	clientError
+	message  string
+	status   int
+	url      string
+	response map[string]interface{}
+}
+
+func NewCustomError(message string, status int) CustomError {
+	return CustomError{
+		message:  message,
+		status:   status,
+		url:      "",
+		response: make(map[string]interface{}),
+	}
+}
+
 type ClientError interface {
 	Error() string
 	Status() int
