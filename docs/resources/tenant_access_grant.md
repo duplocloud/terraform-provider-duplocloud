@@ -3,12 +3,12 @@
 page_title: "duplocloud_tenant_access_grant Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_aws_lb_target_group manages a target group in a Duplo tenant.
+  duplocloud_tenant_access_grant manages a tenant access grant in Duplo.
 ---
 
 # duplocloud_tenant_access_grant (Resource)
 
-`duplocloud_aws_lb_target_group` manages a target group in a Duplo tenant.
+`duplocloud_tenant_access_grant` manages a tenant access grant in Duplo.
 
 ## Example Usage
 
@@ -33,9 +33,9 @@ resource "duplocloud_tenant_access_grant" "dynamodbGrant" {
 
 ### Required
 
-- `grant_area` (String) ARN of the Target Group.
-- `grantee_tenant_id` (String) The GUID of the tenant that the target group will be created in.
-- `grantor_tenant_id` (String) The GUID of the tenant that the target group will be created in.
+- `grant_area` (String) The area the grant allows access to.
+- `grantee_tenant_id` (String) The GUID of the tenant that will receive the granted access.
+- `grantor_tenant_id` (String) The GUID of the tenant that will grant the access.
 
 ### Optional
 

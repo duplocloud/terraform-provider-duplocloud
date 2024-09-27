@@ -16,21 +16,21 @@ import (
 func tenantAccessGrantSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"grantor_tenant_id": {
-			Description:  "The GUID of the tenant that the target group will be created in.",
+			Description:  "The GUID of the tenant that will grant the access.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
 		"grantee_tenant_id": {
-			Description:  "The GUID of the tenant that the target group will be created in.",
+			Description:  "The GUID of the tenant that will receive the granted access.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
 		"grant_area": {
-			Description: "ARN of the Target Group.",
+			Description: "The area the grant allows access to.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
@@ -47,7 +47,7 @@ func tenantAccessGrantSchema() map[string]*schema.Schema {
 
 func resourceTenantAccessGrant() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_aws_lb_target_group` manages a target group in a Duplo tenant.",
+		Description: "`duplocloud_tenant_access_grant` manages a tenant access grant in Duplo.",
 
 		ReadContext:   resourceTenantAccessGrantRead,
 		CreateContext: resourceTenantAccessGrantCreate,
