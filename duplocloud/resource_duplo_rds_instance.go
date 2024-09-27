@@ -185,7 +185,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice(
-				[]string{"gp2", "gp3", "io1", "standard", "aurora"},
+				[]string{"gp2", "gp3", "io1", "standard", "aurora", "aurora-iopt1"},
 				false,
 			),
 		},
