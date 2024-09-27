@@ -65,7 +65,7 @@ func resourceTenantAccessGrant() *schema.Resource {
 }
 
 func resourceTenantAccessGrantRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	grantorTenantId, granteeTenantId, grantedArea, err := parseTenantAccessGrantIdParts(d.Id())
+	granteeTenantId, grantorTenantId, grantedArea, err := parseTenantAccessGrantIdParts(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -140,7 +140,7 @@ func resourceTenantAccessGrantCreate(ctx context.Context, d *schema.ResourceData
 
 // DELETE resource
 func resourceTenantAccessGrantDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	grantorTenantId, granteeTenantId, grantedArea, err := parseTenantAccessGrantIdParts(d.Id())
+	granteeTenantId, grantorTenantId, grantedArea, err := parseTenantAccessGrantIdParts(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -158,6 +158,10 @@ func resourceTenantAccessGrantDelete(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("Unable to retrieve tenant %s access grant { grantorTenantId(%s), grantedArea(%s) } - error %s", granteeTenantId, grantorTenantId, grantedArea, clientErr)
 	}
 
+	// diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB instance", d.Id(), func() (interface{}, duplosdk.ClientError) {
+	// 	return c.GetTenantAccessGrantStatus(granteeTenantId, grantorTenantId, grantedArea)
+	// })
+
 	log.Printf("[TRACE] resourceTenantAccessGrantDelete(%s, %s, %s): end", granteeTenantId, grantorTenantId, grantedArea)
 	return nil
 }
@@ -165,7 +169,7 @@ func resourceTenantAccessGrantDelete(ctx context.Context, d *schema.ResourceData
 func parseTenantAccessGrantIdParts(id string) (grantorTenantId string, granteeTenantId string, grantedArea string, err error) {
 	idParts := strings.SplitN(id, "/", 3)
 	if len(idParts) == 3 {
-		grantorTenantId, granteeTenantId, grantedArea = idParts[0], idParts[1], idParts[2]
+		granteeTenantId, grantorTenantId, grantedArea = idParts[0], idParts[1], idParts[2]
 	} else {
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
