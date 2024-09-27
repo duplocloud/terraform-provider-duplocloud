@@ -180,10 +180,21 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
 		"storage_type": {
-			Description: "Valid values: gp2 | gp3 | io1 | standard | aurora | aurora-iopt1. Storage type to be used for RDS instance storage.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Description: `Storage type to be used for RDS instance storage.
+
+			|Storage Type  | Performance                        | Throughput            | Descritpion                                                                                                                                                                                                               |
+			|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+			| gp2          | 3 IOPS/GB, up to 16K IOPS          | Up to 250 MB/s	    | General-purpose databases, small to medium workloads. 'gp2' provides SSD-based storage with burstable IOPS                                                                                                                |
+			| gp3          | 3K to 16K IOPS                     | Up to 1,000 MB/s      | Cost-effective, customizable performance for a wide range of workloads. gp3 offers a more advanced and cost-effective version of gp2. You can provision IOPS and throughput independently of storage size.                |
+			| io1          | Up to 256K IOPS                    | Up to 1,000 MB/s      | Mission-critical applications with high IOPS requirements. io1 provides provisioned IOPS, meaning you can define and guarantee IOPS performance levels independently of storage capacity.                                 |
+			| standard     | Variable, low IOPS                 | Low and unpredictable | Low-cost, infrequent access, small databases, or test environments. Magnetic storage is the oldest and least performant storage option. It is mainly used for low-cost applications with low performance demands.         |
+			| aurora       | Automatic scaling, up to 200K IOPS | Varies                | High-performance, fault-tolerant, distributed storage for Amazon Aurora databases. Aurora uses a unique distributed, fault-tolerant storage system that automatically replicates data across multiple Availability Zones. |
+			| aurora-iopt1 | Provisioned IOPS, similar to io1   | Varies                | Aurora databases needing guaranteed, high-performance IOPS. Aurora I/O-Optimized storage offers provisioned IOPS for Aurora clusters that require consistently high performance for critical workloads.                   |
+			
+			`,
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
 			ValidateFunc: validation.StringInSlice(
 				[]string{"gp2", "gp3", "io1", "standard", "aurora", "aurora-iopt1"},
 				false,

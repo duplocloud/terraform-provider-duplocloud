@@ -10,7 +10,6 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"unicode"
@@ -1012,51 +1011,6 @@ func addIfDefined(target interface{}, resourceName string, targetValue interface
 			field.Set(val)
 		}
 	}
-}
-func extractVersion(input string) string {
-	// Regular expression to match version-like patterns (e.g., 3.07.1, 4.01.2)
-	re := regexp.MustCompile(`\d+\.\d+\.\d+`)
-
-	// Find the first version number match
-	version := re.FindString(input)
-
-	return version
-}
-
-func compareEngineVersion(version1, version2 string) int {
-
-	v1Parts := strings.Split(extractVersion(version1), ".")
-	v2Parts := strings.Split(version2, ".")
-
-	// Get the maximum length to compare
-	maxLen := max(len(v1Parts), len(v2Parts))
-
-	// Iterate over each part of the version (major, minor, patch, etc.)
-	for i := 0; i < maxLen; i++ {
-		v1 := getVersionPart(v1Parts, i)
-		v2 := getVersionPart(v2Parts, i)
-
-		if v1 > v2 {
-			return 1
-		} else if v1 < v2 {
-			return -1
-		}
-	}
-
-	// If all parts are equal, return 0
-	return 0
-}
-
-// getVersionPart retrieves the version part at a specific index, returns 0 if the part doesn't exist.
-func getVersionPart(versionParts []string, index int) int {
-	if index < len(versionParts) {
-		part, err := strconv.Atoi(versionParts[index])
-		if err != nil {
-			return 0 // Fallback to 0 if conversion fails
-		}
-		return part
-	}
-	return 0 // Return 0 if the index is out of bounds (e.g., comparing "1.2" with "1.2.0")
 }
 
 // max returns the maximum of two integers.
