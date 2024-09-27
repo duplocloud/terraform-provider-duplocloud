@@ -267,7 +267,7 @@ func resourceAzurePostgresqlFlexibleDatabaseDelete(ctx context.Context, d *schem
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure postgresql flexible database", id, func() (interface{}, duplosdk.ClientError) {
-		if rp, err := c.PostgresqlServerExists(tenantID, name); rp || err != nil {
+		if rp, err := c.PostgresqlFlexibleDatabaseGet(tenantID, name); err != nil {
 			return rp, err
 		}
 		return nil, nil
@@ -363,7 +363,7 @@ func verifyPSQLParameters(ctx context.Context, diff *schema.ResourceDiff, m inte
 	if newR.(int) < oldR.(int) {
 		return fmt.Errorf("Reducing the value of backup_retention_days is not allowed.")
 	}
-	if oldH.(string) != "Disabled" && newS.(string) == "Burstable" {
+	if oldH.(string) != "Disabled" && oldH.(string) != "" && newS.(string) == "Burstable" {
 		return fmt.Errorf("disable high_availability before updating to Burstable compute/service tier")
 	}
 	return nil
