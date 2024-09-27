@@ -125,8 +125,8 @@ func (c *Client) GCPTenantCreatePubSubSubscription(tenantID string, duplo DuploP
 	return &resp, nil
 }
 
-func (c *Client) GCPTenantGetPubSubSubscription(tenantID string, topic string) (*DuploPubSubSubscription, ClientError) {
-	rp := DuploPubSubSubscription{}
+func (c *Client) GCPTenantGetPubSubSubscription(tenantID string, topic string) (*DuploPubSubSubscriptionResponse, ClientError) {
+	rp := DuploPubSubSubscriptionResponse{}
 	err := c.getAPI(fmt.Sprintf("GCPTenantGetPubSubSubscription(%s, %s)", tenantID, topic),
 		fmt.Sprintf("v3/subscriptions/%s/google/subscription/%s", tenantID, topic),
 		&rp)
