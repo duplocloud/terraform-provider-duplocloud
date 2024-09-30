@@ -75,7 +75,7 @@ func resourceTenantAccessGrantRead(ctx context.Context, d *schema.ResourceData, 
 	// Get returns no new information for access grants
 	// 404s are still useful to determine terraform plan
 	c := m.(*duplosdk.Client)
-	rp, clientErr := c.GetTenantAccessGrant(grantorTenantId, granteeTenantId, grantedArea)
+	rp, clientErr := c.GetTenantAccessGrant(granteeTenantId, grantorTenantId, grantedArea)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
@@ -158,15 +158,23 @@ func resourceTenantAccessGrantDelete(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("Unable to retrieve tenant %s access grant { grantorTenantId(%s), grantedArea(%s) } - error %s", granteeTenantId, grantorTenantId, grantedArea, clientErr)
 	}
 
-	// diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB instance", d.Id(), func() (interface{}, duplosdk.ClientError) {
-	// 	return c.GetTenantAccessGrantStatus(granteeTenantId, grantorTenantId, grantedArea)
-	// })
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB instance", d.Id(), func() (interface{}, duplosdk.ClientError) {
+		status, err := c.GetTenantAccessGrantStatus(granteeTenantId, grantorTenantId, grantedArea)
+
+		if err != nil {
+			return nil, err
+		}
+		if status.Status == "NonExistent" {
+			return nil, duplosdk.NewCustomError("grant does not exist", 404)
+		}
+		return status, nil
+	})
 
 	log.Printf("[TRACE] resourceTenantAccessGrantDelete(%s, %s, %s): end", granteeTenantId, grantorTenantId, grantedArea)
-	return nil
+	return diags
 }
 
-func parseTenantAccessGrantIdParts(id string) (grantorTenantId string, granteeTenantId string, grantedArea string, err error) {
+func parseTenantAccessGrantIdParts(id string) (granteeTenantId string, grantorTenantId string, grantedArea string, err error) {
 	idParts := strings.SplitN(id, "/", 3)
 	if len(idParts) == 3 {
 		granteeTenantId, grantorTenantId, grantedArea = idParts[0], idParts[1], idParts[2]

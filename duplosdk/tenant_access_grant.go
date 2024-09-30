@@ -43,15 +43,15 @@ func (c *Client) GetTenantAccessGrant(granteeTenantId string, grantorTenantId st
 
 func (c *Client) DeleteTenantAccessGrant(granteeTenantId string, grantorTenantId string, grantedArea string) ClientError {
 	return c.deleteAPI(
-		fmt.Sprintf("DeleteTenantAccessGrant(%s, %s, %s)", grantorTenantId, granteeTenantId, grantedArea),
-		fmt.Sprintf("v3/admin/tenant/%s/accessGrant/%s/%s", grantorTenantId, granteeTenantId, grantedArea),
+		fmt.Sprintf("DeleteTenantAccessGrant(%s, %s, %s)", granteeTenantId, grantorTenantId, grantedArea),
+		fmt.Sprintf("v3/admin/tenant/%s/accessGrant/%s/%s", granteeTenantId, grantorTenantId, grantedArea),
 		nil)
 }
 
 func (c *Client) GetTenantAccessGrantStatus(granteeTenantId string, grantorTenantId string, grantedArea string) (*DuploTenantAccessGrantStatus, ClientError) {
 	rp := DuploTenantAccessGrantStatus{}
-	err := c.getAPI(fmt.Sprintf("GetTenantAccessGrantStatus(%s, %s, %s)", grantorTenantId, granteeTenantId, grantedArea),
-		fmt.Sprintf("v3/admin/tenant/%s/accessGrant/%s/%s/status", grantorTenantId, granteeTenantId, grantedArea),
+	err := c.getAPI(fmt.Sprintf("GetTenantAccessGrantStatus(%s, %s, %s)", granteeTenantId, grantorTenantId, grantedArea),
+		fmt.Sprintf("v3/admin/tenant/%s/accessGrant/%s/%s/status", granteeTenantId, grantorTenantId, grantedArea),
 		&rp)
 	if err != nil {
 		return nil, err
