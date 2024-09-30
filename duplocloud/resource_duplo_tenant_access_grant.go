@@ -116,7 +116,7 @@ func resourceTenantAccessGrantCreate(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(clientError)
 	}
 	id := fmt.Sprintf("%s/%s/%s", granteeTenantId, grantorTenantId, grantedArea)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "tenant access grant", id, func() (interface{}, duplosdk.ClientError) {
+	waitForResourceToBePresentAfterCreate(ctx, d, "tenant access grant", id, func() (interface{}, duplosdk.ClientError) {
 		resp, err := c.GetTenantAccessGrantStatus(granteeTenantId, grantorTenantId, grantedArea)
 		if err != nil {
 			return nil, err
@@ -131,7 +131,7 @@ func resourceTenantAccessGrantCreate(ctx context.Context, d *schema.ResourceData
 
 	d.SetId(id)
 
-	diags = resourceTenantAccessGrantRead(ctx, d, m)
+	diags := resourceTenantAccessGrantRead(ctx, d, m)
 	log.Printf("[TRACE] resourceTenantAccessGrantCreate(%s, %s, %s): end", granteeTenantId, grantorTenantId, grantedArea)
 	return diags
 }
