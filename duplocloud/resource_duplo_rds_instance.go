@@ -147,7 +147,6 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(1, 255),
-				validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9-]*$`), "Invalid DB parameter group name"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
@@ -160,7 +159,6 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(1, 255),
-				validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9-]*$`), "Invalid DB parameter group name"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
