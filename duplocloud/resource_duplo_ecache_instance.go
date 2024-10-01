@@ -10,6 +10,7 @@ import (
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -187,11 +188,11 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IntBetween(1, 35),
 		},
 		"snapshot_window": {
-			Description:  "Specify snapshot window limit The daily time range (in UTC) during which ElastiCache begins taking a daily snapshot of your node group (shard). Example: 05:00-09:00. If you do not specify this parameter, ElastiCache automatically chooses an appropriate time range.",
-			Type:         schema.TypeInt,
-			Optional:     true,
-			Computed:     true,
-			ValidateFunc: isValidSnapshotWindow(),
+			Description:      "Specify snapshot window limit The daily time range (in UTC) during which ElastiCache begins taking a daily snapshot of your node group (shard). Example: 05:00-09:00. If you do not specify this parameter, ElastiCache automatically chooses an appropriate time range.",
+			Type:             schema.TypeInt,
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: isValidSnapshotWindow(),
 		},
 		"log_delivery_configuration": {
 			Type:     schema.TypeSet,
@@ -676,41 +677,50 @@ func removePatchVersion(version string) string {
 	return version
 }
 
-func isValidSnapshotWindow() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (warnings []string, errors []error) {
+func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
+
+	return func(i interface{}, path cty.Path) diag.Diagnostics {
 		if i == nil {
-			return warnings, errors
+			return nil
 		}
 
+		var diags diag.Diagnostics
 		v, ok := i.(string)
 		if !ok {
-			errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
-			return warnings, errors
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "the type of 'snapshot_window' must be a string",
+			})
 		}
 
 		if v == "" {
-			return warnings, errors
+			return nil
 		}
 
 		times := strings.Split(v, "-")
 		if len(times) != 2 {
-			errors = append(errors, fmt.Errorf("expected %s in format '05:00-09:00'", k))
-			return warnings, errors
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "the value of 'snapshot_window' must be in the format 'HH:MM-HH:MM', for example '05:00-09:00'",
+			})
 		}
 
 		startTime, err1 := time.Parse("15:04", times[0])
 		endTime, err2 := time.Parse("15:04", times[1])
 		if err1 != nil || err2 != nil {
-			errors = append(errors, fmt.Errorf("expected %s in format '05:00-09:00'", k))
-			return warnings, errors
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "the value of 'snapshot_window' must be in the format 'HH:MM-HH:MM', for example '05:00-09:00'",
+			})
 		}
 
-		// Check if the input time is within the range
 		if !endTime.After(startTime) {
-			errors = append(errors, fmt.Errorf("expected %s of start-time should be smaller than end-time.", k))
-			return warnings, errors
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "the start time in 'snapshot_window' must be earlier than the end time",
+			})
 		}
 
-		return warnings, errors
+		return nil
 	}
 }
