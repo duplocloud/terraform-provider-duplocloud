@@ -374,7 +374,7 @@ func resourceGCPPubSubSubscriptionRead(ctx context.Context, d *schema.ResourceDa
 	id := d.Id()
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) < 2 {
-		return diag.Errorf("resourceGCPStorageBucketV2Read: Invalid resource (ID: %s)", id)
+		return diag.Errorf("resourceGCPPubSubSubscriptionRead: Invalid resource (ID: %s)", id)
 	}
 	tenantID, name := idParts[0], idParts[1]
 
@@ -385,12 +385,12 @@ func resourceGCPPubSubSubscriptionRead(ctx context.Context, d *schema.ResourceDa
 	// Get the object from Duplo
 	duplo, err := c.GCPTenantGetPubSubSubscription(tenantID, name)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceGCPStorageBucketV2Read: Unable to retrieve storage bucket (tenant: %s, bucket: %s, error: %s)", tenantID, name, err)
+		return diag.Errorf("resourceGCPPubSubSubscriptionRead: Unable to retrieve storage bucket (tenant: %s, bucket: %s, error: %s)", tenantID, name, err)
 	}
 
 	flattenPubSubSubscription(duplo, d)
 
-	log.Printf("[TRACE] resourceGCPStorageBucketV2Read ******** end")
+	log.Printf("[TRACE] resourceGCPPubSubSubscriptionRead ******** end")
 	return nil
 }
 
@@ -406,7 +406,7 @@ func resourceGCPPubSubSubscriptionCreate(ctx context.Context, d *schema.Resource
 
 	// Post the object to Duplo
 	resp, err := c.GCPTenantCreatePubSubSubscription(tenantID, *reqBody)
-	if err != nil || !err.PossibleMissingAPI() {
+	if err != nil && !err.PossibleMissingAPI() {
 		return diag.Errorf("resourceGCPPubSubSubscriptionCreate: Unable to create pubsub subscription (tenant: %s, topic: %s: error: %s)", tenantID, reqBody.Name, err)
 	}
 
@@ -468,7 +468,7 @@ func resourceGCPPubSubSubscriptionDelete(ctx context.Context, d *schema.Resource
 
 	// Wait up to 60 seconds for Duplo to delete the bucket.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.GCPTenantGetV3StorageBucketV2(idParts[0], idParts[1])
+		return c.GCPTenantGetPubSubSubscription(idParts[0], idParts[1])
 	})
 	if diag != nil {
 		return diag
@@ -605,23 +605,27 @@ func expandPubSubSubscription(d *schema.ResourceData) *duplosdk.DuploPubSubSubsc
 		EnableMessageOrdering:     d.Get("enable_message_ordering").(bool),
 		EnableExactlyOnceDelivery: d.Get("enable_exactly_once_delivery").(bool),
 		Labels:                    expandAsStringMap("labels", d),
+		Type:                      "Pull",
 	}
 	if _, ok := d.GetOk("big_query"); ok {
 		obj.BigQuery = expandBigQuery(d)
+		obj.Type = "BigQuery"
 	}
 	if _, ok := d.GetOk("cloud_storage_config"); ok {
 		obj.CloudStorageConfig = expandCloudStorageConfig(d)
+		obj.Type = "CloudStorage"
 	}
 	if _, ok := d.GetOk("push_config"); ok {
 		obj.PushConfig = expandPushConfig(d)
+		obj.Type = "Push"
 	}
 	if _, ok := d.GetOk("expiration_policy"); ok {
 		obj.ExpirationPolicy = expandExpirationPolicy(d)
 	}
-	if _, ok := d.GetOk("retry_policy"); ok {
+	if _, ok := d.GetOk("dead_letter_policy"); ok {
 		obj.DeadLetterPolicy = expandDeadLetterPolicy(d)
 	}
-	if _, ok := d.GetOk("dead_letter_policy"); ok {
+	if _, ok := d.GetOk("retry_policy"); ok {
 		obj.RetryPolicy = expandRetryPolicy(d)
 	}
 	return obj
@@ -630,19 +634,33 @@ func flattenPubSubSubscription(rb *duplosdk.DuploPubSubSubscriptionResponse, d *
 	mp := map[string]interface{}{
 		"name":                         rb.Name,
 		"topic":                        rb.Topic,
-		"big_query":                    flattenBigQuery(rb.BigQuery),
-		"cloud_storage_config":         flattenCloudStorageConfig(rb.CloudStorageConfig),
-		"push_config":                  flattenPushConfig(rb.PushConfig),
 		"ack_deadline_seconds":         rb.AckDeadlineSeconds,
 		"message_retention_duration":   rb.MessageRetentionDuration,
 		"retain_acked_messages":        rb.RetainAckedMessages,
 		"filter":                       rb.Filter,
 		"enable_message_ordering":      rb.EnableMessageOrdering,
 		"enable_exactly_once_delivery": rb.EnableExactlyOnceDelivery,
-		"expiration_policy":            rb.ExpirationPolicy,
-		"dead_letter_policy":           flattenDeadLetterPolicy(rb.DeadLetterPolicy),
-		"retry_policy":                 flattenRetryPolicy(rb.RetryPolicy),
-		"labels":                       flattenStringMap(rb.Labels),
+	}
+	if rb.BigQuery != nil {
+		mp["big_query"] = flattenBigQuery(rb.BigQuery)
+	}
+	if rb.CloudStorageConfig != nil {
+		mp["cloud_storage_config"] = flattenCloudStorageConfig(rb.CloudStorageConfig)
+	}
+	if rb.PushConfig != nil {
+		mp["push_config"] = flattenPushConfig(rb.PushConfig)
+	}
+	if rb.DeadLetterPolicy != nil {
+		mp["dead_letter_policy"] = flattenDeadLetterPolicy(rb.DeadLetterPolicy)
+	}
+	if rb.RetryPolicy != nil {
+		mp["retry_policy"] = flattenRetryPolicy(rb.RetryPolicy)
+	}
+	if rb.Labels != nil {
+		mp["labels"] = flattenStringMap(rb.Labels)
+	}
+	if rb.ExpirationPolicy != nil {
+		mp["expiration_policy"] = flattenExpirationPolicy(rb.ExpirationPolicy)
 	}
 	for k, v := range mp {
 		d.Set(k, v)
@@ -685,15 +703,15 @@ func flattenDeadLetterPolicy(rb *duplosdk.DuploPubSubDeadLetterPolicy) []interfa
 
 func expandRetryPolicy(d *schema.ResourceData) *duplosdk.DuploPubSubRetryPolicy {
 	return &duplosdk.DuploPubSubRetryPolicy{
-		MinimumBackoff: d.Get("minimum_backoff").(string),
-		MaximumBackoff: d.Get("maximum_backoff").(string),
+		MinimumBackoff: d.Get("retry_policy.0.minimum_backoff").(string),
+		MaximumBackoff: d.Get("retry_policy.0.maximum_backoff").(string),
 	}
 }
 
-func flattenRetryPolicy(rb *duplosdk.DuploPubSubRetryPolicy) []interface{} {
+func flattenRetryPolicy(rb *duplosdk.DuploPubSubRetryPolicyResponse) []interface{} {
 	mp := map[string]interface{}{
-		"minimum_backoff": rb.MinimumBackoff,
-		"maximum_backoff": rb.MaximumBackoff,
+		"minimum_backoff": strconv.Itoa(rb.MinimumBackoff.Seconds) + "s",
+		"maximum_backoff": strconv.Itoa(rb.MaximumBackoff.Seconds) + "s",
 	}
 	p := make([]interface{}, 0, 1)
 	p = append(p, mp)

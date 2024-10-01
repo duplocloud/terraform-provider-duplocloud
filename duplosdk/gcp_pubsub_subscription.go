@@ -2,15 +2,15 @@ package duplosdk
 
 import "fmt"
 
-type State string
+type State int
 
 const (
-	STATE_UNSPECIFIED               State = "STATE_UNSPECIFIED"
-	ACTIVE                          State = "ACTIVE"
-	PERMISSION_DENIED               State = "PERMISSION_DENIED"
-	NOT_FOUND                       State = "NOT_FOUND"
-	SCHEMA_MISMATCH                 State = "SCHEMA_MISMATCH"
-	IN_TRANSIT_LOCATION_RESTRICTION State = "IN_TRANSIT_LOCATION_RESTRICTION"
+	STATE_UNSPECIFIED State = iota
+	ACTIVE
+	PERMISSION_DENIED
+	NOT_FOUND
+	SCHEMA_MISMATCH
+	IN_TRANSIT_LOCATION_RESTRICTION
 )
 
 type DuploPubSubBigQuery struct {
@@ -55,36 +55,37 @@ type DuploPubSubPushConfig struct {
 type DuploPubSubSubscription struct {
 	Name                      string                         `json:"name"`
 	Topic                     string                         `json:"topic"`
-	BigQuery                  *DuploPubSubBigQuery           `json:"bigqueryConfig"`
-	CloudStorageConfig        *DuploPubSubCloudStorageConfig `json:"cloudStorageConfig"`
-	PushConfig                *DuploPubSubPushConfig         `json:"pushConfig"`
+	BigQuery                  *DuploPubSubBigQuery           `json:"bigqueryConfig,omitempty"`
+	CloudStorageConfig        *DuploPubSubCloudStorageConfig `json:"cloudStorageConfig,omitempty"`
+	PushConfig                *DuploPubSubPushConfig         `json:"pushConfig,omitempty"`
 	AckDeadlineSeconds        int                            `json:"ackDeadlineSeconds"`
 	MessageRetentionDuration  string                         `json:"messageRetentionDuration"`
 	RetainAckedMessages       bool                           `json:"retainAckedMessages"`
 	Filter                    string                         `json:"filter"`
 	EnableMessageOrdering     bool                           `json:"enableMessageOrdering"`
 	EnableExactlyOnceDelivery bool                           `json:"enableExactlyOnceDelivery"`
-	ExpirationPolicy          *DuploPubSubExpirationPolicy   `json:"expirationPolicy"`
-	DeadLetterPolicy          *DuploPubSubDeadLetterPolicy   `json:"deadLetterPolicy"`
-	RetryPolicy               *DuploPubSubRetryPolicy        `json:"retryPolicy"`
+	ExpirationPolicy          *DuploPubSubExpirationPolicy   `json:"expirationPolicy,omitempty"`
+	DeadLetterPolicy          *DuploPubSubDeadLetterPolicy   `json:"deadLetterPolicy,omitempty"`
+	RetryPolicy               *DuploPubSubRetryPolicy        `json:"retryPolicy,omitempty"`
 	Labels                    map[string]string              `json:"labels"`
+	Type                      string                         `json:"type"`
 }
 
 type DuploPubSubSubscriptionResponse struct {
 	Name                      string                               `json:"name"`
 	Topic                     string                               `json:"topic"`
-	BigQuery                  *DuploPubSubBigQuery                 `json:"bigqueryConfig"`
-	CloudStorageConfig        *DuploPubSubCloudStorageConfig       `json:"cloudStorageConfig"`
-	PushConfig                *DuploPubSubPushConfig               `json:"pushConfig"`
+	BigQuery                  *DuploPubSubBigQuery                 `json:"bigqueryConfig,omitempty"`
+	CloudStorageConfig        *DuploPubSubCloudStorageConfig       `json:"cloudStorageConfig,omitempty"`
+	PushConfig                *DuploPubSubPushConfig               `json:"pushConfig,omitempty"`
 	AckDeadlineSeconds        int                                  `json:"ackDeadlineSeconds"`
 	MessageRetentionDuration  string                               `json:"messageRetentionDuration"`
 	RetainAckedMessages       bool                                 `json:"retainAckedMessages"`
 	Filter                    string                               `json:"filter"`
 	EnableMessageOrdering     bool                                 `json:"enableMessageOrdering"`
 	EnableExactlyOnceDelivery bool                                 `json:"enableExactlyOnceDelivery"`
-	ExpirationPolicy          *DuploPubSubExpirationPolicyResponse `json:"expirationPolicy"`
-	DeadLetterPolicy          *DuploPubSubDeadLetterPolicy         `json:"deadLetterPolicy"`
-	RetryPolicy               *DuploPubSubRetryPolicy              `json:"retryPolicy"`
+	ExpirationPolicy          *DuploPubSubExpirationPolicyResponse `json:"expirationPolicy,omitempty"`
+	DeadLetterPolicy          *DuploPubSubDeadLetterPolicy         `json:"deadLetterPolicy,omitempty"`
+	RetryPolicy               *DuploPubSubRetryPolicyResponse      `json:"retryPolicy,omitempty"`
 	Labels                    map[string]string                    `json:"labels"`
 }
 
@@ -92,15 +93,17 @@ type DuploPubSubExpirationPolicy struct {
 	Ttl string `json:"ttl"`
 }
 
+type SecondNano struct {
+	Seconds int `json:"seconds"`
+	Nano    int `json:"naono"`
+}
 type DuploPubSubExpirationPolicyResponse struct {
-	Ttl struct {
-		Seconds int `json:"seconds"`
-	} `json:"ttl"`
+	Ttl SecondNano `json:"ttl"`
 }
 
 type DuploPubSubDeadLetterPolicy struct {
-	DeadLetterTopic     string `json:"deadLetterTopic"`
-	MaxDeliveryAttempts int    `json:"maxDeliveryAttempts"`
+	DeadLetterTopic     string `json:"deadLetterTopic,omitempty"`
+	MaxDeliveryAttempts int    `json:"maxDeliveryAttempts,omitempty"`
 }
 
 type DuploPubSubRetryPolicy struct {
@@ -108,9 +111,14 @@ type DuploPubSubRetryPolicy struct {
 	MaximumBackoff string `json:"maximumBackoff"`
 }
 
-func (c *Client) GCPTenantCreatePubSubSubscription(tenantID string, duplo DuploPubSubSubscription) (*DuploPubSubSubscription, ClientError) {
+type DuploPubSubRetryPolicyResponse struct {
+	MinimumBackoff SecondNano `json:"minimumBackoff"`
+	MaximumBackoff SecondNano `json:"maximumBackoff"`
+}
 
-	resp := DuploPubSubSubscription{}
+func (c *Client) GCPTenantCreatePubSubSubscription(tenantID string, duplo DuploPubSubSubscription) (*DuploPubSubSubscriptionResponse, ClientError) {
+
+	resp := DuploPubSubSubscriptionResponse{}
 
 	// Create the bucket via Duplo.
 	err := c.postAPI(
@@ -145,10 +153,10 @@ func (c *Client) GCPTenantDeletePubSubSubscription(tenantID string, name string)
 
 }
 
-func (c *Client) GCPTenantUpdatePubSubSubscription(tenantID string, duplo DuploPubSubSubscription) (*DuploPubSubSubscription, ClientError) {
+func (c *Client) GCPTenantUpdatePubSubSubscription(tenantID string, duplo DuploPubSubSubscription) (*DuploPubSubSubscriptionResponse, ClientError) {
 	// Apply the settings via Duplo.
 	apiName := fmt.Sprintf("GCPTenantUpdatePubSubSubscription(%s, %s)", tenantID, duplo.Name)
-	rp := DuploPubSubSubscription{}
+	rp := DuploPubSubSubscriptionResponse{}
 	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/google/subscription/%s", tenantID, duplo.Topic), &duplo, &rp)
 	if err != nil {
 		return nil, err

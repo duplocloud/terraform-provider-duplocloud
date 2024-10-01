@@ -542,7 +542,7 @@ func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.Resour
 		resp, errget := get()
 
 		if errget != nil {
-			if errget.Status() == 404 {
+			if errget.Status() == 404 || errget.Status() == 400 {
 				return nil
 			}
 
