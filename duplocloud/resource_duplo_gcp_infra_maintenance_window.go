@@ -33,15 +33,16 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"infra_name": {
-				Description: "The name of the infrastructure to configure.",
+				Description: "The name of the infrastructure where maintenance windows need to be scheduled.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 			"exclusions": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
+				Description: "Exceptions to maintenance window. Non-emergency maintenance should not occur in these windows. A cluster can have up to 20 maintenance exclusions at a time",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"start_time": {
@@ -55,16 +56,17 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 							Computed: true,
 						},
 						"scope": {
-							Type:     schema.TypeString,
-							Optional: true,
-							Computed: true,
+							Description: "The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES",
+							Type:        schema.TypeString,
+							Required:    true,
 						},
 					},
 				},
 			},
 			"daily_maintenance_start_time": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Time window specified for daily maintenance operations. Specify 'start_time 'in RFC3339 format HH:MM, where HH : [00-23] and MM : [00-59] GMT",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"recurring_window": {
 				Type:     schema.TypeList,
@@ -81,8 +83,9 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 							Required: true,
 						},
 						"recurrence": {
-							Type:     schema.TypeString,
-							Required: true,
+							Description: "Specify recurrence in RFC5545 RRULE format, to specify when this recurs.",
+							Type:        schema.TypeString,
+							Required:    true,
 						},
 					},
 				},
@@ -126,7 +129,7 @@ func resourceInfrastructureMaintenanceWindowCreateOrUpdate(ctx context.Context, 
 
 	c := m.(*duplosdk.Client)
 
-	_, err = c.CreateGCPInfraMaintenanceWindow(infraName, rq)
+	err = c.CreateGCPInfraMaintenanceWindow(infraName, rq)
 	if err != nil {
 		return diag.Errorf("resourceInfrastructureMaintenanceWindowCreateOrUpdate cannot create maintenance window for infra %s error: %s", infraName, err.Error())
 	}

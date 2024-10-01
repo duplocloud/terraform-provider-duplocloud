@@ -24,16 +24,15 @@ type Recurring struct {
 	Recurrence string    `json:"Recurrence"`
 }
 
-func (c *Client) CreateGCPInfraMaintenanceWindow(infraName string, rq *DuploGcpInfraMaintenanceWindow) (*DuploGcpInfraMaintenanceWindow, ClientError) {
+func (c *Client) CreateGCPInfraMaintenanceWindow(infraName string, rq *DuploGcpInfraMaintenanceWindow) ClientError {
 	log.Printf("[TRACE] GCP Infra Maintenance Window request \n\n ******%+v\n*******", rq)
-	resp := DuploGcpInfraMaintenanceWindow{}
 	err := c.postAPI(
 		fmt.Sprintf("CreateGCPInfraMaintenanceWindow(%s)", infraName),
 		fmt.Sprintf("v3/google/cluster/%s/maintenance", infraName),
 		&rq,
-		&resp,
+		nil,
 	)
-	return &resp, err
+	return err
 }
 
 func (c *Client) GetGCPInfraMaintenanceWindow(infraName string) (*DuploGcpInfraMaintenanceWindow, ClientError) {
