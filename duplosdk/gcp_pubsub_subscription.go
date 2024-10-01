@@ -29,8 +29,8 @@ type DuploPubSubCloudStorageConfig struct {
 	FileNameSuffix         string `json:"filenameSuffix"`
 	FileNameDateTimeFormat string `json:"filenameDatetimeFormat"`
 	MaxDuration            string `json:"maxDuration"`
-	MaxBytes               string `json:"maxBytes"`
-	MaxMessages            string `json:"maxMessages"`
+	MaxBytes               int    `json:"maxBytes"`
+	MaxMessages            int    `json:"maxMessages"`
 	State                  State  `json:"state"`
 	ServiceAccountEmail    string `json:"serviceAccountEmail"`
 	AvroConfig             struct {

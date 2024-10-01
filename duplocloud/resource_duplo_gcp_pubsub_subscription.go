@@ -130,12 +130,13 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 						Optional:    true,
 						Computed:    true,
 					},
-					"max_message": {
+					"max_messages": {
 						Description:  "The maximum messages that can be written to a Cloud Storage file before a new file is created. Min 1000 messages.",
 						Type:         schema.TypeInt,
 						Optional:     true,
-						Default:      "1000",
-						ValidateFunc: validateStringFormatedInt64Atleast("1000"),
+						Default:      1000,
+						ValidateFunc: validation.IntAtLeast(1000),
+						//ValidateFunc: validateStringFormatedInt64Atleast("1000"),
 					},
 					"state": {
 						Description: "An output-only field that indicates whether or not the subscription can receive messages.",
@@ -506,22 +507,22 @@ func flattenBigQuery(rb *duplosdk.DuploPubSubBigQuery) []interface{} {
 
 func expandCloudStorageConfig(d *schema.ResourceData) *duplosdk.DuploPubSubCloudStorageConfig {
 	return &duplosdk.DuploPubSubCloudStorageConfig{
-		Bucket:                 d.Get("bucket").(string),
-		FilenamePrefix:         d.Get("filename_prefix").(string),
-		FileNameSuffix:         d.Get("filename_suffix").(string),
-		FileNameDateTimeFormat: d.Get("filename_datetime_format").(string),
-		MaxDuration:            d.Get("max_duration").(string),
-		MaxBytes:               d.Get("max_bytes").(string),
-		MaxMessages:            d.Get("max_message").(string),
+		Bucket:                 d.Get("cloud_storage_config.0.bucket").(string),
+		FilenamePrefix:         d.Get("cloud_storage_config.0.filename_prefix").(string),
+		FileNameSuffix:         d.Get("cloud_storage_config.0.filename_suffix").(string),
+		FileNameDateTimeFormat: d.Get("cloud_storage_config.0.filename_datetime_format").(string),
+		MaxDuration:            d.Get("cloud_storage_config.0.max_duration").(string),
+		MaxBytes:               d.Get("cloud_storage_config.0.max_bytes").(int),
+		MaxMessages:            d.Get("cloud_storage_config.0.max_messages").(int),
 		AvroConfig: struct {
 			WriteMetadata  bool `json:"writeMetadata"`
 			UseTopicSchema bool `json:"useTopicSchema"`
 		}{
-			WriteMetadata:  d.Get("avro_config.0.write_metadata").(bool),
-			UseTopicSchema: d.Get("avro_config.0.use_topic_schema").(bool),
+			WriteMetadata:  d.Get("cloud_storage_config.0.avro_config.0.write_metadata").(bool),
+			UseTopicSchema: d.Get("cloud_storage_config.0.avro_config.0.use_topic_schema").(bool),
 		},
 
-		ServiceAccountEmail: d.Get("service_account_email").(string),
+		ServiceAccountEmail: d.Get("cloud_storage_config.0.service_account_email").(string),
 	}
 }
 
@@ -540,7 +541,7 @@ func flattenCloudStorageConfig(rb *duplosdk.DuploPubSubCloudStorageConfig) []int
 		"filename_datetime_format": rb.FileNameDateTimeFormat,
 		"max_duration":             rb.MaxDuration,
 		"max_bytes":                rb.MaxBytes,
-		"max_message":              rb.MaxMessages,
+		"max_messages":             rb.MaxMessages,
 		"avro_config":              avro,
 		"service_account_email":    rb.ServiceAccountEmail,
 	}
