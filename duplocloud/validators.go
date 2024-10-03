@@ -218,3 +218,24 @@ func isStringValid(r *regexp.Regexp, message string) bool {
 	return r.MatchString(message)
 
 }
+
+func validateDateTimeFormat() schema.SchemaValidateFunc {
+	return func(v interface{}, k string) (ws []string, errors []error) {
+		input := v.(string)
+
+		pattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$`
+
+		// Compile the regex
+		regex := regexp.MustCompile(pattern)
+
+		// Convert the value to a string
+
+		// Check if the value matches the regex pattern
+		if !regex.MatchString(input) {
+			errors = append(errors, fmt.Errorf("Invalid datetime format: %s, expected format: YYYY-MM-DDTHH:MM:SS", input))
+			return nil, errors
+		}
+
+		return nil, nil
+	}
+}

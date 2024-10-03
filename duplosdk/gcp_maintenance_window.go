@@ -3,25 +3,24 @@ package duplosdk
 import (
 	"fmt"
 	"log"
-	"time"
 )
 
 type DuploGcpInfraMaintenanceWindow struct {
-	DailyMaintenanceStartTime *time.Time   `json:"DailyMaintenanceStartTime,omitempty"`
+	DailyMaintenanceStartTime string       `json:"DailyMaintenanceStartTime,omitempty"`
 	Exclusions                *[]Exclusion `json:"Exclusions,omitempty"`
 	RecurringWindow           *Recurring   `json:"RecurringWindow,omitempty"`
 }
 
 type Exclusion struct {
-	StartTime time.Time `json:"StartTime"`
-	EndTime   time.Time `json:"EndTime"`
-	Scope     string    `json:"Scope"`
+	StartTime string `json:"StartTime"`
+	EndTime   string `json:"EndTime"`
+	Scope     string `json:"Scope"`
 }
 
 type Recurring struct {
-	StartTime  time.Time `json:"StartTime"`
-	EndTime    time.Time `json:"EndTime"`
-	Recurrence string    `json:"Recurrence"`
+	StartTime  string `json:"StartTime"`
+	EndTime    string `json:"EndTime"`
+	Recurrence string `json:"Recurrence"`
 }
 
 func (c *Client) CreateGCPInfraMaintenanceWindow(infraName string, rq *DuploGcpInfraMaintenanceWindow) ClientError {
