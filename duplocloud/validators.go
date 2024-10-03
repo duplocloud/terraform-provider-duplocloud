@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"k8s.io/apimachinery/pkg/api/resource"
 	apiValidation "k8s.io/apimachinery/pkg/api/validation"
@@ -219,23 +221,33 @@ func isStringValid(r *regexp.Regexp, message string) bool {
 
 }
 
-func validateDateTimeFormat() schema.SchemaValidateFunc {
-	return func(v interface{}, k string) (ws []string, errors []error) {
-		input := v.(string)
+func validateDateTimeFormat(v interface{}, p cty.Path) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
 
-		pattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$`
-
-		// Compile the regex
-		regex := regexp.MustCompile(pattern)
-
-		// Convert the value to a string
-
-		// Check if the value matches the regex pattern
-		if !regex.MatchString(input) {
-			errors = append(errors, fmt.Errorf("Invalid datetime format: %s, expected format: YYYY-MM-DDTHH:MM:SS", input))
-			return nil, errors
-		}
-
-		return nil, nil
+	// Assert the value is a string
+	input, ok := v.(string)
+	if !ok {
+		return diag.Diagnostics{{
+			Severity: diag.Error,
+			Summary:  "Invalid value type",
+			Detail:   "Expected a string for datetime validation.",
+		}}
 	}
+
+	// Define the regex pattern for the datetime format
+	pattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$`
+
+	// Compile the regex
+	regex := regexp.MustCompile(pattern)
+
+	// Check if the value matches the regex pattern
+	if !regex.MatchString(input) {
+		diagnostics = append(diagnostics, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Invalid datetime format",
+			Detail:   "Invalid datetime format: " + input + ", expected format: YYYY-MM-DDTHH:MM:SS",
+		})
+	}
+
+	return diagnostics
 }

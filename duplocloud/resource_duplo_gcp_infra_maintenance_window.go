@@ -44,16 +44,16 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"start_time": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Computed:     true,
-							ValidateFunc: validateDateTimeFormat(),
+							Type:             schema.TypeString,
+							Optional:         true,
+							Computed:         true,
+							ValidateDiagFunc: validateDateTimeFormat,
 						},
 						"end_time": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Computed:     true,
-							ValidateFunc: validateDateTimeFormat(),
+							Type:             schema.TypeString,
+							Optional:         true,
+							Computed:         true,
+							ValidateDiagFunc: validateDateTimeFormat,
 						},
 						"scope": {
 							Description: "The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES",
@@ -64,13 +64,13 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 				},
 			},
 			"daily_maintenance_start_time": {
-				Description:   "Time window specified for daily maintenance operations. Specify 'start_time 'in RFC3339 format HH:MM, where HH : [00-23] and MM : [00-59] GMT",
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"recurring_window"},
-				ValidateFunc:  validateDateTimeFormat(),
+				Description:      "Time window specified for daily maintenance operations. Specify 'start_time 'in RFC3339 format HH:MM, where HH : [00-23] and MM : [00-59] GMT",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				ForceNew:         true,
+				ConflictsWith:    []string{"recurring_window"},
+				ValidateDiagFunc: validateDateTimeFormat,
 			},
 			"recurring_window": {
 				Type:          schema.TypeList,
@@ -84,15 +84,15 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 						"start_time": {
 							Type: schema.TypeString,
 
-							Required:     true,
-							ForceNew:     true,
-							ValidateFunc: validateDateTimeFormat(),
+							Required:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: validateDateTimeFormat,
 						},
 						"end_time": {
-							Type:         schema.TypeString,
-							Required:     true,
-							ForceNew:     true,
-							ValidateFunc: validateDateTimeFormat(),
+							Type:             schema.TypeString,
+							Required:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: validateDateTimeFormat,
 						},
 						"recurrence": {
 							Description: "Specify recurrence in RFC5545 RRULE format, to specify when this recurs.",
@@ -177,7 +177,7 @@ func expandWindowsMaintenance(d *schema.ResourceData) (*duplosdk.DuploGcpInfraMa
 	}
 
 	recW := d.Get("recurring_window").([]interface{})
-	if recW != nil && len(recW) > 0 {
+	if len(recW) > 0 {
 		mp := recW[0].(map[string]interface{})
 		recurring := &duplosdk.Recurring{
 			Recurrence: mp["recurrence"].(string),
