@@ -159,7 +159,6 @@ func resourceAwsEcrRepositoryUpdate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
-	time.Sleep(5 * time.Minute)
 	return nil
 }
 
