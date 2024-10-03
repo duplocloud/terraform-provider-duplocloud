@@ -26,6 +26,8 @@ const (
 	MAX_DUPLO_LENGTH                    = len("duplo-")
 	MAX_DUPLOSERVICES_LENGTH            = len("duploservices-1234567890ab-")
 	MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH = len("duploservices-1234567890ab--1234567890ab")
+	RDS_DOCUMENT_DB_ENGINE              = 13
+	GCP_CLOUD                           = 3
 )
 
 // Utility function to make a single schema element computed.
@@ -737,6 +739,15 @@ func flattenGcpLabels(d *schema.ResourceData, duplo map[string]string) {
 		duplo[k] = v.(string)
 	}
 	d.Set("labels", flattenStringMap(duplo))
+}
+
+func flattenIPAddress(d *schema.ResourceData, ipAddresses []string) {
+	ips := make([]interface{}, 0, len(ipAddresses))
+	for _, v := range ipAddresses {
+		ips = append(ips, v)
+	}
+
+	d.Set("ip_address", ips)
 }
 
 func expandAsStringMap(fieldName string, d *schema.ResourceData) map[string]string {

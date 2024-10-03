@@ -73,8 +73,9 @@ func dataSourceGCPCloudSQL() *schema.Resource {
 			},
 			"ip_address": {
 				Description: "IP address of the database.",
-				Type:        schema.TypeString,
+				Type:        schema.TypeList,
 				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"connection_name": {
 				Description: "Connection name  of the database.",
