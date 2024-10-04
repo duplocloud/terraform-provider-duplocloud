@@ -37,6 +37,7 @@ func duploAzureStorageQueueSchema() map[string]*schema.Schema {
 			Description: "The URL of the Queue.",
 			Type:        schema.TypeString,
 			Computed:    true,
+			Optional:    true,
 		},
 	}
 }

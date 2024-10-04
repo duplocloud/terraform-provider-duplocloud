@@ -38,6 +38,7 @@ func duploAzureStorageBlobSchema() map[string]*schema.Schema {
 			Description: "The URL of the Blob.",
 			Type:        schema.TypeString,
 			Computed:    true,
+			Optional:    true,
 		},
 	}
 }

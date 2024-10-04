@@ -37,6 +37,7 @@ func duploAzureStorageTableSchema() map[string]*schema.Schema {
 			Description: "The URL of the Table.",
 			Type:        schema.TypeString,
 			Computed:    true,
+			Optional:    true,
 		},
 	}
 }
