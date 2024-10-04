@@ -33,7 +33,7 @@ resource "duplocloud_tenant_access_grant" "dynamodbGrant" {
 
 ### Required
 
-- `grant_area` (String) The area the grant allows access to.
+- `grant_area` (String) The area the grant allows access to. Currently supported: ['s3', 'dynamodb', 'kms', 'apigw', 'rep']
 - `grantee_tenant_id` (String) The GUID of the tenant that will receive the granted access.
 - `grantor_tenant_id` (String) The GUID of the tenant that will grant the access.
 

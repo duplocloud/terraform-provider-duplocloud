@@ -30,7 +30,7 @@ func tenantAccessGrantSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"grant_area": {
-			Description: "The area the grant allows access to.",
+			Description: "The area the grant allows access to. Currently supported: ['s3', 'dynamodb', 'kms', 'apigw', 'rep']",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
