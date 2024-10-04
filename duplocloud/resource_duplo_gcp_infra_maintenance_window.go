@@ -149,7 +149,7 @@ func resourceInfrastructureMaintenanceWindowCreateOrUpdate(ctx context.Context, 
 	d.SetId("maintenance-window/" + infraName)
 
 	diags := resourceInfrastructureMaintenanceWindowRead(ctx, d, m)
-	log.Printf("[TRACE] resourceInfrastructureSettingCreateOrUpdate(%s): end", infraName)
+	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowCreateOrUpdate(%s): end", infraName)
 	return diags
 }
 
