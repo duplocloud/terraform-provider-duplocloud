@@ -16,14 +16,14 @@ import (
 func duploAzureStorageBlobSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the azure storage account share file will be created in.",
+			Description:  "The GUID of the tenant that the azure storage class blob will be created in.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
 		"storage_account_name": {
-			Description: "Specifies the storage account in which to create the blob. Changing this forces a new resource to be created.",
+			Description: "Specifies the storage class in which to create the blob. Changing this forces a new resource to be created.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
@@ -80,7 +80,7 @@ func resourceAzureStorageBlobRead(ctx context.Context, d *schema.ResourceData, m
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve tenant %s azure storage share file %s : %s", tenantID, name, clientErr)
+		return diag.Errorf("Unable to retrieve tenant %s azure storage class blob %s : %s", tenantID, name, clientErr)
 	}
 
 	d.Set("tenant_id", tenantID)
@@ -103,11 +103,11 @@ func resourceAzureStorageBlobCreate(ctx context.Context, d *schema.ResourceData,
 
 	err = c.AzureStorageAccountBlobCreate(tenantID, storageAccountName, name)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure storage account blob '%s': %s", tenantID, name, err)
+		return diag.Errorf("Error creating tenant %s azure storage class blob '%s': %s", tenantID, name, err)
 	}
 
-	id := fmt.Sprintf("%s/%s/%s/%s", tenantID, storageAccountName, "queue", name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure storage account blob ", id, func() (interface{}, duplosdk.ClientError) {
+	id := fmt.Sprintf("%s/%s/%s/%s", tenantID, storageAccountName, "blob", name)
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure storage class blob ", id, func() (interface{}, duplosdk.ClientError) {
 		return c.AzureStorageAccountBlobGet(tenantID, storageAccountName, name)
 	})
 	if diags != nil {
@@ -136,7 +136,7 @@ func resourceAzureStorageBlobDelete(ctx context.Context, d *schema.ResourceData,
 	c := m.(*duplosdk.Client)
 	err = c.AzureStorageAccountBlobDelete(tenantID, storageAccountName, name)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure storage account share file '%s': %s", tenantID, name, err)
+		return diag.Errorf("Error creating tenant %s azure storage class blob '%s': %s", tenantID, name, err)
 	}
 	log.Printf("[TRACE] resourceAzureStorageBlobDelete(%s, %s): end", tenantID, name)
 
