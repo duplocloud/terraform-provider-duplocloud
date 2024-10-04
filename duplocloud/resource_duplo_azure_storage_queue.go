@@ -25,6 +25,7 @@ func duploAzureStorageQueueSchema() map[string]*schema.Schema {
 			Description: "Specifies the storage account in which to create the queue. Changing this forces a new resource to be created.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 		},
 		"name": {
 			Description: "The name of the Queue. Changing this forces a new resource to be created.",

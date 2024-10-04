@@ -25,6 +25,7 @@ func duploAzureStorageTableSchema() map[string]*schema.Schema {
 			Description: "Specifies the storage account in which to create the share. Changing this forces a new resource to be created.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 		},
 		"name": {
 			Description: "The name of the Table. Changing this forces a new resource to be created.",

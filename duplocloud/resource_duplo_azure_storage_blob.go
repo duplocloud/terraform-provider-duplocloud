@@ -26,6 +26,7 @@ func duploAzureStorageBlobSchema() map[string]*schema.Schema {
 			Description: "Specifies the storage account in which to create the blob. Changing this forces a new resource to be created.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 		},
 		"name": {
 			Description: "The name of the Blob. Changing this forces a new resource to be created.",
