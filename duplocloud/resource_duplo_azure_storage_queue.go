@@ -43,7 +43,7 @@ func duploAzureStorageQueueSchema() map[string]*schema.Schema {
 
 func resourceAzureStorageQueue() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_storageclass_queue` manages an Azure storage share file in Duplo.",
+		Description: "`duplocloud_azure_storageclass_queue` manages an Azure storage class queue in Duplo.",
 
 		ReadContext:   resourceAzureStorageQueueRead,
 		CreateContext: resourceAzureStorageQueueCreate,

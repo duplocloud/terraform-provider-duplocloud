@@ -44,7 +44,7 @@ func duploAzureStorageBlobSchema() map[string]*schema.Schema {
 
 func resourceAzureStorageBlob() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_storageclass_blob` manages an Azure storage share file in Duplo.",
+		Description: "`duplocloud_azure_storageclass_blob` manages an Azure storage class blob in Duplo.",
 
 		ReadContext:   resourceAzureStorageBlobRead,
 		CreateContext: resourceAzureStorageBlobCreate,
