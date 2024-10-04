@@ -3,12 +3,12 @@
 page_title: "duplocloud_azure_storageclass_blob Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_azure_storageclass_blob manages an Azure storage share file in Duplo.
+  duplocloud_azure_storageclass_blob manages an Azure storage class blob in Duplo.
 ---
 
 # duplocloud_azure_storageclass_blob (Resource)
 
-`duplocloud_azure_storageclass_blob` manages an Azure storage share file in Duplo.
+`duplocloud_azure_storageclass_blob` manages an Azure storage class blob in Duplo.
 
 
 
@@ -18,17 +18,17 @@ description: |-
 ### Required
 
 - `name` (String) The name of the Blob. Changing this forces a new resource to be created.
-- `storage_account_name` (String) Specifies the storage account in which to create the blob. Changing this forces a new resource to be created.
-- `tenant_id` (String) The GUID of the tenant that the azure storage account share file will be created in.
+- `storage_account_name` (String) Specifies the storage class in which to create the blob. Changing this forces a new resource to be created.
+- `tenant_id` (String) The GUID of the tenant that the azure storage class blob will be created in.
 
 ### Optional
 
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `url` (String) The URL of the Blob.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `url` (String) The URL of the Blob.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

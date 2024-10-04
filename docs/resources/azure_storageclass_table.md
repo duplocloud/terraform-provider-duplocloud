@@ -18,17 +18,17 @@ description: |-
 ### Required
 
 - `name` (String) The name of the Table. Changing this forces a new resource to be created.
-- `storage_account_name` (String) Specifies the storage account in which to create the share. Changing this forces a new resource to be created.
-- `tenant_id` (String) The GUID of the tenant that the azure storage account share file will be created in.
+- `storage_account_name` (String) Specifies the storage class in which to create the table. Changing this forces a new resource to be created.
+- `tenant_id` (String) The GUID of the tenant that the azure storage class table will be created in.
 
 ### Optional
 
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `url` (String) The URL of the Table.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `url` (String) The URL of the Table.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
