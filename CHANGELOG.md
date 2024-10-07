@@ -1,3 +1,24 @@
+## 2024-09-13
+
+### Enhanced
+
+- Implemented validation to restrict tenant creation in GCP cloud if the tenant name contains the keyword 'google'.
+
+## 2024-09-12
+
+### Enhanced
+
+- Added `ForceNew` property to the `availability_zone` attribute in RDS instances to ensure replacement on change.
+- Improved handling of performance insights attributes by setting them only when enabled, preventing unnecessary diffs.
+
+## 2024-09-11
+
+### Enhanced
+
+- Added performance insights configuration to RDS read replica resources, allowing for improved database performance monitoring and tuning.
+- Implemented logic to handle performance insights for both primary and read replica RDS instances, including waiting for insights to be enabled.
+- Updated validation and update processes to support performance insights for read replicas, ensuring consistent application of settings.
+
 ## 2024-09-17
 
 ### Enhanced
@@ -34,6 +55,31 @@
 
 - Added `ForceNew` property to the `availability_zone` attribute in RDS instances to ensure replacement on change.
 - Improved handling of performance insights attributes by setting them only when enabled, preventing unnecessary diffs.
+
+## 2024-09-12
+
+### Bug Fixes
+
+- Fixed an issue with IP address unmarshalling in GCP SQL database instances by changing the `ip_address` field type from `string` to `list`.
+
+### Documentation
+
+- Updated documentation to reflect the change in `ip_address` type to a list of strings for GCP SQL database instances.
+
+## 2024-09-12
+
+### Enhanced
+
+- Added `ForceNew` property to the `availability_zone` attribute in RDS instances to ensure replacement on change.
+- Improved handling of performance insights attributes by setting them only when enabled, preventing unnecessary diffs.
+
+## 2024-09-11
+
+### Enhanced
+
+- Added performance insights configuration to RDS read replica resources, allowing for improved database performance monitoring and tuning.
+- Implemented logic to handle performance insights for both primary and read replica RDS instances, including waiting for insights to be enabled.
+- Updated validation and update processes to support performance insights for read replicas, ensuring consistent application of settings.
 
 ## 2024-09-11
 
@@ -72,6 +118,11 @@
 
 - Updated documentation to reflect changes in the MWAA environment schema.
 
+## 2024-09-10
+
+### Enhanced
+
+- Implemented update functionality for `duplocloud_aws_ecr_repository`, allowing ECR settings to be changed without recreating the resource.
 
 ## 2024-09-09
 

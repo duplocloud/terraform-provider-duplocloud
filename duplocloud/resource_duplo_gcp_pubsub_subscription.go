@@ -481,12 +481,12 @@ func resourceGCPPubSubSubscriptionDelete(ctx context.Context, d *schema.Resource
 
 func expandBigQuery(d *schema.ResourceData) *duplosdk.DuploPubSubBigQuery {
 	return &duplosdk.DuploPubSubBigQuery{
-		Table:               d.Get("table").(string),
-		UseTopicSchema:      d.Get("use_topic_schema").(bool),
-		UseTableSchema:      d.Get("use_table_schema").(bool),
-		DropUnknownFields:   d.Get("drop_unknown_fields").(bool),
-		ServiceAccountEmail: d.Get("service_account_email").(string),
-		WriteMetadata:       d.Get("write_metadata").(bool),
+		Table:               d.Get("big_query.0.table").(string),
+		UseTopicSchema:      d.Get("big_query.0.use_topic_schema").(bool),
+		UseTableSchema:      d.Get("big_query.0.use_table_schema").(bool),
+		DropUnknownFields:   d.Get("big_query.0.drop_unknown_fields").(bool),
+		ServiceAccountEmail: d.Get("big_query.0.service_account_email").(string),
+		WriteMetadata:       d.Get("big_query.0.write_metadata").(bool),
 	}
 
 }
