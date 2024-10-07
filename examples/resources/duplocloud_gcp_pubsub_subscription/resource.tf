@@ -4,11 +4,11 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 //example for push config
-resource "duplocloud_gcp_pubsub_subscription" "sub"{
-  tenant_id=duplocloud_tenant.myapp.tenant_id
-  name="subtest6"
-  topic="test-topic1"
-   ack_deadline_seconds = 20
+resource "duplocloud_gcp_pubsub_subscription" "sub" {
+  tenant_id            = duplocloud_tenant.myapp.tenant_id
+  name                 = "subtest6"
+  topic                = "test-topic1"
+  ack_deadline_seconds = 20
 
   labels = {
     foo = "bar"
@@ -26,9 +26,9 @@ resource "duplocloud_gcp_pubsub_subscription" "sub"{
 
 //example for pull
 resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
-  tenant_id=duplocloud_tenant.myapp.tenant_id
-  name  = "subtest8"
-  topic = "test-topic1"
+  tenant_id = duplocloud_tenant.myapp.tenant_id
+  name      = "subtest8"
+  topic     = "test-topic1"
 
   labels = {
     foo = "bar"
@@ -47,17 +47,49 @@ resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
     minimum_backoff = "10s"
   }
 
-  enable_message_ordering    = false
+  enable_message_ordering = false
 }
 
 //example Deadletter policy
 resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
-  tenant_id=duplocloud_tenant.myapp.tenant_id
-  name  = "subtest9"
-  topic = "test-topic1"
+  tenant_id = duplocloud_tenant.myapp.tenant_id
+  name      = "subtest9"
+  topic     = "test-topic1"
 
   dead_letter_policy {
-    dead_letter_topic = "projects/<project-identifier>/topics/<topic-name>"
+    dead_letter_topic     = "projects/<project-identifier>/topics/<topic-name>"
     max_delivery_attempts = 10
+  }
+}
+
+
+//example BigQuery
+resource "duplocloud_gcp_pubsub_subscription" "sub" {
+  tenant_id = duplocloud_tenant.myapp.tenant_id
+  name      = "subtest12"
+  topic     = "test-topic1"
+  big_query {
+    table                 = "{project}.{dataset}.{table}"
+    service_account_email = "abc@xxyz.com"
+    use_table_schema      = true
+  }
+}
+
+//example cloud storage
+resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
+  tenant_id = duplocloud_tenant.myapp.tenant_id
+  name      = "subtestcloud"
+  topic     = "test-topic1"
+
+  cloud_storage_config {
+    bucket = "{cloudstorage-bucketnamr}"
+
+    filename_prefix          = "pre-"
+    filename_suffix          = "10"
+    filename_datetime_format = "YYYY-MM-DD/hh_mm_ssZ"
+
+    max_bytes    = 1000
+    max_duration = "300s"
+    max_messages = 1000
   }
 }

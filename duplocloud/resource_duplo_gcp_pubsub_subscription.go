@@ -35,6 +35,11 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"topic_fullname": {
+			Description: "A reference to a Topic full path.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"big_query": {
 			Description: "Default encryption settings for objects uploaded to the bucket.",
 			Type:        schema.TypeList,
@@ -377,8 +382,8 @@ func resourceGCPPubSubSubscriptionRead(ctx context.Context, d *schema.ResourceDa
 	if len(idParts) < 2 {
 		return diag.Errorf("resourceGCPPubSubSubscriptionRead: Invalid resource (ID: %s)", id)
 	}
-	tenantID, name := idParts[0], idParts[1]
-
+	tenantID := idParts[0]
+	name := d.Get("topic_fullname").(string)
 	c := m.(*duplosdk.Client)
 
 	// Figure out the full resource name.
@@ -386,7 +391,7 @@ func resourceGCPPubSubSubscriptionRead(ctx context.Context, d *schema.ResourceDa
 	// Get the object from Duplo
 	duplo, err := c.GCPTenantGetPubSubSubscription(tenantID, name)
 	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceGCPPubSubSubscriptionRead: Unable to retrieve storage bucket (tenant: %s, bucket: %s, error: %s)", tenantID, name, err)
+		return diag.Errorf("resourceGCPPubSubSubscriptionRead: Unable to retrieve pubsub subscription (tenant: %s, bucket: %s, error: %s)", tenantID, name, err)
 	}
 
 	flattenPubSubSubscription(duplo, d)
@@ -439,9 +444,9 @@ func resourceGCPPubSubSubscriptionUpdate(ctx context.Context, d *schema.Resource
 	reqBody := expandPubSubSubscription(d)
 
 	c := m.(*duplosdk.Client)
-
+	topic := d.Get("topic_fullname").(string)
 	// Post the object to Duplo
-	_, err := c.GCPTenantUpdatePubSubSubscription(idParts[0], *reqBody)
+	_, err := c.GCPTenantUpdatePubSubSubscription(idParts[0], *reqBody, topic)
 	if err != nil && !err.PossibleMissingAPI() {
 		return diag.Errorf("resourceGCPPubSubSubscriptionUpdate: Unable to update storage bucket using v3 api (tenant: %s, bucket: %s: error: %s)", idParts[0], reqBody.Name, err)
 	}
@@ -462,14 +467,15 @@ func resourceGCPPubSubSubscriptionDelete(ctx context.Context, d *schema.Resource
 	if len(idParts) < 2 {
 		return diag.Errorf("resourceGCPPubSubSubscriptionDelete: Invalid resource (ID: %s)", id)
 	}
-	err := c.GCPTenantDeletePubSubSubscription(idParts[0], idParts[1])
+	topic := d.Get("topic_fullname").(string)
+	err := c.GCPTenantDeletePubSubSubscription(idParts[0], topic)
 	if err != nil {
 		return diag.Errorf("resourceGCPPubSubSubscriptionDelete: Unable to delete bucket (name:%s, error: %s)", id, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to delete the bucket.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "bucket", id, func() (interface{}, duplosdk.ClientError) {
-		return c.GCPTenantGetPubSubSubscription(idParts[0], idParts[1])
+		return c.GCPTenantGetPubSubSubscription(idParts[0], topic)
 	})
 	if diag != nil {
 		return diag
@@ -526,7 +532,7 @@ func expandCloudStorageConfig(d *schema.ResourceData) *duplosdk.DuploPubSubCloud
 	}
 }
 
-func flattenCloudStorageConfig(rb *duplosdk.DuploPubSubCloudStorageConfig) []interface{} {
+func flattenCloudStorageConfig(rb *duplosdk.DuploPubSubCloudStorageConfigReaponse) []interface{} {
 
 	avro := make([]interface{}, 0, 1)
 	amp := map[string]interface{}{
@@ -539,7 +545,7 @@ func flattenCloudStorageConfig(rb *duplosdk.DuploPubSubCloudStorageConfig) []int
 		"filename_prefix":          rb.FilenamePrefix,
 		"filename_suffix":          rb.FileNameSuffix,
 		"filename_datetime_format": rb.FileNameDateTimeFormat,
-		"max_duration":             rb.MaxDuration,
+		"max_duration":             strconv.Itoa(rb.MaxDuration.Seconds) + "s",
 		"max_bytes":                rb.MaxBytes,
 		"max_messages":             rb.MaxMessages,
 		"avro_config":              avro,
@@ -631,16 +637,22 @@ func expandPubSubSubscription(d *schema.ResourceData) *duplosdk.DuploPubSubSubsc
 	}
 	return obj
 }
+
 func flattenPubSubSubscription(rb *duplosdk.DuploPubSubSubscriptionResponse, d *schema.ResourceData) {
+
 	mp := map[string]interface{}{
 		"name":                         rb.Name,
-		"topic":                        rb.Topic,
 		"ack_deadline_seconds":         rb.AckDeadlineSeconds,
 		"message_retention_duration":   rb.MessageRetentionDuration,
 		"retain_acked_messages":        rb.RetainAckedMessages,
 		"filter":                       rb.Filter,
 		"enable_message_ordering":      rb.EnableMessageOrdering,
 		"enable_exactly_once_delivery": rb.EnableExactlyOnceDelivery,
+	}
+	if rb.Topic != "" {
+		mp["topic_fullname"] = rb.Topic
+		token := strings.Split(rb.Topic, "/")
+		mp["topic"] = token[len(token)-1]
 	}
 	if rb.BigQuery != nil {
 		mp["big_query"] = flattenBigQuery(rb.BigQuery)

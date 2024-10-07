@@ -39,6 +39,22 @@ type DuploPubSubCloudStorageConfig struct {
 	} `json:"avroConfig"`
 }
 
+type DuploPubSubCloudStorageConfigReaponse struct {
+	Bucket                 string     `json:"bucket"`
+	FilenamePrefix         string     `json:"filenamePrefix"`
+	FileNameSuffix         string     `json:"filenameSuffix"`
+	FileNameDateTimeFormat string     `json:"filenameDatetimeFormat"`
+	MaxDuration            SecondNano `json:"maxDuration"`
+	MaxBytes               int        `json:"maxBytes"`
+	MaxMessages            int        `json:"maxMessages"`
+	State                  State      `json:"state"`
+	ServiceAccountEmail    string     `json:"serviceAccountEmail"`
+	AvroConfig             struct {
+		WriteMetadata  bool `json:"writeMetadata"`
+		UseTopicSchema bool `json:"useTopicSchema"`
+	} `json:"avroConfig"`
+}
+
 type DuploPubSubPushConfig struct {
 	PushEndpoint string            `json:"pushEndpoint"`
 	Attributes   map[string]string `json:"attributes"`
@@ -72,21 +88,21 @@ type DuploPubSubSubscription struct {
 }
 
 type DuploPubSubSubscriptionResponse struct {
-	Name                      string                               `json:"name"`
-	Topic                     string                               `json:"topic"`
-	BigQuery                  *DuploPubSubBigQuery                 `json:"bigqueryConfig,omitempty"`
-	CloudStorageConfig        *DuploPubSubCloudStorageConfig       `json:"cloudStorageConfig,omitempty"`
-	PushConfig                *DuploPubSubPushConfig               `json:"pushConfig,omitempty"`
-	AckDeadlineSeconds        int                                  `json:"ackDeadlineSeconds"`
-	MessageRetentionDuration  string                               `json:"messageRetentionDuration"`
-	RetainAckedMessages       bool                                 `json:"retainAckedMessages"`
-	Filter                    string                               `json:"filter"`
-	EnableMessageOrdering     bool                                 `json:"enableMessageOrdering"`
-	EnableExactlyOnceDelivery bool                                 `json:"enableExactlyOnceDelivery"`
-	ExpirationPolicy          *DuploPubSubExpirationPolicyResponse `json:"expirationPolicy,omitempty"`
-	DeadLetterPolicy          *DuploPubSubDeadLetterPolicy         `json:"deadLetterPolicy,omitempty"`
-	RetryPolicy               *DuploPubSubRetryPolicyResponse      `json:"retryPolicy,omitempty"`
-	Labels                    map[string]string                    `json:"labels"`
+	Name                      string                                 `json:"name"`
+	Topic                     string                                 `json:"topic"`
+	BigQuery                  *DuploPubSubBigQuery                   `json:"bigqueryConfig,omitempty"`
+	CloudStorageConfig        *DuploPubSubCloudStorageConfigReaponse `json:"cloudStorageConfig,omitempty"`
+	PushConfig                *DuploPubSubPushConfig                 `json:"pushConfig,omitempty"`
+	AckDeadlineSeconds        int                                    `json:"ackDeadlineSeconds"`
+	MessageRetentionDuration  string                                 `json:"messageRetentionDuration"`
+	RetainAckedMessages       bool                                   `json:"retainAckedMessages"`
+	Filter                    string                                 `json:"filter"`
+	EnableMessageOrdering     bool                                   `json:"enableMessageOrdering"`
+	EnableExactlyOnceDelivery bool                                   `json:"enableExactlyOnceDelivery"`
+	ExpirationPolicy          *DuploPubSubExpirationPolicyResponse   `json:"expirationPolicy,omitempty"`
+	DeadLetterPolicy          *DuploPubSubDeadLetterPolicy           `json:"deadLetterPolicy,omitempty"`
+	RetryPolicy               *DuploPubSubRetryPolicyResponse        `json:"retryPolicy,omitempty"`
+	Labels                    map[string]string                      `json:"labels"`
 }
 
 type DuploPubSubExpirationPolicy struct {
@@ -153,11 +169,11 @@ func (c *Client) GCPTenantDeletePubSubSubscription(tenantID string, name string)
 
 }
 
-func (c *Client) GCPTenantUpdatePubSubSubscription(tenantID string, duplo DuploPubSubSubscription) (*DuploPubSubSubscriptionResponse, ClientError) {
+func (c *Client) GCPTenantUpdatePubSubSubscription(tenantID string, duplo DuploPubSubSubscription, topic string) (*DuploPubSubSubscriptionResponse, ClientError) {
 	// Apply the settings via Duplo.
 	apiName := fmt.Sprintf("GCPTenantUpdatePubSubSubscription(%s, %s)", tenantID, duplo.Name)
 	rp := DuploPubSubSubscriptionResponse{}
-	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/google/subscription/%s", tenantID, duplo.Topic), &duplo, &rp)
+	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/google/subscription/%s", tenantID, topic), &duplo, &rp)
 	if err != nil {
 		return nil, err
 	}
