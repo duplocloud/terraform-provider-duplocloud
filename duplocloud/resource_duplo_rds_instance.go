@@ -1047,17 +1047,19 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
 		}
 	}
-	st := diff.Get("storage_type").(string)
-	if st == "aurora-iopt1" {
-		ev := diff.Get("engine_version").(string)
-		if (eng == 8 || eng == 11) && compareEngineVersion(ev, "3.03.1") == -1 {
-			return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 3.03.1", engines[eng], st)
-		}
-		if (eng == 9 || eng == 12) && compareEngineVersion(ev, "13.10") == -1 {
-			return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 13.10", engines[eng], st)
-		}
-		if eng != 8 && eng != 9 && eng != 11 && eng != 12 {
-			return fmt.Errorf("RDS engine %s  do not support storage_type %s ", engines[eng], st)
+	if _, ok := diff.GetOk("storage_type"); ok {
+		st := diff.Get("storage_type").(string)
+		if st == "aurora-iopt1" {
+			ev := diff.Get("engine_version").(string)
+			if (eng == 8 || eng == 11) && compareEngineVersion(ev, "3.03.1") == -1 {
+				return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 3.03.1", engines[eng], st)
+			}
+			if (eng == 9 || eng == 12) && compareEngineVersion(ev, "13.10") == -1 {
+				return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 13.10", engines[eng], st)
+			}
+			if eng != 8 && eng != 9 && eng != 11 && eng != 12 {
+				return fmt.Errorf("RDS engine %s  do not support storage_type %s ", engines[eng], st)
+			}
 		}
 	}
 
