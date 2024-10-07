@@ -1022,3 +1022,11 @@ func addIfDefined(target interface{}, resourceName string, targetValue interface
 		}
 	}
 }
+
+// max returns the maximum of two integers.
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}

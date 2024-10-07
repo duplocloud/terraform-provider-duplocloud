@@ -96,6 +96,7 @@ func Provider() *schema.Provider {
 			"duplocloud_rds_read_replica":                   resourceDuploRdsReadReplica(),
 			"duplocloud_s3_bucket":                          resourceS3Bucket(),
 			"duplocloud_tenant":                             resourceTenant(),
+			"duplocloud_tenant_access_grant":                resourceTenantAccessGrant(),
 			"duplocloud_tenant_cleanup_timers":              resourceTenantCleanUpTimers(),
 			"duplocloud_user":                               resourceUser(),
 			"duplocloud_tenant_config":                      resourceTenantConfig(),
@@ -168,6 +169,10 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_storage_bucket_v2":              resourceGCPStorageBucketV2(),
 			"duplocloud_aws_lambda_function_event_config":   resourceAwsLambdaEventInvokeConfigFunction(),
 			"duplocloud_azure_postgresql_flexible_database": resourceAzurePostgresqlFlexibleDatabase(),
+			"duplocloud_gcp_infra_maintenance_window":       resourceGCPInfraMaintenanceWindow(),
+			"duplocloud_azure_storageclass_blob":            resourceAzureStorageBlob(),
+			"duplocloud_azure_storageclass_queue":           resourceAzureStorageQueue(),
+			"duplocloud_azure_storageclass_table":           resourceAzureStorageTable(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
