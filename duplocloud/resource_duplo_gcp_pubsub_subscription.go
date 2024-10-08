@@ -412,8 +412,8 @@ func resourceGCPPubSubSubscriptionCreate(ctx context.Context, d *schema.Resource
 
 	// Post the object to Duplo
 	resp, err := c.GCPTenantCreatePubSubSubscription(tenantID, *reqBody)
-	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceGCPPubSubSubscriptionCreate: Unable to create pubsub subscription (tenant: %s, topic: %s: error: %s)", tenantID, reqBody.Name, err)
+	if err != nil {
+		return diag.Errorf("resourceGCPPubSubSubscriptionCreate: Unable to create pubsub subscription %s (tenant: %s, topic: %s: error: %s)", reqBody.Name, tenantID, reqBody.Topic, err)
 	}
 
 	id := fmt.Sprintf("%s/%s", tenantID, resp.Name)
