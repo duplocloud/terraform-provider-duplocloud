@@ -151,7 +151,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"metadata": {
-			Description:      "Configuration metadata used when creating the host. *Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10*",
+			Description:      "Configuration metadata used when creating the host.<br>*Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10*",
 			Type:             schema.TypeList,
 			Optional:         true,
 			Computed:         true,
