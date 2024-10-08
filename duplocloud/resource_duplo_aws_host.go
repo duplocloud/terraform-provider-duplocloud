@@ -151,7 +151,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"metadata": {
-			Description:      "Configuration metadata used when creating the host.",
+			Description:      "Configuration metadata used when creating the host. *Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10*",
 			Type:             schema.TypeList,
 			Optional:         true,
 			Computed:         true,
@@ -174,10 +174,11 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Elem:        KeyValueSchema(),
 		},
 		"volume": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			ForceNew: true, // relaunch instance
+			Description: "Block to specify additional or secondary volume beyond the root device",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true, // relaunch instance
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"iops": {

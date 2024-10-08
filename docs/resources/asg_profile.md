@@ -122,7 +122,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
    - `2` : RSA (deprecated - some operating systems no longer support it)
 - `max_instance_count` (Number) The maximum size of the Auto Scaling Group.
 - `max_spot_price` (String) Maximum price to pay for a spot instance in dollars per unit hour.
-- `metadata` (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
+- `metadata` (Block List) Configuration metadata used when creating the host. *Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10* (see [below for nested schema](#nestedblock--metadata))
 - `min_instance_count` (Number) The minimum size of the Auto Scaling Group.
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
@@ -131,7 +131,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `use_spot_instances` (Boolean) Whether or not to use spot instances. Defaults to `false`.
 - `user_account` (String) The name of the tenant that the host will be created in.
-- `volume` (Block List) (see [below for nested schema](#nestedblock--volume))
+- `volume` (Block List) Block to specify additional or secondary volume beyond the root device (see [below for nested schema](#nestedblock--volume))
 - `wait_for_capacity` (Boolean) Whether or not to wait until ASG instances to be healthy, after creation. Defaults to `true`.
 - `zone` (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.
 
