@@ -7,7 +7,7 @@ resource "duplocloud_tenant" "myapp" {
 resource "duplocloud_gcp_pubsub_subscription" "sub" {
   tenant_id            = duplocloud_tenant.myapp.tenant_id
   name                 = "subtest6"
-  topic                = "test-topic1"
+  topic                = "{topic-name}"
   ack_deadline_seconds = 20
 
   labels = {
@@ -28,7 +28,7 @@ resource "duplocloud_gcp_pubsub_subscription" "sub" {
 resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "subtest8"
-  topic     = "test-topic1"
+  topic     = "{topic-name}"
 
   labels = {
     foo = "bar"
@@ -54,10 +54,10 @@ resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
 resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "subtest9"
-  topic     = "test-topic1"
+  topic     = "{topic-name}"
 
   dead_letter_policy {
-    dead_letter_topic     = "projects/<project-identifier>/topics/<topic-name>"
+    dead_letter_topic     = "projects/{project-identifier}/topics/{topic-name}"
     max_delivery_attempts = 10
   }
 }
@@ -67,7 +67,7 @@ resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
 resource "duplocloud_gcp_pubsub_subscription" "sub" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "subtest12"
-  topic     = "test-topic1"
+  topic     = "{topic-name}"
   big_query {
     table                 = "{project}.{dataset}.{table}"
     service_account_email = "abc@xxyz.com"
@@ -79,7 +79,7 @@ resource "duplocloud_gcp_pubsub_subscription" "sub" {
 resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
   name      = "subtestcloud"
-  topic     = "test-topic1"
+  topic     = "{topic-name}"
 
   cloud_storage_config {
     bucket = "{cloudstorage-bucketnamr}"
@@ -91,5 +91,18 @@ resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
     max_bytes    = 1000
     max_duration = "300s"
     max_messages = 1000
+  }
+}
+
+
+resource "duplocloud_gcp_pubsub_subscription" "sub" {
+  tenant_id = duplocloud_tenant.myapp.tenant_id
+  name      = "subtest2"
+  topic     = "{topic-name}"
+  big_query {
+    table                 = "gcp-test10-431717.pbdataset.pbtable"
+    service_account_email = "nikhil.nambiar@duplocloud.net"
+    use_table_schema      = true
+    drop_unknown_fields   = false
   }
 }

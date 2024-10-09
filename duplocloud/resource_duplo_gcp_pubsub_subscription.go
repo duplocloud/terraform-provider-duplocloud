@@ -17,35 +17,36 @@ import (
 func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the storage bucket will be created in.",
+			Description:  "The GUID of the tenant where the Pub/Sub subscription for the topic will be created.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "Name of the subscription.",
+			Description: "Name of the Pub/Sub subscription.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
 		},
-		"topic": {
-			Description: "A reference to a Topic resource.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
-		},
-		"topic_fullname": {
-			Description: "A reference to a Topic full path.",
+		"fullname": {
+			Description: "Full name of the Pub/Sub subscription.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"topic": {
+			Description: "A reference to a Topic resource on which Pub/Sub subscription need to be created.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+		},
 		"big_query": {
-			Description: "Default encryption settings for objects uploaded to the bucket.",
+			Description: "BigQuery configuration related to Pub/Sub subscription, to stream message into BigQuery table",
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
 			MaxItems:    1,
+			ForceNew:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"table": {
@@ -92,11 +93,12 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 			},
 		},
 		"cloud_storage_config": {
-			Description: "Default encryption settings for objects uploaded to the bucket.",
+			Description: "Cloud Storage  configuration related to Pub/Sub subscription, to store message in storage bucket",
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
 			MaxItems:    1,
+			ForceNew:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"bucket": {
@@ -180,15 +182,16 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 			},
 		},
 		"push_config": {
-			Description: "Default encryption settings for objects uploaded to the bucket.",
+			Description: "Message Push Configuration related to Pub/Sub subscription for how messages will be delivered to the subscriber",
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
 			MaxItems:    1,
+			ForceNew:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"push_endpoint": {
-						Description: "User-provided name for the Cloud Storage bucket. The bucket must be created by the user. The bucket name must be without any prefix like 'gs://'.",
+						Description: "URL to which the Pub/Sub system should send messages for a push subscription. When a message is published to the topic, Pub/Sub will automatically send the message as an HTTP POST request to this specified endpoint.",
 						Type:        schema.TypeString,
 						Required:    true,
 					},
@@ -240,14 +243,14 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 		},
 
 		"ack_deadline_seconds": {
-			Description:  "This value is the maximum time after a subscriber receives a message before the subscriber should acknowledge the message.",
+			Description:  "This value is the maximum time after a Pub/Sub subscriber receives a message before the subscriber should acknowledge the message.",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			Default:      10,
 			ValidateFunc: validation.IntBetween(10, 600),
 		},
 		"message_retention_duration": {
-			Description:  "How long to retain unacknowledged messages in the subscription's backlog, from the moment a message is published. If retain_acked_messages is true, then this also configures the retention of acknowledged messages, and thus configures how far back in time a subscriptions.seek can be done. Defaults to 7 days. Cannot be more than 7 days.",
+			Description:  "How long to retain unacknowledged messages in the Pub/Sub subscription's backlog, from the moment a message is published. If retain_acked_messages is true, then this also configures the retention of acknowledged messages, and thus configures how far back in time a subscriptions.seek can be done. Defaults to 7 days. Cannot be more than 7 days.",
 			Type:         schema.TypeString,
 			Optional:     true,
 			Default:      "604800s",
@@ -261,7 +264,7 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"filter": {
-			Description: "The subscription only delivers the messages that match the filter. Pub/Sub automatically acknowledges the messages that don't match the filter. You can filter messages by their attributes. The maximum length of a filter is 256 bytes. After creating the subscription, you can't modify the filter.",
+			Description: "The Pub/Sub subscription only delivers the messages that match the filter. Pub/Sub automatically acknowledges the messages that don't match the filter. You can filter messages by their attributes. The maximum length of a filter is 256 bytes. After creating the subscription, you can't modify the filter.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    true,
@@ -271,6 +274,7 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
+			ForceNew:    true,
 		},
 		"enable_exactly_once_delivery": {
 			Description: "If true, Pub/Sub provides the following guarantees for the delivery of a message with a given value of messageId on this Subscriptions': * The message sent to a subscriber is guaranteed not to be resent before the message's acknowledgement deadline expires. * An acknowledged message will not be resent to a subscriber. Note that subscribers may still receive multiple copies of a message when enable_exactly_once_delivery is true if the message was published multiple times by a publisher client. These copies are considered distinct by Pub/Sub and have distinct messageId values",
@@ -295,7 +299,7 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 			},
 		},
 		"dead_letter_policy": {
-			Description: "A policy that specifies the conditions for dead lettering messages in this subscription. If dead_letter_policy is not set, dead lettering is disabled",
+			Description: "A policy that specifies the conditions for dead lettering messages in this Pub/Sub subscription. If dead_letter_policy is not set, dead lettering is disabled",
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
@@ -319,7 +323,7 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 			},
 		},
 		"retry_policy": {
-			Description: "A policy that specifies how Pub/Sub retries message delivery for this subscription. If not set, the default retry policy is applied. This generally implies that messages will be retried as soon as possible for healthy subscribers. RetryPolicy will be triggered on NACKs or acknowledgement deadline exceeded events for a given message",
+			Description: "A policy that specifies how Pub/Sub retries message delivery for this Pub/Sub subscription. If not set, the default retry policy is applied. This generally implies that messages will be retried as soon as possible for healthy subscribers. RetryPolicy will be triggered on NACKs or acknowledgement deadline exceeded events for a given message",
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
@@ -345,7 +349,7 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 		},
 
 		"labels": {
-			Description: "A set of key/value label pairs to assign to this Subscription",
+			Description: "A set of key/value label pairs to assign to this Pub/Sub Subscription",
 			Type:        schema.TypeMap,
 			Optional:    true,
 			Computed:    true,
@@ -357,6 +361,7 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 // Resource for managing an AWS ElasticSearch instance
 func resourceGCPPubSubSubscription() *schema.Resource {
 	return &schema.Resource{
+		Description:   "duplocloud_gcp_pubsub_subscription resource helps to create and manage Pub/Sub subscription",
 		ReadContext:   resourceGCPPubSubSubscriptionRead,
 		CreateContext: resourceGCPPubSubSubscriptionCreate,
 		UpdateContext: resourceGCPPubSubSubscriptionUpdate,
@@ -383,15 +388,15 @@ func resourceGCPPubSubSubscriptionRead(ctx context.Context, d *schema.ResourceDa
 		return diag.Errorf("resourceGCPPubSubSubscriptionRead: Invalid resource (ID: %s)", id)
 	}
 	tenantID := idParts[0]
-	name := d.Get("topic_fullname").(string)
+	name := idParts[1]
 	c := m.(*duplosdk.Client)
 
 	// Figure out the full resource name.
 
 	// Get the object from Duplo
 	duplo, err := c.GCPTenantGetPubSubSubscription(tenantID, name)
-	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceGCPPubSubSubscriptionRead: Unable to retrieve pubsub subscription (tenant: %s, bucket: %s, error: %s)", tenantID, name, err)
+	if err != nil {
+		return diag.Errorf("resourceGCPPubSubSubscriptionRead: Unable to retrieve pubsub subscription (tenant: %s, pubsub subscription: %s, error: %s)", tenantID, name, err)
 	}
 
 	flattenPubSubSubscription(duplo, d)
@@ -402,7 +407,7 @@ func resourceGCPPubSubSubscriptionRead(ctx context.Context, d *schema.ResourceDa
 
 // CREATE resource
 func resourceGCPPubSubSubscriptionCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGCPStorageBucketV2Create ******** start")
+	log.Printf("[TRACE] resourceGCPPubSubSubscriptionCreate ******** start")
 	c := m.(*duplosdk.Client)
 
 	tenantID := d.Get("tenant_id").(string)
@@ -424,10 +429,9 @@ func resourceGCPPubSubSubscriptionCreate(ctx context.Context, d *schema.Resource
 		return diags
 	}
 	d.SetId(id)
-
 	// Set simple fields first.
 	resourceGCPPubSubSubscriptionRead(ctx, d, m)
-	log.Printf("[TRACE] resourceGCPStorageBucketV2Create ******** end")
+	log.Printf("[TRACE] resourceGCPPubSubSubscriptionCreate ******** end")
 	return nil
 }
 
@@ -444,11 +448,11 @@ func resourceGCPPubSubSubscriptionUpdate(ctx context.Context, d *schema.Resource
 	reqBody := expandPubSubSubscription(d)
 
 	c := m.(*duplosdk.Client)
-	topic := d.Get("topic_fullname").(string)
+	//topic := d.Get("topic").(string)
 	// Post the object to Duplo
-	_, err := c.GCPTenantUpdatePubSubSubscription(idParts[0], *reqBody, topic)
-	if err != nil && !err.PossibleMissingAPI() {
-		return diag.Errorf("resourceGCPPubSubSubscriptionUpdate: Unable to update storage bucket using v3 api (tenant: %s, bucket: %s: error: %s)", idParts[0], reqBody.Name, err)
+	_, err := c.GCPTenantUpdatePubSubSubscription(idParts[0], *reqBody, reqBody.Topic)
+	if err != nil {
+		return diag.Errorf("resourceGCPPubSubSubscriptionUpdate: Unable to update pubsub subscription using v3 api (tenant: %s, subscription: %s topic: %s,  error: %s)", idParts[0], reqBody.Name, reqBody.Topic, err)
 	}
 	resourceGCPPubSubSubscriptionRead(ctx, d, m)
 
@@ -467,14 +471,14 @@ func resourceGCPPubSubSubscriptionDelete(ctx context.Context, d *schema.Resource
 	if len(idParts) < 2 {
 		return diag.Errorf("resourceGCPPubSubSubscriptionDelete: Invalid resource (ID: %s)", id)
 	}
-	topic := d.Get("topic_fullname").(string)
+	topic := d.Get("fullname").(string)
 	err := c.GCPTenantDeletePubSubSubscription(idParts[0], topic)
 	if err != nil {
-		return diag.Errorf("resourceGCPPubSubSubscriptionDelete: Unable to delete bucket (name:%s, error: %s)", id, err)
+		return diag.Errorf("resourceGCPPubSubSubscriptionDelete: Unable to delete pubsub subscription (name:%s, error: %s)", id, err)
 	}
 
-	// Wait up to 60 seconds for Duplo to delete the bucket.
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "bucket", id, func() (interface{}, duplosdk.ClientError) {
+	// Wait up to 60 seconds for Duplo to delete the pubsub subscription.
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "pubsub subscription", id, func() (interface{}, duplosdk.ClientError) {
 		return c.GCPTenantGetPubSubSubscription(idParts[0], topic)
 	})
 	if diag != nil {
@@ -557,51 +561,56 @@ func flattenCloudStorageConfig(rb *duplosdk.DuploPubSubCloudStorageConfigReapons
 }
 
 func expandPushConfig(d *schema.ResourceData) *duplosdk.DuploPubSubPushConfig {
+	emp := expandAsStringMap("push_config.0.attributes", d)
 	return &duplosdk.DuploPubSubPushConfig{
 		PushEndpoint: d.Get("push_config.0.push_endpoint").(string),
-		Attributes:   expandAsStringMap("push_config.0.attributes", d),
-		OidcToken: struct {
-			ServiceAccountEmail string `json:"serviceAccountEmail"`
-			Audience            string `json:"audience"`
-		}{
+		Attributes:   emp,
+		OidcToken: &duplosdk.DuploPubSubPushConfigOidcToken{
 			ServiceAccountEmail: d.Get("push_config.0.oidc_token.0.service_account_email").(string),
 			Audience:            d.Get("push_config.0.oidc_token.0.audience").(string),
 		},
 
-		NoWrapper: struct {
-			WriteMetadata bool `json:"writeMetadata"`
-		}{
+		NoWrapper: &duplosdk.DuploPubSubPushConfigNoWrapper{
 			WriteMetadata: d.Get("push_config.0.no_wrapper.0.write_metadata").(bool),
 		},
 	}
 }
 
 func flattenPushConfig(rb *duplosdk.DuploPubSubPushConfig) []interface{} {
-	omp := map[string]interface{}{
-		"service_account_email": rb.OidcToken.ServiceAccountEmail,
-		"audience":              rb.OidcToken.Audience,
-	}
-	ompList := make([]interface{}, 0, 1)
-	ompList = append(ompList, omp)
-
-	nwmp := map[string]interface{}{
-		"write_metadata": rb.NoWrapper.WriteMetadata,
-	}
-	nwmpList := make([]interface{}, 0, 1)
-	nwmpList = append(nwmpList, nwmp)
-	mp := map[string]interface{}{
-		"push_endpoint": rb.PushEndpoint,
-		"attributes":    flattenStringMap(rb.Attributes),
-		"oidc_token":    ompList,
-		"no_wrapper":    nwmpList,
-	}
+	mp := map[string]interface{}{}
 	config := make([]interface{}, 0, 1)
-	config = append(config, mp)
+
+	if rb.OidcToken != nil {
+		omp := map[string]interface{}{
+			"service_account_email": rb.OidcToken.ServiceAccountEmail,
+			"audience":              rb.OidcToken.Audience,
+		}
+		ompList := make([]interface{}, 0, 1)
+		ompList = append(ompList, omp)
+		mp["oidc_token"] = ompList
+	}
+	if rb.NoWrapper != nil {
+		nwmp := map[string]interface{}{
+			"write_metadata": rb.NoWrapper.WriteMetadata,
+		}
+		nwmpList := make([]interface{}, 0, 1)
+		nwmpList = append(nwmpList, nwmp)
+		mp["no_wrapper"] = nwmpList
+	}
+	if rb.PushEndpoint != "" {
+		mp["push_endpoint"] = rb.PushEndpoint
+	}
+	if len(rb.Attributes) > 0 {
+		fmp := flattenStringMap(rb.Attributes)
+		mp["attributes"] = fmp
+	}
+	if len(mp) > 0 {
+		config = append(config, mp)
+	}
 	return config
 }
 
 func expandPubSubSubscription(d *schema.ResourceData) *duplosdk.DuploPubSubSubscription {
-
 	obj := &duplosdk.DuploPubSubSubscription{
 		Name:                      d.Get("name").(string),
 		Topic:                     d.Get("topic").(string),
@@ -617,6 +626,7 @@ func expandPubSubSubscription(d *schema.ResourceData) *duplosdk.DuploPubSubSubsc
 	if _, ok := d.GetOk("big_query"); ok {
 		obj.BigQuery = expandBigQuery(d)
 		obj.Type = "BigQuery"
+
 	}
 	if _, ok := d.GetOk("cloud_storage_config"); ok {
 		obj.CloudStorageConfig = expandCloudStorageConfig(d)
@@ -641,7 +651,7 @@ func expandPubSubSubscription(d *schema.ResourceData) *duplosdk.DuploPubSubSubsc
 func flattenPubSubSubscription(rb *duplosdk.DuploPubSubSubscriptionResponse, d *schema.ResourceData) {
 
 	mp := map[string]interface{}{
-		"name":                         rb.Name,
+		"fullname":                     rb.Name,
 		"ack_deadline_seconds":         rb.AckDeadlineSeconds,
 		"message_retention_duration":   rb.MessageRetentionDuration,
 		"retain_acked_messages":        rb.RetainAckedMessages,
@@ -649,10 +659,8 @@ func flattenPubSubSubscription(rb *duplosdk.DuploPubSubSubscriptionResponse, d *
 		"enable_message_ordering":      rb.EnableMessageOrdering,
 		"enable_exactly_once_delivery": rb.EnableExactlyOnceDelivery,
 	}
-	if rb.Topic != "" {
-		mp["topic_fullname"] = rb.Topic
-		token := strings.Split(rb.Topic, "/")
-		mp["topic"] = token[len(token)-1]
+	if rb.PushConfig != nil {
+		mp["push_config"] = flattenPushConfig(rb.PushConfig)
 	}
 	if rb.BigQuery != nil {
 		mp["big_query"] = flattenBigQuery(rb.BigQuery)
@@ -660,9 +668,7 @@ func flattenPubSubSubscription(rb *duplosdk.DuploPubSubSubscriptionResponse, d *
 	if rb.CloudStorageConfig != nil {
 		mp["cloud_storage_config"] = flattenCloudStorageConfig(rb.CloudStorageConfig)
 	}
-	if rb.PushConfig != nil {
-		mp["push_config"] = flattenPushConfig(rb.PushConfig)
-	}
+
 	if rb.DeadLetterPolicy != nil {
 		mp["dead_letter_policy"] = flattenDeadLetterPolicy(rb.DeadLetterPolicy)
 	}

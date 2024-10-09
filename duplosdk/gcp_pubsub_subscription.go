@@ -56,18 +56,20 @@ type DuploPubSubCloudStorageConfigReaponse struct {
 }
 
 type DuploPubSubPushConfig struct {
-	PushEndpoint string            `json:"pushEndpoint"`
-	Attributes   map[string]string `json:"attributes"`
-	OidcToken    struct {
-		ServiceAccountEmail string `json:"serviceAccountEmail"`
-		Audience            string `json:"audience"`
-	} `json:"oidcToken"`
+	PushEndpoint string                          `json:"pushEndpoint,omitempty"`
+	Attributes   map[string]string               `json:"attributes,omitempty"`
+	OidcToken    *DuploPubSubPushConfigOidcToken `json:"oidcToken,omitempty"`
 
-	NoWrapper struct {
-		WriteMetadata bool `json:"writeMetadata"`
-	} `json:"noWrapper"`
+	NoWrapper *DuploPubSubPushConfigNoWrapper `json:"noWrapper,omitempty"`
+}
+type DuploPubSubPushConfigOidcToken struct {
+	ServiceAccountEmail string `json:"serviceAccountEmail,omitempty"`
+	Audience            string `json:"audience,omitempty"`
 }
 
+type DuploPubSubPushConfigNoWrapper struct {
+	WriteMetadata bool `json:"writeMetadata,omitempty"`
+}
 type DuploPubSubSubscription struct {
 	Name                      string                         `json:"name"`
 	Topic                     string                         `json:"topic"`
