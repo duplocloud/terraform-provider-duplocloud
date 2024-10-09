@@ -169,6 +169,7 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_storage_bucket_v2":              resourceGCPStorageBucketV2(),
 			"duplocloud_aws_lambda_function_event_config":   resourceAwsLambdaEventInvokeConfigFunction(),
 			"duplocloud_azure_postgresql_flexible_database": resourceAzurePostgresqlFlexibleDatabase(),
+			"duplocloud_gcp_infra_maintenance_window":       resourceGCPInfraMaintenanceWindow(),
 			"duplocloud_azure_storageclass_blob":            resourceAzureStorageBlob(),
 			"duplocloud_azure_storageclass_queue":           resourceAzureStorageQueue(),
 			"duplocloud_azure_storageclass_table":           resourceAzureStorageTable(),
