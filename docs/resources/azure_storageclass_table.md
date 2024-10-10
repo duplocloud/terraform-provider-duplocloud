@@ -24,11 +24,11 @@ description: |-
 ### Optional
 
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `url` (String) The URL of the Table, will be a computed value.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `url` (String) The URL of the Table.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
