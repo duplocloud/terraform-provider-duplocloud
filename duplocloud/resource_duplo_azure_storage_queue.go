@@ -37,7 +37,6 @@ func duploAzureStorageQueueSchema() map[string]*schema.Schema {
 			Description: "The URL of the Queue.",
 			Type:        schema.TypeString,
 			Computed:    true,
-			Optional:    true,
 		},
 	}
 }
@@ -48,7 +47,6 @@ func resourceAzureStorageQueue() *schema.Resource {
 
 		ReadContext:   resourceAzureStorageQueueRead,
 		CreateContext: resourceAzureStorageQueueCreate,
-		UpdateContext: resourceAzureStorageQueueUpdate,
 		DeleteContext: resourceAzureStorageQueueDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -118,10 +116,6 @@ func resourceAzureStorageQueueCreate(ctx context.Context, d *schema.ResourceData
 	diags = resourceAzureStorageQueueRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzureStorageQueueCreate(%s, %s): end", tenantID, name)
 	return diags
-}
-
-func resourceAzureStorageQueueUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil // Backend doesn't support update.
 }
 
 func resourceAzureStorageQueueDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

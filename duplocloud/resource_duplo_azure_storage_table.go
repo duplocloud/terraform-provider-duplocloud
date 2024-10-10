@@ -37,7 +37,6 @@ func duploAzureStorageTableSchema() map[string]*schema.Schema {
 			Description: "The URL of the Table.",
 			Type:        schema.TypeString,
 			Computed:    true,
-			Optional:    true,
 		},
 	}
 }
@@ -48,7 +47,6 @@ func resourceAzureStorageTable() *schema.Resource {
 
 		ReadContext:   resourceAzureStorageTableRead,
 		CreateContext: resourceAzureStorageTableCreate,
-		UpdateContext: resourceAzureStorageTableUpdate,
 		DeleteContext: resourceAzureStorageTableDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -118,10 +116,6 @@ func resourceAzureStorageTableCreate(ctx context.Context, d *schema.ResourceData
 	diags = resourceAzureStorageTableRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzureStorageTableCreate(%s, %s): end", tenantID, name)
 	return diags
-}
-
-func resourceAzureStorageTableUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil // Backend doesn't support update.
 }
 
 func resourceAzureStorageTableDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
