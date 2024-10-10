@@ -96,9 +96,11 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Description: "List of metrics to collect for the ASG Specify one or more of the following metrics.`GroupMinSize`,`GroupMaxSize`,`GroupDesiredCapacity`,`GroupInServiceInstances`,`GroupPendingInstances`,`GroupStandbyInstances`,`GroupTerminatingInstances`,`GroupTotalInstances`,`GroupInServiceCapacity`,`GroupPendingCapacity`,`GroupStandbyCapacity`,`GroupTerminatingCapacity`,`GroupTotalCapacity`,`WarmPoolDesiredCapacity`,`WarmPoolWarmedCapacity`,`WarmPoolPendingCapacity`,`WarmPoolTerminatingCapacity`,`WarmPoolTotalCapacity`,`GroupAndWarmPoolDesiredCapacity`,`GroupAndWarmPoolTotalCapacity`.",
 		Type:        schema.TypeList,
 		Optional:    true,
+		ForceNew:    true,
 		Elem: &schema.Schema{
 			Type:         schema.TypeString,
 			ValidateFunc: validation.StringInSlice([]string{"GroupMinSize", "GroupMaxSize", "GroupDesiredCapacity", "GroupInServiceInstances", "GroupPendingInstances", "GroupStandbyInstances", "GroupTerminatingInstances", "GroupTotalInstances", "GroupInServiceCapacity", "GroupPendingCapacity", "GroupStandbyCapacity", "GroupTerminatingCapacity", "GroupTotalCapacity", "WarmPoolDesiredCapacity", "WarmPoolWarmedCapacity", "WarmPoolPendingCapacity", "WarmPoolTerminatingCapacity", "WarmPoolTotalCapacity", "GroupAndWarmPoolDesiredCapacity", "GroupAndWarmPoolTotalCapacity"}, true),
+			ForceNew:     true,
 		},
 	}
 
@@ -315,11 +317,11 @@ func resourceAwsASGDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	// Parse the identifying attributes
 	id := d.Id()
 	log.Printf("[TRACE] resourceAwsASGDelete(%s): start", id)
-	tenantID, friendlyName, err := asgProfileIdParts(id)
+	tenantID, _, err := asgProfileIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	friendlyName := d.Get("fullname").(string)
 	// Check if the ASG Profile exists
 	c := m.(*duplosdk.Client)
 	exists, err := c.AsgProfileExists(tenantID, friendlyName)
