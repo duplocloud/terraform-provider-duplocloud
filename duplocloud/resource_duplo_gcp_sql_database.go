@@ -98,7 +98,7 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Description: "Flag to enable backup process on delete of database",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Default:     true,
+			Default:     false,
 		},
 	}
 }
