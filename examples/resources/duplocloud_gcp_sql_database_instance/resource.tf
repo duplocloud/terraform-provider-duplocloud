@@ -15,3 +15,15 @@ resource "duplocloud_gcp_sql_database_instance" "sql_instance" {
   }
 }
 
+
+// Backup configuration example
+resource "duplocloud_gcp_sql_database_instance" "sql" {
+  tenant_id        = duplocloud_tenant.myapp.tenant_id
+  name             = "mysqlbckp"
+  database_version = "POSTGRES_14"
+  disk_size        = 10
+  tier             = "db-f1-micro"
+
+  root_password = "qwerty"
+  need_backup   = true
+}
