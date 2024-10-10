@@ -704,23 +704,14 @@ func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 				Summary:  "the value of 'snapshot_window' must be in the format 'HH:MM-HH:MM', for example '05:00-09:00'",
 			})
 		}
-
-		startTime, err1 := time.Parse("15:04", times[0])
-		endTime, err2 := time.Parse("15:04", times[1])
+		_, err1 := time.Parse("15:04", times[0])
+		_, err2 := time.Parse("15:04", times[1])
 		if err1 != nil || err2 != nil {
 			return append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "the value of 'snapshot_window' must be in the format 'HH:MM-HH:MM', for example '05:00-09:00'",
 			})
 		}
-
-		if !endTime.After(startTime) {
-			return append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "the start time in 'snapshot_window' must be earlier than the end time",
-			})
-		}
-
 		return nil
 	}
 }
