@@ -189,7 +189,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 		},
 		"snapshot_window": {
 			Description:      "Specify snapshot window limit The daily time range (in UTC) during which ElastiCache begins taking a daily snapshot of your node group (shard). Example: 05:00-09:00. If you do not specify this parameter, ElastiCache automatically chooses an appropriate time range.",
-			Type:             schema.TypeInt,
+			Type:             schema.TypeString,
 			Optional:         true,
 			Computed:         true,
 			ValidateDiagFunc: isValidSnapshotWindow(),
