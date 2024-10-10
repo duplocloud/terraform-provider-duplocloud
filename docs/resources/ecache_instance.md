@@ -169,7 +169,7 @@ See AWS documentation for the [available Redis instance types](https://docs.aws.
 - `snapshot_arns` (List of String) Specify the ARN of a Redis RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html
 - `snapshot_name` (String) Select the snapshot/backup you want to use for creating redis.
 - `snapshot_retention_limit` (Number) Specify retention limit in days. Accepted values - 1-35.
-- `snapshot_window` (Number) Specify snapshot window limit The daily time range (in UTC) during which ElastiCache begins taking a daily snapshot of your node group (shard). Example: 05:00-09:00. If you do not specify this parameter, ElastiCache automatically chooses an appropriate time range.
+- `snapshot_window` (String) Specify snapshot window limit The daily time range (in UTC) during which ElastiCache begins taking a daily snapshot of your node group (shard). Example: 05:00-09:00. If you do not specify this parameter, ElastiCache automatically chooses an appropriate time range.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
