@@ -676,7 +676,6 @@ func removePatchVersion(version string) string {
 	}
 	return version
 }
-
 func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 
 	return func(i interface{}, path cty.Path) diag.Diagnostics {
@@ -689,7 +688,8 @@ func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 		if !ok {
 			return append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "the type of 'snapshot_window' must be a string",
+				Summary:  "Invalid input type for 'snapshot_window'. Expected a string.",
+				Detail:   "The 'snapshot_window' value must be a string formatted as 'HH:MM-HH:MM'.",
 			})
 		}
 
@@ -701,17 +701,34 @@ func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 		if len(times) != 2 {
 			return append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "the value of 'snapshot_window' must be in the format 'HH:MM-HH:MM', for example '05:00-09:00'",
+				Summary:  "Invalid 'snapshot_window' format.",
+				Detail:   fmt.Sprintf("The value '%s' must be in the format 'HH:MM-HH:MM'. For example, '05:00-09:00' is valid.", v),
 			})
 		}
-		_, err1 := time.Parse("15:04", times[0])
-		_, err2 := time.Parse("15:04", times[1])
+
+		startTime, err1 := time.Parse("15:04", times[0])
+		endTime, err2 := time.Parse("15:04", times[1])
 		if err1 != nil || err2 != nil {
 			return append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "the value of 'snapshot_window' must be in the format 'HH:MM-HH:MM', for example '05:00-09:00'",
+				Summary:  "Invalid time format in 'snapshot_window'.",
+				Detail:   fmt.Sprintf("Both start and end times in '%s' must follow the 'HH:MM' 24-hour format. For example, '05:00-09:00' is valid.", v),
 			})
 		}
+
+		timeDiff := endTime.Sub(startTime)
+		if timeDiff < 0 {
+			timeDiff += 24 * time.Hour
+		}
+
+		if timeDiff < time.Hour {
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Insufficient time window in 'snapshot_window'.",
+				Detail:   fmt.Sprintf("The time difference between the start ('%s') and end ('%s') must be at least 1 hour. For example, '05:00-06:00' is valid, but '05:00-05:30' is not.", times[0], times[1]),
+			})
+		}
+
 		return nil
 	}
 }
