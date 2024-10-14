@@ -725,7 +725,7 @@ func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 			return append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Insufficient time window in 'snapshot_window'.",
-				Detail:   fmt.Sprintf("The time difference between the start ('%s') and end ('%s') must be at least 30 minute. For example, '05:00-06:00' is valid, but '05:00-05:30' is not.", times[0], times[1]),
+				Detail:   fmt.Sprintf("The time difference between the start ('%s') and end ('%s') must be at least 30 minutes. For example, '05:00-05:30' is valid, but '05:00-05:20' is not.", times[0], times[1]),
 			})
 		}
 
