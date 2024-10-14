@@ -24,11 +24,11 @@ description: |-
 ### Optional
 
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `url` (String) The URL of the Blob.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `url` (String) The URL of the Blob.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
