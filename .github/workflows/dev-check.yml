@@ -22,7 +22,7 @@ jobs:
           cache: false
       - 
         name: Run linting
-        uses: golangci/golangci-lint-action@v5
+        uses: golangci/golangci-lint-action@v6
         with:
           only-new-issues: true  # Only show new issues for pull requests.
           args: --timeout=5m
