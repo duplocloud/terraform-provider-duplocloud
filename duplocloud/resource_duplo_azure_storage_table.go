@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -28,10 +29,11 @@ func duploAzureStorageTableSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"name": {
-			Description: "The name of the Table. Changing this forces a new resource to be created.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:  "The name of the Table. Changing this forces a new resource to be created.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9-]{3,63}$`), "Invalid table name. Name should be between 3 to 63 character, Can contain alphanumeric and hypen character."),
 		},
 		"url": {
 			Description: "The URL of the Table.",
