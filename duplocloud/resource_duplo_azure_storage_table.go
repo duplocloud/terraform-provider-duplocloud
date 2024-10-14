@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
@@ -28,16 +29,16 @@ func duploAzureStorageTableSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"name": {
-			Description: "The name of the Table. Changing this forces a new resource to be created.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:  "The name of the Table. Changing this forces a new resource to be created.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9-]{3,63}$`), "Invalid table name. Name should be between 3 to 63 character, Can contain alphanumeric and hypen character."),
 		},
 		"url": {
 			Description: "The URL of the Table.",
 			Type:        schema.TypeString,
 			Computed:    true,
-			Optional:    true,
 		},
 	}
 }
@@ -48,7 +49,6 @@ func resourceAzureStorageTable() *schema.Resource {
 
 		ReadContext:   resourceAzureStorageTableRead,
 		CreateContext: resourceAzureStorageTableCreate,
-		UpdateContext: resourceAzureStorageTableUpdate,
 		DeleteContext: resourceAzureStorageTableDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -118,10 +118,6 @@ func resourceAzureStorageTableCreate(ctx context.Context, d *schema.ResourceData
 	diags = resourceAzureStorageTableRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzureStorageTableCreate(%s, %s): end", tenantID, name)
 	return diags
-}
-
-func resourceAzureStorageTableUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil // Backend doesn't support update.
 }
 
 func resourceAzureStorageTableDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
