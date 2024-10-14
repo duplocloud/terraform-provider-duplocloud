@@ -154,7 +154,11 @@ func resourceGcpSqlDBInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	}
 	c := m.(*duplosdk.Client)
 
-	fullName := d.Get("fullname").(string)
+	//fullName := d.Get("fullname").(string)
+	fullName, clientErr := c.GetDuploServicesNameWithGcp(tenantID, name, false)
+	if clientErr != nil {
+		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+	}
 	duplo, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
@@ -163,6 +167,7 @@ func resourceGcpSqlDBInstanceRead(ctx context.Context, d *schema.ResourceData, m
 		}
 		return diag.Errorf("Unable to retrieve tenant %s gcp sql database '%s': %s", tenantID, fullName, clientErr)
 	}
+
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
@@ -209,7 +214,6 @@ func resourceGcpSqlDBInstanceCreate(ctx context.Context, d *schema.ResourceData,
 			return diag.FromErr(err)
 		}
 	}
-	d.Set("fullname", fullName)
 	resourceGcpSqlDBInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceGcpSqlDBInstanceCreate ******** end")
 	return diags
