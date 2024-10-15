@@ -112,10 +112,15 @@ func (c *Client) GCPSqlDBInstanceGet(tenantID string, name string) (*DuploGCPSql
 	return &rp, err
 }
 
-func (c *Client) GCPSqlDBInstanceDelete(tenantID string, name string) ClientError {
+func (c *Client) GCPSqlDBInstanceDelete(tenantID string, name string, backup bool) ClientError {
+	uri := fmt.Sprintf("v3/subscriptions/%s/google/database/%s", tenantID, name)
+	if backup {
+		uri = fmt.Sprintf("v3/subscriptions/%s/google/database/%s?needBackup=%t", tenantID, name, backup)
+	}
+
 	return c.deleteAPI(
 		fmt.Sprintf("GCPSqlDBInstanceDelete(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/google/database/%s", tenantID, name),
+		uri,
 		nil,
 	)
 }
