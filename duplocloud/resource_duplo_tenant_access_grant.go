@@ -114,7 +114,7 @@ func resourceTenantAccessGrantCreate(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(clientError)
 	}
 	id := fmt.Sprintf("%s/%s/%s", granteeTenantId, grantorTenantId, grantedArea)
-	waitForResourceToBePresentAfterCreate(ctx, d, "tenant access grant", id, func() (interface{}, duplosdk.ClientError) {
+	diag := waitForResourceToBePresentAfterCreate(ctx, d, "tenant access grant", id, func() (interface{}, duplosdk.ClientError) {
 		resp, err := c.GetTenantAccessGrantStatus(granteeTenantId, grantorTenantId, grantedArea)
 		if err != nil {
 			return nil, err
@@ -126,6 +126,9 @@ func resourceTenantAccessGrantCreate(ctx context.Context, d *schema.ResourceData
 		}
 		return resp, nil
 	})
+	if diag != nil {
+		return diag
+	}
 
 	d.SetId(id)
 
