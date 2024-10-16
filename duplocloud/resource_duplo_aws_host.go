@@ -376,7 +376,7 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Apply the data
-	nativeHostToState(d, duplo)
+	nativeHostToState(d, duplo, c)
 
 	log.Printf("[TRACE] resourceAwsHostRead(%s): end", id)
 	return nil
@@ -672,7 +672,7 @@ func expandNativeHostNetworkInterfaces(key string, d *schema.ResourceData) *[]du
 	return &result
 }
 
-func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) {
+func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost, c *duplosdk.Client) {
 	d.Set("instance_id", duplo.InstanceID)
 	d.Set("user_account", duplo.UserAccount)
 	d.Set("tenant_id", duplo.TenantID)
@@ -706,9 +706,13 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	//d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
-	if duplo.Taints != nil {
-		d.Set("taints", flattenTaints(*duplo.Taints))
+	if duplo.IsMinion {
+		obj, _ := c.GetMinionForHost(duplo.TenantID, duplo.InstanceID)
+		if obj.Taints != nil {
+			d.Set("taints", flattenTaints(*obj.Taints))
+		}
 	}
+
 }
 
 func flattenTaints(taints []duplosdk.DuploTaints) []interface{} {
