@@ -54,12 +54,12 @@ func (c *Client) GetResourceName(prefix, tenantID, name string, withAccountSuffi
 }
 
 // GetDuploServicesNameWithGcp builds a duplo resource name, given a tenant ID. The name includes the Gcp project ID suffix.
-func (c *Client) GetDuploServicesNameWithGcp(tenantID, name string) (string, ClientError) {
-	return c.GetResourceNameWithGcp("duploservices", tenantID, name)
+func (c *Client) GetDuploServicesNameWithGcp(tenantID, name string, suffix bool) (string, ClientError) {
+	return c.GetResourceNameWithGcp("duploservices", tenantID, name, suffix)
 }
 
 // GetDuploServicesNameWithGcp builds a duplo resource name, given a tenant ID. The name includes the Gcp project ID suffix.
-func (c *Client) GetResourceNameWithGcp(prefix, tenantID, name string) (string, ClientError) {
+func (c *Client) GetResourceNameWithGcp(prefix, tenantID, name string, suffix bool) (string, ClientError) {
 	tenant, err := c.GetTenantForUser(tenantID)
 	if err != nil {
 		return "", err
@@ -69,7 +69,10 @@ func (c *Client) GetResourceNameWithGcp(prefix, tenantID, name string) (string, 
 		return "", err
 	}
 
-	return strings.Join([]string{prefix, tenant.AccountName, name, projectID}, "-"), nil
+	if suffix {
+		return strings.Join([]string{prefix, tenant.AccountName, name, projectID}, "-"), nil
+	}
+	return strings.Join([]string{prefix, tenant.AccountName, name}, "-"), nil
 }
 
 // GetDuploServicesPrefix builds a duplo resource name, given a tenant ID.
