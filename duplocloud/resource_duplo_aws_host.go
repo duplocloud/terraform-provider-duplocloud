@@ -264,6 +264,38 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Elem:             &schema.Schema{Type: schema.TypeString},
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
+
+		"taints": {
+			Description: "Specify taints to attach to the nodes, to repel other nodes with different toleration",
+			Type:        schema.TypeList,
+			Optional:    true,
+			ForceNew:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"key": {
+						Type:     schema.TypeString,
+						Optional: true,
+						ForceNew: true,
+					},
+					"value": {
+						Type:     schema.TypeString,
+						Optional: true,
+						ForceNew: true,
+					},
+					"effect": {
+						Description: "Update strategy of the node.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						ValidateFunc: validation.StringInSlice([]string{
+							"NoSchedule",
+							"PreferNoSchedule.",
+							"NoExecute",
+						}, false),
+						ForceNew: true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -532,6 +564,19 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
+	obj := []duplosdk.DuploTaints{}
+	if val, ok := d.Get("taints").([]interface{}); ok {
+		for _, dt := range val {
+			m := dt.(map[string]interface{})
+			taints := duplosdk.DuploTaints{
+				Key:    m["key"].(string),
+				Value:  m["value"].(string),
+				Effect: m["effect"].(string),
+			}
+			obj = append(obj, taints)
+
+		}
+	}
 	return &duplosdk.DuploNativeHost{
 		TenantID:          d.Get("tenant_id").(string),
 		InstanceID:        d.Get("instance_id").(string),
@@ -555,6 +600,7 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		Volumes:           expandNativeHostVolumes("volume", d),
 		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
 		ExtraNodeLabels:   keyValueFromMap(d.Get("custom_node_labels").(map[string]interface{})),
+		Taints:            &obj,
 	}
 }
 
@@ -660,6 +706,22 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	//d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	if duplo.Taints != nil {
+		d.Set("taints", flattenTaints(*duplo.Taints))
+	}
+}
+
+func flattenTaints(taints []duplosdk.DuploTaints) []interface{} {
+	state := make([]interface{}, len(taints))
+	for i, t := range taints {
+		data := map[string]interface{}{
+			"key":    t.Key,
+			"value":  t.Value,
+			"effect": t.Effect,
+		}
+		state[i] = data
+	}
+	return state
 }
 
 func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []interface{} {

@@ -65,7 +65,7 @@ func dataSourceNativeHostsRead(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func flattenNativeHost(duplo *duplosdk.DuploNativeHost) map[string]interface{} {
-	return map[string]interface{}{
+	mp := map[string]interface{}{
 		"instance_id":         duplo.InstanceID,
 		"user_account":        duplo.UserAccount,
 		"tenant_id":           duplo.TenantID,
@@ -91,4 +91,8 @@ func flattenNativeHost(duplo *duplosdk.DuploNativeHost) map[string]interface{} {
 		"volume":              flattenNativeHostVolumes(duplo.Volumes),
 		"network_interface":   flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 	}
+	if duplo.Taints != nil {
+		mp["taints"] = flattenTaints(*duplo.Taints)
+	}
+	return mp
 }
