@@ -94,6 +94,12 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"need_backup": {
+			Description: "Flag to enable backup process on delete of database",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 	}
 }
 
@@ -148,7 +154,8 @@ func resourceGcpSqlDBInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	}
 	c := m.(*duplosdk.Client)
 
-	fullName, clientErr := c.GetDuploServicesName(tenantID, name)
+	//fullName := d.Get("fullname").(string)
+	fullName, clientErr := c.GetDuploServicesNameWithGcp(tenantID, name, false)
 	if clientErr != nil {
 		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
 	}
@@ -160,6 +167,7 @@ func resourceGcpSqlDBInstanceRead(ctx context.Context, d *schema.ResourceData, m
 		}
 		return diag.Errorf("Unable to retrieve tenant %s gcp sql database '%s': %s", tenantID, fullName, clientErr)
 	}
+
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
@@ -183,10 +191,6 @@ func resourceGcpSqlDBInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	c := m.(*duplosdk.Client)
-	fullName, clientErr := c.GetDuploServicesName(tenantID, rq.Name)
-	if clientErr != nil {
-		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
-	}
 	// Post the object to Duplo
 	resp, err := c.GCPSqlDBInstanceCreate(tenantID, rq)
 	if err != nil {
@@ -194,6 +198,8 @@ func resourceGcpSqlDBInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	id := fmt.Sprintf("%s/%s", tenantID, rq.Name)
+	fullName := resp.Name
+
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "gcp sql database", id, func() (interface{}, duplosdk.ClientError) {
 		return c.GCPSqlDBInstanceGet(tenantID, fullName)
 	})
@@ -208,7 +214,6 @@ func resourceGcpSqlDBInstanceCreate(ctx context.Context, d *schema.ResourceData,
 			return diag.FromErr(err)
 		}
 	}
-
 	resourceGcpSqlDBInstanceRead(ctx, d, m)
 	log.Printf("[TRACE] resourceGcpSqlDBInstanceCreate ******** end")
 	return diags
@@ -219,15 +224,12 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceGcpSqlDBInstanceUpdate ******** start")
 
 	id := d.Id()
-	tenantID, name, err := parseGcpSqlDatabaseIdParts(id)
+	tenantID, _, err := parseGcpSqlDatabaseIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	c := m.(*duplosdk.Client)
-	fullName, clientErr := c.GetDuploServicesName(tenantID, name)
-	if clientErr != nil {
-		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
-	}
+	fullName := d.Get("fullname").(string)
 	// Post the object to Duplo
 	duplo, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
 	if clientErr != nil {
@@ -265,15 +267,13 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 func resourceGcpSqlDBInstanceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpSqlDBInstanceDelete ******** start")
 	id := d.Id()
-	tenantID, name, err := parseGcpSqlDatabaseIdParts(id)
+	tenantID, _, err := parseGcpSqlDatabaseIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	c := m.(*duplosdk.Client)
-	fullName, clientErr := c.GetDuploServicesName(tenantID, name)
-	if clientErr != nil {
-		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
-	}
+	fullName := d.Get("fullname").(string)
+
 	resp, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
@@ -282,8 +282,8 @@ func resourceGcpSqlDBInstanceDelete(ctx context.Context, d *schema.ResourceData,
 		}
 		return diag.Errorf("Unable to retrieve tenant %s gpc sql database instance %s : %s", tenantID, resp.Name, clientErr)
 	}
-
-	clientErr = c.GCPSqlDBInstanceDelete(tenantID, fullName)
+	backup := d.Get("need_backup").(bool)
+	clientErr = c.GCPSqlDBInstanceDelete(tenantID, fullName, backup)
 	if clientErr != nil {
 		return diag.Errorf("Error deleting gcp sql database '%s': %s", id, clientErr)
 	}
