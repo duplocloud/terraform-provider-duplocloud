@@ -708,7 +708,7 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost, 
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 	if duplo.IsMinion {
 		obj, _ := c.GetMinionForHost(duplo.TenantID, duplo.InstanceID)
-		if obj.Taints != nil {
+		if obj != nil && obj.Taints != nil {
 			d.Set("taints", flattenTaints(*obj.Taints))
 		}
 	}
