@@ -93,7 +93,7 @@ func flattenNativeHost(duplo *duplosdk.DuploNativeHost, c *duplosdk.Client) map[
 	}
 	if duplo.IsMinion {
 		obj, _ := c.GetMinionForHost(duplo.TenantID, duplo.InstanceID)
-		if len(*obj.Taints) > 0 {
+		if obj != nil && obj.Taints != nil {
 			mp["taints"] = flattenTaints(*obj.Taints)
 		}
 	}
