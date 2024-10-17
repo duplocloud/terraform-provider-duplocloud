@@ -965,14 +965,14 @@ func nodeToMap(duplo duplosdk.Node) map[string]interface{} {
 		result["availability_domain"] = duplo.AvailabilityDomain
 
 	}
-	if duplo.DefinedTags != nil && len(duplo.DefinedTags) > 0 {
+	if len(duplo.DefinedTags) > 0 {
 		result["defined_tags"] = definedTagsToMap(duplo.DefinedTags)
 	}
 
 	if len(duplo.FaultDomain) > 0 {
 		result["fault_domain"] = duplo.FaultDomain
 	}
-	if duplo.FreeformTags != nil && len(duplo.FreeformTags) > 0 {
+	if len(duplo.FreeformTags) > 0 {
 		result["freeform_tags"] = duplo.FreeformTags
 	}
 	if len(duplo.Id) > 0 {
@@ -1009,7 +1009,7 @@ func nodeToMap(duplo duplosdk.Node) map[string]interface{} {
 		result["subnet_id"] = duplo.SubnetId
 	}
 
-	if duplo.SystemTags != nil && len(duplo.SystemTags) > 0 {
+	if len(duplo.SystemTags) > 0 {
 		result["system_tags"] = systemTagsToMap(duplo.SystemTags)
 	}
 
