@@ -1055,3 +1055,32 @@ func (c *Client) TenantDeleteV3S3BucketReplication(tenantID, sourceBucket, ruleF
 		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/replication/%s", tenantID, sourceBucket, ruleFullName),
 		nil)
 }
+
+type DuploS3EventNotificaition struct {
+	SQSName           string   `json:"SqsName,omitempty"`
+	SQSARN            string   `json:"SqsArn,omitempty"`
+	SNSName           string   `json:"SnsName,omitempty"`
+	SNSARN            string   `json:"SnsArn,omitempty"`
+	LambdaName        string   `json:"LambdaName,omitempty"`
+	LambdaARN         string   `json:"LambdaArn,omitempty"`
+	EventTypes        []string `json:"EventTypes"`
+	EnableEventBridge bool     `json:"EnableEventBridge"`
+}
+
+func (c *Client) UpdateS3EventNotification(tenantID, bucketName string, duplo DuploS3EventNotificaition) ClientError {
+	// Apply the settings via Duplo.
+	apiName := fmt.Sprintf("UpdateS3EventNotification(%s, %s)", tenantID, bucketName)
+	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/s3Bucket/%s/notifications", tenantID, bucketName), &duplo, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) GetS3EventNotification(tenantID, bucketName string) (*DuploS3EventNotificaition, ClientError) {
+	rp := DuploS3EventNotificaition{}
+	err := c.getAPI(fmt.Sprintf("GetS3EventNotification(%s, %s)", tenantID, bucketName),
+		fmt.Sprintf("v3/subscriptions/%s/s3Bucket/%s/notifications", tenantID, bucketName),
+		&rp)
+	return &rp, err
+}
