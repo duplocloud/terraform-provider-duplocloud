@@ -115,3 +115,20 @@ resource "duplocloud_aws_host" "host" {
 
 }
 
+//example for taints
+resource "duplocloud_aws_host" "native" {
+  tenant_id     = "8cb23b3c-b7f3-4be1-8326-2a3cc4397a37"
+  friendly_name = "host7"
+
+  image_id         = "ami-0006160aad5007c19" # <== put the AWS duplo docker AMI ID here
+  capacity         = "t3a.medium"
+  agent_platform   = 7 # Duplo native container agent
+  zone             = 1 # Zone A
+  user_account     = "test13"
+  is_ebs_optimized = true
+  taints {
+    key    = "tk1"
+    value  = "tv2"
+    effect = "NoSchedule"
+  }
+}
