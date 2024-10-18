@@ -173,6 +173,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_storageclass_blob":            resourceAzureStorageBlob(),
 			"duplocloud_azure_storageclass_queue":           resourceAzureStorageQueue(),
 			"duplocloud_azure_storageclass_table":           resourceAzureStorageTable(),
+			"duplocloud_azure_vm_maintenance_configuration": resourceAzureVmMaintenanceConfig(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
