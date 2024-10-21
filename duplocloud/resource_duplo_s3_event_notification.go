@@ -28,11 +28,11 @@ func s3EventNotificationSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
-		//	"destination_name": {
-		//		Description: "The fully qualified duplo name of specified destination type.",
-		//		Type:        schema.TypeString,
-		//		Required:    true,
-		//	},
+		"destination_name": {
+			Description: "The fully qualified duplo name of specified destination type.",
+			Type:        schema.TypeString,
+			Required:    true,
+		},
 		"destination_type": {
 			Description:  "The type of destination where event notification to be published.",
 			Type:         schema.TypeString,
@@ -43,7 +43,7 @@ func s3EventNotificationSchema() map[string]*schema.Schema {
 		"destination_arn": {
 			Description: "The ARN of the specified destination type.",
 			Type:        schema.TypeString,
-			Required:    true,
+			Computed:    true,
 		},
 		"enable_event_bridge": {
 			Type:     schema.TypeBool,
@@ -65,7 +65,6 @@ func s3EventNotificationSchema() map[string]*schema.Schema {
 			's3:ObjectRestore:Post'<br>`,
 			Type:     schema.TypeSet,
 			Optional: true,
-			ForceNew: true,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{"s3:TestEvent", "s3:ObjectCreated:*", "s3:ObjectCreated:Put",
@@ -102,7 +101,7 @@ func resourceS3EventNotificationRead(ctx context.Context, d *schema.ResourceData
 
 	// Parse the identifying attributes
 	id := d.Id()
-	idParts := strings.SplitN(id, "/", 2)
+	idParts := strings.Split(id, "/")
 	if len(idParts) < 2 {
 		return diag.Errorf("resourceS3EventNotificationRead: Invalid resource (ID: %s)", id)
 	}
@@ -117,7 +116,7 @@ func resourceS3EventNotificationRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	// Set simple fields first.
-	flattenEventNotification(d, tenantID, name, duplo)
+	flattenEventNotification(d, name, duplo)
 
 	log.Printf("[TRACE] resourceS3BucketRead ******** end")
 	return nil
@@ -153,25 +152,35 @@ func resourceS3EventNotificationCreateOrUpdate(ctx context.Context, d *schema.Re
 	return diags
 }
 
-func flattenEventNotification(d *schema.ResourceData, tenantID, name string, duplo *duplosdk.DuploS3EventNotificaition) {
+func flattenEventNotification(d *schema.ResourceData, name string, duplo *duplosdk.DuploS3EventNotificaitionResponse) {
 	d.Set("bucket_name", name)
-	if duplo.LambdaName != "" {
-		d.Set("destination_name", duplo.LambdaName)
-		d.Set("destination_type", "lambda")
-		d.Set("destination_arn", duplo.LambdaARN)
+	if len(*duplo.Lambda) > 0 {
+		for _, l := range *duplo.Lambda {
+			d.Set("destination_type", "lambda")
+			d.Set("destination_arn", l.LambdaARN)
+			d.Set("event_types", StringValueSliceTolist(l.EventTypes))
+			d.Set("destination_name", GetResourceNameFromARN(l.LambdaARN))
+		}
+
 	}
-	if duplo.SNSName != "" {
-		d.Set("destination_name", duplo.SNSName)
-		d.Set("destination_type", "sns")
-		d.Set("destination_arn", duplo.SNSARN)
+	if len(*duplo.SNS) > 0 {
+		for _, s := range *duplo.SNS {
+			d.Set("destination_type", "sns")
+			d.Set("destination_arn", s.SNSARN)
+			d.Set("event_types", StringValueSliceTolist(s.EventTypes))
+			d.Set("destination_name", GetResourceNameFromARN(s.SNSARN))
+
+		}
 	}
-	if duplo.SQSName != "" {
-		d.Set("destination_name", duplo.SQSName)
-		d.Set("destination_type", "sqs")
-		d.Set("destination_arn", duplo.SQSARN)
+	if len(*duplo.SQS) > 0 {
+		for _, q := range *duplo.SQS {
+			d.Set("destination_type", "sqs")
+			d.Set("destination_arn", q.SQSARN)
+			d.Set("event_types", StringValueSliceTolist(q.EventTypes))
+			d.Set("destination_name", GetResourceNameFromARN(q.SQSARN))
+
+		}
 	}
-	d.Set("enable_event_bridge", duplo.EnableEventBridge)
-	d.Set("event_type", duplo.EventTypes)
 }
 
 func expandEventNotification(d *schema.ResourceData) *duplosdk.DuploS3EventNotificaition {
@@ -179,15 +188,11 @@ func expandEventNotification(d *schema.ResourceData) *duplosdk.DuploS3EventNotif
 	obj := duplosdk.DuploS3EventNotificaition{}
 	switch destType {
 	case "lambda":
-		obj.LambdaARN = d.Get("destination_arn").(string)
 		obj.LambdaName = d.Get("destination_name").(string)
 	case "sns":
-		//obj.SNSARN = d.Get("destination_arn").(string)
-		//obj.SNSName = d.Get("destination_name").(string)
-		obj.SNSName = d.Get("destination_arn").(string)
+		obj.SNSName = d.Get("destination_name").(string)
 
 	case "sqs":
-		obj.SQSARN = d.Get("destination_arn").(string)
 		obj.SQSName = d.Get("destination_name").(string)
 	}
 	obj.EventTypes = expandStringSet(d.Get("event_types").(*schema.Set))

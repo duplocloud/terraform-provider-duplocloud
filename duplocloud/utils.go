@@ -1030,3 +1030,16 @@ func max(a, b int) int {
 	}
 	return b
 }
+
+func StringValueSliceTolist(v []duplosdk.DuploStringValue) []string {
+	l := make([]string, 0, len(v))
+	for _, d := range v {
+		l = append(l, d.Value)
+	}
+	return l
+}
+
+func GetResourceNameFromARN(arn string) string {
+	tokens := strings.Split(arn, ":")
+	return tokens[len(tokens)-1]
+}

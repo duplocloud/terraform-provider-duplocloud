@@ -1067,20 +1067,41 @@ type DuploS3EventNotificaition struct {
 	EnableEventBridge bool     `json:"EnableEventBridge"`
 }
 
+type DuploS3EventNotificaitionResponse struct {
+	SQS    *[]DuploS3EventSQSConfiguration    `json:"QueueConfigurations,omitempty"`
+	SNS    *[]DuploS3EventSNSConfiguration    `json:"TopicConfigurations,omitempty"`
+	Lambda *[]DuploS3EventLambdaConfiguration `json:"LambdaFunctionConfigurations,omitempty"`
+}
+
+type DuploS3EventSNSConfiguration struct {
+	EventTypes []DuploStringValue `json:"Events"`
+	SNSARN     string             `json:"Topic"`
+}
+
+type DuploS3EventSQSConfiguration struct {
+	EventTypes []DuploStringValue `json:"Events"`
+	SQSARN     string             `json:"Queue"`
+}
+
+type DuploS3EventLambdaConfiguration struct {
+	EventTypes []DuploStringValue `json:"Events"`
+	LambdaARN  string             `json:"FunctionArn"`
+}
+
 func (c *Client) UpdateS3EventNotification(tenantID, bucketName string, duplo DuploS3EventNotificaition) ClientError {
 	// Apply the settings via Duplo.
 	apiName := fmt.Sprintf("UpdateS3EventNotification(%s, %s)", tenantID, bucketName)
-	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/s3Bucket/%s/notifications", tenantID, bucketName), &duplo, nil)
+	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/notifications", tenantID, bucketName), &duplo, nil)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Client) GetS3EventNotification(tenantID, bucketName string) (*DuploS3EventNotificaition, ClientError) {
-	rp := DuploS3EventNotificaition{}
+func (c *Client) GetS3EventNotification(tenantID, bucketName string) (*DuploS3EventNotificaitionResponse, ClientError) {
+	rp := DuploS3EventNotificaitionResponse{}
 	err := c.getAPI(fmt.Sprintf("GetS3EventNotification(%s, %s)", tenantID, bucketName),
-		fmt.Sprintf("v3/subscriptions/%s/s3Bucket/%s/notifications", tenantID, bucketName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/notifications", tenantID, bucketName),
 		&rp)
 	return &rp, err
 }
