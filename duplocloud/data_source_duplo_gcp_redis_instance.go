@@ -21,7 +21,7 @@ func dataSourceRedisInstance() *schema.Resource {
 func dataGcpRedisInstanceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the redis instancels will be created in.",
+			Description:  "The GUID of the tenant that the redis instance will be created in.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validation.IsUUID,
@@ -30,6 +30,11 @@ func dataGcpRedisInstanceSchema() map[string]*schema.Schema {
 			Description: "The short name of the redis instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.",
 			Type:        schema.TypeString,
 			Required:    true,
+		},
+		"fullname": {
+			Description: "The full name of the of the Redis instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"memory_size_gb": {
 			Type:        schema.TypeInt,

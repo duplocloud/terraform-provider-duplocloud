@@ -41,12 +41,13 @@ output "out" {
 ### Required
 
 - `name` (String) The short name of the redis instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- `tenant_id` (String) The GUID of the tenant that the redis instancels will be created in.
+- `tenant_id` (String) The GUID of the tenant that the redis instance will be created in.
 
 ### Read-Only
 
 - `auth_enabled` (Boolean) Indicates whether OSS Redis AUTH is enabled for the instance. If set to "true" AUTH is enabled on the instance. Default value is "false" meaning AUTH is disabled.
 - `display_name` (String) An arbitrary and optional user-provided name for the instance.
+- `fullname` (String) The full name of the of the Redis instance.
 - `id` (String) The ID of this resource.
 - `labels` (Map of String) Resource labels to represent user provided metadata.
 - `memory_size_gb` (Number) Redis memory size in GiB.

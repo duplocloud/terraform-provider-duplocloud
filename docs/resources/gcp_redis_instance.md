@@ -40,18 +40,20 @@ resource "duplocloud_gcp_redis_instance" "redis-demo" {
 
 ### Optional
 
-- `auth_enabled` (Boolean) Optional. Enable OSS Redis AUTH. Defaults to false (AUTH disabled).
-- `display_name` (String) Optional user-provided name for the instance.
+- `auth_enabled` (Boolean) Enable OSS Redis AUTH. Defaults to false (AUTH disabled).
+- `display_name` (String) User-provided name for the instance.
 - `labels` (Map of String) Resource labels for user-provided metadata.
-- `read_replicas_enabled` (Boolean) Optional. Enable read replica mode (can only be set during instance creation).
+- `read_replicas_enabled` (Boolean) Enable read replica mode (can only be set during instance creation).
 - `redis_configs` (Map of String) Redis configuration parameters. See https://cloud.google.com/memorystore/docs/redis/reference/rest/v1/projects.locations.instances#Instance.FIELDS.redis_configs for supported parameters.
 - `redis_version` (String) Version of Redis software. Defaults to the latest supported version.
 - `replica_count` (Number) Number of replica nodes. Valid range for Standard Tier with read replicas enabled is [1-5], default is 2. For basic tier, valid value is 0, default is 0. Defaults to `0`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `transit_encryption_enabled` (Boolean) Optional. Enable TLS for the Redis instance. Defaults to disabled.
+- `transit_encryption_enabled` (Boolean) Enable TLS for the Redis instance. Defaults to disabled.
+- `wait_until_ready` (Boolean) Whether or not to wait until redis instance to be ready, after creation. Defaults to `true`.
 
 ### Read-Only
 
+- `fullname` (String) The full name of the of the Redis instance.
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>

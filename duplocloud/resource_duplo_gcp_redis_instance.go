@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -28,19 +29,24 @@ func gcpRedisInstanceSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"fullname": {
+			Description: "The full name of the of the Redis instance.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"memory_size_gb": {
 			Description: "Redis memory size in GiB.",
 			Type:        schema.TypeInt,
 			Required:    true,
 		},
 		"display_name": {
-			Description: "Optional user-provided name for the instance.",
+			Description: "User-provided name for the instance.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 		},
 		"read_replicas_enabled": {
-			Description: "Optional. Enable read replica mode (can only be set during instance creation).",
+			Description: "Enable read replica mode (can only be set during instance creation).",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -68,13 +74,13 @@ func gcpRedisInstanceSchema() map[string]*schema.Schema {
 			Default:     0,
 		},
 		"auth_enabled": {
-			Description: "Optional. Enable OSS Redis AUTH. Defaults to false (AUTH disabled).",
+			Description: "Enable OSS Redis AUTH. Defaults to false (AUTH disabled).",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
 		"transit_encryption_enabled": {
-			Description: "Optional. Enable TLS for the Redis instance. Defaults to disabled.",
+			Description: "Enable TLS for the Redis instance. Defaults to disabled.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -95,6 +101,12 @@ func gcpRedisInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"wait_until_ready": {
+			Description: "Whether or not to wait until redis instance to be ready, after creation.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     true,
+		},
 	}
 }
 
@@ -110,9 +122,9 @@ func resourceRedisInstance() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(3 * time.Minute),
-			Update: schema.DefaultTimeout(3 * time.Minute),
-			Delete: schema.DefaultTimeout(3 * time.Minute),
+			Create: schema.DefaultTimeout(15 * time.Minute),
+			Update: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: gcpRedisInstanceSchema(),
 	}
@@ -123,17 +135,20 @@ func resourceGcpRedisInstanceRead(ctx context.Context, d *schema.ResourceData, m
 
 	// Parse the identifying attributes
 	id := d.Id()
-	idParts := strings.SplitN(id, "/", 2)
-	if len(idParts) < 2 {
-		return diag.Errorf("Invalid resource ID: %s", id)
+	tenantID, name, err := parseGcpRedisInstanceIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
 	}
-	tenantID, fullname := idParts[0], idParts[1]
 
 	// Get the client and retrieve the Redis instance
 	c := m.(*duplosdk.Client)
-	duplo, err := c.RedisInstanceGet(tenantID, fullname)
+	fullName, clientErr := c.GetDuploServicesNameWithGcp(tenantID, name, false)
+	if clientErr != nil {
+		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+	}
+	duplo, err := c.RedisInstanceGet(tenantID, fullName)
 	if err != nil {
-		return diag.Errorf("Unable to retrieve tenant %s redis instance '%s': %s", tenantID, fullname, err)
+		return diag.Errorf("Unable to retrieve tenant %s redis instance '%s': %s", tenantID, fullName, err)
 	}
 	if duplo == nil {
 		// Object not found, remove from state
@@ -142,12 +157,21 @@ func resourceGcpRedisInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	// Set the resource data
-	d.SetId(fmt.Sprintf("%s/%s", tenantID, fullname))
-	name := d.Get("name").(string)
+	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
 	resourceGcpRedisInstanceSetData(d, tenantID, name, duplo)
 
 	log.Printf("[TRACE] resourceGcpRedisInstanceRead ******** end")
 	return nil
+}
+
+func parseGcpRedisInstanceIdParts(id string) (tenantID, name string, err error) {
+	idParts := strings.SplitN(id, "/", 2)
+	if len(idParts) == 2 {
+		tenantID, name = idParts[0], idParts[1]
+	} else {
+		err = fmt.Errorf("invalid resource ID: %s", id)
+	}
+	return
 }
 
 // CREATE resource
@@ -162,30 +186,33 @@ func resourceGcpRedisInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	rq := expandGcpRedisInstance(d)
 
 	// Post the object to Duplo and handle errors.
-	duplo, err := c.RedisInstanceCreate(tenantID, rq)
-	if err != nil {
-		return diag.Errorf("Error creating tenant %s redis instance '%s': %s", tenantID, rq.Name, err)
+	duplo, clientErr := c.RedisInstanceCreate(tenantID, rq)
+	if clientErr != nil {
+		return diag.Errorf("Error creating tenant %s redis instance '%s': %s", tenantID, rq.Name, clientErr)
 	}
 
-	// Extract the instance name from Duplo response.
-	parts := strings.Split(duplo.Name, "/")
-	fullName := parts[len(parts)-1]
-	id := fmt.Sprintf("%s/%s", tenantID, fullName)
+	id := fmt.Sprintf("%s/%s", tenantID, name)
 
 	// Wait for the Redis instance details to be available.
 	if diags := waitForResourceToBePresentAfterCreate(ctx, d, "redis instance", id, func() (interface{}, duplosdk.ClientError) {
-		return c.RedisInstanceGet(tenantID, fullName)
+		return c.RedisInstanceGet(tenantID, name)
 	}); diags != nil {
 		return diags
 	}
 
-	// Set resource data.
-	duplo.Name = fullName
 	d.SetId(id)
-	resourceGcpRedisInstanceSetData(d, tenantID, name, duplo)
+
+	if d.Get("wait_until_ready").(bool) {
+		err := gcpRedisInstanceWaitUntilReady(ctx, c, tenantID, duplo.Name, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	diags := resourceGcpRedisInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceGcpRedisInstanceCreate ******** end")
-	return nil
+	return diags
 }
 
 // UPDATE resource
@@ -197,12 +224,12 @@ func resourceGcpRedisInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	if len(idParts) != 2 {
 		return diag.Errorf("Invalid resource ID: %s", d.Id())
 	}
-	tenantID, fullName := idParts[0], idParts[1]
+	tenantID := idParts[0]
+	fullName := d.Get("fullname").(string)
 	log.Printf("[DEBUG] tenantID: %s, fullName: %s", tenantID, fullName)
 
 	// Prepare request for update
 	rq := expandGcpRedisInstance(d)
-	rq.Name = fullName // Set the name for the update request
 	log.Printf("[DEBUG] Redis update request: %+v", rq)
 
 	// Update the Redis instance using the Duplo client
@@ -211,8 +238,16 @@ func resourceGcpRedisInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		return diag.Errorf("Failed to update Redis instance '%s' for tenant '%s': %s", fullName, tenantID, err)
 	}
 
+	if d.Get("wait_until_ready").(bool) {
+		err := gcpRedisInstanceWaitUntilReady(ctx, client, tenantID, fullName, d.Timeout("update"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	diags := resourceGcpRedisInstanceRead(ctx, d, m)
 	log.Println("[TRACE] resourceGcpRedisInstanceUpdate end")
-	return nil
+	return diags
 }
 
 // DELETE resource
@@ -243,6 +278,7 @@ func resourceGcpRedisInstanceDelete(ctx context.Context, d *schema.ResourceData,
 func resourceGcpRedisInstanceSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploRedisInstanceBody) {
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
+	d.Set("fullname", duplo.Name)
 	d.Set("display_name", duplo.DisplayName)
 	d.Set("memory_size_gb", duplo.MemorySizeGb)
 	d.Set("read_replicas_enabled", duplo.ReadReplicasEnabled)
@@ -307,4 +343,33 @@ func expandGcpRedisInstance(d *schema.ResourceData) *duplosdk.DuploRedisInstance
 	}
 
 	return &duplo
+}
+
+func gcpRedisInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	retryFlag := 3
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.RedisInstanceGet(tenantID, name)
+			status := "pending"
+			if err == nil && rp != nil {
+				if rp.Status == "READY" {
+					status = "ready"
+				} else {
+					status = "pending"
+				}
+			} else if err != nil && retryFlag > 0 {
+				status = "pending"
+				retryFlag--
+				err = nil
+			}
+			return rp, status, err
+		},
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] gcpRedisInstanceWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
