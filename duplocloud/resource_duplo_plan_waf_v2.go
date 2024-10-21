@@ -138,7 +138,7 @@ func resourcePlanWafCreateOrUpdateV2(ctx context.Context, d *schema.ResourceData
 
 	all, clientError := c.PlanWAFGetList(planID)
 	if clientError != nil {
-		return diag.Errorf(clientError.Error())
+		return diag.Errorf("%s", clientError.Error())
 	}
 	previous, desired := getPlanWafChange(all, d)
 	if d.Get("delete_unspecified_wafs").(bool) {
@@ -190,7 +190,7 @@ func resourcePlanWafDeleteV2(ctx context.Context, d *schema.ResourceData, m inte
 	c := m.(*duplosdk.Client)
 	all, err := c.PlanWAFGetList(planID)
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.Errorf("%s", err.Error())
 	}
 
 	// Get the previous and desired plan certificates

@@ -205,7 +205,7 @@ func resourcePlanKMSDeleteV2(ctx context.Context, d *schema.ResourceData, m inte
 	c := m.(*duplosdk.Client)
 	all, clientErrr := c.PlanKMSGetList(planID)
 	if clientErrr != nil {
-		return diag.Errorf(clientErrr.Error())
+		return diag.Errorf("%s", clientErrr.Error())
 	}
 
 	// Get the previous and desired plan certificates
