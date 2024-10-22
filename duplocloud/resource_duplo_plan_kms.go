@@ -120,7 +120,7 @@ func resourcePlanKMSCreateOrUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 	clientErr := c.PlanCreateKMSKey(planID, rq)
 	if clientErr != nil {
-		return diag.Errorf(clientErr.Error())
+		return diag.Errorf("error: %s", clientErr.Error())
 	}
 	d.SetId(planID + "/kms/" + rq.KeyName)
 
@@ -138,7 +138,7 @@ func resourcePlanKMSDelete(ctx context.Context, d *schema.ResourceData, m interf
 	c := m.(*duplosdk.Client)
 	clientErr := c.PlanKMSDelete(planID, name)
 	if clientErr != nil {
-		return diag.Errorf(clientErr.Error())
+		return diag.Errorf("error: %s", clientErr.Error())
 	}
 
 	return nil
