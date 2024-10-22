@@ -76,11 +76,17 @@ func resourceAzureVmMaintenanceConfig() *schema.Resource {
 							Computed:    true,
 						},
 						"recur_every": {
-							Description:  "he rate at which a maintenance window is expected to recur. The rate can be expressed as daily, weekly, or monthly schedules.",
-							Type:         schema.TypeString,
-							Optional:     true,
-							Computed:     true,
-							ValidateFunc: validation.StringInSlice([]string{"daily", "weekly", "monthly"}, false),
+							Description: "he rate at which a maintenance window is expected to recur. The rate can be expressed as daily, weekly, or monthly schedules.",
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+							//	ValidateFunc: validation.StringInSlice([]string{"daily", "weekly", "monthly"}, false),
+						},
+
+						"time_zone": {
+							Description: "The timezone on which maintenance should be scheduled.",
+							Type:        schema.TypeString,
+							Required:    true,
 						},
 					},
 				},
@@ -179,7 +185,7 @@ func expandVmMaintenance(d *schema.ResourceData) *duplosdk.DuploAzureVmMaintenan
 	obj.Duration = d.Get("window.0.duration").(string)
 	obj.RecurEvery = d.Get("window.0.recur_every").(string)
 	obj.Visibility = d.Get("visiblity").(string)
-
+	obj.TimeZone = d.Get("window.0.time_zone").(string)
 	return &obj
 }
 
@@ -189,6 +195,7 @@ func flattenVmMaintenance(d *schema.ResourceData, rb duplosdk.DuploAzureVmMainte
 		"expiration_time": rb.ExpirationDateTime,
 		"duration":        rb.Duration,
 		"recur_every":     rb.RecurEvery,
+		"time_zone":       rb.TimeZone,
 	}
 	i := []interface{}{}
 	i = append(i, mp)

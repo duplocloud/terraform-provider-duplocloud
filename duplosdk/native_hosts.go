@@ -389,6 +389,7 @@ type DuploAzureVmMaintenanceWindow struct {
 	Duration           string `json:"Duration"`
 	RecurEvery         string `json:"RecurEvery"`
 	Visibility         string `json:"Visibility"`
+	TimeZone           string `json:"TimeZone"`
 }
 
 func (c *Client) AzureVmMaintenanceConfigurationCreate(tenantId, vmName string, rq *DuploAzureVmMaintenanceWindow) ClientError {
