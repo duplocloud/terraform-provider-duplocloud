@@ -188,6 +188,7 @@ func resourceS3BucketReplicationCreate(ctx context.Context, d *schema.ResourceDa
 	rules := d.Get("rules").([]interface{})
 	sourceBucket := d.Get("source_bucket").(string)
 	// Create the request object.
+	id := fmt.Sprintf("%s/%s", tenantID, sourceBucket)
 	for _, rule := range rules {
 		kv := rule.(map[string]interface{})
 
@@ -205,10 +206,15 @@ func resourceS3BucketReplicationCreate(ctx context.Context, d *schema.ResourceDa
 			return diag.Errorf("resourceS3BucketReplicationCreate: Unable to create s3 bucket replication for (tenant: %s, source bucket: %s: error: %s)", tenantID, duploObject.SourceBucket, err)
 		}
 	}
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "s3 replication rule", id, func() (interface{}, duplosdk.ClientError) {
+		return c.TenantGetV3S3BucketReplication(tenantID, sourceBucket)
+	})
+	if diags != nil {
+		return diags
+	}
 
-	id := fmt.Sprintf("%s/%s", tenantID, sourceBucket)
 	d.SetId(id)
-	diags := resourceS3BucketReplicationRead(ctx, d, m)
+	diags = resourceS3BucketReplicationRead(ctx, d, m)
 	log.Printf("[TRACE] resourceS3BucketReplicationCreate ******** end")
 	return diags
 }
@@ -272,9 +278,14 @@ func resourceS3BucketReplicationDelete(ctx context.Context, d *schema.ResourceDa
 			return diag.Errorf("resourceS3BucketReplicationDelete: Unable to delete bucket replication rule (name:%s, error: %s)", ruleName, err)
 		}
 		// Wait up to 60 seconds for Duplo to delete the bucket replication.
-		time.Sleep(60 * time.Second)
+		//	time.Sleep(60 * time.Second)
 	}
-
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "", id, func() (interface{}, duplosdk.ClientError) {
+		return c.TenantGetV3S3BucketReplication(idParts[0], idParts[1])
+	})
+	if diags != nil {
+		return diags
+	}
 	// Wait 10 more seconds to deal with consistency issues.
 
 	log.Printf("[TRACE] resourceS3BucketDelete ******** end")
