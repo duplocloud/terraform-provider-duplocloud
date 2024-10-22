@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -126,7 +127,8 @@ func resourceRedisInstance() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: gcpRedisInstanceSchema(),
+		Schema:        gcpRedisInstanceSchema(),
+		CustomizeDiff: customdiff.All(validateReplicaCount),
 	}
 }
 
@@ -195,7 +197,7 @@ func resourceGcpRedisInstanceCreate(ctx context.Context, d *schema.ResourceData,
 
 	// Wait for the Redis instance details to be available.
 	if diags := waitForResourceToBePresentAfterCreate(ctx, d, "redis instance", id, func() (interface{}, duplosdk.ClientError) {
-		return c.RedisInstanceGet(tenantID, name)
+		return c.RedisInstanceGet(tenantID, duplo.Name)
 	}); diags != nil {
 		return diags
 	}
@@ -372,4 +374,23 @@ func gcpRedisInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, ten
 	log.Printf("[DEBUG] gcpRedisInstanceWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func validateReplicaCount(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	tier := diff.Get("tier").(string)
+	replica_count := diff.Get("replica_count").(int)
+
+	switch tier {
+	case "BASIC":
+		if replica_count != 0 {
+			return fmt.Errorf("invalid replica_count for 'BASIC' tier: must be 0")
+		}
+	case "STANDARD_HA":
+		if replica_count < 1 || replica_count > 5 {
+			return fmt.Errorf("invalid replica_count for 'STANDARD_HA' tier: must be between 1 and 5")
+		}
+	default:
+		return fmt.Errorf("unknown tier: must be 'BASIC' or 'STANDARD_HA'")
+	}
+	return nil
 }
