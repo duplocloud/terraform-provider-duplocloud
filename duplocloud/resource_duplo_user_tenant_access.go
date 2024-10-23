@@ -14,7 +14,7 @@ import (
 
 func resourceUserTenantAccess() *schema.Resource {
 	return &schema.Resource{
-		Description:   "`duplocloud_user_tenant_access` manages a user in Duplo.",
+		Description:   "`duplocloud_user_tenant_access` manages a user tenant access in Duplo.",
 		ReadContext:   resourceUserTenantAccessRead,
 		CreateContext: resourceUserTenantAccessCreate,
 		UpdateContext: resourceUserTenantAccessUpdate,

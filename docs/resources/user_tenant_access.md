@@ -3,12 +3,12 @@
 page_title: "duplocloud_user_tenant_access Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_user_tenant_access manages a user in Duplo.
+  duplocloud_user_tenant_access manages a user tenant access in Duplo.
 ---
 
 # duplocloud_user_tenant_access (Resource)
 
-`duplocloud_user_tenant_access` manages a user in Duplo.
+`duplocloud_user_tenant_access` manages a user tenant access in Duplo.
 
 
 
