@@ -641,10 +641,10 @@ func flattenOciNodePool(d *schema.ResourceData, duplo *duplosdk.DuploOciNodePool
 	d.Set("compartment_id", duplo.CompartmentId)
 	d.Set("node_pool_id", duplo.Id)
 
-	if duplo.DefinedTags != nil && len(duplo.DefinedTags) > 0 {
+	if len(duplo.DefinedTags) > 0 {
 		d.Set("defined_tags", definedTagsToMap(duplo.DefinedTags))
 	}
-	if duplo.FreeformTags != nil && len(duplo.FreeformTags) > 0 {
+	if len(duplo.FreeformTags) > 0 {
 		d.Set("freeform_tags", duplo.FreeformTags)
 	}
 
@@ -676,7 +676,7 @@ func flattenOciNodePool(d *schema.ResourceData, duplo *duplosdk.DuploOciNodePool
 	if len(duplo.NodeImageName) > 0 {
 		d.Set("node_image_name", duplo.NodeImageName)
 	}
-	if duplo.NodeMetadata != nil && len(duplo.NodeMetadata) > 0 {
+	if len(duplo.NodeMetadata) > 0 {
 		d.Set("node_metadata", duplo.NodeMetadata)
 	}
 	if len(duplo.NodeShape) > 0 {
@@ -711,7 +711,7 @@ func flattenOciNodePool(d *schema.ResourceData, duplo *duplosdk.DuploOciNodePool
 		d.Set("subnet_ids", nil)
 	}
 
-	if duplo.SystemTags != nil && len(duplo.SystemTags) > 0 {
+	if len(duplo.SystemTags) > 0 {
 		d.Set("system_tags", systemTagsToMap(duplo.SystemTags))
 	}
 
@@ -750,14 +750,14 @@ func nodePoolNodeConfigDetailsToMap(duplo *duplosdk.NodePoolNodeConfigDetails) m
 	if len(duplo.KmsKeyId) > 0 {
 		result["kms_key_id"] = duplo.KmsKeyId
 	}
-	if duplo.DefinedTags != nil && len(duplo.DefinedTags) > 0 {
+	if len(duplo.DefinedTags) > 0 {
 		result["defined_tags"] = definedTagsToMap(duplo.DefinedTags)
 	}
-	if duplo.FreeformTags != nil && len(duplo.FreeformTags) > 0 {
+	if len(duplo.FreeformTags) > 0 {
 		result["freeform_tags"] = duplo.FreeformTags
 	}
 
-	if duplo.NsgIds != nil && len(duplo.NsgIds) > 0 {
+	if len(duplo.NsgIds) > 0 {
 		result["nsg_ids"] = flattenStringSet(duplo.NsgIds)
 	}
 
@@ -965,14 +965,14 @@ func nodeToMap(duplo duplosdk.Node) map[string]interface{} {
 		result["availability_domain"] = duplo.AvailabilityDomain
 
 	}
-	if duplo.DefinedTags != nil && len(duplo.DefinedTags) > 0 {
+	if len(duplo.DefinedTags) > 0 {
 		result["defined_tags"] = definedTagsToMap(duplo.DefinedTags)
 	}
 
 	if len(duplo.FaultDomain) > 0 {
 		result["fault_domain"] = duplo.FaultDomain
 	}
-	if duplo.FreeformTags != nil && len(duplo.FreeformTags) > 0 {
+	if len(duplo.FreeformTags) > 0 {
 		result["freeform_tags"] = duplo.FreeformTags
 	}
 	if len(duplo.Id) > 0 {
@@ -1009,7 +1009,7 @@ func nodeToMap(duplo duplosdk.Node) map[string]interface{} {
 		result["subnet_id"] = duplo.SubnetId
 	}
 
-	if duplo.SystemTags != nil && len(duplo.SystemTags) > 0 {
+	if len(duplo.SystemTags) > 0 {
 		result["system_tags"] = systemTagsToMap(duplo.SystemTags)
 	}
 
