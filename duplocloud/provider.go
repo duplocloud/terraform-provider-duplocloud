@@ -174,6 +174,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_storageclass_queue":           resourceAzureStorageQueue(),
 			"duplocloud_azure_storageclass_table":           resourceAzureStorageTable(),
 			"duplocloud_user_tenant_access":                 resourceUserTenantAccess(),
+			"duplocloud_gcp_redis_instance":                 resourceRedisInstance(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
@@ -234,6 +235,7 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_sql_database_instances": dataSourceGCPCloudSQLs(),
 			"duplocloud_gcp_firestore":              dataSourceFirestore(),
 			"duplocloud_gcp_firestores":             dataSourceFirestores(),
+			"duplocloud_gcp_redis_instance":         dataSourceRedisInstance(),
 			"duplocloud_plan_wafs":                  dataSourcePlanWafs(),
 			"duplocloud_plan_waf":                   dataSourcePlanWaf(),
 			"duplocloud_plan_wafs_v2":               dataSourcePlanWafsV2(),
