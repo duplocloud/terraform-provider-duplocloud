@@ -85,7 +85,7 @@ func s3BucketReplicationSchema() map[string]*schema.Schema {
 		"rules": {
 			Description: "replication rules for source bucket",
 			Type:        schema.TypeList,
-			Optional:    true,
+			Required:    true,
 			MaxItems:    1,
 			Elem:        ruleSchema(),
 		},
