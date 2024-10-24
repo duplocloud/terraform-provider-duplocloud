@@ -75,10 +75,6 @@ func dataSourceSsmParameterRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("SSM parameter '%s' not found", id)
 	}
 	ssmParam := body
-	if ssmParam.Type == "SecureString" {
-		body.Value = "**********"
-	}
-	log.Printf("[TRACE] SsmParameterGet: received response: %+v", body)
 
 	d.SetId(id)
 	d.Set("type", ssmParam.Type)
@@ -88,6 +84,10 @@ func dataSourceSsmParameterRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("allowed_pattern", ssmParam.AllowedPattern)
 	d.Set("last_modified_user", ssmParam.LastModifiedUser)
 	d.Set("last_modified_date", ssmParam.LastModifiedDate)
+	if ssmParam.Type == "SecureString" {
+		body.Value = "**********"
+	}
+	log.Printf("[TRACE] SsmParameterGet: received response: %+v", body)
 
 	log.Printf("[TRACE] dataSourceSsmParameterRead(%s, %s): end", tenantID, name)
 	return nil

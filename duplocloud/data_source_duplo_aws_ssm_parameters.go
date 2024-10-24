@@ -80,9 +80,7 @@ func dataSourceSsmParametersRead(d *schema.ResourceData, m interface{}) error {
 	list := make([]map[string]interface{}, 0, len(*rp))
 	for i, body := range resp {
 		ssmParam := body
-		if ssmParam.Type == "SecureString" {
-			resp[i].Value = "**********"
-		}
+
 		if i == len(resp)-1 {
 			log.Printf("[TRACE] SsmParameterGet: received response: %+v", resp)
 		}
@@ -96,6 +94,9 @@ func dataSourceSsmParametersRead(d *schema.ResourceData, m interface{}) error {
 			"last_modified_user": ssmParam.LastModifiedUser,
 			"last_modified_date": ssmParam.LastModifiedDate,
 		})
+		if ssmParam.Type == "SecureString" {
+			resp[i].Value = "**********"
+		}
 	}
 
 	d.Set("parameters", list)
