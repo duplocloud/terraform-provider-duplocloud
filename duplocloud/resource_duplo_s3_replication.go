@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -280,11 +281,9 @@ func resourceS3BucketReplicationDelete(ctx context.Context, d *schema.ResourceDa
 		// Wait up to 60 seconds for Duplo to delete the bucket replication.
 		//	time.Sleep(60 * time.Second)
 	}
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "", id, func() (interface{}, duplosdk.ClientError) {
-		return c.TenantGetV3S3BucketReplication(idParts[0], idParts[1])
-	})
-	if diags != nil {
-		return diags
+	err := s3replicaWaitUntilDelete(ctx, c, idParts[0], idParts[1], d.Timeout("delete"))
+	if err != nil {
+		return diag.Errorf("%s", err.Error())
 	}
 	// Wait 10 more seconds to deal with consistency issues.
 
@@ -301,4 +300,30 @@ func validateTenantBucket(ctx context.Context, diff *schema.ResourceDiff, m inte
 		return fmt.Errorf("S3 bucket %s not found in tenant %s", sbucket, tId)
 	}
 	return nil
+}
+
+func s3replicaWaitUntilDelete(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"deleted"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.TenantGetV3S3BucketReplication(tenantID, name)
+			status := "pending"
+			if err == nil {
+				if len(rp.Rule) == 0 {
+					status = "deleted"
+				} else {
+					status = "pending"
+				}
+			}
+
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] redisCacheWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
