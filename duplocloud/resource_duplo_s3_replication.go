@@ -201,6 +201,7 @@ func resourceS3BucketReplicationCreate(ctx context.Context, d *schema.ResourceDa
 			SourceBucket:            sourceBucket,
 			Priority:                kv["priority"].(int),
 			DeleteMarkerReplication: kv["delete_marker_replication"].(bool),
+			StorageClass:            kv["storage_class"].(string),
 		}
 
 		// Post the object to Duplo
