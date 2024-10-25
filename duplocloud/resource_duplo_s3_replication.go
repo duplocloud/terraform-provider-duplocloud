@@ -29,6 +29,7 @@ func ruleSchema() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z]+$`), "Invalid rule name: only alphabetic characters (A-Z, a-z) are allowed"),
+				ForceNew:     false,
 			},
 			"fullname": {
 				Description: "replication rule fullname for s3 source bucket",
@@ -52,6 +53,7 @@ func ruleSchema() *schema.Resource {
 				Optional:         true,
 				Default:          false,
 				DiffSuppressFunc: diffSuppressWhenNotCreating,
+				ForceNew:         false,
 			},
 			"storage_class": {
 				Description: "storage_class type: STANDARD, INTELLIGENT_TIERING, STANDARD_IA, ONEZONE_IA, GLACIER_IR, GLACIER, DEEP_ARCHIVE, REDUCED_REDUNDANCY. Can be set only during creation",
@@ -68,6 +70,7 @@ func ruleSchema() *schema.Resource {
 					"DEEP_ARCHIVE",
 					"REDUCED_REDUNDANCY",
 				}, false),
+				ForceNew: false,
 			},
 		},
 	}
