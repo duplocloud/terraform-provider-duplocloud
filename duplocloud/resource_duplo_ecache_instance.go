@@ -349,11 +349,11 @@ func validateLogDeliveryConfigurations(engineVersion string, configs []duplosdk.
 	for _, config := range configs {
 		switch config.LogType {
 		case "engine-log":
-			if !duplosdk.IsAppVersionEqualOrGreater(engineVersion, "6.2.0") {
+			if IsAppVersionEqualOrGreater(engineVersion, "6.2.0") {
 				return diag.Errorf("log_delivery_configuration with log_type 'engine-log' cannot be used with engine_version '%s'. Please use engine_version '6.2.0' or above.", engineVersion)
 			}
 		case "slow-log":
-			if !duplosdk.IsAppVersionEqualOrGreater(engineVersion, "6.0.0") {
+			if IsAppVersionEqualOrGreater(engineVersion, "6.0.0") {
 				return diag.Errorf("log_delivery_configuration with log_type 'slow-log' cannot be used with engine_version '%s'. Please use engine_version '6.0.0' or above.", engineVersion)
 			}
 		default:

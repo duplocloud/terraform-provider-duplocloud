@@ -48,7 +48,6 @@ func duploAwsEcrRepositorySchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Computed:    true,
 			Optional:    true,
-			ForceNew:    true,
 		},
 		"enable_scan_image_on_push": {
 			Description: "Indicates whether images are scanned after being pushed to the repository (true) or not scanned (false).",
@@ -143,6 +142,23 @@ func resourceAwsEcrRepositoryCreate(ctx context.Context, d *schema.ResourceData,
 
 func resourceAwsEcrRepositoryUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// TODO - Update is not handled in backend.
+	id := d.Id()
+	tenantID, name, err := parseAwsEcrRepositoryIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	req := duplosdk.DuploAwsEcrRepositoryUpdateRequest{
+		Name:                  name,
+		EnableTagImmutability: d.Get("enable_tag_immutability").(bool),
+		EnableScanImageOnPush: d.Get("enable_scan_image_on_push").(bool),
+		//	ResourceType:          17,
+	}
+	c := m.(*duplosdk.Client)
+
+	err = c.AwsEcrRepositoryUpdate(tenantID, &req)
+	if err != nil {
+		return diag.Errorf("error: %s", err.Error())
+	}
 	return nil
 }
 

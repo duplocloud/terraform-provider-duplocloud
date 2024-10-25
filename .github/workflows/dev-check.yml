@@ -22,13 +22,13 @@ jobs:
           cache: false
       - 
         name: Run linting
-        uses: golangci/golangci-lint-action@v5
+        uses: golangci/golangci-lint-action@v6.1.1
         with:
           only-new-issues: true  # Only show new issues for pull requests.
           args: --timeout=5m
-          version: v1.59
+          version: v1.60
   format:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       -
         name: Checkout
