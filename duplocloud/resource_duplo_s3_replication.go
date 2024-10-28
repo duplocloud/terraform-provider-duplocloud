@@ -28,8 +28,12 @@ func ruleSchema() *schema.Resource {
 				Description:  "replication rule name for s3 source bucket",
 				Type:         schema.TypeString,
 				Required:     true,
+<<<<<<< HEAD
 				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z]+$`), "Invalid rule name: only alphabetic characters (A-Z, a-z) are allowed"),
 				ForceNew:     false,
+=======
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`[a-zA-Z0-9_-]}`), "Invalid rule name: only alphabets, digits, underscores, and hyphens are allowed."),
+>>>>>>> develop
 			},
 			"fullname": {
 				Description: "replication rule fullname for s3 source bucket",
