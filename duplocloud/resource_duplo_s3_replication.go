@@ -29,6 +29,7 @@ func ruleSchema() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z]+$`), "Invalid rule name: only alphabetic characters (A-Z, a-z) are allowed"),
+				ForceNew:     false,
 			},
 			"fullname": {
 				Description: "replication rule fullname for s3 source bucket",
@@ -52,6 +53,7 @@ func ruleSchema() *schema.Resource {
 				Optional:         true,
 				Default:          false,
 				DiffSuppressFunc: diffSuppressWhenNotCreating,
+				ForceNew:         false,
 			},
 			"storage_class": {
 				Description: "storage_class type: STANDARD, INTELLIGENT_TIERING, STANDARD_IA, ONEZONE_IA, GLACIER_IR, GLACIER, DEEP_ARCHIVE, REDUCED_REDUNDANCY. Can be set only during creation",
@@ -68,6 +70,7 @@ func ruleSchema() *schema.Resource {
 					"DEEP_ARCHIVE",
 					"REDUCED_REDUNDANCY",
 				}, false),
+				ForceNew: false,
 			},
 		},
 	}
@@ -88,6 +91,7 @@ func s3BucketReplicationSchema() map[string]*schema.Schema {
 			Required:    true,
 			MaxItems:    1,
 			Elem:        ruleSchema(),
+			ForceNew:    true,
 		},
 
 		"source_bucket": {
@@ -105,7 +109,7 @@ func resourceS3BucketReplication() *schema.Resource {
 		Description:   "Resource duplocloud_s3_bucket_replication is dependent on duplocloud_s3_bucket. This resource sets replication rules for source bucket",
 		ReadContext:   resourceS3BucketReplicationRead,
 		CreateContext: resourceS3BucketReplicationCreate,
-		UpdateContext: resourceS3BucketReplicationUpdate,
+		//UpdateContext: resourceS3BucketReplicationUpdate,
 		DeleteContext: resourceS3BucketReplicationDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -223,6 +227,7 @@ func resourceS3BucketReplicationCreate(ctx context.Context, d *schema.ResourceDa
 	return diags
 }
 
+/*
 // UPDATE resource
 func resourceS3BucketReplicationUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketReplicationUpdate ******** start")
@@ -260,7 +265,7 @@ func resourceS3BucketReplicationUpdate(ctx context.Context, d *schema.ResourceDa
 	log.Printf("[TRACE] resourceS3BucketReplicationUpdate ******** end")
 	return diags
 }
-
+*/
 // DELETE resource
 func resourceS3BucketReplicationDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceS3BucketReplicationDelete ******** start")
