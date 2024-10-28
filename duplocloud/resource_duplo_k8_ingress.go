@@ -143,7 +143,7 @@ func k8sIngressSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"hosts": {
-						Description: "hosts is a list of hosts included in the TLS certificate. The values in this list must match the name/s used in the tlsSecret. Defaults to the wildcard host setting for the loadbalancer controller fulfilling this Ingress, if left unspecified.",
+						Description: "hosts is a list of hosts included in the TLS certificate. Each value in this list must match the name(s) specified in the TLS secret. If not specified, it defaults to the wildcard host setting for the load balancer controller managing this Ingress.",
 						Type:        schema.TypeList,
 						Elem: &schema.Schema{
 							Type: schema.TypeString,
