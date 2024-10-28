@@ -144,7 +144,7 @@ func k8sIngressSchema() map[string]*schema.Schema {
 				Schema: map[string]*schema.Schema{
 					"hosts": {
 						Type: schema.TypeList,
-						Elem: schema.Schema{
+						Elem: &schema.Schema{
 							Type: schema.TypeString,
 						},
 						Optional: true,
