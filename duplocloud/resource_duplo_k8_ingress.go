@@ -136,14 +136,15 @@ func k8sIngressSchema() map[string]*schema.Schema {
 			},
 		},
 		"tls": {
-			Description: "",
+			Description: "tls represents the TLS configuration. Currently the Ingress only supports a single TLS port, 443. If multiple members of this list specify different hosts, they will be multiplexed on the same port according to the hostname specified through the SNI TLS extension, if the ingress controller fulfilling the ingress supports SNI",
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"hosts": {
-						Type: schema.TypeList,
+						Description: "hosts is a list of hosts included in the TLS certificate. The values in this list must match the name/s used in the tlsSecret. Defaults to the wildcard host setting for the loadbalancer controller fulfilling this Ingress, if left unspecified.",
+						Type:        schema.TypeList,
 						Elem: &schema.Schema{
 							Type: schema.TypeString,
 						},
@@ -151,9 +152,10 @@ func k8sIngressSchema() map[string]*schema.Schema {
 						Computed: true,
 					},
 					"secret_name": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Computed: true,
+						Description: "secretName is the name of the secret used to terminate TLS traffic on port 443. Field is left optional to allow TLS routing based on SNI hostname alone. If the SNI host in a listener conflicts with the 'Host' header field used by an IngressRule, the SNI host is used for termination and value of the Host header is used for routing.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},

@@ -178,6 +178,7 @@ resource "duplocloud_k8_ingress" "ingress" {
 - `lbconfig` (Block List, Max: 1) The load balancer configuration. This is required when `ingress_class_name` is set to `alb`. (see [below for nested schema](#nestedblock--lbconfig))
 - `rule` (Block List) A list of host rules used to configure the Ingress. (see [below for nested schema](#nestedblock--rule))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `tls` (Block List) tls represents the TLS configuration. Currently the Ingress only supports a single TLS port, 443. If multiple members of this list specify different hosts, they will be multiplexed on the same port according to the hostname specified through the SNI TLS extension, if the ingress controller fulfilling the ingress supports SNI (see [below for nested schema](#nestedblock--tls))
 
 ### Read-Only
 
@@ -222,6 +223,15 @@ Optional:
 - `create` (String)
 - `delete` (String)
 - `update` (String)
+
+
+<a id="nestedblock--tls"></a>
+### Nested Schema for `tls`
+
+Optional:
+
+- `hosts` (List of String) hosts is a list of hosts included in the TLS certificate. The values in this list must match the name/s used in the tlsSecret. Defaults to the wildcard host setting for the loadbalancer controller fulfilling this Ingress, if left unspecified.
+- `secret_name` (String) secretName is the name of the secret used to terminate TLS traffic on port 443. Field is left optional to allow TLS routing based on SNI hostname alone. If the SNI host in a listener conflicts with the 'Host' header field used by an IngressRule, the SNI host is used for termination and value of the Host header is used for routing.
 
 ## Import
 
