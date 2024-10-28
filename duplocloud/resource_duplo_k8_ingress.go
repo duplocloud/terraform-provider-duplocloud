@@ -152,7 +152,7 @@ func k8sIngressSchema() map[string]*schema.Schema {
 						Computed: true,
 					},
 					"secret_name": {
-						Description: "secretName is the name of the secret used to terminate TLS traffic on port 443. Field is left optional to allow TLS routing based on SNI hostname alone. If the SNI host in a listener conflicts with the 'Host' header field used by an IngressRule, the SNI host is used for termination and value of the Host header is used for routing.",
+						Description: "secret_name specifies the name of the secret used to terminate TLS traffic on port 443. This field is optional, enabling TLS routing based solely on the SNI hostname. If the SNI host in a listener conflicts with the 'Host' header in an IngressRule, the SNI host is used for termination, while the 'Host' header value is used for routing.",
 						Type:        schema.TypeString,
 						Optional:    true,
 						Computed:    true,
