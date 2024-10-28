@@ -135,6 +135,29 @@ func k8sIngressSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"tls": {
+			Description: "",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"hosts": {
+						Type: schema.TypeList,
+						Elem: schema.Schema{
+							Type: schema.TypeString,
+						},
+						Optional: true,
+						Computed: true,
+					},
+					"secret_name": {
+						Type:     schema.TypeString,
+						Optional: true,
+						Computed: true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -303,6 +326,7 @@ func flattenK8sIngress(tenantId string, d *schema.ResourceData, duplo *duplosdk.
 	// Finally, set the map
 	d.Set("annotations", duplo.Annotations)
 	d.Set("labels", duplo.Labels)
+	d.Set("tls", flattenTls(duplo.OtherSpec))
 }
 
 func flattenK8sIngressLBConfig(duplo *duplosdk.DuploK8sLbConfig) map[string]interface{} {
@@ -377,7 +401,9 @@ func expandK8sIngress(d *schema.ResourceData) (*duplosdk.DuploK8sIngress, error)
 			duplo.Labels[key] = value.(string)
 		}
 	}
-
+	if v, ok := d.GetOk("tls"); ok && !isInterfaceNil(v) {
+		duplo.OtherSpec = expandTls(v.([]interface{}))
+	}
 	return &duplo, nil
 }
 
@@ -435,4 +461,39 @@ func expandK8sIngressRule(m map[string]interface{}) (duplosdk.DuploK8sIngressRul
 		r.ServiceName = v.(string)
 	}
 	return r, nil
+}
+
+func expandTls(i []interface{}) *duplosdk.DuploK8IngressOtherSpec {
+	obj := duplosdk.DuploK8IngressOtherSpec{}
+	hosts := []string{}
+	tls := []duplosdk.DuploK8IngressSpecTls{}
+	for _, s := range i {
+		m := s.(map[string]interface{})
+		hs := m["hosts"].([]interface{})
+		for _, h := range hs {
+			hosts = append(hosts, h.(string))
+		}
+		s := m["secret_name"].(string)
+
+		obj := duplosdk.DuploK8IngressSpecTls{
+			Host:       hosts,
+			SecretName: s,
+		}
+		tls = append(tls, obj)
+
+	}
+	obj.Tls = tls
+	return &obj
+}
+
+func flattenTls(obj *duplosdk.DuploK8IngressOtherSpec) []interface{} {
+	i := make([]interface{}, 0, len(obj.Tls))
+	for _, tls := range obj.Tls {
+		m := map[string]interface{}{
+			"hosts":       tls.Host,
+			"secret_name": tls.SecretName,
+		}
+		i = append(i, m)
+	}
+	return i
 }
