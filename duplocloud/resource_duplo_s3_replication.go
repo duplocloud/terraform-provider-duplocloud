@@ -22,14 +22,14 @@ func ruleSchema() *schema.Resource {
 				Description: "name of destination bucket.",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    false,
+				ForceNew:    true,
 			},
 			"name": {
 				Description:  "replication rule name for s3 source bucket",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z]+$`), "Invalid rule name: only alphabetic characters (A-Z, a-z) are allowed"),
-				ForceNew:     false,
+				ForceNew:     true,
 			},
 			"fullname": {
 				Description: "replication rule fullname for s3 source bucket",
@@ -45,7 +45,7 @@ func ruleSchema() *schema.Resource {
 				Description: "replication priority. Priority must be unique between multiple rules.",
 				Type:        schema.TypeInt,
 				Required:    true,
-				ForceNew:    false,
+				ForceNew:    true,
 			},
 			"delete_marker_replication": {
 				Description:      "Whether or not to enable delete marker on replication. Can be set only during creation.",
@@ -53,7 +53,7 @@ func ruleSchema() *schema.Resource {
 				Optional:         true,
 				Default:          false,
 				DiffSuppressFunc: diffSuppressWhenNotCreating,
-				ForceNew:         false,
+				ForceNew:         true,
 			},
 			"storage_class": {
 				Description: "storage_class type: STANDARD, INTELLIGENT_TIERING, STANDARD_IA, ONEZONE_IA, GLACIER_IR, GLACIER, DEEP_ARCHIVE, REDUCED_REDUNDANCY. Can be set only during creation",
@@ -70,7 +70,7 @@ func ruleSchema() *schema.Resource {
 					"DEEP_ARCHIVE",
 					"REDUCED_REDUNDANCY",
 				}, false),
-				ForceNew: false,
+				ForceNew: true,
 			},
 		},
 	}
