@@ -215,35 +215,6 @@ func resourceAgentK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-func buildNodePoolRequestForUpdate(d *schema.ResourceData) *duplosdk.DuploAzureK8NodePoolRequest {
-	nodePool := &duplosdk.DuploAzureK8NodePoolRequest{}
-
-	if d.HasChange("min_capacity") {
-		nodePool.MinSize = d.Get("min_capacity").(int)
-	}
-
-	if d.HasChange("max_capacity") {
-		nodePool.MaxSize = d.Get("max_capacity").(int)
-	}
-
-	if d.HasChange("desired_capacity") {
-		nodePool.DesiredCapacity = d.Get("desired_capacity").(int)
-	}
-
-	if d.HasChange("enable_auto_scaling") {
-		nodePool.EnableAutoScaling = d.Get("enable_auto_scaling").(bool)
-	}
-
-	if d.HasChange("identifier") {
-		nodePool.FriendlyName = strconv.Itoa(d.Get("identifier").(int))
-	}
-
-	if d.HasChange("vm_size") {
-		nodePool.Capacity = d.Get("vm_size").(string)
-	}
-	return nodePool
-}
-
 func resourceAgentK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 	id := d.Id()
@@ -254,14 +225,18 @@ func resourceAgentK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 	log.Printf("[TRACE] resourceAgentK8NodePoolUpdate(%s, %v): start", tenantID, name)
 	c := m.(*duplosdk.Client)
-
-	// Build node pool request
-	nodePool := buildNodePoolRequestForUpdate(d)
-
-	if d.HasChanges("min_capacity", "max_capacity", "desired_capacity", "enable_auto_scaling", "identifier", "vm_size") {
-		friendlyName, err := c.AzureK8NodePoolCreate(tenantID, nodePool)
+	nodepool := &duplosdk.DuploAzureK8NodePoolRequest{
+		FriendlyName:      name,
+		MinSize:           d.Get("min_capacity").(int),
+		MaxSize:           d.Get("max_capacity").(int),
+		DesiredCapacity:   d.Get("desired_capacity").(int),
+		EnableAutoScaling: d.Get("enable_auto_scaling").(bool),
+		Capacity:          d.Get("vm_size").(string),
+	}
+	if d.HasChanges("min_capacity", "max_capacity", "desired_capacity", "enable_auto_scaling", "vm_size") {
+		friendlyName, err := c.AzureK8NodePoolCreate(tenantID, nodepool)
 		if err != nil {
-			return diag.Errorf("Error updating tenant %s azure node pool '%v': %s", tenantID, name, err)
+			return diag.Errorf("Error updating tenant %s azure node pool '%v': %s", tenantID, friendlyName, err)
 		}
 
 		d.SetId(fmt.Sprintf("%s/%s", tenantID, *friendlyName))
