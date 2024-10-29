@@ -353,7 +353,11 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	}
 
 	d.Set("tenant_id", tenantID)
-	d.Set("name", name)
+	// update name only if its "import", for backward compatibility and to skip force recreate.
+	existingName := d.Get("name").(string)
+	if existingName == "" {
+		d.Set("name", name)
+	}
 	d.Set("fullname", duplo.TableName)
 	d.Set("arn", duplo.TableArn)
 	d.Set("status", duplo.TableStatus.Value)
