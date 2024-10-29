@@ -1,3 +1,9 @@
+## 2024-10-18
+
+### Added
+- Introduced GCP Redis Instance resource and data sources for managing GCP Redis Instance in DuploCloud.
+- Added CRUD operations and data retrieval for GCP Redis Instance resources.
+
 ## 2024-09-13
 
 ### Enhanced

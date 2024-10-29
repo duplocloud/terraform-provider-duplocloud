@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"net/url"
 )
 
 type DuploUser struct {
@@ -77,4 +78,37 @@ func (c *Client) UserInfo() (*DuploUser, ClientError) {
 	err := c.getAPI("UserList", "admin/GetUserRoleInfo", &rp)
 
 	return &rp, err
+}
+
+type DuploUserTenantAccess struct {
+	Username string                  `json:"Username"`
+	Policy   DuploTenantAccessPolicy `json:"Policy,omitempty"`
+	TenantId string                  `json:"TenantId"`
+	State    string                  `json:"State,omitempty"`
+}
+
+type DuploTenantAccessPolicy struct {
+	IsReadOnly bool `json:"IsReadOnly"`
+}
+
+type DuploUserTenantAccessResponse struct {
+	AccountName string                  `json:"AccountName"`
+	Policy      DuploTenantAccessPolicy `json:"Policy,omitempty"`
+	TenantId    string                  `json:"TenantId"`
+}
+
+func (c *Client) GrantUserTenantAccess(rq *DuploUserTenantAccess) ClientError {
+
+	return c.postAPI(fmt.Sprintf("GrantUserTenantAccess(%s)", rq.Username), "admin/UpdateUserAccess", rq, nil)
+}
+
+func (c *Client) GetUserTenantAccessInfo(userName, tenantId string) (*DuploUserTenantAccessResponse, ClientError) {
+	rp := []DuploUserTenantAccessResponse{}
+	err := c.getAPI("GetUserTenantAccessInfo", fmt.Sprintf("v3/admin/user/%s/tenantAccess", url.PathEscape(userName)), &rp)
+	for _, d := range rp {
+		if d.TenantId == tenantId {
+			return &d, nil
+		}
+	}
+	return nil, err
 }

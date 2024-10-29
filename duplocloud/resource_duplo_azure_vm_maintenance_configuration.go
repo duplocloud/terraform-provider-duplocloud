@@ -135,7 +135,7 @@ func resourceVmMaintenanceConfigCreate(ctx context.Context, d *schema.ResourceDa
 	if err != nil {
 		return diag.Errorf("resourceVmMaintenanceConfigCreate cannot create maintenance config for vm %s error: %s", vmName, err.Error())
 	}
-	d.SetId(tenantId + "/" + vmName + "maintenance-configuration")
+	d.SetId(tenantId + "/" + vmName + "/maintenance-configuration")
 
 	diags := resourceVmMaintenanceConfigRead(ctx, d, m)
 	log.Printf("[TRACE] resourceVmMaintenanceConfigCreate(%s): end", vmName)
