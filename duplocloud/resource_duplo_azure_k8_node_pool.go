@@ -215,8 +215,74 @@ func resourceAgentK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
+func buildNodePoolRequestForUpdate(d *schema.ResourceData) *duplosdk.DuploAzureK8NodePoolRequest {
+	nodePool := &duplosdk.DuploAzureK8NodePoolRequest{}
+
+	if d.HasChange("min_capacity") {
+		nodePool.MinSize = d.Get("min_capacity").(int)
+	}
+
+	if d.HasChange("max_capacity") {
+		nodePool.MaxSize = d.Get("max_capacity").(int)
+	}
+
+	if d.HasChange("desired_capacity") {
+		nodePool.DesiredCapacity = d.Get("desired_capacity").(int)
+	}
+
+	if d.HasChange("enable_auto_scaling") {
+		nodePool.EnableAutoScaling = d.Get("enable_auto_scaling").(bool)
+	}
+
+	if d.HasChange("identifier") {
+		nodePool.FriendlyName = strconv.Itoa(d.Get("identifier").(int))
+	}
+
+	if d.HasChange("vm_size") {
+		nodePool.Capacity = d.Get("vm_size").(string)
+	}
+	return nodePool
+}
+
 func resourceAgentK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	var err error
+	id := d.Id()
+	// Parse ID parts
+	tenantID, name, err := parseAgentK8NodePoolIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceAgentK8NodePoolUpdate(%s, %v): start", tenantID, name)
+	c := m.(*duplosdk.Client)
+
+	// Build node pool request
+	nodePool := buildNodePoolRequestForUpdate(d)
+
+	if d.HasChanges("min_capacity", "max_capacity", "desired_capacity", "enable_auto_scaling", "identifier", "vm_size") {
+		friendlyName, err := c.AzureK8NodePoolCreate(tenantID, nodePool)
+		if err != nil {
+			return diag.Errorf("Error updating tenant %s azure node pool '%v': %s", tenantID, name, err)
+		}
+
+		d.SetId(fmt.Sprintf("%s/%s", tenantID, *friendlyName))
+
+		diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure node pool", id, func() (interface{}, duplosdk.ClientError) {
+			return c.AzureK8NodePoolGet(tenantID, *friendlyName)
+		})
+		if diags != nil {
+			return diags
+		}
+		if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
+			err := azureK8NodePoolWaitUntilReady(ctx, c, tenantID, *friendlyName, d.Timeout("create"))
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
+	diags := resourceAgentK8NodePoolRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAgentK8NodePoolUpdate(%s, %s): end", tenantID, name)
+	return diags
 }
 
 func resourceAgentK8NodePoolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
