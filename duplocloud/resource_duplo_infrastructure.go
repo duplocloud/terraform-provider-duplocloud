@@ -315,6 +315,13 @@ func resourceInfrastructure() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"disable_public_subnet": {
+				Description: "This flag is used to disable public subnet, applicable only for AWS cloud infra provisioning.",
+				Type:        schema.TypeBool,
+				ForceNew:    true,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -523,6 +530,11 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 		},
 	}
 
+	if config.Cloud == 0 {
+		val := d.Get("disable_public_subnet").(bool)
+		config.DisablePublicSubnet = &val
+	}
+
 	//Azure -> if needed only there, this subnet should be added only in Azure
 	if config.Cloud == 2 {
 		subnet := duplosdk.DuploInfrastructureVnetSubnet{}
@@ -723,6 +735,9 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 			}
 			d.Set("security_groups", securityGroups)
 		}
+		if config.DisablePublicSubnet != nil && config.Cloud == 0 {
+			d.Set("disable_public_subnet", config.DisablePublicSubnet)
+		}
 	}
 
 	return false, nil
@@ -745,6 +760,13 @@ func validateInfraSchema(d *schema.ResourceData) diag.Diagnostics {
 		}
 		if _, ok := d.GetOk("account_id"); !ok {
 			return diag.Errorf("Attribute 'account_id' is required for azure cloud.")
+		}
+	}
+
+	if cloud != 0 {
+		if _, ok := d.GetOk("disable_public_subnet"); ok {
+			return diag.Errorf("Attribute 'disable_public_subnet' is only applicable for aws cloud.")
+
 		}
 	}
 	log.Printf("[TRACE] validateInfraSchema: end")
