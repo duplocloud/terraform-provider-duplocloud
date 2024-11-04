@@ -175,6 +175,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_storageclass_table":           resourceAzureStorageTable(),
 			"duplocloud_user_tenant_access":                 resourceUserTenantAccess(),
 			"duplocloud_gcp_redis_instance":                 resourceRedisInstance(),
+			"duplocloud_gcp_host":                           resourceGcpHost(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),

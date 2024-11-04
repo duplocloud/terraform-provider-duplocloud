@@ -1030,3 +1030,56 @@ func max(a, b int) int {
 	}
 	return b
 }
+
+// 1 trim prefix, 2 trim suffix, 3 trim both
+func trimStringsByPosition(stringsSlice []string, sufixOrPrefix int) []string {
+	position := map[string]struct{}{
+		"allow-lb-healthcheck": {},
+		"allow-lb-internal":    {},
+		"iap-ssh":              {},
+		"iap-rdp":              {},
+		"duploinfra":           {},
+		"duploservices":        {},
+	}
+
+	filtered := make([]string, 0, len(stringsSlice))
+	if sufixOrPrefix == 3 || sufixOrPrefix == 2 {
+		for _, str := range stringsSlice {
+			if !hasSuffix(str, position) {
+				filtered = append(filtered, str)
+			}
+		}
+		stringsSlice = filtered
+
+	}
+	finalFiltered := make([]string, 0, len(stringsSlice))
+
+	if sufixOrPrefix == 3 || sufixOrPrefix == 1 {
+		for _, str := range stringsSlice {
+			if !hasPrefix(str, position) {
+				finalFiltered = append(finalFiltered, str)
+			}
+		}
+	} else {
+		finalFiltered = filtered
+	}
+	return finalFiltered
+}
+
+func hasSuffix(s string, suffixes map[string]struct{}) bool {
+	for suffix := range suffixes {
+		if strings.HasSuffix(s, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasPrefix(s string, suffixes map[string]struct{}) bool {
+	for suffix := range suffixes {
+		if strings.HasPrefix(s, suffix) {
+			return true
+		}
+	}
+	return false
+}
