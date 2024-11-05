@@ -3,12 +3,13 @@ package duplosdk
 import "fmt"
 
 type DuploK8sIngress struct {
-	Name             string                 `json:"name"`
-	IngressClassName string                 `json:"ingressClassName"`
-	Annotations      map[string]string      `json:"annotations,omitempty"`
-	Labels           map[string]string      `json:"labels,omitempty"`
-	LbConfig         *DuploK8sLbConfig      `json:"lbConfig,omitempty"`
-	Rules            *[]DuploK8sIngressRule `json:"rules,omitempty"`
+	Name             string                   `json:"name"`
+	IngressClassName string                   `json:"ingressClassName"`
+	Annotations      map[string]string        `json:"annotations,omitempty"`
+	Labels           map[string]string        `json:"labels,omitempty"`
+	LbConfig         *DuploK8sLbConfig        `json:"lbConfig,omitempty"`
+	Rules            *[]DuploK8sIngressRule   `json:"rules,omitempty"`
+	OtherSpec        *DuploK8IngressOtherSpec `json:"otherSpecs,omitempty"`
 }
 
 type DuploK8sLbConfig struct {
@@ -34,6 +35,15 @@ type DuploK8sIngressRule struct {
 	Host        string `json:"host,omitempty"`
 	Port        int    `json:"port,omitempty"`
 	PortName    string `json:"portName,omitempty"`
+}
+
+type DuploK8IngressOtherSpec struct {
+	Tls []DuploK8IngressSpecTls `json:"Tls"`
+}
+
+type DuploK8IngressSpecTls struct {
+	Host       []string `json:"hosts,omitempty"`
+	SecretName string   `json:"secretName,omitempty"`
 }
 
 func (c *Client) DuploK8sIngressCreate(tenantID string, rq *DuploK8sIngress) ClientError {

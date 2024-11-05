@@ -157,7 +157,7 @@ func resourceAwsEcrRepositoryUpdate(ctx context.Context, d *schema.ResourceData,
 
 	err = c.AwsEcrRepositoryUpdate(tenantID, &req)
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.Errorf("error: %s", err.Error())
 	}
 	return nil
 }
