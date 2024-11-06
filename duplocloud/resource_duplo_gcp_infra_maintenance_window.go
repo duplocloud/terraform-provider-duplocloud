@@ -201,7 +201,11 @@ func flattenWindowMaintenance(d *schema.ResourceData, rb duplosdk.DuploGcpInfraM
 			mp := map[string]interface{}{
 				"start_time": v.StartTime,
 				"end_time":   v.EndTime,
-				"scope":      v.Scope,
+			}
+			if v.Scope != "" {
+				mp["scope"] = v.Scope
+			} else {
+				mp["scope"] = "NO_UPGRADES"
 			}
 			i = append(i, mp)
 		}

@@ -145,3 +145,30 @@ resource "duplocloud_k8_ingress" "ingress" {
     port_name    = "use-annotation"
   }
 }
+
+//example for tls
+resource "duplocloud_k8_ingress" "ingress" {
+  tenant_id          = duplocloud_tenant.myapp.tenant_id
+  name               = "external-echo"
+  ingress_class_name = "alb"
+  lbconfig {
+    is_internal     = false
+    dns_prefix      = "external-echo"
+    certificate_arn = "put your certificate ARN here"
+    https_port      = 443
+  }
+
+  rule {
+    path         = "/hello-world"
+    path_type    = "Prefix"
+    service_name = duplocloud_duplo_service.echo.name
+    port         = 5678
+  }
+
+  tls {
+    secret_name = "tlssecret"
+    hosts       = ["example.com", "https-example.foo.com", "abc.com"]
+  }
+  depends_on = [time_sleep.wait_45_seconds]
+
+}

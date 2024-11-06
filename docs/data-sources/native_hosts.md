@@ -52,6 +52,7 @@ Read-Only:
 - `public_ip_address` (String)
 - `status` (String)
 - `tags` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--tags))
+- `taints` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--taints))
 - `tenant_id` (String)
 - `user_account` (String)
 - `volume` (List of Object) (see [below for nested schema](#nestedobjatt--hosts--volume))
@@ -102,6 +103,16 @@ Read-Only:
 
 Read-Only:
 
+- `key` (String)
+- `value` (String)
+
+
+<a id="nestedobjatt--hosts--taints"></a>
+### Nested Schema for `hosts.taints`
+
+Read-Only:
+
+- `effect` (String)
 - `key` (String)
 - `value` (String)
 
