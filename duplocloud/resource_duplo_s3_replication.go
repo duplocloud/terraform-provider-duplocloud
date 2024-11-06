@@ -177,6 +177,8 @@ func getS3BucketReplication(c *duplosdk.Client, tenantID, name string) ([]map[st
 		kv["name"] = ruleName[len(ruleName)-1]
 		if data.DestinationBucket.StorageClass != nil && data.DestinationBucket.StorageClass.Value != "" {
 			kv["storage_class"] = data.DestinationBucket.StorageClass.Value
+		} else {
+			kv["storage_class"] = "STANDARD"
 		}
 		rules = append(rules, kv)
 	}
