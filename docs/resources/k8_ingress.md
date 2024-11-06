@@ -182,9 +182,8 @@ resource "duplocloud_k8_ingress" "ingress" {
 
   tls {
     secret_name = "tlssecret"
-    hosts       = ["example.com", "https-example.foo.com", "abc.com"]
+    hosts       = ["example.com", "https-example.foo.com"]
   }
-  depends_on = [time_sleep.wait_45_seconds]
 
 }
 ```
