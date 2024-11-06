@@ -393,6 +393,9 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	if duplo.Taints != nil {
+		d.Set("taints", flattenTaints(*duplo.Taints))
+	}
 }
 
 func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
@@ -433,6 +436,21 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 			metricList[i] = val.(string)
 		}
 		asgProfile.EnabledMetrics = &metricList
+	}
+
+	obj := []duplosdk.DuploTaints{}
+	if val, ok := d.Get("taints").([]interface{}); ok {
+		for _, dt := range val {
+			m := dt.(map[string]interface{})
+			taints := duplosdk.DuploTaints{
+				Key:    m["key"].(string),
+				Value:  m["value"].(string),
+				Effect: m["effect"].(string),
+			}
+			obj = append(obj, taints)
+
+		}
+		asgProfile.Taints = &obj
 	}
 
 	return asgProfile
