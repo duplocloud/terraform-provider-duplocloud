@@ -74,6 +74,30 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 
 }
 
+
+//example for taints
+
+resource "duplocloud_asg_profile" "duplo-test-asg" {
+  tenant_id          = duplocloud_tenant.duplo-app.tenant_id
+  friendly_name      = "asgtaint"
+  instance_count     = 1
+  min_instance_count = 1
+  max_instance_count = 2
+
+  image_id       = "ami-id" # <== put the AWS duplo docker AMI ID here
+  capacity       = "t2.small"
+  agent_platform = 7 # Duplo native container agent
+  zone           = 1 # Zone A
+  user_account   = "oct15"
+
+  taints {
+    key    = "tk1"
+    value  = "tv2"
+    effect = "NoSchedule"
+  }
+}
+
+
 #secondary volume example
 resource "duplocloud_asg_profile" "duplo-test-asg" {
   tenant_id             = duplocloud_tenant.duplo-app.tenant_id

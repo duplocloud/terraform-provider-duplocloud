@@ -37,6 +37,7 @@ type DuploAsgProfile struct {
 	Zone                int                                `json:"Zone"`
 	EnabledMetrics      *[]string                          `json:"EnabledMetrics,omitempty"`
 	ExtraNodeLabels     *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
+	Taints              *[]DuploTaints                     `json:"Taints,omitempty"`
 }
 
 type DuploAsgProfileDeleteReq struct {
