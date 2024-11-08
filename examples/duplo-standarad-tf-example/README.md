@@ -1,6 +1,6 @@
 ## Infrastructure Automation with Terraform
 
-Welcome to the infrastructure automation repository using Terraform. This repository houses all the code needed to automate infrastructure provisioning for FedNow application using DuploCloud platform. For more information on Terraform, please refer to the [official documentation](https://developer.hashicorp.com/terraform/docs).
+Welcome to the infrastructure automation repository using Terraform. This repository houses all the code needed to automate infrastructure provisioning for any Application using DuploCloud platform. For more information on Terraform, please refer to the [official documentation](https://developer.hashicorp.com/terraform/docs).
 
 ### Directory Structure
 
@@ -14,13 +14,16 @@ terraform-repository/
 ├── config/
 │   ├── prod/
 │   │   ├── admin.tfvars
-│   │   |── fednow.tfvars
+│   │   |── aws-services.tfvars
+│   │   |── app.tfvars
 │   ├── customer1/
 │   │   ├── admin.tfvars
-│   │   |── fednow.tfvars
+│   │   |── aws-service.tfvars
+│   │   |── app.tfvars
 │   └── test/
-│       ├── admin.tfvars
-│       |── fednow.tfvars
+│   │   ├── admin.tfvars
+│   │   |── aws-service.tfvars
+│   │   |── app.tfvars
 └── terraform/
     ├── admin/
     │   ├── main.tf
