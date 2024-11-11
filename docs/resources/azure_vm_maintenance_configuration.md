@@ -44,7 +44,7 @@ resource "duplocloud_azure_vm_maintenance_configuration" "mt" {
 
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `visiblity` (String) The visibility of the Maintenance Configuration. The only allowable value is Custom. Defaults to `Custom`.
-- `window` (Block List) Block to configure maintenance window (see [below for nested schema](#nestedblock--window))
+- `window` (Block List, Max: 1) Block to configure maintenance window (see [below for nested schema](#nestedblock--window))
 
 ### Read-Only
 
