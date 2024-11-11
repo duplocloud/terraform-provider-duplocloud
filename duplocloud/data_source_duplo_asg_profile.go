@@ -64,7 +64,7 @@ func dataSourceAsgProfilesRead(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
-	return map[string]interface{}{
+	mp := map[string]interface{}{
 		"instance_count":      duplo.DesiredCapacity,
 		"min_instance_count":  duplo.MinSize,
 		"max_instance_count":  duplo.MaxSize,
@@ -87,4 +87,8 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		"volume":              flattenNativeHostVolumes(duplo.Volumes),
 		"network_interface":   flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 	}
+	if duplo.Taints != nil {
+		mp["taints"] = flattenTaints(*duplo.Taints)
+	}
+	return mp
 }

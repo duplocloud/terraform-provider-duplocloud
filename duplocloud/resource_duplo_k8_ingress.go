@@ -148,14 +148,12 @@ func k8sIngressSchema() map[string]*schema.Schema {
 						Elem: &schema.Schema{
 							Type: schema.TypeString,
 						},
-						Optional: true,
-						Computed: true,
+						Required: true,
 					},
 					"secret_name": {
 						Description: "The name of the secret used to terminate TLS traffic on port 443. This field is optional, enabling TLS routing based solely on the SNI hostname. If the SNI host in a listener conflicts with the 'Host' header in an IngressRule, the SNI host is used for termination, while the 'Host' header value is used for routing.",
 						Type:        schema.TypeString,
-						Optional:    true,
-						Computed:    true,
+						Required:    true,
 					},
 				},
 			},
@@ -328,7 +326,9 @@ func flattenK8sIngress(tenantId string, d *schema.ResourceData, duplo *duplosdk.
 	// Finally, set the map
 	d.Set("annotations", duplo.Annotations)
 	d.Set("labels", duplo.Labels)
-	d.Set("tls", flattenTls(duplo.OtherSpec))
+	if duplo.OtherSpec != nil {
+		d.Set("tls", flattenTls(duplo.OtherSpec))
+	}
 }
 
 func flattenK8sIngressLBConfig(duplo *duplosdk.DuploK8sLbConfig) map[string]interface{} {
@@ -490,6 +490,7 @@ func expandTls(i []interface{}) *duplosdk.DuploK8IngressOtherSpec {
 
 func flattenTls(obj *duplosdk.DuploK8IngressOtherSpec) []interface{} {
 	i := make([]interface{}, 0, len(obj.Tls))
+
 	for _, tls := range obj.Tls {
 		m := map[string]interface{}{
 			"hosts":       tls.Host,

@@ -182,8 +182,8 @@ resource "duplocloud_k8_ingress" "ingress" {
 
   tls {
     secret_name = "tlssecret"
+    hosts       = ["example.com", "https-example.foo.com"]
   }
-  depends_on = [time_sleep.wait_45_seconds]
 
 }
 ```
@@ -254,7 +254,7 @@ Optional:
 <a id="nestedblock--tls"></a>
 ### Nested Schema for `tls`
 
-Optional:
+Required:
 
 - `hosts` (List of String) The list of hosts included in the TLS certificate. Each value in this list must match the name(s) specified in the TLS secret. If not specified, it defaults to the wildcard host setting for the load balancer controller managing this Ingress.
 - `secret_name` (String) The name of the secret used to terminate TLS traffic on port 443. This field is optional, enabling TLS routing based solely on the SNI hostname. If the SNI host in a listener conflicts with the 'Host' header in an IngressRule, the SNI host is used for termination, while the 'Host' header value is used for routing.

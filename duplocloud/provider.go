@@ -176,6 +176,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_vm_maintenance_configuration": resourceAzureVmMaintenanceConfig(),
 			"duplocloud_user_tenant_access":                 resourceUserTenantAccess(),
 			"duplocloud_gcp_redis_instance":                 resourceRedisInstance(),
+			"duplocloud_gcp_host":                           resourceGcpHost(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),

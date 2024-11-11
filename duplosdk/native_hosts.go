@@ -52,6 +52,13 @@ type DuploNativeHost struct {
 	IsvTPM             bool                               `json:"IsvTPM"`
 	DiskControlType    string                             `json:"DiskControllerType,omitempty"`
 	ExtraNodeLabels    *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
+	Taints             *[]DuploTaints                     `json:"Taints,omitempty"`
+}
+
+type DuploTaints struct {
+	Key    string `json:"Key"`
+	Value  string `json:"Value"`
+	Effect string `json:"Effect"`
 }
 
 // DuploNativeHostNetworkInterface is a Duplo SDK object that represents a network interface of a native host
