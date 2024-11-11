@@ -16,12 +16,12 @@ import (
 // Resource for managing an infrastructure's settings.
 func resourceAzureVmMaintenanceConfig() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_vm_maintenance_configuration` applies maintenance window to an gcp infrastructure",
+		Description: "`duplocloud_azure_vm_maintenance_configuration` manages maintenance window to an azure vm",
 
-		ReadContext:   resourceVmMaintenanceConfigRead,
-		CreateContext: resourceVmMaintenanceConfigCreate,
-		UpdateContext: resourceVmMaintenanceConfigUpdate,
-		DeleteContext: resourceVmMaintenanceConfigDelete,
+		ReadContext:   resourceAzureVmMaintenanceConfigRead,
+		CreateContext: resourceAzureVmMaintenanceConfigCreate,
+		UpdateContext: resourceAzureVmMaintenanceConfigUpdate,
+		DeleteContext: resourceAzureVmMaintenanceConfigDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -46,7 +46,7 @@ func resourceAzureVmMaintenanceConfig() *schema.Resource {
 				ForceNew:    true,
 			},
 			"visiblity": {
-				Description:  "he visibility of the Maintenance Configuration. The only allowable value is Custom.",
+				Description:  "The visibility of the Maintenance Configuration. The only allowable value is Custom.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "Custom",
@@ -54,7 +54,7 @@ func resourceAzureVmMaintenanceConfig() *schema.Resource {
 			},
 
 			"window": {
-				Description: "Window block to schedule maintenance",
+				Description: "Block to configure maintenance window",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
@@ -99,13 +99,13 @@ func resourceAzureVmMaintenanceConfig() *schema.Resource {
 	}
 }
 
-func resourceVmMaintenanceConfigRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureVmMaintenanceConfigRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	// Parse the identifying attributes
 	tokens := strings.Split(d.Id(), "/")
 	tenantId := tokens[0]
 	vmName := tokens[1]
-	log.Printf("[TRACE] resourceVmMaintenanceConfigRead(%s): start", vmName)
+	log.Printf("[TRACE] resourceAzureVmMaintenanceConfigRead(%s): start", vmName)
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
@@ -120,68 +120,68 @@ func resourceVmMaintenanceConfigRead(ctx context.Context, d *schema.ResourceData
 
 	// Set the simple fields first.
 	d.Set("vm_name", vmName)
-	flattenVmMaintenance(d, *duplo)
+	flattenAzureVmMaintenance(d, *duplo)
 
-	log.Printf("[TRACE] resourceVmMaintenanceConfigRead(%s): end", vmName)
+	log.Printf("[TRACE] resourceAzureVmMaintenanceConfigRead(%s): end", vmName)
 	return nil
 }
 
-func resourceVmMaintenanceConfigCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureVmMaintenanceConfigCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
 	vmName := d.Get("vm_name").(string)
-	log.Printf("[TRACE] resourceVmMaintenanceConfigCreate(%s): start", vmName)
+	log.Printf("[TRACE] resourceAzureVmMaintenanceConfigCreate(%s): start", vmName)
 
-	rq := expandVmMaintenance(d)
+	rq := expandAzureVmMaintenance(d)
 
 	c := m.(*duplosdk.Client)
 
 	err := c.AzureVmMaintenanceConfigurationCreate(tenantId, vmName, rq)
 	if err != nil {
-		return diag.Errorf("resourceVmMaintenanceConfigCreate cannot create maintenance config for vm %s error: %s", vmName, err.Error())
+		return diag.Errorf("resourceAzureVmMaintenanceConfigCreate cannot create maintenance config for vm %s error: %s", vmName, err.Error())
 	}
 	d.SetId(tenantId + "/" + vmName + "/maintenance-configuration")
 
-	diags := resourceVmMaintenanceConfigRead(ctx, d, m)
-	log.Printf("[TRACE] resourceVmMaintenanceConfigCreate(%s): end", vmName)
+	diags := resourceAzureVmMaintenanceConfigRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAzureVmMaintenanceConfigCreate(%s): end", vmName)
 	return diags
 }
 
-func resourceVmMaintenanceConfigUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureVmMaintenanceConfigUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tokens := strings.Split(d.Id(), "/")
 	tenantId := tokens[0]
 	vmName := tokens[1]
-	log.Printf("[TRACE] resourceVmMaintenanceConfigUpdate(%s): start", vmName)
-	rq := expandVmMaintenance(d)
+	log.Printf("[TRACE] resourceAzureVmMaintenanceConfigUpdate(%s): start", vmName)
+	rq := expandAzureVmMaintenance(d)
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	err := c.AzureVmMaintenanceConfigurationUpdate(tenantId, vmName, rq)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve vm maintenance configuration details for '%s': %s", vmName, err)
 	}
-	diags := resourceVmMaintenanceConfigRead(ctx, d, m)
+	diags := resourceAzureVmMaintenanceConfigRead(ctx, d, m)
 
-	log.Printf("[TRACE] resourceVmMaintenanceConfigCreate(%s): end", vmName)
+	log.Printf("[TRACE] resourceAzureVmMaintenanceConfigUpdate(%s): end", vmName)
 
 	return diags
 }
 
-func resourceVmMaintenanceConfigDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureVmMaintenanceConfigDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tokens := strings.Split(d.Id(), "/")
 	tenantId := tokens[0]
 	vmName := tokens[1]
-	log.Printf("[TRACE] resourceVmMaintenanceConfigDelete(%s): start", vmName)
+	log.Printf("[TRACE] resourceAzureVmMaintenanceConfigDelete(%s): start", vmName)
 	c := m.(*duplosdk.Client)
 	err := c.AzureVmMaintenanceConfigurationDelete(tenantId, vmName)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve vm maintenance configuration details for '%s': %s", vmName, err)
 	}
 	d.SetId("")
-	log.Printf("[TRACE] resourceVmMaintenanceConfigDelete(%s): end", vmName)
+	log.Printf("[TRACE] resourceAzureVmMaintenanceConfigDelete(%s): end", vmName)
 
 	return nil
 }
 
-func expandVmMaintenance(d *schema.ResourceData) *duplosdk.DuploAzureVmMaintenanceWindow {
+func expandAzureVmMaintenance(d *schema.ResourceData) *duplosdk.DuploAzureVmMaintenanceWindow {
 	obj := duplosdk.DuploAzureVmMaintenanceWindow{}
 
 	obj.StartDateTime = d.Get("window.0.start_time").(string)
@@ -193,7 +193,7 @@ func expandVmMaintenance(d *schema.ResourceData) *duplosdk.DuploAzureVmMaintenan
 	return &obj
 }
 
-func flattenVmMaintenance(d *schema.ResourceData, rb duplosdk.DuploAzureVmMaintenanceWindow) {
+func flattenAzureVmMaintenance(d *schema.ResourceData, rb duplosdk.DuploAzureVmMaintenanceWindow) {
 	d.Set("window.0.start_time", rb.StartDateTime)
 	d.Set("window.0.expiration_time", rb.ExpirationDateTime)
 	d.Set("window.0.duration", rb.Duration)

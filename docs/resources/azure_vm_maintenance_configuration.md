@@ -3,12 +3,12 @@
 page_title: "duplocloud_azure_vm_maintenance_configuration Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_azure_vm_maintenance_configuration applies maintenance window to an gcp infrastructure
+  duplocloud_azure_vm_maintenance_configuration manages maintenance window to an azure vm
 ---
 
 # duplocloud_azure_vm_maintenance_configuration (Resource)
 
-`duplocloud_azure_vm_maintenance_configuration` applies maintenance window to an gcp infrastructure
+`duplocloud_azure_vm_maintenance_configuration` manages maintenance window to an azure vm
 
 ## Example Usage
 
@@ -43,8 +43,8 @@ resource "duplocloud_azure_vm_maintenance_configuration" "mt" {
 ### Optional
 
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `visiblity` (String) he visibility of the Maintenance Configuration. The only allowable value is Custom. Defaults to `Custom`.
-- `window` (Block List) Window block to schedule maintenance (see [below for nested schema](#nestedblock--window))
+- `visiblity` (String) The visibility of the Maintenance Configuration. The only allowable value is Custom. Defaults to `Custom`.
+- `window` (Block List) Block to configure maintenance window (see [below for nested schema](#nestedblock--window))
 
 ### Read-Only
 
