@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -45,10 +46,11 @@ func resourceAzureVmMaintenanceConfig() *schema.Resource {
 				ForceNew:    true,
 			},
 			"visiblity": {
-				Description: "he visibility of the Maintenance Configuration. The only allowable value is Custom.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "Custom",
+				Description:  "he visibility of the Maintenance Configuration. The only allowable value is Custom.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "Custom",
+				ValidateFunc: validation.StringInSlice([]string{"Custom"}, false),
 			},
 
 			"window": {
@@ -59,15 +61,17 @@ func resourceAzureVmMaintenanceConfig() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"start_time": {
-							Description: "Effective start date of the maintenance window in YYYY-MM-DD hh:mm format.",
-							Type:        schema.TypeString,
-							Required:    true,
+							Description:  "Effective start date of the maintenance window in YYYY-MM-DD HH:MM format.",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$`), "valid datetime format is YYYY-MM-DD HH:MM"),
 						},
 						"expiration_time": {
-							Description: "Effective expiration date of the maintenance window in YYYY-MM-DD hh:mm format.",
-							Type:        schema.TypeString,
-							Optional:    true,
-							Computed:    true,
+							Description:  "Effective expiration date of the maintenance window in YYYY-MM-DD hh:mm format.",
+							Type:         schema.TypeString,
+							Optional:     true,
+							Computed:     true,
+							ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$`), "valid datetime format is YYYY-MM-DD HH:MM"),
 						},
 						"duration": {
 							Description: "The duration of the maintenance window in HH:mm format.",
@@ -190,15 +194,9 @@ func expandVmMaintenance(d *schema.ResourceData) *duplosdk.DuploAzureVmMaintenan
 }
 
 func flattenVmMaintenance(d *schema.ResourceData, rb duplosdk.DuploAzureVmMaintenanceWindow) {
-	mp := map[string]interface{}{
-		"start_time":      rb.StartDateTime,
-		"expiration_time": rb.ExpirationDateTime,
-		"duration":        rb.Duration,
-		"recur_every":     rb.RecurEvery,
-		"time_zone":       rb.TimeZone,
-	}
-	i := []interface{}{}
-	i = append(i, mp)
-	d.Set("window", i)
-	d.Set("visiblity", rb.Visibility)
+	d.Set("window.0.start_time", rb.StartDateTime)
+	d.Set("window.0.expiration_time", rb.ExpirationDateTime)
+	d.Set("window.0.duration", rb.Duration)
+	d.Set("window.0.recur_every", rb.RecurEvery)
+	d.Set("window.0.time_zone", rb.TimeZone)
 }

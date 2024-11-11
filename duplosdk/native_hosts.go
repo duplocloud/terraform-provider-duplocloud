@@ -401,11 +401,10 @@ func (c *Client) AzureVmMaintenanceConfigurationCreate(tenantId, vmName string, 
 }
 
 func (c *Client) AzureVmMaintenanceConfigurationUpdate(tenantId, vmName string, rq *DuploAzureVmMaintenanceWindow) ClientError {
-	rp := DuploAzureVirtualMachine{}
 	return c.putAPI(fmt.Sprintf("AzureVmMaintenanceConfigurationUpdate(%s, %s)", tenantId, vmName),
 		fmt.Sprintf("v3/subscriptions/%s/azure/hosts/%s/maintenanceschedule", tenantId, vmName),
 		&rq,
-		&rp)
+		nil)
 }
 
 func (c *Client) AzureVmMaintenanceConfigurationGet(tenantId, vmName string) (*DuploAzureVmMaintenanceWindow, ClientError) {
