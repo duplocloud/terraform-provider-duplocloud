@@ -15,6 +15,7 @@ type DuploSecurityRule struct {
 }
 
 func (c *Client) GcpSecurityRuleCreate(scopeName string, rq *DuploSecurityRule, tenantSide bool) ClientError {
+	rp := DuploSecurityRule{}
 	patch := "infra/" + scopeName
 	if tenantSide {
 		patch = "tenant/" + scopeName
@@ -23,7 +24,7 @@ func (c *Client) GcpSecurityRuleCreate(scopeName string, rq *DuploSecurityRule, 
 		fmt.Sprintf("GcpSecurityRuleCreate(%s, %s)", scopeName, rq.Name),
 		fmt.Sprintf("v3/admin/google/sgrule/%s", patch),
 		&rq,
-		nil,
+		&rp,
 	)
 	return err
 }

@@ -101,7 +101,6 @@ func resourceGcpInfraSecurityRuleRead(ctx context.Context, d *schema.ResourceDat
 	id := d.Id()
 	tokens := strings.Split(id, "/")
 	infraName, ruleName := tokens[0], tokens[2]
-
 	log.Printf("[TRACE] resourceGcpInfraSecurityRuleRead(%s,%s): start", infraName, ruleName)
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
@@ -191,6 +190,7 @@ func expandGCPSecurityRule(d *schema.ResourceData) (*duplosdk.DuploSecurityRule,
 		Description:     d.Get("description").(string),
 		ServiceProtocol: d.Get("service_protocol").(string),
 		RuleType:        d.Get("rule_type").(string),
+		SourceRanges:    d.Get("source_ranges").(string),
 	}
 	if v, ok := d.GetOk("to_port"); ok {
 		rq.ToPort = v.(string)
