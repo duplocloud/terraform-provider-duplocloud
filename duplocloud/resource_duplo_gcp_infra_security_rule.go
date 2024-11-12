@@ -28,19 +28,19 @@ func schemaSecurityRule() map[string]*schema.Schema {
 		"ports": {
 			Description:   "",
 			Type:          schema.TypeString,
-			Required:      true,
+			Optional:      true,
 			ConflictsWith: []string{"to_port", "from_port"},
 		},
 		"to_port": {
 			Description:   "",
 			Type:          schema.TypeString,
-			Required:      true,
+			Optional:      true,
 			ConflictsWith: []string{"ports"},
 		},
 		"from_port": {
 			Description:   "",
 			Type:          schema.TypeString,
-			Required:      true,
+			Optional:      true,
 			ConflictsWith: []string{"ports"},
 		},
 		"service_protocol": {
