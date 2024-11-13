@@ -159,7 +159,7 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 		"requires_compatibilities": {
 			Type:     schema.TypeSet,
 			Optional: true,
-			ForceNew: true,
+			Computed: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		"ipc_mode": {
@@ -428,7 +428,8 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("memory", duplo.Memory)
 	d.Set("ipc_mode", duplo.IpcMode)
 	d.Set("pid_mode", duplo.PidMode)
-	d.Set("requires_compatibilities", duplo.RequiresCompatibilities)
+	// skip updating state; until backend has support for ec2.
+	// d.Set("requires_compatibilities", duplo.RequiresCompatibilities)
 	if duplo.NetworkMode != nil {
 		d.Set("network_mode", duplo.NetworkMode.Value)
 	}
