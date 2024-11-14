@@ -158,6 +158,7 @@ func resourceInfrastructureOnprem() *schema.Resource {
 				Computed:    true,
 			},
 		},
+		CustomizeDiff: validateOnPremAttribute,
 	}
 }
 
@@ -318,4 +319,15 @@ func flattenInfraOnprem(infra *duplosdk.DuploInfrastructureConfig, d *schema.Res
 	}
 	d.Set("status", infra.ProvisioningStatus)
 
+}
+
+func validateOnPremAttribute(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	vendor := diff.Get("vendor").(int)
+	eks := diff.Get("eks_config").([]interface{})
+
+	if vendor == 2 && len(eks) == 0 {
+		return fmt.Errorf("for vendor eks, eks_config required")
+	}
+
+	return nil
 }
