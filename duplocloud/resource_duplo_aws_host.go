@@ -283,7 +283,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 						ForceNew: true,
 					},
 					"effect": {
-						Description: "Update strategy of the node. Effect types <br>NoSchedule<br>PreferNoSchedule<br>NoExecute",
+						Description: "Update strategy of the node. Effect types <br>   - `0`: NoSchedule<br>   - `1`: PreferNoSchedule<br>   - `2`: NoExecute",
 						Type:        schema.TypeString,
 						Optional:    true,
 						ValidateFunc: validation.StringInSlice([]string{
