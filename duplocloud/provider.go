@@ -176,6 +176,7 @@ func Provider() *schema.Provider {
 			"duplocloud_user_tenant_access":                 resourceUserTenantAccess(),
 			"duplocloud_gcp_redis_instance":                 resourceRedisInstance(),
 			"duplocloud_gcp_host":                           resourceGcpHost(),
+			"duplocloud_infrastructure_onprem":              resourceInfrastructureOnprem(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
