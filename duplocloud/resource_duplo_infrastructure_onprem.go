@@ -176,7 +176,7 @@ func resourceInfrastructureOnpremRead(ctx context.Context, d *schema.ResourceDat
 	c := m.(*duplosdk.Client)
 	config, err := c.InfrastructureGetConfig(name)
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.Errorf("%s", err.Error())
 	}
 	if config == nil {
 		d.SetId("") // object missing
