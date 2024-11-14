@@ -58,7 +58,8 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 						"scope": {
 							Description: "The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES",
 							Type:        schema.TypeString,
-							Required:    true,
+							Optional:    true,
+							Default:     "NO_UPGRADES",
 						},
 					},
 				},
