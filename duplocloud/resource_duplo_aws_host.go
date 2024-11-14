@@ -708,14 +708,27 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost, 
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 	if duplo.IsMinion {
 		obj, _ := c.GetMinionForHost(duplo.TenantID, duplo.InstanceID)
-		if obj != nil && obj.Taints != nil {
-			d.Set("taints", flattenTaints(*obj.Taints))
+		if obj != nil && len(obj.Taints) > 0 {
+			d.Set("taints", flattenMinionTaints(obj.Taints))
 		}
 	}
 
 }
 
 func flattenTaints(taints []duplosdk.DuploTaints) []interface{} {
+	state := make([]interface{}, len(taints))
+	for i, t := range taints {
+		data := map[string]interface{}{
+			"key":    t.Key,
+			"value":  t.Value,
+			"effect": t.Effect,
+		}
+		state[i] = data
+	}
+	return state
+}
+
+func flattenMinionTaints(taints []duplosdk.DuploMinionTaint) []interface{} {
 	state := make([]interface{}, len(taints))
 	for i, t := range taints {
 		data := map[string]interface{}{

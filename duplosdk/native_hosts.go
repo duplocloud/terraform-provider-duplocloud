@@ -61,6 +61,12 @@ type DuploTaints struct {
 	Effect string `json:"Effect"`
 }
 
+type DuploMinionTaint struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Effect string `json:"effect"`
+}
+
 // DuploNativeHostNetworkInterface is a Duplo SDK object that represents a network interface of a native host
 type DuploNativeHostNetworkInterface struct {
 	NetworkInterfaceID string                 `json:"NetworkInterfaceId,omitempty"`
@@ -304,6 +310,7 @@ func (c *Client) AzureNativeHostGet(tenantID, name string) (*DuploNativeHost, Cl
 }
 
 func (c *Client) GetMinionForHost(tenantID, name string) (*DuploMinion, ClientError) {
+	//	time.Sleep(100 * time.Second)
 	list, err := c.TenantListMinions(tenantID)
 	if err != nil {
 		return nil, err
