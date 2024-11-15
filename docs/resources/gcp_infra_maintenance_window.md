@@ -67,13 +67,10 @@ resource "duplocloud_gcp_infra_maintenance_window" "mw" {
 <a id="nestedblock--exclusions"></a>
 ### Nested Schema for `exclusions`
 
-Required:
-
-- `scope` (String) The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES
-
 Optional:
 
 - `end_time` (String)
+- `scope` (String) The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES Defaults to `NO_UPGRADES`.
 - `start_time` (String)
 
 

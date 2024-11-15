@@ -9,6 +9,7 @@ import (
 	"hash/fnv"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -234,4 +235,59 @@ func diffSuppressGCPHostImageIdIfSame(_, _, _ string, d *schema.ResourceData) bo
 		ok = strings.Contains(o.(string), n.(string))
 	}
 	return ok
+}
+
+func diffSuppressListOrdering(k, old, new string, d *schema.ResourceData) bool {
+	// Extract attribute name to get the old and new values
+	attributeName := strings.Split(k, ".")[0]
+	o, n := d.GetChange(attributeName)
+
+	// Type assertion to ensure both old and new values are lists
+	oList, ok1 := o.([]interface{})
+	nList, ok2 := n.([]interface{})
+	if !ok1 || !ok2 {
+		return false // If not lists, don't suppress
+	}
+
+	// Helper function to sort and convert list to a map of key-value pairs
+	toSortedKeyValueList := func(list []interface{}) []map[string]string {
+		result := make([]map[string]string, 0, len(list))
+		for _, item := range list {
+			if entry, ok := item.(map[string]interface{}); ok {
+				entryMap := make(map[string]string)
+				if key, keyOk := entry["key"].(string); keyOk {
+					if value, valueOk := entry["value"].(string); valueOk {
+						entryMap["key"] = key
+						entryMap["value"] = value
+						result = append(result, entryMap)
+					}
+				}
+			}
+		}
+		// Sort list by key for consistency
+		sort.Slice(result, func(i, j int) bool {
+			return result[i]["key"] < result[j]["key"]
+		})
+		return result
+	}
+
+	// Sort and transform both old and new lists
+	oldSortedList := toSortedKeyValueList(oList)
+	newSortedList := toSortedKeyValueList(nList)
+
+	// Compare the lists for equality
+	if len(oldSortedList) != len(newSortedList) {
+		return false // Length mismatch indicates a change
+	}
+	for i := range oldSortedList {
+		oldEntry := oldSortedList[i]
+		newEntry := newSortedList[i]
+		// Compare key-value pairs; suppress if identical
+		if oldEntry["key"] != newEntry["key"] || oldEntry["value"] != newEntry["value"] {
+			return false
+		}
+	}
+
+	// No meaningful difference, suppress the diff
+	return true
 }

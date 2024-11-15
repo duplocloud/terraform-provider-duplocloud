@@ -25,13 +25,24 @@ func tenantSecurityRuleSchema() map[string]*schema.Schema {
 		Required:    true,
 		ForceNew:    true,
 	}
+	mp["source_service_account"] = &schema.Schema{
+		Type:     schema.TypeList,
+		Computed: true,
+		Elem:     &schema.Schema{Type: schema.TypeString},
+	}
+
+	mp["target_service_account"] = &schema.Schema{
+		Type:     schema.TypeList,
+		Computed: true,
+		Elem:     &schema.Schema{Type: schema.TypeString},
+	}
 	return mp
 }
 
 // Resource for managing an infrastructure's settings.
 func resourceGCPTenantSecurityRule() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_gcp_tenant_security_rule` applies security rule to gcp tenantId",
+		Description: "`duplocloud_gcp_tenant_security_rule` applies gcp security rule to  target tenantId",
 
 		ReadContext:   resourceGcpTenantSecurityRuleRead,
 		CreateContext: resourceGcpTenantSecurityRuleCreate,
@@ -56,11 +67,10 @@ func resourceGcpTenantSecurityRuleRead(ctx context.Context, d *schema.ResourceDa
 	id := d.Id()
 	tokens := strings.Split(id, "/")
 	tenantId, ruleName := tokens[0], tokens[2]
-
 	log.Printf("[TRACE] resourceGcpTenantSecurityRuleRead(%s,%s): start", tenantId, ruleName)
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.GcpSecurityRuleGet(tenantId, ruleName, false)
+	duplo, err := c.GcpSecurityRuleGet(tenantId, ruleName, true)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve rule name '%s' of '%s': %s", ruleName, tenantId, err)
 	}
@@ -71,7 +81,7 @@ func resourceGcpTenantSecurityRuleRead(ctx context.Context, d *schema.ResourceDa
 
 	// Set the simple fields first.
 	d.Set("tenant_id", tenantId)
-	d.Set("target_tenant_id", duplo.TargetTenantId)
+	//d.Set("target_tenant_id", duplo.TargetTenantId)
 	flattenGCPSecurityRule(d, *duplo)
 
 	log.Printf("[TRACE] resourceGcpTenantSecurityRuleRead(%s,%s): end", tenantId, ruleName)
@@ -92,13 +102,13 @@ func resourceGcpTenantSecurityRuleCreate(ctx context.Context, d *schema.Resource
 
 	c := m.(*duplosdk.Client)
 
-	err = c.GcpSecurityRuleCreate(tenantId, rq, false)
+	err = c.GcpSecurityRuleCreate(tenantId, rq, true)
 	if err != nil {
 		return diag.Errorf("GcpSecurityRuleCreate cannot create security rule for tenant %s error: %s", tenantId, err.Error())
 	}
 	d.SetId(tenantId + "/security-rule/" + rq.Name)
 
-	diags := resourceGcpInfraSecurityRuleRead(ctx, d, m)
+	diags := resourceGcpTenantSecurityRuleRead(ctx, d, m)
 	log.Printf("[TRACE] resourceGcpTenantSecurityRuleCreate(%s): end", tenantId)
 	return diags
 }
@@ -107,7 +117,7 @@ func resourceGcpTenantSecurityRuleUpdate(ctx context.Context, d *schema.Resource
 	id := d.Id()
 	tokens := strings.Split(id, "/")
 	tenantId := tokens[0]
-	log.Printf("[TRACE] resourceGcpTenantSecurityRuleCreate(%s): start", tenantId)
+	log.Printf("[TRACE] resourceGcpTenantSecurityRuleUpdate(%s): start", tenantId)
 
 	rq, err := expandGCPSecurityRule(d)
 	if err != nil {
@@ -118,15 +128,15 @@ func resourceGcpTenantSecurityRuleUpdate(ctx context.Context, d *schema.Resource
 	}
 
 	c := m.(*duplosdk.Client)
-
-	err = c.GcpSecurityRuleUpdate(tenantId, rq, false)
+	rq.Name = d.Get("fullname").(string)
+	err = c.GcpSecurityRuleUpdate(tenantId, rq, true)
 	if err != nil {
-		return diag.Errorf("GcpSecurityRuleCreate cannot create security rule for tenant %s error: %s", tenantId, err.Error())
+		return diag.Errorf("resourceGcpTenantSecurityRuleUpdate cannot update security rule for tenant %s error: %s", tenantId, err.Error())
 	}
 	d.SetId(tenantId + "/security-rule/" + rq.Name)
 
-	diags := resourceGcpInfraSecurityRuleRead(ctx, d, m)
-	log.Printf("[TRACE] resourceGcpTenantSecurityRuleCreate(%s): end", tenantId)
+	diags := resourceGcpTenantSecurityRuleRead(ctx, d, m)
+	log.Printf("[TRACE] resourceGcpTenantSecurityRuleUpdate(%s): end", tenantId)
 	return diags
 }
 
@@ -138,7 +148,7 @@ func resourceGcpTenantSecurityRuleDelete(ctx context.Context, d *schema.Resource
 	log.Printf("[TRACE] resourceGcpTenantSecurityRuleDelete(%s,%s): start", tenantId, ruleName)
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	err := c.GcpSecurityRuleDelete(tenantId, ruleName, false)
+	err := c.GcpSecurityRuleDelete(tenantId, ruleName, true)
 	if err != nil {
 		return diag.Errorf("Unable to delete security rule '%s' for '%s': %s", ruleName, tenantId, err)
 	}
