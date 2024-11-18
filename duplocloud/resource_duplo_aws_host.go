@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -317,6 +318,14 @@ func diffUserData(ctx context.Context, diff *schema.ResourceDiff, m interface{})
 	return nil
 }
 
+func validateTaintsSupport(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	agp := diff.Get("agent_platform").(int)
+	if _, ok := diff.GetOk("taints"); ok && agp != 7 {
+		return fmt.Errorf("taints not supported for Linux docker/ Native type hosts")
+	}
+	return nil
+}
+
 // SCHEMA for resource crud
 func resourceAwsHost() *schema.Resource {
 	awsHostSchema := nativeHostSchema()
@@ -344,8 +353,11 @@ func resourceAwsHost() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema:        awsHostSchema,
-		CustomizeDiff: diffUserData,
+		Schema: awsHostSchema,
+		CustomizeDiff: customdiff.All(
+			diffUserData,
+			validateTaintsSupport,
+		),
 	}
 }
 
