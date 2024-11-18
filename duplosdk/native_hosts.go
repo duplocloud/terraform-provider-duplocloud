@@ -351,8 +351,11 @@ func (c *Client) GetMinionForHost(ctx context.Context, tenantID, name string) (*
 		},
 	}
 	resp, err := stateConf.WaitForStateContext(ctx)
-	return resp.(*DuploMinion), err
+	if resp != nil {
+		return resp.(*DuploMinion), err
 
+	}
+	return nil, err
 }
 
 //Retry
