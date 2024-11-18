@@ -223,7 +223,7 @@ Required:
 <a id="nestedblock--taints"></a>
 ### Nested Schema for `taints`
 
-Optional:
+Required:
 
 - `effect` (String) Update strategy of the node.
 - `key` (String)
