@@ -309,7 +309,7 @@ func resourceAzureVirtualMachineRead(ctx context.Context, d *schema.ResourceData
 	d.Set("fullname", fullname)
 	d.Set("tenant_id", tenantID)
 	flattenAzureVirtualMachine(d, duplo)
-	minion, _ := c.GetMinionForHost(tenantID, fullname)
+	minion, _ := c.GetMinionForHost(ctx, tenantID, fullname)
 	if minion != nil {
 		log.Printf("[TRACE] Minion found for host (%s).", fullname)
 		d.Set("is_minion", true)

@@ -1,7 +1,11 @@
 package duplosdk
 
 import (
+	"context"
 	"fmt"
+	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
 
 const (
@@ -309,22 +313,49 @@ func (c *Client) AzureNativeHostGet(tenantID, name string) (*DuploNativeHost, Cl
 	return nil, nil
 }
 
-func (c *Client) GetMinionForHost(tenantID, name string) (*DuploMinion, ClientError) {
+func (c *Client) GetMinionForHost(ctx context.Context, tenantID, name string) (*DuploMinion, error) {
 	//	time.Sleep(100 * time.Second)
-	list, err := c.TenantListMinions(tenantID)
-	if err != nil {
-		return nil, err
-	}
-
-	if list != nil {
-		for _, minion := range *list {
-			if minion.Name == name {
-				return &minion, nil
+	//list, err := c.TenantListMinions(tenantID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//if list != nil {
+	//	for _, minion := range *list {
+	//		if minion.Name == name {
+	//			return &minion, nil
+	//		}
+	//	}
+	//}
+	//return nil, nil
+	timeout := 2 * time.Minute
+	stateConf := &retry.StateChangeConf{
+		Target:       []string{"Connected"},
+		Pending:      []string{"notconnected"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			list, err := c.TenantListMinions(tenantID)
+			if err != nil {
+				return nil, "", err
 			}
-		}
+			if list != nil {
+				for _, minion := range *list {
+					if minion.Name == name && minion.ConnectionStatus == "Connected" {
+						return &minion, minion.ConnectionStatus, nil
+					}
+				}
+			}
+			return nil, "notconnected", nil
+		},
 	}
-	return nil, nil
+	resp, err := stateConf.WaitForStateContext(ctx)
+	return resp.(*DuploMinion), err
+
 }
+
+//Retry
 
 func (c *Client) AzureNativeHostList(tenantID string) (*[]DuploNativeHost, ClientError) {
 	rp := []DuploNativeHost{}
