@@ -314,20 +314,6 @@ func (c *Client) AzureNativeHostGet(tenantID, name string) (*DuploNativeHost, Cl
 }
 
 func (c *Client) GetMinionForHost(ctx context.Context, tenantID, name string) (*DuploMinion, error) {
-	//	time.Sleep(100 * time.Second)
-	//list, err := c.TenantListMinions(tenantID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//if list != nil {
-	//	for _, minion := range *list {
-	//		if minion.Name == name {
-	//			return &minion, nil
-	//		}
-	//	}
-	//}
-	//return nil, nil
 	timeout := 2 * time.Minute
 	stateConf := &retry.StateChangeConf{
 		Target:       []string{"Connected"},
