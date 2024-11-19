@@ -160,7 +160,10 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeSet,
 			Optional: true,
 			ForceNew: true,
-			Elem:     &schema.Schema{Type: schema.TypeString},
+			Elem: &schema.Schema{
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"FARGATE"}, false),
+			},
 		},
 		"ipc_mode": {
 			Type:         schema.TypeString,
@@ -242,7 +245,7 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 						ValidateFunc: validation.StringInSlice([]string{"X86_64", "ARM64"}, false),
 					},
 					"operating_system_family": {
-						Description: "Valid values are <br>For FARGATE: 'LINUX','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2022_CORE' <br> For EC2 : 'LINUX','WINDOWS_SERVER_2022_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2016_FULL','WINDOWS_SERVER_2004_CORE','WINDOWS_SERVER_20H2_CORE'",
+						Description: "Valid values are <br>For FARGATE: 'LINUX','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2022_CORE'", // <br> For EC2 : 'LINUX','WINDOWS_SERVER_2022_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2016_FULL','WINDOWS_SERVER_2004_CORE','WINDOWS_SERVER_20H2_CORE'",
 						Type:        schema.TypeString,
 						Optional:    true,
 					},
