@@ -126,12 +126,23 @@ func resourceInfrastructureMaintenanceWindowRead(ctx context.Context, d *schema.
 	token := d.Id()
 	infraName := strings.Split(token, "/")[1]
 	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowRead(%s): start", infraName)
-	time.Sleep(10 * time.Second) //for sync with gcp
+	//for sync with gcp
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.GetGCPInfraMaintenanceWindow(infraName)
-	if err != nil {
-		return diag.Errorf("Unable to retrieve infrastructure maintenance window details for '%s': %s", infraName, err)
+	duplo := &duplosdk.DuploGcpInfraMaintenanceWindow{}
+	var err error
+	i := 0
+	for i < 1 {
+		duplo, err = c.GetGCPInfraMaintenanceWindow(infraName)
+		if err != nil {
+			return diag.Errorf("Unable to retrieve infrastructure maintenance window details for '%s': %s", infraName, err)
+		}
+		i++
+
+		if _, ok := d.GetOk("daily_maintenance_start_time"); ok && duplo.DailyMaintenanceStartTime == "" {
+			i = 0
+			time.Sleep(2 * time.Second)
+		}
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
