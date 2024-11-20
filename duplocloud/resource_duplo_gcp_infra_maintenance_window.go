@@ -159,6 +159,8 @@ func resourceInfrastructureMaintenanceWindowRead(ctx context.Context, d *schema.
 
 func resourceInfrastructureMaintenanceWindowCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	infraName := d.Get("infra_name").(string)
+	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowCreateOrUpdate(%s): start", infraName)
+
 	rq, err := expandWindowsMaintenance(d)
 	if err != nil {
 		return diag.Errorf("resourceInfrastructureMaintenanceWindowCreateOrUpdate cannot create maintenance window for infra %s error: %s", infraName, err.Error())
@@ -179,17 +181,18 @@ func resourceInfrastructureMaintenanceWindowCreateOrUpdate(ctx context.Context, 
 
 func resourceInfrastructureMaintenanceWindowDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	infraName := d.Get("infra_name").(string)
+	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowDelete(%s): start", infraName)
 
 	c := m.(*duplosdk.Client)
 	rq := duplosdk.DuploGcpInfraMaintenanceWindow{}
 	err := c.CreateGCPInfraMaintenanceWindow(infraName, &rq)
 	if err != nil {
-		return diag.Errorf("resourceInfrastructureMaintenanceWindowCreateOrUpdate cannot create maintenance window for infra %s error: %s", infraName, err.Error())
+		return diag.Errorf("resourceInfrastructureMaintenanceWindowDelete cannot delete maintenance window for infra %s error: %s", infraName, err.Error())
 	}
 	d.SetId("maintenance-window/" + infraName)
 
 	diags := resourceInfrastructureMaintenanceWindowRead(ctx, d, m)
-	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowCreateOrUpdate(%s): end", infraName)
+	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowDelete(%s): end", infraName)
 	return diags
 }
 
