@@ -223,9 +223,9 @@ Required:
 <a id="nestedblock--taints"></a>
 ### Nested Schema for `taints`
 
-Optional:
+Required:
 
-- `effect` (String) Update strategy of the node.
+- `effect` (String) Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute
 - `key` (String)
 - `value` (String)
 

@@ -275,21 +275,21 @@ func nativeHostSchema() map[string]*schema.Schema {
 				Schema: map[string]*schema.Schema{
 					"key": {
 						Type:     schema.TypeString,
-						Optional: true,
 						ForceNew: true,
+						Required: true,
 					},
 					"value": {
 						Type:     schema.TypeString,
-						Optional: true,
+						Required: true,
 						ForceNew: true,
 					},
 					"effect": {
-						Description: "Update strategy of the node.",
+						Description: "Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute",
 						Type:        schema.TypeString,
-						Optional:    true,
+						Required:    true,
 						ValidateFunc: validation.StringInSlice([]string{
 							"NoSchedule",
-							"PreferNoSchedule.",
+							"PreferNoSchedule",
 							"NoExecute",
 						}, false),
 						ForceNew: true,
@@ -388,7 +388,7 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Apply the data
-	nativeHostToState(d, duplo, c)
+	nativeHostToState(ctx, d, duplo, c)
 
 	log.Printf("[TRACE] resourceAwsHostRead(%s): end", id)
 	return nil
@@ -684,7 +684,7 @@ func expandNativeHostNetworkInterfaces(key string, d *schema.ResourceData) *[]du
 	return &result
 }
 
-func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost, c *duplosdk.Client) {
+func nativeHostToState(ctx context.Context, d *schema.ResourceData, duplo *duplosdk.DuploNativeHost, c *duplosdk.Client) {
 	d.Set("instance_id", duplo.InstanceID)
 	d.Set("user_account", duplo.UserAccount)
 	d.Set("tenant_id", duplo.TenantID)
@@ -719,15 +719,28 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost, 
 	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 	if duplo.IsMinion {
-		obj, _ := c.GetMinionForHost(duplo.TenantID, duplo.InstanceID)
-		if obj != nil && obj.Taints != nil {
-			d.Set("taints", flattenTaints(*obj.Taints))
+		obj, _ := c.GetMinionForHost(ctx, duplo.TenantID, duplo.InstanceID)
+		if obj != nil && len(obj.Taints) > 0 {
+			d.Set("taints", flattenMinionTaints(obj.Taints))
 		}
 	}
 
 }
 
 func flattenTaints(taints []duplosdk.DuploTaints) []interface{} {
+	state := make([]interface{}, len(taints))
+	for i, t := range taints {
+		data := map[string]interface{}{
+			"key":    t.Key,
+			"value":  t.Value,
+			"effect": t.Effect,
+		}
+		state[i] = data
+	}
+	return state
+}
+
+func flattenMinionTaints(taints []duplosdk.DuploMinionTaint) []interface{} {
 	state := make([]interface{}, len(taints))
 	for i, t := range taints {
 		data := map[string]interface{}{
