@@ -73,7 +73,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 ### Read-Only
 
 - `arn` (String) The ARN of the task definition.
-- `container_definitions_backend_updates` (String)
+- `container_definitions_updates` (String) container_definitions updates in backend
 - `execution_role_arn` (String)
 - `full_family_name` (String) The name of the task definition to create.
 - `id` (String) The ID of this resource.

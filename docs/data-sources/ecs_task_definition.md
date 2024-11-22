@@ -23,7 +23,7 @@ description: |-
 ### Read-Only
 
 - `container_definitions` (String)
-- `container_definitions_backend_updates` (String)
+- `container_definitions_updates` (String) container_definitions updates in backend
 - `cpu` (String)
 - `execution_role_arn` (String)
 - `family` (String) The name of the task definition to create.

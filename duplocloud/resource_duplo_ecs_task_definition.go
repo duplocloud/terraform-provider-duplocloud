@@ -89,9 +89,10 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 				return validateJsonObjectArray("Duplo ECS Task Definition container_definitions", v.(string))
 			},
 		},
-		"container_definitions_backend_updates": {
-			Type:     schema.TypeString,
-			Computed: true,
+		"container_definitions_updates": {
+			Type:        schema.TypeString,
+			Description: "container_definitions updates in backend",
+			Computed:    true,
 		},
 		"volumes": {
 			Type:     schema.TypeString,
@@ -446,7 +447,7 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	}
 
 	// Next, convert things into embedded JSON
-	toJsonStringState("container_definitions_backend_updates", duplo.ContainerDefinitions, d)
+	toJsonStringState("container_definitions_updates", duplo.ContainerDefinitions, d)
 	toJsonStringState("volumes", duplo.Volumes, d)
 
 	// Next, convert things into structured data.
@@ -854,8 +855,4 @@ func validateInput(ctx context.Context, diff *schema.ResourceDiff, m interface{}
 	}
 
 	return nil
-}
-
-func ignoreDiff(k, old, new string, d *schema.ResourceData) bool {
-	return true //strings.EqualFold(old, new)
 }
