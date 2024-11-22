@@ -151,7 +151,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"metadata": {
-			Description:      "Configuration metadata used when creating the host.",
+			Description:      "Configuration metadata used when creating the host.<br>*Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10*",
 			Type:             schema.TypeList,
 			Optional:         true,
 			Computed:         true,
@@ -174,10 +174,11 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Elem:        KeyValueSchema(),
 		},
 		"volume": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Computed: true,
-			ForceNew: true, // relaunch instance
+			Description: "Block to specify additional or secondary volume beyond the root device",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true, // relaunch instance
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"iops": {
@@ -263,6 +264,38 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Elem:             &schema.Schema{Type: schema.TypeString},
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
+
+		"taints": {
+			Description: "Specify taints to attach to the nodes, to repel other nodes with different toleration",
+			Type:        schema.TypeList,
+			Optional:    true,
+			ForceNew:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"key": {
+						Type:     schema.TypeString,
+						Optional: true,
+						ForceNew: true,
+					},
+					"value": {
+						Type:     schema.TypeString,
+						Optional: true,
+						ForceNew: true,
+					},
+					"effect": {
+						Description: "Update strategy of the node.",
+						Type:        schema.TypeString,
+						Optional:    true,
+						ValidateFunc: validation.StringInSlice([]string{
+							"NoSchedule",
+							"PreferNoSchedule.",
+							"NoExecute",
+						}, false),
+						ForceNew: true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -343,7 +376,7 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Apply the data
-	nativeHostToState(d, duplo)
+	nativeHostToState(d, duplo, c)
 
 	log.Printf("[TRACE] resourceAwsHostRead(%s): end", id)
 	return nil
@@ -531,6 +564,19 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
+	obj := []duplosdk.DuploTaints{}
+	if val, ok := d.Get("taints").([]interface{}); ok {
+		for _, dt := range val {
+			m := dt.(map[string]interface{})
+			taints := duplosdk.DuploTaints{
+				Key:    m["key"].(string),
+				Value:  m["value"].(string),
+				Effect: m["effect"].(string),
+			}
+			obj = append(obj, taints)
+
+		}
+	}
 	return &duplosdk.DuploNativeHost{
 		TenantID:          d.Get("tenant_id").(string),
 		InstanceID:        d.Get("instance_id").(string),
@@ -554,6 +600,7 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		Volumes:           expandNativeHostVolumes("volume", d),
 		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
 		ExtraNodeLabels:   keyValueFromMap(d.Get("custom_node_labels").(map[string]interface{})),
+		Taints:            &obj,
 	}
 }
 
@@ -625,7 +672,7 @@ func expandNativeHostNetworkInterfaces(key string, d *schema.ResourceData) *[]du
 	return &result
 }
 
-func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) {
+func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost, c *duplosdk.Client) {
 	d.Set("instance_id", duplo.InstanceID)
 	d.Set("user_account", duplo.UserAccount)
 	d.Set("tenant_id", duplo.TenantID)
@@ -659,6 +706,26 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	//d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	if duplo.IsMinion {
+		obj, _ := c.GetMinionForHost(duplo.TenantID, duplo.InstanceID)
+		if obj != nil && obj.Taints != nil {
+			d.Set("taints", flattenTaints(*obj.Taints))
+		}
+	}
+
+}
+
+func flattenTaints(taints []duplosdk.DuploTaints) []interface{} {
+	state := make([]interface{}, len(taints))
+	for i, t := range taints {
+		data := map[string]interface{}{
+			"key":    t.Key,
+			"value":  t.Value,
+			"effect": t.Effect,
+		}
+		state[i] = data
+	}
+	return state
 }
 
 func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []interface{} {

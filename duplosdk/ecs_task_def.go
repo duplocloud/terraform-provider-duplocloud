@@ -47,6 +47,12 @@ type DuploEcsTaskDef struct {
 	InferenceAccelerators   *[]DuploEcsTaskDefInferenceAccelerator `json:"InferenceAccelerators,omitempty"`
 	Status                  *DuploStringValue                      `json:"Status,omitempty"`
 	Volumes                 []map[string]interface{}               `json:"Volumes,omitempty"`
+	RuntimePlatform         *DuploEcsTaskDefRuntimePlatform        `json:"runtimePlatform,omitempty"`
+}
+
+type DuploEcsTaskDefRuntimePlatform struct {
+	CPUArchitecture DuploStringValue `json:"cpuArchitecture"`
+	OSFamily        DuploStringValue `json:"operatingSystemFamily"`
 }
 
 /*************************************************

@@ -907,7 +907,7 @@ func resourceGCPK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 	err = gcpNodePoolAutoScalingUpdate(c, tenantID, fullName, d, *rq)
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.Errorf("error: %s", err.Error())
 	}
 	duplo, err := c.GCPK8NodePoolGet(tenantID, fullName)
 	if err != nil {
@@ -1017,38 +1017,13 @@ func gcpNodePoolZoneUpdate(c *duplosdk.Client, tenantID, fullName string, zones 
 	return resp, nil
 }
 
-func hasSuffix(s string, suffixes map[string]struct{}) bool {
-	for suffix := range suffixes {
-		if strings.HasSuffix(s, suffix) {
-			return true
-		}
-	}
-	return false
-}
-
-func filterStringsBySuffix(stringsSlice []string) []string {
-	suffixes := map[string]struct{}{
-		"allow-lb-healthcheck": {},
-		"allow-lb-internal":    {},
-		"iap-ssh":              {},
-		"iap-rdp":              {},
-	}
-
-	filtered := make([]string, 0, len(stringsSlice))
-	for _, str := range stringsSlice {
-		if !hasSuffix(str, suffixes) {
-			filtered = append(filtered, str)
-		}
-	}
-	return filtered
-}
-
 func filterOutDefaultTags(tags []string) []string {
-	return filterStringsBySuffix(tags)
+	return trimStringsByPosition(tags, 2)
 }
 
 func filterOutDefaultLabels(labels map[string]string) map[string]string {
 	delete(labels, "tenantname")
+	delete(labels, "duplo-tenant")
 	return labels
 }
 
