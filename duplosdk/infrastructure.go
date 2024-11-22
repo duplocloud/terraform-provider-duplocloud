@@ -32,6 +32,7 @@ type DuploInfrastructureCreateRequest struct {
 	EnableContainerInsights bool                     `json:"EnableContainerInsights"`
 	Vnet                    *DuploInfrastructureVnet `json:"Vnet"`
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
+	OnPrem                  *DuploOnPrem             `json:"OnPremConfig,omitempty"`
 }
 
 // DuploInfrastructure represents a Duplo infrastructure
@@ -48,6 +49,25 @@ type DuploInfrastructure struct {
 	SubnetCidr              int                    `json:"SubnetCidr"`
 	ProvisioningStatus      string                 `json:"ProvisioningStatus"`
 	CustomData              *[]DuploKeyStringValue `json:"CustomData,omitempty"`
+}
+
+type DuploOnPremEKSConfig struct {
+	PrivateSubnets          []string `json:"PrivateSubnets"`
+	PublicSubnets           []string `json:"PublicSubnets"`
+	VpcId                   string   `json:"VpcId"`
+	IngressSecurityGroupIds []string `json:"IngressSecurityGroupIds"`
+}
+type DuploOnPremK8Config struct {
+	Name                           string                `json:"Name"`
+	Vendor                         int                   `json:"Vendor"`
+	ClusterEndpoint                string                `json:"ClusterEndpoint"`
+	ApiToken                       string                `json:"ApiToken"`
+	CertificateAuthorityDataBase64 string                `json:"CertificateAuthorityDataBase64"`
+	OnPremEKSConfig                *DuploOnPremEKSConfig `json:"OnPremEKSConfig,omitempty"`
+}
+type DuploOnPrem struct {
+	OnPremK8Config *DuploOnPremK8Config `json:"OnPremK8Config,omitempty"`
+	DataCenter     string               `json:"DataCenter"`
 }
 
 // DuploInfrastructureVnetSubnet represents a Duplo infrastructure VNET subnet
@@ -118,6 +138,7 @@ type DuploInfrastructureConfig struct {
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
 	AksConfig               *AksConfig               `json:"AksConfig,omitempty"`
 	ClusterIpv4Cidr         string                   `json:"ClusterIpv4Cidr,omitempty"`
+	OnPrem                  *DuploOnPrem             `json:"OnPremConfig,omitempty"`
 }
 
 type AksConfig struct {
