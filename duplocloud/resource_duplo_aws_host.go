@@ -288,7 +288,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 						Optional:    true,
 						ValidateFunc: validation.StringInSlice([]string{
 							"NoSchedule",
-							"PreferNoSchedule.",
+							"PreferNoSchedule",
 							"NoExecute",
 						}, false),
 						ForceNew: true,
