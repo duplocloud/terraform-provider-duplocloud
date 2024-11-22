@@ -255,7 +255,7 @@ Required:
 
 Optional:
 
-- `effect` (String) Update strategy of the node. Effect types <br>     `0`: NoSchedule<br>     `1`: PreferNoSchedule<br>     `2`: NoExecute
+- `effect` (String) Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute
 - `key` (String)
 - `value` (String)
 
