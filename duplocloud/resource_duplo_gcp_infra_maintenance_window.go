@@ -2,13 +2,16 @@ package duplocloud
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // Resource for managing an infrastructure's settings.
@@ -40,37 +43,51 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 				Description: "Exceptions to maintenance window. Non-emergency maintenance should not occur in these windows. A cluster can have up to 20 maintenance exclusions at a time",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Computed:    true,
+				//Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"start_time": {
 							Type:             schema.TypeString,
-							Optional:         true,
-							Computed:         true,
+							Required:         true,
 							ValidateDiagFunc: validateDateTimeFormat,
 						},
 						"end_time": {
 							Type:             schema.TypeString,
-							Optional:         true,
-							Computed:         true,
+							Required:         true,
 							ValidateDiagFunc: validateDateTimeFormat,
 						},
 						"scope": {
 							Description: "The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES",
 							Type:        schema.TypeString,
-							Required:    true,
+							Optional:    true,
+							Default:     "NO_UPGRADES",
 						},
 					},
 				},
 			},
 			"daily_maintenance_start_time": {
-				Description:      "Time window specified for daily maintenance operations. Specify 'start_time 'in RFC3339 format HH:MM, where HH : [00-23] and MM : [00-59] GMT",
-				Type:             schema.TypeString,
-				Optional:         true,
-				Computed:         true,
-				ForceNew:         true,
-				ConflictsWith:    []string{"recurring_window"},
-				ValidateDiagFunc: validateDateTimeFormat,
+				Description:   "Time window specified for daily maintenance operations. Specify 'start_time 'in RFC3339 format HH:MM, where HH : [00-23] and MM : [00-59] GMT",
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"recurring_window"},
+				ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d$`), "Invalid format: valid format format HH:MM, where HH : [00-23] and MM : [00-59]"),
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					o, n := d.GetChange("daily_maintenance_start_time")
+					tim := strings.Split(o.(string), "T")
+					fmt.Println(tim)
+					if len(tim) > 1 {
+						hm := strings.Split(tim[1], ":")
+						fmt.Println(hm)
+
+						hhmm := hm[0] + ":" + hm[1]
+						if hhmm == n {
+							return true
+						}
+					}
+					return false
+				},
 			},
 			"recurring_window": {
 				Type:          schema.TypeList,
@@ -82,23 +99,19 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"start_time": {
-							Type: schema.TypeString,
-
+							Type:             schema.TypeString,
 							Required:         true,
-							ForceNew:         true,
 							ValidateDiagFunc: validateDateTimeFormat,
 						},
 						"end_time": {
 							Type:             schema.TypeString,
 							Required:         true,
-							ForceNew:         true,
 							ValidateDiagFunc: validateDateTimeFormat,
 						},
 						"recurrence": {
 							Description: "Specify recurrence in RFC5545 RRULE format, to specify when this recurs.",
 							Type:        schema.TypeString,
 							Required:    true,
-							ForceNew:    true,
 						},
 					},
 				},
@@ -113,12 +126,23 @@ func resourceInfrastructureMaintenanceWindowRead(ctx context.Context, d *schema.
 	token := d.Id()
 	infraName := strings.Split(token, "/")[1]
 	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowRead(%s): start", infraName)
-
+	//for sync with gcp
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.GetGCPInfraMaintenanceWindow(infraName)
-	if err != nil {
-		return diag.Errorf("Unable to retrieve infrastructure maintenance window details for '%s': %s", infraName, err)
+	duplo := &duplosdk.DuploGcpInfraMaintenanceWindow{}
+	var err error
+	i := 0
+	for i < 1 {
+		duplo, err = c.GetGCPInfraMaintenanceWindow(infraName)
+		if err != nil {
+			return diag.Errorf("Unable to retrieve infrastructure maintenance window details for '%s': %s", infraName, err)
+		}
+		i++
+
+		if _, ok := d.GetOk("daily_maintenance_start_time"); ok && duplo.DailyMaintenanceStartTime == "" {
+			i = 0
+			time.Sleep(2 * time.Second)
+		}
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -135,6 +159,8 @@ func resourceInfrastructureMaintenanceWindowRead(ctx context.Context, d *schema.
 
 func resourceInfrastructureMaintenanceWindowCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	infraName := d.Get("infra_name").(string)
+	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowCreateOrUpdate(%s): start", infraName)
+
 	rq, err := expandWindowsMaintenance(d)
 	if err != nil {
 		return diag.Errorf("resourceInfrastructureMaintenanceWindowCreateOrUpdate cannot create maintenance window for infra %s error: %s", infraName, err.Error())
@@ -154,7 +180,20 @@ func resourceInfrastructureMaintenanceWindowCreateOrUpdate(ctx context.Context, 
 }
 
 func resourceInfrastructureMaintenanceWindowDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	infraName := d.Get("infra_name").(string)
+	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowDelete(%s): start", infraName)
+
+	c := m.(*duplosdk.Client)
+	rq := duplosdk.DuploGcpInfraMaintenanceWindow{}
+	err := c.CreateGCPInfraMaintenanceWindow(infraName, &rq)
+	if err != nil {
+		return diag.Errorf("resourceInfrastructureMaintenanceWindowDelete cannot delete maintenance window for infra %s error: %s", infraName, err.Error())
+	}
+	d.SetId("maintenance-window/" + infraName)
+
+	diags := resourceInfrastructureMaintenanceWindowRead(ctx, d, m)
+	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowDelete(%s): end", infraName)
+	return diags
 }
 
 func expandWindowsMaintenance(d *schema.ResourceData) (*duplosdk.DuploGcpInfraMaintenanceWindow, error) {
