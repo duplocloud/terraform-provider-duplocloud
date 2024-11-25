@@ -251,3 +251,26 @@ func validateDateTimeFormat(v interface{}, p cty.Path) diag.Diagnostics {
 
 	return diagnostics
 }
+
+func ValidateNoDuplicatesInList() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (warnings []string, errors []error) {
+		// Convert the input to a slice of strings
+		values, ok := i.([]interface{})
+		if !ok {
+			errors = append(errors, fmt.Errorf("%s: expected type list", k))
+			return warnings, errors
+		}
+
+		// Use a map to track duplicates
+		seen := make(map[string]bool)
+		for _, v := range values {
+			str := v.(string)
+			if seen[str] {
+				errors = append(errors, fmt.Errorf("%s: duplicate value '%s' found", k, str))
+			}
+			seen[str] = true
+		}
+
+		return warnings, errors
+	}
+}

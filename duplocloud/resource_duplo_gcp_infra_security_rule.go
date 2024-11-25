@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
@@ -18,6 +19,7 @@ func schemaSecurityRule() map[string]*schema.Schema {
 			Description: "Specify rule name",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 		},
 		"fullname": {
 			Description: "Duplocloud prefixed rule name",
@@ -30,29 +32,41 @@ func schemaSecurityRule() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
-		"ports": {
-			Description: "The list of ports to which this rule applies. This field is only applicable for UDP or TCP protocol.",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
+		"ports_and_protocols": {
+			Type:     schema.TypeList,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"ports": {
+						Description: "The list of ports to which this rule applies. This field is only applicable for UDP or TCP protocol.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+					},
+					"service_protocol": {
+						Description:  "The IP protocol to which this rule applies. The protocol type is required when creating a firewall rule. This value can either be one of the following well known protocol strings (tcp, udp, icmp, esp, ah, sctp, ipip, all), or the IP protocol number.",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"tcp", "udp", "icmp", "esp", "ah", "sctp", "ipip", "all"}, false),
+					},
+				},
+			},
 		},
-		"service_protocol": {
-			Description:  "The IP protocol to which this rule applies. The protocol type is required when creating a firewall rule. This value can either be one of the following well known protocol strings (tcp, udp, icmp, esp, ah, sctp, ipip, all), or the IP protocol number.",
-			Type:         schema.TypeString,
-			Required:     true,
-			ValidateFunc: validation.StringInSlice([]string{"tcp", "udp", "icmp", "esp", "ah", "sctp", "ipip", "all"}, false),
-		},
+
 		"source_ranges": {
 			Description: "The lists of IPv4 or IPv6 addresses in CIDR format that specify the source of traffic for a firewall rule",
 			Type:        schema.TypeList,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-			Required:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+			Required: true,
 		},
 		"rule_type": {
 			Description:  "Specify type of access rule (ALLOW , DENY)",
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringInSlice([]string{"ALLOW", "DENY"}, false),
+			ForceNew:     true,
 		},
 		"direction": {
 			Type:     schema.TypeString,
@@ -111,7 +125,8 @@ func resourceGCPInfraSecurityRule() *schema.Resource {
 			Delete: schema.DefaultTimeout(2 * time.Minute),
 		},
 
-		Schema: infraSecurityRuleSchema(),
+		Schema:        infraSecurityRuleSchema(),
+		CustomizeDiff: validateGCPSecurityRuleAttribute,
 	}
 }
 
@@ -211,15 +226,18 @@ func expandGCPSecurityRule(d *schema.ResourceData) (*duplosdk.DuploSecurityRule,
 		RuleType:    d.Get("rule_type").(string),
 	}
 	pps := []duplosdk.DuploSecurityRuleProtocolAndPorts{}
-	pp := duplosdk.DuploSecurityRuleProtocolAndPorts{}
-	if v, ok := d.GetOk("ports"); ok {
-		for _, p := range v.([]interface{}) {
+
+	for _, spp := range d.Get("ports_and_protocols").([]interface{}) {
+		pp := duplosdk.DuploSecurityRuleProtocolAndPorts{}
+
+		mpp := spp.(map[string]interface{})
+		for _, p := range mpp["ports"].([]interface{}) {
 			pp.Ports = append(pp.Ports, p.(string))
 		}
-	}
-	pp.ServiceProtocol = d.Get("service_protocol").(string)
+		pp.ServiceProtocol = mpp["service_protocol"].(string)
+		pps = append(pps, pp)
 
-	pps = append(pps, pp)
+	}
 	rq.ProtocolAndPorts = pps
 	for _, sr := range d.Get("source_ranges").([]interface{}) {
 		rq.SourceRanges = append(rq.SourceRanges, sr.(string))
@@ -230,15 +248,29 @@ func expandGCPSecurityRule(d *schema.ResourceData) (*duplosdk.DuploSecurityRule,
 func flattenGCPSecurityRule(d *schema.ResourceData, rb duplosdk.DuploSecurityRuleResponse) {
 	d.Set("fullname", rb.Name)
 	d.Set("description", rb.Description)
+
 	if len(rb.Allowed) > 0 {
+		ppI := make([]interface{}, 0, len(rb.Allowed))
 		d.Set("rule_type", "ALLOW")
-		d.Set("ports", rb.Allowed[0].Ports)
-		d.Set("service_protocol", rb.Allowed[0].ServiceProtocol)
+		for _, v := range rb.Allowed {
+			mp := make(map[string]interface{})
+			mp["ports"] = v.Ports
+			mp["service_protocol"] = v.ServiceProtocol
+			ppI = append(ppI, mp)
+		}
+		d.Set("ports_and_protocols", ppI)
+
 	}
 	if len(rb.Denied) > 0 {
+		ppI := make([]interface{}, 0, len(rb.Allowed))
 		d.Set("rule_type", "DENY")
-		d.Set("ports", rb.Denied[0].Ports)
-		d.Set("service_protocol", rb.Denied[0].ServiceProtocol)
+		for _, v := range rb.Allowed {
+			mp := make(map[string]interface{})
+			mp["ports"] = v.Ports
+			mp["service_protocol"] = v.ServiceProtocol
+			ppI = append(ppI, mp)
+		}
+		d.Set("ports_and_protocols", ppI)
 	}
 	if len(rb.SourceServiceAccounts) > 0 {
 		d.Set("source_service_account", rb.SourceServiceAccounts)
@@ -253,4 +285,16 @@ func flattenGCPSecurityRule(d *schema.ResourceData, rb duplosdk.DuploSecurityRul
 	d.Set("self_link", rb.SelfLink)
 	d.Set("source_tags", rb.SourceTags)
 
+}
+
+func validateGCPSecurityRuleAttribute(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	srs := diff.Get("source_ranges").([]interface{})
+	dup := map[string]struct{}{}
+	for _, v := range srs {
+		if _, ok := dup[v.(string)]; ok {
+			return fmt.Errorf("duplicate value in source_ranges not allowed")
+		}
+		dup[v.(string)] = struct{}{}
+	}
+	return nil
 }
