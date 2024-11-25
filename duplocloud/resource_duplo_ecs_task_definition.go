@@ -160,7 +160,10 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeSet,
 			Optional: true,
 			ForceNew: true,
-			Elem:     &schema.Schema{Type: schema.TypeString},
+			Elem: &schema.Schema{
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"FARGATE"}, false),
+			},
 		},
 		"ipc_mode": {
 			Type:         schema.TypeString,
@@ -242,7 +245,7 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 						ValidateFunc: validation.StringInSlice([]string{"X86_64", "ARM64"}, false),
 					},
 					"operating_system_family": {
-						Description: "Valid values are <br>For FARGATE: 'LINUX','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2022_CORE' <br> For EC2 : 'LINUX','WINDOWS_SERVER_2022_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2016_FULL','WINDOWS_SERVER_2004_CORE','WINDOWS_SERVER_20H2_CORE'",
+						Description: "Valid values are <br>For FARGATE: 'LINUX','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2022_CORE'", // <br> For EC2 : 'LINUX','WINDOWS_SERVER_2022_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2016_FULL','WINDOWS_SERVER_2004_CORE','WINDOWS_SERVER_20H2_CORE'",
 						Type:        schema.TypeString,
 						Optional:    true,
 					},
@@ -799,38 +802,50 @@ func validateInput(ctx context.Context, diff *schema.ResourceDiff, m interface{}
 		"WINDOWS_SERVER_2004_CORE": true,
 		"WINDOWS_SERVER_20H2_CORE": true,
 	}
-	for _, o := range obj.List() {
-		if o.(string) == "FARGATE" {
-			if len(pf) == 0 {
-				v := []interface{}{}
-				m := map[string]interface{}{
-					"operating_system_family": "LINUX",
-					"cpu_architecture":        "X86_64",
-				}
-				v = append(v, m)
-				e := diff.SetNew("runtime_platform", v)
-				if e != nil {
-					return e
-				}
-			} else {
-				os := pf[0].(map[string]interface{})
-				f := os["operating_system_family"].(string)
-				if _, ok := fmp[f]; !ok {
-					return errors.New("Invalid operating_system_family")
-				}
-			}
-		} else if o.(string) == "EC2" {
-			if len(pf) > 0 {
-				os := pf[0].(map[string]interface{})
-				f := os["operating_system_family"].(string)
-				if f != "" {
-					if _, ok := emp[f]; !ok {
-						return errors.New("Invalid operating_system_family")
 
-					}
+	for _, o := range obj.List() {
+		if len(pf) == 0 {
+			v := []interface{}{}
+			m := map[string]interface{}{
+				"operating_system_family": "LINUX",
+				"cpu_architecture":        "X86_64",
+			}
+			v = append(v, m)
+			e := diff.SetNew("runtime_platform", v)
+			if e != nil {
+				return e
+			}
+			return nil
+		}
+		os := pf[0].(map[string]interface{})
+		f := os["operating_system_family"].(string)
+
+		if strings.Contains(f, "WINDOW") && os["cpu_architecture"] == "ARM64" {
+			return errors.New("cpu_architecture ARM64 is not compatible with WINDOWS OS family")
+		}
+
+		if o.(string) == "FARGATE" {
+			os := pf[0].(map[string]interface{})
+			f := os["operating_system_family"].(string)
+
+			if _, ok := fmp[f]; !ok {
+				return errors.New("invalid operating_system_family")
+			}
+			nm := diff.Get("network_mode").(string)
+			if nm != "awsvpc" {
+				return errors.New("invalid network mode, FARGATE only supports awsvpc network mode")
+			}
+		}
+
+		if o.(string) == "EC2" {
+			if f != "" {
+				if _, ok := emp[f]; !ok {
+					return errors.New("invalid operating_system_family")
 				}
 			}
 		}
+
 	}
+
 	return nil
 }
