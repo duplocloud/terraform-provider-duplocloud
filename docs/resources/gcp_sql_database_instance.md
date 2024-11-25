@@ -58,7 +58,7 @@ resource "duplocloud_gcp_sql_database_instance" "sql" {
 
 - `disk_size` (Number) The size of data disk, in GB. Size of a running instance cannot be reduced but can be increased. The minimum value is 10GB.
 - `labels` (Map of String) Map of string keys and values that can be used to organize and categorize this resource.
-- `need_backup` (Boolean) Flag to enable backup process on delete of database Defaults to `false`.
+- `need_backup` (Boolean) Flag to enable backup process on delete of database Defaults to `true`.
 - `root_password` (String) Provide root password for specific database versions.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `wait_until_ready` (Boolean) Whether or not to wait until sql database instance to be ready, after creation. Defaults to `true`.
