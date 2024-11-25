@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -270,17 +272,20 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			ForceNew:    true,
+			MaxItems:    50,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
-						Type:     schema.TypeString,
-						ForceNew: true,
-						Required: true,
+						Type:         schema.TypeString,
+						Optional:     true,
+						ForceNew:     true,
+						ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9.-]{0,62}$|^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?/(.{1,253})$`), "Invalid key format: taint key must begin with a letter or number, can contain letters, numbers, hyphens(-), and periods(.), and be up to 63 characters long OR the taint key begins with a valid DNS subdomain prefix, followed by a single /, and includes a key of up to 253 characters"),
 					},
 					"value": {
-						Type:     schema.TypeString,
-						Required: true,
-						ForceNew: true,
+						Type:         schema.TypeString,
+						Optional:     true,
+						ForceNew:     true,
+						ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$`), "Invalid value format: taint value must begin with a letter or number, can contain letters, numbers, hyphens(-), and be up to 63 characters long"),
 					},
 					"effect": {
 						Description: "Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute",
@@ -317,6 +322,14 @@ func diffUserData(ctx context.Context, diff *schema.ResourceDiff, m interface{})
 	return nil
 }
 
+func validateTaintsSupport(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	agp := diff.Get("agent_platform").(int)
+	if _, ok := diff.GetOk("taints"); ok && agp != 7 {
+		return fmt.Errorf("taints not supported for Linux docker/ Native type hosts")
+	}
+	return nil
+}
+
 // SCHEMA for resource crud
 func resourceAwsHost() *schema.Resource {
 	awsHostSchema := nativeHostSchema()
@@ -344,8 +357,11 @@ func resourceAwsHost() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema:        awsHostSchema,
-		CustomizeDiff: diffUserData,
+		Schema: awsHostSchema,
+		CustomizeDiff: customdiff.All(
+			diffUserData,
+			validateTaintsSupport,
+		),
 	}
 }
 
