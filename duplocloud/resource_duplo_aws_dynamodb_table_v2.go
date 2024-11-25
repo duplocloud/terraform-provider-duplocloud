@@ -1256,7 +1256,13 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 
 	// Generate the ID for the resource and set it.
 	id := fmt.Sprintf("%s/%s", tenantID, fullName)
+	if d.HasChanges("ttl") {
+		err := updateDynamoDBTTl(ctx, d, m)
+		if err != nil {
+			return err
+		}
 
+	}
 	err = dynamodbWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 	if err != nil {
 		return diag.FromErr(err)
