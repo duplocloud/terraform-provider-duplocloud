@@ -176,6 +176,8 @@ func Provider() *schema.Provider {
 			"duplocloud_user_tenant_access":                 resourceUserTenantAccess(),
 			"duplocloud_gcp_redis_instance":                 resourceRedisInstance(),
 			"duplocloud_gcp_host":                           resourceGcpHost(),
+			"duplocloud_gcp_infra_security_rule":            resourceGCPInfraSecurityRule(),
+			"duplocloud_gcp_tenant_security_rule":           resourceGCPTenantSecurityRule(),
 			"duplocloud_infrastructure_onprem":              resourceInfrastructureOnprem(),
 			"duplocloud_k8_helm_repository":                 resourceHelmRepository(),
 			"duplocloud_k8_helm_release":                    resourceHelmRelease(),

@@ -412,7 +412,7 @@ type DuploMinion struct {
 	Tunnel           int                    `json:"Tunnel"`
 	AgentPlatform    int                    `json:"AgentPlatform"`
 	Cloud            int                    `json:"Cloud"`
-	Taints           *[]DuploTaints         `json:"Taints,omitempty"`
+	Taints           []DuploMinionTaint     `json:"Taints"`
 }
 
 type DuploMinionDeleteReq struct {
