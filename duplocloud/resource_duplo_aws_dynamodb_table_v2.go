@@ -274,11 +274,11 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"ttl": {
-			Description: "Setup ttl for dynamodb table",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Computed:    true,
-			MaxItems:    1,
+			Description:      "Setup ttl for dynamodb table",
+			Type:             schema.TypeList,
+			Optional:         true,
+			MaxItems:         1,
+			DiffSuppressFunc: diffSuppressDynamodbTTLHandler,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"attribute_name": {
@@ -476,7 +476,7 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if diags != nil {
 		return diags
 	}
-	diags = updateDynamoDBTTl(ctx, d, m)
+	diags = updateDynamoDBTTl(ctx, d, m, rp.TtlStatus == "ENABLED")
 	if diags != nil {
 		return diags
 	}
@@ -485,8 +485,10 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-func updateDynamoDBTTl(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	if v, ok := d.GetOk("ttl"); ok {
+func updateDynamoDBTTl(_ context.Context, d *schema.ResourceData, m interface{}, currState bool) diag.Diagnostics {
+	var v interface{}
+	ok := false
+	if v, ok = d.GetOk("ttl"); ok {
 		id := d.Id()
 		tenantID, name, err := parseAwsDynamoDBTableIdParts(id)
 		if err != nil {
@@ -495,6 +497,9 @@ func updateDynamoDBTTl(_ context.Context, d *schema.ResourceData, m interface{})
 		fullname := d.Get("fullname").(string)
 
 		ttlReq := expandTTl(v.([]interface{}))
+		//	if ttlReq.Enabled == currState && {
+		//		return nil
+		//	}
 		c := m.(*duplosdk.Client)
 		_, respErr := c.DynamoDBTableV2TTl(tenantID, fullname, ttlReq)
 		if respErr != nil {
@@ -1257,7 +1262,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	// Generate the ID for the resource and set it.
 	id := fmt.Sprintf("%s/%s", tenantID, fullName)
 	if d.HasChanges("ttl") {
-		err := updateDynamoDBTTl(ctx, d, m)
+		err := updateDynamoDBTTl(ctx, d, m, existing.TtlStatus == "ENABLED")
 		if err != nil {
 			return err
 		}
