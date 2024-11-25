@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -271,17 +272,20 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			ForceNew:    true,
+			MaxItems:    50,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
-						Type:     schema.TypeString,
-						ForceNew: true,
-						Required: true,
+						Type:         schema.TypeString,
+						Optional:     true,
+						ForceNew:     true,
+						ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9.-]{0,62}$|^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?/(.{1,253})$`), "Invalid key format: taint key must begin with a letter or number, can contain letters, numbers, hyphens(-), and periods(.), and be up to 63 characters long OR the taint key begins with a valid DNS subdomain prefix, followed by a single /, and includes a key of up to 253 characters"),
 					},
 					"value": {
-						Type:     schema.TypeString,
-						Required: true,
-						ForceNew: true,
+						Type:         schema.TypeString,
+						Optional:     true,
+						ForceNew:     true,
+						ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$`), "Invalid value format: taint value must begin with a letter or number, can contain letters, numbers, hyphens(-), and be up to 63 characters long"),
 					},
 					"effect": {
 						Description: "Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute",
