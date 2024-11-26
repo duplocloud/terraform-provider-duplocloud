@@ -259,12 +259,13 @@ func nativeHostSchema() map[string]*schema.Schema {
 			},
 		},
 		"custom_node_labels": {
-			Description:      "Specify the labels to attach to the nodes.",
-			Type:             schema.TypeMap,
-			Optional:         true,
-			Computed:         true,
-			Elem:             &schema.Schema{Type: schema.TypeString},
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Description: "Specify the labels to attach to the nodes.",
+			Type:        schema.TypeMap,
+			Optional:    true,
+			//Computed:         true,
+			Elem: &schema.Schema{Type: schema.TypeString},
+			//DiffSuppressFunc: diffSuppressWhenNotCreating,
+			ForceNew: true,
 		},
 
 		"taints": {
@@ -722,7 +723,7 @@ func nativeHostToState(ctx context.Context, d *schema.ResourceData, duplo *duplo
 	//d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
-	if duplo.IsMinion {
+	if duplo.IsMinion && duplo.AgentPlatform == 7 {
 		obj, _ := c.GetMinionForHost(ctx, duplo.TenantID, duplo.InstanceID)
 		if obj != nil && len(obj.Taints) > 0 { //taints only applicable at k8s side
 			d.Set("taints", flattenMinionTaints(obj.Taints))
