@@ -31,6 +31,7 @@ type DuploEcacheInstance struct {
 	SnapshotName             string   `json:"SnapshotName,omitempty"`
 	SnapshotArns             []string `json:"SnapshotArns,omitempty"`
 	SnapshotRetentionLimit   int      `json:"SnapshotRetentionLimit,omitempty"`
+	SnapshotWindow           string   `json:"SnapshotWindow,omitempty"`
 }
 
 type AddDuploEcacheInstanceRequest struct {
