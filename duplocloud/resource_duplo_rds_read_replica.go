@@ -129,6 +129,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			Type:             schema.TypeList,
 			MaxItems:         1,
 			Optional:         true,
+			Computed:         true,
 			DiffSuppressFunc: suppressIfPerformanceInsightsDisabled,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
