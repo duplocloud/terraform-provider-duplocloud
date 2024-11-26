@@ -724,7 +724,7 @@ func nativeHostToState(ctx context.Context, d *schema.ResourceData, duplo *duplo
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 	if duplo.IsMinion {
 		obj, _ := c.GetMinionForHost(ctx, duplo.TenantID, duplo.InstanceID)
-		if obj != nil && len(obj.Taints) > 0 {
+		if obj != nil && len(obj.Taints) > 0 { //taints only applicable at k8s side
 			d.Set("taints", flattenMinionTaints(obj.Taints))
 		}
 	}
