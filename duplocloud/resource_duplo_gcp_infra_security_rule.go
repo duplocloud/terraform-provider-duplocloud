@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -44,10 +45,13 @@ func schemaSecurityRule() map[string]*schema.Schema {
 						Elem:        &schema.Schema{Type: schema.TypeString},
 					},
 					"service_protocol": {
-						Description:  "The IP protocol to which this rule applies. The protocol type is required when creating a firewall rule. This value can either be one of the following well known protocol strings (tcp, udp, icmp, esp, ah, sctp, ipip, all), or the IP protocol number.",
-						Type:         schema.TypeString,
-						Required:     true,
-						ValidateFunc: validation.StringInSlice([]string{"tcp", "udp", "icmp", "esp", "ah", "sctp", "ipip", "all"}, false),
+						Description: "The IP protocol to which this rule applies. The protocol type is required when creating a firewall rule. This value can either be one of the following well known protocol strings (tcp, udp, icmp, esp, ah, sctp, ipip, all), or the IP protocol number.",
+						Type:        schema.TypeString,
+						Required:    true,
+						ValidateFunc: validation.Any(
+							validation.StringInSlice([]string{"tcp", "udp", "icmp", "esp", "ah", "sctp", "ipip", "all"}, false),
+							validation.StringMatch(regexp.MustCompile(`^((25[0-5])|(2[0-4][0-9])|([0-1]?[0-9][0-9]?)$)`), "exceptable value should be between 0-255"),
+						),
 					},
 				},
 			},
