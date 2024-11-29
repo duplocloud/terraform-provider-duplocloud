@@ -126,7 +126,7 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			},
 		},
 		"os_type": {
-			Description: "Specifies the OS used by the agent pool. Possible values are AzureLinux, Ubuntu.",
+			Description: "Specifies the OS used by the agent pool. Possible values are `Linux`, `Windows`.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Default:     "Linux",
