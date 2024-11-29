@@ -26,16 +26,20 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"identifier": {
-			Description:  "Identifier for node pool.",
-			Type:         schema.TypeInt,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}),
+			Description:   "Identifier for node pool.",
+			Type:          schema.TypeInt,
+			Computed:      true,
+			Optional:      true,
+			ValidateFunc:  validation.IntInSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}),
+			Deprecated:    "identifier has been deprecated instead use name",
+			ConflictsWith: []string{"name"},
 		},
 		"name": {
-			Description: "The Duplo generated name of the node pool.",
-			Type:        schema.TypeString,
-			Computed:    true,
+			Description:   "The name of the node pool.",
+			Type:          schema.TypeString,
+			Computed:      true,
+			Optional:      true,
+			ConflictsWith: []string{"identifier"},
 		},
 		"min_capacity": {
 			Description: "The minimum number of nodes which should exist within this Node Pool.",
@@ -204,17 +208,18 @@ func resourceAgentK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, 
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
-	identifier := d.Get("identifier").(int)
-	log.Printf("[TRACE] resourceAgentK8NodePoolCreate(%s, %v): start", tenantID, identifier)
+	identifier := useNameElseIdentifier(d)
+
+	log.Printf("[TRACE] resourceAgentK8NodePoolCreate(%s, %s): start", tenantID, identifier)
 	c := m.(*duplosdk.Client)
 
-	rq, err := expandAgentK8NodePool(d)
+	rq, err := expandAgentK8NodePool(d, identifier)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure node pool '%v': %s", tenantID, identifier, err)
+		return diag.Errorf("Error creating tenant %s azure node pool '%s': %s", tenantID, identifier, err)
 	}
 	friendlyName, err := c.AzureK8NodePoolCreate(tenantID, rq)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure node pool '%v': %s", tenantID, identifier, err)
+		return diag.Errorf("Error creating tenant %s azure node pool '%s': %s", tenantID, identifier, err)
 	}
 
 	id := fmt.Sprintf("%s/%s", tenantID, *friendlyName)
@@ -247,7 +252,7 @@ func resourceAgentK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAgentK8NodePoolUpdate(%s, %v): start", tenantID, name)
+	log.Printf("[TRACE] resourceAgentK8NodePoolUpdate(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
 	nodepool := &duplosdk.DuploAzureK8NodePoolRequest{
 		FriendlyName:      name,
@@ -315,13 +320,22 @@ func resourceAgentK8NodePoolDelete(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-func expandAgentK8NodePool(d *schema.ResourceData) (*duplosdk.DuploAzureK8NodePoolRequest, error) {
+func useNameElseIdentifier(d *schema.ResourceData) string {
+	identifier := d.Get("identifier").(int)
+	name := d.Get("name").(string)
+	if name != "" {
+		return name
+	}
+	return strconv.Itoa(identifier)
+}
+
+func expandAgentK8NodePool(d *schema.ResourceData, identifier string) (*duplosdk.DuploAzureK8NodePoolRequest, error) {
 	nodePool := &duplosdk.DuploAzureK8NodePoolRequest{
 		MinSize:           d.Get("min_capacity").(int),
 		MaxSize:           d.Get("max_capacity").(int),
 		DesiredCapacity:   d.Get("desired_capacity").(int),
 		EnableAutoScaling: d.Get("enable_auto_scaling").(bool),
-		FriendlyName:      strconv.Itoa(d.Get("identifier").(int)),
+		FriendlyName:      identifier,
 		Capacity:          d.Get("vm_size").(string),
 	}
 

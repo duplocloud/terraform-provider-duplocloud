@@ -56,7 +56,6 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 ### Required
 
 - `desired_capacity` (Number) The initial number of nodes which should exist within this Node.
-- `identifier` (Number) Identifier for node pool.
 - `max_capacity` (Number) The maximum number of nodes which should exist within this Node Pool.
 - `min_capacity` (Number) The minimum number of nodes which should exist within this Node Pool.
 - `tenant_id` (String) The GUID of the tenant that the azure node pool will be created in.
@@ -67,6 +66,8 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 - `allocation_tag` (String) Allocation tags for this node pool.
 - `availability_zones` (Set of String) availability zones of node pool
 - `enable_auto_scaling` (Boolean) Whether to enable auto-scaler.
+- `identifier` (Number, Deprecated) Identifier for node pool. identifier has been deprecated instead use name
+- `name` (String) The name of the node pool.
 - `node_labels` (Block List) Kubernetes labels which should be applied to nodes in this Node Pool. (see [below for nested schema](#nestedblock--node_labels))
 - `node_taints` (List of String) A list of Kubernetes taints which should be applied to nodes in the agent pool.
 - `os_type` (String) Specifies the OS used by the agent pool. Possible values are `Linux`, `Windows`. Defaults to `Linux`.
@@ -77,7 +78,6 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `name` (String) The Duplo generated name of the node pool.
 
 <a id="nestedblock--node_labels"></a>
 ### Nested Schema for `node_labels`
