@@ -378,9 +378,11 @@ func expandAgentK8NodePool(d *schema.ResourceData, identifier string) (*duplosdk
 		}
 	}
 	if v, ok := d.GetOk("node_taints"); ok && v != nil {
-		nodetaints := v.(*schema.Set)
-		for _, v := range nodetaints.List() {
-			nodePool.NodeTaints = append(nodePool.NodeTaints, v.(string))
+		nodetaints := v.([]interface{})
+		if len(nodetaints) > 0 {
+			for _, v := range nodetaints {
+				nodePool.NodeTaints = append(nodePool.NodeTaints, v.(string))
+			}
 		}
 	}
 	if v, ok := d.GetOk("node_labels"); ok && v != nil {
