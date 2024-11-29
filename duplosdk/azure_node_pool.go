@@ -16,6 +16,9 @@ type DuploAzureK8NodePoolRequest struct {
 	ScaleSetEvictionPolicy string                 `json:"ScaleSetEvictionPolicy,omitempty"`
 	SpotMaxPrice           float32                `json:"SpotMaxPrice,omitempty"`
 	AvailabilityZones      []string               `json:"AvailabilityZones,omitempty"`
+	K8sWorkerOs            int                    `json:"K8sWorkerOs"`
+	NodeTaints             []string               `json:"NodeTaints,omitempty"`
+	NodeLabels             *[]DuploKeyStringValue `json:"NodeLabels,omitempty"`
 }
 
 type DuploAzureK8NodePoolDeleteRequest struct {
@@ -28,30 +31,33 @@ type DuploAzureK8NodePool struct {
 		Key   string `json:"Key"`
 		Value string `json:"Value"`
 	} `json:"CustomDataTags"`
-	FriendlyName           string        `json:"FriendlyName"`
-	Capacity               string        `json:"Capacity"`
-	IsMinion               bool          `json:"IsMinion"`
-	Zone                   int           `json:"Zone"`
-	Volumes                []interface{} `json:"Volumes"`
-	Tags                   []interface{} `json:"Tags"`
-	TagsEx                 []interface{} `json:"TagsEx"`
-	AgentPlatform          int           `json:"AgentPlatform"`
-	IsEbsOptimized         bool          `json:"IsEbsOptimized"`
-	Cloud                  int           `json:"Cloud"`
-	AllocatedPublicIP      bool          `json:"AllocatedPublicIp"`
-	NetworkInterfaces      []interface{} `json:"NetworkInterfaces"`
-	MetaData               []interface{} `json:"MetaData"`
-	MinionTags             []interface{} `json:"MinionTags"`
-	EncryptDisk            bool          `json:"EncryptDisk"`
-	ProvisioningState      string        `json:"ProvisioningState"`
-	DesiredCapacity        int           `json:"DesiredCapacity"`
-	MaxSize                int           `json:"MaxSize"`
-	MinSize                int           `json:"MinSize"`
-	EnableAutoScaling      bool          `json:"EnableAutoScaling"`
-	ScaleSetPriority       string        `json:"ScaleSetPriority,omitempty"`
-	ScaleSetEvictionPolicy string        `json:"ScaleSetEvictionPolicy,omitempty"`
-	SpotMaxPrice           float32       `json:"SpotMaxPrice,omitempty"`
-	AvailabilityZones      []string      `json:"AvailabilityZones,omitempty"`
+	FriendlyName           string                 `json:"FriendlyName"`
+	Capacity               string                 `json:"Capacity"`
+	IsMinion               bool                   `json:"IsMinion"`
+	Zone                   int                    `json:"Zone"`
+	Volumes                []interface{}          `json:"Volumes"`
+	Tags                   []interface{}          `json:"Tags"`
+	TagsEx                 []interface{}          `json:"TagsEx"`
+	AgentPlatform          int                    `json:"AgentPlatform"`
+	IsEbsOptimized         bool                   `json:"IsEbsOptimized"`
+	Cloud                  int                    `json:"Cloud"`
+	AllocatedPublicIP      bool                   `json:"AllocatedPublicIp"`
+	NetworkInterfaces      []interface{}          `json:"NetworkInterfaces"`
+	MetaData               []interface{}          `json:"MetaData"`
+	MinionTags             []interface{}          `json:"MinionTags"`
+	EncryptDisk            bool                   `json:"EncryptDisk"`
+	ProvisioningState      string                 `json:"ProvisioningState"`
+	DesiredCapacity        int                    `json:"DesiredCapacity"`
+	MaxSize                int                    `json:"MaxSize"`
+	MinSize                int                    `json:"MinSize"`
+	EnableAutoScaling      bool                   `json:"EnableAutoScaling"`
+	ScaleSetPriority       string                 `json:"ScaleSetPriority,omitempty"`
+	ScaleSetEvictionPolicy string                 `json:"ScaleSetEvictionPolicy,omitempty"`
+	SpotMaxPrice           float32                `json:"SpotMaxPrice,omitempty"`
+	AvailabilityZones      []string               `json:"AvailabilityZones,omitempty"`
+	K8sWorkerOs            int                    `json:"K8sWorkerOs"`
+	NodeTaints             []string               `json:"NodeTaints,omitempty"`
+	NodeLabels             *[]DuploKeyStringValue `json:"NodeLabels,omitempty"`
 }
 
 func (c *Client) AzureK8NodePoolCreate(tenantID string, rq *DuploAzureK8NodePoolRequest) (*string, ClientError) {

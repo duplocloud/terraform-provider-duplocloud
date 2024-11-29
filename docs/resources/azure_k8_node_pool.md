@@ -67,6 +67,9 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 - `allocation_tag` (String) Allocation tags for this node pool.
 - `availability_zones` (Set of String) availability zones of node pool
 - `enable_auto_scaling` (Boolean) Whether to enable auto-scaler.
+- `node_labels` (Block List) Kubernetes labels which should be applied to nodes in this Node Pool. (see [below for nested schema](#nestedblock--node_labels))
+- `node_taints` (List of String) A list of Kubernetes taints which should be applied to nodes in the agent pool.
+- `os_type` (String) Specifies the OS used by the agent pool. Possible values are AzureLinux, Ubuntu. Defaults to `Linux`.
 - `scale_priority` (Block List, Max: 1) specify the priority for scaling operations,supported priority Regular or Spot (see [below for nested schema](#nestedblock--scale_priority))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `wait_until_ready` (Boolean) Whether or not to wait until node pool to be ready, after creation. Defaults to `true`.
@@ -75,6 +78,15 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 
 - `id` (String) The ID of this resource.
 - `name` (String) The Duplo generated name of the node pool.
+
+<a id="nestedblock--node_labels"></a>
+### Nested Schema for `node_labels`
+
+Required:
+
+- `key` (String)
+- `value` (String)
+
 
 <a id="nestedblock--scale_priority"></a>
 ### Nested Schema for `scale_priority`

@@ -125,6 +125,30 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 				ValidateFunc: validation.StringInSlice([]string{"1", "2", "3"}, true),
 			},
 		},
+		"os_type": {
+			Description: "Specifies the OS used by the agent pool. Possible values are AzureLinux, Ubuntu.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Default:     "Linux",
+			ValidateFunc: validation.StringInSlice([]string{
+				"Linux",
+				"Windows",
+			}, false),
+		},
+		"node_taints": {
+			Description: "A list of Kubernetes taints which should be applied to nodes in the agent pool.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		"node_labels": {
+			Description: "Kubernetes labels which should be applied to nodes in this Node Pool.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			Elem:        KeyValueSchema(),
+		},
 	}
 }
 
@@ -323,12 +347,32 @@ func expandAgentK8NodePool(d *schema.ResourceData) (*duplosdk.DuploAzureK8NodePo
 			}
 		}
 	}
-	if v, ok := d.GetOk("availability_zones"); ok {
+	if v, ok := d.GetOk("availability_zones"); ok && v != nil {
 		azs := v.(*schema.Set)
 		for _, v := range azs.List() {
 			nodePool.AvailabilityZones = append(nodePool.AvailabilityZones, v.(string))
 		}
 	}
+	if v, ok := d.GetOk("os_type"); ok && v != nil {
+		if v.(string) == "Windows" {
+			nodePool.K8sWorkerOs = 1
+		} else {
+			nodePool.K8sWorkerOs = 0
+		}
+	}
+	if v, ok := d.GetOk("node_taints"); ok && v != nil {
+		nodetaints := v.(*schema.Set)
+		for _, v := range nodetaints.List() {
+			nodePool.NodeTaints = append(nodePool.NodeTaints, v.(string))
+		}
+	}
+	if v, ok := d.GetOk("node_labels"); ok && v != nil {
+		labels := v.([]interface{})
+		if len(labels) > 0 {
+			nodePool.NodeLabels = keyValueFromState("node_labels", d)
+		}
+	}
+
 	return nodePool, nil
 }
 
@@ -372,6 +416,18 @@ func flattenAgentK8NodePool(d *schema.ResourceData, duplo *duplosdk.DuploAzureK8
 	if len(duplo.AvailabilityZones) > 0 {
 		d.Set("availability_zones", duplo.AvailabilityZones)
 	}
+	if duplo.K8sWorkerOs == 1 {
+		d.Set("os_type", "Windows")
+	} else {
+		d.Set("os_type", "Linux")
+	}
+	if len(duplo.NodeTaints) > 0 {
+		d.Set("node_taints", duplo.NodeTaints)
+	}
+	if duplo.NodeLabels != nil && len(*duplo.NodeLabels) > 0 {
+		d.Set("node_labels", keyValueToState("node_labels", duplo.NodeLabels))
+	}
+
 }
 
 func azureK8NodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
