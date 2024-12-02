@@ -26,7 +26,7 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"identifier": {
-			Description:  "Identifier for node pool.",
+			Description:  "Node pool identifier. This field is deprecated, Please use `name` instead.",
 			Type:         schema.TypeInt,
 			Required:     true,
 			ForceNew:     true,

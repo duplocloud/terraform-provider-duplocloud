@@ -56,7 +56,7 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 ### Required
 
 - `desired_capacity` (Number) The initial number of nodes which should exist within this Node.
-- `identifier` (Number) Identifier for node pool.
+- `identifier` (Number) Node pool identifier. This field is deprecated, Please use `name` instead.
 - `max_capacity` (Number) The maximum number of nodes which should exist within this Node Pool.
 - `min_capacity` (Number) The minimum number of nodes which should exist within this Node Pool.
 - `tenant_id` (String) The GUID of the tenant that the azure node pool will be created in.
