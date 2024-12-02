@@ -70,6 +70,8 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 - `name` (String) The name of the node pool.
 - `node_labels` (Block List) Kubernetes labels which should be applied to nodes in this Node Pool. (see [below for nested schema](#nestedblock--node_labels))
 - `node_taints` (List of String) A list of Kubernetes taints which should be applied to nodes in the agent pool.
+- `os_disk_size_gb` (Number) The Agent Operating System disk size in GB.
+- `os_sku` (String) Specifies the OS SKU used by the agent pool. Possible values are `AzureLinux`, `Ubuntu`, `Windows2019` and `Windows2022`
 - `os_type` (String) Specifies the OS used by the agent pool. Possible values are `Linux`, `Windows`. Defaults to `Linux`.
 - `scale_priority` (Block List, Max: 1) specify the priority for scaling operations,supported priority Regular or Spot (see [below for nested schema](#nestedblock--scale_priority))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))

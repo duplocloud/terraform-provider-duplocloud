@@ -140,6 +140,26 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			}, false),
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
+		"os_sku": {
+			Description: "Specifies the OS SKU used by the agent pool. Possible values are `AzureLinux`, `Ubuntu`, `Windows2019` and `Windows2022`",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"AzureLinux",
+				"Ubuntu",
+				"Windows2019",
+				"Windows2022",
+			}, false),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
+		"os_disk_size_gb": {
+			Description:      "The Agent Operating System disk size in GB.",
+			Type:             schema.TypeInt,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
 		"node_taints": {
 			Description:      "A list of Kubernetes taints which should be applied to nodes in the agent pool.",
 			Type:             schema.TypeList,
@@ -377,6 +397,12 @@ func expandAgentK8NodePool(d *schema.ResourceData, identifier string) (*duplosdk
 			nodePool.K8sWorkerOs = 0
 		}
 	}
+	if v, ok := d.GetOk("os_sku"); ok && v != nil {
+		nodePool.OsSKU = v.(string)
+	}
+	if v, ok := d.GetOk("os_disk_size_gb"); ok && v != nil && v.(int) != 0 {
+		nodePool.OsDiskSizeGB = v.(int)
+	}
 	if v, ok := d.GetOk("node_taints"); ok && v != nil {
 		nodetaints := v.([]interface{})
 		if len(nodetaints) > 0 {
@@ -440,13 +466,18 @@ func flattenAgentK8NodePool(d *schema.ResourceData, duplo *duplosdk.DuploAzureK8
 	} else {
 		d.Set("os_type", "Linux")
 	}
+	if len(duplo.OsSKU) > 0 {
+		d.Set("os_sku", duplo.OsSKU)
+	}
+	if duplo.OsDiskSizeGB != 0 {
+		d.Set("os_disk_size_gb", duplo.OsDiskSizeGB)
+	}
 	if len(duplo.NodeTaints) > 0 {
 		d.Set("node_taints", duplo.NodeTaints)
 	}
 	if duplo.NodeLabels != nil && len(*duplo.NodeLabels) > 0 {
 		d.Set("node_labels", keyValueToState("node_labels", duplo.NodeLabels))
 	}
-
 }
 
 func azureK8NodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {

@@ -19,6 +19,8 @@ type DuploAzureK8NodePoolRequest struct {
 	K8sWorkerOs            int                    `json:"K8sWorkerOs"`
 	NodeTaints             []string               `json:"NodeTaints,omitempty"`
 	NodeLabels             *[]DuploKeyStringValue `json:"NodeLabels,omitempty"`
+	OsDiskSizeGB           int                    `json:"OsDiskSizeGB,omitempty"`
+	OsSKU                  string                 `json:"OsSKU,omitempty"`
 }
 
 type DuploAzureK8NodePoolDeleteRequest struct {
@@ -58,6 +60,8 @@ type DuploAzureK8NodePool struct {
 	K8sWorkerOs            int                    `json:"K8sWorkerOs"`
 	NodeTaints             []string               `json:"NodeTaints,omitempty"`
 	NodeLabels             *[]DuploKeyStringValue `json:"NodeLabels,omitempty"`
+	OsDiskSizeGB           int                    `json:"OsDiskSizeGB,omitempty"`
+	OsSKU                  string                 `json:"OsSKU,omitempty"`
 }
 
 func (c *Client) AzureK8NodePoolCreate(tenantID string, rq *DuploAzureK8NodePoolRequest) (*string, ClientError) {
