@@ -39,12 +39,14 @@ func duploAzureTenantKeyVaultSecretSchema() map[string]*schema.Schema {
 			Description: "Specifies the value of the Key Vault Secret. Changing this will create a new version of the Key Vault Secret.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 		},
 		"content_type": {
-			Description: "Specifies the content type for the Key Vault Secret.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Description:      "Specifies the content type for the Key Vault Secret.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"azure_id": {
 			Description: "The azure ID of the Key Vault secret.",
