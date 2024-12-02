@@ -56,6 +56,16 @@ func duploAzureTenantKeyVaultSecretSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"vault_base_url": {
+			Description: "Base URL of the Azure Key Vault",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"recovery_level": {
+			Description: "Reflects the deletion recovery level currently in effect for secrets in the current vault.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
@@ -199,6 +209,8 @@ func flattenAzureTenantKeyVaultSecret(tenantID string, d *schema.ResourceData, d
 	}
 	d.Set("azure_id", duplo.ID)
 	d.Set("version", duplo.SecretIdentifier.Version)
+	d.Set("vault_base_url", duplo.SecretIdentifier.BaseIdentifier)
+	d.Set("recovery_level", duplo.Attributes.RecoveryLevel)
 }
 
 func getVaultName(vaultURL string) string {

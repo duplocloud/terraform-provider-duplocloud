@@ -27,11 +27,10 @@ resource "duplocloud_azure_tenant_key_vault" "kv" {
 }
 
 resource "duplocloud_azure_tenant_key_vault_secret" "kv_secret" {
-  tenant_id                  = duplocloud_tenant.tenant.tenant_id
-  vault_name                 = duplocloud_azure_tenant_key_vault.kv.name
-  name                       = "Sec001"
-  value                      = "SecVal001"
-  soft_delete_retention_days = 90
+  tenant_id  = duplocloud_tenant.tenant.tenant_id
+  vault_name = duplocloud_azure_tenant_key_vault.kv.name
+  name       = "Sec001"
+  value      = "SecVal001"
 }
 ```
 
@@ -54,6 +53,8 @@ resource "duplocloud_azure_tenant_key_vault_secret" "kv_secret" {
 
 - `azure_id` (String) The azure ID of the Key Vault secret.
 - `id` (String) The ID of this resource.
+- `recovery_level` (String) Reflects the deletion recovery level currently in effect for secrets in the current vault.
+- `vault_base_url` (String) Base URL of the Azure Key Vault
 - `version` (String) The current version of the Key Vault Secret.
 
 <a id="nestedblock--timeouts"></a>

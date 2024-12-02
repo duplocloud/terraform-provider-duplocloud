@@ -204,7 +204,7 @@ func (c *Client) TenantKeyVaultSecretCreate(tenantID string, rq *DuploAzureTenan
 	resp := &DuploAzureTenantKeyVaultSecret{}
 	return c.postAPI(
 		fmt.Sprintf("TenantKeyVaultSecretCreate(%s, %s, %s)", tenantID, rq.VaultName, rq.SecretName),
-		fmt.Sprintf("v3/subscriptions/%s/azure/keyvault/%s/secret/%s", tenantID, rq.VaultName, rq.SecretName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/keyvault/%s/secret", tenantID, rq.VaultName),
 		&rq,
 		&resp,
 	)

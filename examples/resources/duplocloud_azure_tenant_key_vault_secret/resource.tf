@@ -12,9 +12,8 @@ resource "duplocloud_azure_tenant_key_vault" "kv" {
 }
 
 resource "duplocloud_azure_tenant_key_vault_secret" "kv_secret" {
-  tenant_id                  = duplocloud_tenant.tenant.tenant_id
-  vault_name                 = duplocloud_azure_tenant_key_vault.kv.name
-  name                       = "Sec001"
-  value                      = "SecVal001"
-  soft_delete_retention_days = 90
+  tenant_id  = duplocloud_tenant.tenant.tenant_id
+  vault_name = duplocloud_azure_tenant_key_vault.kv.name
+  name       = "Sec001"
+  value      = "SecVal001"
 }
