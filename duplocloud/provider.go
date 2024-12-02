@@ -179,6 +179,7 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_infra_security_rule":            resourceGCPInfraSecurityRule(),
 			"duplocloud_gcp_tenant_security_rule":           resourceGCPTenantSecurityRule(),
 			"duplocloud_infrastructure_onprem":              resourceInfrastructureOnprem(),
+			"duplocloud_aws_launch_template":                resourceAwsLaunchTemplate(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
