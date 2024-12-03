@@ -274,12 +274,11 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"ttl": {
-			Description:      "Setup ttl for dynamodb table.",
+			Description:      "Setup ttl for dynamodb table. Defaults to `false or empty`",
 			Type:             schema.TypeList,
 			Optional:         true,
 			MaxItems:         1,
 			DiffSuppressFunc: diffSuppressDynamodbTTLHandler,
-			Default:          "false or empty",
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"attribute_name": {
