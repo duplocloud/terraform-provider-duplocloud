@@ -175,6 +175,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_storageclass_blob":            resourceAzureStorageBlob(),
 			"duplocloud_azure_storageclass_queue":           resourceAzureStorageQueue(),
 			"duplocloud_azure_storageclass_table":           resourceAzureStorageTable(),
+			"duplocloud_gcp_pubsub_subscription":            resourceGCPPubSubSubscription(),
 			"duplocloud_user_tenant_access":                 resourceUserTenantAccess(),
 			"duplocloud_gcp_redis_instance":                 resourceRedisInstance(),
 			"duplocloud_gcp_host":                           resourceGcpHost(),
