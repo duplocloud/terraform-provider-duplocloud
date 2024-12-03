@@ -274,7 +274,7 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"ttl": {
-			Description:      "Setup ttl for dynamodb table",
+			Description:      "Setup ttl for dynamodb table. Defaults to `false or empty`, To disable ttl, enabled field should be set to false",
 			Type:             schema.TypeList,
 			Optional:         true,
 			MaxItems:         1,
