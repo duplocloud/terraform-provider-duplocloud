@@ -157,11 +157,11 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
   billing_mode                = "PROVISIONED"
   is_point_in_time_recovery   = false
   deletion_protection_enabled = false
-
   tag {
-    key   = "school"
-    value = "admission"
+    key   = "m1"
+    value = "me1"
   }
+
   attribute {
     name = "ForumName"
     type = "S"
@@ -180,38 +180,49 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
   }
 
   attribute {
-    name = "GameTitle"
+    name = "GamerZone"
     type = "S"
   }
-
   attribute {
     name = "TopScore"
     type = "N"
   }
-
   key_schema {
-    attribute_name = "UserId"
+    attribute_name = "ForumName"
     key_type       = "HASH"
   }
-
   key_schema {
-    attribute_name = "GameTitle"
+    attribute_name = "Subject"
     key_type       = "RANGE"
   }
-
   global_secondary_index {
-    name               = "GameTitleIndex"
-    hash_key           = "GameTitle"
-    range_key          = "TopScore"
-    write_capacity     = 10
-    read_capacity      = 10
-    projection_type    = "INCLUDE"
-    non_key_attributes = ["UserId"]
+    name            = "PostCreate"
+    hash_key        = "PostMonth"
+    range_key       = "TopScore"
+    write_capacity  = 2
+    read_capacity   = 2
+    projection_type = "KEYS_ONLY"
   }
-
+  global_secondary_index {
+    name            = "GamerZone"
+    hash_key        = "GamerZone"
+    range_key       = "LastPostDateTime"
+    write_capacity  = 5
+    read_capacity   = 5
+    projection_type = "ALL"
+  }
+  server_side_encryption {
+    enabled = true
+  }
+  local_secondary_index {
+    hash_key        = "ForumName"
+    name            = "LastPostIndex"
+    range_key       = "LastPostDateTime"
+    projection_type = "KEYS_ONLY"
+  }
   ttl {
     attribute_name = "TimeToExist"
-    enabled        = true
+    enabled        = false
   }
 }
 ```
@@ -239,7 +250,7 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 - `stream_view_type` (String) When an item in the table is modified, StreamViewType determines what information is written to the table's stream. Valid values are `KEYS_ONLY`, `NEW_IMAGE`, `OLD_IMAGE`, `NEW_AND_OLD_IMAGES`.
 - `tag` (Block List) (see [below for nested schema](#nestedblock--tag))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `ttl` (Block List, Max: 1) Setup ttl for dynamodb table (see [below for nested schema](#nestedblock--ttl))
+- `ttl` (Block List, Max: 1) Setup ttl for dynamodb table. Defaults to `false or empty`, To disable ttl, enabled field should be set to false (see [below for nested schema](#nestedblock--ttl))
 - `wait_until_ready` (Boolean) Whether or not to wait until dynamodb instance to be ready, after creation. Defaults to `true`.
 - `write_capacity` (Number) The number of write units for this table. If the `billing_mode` is `PROVISIONED`, this field is required.
 

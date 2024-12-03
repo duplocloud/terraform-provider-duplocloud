@@ -46,6 +46,7 @@ resource "duplocloud_gcp_tenant_security_rule" "trule" {
 ### Required
 
 - `name` (String) Specify rule name
+- `ports_and_protocols` (Block List, Min: 1) (see [below for nested schema](#nestedblock--ports_and_protocols))
 - `rule_type` (String) Specify type of access rule (ALLOW , DENY)
 - `source_ranges` (List of String) The lists of IPv4 or IPv6 addresses in CIDR format that specify the source of traffic for a firewall rule
 - `target_tenant_id` (String) The GUID of the tenant to which security rule need to be applied
@@ -54,7 +55,6 @@ resource "duplocloud_gcp_tenant_security_rule" "trule" {
 ### Optional
 
 - `description` (String) The description related to the rule
-- `ports_and_protocols` (Block List) (see [below for nested schema](#nestedblock--ports_and_protocols))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
