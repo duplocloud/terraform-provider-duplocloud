@@ -19,7 +19,7 @@ func ruleSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"destination_bucket": {
-				Description: "name of destination bucket.",
+				Description: "fullname of the destination bucket.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
@@ -95,7 +95,7 @@ func s3BucketReplicationSchema() map[string]*schema.Schema {
 		},
 
 		"source_bucket": {
-			Description: "name of source bucket.",
+			Description: "fullname of the source bucket.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,

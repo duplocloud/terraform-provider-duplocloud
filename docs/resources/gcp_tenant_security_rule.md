@@ -20,11 +20,19 @@ resource "duplocloud_tenant" "myapp" {
 
 
 resource "duplocloud_gcp_tenant_security_rule" "trule" {
-  tenant_id        = duplocloud_tenant.myapp.tenant_id
-  name             = "tenant-rule"
-  description      = "security rule for target tenant"
-  ports            = ["24", "23-89"]
-  service_protocol = "tcp"
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
+  name        = "tenant-rule"
+  description = "security rule for target tenant"
+  ports_and_protocols {
+    ports            = ["24", "23-89"]
+    service_protocol = "tcp"
+
+  }
+  ports_and_protocols {
+    ports            = ["100"]
+    service_protocol = "udp"
+
+  }
   source_ranges    = ["0.0.0.0/32"]
   rule_type        = "ALLOW"
   target_tenant_id = "<target-tenant-id>"
@@ -39,7 +47,6 @@ resource "duplocloud_gcp_tenant_security_rule" "trule" {
 
 - `name` (String) Specify rule name
 - `rule_type` (String) Specify type of access rule (ALLOW , DENY)
-- `service_protocol` (String) The IP protocol to which this rule applies. The protocol type is required when creating a firewall rule. This value can either be one of the following well known protocol strings (tcp, udp, icmp, esp, ah, sctp, ipip, all), or the IP protocol number.
 - `source_ranges` (List of String) The lists of IPv4 or IPv6 addresses in CIDR format that specify the source of traffic for a firewall rule
 - `target_tenant_id` (String) The GUID of the tenant to which security rule need to be applied
 - `tenant_id` (String) The GUID of the tenant.
@@ -47,7 +54,7 @@ resource "duplocloud_gcp_tenant_security_rule" "trule" {
 ### Optional
 
 - `description` (String) The description related to the rule
-- `ports` (List of String) The list of ports to which this rule applies. This field is only applicable for UDP or TCP protocol.
+- `ports_and_protocols` (Block List) (see [below for nested schema](#nestedblock--ports_and_protocols))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -62,6 +69,18 @@ resource "duplocloud_gcp_tenant_security_rule" "trule" {
 - `source_service_account` (List of String)
 - `source_tags` (List of String)
 - `target_service_account` (List of String)
+
+<a id="nestedblock--ports_and_protocols"></a>
+### Nested Schema for `ports_and_protocols`
+
+Required:
+
+- `service_protocol` (String) The IP protocol to which this rule applies. The protocol type is required when creating a firewall rule. This value can either be one of the following well known protocol strings (tcp, udp, icmp, esp, ah, sctp, ipip, all), or the IP protocol number.
+
+Optional:
+
+- `ports` (List of String) The list of ports to which this rule applies. This field is only applicable for UDP or TCP protocol.
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
