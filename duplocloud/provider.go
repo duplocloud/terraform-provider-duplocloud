@@ -181,6 +181,8 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_infra_security_rule":            resourceGCPInfraSecurityRule(),
 			"duplocloud_gcp_tenant_security_rule":           resourceGCPTenantSecurityRule(),
 			"duplocloud_infrastructure_onprem":              resourceInfrastructureOnprem(),
+			"duplocloud_k8_helm_repository":                 resourceHelmRepository(),
+			"duplocloud_k8_helm_release":                    resourceHelmRelease(),
 			"duplocloud_azure_datafactory":                  resourceAzureDataFactory(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
