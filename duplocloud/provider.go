@@ -183,6 +183,7 @@ func Provider() *schema.Provider {
 			"duplocloud_infrastructure_onprem":              resourceInfrastructureOnprem(),
 			"duplocloud_k8_helm_repository":                 resourceHelmRepository(),
 			"duplocloud_k8_helm_release":                    resourceHelmRelease(),
+			"duplocloud_azure_datafactory":                  resourceAzureDataFactory(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
