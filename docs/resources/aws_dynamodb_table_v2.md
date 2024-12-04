@@ -330,6 +330,8 @@ Optional:
 
 - `create` (String)
 - `delete` (String)
+- `read` (String)
+- `update` (String)
 
 
 <a id="nestedblock--ttl"></a>

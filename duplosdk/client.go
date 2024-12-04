@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -303,82 +302,100 @@ func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp inte
 	return c.doAPIWithRequestBody("POST", apiName, apiPath, rq, rp)
 }
 
-// retry
-const (
-	RateExceededMaxRetries = 5
-	RateExceededMsg        = "Rate exceeded"
-	MinStartingDelay       = 2
-	MaxStartingDelay       = 6
-	MinDelay               = 3
-	MaxDelay               = 15
-	MinJitterDelay         = 6
-)
-
-func calculateBackoffInterval(attempt int) time.Duration {
-	var minDelay, maxDelay int
-	switch {
-	case attempt == 1:
-		minDelay, maxDelay = MinStartingDelay, MaxStartingDelay
-	case attempt <= 3:
-		minDelay, maxDelay = MinDelay, MaxDelay
-	default:
-		minDelay, maxDelay = MinJitterDelay, MinJitterDelay+attempt*MinStartingDelay
-	}
-	return time.Duration(rand.Intn(maxDelay-minDelay+1)+minDelay) * time.Second
-}
-
-func retryOperation(operation func() ClientError) ClientError {
-	var err ClientError
-	for attempt := 1; attempt <= RateExceededMaxRetries; attempt++ {
-		delay := calculateBackoffInterval(attempt)
-		time.Sleep(delay)
-
-		err = operation()
-		if err == nil {
-			return nil
-		}
-		if !isRateExceededError(err) {
-			return err
-		}
-	}
-	return newClientError("Max retry attempts exceeded")
-}
-
-func isRateExceededError(err ClientError) bool {
-	return strings.Contains(err.Error(), RateExceededMsg)
-}
-
-func (c *Client) doAPIWithRetry(verb, apiName, apiPath string, rp interface{}) ClientError {
-	operation := func() ClientError {
-		return c.doAPI(verb, apiName, apiPath, rp)
-	}
-	return retryOperation(operation)
-}
-
-func (c *Client) getAPIWithRetry(apiName, apiPath string, rp interface{}) ClientError {
-	operation := func() ClientError {
-		return c.doAPI("GET", apiName, apiPath, rp)
-	}
-	return retryOperation(operation)
-}
-
-func (c *Client) deleteAPIWithRetry(apiName, apiPath string, rp interface{}) ClientError {
-	operation := func() ClientError {
-		return c.doAPI("DELETE", apiName, apiPath, rp)
-	}
-	return retryOperation(operation)
-}
-
-func (c *Client) postAPIWithRetry(apiName, apiPath string, rq, rp interface{}) ClientError {
-	operation := func() ClientError {
-		return c.doAPIWithRequestBody("POST", apiName, apiPath, rq, rp)
-	}
-	return retryOperation(operation)
-}
-
-func (c *Client) putAPIWithRetry(apiName, apiPath string, rq, rp interface{}) ClientError {
-	operation := func() ClientError {
-		return c.doAPIWithRequestBody("PUT", apiName, apiPath, rq, rp)
-	}
-	return retryOperation(operation)
-}
+//
+//// retry - intial setting for dynamodb, need more insights to make it generic.
+//const (
+//	RateExceededMaxRetries = 5
+//	RateExceededMsg        = "Rate exceeded"
+//	MinStartingDelay       = 2
+//	MaxStartingDelay       = 6
+//	MinDelay               = 3
+//	MaxDelay               = 15
+//	MinJitterDelay         = 6
+//)
+//
+//func calculateBackoffInterval(apiCaller string, attempt int) time.Duration {
+//	var minDelay, maxDelay int
+//	switch {
+//	case attempt == 1:
+//		minDelay, maxDelay = MinStartingDelay, MaxStartingDelay
+//	case attempt <= 3:
+//		minDelay, maxDelay = MinDelay, MaxDelay
+//	default:
+//		minDelay, maxDelay = MinJitterDelay, MinJitterDelay+attempt*MinStartingDelay
+//	}
+//	interval := rand.Intn(maxDelay-minDelay+1) + minDelay
+//	log.Printf("[TRACE] calculateBackoffInterval minDelay: %d, maxDelay: %d, interval: %d %s", minDelay, maxDelay, interval, apiCaller)
+//	return time.Duration(interval) * time.Second
+//}
+//
+//func retryApiCall(apiCaller string, operation func() ClientError) ClientError {
+//	var err ClientError
+//	var attempt int
+//	for attempt = 1; attempt <= RateExceededMaxRetries; attempt++ {
+//		delay := calculateBackoffInterval(apiCaller, attempt)
+//		log.Printf("[TRACE] retryApiCall START sleep start (sleep,attempt,api) (%d,%d,%s)", delay, attempt, apiCaller)
+//		time.Sleep(delay)
+//		log.Printf("[TRACE] retryApiCall sleep done (sleep,attempt,api) (%d,%d,%s)", delay, attempt, apiCaller)
+//		err = operation()
+//		if err == nil {
+//			return nil
+//		}
+//
+//		if !isRateExceededError(err) {
+//			return err
+//		}
+//
+//		if attempt > 1 {
+//			log.Printf("[TRACE] retryApiCall FAILED_RATE_EXCEEDED (sleep,attempt,api) (%d,%d,%s)", delay, attempt, apiCaller)
+//		}
+//	}
+//	return newClientError(fmt.Sprintf("Max retry attempts exceeded. (attempt,api) (%d,%s)", attempt, apiCaller))
+//}
+//
+//func isRateExceededError(err ClientError) bool {
+//	if err == nil {
+//		return false
+//	}
+//	if value, exists := err.Response()["Message"]; exists {
+//		if strValue, ok := value.(string); ok {
+//			if RateExceededMsg == strValue {
+//				log.Printf("[TRACE] isRateExceededError: detected? %s", strValue)
+//				return true
+//			}
+//		}
+//	}
+//	return false
+//}
+//
+//func (c *Client) getAPIWithRetry(apiName, apiPath string, rp interface{}) ClientError {
+//	operation := func() ClientError {
+//		return c.doAPI("GET", apiName, apiPath, rp)
+//	}
+//	apiCaller := fmt.Sprintf("GET (%s, %s)", apiName, apiPath)
+//	return retryApiCall(apiCaller, operation)
+//}
+//
+//func (c *Client) deleteAPIWithRetry(apiName, apiPath string, rp interface{}) ClientError {
+//	operation := func() ClientError {
+//		return c.doAPI("DELETE", apiName, apiPath, rp)
+//	}
+//	apiCaller := fmt.Sprintf("DELETE (%s, %s)", apiName, apiPath)
+//	return retryApiCall(apiCaller, operation)
+//}
+//
+//func (c *Client) postAPIWithRetry(apiName, apiPath string, rq, rp interface{}) ClientError {
+//	operation := func() ClientError {
+//		return c.doAPIWithRequestBody("POST", apiName, apiPath, rq, rp)
+//	}
+//	apiCaller := fmt.Sprintf("POST (%s, %s)", apiName, apiPath)
+//	return retryApiCall(apiCaller, operation)
+//}
+//
+//func (c *Client) putAPIWithRetry(apiName, apiPath string, rq, rp interface{}) ClientError {
+//	operation := func() ClientError {
+//		return c.doAPIWithRequestBody("PUT", apiName, apiPath, rq, rp)
+//	}
+//	apiCaller := fmt.Sprintf("PUT (%s, %s)", apiName, apiPath)
+//	return retryApiCall(apiCaller, operation)
+//}
