@@ -85,7 +85,7 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			Optional:    true,
 			ForceNew:    true,
 			ValidateFunc: validation.StringInSlice([]string{
-				"2.4.3", "2.5.1", "2.6.3", "2.7.2", "2.8.1", "2.9.2",
+				"2.4.3", "2.5.1", "2.6.3", "2.7.2", "2.8.1", "2.9.2", "2.10.1",
 			}, false),
 		},
 		"environment_class": {
@@ -298,7 +298,7 @@ func resourceMwaaAirflow() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(60 * time.Minute),
 		},
 		Schema: duploMwaaAirflowSchema(),
 	}

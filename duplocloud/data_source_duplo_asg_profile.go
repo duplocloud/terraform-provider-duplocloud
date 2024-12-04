@@ -53,19 +53,18 @@ func dataSourceAsgProfilesRead(ctx context.Context, d *schema.ResourceData, m in
 		// TODO: ability to filter
 		profiles = append(profiles, flattenAsgProfile(&duplo))
 	}
+	d.SetId(tenantID)
 
 	if err := d.Set("asg_profiles", profiles); err != nil {
 		return diag.FromErr(err)
 	}
-
-	d.SetId(tenantID)
 
 	log.Printf("[TRACE] dataSourceAsgProfilesRead(%s): end", tenantID)
 	return nil
 }
 
 func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
-	return map[string]interface{}{
+	mp := map[string]interface{}{
 		"instance_count":      duplo.DesiredCapacity,
 		"min_instance_count":  duplo.MinSize,
 		"max_instance_count":  duplo.MaxSize,
@@ -85,7 +84,11 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		"metadata":            keyValueToState("metadata", duplo.MetaData),
 		"tags":                keyValueToState("tags", duplo.Tags),
 		"minion_tags":         keyValueToState("minion_tags", duplo.CustomDataTags),
-		"volumes":             flattenNativeHostVolumes(duplo.Volumes),
-		"network_interfaces":  flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
+		"volume":              flattenNativeHostVolumes(duplo.Volumes),
+		"network_interface":   flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 	}
+	if duplo.Taints != nil {
+		mp["taints"] = flattenTaints(*duplo.Taints)
+	}
+	return mp
 }

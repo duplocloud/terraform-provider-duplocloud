@@ -96,9 +96,11 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Description: "List of metrics to collect for the ASG Specify one or more of the following metrics.`GroupMinSize`,`GroupMaxSize`,`GroupDesiredCapacity`,`GroupInServiceInstances`,`GroupPendingInstances`,`GroupStandbyInstances`,`GroupTerminatingInstances`,`GroupTotalInstances`,`GroupInServiceCapacity`,`GroupPendingCapacity`,`GroupStandbyCapacity`,`GroupTerminatingCapacity`,`GroupTotalCapacity`,`WarmPoolDesiredCapacity`,`WarmPoolWarmedCapacity`,`WarmPoolPendingCapacity`,`WarmPoolTerminatingCapacity`,`WarmPoolTotalCapacity`,`GroupAndWarmPoolDesiredCapacity`,`GroupAndWarmPoolTotalCapacity`.",
 		Type:        schema.TypeList,
 		Optional:    true,
+		ForceNew:    true,
 		Elem: &schema.Schema{
 			Type:         schema.TypeString,
 			ValidateFunc: validation.StringInSlice([]string{"GroupMinSize", "GroupMaxSize", "GroupDesiredCapacity", "GroupInServiceInstances", "GroupPendingInstances", "GroupStandbyInstances", "GroupTerminatingInstances", "GroupTotalInstances", "GroupInServiceCapacity", "GroupPendingCapacity", "GroupStandbyCapacity", "GroupTerminatingCapacity", "GroupTotalCapacity", "WarmPoolDesiredCapacity", "WarmPoolWarmedCapacity", "WarmPoolPendingCapacity", "WarmPoolTerminatingCapacity", "WarmPoolTotalCapacity", "GroupAndWarmPoolDesiredCapacity", "GroupAndWarmPoolTotalCapacity"}, true),
+			ForceNew:     true,
 		},
 	}
 
@@ -142,6 +144,7 @@ func resourceAwsASG() *schema.Resource {
 		CustomizeDiff: customdiff.All(
 			diffUserData,
 			validateMaxSpotPrice,
+			validateTaintsSupport,
 		),
 	}
 }
@@ -315,11 +318,11 @@ func resourceAwsASGDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	// Parse the identifying attributes
 	id := d.Id()
 	log.Printf("[TRACE] resourceAwsASGDelete(%s): start", id)
-	tenantID, friendlyName, err := asgProfileIdParts(id)
+	tenantID, _, err := asgProfileIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
+	friendlyName := d.Get("fullname").(string)
 	// Check if the ASG Profile exists
 	c := m.(*duplosdk.Client)
 	exists, err := c.AsgProfileExists(tenantID, friendlyName)
@@ -391,6 +394,9 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	if duplo.Taints != nil {
+		d.Set("taints", flattenTaints(*duplo.Taints))
+	}
 }
 
 func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
@@ -431,6 +437,21 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 			metricList[i] = val.(string)
 		}
 		asgProfile.EnabledMetrics = &metricList
+	}
+
+	obj := []duplosdk.DuploTaints{}
+	if val, ok := d.Get("taints").([]interface{}); ok {
+		for _, dt := range val {
+			m := dt.(map[string]interface{})
+			taints := duplosdk.DuploTaints{
+				Key:    m["key"].(string),
+				Value:  m["value"].(string),
+				Effect: m["effect"].(string),
+			}
+			obj = append(obj, taints)
+
+		}
+		asgProfile.Taints = &obj
 	}
 
 	return asgProfile

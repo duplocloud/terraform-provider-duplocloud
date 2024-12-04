@@ -149,14 +149,15 @@ resource "duplocloud_aws_host" "host" {
    - `0` : Default
    - `1` : ED25519
    - `2` : RSA (deprecated - some operating systems no longer support it)
-- `metadata` (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
+- `metadata` (Block List) Configuration metadata used when creating the host.<br>*Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10* (see [below for nested schema](#nestedblock--metadata))
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
 - `prepend_user_data` (Boolean) Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided. Defaults to `true`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
+- `taints` (Block List, Max: 50) Specify taints to attach to the nodes, to repel other nodes with different toleration (see [below for nested schema](#nestedblock--taints))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_account` (String) The name of the tenant that the host will be created in.
-- `volume` (Block List) (see [below for nested schema](#nestedblock--volume))
+- `volume` (Block List) Block to specify additional or secondary volume beyond the root device (see [below for nested schema](#nestedblock--volume))
 - `wait_until_connected` (Boolean) Whether or not to wait until Duplo can connect to the host, after creation. Defaults to `true`.
 - `zone` (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.
 
@@ -219,6 +220,19 @@ Required:
 - `value` (String)
 
 
+<a id="nestedblock--taints"></a>
+### Nested Schema for `taints`
+
+Required:
+
+- `effect` (String) Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute
+
+Optional:
+
+- `key` (String)
+- `value` (String)
+
+
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
@@ -245,9 +259,9 @@ Optional:
 Import is supported using the following syntax:
 
 ```shell
-# Example: Importing an existing service
+# Example: Importing an existing AWS host
 #  - *TENANT_ID* is the tenant GUID
-#  - *NAME* is the name of the service
+#  - *INSTANCE_ID* is the AWS EC2 instance ID
 #
-terraform import duplocloud_duplo_service.myservice v2/subscriptions/*TENANT_ID*/ReplicationControllerApiV2/*NAME*
+terraform import duplocloud_aws_host.myhost v2/subscriptions/*TENANT_ID*/NativeHostV2/*INSTANCE_ID*
 ```

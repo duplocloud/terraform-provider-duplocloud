@@ -11,7 +11,7 @@ import (
 
 func dataSourceAzureAvailabilitySet() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_availability_set` retrieves a azure availability set in Duplo.",
+		Description: "`duplocloud_azure_availability_set` manages a azure availability set in Duplo.",
 
 		Read: dataSourceAzureAvailabilitySetRead,
 

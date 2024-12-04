@@ -66,6 +66,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 - `proxy_configuration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--proxy_configuration))
 - `requires_attributes` (Block Set) (see [below for nested schema](#nestedblock--requires_attributes))
 - `requires_compatibilities` (Set of String)
+- `runtime_platform` (Block List, Max: 1) Configuration block for runtime_platform that containers in your task may use. Required on ecs tasks that are hosted on Fargate. (see [below for nested schema](#nestedblock--runtime_platform))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `volumes` (String) Defaults to `[]`.
 
@@ -120,6 +121,15 @@ Optional:
 Required:
 
 - `name` (String)
+
+
+<a id="nestedblock--runtime_platform"></a>
+### Nested Schema for `runtime_platform`
+
+Optional:
+
+- `cpu_architecture` (String) Valid values are 'X86_64','ARM64'
+- `operating_system_family` (String) Valid values are <br>For FARGATE: 'LINUX','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2022_CORE'
 
 
 <a id="nestedblock--timeouts"></a>

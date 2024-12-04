@@ -3,12 +3,12 @@
 page_title: "duplocloud_azure_availability_set Data Source - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_azure_availability_set retrieves a azure availability set in Duplo.
+  duplocloud_azure_availability_set manages a azure availability set in Duplo.
 ---
 
 # duplocloud_azure_availability_set (Data Source)
 
-`duplocloud_azure_availability_set` retrieves a azure availability set in Duplo.
+`duplocloud_azure_availability_set` manages a azure availability set in Duplo.
 
 ## Example Usage
 

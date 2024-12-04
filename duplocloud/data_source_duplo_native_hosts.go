@@ -51,7 +51,7 @@ func dataSourceNativeHostsRead(ctx context.Context, d *schema.ResourceData, m in
 	hosts := make([]interface{}, 0, len(*list))
 	for _, duplo := range *list {
 		// TODO: ability to filter
-		hosts = append(hosts, flattenNativeHost(&duplo))
+		hosts = append(hosts, flattenNativeHost(ctx, &duplo, c))
 	}
 
 	if err := d.Set("hosts", hosts); err != nil {
@@ -64,8 +64,8 @@ func dataSourceNativeHostsRead(ctx context.Context, d *schema.ResourceData, m in
 	return nil
 }
 
-func flattenNativeHost(duplo *duplosdk.DuploNativeHost) map[string]interface{} {
-	return map[string]interface{}{
+func flattenNativeHost(ctx context.Context, duplo *duplosdk.DuploNativeHost, c *duplosdk.Client) map[string]interface{} {
+	mp := map[string]interface{}{
 		"instance_id":         duplo.InstanceID,
 		"user_account":        duplo.UserAccount,
 		"tenant_id":           duplo.TenantID,
@@ -91,4 +91,12 @@ func flattenNativeHost(duplo *duplosdk.DuploNativeHost) map[string]interface{} {
 		"volume":              flattenNativeHostVolumes(duplo.Volumes),
 		"network_interface":   flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 	}
+	if duplo.IsMinion {
+		obj, _ := c.GetMinionForHost(ctx, duplo.TenantID, duplo.InstanceID)
+
+		if obj != nil && len(obj.Taints) > 0 {
+			mp["taints"] = flattenMinionTaints(obj.Taints)
+		}
+	}
+	return mp
 }

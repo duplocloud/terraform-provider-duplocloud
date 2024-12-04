@@ -26,6 +26,8 @@ const (
 	MAX_DUPLO_LENGTH                    = len("duplo-")
 	MAX_DUPLOSERVICES_LENGTH            = len("duploservices-1234567890ab-")
 	MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH = len("duploservices-1234567890ab--1234567890ab")
+	RDS_DOCUMENT_DB_ENGINE              = 13
+	GCP_CLOUD                           = 3
 )
 
 // Utility function to make a single schema element computed.
@@ -739,6 +741,15 @@ func flattenGcpLabels(d *schema.ResourceData, duplo map[string]string) {
 	d.Set("labels", flattenStringMap(duplo))
 }
 
+func flattenIPAddress(d *schema.ResourceData, ipAddresses []string) {
+	ips := make([]interface{}, 0, len(ipAddresses))
+	for _, v := range ipAddresses {
+		ips = append(ips, v)
+	}
+
+	d.Set("ip_address", ips)
+}
+
 func expandAsStringMap(fieldName string, d *schema.ResourceData) map[string]string {
 	m := map[string]string{}
 
@@ -1010,4 +1021,65 @@ func addIfDefined(target interface{}, resourceName string, targetValue interface
 			field.Set(val)
 		}
 	}
+}
+
+// max returns the maximum of two integers.
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// 1 trim prefix, 2 trim suffix, 3 trim both
+func trimStringsByPosition(stringsSlice []string, sufixOrPrefix int) []string {
+	position := map[string]struct{}{
+		"allow-lb-healthcheck": {},
+		"allow-lb-internal":    {},
+		"iap-ssh":              {},
+		"iap-rdp":              {},
+		"duploinfra":           {},
+		"duploservices":        {},
+	}
+
+	filtered := make([]string, 0, len(stringsSlice))
+	if sufixOrPrefix == 3 || sufixOrPrefix == 2 {
+		for _, str := range stringsSlice {
+			if !hasSuffix(str, position) {
+				filtered = append(filtered, str)
+			}
+		}
+		stringsSlice = filtered
+
+	}
+	finalFiltered := make([]string, 0, len(stringsSlice))
+
+	if sufixOrPrefix == 3 || sufixOrPrefix == 1 {
+		for _, str := range stringsSlice {
+			if !hasPrefix(str, position) {
+				finalFiltered = append(finalFiltered, str)
+			}
+		}
+	} else {
+		finalFiltered = filtered
+	}
+	return finalFiltered
+}
+
+func hasSuffix(s string, suffixes map[string]struct{}) bool {
+	for suffix := range suffixes {
+		if strings.HasSuffix(s, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasPrefix(s string, suffixes map[string]struct{}) bool {
+	for suffix := range suffixes {
+		if strings.HasPrefix(s, suffix) {
+			return true
+		}
+	}
+	return false
 }

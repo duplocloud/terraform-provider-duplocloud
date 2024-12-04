@@ -144,10 +144,11 @@ func (c *Client) MwaaAirflowList(tenantID string) (*[]DuploMwaaAirflowSummary, C
 }
 
 func (c *Client) MwaaAirflowDelete(tenantID string, id string) ClientError {
+	cloudResource := DuploAwsCloudResource{}
 	return c.deleteAPI(
 		fmt.Sprintf("MwaaAirflowDelete(%s, %s)", tenantID, id),
 		fmt.Sprintf("v3/subscriptions/%s/aws/mwaaairflow/%s", tenantID, id),
-		nil,
+		&cloudResource,
 	)
 }
 

@@ -133,7 +133,7 @@ func resourceAzureRedisCache() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(60 * time.Minute),
 		},
 		Schema: duploAzureRedisCacheSchema(),
 	}
@@ -249,6 +249,7 @@ func expandAzureRedisCache(d *schema.ResourceData) *duplosdk.DuploAzureRedisCach
 				Family:   d.Get("family").(string),
 				Capacity: d.Get("capacity").(int),
 			},
+			PublicNetworkAccess: "Disabled",
 		},
 	}
 }
@@ -280,7 +281,9 @@ func redisCacheWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID 
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
 			rp, err := c.RedisCacheGet(tenantID, name)
-			log.Printf("[TRACE] Redis cache provisioning state is (%s).", rp.PropertiesProvisioningState)
+			if rp != nil {
+				log.Printf("[TRACE] Redis cache provisioning state is (%s).", rp.PropertiesProvisioningState)
+			}
 			status := "pending"
 			if err == nil {
 				if rp.PropertiesProvisioningState == "Succeeded" {

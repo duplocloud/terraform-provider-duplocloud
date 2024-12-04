@@ -37,6 +37,27 @@ func (e clientError) Response() map[string]interface{} {
 	return e.response
 }
 
+type CustomError struct {
+	clientError
+	message  string
+	status   int
+	url      string
+	response map[string]interface{}
+}
+
+func (e CustomError) Status() int {
+	return e.status
+}
+
+func NewCustomError(message string, status int) CustomError {
+	return CustomError{
+		message:  message,
+		status:   status,
+		url:      "",
+		response: make(map[string]interface{}),
+	}
+}
+
 type ClientError interface {
 	Error() string
 	Status() int
@@ -114,9 +135,10 @@ func responseHttpError(req *http.Request, res *http.Response) ClientError {
 
 // Client is a Duplo API client
 type Client struct {
-	HTTPClient *http.Client
-	HostURL    string
-	Token      string
+	HTTPClient  *http.Client
+	HostURL     string
+	Token       string
+	UserAccount string
 }
 
 // NewClient creates a new Duplo API client
@@ -136,7 +158,9 @@ func NewClient(host, token string) (*Client, error) {
 func (c *Client) doRequestWithStatus(req *http.Request, expectedStatus int) ([]byte, ClientError) {
 	req.Header.Set("Authorization", c.Token)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-
+	if c.UserAccount != "" {
+		req.Header.Set("DuploUser", c.UserAccount)
+	}
 	res, err := c.HTTPClient.Do(req)
 
 	// Handle I/O errors

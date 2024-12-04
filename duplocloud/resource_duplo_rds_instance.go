@@ -147,7 +147,6 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(1, 255),
-				validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9-]*$`), "Invalid DB parameter group name"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
@@ -160,7 +159,6 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(1, 255),
-				validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9-]*$`), "Invalid DB parameter group name"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
@@ -180,12 +178,23 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
 		},
 		"storage_type": {
-			Description: "Valid values: gp2 | gp3 | io1 | standard | aurora. Storage type to be used for RDS instance storage.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Description: `Storage type to be used for RDS instance storage.
+
+			|Storage Type  | Performance                        | Throughput            | Descritpion                                                                                                                                                                                                               |
+			|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+			| gp2          | 3 IOPS/GB, up to 16K IOPS          | Up to 250 MB/s	    | General-purpose databases, small to medium workloads. 'gp2' provides SSD-based storage with burstable IOPS                                                                                                                |
+			| gp3          | 3K to 16K IOPS                     | Up to 1,000 MB/s      | Cost-effective, customizable performance for a wide range of workloads. gp3 offers a more advanced and cost-effective version of gp2. You can provision IOPS and throughput independently of storage size.                |
+			| io1          | Up to 256K IOPS                    | Up to 1,000 MB/s      | Mission-critical applications with high IOPS requirements. io1 provides provisioned IOPS, meaning you can define and guarantee IOPS performance levels independently of storage capacity.                                 |
+			| standard     | Variable, low IOPS                 | Low and unpredictable | Low-cost, infrequent access, small databases, or test environments. Magnetic storage is the oldest and least performant storage option. It is mainly used for low-cost applications with low performance demands.         |
+			| aurora       | Automatic scaling, up to 200K IOPS | Varies                | High-performance, fault-tolerant, distributed storage for Amazon Aurora databases. Aurora uses a unique distributed, fault-tolerant storage system that automatically replicates data across multiple Availability Zones. |
+			| aurora-iopt1 | Provisioned IOPS, similar to io1   | Varies                | Aurora databases needing guaranteed, high-performance IOPS. Aurora I/O-Optimized storage offers provisioned IOPS for Aurora clusters that require consistently high performance for critical workloads.                   |
+			
+			`,
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
 			ValidateFunc: validation.StringInSlice(
-				[]string{"gp2", "gp3", "io1", "standard", "aurora"},
+				[]string{"gp2", "gp3", "io1", "standard", "aurora", "aurora-iopt1"},
 				false,
 			),
 		},
@@ -290,10 +299,11 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
 		},
 		"performance_insights": {
-			Description: "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. Not applicable for Cluster Db",
-			Type:        schema.TypeList,
-			MaxItems:    1,
-			Optional:    true,
+			Description:      "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true.",
+			Type:             schema.TypeList,
+			MaxItems:         1,
+			Optional:         true,
+			DiffSuppressFunc: suppressIfPerformanceInsightsDisabled,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"enabled": {
@@ -303,20 +313,22 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 						Default:     false,
 					},
 					"kms_key_id": {
-						Description: "Specify ARN for the KMS key to encrypt Performance Insights data.",
-						Type:        schema.TypeString,
-						Optional:    true,
-						Computed:    true,
+						Description:      "Specify ARN for the KMS key to encrypt Performance Insights data.",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressKmsIfPerformanceInsightsDisabled,
 					},
 					"retention_period": {
-						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31",
+						Description: "Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31. For Document DB retention period is 7",
 						Type:        schema.TypeInt,
 						Optional:    true,
-						Computed:    true,
+						Default:     7,
 						ValidateFunc: validation.Any(
 							validation.IntInSlice([]int{7, 731}),
 							validation.IntDivisibleBy(31),
 						),
+						DiffSuppressFunc: suppressRetentionPeriodIfPerformanceInsightsDisabled,
 					},
 				},
 			},
@@ -328,6 +340,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 			Optional: true,
+			ForceNew: true,
 		},
 	}
 }
@@ -368,13 +381,13 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 		d.SetId("")
 		return nil
 	}
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 
 	// Convert the object into Terraform resource data
 	jo := rdsInstanceToState(duplo, d)
-	for key := range jo {
-		d.Set(key, jo[key])
+	for key, val := range jo {
+		d.Set(key, val) //jo[key])
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceRead ******** end")
 	return nil
@@ -429,7 +442,21 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	identifier := createdRds.Identifier
+	pI := expandPerformanceInsight(d)
+	if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
+		obj := enablePerformanceInstanceObject(pI)
+		obj.DBInstanceIdentifier = identifier
+		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+		if insightErr != nil {
+			return diag.FromErr(insightErr)
 
+		}
+		err = performanceInsightsWaitUntilEnabled(ctx, c, id)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance  '%s' performance insights : %s", id, err)
+		}
+
+	}
 	if d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
 		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
 		deleteProtection := new(bool)
@@ -617,31 +644,26 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
 	pI := expandPerformanceInsight(d)
 	if pI != nil {
-		period := pI["retention_period"].(int)
-		kmsid := pI["kms_key_id"].(string)
-		enable := duplosdk.PerformanceInsightEnable{
-			EnablePerformanceInsights:          pI["enabled"].(bool),
-			PerformanceInsightsRetentionPeriod: period,
-			PerformanceInsightsKMSKeyId:        kmsid,
-		}
-		obj.Enable = &enable
+		obj = enablePerformanceInstanceObject(pI)
+
 	} else {
 		disable := duplosdk.PerformanceInsightDisable{
 			EnablePerformanceInsights: false,
 		}
 		obj.Disable = &disable
 	}
-	obj.DBInstanceIdentifier = identifier + "-cluster"
+	obj.DBInstanceIdentifier = identifier
 	if isAuroraDB(d) {
+		obj.DBInstanceIdentifier = identifier + "-cluster"
 		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
 		if insightErr != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(insightErr)
 
 		}
 	} else {
 		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
 		if insightErr != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(insightErr)
 
 		}
 	}
@@ -659,6 +681,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
 	return diags
+
 }
 
 // DELETE resource
@@ -796,7 +819,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	}
 	duploObject.DatabaseName = d.Get("db_name").(string)
 	pI := expandPerformanceInsight(d)
-	if pI != nil {
+	if pI != nil && d.Get("engine").(int) != RDS_DOCUMENT_DB_ENGINE {
 
 		period := pI["retention_period"].(int)
 		kmsid := pI["kms_key_id"].(string)
@@ -890,14 +913,12 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	pis := []interface{}{}
 	pi := make(map[string]interface{})
 	pi["enabled"] = duploObject.EnablePerformanceInsights
-	if duploObject.EnablePerformanceInsights {
-		pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
-		pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
-	}
+	pi["retention_period"] = duploObject.PerformanceInsightsRetentionPeriod
+	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
 	pis = append(pis, pi)
 	jo["performance_insights"] = pis
 	jsonData2, _ := json.Marshal(jo)
-	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
+	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", string(jsonData2))
 
 	return jo
 }
@@ -952,7 +973,7 @@ func isAuroraDB(d *schema.ResourceData) bool {
 
 func isDeleteProtectionSupported(d *schema.ResourceData) bool {
 	// Avoid setting delete protection for document DB
-	return d.Get("engine").(int) != 13
+	return d.Get("engine").(int) != RDS_DOCUMENT_DB_ENGINE
 }
 
 func isClusterGroupParameterSupportDb(db int) bool {
@@ -997,7 +1018,6 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			"db.t4g.micro": {},
 			"db.t4g.small": {},
 		},
-		13: {"ALL": {}},
 	}
 	engines := map[int]string{
 		0:  "MySQL",
@@ -1013,6 +1033,7 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		14: "MariaDB",
 		16: "Aurora",
 	}
+
 	eng := diff.Get("engine").(int)
 	perf_insights_enabled := false
 	perf_insights_configuration_list := diff.Get("performance_insights").([]interface{})
@@ -1023,19 +1044,98 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 	if v, ok := nonsup[eng]; perf_insights_enabled && ok {
 		s := diff.Get("size").(string)
 		if _, ok := v[s]; ok {
-			if engines[eng] == "DocumentDB" {
-				return fmt.Errorf("RDS engine %s do not support Performance Insights at cluster level.", engines[eng])
-			}
 			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
 		}
 	}
-	if eng == 8 || eng == 9 || eng == 16 || eng == 13 || eng == 11 || eng == 12 {
+	if _, ok := diff.GetOk("storage_type"); ok {
 		st := diff.Get("storage_type").(string)
-		if st != "" && st != "aurora" {
-			return fmt.Errorf("RDS engine %s invalid storage type %s valid value is aurora", engines[eng], st)
-
+		if st == "aurora-iopt1" {
+			ev := diff.Get("engine_version").(string)
+			if (eng == 8 || eng == 11) && compareEngineVersion(ev, "3.03.1") == -1 {
+				return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 3.03.1", engines[eng], st)
+			}
+			if (eng == 9 || eng == 12) && compareEngineVersion(ev, "13.10") == -1 {
+				return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 13.10", engines[eng], st)
+			}
+			if eng != 8 && eng != 9 && eng != 11 && eng != 12 {
+				return fmt.Errorf("RDS engine %s  do not support storage_type %s ", engines[eng], st)
+			}
 		}
-
 	}
+
 	return nil
+}
+
+func enablePerformanceInstanceObject(pI map[string]interface{}) duplosdk.DuploRdsUpdatePerformanceInsights {
+	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
+	period := pI["retention_period"].(int)
+	kmsid := pI["kms_key_id"].(string)
+	enable := duplosdk.PerformanceInsightEnable{
+		EnablePerformanceInsights:          pI["enabled"].(bool),
+		PerformanceInsightsRetentionPeriod: period,
+		PerformanceInsightsKMSKeyId:        kmsid,
+		ApplyImmediately:                   true,
+	}
+	obj.Enable = &enable
+	return obj
+}
+
+func performanceInsightsWaitUntilEnabled(ctx context.Context, c *duplosdk.Client, id string) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:      []string{"false"},
+		Target:       []string{"true"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			status := "false"
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.EnablePerformanceInsights {
+				status = "true"
+			}
+			return resp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] performanceInsightsWaitUntilAvailable (%s)", id)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+func suppressIfPerformanceInsightsDisabled(k, old, new string, d *schema.ResourceData) bool {
+	// Check if the `enable` field is set to false
+	oldPI, newPI := d.GetChange("performance_insights.0.enabled")
+	if !oldPI.(bool) && !newPI.(bool) { //both false return no change
+		return true
+	} else if oldPI.(bool) && newPI.(bool) { //both true check if kms and retention period has change
+		if d.HasChange("performance_insights.0.kms_key_id") || d.HasChange("performance_insights.0.retention_period") {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+func suppressKmsIfPerformanceInsightsDisabled(k, old, new string, d *schema.ResourceData) bool {
+	oldPI, newPI := d.GetChange("performance_insights.0.enabled")
+	if oldPI.(bool) && !newPI.(bool) {
+		if d.HasChange("performance_insights.0.kms_key_id") {
+			return true
+		}
+	}
+	return false
+
+}
+
+func suppressRetentionPeriodIfPerformanceInsightsDisabled(k, old, new string, d *schema.ResourceData) bool {
+	oldPI, newPI := d.GetChange("performance_insights.0.enabled")
+	if oldPI.(bool) && !newPI.(bool) {
+		if d.HasChange("performance_insights.0.retention_period") {
+			return true
+		}
+	}
+	return false
+
 }

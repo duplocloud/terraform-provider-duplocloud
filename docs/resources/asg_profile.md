@@ -85,9 +85,67 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
   custom_node_labels = {
     "key1" = "value1"
     "key2" = "value2"
-
   }
 
+}
+
+
+//example for taints
+
+resource "duplocloud_asg_profile" "duplo-test-asg" {
+  tenant_id          = duplocloud_tenant.duplo-app.tenant_id
+  friendly_name      = "asgtaint"
+  instance_count     = 1
+  min_instance_count = 1
+  max_instance_count = 2
+
+  image_id       = "ami-id" # <== put the AWS duplo docker AMI ID here
+  capacity       = "t2.small"
+  agent_platform = 7 # Duplo native container agent
+  zone           = 1 # Zone A
+  user_account   = "oct15"
+
+  taints {
+    key    = "tk1"
+    value  = "tv2"
+    effect = "NoSchedule"
+  }
+}
+
+
+#secondary volume example
+resource "duplocloud_asg_profile" "duplo-test-asg" {
+  tenant_id             = duplocloud_tenant.duplo-app.tenant_id
+  friendly_name         = "duplo-test-asg"
+  instance_count        = 1
+  min_instance_count    = 1
+  max_instance_count    = 1
+  image_id              = "ami-077e0e0754c311a47" # <== put the AWS duplo docker AMI ID here
+  capacity              = "t3a.small"
+  agent_platform        = 7 # Duplo native container agent
+  zone                  = 0 # Zone A
+  user_account          = duplocloud_tenant.duplo-app.account_name
+  keypair_type          = 2
+  prepend_user_data     = false
+  use_spot_instances    = true
+  can_scale_from_zero   = false
+  is_cluster_autoscaled = false
+
+  metadata {
+    key   = "OsDiskSize" # <== This is the size of the OS disk in GB
+    value = "100"
+  }
+
+  minion_tags {
+    key   = "AllocationTags"
+    value = "test"
+  }
+
+  volume {
+    name        = "/dev/sda2"
+    volume_type = "gp3"
+    size        = 100
+  }
 }
 ```
 
@@ -122,16 +180,17 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
    - `2` : RSA (deprecated - some operating systems no longer support it)
 - `max_instance_count` (Number) The maximum size of the Auto Scaling Group.
 - `max_spot_price` (String) Maximum price to pay for a spot instance in dollars per unit hour.
-- `metadata` (Block List) Configuration metadata used when creating the host. (see [below for nested schema](#nestedblock--metadata))
+- `metadata` (Block List) Configuration metadata used when creating the host.<br>*Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10* (see [below for nested schema](#nestedblock--metadata))
 - `min_instance_count` (Number) The minimum size of the Auto Scaling Group.
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
 - `prepend_user_data` (Boolean) Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided. Defaults to `true`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
+- `taints` (Block List, Max: 50) Specify taints to attach to the nodes, to repel other nodes with different toleration (see [below for nested schema](#nestedblock--taints))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `use_spot_instances` (Boolean) Whether or not to use spot instances. Defaults to `false`.
 - `user_account` (String) The name of the tenant that the host will be created in.
-- `volume` (Block List) (see [below for nested schema](#nestedblock--volume))
+- `volume` (Block List) Block to specify additional or secondary volume beyond the root device (see [below for nested schema](#nestedblock--volume))
 - `wait_for_capacity` (Boolean) Whether or not to wait until ASG instances to be healthy, after creation. Defaults to `true`.
 - `zone` (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.
 
@@ -186,6 +245,19 @@ Required:
 ### Nested Schema for `tags`
 
 Required:
+
+- `key` (String)
+- `value` (String)
+
+
+<a id="nestedblock--taints"></a>
+### Nested Schema for `taints`
+
+Required:
+
+- `effect` (String) Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute
+
+Optional:
 
 - `key` (String)
 - `value` (String)

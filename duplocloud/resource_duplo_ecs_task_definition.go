@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -159,7 +160,10 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeSet,
 			Optional: true,
 			ForceNew: true,
-			Elem:     &schema.Schema{Type: schema.TypeString},
+			Elem: &schema.Schema{
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"FARGATE"}, false),
+			},
 		},
 		"ipc_mode": {
 			Type:         schema.TypeString,
@@ -226,6 +230,28 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"runtime_platform": {
+			Description: "Configuration block for runtime_platform that containers in your task may use. Required on ecs tasks that are hosted on Fargate.",
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Optional:    true,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"cpu_architecture": {
+						Description:  "Valid values are 'X86_64','ARM64'",
+						Type:         schema.TypeString,
+						Optional:     true,
+						ValidateFunc: validation.StringInSlice([]string{"X86_64", "ARM64"}, false),
+					},
+					"operating_system_family": {
+						Description: "Valid values are <br>For FARGATE: 'LINUX','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2022_CORE'", // <br> For EC2 : 'LINUX','WINDOWS_SERVER_2022_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2016_FULL','WINDOWS_SERVER_2004_CORE','WINDOWS_SERVER_20H2_CORE'",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -246,7 +272,8 @@ func resourceDuploEcsTaskDefinition() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: ecsTaskDefinitionSchema(),
+		Schema:        ecsTaskDefinitionSchema(),
+		CustomizeDiff: validateInput,
 	}
 }
 
@@ -376,7 +403,18 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	duplo.ProxyConfiguration = ecsProxyConfigFromState(d)
 	duplo.InferenceAccelerators = ecsInferenceAcceleratorsFromState(d)
 	duplo.RequiresAttributes = ecsRequiresAttributesFromState(d)
+	platform := d.Get("runtime_platform").([]interface{})
+	if len(platform) > 0 {
+		duplo.RuntimePlatform = &duplosdk.DuploEcsTaskDefRuntimePlatform{}
+		obj := platform[0].(map[string]interface{})
+		if v, ok := obj["cpu_architecture"]; ok && v.(string) != "" {
+			duplo.RuntimePlatform.CPUArchitecture.Value = v.(string)
 
+		}
+		if v, ok := obj["operating_system_family"]; ok && v.(string) != "" {
+			duplo.RuntimePlatform.OSFamily.Value = v.(string)
+		}
+	}
 	return &duplo, nil
 }
 
@@ -411,6 +449,7 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("inference_accelerator", ecsInferenceAcceleratorsToState(duplo.InferenceAccelerators))
 	d.Set("requires_attributes", ecsRequiresAttributesToState(duplo.RequiresAttributes))
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
+	d.Set("runtime_platform", ecsPlatformRuntimeToState)
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
@@ -583,6 +622,20 @@ func ecsPlacementConstraintsToState(pcs *[]duplosdk.DuploEcsTaskDefPlacementCons
 	return results
 }
 
+func ecsPlatformRuntimeToState(p *duplosdk.DuploEcsTaskDefRuntimePlatform) []interface{} {
+	if p != nil {
+		return nil
+	}
+
+	results := make([]interface{}, 0)
+	c := make(map[string]interface{})
+	c["cpu_architecture"] = p.CPUArchitecture.Value
+	c["operating_system_family"] = p.OSFamily.Value
+	results = append(results, c)
+
+	return results
+}
+
 func ecsPlacementConstraintsFromState(d *schema.ResourceData) *[]duplosdk.DuploEcsTaskDefPlacementConstraint {
 	spcs := d.Get("placement_constraints").(*schema.Set)
 	if spcs == nil || spcs.Len() == 0 {
@@ -726,4 +779,73 @@ func parseEcsTaskDefIdParts(id string) (tenantID, arn string, err error) {
 func isLogConfigProvided(d *schema.ResourceData) bool {
 	condefs := d.Get("container_definitions").(string)
 	return strings.Contains(condefs, "LogConfiguration")
+}
+
+func validateInput(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	obj := diff.Get("requires_compatibilities").(*schema.Set)
+	pf := diff.Get("runtime_platform").([]interface{})
+
+	fmp := map[string]bool{
+		"LINUX":                    true,
+		"WINDOWS_SERVER_2019_FULL": true,
+		"WINDOWS_SERVER_2019_CORE": true,
+		"WINDOWS_SERVER_2022_FULL": true,
+		"WINDOWS_SERVER_2022_CORE": true,
+	}
+	emp := map[string]bool{
+		"LINUX":                    true,
+		"WINDOWS_SERVER_2022_CORE": true,
+		"WINDOWS_SERVER_2022_FULL": true,
+		"WINDOWS_SERVER_2019_FULL": true,
+		"WINDOWS_SERVER_2019_CORE": true,
+		"WINDOWS_SERVER_2016_FULL": true,
+		"WINDOWS_SERVER_2004_CORE": true,
+		"WINDOWS_SERVER_20H2_CORE": true,
+	}
+
+	for _, o := range obj.List() {
+		if len(pf) == 0 {
+			v := []interface{}{}
+			m := map[string]interface{}{
+				"operating_system_family": "LINUX",
+				"cpu_architecture":        "X86_64",
+			}
+			v = append(v, m)
+			e := diff.SetNew("runtime_platform", v)
+			if e != nil {
+				return e
+			}
+			return nil
+		}
+		os := pf[0].(map[string]interface{})
+		f := os["operating_system_family"].(string)
+
+		if strings.Contains(f, "WINDOW") && os["cpu_architecture"] == "ARM64" {
+			return errors.New("cpu_architecture ARM64 is not compatible with WINDOWS OS family")
+		}
+
+		if o.(string) == "FARGATE" {
+			os := pf[0].(map[string]interface{})
+			f := os["operating_system_family"].(string)
+
+			if _, ok := fmp[f]; !ok {
+				return errors.New("invalid operating_system_family")
+			}
+			nm := diff.Get("network_mode").(string)
+			if nm != "awsvpc" {
+				return errors.New("invalid network mode, FARGATE only supports awsvpc network mode")
+			}
+		}
+
+		if o.(string) == "EC2" {
+			if f != "" {
+				if _, ok := emp[f]; !ok {
+					return errors.New("invalid operating_system_family")
+				}
+			}
+		}
+
+	}
+
+	return nil
 }
