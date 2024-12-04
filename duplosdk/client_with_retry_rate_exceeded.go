@@ -43,10 +43,10 @@ func retryApiCall(apiCaller string, operationApiCall func() ClientError) ClientE
 	for attempt = 1; attempt <= RateExceededMaxRetries; attempt++ {
 		delay := calculateBackoffInterval(apiCaller, attempt)
 		sleepDuration += delay
-		log.Printf("[TRACE] retryApiCall START sleep start (loop_sleep, retry_attempts, api) (%d,%d,%s)", delay.Seconds(), attempt, apiCaller)
+		log.Printf("[TRACE] retryApiCall START sleep start (loop_sleep, retry_attempts, api) (%d,%d,%s)", int(delay.Seconds()), attempt, apiCaller)
 		time.Sleep(delay)
 		if attempt > 1 {
-			log.Printf("[WARN] retryApiCall sleep done (loop_sleep, retry_attempts, api) (%d,%d,%s)", delay.Seconds(), attempt, apiCaller)
+			log.Printf("[WARN] retryApiCall sleep done (loop_sleep, retry_attempts, api) (%d,%d,%s)", int(delay.Seconds()), attempt, apiCaller)
 		}
 		err = operationApiCall()
 		if err == nil {
@@ -57,9 +57,9 @@ func retryApiCall(apiCaller string, operationApiCall func() ClientError) ClientE
 			return err
 		}
 
-		log.Printf("[WARN] FAILED_WITH_RATE_EXCEEDED: retryApiCall (total_sleep, retry_attempts, api) (%d,%d,%s)", sleepDuration.Seconds(), attempt, apiCaller)
+		log.Printf("[WARN] FAILED_WITH_RATE_EXCEEDED: retryApiCall (total_sleep, retry_attempts, api) (%d,%d,%s)", int(sleepDuration.Seconds()), attempt, apiCaller)
 	}
-	return newClientError(fmt.Sprintf("FAILED_WITH_RATE_EXCEEDED: Max retry attempts exceeded. (total_sleep, retry_attempts, api) (%d,%s)", sleepDuration.Seconds(), attempt, apiCaller))
+	return newClientError(fmt.Sprintf("FAILED_WITH_RATE_EXCEEDED: Max retry attempts exceeded. (total_sleep, retry_attempts, api) (%d,%s)", int(sleepDuration.Seconds()), attempt, apiCaller))
 }
 
 func isRateExceededError(err ClientError) bool {
