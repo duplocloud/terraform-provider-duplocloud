@@ -59,7 +59,7 @@ func retryApiCall(apiCaller string, operationApiCall func() ClientError) ClientE
 
 		log.Printf("[WARN] FAILED_WITH_RATE_EXCEEDED: retryApiCall (total_sleep, retry_attempts, api) (%d,%d,%s)", int(sleepDuration.Seconds()), attempt, apiCaller)
 	}
-	return newClientError(fmt.Sprintf("FAILED_WITH_RATE_EXCEEDED: Max retry attempts exceeded. (total_sleep, retry_attempts, api) (%d,%s)", int(sleepDuration.Seconds()), attempt, apiCaller))
+	return newClientError(fmt.Sprintf("FAILED_WITH_RATE_EXCEEDED: Max retry attempts exceeded. (total_sleep, retry_attempts, api) (%d,%d,%s)", int(sleepDuration.Seconds()), attempt, apiCaller))
 }
 
 func isRateExceededError(err ClientError) bool {
