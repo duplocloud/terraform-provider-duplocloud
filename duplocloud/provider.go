@@ -184,6 +184,7 @@ func Provider() *schema.Provider {
 			"duplocloud_k8_helm_repository":                 resourceHelmRepository(),
 			"duplocloud_k8_helm_release":                    resourceHelmRelease(),
 			"duplocloud_azure_datafactory":                  resourceAzureDataFactory(),
+			"duplocloud_azure_availability_set":             resourceAzureAvailabilitySet(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
@@ -253,6 +254,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_kms_key":               dataSourcePlanKMSList(),
 			"duplocloud_plan_kms_v2":                dataSourcePlanKMSV2(),
 			"duplocloud_plan_kms_key_v2":            dataSourcePlanKMSListV2(),
+			"duplocloud_azure_availability_set":     dataSourceAzureAvailabilitySet(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
