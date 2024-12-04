@@ -104,8 +104,7 @@ Optional:
 - `health_check_url` (String) The health check URL to associate with this load balancer configuration.
 - `host_name` (String) (Azure Only) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).
 - `is_internal` (Boolean) Whether or not to create an internal load balancer.
-- `is_native` (Boolean) (Boolean) Set to true if the service for which the load balancer is being created is hosted on a docker native host, which is managed directly by Duplocloud, or false if the service is hosted on a cloud-provided platform like EKS,
-   AKS, ECS, etc. The duplocloud_native_hosts data source lists the "native hosts" in a DuploCloud Tenant.
+- `is_native` (Boolean) Set to true if the service for which the load balancer is being created is hosted on a docker native host, which is managed directly by DuploCloud, or false if the service is hosted on a cloud-provided platform like EKS, AKS, GKE, ECS, etc. The `duplocloud_native_hosts` data source lists the native hosts in a DuploCloud Tenant
 - `set_ingress_health_check` (Boolean) Only for K8S services or load balancers in Kubernetes.  Set to `true` to set health check annotations for ingress.
 - `skip_http_to_https` (Boolean) Skip http to https.
 
