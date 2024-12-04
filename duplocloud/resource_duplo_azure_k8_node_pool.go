@@ -26,16 +26,20 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"identifier": {
-			Description:  "Node pool identifier. This field is deprecated, Please use `name` instead.",
-			Type:         schema.TypeInt,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}),
+			Description:   "Node pool identifier. This field is deprecated, Please use `name` instead.",
+			Type:          schema.TypeInt,
+			Computed:      true,
+			Optional:      true,
+			ValidateFunc:  validation.IntInSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}),
+			Deprecated:    "identifier has been deprecated instead use name",
+			ConflictsWith: []string{"name"},
 		},
 		"name": {
-			Description: "The Duplo generated name of the node pool.",
-			Type:        schema.TypeString,
-			Computed:    true,
+			Description:   "The name of the node pool.",
+			Type:          schema.TypeString,
+			Computed:      true,
+			Optional:      true,
+			ConflictsWith: []string{"identifier"},
 		},
 		"min_capacity": {
 			Description: "The minimum number of nodes which should exist within this Node Pool.",
@@ -125,6 +129,53 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 				ValidateFunc: validation.StringInSlice([]string{"1", "2", "3"}, true),
 			},
 		},
+		"os_type": {
+			Description: "Specifies the OS used by the agent pool. Possible values are `Linux`, `Windows`.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Default:     "Linux",
+			ValidateFunc: validation.StringInSlice([]string{
+				"Linux",
+				"Windows",
+			}, false),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
+		"os_sku": {
+			Description: "Specifies the OS SKU used by the agent pool. Possible values are `AzureLinux`, `Ubuntu`, `Windows2019` and `Windows2022`",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"AzureLinux",
+				"Ubuntu",
+				"Windows2019",
+				"Windows2022",
+			}, false),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
+		"os_disk_size_gb": {
+			Description:      "The Agent Operating System disk size in GB.",
+			Type:             schema.TypeInt,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
+		"node_taints": {
+			Description:      "A list of Kubernetes taints which should be applied to nodes in the agent pool.",
+			Type:             schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem:             &schema.Schema{Type: schema.TypeString},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
+		"node_labels": {
+			Description:      "Kubernetes labels which should be applied to nodes in this Node Pool.",
+			Type:             schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			Elem:             KeyValueSchema(),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
 	}
 }
 
@@ -180,17 +231,18 @@ func resourceAgentK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, 
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
-	identifier := d.Get("identifier").(int)
-	log.Printf("[TRACE] resourceAgentK8NodePoolCreate(%s, %v): start", tenantID, identifier)
+	identifier := useNameElseIdentifier(d)
+
+	log.Printf("[TRACE] resourceAgentK8NodePoolCreate(%s, %s): start", tenantID, identifier)
 	c := m.(*duplosdk.Client)
 
-	rq, err := expandAgentK8NodePool(d)
+	rq, err := expandAgentK8NodePool(d, identifier)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure node pool '%v': %s", tenantID, identifier, err)
+		return diag.Errorf("Error creating tenant %s azure node pool '%s': %s", tenantID, identifier, err)
 	}
 	friendlyName, err := c.AzureK8NodePoolCreate(tenantID, rq)
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure node pool '%v': %s", tenantID, identifier, err)
+		return diag.Errorf("Error creating tenant %s azure node pool '%s': %s", tenantID, identifier, err)
 	}
 
 	id := fmt.Sprintf("%s/%s", tenantID, *friendlyName)
@@ -223,7 +275,7 @@ func resourceAgentK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAgentK8NodePoolUpdate(%s, %v): start", tenantID, name)
+	log.Printf("[TRACE] resourceAgentK8NodePoolUpdate(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
 	nodepool := &duplosdk.DuploAzureK8NodePoolRequest{
 		FriendlyName:      name,
@@ -291,13 +343,22 @@ func resourceAgentK8NodePoolDelete(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-func expandAgentK8NodePool(d *schema.ResourceData) (*duplosdk.DuploAzureK8NodePoolRequest, error) {
+func useNameElseIdentifier(d *schema.ResourceData) string {
+	identifier := d.Get("identifier").(int)
+	name := d.Get("name").(string)
+	if name != "" {
+		return name
+	}
+	return strconv.Itoa(identifier)
+}
+
+func expandAgentK8NodePool(d *schema.ResourceData, identifier string) (*duplosdk.DuploAzureK8NodePoolRequest, error) {
 	nodePool := &duplosdk.DuploAzureK8NodePoolRequest{
 		MinSize:           d.Get("min_capacity").(int),
 		MaxSize:           d.Get("max_capacity").(int),
 		DesiredCapacity:   d.Get("desired_capacity").(int),
 		EnableAutoScaling: d.Get("enable_auto_scaling").(bool),
-		FriendlyName:      strconv.Itoa(d.Get("identifier").(int)),
+		FriendlyName:      identifier,
 		Capacity:          d.Get("vm_size").(string),
 	}
 
@@ -323,12 +384,40 @@ func expandAgentK8NodePool(d *schema.ResourceData) (*duplosdk.DuploAzureK8NodePo
 			}
 		}
 	}
-	if v, ok := d.GetOk("availability_zones"); ok {
+	if v, ok := d.GetOk("availability_zones"); ok && v != nil {
 		azs := v.(*schema.Set)
 		for _, v := range azs.List() {
 			nodePool.AvailabilityZones = append(nodePool.AvailabilityZones, v.(string))
 		}
 	}
+	if v, ok := d.GetOk("os_type"); ok && v != nil {
+		if v.(string) == "Windows" {
+			nodePool.K8sWorkerOs = 1
+		} else {
+			nodePool.K8sWorkerOs = 0
+		}
+	}
+	if v, ok := d.GetOk("os_sku"); ok && v != nil {
+		nodePool.OsSKU = v.(string)
+	}
+	if v, ok := d.GetOk("os_disk_size_gb"); ok && v != nil && v.(int) != 0 {
+		nodePool.OsDiskSizeGB = v.(int)
+	}
+	if v, ok := d.GetOk("node_taints"); ok && v != nil {
+		nodetaints := v.([]interface{})
+		if len(nodetaints) > 0 {
+			for _, v := range nodetaints {
+				nodePool.NodeTaints = append(nodePool.NodeTaints, v.(string))
+			}
+		}
+	}
+	if v, ok := d.GetOk("node_labels"); ok && v != nil {
+		labels := v.([]interface{})
+		if len(labels) > 0 {
+			nodePool.NodeLabels = keyValueFromState("node_labels", d)
+		}
+	}
+
 	return nodePool, nil
 }
 
@@ -371,6 +460,23 @@ func flattenAgentK8NodePool(d *schema.ResourceData, duplo *duplosdk.DuploAzureK8
 	}
 	if len(duplo.AvailabilityZones) > 0 {
 		d.Set("availability_zones", duplo.AvailabilityZones)
+	}
+	if duplo.K8sWorkerOs == 1 {
+		d.Set("os_type", "Windows")
+	} else {
+		d.Set("os_type", "Linux")
+	}
+	if len(duplo.OsSKU) > 0 {
+		d.Set("os_sku", duplo.OsSKU)
+	}
+	if duplo.OsDiskSizeGB != 0 {
+		d.Set("os_disk_size_gb", duplo.OsDiskSizeGB)
+	}
+	if len(duplo.NodeTaints) > 0 {
+		d.Set("node_taints", duplo.NodeTaints)
+	}
+	if duplo.NodeLabels != nil && len(*duplo.NodeLabels) > 0 {
+		d.Set("node_labels", keyValueToState("node_labels", duplo.NodeLabels))
 	}
 }
 

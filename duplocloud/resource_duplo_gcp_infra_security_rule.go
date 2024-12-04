@@ -35,7 +35,7 @@ func schemaSecurityRule() map[string]*schema.Schema {
 		},
 		"ports_and_protocols": {
 			Type:     schema.TypeList,
-			Optional: true,
+			Required: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"ports": {
@@ -299,6 +299,20 @@ func validateGCPSecurityRuleAttribute(ctx context.Context, diff *schema.Resource
 			return fmt.Errorf("duplicate value in source_ranges not allowed")
 		}
 		dup[v.(string)] = struct{}{}
+	}
+	pp := diff.Get("ports_and_protocols").([]interface{})
+	hasAll := false
+	for _, v := range pp {
+		mp := v.(map[string]interface{})
+		vl := mp["service_protocol"].(string)
+		if vl == "all" {
+			if len(pp) > 1 {
+				return fmt.Errorf("cannot pass other service_protocol with 'all'")
+			}
+			hasAll = true
+		} else if hasAll {
+			return fmt.Errorf("cannot pass other service_protocol with 'all'")
+		}
 	}
 	return nil
 }
