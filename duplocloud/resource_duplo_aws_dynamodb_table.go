@@ -76,8 +76,10 @@ func resourceAwsDynamoDBTable() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
+			Read:   schema.DefaultTimeout(25 * time.Minute),
+			Update: schema.DefaultTimeout(60 * time.Minute),
 			Create: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(25 * time.Minute),
 		},
 		Schema: awsDynamoDBTableSchema(),
 	}
