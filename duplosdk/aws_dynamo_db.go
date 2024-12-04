@@ -312,37 +312,6 @@ func (c *Client) DynamoDBTableUpdateV2(
 	return &rp, err
 }
 
-//func (c *Client) DynamoDBTableUpdateGSIV2(
-//	tenantID string,
-//	rq *ModifyGSI) (*DuploDynamoDBTableV2, ClientError) {
-//	rp := DuploDynamoDBTableV2{}
-//
-//	err := c.putAPIWithRetry(
-//		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
-//		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
-//		&rq,
-//		&rp,
-//	)
-//	rp.TenantID = tenantID
-//	return &rp, err
-//}
-
-//func (c *Client) DynamoDBTableUpdateV21(
-//	tenantID string,
-//	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
-//	rp := DuploDynamoDBTableV2{}
-//	//rs := &[]DuploDynamoDBTableV2GlobalSecondaryIndex{}
-//	//rs = rq.GlobalSecondaryIndexes
-//	err := c.putAPIWithRetry(
-//		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
-//		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
-//		rq,
-//		&rp,
-//	)
-//	rp.TenantID = tenantID
-//	return &rp, err
-//}
-
 func (c *Client) DynamoDBTableUpdateTagsV2(
 	tenantId, name string,
 	rq *DuploDynamoDBTagResource) (*DuploDynamoDBTagResource, ClientError) {
@@ -382,15 +351,6 @@ func (c *Client) DynamoDBTableGet(tenantID string, name string) (*DuploDynamoDBT
 	return &rp, err
 }
 
-//func (c *Client) DynamoDBTableGetTags(tenantID string, arn string) ([]DuploKeyStringValue, ClientError) {
-//	rp := []DuploKeyStringValue{}
-//	err := c.getAPI(
-//		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, arn), // triple encoding needed to fetch the data
-//		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s", tenantID, url.PathEscape(url.PathEscape(url.PathEscape(arn)))),
-//		&rp)
-//	return rp, err
-//}
-
 func (c *Client) DynamoDBTableGetV2(tenantID string, name string) (*DuploDynamoDBTableV2Response, ClientError) {
 	rp := DuploDynamoDBTableV2Response{}
 	err := c.getAPIWithRetry(
@@ -427,6 +387,68 @@ func (c *Client) DynamoDBTableV2TTl(tenantID, tableName string, rq *DuploDynamoD
 	return &rp, err
 }
 
+type ModifyGSI struct {
+	TableName                   string                             `json:"TableName"`
+	AttributeDefinitions        []DuploDynamoDBAttributeDefinionV2 `json:"AttributeDefinitions,omitempty"`
+	GlobalSecondaryIndexUpdates []GlobalSecondaryIndexUpdates
+}
+type GlobalSecondaryIndexUpdates struct {
+	Create *DuploDynamoDBTableV2GlobalSecondaryIndex `json:"Create,omitempty"`
+	Delete *Delete                                   `json:"Delete,omitempty"`
+	Update *Update                                   `json:"Update,omitempty"`
+}
+
+type Delete struct {
+	IndexName string `json:"IndexName"`
+}
+
+type Update struct {
+	IndexName             string                             `json:"IndexName"`
+	ProvisionedThroughput DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput"`
+}
+
+// remove after july 2024 release updation
+//func (c *Client) DynamoDBTableGetV2Old(tenantID string, name string) (*DuploDynamoDBTableV2Old, ClientError) {
+//	rp := DuploDynamoDBTableV2Old{}
+//	err := c.getAPI(
+//		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, name),
+//		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, name),
+//		&rp)
+//	rp.TenantID = tenantID
+//	return &rp, err
+//}
+
+//func (c *Client) DynamoDBTableUpdateGSIV2(
+//	tenantID string,
+//	rq *ModifyGSI) (*DuploDynamoDBTableV2, ClientError) {
+//	rp := DuploDynamoDBTableV2{}
+//
+//	err := c.putAPIWithRetry(
+//		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
+//		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
+//		&rq,
+//		&rp,
+//	)
+//	rp.TenantID = tenantID
+//	return &rp, err
+//}
+
+//func (c *Client) DynamoDBTableUpdateV21(
+//	tenantID string,
+//	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+//	rp := DuploDynamoDBTableV2{}
+//	//rs := &[]DuploDynamoDBTableV2GlobalSecondaryIndex{}
+//	//rs = rq.GlobalSecondaryIndexes
+//	err := c.putAPIWithRetry(
+//		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
+//		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
+//		rq,
+//		&rp,
+//	)
+//	rp.TenantID = tenantID
+//	return &rp, err
+//}
+
 //func (c *Client) DynamoDBTableExistsV2(tenantID string, name string) (bool, ClientError) {
 //	_, err := c.DynamoDBTableGetV2(tenantID, name)
 //	if err != nil {
@@ -460,33 +482,11 @@ func (c *Client) DynamoDBTableV2TTl(tenantID, tableName string, rq *DuploDynamoD
 //	return c.DynamoDBTableUpdateV2(tenantID, r)
 //}
 
-type ModifyGSI struct {
-	TableName                   string                             `json:"TableName"`
-	AttributeDefinitions        []DuploDynamoDBAttributeDefinionV2 `json:"AttributeDefinitions,omitempty"`
-	GlobalSecondaryIndexUpdates []GlobalSecondaryIndexUpdates
-}
-type GlobalSecondaryIndexUpdates struct {
-	Create *DuploDynamoDBTableV2GlobalSecondaryIndex `json:"Create,omitempty"`
-	Delete *Delete                                   `json:"Delete,omitempty"`
-	Update *Update                                   `json:"Update,omitempty"`
-}
-
-type Delete struct {
-	IndexName string `json:"IndexName"`
-}
-
-type Update struct {
-	IndexName             string                             `json:"IndexName"`
-	ProvisionedThroughput DuploDynamoDBProvisionedThroughput `json:"ProvisionedThroughput"`
-}
-
-// remove after july 2024 release updation
-//func (c *Client) DynamoDBTableGetV2Old(tenantID string, name string) (*DuploDynamoDBTableV2Old, ClientError) {
-//	rp := DuploDynamoDBTableV2Old{}
+//func (c *Client) DynamoDBTableGetTags(tenantID string, arn string) ([]DuploKeyStringValue, ClientError) {
+//	rp := []DuploKeyStringValue{}
 //	err := c.getAPI(
-//		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, name),
-//		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, name),
+//		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, arn), // triple encoding needed to fetch the data
+//		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s", tenantID, url.PathEscape(url.PathEscape(url.PathEscape(arn)))),
 //		&rp)
-//	rp.TenantID = tenantID
-//	return &rp, err
+//	return rp, err
 //}
