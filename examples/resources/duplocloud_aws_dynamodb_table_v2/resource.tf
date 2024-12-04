@@ -207,6 +207,6 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
   }
   ttl {
     attribute_name = "TimeToExist"
-    enabled        = false
+    enabled        = true
   }
 }
