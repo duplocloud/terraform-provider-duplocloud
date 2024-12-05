@@ -57,6 +57,7 @@ type DuploNativeHost struct {
 	DiskControlType    string                             `json:"DiskControllerType,omitempty"`
 	ExtraNodeLabels    *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
 	Taints             *[]DuploTaints                     `json:"Taints,omitempty"`
+	AvailabilitySetId  string                             `json:"AvailabilitySetId"`
 }
 
 type DuploTaints struct {
