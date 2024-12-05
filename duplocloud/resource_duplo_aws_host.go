@@ -278,13 +278,13 @@ func nativeHostSchema() map[string]*schema.Schema {
 				Schema: map[string]*schema.Schema{
 					"key": {
 						Type:         schema.TypeString,
-						Optional:     true,
+						Required:     true,
 						ForceNew:     true,
 						ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9.-]{0,62}$|^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?/(.{1,253})$`), "Invalid key format: taint key must begin with a letter or number, can contain letters, numbers, hyphens(-), and periods(.), and be up to 63 characters long OR the taint key begins with a valid DNS subdomain prefix, followed by a single /, and includes a key of up to 253 characters"),
 					},
 					"value": {
 						Type:         schema.TypeString,
-						Optional:     true,
+						Required:     true,
 						ForceNew:     true,
 						ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$`), "Invalid value format: taint value must begin with a letter or number, can contain letters, numbers, hyphens(-), and be up to 63 characters long"),
 					},
