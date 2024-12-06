@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -23,29 +24,35 @@ func duploAzureAvailablitySetSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "The name for availability set",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:  "The name for availability set",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9._-]{0,78}[a-zA-Z0-9_]$"), `The length must be between 1 and 80 characters. The first character must be a letter or number. The last character must be a letter, number, or underscore. The remaining characters must be letters, numbers, periods, underscores, or dashes.`),
 		},
 		"platform_update_domain_count": {
-			Description: "Specify platform update domain count for availability set.",
-			Type:        schema.TypeInt,
-			Required:    true,
-			ForceNew:    true,
+			Description:  "Specify platform update domain count between 1-20, for availability set. Virtual machines in the same update domain will be restarted together during planned maintenance. Azure never restarts more than one update domain at a time.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ForceNew:     true,
+			Default:      5,
+			ValidateFunc: validation.IntBetween(1, 20),
 		},
 		"platform_fault_domain_count": {
-			Description:  "Specify platform fault domain count for availability set",
+			Description:  "Specify platform fault domain count betweem 1-3, for availability set. Virtual machines in the same fault domain share a common power source and physical network switch.",
 			Type:         schema.TypeInt,
-			Required:     true,
+			Optional:     true,
 			ValidateFunc: validation.IntBetween(1, 3),
 			ForceNew:     true,
+			Default:      2,
 		},
-		"sku_name": {
-			Description: "Specify sku name for availability set.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+		"use_managed_disk": {
+			Description:  "Set this to `Aligned` if you plan to create virtual machines in this availability set with managed disks.",
+			Type:         schema.TypeString,
+			Optional:     true,
+			ForceNew:     true,
+			Default:      "Classic",
+			ValidateFunc: validation.StringInSlice([]string{"Aligned", "Classic"}, false),
 		},
 		"location": {
 			Type:     schema.TypeString,
@@ -180,7 +187,7 @@ func expandAzureAvailabilitySet(d *schema.ResourceData) *duplosdk.DuploAvailabil
 	if v, ok := d.GetOk("platform_fault_domain_count"); ok {
 		req.PlatformFaultDomainCount = v.(int)
 	}
-	if v, ok := d.GetOk("sku_name"); ok && v != nil && v.(string) != "" {
+	if v, ok := d.GetOk("use_managed_disk"); ok && v != nil && v.(string) != "" {
 		req.Sku.Name = v.(string)
 	}
 	if v, ok := d.GetOk("name"); ok && v != nil && v.(string) != "" {
@@ -194,7 +201,7 @@ func flattenAzureAvailabilitySet(d *schema.ResourceData, duplo *duplosdk.DuploAv
 	d.Set("name", duplo.Name)
 	d.Set("platform_update_domain_count", duplo.PlatformUpdateDomainCount)
 	d.Set("platform_fault_domain_count", duplo.PlatformFaultDomainCount)
-	d.Set("sku_name", duplo.Sku.Name)
+	d.Set("use_managed_disk", duplo.Sku.Name)
 	d.Set("location", duplo.Location)
 	d.Set("tags", duplo.Tags)
 	d.Set("type", duplo.Type)
