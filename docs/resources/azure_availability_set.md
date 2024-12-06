@@ -33,14 +33,14 @@ resource "duplocloud_azure_availability_set" "st" {
 ### Required
 
 - `name` (String) The name for availability set
-- `platform_fault_domain_count` (Number) Specify platform fault domain count for availability set
-- `platform_update_domain_count` (Number) Specify platform update domain count for availability set.
-- `sku_name` (String) Specify sku name for availability set.
 - `tenant_id` (String) The GUID of the tenant that the host will be created in.
 
 ### Optional
 
+- `platform_fault_domain_count` (Number) Specify platform fault domain count betweem 1-3, for availability set. Virtual machines in the same fault domain share a common power source and physical network switch. Defaults to `2`.
+- `platform_update_domain_count` (Number) Specify platform update domain count between 1-20, for availability set. Virtual machines in the same update domain will be restarted together during planned maintenance. Azure never restarts more than one update domain at a time. Defaults to `5`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `use_managed_disk` (String) Set this to `Aligned` if you plan to create virtual machines in this availability set with managed disks. Defaults to `Classic`.
 
 ### Read-Only
 
