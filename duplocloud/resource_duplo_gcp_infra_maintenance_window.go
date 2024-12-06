@@ -123,12 +123,11 @@ func resourceInfrastructureMaintenanceWindowRead(ctx context.Context, d *schema.
 	// Get the object from Duplo, detecting a missing object
 	flag := ctx.Value(flagKey)
 	c := m.(*duplosdk.Client)
-	duplo := &duplosdk.DuploGcpInfraMaintenanceWindow{}
 	var err error
 	if flag != nil && flag.(bool) {
 		time.Sleep(60 * time.Second)
 	}
-	duplo, err = c.GetGCPInfraMaintenanceWindow(infraName)
+	duplo, err := c.GetGCPInfraMaintenanceWindow(infraName)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve infrastructure maintenance window details for '%s': %s", infraName, err)
 	}
