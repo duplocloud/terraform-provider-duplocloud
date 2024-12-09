@@ -79,7 +79,7 @@ Required:
 
 Optional:
 
-- `ports` (List of String) The list of ports to which this rule applies. This field is only applicable for UDP or TCP protocol.
+- `ports` (List of String) The list of ports to which this rule applies. This field is only applicable for UDP, TCP and SCTP protocol.
 
 
 <a id="nestedblock--timeouts"></a>
