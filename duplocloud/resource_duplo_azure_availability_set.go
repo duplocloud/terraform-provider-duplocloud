@@ -142,7 +142,7 @@ func resourceAzureAvailabilitySetCreate(ctx context.Context, d *schema.ResourceD
 	for {
 		err := c.AzureAvailabilitySetCreate(tenantID, rq)
 		if err != nil {
-			if err.Status() == 404 {
+			if err.Status() == 404 || strings.Contains(err.Error(), "Error retrieving AvailabilitySet ntest2 status with Exception The entity was not found in this Azure location") {
 				if i < 2 {
 					time.Sleep(5 * time.Second)
 
@@ -188,6 +188,7 @@ func resourceAzureAvailabilitySetDelete(ctx context.Context, d *schema.ResourceD
 		return diag.Errorf("Unable to delete tenant %s azure availablity set '%s': %s", tenantID, name, clientErr)
 
 	}
+	time.Sleep(2 * time.Minute)
 	log.Printf("[TRACE] resourceAzureAvailabilitySetDelete(%s, %s): end", tenantID, name)
 
 	return nil
