@@ -30,11 +30,12 @@ type VMIds struct {
 }
 
 func (c *Client) AzureAvailabilitySetCreate(tenantID string, rq *DuploAvailabilitySet) ClientError {
+	rp := map[string]interface{}{}
 	err := c.postAPI(
 		fmt.Sprintf("AzureAvailabilitySetCreate(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/azure/host/availabilityset", tenantID),
 		&rq,
-		nil,
+		&rp,
 	)
 	return err
 }
