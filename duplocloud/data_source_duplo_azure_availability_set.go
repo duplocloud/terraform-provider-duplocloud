@@ -33,7 +33,7 @@ func dataSourceAzureAvailabilitySet() *schema.Resource {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
-			"sku_name": {
+			"use_managed_disk": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -86,7 +86,7 @@ func dataSourceAzureAvailabilitySetRead(d *schema.ResourceData, m interface{}) e
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Unable to retrieve tenant %s azure virtual machine %s : %s", tenantID, name, clientErr)
+		return fmt.Errorf("unable to retrieve tenant %s azure virtual machine %s : %s", tenantID, name, clientErr)
 	}
 	d.SetId(fmt.Sprintf("%s/availability-set/%s", tenantID, name))
 
@@ -94,7 +94,7 @@ func dataSourceAzureAvailabilitySetRead(d *schema.ResourceData, m interface{}) e
 	d.Set("name", duplo.Name)
 	d.Set("platform_update_domain_count", duplo.PlatformUpdateDomainCount)
 	d.Set("platform_fault_domain_count", duplo.PlatformFaultDomainCount)
-	d.Set("sku_name", duplo.Sku.Name)
+	d.Set("use_managed_disk", duplo.Sku.Name)
 	d.Set("location", duplo.Location)
 	d.Set("tags", duplo.Tags)
 	d.Set("type", duplo.Type)
