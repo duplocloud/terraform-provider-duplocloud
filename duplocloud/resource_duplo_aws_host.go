@@ -284,7 +284,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 					},
 					"value": {
 						Type:         schema.TypeString,
-						Required:     true,
+						Optional:     true,
 						ForceNew:     true,
 						ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$`), "Invalid value format: taint value must begin with a letter or number, can contain letters, numbers, hyphens(-), and be up to 63 characters long"),
 					},
