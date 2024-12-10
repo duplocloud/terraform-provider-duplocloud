@@ -123,7 +123,7 @@ func resourceAzureAvailabilitySetRead(ctx context.Context, d *schema.ResourceDat
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve tenant %s azure virtual machine %s : %s", tenantID, name, clientErr)
+		return diag.Errorf("Unable to retrieve tenant %s azure availablity set %s : %s", tenantID, name, clientErr)
 	}
 	d.Set("tenant_id", tenantID)
 	flattenAzureAvailabilitySet(d, duplo)
@@ -132,7 +132,6 @@ func resourceAzureAvailabilitySetRead(ctx context.Context, d *schema.ResourceDat
 }
 
 func resourceAzureAvailabilitySetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var err error
 
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
@@ -140,11 +139,25 @@ func resourceAzureAvailabilitySetCreate(ctx context.Context, d *schema.ResourceD
 	c := m.(*duplosdk.Client)
 
 	rq := expandAzureAvailabilitySet(d)
-	err = c.AzureAvailabilitySetCreate(tenantID, rq)
-	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure availability set '%s': %s", tenantID, name, err)
-	}
+	i := 0
+	for {
+		err := c.AzureAvailabilitySetCreate(tenantID, rq)
+		if err != nil {
+			if err.Status() == 404 || strings.Contains(err.Error(), "Error retrieving AvailabilitySet ntest2 status with Exception The entity was not found in this Azure location") {
+				if i < 2 {
+					time.Sleep(5 * time.Second)
 
+				}
+			}
+			if i == 2 {
+				return diag.Errorf("Error creating tenant %s azure availability set '%s': %s", tenantID, name, err.Error())
+			}
+		} else {
+			break
+		}
+		i++
+
+	}
 	id := fmt.Sprintf("%s/availability-set/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "Availability Set", id, func() (interface{}, duplosdk.ClientError) {
 		return c.AzureAvailabilitySetGet(tenantID, name)
@@ -153,6 +166,7 @@ func resourceAzureAvailabilitySetCreate(ctx context.Context, d *schema.ResourceD
 		return diags
 	}
 	d.SetId(id)
+
 	diags = resourceAzureAvailabilitySetRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzureAvailabilitySetCreate(%s, %s): end", tenantID, name)
 	return diags
@@ -175,6 +189,7 @@ func resourceAzureAvailabilitySetDelete(ctx context.Context, d *schema.ResourceD
 		return diag.Errorf("Unable to delete tenant %s azure availablity set '%s': %s", tenantID, name, clientErr)
 
 	}
+	time.Sleep(2 * time.Minute)
 	log.Printf("[TRACE] resourceAzureAvailabilitySetDelete(%s, %s): end", tenantID, name)
 
 	return nil
