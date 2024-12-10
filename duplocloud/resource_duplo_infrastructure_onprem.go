@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -76,6 +77,13 @@ func resourceInfrastructureOnprem() *schema.Resource {
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Required:    true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^https:\/\/`+ // Enforce HTTPS scheme
+					`(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}|`+ // Domain name
+					`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`+ // OR IPv4 address
+					`(:\d+)?`+ // Optional port
+					`(\/[a-zA-Z0-9-_.~]*)*`+ // Optional path
+					`(\?[a-zA-Z0-9-_=&]*)?`+ // Optional query parameters
+					`(#\S*)?$`), "Endpoint should start with https:// and should be valid url"),
 			},
 			"cluster_endpoint": {
 				Description: "Endpoint URL of K8 cluster",
