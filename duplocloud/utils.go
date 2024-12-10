@@ -590,7 +590,7 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 func isStructEmpty(i interface{}) bool {
 	// Get the type of the input
 	val := reflect.ValueOf(i)
-	typ := reflect.TypeOf(i)
+	//typ := reflect.TypeOf(i)
 
 	// If it's a pointer, dereference it
 	if val.Kind() == reflect.Ptr {
@@ -598,7 +598,7 @@ func isStructEmpty(i interface{}) bool {
 			return true // Nil pointers are considered empty
 		}
 		val = val.Elem()
-		typ = typ.Elem()
+		//	typ = typ.Elem()
 	}
 
 	// Ensure the input is a struct
