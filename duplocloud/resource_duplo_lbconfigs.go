@@ -130,9 +130,10 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Optional:    true,
 		},
 		"is_native": {
-			Type:     schema.TypeBool,
-			Computed: true,
-			Optional: true,
+			Description: "Set to true if the service for which the load balancer is being created is hosted on a docker native host, which is managed directly by DuploCloud, or false if the service is hosted on a cloud-provided platform like EKS, AKS, GKE, ECS, etc. The `duplocloud_native_hosts` data source lists the native hosts in a DuploCloud Tenant",
+			Type:        schema.TypeBool,
+			Computed:    true,
+			Optional:    true,
 		},
 		"host_name": {
 			Description: "(Azure Only) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).",

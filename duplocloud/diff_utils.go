@@ -291,3 +291,22 @@ func diffSuppressListOrdering(k, old, new string, d *schema.ResourceData) bool {
 	// No meaningful difference, suppress the diff
 	return true
 }
+
+func diffSuppressDynamodbTTLHandler(k, old, new string, d *schema.ResourceData) bool {
+	ostate, nstate := d.GetChange("ttl")
+	if len(ostate.([]interface{})) == 0 && len(nstate.([]interface{})) > 0 { //if ttl already disable ignnoring change
+		l := nstate.([]interface{})
+		mp := l[0].(map[string]interface{})
+		if !mp["enabled"].(bool) {
+			return true
+		}
+	} else if len(ostate.([]interface{})) > 0 && len(nstate.([]interface{})) == 0 {
+		l := ostate.([]interface{})
+
+		mp := l[0].(map[string]interface{})
+		if !mp["enabled"].(bool) {
+			return true
+		}
+	}
+	return false
+}
