@@ -603,7 +603,7 @@ func isStructEmpty(i interface{}) bool {
 
 	// Ensure the input is a struct
 	if val.Kind() != reflect.Struct {
-		panic("isStructEmpty can only be used with structs or pointers to structs")
+		return false
 	}
 
 	// Check if all fields are at their zero values
