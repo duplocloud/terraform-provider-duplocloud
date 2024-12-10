@@ -100,7 +100,8 @@ func resourceAzureAvailabilitySet() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAzureAvailablitySetSchema(),
+		Schema:        duploAzureAvailablitySetSchema(),
+		CustomizeDiff: validateAvailabilitySetAttribute,
 	}
 }
 
@@ -236,4 +237,14 @@ func flattenVMIds(duplo *[]duplosdk.VMIds) []interface{} {
 	}
 
 	return list
+}
+
+func validateAvailabilitySetAttribute(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	uc := diff.Get("platform_update_domain_count").(int)
+	fc := diff.Get("platform_fault_domain_count").(int)
+
+	if fc == 1 && uc != 1 {
+		return fmt.Errorf("cannot set platform_update_domain_count to 1 if platform_fault_domain_count is set to 1")
+	}
+	return nil
 }
