@@ -77,17 +77,17 @@ func dataSourceAzureAvailabilitySetRead(d *schema.ResourceData, m interface{}) e
 	c := m.(*duplosdk.Client)
 
 	duplo, clientErr := c.AzureAvailabilitySetGet(tenantID, name)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			d.SetId("")
+		}
+		return fmt.Errorf("unable to retrieve tenant %s azure virtual machine %s : %s", tenantID, name, clientErr)
+	}
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
 	}
-	if clientErr != nil {
-		if clientErr.Status() == 404 {
-			d.SetId("")
-			return nil
-		}
-		return fmt.Errorf("unable to retrieve tenant %s azure virtual machine %s : %s", tenantID, name, clientErr)
-	}
+
 	d.SetId(fmt.Sprintf("%s/availability-set/%s", tenantID, name))
 
 	d.Set("tenant_id", tenantID)
