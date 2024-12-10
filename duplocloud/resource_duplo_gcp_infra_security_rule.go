@@ -218,9 +218,12 @@ func resourceGcpInfraSecurityRuleDelete(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.Errorf("Unable to delete security rule '%s' for '%s': %s", ruleName, infraName, err)
 	}
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp infra security rule", id, func() (interface{}, duplosdk.ClientError) {
+		return c.GcpSecurityRuleGet(infraName, ruleName, false)
 
+	})
 	log.Printf("[TRACE] resourceGcpInfraSecurityRuleDelete(%s,%s): end", infraName, ruleName)
-	return nil
+	return diag
 }
 
 func expandGCPSecurityRule(d *schema.ResourceData) (*duplosdk.DuploSecurityRule, error) {
