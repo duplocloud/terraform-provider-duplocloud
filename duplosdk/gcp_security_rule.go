@@ -21,18 +21,18 @@ type DuploSecurityRuleProtocolAndPortsResponse struct {
 }
 
 type DuploSecurityRuleResponse struct {
-	Name    string                                      `json:"name"`
+	Name    string                                      `json:"name,omitempty"`
 	Allowed []DuploSecurityRuleProtocolAndPortsResponse `json:"allowed,omitempty"`
 	Denied  []DuploSecurityRuleProtocolAndPortsResponse `json:"denied,omitempty"`
 
-	Description           string   `json:"description"`
-	Kind                  string   `json:"kind"`
-	Direction             string   `json:"direction"`
-	Network               string   `json:"network"`
-	SelfLink              string   `json:"selfLink"`
-	SourceTags            []string `json:"sourceTags"`
-	SourceRanges          []string `json:"sourceRanges"`
-	Priority              int      `json:"priority"`
+	Description           string   `json:"description,omitempty"`
+	Kind                  string   `json:"kind,omitempty"`
+	Direction             string   `json:"direction,omitempty"`
+	Network               string   `json:"network,omitempty"`
+	SelfLink              string   `json:"selfLink,omitempty"`
+	SourceTags            []string `json:"sourceTags,omitempty"`
+	SourceRanges          []string `json:"sourceRanges,omitempty"`
+	Priority              int      `json:"priority,omitempty"`
 	TargetServiceAccounts []string `json:"targetServiceAccounts,omitempty"`
 	SourceServiceAccounts []string `json:"sourceServiceAccounts,omitempty"`
 }

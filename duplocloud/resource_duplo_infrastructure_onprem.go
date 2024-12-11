@@ -78,10 +78,11 @@ func resourceInfrastructureOnprem() *schema.Resource {
 				Required:    true,
 			},
 			"cluster_endpoint": {
-				Description: "Endpoint URL of K8 cluster",
-				Type:        schema.TypeString,
-				ForceNew:    true,
-				Required:    true,
+				Description:  "Endpoint URL of K8 cluster",
+				Type:         schema.TypeString,
+				ForceNew:     true,
+				Required:     true,
+				ValidateFunc: validation.IsURLWithHTTPS,
 			},
 			"api_token": {
 				Description: "Token to access cluster API's",

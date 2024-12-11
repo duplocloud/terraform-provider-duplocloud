@@ -39,7 +39,7 @@ func schemaSecurityRule() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"ports": {
-						Description: "The list of ports to which this rule applies. This field is only applicable for UDP or TCP protocol.",
+						Description: "The list of ports to which this rule applies. This field is only applicable for UDP, TCP and SCTP protocol.",
 						Type:        schema.TypeList,
 						Optional:    true,
 						Elem:        &schema.Schema{Type: schema.TypeString},
@@ -218,9 +218,12 @@ func resourceGcpInfraSecurityRuleDelete(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.Errorf("Unable to delete security rule '%s' for '%s': %s", ruleName, infraName, err)
 	}
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp infra security rule", id, func() (interface{}, duplosdk.ClientError) {
+		return c.GcpSecurityRuleGet(infraName, ruleName, false)
 
+	})
 	log.Printf("[TRACE] resourceGcpInfraSecurityRuleDelete(%s,%s): end", infraName, ruleName)
-	return nil
+	return diag
 }
 
 func expandGCPSecurityRule(d *schema.ResourceData) (*duplosdk.DuploSecurityRule, error) {

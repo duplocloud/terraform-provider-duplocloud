@@ -2,7 +2,6 @@ package duplocloud
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -13,6 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
+
+type contextKey string
+
+const flagKey contextKey = "flag"
 
 // Resource for managing an infrastructure's settings.
 func resourceGCPInfraMaintenanceWindow() *schema.Resource {
@@ -66,34 +69,24 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 				},
 			},
 			"daily_maintenance_start_time": {
-				Description:   "Time window specified for daily maintenance operations. Specify 'start_time 'in RFC3339 format HH:MM, where HH : [00-23] and MM : [00-59] GMT",
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
+				Description: "Time window specified for daily maintenance operations. Specify 'start_time 'in RFC3339 format HH:MM, where HH : [00-23] and MM : [00-59] GMT",
+				Type:        schema.TypeString,
+				Optional:    true,
+				//Computed:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"recurring_window"},
 				ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d$`), "Invalid format: valid format format HH:MM, where HH : [00-23] and MM : [00-59]"),
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					o, n := d.GetChange("daily_maintenance_start_time")
-					tim := strings.Split(o.(string), "T")
-					fmt.Println(tim)
-					if len(tim) > 1 {
-						hm := strings.Split(tim[1], ":")
-						fmt.Println(hm)
-
-						hhmm := hm[0] + ":" + hm[1]
-						if hhmm == n {
-							return true
-						}
-					}
-					return false
+					hhmm := dailyMaintenanceStartTimeFormat(o.(string))
+					return hhmm == n
 				},
 			},
 			"recurring_window": {
-				Type:          schema.TypeList,
-				MaxItems:      1,
-				Optional:      true,
-				Computed:      true,
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Optional: true,
+				//	Computed:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"daily_maintenance_start_time"},
 				Elem: &schema.Resource{
@@ -128,33 +121,27 @@ func resourceInfrastructureMaintenanceWindowRead(ctx context.Context, d *schema.
 	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowRead(%s): start", infraName)
 	//for sync with gcp
 	// Get the object from Duplo, detecting a missing object
+	flag := ctx.Value(flagKey)
 	c := m.(*duplosdk.Client)
-	duplo := &duplosdk.DuploGcpInfraMaintenanceWindow{}
 	var err error
-	i := 0
-	for i < 1 {
-		duplo, err = c.GetGCPInfraMaintenanceWindow(infraName)
-		if err != nil {
-			return diag.Errorf("Unable to retrieve infrastructure maintenance window details for '%s': %s", infraName, err)
-		}
-		i++
-
-		if _, ok := d.GetOk("daily_maintenance_start_time"); ok && duplo.DailyMaintenanceStartTime == "" {
-			i = 0
-			time.Sleep(2 * time.Second)
-		}
+	if flag != nil && flag.(bool) {
+		time.Sleep(60 * time.Second)
+	}
+	duplo, err := c.GetGCPInfraMaintenanceWindow(infraName)
+	if err != nil {
+		return diag.Errorf("Unable to retrieve infrastructure maintenance window details for '%s': %s", infraName, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
 	}
-
 	// Set the simple fields first.
 	d.Set("infra_name", infraName)
 	flattenWindowMaintenance(d, *duplo)
 
 	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowRead(%s): end", infraName)
 	return nil
+
 }
 
 func resourceInfrastructureMaintenanceWindowCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -167,14 +154,14 @@ func resourceInfrastructureMaintenanceWindowCreateOrUpdate(ctx context.Context, 
 	}
 
 	c := m.(*duplosdk.Client)
-
 	err = c.CreateGCPInfraMaintenanceWindow(infraName, rq)
 	if err != nil {
 		return diag.Errorf("resourceInfrastructureMaintenanceWindowCreateOrUpdate cannot create maintenance window for infra %s error: %s", infraName, err.Error())
 	}
 	d.SetId("maintenance-window/" + infraName)
+	ctx1 := context.WithValue(ctx, flagKey, true)
 
-	diags := resourceInfrastructureMaintenanceWindowRead(ctx, d, m)
+	diags := resourceInfrastructureMaintenanceWindowRead(ctx1, d, m)
 	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowCreateOrUpdate(%s): end", infraName)
 	return diags
 }
@@ -189,11 +176,8 @@ func resourceInfrastructureMaintenanceWindowDelete(ctx context.Context, d *schem
 	if err != nil {
 		return diag.Errorf("resourceInfrastructureMaintenanceWindowDelete cannot delete maintenance window for infra %s error: %s", infraName, err.Error())
 	}
-	d.SetId("maintenance-window/" + infraName)
-
-	diags := resourceInfrastructureMaintenanceWindowRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowDelete(%s): end", infraName)
-	return diags
+	return nil
 }
 
 func expandWindowsMaintenance(d *schema.ResourceData) (*duplosdk.DuploGcpInfraMaintenanceWindow, error) {
@@ -260,4 +244,55 @@ func flattenWindowMaintenance(d *schema.ResourceData, rb duplosdk.DuploGcpInfraM
 		ri = append(ri, mpr)
 		d.Set("recurring_window", ri)
 	}
+}
+
+/*
+	func syncExclusion(d *schema.ResourceData, rqExc []duplosdk.Exclusion) bool {
+		_, nExc := d.GetChange("exclusion")
+		if nExc == nil {
+			return true
+		}
+		mp := map[string]struct{}{}
+		for _, exc := range nExc.([]interface{}) {
+			emp := exc.(map[string]interface{})
+			token := emp["start_time"].(string)
+			token += emp["end_time"].(string)
+			token += emp["scope"].(string)
+			mp[token] = struct{}{}
+		}
+		syncCount := 0
+		for _, exc := range rqExc {
+			token := exc.StartTime + exc.EndTime + exc.Scope
+			if _, ok := mp[token]; ok {
+				syncCount++
+			}
+		}
+		return syncCount == len(rqExc)
+	}
+
+	func syncRecurringWindow(d *schema.ResourceData, rqRW duplosdk.Recurring) bool {
+		nRR := d.Get("recurring_window")
+		if nRR == nil {
+			return true
+		}
+		l := nRR.([]interface{})
+		if len(l) == 0 {
+			return true
+		}
+		mpRR := l[0].(map[string]interface{})
+		token := mpRR["start_time"].(string) + mpRR["end_time"].(string) + mpRR["recurrence"].(string)
+		token1 := rqRW.StartTime + rqRW.EndTime + rqRW.Recurrence
+		st := token == token1
+
+		return st
+	}
+*/
+func dailyMaintenanceStartTimeFormat(o string) string {
+	hhmm := ""
+	tim := strings.Split(o, "T")
+	if len(tim) > 1 {
+		hm := strings.Split(tim[1], ":")
+		hhmm = hm[0] + ":" + hm[1]
+	}
+	return hhmm
 }
