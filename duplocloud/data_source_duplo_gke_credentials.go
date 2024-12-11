@@ -59,30 +59,43 @@ func dataSourceGKECredentialsRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to get plan %s kubernetes JIT access: %s", planID, err)
 	}
-	if infra == nil {
-		return fmt.Errorf("no plan configuration for plan %s", planID)
-	}
+	k8sConfig := &duplosdk.DuploEksCredentials{}
 
 	// Now we know infra is not nil, proceed with checks
-	if !infra.EnableK8Cluster && infra.Cloud != 2 {
-		return fmt.Errorf("no kubernetes cluster for this plan %s", planID)
-	} else if infra.Cloud == 2 {
-		// Check for AksConfig only if Cloud is 2 (relevant scenario)
-		if infra.AksConfig == nil || !infra.AksConfig.CreateAndManage {
-			return fmt.Errorf("no kubernetes cluster for plan %s", planID)
+	if infra != nil && planID != "default" {
+		if !infra.EnableK8Cluster && infra.Cloud != 2 {
+			return fmt.Errorf("no kubernetes cluster for this plan %s", planID)
+		} else if infra.Cloud == 2 {
+			// Check for AksConfig only if Cloud is 2 (relevant scenario)
+			if infra.AksConfig == nil || !infra.AksConfig.CreateAndManage {
+				return fmt.Errorf("no kubernetes cluster for plan %s", planID)
+			}
 		}
-	}
-	// First, try the newer method of obtaining a JIT access token.
-	k8sConfig, err := c.GetPlanK8sJitAccess(planID)
-	if err != nil && !err.PossibleMissingAPI() {
-		return fmt.Errorf("failed to get plan %s kubernetes JIT access: %s", planID, err)
-	}
+		// First, try the newer method of obtaining a JIT access token.
+		k8sConfig, err = c.GetPlanK8sJitAccess(planID)
+		if err != nil && !err.PossibleMissingAPI() {
+			return fmt.Errorf("failed to get plan %s kubernetes JIT access: %s", planID, err)
+		}
 
-	// If it failed, try the fallback method.
-	if k8sConfig == nil {
-		k8sConfig, err = c.GetK8sCredentials(planID)
-		if err != nil {
-			return fmt.Errorf("failed to read EKS credentials: %s", err)
+		// If it failed, try the fallback method.
+		if k8sConfig == nil {
+			k8sConfig, err = c.GetK8sCredentials(planID)
+			if err != nil {
+				return fmt.Errorf("failed to read EKS credentials: %s", err)
+			}
+		}
+	} else {
+		k8sConfig, err = c.GetPlanK8sJitAccess(planID)
+		if err != nil && !err.PossibleMissingAPI() {
+			return fmt.Errorf("failed to get plan %s kubernetes JIT access: %s", planID, err)
+		}
+
+		// If it failed, try the fallback method.
+		if k8sConfig == nil {
+			k8sConfig, err = c.GetK8sCredentials(planID)
+			if err != nil {
+				return fmt.Errorf("failed to read EKS credentials: %s", err)
+			}
 		}
 	}
 	d.SetId(planID)

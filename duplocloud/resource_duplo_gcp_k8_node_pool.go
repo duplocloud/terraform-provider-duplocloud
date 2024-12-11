@@ -194,6 +194,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
+			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"variant_config": {
@@ -543,21 +544,24 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 		req.LinuxNodeConfig.CGroupMode = val[0]["cgroup_mode"].(string)
 		req.LinuxNodeConfig.SysCtls = val[0]["sysctls"]
 	}
-	if val, ok := d.Get("labels").(map[string]string); ok {
-		req.Labels = val
-	}
-	if val, ok := d.Get("logging_config").(map[string]interface{}); ok {
-		loggingConfig := duplosdk.GCPLoggingConfig{}
-
-		if vConfig, ok := val["variant_config"].(map[string]interface{}); ok {
-			variantConfig := duplosdk.VariantConfig{}
-
-			if variant, ok := vConfig["variant"].(string); ok {
-				variantConfig.Variant = variant
-			}
-
-			loggingConfig.VariantConfig = &variantConfig
+	if val, ok := d.Get("labels").(map[string]interface{}); ok {
+		req.Labels = make(map[string]string)
+		for k, v := range val {
+			req.Labels[k] = v.(string)
 		}
+	}
+	if val, ok := d.Get("node_pool_logging_config").([]interface{}); ok {
+		loggingConfig := duplosdk.GCPLoggingConfig{}
+		//for _, v := range val {
+		m := val[0].(map[string]interface{})
+		m1 := m["variant_config"].(map[string]interface{})
+		variantConfig := duplosdk.VariantConfig{}
+
+		if variant, ok := m1["variant"].(string); ok {
+			variantConfig.Variant = variant
+		}
+
+		loggingConfig.VariantConfig = &variantConfig
 
 		// Assign the loggingConfig to the request object
 		req.LoggingConfig = &loggingConfig
@@ -1018,7 +1022,7 @@ func gcpNodePoolZoneUpdate(c *duplosdk.Client, tenantID, fullName string, zones 
 }
 
 func filterOutDefaultTags(tags []string) []string {
-	return trimStringsByPosition(tags, 2)
+	return trimStringsByPosition(tags, 3)
 }
 
 func filterOutDefaultLabels(labels map[string]string) map[string]string {
