@@ -27,6 +27,6 @@ resource "duplocloud_gcp_infra_maintenance_window" "mw" {
 //recurrencing maintenance example
 resource "duplocloud_gcp_infra_maintenance_window" "mw" {
   infra_name                   = "infra-name"
-  daily_maintenance_start_time = "2024-10-05T00:10:00"
+  daily_maintenance_start_time = "18:06"
 
 }
