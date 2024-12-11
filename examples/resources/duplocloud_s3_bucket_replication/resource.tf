@@ -44,4 +44,6 @@ resource "duplocloud_s3_bucket_replication" "rep1" {
     delete_marker_replication = false
     storage_class             = "STANDARD"
   }
+  depends_on = [duplocloud_s3_bucket_replication.rep]
+
 }
