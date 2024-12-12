@@ -1089,17 +1089,3 @@ func filterOutDefaultResourceLabels(labels map[string]string) map[string]string 
 	delete(labels, "duplo-tenant")
 	return labels
 }
-
-func validateUpgradeSettings(val interface{}, k string) ([]string, []error) {
-	upgradeSettings, ok := val.(map[string]interface{})
-	if !ok {
-		return nil, []error{fmt.Errorf("invalid upgrade settings")}
-	}
-
-	if _, exists := upgradeSettings["node_pool_soak_duration"]; exists {
-		if _, exists := upgradeSettings["blue_green_settings"]; exists {
-			return nil, []error{fmt.Errorf("node_pool_soak_duration and blue_green_settings.standard_rollout_policy cannot be set simultaneously")}
-		}
-	}
-	return nil, nil
-}
