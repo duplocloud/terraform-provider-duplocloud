@@ -61,13 +61,11 @@ func k8sIngressSchema() map[string]*schema.Schema {
 					"http_port": {
 						Description: "HTTP Listener Port.",
 						Type:        schema.TypeInt,
-						Computed:    true,
 						Optional:    true,
 					},
 					"https_port": {
 						Description: "HTTPS Listener Port.",
 						Type:        schema.TypeInt,
-						Computed:    true,
 						Optional:    true,
 					},
 				},
