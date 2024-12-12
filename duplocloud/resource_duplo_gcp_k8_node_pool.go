@@ -288,7 +288,6 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 												Optional:     true,
 												Computed:     true,
 												ValidateFunc: validation.FloatBetween(0.1, 1.0),
-												//	ConflictsWith: []string{"blue_green_settings.standard_rollout_policy.batch_node_count"},
 											},
 											"batch_node_count": {
 												Description: "Note: The batch_node_count should not be used along with batch_percentage",
@@ -296,7 +295,6 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 												Type:     schema.TypeInt,
 												Optional: true,
 												Computed: true,
-												//	ConflictsWith: []string{"blue_green_settings.standard_rollout_policy.0.batch_percentage"},
 											},
 											"batch_soak_duration": {
 												Type:         schema.TypeString,
