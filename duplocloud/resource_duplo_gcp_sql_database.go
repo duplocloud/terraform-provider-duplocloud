@@ -43,9 +43,9 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 		"database_version": {
 			Description: "The MySQL, PostgreSQL or SQL Server version to use." +
 				"Supported values include `MYSQL_5_6`,`MYSQL_5_7`, `MYSQL_8_0`, `POSTGRES_9_6`,`POSTGRES_10`," +
-				"`POSTGRES_11`,`POSTGRES_12`, `POSTGRES_13`, `POSTGRES_14`, `POSTGRES_15`, `SQLSERVER_2017_STANDARD`,`SQLSERVER_2017_ENTERPRISE`," +
+				"`POSTGRES_11`,`POSTGRES_12`, `POSTGRES_13`, `POSTGRES_14`, `POSTGRES_15`,`POSTGRES_16`,`POSTGRES_17`, `SQLSERVER_2017_STANDARD`,`SQLSERVER_2017_ENTERPRISE`," +
 				"`SQLSERVER_2017_EXPRESS`, `SQLSERVER_2017_WEB`,`SQLSERVER_2019_STANDARD`, `SQLSERVER_2019_ENTERPRISE`, `SQLSERVER_2019_EXPRESS`," +
-				"`SQLSERVER_2019_WEB`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions) includes an up-to-date reference of supported versions.",
+				"`SQLSERVER_2019_WEB`,`SQLSERVER_2022_WEB`,`SQLSERVER_2022_EXPRESS`,`SQLSERVER_2022_ENTERPRISE`,`SQLSERVER_2022_STANDARD`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions) includes an up-to-date reference of supported versions.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringInSlice(supportedGcpSQLDBVersions(), false),
@@ -116,6 +116,12 @@ func checkPasswordNeeded(d *schema.ResourceData) bool {
 		"SQLSERVER_2019_ENTERPRISE": true,
 		"SQLSERVER_2019_EXPRESS":    true,
 		"SQLSERVER_2019_WEB":        true,
+		"POSTGRES_16":               true,
+		"POSTGRES_17":               true,
+		"SQLSERVER_2022_WEB":        true,
+		"SQLSERVER_2022_EXPRESS":    true,
+		"SQLSERVER_2022_ENTERPRISE": true,
+		"SQLSERVER_2022_STANDARD":   true,
 	}
 	return mp[dependentFieldValue]
 }

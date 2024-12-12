@@ -129,11 +129,11 @@ func resourceS3BucketReplicationRead(ctx context.Context, d *schema.ResourceData
 
 	// Parse the identifying attributes
 	id := d.Id()
-	idParts := strings.SplitN(id, "/", 2)
-	if len(idParts) < 2 {
+	idParts := strings.SplitN(id, "/", 3)
+	if len(idParts) < 3 {
 		return diag.Errorf("resourceS3BucketReplicationRead: Invalid resource (ID: %s)", id)
 	}
-	tenantID, name := idParts[0], idParts[1]
+	tenantID, name, ruleName := idParts[0], idParts[1], idParts[2]
 
 	c := m.(*duplosdk.Client)
 	duplo, err := getS3BucketReplication(c, tenantID, name)
@@ -146,8 +146,17 @@ func resourceS3BucketReplicationRead(ctx context.Context, d *schema.ResourceData
 		d.SetId("")
 		return nil
 	}
+	rp := []map[string]interface{}{}
+	for _, rule := range duplo {
+		fullName := strings.Split(rule["fullname"].(string), "-")
+		n := fullName[len(fullName)-1]
+		if n == ruleName {
+			rp = append(rp, rule)
+			break
+		}
+	}
 	// Get the object from Duplo
-	d.Set("rules", duplo)
+	d.Set("rules", rp)
 	d.Set("source_bucket", name)
 
 	// Set simple fields first.
@@ -195,25 +204,27 @@ func resourceS3BucketReplicationCreate(ctx context.Context, d *schema.ResourceDa
 	rules := d.Get("rules").([]interface{})
 	sourceBucket := d.Get("source_bucket").(string)
 	// Create the request object.
-	id := fmt.Sprintf("%s/%s", tenantID, sourceBucket)
+	duploObject := duplosdk.DuploS3BucketReplication{}
+
 	for _, rule := range rules {
 		kv := rule.(map[string]interface{})
 
-		duploObject := duplosdk.DuploS3BucketReplication{
-			Rule:                    kv["name"].(string),
-			DestinationBucket:       kv["destination_bucket"].(string),
-			SourceBucket:            sourceBucket,
-			Priority:                kv["priority"].(int),
-			DeleteMarkerReplication: kv["delete_marker_replication"].(bool),
-			StorageClass:            kv["storage_class"].(string),
-		}
+		duploObject.Rule = kv["name"].(string)
+		duploObject.DestinationBucket = kv["destination_bucket"].(string)
+		duploObject.SourceBucket = sourceBucket
+		duploObject.Priority = kv["priority"].(int)
+		duploObject.DeleteMarkerReplication = kv["delete_marker_replication"].(bool)
+		duploObject.StorageClass = kv["storage_class"].(string)
 
 		// Post the object to Duplo
-		err := c.TenantCreateV3S3BucketReplication(tenantID, duploObject)
-		if err != nil {
-			return diag.Errorf("resourceS3BucketReplicationCreate: Unable to create s3 bucket replication for (tenant: %s, source bucket: %s: error: %s)", tenantID, duploObject.SourceBucket, err)
-		}
+
 	}
+	err := c.TenantCreateV3S3BucketReplication(tenantID, duploObject)
+	if err != nil {
+		return diag.Errorf("resourceS3BucketReplicationCreate: Unable to create s3 bucket replication for (tenant: %s, source bucket: %s: error: %s)", tenantID, duploObject.SourceBucket, err)
+	}
+	id := fmt.Sprintf("%s/%s/%s", tenantID, sourceBucket, duploObject.Rule)
+
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "s3 replication rule", id, func() (interface{}, duplosdk.ClientError) {
 		return c.TenantGetV3S3BucketReplication(tenantID, sourceBucket)
 	})
@@ -273,25 +284,23 @@ func resourceS3BucketReplicationDelete(ctx context.Context, d *schema.ResourceDa
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
 	id := d.Id()
-	idParts := strings.SplitN(id, "/", 2)
+	idParts := strings.SplitN(id, "/", 3)
 	if len(idParts) < 2 {
 		return diag.Errorf("resourceS3BucketReplicationDelete: Invalid resource (ID: %s)", id)
 	}
-	rules := d.Get("rules").([]interface{})
+	rule := d.Get("rules").([]interface{})
 
-	for _, rule := range rules {
-		kv := rule.(map[string]interface{})
-		ruleName := kv["fullname"].(string)
-		err := c.TenantDeleteV3S3BucketReplication(idParts[0], idParts[1], ruleName)
-		if err != nil {
-			return diag.Errorf("resourceS3BucketReplicationDelete: Unable to delete bucket replication rule (name:%s, error: %s)", ruleName, err)
-		}
-		// Wait up to 60 seconds for Duplo to delete the bucket replication.
-		//	time.Sleep(60 * time.Second)
-	}
-	err := s3replicaWaitUntilDelete(ctx, c, idParts[0], idParts[1], d.Timeout("delete"))
+	kv := rule[0].(map[string]interface{})
+	ruleName := kv["fullname"].(string)
+	err := c.TenantDeleteV3S3BucketReplication(idParts[0], idParts[1], ruleName)
 	if err != nil {
-		return diag.Errorf("%s", err.Error())
+		return diag.Errorf("resourceS3BucketReplicationDelete: Unable to delete bucket replication rule (name:%s, error: %s)", ruleName, err)
+	}
+	// Wait up to 60 seconds for Duplo to delete the bucket replication.
+	//	time.Sleep(60 * time.Second)
+	cerr := s3replicaWaitUntilDelete(ctx, c, idParts[0], idParts[1], ruleName, d.Timeout("delete"))
+	if cerr != nil {
+		return diag.Errorf("%s", cerr.Error())
 	}
 	// Wait 10 more seconds to deal with consistency issues.
 
@@ -310,7 +319,7 @@ func validateTenantBucket(ctx context.Context, diff *schema.ResourceDiff, m inte
 	return nil
 }
 
-func s3replicaWaitUntilDelete(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+func s3replicaWaitUntilDelete(ctx context.Context, c *duplosdk.Client, tenantID string, name string, ruleName string, timeout time.Duration) error {
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"deleted"},
@@ -318,10 +327,21 @@ func s3replicaWaitUntilDelete(ctx context.Context, c *duplosdk.Client, tenantID 
 			rp, err := c.TenantGetV3S3BucketReplication(tenantID, name)
 			status := "pending"
 			if err == nil {
-				if len(rp.Rule) == 0 {
+				l := len(rp.Rule)
+				c := 0
+				if l == 0 {
 					status = "deleted"
 				} else {
-					status = "pending"
+					for _, r := range rp.Rule {
+						if r.Rule != ruleName {
+							c++
+						}
+					}
+					if l == c {
+						status = "deleted"
+					} else {
+						status = "pending"
+					}
 				}
 			}
 
