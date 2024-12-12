@@ -46,6 +46,7 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 				Description: "Exceptions to maintenance window. Non-emergency maintenance should not occur in these windows. A cluster can have up to 20 maintenance exclusions at a time",
 				Type:        schema.TypeList,
 				Optional:    true,
+				//	DiffSuppressFunc: diffSuppressListOrdering,
 				//Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -53,17 +54,20 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 							Type:             schema.TypeString,
 							Required:         true,
 							ValidateDiagFunc: validateDateTimeFormat,
+							DiffSuppressFunc: diffSuppressListOrderingOnNestedField,
 						},
 						"end_time": {
 							Type:             schema.TypeString,
 							Required:         true,
 							ValidateDiagFunc: validateDateTimeFormat,
+							DiffSuppressFunc: diffSuppressListOrderingOnNestedField,
 						},
 						"scope": {
-							Description: "The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES",
-							Type:        schema.TypeString,
-							Optional:    true,
-							Default:     "NO_UPGRADES",
+							Description:      "The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES",
+							Type:             schema.TypeString,
+							Optional:         true,
+							Default:          "NO_UPGRADES",
+							DiffSuppressFunc: diffSuppressListOrderingOnNestedField,
 						},
 					},
 				},
