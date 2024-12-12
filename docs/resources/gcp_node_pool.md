@@ -124,7 +124,7 @@ locals {
 - `initial_node_count` (Number) The initial node count for the pool Defaults to `1`.
 - `is_autoscaling_enabled` (Boolean) Is autoscaling enabled for this node pool.
 - `labels` (Map of String) The map of Kubernetes labels (key/value pairs) to be applied to each node.
-- `linux_node_config` (Block List) Parameters that can be configured on Linux nodes (see [below for nested schema](#nestedblock--linux_node_config))
+- `linux_node_config` (Block List, Max: 1) Parameters that can be configured on Linux nodes (see [below for nested schema](#nestedblock--linux_node_config))
 - `location_policy` (String) Update strategy of the node pool. Defaults to `BALANCED`.
 - `max_node_count` (Number) Maximum number of nodes for one location in the NodePool. Must be >= minNodeCount.
 - `metadata` (Map of String) The metadata key/value pairs assigned to instances in the cluster.
@@ -220,8 +220,8 @@ Optional:
 Optional:
 
 - `blue_green_settings` (Block List) (see [below for nested schema](#nestedblock--upgrade_settings--blue_green_settings))
-- `max_surge` (Number)
-- `max_unavailable` (Number)
+- `max_surge` (Number) The maximum number of nodes that can be created beyond the current size of the node pool during the upgrade process.
+- `max_unavailable` (Number) The maximum number of nodes that can be simultaneously unavailable during the upgrade process. A node is considered available if its status is Ready
 - `strategy` (String) Update strategy of the node pool.
 
 <a id="nestedblock--upgrade_settings--blue_green_settings"></a>
@@ -229,16 +229,16 @@ Optional:
 
 Optional:
 
-- `node_pool_soak_duration` (String)
-- `standard_rollout_policy` (Block List) (see [below for nested schema](#nestedblock--upgrade_settings--blue_green_settings--standard_rollout_policy))
+- `node_pool_soak_duration` (String) Note: The node_pool_soak_duration should not be used along with standard_rollout_policy
+- `standard_rollout_policy` (Block List) Note: The standard_rollout_policy should not be used along with node_pool_soak_duration (see [below for nested schema](#nestedblock--upgrade_settings--blue_green_settings--standard_rollout_policy))
 
 <a id="nestedblock--upgrade_settings--blue_green_settings--standard_rollout_policy"></a>
 ### Nested Schema for `upgrade_settings.blue_green_settings.standard_rollout_policy`
 
 Optional:
 
-- `batch_node_count` (Number)
-- `batch_percentage` (Number)
+- `batch_node_count` (Number) Note: The batch_node_count should not be used along with batch_percentage
+- `batch_percentage` (Number) Note: The batch_percentage should not be used along with batch_node_count
 - `batch_soak_duration` (String)
 
 ## Import
