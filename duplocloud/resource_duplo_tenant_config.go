@@ -44,7 +44,7 @@ func resourceTenantConfig() *schema.Resource {
 				Type:             schema.TypeList,
 				Optional:         true,
 				Elem:             KeyValueSchema(),
-				DiffSuppressFunc: diffSuppressListOrdering,
+				DiffSuppressFunc: diffSuppressListKeyValueOrdering,
 			},
 			"delete_unspecified_settings": {
 				Description: "Whether or not this resource should delete any settings not specified by this resource. " +
