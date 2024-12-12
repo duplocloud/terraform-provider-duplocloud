@@ -256,11 +256,13 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"availability_set_id": {
-			Description: "Specify availability set id to which virtual machine should be added to",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-			ForceNew:    true,
+			Description:      "Specify availability set id to which virtual machine should be added to",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ForceNew:         true,
+			ValidateFunc:     validation.StringIsNotWhiteSpace,
+			DiffSuppressFunc: diffSuppressAvailablitySetIdOnCase,
 		},
 	}
 }
@@ -666,4 +668,9 @@ func needsAzureVMUpdate(d *schema.ResourceData) bool {
 		d.HasChange("disk_size_gb") ||
 		d.HasChange("os_disk_type") ||
 		d.HasChange("volume")
+}
+
+func diffSuppressAvailablitySetIdOnCase(k, old, new string, d *schema.ResourceData) bool {
+
+	return strings.ToLower(old) == strings.ToLower(new)
 }
