@@ -311,6 +311,7 @@ func diffSuppressDynamodbTTLHandler(k, old, new string, d *schema.ResourceData) 
 	return false
 }
 
+/*
 func diffSuppressListOrderingAsWhole(k, old, new string, d *schema.ResourceData) bool {
 	// Extract attribute name to get the old and new values
 	attributeName := strings.Split(k, ".")[0]
@@ -378,7 +379,7 @@ func diffSuppressListOrderingAsWhole(k, old, new string, d *schema.ResourceData)
 
 	// No meaningful difference, suppress the diff
 	return true
-}
+}*/
 
 func diffSuppressListOrderingOnNestedField(k, old, new string, d *schema.ResourceData) bool {
 	// Extract attribute name to get the old and new values
