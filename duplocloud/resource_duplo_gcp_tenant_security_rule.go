@@ -152,7 +152,11 @@ func resourceGcpTenantSecurityRuleDelete(ctx context.Context, d *schema.Resource
 	if err != nil {
 		return diag.Errorf("Unable to delete security rule '%s' for '%s': %s", ruleName, tenantId, err)
 	}
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp tenant security rule", id, func() (interface{}, duplosdk.ClientError) {
+		return c.GcpSecurityRuleGet(tenantId, ruleName, true)
+
+	})
 
 	log.Printf("[TRACE] resourceGcpTenantSecurityRuleDelete(%s,%s): end", tenantId, ruleName)
-	return nil
+	return diag
 }

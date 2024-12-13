@@ -14,7 +14,8 @@ type DuploAwsLaunchTemplateRequest struct {
 }
 
 type DuploLaunchTemplateData struct {
-	InstanceType DuploStringValue `json:"InstanceType"`
+	InstanceType DuploStringValue `json:"InstanceType,omitempty"`
+	ImageId      string           `json:"ImageId,omitempty"`
 }
 
 func (c *Client) CreateAwsLaunchTemplate(tenantId string, rq *DuploAwsLaunchTemplateRequest) ClientError {

@@ -29,15 +29,14 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"version": {
-			Description: "The existing latest version of the launch template",
+			Description: "Any of the existing version of the launch template",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
 		},
 		"default_version": {
-			Description: "The default version of the launch template to be set.",
+			Description: "The current default version of the launch template.",
 			Type:        schema.TypeString,
-			Optional:    true,
 			Computed:    true,
 		},
 		"latest_version": {
@@ -46,17 +45,23 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"version_description": {
-			Description:      "The version of the launch template",
-			Type:             schema.TypeString,
-			Required:         true,
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Description: "The version of the launch template",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 
 		"instance_type": {
-			Description:      "The version of the launch template",
-			Type:             schema.TypeString,
-			Required:         true,
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Description: "Asg instance type to be used to update the version from the current version",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+		},
+		"ami": {
+			Description: "Asg ami to be used to update the version from the current version",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
 		},
 		"version_metadata": {
 			Type:     schema.TypeString,
@@ -66,10 +71,9 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 }
 func resourceAwsLaunchTemplate() *schema.Resource {
 	return &schema.Resource{
-		Description:   "",
+		Description:   "duplocloud_aws_launch_template creates the new version over current launch template version",
 		ReadContext:   resourceAwsLaunchTemplateRead,
 		CreateContext: resourceAwsLaunchTemplateCreate,
-		UpdateContext: resourceAwsLaunchTemplateUpdate,
 		DeleteContext: resourceAwsLaunchTemplateDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -99,8 +103,9 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 	}
 	if rp == nil {
 		d.SetId("")
+		return nil
 	}
-	fErr := flattenLaunchTemplate(d, *rp, ver)
+	fErr := flattenLaunchTemplate(d, rp, ver)
 	if fErr != nil {
 		return diag.Errorf("%s", fErr.Error())
 	}
@@ -120,25 +125,6 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 
 }
 
-func resourceAwsLaunchTemplateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	id := d.Id()
-	idParts := strings.Split(id, "/")
-	tenantId, asgName := idParts[0], idParts[2]
-	rq := duplosdk.DuploAwsLaunchTemplateRequest{
-		LaunchTemplateName: asgName,
-		DefaultVersion:     d.Get("version").(string),
-	}
-	c := m.(*duplosdk.Client)
-
-	err := c.UpdateAwsLaunchTemplateVersion(tenantId, &rq)
-	if err != nil {
-		return diag.Errorf("%s", err.Error())
-	}
-	d.SetId(tenantId + "/launch-template/" + rq.LaunchTemplateName + "/" + rq.SourceVersion)
-	diag := resourceAwsLaunchTemplateRead(ctx, d, m)
-	return diag
-}
-
 func resourceAwsLaunchTemplateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return nil
 
@@ -153,24 +139,23 @@ func expandLaunchTemplate(d *schema.ResourceData) duplosdk.DuploAwsLaunchTemplat
 			InstanceType: duplosdk.DuploStringValue{
 				Value: d.Get("instance_type").(string),
 			},
+			ImageId: d.Get("ami").(string),
 		},
 	}
 
 }
 
-func flattenLaunchTemplate(d *schema.ResourceData, rp []duplosdk.DuploLaunchTemplateResponse, ver string) error {
+func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, ver string) error {
 
 	b, err := json.Marshal(rp)
 	if err != nil {
 		return err
 	}
-	var insType, verDesc, name, cver, dver string
+	var name, cver, insType, verDesc, dver, imgId string
 	max := 0
 	d.Set("version_metadata", string(b))
-	for _, v := range rp {
+	for _, v := range *rp {
 		if strconv.Itoa(int(v.VersionNumber)) == ver {
-			insType = v.LaunchTemplateData.InstanceType.Value
-			verDesc = v.VersionDescription
 			name = v.LaunchTemplateName
 			cver = strconv.Itoa(int(v.VersionNumber))
 		}
@@ -179,6 +164,9 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp []duplosdk.DuploLaunchTemp
 		}
 		if max < int(v.VersionNumber) {
 			max = int(v.VersionNumber)
+			insType = v.LaunchTemplateData.InstanceType.Value
+			verDesc = v.VersionDescription
+			imgId = v.LaunchTemplateData.ImageId
 		}
 	}
 	d.Set("instance_type", insType)
@@ -187,6 +175,6 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp []duplosdk.DuploLaunchTemp
 	d.Set("version", cver)
 	d.Set("latest_version", strconv.Itoa(max))
 	d.Set("default_version", dver)
-
+	d.Set("ami", imgId)
 	return nil
 }

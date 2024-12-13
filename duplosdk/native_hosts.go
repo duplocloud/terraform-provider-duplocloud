@@ -57,6 +57,7 @@ type DuploNativeHost struct {
 	DiskControlType    string                             `json:"DiskControllerType,omitempty"`
 	ExtraNodeLabels    *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
 	Taints             *[]DuploTaints                     `json:"Taints,omitempty"`
+	AvailabilitySetId  string                             `json:"AvailabilitySetId"`
 }
 
 type DuploTaints struct {
@@ -415,4 +416,42 @@ func (c *Client) AzureVirtualMachineTagExists(tenantID, vmName, tagKey string) (
 		}
 	}
 	return false, nil
+}
+
+type DuploAzureVmMaintenanceWindow struct {
+	StartDateTime      string `json:"StartDateTime"`
+	ExpirationDateTime string `json:"ExpirationDateTime"`
+	Duration           string `json:"Duration"`
+	RecurEvery         string `json:"RecurEvery"`
+	Visibility         string `json:"Visibility"`
+	TimeZone           string `json:"TimeZone"`
+}
+
+func (c *Client) AzureVmMaintenanceConfigurationCreate(tenantId, vmName string, rq *DuploAzureVmMaintenanceWindow) ClientError {
+	rp := DuploAzureVirtualMachine{}
+	return c.postAPI(fmt.Sprintf("AzureVmMaintenanceConfigurationCreate(%s, %s)", tenantId, vmName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/hosts/%s/maintenanceschedule", tenantId, EncodePathParam(vmName)),
+		&rq,
+		&rp)
+}
+
+func (c *Client) AzureVmMaintenanceConfigurationUpdate(tenantId, vmName string, rq *DuploAzureVmMaintenanceWindow) ClientError {
+	return c.putAPI(fmt.Sprintf("AzureVmMaintenanceConfigurationUpdate(%s, %s)", tenantId, vmName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/hosts/%s/maintenanceschedule", tenantId, vmName),
+		&rq,
+		nil)
+}
+
+func (c *Client) AzureVmMaintenanceConfigurationGet(tenantId, vmName string) (*DuploAzureVmMaintenanceWindow, ClientError) {
+	rp := DuploAzureVmMaintenanceWindow{}
+	err := c.getAPI(fmt.Sprintf("AzureVmMaintenanceConfigurationGet(%s,%s)", tenantId, vmName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/hosts/%s/maintenanceschedule", tenantId, EncodePathParam(vmName)),
+		&rp)
+	return &rp, err
+}
+
+func (c *Client) AzureVmMaintenanceConfigurationDelete(tenantId, vmName string) ClientError {
+	return c.deleteAPI(fmt.Sprintf("AzureVmMaintenanceConfigurationDelete(%s, %s)", tenantId, vmName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/hosts/%s/maintenanceschedule", tenantId, vmName),
+		nil)
 }
