@@ -559,12 +559,14 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 	req.Spot = d.Get("spot").(bool)
 	if val, ok := d.Get("linux_node_config").([]interface{}); ok {
 		if len(val) > 0 {
-			m := val[0].(map[string]interface{})
-			lnc := duplosdk.GCPLinuxNodeConfig{
-				CGroupMode: m["cgroup_mode"].(string),
-				SysCtls:    m["sysctls"],
+			if val[0] != nil {
+				m := val[0].(map[string]interface{})
+				lnc := duplosdk.GCPLinuxNodeConfig{
+					CGroupMode: m["cgroup_mode"].(string),
+					SysCtls:    m["sysctls"],
+				}
+				req.LinuxNodeConfig = &lnc
 			}
-			req.LinuxNodeConfig = &lnc
 		}
 	}
 	if val, ok := d.Get("labels").(map[string]interface{}); ok {
@@ -577,15 +579,17 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 		loggingConfig := duplosdk.GCPLoggingConfig{}
 		//for _, v := range val {
 		if len(val) > 0 {
-			m := val[0].(map[string]interface{})
-			m1 := m["variant_config"].(map[string]interface{})
-			variantConfig := duplosdk.VariantConfig{}
+			if val[0] != nil {
+				m := val[0].(map[string]interface{})
+				m1 := m["variant_config"].(map[string]interface{})
+				variantConfig := duplosdk.VariantConfig{}
 
-			if variant, ok := m1["variant"].(string); ok {
-				variantConfig.Variant = variant
+				if variant, ok := m1["variant"].(string); ok {
+					variantConfig.Variant = variant
+				}
+
+				loggingConfig.VariantConfig = &variantConfig
 			}
-
-			loggingConfig.VariantConfig = &variantConfig
 		}
 		// Assign the loggingConfig to the request object
 		req.LoggingConfig = &loggingConfig
@@ -848,14 +852,14 @@ func gcpNodePoolAcceleratortoState(accelerator *duplosdk.Accelerator) []map[stri
 }
 
 func gcpNodePoolTaintstoState(taints []duplosdk.GCPNodeTaints) []interface{} {
-	state := make([]interface{}, len(taints))
-	for i, t := range taints {
+	state := make([]interface{}, 0, len(taints))
+	for _, t := range taints {
 		data := map[string]interface{}{
 			"key":    t.Key,
 			"value":  t.Value,
 			"effect": t.Effect,
 		}
-		state[i] = data
+		state = append(state, data)
 	}
 	return state
 }
