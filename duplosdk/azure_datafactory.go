@@ -9,7 +9,7 @@ type DuplocloudAzureDataFactoryRequest struct {
 
 type DuplocloudAzureDataFactoryResponse struct {
 	Name         string `json:"name"`
-	PublicAccess string `json:"publicNetworkAccess"`
+	PublicAccess string `json:"properties.publicNetworkAccess"`
 	Version      string `json:"properties.version"`
 	Type         string `json:"type"`
 	Location     string `json:"location"`
