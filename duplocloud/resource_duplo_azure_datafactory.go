@@ -141,7 +141,7 @@ func expandDatafactory(d *schema.ResourceData) duplosdk.DuplocloudAzureDataFacto
 
 func flattenDataFactory(d *schema.ResourceData, rp duplosdk.DuplocloudAzureDataFactoryResponse) {
 	d.Set("name", rp.Name)
-	d.Set("public_access", rp.PublicAccess == "ENABLED")
+	d.Set("public_access", strings.EqualFold(rp.PublicAccess, "ENABLED"))
 	d.Set("location", rp.Location)
 	d.Set("type", rp.Type)
 	d.Set("version", rp.Version)
