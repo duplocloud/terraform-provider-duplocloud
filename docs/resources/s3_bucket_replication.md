@@ -23,14 +23,43 @@ resource "duplocloud_tenant" "myapp" {
 
 resource "duplocloud_s3_bucket_replication" "rep" {
   tenant_id     = duplocloud_tenant.myapp.tenant_id
-  source_bucket = "duploservices-tenantid-sourcebucket-011071455608"
+  source_bucket = "duploservices-tenantname-sourcebucket-011071455608"
   rules {
     name                      = "rulename"
-    destination_bucket        = "duploservices-tenantid-destinationbucket-011071455608"
+    destination_bucket        = "duploservices-tenantname-destinationbucket-011071455608"
     priority                  = 2
     delete_marker_replication = false
     storage_class             = "INTELLIGENT_TIERING"
   }
+
+}
+
+# Simple Example 2: Deploy multiple S3 bucket replication rule for a source bucket
+
+resource "duplocloud_s3_bucket_replication" "rep" {
+  tenant_id     = duplocloud_tenant.myapp.tenant_id
+  source_bucket = "duploservices-tenantname-src-182680712604"
+  rules {
+    name                      = "tfruleA"
+    destination_bucket        = "duploservices-tenantname-dest1-182680712604"
+    priority                  = 2
+    delete_marker_replication = false
+    storage_class             = "STANDARD"
+  }
+
+}
+
+resource "duplocloud_s3_bucket_replication" "rep1" {
+  tenant_id     = duplocloud_tenant.myapp.tenant_id
+  source_bucket = "duploservices-tenantname-src-182680712604"
+  rules {
+    name                      = "tfruleB"
+    destination_bucket        = "duploservices-tenantname-dest2-182680712604"
+    priority                  = 1 #priority should not conflict
+    delete_marker_replication = false
+    storage_class             = "STANDARD"
+  }
+  depends_on = [duplocloud_s3_bucket_replication.rep]
 
 }
 ```
@@ -41,7 +70,7 @@ resource "duplocloud_s3_bucket_replication" "rep" {
 ### Required
 
 - `rules` (Block List, Min: 1, Max: 1) replication rules for source bucket (see [below for nested schema](#nestedblock--rules))
-- `source_bucket` (String) name of source bucket.
+- `source_bucket` (String) fullname of the source bucket.
 - `tenant_id` (String) The GUID of the tenant that the S3 bucket replication rule will be created in.
 
 ### Optional
@@ -57,7 +86,7 @@ resource "duplocloud_s3_bucket_replication" "rep" {
 
 Required:
 
-- `destination_bucket` (String) name of destination bucket.
+- `destination_bucket` (String) fullname of the destination bucket.
 - `name` (String) replication rule name for s3 source bucket
 - `priority` (Number) replication priority. Priority must be unique between multiple rules.
 
