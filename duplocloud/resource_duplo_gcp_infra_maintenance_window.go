@@ -46,7 +46,7 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 				Description: "Exceptions to maintenance window. Non-emergency maintenance should not occur in these windows. A cluster can have up to 20 maintenance exclusions at a time",
 				Type:        schema.TypeList,
 				Optional:    true,
-				//	DiffSuppressFunc: diffSuppressListOrdering,
+				//DiffSuppressFunc: diffSuppressListOrderingAsWhole,
 				//Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -54,20 +54,20 @@ func resourceGCPInfraMaintenanceWindow() *schema.Resource {
 							Type:             schema.TypeString,
 							Required:         true,
 							ValidateDiagFunc: validateDateTimeFormat,
-							DiffSuppressFunc: diffSuppressListOrderingOnNestedField,
+							//DiffSuppressFunc: diffSuppressListOrderingOnNestedField,
 						},
 						"end_time": {
 							Type:             schema.TypeString,
 							Required:         true,
 							ValidateDiagFunc: validateDateTimeFormat,
-							DiffSuppressFunc: diffSuppressListOrderingOnNestedField,
+							//DiffSuppressFunc: diffSuppressListOrderingOnNestedField,
 						},
 						"scope": {
-							Description:      "The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES",
-							Type:             schema.TypeString,
-							Optional:         true,
-							Default:          "NO_UPGRADES",
-							DiffSuppressFunc: diffSuppressListOrderingOnNestedField,
+							Description: "The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES",
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "NO_UPGRADES",
+							//DiffSuppressFunc: diffSuppressListOrderingOnNestedField,
 						},
 					},
 				},
@@ -221,21 +221,25 @@ func expandWindowsMaintenance(d *schema.ResourceData) (*duplosdk.DuploGcpInfraMa
 }
 
 func flattenWindowMaintenance(d *schema.ResourceData, rb duplosdk.DuploGcpInfraMaintenanceWindow) {
+	exp, _ := expandWindowsMaintenance(d)
 	d.Set("daily_maintenance_start_time", rb.DailyMaintenanceStartTime)
 	if rb.Exclusions != nil {
-		i := make([]interface{}, 0, len(*rb.Exclusions))
-		for _, v := range *rb.Exclusions {
-			mp := map[string]interface{}{
-				"start_time": v.StartTime,
-				"end_time":   v.EndTime,
-			}
-			if v.Scope != "" {
-				mp["scope"] = v.Scope
-			} else {
-				mp["scope"] = "NO_UPGRADES"
-			}
-			i = append(i, mp)
-		}
+
+		i := reorderToMatchCurrent(toInterfaceSlice(*exp.Exclusions), toInterfaceSlice(*rb.Exclusions))
+
+		//for _, v := range *rb.Exclusions {
+		//	mp := map[string]interface{}{
+		//		"start_time": v.StartTime,
+		//		"end_time":   v.EndTime,
+		//	}
+		//	if v.Scope != "" {
+		//		mp["scope"] = v.Scope
+		//	} else {
+		//		mp["scope"] = "NO_UPGRADES"
+		//	}
+		//	i = append(i, mp)
+		//}
+
 		d.Set("exclusions", i)
 	}
 	if rb.RecurringWindow != nil {
@@ -299,4 +303,48 @@ func dailyMaintenanceStartTimeFormat(o string) string {
 		hhmm = hm[0] + ":" + hm[1]
 	}
 	return hhmm
+}
+
+func reorderToMatchCurrent(current, incoming []interface{}) []interface{} {
+	positionMap := make(map[interface{}]int)
+
+	// Build a map of the position of elements in 'current'.
+	for i, v := range current {
+		positionMap[v] = i
+	}
+
+	// Create a new slice to store reordered elements.
+	reordered := make([]interface{}, len(current))
+	remaining := []interface{}{}
+
+	// Place elements of 'incoming' into 'reordered' based on 'current' positions.
+	for _, v := range incoming {
+		if pos, found := positionMap[v]; found {
+			reordered[pos] = v
+		} else {
+			remaining = append(remaining, v) // Keep track of extra elements.
+		}
+	}
+
+	// Fill gaps in 'reordered' with elements from 'remaining'.
+	ri := 0
+	for i := range reordered {
+		if reordered[i] == nil && ri < len(remaining) {
+			reordered[i] = remaining[ri]
+			ri++
+		}
+	}
+
+	// Add any leftover elements from 'remaining' to the end.
+	reordered = append(reordered, remaining[ri:]...)
+	return reordered
+}
+
+// Helper function to convert a slice of a specific type to a slice of interface{}.
+func toInterfaceSlice[T any](input []T) []interface{} {
+	result := make([]interface{}, len(input))
+	for i, v := range input {
+		result[i] = v
+	}
+	return result
 }
