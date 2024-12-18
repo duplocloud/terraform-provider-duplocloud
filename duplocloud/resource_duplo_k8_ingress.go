@@ -61,13 +61,11 @@ func k8sIngressSchema() map[string]*schema.Schema {
 					"http_port": {
 						Description: "HTTP Listener Port.",
 						Type:        schema.TypeInt,
-						Computed:    true,
 						Optional:    true,
 					},
 					"https_port": {
 						Description: "HTTPS Listener Port.",
 						Type:        schema.TypeInt,
-						Computed:    true,
 						Optional:    true,
 					},
 				},
@@ -139,7 +137,6 @@ func k8sIngressSchema() map[string]*schema.Schema {
 			Description: "Block represents the TLS configuration. Currently the Ingress only supports a single TLS port, 443. If multiple members of this list specify different hosts, they will be multiplexed on the same port according to the hostname specified through the SNI TLS extension, if the ingress controller fulfilling the ingress supports SNI",
 			Type:        schema.TypeList,
 			Optional:    true,
-			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"hosts": {
@@ -326,7 +323,9 @@ func flattenK8sIngress(tenantId string, d *schema.ResourceData, duplo *duplosdk.
 	// Finally, set the map
 	d.Set("annotations", duplo.Annotations)
 	d.Set("labels", duplo.Labels)
-	d.Set("tls", flattenTls(duplo.OtherSpec))
+	if duplo.OtherSpec != nil {
+		d.Set("tls", flattenTls(duplo.OtherSpec))
+	}
 }
 
 func flattenK8sIngressLBConfig(duplo *duplosdk.DuploK8sLbConfig) map[string]interface{} {
@@ -488,6 +487,7 @@ func expandTls(i []interface{}) *duplosdk.DuploK8IngressOtherSpec {
 
 func flattenTls(obj *duplosdk.DuploK8IngressOtherSpec) []interface{} {
 	i := make([]interface{}, 0, len(obj.Tls))
+
 	for _, tls := range obj.Tls {
 		m := map[string]interface{}{
 			"hosts":       tls.Host,

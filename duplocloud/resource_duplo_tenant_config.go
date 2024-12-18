@@ -40,10 +40,11 @@ func resourceTenantConfig() *schema.Resource {
 				ValidateFunc: validation.IsUUID,
 			},
 			"setting": {
-				Description: "A list of configuration settings to manage, expressed as key / value pairs.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        KeyValueSchema(),
+				Description:      "A list of configuration settings to manage, expressed as key / value pairs.",
+				Type:             schema.TypeList,
+				Optional:         true,
+				Elem:             KeyValueSchema(),
+				DiffSuppressFunc: diffSuppressListKeyValueOrdering,
 			},
 			"delete_unspecified_settings": {
 				Description: "Whether or not this resource should delete any settings not specified by this resource. " +

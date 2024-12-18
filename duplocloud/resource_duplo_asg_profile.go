@@ -144,6 +144,7 @@ func resourceAwsASG() *schema.Resource {
 		CustomizeDiff: customdiff.All(
 			diffUserData,
 			validateMaxSpotPrice,
+			validateTaintsSupport,
 		),
 	}
 }

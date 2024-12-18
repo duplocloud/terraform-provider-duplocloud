@@ -114,7 +114,7 @@ func resourceTenantAccessGrantCreate(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(clientError)
 	}
 	id := fmt.Sprintf("%s/%s/%s", granteeTenantId, grantorTenantId, grantedArea)
-	waitForResourceToBePresentAfterCreate(ctx, d, "tenant access grant", id, func() (interface{}, duplosdk.ClientError) {
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "tenant access grant", id, func() (interface{}, duplosdk.ClientError) {
 		resp, err := c.GetTenantAccessGrantStatus(granteeTenantId, grantorTenantId, grantedArea)
 		if err != nil {
 			return nil, err
@@ -126,10 +126,12 @@ func resourceTenantAccessGrantCreate(ctx context.Context, d *schema.ResourceData
 		}
 		return resp, nil
 	})
-
+	if diags != nil {
+		return diags
+	}
 	d.SetId(id)
 
-	diags := resourceTenantAccessGrantRead(ctx, d, m)
+	diags = resourceTenantAccessGrantRead(ctx, d, m)
 	log.Printf("[TRACE] resourceTenantAccessGrantCreate(%s, %s, %s): end", granteeTenantId, grantorTenantId, grantedArea)
 	return diags
 }
@@ -156,7 +158,7 @@ func resourceTenantAccessGrantDelete(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("Unable to retrieve tenant %s access grant { grantorTenantId(%s), grantedArea(%s) } - error %s", granteeTenantId, grantorTenantId, grantedArea, clientErr)
 	}
 
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB instance", d.Id(), func() (interface{}, duplosdk.ClientError) {
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "tenant access grant", d.Id(), func() (interface{}, duplosdk.ClientError) {
 		status, err := c.GetTenantAccessGrantStatus(granteeTenantId, grantorTenantId, grantedArea)
 
 		if err != nil {
