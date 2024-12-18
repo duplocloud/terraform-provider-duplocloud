@@ -265,7 +265,11 @@ Optional:
 
 Optional:
 
-- `effect` (String) Update strategy of the node pool.
+- `effect` (String) Update strategy of the node pool. Supported effect's are : 
+	- EFFECT_UNSPECIFIED 
+	- NO_SCHEDULE 
+	- PREFER_NO_SCHEDULE
+	- NO_EXECUTE
 - `key` (String)
 - `value` (String)
 
