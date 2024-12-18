@@ -41,9 +41,9 @@ output "out" {
 - `location` (String)
 - `platform_fault_domain_count` (Number)
 - `platform_update_domain_count` (Number)
+- `sku_name` (String)
 - `tags` (String)
 - `type` (String)
-- `use_managed_disk` (String)
 - `virtual_machines` (List of Object) (see [below for nested schema](#nestedatt--virtual_machines))
 
 <a id="nestedatt--virtual_machines"></a>
