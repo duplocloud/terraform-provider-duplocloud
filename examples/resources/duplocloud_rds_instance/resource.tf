@@ -103,3 +103,12 @@ resource "duplocloud_rds_instance" "mydb" {
     retention_period = 7
   }
 }
+
+resource "duplocloud_rds_instance" "mydb" {
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
+  name           = "mydbpsql"
+  engine         = 0 //mysql
+  engine_version = "5.7.44"
+  size           = "db.t3.medium"
+  snapshot_id    = "rds:duplotest-snapdb-2024-12-17-07-00" //snapshot id is of previously created mysql db of version 5.7.44
+}
