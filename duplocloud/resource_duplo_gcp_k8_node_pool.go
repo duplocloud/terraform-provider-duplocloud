@@ -333,7 +333,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 						Optional: true,
 					},
 					"effect": {
-						Description: "Update strategy of the node pool.",
+						Description: "Update strategy of the node pool. Supported effect's are : \n\t- EFFECT_UNSPECIFIED \n\t- NO_SCHEDULE \n\t- PREFER_NO_SCHEDULE\n\t- NO_EXECUTE",
 						Type:        schema.TypeString,
 						Optional:    true,
 						ValidateFunc: validation.StringInSlice([]string{
