@@ -111,7 +111,10 @@ func resourceInfrastructureSettingRead(ctx context.Context, d *schema.ResourceDa
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
-		d.Set("setting", keyValueToState("setting", selectKeyValues(duplo.Setting, *v)))
+		incoming := selectKeyValues(duplo.Setting, *v)
+		current := keyValueFromState("setting", d)
+		i := reorderToMatchCurrent(toInterfaceSlice(*current), toInterfaceSlice(*incoming))
+		d.Set("setting", i)
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureSettingRead(%s): end", infraName)
