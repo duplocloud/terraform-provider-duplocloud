@@ -92,12 +92,12 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^cache\.`), "Elasticache instance types must start with 'cache.'"),
 		},
 		"replicas": {
-			Description:  "The number of replicas to create.",
+			Description:  "The number of replicas to create. Supported number of replicas is 1 to 6",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
 			Default:      1,
-			ValidateFunc: validation.IntBetween(1, 40),
+			ValidateFunc: validation.IntBetween(1, 6),
 		},
 		"encryption_at_rest": {
 			Description: "Enables encryption-at-rest.",
