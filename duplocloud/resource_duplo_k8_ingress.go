@@ -111,7 +111,6 @@ func k8sIngressSchema() map[string]*schema.Schema {
 					"host": {
 						Description: "If a host is provided (for e.g. example, foo.bar.com), the rules apply to that host.",
 						Type:        schema.TypeString,
-						Computed:    true,
 						Optional:    true,
 					},
 					"service_name": {
