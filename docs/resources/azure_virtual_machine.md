@@ -66,6 +66,7 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 - `admin_password` (String, Sensitive) The password associated with the local administrator account.
 - `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
 - `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
+- `availability_set_id` (String) Specify availability set id to which virtual machine should be added to
 - `base64_user_data` (String) Base64 encoded user data to associated with the host.
 - `disk_control_type` (String) disk control types refer to the different levels of management and performance control provided for disks attached to virtual machines (VMs)
 - `disk_size_gb` (Number) Specifies the size of the OS Disk in gigabytes Defaults to `128`.
@@ -74,7 +75,7 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 - `enable_security_boot` (Boolean) Specify to enable Secure Boot for your VM. Used with security_type=TrustedLaunch Defaults to `true`.
 - `enable_vtpm` (Boolean) Specify to enable virtual Trusted Platform Module (vTPM) for Azure VM. Used with security_type=TrustedLaunch Defaults to `true`.
 - `encrypt_disk` (Boolean) Defaults to `false`.
-- `is_minion` (Boolean) Defaults to `true`.
+- `is_minion` (Boolean)
 - `join_domain` (Boolean) Join a Windows Server virtual machine to an Azure Active Directory Domain Services. Defaults to `false`.
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - `os_disk_type` (String) Specifies the type of managed disk to create. Possible values are either `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_ZRS` or `UltraSSD_LRS`.

@@ -186,7 +186,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
 - `prepend_user_data` (Boolean) Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided. Defaults to `true`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
-- `taints` (Block List) Specify taints to attach to the nodes, to repel other nodes with different toleration (see [below for nested schema](#nestedblock--taints))
+- `taints` (Block List, Max: 50) Specify taints to attach to the nodes, to repel other nodes with different toleration (see [below for nested schema](#nestedblock--taints))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `use_spot_instances` (Boolean) Whether or not to use spot instances. Defaults to `false`.
 - `user_account` (String) The name of the tenant that the host will be created in.
@@ -253,10 +253,13 @@ Required:
 <a id="nestedblock--taints"></a>
 ### Nested Schema for `taints`
 
+Required:
+
+- `effect` (String) Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute
+- `key` (String)
+
 Optional:
 
-- `effect` (String) Update strategy of the node.
-- `key` (String)
 - `value` (String)
 
 

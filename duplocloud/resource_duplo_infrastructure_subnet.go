@@ -53,11 +53,11 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				ForceNew: true,
 			},
 			"type": {
-				Description:  "Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace` is used for azure.",
+				Description:  "Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace`, `mysql-flexiserver`, `postgres-flexiserver` is used for azure.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"private", "public", "none", "appgwsubnet", "appgw-internal-subnet", "azurebastionsubnet", "managedinstance", "databrick-workspace"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"private", "public", "none", "appgwsubnet", "appgw-internal-subnet", "azurebastionsubnet", "managedinstance", "databrick-workspace", "mysql-flexiserver", "postgres-flexiserver"}, false),
 			},
 			"zone": {
 				Description: "The Duplo zone that the subnet resides in.  Will be one of:  `\"A\"`, `\"B\"`, `\"C\"`, or `\"D\"`. This is applicable only for AWS subnets.",

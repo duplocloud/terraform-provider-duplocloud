@@ -40,7 +40,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				validation.StringMatch(regexp.MustCompile(`^[a-z0-9-]*$`), "Invalid RDS instance name"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "RDS instance name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "RDS instance name cannot contain two hyphens"),
-
+				duplosdk.ValidateRdsNoDoubleDuploPrefix,
 				// NOTE: some validations are moot, because Duplo provides a prefix and suffix for the name:
 				//
 				// - First character must be a letter
