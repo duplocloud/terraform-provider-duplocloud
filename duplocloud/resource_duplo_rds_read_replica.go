@@ -37,7 +37,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 				validation.StringMatch(regexp.MustCompile(`^[a-z0-9-]*$`), "Invalid RDS read replica name"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "RDS read replica name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "RDS read replica name cannot contain two hyphens"),
-
+				duplosdk.ValidateRdsNoDoubleDuploPrefix,
 				// NOTE: some validations are moot, because Duplo provides a prefix and suffix for the name:
 				//
 				// - First character must be a letter
@@ -129,6 +129,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			Type:             schema.TypeList,
 			MaxItems:         1,
 			Optional:         true,
+			Computed:         true,
 			DiffSuppressFunc: suppressIfPerformanceInsightsDisabled,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
