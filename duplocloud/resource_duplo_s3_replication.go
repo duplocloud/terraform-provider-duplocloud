@@ -134,7 +134,7 @@ func resourceS3BucketReplicationRead(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("resourceS3BucketReplicationRead: Invalid resource (ID: %s)", id)
 	}
 	tenantID, name := idParts[0], idParts[1]
-	//ruleName:=idParts[2]
+	ruleName := idParts[2]
 
 	c := m.(*duplosdk.Client)
 	duplo, err := getS3BucketReplication(c, tenantID, name)
@@ -147,16 +147,15 @@ func resourceS3BucketReplicationRead(ctx context.Context, d *schema.ResourceData
 		d.SetId("")
 		return nil
 	}
+
 	rp := []map[string]interface{}{}
-	//for _, rule := range duplo {
-	//	//	fullName := strings.Split(rule["fullname"].(string), "-")
-	//	//	n := fullName[len(fullName)-1]
-	//	//	if n == ruleName {
-	//	rp = append(rp, rule)
-	//	//		break
-	//	//	}
-	//}
-	rp = append(rp, duplo...)
+	for _, rule := range duplo {
+		fullName := rule["fullname"].(string)
+		if strings.HasSuffix(fullName, ruleName) {
+			rp = append(rp, rule)
+			break
+		}
+	}
 	// Get the object from Duplo
 	d.Set("rules", rp)
 	d.Set("source_bucket", name)
