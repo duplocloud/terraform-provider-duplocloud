@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
@@ -85,6 +86,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
+			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"cgroup_mode": {
@@ -194,6 +196,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
+			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"variant_config": {
@@ -255,13 +258,13 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 						}, false),
 					},
 					"max_surge": {
-						Description: "",
+						Description: "The maximum number of nodes that can be created beyond the current size of the node pool during the upgrade process.",
 						Type:        schema.TypeInt,
 						Optional:    true,
 						Computed:    true,
 					},
 					"max_unavailable": {
-						Description: "",
+						Description: "The maximum number of nodes that can be simultaneously unavailable during the upgrade process. A node is considered available if its status is Ready",
 						Type:        schema.TypeInt,
 						Optional:    true,
 						Computed:    true,
@@ -273,32 +276,41 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
 								"standard_rollout_policy": {
-									Type:     schema.TypeList,
-									Optional: true,
+									Description: "Note: The standard_rollout_policy should not be used along with node_pool_soak_duration",
+									Type:        schema.TypeList,
+									Optional:    true,
 									Elem: &schema.Resource{
 										Schema: map[string]*schema.Schema{
 											"batch_percentage": {
-												Type:     schema.TypeFloat,
-												Optional: true,
-												Computed: true,
+												Description: "Note: The batch_percentage should not be used along with batch_node_count",
+
+												Type:         schema.TypeFloat,
+												Optional:     true,
+												Computed:     true,
+												ValidateFunc: validation.FloatBetween(0.1, 1.0),
 											},
 											"batch_node_count": {
+												Description: "Note: The batch_node_count should not be used along with batch_percentage",
+
 												Type:     schema.TypeInt,
 												Optional: true,
 												Computed: true,
 											},
 											"batch_soak_duration": {
-												Type:     schema.TypeString,
-												Optional: true,
-												Computed: true,
+												Type:         schema.TypeString,
+												Optional:     true,
+												Computed:     true,
+												ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d+(\.\d{1,9})?s$`), "Invalid seconds format, valid format : seconds with up to nine fractional digits, ending with 's'. Example: `3.5s`."),
 											},
 										},
 									},
 								},
 								"node_pool_soak_duration": {
-									Type:     schema.TypeString,
-									Optional: true,
-									Computed: true,
+									Description:  "Note: The node_pool_soak_duration should not be used along with standard_rollout_policy",
+									Type:         schema.TypeString,
+									Optional:     true,
+									Computed:     true,
+									ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d+(\.\d{1,9})?s$`), "Invalid seconds format, valid format : seconds with up to nine fractional digits, ending with 's'. Example: `3.5s`."),
 								},
 							},
 						},
@@ -321,7 +333,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 						Optional: true,
 					},
 					"effect": {
-						Description: "Update strategy of the node pool.",
+						Description: "Update strategy of the node pool. Supported effect's are : \n\t- EFFECT_UNSPECIFIED \n\t- NO_SCHEDULE \n\t- PREFER_NO_SCHEDULE\n\t- NO_EXECUTE",
 						Type:        schema.TypeString,
 						Optional:    true,
 						ValidateFunc: validation.StringInSlice([]string{
@@ -502,20 +514,26 @@ func expandGCPNodePoolUpgradeSettings(d *schema.ResourceData, req *duplosdk.Dupl
 					Strategy:       m["strategy"].(string),
 				}
 
-				if bgMap, ok := m["blue_green_settings"].(map[string]interface{}); ok {
-					blueGreenSettings := &duplosdk.BlueGreenSettings{
-						NodePoolSoakDuration: bgMap["node_pool_soak_duration"].(string),
-					}
-
-					if rollout, ok := bgMap["standard_rollout_policy"].(map[string]interface{}); ok {
-						rolloutPolicy := &duplosdk.StandardRolloutPolicy{
-							BatchPercentage:   rollout["batch_percentage"].(float32),
-							BatchNodeCount:    rollout["batch_node_count"].(int),
-							BatchSoakDuration: rollout["batch_soak_duration"].(string),
+				if bgl, ok := m["blue_green_settings"].([]interface{}); ok {
+					if len(bgl) > 0 {
+						bgMap := bgl[0].(map[string]interface{})
+						blueGreenSettings := &duplosdk.BlueGreenSettings{
+							NodePoolSoakDuration: bgMap["node_pool_soak_duration"].(string),
 						}
-						blueGreenSettings.StandardRolloutPolicy = rolloutPolicy
+
+						if rolloutList, ok := bgMap["standard_rollout_policy"].([]interface{}); ok {
+							if len(rolloutList) > 0 {
+								rollout := rolloutList[0].(map[string]interface{})
+								rolloutPolicy := &duplosdk.StandardRolloutPolicy{
+									BatchPercentage:   float32(rollout["batch_percentage"].(float64)),
+									BatchNodeCount:    rollout["batch_node_count"].(int),
+									BatchSoakDuration: rollout["batch_soak_duration"].(string),
+								}
+								blueGreenSettings.StandardRolloutPolicy = rolloutPolicy
+							}
+						}
+						upgradeSetting.BlueGreenSettings = blueGreenSettings
 					}
-					upgradeSetting.BlueGreenSettings = blueGreenSettings
 				}
 				req.UpgradeSettings = upgradeSetting
 			}
@@ -539,36 +557,51 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 		req.DiscType = val
 	}
 	req.Spot = d.Get("spot").(bool)
-	if val, ok := d.Get("linux_node_config").([]map[string]interface{}); ok {
-		req.LinuxNodeConfig.CGroupMode = val[0]["cgroup_mode"].(string)
-		req.LinuxNodeConfig.SysCtls = val[0]["sysctls"]
-	}
-	if val, ok := d.Get("labels").(map[string]string); ok {
-		req.Labels = val
-	}
-	if val, ok := d.Get("logging_config").(map[string]interface{}); ok {
-		loggingConfig := duplosdk.GCPLoggingConfig{}
-
-		if vConfig, ok := val["variant_config"].(map[string]interface{}); ok {
-			variantConfig := duplosdk.VariantConfig{}
-
-			if variant, ok := vConfig["variant"].(string); ok {
-				variantConfig.Variant = variant
+	if val, ok := d.Get("linux_node_config").([]interface{}); ok {
+		if len(val) > 0 {
+			if val[0] != nil {
+				m := val[0].(map[string]interface{})
+				lnc := duplosdk.GCPLinuxNodeConfig{
+					CGroupMode: m["cgroup_mode"].(string),
+					SysCtls:    m["sysctls"],
+				}
+				req.LinuxNodeConfig = &lnc
 			}
-
-			loggingConfig.VariantConfig = &variantConfig
 		}
+	}
+	if val, ok := d.Get("labels").(map[string]interface{}); ok {
+		req.Labels = make(map[string]string)
+		for k, v := range val {
+			req.Labels[k] = v.(string)
+		}
+	}
+	if val, ok := d.Get("node_pool_logging_config").([]interface{}); ok {
+		loggingConfig := duplosdk.GCPLoggingConfig{}
+		//for _, v := range val {
+		if len(val) > 0 {
+			if val[0] != nil {
+				m := val[0].(map[string]interface{})
+				m1 := m["variant_config"].(map[string]interface{})
+				variantConfig := duplosdk.VariantConfig{}
 
+				if variant, ok := m1["variant"].(string); ok {
+					variantConfig.Variant = variant
+				}
+
+				loggingConfig.VariantConfig = &variantConfig
+			}
+		}
 		// Assign the loggingConfig to the request object
 		req.LoggingConfig = &loggingConfig
 	}
 
-	if val, ok := d.Get("taints").([]duplosdk.GCPNodeTaints); ok {
+	if val, ok := d.Get("taints").([]interface{}); ok {
 		for _, dt := range val {
+			m := dt.(map[string]interface{})
 			taints := duplosdk.GCPNodeTaints{
-				Key:    dt.Key,
-				Value:  dt.Value,
-				Effect: dt.Effect,
+				Key:    m["key"].(string),
+				Value:  m["value"].(string),
+				Effect: m["effect"].(string),
 			}
 			req.Taints = append(req.Taints, taints)
 
@@ -731,29 +764,42 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 
 }
 
-func gcpNodePoolUpgradeSettingToState(upgradeSetting *duplosdk.GCPNodeUpgradeSetting) []map[string]interface{} {
+func gcpNodePoolUpgradeSettingToState(upgradeSetting *duplosdk.GCPNodeUpgradeSetting) []interface{} {
+	us := make([]interface{}, 0, 1)
 	if upgradeSetting == nil {
 		return nil
 	}
 	state := make(map[string]interface{})
 	state["strategy"] = upgradeSetting.Strategy
-	state["max_surge"] = upgradeSetting.MaxSurge
-	state["max_unavailable"] = upgradeSetting.MaxUnavailable
-
+	if upgradeSetting.MaxSurge > 0 {
+		state["max_surge"] = upgradeSetting.MaxSurge
+	}
+	if upgradeSetting.MaxUnavailable > 0 {
+		state["max_unavailable"] = upgradeSetting.MaxUnavailable
+	}
 	if upgradeSetting.BlueGreenSettings != nil {
+		bGSettings := make([]interface{}, 0, 1)
+
 		blueGreenSettings := make(map[string]interface{})
 		if upgradeSetting.BlueGreenSettings.StandardRolloutPolicy != nil {
+			sRP := make([]interface{}, 0, 1)
 			rolloutPolicy := make(map[string]interface{})
-			rolloutPolicy["batch_percentage"] = upgradeSetting.BlueGreenSettings.StandardRolloutPolicy.BatchPercentage
-			rolloutPolicy["batch_node_count"] = upgradeSetting.BlueGreenSettings.StandardRolloutPolicy.BatchNodeCount
+			if upgradeSetting.BlueGreenSettings.StandardRolloutPolicy.BatchPercentage > 0 {
+				rolloutPolicy["batch_percentage"] = upgradeSetting.BlueGreenSettings.StandardRolloutPolicy.BatchPercentage
+			}
+			if upgradeSetting.BlueGreenSettings.StandardRolloutPolicy.BatchNodeCount > 0 {
+				rolloutPolicy["batch_node_count"] = upgradeSetting.BlueGreenSettings.StandardRolloutPolicy.BatchNodeCount
+			}
 			rolloutPolicy["batch_soak_duration"] = upgradeSetting.BlueGreenSettings.StandardRolloutPolicy.BatchSoakDuration
-			blueGreenSettings["standard_rollout_policy"] = []map[string]interface{}{rolloutPolicy}
+			sRP = append(sRP, rolloutPolicy)
+			blueGreenSettings["standard_rollout_policy"] = sRP
 		}
 		blueGreenSettings["node_pool_soak_duration"] = upgradeSetting.BlueGreenSettings.NodePoolSoakDuration
-		state["blue_green_settings"] = []map[string]interface{}{blueGreenSettings}
+		bGSettings = append(bGSettings, blueGreenSettings)
+		state["blue_green_settings"] = bGSettings
 	}
-
-	return []map[string]interface{}{state}
+	us = append(us, state)
+	return us
 }
 
 func gcpNodePoolLoggingConfigToState(loggingConfig *duplosdk.GCPLoggingConfig) []map[string]interface{} {
@@ -806,14 +852,14 @@ func gcpNodePoolAcceleratortoState(accelerator *duplosdk.Accelerator) []map[stri
 }
 
 func gcpNodePoolTaintstoState(taints []duplosdk.GCPNodeTaints) []interface{} {
-	state := make([]interface{}, len(taints))
-	for i, t := range taints {
+	state := make([]interface{}, 0, len(taints))
+	for _, t := range taints {
 		data := map[string]interface{}{
 			"key":    t.Key,
 			"value":  t.Value,
 			"effect": t.Effect,
 		}
-		state[i] = data
+		state = append(state, data)
 	}
 	return state
 }
@@ -1018,7 +1064,7 @@ func gcpNodePoolZoneUpdate(c *duplosdk.Client, tenantID, fullName string, zones 
 }
 
 func filterOutDefaultTags(tags []string) []string {
-	return trimStringsByPosition(tags, 2)
+	return trimStringsByPosition(tags, 3)
 }
 
 func filterOutDefaultLabels(labels map[string]string) map[string]string {
@@ -1029,10 +1075,10 @@ func filterOutDefaultLabels(labels map[string]string) map[string]string {
 
 func filterOutDefaultOAuth(oAuths []string) []string {
 	oauthMap := map[string]struct{}{
-		"https://www.googleapis.com/auth/compute":              {},
-		"https://www.googleapis.com/auth/devstorage.read_only": {},
-		"https://www.googleapis.com/auth/logging.write":        {},
-		"https://www.googleapis.com/auth/monitoring":           {},
+		//"https://www.googleapis.com/auth/compute":              {},
+		//"https://www.googleapis.com/auth/devstorage.read_only": {},
+		//"https://www.googleapis.com/auth/logging.write":        {},
+		//"https://www.googleapis.com/auth/monitoring":           {},
 	}
 	filters := []string{}
 	for _, oAuth := range oAuths {

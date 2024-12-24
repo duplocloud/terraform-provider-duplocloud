@@ -10,6 +10,7 @@ import (
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -92,12 +93,12 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^cache\.`), "Elasticache instance types must start with 'cache.'"),
 		},
 		"replicas": {
-			Description:  "The number of replicas to create.",
+			Description:  "The number of replicas to create. Supported number of replicas is 1 to 6",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
 			Default:      1,
-			ValidateFunc: validation.IntBetween(1, 40),
+			ValidateFunc: validation.IntBetween(1, 6),
 		},
 		"encryption_at_rest": {
 			Description: "Enables encryption-at-rest.",
@@ -185,6 +186,13 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Optional:     true,
 			Computed:     true,
 			ValidateFunc: validation.IntBetween(1, 35),
+		},
+		"snapshot_window": {
+			Description:      "Specify snapshot window limit The daily time range (in UTC) during which ElastiCache begins taking a daily snapshot of your node group (shard). Example: 05:00-09:00. If you do not specify this parameter, ElastiCache automatically chooses an appropriate time range.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: isValidSnapshotWindow(),
 		},
 		"log_delivery_configuration": {
 			Type:     schema.TypeSet,
@@ -349,11 +357,11 @@ func validateLogDeliveryConfigurations(engineVersion string, configs []duplosdk.
 	for _, config := range configs {
 		switch config.LogType {
 		case "engine-log":
-			if IsAppVersionEqualOrGreater(engineVersion, "6.2.0") {
+			if !IsAppVersionEqualOrGreater(engineVersion, "6.2.0") {
 				return diag.Errorf("log_delivery_configuration with log_type 'engine-log' cannot be used with engine_version '%s'. Please use engine_version '6.2.0' or above.", engineVersion)
 			}
 		case "slow-log":
-			if IsAppVersionEqualOrGreater(engineVersion, "6.0.0") {
+			if !IsAppVersionEqualOrGreater(engineVersion, "6.0.0") {
 				return diag.Errorf("log_delivery_configuration with log_type 'slow-log' cannot be used with engine_version '%s'. Please use engine_version '6.0.0' or above.", engineVersion)
 			}
 		default:
@@ -537,6 +545,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			SnapshotName:             d.Get("snapshot_name").(string),
 			SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
 			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
+			SnapshotWindow:           d.Get("snapshot_window").(string),
 		},
 	}
 	if ds, ok := d.Get("log_delivery_configuration").(*schema.Set); ok {
@@ -596,7 +605,9 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_name", duplo.SnapshotName)
 	d.Set("snapshot_arns", duplo.SnapshotArns)
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
+	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
+
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
@@ -664,4 +675,60 @@ func removePatchVersion(version string) string {
 		return strings.Join(parts[:2], ".")
 	}
 	return version
+}
+func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
+
+	return func(i interface{}, path cty.Path) diag.Diagnostics {
+		if i == nil {
+			return nil
+		}
+
+		var diags diag.Diagnostics
+		v, ok := i.(string)
+		if !ok {
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Invalid input type for 'snapshot_window'. Expected a string.",
+				Detail:   "The 'snapshot_window' value must be a string formatted as 'HH:MM-HH:MM'.",
+			})
+		}
+
+		if v == "" {
+			return nil
+		}
+
+		times := strings.Split(v, "-")
+		if len(times) != 2 {
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Invalid 'snapshot_window' format.",
+				Detail:   fmt.Sprintf("The value '%s' must be in the format 'HH:MM-HH:MM'. For example, '05:00-09:00' is valid.", v),
+			})
+		}
+
+		startTime, err1 := time.Parse("15:04", times[0])
+		endTime, err2 := time.Parse("15:04", times[1])
+		if err1 != nil || err2 != nil {
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Invalid time format in 'snapshot_window'.",
+				Detail:   fmt.Sprintf("Both start and end times in '%s' must follow the 'HH:MM' 24-hour format. For example, '05:00-09:00' is valid.", v),
+			})
+		}
+
+		timeDiff := endTime.Sub(startTime)
+		if timeDiff < 0 {
+			timeDiff += 24 * time.Hour
+		}
+
+		if timeDiff < time.Hour {
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Insufficient time window in 'snapshot_window'.",
+				Detail:   fmt.Sprintf("The time difference between the start ('%s') and end ('%s') must be at least 1 Hour. For example, '05:00-05:30' is valid, but '05:00-05:20' is not.", times[0], times[1]),
+			})
+		}
+
+		return nil
+	}
 }

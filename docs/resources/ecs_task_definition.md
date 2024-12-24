@@ -65,7 +65,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 - `prevent_tf_destroy` (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`. Defaults to `true`.
 - `proxy_configuration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--proxy_configuration))
 - `requires_attributes` (Block Set) (see [below for nested schema](#nestedblock--requires_attributes))
-- `requires_compatibilities` (Set of String)
+- `requires_compatibilities` (Set of String) Requires compatibilities for running jobs. Valid values are [FARGATE]
 - `runtime_platform` (Block List, Max: 1) Configuration block for runtime_platform that containers in your task may use. Required on ecs tasks that are hosted on Fargate. (see [below for nested schema](#nestedblock--runtime_platform))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `volumes` (String) Defaults to `[]`.
@@ -73,6 +73,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 ### Read-Only
 
 - `arn` (String) The ARN of the task definition.
+- `container_definitions_updates` (String) container_definitions updates in backend
 - `execution_role_arn` (String)
 - `full_family_name` (String) The name of the task definition to create.
 - `id` (String) The ID of this resource.
@@ -129,7 +130,7 @@ Required:
 Optional:
 
 - `cpu_architecture` (String) Valid values are 'X86_64','ARM64'
-- `operating_system_family` (String) Valid values are <br>For FARGATE: 'LINUX','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2022_CORE' <br> For EC2 : 'LINUX','WINDOWS_SERVER_2022_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2016_FULL','WINDOWS_SERVER_2004_CORE','WINDOWS_SERVER_20H2_CORE'
+- `operating_system_family` (String) Valid values are <br>For FARGATE: 'LINUX','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2022_CORE'
 
 
 <a id="nestedblock--timeouts"></a>

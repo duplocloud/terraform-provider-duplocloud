@@ -40,7 +40,7 @@ resource "duplocloud_infrastructure_subnet" "az-subnet" {
 - `cidr_block` (String)
 - `infra_name` (String)
 - `name` (String)
-- `type` (String) Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace` is used for azure.
+- `type` (String) Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace`, `mysql-flexiserver`, `postgres-flexiserver` is used for azure.
 
 ### Optional
 
