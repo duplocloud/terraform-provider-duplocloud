@@ -148,14 +148,15 @@ func resourceS3BucketReplicationRead(ctx context.Context, d *schema.ResourceData
 		return nil
 	}
 	rp := []map[string]interface{}{}
-	for _, rule := range duplo {
-		//	fullName := strings.Split(rule["fullname"].(string), "-")
-		//	n := fullName[len(fullName)-1]
-		//	if n == ruleName {
-		rp = append(rp, rule)
-		//		break
-		//	}
-	}
+	//for _, rule := range duplo {
+	//	//	fullName := strings.Split(rule["fullname"].(string), "-")
+	//	//	n := fullName[len(fullName)-1]
+	//	//	if n == ruleName {
+	//	rp = append(rp, rule)
+	//	//		break
+	//	//	}
+	//}
+	rp = append(rp, duplo...)
 	// Get the object from Duplo
 	d.Set("rules", rp)
 	d.Set("source_bucket", name)
