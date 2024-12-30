@@ -1159,3 +1159,12 @@ func toInterfaceSlice[T any](input []T) []interface{} {
 	}
 	return result
 }
+
+func stringInSlice(s string, list []string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
