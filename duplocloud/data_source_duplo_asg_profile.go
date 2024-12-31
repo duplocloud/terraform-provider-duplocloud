@@ -9,6 +9,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func dataAsgSchema() map[string]*schema.Schema {
+	m := autoscalingGroupSchema()
+	delete(m, "zone")
+	delete(m, "zones")
+	m["zones"] = &schema.Schema{
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0",
+		Type:        schema.TypeList,
+		Computed:    true,
+		ForceNew:    true,
+		Elem: &schema.Schema{
+			Type:     schema.TypeInt,
+			ForceNew: true,
+		},
+	}
+
+	return m
+}
+
 // SCHEMA for resource data/search
 func dataSourceAsgProfiles() *schema.Resource {
 	return &schema.Resource{
@@ -27,7 +45,7 @@ func dataSourceAsgProfiles() *schema.Resource {
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: autoscalingGroupSchema(),
+					Schema: dataAsgSchema(),
 				},
 			},
 		},
@@ -72,7 +90,6 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		"tenant_id":           duplo.TenantId,
 		"friendly_name":       duplo.FriendlyName,
 		"capacity":            duplo.Capacity,
-		"zone":                duplo.Zone,
 		"is_minion":           duplo.IsMinion,
 		"image_id":            duplo.ImageID,
 		"base64_user_data":    duplo.Base64UserData,
@@ -89,6 +106,15 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 	}
 	if duplo.Taints != nil {
 		mp["taints"] = flattenTaints(*duplo.Taints)
+	}
+	if len(duplo.Zones) > 0 {
+		i := []interface{}{}
+		for _, v := range duplo.Zones {
+			i = append(i, v)
+		}
+		mp["zones"] = i
+	} else {
+		mp["zones"] = []interface{}{}
 	}
 	return mp
 }
