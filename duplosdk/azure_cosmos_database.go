@@ -1,50 +1,102 @@
 package duplosdk
 
 type DuploAzureCosmosDBRequest struct {
-	Kind                               string `json:"Kind"`
-	Identity                           `json:"Identity"`
-	ConsistencyPolicy                  `json:"ConsistencyPolicy"`
-	Locations                          string   `json:"Locations"`
-	IpRules                            []string `json:"IpRules"`
-	IsVirtualNetworkFilterEnabled      bool     `json:"IsVirtualNetworkFilterEnabled"`
-	EnableAutomaticFailover            bool     `json:"EnableAutomaticFailover"`
-	Capabilities                       `json:"Capabilities"`
-	VirtualNetworkRules                `json:"VirtualNetworkRules"`
-	EnableMultipleWriteLocations       bool `json:"EnableMultipleWriteLocations"`
-	EnableCassandraConnector           bool `json:"EnableCassandraConnector"`
-	ConnectorOffer                     `json:"ConnectorOffer"`
-	DisableKeyBasedMetadataWriteAccess bool   `json:"DisableKeyBasedMetadataWriteAccess"`
-	KeyVaultKeyUri                     string `json:"KeyVaultKeyUri"`
-	DefaultIdentity                    string `json:"DefaultIdentity"`
-	PublicNetworkAccess                `json:"PublicNetworkAccess"`
-	EnableFreeTier                     bool `json:"EnableFreeTier"`
-	ApiProperties                      `json:"ApiProperties"`
-	EnableAnalyticalStorage            bool `json:"EnableAnalyticalStorage"`
-	AnalyticalStorageConfiguration     `json:"AnalyticalStorageConfiguration"`
-	CreateMode                         `json:"CreateMode"`
-	BackupPolicy                       `json:"BackupPolicy"`
-	Cors                               `json:"Cors"`
-	NetworkAclBypass                   string                              `json:"NetworkAclBypass"`  //None AzureServices
-	NetworkAclBypassResourceIds        []string                            `json:"NetworkAclBypassResourceIds"`
-	DisableLocalAuth                   bool                                `json:"DisableLocalAuth"`
-	RestoreParameters                  DuploAzureCosmosDBRestoreParameters `json:"RestoreParameters"`
-	Capacity                           DuploAzureCosmosDBCapacity          `json:"Capacity"`
-	DatabaseAccountOfferType           string                              `json:"DatabaseAccountOfferType	"`
+	Kind                               string                                            `json:"kind"`
+	Identity                           *DuploAzureCosmosDBManagedServiceIdentity         `json:"identity"`
+	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy              `json:"properties.consistencyPolicy"`
+	Locations                          []string                                          `json:"properties.locations"`
+	IpRules                            []string                                          `json:"properties.ipRules"`
+	IsVirtualNetworkFilterEnabled      bool                                              `json:"properties.isVirtualNetworkFilterEnabled"`
+	EnableAutomaticFailover            bool                                              `json:"properties.enableAutomaticFailover"`
+	Capabilities                       *[]DuploAzureCosmosDBCapability                   `json:"properties.capabilities"`
+	VirtualNetworkRules                *[]DuploAzureCosmosDBVirtualNetworkRule           `json:"properties.virtualNetworkRules"`
+	EnableMultipleWriteLocations       bool                                              `json:"properties.enableMultipleWriteLocations"`
+	EnableCassandraConnector           bool                                              `json:"properties.enableCassandraConnector"`
+	ConnectorOffer                     string                                            `json:"properties.connectorOffer"`
+	DisableKeyBasedMetadataWriteAccess bool                                              `json:"properties.disableKeyBasedMetadataWriteAccess"`
+	KeyVaultKeyUri                     string                                            `json:"properties.keyVaultKeyUri"`
+	DefaultIdentity                    string                                            `json:"properties.defaultIdentity"`
+	PublicNetworkAccess                string                                            `json:"properties.publicNetworkAccess"`
+	EnableFreeTier                     bool                                              `json:"properties.enableFreeTier"`
+	ApiProperties                      *DuploAzureCosmosDBApiProperties                  `json:"properties.apiProperties"`
+	EnableAnalyticalStorage            bool                                              `json:"properties.enableAnalyticalStorage"`
+	AnalyticalStorageConfiguration     *DuploAzureCosmosDBAnalyticalStorageConfiguration `json:"properties.analyticalStorageConfiguration"`
+	CreateMode                         string                                            `json:"properties.createMode"`
+	BackupPolicy                       *DuploAzureCosmosDBBackupPolicy                   `json:"properties.backupPolicy"`
+	Cors                               *DuploAzureCosmosDBCorsPolicy                     `json:"properties.cors"`
+	NetworkAclBypass                   string                                            `json:"properties.networkAclBypass"` //None AzureServices
+	NetworkAclBypassResourceIds        []string                                          `json:"properties.networkAclBypassResourceIds"`
+	DisableLocalAuth                   bool                                              `json:"properties.disableLocalAuth"`
+	RestoreParameters                  *DuploAzureCosmosDBRestoreParameters              `json:"properties.restoreParameters"`
+	Capacity                           *DuploAzureCosmosDBCapacity                       `json:"properties.capacity"`
+	DatabaseAccountOfferType           string                                            `json:"properties.databaseAccountOfferType	"`
 }
 
 type DuploAzureCosmosDBCapacity struct {
-	TotalThroughputLimit int `json:"TotalThroughputLimit"`
+	TotalThroughputLimit int `json:"totalThroughputLimit"`
 }
 
 type DuploAzureCosmosDBRestoreParameters struct {
-	RestoreMode        string                            `json:"RestoreMode"`
-	TablesToRestore    []string                          `json:"TablesToRestore"`
-	DatabasesToRestore DuploAzureDatabaseRestoreResource `json:"DatabasesToRestore"`
+	RestoreMode        string                            `json:"restoreMode"`
+	TablesToRestore    []string                          `json:"tablesToRestore"`
+	DatabasesToRestore DuploAzureDatabaseRestoreResource `json:"databasesToRestore"`
 }
 
 type DuploAzureDatabaseRestoreResource struct {
-	DatabaseName    string   `json:"DatabaseName"`
-	CollectionNames []string `json:"CollectionNames"`
+	DatabaseName    string   `json:"databaseName"`
+	CollectionNames []string `json:"collectionNames"`
 }
 
-type DuploAzureCosmosDB
+type DuploAzureCosmosDBCorsPolicy struct {
+	AllowedOrigins  string  `json:"allowedOrigins"`
+	AllowedMethods  string  `json:"allowedMethods"`
+	AllowedHeaders  string  `json:"allowedHeaders"`
+	ExposedHeaders  string  `json:"exposedHeaders"`
+	MaxAgeInSeconds float64 `json:"maxAgeInSeconds"`
+}
+
+type DuploAzureCosmosDBBackupPolicy struct {
+	BackupPolicyMigrationState DuploAzureCosmosDBBackupPolicyMigrationState `json:"migrationState"`
+}
+
+type DuploAzureCosmosDBBackupPolicyMigrationState struct {
+	Status     string `json:"Status"`
+	TargetType string `json:"targetType"`
+	StartTime  string `json:"startTime"`
+}
+
+type DuploAzureCosmosDBAnalyticalStorageConfiguration struct {
+	SchemaType string `json:"schemaType"`
+}
+
+type DuploAzureCosmosDBApiProperties struct {
+	ServerVersion string `json:"serverVersion"`
+}
+
+type DuploAzureCosmosDBVirtualNetworkRule struct {
+	Id                               string `json:"id"`
+	IgnoreMissingVNetServiceEndpoint bool   `json:"ignoreMissingVNetServiceEndpoint"`
+}
+
+type DuploAzureCosmosDBCapability struct {
+	Name string `json:"name"`
+}
+
+type DuploAzureCosmosDBConsistencyPolicy struct {
+	MaxStalenessPrefix      float64 `json:"maxStalenessPrefix"`
+	MaxIntervalInSeconds    int     `json:"maxIntervalInSeconds"`
+	DefaultConsistencyLevel string  `json:"defaultConsistencyLevel"` //ENUM: Eventual,Session,BoundedStaleness,Strong,
+
+}
+
+type DuploAzureCosmosDBManagedServiceIdentity struct {
+	PrincipalId            string                                                                    `json:"principalId"`
+	TenantId               string                                                                    `json:"tenantId"`
+	ResourceIdentityType   string                                                                    `json:"type"` //Enum: SystemAssigned,UserAssigned,SystemAssignedUserAssigned,None
+	UserAssignedIdentities map[string]DuploAzureCosmosDBManagedServiceIdentityUserAssignedIdentities `json:""`
+}
+
+type DuploAzureCosmosDBManagedServiceIdentityUserAssignedIdentities struct {
+	PrincipalId string `json:"principalId"`
+	ClientId    string `json:"clientId"`
+}
