@@ -572,11 +572,19 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		if err != nil {
 			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
 		}
+		if req.DbParameterGroupName != "" {
+			err = rdsInstanceSyncParameterGroup(ctx, c, id, 20*time.Minute, req.DbParameterGroupName, "DBPARAM")
+			if err != nil {
+				return diag.Errorf("Error waiting for RDS DB instance '%s' to update db parameter group name: %s", id, err.Error())
 
-		// in-case timed out. check one more time .. aurora cluster takes long time to update and backup
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 3*time.Minute)
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+			}
+		}
+		if req.ClusterParameterGroupName != "" {
+			err = rdsInstanceSyncParameterGroup(ctx, c, id, 20*time.Minute, req.ClusterParameterGroupName, "CLUSTERPARAM")
+			if err != nil {
+				return diag.Errorf("Error waiting for RDS DB instance '%s' to update cluster parameter group name: %s", id, err.Error())
+
+			}
 		}
 	}
 	// Request the password change in Duplo
@@ -1165,4 +1173,31 @@ func suppressRetentionPeriodIfPerformanceInsightsDisabled(k, old, new string, d 
 	}
 	return false
 
+}
+
+func rdsInstanceSyncParameterGroup(ctx context.Context, c *duplosdk.Client, id string, timeout time.Duration, paramName, paramType string) error {
+	stateConf := &retry.StateChangeConf{
+		Target:       []string{"updated"},
+		Pending:      []string{"updating"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 50 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			status := "updating"
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if paramType == "DBPARAM" && strings.Contains(resp.DBParameterGroupName, paramName) {
+				status = "updated"
+			}
+			if paramType == "CLUSTERPARAM" && strings.Contains(resp.ClusterParameterGroupName, paramName) {
+				status = "updated"
+			}
+			return resp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
