@@ -343,7 +343,7 @@ func resourceAwsHost() *schema.Resource {
 		Default:          true,
 		DiffSuppressFunc: diffSuppressWhenNotCreating,
 	}
-
+	delete(awsHostSchema, "encrypt_disk")
 	return &schema.Resource{
 		Description: "The duplocloud_aws_host represents an AWS resource, such as an EC2 instance, that is managed and automated through DuploCloud. It provides seamless integration and governance within AWS, enabling efficient deployment, management, and scaling of cloud infrastructure through DuploCloud’s platform.",
 
