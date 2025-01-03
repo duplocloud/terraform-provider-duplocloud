@@ -150,7 +150,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			//DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"cluster_parameter_group_name": {
 			Description: "Parameter group associated with this instance's DB Cluster.",
@@ -162,7 +162,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			//DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"store_details_in_secret_manager": {
 			Description: "Whether or not to store RDS details in the AWS secrets manager.",
@@ -442,20 +442,22 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	identifier := createdRds.Identifier
-	pI := expandPerformanceInsight(d)
-	if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
-		obj := enablePerformanceInstanceObject(pI)
-		obj.DBInstanceIdentifier = identifier
-		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(insightErr)
+	if d.HasChange("performance_insights") {
+		pI := expandPerformanceInsight(d)
+		if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
+			obj := enablePerformanceInstanceObject(pI)
+			obj.DBInstanceIdentifier = identifier
+			insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+			if insightErr != nil {
+				return diag.FromErr(insightErr)
+
+			}
+			err = performanceInsightsWaitUntilEnabled(ctx, c, id)
+			if err != nil {
+				return diag.Errorf("Error waiting for RDS DB instance  '%s' performance insights : %s", id, err)
+			}
 
 		}
-		err = performanceInsightsWaitUntilEnabled(ctx, c, id)
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance  '%s' performance insights : %s", id, err)
-		}
-
 	}
 	if d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
 		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
@@ -552,6 +554,31 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
+	if d.HasChange("parameter_group_name") || d.HasChange("cluster_parameter_group_name") {
+		req := duplosdk.DuploRdsUpdatePayload{}
+		if v, ok := d.GetOk("parameter_group_name"); ok {
+			req.DbParameterGroupName = v.(string)
+		}
+		if v, ok := d.GetOk("cluster_parameter_group_name"); ok {
+			req.ClusterParameterGroupName = v.(string)
+		}
+		identifier := d.Get("identifier").(string)
+		err := c.RdsInstanceUpdateParameterGroupName(tenantID, identifier, &req)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		// Wait for the instance to become available.
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 7*time.Minute)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+		}
+
+		// in-case timed out. check one more time .. aurora cluster takes long time to update and backup
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 3*time.Minute)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+		}
+	}
 	// Request the password change in Duplo
 	if d.HasChange("master_password") {
 		snapshotId, hasSnapshot := d.GetOk("snapshot_id")
@@ -640,43 +667,43 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	if d.HasChange("performance_insights") {
+		obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
+		pI := expandPerformanceInsight(d)
+		if pI != nil {
+			obj = enablePerformanceInstanceObject(pI)
 
-	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
-	pI := expandPerformanceInsight(d)
-	if pI != nil {
-		obj = enablePerformanceInstanceObject(pI)
-
-	} else {
-		disable := duplosdk.PerformanceInsightDisable{
-			EnablePerformanceInsights: false,
+		} else {
+			disable := duplosdk.PerformanceInsightDisable{
+				EnablePerformanceInsights: false,
+			}
+			obj.Disable = &disable
 		}
-		obj.Disable = &disable
-	}
-	obj.DBInstanceIdentifier = identifier
-	if isAuroraDB(d) {
-		obj.DBInstanceIdentifier = identifier + "-cluster"
-		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(insightErr)
+		obj.DBInstanceIdentifier = identifier
+		if isAuroraDB(d) {
+			obj.DBInstanceIdentifier = identifier + "-cluster"
+			insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
+			if insightErr != nil {
+				return diag.FromErr(insightErr)
 
+			}
+		} else {
+			insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+			if insightErr != nil {
+				return diag.FromErr(insightErr)
+
+			}
 		}
-	} else {
-		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(insightErr)
 
+		// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
+		_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+
+		// Wait for the instance to become available.
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 		}
 	}
-
-	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
-	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
-
-	// Wait for the instance to become available.
-	err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
-	if err != nil {
-		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
-	}
-
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
