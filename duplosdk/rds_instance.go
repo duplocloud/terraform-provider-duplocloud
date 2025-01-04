@@ -92,8 +92,10 @@ type DuploRdsInstancePasswordChange struct {
 
 // DuploRdsUpdatePayload is a Duplo SDK object that represents an update payload for size and enabling/disabling logging
 type DuploRdsUpdatePayload struct {
-	EnableLogging *bool  `json:"EnableLogging,omitempty"`
-	SizeEx        string `json:"SizeEx,omitempty"`
+	EnableLogging             *bool  `json:"EnableLogging,omitempty"`
+	SizeEx                    string `json:"SizeEx,omitempty"`
+	DbParameterGroupName      string `json:"DbParameterGroupName,omitempty"`
+	ClusterParameterGroupName string `json:"ClusterParameterGroupName,omitempty"`
 }
 
 type DuploRdsUpdateInstance struct {
@@ -453,4 +455,13 @@ func ValidateRdsNoDoubleDuploPrefix(v interface{}, k string) (ws []string, error
 		errors = append(errors, fmt.Errorf("%q cannot contain multiple consecutive '%s' prefixes", k, AWSRdsPrefix))
 	}
 	return
+}
+
+func (c *Client) RdsInstanceUpdateParameterGroupName(tenantID string, instanceId string, rdsUpdate *DuploRdsUpdatePayload) error {
+	return c.putAPI(
+		fmt.Sprintf("RdsInstanceUpdateParameterGroupName(%s, %s, %+v)", tenantID, instanceId, rdsUpdate),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/updatePayload", tenantID, instanceId),
+		&rdsUpdate,
+		nil,
+	)
 }
