@@ -50,7 +50,7 @@ resource "duplocloud_aws_sqs_queue" "sqs_queue_with_dlq" {
 
 ### Required
 
-- `name` (String) The name of the queue. Queue names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and have up to 80 characters long.
+- `name` (String) The name of the queue. Queue names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and have up to 80 characters long which is inclusive of duplo prefix (duploservices-{tenant_name}-) appended by the system, allowed input length for name field is 47 .
 - `tenant_id` (String) The GUID of the tenant that the SQS queue will be created in.
 
 ### Optional
