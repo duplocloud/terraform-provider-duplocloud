@@ -29,11 +29,11 @@ func duploAwsSqsQueueSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description:  "The name of the queue. Queue names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and must be between 1 and 80 characters long.",
+			Description:  "The name of the queue. Queue names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and have up to 80 characters long.",
 			Type:         schema.TypeString,
 			ForceNew:     true,
 			Required:     true,
-			ValidateFunc: validation.StringMatch(regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{1,33}$"), "invalid name format. Name can contain alphabet, numbers, hyphen and underscores, it should start with a alphabet and should be minimum 2  and max 34 character long"),
+			ValidateFunc: validation.StringMatch(regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,79}$"), "invalid name format. Name can contain alphabet, numbers, hyphen and underscores, it should start with a alphabet and have up to 80 character long"),
 		},
 		"fifo_queue": {
 			Description: "Boolean designating a FIFO queue. If not set, it defaults to `false` making it standard.",
