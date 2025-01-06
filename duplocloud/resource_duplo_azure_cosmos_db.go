@@ -97,12 +97,12 @@ func duploAzureCosmosDBchema() map[string]*schema.Schema {
 				Schema: map[string]*schema.Schema{
 
 					"principal_id": {
-						Description: "",
+						Description: "System assigned principal id",
 						Type:        schema.TypeString,
 						Computed:    true,
 					},
 					"tenant_id": {
-						Description: "",
+						Description: "System assigned tenant id",
 						Type:        schema.TypeString,
 						Computed:    true,
 					},
@@ -124,12 +124,12 @@ func duploAzureCosmosDBchema() map[string]*schema.Schema {
 									ValidateFunc: validation.StringMatch(regexp.MustCompile(`^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft\\.ManagedIdentity/userAssignedIdentities/[^/]+$`), "invalid arm_resource_id"),
 								},
 								"principal_id": {
-									Description: "",
+									Description: "User assigned principal id",
 									Type:        schema.TypeString,
 									Computed:    true,
 								},
 								"client_id": {
-									Description: "",
+									Description: "User assigned client id",
 									Type:        schema.TypeString,
 									Computed:    true,
 								},
@@ -372,12 +372,12 @@ func duploAzureCosmosDBchema() map[string]*schema.Schema {
 			},
 		},
 		"connector_offer": {
-			Description: "",
+			Description: "Specify cassandra connector offer type for the Cosmos DB database C*",
 			Optional:    true,
 			Type:        schema.TypeString,
 		},
 		"key_vault_key_uri": {
-			Description: "",
+			Description: "The URI of the key vault",
 			Optional:    true,
 			Type:        schema.TypeString,
 		},
