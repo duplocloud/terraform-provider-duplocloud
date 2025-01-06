@@ -343,7 +343,7 @@ func resourceAwsHost() *schema.Resource {
 		Default:          true,
 		DiffSuppressFunc: diffSuppressWhenNotCreating,
 	}
-
+	delete(awsHostSchema, "encrypt_disk")
 	return &schema.Resource{
 		Description: "The duplocloud_aws_host represents an AWS resource, such as an EC2 instance, that is managed and automated through DuploCloud. It provides seamless integration and governance within AWS, enabling efficient deployment, management, and scaling of cloud infrastructure through DuploCloud’s platform.",
 
@@ -610,7 +610,6 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		AllocatedPublicIP: d.Get("allocated_public_ip").(bool),
 		Cloud:             d.Get("cloud").(int),
 		KeyPairType:       d.Get("keypair_type").(int),
-		EncryptDisk:       d.Get("encrypt_disk").(bool),
 		MetaData:          keyValueFromState("metadata", d),
 		Tags:              keyValueFromState("tags", d),
 		MinionTags:        keyValueFromState("minion_tags", d),
@@ -702,7 +701,6 @@ func nativeHostToState(ctx context.Context, d *schema.ResourceData, duplo *duplo
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
 	d.Set("cloud", duplo.Cloud)
 	d.Set("keypair_type", duplo.KeyPairType)
-	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("status", duplo.Status)
 	d.Set("identity_role", duplo.IdentityRole)
 	d.Set("private_ip_address", duplo.PrivateIPAddress)
