@@ -131,7 +131,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"parameter_group_name": {
-			Description: "A RDS parameter group name to apply to the RDS instance. This field will behave as computed field for rds instances like MySQL, PostgreSQL, MariaDB",
+			Description: "A RDS parameter group name to apply to the RDS instance.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			ValidateFunc: validation.All(
@@ -329,8 +329,7 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 	tenantID := d.Get("tenant_id").(string)
 	id := d.Id()
 	identifier := d.Get("identifier").(string)
-	eng := d.Get("engine_type").(int)
-	if d.HasChange("parameter_group_name") && eng != 0 && eng != 1 && eng != 14 {
+	if d.HasChange("parameter_group_name") {
 		req := duplosdk.DuploRdsUpdatePayload{}
 		if v, ok := d.GetOk("parameter_group_name"); ok {
 			req.DbParameterGroupName = v.(string)
@@ -482,10 +481,7 @@ func rdsReadReplicaFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance
 	duploObject.Identifier = d.Get("name").(string)
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
-	eng := d.Get("engine_type").(int)
-	if eng != 0 && eng != 1 && eng != 14 {
-		duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
-	}
+	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
 	return duploObject, nil
 }
 
@@ -595,12 +591,12 @@ func validateRDSReplicaUse(ctx context.Context, diff *schema.ResourceDiff, m int
 		return fmt.Errorf("resource duplocloud_read_replica is not applicable for %s engine", engines[eng])
 	}
 
-	if eng == 0 || eng == 1 || eng == 14 {
-		diff.SetNewComputed("parameter_group_name")
-		//if diff.HasChange("parameter_group_name") {
-		//	return fmt.Errorf("cannot update parameter_group_name for %s engine", engines[eng])
-		//
-		//}
-	}
+	//	if eng == 0 || eng == 1 || eng == 14 {
+	//		diff.SetNewComputed("parameter_group_name")
+	//		//if diff.HasChange("parameter_group_name") {
+	//		//	return fmt.Errorf("cannot update parameter_group_name for %s engine", engines[eng])
+	//		//
+	//		//}
+	//	}
 	return nil
 }
