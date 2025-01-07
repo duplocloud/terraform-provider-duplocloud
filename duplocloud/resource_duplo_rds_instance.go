@@ -822,7 +822,10 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.EngineVersion = d.Get("engine_version").(string)
 	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
-	if isClusterGroupParameterSupportDb(duploObject.Engine) {
+	if isOnlyClusterGroupParameterSupportDb(duploObject.Engine) {
+		duploObject.ClusterParameterGroupName = d.Get("cluster_parameter_group_name").(string)
+
+	} else if isClusterGroupParameterSupportDb(duploObject.Engine) {
 		duploObject.ClusterParameterGroupName = d.Get("cluster_parameter_group_name").(string)
 		duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
 	} else {
@@ -920,7 +923,9 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["availability_zone"] = duploObject.AvailabilityZone
 	jo["snapshot_id"] = duploObject.SnapshotID
-	jo["parameter_group_name"] = duploObject.DBParameterGroupName
+	if duploObject.Engine != 13 {
+		jo["parameter_group_name"] = duploObject.DBParameterGroupName
+	}
 	jo["cluster_parameter_group_name"] = duploObject.ClusterParameterGroupName
 	jo["db_subnet_group_name"] = duploObject.DBSubnetGroupName
 	jo["size"] = duploObject.SizeEx
@@ -1017,8 +1022,14 @@ func isClusterGroupParameterSupportDb(db int) bool {
 		9:  true,
 		11: true,
 		12: true,
-		13: true,
 		16: true,
+	}
+	return clusterDb[db]
+}
+
+func isOnlyClusterGroupParameterSupportDb(db int) bool {
+	clusterDb := map[int]bool{
+		13: true,
 	}
 	return clusterDb[db]
 }
@@ -1097,7 +1108,11 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			}
 		}
 	}
-
+	if isOnlyClusterGroupParameterSupportDb(eng) && diff.Get("parameter_group_name").(string) != "" {
+		return fmt.Errorf("RDS engine %s  do not support  parameter_group_name ", engines[eng])
+	} else if !isClusterGroupParameterSupportDb(eng) && diff.Get("cluster_parameter_group_name").(string) != "" && eng != 13 {
+		return fmt.Errorf("RDS engine %s  do not support  cluster_parameter_group_name ", engines[eng])
+	}
 	return nil
 }
 
