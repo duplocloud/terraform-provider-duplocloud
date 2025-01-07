@@ -162,12 +162,15 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 ### Optional
 
 - `availability_zone` (String) The AZ for the RDS instance.
+- `engine_type` (Number) Engine type required to validate applicable parameter group setting for different instance. Should be referred from writer
+- `parameter_group_name` (String) A RDS parameter group name to apply to the RDS instance. This field will behave as computed field for rds instances like MySQL, PostgreSQL, MariaDB
 - `performance_insights` (Block List, Max: 1) Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. (see [below for nested schema](#nestedblock--performance_insights))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `arn` (String) The ARN of the RDS read replica.
+- `cluster_parameter_group_name` (String) Parameter group associated with this instance's DB Cluster.
 - `enable_logging` (Boolean) Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance.
 - `encrypt_storage` (Boolean) Whether or not to encrypt the RDS instance storage.
 - `endpoint` (String) The endpoint of the RDS read replica.
