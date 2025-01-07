@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -363,7 +364,7 @@ func resourceDuploRdsInstance() *schema.Resource {
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema:        rdsInstanceSchema(),
-		CustomizeDiff: validateRDSParameters,
+		CustomizeDiff: customdiff.All(validateRDSParameters, validateRDSGroupParameters),
 	}
 }
 
@@ -1108,11 +1109,6 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			}
 		}
 	}
-	if isOnlyClusterGroupParameterSupportDb(eng) && diff.Get("parameter_group_name").(string) != "" {
-		return fmt.Errorf("RDS engine %s  do not support  parameter_group_name ", engines[eng])
-	} else if !isClusterGroupParameterSupportDb(eng) && diff.Get("cluster_parameter_group_name").(string) != "" && eng != 13 {
-		return fmt.Errorf("RDS engine %s  do not support  cluster_parameter_group_name ", engines[eng])
-	}
 	return nil
 }
 
@@ -1215,4 +1211,29 @@ func rdsInstanceSyncParameterGroup(ctx context.Context, c *duplosdk.Client, id s
 	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func validateRDSGroupParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	engines := map[int]string{
+		0:  "MySQL",
+		1:  "PostgreSQL",
+		2:  "MsftSQL-Express",
+		3:  "MsftSQL-Standard",
+		8:  "Aurora-MySQL",
+		9:  "Aurora-PostgreSQL",
+		10: "MsftSQL-Web",
+		11: "Aurora-Serverless-MySql",
+		12: "Aurora-Serverless-PostgreSql",
+		13: "DocumentDB",
+		14: "MariaDB",
+		16: "Aurora",
+	}
+
+	eng := diff.Get("engine").(int)
+	if isOnlyClusterGroupParameterSupportDb(eng) && diff.Get("parameter_group_name").(string) != "" {
+		return fmt.Errorf("RDS engine %s  do not support  parameter_group_name ", engines[eng])
+	} else if !isClusterGroupParameterSupportDb(eng) && diff.Get("cluster_parameter_group_name").(string) != "" && eng != 13 {
+		return fmt.Errorf("RDS engine %s  do not support  cluster_parameter_group_name ", engines[eng])
+	}
+	return nil
 }
