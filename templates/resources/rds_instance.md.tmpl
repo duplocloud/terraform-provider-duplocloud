@@ -350,7 +350,7 @@ Import is supported using the following syntax:
 terraform import duplocloud_rds_instance.mydb v2/subscriptions/*TENANT_ID*/RDSDBInstance/*SHORTNAME*
 ```
 
-Example to showcase use of parameter group in writer and read replica for auroro cluster instance
+Example to showcase use of parameter group in writer and read replica for aurora cluster instance
 
 ```
 resource "random_password" "mypassword" {
@@ -400,7 +400,6 @@ resource "duplocloud_rds_instance" "mydb" {
   size           = "db.t3.medium"
   master_username = "myuser"
   master_password = "Qaazwedd#1"
-  cluster_parameter_group_name = "postgresql17-clusterparamgroup"
   parameter_group_name = "psql13dbparam"
   encrypt_storage                 = false
   store_details_in_secret_manager = false
@@ -419,5 +418,6 @@ resource "duplocloud_rds_read_replica" "replica" {
     retention_period = 31
   }
   engine_type=duplocloud_rds_instance.mydb.engine
+  parameter_group_name=duplocloud_rds_instance.mydb.parameter_group_name
 }
 ```
