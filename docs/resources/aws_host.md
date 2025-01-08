@@ -141,7 +141,6 @@ resource "duplocloud_aws_host" "host" {
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
 - `cloud` (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
 - `custom_node_labels` (Map of String) Specify the labels to attach to the nodes.
-- `encrypt_disk` (Boolean) Defaults to `false`.
 - `is_ebs_optimized` (Boolean) Defaults to `false`.
 - `is_minion` (Boolean) Defaults to `true`.
 - `keypair_type` (Number) The numeric ID of the keypair type being used.Should be one of:

@@ -62,7 +62,7 @@ Read-Only:
 - `user_account` (String)
 - `volume` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--volume))
 - `wait_for_capacity` (Boolean)
-- `zone` (Number)
+- `zones` (List of Number)
 
 <a id="nestedobjatt--asg_profiles--metadata"></a>
 ### Nested Schema for `asg_profiles.metadata`
