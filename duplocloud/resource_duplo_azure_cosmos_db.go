@@ -294,7 +294,7 @@ func duploAzureCosmosDBchema() map[string]*schema.Schema {
 						Optional:    true,
 						Type:        schema.TypeString,
 					},
-					"exposed_heafers": {
+					"exposed_headers": {
 						Description: "Valid values WellDefined, FullFidelity",
 						Optional:    true,
 						Type:        schema.TypeString,
@@ -359,14 +359,17 @@ func duploAzureCosmosDBchema() map[string]*schema.Schema {
 		},
 
 		"capacity": {
-			Type:     schema.TypeList,
-			Optional: true,
-			MaxItems: 1,
+			Description: "Specifiy capacity property for the account",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"total_throughput_limit": {
-						Type:     schema.TypeInt,
-						Optional: true,
+						Description:  "Total throughput limit imposed on the Account.A totalThroughputLimit of 2000 imposes a strict limit of max throughput that can be provisioned on that account to be 2000. A totalThroughputLimit of -1 indicates no limits on provisioning of throughput.",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						ValidateFunc: validation.IntAtMost(2000),
 					},
 				},
 			},
@@ -392,20 +395,32 @@ func duploAzureCosmosDBchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 		},
 		"create_mode": {
-			Description: "",
-			Optional:    true,
-			Type:        schema.TypeString,
+			Description:  "Indicate the mode of account creation. Possible values include: 'Default', 'Restore'",
+			Optional:     true,
+			Type:         schema.TypeString,
+			ValidateFunc: validation.StringInSlice([]string{"Default", "Restore"}, false),
 		},
 		"network_acl_bypass": {
-			Description: "",
+			Description: "Indicates what services are allowed to bypass firewall checks. Possible values include: 'None', 'AzureServices'",
 			Optional:    true,
 			Type:        schema.TypeList,
-			Elem:        &schema.Schema{Type: schema.TypeString},
+			Elem: &schema.Schema{
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"None", "AzureServices"}, false),
+			},
 		},
 		"database_account_offer_type": {
 			Description: "",
 			Optional:    true,
 			Type:        schema.TypeString,
+		},
+		"network_acl_bypass_resource_ids": {
+			Description: "Resource Ids for Network Acl Bypass for the Cosmos DB account.",
+			Optional:    true,
+			Type:        schema.TypeList,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
 		},
 	}
 }
