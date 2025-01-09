@@ -1,9 +1,11 @@
 package duplocloud
 
 import (
+	"context"
 	"regexp"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -429,10 +431,10 @@ func resourceAzureCosmosDB() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_azure_availability_set` manages logical groupings of VMs that enhance reliability by placing VMs in different fault domains to minimize correlated failures, offering improved VM-to-VM latency and high availability, with no extra cost beyond the VM instances themselves, though they may still be affected by shared infrastructure failures.",
 
-		ReadContext:   resourceAzureAvailabilitySetRead,
-		CreateContext: resourceAzureAvailabilitySetCreate,
-		//	UpdateContext: resourceAzureAvailabilitySetUpdate,
-		DeleteContext: resourceAzureAvailabilitySetDelete,
+		ReadContext:   resourceAzureCosmosDBRead,
+		CreateContext: resourceAzureCosmosDBCreate,
+		//UpdateContext: resourceAzureAvailabilitySetUpdate,
+		DeleteContext: resourceAzureCosmosDBDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -440,7 +442,26 @@ func resourceAzureCosmosDB() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema:        duploAzureAvailablitySetSchema(),
-		CustomizeDiff: validateAvailabilitySetAttribute,
+		Schema: duploAzureCosmosDBchema(),
 	}
 }
+
+func resourceAzureCosmosDBRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	return nil
+}
+
+func resourceAzureCosmosDBCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	return nil
+}
+
+func resourceAzureCosmosDBDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	return nil
+}
+
+/*
+func expandAzureCosmosDB(d *schema.ResourceData) duplosdk.DuploAzureCosmosDBRequest {
+	obj := duplosdk.DuploAzureCosmosDBRequest{}
+	obj.Kind = d.Get("kind").(string)
+	obj.Identity=
+}
+*/
