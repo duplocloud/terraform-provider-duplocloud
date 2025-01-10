@@ -103,15 +103,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				"   - `8` : Aurora-MySQL\n" +
 				"   - `9` : Aurora-PostgreSQL\n" +
 				"   - `10` : MsftSQL-Web\n" +
-				"   - `11` : Aurora-Serverless-MySql\n" +
-				"   - `12` : Aurora-Serverless-PostgreSql\n" +
 				"   - `13` : DocumentDB\n" +
 				"   - `14` : MariaDB\n" +
 				"   - `16` : Aurora\n",
 			Type:         schema.TypeInt,
 			Required:     true,
 			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 16}),
+			ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 8, 9, 10, 13, 14, 16}),
 		},
 		"engine_version": {
 			Description: "The database engine version to use the for the RDS instance.\n" +
@@ -1008,8 +1006,7 @@ func validateRdsInstance(duplo *duplosdk.DuploRdsInstance) (errors []error) {
 }
 
 func isAuroraDB(d *schema.ResourceData) bool {
-	return d.Get("engine").(int) == 8 || d.Get("engine").(int) == 9 ||
-		d.Get("engine").(int) == 11 || d.Get("engine").(int) == 12 || d.Get("engine").(int) == 16
+	return d.Get("engine").(int) == 8 || d.Get("engine").(int) == 9 || d.Get("engine").(int) == 16
 }
 
 func isDeleteProtectionSupported(d *schema.ResourceData) bool {
@@ -1021,8 +1018,6 @@ func isClusterGroupParameterSupportDb(db int) bool {
 	clusterDb := map[int]bool{
 		8:  true,
 		9:  true,
-		11: true,
-		12: true,
 		16: true,
 	}
 	return clusterDb[db]
@@ -1074,8 +1069,6 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		8:  "Aurora-MySQL",
 		9:  "Aurora-PostgreSQL",
 		10: "MsftSQL-Web",
-		11: "Aurora-Serverless-MySql",
-		12: "Aurora-Serverless-PostgreSql",
 		13: "DocumentDB",
 		14: "MariaDB",
 		16: "Aurora",
@@ -1098,13 +1091,13 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		st := diff.Get("storage_type").(string)
 		if st == "aurora-iopt1" {
 			ev := diff.Get("engine_version").(string)
-			if (eng == 8 || eng == 11) && compareEngineVersion(ev, "3.03.1") == -1 {
+			if eng == 8 && compareEngineVersion(ev, "3.03.1") == -1 {
 				return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 3.03.1", engines[eng], st)
 			}
-			if (eng == 9 || eng == 12) && compareEngineVersion(ev, "13.10") == -1 {
+			if eng == 9 && compareEngineVersion(ev, "13.10") == -1 {
 				return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 13.10", engines[eng], st)
 			}
-			if eng != 8 && eng != 9 && eng != 11 && eng != 12 {
+			if eng != 8 && eng != 9 {
 				return fmt.Errorf("RDS engine %s  do not support storage_type %s ", engines[eng], st)
 			}
 		}
