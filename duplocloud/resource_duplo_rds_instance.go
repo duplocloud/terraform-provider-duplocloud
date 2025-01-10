@@ -343,6 +343,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional: true,
 			ForceNew: true,
 		},
+		"auto_minor_version_upgrade": {
+			Description: "Enable or disable auto minor version upgrade",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+			ForceNew:    true,
+		},
 	}
 }
 
@@ -847,6 +854,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.SkipFinalSnapshot = d.Get("skip_final_snapshot").(bool)
 	duploObject.StoreDetailsInSecretManager = d.Get("store_details_in_secret_manager").(bool)
 	duploObject.EnableIamAuth = d.Get("enable_iam_auth").(bool)
+	duploObject.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
 	if v, ok := d.GetOk("v2_scaling_configuration"); ok {
 		duploObject.V2ScalingConfiguration = expandV2ScalingConfiguration(v.([]interface{}))
 	}
@@ -950,7 +958,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	}
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
-
+	jo["auto_minor_version_upgrade"] = duploObject.AutoMinorVersionUpgrade
 	pis := []interface{}{}
 	pi := make(map[string]interface{})
 	pi["enabled"] = duploObject.EnablePerformanceInsights
