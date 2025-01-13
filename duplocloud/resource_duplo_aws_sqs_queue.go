@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
+	"strconv"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
@@ -28,10 +30,11 @@ func duploAwsSqsQueueSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "The name of the queue. Queue names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and must be between 1 and 80 characters long.",
+			Description: "The name of the queue. Queue names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and have up to 80 characters long which is inclusive of duplo prefix (duploservices-{tenant_name}-) appended by the system.",
 			Type:        schema.TypeString,
 			ForceNew:    true,
 			Required:    true,
+			//	ValidateFunc: validation.StringMatch(regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,46}$"), "invalid name format. Name can contain alphabet, numbers, hyphen and underscores, it should start with a alphabet and have up to 80 character long inclusive of duploservices-{max tenant name length}-"),
 		},
 		"fifo_queue": {
 			Description: "Boolean designating a FIFO queue. If not set, it defaults to `false` making it standard.",
@@ -220,8 +223,12 @@ func resourceAwsSqsQueueCreate(ctx context.Context, d *schema.ResourceData, m in
 	name := d.Get("name").(string)
 	log.Printf("[TRACE] resourceAwsSqsQueueCreate(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
-
 	rq := expandAwsSqsQueue(d)
+	err = validateSQSName(c, tenantID, name, rq.QueueType == 1)
+	if err != nil {
+		return diag.Errorf("%s", err)
+	}
+
 	resp, err := c.DuploSQSQueueCreateV3(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s SQS queue '%s': %s", tenantID, name, err)
@@ -364,4 +371,26 @@ func parseAwsSqsQueueIdParts(id string) (tenantID, url string, err error) {
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
 	return
+}
+
+func validateSQSName(c *duplosdk.Client, tId, name string, fifo bool) error {
+	rp, cerr := c.TenantGetV2(tId)
+	if cerr != nil {
+		return fmt.Errorf("%s", cerr.Error())
+	}
+	allowedLen := 80 - (15 + len([]rune(rp.AccountName)) - 1)
+
+	if fifo {
+		allowedLen = allowedLen - len([]rune(".fifo"))
+	}
+	regString := "^[a-zA-Z][a-zA-Z0-9_-]{0," + strconv.Itoa(allowedLen) + "}$"
+	b, err := regexp.MatchString(regString, name)
+	if err != nil {
+		return err
+	}
+
+	if !b {
+		return fmt.Errorf("invalid name format. Queue names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and have up to 80 characters long which is inclusive of duplo prefix (duploservices-{tenant_name}-) added by the system")
+	}
+	return nil
 }

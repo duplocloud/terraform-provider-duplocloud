@@ -40,11 +40,10 @@ func resourceTenantConfig() *schema.Resource {
 				ValidateFunc: validation.IsUUID,
 			},
 			"setting": {
-				Description:      "A list of configuration settings to manage, expressed as key / value pairs.",
-				Type:             schema.TypeList,
-				Optional:         true,
-				Elem:             KeyValueSchema(),
-				DiffSuppressFunc: diffSuppressListOrdering,
+				Description: "A list of configuration settings to manage, expressed as key / value pairs.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        KeyValueSchema(),
 			},
 			"delete_unspecified_settings": {
 				Description: "Whether or not this resource should delete any settings not specified by this resource. " +
@@ -109,7 +108,11 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
-		d.Set("setting", keyValueToState("setting", selectKeyValues(duplo.Metadata, *v)))
+		incoming := selectKeyValues(duplo.Metadata, *v)
+		current := keyValueFromState("setting", d)
+		i := reorderToMatchCurrent(toInterfaceSlice(*current), toInterfaceSlice(*incoming))
+
+		d.Set("setting", i)
 	}
 
 	log.Printf("[TRACE] resourceTenantConfigRead(%s): end", tenantID)

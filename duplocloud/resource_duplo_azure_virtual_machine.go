@@ -51,7 +51,8 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 		"is_minion": {
 			Type:     schema.TypeBool,
 			Optional: true,
-			Default:  true,
+			Computed: true,
+			ForceNew: true,
 		},
 		"join_domain": {
 			Description: "Join a Windows Server virtual machine to an Azure Active Directory Domain Services.",
@@ -254,6 +255,15 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     true,
 		},
+		"availability_set_id": {
+			Description:      "Specify availability set id to which virtual machine should be added to",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ForceNew:         true,
+			ValidateFunc:     validation.StringIsNotWhiteSpace,
+			DiffSuppressFunc: diffSuppressAvailablitySetIdOnCase,
+		},
 	}
 }
 
@@ -309,7 +319,7 @@ func resourceAzureVirtualMachineRead(ctx context.Context, d *schema.ResourceData
 	d.Set("fullname", fullname)
 	d.Set("tenant_id", tenantID)
 	flattenAzureVirtualMachine(d, duplo)
-	minion, _ := c.GetMinionForHost(tenantID, fullname)
+	minion, _ := c.GetMinionForHost(ctx, tenantID, fullname)
 	if minion != nil {
 		log.Printf("[TRACE] Minion found for host (%s).", fullname)
 		d.Set("is_minion", true)
@@ -528,9 +538,10 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 				SubnetID: d.Get("subnet_id").(string),
 			},
 		},
-		SecurityType:    d.Get("security_type").(string),
-		IsEncryptAtHost: d.Get("enable_encrypt_at_host").(bool),
-		DiskControlType: d.Get("disk_control_type").(string),
+		SecurityType:      d.Get("security_type").(string),
+		IsEncryptAtHost:   d.Get("enable_encrypt_at_host").(bool),
+		DiskControlType:   d.Get("disk_control_type").(string),
+		AvailabilitySetId: d.Get("availability_set_id").(string),
 	}
 	if data.SecurityType == "TrustedLaunch" {
 		data.IsSecureBoot = d.Get("enable_security_boot").(bool)
@@ -599,6 +610,7 @@ func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNat
 	}
 	d.Set("enable_encrypt_at_host", duplo.IsEncryptAtHost)
 	d.Set("disk_control_type", duplo.DiskControlType)
+	d.Set("availability_set_id", duplo.AvailabilitySetId)
 }
 
 func flattenTags(tags *[]duplosdk.DuploKeyStringValue) []interface{} {
@@ -656,4 +668,9 @@ func needsAzureVMUpdate(d *schema.ResourceData) bool {
 		d.HasChange("disk_size_gb") ||
 		d.HasChange("os_disk_type") ||
 		d.HasChange("volume")
+}
+
+func diffSuppressAvailablitySetIdOnCase(k, old, new string, d *schema.ResourceData) bool {
+
+	return strings.EqualFold(old, new)
 }

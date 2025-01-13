@@ -114,7 +114,7 @@ func dataSourceGCPSQLCloudList(ctx context.Context, d *schema.ResourceData, m in
 			"name":             duplo.Name,
 			"self_link":        duplo.SelfLink,
 			"tier":             duplo.Tier,
-			"database_version": reverseGcpSQLDBVersionsMap()[duplo.DatabaseVersion],
+			"database_version": duplo.DatabaseVersion,
 			"disk_size":        duplo.DataDiskSizeGb,
 			"labels":           flattenStringMap(duplo.Labels),
 			"ip_address":       flattenStringList(duplo.IPAddress),

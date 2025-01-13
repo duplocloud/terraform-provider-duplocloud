@@ -133,6 +133,19 @@ resource "duplocloud_ecache_instance" "mem_cache" {
 }
 ```
 
+### Create an Amazon ElastiCache with snapshot window
+```
+resource "duplocloud_ecache_instance" "mycaches" {
+  tenant_id  = data.duplocloud_tenant.tenant.id
+   name                  = "mycache"
+  cache_type            = 0
+  replicas              = 2
+  size                  = "cache.t3.small"
+  engine_version    = "7.1"
+  snapshot_window="04:00-13:00"
+  
+}
+```
 {{ .SchemaMarkdown | trimspace }}
 
 ## Import

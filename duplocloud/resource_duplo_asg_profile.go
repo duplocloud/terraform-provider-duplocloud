@@ -23,6 +23,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	delete(awsASGSchema, "status")
 	delete(awsASGSchema, "identity_role")
 	delete(awsASGSchema, "private_ip_address")
+	delete(awsASGSchema, "zone")
 
 	awsASGSchema["instance_count"] = &schema.Schema{
 		Description: "The number of instances that should be running in the group.",
@@ -103,7 +104,28 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 		},
 	}
+	awsASGSchema["zone"] = &schema.Schema{
 
+		Description:   "The availability zone to launch the host in, expressed as a number and starting at 0.",
+		Type:          schema.TypeInt,
+		Optional:      true,
+		ForceNew:      true, // relaunch instance
+		Default:       0,
+		Deprecated:    "zone has been deprecated instead use zones",
+		ConflictsWith: []string{"zones"},
+	}
+
+	awsASGSchema["zones"] = &schema.Schema{
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0",
+		Type:        schema.TypeList,
+		Optional:    true,
+		ForceNew:    true,
+		Elem: &schema.Schema{
+			Type:     schema.TypeInt,
+			ForceNew: true,
+		},
+		ConflictsWith: []string{"zone"},
+	}
 	return awsASGSchema
 }
 
@@ -144,6 +166,7 @@ func resourceAwsASG() *schema.Resource {
 		CustomizeDiff: customdiff.All(
 			diffUserData,
 			validateMaxSpotPrice,
+			validateTaintsSupport,
 		),
 	}
 }
@@ -386,7 +409,13 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
-		d.Set("zone", duplo.Zone)
+		if len(duplo.Zones) > 0 {
+			i := []interface{}{}
+			for _, v := range duplo.Zones {
+				i = append(i, v)
+			}
+			d.Set("zones", i)
+		}
 		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
 	}
 
@@ -404,7 +433,6 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		AccountName:         d.Get("user_account").(string),
 		FriendlyName:        d.Get("friendly_name").(string),
 		Capacity:            d.Get("capacity").(string),
-		Zone:                d.Get("zone").(int),
 		IsMinion:            d.Get("is_minion").(bool),
 		ImageID:             d.Get("image_id").(string),
 		Base64UserData:      d.Get("base64_user_data").(string),
@@ -451,6 +479,16 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 
 		}
 		asgProfile.Taints = &obj
+	}
+	z := []int{}
+	if val, ok := d.Get("zones").([]interface{}); ok {
+		for _, dt := range val {
+			z = append(z, dt.(int))
+		}
+		asgProfile.Zones = z
+	} else {
+		z = append(z, d.Get("zone").(int))
+		asgProfile.Zones = z
 	}
 
 	return asgProfile

@@ -43,12 +43,11 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 		"database_version": {
 			Description: "The MySQL, PostgreSQL or SQL Server version to use." +
 				"Supported values include `MYSQL_5_6`,`MYSQL_5_7`, `MYSQL_8_0`, `POSTGRES_9_6`,`POSTGRES_10`," +
-				"`POSTGRES_11`,`POSTGRES_12`, `POSTGRES_13`, `POSTGRES_14`, `POSTGRES_15`, `SQLSERVER_2017_STANDARD`,`SQLSERVER_2017_ENTERPRISE`," +
+				"`POSTGRES_11`,`POSTGRES_12`, `POSTGRES_13`, `POSTGRES_14`, `POSTGRES_15`,`POSTGRES_16`,`POSTGRES_17`, `SQLSERVER_2017_STANDARD`,`SQLSERVER_2017_ENTERPRISE`," +
 				"`SQLSERVER_2017_EXPRESS`, `SQLSERVER_2017_WEB`,`SQLSERVER_2019_STANDARD`, `SQLSERVER_2019_ENTERPRISE`, `SQLSERVER_2019_EXPRESS`," +
-				"`SQLSERVER_2019_WEB`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions) includes an up-to-date reference of supported versions.",
-			Type:         schema.TypeString,
-			Required:     true,
-			ValidateFunc: validation.StringInSlice(supportedGcpSQLDBVersions(), false),
+				"`SQLSERVER_2019_WEB`,`SQLSERVER_2022_WEB`,`SQLSERVER_2022_EXPRESS`,`SQLSERVER_2022_ENTERPRISE`,`SQLSERVER_2022_STANDARD`.[Database Version Policies](https://cloud.google.com/sql/docs/db-versions) includes an up-to-date reference of supported versions.",
+			Type:     schema.TypeString,
+			Required: true,
 		},
 
 		"tier": {
@@ -98,26 +97,9 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Description: "Flag to enable backup process on delete of database",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Default:     false,
+			Default:     true,
 		},
 	}
-}
-
-func checkPasswordNeeded(d *schema.ResourceData) bool {
-
-	// Check the value of dependent_field
-	dependentFieldValue := d.Get("database_version").(string)
-	mp := map[string]bool{
-		"SQLSERVER_2017_STANDARD":   true,
-		"SQLSERVER_2017_ENTERPRISE": true,
-		"SQLSERVER_2017_EXPRESS":    true,
-		"SQLSERVER_2017_WEB":        true,
-		"SQLSERVER_2019_STANDARD":   true,
-		"SQLSERVER_2019_ENTERPRISE": true,
-		"SQLSERVER_2019_EXPRESS":    true,
-		"SQLSERVER_2019_WEB":        true,
-	}
-	return mp[dependentFieldValue]
 }
 
 func resourceGcpSqlDBInstance() *schema.Resource {
@@ -186,11 +168,24 @@ func resourceGcpSqlDBInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	// Create the request object.
 	rq := expandGcpSqlDBInstance(d)
 	tenantID := d.Get("tenant_id").(string)
-	if checkPasswordNeeded(d) && rq.RootPassword == "" {
-		return diag.Errorf("root password is mandatory for database version %s ", d.Get("database_version").(string))
-	}
 
 	c := m.(*duplosdk.Client)
+
+	// Validate the database version
+	requestedVersion := d.Get("database_version").(string)
+	if diags := validateDatabaseVersion(ctx, c, tenantID, requestedVersion); diags != nil {
+		return diags
+	}
+
+	// Validate if password is needed
+	needPassword, diags := passwordRequiredForVersion(ctx, c, tenantID, requestedVersion)
+	if diags != nil {
+		return diags
+	}
+	if needPassword && rq.RootPassword == "" {
+		return diag.Errorf("root password is mandatory for database version %s", requestedVersion)
+	}
+
 	// Post the object to Duplo
 	resp, err := c.GCPSqlDBInstanceCreate(tenantID, rq)
 	if err != nil {
@@ -200,7 +195,7 @@ func resourceGcpSqlDBInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	id := fmt.Sprintf("%s/%s", tenantID, rq.Name)
 	fullName := resp.Name
 
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "gcp sql database", id, func() (interface{}, duplosdk.ClientError) {
+	diags = waitForResourceToBePresentAfterCreate(ctx, d, "gcp sql database", id, func() (interface{}, duplosdk.ClientError) {
 		return c.GCPSqlDBInstanceGet(tenantID, fullName)
 	})
 	if diags != nil {
@@ -244,6 +239,13 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		return nil
 	}
 	if d.HasChanges("tier", "disk_size", "labels", "database_version") {
+		requestedVersion := d.Get("database_version").(string)
+
+		// Validate the database version
+		if diags := validateDatabaseVersion(ctx, c, tenantID, requestedVersion); diags != nil {
+			return diags
+		}
+
 		rq := expandGcpSqlDBInstance(d)
 		rq.Name = fullName
 		resp, err := c.GCPSqlDBInstanceUpdate(tenantID, rq)
@@ -299,29 +301,13 @@ func resourceGcpSqlDBInstanceDelete(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func supportedGcpSQLDBVersions() []string {
-	keys := make([]string, 0, len(duplosdk.DuploGCPSqlDBInstanceVersionMappings))
-	for k := range duplosdk.DuploGCPSqlDBInstanceVersionMappings {
-		keys = append(keys, k)
-	}
-	return keys
-}
-
-func reverseGcpSQLDBVersionsMap() map[int]string {
-	reversedMap := make(map[int]string, len(duplosdk.DuploGCPSqlDBInstanceVersionMappings))
-	for key, value := range duplosdk.DuploGCPSqlDBInstanceVersionMappings {
-		reversedMap[value] = key
-	}
-	return reversedMap
-}
-
 func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploGCPSqlDBInstance) {
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("fullname", duplo.Name)
 	d.Set("self_link", duplo.SelfLink)
 	d.Set("tier", duplo.Tier)
-	d.Set("database_version", reverseGcpSQLDBVersionsMap()[duplo.DatabaseVersion])
+	d.Set("database_version", duplo.DatabaseVersion)
 	d.Set("disk_size", duplo.DataDiskSizeGb)
 	d.Set("ip_address", flattenStringList(duplo.IPAddress))
 	d.Set("connection_name", duplo.ConnectionName)
@@ -333,7 +319,7 @@ func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name strin
 func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInstance {
 	rq := &duplosdk.DuploGCPSqlDBInstance{
 		Name:            d.Get("name").(string),
-		DatabaseVersion: duplosdk.DuploGCPSqlDBInstanceVersionMappings[d.Get("database_version").(string)],
+		DatabaseVersion: d.Get("database_version").(string),
 		Tier:            d.Get("tier").(string),
 		DataDiskSizeGb:  d.Get("disk_size").(int),
 		ResourceType:    duplosdk.DuploGCPDatabaseInstanceResourceType,
@@ -398,4 +384,31 @@ func replaceOn(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bo
 	oldParts := strings.Split(old.(string), "_")
 	newParts := strings.Split(new.(string), "_")
 	return oldParts[0] != newParts[0]
+}
+
+func validateDatabaseVersion(ctx context.Context, c *duplosdk.Client, tenantID, requestedVersion string) diag.Diagnostics {
+	versions, err := c.GCPSqlDBInstanceVersionsList(tenantID)
+	if err != nil {
+		return diag.Errorf("Error fetching supported database versions: %s", err)
+	}
+
+	if !stringInSlice(requestedVersion, versions) {
+		return diag.Errorf("Unsupported database version '%s'. Must be one of: %v", requestedVersion, versions)
+	}
+
+	return nil
+}
+
+func passwordRequiredForVersion(ctx context.Context, c *duplosdk.Client, tenantID, requestedVersion string) (bool, diag.Diagnostics) {
+	versionsRequiringPassword, err := c.GCPSqlDBInstanceVersionsRequiringPasswordList(tenantID)
+	if err != nil {
+		return false, diag.Errorf("Error fetching versions requiring password: %s", err)
+	}
+
+	for _, v := range versionsRequiringPassword {
+		if v == requestedVersion {
+			return true, nil
+		}
+	}
+	return false, nil
 }

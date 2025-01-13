@@ -141,7 +141,6 @@ resource "duplocloud_aws_host" "host" {
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
 - `cloud` (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
 - `custom_node_labels` (Map of String) Specify the labels to attach to the nodes.
-- `encrypt_disk` (Boolean) Defaults to `false`.
 - `is_ebs_optimized` (Boolean) Defaults to `false`.
 - `is_minion` (Boolean) Defaults to `true`.
 - `keypair_type` (Number) The numeric ID of the keypair type being used.Should be one of:
@@ -154,7 +153,7 @@ resource "duplocloud_aws_host" "host" {
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
 - `prepend_user_data` (Boolean) Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided. Defaults to `true`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
-- `taints` (Block List) Specify taints to attach to the nodes, to repel other nodes with different toleration (see [below for nested schema](#nestedblock--taints))
+- `taints` (Block List, Max: 50) Specify taints to attach to the nodes, to repel other nodes with different toleration (see [below for nested schema](#nestedblock--taints))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_account` (String) The name of the tenant that the host will be created in.
 - `volume` (Block List) Block to specify additional or secondary volume beyond the root device (see [below for nested schema](#nestedblock--volume))
@@ -223,10 +222,13 @@ Required:
 <a id="nestedblock--taints"></a>
 ### Nested Schema for `taints`
 
+Required:
+
+- `effect` (String) Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute
+- `key` (String)
+
 Optional:
 
-- `effect` (String) Update strategy of the node.
-- `key` (String)
 - `value` (String)
 
 

@@ -142,11 +142,11 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
   billing_mode                = "PROVISIONED"
   is_point_in_time_recovery   = false
   deletion_protection_enabled = false
-
   tag {
-    key   = "school"
-    value = "admission"
+    key   = "m1"
+    value = "me1"
   }
+
   attribute {
     name = "ForumName"
     type = "S"
@@ -165,35 +165,46 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
   }
 
   attribute {
-    name = "GameTitle"
+    name = "GamerZone"
     type = "S"
   }
-
   attribute {
     name = "TopScore"
     type = "N"
   }
-
   key_schema {
-    attribute_name = "UserId"
+    attribute_name = "ForumName"
     key_type       = "HASH"
   }
-
   key_schema {
-    attribute_name = "GameTitle"
+    attribute_name = "Subject"
     key_type       = "RANGE"
   }
-
   global_secondary_index {
-    name               = "GameTitleIndex"
-    hash_key           = "GameTitle"
-    range_key          = "TopScore"
-    write_capacity     = 10
-    read_capacity      = 10
-    projection_type    = "INCLUDE"
-    non_key_attributes = ["UserId"]
+    name            = "PostCreate"
+    hash_key        = "PostMonth"
+    range_key       = "TopScore"
+    write_capacity  = 2
+    read_capacity   = 2
+    projection_type = "KEYS_ONLY"
   }
-
+  global_secondary_index {
+    name            = "GamerZone"
+    hash_key        = "GamerZone"
+    range_key       = "LastPostDateTime"
+    write_capacity  = 5
+    read_capacity   = 5
+    projection_type = "ALL"
+  }
+  server_side_encryption {
+    enabled = true
+  }
+  local_secondary_index {
+    hash_key        = "ForumName"
+    name            = "LastPostIndex"
+    range_key       = "LastPostDateTime"
+    projection_type = "KEYS_ONLY"
+  }
   ttl {
     attribute_name = "TimeToExist"
     enabled        = true

@@ -186,13 +186,14 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
 - `prepend_user_data` (Boolean) Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided. Defaults to `true`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
-- `taints` (Block List) Specify taints to attach to the nodes, to repel other nodes with different toleration (see [below for nested schema](#nestedblock--taints))
+- `taints` (Block List, Max: 50) Specify taints to attach to the nodes, to repel other nodes with different toleration (see [below for nested schema](#nestedblock--taints))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `use_spot_instances` (Boolean) Whether or not to use spot instances. Defaults to `false`.
 - `user_account` (String) The name of the tenant that the host will be created in.
 - `volume` (Block List) Block to specify additional or secondary volume beyond the root device (see [below for nested schema](#nestedblock--volume))
 - `wait_for_capacity` (Boolean) Whether or not to wait until ASG instances to be healthy, after creation. Defaults to `true`.
-- `zone` (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.
+- `zone` (Number, Deprecated) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`. zone has been deprecated instead use zones
+- `zones` (List of Number) The multi availability zone to launch the asg in, expressed as a number and starting at 0
 
 ### Read-Only
 
@@ -253,10 +254,13 @@ Required:
 <a id="nestedblock--taints"></a>
 ### Nested Schema for `taints`
 
+Required:
+
+- `effect` (String) Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute
+- `key` (String)
+
 Optional:
 
-- `effect` (String) Update strategy of the node.
-- `key` (String)
 - `value` (String)
 
 
