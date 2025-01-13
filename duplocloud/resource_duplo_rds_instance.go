@@ -359,9 +359,9 @@ func resourceDuploRdsInstance() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(45 * time.Minute),
-			Update: schema.DefaultTimeout(20 * time.Minute),
-			Delete: schema.DefaultTimeout(45 * time.Minute),
+			Create: schema.DefaultTimeout(70 * time.Minute),
+			Update: schema.DefaultTimeout(70 * time.Minute),
+			Delete: schema.DefaultTimeout(70 * time.Minute),
 		},
 		Schema:        rdsInstanceSchema(),
 		CustomizeDiff: customdiff.All(validateRDSParameters, validateRDSGroupParameters),
@@ -492,7 +492,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 			return diag.FromErr(err)
 		}
 
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("create"))
 		if err != nil {
 			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 		}
@@ -543,16 +543,11 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 
 		// Wait for the instance to become available.
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 7*time.Minute)
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
 		if err != nil {
 			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
 		}
 
-		// in-case timed out. check one more time .. aurora cluster takes long time to update and backup
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 3*time.Minute)
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
-		}
 	}
 
 	if d.HasChange("parameter_group_name") || d.HasChange("cluster_parameter_group_name") {
@@ -569,19 +564,19 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			return diag.FromErr(err)
 		}
 		// Wait for the instance to become available.
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 7*time.Minute)
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
 		if err != nil {
 			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
 		}
 		if req.DbParameterGroupName != "" {
-			err = rdsInstanceSyncParameterGroup(ctx, c, id, 20*time.Minute, req.DbParameterGroupName, "DBPARAM")
+			err = rdsInstanceSyncParameterGroup(ctx, c, id, d.Timeout("update"), req.DbParameterGroupName, "DBPARAM")
 			if err != nil {
 				return diag.Errorf("Error waiting for RDS DB instance '%s' to update db parameter group name: %s", id, err.Error())
 
 			}
 		}
 		if req.ClusterParameterGroupName != "" {
-			err = rdsInstanceSyncParameterGroup(ctx, c, id, 20*time.Minute, req.ClusterParameterGroupName, "CLUSTERPARAM")
+			err = rdsInstanceSyncParameterGroup(ctx, c, id, d.Timeout("update"), req.ClusterParameterGroupName, "CLUSTERPARAM")
 			if err != nil {
 				return diag.Errorf("Error waiting for RDS DB instance '%s' to update cluster parameter group name: %s", id, err.Error())
 
