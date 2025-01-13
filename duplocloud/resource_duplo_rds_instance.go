@@ -359,8 +359,8 @@ func resourceDuploRdsInstance() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(2 * time.Hour),
-			Update: schema.DefaultTimeout(2 * time.Hour),
+			Create: schema.DefaultTimeout(70 * time.Minute),
+			Update: schema.DefaultTimeout(70 * time.Minute),
 			Delete: schema.DefaultTimeout(1 * time.Hour),
 		},
 		Schema:        rdsInstanceSchema(),
