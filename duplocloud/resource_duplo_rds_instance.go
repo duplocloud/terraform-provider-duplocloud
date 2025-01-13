@@ -361,7 +361,7 @@ func resourceDuploRdsInstance() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(2 * time.Hour),
 			Update: schema.DefaultTimeout(2 * time.Hour),
-			Delete: schema.DefaultTimeout(2 * time.Hour),
+			Delete: schema.DefaultTimeout(1 * time.Hour),
 		},
 		Schema:        rdsInstanceSchema(),
 		CustomizeDiff: customdiff.All(validateRDSParameters, validateRDSGroupParameters),
@@ -492,7 +492,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 			return diag.FromErr(err)
 		}
 
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("create"))
 		if err != nil {
 			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 		}
@@ -517,87 +517,61 @@ func expandPerformanceInsight(d *schema.ResourceData) map[string]interface{} {
 }
 
 // UPDATE resource
-/*
 func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
+	var needsWait bool
 
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 	id := d.Id()
+	identifier := d.Get("identifier").(string)
 
+	// Aurora Serverless V2 instance-size change
 	size := d.Get("size").(string)
 	if d.HasChange("v2_scaling_configuration") && size == "db.serverless" {
-		// Request Aurora serverless V2 instance-size change
 		if v, ok := d.GetOk("v2_scaling_configuration"); ok {
 			log.Printf("[TRACE] DuploRdsModifyAuroraV2ServerlessInstanceSize ******** start")
 			err = c.RdsModifyAuroraV2ServerlessInstanceSize(tenantID, duplosdk.DuploRdsModifyAuroraV2ServerlessInstanceSize{
-				Identifier:             d.Get("identifier").(string),
-				ClusterIdentifier:      d.Get("identifier").(string) + "-cluster",
+				Identifier:             identifier,
+				ClusterIdentifier:      identifier + "-cluster",
 				SizeEx:                 size,
 				ApplyImmediately:       true,
 				V2ScalingConfiguration: expandV2ScalingConfiguration(v.([]interface{})),
 			})
-		}
-
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		// Wait for the instance to become available.
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 7*time.Minute)
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
-		}
-
-		// in-case timed out. check one more time .. aurora cluster takes long time to update and backup
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 3*time.Minute)
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			needsWait = true
 		}
 	}
-
+	paramName, clusterParamName := "", ""
+	// Parameter group changes
 	if d.HasChange("parameter_group_name") || d.HasChange("cluster_parameter_group_name") {
 		req := duplosdk.DuploRdsUpdatePayload{}
-		if v, ok := d.GetOk("parameter_group_name"); ok {
+		if v, ok := d.GetOk("parameter_group_name"); ok && v.(string) != "" {
 			req.DbParameterGroupName = v.(string)
+			paramName = req.DbParameterGroupName
 		}
-		if v, ok := d.GetOk("cluster_parameter_group_name"); ok {
+		if v, ok := d.GetOk("cluster_parameter_group_name"); ok && v.(string) != "" {
 			req.ClusterParameterGroupName = v.(string)
+			clusterParamName = req.DbParameterGroupName
+
 		}
-		identifier := d.Get("identifier").(string)
-		err := c.RdsInstanceUpdateParameterGroupName(tenantID, identifier, &req)
+		err = c.RdsInstanceUpdateParameterGroupName(tenantID, identifier, &req)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		// Wait for the instance to become available.
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 7*time.Minute)
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
-		}
-		if req.DbParameterGroupName != "" {
-			err = rdsInstanceSyncParameterGroup(ctx, c, id, 20*time.Minute, req.DbParameterGroupName, "DBPARAM")
-			if err != nil {
-				return diag.Errorf("Error waiting for RDS DB instance '%s' to update db parameter group name: %s", id, err.Error())
+		needsWait = true
 
-			}
-		}
-		if req.ClusterParameterGroupName != "" {
-			err = rdsInstanceSyncParameterGroup(ctx, c, id, 20*time.Minute, req.ClusterParameterGroupName, "CLUSTERPARAM")
-			if err != nil {
-				return diag.Errorf("Error waiting for RDS DB instance '%s' to update cluster parameter group name: %s", id, err.Error())
-
-			}
-		}
 	}
-	// Request the password change in Duplo
-	if d.HasChange("master_password") {
-		snapshotId, hasSnapshot := d.GetOk("snapshot_id")
-		masterPassword := d.Get("master_password").(string)
 
-		// Condition to check snapshot_id and password.
-		if !(hasSnapshot && snapshotId.(string) != "" && masterPassword == "donotuse") {
+	// Master password change
+	if d.HasChange("master_password") {
+		snapshotID, hasSnapshot := d.GetOk("snapshot_id")
+		masterPassword := d.Get("master_password").(string)
+		if !(hasSnapshot && snapshotID.(string) != "" && masterPassword == "donotuse") {
 			err = c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
-				Identifier:     d.Get("identifier").(string),
+				Identifier:     identifier,
 				MasterPassword: masterPassword,
 				StorePassword:  true,
 			})
@@ -605,67 +579,54 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 				return diag.FromErr(err)
 			}
 		}
+		needsWait = true
 	}
 
-	identifier := d.Get("identifier").(string)
-	updateLogging := d.HasChange("enable_logging")
-	updateSize := d.HasChange("size")
-	if updateLogging || updateSize {
-		uploadDuploObject := new(duplosdk.DuploRdsUpdatePayload)
-		if updateLogging {
-			enableLogging := new(bool)
-			*enableLogging = d.Get("enable_logging").(bool)
-			uploadDuploObject.EnableLogging = enableLogging
-
-			log.Printf("[TRACE] Updating enable_logging to: '%v' for db instance '%s'.", enableLogging, identifier)
+	// Logging or size updates
+	if d.HasChange("enable_logging") || d.HasChange("size") {
+		uploadDuploObject := &duplosdk.DuploRdsUpdatePayload{}
+		if d.HasChange("enable_logging") {
+			enableLogging := d.Get("enable_logging").(bool)
+			uploadDuploObject.EnableLogging = &enableLogging
 		}
-
-		if updateSize {
-			size := d.Get("size").(string)
+		if d.HasChange("size") {
 			uploadDuploObject.SizeEx = size
-
-			log.Printf("[TRACE] Updating size to: '%s' for db instance '%s'.", size, identifier)
 		}
-
 		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, uploadDuploObject)
-
 		if err != nil {
 			return diag.FromErr(err)
 		}
+		needsWait = true
 	}
 
-	if d.HasChange("backup_retention_period") || d.HasChange("deletion_protection") ||
-		d.HasChange("skip_final_snapshot") {
+	// Backup or deletion settings
+	if d.HasChange("backup_retention_period") || d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
 		backupRetentionPeriod := d.Get("backup_retention_period").(int)
 		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
-		deleteProtection := new(bool)
-
-		if isDeleteProtectionSupported(d) {
-			log.Printf("[DEBUG] Updating delete protection settings to '%t' for db instance '%s'.", d.Get("deletion_protection").(bool), d.Get("identifier").(string))
-			*deleteProtection = d.Get("deletion_protection").(bool)
-		}
-
+		deleteProtection := d.Get("deletion_protection").(bool)
 		if isAuroraDB(d) {
-			obj := duplosdk.DuploRdsUpdateCluster{
+			err = c.UpdateRdsCluster(tenantID, duplosdk.DuploRdsUpdateCluster{
 				DBClusterIdentifier:   identifier + "-cluster",
 				BackupRetentionPeriod: backupRetentionPeriod,
-				DeletionProtection:    deleteProtection,
+				DeletionProtection:    &deleteProtection,
 				SkipFinalSnapshot:     skipFinalSnapshot,
 				ApplyImmediately:      true,
-			}
-			err = c.UpdateRdsCluster(tenantID, obj)
+			})
 		} else {
-			obj := duplosdk.DuploRdsUpdateInstance{
+			err = c.UpdateRDSDBInstance(tenantID, duplosdk.DuploRdsUpdateInstance{
 				DBInstanceIdentifier:  identifier,
 				BackupRetentionPeriod: backupRetentionPeriod,
-				DeletionProtection:    deleteProtection,
+				DeletionProtection:    &deleteProtection,
 				SkipFinalSnapshot:     skipFinalSnapshot,
-			}
-			err = c.UpdateRDSDBInstance(tenantID, obj)
+			})
 		}
-
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		needsWait = true
 	}
 
+	// Enhanced monitoring
 	if d.HasChange("enhanced_monitoring") {
 		val := d.Get("enhanced_monitoring").(int)
 		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
@@ -673,10 +634,13 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			ApplyImmediately:     true,
 			MonitoringInterval:   val,
 		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		needsWait = true
 	}
-	if err != nil {
-		return diag.FromErr(err)
-	}
+
+	// Performance insights
 	if d.HasChange("performance_insights") {
 		obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
 		pI := expandPerformanceInsight(d)
@@ -704,22 +668,33 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 			}
 		}
-
-		// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
+		// in-case timed out. check one more time .. aurora cluster takes long time to update and backup
 		_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+		needsWait = true
+	}
 
-		// Wait for the instance to become available.
+	// Wait for instance availability if any updates were performed
+	if needsWait {
 		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
 		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to become available: %s", id, err)
+		}
+		if paramName != "" {
+			err = rdsInstanceSyncParameterGroup(ctx, c, id, d.Timeout("update"), paramName, "DBPARAM")
+			if err != nil {
+				return diag.Errorf("Error updating DB parameter group: %s", err)
+			}
+		}
+		if clusterParamName != "" {
+			err = rdsInstanceSyncParameterGroup(ctx, c, id, d.Timeout("update"), clusterParamName, "CLUSTERPARAM")
+			if err != nil {
+				return diag.Errorf("Error updating cluster parameter group: %s", err)
+			}
 		}
 	}
-	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
-	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
-	return diags
-
-}*/
+	return resourceDuploRdsInstanceRead(ctx, d, m)
+}
 
 // DELETE resource
 func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -1237,182 +1212,4 @@ func validateRDSGroupParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		return fmt.Errorf("RDS engine %s  do not support  cluster_parameter_group_name ", engines[eng])
 	}
 	return nil
-}
-
-func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var err error
-	var needsWait bool
-
-	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
-	id := d.Id()
-	identifier := d.Get("identifier").(string)
-
-	// Aurora Serverless V2 instance-size change
-	size := d.Get("size").(string)
-	if d.HasChange("v2_scaling_configuration") && size == "db.serverless" {
-		if v, ok := d.GetOk("v2_scaling_configuration"); ok {
-			log.Printf("[TRACE] DuploRdsModifyAuroraV2ServerlessInstanceSize ******** start")
-			err = c.RdsModifyAuroraV2ServerlessInstanceSize(tenantID, duplosdk.DuploRdsModifyAuroraV2ServerlessInstanceSize{
-				Identifier:             identifier,
-				ClusterIdentifier:      identifier + "-cluster",
-				SizeEx:                 size,
-				ApplyImmediately:       true,
-				V2ScalingConfiguration: expandV2ScalingConfiguration(v.([]interface{})),
-			})
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			needsWait = true
-		}
-	}
-	paramName, clusterParamName := "", ""
-	// Parameter group changes
-	if d.HasChange("parameter_group_name") || d.HasChange("cluster_parameter_group_name") {
-		req := duplosdk.DuploRdsUpdatePayload{}
-		if v, ok := d.GetOk("parameter_group_name"); ok && v.(string) != "" {
-			req.DbParameterGroupName = v.(string)
-			paramName = req.DbParameterGroupName
-		}
-		if v, ok := d.GetOk("cluster_parameter_group_name"); ok && v.(string) != "" {
-			req.ClusterParameterGroupName = v.(string)
-			clusterParamName = req.DbParameterGroupName
-
-		}
-		err = c.RdsInstanceUpdateParameterGroupName(tenantID, identifier, &req)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		needsWait = true
-
-	}
-
-	// Master password change
-	if d.HasChange("master_password") {
-		snapshotID, hasSnapshot := d.GetOk("snapshot_id")
-		masterPassword := d.Get("master_password").(string)
-		if !(hasSnapshot && snapshotID.(string) != "" && masterPassword == "donotuse") {
-			err = c.RdsInstanceChangePassword(tenantID, duplosdk.DuploRdsInstancePasswordChange{
-				Identifier:     identifier,
-				MasterPassword: masterPassword,
-				StorePassword:  true,
-			})
-			if err != nil {
-				return diag.FromErr(err)
-			}
-		}
-		needsWait = true
-	}
-
-	// Logging or size updates
-	if d.HasChange("enable_logging") || d.HasChange("size") {
-		uploadDuploObject := &duplosdk.DuploRdsUpdatePayload{}
-		if d.HasChange("enable_logging") {
-			enableLogging := d.Get("enable_logging").(bool)
-			uploadDuploObject.EnableLogging = &enableLogging
-		}
-		if d.HasChange("size") {
-			uploadDuploObject.SizeEx = size
-		}
-		err = c.RdsInstanceChangeSizeOrEnableLogging(tenantID, identifier, uploadDuploObject)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		needsWait = true
-	}
-
-	// Backup or deletion settings
-	if d.HasChange("backup_retention_period") || d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
-		backupRetentionPeriod := d.Get("backup_retention_period").(int)
-		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
-		deleteProtection := d.Get("deletion_protection").(bool)
-		if isAuroraDB(d) {
-			err = c.UpdateRdsCluster(tenantID, duplosdk.DuploRdsUpdateCluster{
-				DBClusterIdentifier:   identifier + "-cluster",
-				BackupRetentionPeriod: backupRetentionPeriod,
-				DeletionProtection:    &deleteProtection,
-				SkipFinalSnapshot:     skipFinalSnapshot,
-				ApplyImmediately:      true,
-			})
-		} else {
-			err = c.UpdateRDSDBInstance(tenantID, duplosdk.DuploRdsUpdateInstance{
-				DBInstanceIdentifier:  identifier,
-				BackupRetentionPeriod: backupRetentionPeriod,
-				DeletionProtection:    &deleteProtection,
-				SkipFinalSnapshot:     skipFinalSnapshot,
-			})
-		}
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		needsWait = true
-	}
-
-	// Enhanced monitoring
-	if d.HasChange("enhanced_monitoring") {
-		val := d.Get("enhanced_monitoring").(int)
-		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
-			DBInstanceIdentifier: identifier,
-			ApplyImmediately:     true,
-			MonitoringInterval:   val,
-		})
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		needsWait = true
-	}
-
-	// Performance insights
-	if d.HasChange("performance_insights") {
-		obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
-		pI := expandPerformanceInsight(d)
-		if pI != nil {
-			obj = enablePerformanceInstanceObject(pI)
-
-		} else {
-			disable := duplosdk.PerformanceInsightDisable{
-				EnablePerformanceInsights: false,
-			}
-			obj.Disable = &disable
-		}
-		obj.DBInstanceIdentifier = identifier
-		if isAuroraDB(d) {
-			obj.DBInstanceIdentifier = identifier + "-cluster"
-			insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
-			if insightErr != nil {
-				return diag.FromErr(insightErr)
-
-			}
-		} else {
-			insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-			if insightErr != nil {
-				return diag.FromErr(insightErr)
-
-			}
-		}
-
-		needsWait = true
-	}
-
-	// Wait for instance availability if any updates were performed
-	if needsWait {
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to become available: %s", id, err)
-		}
-		if paramName != "" {
-			err = rdsInstanceSyncParameterGroup(ctx, c, id, d.Timeout("update"), paramName, "DBPARAM")
-			if err != nil {
-				return diag.Errorf("Error updating DB parameter group: %s", err)
-			}
-		}
-		if clusterParamName != "" {
-			err = rdsInstanceSyncParameterGroup(ctx, c, id, d.Timeout("update"), clusterParamName, "CLUSTERPARAM")
-			if err != nil {
-				return diag.Errorf("Error updating cluster parameter group: %s", err)
-			}
-		}
-	}
-
-	return resourceDuploRdsInstanceRead(ctx, d, m)
 }
