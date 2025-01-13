@@ -246,7 +246,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				"The database can't be deleted when this value is set to `true`. This setting is not applicable for document db cluster instance.",
 			Type:     schema.TypeBool,
 			Optional: true,
-			Default:  false,
+			//	Default:  false,
 		},
 		"kms_key_id": {
 			Description: "The globally unique identifier for the key.",
@@ -950,7 +950,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	}
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
-
+	jo["delete_protection"] = duploObject.DeletionProtection
 	pis := []interface{}{}
 	pi := make(map[string]interface{})
 	pi["enabled"] = duploObject.EnablePerformanceInsights
