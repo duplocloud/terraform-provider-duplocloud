@@ -258,6 +258,7 @@ func resourceS3BucketReplicationUpdate(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.Errorf("resourceS3BucketReplicationUpdate: Unable to update s3 bucket using v3 api (tenant: %s, bucket: %s: rule: %s,error: %s)", tenantID, duploObject.SourceBucket, ruleFullname, err)
 		}
+		time.Sleep(250 * time.Millisecond)
 	}
 	diags := resourceS3BucketReplicationRead(ctx, d, m)
 
@@ -284,13 +285,12 @@ func resourceS3BucketReplicationDelete(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.Errorf("resourceS3BucketReplicationDelete: Unable to delete bucket replication rule (name:%s, error: %s)", ruleName, err)
 		}
-		// Wait up to 60 seconds for Duplo to delete the bucket replication.
-		//	time.Sleep(60 * time.Second)
 		cerr := s3replicaWaitUntilDelete(ctx, c, idParts[0], idParts[1], ruleName, d.Timeout("delete"))
 		if cerr != nil {
 			return diag.Errorf("%s", cerr.Error())
 		}
-		// Wait 10 more seconds to deal with consistency issues.
+		time.Sleep(250 * time.Millisecond)
+
 	}
 	log.Printf("[TRACE] resourceS3BucketDelete ******** end")
 	return nil
