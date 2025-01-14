@@ -76,6 +76,7 @@ type DuploRdsInstance struct {
 	EnablePerformanceInsights          bool                    `json:"EnablePerformanceInsights"`
 	PerformanceInsightsRetentionPeriod int                     `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string                  `json:"PerformanceInsightsKMSKeyId,omitempty"`
+	DeletionProtection                 bool                    `json:"DeletionProtection"`
 }
 
 type V2ScalingConfiguration struct {
