@@ -34,7 +34,8 @@ type DuploAsgProfile struct {
 	TenantId            string                             `json:"TenantId,omitempty"`
 	UseSpotInstances    bool                               `json:"UseSpotInstances,omitempty"`
 	Volumes             *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
-	Zones               []int                              `json:"Zones"`
+	Zones               []int                              `json:"Zones",omitempty`
+	Zone                int                                `json:"Zone"`
 	EnabledMetrics      *[]string                          `json:"EnabledMetrics,omitempty"`
 	ExtraNodeLabels     *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
 	Taints              *[]DuploTaints                     `json:"Taints,omitempty"`
