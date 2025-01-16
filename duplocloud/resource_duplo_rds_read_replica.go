@@ -181,6 +181,13 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"enhanced_monitoring": {
+			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on. Applicable on resource update",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
+		},
 	}
 }
 
@@ -314,7 +321,17 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 		}
 
 	}
-
+	if d.HasChange("enhanced_monitoring") {
+		val := d.Get("enhanced_monitoring").(int)
+		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
+			DBInstanceIdentifier: identifier,
+			ApplyImmediately:     true,
+			MonitoringInterval:   val,
+		})
+	}
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	diags = resourceDuploRdsReadReplicaRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsReadReplicaCreate ******** end")
@@ -383,7 +400,17 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
-
+	if d.HasChange("enhanced_monitoring") {
+		val := d.Get("enhanced_monitoring").(int)
+		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
+			DBInstanceIdentifier: identifier,
+			ApplyImmediately:     true,
+			MonitoringInterval:   val,
+		})
+	}
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	diags := resourceDuploRdsReadReplicaRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsReadReplicaUpdate ******** end")
@@ -519,6 +546,7 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 	jo["replica_status"] = duploObject.InstanceStatus
 	jo["parameter_group_name"] = duploObject.DBParameterGroupName
 	jo["cluster_parameter_group_name"] = duploObject.ClusterParameterGroupName
+	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 
 	clusterIdentifier := duploObject.ClusterIdentifier
 	if len(clusterIdentifier) == 0 {
