@@ -291,10 +291,9 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"enhanced_monitoring": {
-			Description: "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			//Computed:     true,
+			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
+			Type:         schema.TypeInt,
+			Optional:     true,
 			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
 		},
 		"performance_insights": {
