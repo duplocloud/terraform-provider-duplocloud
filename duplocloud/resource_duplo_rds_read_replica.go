@@ -550,8 +550,6 @@ func isEngineAuroraType(engineCode int) bool {
 	engineNameByCode := map[int]string{
 		8:  "AuroraMySql",
 		9:  "AuroraPostgreSql",
-		11: "AuroraServerlessMySql",
-		12: "AuroraServerlessPostgreSql",
 		16: "Aurora",
 	}
 
