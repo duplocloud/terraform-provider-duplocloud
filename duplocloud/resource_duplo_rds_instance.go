@@ -497,18 +497,6 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 
 	}
 
-	if d.HasChange("enhanced_monitoring") {
-		val := d.Get("enhanced_monitoring").(int)
-		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
-			DBInstanceIdentifier: identifier,
-			ApplyImmediately:     true,
-			MonitoringInterval:   val,
-		})
-	}
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	diags = resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceCreate ******** end")
