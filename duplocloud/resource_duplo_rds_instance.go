@@ -944,7 +944,6 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	}
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
-
 	pis := []interface{}{}
 	pi := make(map[string]interface{})
 	pi["enabled"] = duploObject.EnablePerformanceInsights
