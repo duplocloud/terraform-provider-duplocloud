@@ -116,7 +116,7 @@ resource "duplocloud_gcp_pubsub_subscription" "sub" {
   topic     = "{topic-name}"
   big_query {
     table                 = "gcp-test10-431717.pbdataset.pbtable"
-    service_account_email = "nikhil.nambiar@duplocloud.net"
+    service_account_email = "abc@xxyz.com"
     use_table_schema      = true
     drop_unknown_fields   = false
   }
@@ -281,7 +281,7 @@ Import is supported using the following syntax:
 ```shell
 # Example: Importing an existing GCP storage bucket
 #  - *TENANT_ID* is the tenant GUID
-#  - *SHORT_NAME* is the short name of the GCP storage bucket
+#  - *SHORT_NAME* is the short name for the pubsub subscriptiom
 #
-terraform import duplocloud_gcp_storage_bucket.mybucket *TENANT_ID*/*SHORT_NAME*
+terraform import duplocloud_gcp_pubsub_subscription.mybucket *TENANT_ID*/*SHORT_NAME*
 ```

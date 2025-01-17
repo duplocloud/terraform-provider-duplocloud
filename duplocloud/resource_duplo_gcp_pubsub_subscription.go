@@ -391,8 +391,6 @@ func resourceGCPPubSubSubscriptionRead(ctx context.Context, d *schema.ResourceDa
 	name := idParts[1]
 	c := m.(*duplosdk.Client)
 
-	// Figure out the full resource name.
-
 	// Get the object from Duplo
 	duplo, err := c.GCPTenantGetPubSubSubscription(tenantID, name)
 	if err != nil {
@@ -448,7 +446,6 @@ func resourceGCPPubSubSubscriptionUpdate(ctx context.Context, d *schema.Resource
 	reqBody := expandPubSubSubscription(d)
 
 	c := m.(*duplosdk.Client)
-	//topic := d.Get("topic").(string)
 	// Post the object to Duplo
 	_, err := c.GCPTenantUpdatePubSubSubscription(idParts[0], *reqBody, reqBody.Topic)
 	if err != nil {
