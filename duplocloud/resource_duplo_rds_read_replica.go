@@ -182,7 +182,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			},
 		},
 		"enhanced_monitoring": {
-			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on. Applicable on resource update",
+			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			Computed:     true,
@@ -305,6 +305,24 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("create"))
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB read replica '%s' to be available: %s", id, err)
+	}
+
+	if d.HasChange("enhanced_monitoring") {
+		val := d.Get("enhanced_monitoring").(int)
+		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
+			DBInstanceIdentifier: instResp.Identifier,
+			ApplyImmediately:     true,
+			MonitoringInterval:   val,
+		})
+		err = rdsInstanceSyncMonitoringInterval(ctx, c, id, d.Timeout("create"), val)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS read replica DB instance '%s' to update enhanced monitoring level: %s", id, err.Error())
+
+		}
+
+	}
+	if err != nil {
+		return diag.FromErr(err)
 	}
 	//performance insights update for document db specific
 	if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
