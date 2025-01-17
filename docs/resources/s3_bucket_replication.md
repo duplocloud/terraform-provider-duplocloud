@@ -69,7 +69,7 @@ resource "duplocloud_s3_bucket_replication" "rep1" {
 
 ### Required
 
-- `rules` (Block List, Min: 1, Max: 1) replication rules for source bucket (see [below for nested schema](#nestedblock--rules))
+- `rules` (Block List, Min: 1) replication rules for source bucket (see [below for nested schema](#nestedblock--rules))
 - `source_bucket` (String) fullname of the source bucket.
 - `tenant_id` (String) The GUID of the tenant that the S3 bucket replication rule will be created in.
 
@@ -92,8 +92,8 @@ Required:
 
 Optional:
 
-- `delete_marker_replication` (Boolean) Whether or not to enable delete marker on replication. Can be set only during creation. Defaults to `false`.
-- `storage_class` (String) storage_class type: STANDARD, INTELLIGENT_TIERING, STANDARD_IA, ONEZONE_IA, GLACIER_IR, GLACIER, DEEP_ARCHIVE, REDUCED_REDUNDANCY. Can be set only during creation
+- `delete_marker_replication` (Boolean) Whether or not to enable delete marker on replication. Defaults to `false`.
+- `storage_class` (String) storage_class type: STANDARD, INTELLIGENT_TIERING, STANDARD_IA, ONEZONE_IA, GLACIER_IR, GLACIER, DEEP_ARCHIVE, REDUCED_REDUNDANCY.
 
 Read-Only:
 
