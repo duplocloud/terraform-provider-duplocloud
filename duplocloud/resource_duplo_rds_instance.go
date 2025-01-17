@@ -294,7 +294,6 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			Computed:     true,
 			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
 		},
 		"performance_insights": {
@@ -898,6 +897,8 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["identifier"] = duploObject.Identifier
 	jo["arn"] = duploObject.Arn
 	jo["endpoint"] = duploObject.Endpoint
+	jo["deletion_protection"] = duploObject.DeletionProtection
+	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	clusterIdentifier := duploObject.ClusterIdentifier
 	if len(clusterIdentifier) == 0 {
 		clusterIdentifier = duploObject.Identifier
@@ -1095,6 +1096,11 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 				return fmt.Errorf("RDS engine %s  do not support storage_type %s ", engines[eng], st)
 			}
 		}
+	}
+	id := diff.Id()
+	if id == "" && diff.Get("enhanced_monitoring").(int) > 0 {
+		return fmt.Errorf("RDS resources supports enhanced_monitoring during update")
+
 	}
 	return nil
 }
