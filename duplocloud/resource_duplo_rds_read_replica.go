@@ -314,15 +314,16 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 			ApplyImmediately:     true,
 			MonitoringInterval:   val,
 		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		err = rdsInstanceSyncMonitoringInterval(ctx, c, id, d.Timeout("create"), val)
 		if err != nil {
 			return diag.Errorf("Error waiting for RDS read replica DB instance '%s' to update enhanced monitoring level: %s", id, err.Error())
 
 		}
 
-	}
-	if err != nil {
-		return diag.FromErr(err)
 	}
 	//performance insights update for document db specific
 	if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {

@@ -448,6 +448,9 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 			ApplyImmediately:     true,
 			MonitoringInterval:   val,
 		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
 		err = rdsInstanceSyncMonitoringInterval(ctx, c, id, d.Timeout("create"), val)
 		if err != nil {
 			return diag.Errorf("Error waiting for RDS DB instance '%s' to update enhanced monitoring level: %s", id, err.Error())
@@ -455,9 +458,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 		}
 
 	}
-	if err != nil {
-		return diag.FromErr(err)
-	}
+
 	if d.HasChange("performance_insights") {
 		pI := expandPerformanceInsight(d)
 		if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
