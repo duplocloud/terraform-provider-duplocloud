@@ -108,7 +108,11 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
-		d.Set("setting", keyValueToState("setting", selectKeyValues(duplo.Metadata, *v)))
+		incoming := selectKeyValues(duplo.Metadata, *v)
+		current := keyValueFromState("setting", d)
+		i := reorderToMatchCurrent(toInterfaceSlice(*current), toInterfaceSlice(*incoming))
+
+		d.Set("setting", i)
 	}
 
 	log.Printf("[TRACE] resourceTenantConfigRead(%s): end", tenantID)

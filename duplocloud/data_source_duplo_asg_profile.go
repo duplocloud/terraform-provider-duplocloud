@@ -9,6 +9,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func dataAsgSchema() map[string]*schema.Schema {
+	m := autoscalingGroupSchema()
+	delete(m, "zone")
+	delete(m, "zones")
+	m["zones"] = &schema.Schema{
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0",
+		Type:        schema.TypeList,
+		Computed:    true,
+		ForceNew:    true,
+		Elem: &schema.Schema{
+			Type:     schema.TypeInt,
+			ForceNew: true,
+		},
+	}
+
+	return m
+}
+
 // SCHEMA for resource data/search
 func dataSourceAsgProfiles() *schema.Resource {
 	return &schema.Resource{
@@ -27,7 +45,7 @@ func dataSourceAsgProfiles() *schema.Resource {
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: autoscalingGroupSchema(),
+					Schema: dataAsgSchema(),
 				},
 			},
 		},
@@ -53,19 +71,18 @@ func dataSourceAsgProfilesRead(ctx context.Context, d *schema.ResourceData, m in
 		// TODO: ability to filter
 		profiles = append(profiles, flattenAsgProfile(&duplo))
 	}
+	d.SetId(tenantID)
 
 	if err := d.Set("asg_profiles", profiles); err != nil {
 		return diag.FromErr(err)
 	}
-
-	d.SetId(tenantID)
 
 	log.Printf("[TRACE] dataSourceAsgProfilesRead(%s): end", tenantID)
 	return nil
 }
 
 func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
-	return map[string]interface{}{
+	mp := map[string]interface{}{
 		"instance_count":      duplo.DesiredCapacity,
 		"min_instance_count":  duplo.MinSize,
 		"max_instance_count":  duplo.MaxSize,
@@ -73,7 +90,6 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		"tenant_id":           duplo.TenantId,
 		"friendly_name":       duplo.FriendlyName,
 		"capacity":            duplo.Capacity,
-		"zone":                duplo.Zone,
 		"is_minion":           duplo.IsMinion,
 		"image_id":            duplo.ImageID,
 		"base64_user_data":    duplo.Base64UserData,
@@ -85,7 +101,20 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		"metadata":            keyValueToState("metadata", duplo.MetaData),
 		"tags":                keyValueToState("tags", duplo.Tags),
 		"minion_tags":         keyValueToState("minion_tags", duplo.CustomDataTags),
-		"volumes":             flattenNativeHostVolumes(duplo.Volumes),
-		"network_interfaces":  flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
+		"volume":              flattenNativeHostVolumes(duplo.Volumes),
+		"network_interface":   flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 	}
+	if duplo.Taints != nil {
+		mp["taints"] = flattenTaints(*duplo.Taints)
+	}
+	if len(duplo.Zones) > 0 {
+		i := []interface{}{}
+		for _, v := range duplo.Zones {
+			i = append(i, v)
+		}
+		mp["zones"] = i
+	} else {
+		mp["zones"] = []interface{}{}
+	}
+	return mp
 }

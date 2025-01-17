@@ -11,16 +11,14 @@ const (
 )
 
 const (
-	DUPLO_RDS_ENGINE_MYSQL                        = 0
-	DUPLO_RDS_ENGINE_POSTGRESQL                   = 1
-	DUPLO_RDS_ENGINE_MSSQL_EXPRESS                = 2
-	DUPLO_RDS_ENGINE_MSSQL_STANDARD               = 3
-	DUPLO_RDS_ENGINE_AURORA_MYSQL                 = 8
-	DUPLO_RDS_ENGINE_AURORA_POSTGRESQL            = 9
-	DUPLO_RDS_ENGINE_MSSQL_WEB                    = 10
-	DUPLO_RDS_ENGINE_AURORA_SERVERLESS_MYSQL      = 11
-	DUPLO_RDS_ENGINE_AURORA_SERVERLESS_POSTGRESQL = 12
-	DUPLO_RDS_ENGINE_DOCUMENTDB                   = 13
+	DUPLO_RDS_ENGINE_MYSQL             = 0
+	DUPLO_RDS_ENGINE_POSTGRESQL        = 1
+	DUPLO_RDS_ENGINE_MSSQL_EXPRESS     = 2
+	DUPLO_RDS_ENGINE_MSSQL_STANDARD    = 3
+	DUPLO_RDS_ENGINE_AURORA_MYSQL      = 8
+	DUPLO_RDS_ENGINE_AURORA_POSTGRESQL = 9
+	DUPLO_RDS_ENGINE_MSSQL_WEB         = 10
+	DUPLO_RDS_ENGINE_DOCUMENTDB        = 13
 )
 
 const (
@@ -76,6 +74,7 @@ type DuploRdsInstance struct {
 	EnablePerformanceInsights          bool                    `json:"EnablePerformanceInsights"`
 	PerformanceInsightsRetentionPeriod int                     `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string                  `json:"PerformanceInsightsKMSKeyId,omitempty"`
+	DeletionProtection                 bool                    `json:"DeletionProtection"`
 }
 
 type V2ScalingConfiguration struct {
@@ -92,8 +91,10 @@ type DuploRdsInstancePasswordChange struct {
 
 // DuploRdsUpdatePayload is a Duplo SDK object that represents an update payload for size and enabling/disabling logging
 type DuploRdsUpdatePayload struct {
-	EnableLogging *bool  `json:"EnableLogging,omitempty"`
-	SizeEx        string `json:"SizeEx,omitempty"`
+	EnableLogging             *bool  `json:"EnableLogging,omitempty"`
+	SizeEx                    string `json:"SizeEx,omitempty"`
+	DbParameterGroupName      string `json:"DbParameterGroupName,omitempty"`
+	ClusterParameterGroupName string `json:"ClusterParameterGroupName,omitempty"`
 }
 
 type DuploRdsUpdateInstance struct {
@@ -203,11 +204,11 @@ func (c *Client) RdsInstanceDelete(id string) (*DuploRdsInstance, ClientError) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]
-
+	identifier := EnsureDuploPrefixInRdsIdentifier(name)
 	// Call the API.
 	err := c.deleteAPI(
-		fmt.Sprintf("RdsInstanceDelete(%s, duplo%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/duplo%s", tenantID, name),
+		fmt.Sprintf("RdsInstanceDelete(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
 		nil)
 	if err != nil {
 		return nil, err
@@ -222,12 +223,12 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
 	idParts := strings.SplitN(id, "/", 5)
 	tenantID := idParts[2]
 	name := idParts[4]
-
+	identifier := EnsureDuploPrefixInRdsIdentifier(name)
 	// Call the API.
 	duploObject := DuploRdsInstance{}
 	err := c.getAPI(
-		fmt.Sprintf("RdsInstanceGet(%s, duplo%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/duplo%s", tenantID, name),
+		fmt.Sprintf("RdsInstanceGet(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
 		&duploObject)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
@@ -239,12 +240,12 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
 }
 
 func (c *Client) RdsInstanceGetByName(tenantID, name string) (*DuploRdsInstance, ClientError) {
-
+	identifier := EnsureDuploPrefixInRdsIdentifier(name)
 	// Call the API.
 	duploObject := DuploRdsInstance{}
 	err := c.getAPI(
-		fmt.Sprintf("RdsInstanceGet(%s, duplo%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/duplo%s", tenantID, name),
+		fmt.Sprintf("RdsInstanceGet(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
 		&duploObject)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
@@ -354,9 +355,7 @@ func (c *Client) RdsUpdateMonitoringInterval(tenantID string, duploObject DuploM
 
 func RdsIsAurora(engine int) bool {
 	return engine == DUPLO_RDS_ENGINE_AURORA_MYSQL ||
-		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL ||
-		engine == DUPLO_RDS_ENGINE_AURORA_SERVERLESS_MYSQL ||
-		engine == DUPLO_RDS_ENGINE_AURORA_SERVERLESS_POSTGRESQL
+		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL
 }
 
 func RdsIsMsSQL(engine int) bool {
@@ -419,6 +418,47 @@ func (c *Client) RdsTagDeleteV3(tenantID string, tag DuploRDSTag) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("RdsTagDeleteV3(%s, %s)", tenantID, tag.ResourceId),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
+		nil,
+	)
+}
+
+const (
+	AWSRdsPrefix = "duplo"
+)
+
+func EnsureDuploPrefixInRdsIdentifier(name string) string {
+	identifier := strings.TrimSpace(name)
+	for strings.HasPrefix(identifier, AWSRdsPrefix) {
+		identifier = strings.TrimPrefix(identifier, AWSRdsPrefix)
+		identifier = strings.TrimSpace(identifier)
+	}
+	return AWSRdsPrefix + identifier
+}
+
+func ValidateRdsNoDoubleDuploPrefix(v interface{}, k string) (ws []string, errors []error) {
+	value := v.(string)
+	trimmedValue := strings.TrimSpace(value)
+	if !strings.HasPrefix(trimmedValue, AWSRdsPrefix) {
+		return
+	}
+	// Check for multiple consecutive 'duplo' prefixes
+	count := 0
+	for strings.HasPrefix(trimmedValue, AWSRdsPrefix) {
+		trimmedValue = strings.TrimPrefix(trimmedValue, AWSRdsPrefix)
+		trimmedValue = strings.TrimSpace(trimmedValue)
+		count++
+	}
+	if count > 1 {
+		errors = append(errors, fmt.Errorf("%q cannot contain multiple consecutive '%s' prefixes", k, AWSRdsPrefix))
+	}
+	return
+}
+
+func (c *Client) RdsInstanceUpdateParameterGroupName(tenantID string, instanceId string, rdsUpdate *DuploRdsUpdatePayload) error {
+	return c.putAPI(
+		fmt.Sprintf("RdsInstanceUpdateParameterGroupName(%s, %s, %+v)", tenantID, instanceId, rdsUpdate),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/updatePayload", tenantID, instanceId),
+		&rdsUpdate,
 		nil,
 	)
 }

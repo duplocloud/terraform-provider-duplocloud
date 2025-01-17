@@ -56,12 +56,13 @@ Read-Only:
 - `prepend_user_data` (Boolean)
 - `public_ip_address` (String)
 - `tags` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--tags))
+- `taints` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--taints))
 - `tenant_id` (String)
 - `use_spot_instances` (Boolean)
 - `user_account` (String)
 - `volume` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--volume))
 - `wait_for_capacity` (Boolean)
-- `zone` (Number)
+- `zones` (List of Number)
 
 <a id="nestedobjatt--asg_profiles--metadata"></a>
 ### Nested Schema for `asg_profiles.metadata`
@@ -108,6 +109,16 @@ Read-Only:
 
 Read-Only:
 
+- `key` (String)
+- `value` (String)
+
+
+<a id="nestedobjatt--asg_profiles--taints"></a>
+### Nested Schema for `asg_profiles.taints`
+
+Read-Only:
+
+- `effect` (String)
 - `key` (String)
 - `value` (String)
 

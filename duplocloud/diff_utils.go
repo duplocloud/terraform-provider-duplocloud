@@ -199,3 +199,205 @@ func diffIgnoreIfCaseSensitive(k, old, new string, d *schema.ResourceData) bool 
 	newVar, oldVar := d.GetChange(k)
 	return strings.EqualFold(newVar.(string), oldVar.(string))
 }
+
+func diffSuppressOnComputedDataOnMetadataBlock(_, _, _ string, d *schema.ResourceData) bool {
+
+	n, o := d.GetChange("metadata")
+	m := n.(map[string]interface{})
+	mo := o.(map[string]interface{})
+	_, ok := m["CreatedBy"]
+	_, ok1 := m["CreatedOn"]
+	for k, vl := range m {
+		if mov, ok := mo[k]; ok || (mov != nil && mov.(string) != vl) {
+			return false
+		}
+	}
+	if ok && ok1 {
+		return true
+	}
+	return false
+}
+
+func diffSuppressOnComputedDataOnLabelBlock(_, _, _ string, d *schema.ResourceData) bool {
+
+	n, _ := d.GetChange("labels")
+	m := n.(map[string]interface{})
+	_, ok := m["image-id"]
+	return ok
+}
+
+func diffSuppressGCPHostImageIdIfSame(_, _, _ string, d *schema.ResourceData) bool {
+
+	n, o := d.GetChange("image_id")
+	ok := false
+	if n != "" {
+		ok = strings.Contains(o.(string), n.(string))
+	}
+	return ok
+}
+
+/*
+	func diffSuppressListKeyValueOrdering(k, old, new string, d *schema.ResourceData) bool {
+		// Extract attribute name to get the old and new values
+		attributeName := strings.Split(k, ".")[0]
+		o, n := d.GetChange(attributeName)
+
+		// Type assertion to ensure both old and new values are lists
+		oList, ok1 := o.([]interface{})
+		nList, ok2 := n.([]interface{})
+		if !ok1 || !ok2 {
+			return false // If not lists, don't suppress
+		}
+
+		// Helper function to sort and convert list to a map of key-value pairs
+		toSortedKeyValueList := func(list []interface{}) []map[string]string {
+			result := make([]map[string]string, 0, len(list))
+			for _, item := range list {
+				if entry, ok := item.(map[string]interface{}); ok {
+					entryMap := make(map[string]string)
+					if key, keyOk := entry["key"].(string); keyOk {
+						if value, valueOk := entry["value"].(string); valueOk {
+							entryMap["key"] = key
+							entryMap["value"] = value
+							result = append(result, entryMap)
+						}
+					}
+				}
+			}
+			// Sort list by key for consistency
+			sort.Slice(result, func(i, j int) bool {
+				return result[i]["key"] < result[j]["key"]
+			})
+			return result
+		}
+
+		// Sort and transform both old and new lists
+		oldSortedList := toSortedKeyValueList(oList)
+		newSortedList := toSortedKeyValueList(nList)
+
+		// Compare the lists for equality
+		if len(oldSortedList) != len(newSortedList) {
+			return false // Length mismatch indicates a change
+		}
+		for i := range oldSortedList {
+			oldEntry := oldSortedList[i]
+			newEntry := newSortedList[i]
+			// Compare key-value pairs; suppress if identical
+			if oldEntry["key"] != newEntry["key"] || oldEntry["value"] != newEntry["value"] {
+				return false
+			}
+		}
+
+		// No meaningful difference, suppress the diff
+		return true
+	}
+*/
+func diffSuppressDynamodbTTLHandler(k, old, new string, d *schema.ResourceData) bool {
+	ostate, nstate := d.GetChange("ttl")
+	if len(ostate.([]interface{})) == 0 && len(nstate.([]interface{})) > 0 { //if ttl already disable ignnoring change
+		l := nstate.([]interface{})
+		mp := l[0].(map[string]interface{})
+		if !mp["enabled"].(bool) {
+			return true
+		}
+	} else if len(ostate.([]interface{})) > 0 && len(nstate.([]interface{})) == 0 {
+		l := ostate.([]interface{})
+
+		mp := l[0].(map[string]interface{})
+		if !mp["enabled"].(bool) {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+func diffSuppressListOrderingAsWhole(k, old, new string, d *schema.ResourceData) bool {
+	// Extract attribute name to get the old and new values
+	attributeName := strings.Split(k, ".")[0]
+	o, n := d.GetChange(attributeName)
+
+	// Type assertion to ensure both old and new values are lists
+	oList, ok1 := o.([]interface{})
+	nList, ok2 := n.([]interface{})
+	if !ok1 || !ok2 {
+		return false // If not lists, don't suppress
+	}
+
+	// Helper function to sort and convert list to a map of key-value pairs
+	toSortedList := func(list []interface{}, fields []string) []map[string]string {
+		result := make([]map[string]string, 0, len(list))
+		for _, item := range list {
+			if entry, ok := item.(map[string]interface{}); ok {
+				sortedEntry := make(map[string]string)
+				for _, field := range fields {
+					if value, valueOk := entry[field].(string); valueOk {
+						sortedEntry[field] = value
+					}
+				}
+				result = append(result, sortedEntry)
+			}
+		}
+		// Sort list by concatenated field values for consistency
+		sort.Slice(result, func(i, j int) bool {
+			for _, field := range fields {
+				if result[i][field] != result[j][field] {
+					return result[i][field] < result[j][field]
+				}
+			}
+			return false
+		})
+		return result
+	}
+
+	// Dynamically determine the fields to compare based on schema
+	schemaMap := d.Get(attributeName).([]interface{})
+	fields := []string{}
+	if len(schemaMap) > 0 {
+		if firstItem, ok := schemaMap[0].(map[string]interface{}); ok {
+			for key := range firstItem {
+				fields = append(fields, key)
+			}
+		}
+	}
+
+	// Sort and transform both old and new lists
+	oldSortedList := toSortedList(oList, fields)
+	newSortedList := toSortedList(nList, fields)
+
+	// Compare the lists for equality
+	if len(oldSortedList) != len(newSortedList) {
+		return false // Length mismatch indicates a change
+	}
+	for i := range oldSortedList {
+		for _, field := range fields {
+			if oldSortedList[i][field] != newSortedList[i][field] {
+				return false // Field mismatch indicates a change
+			}
+		}
+	}
+
+	// No meaningful difference, suppress the diff
+	return true
+}
+*/
+/*
+func diffSuppressListOrderingOnNestedField(k, old, new string, d *schema.ResourceData) bool {
+	// Extract attribute name to get the old and new values
+	token := strings.Split(k, ".")
+	attributeName := token[0]
+	child := token[2]
+	o, _ := d.GetChange(attributeName)
+	for _, om := range o.([]interface{}) {
+		m := om.(map[string]interface{})
+		//for _, m := range mi {
+		if new == m[child] {
+			return true
+		}
+		//}
+	}
+
+	// No meaningful difference, suppress the diff
+	return false
+}
+*/

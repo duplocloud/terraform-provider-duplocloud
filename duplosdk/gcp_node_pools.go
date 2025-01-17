@@ -78,13 +78,13 @@ type GCPNodeUpgradeSetting struct {
 }
 
 type BlueGreenSettings struct {
-	StandardRolloutPolicy *StandardRolloutPolicy `json:"standardRolloutPolicy"`
-	NodePoolSoakDuration  string                 `json:"nodePoolSoakDuration"`
+	StandardRolloutPolicy *StandardRolloutPolicy `json:"standardRolloutPolicy,omitempty"`
+	NodePoolSoakDuration  string                 `json:"nodePoolSoakDuration,omitempty"`
 }
 
 type StandardRolloutPolicy struct {
-	BatchPercentage   float32 `json:"batchPercentage"`
-	BatchNodeCount    int     `json:"batchNodeCount"`
+	BatchPercentage   float32 `json:"batchPercentage,omitempty"`
+	BatchNodeCount    int     `json:"batchNodeCount,omitempty"`
 	BatchSoakDuration string  `json:"batchSoakDuration"`
 }
 

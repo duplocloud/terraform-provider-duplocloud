@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -40,7 +41,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				validation.StringMatch(regexp.MustCompile(`^[a-z0-9-]*$`), "Invalid RDS instance name"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "RDS instance name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "RDS instance name cannot contain two hyphens"),
-
+				duplosdk.ValidateRdsNoDoubleDuploPrefix,
 				// NOTE: some validations are moot, because Duplo provides a prefix and suffix for the name:
 				//
 				// - First character must be a letter
@@ -102,15 +103,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				"   - `8` : Aurora-MySQL\n" +
 				"   - `9` : Aurora-PostgreSQL\n" +
 				"   - `10` : MsftSQL-Web\n" +
-				"   - `11` : Aurora-Serverless-MySql\n" +
-				"   - `12` : Aurora-Serverless-PostgreSql\n" +
 				"   - `13` : DocumentDB\n" +
 				"   - `14` : MariaDB\n" +
 				"   - `16` : Aurora\n",
 			Type:         schema.TypeInt,
 			Required:     true,
 			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 16}),
+			ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 8, 9, 10, 13, 14, 16}),
 		},
 		"engine_version": {
 			Description: "The database engine version to use the for the RDS instance.\n" +
@@ -150,7 +149,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			//DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"cluster_parameter_group_name": {
 			Description: "Parameter group associated with this instance's DB Cluster.",
@@ -162,7 +161,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			//DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"store_details_in_secret_manager": {
 			Description: "Whether or not to store RDS details in the AWS secrets manager.",
@@ -295,7 +294,6 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			Computed:     true,
 			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
 		},
 		"performance_insights": {
@@ -358,12 +356,12 @@ func resourceDuploRdsInstance() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(45 * time.Minute),
-			Update: schema.DefaultTimeout(20 * time.Minute),
-			Delete: schema.DefaultTimeout(20 * time.Minute),
+			Create: schema.DefaultTimeout(70 * time.Minute),
+			Update: schema.DefaultTimeout(70 * time.Minute),
+			Delete: schema.DefaultTimeout(70 * time.Minute),
 		},
 		Schema:        rdsInstanceSchema(),
-		CustomizeDiff: validateRDSParameters,
+		CustomizeDiff: customdiff.All(validateRDSParameters, validateRDSGroupParameters),
 	}
 }
 
@@ -442,20 +440,22 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	identifier := createdRds.Identifier
-	pI := expandPerformanceInsight(d)
-	if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
-		obj := enablePerformanceInstanceObject(pI)
-		obj.DBInstanceIdentifier = identifier
-		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(insightErr)
+	if d.HasChange("performance_insights") {
+		pI := expandPerformanceInsight(d)
+		if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
+			obj := enablePerformanceInstanceObject(pI)
+			obj.DBInstanceIdentifier = identifier
+			insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+			if insightErr != nil {
+				return diag.FromErr(insightErr)
+
+			}
+			err = performanceInsightsWaitUntilEnabled(ctx, c, id)
+			if err != nil {
+				return diag.Errorf("Error waiting for RDS DB instance  '%s' performance insights : %s", id, err)
+			}
 
 		}
-		err = performanceInsightsWaitUntilEnabled(ctx, c, id)
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance  '%s' performance insights : %s", id, err)
-		}
-
 	}
 	if d.HasChange("deletion_protection") || d.HasChange("skip_final_snapshot") {
 		skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
@@ -489,7 +489,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 			return diag.FromErr(err)
 		}
 
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("create"))
 		if err != nil {
 			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 		}
@@ -540,18 +540,46 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 
 		// Wait for the instance to become available.
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 7*time.Minute)
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
 		if err != nil {
 			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
 		}
 
-		// in-case timed out. check one more time .. aurora cluster takes long time to update and backup
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 3*time.Minute)
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
-		}
 	}
 
+	if d.HasChange("parameter_group_name") || d.HasChange("cluster_parameter_group_name") {
+		req := duplosdk.DuploRdsUpdatePayload{}
+		if v, ok := d.GetOk("parameter_group_name"); ok {
+			req.DbParameterGroupName = v.(string)
+		}
+		if v, ok := d.GetOk("cluster_parameter_group_name"); ok {
+			req.ClusterParameterGroupName = v.(string)
+		}
+		identifier := d.Get("identifier").(string)
+		err := c.RdsInstanceUpdateParameterGroupName(tenantID, identifier, &req)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		// Wait for the instance to become available.
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+		}
+		if req.DbParameterGroupName != "" {
+			err = rdsInstanceSyncParameterGroup(ctx, c, id, d.Timeout("update"), req.DbParameterGroupName, "DBPARAM")
+			if err != nil {
+				return diag.Errorf("Error waiting for RDS DB instance '%s' to update db parameter group name: %s", id, err.Error())
+
+			}
+		}
+		if req.ClusterParameterGroupName != "" {
+			err = rdsInstanceSyncParameterGroup(ctx, c, id, d.Timeout("update"), req.ClusterParameterGroupName, "CLUSTERPARAM")
+			if err != nil {
+				return diag.Errorf("Error waiting for RDS DB instance '%s' to update cluster parameter group name: %s", id, err.Error())
+
+			}
+		}
+	}
 	// Request the password change in Duplo
 	if d.HasChange("master_password") {
 		snapshotId, hasSnapshot := d.GetOk("snapshot_id")
@@ -640,43 +668,43 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	if d.HasChange("performance_insights") {
+		obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
+		pI := expandPerformanceInsight(d)
+		if pI != nil {
+			obj = enablePerformanceInstanceObject(pI)
 
-	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
-	pI := expandPerformanceInsight(d)
-	if pI != nil {
-		obj = enablePerformanceInstanceObject(pI)
-
-	} else {
-		disable := duplosdk.PerformanceInsightDisable{
-			EnablePerformanceInsights: false,
+		} else {
+			disable := duplosdk.PerformanceInsightDisable{
+				EnablePerformanceInsights: false,
+			}
+			obj.Disable = &disable
 		}
-		obj.Disable = &disable
-	}
-	obj.DBInstanceIdentifier = identifier
-	if isAuroraDB(d) {
-		obj.DBInstanceIdentifier = identifier + "-cluster"
-		insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(insightErr)
+		obj.DBInstanceIdentifier = identifier
+		if isAuroraDB(d) {
+			obj.DBInstanceIdentifier = identifier + "-cluster"
+			insightErr := c.UpdateDBClusterPerformanceInsight(tenantID, obj)
+			if insightErr != nil {
+				return diag.FromErr(insightErr)
 
+			}
+		} else {
+			insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+			if insightErr != nil {
+				return diag.FromErr(insightErr)
+
+			}
 		}
-	} else {
-		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(insightErr)
 
+		// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
+		_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+
+		// Wait for the instance to become available.
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 		}
 	}
-
-	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
-	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
-
-	// Wait for the instance to become available.
-	err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
-	if err != nil {
-		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
-	}
-
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
@@ -787,7 +815,10 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.EngineVersion = d.Get("engine_version").(string)
 	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
 	duploObject.SnapshotID = d.Get("snapshot_id").(string)
-	if isClusterGroupParameterSupportDb(duploObject.Engine) {
+	if isOnlyClusterGroupParameterSupportDb(duploObject.Engine) {
+		duploObject.ClusterParameterGroupName = d.Get("cluster_parameter_group_name").(string)
+
+	} else if isClusterGroupParameterSupportDb(duploObject.Engine) {
 		duploObject.ClusterParameterGroupName = d.Get("cluster_parameter_group_name").(string)
 		duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
 	} else {
@@ -866,6 +897,8 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["identifier"] = duploObject.Identifier
 	jo["arn"] = duploObject.Arn
 	jo["endpoint"] = duploObject.Endpoint
+	jo["deletion_protection"] = duploObject.DeletionProtection
+	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	clusterIdentifier := duploObject.ClusterIdentifier
 	if len(clusterIdentifier) == 0 {
 		clusterIdentifier = duploObject.Identifier
@@ -885,7 +918,9 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["availability_zone"] = duploObject.AvailabilityZone
 	jo["snapshot_id"] = duploObject.SnapshotID
-	jo["parameter_group_name"] = duploObject.DBParameterGroupName
+	if duploObject.Engine != 13 {
+		jo["parameter_group_name"] = duploObject.DBParameterGroupName
+	}
 	jo["cluster_parameter_group_name"] = duploObject.ClusterParameterGroupName
 	jo["db_subnet_group_name"] = duploObject.DBSubnetGroupName
 	jo["size"] = duploObject.SizeEx
@@ -909,7 +944,6 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	}
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
-
 	pis := []interface{}{}
 	pi := make(map[string]interface{})
 	pi["enabled"] = duploObject.EnablePerformanceInsights
@@ -967,8 +1001,7 @@ func validateRdsInstance(duplo *duplosdk.DuploRdsInstance) (errors []error) {
 }
 
 func isAuroraDB(d *schema.ResourceData) bool {
-	return d.Get("engine").(int) == 8 || d.Get("engine").(int) == 9 ||
-		d.Get("engine").(int) == 11 || d.Get("engine").(int) == 12 || d.Get("engine").(int) == 16
+	return d.Get("engine").(int) == 8 || d.Get("engine").(int) == 9 || d.Get("engine").(int) == 16
 }
 
 func isDeleteProtectionSupported(d *schema.ResourceData) bool {
@@ -980,10 +1013,14 @@ func isClusterGroupParameterSupportDb(db int) bool {
 	clusterDb := map[int]bool{
 		8:  true,
 		9:  true,
-		11: true,
-		12: true,
-		13: true,
 		16: true,
+	}
+	return clusterDb[db]
+}
+
+func isOnlyClusterGroupParameterSupportDb(db int) bool {
+	clusterDb := map[int]bool{
+		13: true,
 	}
 	return clusterDb[db]
 }
@@ -1027,8 +1064,6 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		8:  "Aurora-MySQL",
 		9:  "Aurora-PostgreSQL",
 		10: "MsftSQL-Web",
-		11: "Aurora-Serverless-MySql",
-		12: "Aurora-Serverless-PostgreSql",
 		13: "DocumentDB",
 		14: "MariaDB",
 		16: "Aurora",
@@ -1051,18 +1086,22 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		st := diff.Get("storage_type").(string)
 		if st == "aurora-iopt1" {
 			ev := diff.Get("engine_version").(string)
-			if (eng == 8 || eng == 11) && compareEngineVersion(ev, "3.03.1") == -1 {
+			if eng == 8 && compareEngineVersion(ev, "3.03.1") == -1 {
 				return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 3.03.1", engines[eng], st)
 			}
-			if (eng == 9 || eng == 12) && compareEngineVersion(ev, "13.10") == -1 {
+			if eng == 9 && compareEngineVersion(ev, "13.10") == -1 {
 				return fmt.Errorf("RDS engine %s  do not support storage_type %s for version less than 13.10", engines[eng], st)
 			}
-			if eng != 8 && eng != 9 && eng != 11 && eng != 12 {
+			if eng != 8 && eng != 9 {
 				return fmt.Errorf("RDS engine %s  do not support storage_type %s ", engines[eng], st)
 			}
 		}
 	}
+	id := diff.Id()
+	if id == "" && diff.Get("enhanced_monitoring").(int) > 0 {
+		return fmt.Errorf("RDS resources supports enhanced_monitoring during update")
 
+	}
 	return nil
 }
 
@@ -1138,4 +1177,56 @@ func suppressRetentionPeriodIfPerformanceInsightsDisabled(k, old, new string, d 
 	}
 	return false
 
+}
+
+func rdsInstanceSyncParameterGroup(ctx context.Context, c *duplosdk.Client, id string, timeout time.Duration, paramName, paramType string) error {
+	stateConf := &retry.StateChangeConf{
+		Target:       []string{"updated"},
+		Pending:      []string{"updating"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 50 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			status := "updating"
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if paramType == "DBPARAM" && strings.Contains(resp.DBParameterGroupName, paramName) {
+				status = "updated"
+			}
+			if paramType == "CLUSTERPARAM" && strings.Contains(resp.ClusterParameterGroupName, paramName) {
+				status = "updated"
+			}
+			return resp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+func validateRDSGroupParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	engines := map[int]string{
+		0:  "MySQL",
+		1:  "PostgreSQL",
+		2:  "MsftSQL-Express",
+		3:  "MsftSQL-Standard",
+		8:  "Aurora-MySQL",
+		9:  "Aurora-PostgreSQL",
+		10: "MsftSQL-Web",
+		11: "Aurora-Serverless-MySql",
+		12: "Aurora-Serverless-PostgreSql",
+		13: "DocumentDB",
+		14: "MariaDB",
+		16: "Aurora",
+	}
+
+	eng := diff.Get("engine").(int)
+	if isOnlyClusterGroupParameterSupportDb(eng) && diff.Get("parameter_group_name").(string) != "" {
+		return fmt.Errorf("RDS engine %s  do not support  parameter_group_name ", engines[eng])
+	} else if !isClusterGroupParameterSupportDb(eng) && diff.Get("cluster_parameter_group_name").(string) != "" && eng != 13 {
+		return fmt.Errorf("RDS engine %s  do not support  cluster_parameter_group_name ", engines[eng])
+	}
+	return nil
 }

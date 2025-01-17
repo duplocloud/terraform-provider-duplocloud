@@ -1,3 +1,9 @@
+## 2024-10-18
+
+### Added
+- Introduced GCP Redis Instance resource and data sources for managing GCP Redis Instance in DuploCloud.
+- Added CRUD operations and data retrieval for GCP Redis Instance resources.
+
 ## 2024-09-13
 
 ### Enhanced
@@ -123,6 +129,23 @@
 ### Enhanced
 
 - Implemented update functionality for `duplocloud_aws_ecr_repository`, allowing ECR settings to be changed without recreating the resource.
+## 2024-09-09
+
+### Enhanced
+
+- Added support for managing Azure Availability Sets with new resource `duplocloud_azure_availability_set`.
+- Introduced a new data source `duplocloud_azure_availability_set` for retrieving Azure Availability Sets.
+
+### Documentation
+
+- Updated documentation with examples and schema details for Azure Availability Sets resource and data source.
+
+## 2024-09-09
+
+### Enhanced
+
+- Improved RDS instance update logic to handle Aurora DB clusters separately, including performance insights updates.
+- Modified storage type validation to allow empty values for Aurora DBs.
 
 ## 2024-09-09
 
@@ -130,7 +153,8 @@
 
 - Added new Airflow versions and removed deprecated ones in the MWAA environment schema.
 - Introduced new instance sizes for MWAA environments.
-
+- Added support for managing Azure Availability Sets with new resource `duplocloud_azure_availability_set`.
+- Introduced a new data source `duplocloud_azure_availability_set` for retrieving Azure Availability Sets.
 ## 2024-09-09
 
 ### Documentation

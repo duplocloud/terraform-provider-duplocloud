@@ -5,7 +5,7 @@ on:
       - 'v*'
 jobs:
   goreleaser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       -
         name: Checkout
@@ -42,7 +42,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.DUPLO_GITHUB_TOKEN }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
   publish-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs:
       - goreleaser
     steps:

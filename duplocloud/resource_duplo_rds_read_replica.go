@@ -37,7 +37,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 				validation.StringMatch(regexp.MustCompile(`^[a-z0-9-]*$`), "Invalid RDS read replica name"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "RDS read replica name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "RDS read replica name cannot contain two hyphens"),
-
+				duplosdk.ValidateRdsNoDoubleDuploPrefix,
 				// NOTE: some validations are moot, because Duplo provides a prefix and suffix for the name:
 				//
 				// - First character must be a letter
@@ -94,6 +94,12 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Computed:    true,
 		},
+		"engine_type": {
+			Description: "Engine type required to validate applicable parameter group setting for different instance. Should be referred from writer",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
 		"engine_version": {
 			Description: "The database engine version to be used the for the RDS read replica.",
 			Type:        schema.TypeString,
@@ -124,11 +130,27 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"parameter_group_name": {
+			Description: "A RDS parameter group name to apply to the RDS instance.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(1, 255),
+				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
+				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
+			),
+		},
+		"cluster_parameter_group_name": {
+			Description: "Parameter group associated with this instance's DB Cluster.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"performance_insights": {
 			Description:      "Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true.",
 			Type:             schema.TypeList,
 			MaxItems:         1,
 			Optional:         true,
+			Computed:         true,
 			DiffSuppressFunc: suppressIfPerformanceInsightsDisabled,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -159,6 +181,13 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"enhanced_monitoring": {
+			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on. Applicable on resource update",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
+		},
 	}
 }
 
@@ -180,7 +209,7 @@ func resourceDuploRdsReadReplica() *schema.Resource {
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema:        rdsReadReplicaSchema(),
-		CustomizeDiff: customdiff.All(validateRDSParameters),
+		CustomizeDiff: customdiff.All(validateRDSParameters, validateRDSReplicaUse),
 	}
 }
 
@@ -292,7 +321,6 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 		}
 
 	}
-
 	diags = resourceDuploRdsReadReplicaRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsReadReplicaCreate ******** end")
@@ -307,7 +335,26 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 	tenantID := d.Get("tenant_id").(string)
 	id := d.Id()
 	identifier := d.Get("identifier").(string)
+	if d.HasChange("parameter_group_name") {
+		req := duplosdk.DuploRdsUpdatePayload{}
+		if v, ok := d.GetOk("parameter_group_name"); ok {
+			req.DbParameterGroupName = v.(string)
+		}
+		err := c.RdsInstanceUpdateParameterGroupName(tenantID, identifier, &req)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, 7*time.Minute)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be unavailable: %s", id, err)
+		}
+		err = rdsInstanceSyncParameterGroup(ctx, c, id, 20*time.Minute, req.DbParameterGroupName, "DBPARAM")
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to update db parameter group name: %s", id, err.Error())
+
+		}
+	}
 	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
 	pI := expandPerformanceInsight(d)
 	if pI != nil {
@@ -342,7 +389,17 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
-
+	if d.HasChange("enhanced_monitoring") {
+		val := d.Get("enhanced_monitoring").(int)
+		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
+			DBInstanceIdentifier: identifier,
+			ApplyImmediately:     true,
+			MonitoringInterval:   val,
+		})
+	}
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	diags := resourceDuploRdsReadReplicaRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsReadReplicaUpdate ******** end")
@@ -440,7 +497,7 @@ func rdsReadReplicaFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance
 	duploObject.Identifier = d.Get("name").(string)
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
-
+	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
 	return duploObject, nil
 }
 
@@ -476,6 +533,10 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 	jo["enable_logging"] = duploObject.EnableLogging
 	jo["multi_az"] = duploObject.MultiAZ
 	jo["replica_status"] = duploObject.InstanceStatus
+	jo["parameter_group_name"] = duploObject.DBParameterGroupName
+	jo["cluster_parameter_group_name"] = duploObject.ClusterParameterGroupName
+	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
+
 	clusterIdentifier := duploObject.ClusterIdentifier
 	if len(clusterIdentifier) == 0 {
 		clusterIdentifier = duploObject.ReplicationSourceIdentifier
@@ -506,8 +567,6 @@ func isEngineAuroraType(engineCode int) bool {
 	engineNameByCode := map[int]string{
 		8:  "AuroraMySql",
 		9:  "AuroraPostgreSql",
-		11: "AuroraServerlessMySql",
-		12: "AuroraServerlessPostgreSql",
 		16: "Aurora",
 	}
 
@@ -519,4 +578,40 @@ func isEngineAuroraType(engineCode int) bool {
 func hasPerformanceInsightConfigurations(tfRdsReplicaSpecification *schema.ResourceData) bool {
 	configuration := tfRdsReplicaSpecification.Get("performance_insights").([]interface{})
 	return len(configuration) > 0
+}
+
+func validateRDSReplicaUse(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	engines := map[int]string{
+		0:  "MySQL",
+		1:  "PostgreSQL",
+		2:  "MsftSQL-Express",
+		3:  "MsftSQL-Standard",
+		8:  "Aurora-MySQL",
+		9:  "Aurora-PostgreSQL",
+		10: "MsftSQL-Web",
+		11: "Aurora-Serverless-MySql",
+		12: "Aurora-Serverless-PostgreSql",
+		13: "DocumentDB",
+		14: "MariaDB",
+		16: "Aurora",
+	}
+
+	eng := diff.Get("engine_type").(int)
+
+	if eng == 13 && diff.Get("parameter_group_name").(string) != "" {
+		return fmt.Errorf("parameter group is not applicable for %s engine read replica", engines[eng])
+
+	}
+	if eng == 2 || eng == 3 || eng == 10 {
+		return fmt.Errorf("resource duplocloud_read_replica is not applicable for %s engine", engines[eng])
+	}
+
+	//	if eng == 0 || eng == 1 || eng == 14 {
+	//		diff.SetNewComputed("parameter_group_name")
+	//		//if diff.HasChange("parameter_group_name") {
+	//		//	return fmt.Errorf("cannot update parameter_group_name for %s engine", engines[eng])
+	//		//
+	//		//}
+	//	}
+	return nil
 }

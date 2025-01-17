@@ -547,6 +547,10 @@ func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.Resour
 
 			return retry.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
 		}
+		if isStructEmpty(resp) {
+			return nil
+
+		}
 
 		if !isInterfaceNil(resp) {
 			return retry.RetryableError(fmt.Errorf("expected %s '%s' to be missing, but it still exists", kind, id))
@@ -571,7 +575,6 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 
 			return retry.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
 		}
-
 		if isInterfaceNil(resp) {
 			return retry.RetryableError(fmt.Errorf("expected %s '%s' to be retrieved, but got: nil", kind, id))
 		}
@@ -582,6 +585,35 @@ func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.Resour
 		return diag.Errorf("error creating %s '%s': %s", kind, id, err)
 	}
 	return nil
+}
+
+func isStructEmpty(i interface{}) bool {
+	// Get the type of the input
+	val := reflect.ValueOf(i)
+	//typ := reflect.TypeOf(i)
+
+	// If it's a pointer, dereference it
+	if val.Kind() == reflect.Ptr {
+		if val.IsNil() {
+			return true // Nil pointers are considered empty
+		}
+		val = val.Elem()
+		//	typ = typ.Elem()
+	}
+
+	// Ensure the input is a struct
+	if val.Kind() != reflect.Struct {
+		return false
+	}
+
+	// Check if all fields are at their zero values
+	for i := 0; i < val.NumField(); i++ {
+		if !reflect.DeepEqual(val.Field(i).Interface(), reflect.Zero(val.Field(i).Type()).Interface()) {
+			return false
+		}
+	}
+
+	return true
 }
 
 /*
@@ -1042,4 +1074,109 @@ func StringValueSliceTolist(v []duplosdk.DuploStringValue) []string {
 func GetResourceNameFromARN(arn string) string {
 	tokens := strings.Split(arn, ":")
 	return tokens[len(tokens)-1]
+}
+
+func trimStringsByPosition(stringsSlice []string, sufixOrPrefix int) []string {
+	position := map[string]struct{}{
+		"allow-lb-healthcheck": {},
+		"allow-lb-internal":    {},
+		"iap-ssh":              {},
+		"iap-rdp":              {},
+		"duploinfra":           {},
+		"duploservices":        {},
+	}
+
+	filtered := make([]string, 0, len(stringsSlice))
+	if sufixOrPrefix == 3 || sufixOrPrefix == 2 {
+		for _, str := range stringsSlice {
+			if !hasSuffix(str, position) {
+				filtered = append(filtered, str)
+			}
+		}
+		stringsSlice = filtered
+
+	}
+	finalFiltered := make([]string, 0, len(stringsSlice))
+
+	if sufixOrPrefix == 3 || sufixOrPrefix == 1 {
+		for _, str := range stringsSlice {
+			if !hasPrefix(str, position) {
+				finalFiltered = append(finalFiltered, str)
+			}
+		}
+	} else {
+		finalFiltered = filtered
+	}
+	return finalFiltered
+}
+
+func hasSuffix(s string, suffixes map[string]struct{}) bool {
+	for suffix := range suffixes {
+		if strings.HasSuffix(s, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasPrefix(s string, suffixes map[string]struct{}) bool {
+	for suffix := range suffixes {
+		if strings.HasPrefix(s, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func reorderToMatchCurrent(current, incoming []interface{}) []interface{} {
+	positionMap := make(map[interface{}]int)
+
+	// Build a map of the position of elements in 'current'.
+	for i, v := range current {
+		positionMap[v] = i
+	}
+
+	// Create a new slice to store reordered elements.
+	reordered := make([]interface{}, len(current))
+	remaining := []interface{}{}
+
+	// Place elements of 'incoming' into 'reordered' based on 'current' positions.
+	for _, v := range incoming {
+		if pos, found := positionMap[v]; found {
+			reordered[pos] = v
+		} else {
+			remaining = append(remaining, v) // Keep track of extra elements.
+		}
+	}
+
+	// Fill gaps in 'reordered' with elements from 'remaining'.
+	ri := 0
+	for i := range reordered {
+		if reordered[i] == nil && ri < len(remaining) {
+			reordered[i] = remaining[ri]
+			ri++
+		}
+	}
+
+	// Add any leftover elements from 'remaining' to the end.
+	reordered = append(reordered, remaining[ri:]...)
+	return reordered
+}
+
+// Helper function to convert a slice of a specific type to a slice of interface{}.
+func toInterfaceSlice[T any](input []T) []interface{} {
+	result := make([]interface{}, len(input))
+	for i, v := range input {
+		result[i] = v
+	}
+	return result
+}
+
+func stringInSlice(s string, list []string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }

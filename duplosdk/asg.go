@@ -34,9 +34,10 @@ type DuploAsgProfile struct {
 	TenantId            string                             `json:"TenantId,omitempty"`
 	UseSpotInstances    bool                               `json:"UseSpotInstances,omitempty"`
 	Volumes             *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
-	Zone                int                                `json:"Zone"`
+	Zones               []int                              `json:"Zones"`
 	EnabledMetrics      *[]string                          `json:"EnabledMetrics,omitempty"`
 	ExtraNodeLabels     *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
+	Taints              *[]DuploTaints                     `json:"Taints,omitempty"`
 }
 
 type DuploAsgProfileDeleteReq struct {

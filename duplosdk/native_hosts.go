@@ -1,7 +1,11 @@
 package duplosdk
 
 import (
+	"context"
 	"fmt"
+	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
 
 const (
@@ -52,6 +56,20 @@ type DuploNativeHost struct {
 	IsvTPM             bool                               `json:"IsvTPM"`
 	DiskControlType    string                             `json:"DiskControllerType,omitempty"`
 	ExtraNodeLabels    *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
+	Taints             *[]DuploTaints                     `json:"Taints,omitempty"`
+	AvailabilitySetId  string                             `json:"AvailabilitySetId"`
+}
+
+type DuploTaints struct {
+	Key    string `json:"Key"`
+	Value  string `json:"Value"`
+	Effect string `json:"Effect"`
+}
+
+type DuploMinionTaint struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Effect string `json:"effect"`
 }
 
 // DuploNativeHostNetworkInterface is a Duplo SDK object that represents a network interface of a native host
@@ -296,21 +314,38 @@ func (c *Client) AzureNativeHostGet(tenantID, name string) (*DuploNativeHost, Cl
 	return nil, nil
 }
 
-func (c *Client) GetMinionForHost(tenantID, name string) (*DuploMinion, ClientError) {
-	list, err := c.TenantListMinions(tenantID)
-	if err != nil {
-		return nil, err
-	}
-
-	if list != nil {
-		for _, minion := range *list {
-			if minion.Name == name {
-				return &minion, nil
+func (c *Client) GetMinionForHost(ctx context.Context, tenantID, name string) (*DuploMinion, error) {
+	timeout := 2 * time.Minute
+	stateConf := &retry.StateChangeConf{
+		Target:       []string{"Connected"},
+		Pending:      []string{"notconnected"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			list, err := c.TenantListMinions(tenantID)
+			if err != nil {
+				return nil, "", err
 			}
-		}
+			if list != nil {
+				for _, minion := range *list {
+					if minion.Name == name && minion.ConnectionStatus == "Connected" {
+						return &minion, minion.ConnectionStatus, nil
+					}
+				}
+			}
+			return nil, "notconnected", nil
+		},
 	}
-	return nil, nil
+	resp, err := stateConf.WaitForStateContext(ctx)
+	if resp != nil {
+		return resp.(*DuploMinion), err
+
+	}
+	return nil, err
 }
+
+//Retry
 
 func (c *Client) AzureNativeHostList(tenantID string) (*[]DuploNativeHost, ClientError) {
 	rp := []DuploNativeHost{}
@@ -381,4 +416,42 @@ func (c *Client) AzureVirtualMachineTagExists(tenantID, vmName, tagKey string) (
 		}
 	}
 	return false, nil
+}
+
+type DuploAzureVmMaintenanceWindow struct {
+	StartDateTime      string `json:"StartDateTime"`
+	ExpirationDateTime string `json:"ExpirationDateTime"`
+	Duration           string `json:"Duration"`
+	RecurEvery         string `json:"RecurEvery"`
+	Visibility         string `json:"Visibility"`
+	TimeZone           string `json:"TimeZone"`
+}
+
+func (c *Client) AzureVmMaintenanceConfigurationCreate(tenantId, vmName string, rq *DuploAzureVmMaintenanceWindow) ClientError {
+	rp := DuploAzureVirtualMachine{}
+	return c.postAPI(fmt.Sprintf("AzureVmMaintenanceConfigurationCreate(%s, %s)", tenantId, vmName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/hosts/%s/maintenanceschedule", tenantId, EncodePathParam(vmName)),
+		&rq,
+		&rp)
+}
+
+func (c *Client) AzureVmMaintenanceConfigurationUpdate(tenantId, vmName string, rq *DuploAzureVmMaintenanceWindow) ClientError {
+	return c.putAPI(fmt.Sprintf("AzureVmMaintenanceConfigurationUpdate(%s, %s)", tenantId, vmName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/hosts/%s/maintenanceschedule", tenantId, vmName),
+		&rq,
+		nil)
+}
+
+func (c *Client) AzureVmMaintenanceConfigurationGet(tenantId, vmName string) (*DuploAzureVmMaintenanceWindow, ClientError) {
+	rp := DuploAzureVmMaintenanceWindow{}
+	err := c.getAPI(fmt.Sprintf("AzureVmMaintenanceConfigurationGet(%s,%s)", tenantId, vmName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/hosts/%s/maintenanceschedule", tenantId, EncodePathParam(vmName)),
+		&rp)
+	return &rp, err
+}
+
+func (c *Client) AzureVmMaintenanceConfigurationDelete(tenantId, vmName string) ClientError {
+	return c.deleteAPI(fmt.Sprintf("AzureVmMaintenanceConfigurationDelete(%s, %s)", tenantId, vmName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/hosts/%s/maintenanceschedule", tenantId, vmName),
+		nil)
 }

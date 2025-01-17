@@ -41,7 +41,7 @@ resource "duplocloud_gcp_infra_maintenance_window" "mw" {
 //recurrencing maintenance example
 resource "duplocloud_gcp_infra_maintenance_window" "mw" {
   infra_name                   = "infra-name"
-  daily_maintenance_start_time = "2024-10-05T00:10:00"
+  daily_maintenance_start_time = "18:06"
 
 }
 ```
@@ -69,12 +69,12 @@ resource "duplocloud_gcp_infra_maintenance_window" "mw" {
 
 Required:
 
-- `scope` (String) The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES
+- `end_time` (String)
+- `start_time` (String)
 
 Optional:
 
-- `end_time` (String)
-- `start_time` (String)
+- `scope` (String) The scope of automatic upgrades to restrict in the exclusion window. One of: NO_UPGRADES | NO_MINOR_UPGRADES | NO_MINOR_OR_NODE_UPGRADES Defaults to `NO_UPGRADES`.
 
 
 <a id="nestedblock--recurring_window"></a>

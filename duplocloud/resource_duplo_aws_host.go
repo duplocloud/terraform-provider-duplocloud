@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -257,12 +259,48 @@ func nativeHostSchema() map[string]*schema.Schema {
 			},
 		},
 		"custom_node_labels": {
-			Description:      "Specify the labels to attach to the nodes.",
-			Type:             schema.TypeMap,
-			Optional:         true,
-			Computed:         true,
-			Elem:             &schema.Schema{Type: schema.TypeString},
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Description: "Specify the labels to attach to the nodes.",
+			Type:        schema.TypeMap,
+			Optional:    true,
+			//Computed:         true,
+			Elem: &schema.Schema{Type: schema.TypeString},
+			//DiffSuppressFunc: diffSuppressWhenNotCreating,
+			ForceNew: true,
+		},
+
+		"taints": {
+			Description: "Specify taints to attach to the nodes, to repel other nodes with different toleration",
+			Type:        schema.TypeList,
+			Optional:    true,
+			ForceNew:    true,
+			MaxItems:    50,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"key": {
+						Type:         schema.TypeString,
+						Required:     true,
+						ForceNew:     true,
+						ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9.-]{0,62}$|^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?/(.{1,253})$`), "Invalid key format: taint key must begin with a letter or number, can contain letters, numbers, hyphens(-), and periods(.), and be up to 63 characters long OR the taint key begins with a valid DNS subdomain prefix, followed by a single /, and includes a key of up to 253 characters"),
+					},
+					"value": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						ForceNew:     true,
+						ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$`), "Invalid value format: taint value must begin with a letter or number, can contain letters, numbers, hyphens(-), and be up to 63 characters long"),
+					},
+					"effect": {
+						Description: "Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute",
+						Type:        schema.TypeString,
+						Required:    true,
+						ValidateFunc: validation.StringInSlice([]string{
+							"NoSchedule",
+							"PreferNoSchedule",
+							"NoExecute",
+						}, false),
+						ForceNew: true,
+					},
+				},
+			},
 		},
 	}
 }
@@ -285,6 +323,14 @@ func diffUserData(ctx context.Context, diff *schema.ResourceDiff, m interface{})
 	return nil
 }
 
+func validateTaintsSupport(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	agp := diff.Get("agent_platform").(int)
+	if _, ok := diff.GetOk("taints"); ok && agp != 7 {
+		return fmt.Errorf("taints not supported for Linux docker/ Native type hosts")
+	}
+	return nil
+}
+
 // SCHEMA for resource crud
 func resourceAwsHost() *schema.Resource {
 	awsHostSchema := nativeHostSchema()
@@ -297,7 +343,7 @@ func resourceAwsHost() *schema.Resource {
 		Default:          true,
 		DiffSuppressFunc: diffSuppressWhenNotCreating,
 	}
-
+	delete(awsHostSchema, "encrypt_disk")
 	return &schema.Resource{
 		Description: "The duplocloud_aws_host represents an AWS resource, such as an EC2 instance, that is managed and automated through DuploCloud. It provides seamless integration and governance within AWS, enabling efficient deployment, management, and scaling of cloud infrastructure through DuploCloud’s platform.",
 
@@ -312,8 +358,11 @@ func resourceAwsHost() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema:        awsHostSchema,
-		CustomizeDiff: diffUserData,
+		Schema: awsHostSchema,
+		CustomizeDiff: customdiff.All(
+			diffUserData,
+			validateTaintsSupport,
+		),
 	}
 }
 
@@ -344,7 +393,7 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 	}
 
 	// Apply the data
-	nativeHostToState(d, duplo)
+	nativeHostToState(ctx, d, duplo, c)
 
 	log.Printf("[TRACE] resourceAwsHostRead(%s): end", id)
 	return nil
@@ -532,6 +581,19 @@ func resourceAwsHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
+	obj := []duplosdk.DuploTaints{}
+	if val, ok := d.Get("taints").([]interface{}); ok {
+		for _, dt := range val {
+			m := dt.(map[string]interface{})
+			taints := duplosdk.DuploTaints{
+				Key:    m["key"].(string),
+				Value:  m["value"].(string),
+				Effect: m["effect"].(string),
+			}
+			obj = append(obj, taints)
+
+		}
+	}
 	return &duplosdk.DuploNativeHost{
 		TenantID:          d.Get("tenant_id").(string),
 		InstanceID:        d.Get("instance_id").(string),
@@ -548,13 +610,13 @@ func expandNativeHost(d *schema.ResourceData) *duplosdk.DuploNativeHost {
 		AllocatedPublicIP: d.Get("allocated_public_ip").(bool),
 		Cloud:             d.Get("cloud").(int),
 		KeyPairType:       d.Get("keypair_type").(int),
-		EncryptDisk:       d.Get("encrypt_disk").(bool),
 		MetaData:          keyValueFromState("metadata", d),
 		Tags:              keyValueFromState("tags", d),
 		MinionTags:        keyValueFromState("minion_tags", d),
 		Volumes:           expandNativeHostVolumes("volume", d),
 		NetworkInterfaces: expandNativeHostNetworkInterfaces("network_interface", d),
 		ExtraNodeLabels:   keyValueFromMap(d.Get("custom_node_labels").(map[string]interface{})),
+		Taints:            &obj,
 	}
 }
 
@@ -626,7 +688,7 @@ func expandNativeHostNetworkInterfaces(key string, d *schema.ResourceData) *[]du
 	return &result
 }
 
-func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) {
+func nativeHostToState(ctx context.Context, d *schema.ResourceData, duplo *duplosdk.DuploNativeHost, c *duplosdk.Client) {
 	d.Set("instance_id", duplo.InstanceID)
 	d.Set("user_account", duplo.UserAccount)
 	d.Set("tenant_id", duplo.TenantID)
@@ -639,7 +701,6 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	d.Set("is_ebs_optimized", duplo.IsEbsOptimized)
 	d.Set("cloud", duplo.Cloud)
 	d.Set("keypair_type", duplo.KeyPairType)
-	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("status", duplo.Status)
 	d.Set("identity_role", duplo.IdentityRole)
 	d.Set("private_ip_address", duplo.PrivateIPAddress)
@@ -660,6 +721,39 @@ func nativeHostToState(d *schema.ResourceData, duplo *duplosdk.DuploNativeHost) 
 	//d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
+	if duplo.IsMinion && duplo.AgentPlatform == 7 {
+		obj, _ := c.GetMinionForHost(ctx, duplo.TenantID, duplo.InstanceID)
+		if obj != nil && len(obj.Taints) > 0 { //taints only applicable at k8s side
+			d.Set("taints", flattenMinionTaints(obj.Taints))
+		}
+	}
+
+}
+
+func flattenTaints(taints []duplosdk.DuploTaints) []interface{} {
+	state := make([]interface{}, len(taints))
+	for i, t := range taints {
+		data := map[string]interface{}{
+			"key":    t.Key,
+			"value":  t.Value,
+			"effect": t.Effect,
+		}
+		state[i] = data
+	}
+	return state
+}
+
+func flattenMinionTaints(taints []duplosdk.DuploMinionTaint) []interface{} {
+	state := make([]interface{}, len(taints))
+	for i, t := range taints {
+		data := map[string]interface{}{
+			"key":    t.Key,
+			"value":  t.Value,
+			"effect": t.Effect,
+		}
+		state[i] = data
+	}
+	return state
 }
 
 func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []interface{} {
