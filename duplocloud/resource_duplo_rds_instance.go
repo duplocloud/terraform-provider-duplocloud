@@ -440,6 +440,25 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	identifier := createdRds.Identifier
+
+	if d.HasChange("enhanced_monitoring") {
+		val := d.Get("enhanced_monitoring").(int)
+		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
+			DBInstanceIdentifier: identifier,
+			ApplyImmediately:     true,
+			MonitoringInterval:   val,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		err = rdsInstanceSyncMonitoringInterval(ctx, c, id, d.Timeout("create"), val)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to update enhanced monitoring level: %s", id, err.Error())
+
+		}
+
+	}
+
 	if d.HasChange("performance_insights") {
 		pI := expandPerformanceInsight(d)
 		if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
@@ -578,6 +597,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 				return diag.Errorf("Error waiting for RDS DB instance '%s' to update cluster parameter group name: %s", id, err.Error())
 
 			}
+
 		}
 	}
 	// Request the password change in Duplo
@@ -1097,11 +1117,6 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			}
 		}
 	}
-	id := diff.Id()
-	if id == "" && diff.Get("enhanced_monitoring").(int) > 0 {
-		return fmt.Errorf("RDS resources supports enhanced_monitoring during update")
-
-	}
 	return nil
 }
 
@@ -1229,4 +1244,29 @@ func validateRDSGroupParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		return fmt.Errorf("RDS engine %s  do not support  cluster_parameter_group_name ", engines[eng])
 	}
 	return nil
+}
+
+func rdsInstanceSyncMonitoringInterval(ctx context.Context, c *duplosdk.Client, id string, timeout time.Duration, monitoringInterval int) error {
+	stateConf := &retry.StateChangeConf{
+		Target:       []string{"updated"},
+		Pending:      []string{"updating"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 50 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			status := "updating"
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if monitoringInterval == resp.MonitoringInterval {
+				status = "updated"
+			}
+
+			return resp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] rdsInstanceSyncMonitoringInterval (%s)", id)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
