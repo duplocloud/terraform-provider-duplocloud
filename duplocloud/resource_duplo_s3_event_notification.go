@@ -201,5 +201,25 @@ func expandEventNotification(d *schema.ResourceData) *duplosdk.DuploS3EventNotif
 }
 
 func resourceS3EventNotificationDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceS3EventNotificationDelete ******** start")
+
+	id := d.Id()
+	idParts := strings.Split(id, "/")
+	tenantID, name := idParts[0], idParts[1]
+	rq := &duplosdk.DuploS3EventNotificaition{}
+	c := m.(*duplosdk.Client)
+
+	err := c.UpdateS3EventNotification(tenantID, name, *rq)
+	if err != nil {
+		return diag.Errorf("resourceS3EventNotificationCreateOrUpdate: Unable to create or update s3 event notification using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
+	}
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "s3 event notification", id, func() (interface{}, duplosdk.ClientError) {
+		return c.GetS3EventNotification(tenantID, name)
+	})
+	if diag != nil {
+		return diag
+	}
+	log.Printf("[TRACE] resourceS3EventNotificationDelete ******** end")
+
 	return nil
 }
