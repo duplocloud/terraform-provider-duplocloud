@@ -299,9 +299,9 @@ func validateTenantBucket(ctx context.Context, diff *schema.ResourceDiff, m inte
 	tId := diff.Get("tenant_id").(string)
 	sbucket := diff.Get("source_bucket").(string)
 	c := m.(*duplosdk.Client)
-	rp, err := c.TenantGetAwsCloudResource(tId, 1, sbucket)
-	if err != nil || rp == nil {
-		return fmt.Errorf("S3 bucket %s not found in tenant %s", sbucket, tId)
+	_, err := c.TenantGetAwsCloudResource(tId, 1, sbucket)
+	if err != nil {
+		return fmt.Errorf("%s", err.Error())
 	}
 	return nil
 }
