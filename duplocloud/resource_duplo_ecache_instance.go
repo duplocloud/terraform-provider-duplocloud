@@ -158,7 +158,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 		},
 		"number_of_shards": {
-			Description:      "The number of shards to create.",
+			Description:      "The number of shards to create. Applicable only if enable_cluster_mode is set to true",
 			Type:             schema.TypeInt,
 			Optional:         true,
 			DiffSuppressFunc: suppressNoOfShardsDiff,
@@ -256,7 +256,8 @@ func resourceDuploEcacheInstance() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: ecacheInstanceSchema(),
+		Schema:        ecacheInstanceSchema(),
+		CustomizeDiff: validateEcacheParameters,
 	}
 }
 
@@ -731,4 +732,13 @@ func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 
 		return nil
 	}
+}
+
+func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	ecm := diff.Get("enable_cluster_mode").(bool)
+	nshard := diff.Get("number_of_shards").(int)
+	if !ecm && nshard > 0 {
+		return fmt.Errorf("number_of_shards can be set only if cluster mode is enabled")
+	}
+	return nil
 }
