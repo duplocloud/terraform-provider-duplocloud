@@ -188,6 +188,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_datafactory":                   resourceAzureDataFactory(),
 			"duplocloud_azure_availability_set":              resourceAzureAvailabilitySet(),
 			"duplocloud_aws_launch_template_default_version": resourceAwsLaunchTemplateDefaultVersion(),
+			"duplocloud_gcp_pubsub_subscription":             resourceGCPPubSubSubscription(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
