@@ -409,12 +409,18 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
-		if len(duplo.Zones) > 0 {
+		_, zok := d.GetOk("zone")
+
+		if len(duplo.Zones) > 0 && !zok {
 			i := []interface{}{}
 			for _, v := range duplo.Zones {
 				i = append(i, v)
 			}
 			d.Set("zones", i)
+		} else {
+			if len(duplo.Zones) == 1 {
+				d.Set("zone", duplo.Zones[0])
+			}
 		}
 		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
 	}
@@ -481,14 +487,13 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		asgProfile.Taints = &obj
 	}
 	z := []int{}
-	if val, ok := d.Get("zones").([]interface{}); ok {
+	if val, ok := d.Get("zones").([]interface{}); ok && len(val) > 0 {
 		for _, dt := range val {
 			z = append(z, dt.(int))
 		}
 		asgProfile.Zones = z
 	} else {
-		z = append(z, d.Get("zone").(int))
-		asgProfile.Zones = z
+		asgProfile.Zones = append(asgProfile.Zones, d.Get("zone").(int))
 	}
 
 	return asgProfile
