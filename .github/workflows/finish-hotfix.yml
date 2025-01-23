@@ -1,0 +1,37 @@
+name: Finish Hotfix
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
+env:
+  git_user: duplo-bot
+  git_email: tahir+github-bot@duplocloud.net
+jobs:
+  finish-hotfix:
+    if: github.event.pull_request.merged == true && (startsWith(github.head_ref, 'refs/heads/hotfix/') || startsWith(github.head_ref, 'hotfix/'))
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: master                 # Always finish hotfixes from the "merged to" master
+          fetch-depth: 0
+          persist-credentials: false  # Needed so we can push with different credentials.
+                                      # NOTE: Pushing with different credentials allows admins to push protected branches.
+                                      # NOTE: Pushing with different credentials allow workflows to trigger from the push.
+
+      # FINISH THE RELEASE
+      - name: Initialize mandatory git config
+        run: |
+          git config --global user.name $git_user &&
+          git config --global user.email $git_email
+      - name: Finish gitflow release
+        id: finish-release
+        uses: duplocloud/ghactions-finish-gitflow-release@hotfix-support
+        with:
+          validate_merge: false
+          delete_branch: false
+          github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
+          is_hotfix: true
