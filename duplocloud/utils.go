@@ -1033,10 +1033,8 @@ func diffSuppressAsgZones(k, old, new string, d *schema.ResourceData) bool {
 
 func diffSuppressAsgZone(k, old, new string, d *schema.ResourceData) bool {
 	z := d.Get("zone").(int)
-	if z == 0 {
-		return true
-	}
-	return false
+
+	return z == 0
 }
 
 func OctalToNumericInt32(octal string) (int32, error) {
