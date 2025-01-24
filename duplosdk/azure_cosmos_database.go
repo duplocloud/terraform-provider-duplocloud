@@ -1,6 +1,9 @@
 package duplosdk
 
+import "fmt"
+
 type DuploAzureCosmosDBRequest struct {
+	Name                               string                                            `json:"name"`
 	Kind                               string                                            `json:"kind"`
 	Identity                           *DuploAzureCosmosDBManagedServiceIdentity         `json:"identity"`
 	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy              `json:"properties.consistencyPolicy"`
@@ -93,10 +96,34 @@ type DuploAzureCosmosDBManagedServiceIdentity struct {
 	PrincipalId            string                                                                    `json:"principalId"`
 	TenantId               string                                                                    `json:"tenantId"`
 	ResourceIdentityType   string                                                                    `json:"type"` //Enum: SystemAssigned,UserAssigned,SystemAssignedUserAssigned,None
-	UserAssignedIdentities map[string]DuploAzureCosmosDBManagedServiceIdentityUserAssignedIdentities `json:""`
+	UserAssignedIdentities map[string]DuploAzureCosmosDBManagedServiceIdentityUserAssignedIdentities `json:"userAssignedIdentities"`
 }
 
 type DuploAzureCosmosDBManagedServiceIdentityUserAssignedIdentities struct {
 	PrincipalId string `json:"principalId"`
 	ClientId    string `json:"clientId"`
+}
+
+func (c *Client) CreateCosmosDB(tenantId string, rq DuploAzureCosmosDBRequest) ClientError {
+	rp := make(map[string]interface{})
+	err := c.postAPI(fmt.Sprintf("CreateCosmosDB(%s)", tenantId),
+		fmt.Sprintf("v3/subscriptions/%s/azure/cosmosDb/account", tenantId),
+		&rq,
+		&rp)
+	if err != nil {
+		return err
+	}
+	fmt.Println(rp)
+	return nil
+}
+
+func (c *Client) GetCosmosDB(tenantId, name string) (*DuploAzureCosmosDBRequest, ClientError) {
+	rp := DuploAzureCosmosDBRequest{}
+	err := c.getAPI(fmt.Sprintf("GetCosmosDB(%s,%s)", tenantId, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/cosmosDb/account/%s", tenantId, name),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
 }

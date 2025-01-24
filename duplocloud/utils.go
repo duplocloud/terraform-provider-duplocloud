@@ -1168,3 +1168,11 @@ func stringInSlice(s string, list []string) bool {
 	}
 	return false
 }
+
+func ExpandStringList(inf []interface{}) []string {
+	obj := []string{}
+	for _, i := range inf {
+		obj = append(obj, i.(string))
+	}
+	return obj
+}
