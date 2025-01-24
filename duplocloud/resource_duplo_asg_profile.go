@@ -104,19 +104,8 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 		},
 	}
-	awsASGSchema["zone"] = &schema.Schema{
-
-		Description:   "The availability zone to launch the host in, expressed as a number and starting at 0.",
-		Type:          schema.TypeInt,
-		Optional:      true,
-		ForceNew:      true, // relaunch instance
-		Default:       0,
-		Deprecated:    "zone has been deprecated instead use zones",
-		ConflictsWith: []string{"zones"},
-	}
-
 	awsASGSchema["zones"] = &schema.Schema{
-		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0",
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Automatic 1 - Zone A 2 - Zone B",
 		Type:        schema.TypeList,
 		Optional:    true,
 		ForceNew:    true,
@@ -124,8 +113,20 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 			Type:     schema.TypeInt,
 			ForceNew: true,
 		},
-		ConflictsWith: []string{"zone"},
+		ConflictsWith:    []string{"zone"},
+		DiffSuppressFunc: diffSuppressAsgZones,
 	}
+	awsASGSchema["zone"] = &schema.Schema{
+
+		Description:      "The availability zone to launch the host in, expressed as a number and starting at 0.",
+		Type:             schema.TypeInt,
+		Optional:         true,
+		ForceNew:         true, // relaunch instance
+		Deprecated:       "zone has been deprecated instead use zones",
+		ConflictsWith:    []string{"zones"},
+		DiffSuppressFunc: diffSuppressAsgZone,
+	}
+
 	return awsASGSchema
 }
 

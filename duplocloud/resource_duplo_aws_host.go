@@ -319,7 +319,14 @@ func diffUserData(ctx context.Context, diff *schema.ResourceDiff, m interface{})
 			}
 		}
 	}
-
+	if diff.HasChange("zones") {
+		zones := diff.Get("zones").([]interface{})
+		for _, z := range zones {
+			if z.(int) == 0 && len(zones) > 1 {
+				return fmt.Errorf("[Error] Cannot set automatic zone along with other zones")
+			}
+		}
+	}
 	return nil
 }
 
