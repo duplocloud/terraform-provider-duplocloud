@@ -356,7 +356,7 @@ Should be one of:
    - `16` : Aurora
 - `name` (String) The short name of the RDS instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
 - `size` (String) The instance type of the RDS instance.
-See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).
+See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).Size should be set as db.serverless if rds instamce is created as serverless
 - `tenant_id` (String) The GUID of the tenant that the RDS instance will be created in.
 
 ### Optional
@@ -395,7 +395,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 			| aurora-iopt1 | Provisioned IOPS, similar to io1   | Varies                | Aurora databases needing guaranteed, high-performance IOPS. Aurora I/O-Optimized storage offers provisioned IOPS for Aurora clusters that require consistently high performance for critical workloads.                   |
 - `store_details_in_secret_manager` (Boolean) Whether or not to store RDS details in the AWS secrets manager.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `v2_scaling_configuration` (Block List, Max: 1) Serverless v2_scaling_configuration min and max scalling capacity. (see [below for nested schema](#nestedblock--v2_scaling_configuration))
+- `v2_scaling_configuration` (Block List, Max: 1) Serverless v2_scaling_configuration min and max scalling capacity. This configuration is only applicable for serverless instances (see [below for nested schema](#nestedblock--v2_scaling_configuration))
 
 ### Read-Only
 
