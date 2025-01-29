@@ -62,6 +62,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    true,
+			Computed:    true,
 		},
 		"version_metadata": {
 			Type:     schema.TypeString,
