@@ -323,7 +323,7 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 			return diag.Errorf("v2_scaling_configuration: min_capacity and max_capacity must be provided")
 
 		}
-		err := c.ReadReplicaServerlessCreate(tenantID, rq.ClusterIdentifier, rq)
+		err := c.EnableReadReplicaServerlessCreation(tenantID, rq.ClusterIdentifier, rq)
 		if err != nil {
 			return diag.Errorf("%s", err.Error())
 		}

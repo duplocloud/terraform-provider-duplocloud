@@ -464,7 +464,7 @@ func (c *Client) RdsInstanceUpdateParameterGroupName(tenantID string, instanceId
 	)
 }
 
-func (c *Client) ReadReplicaServerlessCreate(tenantID, cIdentifier string, rq DuploRdsModifyAuroraV2ServerlessInstanceSize) ClientError {
+func (c *Client) EnableReadReplicaServerlessCreation(tenantID, cIdentifier string, rq DuploRdsModifyAuroraV2ServerlessInstanceSize) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("ReadReplicaServerlessCreate(%s, %s)", tenantID, cIdentifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/auroraToV2Serverless", tenantID, cIdentifier),
