@@ -1023,6 +1023,20 @@ func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
 }
 
+func diffSuppressAsgZones(k, old, new string, d *schema.ResourceData) bool {
+	zs := d.Get("zones").([]interface{})
+	if len(zs) == 1 && zs[0].(int) == 0 {
+		return true
+	}
+	return false
+}
+
+func diffSuppressAsgZone(k, old, new string, d *schema.ResourceData) bool {
+	z := d.Get("zone").(int)
+
+	return z == 0
+}
+
 func OctalToNumericInt32(octal string) (int32, error) {
 	var result int64
 	base := int64(8) // Base for octal numbers

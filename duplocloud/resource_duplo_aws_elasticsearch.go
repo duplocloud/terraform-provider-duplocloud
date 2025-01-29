@@ -74,7 +74,7 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"use_latest_tls_cipher": {
-			Description: "Whether or not to use the latest TLS cipher for this ElasticSearch instance.",
+			Description: "Whether or not to use the latest TLS cipher for this ElasticSearch instance. For govcloud environments this should be set to true",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,

@@ -36,7 +36,7 @@ func awsLambdaFunctionEventInvokeConfigSchema() map[string]*schema.Schema {
 			Description:  "Maximum number of attempts a Lambda function may retry in case of error",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			ValidateFunc: validation.IntBetween(1, 2),
+			ValidateFunc: validation.IntBetween(0, 2),
 		},
 		"max_event_age_in_seconds": {
 			Description:  "The maximum age of a request that Lambda sends to a function for processing",
