@@ -1,7 +1,7 @@
 package duplocloud
 
 import (
-	"terraform-provider-duplocloud/duplosdk"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"terraform-provider-duplocloud/internal/duplosdktest"
 	"testing"
 

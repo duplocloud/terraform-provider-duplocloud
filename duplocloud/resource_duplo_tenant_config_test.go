@@ -2,9 +2,9 @@ package duplocloud
 
 import (
 	"fmt"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"terraform-provider-duplocloud/internal/duplocloudtest"
 	"terraform-provider-duplocloud/internal/duplosdktest"
 	"testing"

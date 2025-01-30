@@ -2,7 +2,7 @@ package duplocloud
 
 import (
 	"fmt"
-	"terraform-provider-duplocloud/duplosdk"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"terraform-provider-duplocloud/internal/duplocloudtest"
 	"terraform-provider-duplocloud/internal/duplosdktest"
 	"testing"

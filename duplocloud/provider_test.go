@@ -2,9 +2,9 @@ package duplocloud
 
 import (
 	"context"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"terraform-provider-duplocloud/internal/duplosdktest"
 
 	"github.com/barkimedes/go-deepcopy"
