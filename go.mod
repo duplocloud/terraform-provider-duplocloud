@@ -1,4 +1,4 @@
-module github.com/terraform-provider-duplocloud
+module github.com/duplocloud/terraform-provider-duplocloud
 
 go 1.20
 
