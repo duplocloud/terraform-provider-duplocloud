@@ -3,9 +3,9 @@ package duplocloud
 import (
 	"context"
 	"encoding/json"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
