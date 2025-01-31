@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	. "terraform-provider-duplocloud/internal/duplosdktest"
+	. "github.com/duplocloud/terraform-provider-duplocloud/internal/duplosdktest"
 )
 
 // Should collect a response body and deserialize it from JSON
