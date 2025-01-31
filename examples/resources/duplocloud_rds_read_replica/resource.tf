@@ -131,3 +131,33 @@ resource "duplocloud_rds_read_replica" "replica" {
     retention_period = 7
   }
 }
+
+//Example to create serverless read replica for a provisioned writer
+
+resource "duplocloud_rds_instance" "provisioned3" {
+  tenant_id      = duplocloud_rds_instance.mydb.tenant_id
+  name           = "provisioned1"
+  engine         = 8
+  engine_version = "8.0.mysql_aurora.3.05.2"
+  size           = "db.t3.medium"
+
+  master_username = "duploadmin"
+  master_password = "duploadmin"
+
+  encrypt_storage         = true
+  backup_retention_period = 1
+
+}
+
+
+
+resource "duplocloud_rds_read_replica" "serverless_replica2" {
+  tenant_id          = duplocloud_rds_instance.mydb.tenant_id
+  name               = "provisioned1-serverless-replica"
+  size               = "db.serverless"
+  cluster_identifier = duplocloud_rds_instance.provisioned3.cluster_identifier
+  v2_scaling_configuration {
+    max_capacity = 2
+    min_capacity = 1
+  }
+}

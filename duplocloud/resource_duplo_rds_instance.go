@@ -171,7 +171,8 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 		},
 		"size": {
 			Description: "The instance type of the RDS instance.\n" +
-				"See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).",
+				"See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/)." +
+				"Size should be set as db.serverless if rds instamce is created as serverless",
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
@@ -258,7 +259,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"v2_scaling_configuration": {
-			Description: "Serverless v2_scaling_configuration min and max scalling capacity.",
+			Description: "Serverless v2_scaling_configuration min and max scalling capacity. This configuration is only applicable for serverless instances",
 			Type:        schema.TypeList,
 			MaxItems:    1,
 			Optional:    true,
@@ -499,6 +500,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 				DBInstanceIdentifier: identifier,
 				DeletionProtection:   deleteProtection,
 				SkipFinalSnapshot:    skipFinalSnapshot,
+				ApplyImmediately:     true,
 			}
 
 			err = c.UpdateRDSDBInstance(tenantID, obj)
@@ -956,7 +958,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["skip_final_snapshot"] = duploObject.SkipFinalSnapshot
 	jo["store_details_in_secret_manager"] = duploObject.StoreDetailsInSecretManager
 	jo["enable_iam_auth"] = duploObject.EnableIamAuth
-	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 {
+	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 && duploObject.SizeEx == "db.serverless" {
 		d.Set("v2_scaling_configuration", []map[string]interface{}{{
 			"min_capacity": duploObject.V2ScalingConfiguration.MinCapacity,
 			"max_capacity": duploObject.V2ScalingConfiguration.MaxCapacity,
@@ -1096,8 +1098,9 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		perf_insights_configuration := perf_insights_configuration_list[0].(map[string]interface{})
 		perf_insights_enabled = perf_insights_configuration["enabled"].(bool)
 	}
+	s := diff.Get("size").(string)
+
 	if v, ok := nonsup[eng]; perf_insights_enabled && ok {
-		s := diff.Get("size").(string)
 		if _, ok := v[s]; ok {
 			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
 		}
@@ -1115,6 +1118,11 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			if eng != 8 && eng != 9 {
 				return fmt.Errorf("RDS engine %s  do not support storage_type %s ", engines[eng], st)
 			}
+		}
+	}
+	if v, ok := diff.GetOk("v2_scaling_configuration"); ok {
+		if len(v.([]interface{})) > 0 && s != "db.serverless" {
+			return fmt.Errorf("Cannot set v2 scaling configuration for provisioned rds instance")
 		}
 	}
 	return nil
