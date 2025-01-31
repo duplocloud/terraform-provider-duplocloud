@@ -47,14 +47,15 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		"version_description": {
 			Description: "The version of the launch template",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			ForceNew:    true,
+			Computed:    true,
 		},
 
 		"instance_type": {
 			Description: "Asg instance type to be used to update the version from the current version",
 			Type:        schema.TypeString,
-			Optional:    true,
+			Required:    true,
 			ForceNew:    true,
 		},
 		"ami": {
@@ -62,6 +63,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    true,
+			Computed:    true,
 		},
 		"version_metadata": {
 			Type:     schema.TypeString,
