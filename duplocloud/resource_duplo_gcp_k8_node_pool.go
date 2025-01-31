@@ -3,13 +3,13 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -74,6 +74,13 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
+		},
+		"allocation_tags": {
+			Description: `Allocation tag to give to the nodes 
+			if specified it would be added as a label and that can be used while creating services`,
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
 		},
 		"spot": {
 			Description: "Spot flag for enabling Spot VM",
@@ -545,6 +552,10 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 	req.MachineType = d.Get("machine_type").(string)
 	req.DiscSizeGb = d.Get("disc_size_gb").(int)
 	req.ImageType = d.Get("image_type").(string)
+
+	if val, ok := d.Get("allocation_tags").(string); ok {
+		req.AllocationTags = val
+	}
 	for _, tag := range d.Get("tags").([]interface{}) {
 		req.Tags = append(req.Tags, tag.(string))
 	}
@@ -929,7 +940,8 @@ func resourceGCPK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 		}
 	}
-	if d.HasChange("taints") || d.HasChange("labels") || d.HasChange("tags") || d.HasChange("resource_labels") {
+
+	if d.HasChange("taints") || d.HasChange("labels") || d.HasChange("tags") || d.HasChange("resource_labels") || d.HasChange("allocation_tags") {
 		_, err = gcpNodePoolUpdateTaintAndTags(c, tenantID, fullName, rq)
 		if err != nil {
 			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())

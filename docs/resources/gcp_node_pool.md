@@ -181,6 +181,8 @@ locals {
 ### Optional
 
 - `accelerator` (Block List) (see [below for nested schema](#nestedblock--accelerator))
+- `allocation_tags` (String) Allocation tag to give to the nodes 
+			if specified it would be added as a label and that can be used while creating services
 - `auto_repair` (Boolean) Whether the nodes will be automatically repaired.
 - `auto_upgrade` (Boolean) Whether the nodes will be automatically upgraded.
 - `disc_size_gb` (Number) Size of the disk attached to each node, specified in GB. The smallest allowed disk size is 10GB.
