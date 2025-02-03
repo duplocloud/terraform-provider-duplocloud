@@ -1292,6 +1292,7 @@ func expandImagePullSecrets(val []interface{}) []v1.LocalObjectReference {
 	return sec
 }
 
+/*
 func expandSecurityContext(val []interface{}) *v1.PodSecurityContext {
 	obj := &v1.PodSecurityContext{}
 	for _, v := range val {
@@ -1372,3 +1373,4 @@ func expandSupplementalGroups(val *schema.Set) []int64 {
 	}
 	return obj
 }
+*/
