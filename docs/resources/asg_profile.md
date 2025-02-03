@@ -159,7 +159,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
   image_id       = "ami-077e0e0754c311a47" # <== put the AWS duplo docker AMI ID here
   capacity       = "t2.small"
   agent_platform = 0      # Duplo native container agent
-  zones          = [1, 2] # [Zone A, Zone B]
+  zones          = [0, 1] # [Zone A, Zone B]
   user_account   = duplocloud_tenant.duplo-app.account_name
 
   metadata {

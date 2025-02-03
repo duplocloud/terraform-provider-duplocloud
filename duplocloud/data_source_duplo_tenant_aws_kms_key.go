@@ -3,8 +3,8 @@ package duplocloud
 import (
 	"fmt"
 	"log"
-	"terraform-provider-duplocloud/duplosdk"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
