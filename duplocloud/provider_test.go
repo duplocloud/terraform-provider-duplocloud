@@ -2,10 +2,10 @@ package duplocloud
 
 import (
 	"context"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	"github.com/duplocloud/terraform-provider-duplocloud/internal/duplosdktest"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
-	"terraform-provider-duplocloud/internal/duplosdktest"
 
 	"github.com/barkimedes/go-deepcopy"
 	"github.com/google/uuid"

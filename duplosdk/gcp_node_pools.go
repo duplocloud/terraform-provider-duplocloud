@@ -8,6 +8,7 @@ import (
 type DuploGCPK8NodePool struct {
 	AutoRepair           bool                   `json:"AutoRepair"`
 	AutoUpgrade          bool                   `json:"AutoUpgrade" default:"true"`
+	AllocationTags       string                 `json:"AllocationTags"`
 	DiscSizeGb           int                    `json:"DiscSizeGb" default:"100"`
 	DiscType             string                 `json:"DiscType" default:"pd-standard"`
 	ImageType            string                 `json:"ImageType" default:"cos_containerd"`

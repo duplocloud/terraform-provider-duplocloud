@@ -3,9 +3,9 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
