@@ -395,7 +395,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 			| aurora-iopt1 | Provisioned IOPS, similar to io1   | Varies                | Aurora databases needing guaranteed, high-performance IOPS. Aurora I/O-Optimized storage offers provisioned IOPS for Aurora clusters that require consistently high performance for critical workloads.                   |
 - `store_details_in_secret_manager` (Boolean) Whether or not to store RDS details in the AWS secrets manager.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `v2_scaling_configuration` (Block List, Max: 1) Serverless v2_scaling_configuration min and max scalling capacity. This configuration is only applicable for serverless instances (see [below for nested schema](#nestedblock--v2_scaling_configuration))
+- `v2_scaling_configuration` (Block List, Max: 1) Serverless v2_scaling_configuration min and max scaling capacity. This configuration is only applicable for serverless instances (see [below for nested schema](#nestedblock--v2_scaling_configuration))
 
 ### Read-Only
 
@@ -433,8 +433,8 @@ Optional:
 
 Required:
 
-- `max_capacity` (Number) Specifies max scalling capacity.
-- `min_capacity` (Number) Specifies min scalling capacity.
+- `max_capacity` (Number) Specifies max scaling capacity.
+- `min_capacity` (Number) Specifies min scaling capacity.
 
 ## Import
 

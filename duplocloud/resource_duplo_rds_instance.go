@@ -259,19 +259,19 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"v2_scaling_configuration": {
-			Description: "Serverless v2_scaling_configuration min and max scalling capacity. This configuration is only applicable for serverless instances",
+			Description: "Serverless v2_scaling_configuration min and max scaling capacity. This configuration is only applicable for serverless instances",
 			Type:        schema.TypeList,
 			MaxItems:    1,
 			Optional:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"min_capacity": {
-						Description: "Specifies min scalling capacity.",
+						Description: "Specifies min scaling capacity.",
 						Type:        schema.TypeFloat,
 						Required:    true,
 					},
 					"max_capacity": {
-						Description: "Specifies max scalling capacity.",
+						Description: "Specifies max scaling capacity.",
 						Type:        schema.TypeFloat,
 						Required:    true,
 					},
