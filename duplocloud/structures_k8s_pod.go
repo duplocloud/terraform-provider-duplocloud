@@ -668,11 +668,6 @@ func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 	if v, ok := in["image_pull_secrets"].([]interface{}); ok && len(v) > 0 {
 		obj.ImagePullSecrets = expandImagePullSecrets(v)
 	}
-	/*
-		if v, ok := in["security_context"].([]interface{}); ok && len(v) > 0 {
-			obj.SecurityContext = expandSecurityContext(v)
-		}
-	*/
 	if v, ok := in["affinity"].([]interface{}); ok && len(v) > 0 {
 		a, err := expandAffinity(v)
 		if err != nil {
@@ -1291,86 +1286,3 @@ func expandImagePullSecrets(val []interface{}) []v1.LocalObjectReference {
 	}
 	return sec
 }
-
-/*
-func expandSecurityContext(val []interface{}) *v1.PodSecurityContext {
-	obj := &v1.PodSecurityContext{}
-	for _, v := range val {
-		m := v.(map[string]interface{})
-		fsg, _ := strconv.ParseInt(m["fs_group"].(string), 10, 64)
-		obj.FSGroup = &fsg
-		rag, _ := strconv.ParseInt(m["run_as_group"].(string), 10, 64)
-		obj.RunAsGroup = &rag
-		rau, _ := strconv.ParseInt(m["run_as_user"].(string), 10, 64)
-		obj.RunAsUser = &rau
-		ranr := m["run_as_non_root"].(bool)
-		obj.RunAsNonRoot = &ranr
-		if v, ok := m["fs_group_change_policy"]; ok {
-			obj.FSGroupChangePolicy = expandFSGroupChangePolicy(v)
-		}
-		if v, ok := m["se_linux_options"]; ok {
-			obj.SELinuxOptions = expandSELinuxOptions(v.([]interface{}))
-		}
-		if v, ok := m["seccomp_profile"]; ok {
-			obj.SeccompProfile = expandSeccompProfile(v.([]interface{}))
-		}
-		if v, ok := m["sysctl"]; ok {
-			obj.Sysctls = expandSysCtls(v.([]interface{}))
-		}
-		if v, ok := m["supplemental_groups"]; ok {
-			set, ok := v.(*schema.Set)
-			if ok {
-				obj.SupplementalGroups = expandSupplementalGroups(set)
-			}
-		}
-	}
-	return obj
-}
-
-func expandFSGroupChangePolicy(val interface{}) *v1.PodFSGroupChangePolicy {
-	s := v1.PodFSGroupChangePolicy(val.(string))
-	return &s
-}
-func expandSELinuxOptions(val []interface{}) *v1.SELinuxOptions {
-	obj := &v1.SELinuxOptions{}
-	for _, v := range val {
-		m := v.(map[string]interface{})
-		obj.Level = m["level"].(string)
-		obj.Role = m["role"].(string)
-		obj.Type = m["type"].(string)
-		obj.User = m["user"].(string)
-	}
-	return obj
-}
-
-func expandSeccompProfile(val []interface{}) *v1.SeccompProfile {
-	obj := &v1.SeccompProfile{}
-	for _, v := range val {
-		m := v.(map[string]interface{})
-		s := m["localhost_profile"].(string)
-		obj.LocalhostProfile = &s
-		obj.Type = m["type"].(v1.SeccompProfileType)
-	}
-	return obj
-}
-
-func expandSysCtls(val []interface{}) []v1.Sysctl {
-	obj := []v1.Sysctl{}
-	for _, v := range val {
-		o := v1.Sysctl{}
-		m := v.(map[string]interface{})
-		o.Name = m["name"].(string)
-		o.Value = m["value"].(string)
-		obj = append(obj, o)
-	}
-	return obj
-}
-
-func expandSupplementalGroups(val *schema.Set) []int64 {
-	obj := []int64{}
-	for _, v := range val.List() {
-		obj = append(obj, v.(int64))
-	}
-	return obj
-}
-*/
