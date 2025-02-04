@@ -29,7 +29,7 @@ jobs:
           git config --global user.email $git_email
       - name: Finish gitflow release
         id: finish-release
-        uses: duplocloud/ghactions-finish-gitflow-release@hotfix-support
+        uses: duplocloud/ghactions-finish-gitflow-release@master
         with:
           validate_merge: false
           delete_branch: false
