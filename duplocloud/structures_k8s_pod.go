@@ -665,6 +665,9 @@ func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 		obj.ActiveDeadlineSeconds = ptrToInt64(int64(v))
 	}
 
+	if v, ok := in["image_pull_secrets"].([]interface{}); ok && len(v) > 0 {
+		obj.ImagePullSecrets = expandImagePullSecrets(v)
+	}
 	if v, ok := in["affinity"].([]interface{}); ok && len(v) > 0 {
 		a, err := expandAffinity(v)
 		if err != nil {
@@ -1269,4 +1272,17 @@ func expandServiceAccountToken(sat []interface{}) *v1.ServiceAccountTokenProject
 		tokenBody.Path = v.(string)
 	}
 	return &tokenBody
+}
+
+func expandImagePullSecrets(val []interface{}) []v1.LocalObjectReference {
+	sec := []v1.LocalObjectReference{}
+	for _, v := range val {
+		m := v.(map[string]interface{})
+
+		se := v1.LocalObjectReference{
+			Name: m["name"].(string),
+		}
+		sec = append(sec, se)
+	}
+	return sec
 }
