@@ -900,11 +900,11 @@ func validateEBSStorage(ctx context.Context, diff *schema.ResourceDiff, m interf
 	instanceType := mp["instance_type"].(string)
 
 	//non ebs no need storage
-	if strings.Contains(instanceType, "im4gn.") || strings.Contains(instanceType, "i3.") {
-		if storage > 0 {
-			return fmt.Errorf("storage_size must be 0 for non-EBS-backed instance types (im4gn./i3.)")
+	nonEBSInstanceTypes := []string{"im4gn.", "i3."}
+	for _, prefix := range nonEBSInstanceTypes {
+		if strings.Contains(instanceType, prefix) && storage > 0 {
+			return fmt.Errorf("storage_size must be 0 for non-EBS-backed instance types (%s)", strings.Join(nonEBSInstanceTypes, "/"))
 		}
 	}
-
 	return nil
 }
