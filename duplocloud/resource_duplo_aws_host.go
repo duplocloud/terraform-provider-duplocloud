@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -320,6 +321,13 @@ func diffUserData(ctx context.Context, diff *schema.ResourceDiff, m interface{})
 		}
 	}
 
+	z, ok1 := diff.Get("zone").(int)
+	agp, ok2 := diff.Get("agent_platform").(int)
+	allocatedPublicIP, ok3 := diff.Get("allocated_public_ip").(bool)
+
+	if ok1 && ok2 && ok3 && allocatedPublicIP && z != 0 && agp == 7 {
+		return fmt.Errorf("[Error] Cannot set zone to %d if allocated_public_ip is true", z)
+	}
 	return nil
 }
 
@@ -713,15 +721,15 @@ func nativeHostToState(ctx context.Context, d *schema.ResourceData, duplo *duplo
 		d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	}
 	// If a network interface was customized, certain fields are not returned by the backend.
-	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
-		d.Set("zone", duplo.Zone)
-		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
-	}
+	//if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
+	d.Set("zone", duplo.Zone)
+	d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
+	//}
 
 	//d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
-	if duplo.IsMinion && duplo.AgentPlatform == 7 {
+	if duplo.IsMinion && duplo.AgentPlatform == 7 && len(d.Get("taints").([]interface{})) > 0 {
 		obj, _ := c.GetMinionForHost(ctx, duplo.TenantID, duplo.InstanceID)
 		if obj != nil && len(obj.Taints) > 0 { //taints only applicable at k8s side
 			d.Set("taints", flattenMinionTaints(obj.Taints))
