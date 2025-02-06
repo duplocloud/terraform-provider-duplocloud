@@ -320,12 +320,14 @@ func diffUserData(ctx context.Context, diff *schema.ResourceDiff, m interface{})
 			}
 		}
 	}
-	z := diff.Get("zone").(int)
-	agp := diff.Get("agent_platform").(int)
-	if diff.Get("allocated_public_ip").(bool) && z != 0 && agp == 7 {
-		return fmt.Errorf("[Error] Error cannot set zone to %d if allocated_public_ip is set to true", z)
-	}
 
+	z, ok1 := diff.Get("zone").(int)
+	agp, ok2 := diff.Get("agent_platform").(int)
+	allocatedPublicIP, ok3 := diff.Get("allocated_public_ip").(bool)
+
+	if ok1 && ok2 && ok3 && allocatedPublicIP && z != 0 && agp == 7 {
+		return fmt.Errorf("[Error] Cannot set zone to %d if allocated_public_ip is true", z)
+	}
 	return nil
 }
 
