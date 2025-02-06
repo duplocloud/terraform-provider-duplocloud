@@ -44,7 +44,7 @@ jobs:
           git config --global user.name $git_user &&
           git config --global user.email $git_email
       - name: Start gitflow hotfix
-        uses: duplocloud/ghactions-start-gitflow-release@hotfix-support
+        uses: duplocloud/ghactions-start-gitflow-release@master
         with:
           github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
           version: "${{ steps.version.outputs.hotfix }}"
