@@ -2,8 +2,8 @@ package duplocloud
 
 import (
 	"fmt"
-	"terraform-provider-duplocloud/duplosdk"
-	"terraform-provider-duplocloud/internal/duplosdktest"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	"github.com/duplocloud/terraform-provider-duplocloud/internal/duplosdktest"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"

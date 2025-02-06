@@ -3,9 +3,9 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -65,7 +65,7 @@ func gcpRedisInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice([]string{
-				"REDIS_3_2", "REDIS_4_0", "REDIS_5_0", "REDIS_6_X",
+				"REDIS_3_2", "REDIS_4_0", "REDIS_5_0", "REDIS_6_X", "REDIS_7_0",
 			}, false),
 		},
 		"replica_count": {

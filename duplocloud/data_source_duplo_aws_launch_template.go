@@ -1,8 +1,8 @@
 package duplocloud
 
 import (
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"strconv"
-	"terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"

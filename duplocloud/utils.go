@@ -5,13 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"math"
 	"reflect"
 	"regexp"
 	"sort"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -1021,6 +1021,20 @@ func diffSuppressSpecifiedMetadata(k, old, new string, d *schema.ResourceData) b
 
 func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
+}
+
+func diffSuppressAsgZones(k, old, new string, d *schema.ResourceData) bool {
+	zs := d.Get("zones").([]interface{})
+	if len(zs) == 1 && zs[0].(int) == 0 {
+		return true
+	}
+	return false
+}
+
+func diffSuppressAsgZone(k, old, new string, d *schema.ResourceData) bool {
+	z := d.Get("zone").(int)
+
+	return z == 0
 }
 
 func OctalToNumericInt32(octal string) (int32, error) {

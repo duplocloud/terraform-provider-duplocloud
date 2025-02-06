@@ -11,16 +11,14 @@ const (
 )
 
 const (
-	DUPLO_RDS_ENGINE_MYSQL                        = 0
-	DUPLO_RDS_ENGINE_POSTGRESQL                   = 1
-	DUPLO_RDS_ENGINE_MSSQL_EXPRESS                = 2
-	DUPLO_RDS_ENGINE_MSSQL_STANDARD               = 3
-	DUPLO_RDS_ENGINE_AURORA_MYSQL                 = 8
-	DUPLO_RDS_ENGINE_AURORA_POSTGRESQL            = 9
-	DUPLO_RDS_ENGINE_MSSQL_WEB                    = 10
-	DUPLO_RDS_ENGINE_AURORA_SERVERLESS_MYSQL      = 11
-	DUPLO_RDS_ENGINE_AURORA_SERVERLESS_POSTGRESQL = 12
-	DUPLO_RDS_ENGINE_DOCUMENTDB                   = 13
+	DUPLO_RDS_ENGINE_MYSQL             = 0
+	DUPLO_RDS_ENGINE_POSTGRESQL        = 1
+	DUPLO_RDS_ENGINE_MSSQL_EXPRESS     = 2
+	DUPLO_RDS_ENGINE_MSSQL_STANDARD    = 3
+	DUPLO_RDS_ENGINE_AURORA_MYSQL      = 8
+	DUPLO_RDS_ENGINE_AURORA_POSTGRESQL = 9
+	DUPLO_RDS_ENGINE_MSSQL_WEB         = 10
+	DUPLO_RDS_ENGINE_DOCUMENTDB        = 13
 )
 
 const (
@@ -76,6 +74,7 @@ type DuploRdsInstance struct {
 	EnablePerformanceInsights          bool                    `json:"EnablePerformanceInsights"`
 	PerformanceInsightsRetentionPeriod int                     `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string                  `json:"PerformanceInsightsKMSKeyId,omitempty"`
+	DeletionProtection                 bool                    `json:"DeletionProtection"`
 }
 
 type V2ScalingConfiguration struct {
@@ -103,6 +102,7 @@ type DuploRdsUpdateInstance struct {
 	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
 	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
 	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot"`
+	ApplyImmediately      bool   `json:"ApplyImmediately"`
 }
 
 type DuploRdsUpdatePerformanceInsights struct {
@@ -356,9 +356,7 @@ func (c *Client) RdsUpdateMonitoringInterval(tenantID string, duploObject DuploM
 
 func RdsIsAurora(engine int) bool {
 	return engine == DUPLO_RDS_ENGINE_AURORA_MYSQL ||
-		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL ||
-		engine == DUPLO_RDS_ENGINE_AURORA_SERVERLESS_MYSQL ||
-		engine == DUPLO_RDS_ENGINE_AURORA_SERVERLESS_POSTGRESQL
+		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL
 }
 
 func RdsIsMsSQL(engine int) bool {
@@ -464,4 +462,11 @@ func (c *Client) RdsInstanceUpdateParameterGroupName(tenantID string, instanceId
 		&rdsUpdate,
 		nil,
 	)
+}
+
+func (c *Client) EnableReadReplicaServerlessCreation(tenantID, cIdentifier string, rq DuploRdsModifyAuroraV2ServerlessInstanceSize) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("ReadReplicaServerlessCreate(%s, %s)", tenantID, cIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/auroraToV2Serverless", tenantID, cIdentifier),
+		&rq, nil)
 }

@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -116,7 +116,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Description: "The numeric ID of the container agent to use for deployment.\n" +
 				"Should be one of:\n\n" +
 				"   - `0` : Duplo Native container agent\n" +
-				"   - `7` : EKS linux container agent\n",
+				"   - `7` : Linux container agent for Kubernetes\n",
 			Type:     schema.TypeInt,
 			Optional: true,
 			Required: false,

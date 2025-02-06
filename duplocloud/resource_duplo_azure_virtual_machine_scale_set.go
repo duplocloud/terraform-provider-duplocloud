@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"

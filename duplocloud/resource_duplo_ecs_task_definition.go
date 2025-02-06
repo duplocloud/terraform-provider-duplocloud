@@ -8,8 +8,9 @@ import (
 	"log"
 	"sort"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -247,13 +248,13 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 					"cpu_architecture": {
 						Description:  "Valid values are 'X86_64','ARM64'",
 						Type:         schema.TypeString,
-						Optional:     true,
+						Required:     true,
 						ValidateFunc: validation.StringInSlice([]string{"X86_64", "ARM64"}, false),
 					},
 					"operating_system_family": {
 						Description: "Valid values are <br>For FARGATE: 'LINUX','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2022_CORE'", // <br> For EC2 : 'LINUX','WINDOWS_SERVER_2022_CORE','WINDOWS_SERVER_2022_FULL','WINDOWS_SERVER_2019_FULL','WINDOWS_SERVER_2019_CORE','WINDOWS_SERVER_2016_FULL','WINDOWS_SERVER_2004_CORE','WINDOWS_SERVER_20H2_CORE'",
 						Type:        schema.TypeString,
-						Optional:    true,
+						Required:    true,
 					},
 				},
 			},
@@ -412,13 +413,19 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	platform := d.Get("runtime_platform").([]interface{})
 	if len(platform) > 0 {
 		duplo.RuntimePlatform = &duplosdk.DuploEcsTaskDefRuntimePlatform{}
-		obj := platform[0].(map[string]interface{})
-		if v, ok := obj["cpu_architecture"]; ok && v.(string) != "" {
-			duplo.RuntimePlatform.CPUArchitecture.Value = v.(string)
+		if platform[0] == nil {
+			duplo.RuntimePlatform.CPUArchitecture.Value = ""
+			duplo.RuntimePlatform.OSFamily.Value = ""
+		} else {
+			obj := platform[0].(map[string]interface{})
 
-		}
-		if v, ok := obj["operating_system_family"]; ok && v.(string) != "" {
-			duplo.RuntimePlatform.OSFamily.Value = v.(string)
+			if v, ok := obj["cpu_architecture"]; ok && v.(string) != "" {
+				duplo.RuntimePlatform.CPUArchitecture.Value = v.(string)
+
+			}
+			if v, ok := obj["operating_system_family"]; ok && v.(string) != "" {
+				duplo.RuntimePlatform.OSFamily.Value = v.(string)
+			}
 		}
 	}
 	return &duplo, nil
@@ -793,6 +800,7 @@ func validateInput(ctx context.Context, diff *schema.ResourceDiff, m interface{}
 	pf := diff.Get("runtime_platform").([]interface{})
 
 	fmp := map[string]bool{
+		"":                         true,
 		"LINUX":                    true,
 		"WINDOWS_SERVER_2019_FULL": true,
 		"WINDOWS_SERVER_2019_CORE": true,
@@ -823,6 +831,14 @@ func validateInput(ctx context.Context, diff *schema.ResourceDiff, m interface{}
 				return e
 			}
 			return nil
+		} else {
+			os := pf[0].(map[string]interface{})
+			if os["operating_system_family"].(string) != "" && os["cpu_architecture"] == "" {
+				return fmt.Errorf("cpu_architecture cannot be empty if operating_system_family is specified")
+			}
+			if os["operating_system_family"].(string) == "" && os["cpu_architecture"] != "" {
+				return fmt.Errorf("operating_system_family cannot be empty if cpu_architecture is specified")
+			}
 		}
 		os := pf[0].(map[string]interface{})
 		f := os["operating_system_family"].(string)

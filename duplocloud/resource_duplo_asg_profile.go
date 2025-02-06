@@ -3,10 +3,10 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -104,19 +104,8 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 		},
 	}
-	awsASGSchema["zone"] = &schema.Schema{
-
-		Description:   "The availability zone to launch the host in, expressed as a number and starting at 0.",
-		Type:          schema.TypeInt,
-		Optional:      true,
-		ForceNew:      true, // relaunch instance
-		Default:       0,
-		Deprecated:    "zone has been deprecated instead use zones",
-		ConflictsWith: []string{"zones"},
-	}
-
 	awsASGSchema["zones"] = &schema.Schema{
-		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0",
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Automatic 1 - Zone A 2 - Zone B",
 		Type:        schema.TypeList,
 		Optional:    true,
 		ForceNew:    true,
@@ -124,8 +113,20 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 			Type:     schema.TypeInt,
 			ForceNew: true,
 		},
-		ConflictsWith: []string{"zone"},
+		ConflictsWith:    []string{"zone"},
+		DiffSuppressFunc: diffSuppressAsgZones,
 	}
+	awsASGSchema["zone"] = &schema.Schema{
+
+		Description:      "The availability zone to launch the host in, expressed as a number and starting at 0.",
+		Type:             schema.TypeInt,
+		Optional:         true,
+		ForceNew:         true, // relaunch instance
+		Deprecated:       "zone has been deprecated instead use zones",
+		ConflictsWith:    []string{"zones"},
+		DiffSuppressFunc: diffSuppressAsgZone,
+	}
+
 	return awsASGSchema
 }
 
@@ -409,12 +410,18 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
-		if len(duplo.Zones) > 0 {
+		_, zok := d.GetOk("zone")
+
+		if len(duplo.Zones) > 0 && !zok {
 			i := []interface{}{}
 			for _, v := range duplo.Zones {
 				i = append(i, v)
 			}
 			d.Set("zones", i)
+		} else {
+			if len(duplo.Zones) == 1 {
+				d.Set("zone", duplo.Zones[0])
+			}
 		}
 		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
 	}
@@ -481,14 +488,13 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		asgProfile.Taints = &obj
 	}
 	z := []int{}
-	if val, ok := d.Get("zones").([]interface{}); ok {
+	if val, ok := d.Get("zones").([]interface{}); ok && len(val) > 0 {
 		for _, dt := range val {
 			z = append(z, dt.(int))
 		}
 		asgProfile.Zones = z
 	} else {
-		z = append(z, d.Get("zone").(int))
-		asgProfile.Zones = z
+		asgProfile.Zones = append(asgProfile.Zones, d.Get("zone").(int))
 	}
 
 	return asgProfile

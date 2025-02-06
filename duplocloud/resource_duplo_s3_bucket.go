@@ -6,12 +6,17 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+)
+
+const (
+	TOTALS3NAMELENGTH = 63
 )
 
 func s3BucketSchema() map[string]*schema.Schema {
@@ -192,13 +197,6 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 	c := m.(*duplosdk.Client)
 	features, _ := c.AdminGetSystemFeatures()
 
-	s3MaxLength := 63 - MAX_DUPLOSERVICES_AND_SUFFIX_LENGTH
-	if features != nil && features.IsTagsBasedResourceMgmtEnabled {
-		s3MaxLength = 63
-	}
-	if len(name) > s3MaxLength {
-		return diag.Errorf("resourceS3BucketCreate: Invalid s3 bucket name: %s, Length must be in the range: (1 - %d)", name, s3MaxLength)
-	}
 	tenantID := d.Get("tenant_id").(string)
 
 	// prefix + name based on settings
@@ -209,7 +207,10 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 	if errname != nil {
 		return diag.Errorf("resourceS3BucketCreate: Unable to retrieve duplo service name (name: %s, error: %s)", name, errname.Error())
 	}
+	if !validateStringLength(fullName, TOTALS3NAMELENGTH) {
+		return diag.Errorf("resourceS3BucketCreate: fullname %s exceeds allowable bucket name length %d)", fullName, TOTALS3NAMELENGTH)
 
+	}
 	// Create the request object.
 	duploObject := duplosdk.DuploS3BucketSettingsRequest{
 		Name: name,
