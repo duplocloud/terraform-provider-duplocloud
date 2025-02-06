@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -897,8 +898,13 @@ func validateEBSStorage(ctx context.Context, diff *schema.ResourceDiff, m interf
 	}
 	mp := clusterConfig[0].(map[string]interface{})
 	instanceType := mp["instance_type"].(string)
-	if (!strings.Contains(instanceType, "im4gn.") && !strings.Contains(instanceType, "i3.")) && (storage == 0) {
-		return fmt.Errorf("storage_size cannot be 0 for non ebs storage instance_type (im4gn./i3.)")
+
+	//non ebs no need storage
+	nonEBSInstanceTypes := []string{"im4gn.", "i3."}
+	for _, prefix := range nonEBSInstanceTypes {
+		if strings.Contains(instanceType, prefix) && storage > 0 {
+			return fmt.Errorf("storage_size must be 0 for non-EBS-backed instance types (%s)", strings.Join(nonEBSInstanceTypes, "/"))
+		}
 	}
 	return nil
 }
