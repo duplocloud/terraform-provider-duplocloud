@@ -251,3 +251,8 @@ func validateDateTimeFormat(v interface{}, p cty.Path) diag.Diagnostics {
 
 	return diagnostics
 }
+
+// validateStringLength returns true if string length is less than max length
+func validateStringLength(input string, maxLength int) bool {
+	return len(input) <= maxLength
+}
