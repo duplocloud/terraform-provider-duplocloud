@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -42,7 +43,10 @@ func schemaSecurityRule() map[string]*schema.Schema {
 						Description: "The list of ports to which this rule applies. This field is only applicable for UDP, TCP and SCTP protocol.",
 						Type:        schema.TypeList,
 						Optional:    true,
-						Elem:        &schema.Schema{Type: schema.TypeString},
+						Elem: &schema.Schema{
+							Type:             schema.TypeString,
+							DiffSuppressFunc: diffSuppressWhenPortAll,
+						},
 					},
 					"service_protocol": {
 						Description: "The IP protocol to which this rule applies. The protocol type is required when creating a firewall rule. This value can either be one of the following well known protocol strings (tcp, udp, icmp, esp, ah, sctp, ipip, all), or the IP protocol number.",
@@ -238,9 +242,15 @@ func expandGCPSecurityRule(d *schema.ResourceData) (*duplosdk.DuploSecurityRule,
 		pp := duplosdk.DuploSecurityRuleProtocolAndPorts{}
 
 		mpp := spp.(map[string]interface{})
-		for _, p := range mpp["ports"].([]interface{}) {
-			pp.Ports = append(pp.Ports, p.(string))
+		ps := mpp["ports"].([]interface{})
+		for _, p := range ps {
+			if p == nil {
+				pp.Ports = append(pp.Ports, "")
+			} else {
+				pp.Ports = append(pp.Ports, p.(string))
+			}
 		}
+
 		pp.ServiceProtocol = mpp["service_protocol"].(string)
 		pps = append(pps, pp)
 
@@ -261,7 +271,16 @@ func flattenGCPSecurityRule(d *schema.ResourceData, rb duplosdk.DuploSecurityRul
 		d.Set("rule_type", "ALLOW")
 		for _, v := range rb.Allowed {
 			mp := make(map[string]interface{})
-			mp["ports"] = v.Ports
+			ps := []string{}
+			for _, p := range v.Ports {
+				if p == "0" {
+					ps = append(ps, "all")
+				} else {
+					ps = append(ps, p)
+				}
+			}
+			mp["ports"] = ps
+
 			mp["service_protocol"] = v.ServiceProtocol
 			ppI = append(ppI, mp)
 		}
@@ -318,4 +337,12 @@ func validateGCPSecurityRuleAttribute(ctx context.Context, diff *schema.Resource
 		}
 	}
 	return nil
+}
+
+func diffSuppressWhenPortAll(k, old, new string, d *schema.ResourceData) bool {
+
+	if (old == "" && new == "all") || (new == "" && old == "all") {
+		return true
+	}
+	return false
 }
