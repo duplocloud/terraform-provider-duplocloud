@@ -622,13 +622,13 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		bp := strings.ToLower(m["backend_protocol_version"].(string))
 		lb, ok := m["lb_type"].(int)
 		if ok && lb != 1 && bp != "" {
-			fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")
+			return fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")
 		}
 		if ok && lb == 1 && bp == "" {
-			fmt.Errorf("backend_protocol_version is a required field for ALB load balancer type")
+			return fmt.Errorf("backend_protocol_version is a required field for ALB load balancer type")
 		}
 		if p == "http" && bp == "grpc" {
-			fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, p)
+			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, p)
 		}
 	}
 	return nil
