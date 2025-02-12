@@ -78,6 +78,7 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
 
 Required:
 
+- `backend_protocol_version` (String) Is used for communication between the load balancer and the target instances. This is a required field for ALB load balancer
 - `lb_type` (Number) The numerical index of the type of load balancer configuration to create.
 Should be one of:
 
@@ -110,7 +111,6 @@ Optional:
 
 Read-Only:
 
-- `backend_protocol_version` (String)
 - `cloud_name` (String) The name of the cloud load balancer (if applicable).
 - `dns_name` (String) The DNS name of the cloud load balancer (if applicable).
 - `frontend_ip` (String)
