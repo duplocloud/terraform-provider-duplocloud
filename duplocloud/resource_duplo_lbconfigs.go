@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -46,6 +47,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Type:             schema.TypeString,
 			Required:         true,
 			DiffSuppressFunc: diffSuppressStringCase,
+			ValidateFunc:     validation.StringInSlice([]string{"HTTP", "HHTPS"}, true),
 		},
 		"port": {
 			Description: "The backend port associated with this load balancer configuration.",
@@ -116,8 +118,10 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"backend_protocol_version": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description:  "Is used for communication between the load balancer and the target instances. This is a required field for ALB load balancer ",
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringInSlice([]string{"HTTP1", "HTTP2", "GRPC"}, false),
 		},
 		"frontend_ip": {
 			Type:     schema.TypeString,
@@ -234,7 +238,8 @@ func resourceDuploServiceLbConfigs() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploServiceLbConfigsSchema(),
+		Schema:        duploServiceLbConfigsSchema(),
+		CustomizeDiff: validateLBConfigParameters,
 	}
 }
 
@@ -386,7 +391,9 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
 					SkipHttpToHttps:           lbc["skip_http_to_https"].(bool),
 				}
-
+				if v, ok := lbc["backend_protocol_version"]; ok && item.LbType == 1 {
+					item.BeProtocolVersion = v.(string)
+				}
 				if v, ok := lbc["health_check"]; ok && len(v.([]interface{})) > 0 {
 					healthcheck := v.([]interface{})[0].(map[string]interface{})
 
@@ -604,4 +611,25 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 
 	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... End")
 	return m
+}
+
+func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+
+	lbconfs := diff.Get("lbconfigs").([]interface{})
+	for _, lb := range lbconfs {
+		m := lb.(map[string]interface{})
+		p := strings.ToLower(m["protocol"].(string))
+		bp := strings.ToLower(m["backend_protocol_version"].(string))
+		lb, ok := m["lb_type"].(int)
+		if ok && lb != 1 && bp != "" {
+			return fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")
+		}
+		if ok && lb == 1 && bp == "" {
+			return fmt.Errorf("backend_protocol_version is a required field for ALB load balancer type")
+		}
+		if p == "http" && bp == "grpc" {
+			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, p)
+		}
+	}
+	return nil
 }
