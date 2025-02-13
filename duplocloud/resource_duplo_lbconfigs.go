@@ -47,7 +47,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Type:             schema.TypeString,
 			Required:         true,
 			DiffSuppressFunc: diffSuppressStringCase,
-			ValidateFunc:     validation.StringInSlice([]string{"HTTP", "HHTPS"}, true),
+			ValidateFunc:     validation.StringInSlice([]string{"HTTP", "HTTPS"}, true),
 		},
 		"port": {
 			Description: "The backend port associated with this load balancer configuration.",
@@ -118,9 +118,11 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"backend_protocol_version": {
-			Description:  "Is used for communication between the load balancer and the target instances. This is a required field for ALB load balancer ",
+			Description:  "Is used for communication between the load balancer and the target instances. This is a required field for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1",
 			Type:         schema.TypeString,
-			Required:     true,
+			Optional:     true,
+			ForceNew:     true,
+			Default:      "HTTP1",
 			ValidateFunc: validation.StringInSlice([]string{"HTTP1", "HTTP2", "GRPC"}, false),
 		},
 		"frontend_ip": {
@@ -277,8 +279,9 @@ func duploServiceLbConfigsSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"lbconfigs": {
-			Type:     schema.TypeList,
-			Required: true,
+			Type:             schema.TypeList,
+			Required:         true,
+			DiffSuppressFunc: diffIgnoreIfHttp1ForNonALB,
 			Elem: &schema.Resource{
 				Schema: duploLbConfigSchema(),
 			},
@@ -621,8 +624,9 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		p := strings.ToLower(m["protocol"].(string))
 		bp := strings.ToLower(m["backend_protocol_version"].(string))
 		lb, ok := m["lb_type"].(int)
-		if ok && lb != 1 && bp != "" {
+		if ok && lb != 1 && bp != "" && bp != "http1" {
 			return fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")
+
 		}
 		if ok && lb == 1 && bp == "" {
 			return fmt.Errorf("backend_protocol_version is a required field for ALB load balancer type")
@@ -632,4 +636,19 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		}
 	}
 	return nil
+}
+
+func diffIgnoreIfHttp1ForNonALB(k, old, new string, d *schema.ResourceData) bool {
+	lbconfs := d.Get("lbconfigs")
+	if lbconfs != nil {
+		for _, lbconf := range lbconfs.([]interface{}) {
+			m := lbconf.(map[string]interface{})
+			alb := m["lb_type"].(int)
+			bp := m["backend_protocol_version"].(string)
+			if alb != 1 && bp == "HTTP1" {
+				return true
+			}
+		}
+	}
+	return false
 }
