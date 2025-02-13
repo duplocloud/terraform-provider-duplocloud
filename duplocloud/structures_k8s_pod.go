@@ -25,7 +25,7 @@ var builtInTolerations = map[string]string{
 
 // Flatteners
 
-func flattenPodSpec(in v1.PodSpec) ([]interface{}, error) {
+func flattenPodSpec(in v1.PodSpec, d *schema.ResourceData) ([]interface{}, error) {
 	att := make(map[string]interface{})
 	if in.ActiveDeadlineSeconds != nil {
 		att["active_deadline_seconds"] = *in.ActiveDeadlineSeconds
@@ -152,8 +152,11 @@ func flattenPodSpec(in v1.PodSpec) ([]interface{}, error) {
 		if err != nil {
 			return []interface{}{att}, err
 		}
-		att["volumes"] = v
-		att["volume"] = v
+		if _, ok := d.GetOk("volumes"); ok {
+			att["volumes"] = v
+		} else if _, ok := d.GetOk("volume"); ok {
+			att["volume"] = v
+		}
 	}
 	return []interface{}{att}, nil
 }
