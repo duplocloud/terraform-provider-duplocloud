@@ -478,12 +478,24 @@ func podSpecFields(isUpdatable, isComputed bool) map[string]*schema.Schema {
 			},
 		},
 		"volume": {
-			Type:        schema.TypeList,
-			Optional:    true,
-			Description: "List of volumes that can be mounted by containers belonging to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes",
-			Elem:        volumeSchema(isUpdatable),
+			Type:          schema.TypeList,
+			Optional:      true,
+			Computed:      true,
+			Deprecated:    "This attribute has been deprecated; please use `volumes` instead.",
+			ConflictsWith: []string{"volumes"},
+			Description:   "List of volumes that can be mounted by containers belonging to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes",
+			Elem:          volumeSchema(isUpdatable),
+		},
+		"volumes": {
+			Type:          schema.TypeList,
+			Optional:      true,
+			Computed:      true,
+			ConflictsWith: []string{"volume"},
+			Description:   "List of volumes that can be mounted by containers belonging to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes",
+			Elem:          volumeSchema(isUpdatable),
 		},
 	}
+
 	return s
 }
 

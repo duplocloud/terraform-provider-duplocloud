@@ -152,6 +152,7 @@ func flattenPodSpec(in v1.PodSpec) ([]interface{}, error) {
 		if err != nil {
 			return []interface{}{att}, err
 		}
+		att["volumes"] = v
 		att["volume"] = v
 	}
 	return []interface{}{att}, nil
@@ -771,13 +772,18 @@ func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 	if v, ok := in["termination_grace_period_seconds"].(int); ok {
 		obj.TerminationGracePeriodSeconds = ptrToInt64(int64(v))
 	}
-	if v, ok := in["volume"]; ok {
+	if v, ok := in["volumes"]; ok {
 		r, err := expandPodSpecVolumes(v.([]interface{}))
 		if err != nil {
 			return nil, err
 		}
 		obj.Volumes = r
-
+	} else if v, ok := in["volume"]; ok { // Support for deprecated attribute
+		r, err := expandPodSpecVolumes(v.([]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		obj.Volumes = r
 	}
 	return obj, nil
 }
