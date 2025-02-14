@@ -333,29 +333,3 @@ func validateGCPSecurityRuleAttribute(ctx context.Context, diff *schema.Resource
 	}
 	return nil
 }
-
-func diffSuppressWhenPortAll(k, old, new string, d *schema.ResourceData) bool {
-	//v := strings.SplitAfter(k, "ports")
-	//n, o := d.GetChange(v[0] + v[1])
-	//if o == nil || n == nil {
-	//	return true
-	//}
-	//_, ok1 := n.(int)
-	//_, ok := o.(int)
-	//if ok && ok1 {
-	//	return false
-	//}
-	//if len(n.([]interface{})) != len(o.([]interface{})) {
-	//	return false
-	//}
-	if strings.TrimSpace(old) == "" && strings.TrimSpace(new) == "all" {
-		return true
-	}
-
-	// Suppress diff if both values are identical
-	if old == new {
-		return true
-	}
-
-	return false
-}
