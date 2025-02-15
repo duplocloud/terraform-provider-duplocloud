@@ -78,7 +78,6 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
 
 Required:
 
-- `backend_protocol_version` (String) Is used for communication between the load balancer and the target instances. This is a required field for ALB load balancer
 - `lb_type` (Number) The numerical index of the type of load balancer configuration to create.
 Should be one of:
 
@@ -96,6 +95,7 @@ Should be one of:
 Optional:
 
 - `allow_global_access` (Boolean) Applicable for internal lb.
+- `backend_protocol_version` (String) Is used for communication between the load balancer and the target instances. This is a required field for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1 Defaults to `HTTP1`.
 - `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - `custom_cidr` (List of String) Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.
 - `external_port` (Number) The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.
