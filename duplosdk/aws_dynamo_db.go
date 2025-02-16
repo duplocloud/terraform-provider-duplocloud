@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"net/url"
 )
 
 const DynamoDBProvisionedThroughputMinValue = 1
@@ -418,20 +419,20 @@ type Update struct {
 //	return &rp, err
 //}
 
-//func (c *Client) DynamoDBTableUpdateGSIV2(
-//	tenantID string,
-//	rq *ModifyGSI) (*DuploDynamoDBTableV2, ClientError) {
-//	rp := DuploDynamoDBTableV2{}
-//
-//	err := c.putAPIWithRetry(
-//		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
-//		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
-//		&rq,
-//		&rp,
-//	)
-//	rp.TenantID = tenantID
-//	return &rp, err
-//}
+func (c *Client) DynamoDBTableUpdateGSIV2(
+	tenantID string,
+	rq *ModifyGSI) (*DuploDynamoDBTableV2, ClientError) {
+	rp := DuploDynamoDBTableV2{}
+
+	err := c.putAPIWithRetry(
+		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
+		&rq,
+		&rp,
+	)
+	rp.TenantID = tenantID
+	return &rp, err
+}
 
 //func (c *Client) DynamoDBTableUpdateV21(
 //	tenantID string,
@@ -460,33 +461,33 @@ type Update struct {
 // DuploDynamoDBTableV2UpdateSSESpecification updates the server side encryption
 // settings on the provide DynamoDB table. Per the the AWS .NET SDK@3.7:
 // "server side encryption modification must be the only operation in the request"
-//func (c *Client) DuploDynamoDBTableV2UpdateSSESpecification(
-//	tenantID string,
-//	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
-//
-//	r := DuploDynamoDBTableRequestV2{}
-//
-//	r.TableName = rq.TableName
-//	r.SSESpecification = rq.SSESpecification
-//
-//	return c.DynamoDBTableUpdateV2(tenantID, &r)
-//}
+func (c *Client) DuploDynamoDBTableV2UpdateSSESpecification(
+	tenantID string,
+	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
+
+	r := DuploDynamoDBTableRequestV2{}
+
+	r.TableName = rq.TableName
+	r.SSESpecification = rq.SSESpecification
+
+	return c.DynamoDBTableUpdateV2(tenantID, &r)
+}
 
 // DuploDynamoDBTableV2UpdateDeletionProtection updates the deletion protection
 // settings on the provide DynamoDB table. Per the the AWS .NET SDK@3.7:
 // "DeletionProtection modification must be the only operation in the request"
-//func (c *Client) DuploDynamoDBTableV2UpdateDeletionProtection(
-//	tenantID string,
-//	r *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
-//
-//	return c.DynamoDBTableUpdateV2(tenantID, r)
-//}
+func (c *Client) DuploDynamoDBTableV2UpdateDeletionProtection(
+	tenantID string,
+	r *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
 
-//func (c *Client) DynamoDBTableGetTags(tenantID string, arn string) ([]DuploKeyStringValue, ClientError) {
-//	rp := []DuploKeyStringValue{}
-//	err := c.getAPI(
-//		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, arn), // triple encoding needed to fetch the data
-//		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s", tenantID, url.PathEscape(url.PathEscape(url.PathEscape(arn)))),
-//		&rp)
-//	return rp, err
-//}
+	return c.DynamoDBTableUpdateV2(tenantID, r)
+}
+
+func (c *Client) DynamoDBTableGetTags(tenantID string, arn string) ([]DuploKeyStringValue, ClientError) {
+	rp := []DuploKeyStringValue{}
+	err := c.getAPI(
+		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, arn), // triple encoding needed to fetch the data
+		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s", tenantID, url.PathEscape(url.PathEscape(url.PathEscape(arn)))),
+		&rp)
+	return rp, err
+}
