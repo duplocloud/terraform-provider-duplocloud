@@ -40,12 +40,12 @@ func schemaSecurityRule() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"ports": {
-						Description: "The list of ports to which this rule applies. This field is only applicable for UDP, TCP and SCTP protocol.",
+						Description: "The list of ports to which this rule applies. This field is only applicable for UDP, TCP and SCTP protocol. To apply all ports dont specify the field",
 						Type:        schema.TypeList,
 						Optional:    true,
 						Elem: &schema.Schema{
-							Type:             schema.TypeString,
-							DiffSuppressFunc: diffSuppressWhenPortAll,
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringNotInSlice([]string{"all", ""}, false),
 						},
 					},
 					"service_protocol": {
@@ -244,10 +244,14 @@ func expandGCPSecurityRule(d *schema.ResourceData) (*duplosdk.DuploSecurityRule,
 		mpp := spp.(map[string]interface{})
 		ps := mpp["ports"].([]interface{})
 		for _, p := range ps {
-			if p == nil {
-				pp.Ports = append(pp.Ports, "")
-			} else {
+			//if p == nil {
+			//	pp.Ports = append(pp.Ports, "")
+			//} else {
+			//	pp.Ports = append(pp.Ports, p.(string))
+			//}
+			if p != nil && p.(string) != "all" && p.(string) != "" {
 				pp.Ports = append(pp.Ports, p.(string))
+
 			}
 		}
 
@@ -271,16 +275,7 @@ func flattenGCPSecurityRule(d *schema.ResourceData, rb duplosdk.DuploSecurityRul
 		d.Set("rule_type", "ALLOW")
 		for _, v := range rb.Allowed {
 			mp := make(map[string]interface{})
-			ps := []string{}
-			for _, p := range v.Ports {
-				if p == "0" {
-					ps = append(ps, "all")
-				} else {
-					ps = append(ps, p)
-				}
-			}
-			mp["ports"] = ps
-
+			mp["ports"] = v.Ports
 			mp["service_protocol"] = v.ServiceProtocol
 			ppI = append(ppI, mp)
 		}
@@ -290,7 +285,7 @@ func flattenGCPSecurityRule(d *schema.ResourceData, rb duplosdk.DuploSecurityRul
 	if len(rb.Denied) > 0 {
 		ppI := make([]interface{}, 0, len(rb.Allowed))
 		d.Set("rule_type", "DENY")
-		for _, v := range rb.Allowed {
+		for _, v := range rb.Denied {
 			mp := make(map[string]interface{})
 			mp["ports"] = v.Ports
 			mp["service_protocol"] = v.ServiceProtocol
@@ -337,12 +332,4 @@ func validateGCPSecurityRuleAttribute(ctx context.Context, diff *schema.Resource
 		}
 	}
 	return nil
-}
-
-func diffSuppressWhenPortAll(k, old, new string, d *schema.ResourceData) bool {
-
-	if (old == "" && new == "all") || (new == "" && old == "all") {
-		return true
-	}
-	return false
 }
