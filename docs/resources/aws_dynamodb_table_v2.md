@@ -18,7 +18,8 @@ resource "duplocloud_tenant" "myapp" {
   plan_id      = "default"
 }
 
-#1. Example: Basic dynamo db table. Every key definition should have attribute associated to it.
+#1. Example: Basic dynamo db table. 
+#            Every key definition should have attribute associated to it.
 resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
   tenant_id                   = duplocloud_tenant.myapp.tenant_id
@@ -81,7 +82,10 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
 }
 
-#3. Example: Creating Dynamo db table with local secondary index. Local secondary index can only be implemented during creation. Here attribute of LastPostDateTime is defined for range key of local secondary index.
+#3. Example: Creating Dynamo db table with local secondary index. 
+#            Local secondary index can only be implemented during creation. 
+#            Attribute of LastPostDateTime is defined for range key of local secondary index,
+#            and a range key, key schema definition needs to be provided.
 resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
   tenant_id                   = duplocloud_tenant.myapp.tenant_id
@@ -127,7 +131,8 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
 }
 
-#4. Example : Creating Dynamo db table with Global Secondary Index. Here attribute of PostMonth and TopScore is defined for hash key and range key of global secondary index respectively.
+#4. Example : Creating Dynamo db table with Global Secondary Index. 
+#             Attribute of PostMonth and TopScore is defined for hash key and range key of global secondary index respectively.
 resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 
   tenant_id                   = duplocloud_tenant.myapp.tenant_id
