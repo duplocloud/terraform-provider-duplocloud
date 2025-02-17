@@ -11,6 +11,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -477,6 +478,10 @@ func resourceGCPK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, m 
 	if diags != nil {
 		return diags
 	}
+	err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("create"))
+	if err != nil {
+		return diag.Errorf("%s", err.Error())
+	}
 	d.SetId(id)
 	d.Set("name", shortName)
 	resourceGCPNodePoolRead(ctx, d, m)
@@ -863,14 +868,27 @@ func gcpNodePoolAcceleratortoState(accelerator *duplosdk.Accelerator) []map[stri
 }
 
 func gcpNodePoolTaintstoState(taints []duplosdk.GCPNodeTaints) []interface{} {
+	gcpTaints := map[string]struct{}{
+		"node.kubernetes.io/not-ready":                   {},
+		"nvidia.com/gpu":                                 {},
+		"node.kubernetes.io/unreachable":                 {},
+		"node.kubernetes.io/memory-pressure":             {},
+		"node.kubernetes.io/disk-pressure":               {},
+		"node.kubernetes.io/pid-pressure":                {},
+		"node.kubernetes.io/network-unavailable":         {},
+		"node.kubernetes.io/unschedulable":               {},
+		"node.cloudprovider.kubernetes.io/uninitialized": {},
+	}
 	state := make([]interface{}, 0, len(taints))
 	for _, t := range taints {
-		data := map[string]interface{}{
-			"key":    t.Key,
-			"value":  t.Value,
-			"effect": t.Effect,
+		if _, ok := gcpTaints[t.Effect]; !ok {
+			data := map[string]interface{}{
+				"key":    t.Key,
+				"value":  t.Value,
+				"effect": t.Effect,
+			}
+			state = append(state, data)
 		}
-		state = append(state, data)
 	}
 	return state
 }
@@ -1104,4 +1122,31 @@ func filterOutDefaultOAuth(oAuths []string) []string {
 func filterOutDefaultResourceLabels(labels map[string]string) map[string]string {
 	delete(labels, "duplo-tenant")
 	return labels
+}
+
+func gcpNodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.GCPK8NodePoolGet(tenantID, name)
+			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
+			status := "pending"
+			if err == nil {
+				if rp.Status == "RUNNING" {
+					status = "ready"
+				} else {
+					status = "pending"
+				}
+			}
+
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] gcpNodePoolWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
