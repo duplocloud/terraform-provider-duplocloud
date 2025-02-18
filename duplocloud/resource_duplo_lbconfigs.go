@@ -489,7 +489,7 @@ func resourceDuploServiceLbConfigsDelete(ctx context.Context, d *schema.Resource
 
 	// Wait 40 more seconds to deal with consistency issues.
 	if diags == nil {
-		time.Sleep(40 * time.Second)
+		time.Sleep(140 * time.Second)
 	}
 
 	log.Printf("[TRACE] resourceDuploServiceLbConfigsDelete(%s, %s): end", tenantID, name)
