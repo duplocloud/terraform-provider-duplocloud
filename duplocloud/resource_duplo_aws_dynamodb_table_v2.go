@@ -379,7 +379,7 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 		d.Set("read_capacity", duplo.ProvisionedThroughput.ReadCapacityUnits)
 	}
 	if duplo.StreamSpecification != nil {
-		d.Set("stream_view_type", duplo.StreamSpecification.StreamViewType)
+		d.Set("stream_view_type", duplo.StreamSpecification.StreamViewType.Value)
 		d.Set("stream_enabled", duplo.StreamSpecification.StreamEnabled)
 	} else {
 		d.Set("stream_view_type", "")
@@ -391,17 +391,21 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	if err := d.Set("attribute", flattenTableAttributeDefinitions(duplo.AttributeDefinitions)); err != nil {
 		return diag.FromErr(err)
 	}
-
+	intf := []interface{}{}
 	for _, attribute := range *duplo.KeySchema {
+		mp := make(map[string]interface{})
 		if attribute.KeyType.Value == duplosdk.DynamoDBKeyTypeHash {
-			d.Set("hash_key", attribute.AttributeName)
+			mp["attribute_name"] = attribute.AttributeName
+			mp["key_type"] = "HASH"
 		}
 
 		if attribute.KeyType.Value == duplosdk.DynamoDBKeyTypeRange {
-			d.Set("range_key", attribute.AttributeName)
+			mp["attribute_name"] = attribute.AttributeName
+			mp["key_type"] = "RANGE"
 		}
+		intf = append(intf, mp)
 	}
-
+	d.Set("key_schema", intf)
 	if err := d.Set("local_secondary_index", flattenTableLocalSecondaryIndex(duplo.LocalSecondaryIndexes)); err != nil {
 		return diag.FromErr(err)
 	}
@@ -1228,6 +1232,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 	rq.TableName = fullname
+
 	// Fetch the existing table for compairson
 	existing, err := c.DynamoDBTableGetV2(tenantID, fullname)
 	if err != nil {
