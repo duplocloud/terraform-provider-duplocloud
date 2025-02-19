@@ -1332,36 +1332,39 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-func setDeleteProtection(d *schema.ResourceData) bool {
-	return d.HasChange("deletion_protection_enabled")
-}
+/*
+	func setDeleteProtection(d *schema.ResourceData) bool {
+		return d.HasChange("deletion_protection_enabled")
+	}
 
 func shouldUpdateGSI(
+
 	table *duplosdk.DuploDynamoDBTableV2Response,
 	request *duplosdk.DuploDynamoDBTableRequestV2,
-) bool {
-	if table.GlobalSecondaryIndexes == nil || request.GlobalSecondaryIndexes == nil {
-		return true
-	}
-	if len(*table.GlobalSecondaryIndexes) != len(*request.GlobalSecondaryIndexes) {
-		return true
-	}
 
-	for i, aIndex := range *table.GlobalSecondaryIndexes {
-		bIndex := (*request.GlobalSecondaryIndexes)[i]
-
-		isDeepEqual := reflect.DeepEqual(
-			aIndex.ProvisionedThroughput,
-			bIndex.ProvisionedThroughput,
-		)
-		if aIndex.IndexName != bIndex.IndexName || !isDeepEqual {
+	) bool {
+		if table.GlobalSecondaryIndexes == nil || request.GlobalSecondaryIndexes == nil {
 			return true
 		}
+		if len(*table.GlobalSecondaryIndexes) != len(*request.GlobalSecondaryIndexes) {
+			return true
+		}
+
+		for i, aIndex := range *table.GlobalSecondaryIndexes {
+			bIndex := (*request.GlobalSecondaryIndexes)[i]
+
+			isDeepEqual := reflect.DeepEqual(
+				aIndex.ProvisionedThroughput,
+				bIndex.ProvisionedThroughput,
+			)
+			if aIndex.IndexName != bIndex.IndexName || !isDeepEqual {
+				return true
+			}
+		}
+
+		return false
 	}
-
-	return false
-}
-
+*/
 func tagDynamoDBtTableV2(
 	tenantId, name string,
 	rq *duplosdk.DuploDynamoDBTagResource,
