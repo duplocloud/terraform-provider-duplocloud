@@ -599,7 +599,9 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 		}
 	}
 
-	if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.")) && (duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
+	if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.") 
+	   && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4i.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4g.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "R6gd."))
+	&& (duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
 		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
 			VolumeSize: 20,
 		}
@@ -900,7 +902,7 @@ func validateEBSStorage(ctx context.Context, diff *schema.ResourceDiff, m interf
 	instanceType := mp["instance_type"].(string)
 
 	//non ebs no need storage
-	nonEBSInstanceTypes := []string{"im4gn.", "i3."}
+	nonEBSInstanceTypes := []string{"im4gn.", "i3.","i4i.","i4g.","R6gd."}
 	for _, prefix := range nonEBSInstanceTypes {
 		if strings.Contains(instanceType, prefix) && storage > 0 {
 			return fmt.Errorf("storage_size must be 0 for non-EBS-backed instance types (%s)", strings.Join(nonEBSInstanceTypes, "/"))
