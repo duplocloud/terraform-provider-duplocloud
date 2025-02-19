@@ -599,9 +599,7 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 		}
 	}
 
-	if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.") 
-	   && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4i.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4g.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "R6gd."))
-	&& (duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
+	if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4i.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4g.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "R6gd.")) && (duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
 		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
 			VolumeSize: 20,
 		}
