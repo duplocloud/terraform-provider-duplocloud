@@ -969,8 +969,8 @@ func expandCSI(csi []interface{}) *v1.CSIVolumeSource {
 	if v, ok := csiMap["driver"]; ok {
 		csiBody.Driver = v.(string)
 	}
-	if v, ok := csiMap["volume_attributes"]; ok {
-		csiBody.VolumeAttributes = v.(map[string]string)
+	if v, ok := csiMap["volume_attributes"].(map[string]interface{}); ok && len(v) > 0 {
+		csiBody.VolumeAttributes = expandStringMap(v)
 	}
 	if v, ok := csiMap["fs_type"]; ok {
 		str := v.(string)
