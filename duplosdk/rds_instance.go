@@ -227,10 +227,11 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
 	identifier := EnsureDuploPrefixInRdsIdentifier(name)
 	// Call the API.
 	duploObject := DuploRdsInstance{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("RdsInstanceGet(%s, %s)", tenantID, identifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
-		&duploObject)
+		&duploObject, &conf)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
 	}
@@ -244,10 +245,11 @@ func (c *Client) RdsInstanceGetByName(tenantID, name string) (*DuploRdsInstance,
 	identifier := EnsureDuploPrefixInRdsIdentifier(name)
 	// Call the API.
 	duploObject := DuploRdsInstance{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("RdsInstanceGet(%s, %s)", tenantID, identifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
-		&duploObject)
+		&duploObject, &conf)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
 	}
@@ -397,20 +399,23 @@ func (c *Client) RdsTagUpdateV3(tenantID string, tag DuploRDSTag) ClientError {
 
 func (c *Client) RdsTagListV3(tenantID, resourceType, resourceId string) (*[]DuploKeyStringValue, ClientError) {
 	tags := []DuploKeyStringValue{}
-	err := c.getAPI(
+
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("RdsTagListV3(%s, %s)", tenantID, resourceId),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag", tenantID, resourceType, resourceId),
-		&tags,
+		&tags, &conf,
 	)
 	return &tags, err
 }
 
 func (c *Client) RdsTagGetV3(tenantID string, tag DuploRDSTag) (*DuploKeyStringValue, ClientError) {
 	tags := DuploKeyStringValue{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("RdsTagGetV3(%s, %s)", tenantID, tag.ResourceId),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
-		&tags,
+		&tags, &conf,
 	)
 	return &tags, err
 }

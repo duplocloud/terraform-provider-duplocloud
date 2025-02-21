@@ -271,11 +271,12 @@ func (c *Client) DynamoDBTableCreate(
 ) (*DuploDynamoDBTable, ClientError) {
 	fmt.Println("calling DynamoDBTableCreate")
 	rp := DuploDynamoDBTable{}
+	conf := NewRetryConf()
 	err := c.postAPIWithRetry(
 		fmt.Sprintf("DynamoDBTableCreate(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTable", tenantID),
 		&rq,
-		&rp,
+		&rp, &conf,
 	)
 	rp.TenantID = tenantID
 	return &rp, err
@@ -286,13 +287,14 @@ func (c *Client) DynamoDBTableCreateV2(
 	rq *DuploDynamoDBTableRequestV2,
 ) (*DuploDynamoDBTableV2Response, ClientError) {
 	fmt.Println("calling DynamoDBTableCreateV2")
+	conf := NewRetryConf()
 
 	rp := DuploDynamoDBTableV2Response{}
 	err := c.postAPIWithRetry(
 		fmt.Sprintf("DynamoDBTableCreate(%s, %s)", tenantID, rq.TableName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2", tenantID),
 		&rq,
-		&rp,
+		&rp, &conf,
 	)
 
 	rp.TenantID = tenantID
@@ -303,11 +305,12 @@ func (c *Client) DynamoDBTableUpdateV2(
 	tenantID string,
 	rq *DuploDynamoDBTableRequestV2) (*DuploDynamoDBTableV2, ClientError) {
 	rp := DuploDynamoDBTableV2{}
+	conf := NewRetryConf()
 	err := c.putAPIWithRetry(
 		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
 		&rq,
-		&rp,
+		&rp, &conf,
 	)
 	rp.TenantID = tenantID
 	return &rp, err
@@ -335,29 +338,33 @@ func (c *Client) DynamoDBTableDelete(tenantID, name string) ClientError {
 }
 
 func (c *Client) DynamoDBTableDeleteV2(tenantID, name string) ClientError {
+	conf := NewRetryConf()
+
 	return c.deleteAPIWithRetry(
 		fmt.Sprintf("DynamoDBTableDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, name),
-		nil)
+		nil, &conf)
 }
 
 // DynamoDBTableGet retrieves a dynamodb table via the Duplo API
 func (c *Client) DynamoDBTableGet(tenantID string, name string) (*DuploDynamoDBTable, ClientError) {
 	rp := DuploDynamoDBTable{}
+	conf := NewRetryConf()
 	err := c.getAPIWithRetry(
 		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTable/%s", tenantID, name),
-		&rp)
+		&rp, &conf)
 	rp.TenantID = tenantID
 	return &rp, err
 }
 
 func (c *Client) DynamoDBTableGetV2(tenantID string, name string) (*DuploDynamoDBTableV2Response, ClientError) {
+	conf := NewRetryConf()
 	rp := DuploDynamoDBTableV2Response{}
 	err := c.getAPIWithRetry(
 		fmt.Sprintf("DynamoDBTableGet(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, name),
-		&rp)
+		&rp, &conf)
 	rp.TenantID = tenantID
 	return &rp, err
 }
@@ -367,23 +374,26 @@ func (c *Client) DynamoDBTableV2PointInRecovery(tenantID, tableName string, isPo
 	rq := DuploDynamoDBTableV2TimeInRecovery{
 		IsPointInTimeRecovery: isPointInRecovery,
 	}
+	conf := NewRetryConf()
+
 	err := c.putAPIWithRetry(
 		fmt.Sprintf("DynamoDBTableV2PointInRecovery(%s, %s)", tenantID, tableName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s/point-in-time-recovery", tenantID, tableName),
 		&rq,
-		&rp,
+		&rp, &conf,
 	)
 	return &rp, err
 }
 
 func (c *Client) DynamoDBTableV2TTl(tenantID, tableName string, rq *DuploDynamoDBTableV2TTl) (*DuploDynamoDBTableV2TTl, ClientError) {
 	rp := DuploDynamoDBTableV2TTl{}
+	conf := NewRetryConf()
 
 	err := c.putAPIWithRetry(
 		fmt.Sprintf("DynamoDBTableV2TTl(%s, %s)", tenantID, tableName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s/ttl", tenantID, tableName),
 		&rq,
-		&rp,
+		&rp, &conf,
 	)
 	return &rp, err
 }
@@ -423,12 +433,13 @@ func (c *Client) DynamoDBTableUpdateGSIV2(
 	tenantID string,
 	rq *ModifyGSI) (*DuploDynamoDBTableV2, ClientError) {
 	rp := DuploDynamoDBTableV2{}
+	conf := NewRetryConf()
 
 	err := c.putAPIWithRetry(
 		fmt.Sprintf("DynamoDBTableUpdate(%s, %s)", tenantID, rq.TableName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/dynamodbTableV2/%s", tenantID, rq.TableName),
 		&rq,
-		&rp,
+		&rp, &conf,
 	)
 	rp.TenantID = tenantID
 	return &rp, err
