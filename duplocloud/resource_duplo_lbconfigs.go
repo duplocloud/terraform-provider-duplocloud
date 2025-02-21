@@ -279,9 +279,8 @@ func duploServiceLbConfigsSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"lbconfigs": {
-			Type:             schema.TypeList,
-			Required:         true,
-			DiffSuppressFunc: diffIgnoreIfHttp1ForNonALB,
+			Type:     schema.TypeList,
+			Required: true,
 			Elem: &schema.Resource{
 				Schema: duploLbConfigSchema(),
 			},
@@ -582,7 +581,6 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"cloud_name":                  lb.CloudName,
 		"health_check_url":            lb.HealthCheckURL,
 		"external_traffic_policy":     lb.ExternalTrafficPolicy,
-		"backend_protocol_version":    lb.BeProtocolVersion,
 		"index":                       lb.LbIndex,
 		"frontend_ip":                 lb.FrontendIP,
 		"is_native":                   lb.IsNative,
@@ -593,6 +591,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"custom_cidr":                 lb.CustomCidrs,
 		"allow_global_access":         lb.AllowGlobalAccess,
 		"skip_http_to_https":          lb.SkipHttpToHttps,
+		"backend_protocol_version":    lb.BeProtocolVersion,
 	}
 
 	if lb.HealthCheckConfig != nil {
@@ -610,6 +609,10 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 	if lb.LbType == 5 && lb.HostNames != nil && len(*lb.HostNames) > 0 {
 		log.Printf("[DEBUG] HostNames... %v", lb.HostNames)
 		m["host_name"] = (*lb.HostNames)[0]
+	}
+	if lb.LbType != 1 {
+		m["backend_protocol_version"] = "HTTP1"
+
 	}
 
 	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... End")
