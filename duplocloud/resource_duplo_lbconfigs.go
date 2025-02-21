@@ -640,18 +640,3 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 	}
 	return nil
 }
-
-func diffIgnoreIfHttp1ForNonALB(k, old, new string, d *schema.ResourceData) bool {
-	lbconfs := d.Get("lbconfigs")
-	if lbconfs != nil {
-		for _, lbconf := range lbconfs.([]interface{}) {
-			m := lbconf.(map[string]interface{})
-			alb := m["lb_type"].(int)
-			bp := m["backend_protocol_version"].(string)
-			if alb != 1 && bp == "HTTP1" {
-				return true
-			}
-		}
-	}
-	return false
-}
