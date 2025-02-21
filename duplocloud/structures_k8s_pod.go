@@ -927,7 +927,7 @@ func expandItems(items []interface{}) ([]v1.KeyToPath, error) {
 		if v, ok := val["key"]; ok {
 			i.Key = v.(string)
 		}
-		if v, ok := val["mode"]; ok {
+		if v, ok := val["mode"]; ok && v.(string) != "" {
 			val, err := strconv.Atoi(v.(string))
 			if err != nil {
 				return nil, err
@@ -1038,7 +1038,7 @@ func expandDownwardAPIItems(items []interface{}) ([]v1.DownwardAPIVolumeFile, er
 			}
 			i.FieldRef = ref
 		}
-		if v, ok := val["mode"]; ok {
+		if v, ok := val["mode"]; ok && v.(string) != "" {
 			val, err := strconv.Atoi(v.(string))
 			if err != nil {
 				return nil, err
