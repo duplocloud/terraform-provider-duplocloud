@@ -239,47 +239,47 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.Errorf("Invalid resource ID: %s", id)
 	}
 	log.Printf("[TRACE] resourceTenantDelete(%s): start", tenantID)
-	allowedDeletion, ok := d.Get("allow_deletion").(bool)
-	if allowedDeletion && ok {
-		// Delete the object with Duplo
-		c := m.(*duplosdk.Client)
-		mds, err := c.TenantGetConfig(tenantID)
-		if err != nil {
-			if err.Status() == 404 {
-				return nil
-			}
-			return diag.Errorf("Unable to retrieve tenant config '%s': %s", tenantID, err)
-		}
-		for _, md := range *mds.Metadata {
-			if md.Key == "delete_protection" && md.Value == "true" {
-				return diag.Errorf("Cannot delete tenant delete_protection is enabled")
-			}
-		}
-		duplo, err := c.TenantGetV2(tenantID)
-		if err != nil {
-			if err.Status() == 404 {
-				return nil
-			}
-			return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
-		}
-		if duplo == nil {
+	allowedDeletion := d.Get("allow_deletion").(bool)
+	if !allowedDeletion {
+		return diag.Errorf("[Error] resourceTenantDelete(%s): will NOT delete the tenant - because 'allow_deletion' is 'false'", tenantID)
+
+	}
+	// Delete the object with Duplo
+	c := m.(*duplosdk.Client)
+	mds, err := c.TenantGetConfig(tenantID)
+	if err != nil {
+		if err.Status() == 404 {
 			return nil
 		}
-		err = c.TenantDelete(tenantID)
-		if err != nil {
-			if err.Status() == 404 {
-				return nil
-			}
-			return diag.Errorf("Error deleting tenant '%s': %s", tenantID, err)
+		return diag.Errorf("Unable to retrieve tenant config '%s': %s", tenantID, err)
+	}
+	for _, md := range *mds.Metadata {
+		if md.Key == "delete_protection" && md.Value == "true" {
+			return diag.Errorf("Cannot delete tenant delete_protection is enabled")
 		}
+	}
+	duplo, err := c.TenantGetV2(tenantID)
+	if err != nil {
+		if err.Status() == 404 {
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
+	}
+	if duplo == nil {
+		return nil
+	}
+	err = c.TenantDelete(tenantID)
+	if err != nil {
+		if err.Status() == 404 {
+			return nil
+		}
+		return diag.Errorf("Error deleting tenant '%s': %s", tenantID, err)
+	}
 
-		// Wait for 1 minute to allow tenant deletion.
-		if d.Get("wait_until_deleted").(bool) {
-			log.Printf("[TRACE] resourceTenantDelete(%s): waiting for 1 minute because 'wait_until_deleted' is 'true'", tenantID)
-			time.Sleep(time.Duration(1) * time.Minute)
-		}
-	} else {
-		return diag.Errorf("[Error] resourceTenantDelete(%s): will NOT delete the tenant - because 'allow_deletion' is 'false'", tenantID)
+	// Wait for 1 minute to allow tenant deletion.
+	if d.Get("wait_until_deleted").(bool) {
+		log.Printf("[TRACE] resourceTenantDelete(%s): waiting for 1 minute because 'wait_until_deleted' is 'true'", tenantID)
+		time.Sleep(time.Duration(1) * time.Minute)
 	}
 
 	log.Printf("[TRACE] resourceTenantDelete(%s): end", tenantID)
