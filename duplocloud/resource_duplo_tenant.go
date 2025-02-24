@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -239,9 +240,20 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	log.Printf("[TRACE] resourceTenantDelete(%s): start", tenantID)
 
 	if d.Get("allow_deletion").(bool) {
-
 		// Delete the object with Duplo
 		c := m.(*duplosdk.Client)
+		mds, err := c.TenantGetConfig(tenantID)
+		if err != nil {
+			if err.Status() == 404 {
+				return nil
+			}
+			return diag.Errorf("Unable to retrieve tenant config '%s': %s", tenantID, err)
+		}
+		for _, md := range *mds.Metadata {
+			if md.Key == "delete_protection" && md.Value == "true" {
+				return diag.Errorf("Cannot delete tenant delete_protection is enabled")
+			}
+		}
 		duplo, err := c.TenantGetV2(tenantID)
 		if err != nil {
 			if err.Status() == 404 {
