@@ -153,7 +153,8 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 		d.Set("policy", []map[string]interface{}{})
 	}
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-
+	ald := d.Get("allow_deletion").(bool)
+	d.Set("allow_deletion", ald)
 	log.Printf("[TRACE] resourceTenantRead(%s): end", tenantID)
 	return nil
 }
@@ -238,8 +239,8 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.Errorf("Invalid resource ID: %s", id)
 	}
 	log.Printf("[TRACE] resourceTenantDelete(%s): start", tenantID)
-
-	if d.Get("allow_deletion").(bool) {
+	allowedDeletion, ok := d.Get("allow_deletion").(bool)
+	if allowedDeletion && ok {
 		// Delete the object with Duplo
 		c := m.(*duplosdk.Client)
 		mds, err := c.TenantGetConfig(tenantID)
@@ -278,7 +279,7 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 			time.Sleep(time.Duration(1) * time.Minute)
 		}
 	} else {
-		log.Printf("[WARN] resourceTenantDelete(%s): will NOT delete the tenant - because 'allow_deletion' is 'false'", tenantID)
+		return diag.Errorf("[Error] resourceTenantDelete(%s): will NOT delete the tenant - because 'allow_deletion' is 'false'", tenantID)
 	}
 
 	log.Printf("[TRACE] resourceTenantDelete(%s): end", tenantID)
