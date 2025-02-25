@@ -58,12 +58,18 @@ func resourceKubernetesCronJobSchemaV1Beta1(readonly bool) map[string]*schema.Sc
 			Optional: true,
 			Default:  false,
 		},
+		"allocation_tags": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Allocation tags is the simplest way to constraint containers/pods with hosts/nodes. DuploCloud/Kubernetes Orchestrator will make sure containers will run on the hosts having same allocation tags.",
+		},
 	}
 }
 
 func resourceKubernetesCronJobV1Beta1Create(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
 	isAnyHostAllowed := d.Get("is_any_host_allowed").(bool)
+	allocationTags := d.Get("allocation_tags").(string)
 	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): start", tenantId)
 
 	name, err := getK8sJobName(d)
@@ -82,7 +88,7 @@ func resourceKubernetesCronJobV1Beta1Create(ctx context.Context, d *schema.Resou
 	rq.Spec = spec
 	rq.TenantId = tenantId
 	rq.IsAnyHostAllowed = isAnyHostAllowed
-
+	rq.AllocationTags = allocationTags
 	c := meta.(*duplosdk.Client)
 	err = c.K8sCronJobCreate(&rq)
 	if err != nil {
@@ -99,6 +105,7 @@ func resourceKubernetesCronJobV1Beta1Create(ctx context.Context, d *schema.Resou
 func resourceKubernetesCronJobV1Beta1Update(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
 	isAnyHostAllowed := d.Get("is_any_host_allowed").(bool)
+	allocationTags := d.Get("allocation_tags").(string)
 	log.Printf("[TRACE] resourceKubernetesCronJobV1Update(%s): end", tenantId)
 
 	name, err := getK8sJobName(d)
@@ -117,6 +124,7 @@ func resourceKubernetesCronJobV1Beta1Update(ctx context.Context, d *schema.Resou
 		Metadata:         metadata,
 		Spec:             spec,
 		IsAnyHostAllowed: isAnyHostAllowed,
+		AllocationTags:   allocationTags,
 	}
 
 	// initiate update Job
@@ -183,6 +191,8 @@ func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 	d.Set("tenant_id", tenantId)
+	allocationTags := GetAllocationTags(job.Spec.JobTemplate.Spec.Template.Spec.NodeSelector)
+	d.Set("allocation_tags", allocationTags)
 	return diag.Diagnostics{}
 }
 
@@ -196,6 +206,13 @@ func GetIsAnyHostAllowed(annotations map[string]string) bool {
 		return boolValue
 	}
 	return false
+}
+
+func GetAllocationTags(nodeSelector map[string]string) string {
+	if val, ok := nodeSelector["allocationtags"]; ok {
+		return val
+	}
+	return ""
 }
 
 func resourceKubernetesCronJobV1Beta1Delete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
