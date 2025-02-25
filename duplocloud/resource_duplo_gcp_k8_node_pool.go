@@ -902,7 +902,10 @@ func resourceGcpNodePoolDelete(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.Errorf("Error deleting node pool '%s': %s", id, err)
 	}
-
+	derr := gcpNodePoolWaitUntilAvailableForDeleted(ctx, c, tenantID, fullName, d.Timeout("delete"))
+	if derr != nil {
+		return diag.Errorf("%s", derr)
+	}
 	// Wait up to 60 seconds for Duplo to delete the node pool.
 	diagErr := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp node pool", id, func() (interface{}, duplosdk.ClientError) {
 		return c.GCPK8NodePoolGet(tenantID, fullName)
@@ -910,7 +913,6 @@ func resourceGcpNodePoolDelete(ctx context.Context, d *schema.ResourceData, m in
 	if diagErr != nil {
 		return diagErr
 	}
-
 	log.Printf("[TRACE] resourceGcpNodePoolDelete ******** end")
 	return nil
 }
@@ -1092,9 +1094,11 @@ func filterOutDefaultLabels(labels map[string]string) map[string]string {
 
 func filterOutDefaultOAuth(oAuths []string) []string {
 	oauthMap := map[string]struct{}{
-		"https://www.googleapis.com/auth/monitoring.write": {},
-		"https://www.googleapis.com/auth/logging.write":    {},
-		"https://www.googleapis.com/auth/monitoring":       {},
+		"https://www.googleapis.com/auth/monitoring.write":     {},
+		"https://www.googleapis.com/auth/logging.write":        {},
+		"https://www.googleapis.com/auth/monitoring":           {},
+		"https://www.googleapis.com/auth/compute":              {},
+		"https://www.googleapis.com/auth/devstorage.read_only": {},
 	}
 	filters := []string{}
 	for _, oAuth := range oAuths {
@@ -1133,6 +1137,27 @@ func gcpNodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID
 		Timeout:      timeout,
 	}
 	log.Printf("[DEBUG] gcpNodePoolWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+func gcpNodePoolWaitUntilAvailableForDeleted(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:      []string{"waiting"},
+		Target:       []string{"available"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			status := "waiting"
+			rp, _ := c.GCPK8NodePoolGet(tenantID, name)
+			if rp != nil && rp.Status == "STOPPING" {
+				status = "available"
+			}
+			return rp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilDeleted (%s/%s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
