@@ -30,6 +30,9 @@ func flattenAzureDiskVolumeSource(in *v1.AzureDiskVolumeSource) []interface{} {
 	if in.Kind != nil {
 		att["kind"] = string(*in.Kind)
 	}
+	if in.CachingMode != nil {
+		att["caching_mode"] = string(*in.CachingMode)
+	}
 	att["caching_mode"] = string(*in.CachingMode)
 	if in.FSType != nil {
 		att["fs_type"] = *in.FSType
@@ -132,7 +135,9 @@ func flattenCinderVolumeSource(in *v1.CinderVolumeSource) []interface{} {
 func flattenFCVolumeSource(in *v1.FCVolumeSource) []interface{} {
 	att := make(map[string]interface{})
 	att["target_ww_ns"] = newStringSet(schema.HashString, in.TargetWWNs)
-	att["lun"] = *in.Lun
+	if in.Lun != nil {
+		att["lun"] = *in.Lun
+	}
 	if in.FSType != "" {
 		att["fs_type"] = in.FSType
 	}
