@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strconv"
@@ -13,6 +12,8 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -644,6 +645,13 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, d.Timeout("update"))
+
+		// Wait for the instance to become available.
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 		}
 	}
 
