@@ -15,6 +15,7 @@ type DuploK8sJob struct {
 	Spec             batchv1.JobSpec   `json:"spec"`
 	Status           batchv1.JobStatus `json:"status"`
 	IsAnyHostAllowed bool              `json:"IsAnyHostAllowed"`
+	AllocationTags   string            `json:"AllocationTags"`
 }
 
 // K8sJobGetList retrieves a list of k8s jobs via the Duplo API.
