@@ -73,16 +73,17 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "The numerical index of elasticache instance type.\n" +
 				"Should be one of:\n\n" +
 				"   - `0` : Redis\n" +
-				"   - `1` : Memcache\n\n",
+				"   - `1` : Memcache\n\n" +
+				"   - `2` : Valkey\n\n",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
 			Default:      0,
-			ValidateFunc: validation.IntBetween(0, 1),
+			ValidateFunc: validation.IntBetween(0, 2),
 		},
 		"engine_version": {
 			Description: "The engine version of the elastic instance.\n" +
-				"See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) " +
+				"See AWS documentation for the [available Redis and Valkey instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) " +
 				"or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).",
 			Type:             schema.TypeString,
 			Optional:         true,
@@ -150,14 +151,14 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"parameter_group_name": {
-			Description: "The REDIS parameter group to supply.",
+			Description: "The REDIS/Valkey parameter group to supply.",
 			Type:        schema.TypeString,
 			Computed:    true,
 			Optional:    true,
 			ForceNew:    true,
 		},
 		"enable_cluster_mode": {
-			Description: "Flag to enable/disable redis cluster mode.",
+			Description: "Flag to enable/disable redis/valkey cluster mode.",
 			Type:        schema.TypeBool,
 			Computed:    true,
 			Optional:    true,
@@ -171,7 +172,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc:     validation.IntBetween(1, 500),
 		},
 		"snapshot_arns": {
-			Description:   "Specify the ARN of a Redis RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html",
+			Description:   "Specify the ARN of a Redis/Valkey RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html",
 			Type:          schema.TypeList,
 			Optional:      true,
 			Computed:      true,
@@ -179,7 +180,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Elem:          &schema.Schema{Type: schema.TypeString},
 		},
 		"snapshot_name": {
-			Description:   "Select the snapshot/backup you want to use for creating redis.",
+			Description:   "Select the snapshot/backup you want to use for creating redis/valkey.",
 			Type:          schema.TypeString,
 			Optional:      true,
 			Computed:      true,
