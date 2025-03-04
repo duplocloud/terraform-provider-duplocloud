@@ -107,7 +107,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		},
 	}
 	awsASGSchema["zones"] = &schema.Schema{
-		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A 1 - Zone B. For Automatic do not specify zones or zone field",
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A 1 - Zone B. For Automatic do not specify zones and zone field",
 		Type:        schema.TypeList,
 		Optional:    true,
 		ForceNew:    true,
