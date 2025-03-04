@@ -3,11 +3,13 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -105,7 +107,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		},
 	}
 	awsASGSchema["zones"] = &schema.Schema{
-		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Automatic 1 - Zone A 2 - Zone B",
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A 1 - Zone B. For Automatic do not specify zones or zone field",
 		Type:        schema.TypeList,
 		Optional:    true,
 		ForceNew:    true,
@@ -115,6 +117,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		},
 		ConflictsWith:    []string{"zone"},
 		DiffSuppressFunc: diffSuppressAsgZones,
+		Computed:         true,
 	}
 	awsASGSchema["zone"] = &schema.Schema{
 
@@ -493,8 +496,14 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 			z = append(z, dt.(int))
 		}
 		asgProfile.Zones = z
-	} else {
+	} else if v, ok := d.GetOk("zone"); ok && v != nil {
 		asgProfile.Zones = append(asgProfile.Zones, d.Get("zone").(int))
+	} else {
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		z = append(z, r.Intn(2))
+		asgProfile.Zones = z
+		d.Set("zones", z)
+
 	}
 
 	return asgProfile
