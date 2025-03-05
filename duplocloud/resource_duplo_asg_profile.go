@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -121,13 +122,14 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	}
 	awsASGSchema["zone"] = &schema.Schema{
 
-		Description:      "The availability zone to launch the host in, expressed as a number and starting at 0.",
-		Type:             schema.TypeInt,
-		Optional:         true,
-		ForceNew:         true, // relaunch instance
-		Deprecated:       "zone has been deprecated instead use zones",
-		ConflictsWith:    []string{"zones"},
-		DiffSuppressFunc: diffSuppressAsgZone,
+		Description:   "The availability zone to launch the host in, expressed as a number and starting at 0.",
+		Type:          schema.TypeString,
+		Optional:      true,
+		ForceNew:      true, // relaunch instance
+		Deprecated:    "zone has been deprecated instead use zones",
+		ConflictsWith: []string{"zones"},
+		ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^[01]{1}$`), "allowed values 0 or 1"),
+		//DiffSuppressFunc: diffSuppressAsgZone,
 	}
 
 	return awsASGSchema
@@ -497,7 +499,8 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		}
 		asgProfile.Zones = z
 	} else if v, ok := d.GetOk("zone"); ok && v != nil {
-		asgProfile.Zones = append(asgProfile.Zones, d.Get("zone").(int))
+		zn, _ := strconv.Atoi(d.Get("zone").(string))
+		asgProfile.Zones = append(asgProfile.Zones, zn)
 	} else {
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		z = append(z, r.Intn(2))
