@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
@@ -25,11 +26,9 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 		PreCheck:   duplosdktest.ResetEmulator,
 		CheckDestroy: func(state *terraform.State) error {
 			deleted := duplosdktest.EmuDeleted()
-			for _, rs := range state.RootModule().Resources {
-				if rs.Type == "duplocloud_tenant" {
-					if !contains(deleted, rs.Primary.ID) {
-						return fmt.Errorf("Tenant %s should have been deleted but wasn't", rs.Primary.ID)
-					}
+			for _, s := range deleted {
+				if !strings.Contains(s, "tenant/") {
+					return fmt.Errorf("Should  have been deleted: %s", "duplocloud_tenant."+rName)
 				}
 			}
 			return nil
@@ -94,6 +93,7 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "tenant_id", tenant.TenantID),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "plan_id", "testacc1"),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "account_name", tenantName),
+						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "allow_deletion", "false"),
 					)(state)
 				},
 			},
