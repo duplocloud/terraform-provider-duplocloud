@@ -3,18 +3,23 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+)
+
+const (
+	TOTALECACHENAMELENGTH = 40
 )
 
 func ecacheInstanceSchema() map[string]*schema.Schema {
@@ -301,6 +306,17 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	if diagErr != nil {
 		return diagErr
 	}
+	c := m.(*duplosdk.Client)
+
+	fullName, errname := c.GetResourceName("duploservices", tenantID, duplo.Name, false)
+	if errname != nil {
+		return diag.Errorf("resourceDuploEcacheInstanceCreate: Unable to retrieve duplo service name (name: %s, error: %s)", duplo.Name, errname.Error())
+
+	}
+	if !validateStringLength(fullName, TOTALECACHENAMELENGTH) {
+		return diag.Errorf("resourceDuploEcacheInstanceCreate: fullname %s exceeds allowable ecache name length %d)", fullName, TOTALECACHENAMELENGTH)
+
+	}
 
 	duplo.Identifier = duplo.Name
 	id := fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/%s", tenantID, duplo.Name)
@@ -324,7 +340,6 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Post the object to Duplo
-	c := m.(*duplosdk.Client)
 	_, err = c.EcacheInstanceCreate(tenantID, duplo)
 	if err != nil {
 		return diag.Errorf("Error updating ECache instance '%s': %s", id, err)

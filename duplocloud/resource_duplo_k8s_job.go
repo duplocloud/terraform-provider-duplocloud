@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -66,12 +67,18 @@ func resourceKubernetesJobV1Schema(readonly bool) map[string]*schema.Schema {
 			Optional: true,
 			Default:  false,
 		},
+		"allocation_tags": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Allocation tags is the simplest way to constraint containers/pods with hosts/nodes. DuploCloud/Kubernetes Orchestrator will make sure containers will run on the hosts having same allocation tags.",
+		},
 	}
 }
 
 func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
 	isAnyHostAllowed := d.Get("is_any_host_allowed").(bool)
+	allocationTags := d.Get("allocation_tags").(string)
 	log.Printf("[TRACE] resourceKubernetesJobV1Create(%s): start", tenantId)
 
 	name, err := getK8sJobName(d)
@@ -91,6 +98,7 @@ func resourceKubernetesJobV1Create(ctx context.Context, d *schema.ResourceData, 
 	rq.Spec = spec
 	rq.TenantId = tenantId
 	rq.IsAnyHostAllowed = isAnyHostAllowed
+	rq.AllocationTags = allocationTags
 
 	// initiate create Job
 	c := meta.(*duplosdk.Client)
@@ -170,13 +178,15 @@ func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, me
 	if specError != nil {
 		return diag.FromErr(specError)
 	}
-
+	allocationTags := GetAllocationTags(job.Spec.Template.Spec.NodeSelector)
+	d.Set("allocation_tags", allocationTags)
 	return diag.Diagnostics{}
 }
 
 func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
 	isAnyHostAllowed := d.Get("is_any_host_allowed").(bool)
+	allocationTags := d.Get("allocation_tags").(string)
 	log.Printf("[TRACE] resourceKubernetesJobV1Update(%s): end", tenantId)
 
 	name, err := getK8sJobName(d)
@@ -187,7 +197,7 @@ func resourceKubernetesJobV1Update(ctx context.Context, d *schema.ResourceData, 
 	var rq duplosdk.DuploK8sJob
 	rq.TenantId = tenantId
 	rq.IsAnyHostAllowed = isAnyHostAllowed
-
+	rq.AllocationTags = allocationTags
 	if d.HasChange("spec") {
 		spec, err := expandJobV1Spec(d.Get("spec").([]interface{}))
 		if err != nil {

@@ -15,6 +15,7 @@ type DuploK8sCronJob struct {
 	Spec             v1beta1.CronJobSpec   `json:"spec"`
 	Status           v1beta1.CronJobStatus `json:"status"`
 	IsAnyHostAllowed bool                  `json:"IsAnyHostAllowed"`
+	AllocationTags   string                `json:"AllocationTags"`
 }
 
 // K8sCronJobGetList retrieves a list of k8s jobs via the Duplo API.

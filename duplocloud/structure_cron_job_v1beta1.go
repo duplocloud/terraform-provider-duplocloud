@@ -7,6 +7,9 @@ import (
 )
 
 func flattenK8sCronJob(d *schema.ResourceData, duplo *duplosdk.DuploK8sCronJob, meta interface{}) error {
+	if duplo == nil {
+		return nil
+	}
 	d.Set("tenant_id", duplo.TenantId)
 	d.Set("metadata", flattenMetadata(duplo.Metadata, d, meta))
 	jobSpec, err := flattenCronJobSpecV1Beta1(duplo.Spec, d, meta)

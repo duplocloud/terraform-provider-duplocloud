@@ -586,6 +586,7 @@ func flattenSecretProjection(in *v1.SecretProjection) []interface{} {
 			m["key"] = v.Key
 			if v.Mode != nil {
 				m["mode"] = "0" + strconv.FormatInt(int64(*v.Mode), 8)
+
 			}
 			m["path"] = v.Path
 			items[i] = m
@@ -610,6 +611,7 @@ func flattenConfigMapProjection(in *v1.ConfigMapProjection) []interface{} {
 			}
 			if v.Mode != nil {
 				m["mode"] = "0" + strconv.FormatInt(int64(*v.Mode), 8)
+
 			}
 			if v.Path != "" {
 				m["path"] = v.Path
@@ -927,12 +929,13 @@ func expandItems(items []interface{}) ([]v1.KeyToPath, error) {
 		if v, ok := val["key"]; ok {
 			i.Key = v.(string)
 		}
-		if v, ok := val["mode"]; ok {
-			val, err := strconv.Atoi(v.(string))
+		if v, ok := val["mode"]; ok && v.(string) != "" {
+			num, err := OctalToNumericInt32(v.(string))
 			if err != nil {
 				return nil, err
 			}
-			i.Mode = ptrToInt32(int32(val))
+
+			i.Mode = ptrToInt32(num)
 		}
 		if v, ok := val["path"]; ok {
 			i.Path = v.(string)
@@ -1038,12 +1041,13 @@ func expandDownwardAPIItems(items []interface{}) ([]v1.DownwardAPIVolumeFile, er
 			}
 			i.FieldRef = ref
 		}
-		if v, ok := val["mode"]; ok {
-			val, err := strconv.Atoi(v.(string))
+		if v, ok := val["mode"]; ok && v.(string) != "" {
+			num, err := OctalToNumericInt32(v.(string))
 			if err != nil {
 				return nil, err
 			}
-			i.Mode = ptrToInt32(int32(val))
+
+			i.Mode = ptrToInt32(num)
 		}
 		if v, ok := val["path"]; ok {
 			i.Path = v.(string)
