@@ -46,6 +46,7 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "tenant_id", tenant.TenantID),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "plan_id", "testacc1"),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "account_name", tenantName),
+						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "allow_deletion", tenantName),
 					)(state)
 				},
 			},
@@ -80,6 +81,7 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						"	 account_name = \"" + tenantName + "\"\n" +
 						"	 plan_id = \"testacc1\"\n" +
 						"	 wait_until_created = false\n" +
+						"	 allow_deletion = false\n" +
 						"}",
 				),
 				Check: func(state *terraform.State) error {
@@ -97,6 +99,7 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						"	 account_name = \"" + tenantName + "\"\n" +
 						"	 plan_id = \"testacc1\"\n" +
 						"	 wait_until_created = false\n" +
+						"	 allow_deletion = false\n" +
 						"}",
 				),
 			},
