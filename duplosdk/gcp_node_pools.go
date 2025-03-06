@@ -34,6 +34,7 @@ type DuploGCPK8NodePool struct {
 	TotalMinNodeCount    *int                   `json:"TotalMinNodeCount"`
 	Accelerator          *Accelerator           `json:"Accelerator,omitempty"`
 	ResourceLabels       map[string]string      `json:"ResourceLabels"`
+	Status               string                 `json:"Status"`
 }
 
 type Accelerator struct {
