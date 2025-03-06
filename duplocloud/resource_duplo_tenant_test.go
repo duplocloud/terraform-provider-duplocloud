@@ -46,7 +46,7 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "tenant_id", tenant.TenantID),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "plan_id", "testacc1"),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "account_name", tenantName),
-						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "allow_deletion", tenantName),
+						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "allow_deletion", "true"),
 					)(state)
 				},
 			},
