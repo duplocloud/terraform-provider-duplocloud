@@ -2,9 +2,10 @@ package duplocloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/duplocloud/terraform-provider-duplocloud/internal/duplosdktest"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -79,7 +80,6 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						"	 account_name = \"" + tenantName + "\"\n" +
 						"	 plan_id = \"testacc1\"\n" +
 						"	 wait_until_created = false\n" +
-						"	 allow_deletion = false\n" +
 						"}",
 				),
 				Check: func(state *terraform.State) error {
@@ -97,7 +97,6 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						"	 account_name = \"" + tenantName + "\"\n" +
 						"	 plan_id = \"testacc1\"\n" +
 						"	 wait_until_created = false\n" +
-						"	 allow_deletion = false\n" +
 						"}",
 				),
 			},
