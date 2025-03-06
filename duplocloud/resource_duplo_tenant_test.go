@@ -25,8 +25,12 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 		PreCheck:   duplosdktest.ResetEmulator,
 		CheckDestroy: func(state *terraform.State) error {
 			deleted := duplosdktest.EmuDeleted()
-			if len(deleted) == 0 {
-				return fmt.Errorf("Not deleted: %s", "duplocloud_tenant."+rName)
+			for _, rs := range state.RootModule().Resources {
+				if rs.Type == "duplocloud_tenant" {
+					if !contains(deleted, rs.Primary.ID) {
+						return fmt.Errorf("Tenant %s should have been deleted but wasn't", rs.Primary.ID)
+					}
+				}
 			}
 			return nil
 		},
@@ -105,4 +109,13 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 			},
 		},
 	})
+}
+
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
