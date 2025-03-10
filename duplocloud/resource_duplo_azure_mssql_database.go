@@ -3,11 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -73,6 +73,13 @@ func duploAzureMssqlDatabaseSchema() map[string]*schema.Schema {
 					},
 				},
 			},
+		},
+		"max_size_gb": {
+			Description:  "Maximum allowed database size in GB",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntBetween(1, 4096),
 		},
 	}
 }
@@ -198,12 +205,19 @@ func resourceAzureMssqlDatabaseDelete(ctx context.Context, d *schema.ResourceDat
 }
 
 func expandAzureMssqlDatabase(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlDatabaseRequest {
-	return &duplosdk.DuploAzureMsSqlDatabaseRequest{
+	obj := &duplosdk.DuploAzureMsSqlDatabaseRequest{
 		Name:                    d.Get("name").(string),
 		PropertiesCollation:     d.Get("collation").(string),
 		PropertiesElasticPoolId: d.Get("elastic_pool_id").(string),
 		Sku:                     expandAzureMssqlDatabaseSku(d),
 	}
+	val := d.Get("max_size_gb").(int)
+	if val > 0 {
+		gb := gBToBytes(val)
+
+		obj.MaxSizeBytes = gb
+	}
+	return obj
 }
 
 func expandAzureMssqlDatabaseSku(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlDatabaseSku {
@@ -246,6 +260,7 @@ func flattenAzureMssqlDatabase(d *schema.ResourceData, duplo *duplosdk.DuploAzur
 			return fmt.Errorf("[DEBUG] setting `sku`: %#v", err)
 		}
 	}
+	d.Set("max_size_gb", bytesToGB(duplo.PropertiesMaxSizeBytes))
 	return nil
 }
 
