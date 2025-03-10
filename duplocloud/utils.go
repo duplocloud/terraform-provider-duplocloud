@@ -1185,3 +1185,11 @@ func stringInSlice(s string, list []string) bool {
 	}
 	return false
 }
+
+func gBToBytes(gb int) int64 {
+	return int64(gb) * 1024 * 1024 * 1024
+}
+
+func bytesToGB(bytes int64) int {
+	return int(bytes / (1024 * 1024 * 1024))
+}

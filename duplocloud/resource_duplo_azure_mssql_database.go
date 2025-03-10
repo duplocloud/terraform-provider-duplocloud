@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -76,12 +74,12 @@ func duploAzureMssqlDatabaseSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"max_size_bytes": {
-			Description:  "Maximum allowed database size in bytes",
-			Type:         schema.TypeString,
+		"max_size_gb": {
+			Description:  "Maximum allowed database size in GB",
+			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
-			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d+$`), "invalid value to max_size_bytes, field only accepts numerical values"),
+			ValidateFunc: validation.IntBetween(1, 4096),
 		},
 	}
 }
@@ -147,10 +145,7 @@ func resourceAzureMssqlDatabaseCreate(ctx context.Context, d *schema.ResourceDat
 	log.Printf("[TRACE] resourceAzureMssqlDatabaseCreate(%s, %s): start", tenantID, dbName)
 	c := m.(*duplosdk.Client)
 
-	rq, eerr := expandAzureMssqlDatabase(d)
-	if eerr != nil {
-		return diag.Errorf("Error getting mssql database field '%s': %s", dbName, err)
-	}
+	rq := expandAzureMssqlDatabase(d)
 	err = c.MsSqlDatabaseCreate(tenantID, serverName, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s azure mssql database '%s': %s", tenantID, dbName, err)
@@ -209,19 +204,20 @@ func resourceAzureMssqlDatabaseDelete(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func expandAzureMssqlDatabase(d *schema.ResourceData) (*duplosdk.DuploAzureMsSqlDatabaseRequest, error) {
+func expandAzureMssqlDatabase(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlDatabaseRequest {
 	obj := &duplosdk.DuploAzureMsSqlDatabaseRequest{
 		Name:                    d.Get("name").(string),
 		PropertiesCollation:     d.Get("collation").(string),
 		PropertiesElasticPoolId: d.Get("elastic_pool_id").(string),
 		Sku:                     expandAzureMssqlDatabaseSku(d),
 	}
-	num, err := strconv.ParseInt(d.Get("max_size_bytes").(string), 10, 64)
-	if err != nil {
-		return nil, err
+	val := d.Get("max_size_gb").(int)
+	if val > 0 {
+		gb := gBToBytes(val)
+
+		obj.MaxSizeBytes = gb
 	}
-	obj.MaxSizeBytes = num
-	return obj, nil
+	return obj
 }
 
 func expandAzureMssqlDatabaseSku(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlDatabaseSku {
@@ -264,7 +260,7 @@ func flattenAzureMssqlDatabase(d *schema.ResourceData, duplo *duplosdk.DuploAzur
 			return fmt.Errorf("[DEBUG] setting `sku`: %#v", err)
 		}
 	}
-	d.Set("max_size_byte", strconv.FormatInt(duplo.PropertiesMaxSizeBytes, 10))
+	d.Set("max_size_gb", bytesToGB(duplo.PropertiesMaxSizeBytes))
 	return nil
 }
 
