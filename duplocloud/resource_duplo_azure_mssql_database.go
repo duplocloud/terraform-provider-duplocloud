@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -77,10 +77,11 @@ func duploAzureMssqlDatabaseSchema() map[string]*schema.Schema {
 			},
 		},
 		"max_size_bytes": {
-			Description: "DB size in byte",
-			Type:        schema.TypeString,
-			Optional:    true,
-			ForceNew:    true,
+			Description:  "Maximum allowed database size in bytes",
+			Type:         schema.TypeString,
+			Optional:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d+$`), "invalid value to max_size_bytes, field only accepts numerical values"),
 		},
 	}
 }

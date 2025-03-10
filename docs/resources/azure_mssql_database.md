@@ -61,7 +61,7 @@ resource "duplocloud_azure_mssql_database" "mssql_database" {
 
 - `collation` (String) Specifies the collation of the database.
 - `elastic_pool_id` (String) Specifies the id of the elastic pool containing this database.
-- `max_size_bytes` (String) DB size in byte
+- `max_size_bytes` (String) Maximum allowed database size in bytes
 - `sku` (Block List, Max: 1) (see [below for nested schema](#nestedblock--sku))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
