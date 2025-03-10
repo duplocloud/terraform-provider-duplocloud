@@ -3,10 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -74,6 +76,12 @@ func duploAzureMssqlDatabaseSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"max_size_bytes": {
+			Description: "DB size in byte",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+		},
 	}
 }
 
@@ -138,7 +146,10 @@ func resourceAzureMssqlDatabaseCreate(ctx context.Context, d *schema.ResourceDat
 	log.Printf("[TRACE] resourceAzureMssqlDatabaseCreate(%s, %s): start", tenantID, dbName)
 	c := m.(*duplosdk.Client)
 
-	rq := expandAzureMssqlDatabase(d)
+	rq, eerr := expandAzureMssqlDatabase(d)
+	if eerr != nil {
+		return diag.Errorf("Error getting mssql database field '%s': %s", dbName, err)
+	}
 	err = c.MsSqlDatabaseCreate(tenantID, serverName, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s azure mssql database '%s': %s", tenantID, dbName, err)
@@ -197,13 +208,19 @@ func resourceAzureMssqlDatabaseDelete(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func expandAzureMssqlDatabase(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlDatabaseRequest {
-	return &duplosdk.DuploAzureMsSqlDatabaseRequest{
+func expandAzureMssqlDatabase(d *schema.ResourceData) (*duplosdk.DuploAzureMsSqlDatabaseRequest, error) {
+	obj := &duplosdk.DuploAzureMsSqlDatabaseRequest{
 		Name:                    d.Get("name").(string),
 		PropertiesCollation:     d.Get("collation").(string),
 		PropertiesElasticPoolId: d.Get("elastic_pool_id").(string),
 		Sku:                     expandAzureMssqlDatabaseSku(d),
 	}
+	num, err := strconv.ParseInt(d.Get("max_size_bytes").(string), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	obj.MaxSizeBytes = num
+	return obj, nil
 }
 
 func expandAzureMssqlDatabaseSku(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlDatabaseSku {
@@ -246,6 +263,7 @@ func flattenAzureMssqlDatabase(d *schema.ResourceData, duplo *duplosdk.DuploAzur
 			return fmt.Errorf("[DEBUG] setting `sku`: %#v", err)
 		}
 	}
+	d.Set("max_size_byte", strconv.FormatInt(duplo.PropertiesMaxSizeBytes, 10))
 	return nil
 }
 
