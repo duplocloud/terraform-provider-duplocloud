@@ -95,6 +95,7 @@ func flattenPodSpec(in v1.PodSpec, podSpec interface{}) ([]interface{}, error) {
 		filter := map[string]struct{}{
 			"kubernetes.io/os": {},
 			"tenantname":       {},
+			"allocationtags":   {},
 		}
 
 		temp := make(map[string]interface{})

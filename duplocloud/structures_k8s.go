@@ -2,10 +2,11 @@ package duplocloud
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"net/url"
 	"regexp"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	api "k8s.io/api/core/v1"
@@ -91,10 +92,16 @@ func removeInternalKeys(m map[string]string, d map[string]interface{}) map[strin
 // In that case, they won't be available in the TF state file and will be ignored during apply/plan operations.
 func removeKeys(m map[string]string, d map[string]interface{}, ignoreKubernetesMetadataKeys []string) map[string]string {
 	for k := range m {
+		if _, ok := d[k]; !ok {
+			delete(m, k)
+		}
+	}
+	for k := range m {
 		if ignoreKey(k, ignoreKubernetesMetadataKeys) && !isKeyInMap(k, d) {
 			delete(m, k)
 		}
 	}
+
 	return m
 }
 
