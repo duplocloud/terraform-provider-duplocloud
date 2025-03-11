@@ -134,10 +134,11 @@ func (c *Client) EcacheInstanceGet(tenantID, name string) (*DuploEcacheInstance,
 
 	// Call the API.
 	rp := DuploEcacheInstance{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("EcacheInstanceGet(%s, duplo-%s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/duplo-%s", tenantID, name),
-		&rp)
+		&rp, &conf)
 	if err != nil || rp.Identifier == "" {
 		return nil, err
 	}
