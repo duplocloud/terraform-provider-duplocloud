@@ -126,7 +126,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Type:          schema.TypeString,
 		Optional:      true,
 		ForceNew:      true, // relaunch instance
-		Deprecated:    "zone has been deprecated instead use zones",
+		Deprecated:    "zone has been deprecated instead use zones, if on evironment above july 2024 release",
 		ConflictsWith: []string{"zones"},
 		ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^[012345]{1}$`), "allowed values 0 - 5"),
 		//DiffSuppressFunc: diffSuppressAsgZone,
