@@ -88,7 +88,6 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						"	 allow_deletion = false\n" +
 						"}",
 				),
-				Destroy: true,
 				Check: func(state *terraform.State) error {
 					tenant := duplosdktest.EmuCreated()[0].(*duplosdk.DuploTenant)
 					return resource.ComposeTestCheckFunc(
