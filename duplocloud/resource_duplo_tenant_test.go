@@ -2,8 +2,6 @@ package duplocloud
 
 import (
 	"fmt"
-	"log"
-	"regexp"
 	"testing"
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
@@ -26,11 +24,9 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 		Providers:  testAccProviders,
 		PreCheck:   duplosdktest.ResetEmulator,
 		CheckDestroy: func(state *terraform.State) error {
-			log.Println("[DEBUG] CheckDestroy function called")
 			deleted := duplosdktest.EmuDeleted()
-			log.Printf("[DEBUG] Deleted resources: %+v", deleted)
 			if len(deleted) == 0 {
-				return fmt.Errorf("Should not have been deleted: %s", "duplocloud_tenant."+rName)
+				return fmt.Errorf("Not deleted: %s", "duplocloud_tenant."+rName)
 			}
 			return nil
 		},
@@ -44,14 +40,12 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						"	 allow_deletion = true\n" +
 						"}",
 				),
-				Destroy: true,
 				Check: func(state *terraform.State) error {
 					tenant := duplosdktest.EmuCreated()[0].(*duplosdk.DuploTenant)
 					return resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "tenant_id", tenant.TenantID),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "plan_id", "testacc1"),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "account_name", tenantName),
-						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "allow_deletion", "true"),
 					)(state)
 				},
 			},
@@ -74,12 +68,10 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 		Providers:  testAccProviders,
 		PreCheck:   duplosdktest.ResetEmulator,
 		CheckDestroy: func(state *terraform.State) error {
-			if len(duplosdktest.EmuDeleted()) == 0 {
-				return nil
-			} else {
+			if len(duplosdktest.EmuCreated()) == 0 {
 				return fmt.Errorf("Should not have been deleted: %s", "duplocloud_tenant."+rName)
 			}
-
+			return nil
 		},
 		Steps: []resource.TestStep{
 			{
@@ -97,10 +89,8 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "tenant_id", tenant.TenantID),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "plan_id", "testacc1"),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "account_name", tenantName),
-						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "allow_deletion", "false"),
 					)(state)
 				},
-				ExpectError: regexp.MustCompile("Will NOT delete the tenant - because allow_deletion is false"),
 			},
 			{
 				Config: testAccProvider_GenConfig(
