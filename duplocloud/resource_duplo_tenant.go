@@ -268,7 +268,7 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 			time.Sleep(time.Duration(1) * time.Minute)
 		}
 	} else {
-		return diag.Errorf("[Error] resourceTenantDelete(%s): will NOT delete the tenant - because 'allow_deletion' is 'false'", tenantID)
+		return diag.Errorf("Will NOT delete the tenant - because allow_deletion is false")
 	}
 
 	log.Printf("[TRACE] resourceTenantDelete(%s): end", tenantID)

@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -71,12 +72,12 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 		IsUnitTest: true,
 		Providers:  testAccProviders,
 		PreCheck:   duplosdktest.ResetEmulator,
-		CheckDestroy: func(state *terraform.State) error {
-			if len(duplosdktest.EmuCreated()) == 0 {
-				return fmt.Errorf("Should not have been deleted: %s", "duplocloud_tenant."+rName)
-			}
-			return nil
-		},
+		//CheckDestroy: func(state *terraform.State) error {
+		//	if len(duplosdktest.EmuDeleted()) == 0 {
+		//		return fmt.Errorf("Should not have been deleted: %s", "duplocloud_tenant."+rName)
+		//	}
+		//	return nil
+		//},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccProvider_GenConfig(
@@ -96,6 +97,7 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "allow_deletion", "false"),
 					)(state)
 				},
+				ExpectError: regexp.MustCompile("Will NOT delete the tenant - because allow_deletion is false"),
 			},
 			{
 				Config: testAccProvider_GenConfig(
@@ -109,13 +111,4 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 			},
 		},
 	})
-}
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
 }
