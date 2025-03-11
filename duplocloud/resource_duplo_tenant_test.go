@@ -61,6 +61,7 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 			},
 		},
 	})
+	// Issue: https://github.com/hashicorp/terraform-plugin-sdk/issues/609
 
 	// Tenant that is not allowed to be deleted.
 	// resource.Test(t, resource.TestCase{
