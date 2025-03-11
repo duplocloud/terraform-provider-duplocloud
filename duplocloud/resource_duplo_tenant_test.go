@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"testing"
 
@@ -25,7 +26,9 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 		Providers:  testAccProviders,
 		PreCheck:   duplosdktest.ResetEmulator,
 		CheckDestroy: func(state *terraform.State) error {
+			log.Println("[DEBUG] CheckDestroy function called")
 			deleted := duplosdktest.EmuDeleted()
+			log.Printf("[DEBUG] Deleted resources: %+v", deleted)
 			if len(deleted) == 0 {
 				return fmt.Errorf("Should not have been deleted: %s", "duplocloud_tenant."+rName)
 			}
