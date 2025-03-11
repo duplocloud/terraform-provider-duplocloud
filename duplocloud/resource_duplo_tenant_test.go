@@ -44,7 +44,6 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						"	 allow_deletion = true\n" +
 						"}",
 				),
-				Destroy: true,
 				Check: func(state *terraform.State) error {
 					tenant := duplosdktest.EmuCreated()[0].(*duplosdk.DuploTenant)
 					return resource.ComposeTestCheckFunc(
@@ -73,12 +72,14 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 		IsUnitTest: true,
 		Providers:  testAccProviders,
 		PreCheck:   duplosdktest.ResetEmulator,
-		//CheckDestroy: func(state *terraform.State) error {
-		//	if len(duplosdktest.EmuDeleted()) == 0 {
-		//		return fmt.Errorf("Should not have been deleted: %s", "duplocloud_tenant."+rName)
-		//	}
-		//	return nil
-		//},
+		CheckDestroy: func(state *terraform.State) error {
+			if len(duplosdktest.EmuDeleted()) == 0 {
+				return nil
+			} else {
+				return fmt.Errorf("Should not have been deleted: %s", "duplocloud_tenant."+rName)
+			}
+
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccProvider_GenConfig(

@@ -153,8 +153,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 		d.Set("policy", []map[string]interface{}{})
 	}
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	ald := d.Get("allow_deletion").(bool)
-	d.Set("allow_deletion", ald)
+	d.Set("allow_deletion", d.Get("allow_deletion").(bool))
 	log.Printf("[TRACE] resourceTenantRead(%s): end", tenantID)
 	return nil
 }
