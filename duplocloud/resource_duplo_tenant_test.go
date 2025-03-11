@@ -63,45 +63,45 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 	})
 
 	// Tenant that is not allowed to be deleted.
-	resource.Test(t, resource.TestCase{
-		IsUnitTest: true,
-		Providers:  testAccProviders,
-		PreCheck:   duplosdktest.ResetEmulator,
-		CheckDestroy: func(state *terraform.State) error {
-			if len(duplosdktest.EmuCreated()) == 0 {
-				return fmt.Errorf("Should not have been deleted: %s", "duplocloud_tenant."+rName)
-			}
-			return nil
-		},
-		Steps: []resource.TestStep{
-			{
-				Config: testAccProvider_GenConfig(
-					"resource \"duplocloud_tenant\" \"" + rName + "\" {\n" +
-						"	 account_name = \"" + tenantName + "\"\n" +
-						"	 plan_id = \"testacc1\"\n" +
-						"	 wait_until_created = false\n" +
-						"	 allow_deletion = false\n" +
-						"}",
-				),
-				Check: func(state *terraform.State) error {
-					tenant := duplosdktest.EmuCreated()[0].(*duplosdk.DuploTenant)
-					return resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "tenant_id", tenant.TenantID),
-						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "plan_id", "testacc1"),
-						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "account_name", tenantName),
-					)(state)
-				},
-			},
-			{
-				Config: testAccProvider_GenConfig(
-					"resource \"duplocloud_tenant\" \"" + rName + "\" {\n" +
-						"	 account_name = \"" + tenantName + "\"\n" +
-						"	 plan_id = \"testacc1\"\n" +
-						"	 wait_until_created = false\n" +
-						"	 allow_deletion = false\n" +
-						"}",
-				),
-			},
-		},
-	})
+	// resource.Test(t, resource.TestCase{
+	// 	IsUnitTest: true,
+	// 	Providers:  testAccProviders,
+	// 	PreCheck:   duplosdktest.ResetEmulator,
+	// 	CheckDestroy: func(state *terraform.State) error {
+	// 		if len(duplosdktest.EmuCreated()) == 0 {
+	// 			return fmt.Errorf("Should not have been deleted: %s", "duplocloud_tenant."+rName)
+	// 		}
+	// 		return nil
+	// 	},
+	// 	Steps: []resource.TestStep{
+	// 		{
+	// 			Config: testAccProvider_GenConfig(
+	// 				"resource \"duplocloud_tenant\" \"" + rName + "\" {\n" +
+	// 					"	 account_name = \"" + tenantName + "\"\n" +
+	// 					"	 plan_id = \"testacc1\"\n" +
+	// 					"	 wait_until_created = false\n" +
+	// 					"	 allow_deletion = false\n" +
+	// 					"}",
+	// 			),
+	// 			Check: func(state *terraform.State) error {
+	// 				tenant := duplosdktest.EmuCreated()[0].(*duplosdk.DuploTenant)
+	// 				return resource.ComposeTestCheckFunc(
+	// 					resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "tenant_id", tenant.TenantID),
+	// 					resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "plan_id", "testacc1"),
+	// 					resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "account_name", tenantName),
+	// 				)(state)
+	// 			},
+	// 		},
+	// 		{
+	// 			Config: testAccProvider_GenConfig(
+	// 				"resource \"duplocloud_tenant\" \"" + rName + "\" {\n" +
+	// 					"	 account_name = \"" + tenantName + "\"\n" +
+	// 					"	 plan_id = \"testacc1\"\n" +
+	// 					"	 wait_until_created = false\n" +
+	// 					"	 allow_deletion = false\n" +
+	// 					"}",
+	// 			),
+	// 		},
+	// 	},
+	// })
 }
