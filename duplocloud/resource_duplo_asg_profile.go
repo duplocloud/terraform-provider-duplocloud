@@ -122,13 +122,13 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	}
 	awsASGSchema["zone"] = &schema.Schema{
 
-		Description:   "The availability zone to launch the host in, expressed as a number and starting at 0.",
+		Description:   "The availability zone to launch the host in, expressed as a numeric value and starting at 0 to 5. Recommended for environment on july release",
 		Type:          schema.TypeString,
 		Optional:      true,
 		ForceNew:      true, // relaunch instance
 		Deprecated:    "zone has been deprecated instead use zones",
 		ConflictsWith: []string{"zones"},
-		ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^[01]{1}$`), "allowed values 0 or 1"),
+		ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^[012345]{1}$`), "allowed values 0 - 5"),
 		//DiffSuppressFunc: diffSuppressAsgZone,
 	}
 
