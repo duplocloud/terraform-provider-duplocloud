@@ -591,7 +591,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"custom_cidr":                 lb.CustomCidrs,
 		"allow_global_access":         lb.AllowGlobalAccess,
 		"skip_http_to_https":          lb.SkipHttpToHttps,
-		"backend_protocol_version":    lb.BeProtocolVersion,
+		"backend_protocol_version":    strings.ToUpper(lb.BeProtocolVersion),
 	}
 
 	if lb.HealthCheckConfig != nil {
