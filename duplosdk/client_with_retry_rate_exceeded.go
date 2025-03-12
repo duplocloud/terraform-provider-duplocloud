@@ -110,7 +110,13 @@ func is400OrTimeoutsError(err ClientError) bool {
 				if strings.Contains(strError, "HRESULT") {
 					log.Printf("[ERROR] FAILED_WITH_TIMEOUT_PERIOD_EXPIRED is400OrTimeoutsError: detected? %s", strError)
 					return true
+				} else if err.Status() == 400 {
+					log.Printf("[ERROR] FAILED_WITH_400 is400OrTimeoutsError: detected? %s", err.Error())
+					return true
 				}
+			} else if err.Status() == 400 {
+				log.Printf("[ERROR] FAILED_WITH_400 is400OrTimeoutsError: detected? %s", err.Error())
+				return true
 			}
 		} else if err.Status() == 400 {
 			log.Printf("[ERROR] FAILED_WITH_400 is400OrTimeoutsError: detected? %s", err.Error())
