@@ -63,7 +63,7 @@ install_window: build
 #	mkdir -p bin
 #	mv ${BINARY} bin
 test:
-	TF_LOG=DEBUG go test -i $(TEST) || exit 1
+	go test -i $(TEST) || exit 1
 	echo $(TEST) | xargs -t -n4 go test $(TESTARGS) -timeout=90s -parallel=4
 
 testacc:
