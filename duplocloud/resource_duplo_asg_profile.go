@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
@@ -108,13 +107,14 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		},
 	}
 	awsASGSchema["zones"] = &schema.Schema{
-		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A 1 - Zone B. For Automatic do not specify zones and zone field",
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A to 3 - Zone D, based on the infra setup",
 		Type:        schema.TypeList,
 		Optional:    true,
 		ForceNew:    true,
 		Elem: &schema.Schema{
-			Type:     schema.TypeInt,
-			ForceNew: true,
+			Type:         schema.TypeInt,
+			ForceNew:     true,
+			ValidateFunc: validation.IntBetween(0, 3),
 		},
 		ConflictsWith:    []string{"zone"},
 		DiffSuppressFunc: diffSuppressAsgZones,
@@ -122,13 +122,13 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	}
 	awsASGSchema["zone"] = &schema.Schema{
 
-		Description:   "The availability zone to launch the host in, expressed as a numeric value and starting at 0 to 5. Recommended for environment on july release",
+		Description:   "The availability zone to launch the host in, expressed as a numeric value and starting at 0 to 3. Recommended for environment on july release",
 		Type:          schema.TypeString,
 		Optional:      true,
 		ForceNew:      true, // relaunch instance
 		Deprecated:    "zone has been deprecated instead use zones, if on evironment above july 2024 release",
 		ConflictsWith: []string{"zones"},
-		ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^[012345]{1}$`), "allowed values 0 - 5"),
+		ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^[0123]{1}$`), "allowed values 0 - 3"),
 		//DiffSuppressFunc: diffSuppressAsgZone,
 	}
 
@@ -501,12 +501,6 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 	} else if v, ok := d.GetOk("zone"); ok && v != nil {
 		zn, _ := strconv.Atoi(d.Get("zone").(string))
 		asgProfile.Zones = append(asgProfile.Zones, zn)
-	} else {
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
-		z = append(z, r.Intn(2))
-		asgProfile.Zones = z
-		d.Set("zones", z)
-
 	}
 
 	return asgProfile

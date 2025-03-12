@@ -213,8 +213,8 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `user_account` (String) The name of the tenant that the host will be created in.
 - `volume` (Block List) Block to specify additional or secondary volume beyond the root device (see [below for nested schema](#nestedblock--volume))
 - `wait_for_capacity` (Boolean) Whether or not to wait until ASG instances to be healthy, after creation. Defaults to `true`.
-- `zone` (String, Deprecated) The availability zone to launch the host in, expressed as a number and starting at 0. zone has been deprecated instead use zones
-- `zones` (List of Number) The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A 1 - Zone B. For Automatic do not specify zones and zone field
+- `zone` (String, Deprecated) The availability zone to launch the host in, expressed as a numeric value and starting at 0 to 3. Recommended for environment on july release zone has been deprecated instead use zones, if on evironment above july 2024 release
+- `zones` (List of Number) The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A to 3 - Zone D, based on the infra setup
 
 ### Read-Only
 
