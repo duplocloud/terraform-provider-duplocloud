@@ -47,7 +47,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Type:             schema.TypeString,
 			Required:         true,
 			DiffSuppressFunc: diffSuppressStringCase,
-			ValidateFunc:     validation.StringInSlice([]string{"HTTP", "HTTPS"}, true),
+			ValidateFunc:     validation.StringInSlice([]string{"HTTP", "HTTPS", "TCP", "UDP", "TLS"}, false),
 		},
 		"port": {
 			Description: "The backend port associated with this load balancer configuration.",
@@ -591,7 +591,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"custom_cidr":                 lb.CustomCidrs,
 		"allow_global_access":         lb.AllowGlobalAccess,
 		"skip_http_to_https":          lb.SkipHttpToHttps,
-		"backend_protocol_version":    lb.BeProtocolVersion,
+		"backend_protocol_version":    strings.ToUpper(lb.BeProtocolVersion),
 	}
 
 	if lb.HealthCheckConfig != nil {
@@ -624,8 +624,11 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 	lbconfs := diff.Get("lbconfigs").([]interface{})
 	for _, lb := range lbconfs {
 		m := lb.(map[string]interface{})
-		p := strings.ToLower(m["protocol"].(string))
-		bp := strings.ToLower(m["backend_protocol_version"].(string))
+		pr := m["protocol"].(string)
+		p := strings.ToLower(pr)
+		b := m["backend_protocol_version"].(string)
+		bp := strings.ToLower(b)
+
 		lb, ok := m["lb_type"].(int)
 		if ok && lb != 1 && bp != "" && bp != "http1" {
 			return fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")
@@ -635,8 +638,19 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 			return fmt.Errorf("backend_protocol_version is a required field for ALB load balancer type")
 		}
 		if p == "http" && bp == "grpc" {
-			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, p)
+			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, pr)
 		}
+
+		if (lb == 1 || lb == 7) && (p != "http" && p != "https") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		}
+		if lb == 6 && (p != "tcp" && p != "udp" && p != "tls") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		}
+		if (lb == 3 || lb == 4) && (p != "tcp" && p != "udp") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		}
+
 	}
 	return nil
 }
