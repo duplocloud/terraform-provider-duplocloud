@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"math"
 	"reflect"
@@ -13,6 +12,8 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -1025,17 +1026,19 @@ func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
 
 func diffSuppressAsgZones(k, old, new string, d *schema.ResourceData) bool {
 	zs := d.Get("zones").([]interface{})
-	if len(zs) == 1 && zs[0].(int) == 0 {
+	z := d.Get("zone")
+
+	if len(zs) == 0 && z != nil {
 		return true
 	}
 	return false
 }
 
-func diffSuppressAsgZone(k, old, new string, d *schema.ResourceData) bool {
-	z := d.Get("zone").(int)
-
-	return z == 0
-}
+//func diffSuppressAsgZone(k, old, new string, d *schema.ResourceData) bool {
+//	z := d.Get("zone")
+//
+//	return z != nil
+//}
 
 func OctalToNumericInt32(octal string) (int32, error) {
 	var result int64
@@ -1181,4 +1184,12 @@ func stringInSlice(s string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func gBToBytes(gb int) int64 {
+	return int64(gb) * 1024 * 1024 * 1024
+}
+
+func bytesToGB(bytes int64) int {
+	return int(bytes / (1024 * 1024 * 1024))
 }
