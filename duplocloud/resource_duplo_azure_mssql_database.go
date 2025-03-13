@@ -75,10 +75,11 @@ func duploAzureMssqlDatabaseSchema() map[string]*schema.Schema {
 			},
 		},
 		"max_size_gb": {
-			Description:  "Maximum allowed database size in GB",
+			Description:  "Maximum allowed database size in GB for more information please refer following link https://learn.microsoft.com/en-us/azure/azure-sql/database/resource-limits-vcore-single-databases?view=azuresql",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
+			Computed:     true,
 			ValidateFunc: validation.IntBetween(1, 4096),
 		},
 	}
