@@ -43,7 +43,15 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			ForceNew: true,
 		},
 		"protocol": {
-			Description:      "The backend protocol associated with this load balancer configuration.",
+			Description: "The backend protocol associated with this load balancer configuration.\n" +
+				"Supported protocol based on lb_type:\n\n" +
+				"`0 (ELB)`: HTTP, HTTPS, TCP, UDP" +
+				"`1 (ALB)` : HTTP, HTTPS" +
+				"`3 (K8S Service w/ Cluster IP)`: TCP, UDP" +
+				"`4 (K8S Service w/ Node Port)` : TCP, UDP" +
+				"`5 (Azure Shared Application Gateway)`: HTTP, HTTPS" +
+				"`6 (NLB)` : TCP, UDP, TLS" +
+				"`7 (Target Group Only)` : HTTP, HTTPS",
 			Type:             schema.TypeString,
 			Required:         true,
 			DiffSuppressFunc: diffSuppressStringCase,
@@ -641,7 +649,7 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, pr)
 		}
 
-		if (lb == 1 || lb == 7) && (p != "http" && p != "https") {
+		if (lb == 1 || lb == 7 || lb == 5) && (p != "http" && p != "https") {
 			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
 		}
 		if lb == 6 && (p != "tcp" && p != "udp" && p != "tls") {
@@ -650,7 +658,9 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		if (lb == 3 || lb == 4) && (p != "tcp" && p != "udp") {
 			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
 		}
-
+		if lb == 0 && p == "tls" {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		}
 	}
 	return nil
 }
