@@ -93,7 +93,13 @@ Should be one of:
 - `protocol` (String) The backend protocol associated with this load balancer configuration.
 Supported protocol based on lb_type:
 
-`0 (ELB)`: HTTP, HTTPS, TCP, UDP`1 (ALB)` : HTTP, HTTPS`3 (K8S Service w/ Cluster IP)`: TCP, UDP`4 (K8S Service w/ Node Port)` : TCP, UDP`5 (Azure Shared Application Gateway)`: HTTP, HTTPS`6 (NLB)` : TCP, UDP, TLS`7 (Target Group Only)` : HTTP, HTTPS
+`0 (ELB)`: HTTP, HTTPS, TCP, UDP
+`1 (ALB)` : HTTP, HTTPS
+`3 (K8S Service w/ Cluster IP)`: TCP, UDP
+`4 (K8S Service w/ Node Port)` : TCP, UDP
+`5 (Azure Shared Application Gateway)`: HTTP, HTTPS
+`6 (NLB)` : TCP, UDP, TLS
+`7 (Target Group Only)` : HTTP, HTTPS
 
 Optional:
 
