@@ -79,7 +79,7 @@ func duploAzureMssqlDatabaseSchema() map[string]*schema.Schema {
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
-			Computed:     true,
+			Default:      32,
 			ValidateFunc: validation.IntBetween(1, 4096),
 		},
 	}

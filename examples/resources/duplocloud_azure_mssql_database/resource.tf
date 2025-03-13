@@ -41,5 +41,5 @@ resource "duplocloud_azure_mssql_database" "mssql_database" {
     name     = "GP_Gen5"
     capacity = 2
   }
-  max_size_gb = 80
+  max_size_gb = 81
 }
