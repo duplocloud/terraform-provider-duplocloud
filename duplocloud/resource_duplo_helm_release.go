@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"encoding/json"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -65,8 +66,7 @@ func resourceHelmRelease() *schema.Resource {
 			"chart": {
 				Description: "Helm chart",
 				Type:        schema.TypeList,
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
 				ForceNew:    true, // relaunch instance
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -140,7 +140,7 @@ func resourceHelmReleaseRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 
 	flattenErr := flattenHelmRelease(d, *duplo)
-	if err != nil {
+	if flattenErr != nil {
 		diag.Errorf("%s", flattenErr.Error())
 	}
 	log.Printf("[TRACE] resourceHelmReleaseRead(%s,%s): end", tenantID, name)
@@ -236,7 +236,10 @@ func expandHelmRelease(d *schema.ResourceData) (duplosdk.DuploHelmRelease, error
 			},
 		},
 	}
-	err := json.Unmarshal([]byte(d.Get("values").(string)), &obj.Spec.Values)
+	var err error
+	if val, ok := d.GetOk("values"); ok && val.(string) != "" {
+		err = json.Unmarshal([]byte(d.Get("values").(string)), &obj.Spec.Values)
+	}
 	return obj, err
 }
 
@@ -250,9 +253,12 @@ func flattenHelmRelease(d *schema.ResourceData, rb duplosdk.DuploHelmRelease) er
 	d.Set("chart.0.source_type", rb.Spec.Chart.Spec.SourceRef.Kind)
 	d.Set("chart.0.source_name", rb.Spec.Chart.Spec.SourceRef.Name)
 	d.Set("chart.0.reconcile_strategy", rb.Spec.Chart.Spec.ReconcileStrategy)
-	v, err := json.Marshal(rb.Spec.Values)
-	if err == nil {
-		d.Set("values", string(v))
+	var err error
+	if rb.Spec.Values != nil {
+		v, err := json.Marshal(rb.Spec.Values)
+		if err == nil {
+			d.Set("values", string(v))
+		}
 	}
 	return err
 }

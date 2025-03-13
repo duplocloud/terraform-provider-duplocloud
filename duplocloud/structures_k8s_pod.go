@@ -25,7 +25,7 @@ var builtInTolerations = map[string]string{
 
 // Flatteners
 
-func flattenPodSpec(in v1.PodSpec) ([]interface{}, error) {
+func flattenPodSpec(in v1.PodSpec, podSpec interface{}) ([]interface{}, error) {
 	att := make(map[string]interface{})
 	if in.ActiveDeadlineSeconds != nil {
 		att["active_deadline_seconds"] = *in.ActiveDeadlineSeconds
@@ -92,7 +92,31 @@ func flattenPodSpec(in v1.PodSpec) ([]interface{}, error) {
 		att["node_name"] = in.NodeName
 	}
 	if len(in.NodeSelector) > 0 {
-		att["node_selector"] = in.NodeSelector
+		filter := map[string]struct{}{
+			"kubernetes.io/os": {},
+			"tenantname":       {},
+			"allocationtags":   {},
+		}
+
+		temp := make(map[string]interface{})
+
+		psm, ok := podSpec.([]interface{})
+		if ok && len(psm) > 0 {
+			mp := psm[0].(map[string]interface{})
+			ns, ok := mp["node_selector"].(map[string]interface{})
+			if ok {
+				for k := range ns {
+					delete(filter, k)
+				}
+			}
+		}
+		for k, v := range in.NodeSelector {
+			if _, ok := filter[k]; !ok {
+				temp[k] = v
+			}
+		}
+
+		att["node_selector"] = temp
 	}
 	if in.RuntimeClassName != nil {
 		att["runtime_class_name"] = *in.RuntimeClassName
