@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -152,7 +153,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 		d.Set("policy", []map[string]interface{}{})
 	}
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-
+	d.Set("allow_deletion", d.Get("allow_deletion").(bool))
 	log.Printf("[TRACE] resourceTenantRead(%s): end", tenantID)
 	return nil
 }
@@ -266,11 +267,12 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 			time.Sleep(time.Duration(1) * time.Minute)
 		}
 	} else {
-		log.Printf("[WARN] resourceTenantDelete(%s): will NOT delete the tenant - because 'allow_deletion' is 'false'", tenantID)
+		return diag.Errorf("Will NOT delete the tenant - because allow_deletion is false")
 	}
 
 	log.Printf("[TRACE] resourceTenantDelete(%s): end", tenantID)
 	return nil
+
 }
 
 func parseDuploTenantIdParts(id string) (tenantID string) {
