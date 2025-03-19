@@ -144,13 +144,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description: "A RDS parameter group name to apply to the RDS instance.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Computed:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(1, 255),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
-			//DiffSuppressFunc: diffSuppressWhenNotCreating,
+			DiffSuppressFunc: diffSuppressDefaultParameterName,
 		},
 		"cluster_parameter_group_name": {
 			Description: "Parameter group associated with this instance's DB Cluster.",
@@ -1286,4 +1285,36 @@ func rdsInstanceSyncMonitoringInterval(ctx context.Context, c *duplosdk.Client, 
 	log.Printf("[DEBUG] rdsInstanceSyncMonitoringInterval (%s)", id)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func diffSuppressDefaultParameterName(k, old, new string, d *schema.ResourceData) bool {
+	// If both values are identical, suppress the diff
+	if old == new {
+		return true
+	}
+
+	// Define the known default prefix (assuming "default" is a prefix)
+	defaultPrefix := "default."
+
+	// Check if the field was not explicitly set in Terraform
+	if !d.HasChange(k) {
+		// If the API returns a default value, suppress the diff
+		if strings.Contains(new, "") && strings.Contains(old, defaultPrefix) {
+			return true
+		}
+	}
+
+	// If both old and new values contain the default prefix, suppress the diff
+	if strings.Contains(old, defaultPrefix) && strings.Contains(new, defaultPrefix) {
+		return true
+	}
+
+	// If transitioning from a default value to a custom value, allow diff
+	// If transitioning from a custom value back to a default value, allow diff
+	if (strings.Contains(old, defaultPrefix) && !strings.Contains(new, defaultPrefix)) ||
+		(!strings.Contains(old, defaultPrefix) && strings.Contains(new, defaultPrefix)) {
+		return false
+	}
+
+	return false
 }
