@@ -167,6 +167,7 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 		var rp *duplosdk.DuploAwsSecret
 		//name, errget := c.GetDuploServicesName(tenantID, duploObject.Name)
 		//if errget == nil {
+		time.Sleep(5 * time.Second)
 		rp, errget := c.TenantGetAwsSecret(tenantID, crp.Name)
 		if errget == nil && rp != nil {
 			d.SetId(fmt.Sprintf("%s/%s", tenantID, rp.Name))
