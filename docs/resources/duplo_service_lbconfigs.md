@@ -53,7 +53,7 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
 }
 
 
-resource "duplocloud_duplo_service_lbconfigs" "myservice" {
+resource "duplocloud_duplo_service_lbconfigs" "myservice2" {
   tenant_id                   = duplocloud_duplo_service.myservice.tenant_id
   replication_controller_name = duplocloud_duplo_service.myservice.name
 
