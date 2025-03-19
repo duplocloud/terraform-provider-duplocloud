@@ -161,13 +161,13 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 		return diag.Errorf("error creating secret %s for tenant '%s': %s", duploObject.Name, tenantID, err)
 	}
 	tempID := fmt.Sprintf("%s/%s", tenantID, duploObject.Name)
-
+	// This is added to handle the delay in the secret creation. For - DUPLO-29541
+	time.Sleep(5 * time.Second)
 	// Wait for Duplo to be able to return the secret's details.
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "tenant secret", tempID, func() (interface{}, duplosdk.ClientError) {
 		var rp *duplosdk.DuploAwsSecret
 		//name, errget := c.GetDuploServicesName(tenantID, duploObject.Name)
 		//if errget == nil {
-		time.Sleep(5 * time.Second)
 		rp, errget := c.TenantGetAwsSecret(tenantID, crp.Name)
 		if errget == nil && rp != nil {
 			d.SetId(fmt.Sprintf("%s/%s", tenantID, rp.Name))
