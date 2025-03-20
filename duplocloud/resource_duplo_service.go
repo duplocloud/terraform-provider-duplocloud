@@ -377,16 +377,12 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 	}
-	if d.HasChange("init_container_docker_image") {
-		if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
-			updatedOtherDockerConfig, err := updateInitContainerImages(d.Get("other_docker_config").(string), d.Get("init_container_docker_image").([]interface{}))
-			if err != nil {
-				return diag.Errorf("Error updating init container images: %s", err)
-			}
-			rq.OtherDockerConfig = updatedOtherDockerConfig
-		} else {
-			rq.OtherDockerConfig = d.Get("other_docker_config").(string)
+	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
+		updatedOtherDockerConfig, err := updateInitContainerImages(d.Get("other_docker_config").(string), d.Get("init_container_docker_image").([]interface{}))
+		if err != nil {
+			return diag.Errorf("Error updating init container images: %s", err)
 		}
+		rq.OtherDockerConfig = updatedOtherDockerConfig
 	} else {
 		rq.OtherDockerConfig = d.Get("other_docker_config").(string)
 	}
