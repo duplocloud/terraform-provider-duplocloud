@@ -1021,7 +1021,8 @@ func diffSuppressSpecifiedMetadata(k, old, new string, d *schema.ResourceData) b
 }
 
 func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
-	return strings.EqualFold(old, new)
+	b := strings.EqualFold(old, new)
+	return b
 }
 
 func diffSuppressAsgZones(k, old, new string, d *schema.ResourceData) bool {
