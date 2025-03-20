@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -155,7 +156,7 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	_, err = c.TenantCreateAwsSecret(tenantID, &duploObject)
+	crp, err := c.TenantCreateAwsSecret(tenantID, &duploObject)
 	if err != nil {
 		return diag.Errorf("error creating secret %s for tenant '%s': %s", duploObject.Name, tenantID, err)
 	}
@@ -164,13 +165,13 @@ func resourceTenantSecretCreate(ctx context.Context, d *schema.ResourceData, m i
 	// Wait for Duplo to be able to return the secret's details.
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "tenant secret", tempID, func() (interface{}, duplosdk.ClientError) {
 		var rp *duplosdk.DuploAwsSecret
-		name, errget := c.GetDuploServicesName(tenantID, duploObject.Name)
-		if errget == nil {
-			rp, errget = c.TenantGetAwsSecret(tenantID, name)
-			if errget == nil && rp != nil {
-				d.SetId(fmt.Sprintf("%s/%s", tenantID, rp.Name))
-			}
+		//name, errget := c.GetDuploServicesName(tenantID, duploObject.Name)
+		//if errget == nil {
+		rp, errget := c.TenantGetAwsSecret(tenantID, crp.Name)
+		if errget == nil && rp != nil {
+			d.SetId(fmt.Sprintf("%s/%s", tenantID, rp.Name))
 		}
+		//}
 		return rp, errget
 	})
 	if diags == nil {

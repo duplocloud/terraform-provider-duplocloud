@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -244,7 +245,7 @@ func resourceInfrastructure() *schema.Resource {
 				Required:    true,
 			},
 			"subnet_cidr": {
-				Description: "The CIDR subnet size (in bits) for the automatically created subnets. This is applicable only for AWS.",
+				Description: "The CIDR subnet size (in bits) for the automatically created subnets.",
 				Type:        schema.TypeInt,
 				ForceNew:    true,
 				Optional:    true,

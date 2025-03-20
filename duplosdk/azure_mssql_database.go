@@ -19,6 +19,7 @@ type DuploAzureMsSqlDatabaseRequest struct {
 	Sku                     *DuploAzureMsSqlDatabaseSku `json:"sku"`
 	PropertiesCollation     string                      `json:"properties.collation,omitempty"`
 	PropertiesElasticPoolId string                      `json:"properties.elasticPoolId,omitempty"`
+	MaxSizeBytes            int64                       `json:"properties.MaxSizeBytes"`
 }
 
 type DuploAzureMsSqlElasticPoolRequest struct {

@@ -91,10 +91,20 @@ Should be one of:
    - `7` : Target Group Only
 - `port` (String) The backend port associated with this load balancer configuration.
 - `protocol` (String) The backend protocol associated with this load balancer configuration.
+Supported protocol based on lb_type:
+
+	- `0 (ELB)`: HTTP, HTTPS, TCP, UDP
+	- `1 (ALB)` : HTTP, HTTPS
+	- `3 (K8S Service w/ Cluster IP)`: TCP, UDP
+	- `4 (K8S Service w/ Node Port)` : TCP, UDP
+	- `5 (Azure Shared Application Gateway)`: HTTP, HTTPS
+	- `6 (NLB)` : TCP, UDP, TLS
+	- `7 (Target Group Only)` : HTTP, HTTPS
 
 Optional:
 
 - `allow_global_access` (Boolean) Applicable for internal lb.
+- `backend_protocol_version` (String) Is used for communication between the load balancer and the target instances. This is a required field for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1 Defaults to `HTTP1`.
 - `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - `custom_cidr` (List of String) Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.
 - `external_port` (Number) The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.
@@ -110,7 +120,6 @@ Optional:
 
 Read-Only:
 
-- `backend_protocol_version` (String)
 - `cloud_name` (String) The name of the cloud load balancer (if applicable).
 - `dns_name` (String) The DNS name of the cloud load balancer (if applicable).
 - `frontend_ip` (String)

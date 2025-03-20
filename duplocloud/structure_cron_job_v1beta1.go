@@ -1,12 +1,15 @@
 package duplocloud
 
 import (
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"k8s.io/api/batch/v1beta1"
-	"terraform-provider-duplocloud/duplosdk"
 )
 
 func flattenK8sCronJob(d *schema.ResourceData, duplo *duplosdk.DuploK8sCronJob, meta interface{}) error {
+	if duplo == nil {
+		return nil
+	}
 	d.Set("tenant_id", duplo.TenantId)
 	d.Set("metadata", flattenMetadata(duplo.Metadata, d, meta))
 	jobSpec, err := flattenCronJobSpecV1Beta1(duplo.Spec, d, meta)

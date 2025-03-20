@@ -3,6 +3,44 @@ package duplosdk
 import "fmt"
 
 type DuploAzureCosmosDBRequest struct {
+	Name       string                                    `json:"name"`
+	Kind       string                                    `json:"kind"`
+	Identity   *DuploAzureCosmosDBManagedServiceIdentity `json:"identity"`
+	Properties *DuploAzureCosmosDBProperties             `json:"properties"`
+	Location   string                                    `json:"location"`
+}
+
+type DuploAzureCosmosDBProperties struct {
+	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy              `json:"consistencyPolicy"`
+	Locations                          []string                                          `json:"locations"`
+	IpRules                            []string                                          `json:"ipRules"`
+	IsVirtualNetworkFilterEnabled      bool                                              `json:"isVirtualNetworkFilterEnabled"`
+	EnableAutomaticFailover            bool                                              `json:"enableAutomaticFailover"`
+	Capabilities                       *[]DuploAzureCosmosDBCapability                   `json:"capabilities"`
+	VirtualNetworkRules                *[]DuploAzureCosmosDBVirtualNetworkRule           `json:"virtualNetworkRules"`
+	EnableMultipleWriteLocations       bool                                              `json:"enableMultipleWriteLocations"`
+	EnableCassandraConnector           bool                                              `json:"enableCassandraConnector"`
+	ConnectorOffer                     string                                            `json:"connectorOffer"`
+	DisableKeyBasedMetadataWriteAccess bool                                              `json:"disableKeyBasedMetadataWriteAccess"`
+	KeyVaultKeyUri                     string                                            `json:"keyVaultKeyUri"`
+	DefaultIdentity                    string                                            `json:"defaultIdentity"`
+	PublicNetworkAccess                string                                            `json:"publicNetworkAccess"`
+	EnableFreeTier                     bool                                              `json:"enableFreeTier"`
+	ApiProperties                      *DuploAzureCosmosDBApiProperties                  `json:"apiProperties"`
+	EnableAnalyticalStorage            bool                                              `json:"enableAnalyticalStorage"`
+	AnalyticalStorageConfiguration     *DuploAzureCosmosDBAnalyticalStorageConfiguration `json:"analyticalStorageConfiguration"`
+	CreateMode                         string                                            `json:"createMode"`
+	BackupPolicy                       *DuploAzureCosmosDBBackupPolicy                   `json:"backupPolicy"`
+	Cors                               *DuploAzureCosmosDBCorsPolicy                     `json:"cors"`
+	NetworkAclBypass                   string                                            `json:"networkAclBypass"` //None AzureServices
+	NetworkAclBypassResourceIds        []string                                          `json:"networkAclBypassResourceIds"`
+	DisableLocalAuth                   bool                                              `json:"disableLocalAuth"`
+	RestoreParameters                  *DuploAzureCosmosDBRestoreParameters              `json:"restoreParameters"`
+	Capacity                           *DuploAzureCosmosDBCapacity                       `json:"capacity"`
+	DatabaseAccountOfferType           string                                            `json:"databaseAccountOff"`
+}
+
+type DuploAzureCosmosDBResponse struct {
 	Name                               string                                            `json:"name"`
 	Kind                               string                                            `json:"kind"`
 	Identity                           *DuploAzureCosmosDBManagedServiceIdentity         `json:"identity"`
@@ -32,7 +70,8 @@ type DuploAzureCosmosDBRequest struct {
 	DisableLocalAuth                   bool                                              `json:"properties.disableLocalAuth"`
 	RestoreParameters                  *DuploAzureCosmosDBRestoreParameters              `json:"properties.restoreParameters"`
 	Capacity                           *DuploAzureCosmosDBCapacity                       `json:"properties.capacity"`
-	DatabaseAccountOfferType           string                                            `json:"properties.databaseAccountOfferType	"`
+	DatabaseAccountOfferType           string                                            `json:"properties.databaseAccountOfferType"`
+	Location                           string                                            `json:"location"`
 }
 
 type DuploAzureCosmosDBCapacity struct {
@@ -117,8 +156,8 @@ func (c *Client) CreateCosmosDB(tenantId string, rq DuploAzureCosmosDBRequest) C
 	return nil
 }
 
-func (c *Client) GetCosmosDB(tenantId, name string) (*DuploAzureCosmosDBRequest, ClientError) {
-	rp := DuploAzureCosmosDBRequest{}
+func (c *Client) GetCosmosDB(tenantId, name string) (*DuploAzureCosmosDBResponse, ClientError) {
+	rp := DuploAzureCosmosDBResponse{}
 	err := c.getAPI(fmt.Sprintf("GetCosmosDB(%s,%s)", tenantId, name),
 		fmt.Sprintf("v3/subscriptions/%s/azure/cosmosDb/account/%s", tenantId, name),
 		&rp)

@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -104,28 +106,32 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 		},
 	}
-	awsASGSchema["zone"] = &schema.Schema{
-
-		Description:   "The availability zone to launch the host in, expressed as a number and starting at 0.",
-		Type:          schema.TypeInt,
-		Optional:      true,
-		ForceNew:      true, // relaunch instance
-		Default:       0,
-		Deprecated:    "zone has been deprecated instead use zones",
-		ConflictsWith: []string{"zones"},
-	}
-
 	awsASGSchema["zones"] = &schema.Schema{
-		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0",
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A to 3 - Zone D, based on the infra setup",
 		Type:        schema.TypeList,
 		Optional:    true,
 		ForceNew:    true,
 		Elem: &schema.Schema{
-			Type:     schema.TypeInt,
-			ForceNew: true,
+			Type:         schema.TypeInt,
+			ForceNew:     true,
+			ValidateFunc: validation.IntBetween(0, 3),
 		},
-		ConflictsWith: []string{"zone"},
+		ConflictsWith:    []string{"zone"},
+		DiffSuppressFunc: diffSuppressAsgZones,
+		Computed:         true,
 	}
+	awsASGSchema["zone"] = &schema.Schema{
+
+		Description:   "The availability zone to launch the host in, expressed as a numeric value and starting at 0 to 3. Recommended for environment on july release",
+		Type:          schema.TypeString,
+		Optional:      true,
+		ForceNew:      true, // relaunch instance
+		Deprecated:    "zone has been deprecated instead use zones, if on evironment above july 2024 release",
+		ConflictsWith: []string{"zones"},
+		ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^[0123]{1}$`), "allowed values 0 - 3"),
+		//DiffSuppressFunc: diffSuppressAsgZone,
+	}
+
 	return awsASGSchema
 }
 
@@ -492,8 +498,9 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 			z = append(z, dt.(int))
 		}
 		asgProfile.Zones = z
-	} else {
-		asgProfile.Zones = append(asgProfile.Zones, d.Get("zone").(int))
+	} else if v, ok := d.GetOk("zone"); ok && v != nil {
+		zn, _ := strconv.Atoi(d.Get("zone").(string))
+		asgProfile.Zones = append(asgProfile.Zones, zn)
 	}
 
 	return asgProfile

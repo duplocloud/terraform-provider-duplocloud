@@ -11,8 +11,9 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"unicode"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -1023,6 +1024,22 @@ func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
 }
 
+func diffSuppressAsgZones(k, old, new string, d *schema.ResourceData) bool {
+	zs := d.Get("zones").([]interface{})
+	z := d.Get("zone")
+
+	if len(zs) == 0 && z != nil {
+		return true
+	}
+	return false
+}
+
+//func diffSuppressAsgZone(k, old, new string, d *schema.ResourceData) bool {
+//	z := d.Get("zone")
+//
+//	return z != nil
+//}
+
 func OctalToNumericInt32(octal string) (int32, error) {
 	var result int64
 	base := int64(8) // Base for octal numbers
@@ -1175,4 +1192,12 @@ func ExpandStringList(inf []interface{}) []string {
 		obj = append(obj, i.(string))
 	}
 	return obj
+}
+
+func gBToBytes(gb int) int64 {
+	return int64(gb) * 1024 * 1024 * 1024
+}
+
+func bytesToGB(bytes int64) int {
+	return int(bytes / (1024 * 1024 * 1024))
 }

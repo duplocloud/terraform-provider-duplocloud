@@ -6,9 +6,9 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -40,8 +40,13 @@ func duploAzureCosmosDBchema() map[string]*schema.Schema {
 		"locations": {
 			Description: "An array that contains the georeplication locations enabled for the Cosmos DB account.",
 			Type:        schema.TypeList,
-			Required:    true,
+			Optional:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		"location": {
+			Description: "Specifies the primary write region for Cosmos DB.",
+			Type:        schema.TypeString,
+			Required:    true,
 		},
 		"ip_rules": {
 			Description: "List of IpRules.",
@@ -453,9 +458,9 @@ func resourceAzureCosmosDBRead(ctx context.Context, d *schema.ResourceData, m in
 	id := d.Id()
 	idParts := strings.Split(id, "/")
 	c := m.(*duplosdk.Client)
-	rp, err := c.GetCosmosDB(idParts[0], idParts[1])
+	rp, err := c.GetCosmosDB(idParts[0], idParts[2])
 	if err != nil {
-		return diag.Errorf("Error fetching cosmos db account %s details for tenantId %s", idParts[1], idParts[0])
+		return diag.Errorf("Error fetching cosmos db account %s details for tenantId %s", idParts[2], idParts[0])
 	}
 	flattenAzureCosmosDB(d, *rp)
 	return nil
@@ -492,40 +497,44 @@ func expandAzureCosmosDB(d *schema.ResourceData) duplosdk.DuploAzureCosmosDBRequ
 	obj.Name = d.Get("name").(string)
 	obj.Kind = d.Get("kind").(string)
 	obj.Identity = expandIdentity(d.Get("identity").([]interface{}))
-	obj.Locations = expandStringSlice(d.Get("locations").([]interface{}))
-	obj.IpRules = expandStringSlice(d.Get("ip_rules").([]interface{}))
-	obj.IsVirtualNetworkFilterEnabled = d.Get("is_virtual_network_filter_enabled").(bool)
-	obj.EnableAutomaticFailover = d.Get("enable_automatic_failover").(bool)
-	obj.EnableMultipleWriteLocations = d.Get("enable_multiple_write_locations").(bool)
-	obj.EnableCassandraConnector = d.Get("enable_cassandra_connector").(bool)
-	obj.DisableKeyBasedMetadataWriteAccess = d.Get("disable_key_based_metadata_write_access").(bool)
-	obj.DisableLocalAuth = d.Get("disable_local_auth").(bool)
-	obj.EnableFreeTier = d.Get("enable_free_tier").(bool)
-	obj.EnableAnalyticalStorage = d.Get("enable_analytical_storage").(bool)
-	obj.ConnectorOffer = d.Get("connector_offer").(string)
-	obj.KeyVaultKeyUri = d.Get("key_vault_key_uri").(string)
-	obj.DefaultIdentity = d.Get("default_identity").(string)
-	obj.PublicNetworkAccess = d.Get("public_network_access").(string)
-	obj.CreateMode = d.Get("create_mode").(string)
-	obj.NetworkAclBypass = d.Get("network_acl_bypass").(string)
-	obj.DatabaseAccountOfferType = d.Get("database_account_offer_type").(string)
-	obj.Capabilities = expandCapablities(d.Get("capablities").([]interface{}))
-	obj.ConsistencyPolicy = expandConsistencyPolicy(d.Get("consistency_policy").([]interface{}))
-	obj.VirtualNetworkRules = expandVirtualNetworkRules(d.Get("virtual_network_rules").([]interface{}))
-	obj.ApiProperties = expandApiProperties(d.Get("api_properties").([]interface{}))
-	obj.AnalyticalStorageConfiguration = expandAnalyticalStorageConfiguration(d.Get("analytical_storage_configuration").([]interface{}))
-	obj.BackupPolicy = expandBackupPolicy(d.Get("backup_policy").([]interface{}))
-	obj.Cors = expandCors(d.Get("cors").([]interface{}))
-	obj.RestoreParameters = expandRestoreParams(d.Get("restore_parameters").([]interface{}))
-	obj.Capacity = expandCapacity(d.Get("capacity").([]interface{}))
-
-	obj.NetworkAclBypassResourceIds = expandStringSlice(d.Get("network_acl_bypass_resource_ids").([]interface{}))
+	prop := duplosdk.DuploAzureCosmosDBProperties{}
+	prop.Locations = expandStringSlice(d.Get("locations").([]interface{}))
+	prop.IpRules = expandStringSlice(d.Get("ip_rules").([]interface{}))
+	prop.IsVirtualNetworkFilterEnabled = d.Get("is_virtual_network_filter_enabled").(bool)
+	prop.EnableAutomaticFailover = d.Get("enable_automatic_failover").(bool)
+	prop.EnableMultipleWriteLocations = d.Get("enable_multiple_write_locations").(bool)
+	prop.EnableCassandraConnector = d.Get("enable_cassandra_connector").(bool)
+	prop.DisableKeyBasedMetadataWriteAccess = d.Get("disable_key_based_metadata_write_access").(bool)
+	prop.DisableLocalAuth = d.Get("disable_local_auth").(bool)
+	prop.EnableFreeTier = d.Get("enable_free_tier").(bool)
+	prop.EnableAnalyticalStorage = d.Get("enable_analytical_storage").(bool)
+	prop.ConnectorOffer = d.Get("connector_offer").(string)
+	prop.KeyVaultKeyUri = d.Get("key_vault_key_uri").(string)
+	prop.DefaultIdentity = d.Get("default_identity").(string)
+	prop.PublicNetworkAccess = d.Get("public_network_access").(string)
+	prop.CreateMode = d.Get("create_mode").(string)
+	prop.NetworkAclBypass = d.Get("network_acl_bypass").(string)
+	prop.DatabaseAccountOfferType = d.Get("database_account_offer_type").(string)
+	prop.Capabilities = expandCapablities(d.Get("capablities").([]interface{}))
+	prop.ConsistencyPolicy = expandConsistencyPolicy(d.Get("consistency_policy").([]interface{}))
+	prop.VirtualNetworkRules = expandVirtualNetworkRules(d.Get("virtual_network_rules").([]interface{}))
+	prop.ApiProperties = expandApiProperties(d.Get("api_properties").([]interface{}))
+	prop.AnalyticalStorageConfiguration = expandAnalyticalStorageConfiguration(d.Get("analytical_storage_configuration").([]interface{}))
+	prop.BackupPolicy = expandBackupPolicy(d.Get("backup_policy").([]interface{}))
+	prop.Cors = expandCors(d.Get("cors").([]interface{}))
+	prop.RestoreParameters = expandRestoreParams(d.Get("restore_parameters").([]interface{}))
+	prop.Capacity = expandCapacity(d.Get("capacity").([]interface{}))
+	prop.NetworkAclBypassResourceIds = expandStringSlice(d.Get("network_acl_bypass_resource_ids").([]interface{}))
+	obj.Properties = &prop
+	obj.Location = d.Get("location").(string)
 	return obj
 }
 
-func flattenAzureCosmosDB(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDBRequest) {
+func flattenAzureCosmosDB(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDBResponse) {
 	d.Set("name", rp.Name)
 	d.Set("kind", rp.Kind)
+	d.Set("location", rp.Location)
+
 	if rp.Identity != nil {
 		d.Set("identity", flattenIdentity(*rp.Identity))
 	}
@@ -533,7 +542,7 @@ func flattenAzureCosmosDB(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDB
 		d.Set("location", flattenStringList(rp.Locations))
 	}
 	if len(rp.IpRules) > 0 {
-		d.Set("location", flattenStringList(rp.IpRules))
+		d.Set("ip_rules", flattenStringList(rp.IpRules))
 	}
 	d.Set("is_virtual_network_filter_enabled", rp.IsVirtualNetworkFilterEnabled)
 	d.Set("enable_automatic_failover", rp.EnableAutomaticFailover)

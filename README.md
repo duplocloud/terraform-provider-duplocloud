@@ -1,5 +1,7 @@
 # Terraform Provider duplocloud
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ## Releasing new versions
 
 This repo now the Duplo Github Actions to perform releases.
@@ -81,3 +83,6 @@ Install terraform
 sudo snap install terraform --classic
 terraform version # you should see something like Terraform v1.6.5 ....
 ```
+
+## License
+This project is licensed under the [MIT License](LICENSE).

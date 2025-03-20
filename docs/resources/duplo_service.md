@@ -287,7 +287,7 @@ resource "duplocloud_duplo_service" "nginx" {
 Should be one of:
 
    - `0` : Duplo Native container agent
-   - `7` : EKS linux container agent
+   - `7` : Linux container agent for Kubernetes
  Defaults to `0`.
 - `allocation_tags` (String)
 - `any_host_allowed` (Boolean) Whether or not the service can run on hosts in other tenants (within the the same plan as the current tenant). Defaults to `false`.

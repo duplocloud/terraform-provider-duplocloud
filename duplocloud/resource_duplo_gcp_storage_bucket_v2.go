@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -126,8 +127,11 @@ func resourceGCPStorageBucketV2Read(ctx context.Context, d *schema.ResourceData,
 	c := m.(*duplosdk.Client)
 
 	// Figure out the full resource name.
-	fullName := d.Get("fullname").(string)
+	fullName, clientErr := c.GetDuploServicesNameWithGcp(tenantID, name, false)
+	if clientErr != nil {
+		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
 
+	}
 	// Get the object from Duplo
 	duplo, err := c.GCPTenantGetV3StorageBucketV2(tenantID, fullName)
 	if err != nil && !err.PossibleMissingAPI() {
