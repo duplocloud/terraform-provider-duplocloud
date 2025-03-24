@@ -2,7 +2,6 @@ package duplocloud
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -764,9 +763,9 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 	}
 	eng := diff.Get("cache_type").(int)
 	engVer := diff.Get("engine_version").(string)
-	err := validateClusterEngineVersion(eng, engVer)
-	if err != nil {
-		return err
+	diag := validateClusterEngineVersion(eng, engVer)
+	if diag != nil {
+		return diagsToError(diag)
 	}
 	return nil
 }
@@ -808,14 +807,21 @@ var (
 	redisVersionPostV6Regexp = regexp.MustCompile(redisVersionPostV6RegexpPattern)
 )
 
-func validRedisVersionString(v any, k string) (ws []string, errors []error) {
-	value := v.(string)
-
-	if !redisVersionRegexp.MatchString(value) {
-		errors = append(errors, fmt.Errorf("%s: %s is invalid. For Redis v6 or higher, use <major>.<minor>. For Redis v5 or lower, use <major>.<minor>.<patch>.", k, value))
+func validRedisVersionString(v interface{}, p cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("Invalid type: expected a string.")
 	}
 
-	return
+	if !redisVersionRegexp.MatchString(value) {
+		return diag.Errorf(
+			"Invalid Redis version: %q is not valid. For Redis v6 or higher, use <major>.<minor>. "+
+				"For Redis v5 or lower, use <major>.<minor>.<patch>.", value,
+		)
+	}
+
+	return diags
 }
 
 const (
@@ -825,32 +831,51 @@ const (
 
 var versionStringRegexp = regexp.MustCompile(versionStringRegexpPattern)
 
-func validMemcachedVersionString(v any, k string) (ws []string, errors []error) {
-	value := v.(string)
+/*
+	func validMemcachedVersionString(v any, k string) (ws []string, errors []error) {
+		value := v.(string)
 
-	if !versionStringRegexp.MatchString(value) {
-		errors = append(errors, fmt.Errorf("%s: must be a version string matching <major>.<minor>.<patch>", k))
+		if !versionStringRegexp.MatchString(value) {
+			errors = append(errors, fmt.Errorf("%s: must be a version string matching <major>.<minor>.<patch>", k))
+		}
+
+		return
+	}
+*/
+func validMemcachedVersionString(v interface{}, p cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("Invalid Type", "Expected a string value.")
 	}
 
-	return
-}
+	if !versionStringRegexp.MatchString(value) {
+		diag.Errorf(
+			"Invalid Memcached Version",
+			fmt.Sprintf("Value %q must be in <major>.<minor>.<patch> format.", value),
+		)
+	}
 
-func validateClusterEngineVersion(engine int, engineVersion string) error {
+	return diags
+}
+func validateClusterEngineVersion(engine int, engineVersion string) diag.Diagnostics {
 	// Memcached: Versions in format <major>.<minor>.<patch>
 	// Redis: Starting with version 6, must match <major>.<minor>, prior to version 6, <major>.<minor>.<patch>
 	// Valkey: Versions in format <major>.<minor>
-	var validator schema.SchemaValidateFunc
+	var validator schema.SchemaValidateDiagFunc
+
 	switch engine {
 	case 1:
 		validator = validMemcachedVersionString
 	case 0:
 		validator = validRedisVersionString
-
 	}
 
-	_, errs := validator(engineVersion, "engine_version")
+	diags := validator(engineVersion, cty.Path{
+		cty.GetAttrStep{Name: "engine_version"},
+	})
 
-	return errors.Join(errs...)
+	return diags
 }
 
 // normalizeEngineVersion returns a github.com/hashicorp/go-version Version from:
@@ -864,4 +889,15 @@ func normalizeEngineVersion(version string) (*gversion.Version, error) {
 		}
 	}
 	return gversion.NewVersion(version)
+}
+
+func diagsToError(diags diag.Diagnostics) error {
+	if !diags.HasError() {
+		return nil
+	}
+	var errMsgs []string
+	for _, d := range diags {
+		errMsgs = append(errMsgs, d.Summary)
+	}
+	return fmt.Errorf(strings.Join(errMsgs, "; "))
 }
