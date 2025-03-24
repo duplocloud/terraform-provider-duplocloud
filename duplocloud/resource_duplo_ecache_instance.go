@@ -88,6 +88,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Optional:         true,
 			ForceNew:         true,
 			DiffSuppressFunc: suppressEnginePatchVersion,
+			ValidateFunc:     validation.StringMatch(regexp.MustCompile(`^[1-9]\d*\.(0|[1-9]\d*)(?:\.([1-9]\d*))?$`), "Invalid version: possible invalid input : Patch version is 0; Too many parts; Contains letters; trailing dot; minor version missing;leading zeros"),
 		},
 		"size": {
 			Description: "The instance type of the elasticache instance.\n" +
@@ -289,10 +290,10 @@ func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	// Convert the object into Terraform resource data
-	flattenEcacheInstance(duplo, d)
+	diag := flattenEcacheInstance(duplo, d)
 
 	log.Printf("[TRACE] resourceDuploEcacheInstanceRead(%s, %s): end", tenantID, name)
-	return nil
+	return diag
 }
 
 // CREATE resource
@@ -592,7 +593,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 }
 
 // flattenEcacheInstance converts a Duplo SDK object respresenting an ECache instance to terraform resource data.
-func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.ResourceData) {
+func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.ResourceData) diag.Diagnostics {
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("name", duplo.Name)
 	d.Set("identifier", duplo.Identifier)
@@ -607,7 +608,11 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 		}
 	}
 	d.Set("cache_type", duplo.CacheType)
-	d.Set("engine_version", duplo.EngineVersion)
+	v, err := normalizeVersion(duplo.EngineVersion)
+	if err != nil {
+		return diag.Errorf("%s", err.Error())
+	}
+	d.Set("engine_version", v)
 	d.Set("size", duplo.Size)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("encryption_at_rest", duplo.EncryptionAtRest)
@@ -623,7 +628,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
-
+	return nil
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
@@ -756,4 +761,26 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 		return fmt.Errorf("number_of_shards can be set only if cluster mode is enabled")
 	}
 	return nil
+}
+
+func normalizeVersion(version string) (string, error) {
+	// Validate input format
+	re := regexp.MustCompile(`^\d+(\.\d+){0,2}$`)
+	if !re.MatchString(version) {
+		return "", fmt.Errorf("invalid version format: %s", version)
+	}
+
+	// Split version into parts
+	parts := strings.Split(version, ".")
+
+	// Ensure at least "major.minor" format
+	if len(parts) == 1 {
+		// Convert "1" → "1.0"
+		return parts[0] + ".0", nil
+	} else if len(parts) == 3 && parts[2] == "0" {
+		// Convert "1.2.0" → "1.2"
+		return parts[0] + "." + parts[1], nil
+	}
+
+	return version, nil
 }
