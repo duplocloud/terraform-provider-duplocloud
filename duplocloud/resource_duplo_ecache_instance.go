@@ -850,10 +850,7 @@ func validMemcachedVersionString(v interface{}, p cty.Path) diag.Diagnostics {
 	}
 
 	if !versionStringRegexp.MatchString(value) {
-		diag.Errorf(
-			"Invalid Memcached Version",
-			fmt.Sprintf("Value %q must be in <major>.<minor>.<patch> format.", value),
-		)
+		diag.Errorf("Invalid Memcached Version value  must be in <major>.<minor>.<patch> format.", value)
 	}
 
 	return diags
@@ -899,5 +896,5 @@ func diagsToError(diags diag.Diagnostics) error {
 	for _, d := range diags {
 		errMsgs = append(errMsgs, d.Summary)
 	}
-	return fmt.Errorf(strings.Join(errMsgs, "; "))
+	return fmt.Errorf("%s", strings.Join(errMsgs, "; "))
 }
