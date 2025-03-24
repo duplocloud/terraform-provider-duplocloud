@@ -846,11 +846,11 @@ func validMemcachedVersionString(v interface{}, p cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
 	value, ok := v.(string)
 	if !ok {
-		return diag.Errorf("Invalid Type", "Expected a string value.")
+		return diag.Errorf("Invalid Type Expected a string value.")
 	}
 
 	if !versionStringRegexp.MatchString(value) {
-		diag.Errorf("Invalid Memcached Version value  must be in <major>.<minor>.<patch> format.", value)
+		diag.Errorf("Invalid Memcached Version value  must be in <major>.<minor>.<patch> format. %s", value)
 	}
 
 	return diags
