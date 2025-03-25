@@ -151,8 +151,6 @@ resource "duplocloud_ecache_instance" "mycaches" {
 
 ### Required
 
-- `engine_version` (String) The engine version of the elastic instance.
-See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).
 - `name` (String) The short name of the elasticache instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
 - `size` (String) The instance type of the elasticache instance.
 See AWS documentation for the [available instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CacheNodes.SupportedTypes.html).
@@ -174,6 +172,8 @@ Should be one of:
 - `enable_cluster_mode` (Boolean) Flag to enable/disable redis cluster mode.
 - `encryption_at_rest` (Boolean) Enables encryption-at-rest. Defaults to `false`.
 - `encryption_in_transit` (Boolean) Enables encryption-in-transit. Defaults to `false`.
+- `engine_version` (String) The engine version of the elastic instance.
+See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).
 - `kms_key_id` (String) The globally unique identifier for the key.
 - `log_delivery_configuration` (Block Set, Max: 2) (see [below for nested schema](#nestedblock--log_delivery_configuration))
 - `number_of_shards` (Number) The number of shards to create. Applicable only if enable_cluster_mode is set to true
@@ -187,6 +187,7 @@ Should be one of:
 
 ### Read-Only
 
+- `actual_engine_version` (String)
 - `arn` (String) The ARN of the elasticache instance.
 - `endpoint` (String) The endpoint of the elasticache instance.
 - `host` (String) The DNS hostname of the elasticache instance.

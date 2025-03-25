@@ -86,10 +86,15 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "The engine version of the elastic instance.\n" +
 				"See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) " +
 				"or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).",
-			Type:             schema.TypeString,
-			Required:         true,
-			ForceNew:         true,
-			DiffSuppressFunc: suppressEnginePatchVersion,
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+			Computed: true,
+			//DiffSuppressFunc: suppressEnginePatchVersion,
+		},
+		"actual_engine_version": {
+			Type:     schema.TypeString,
+			Computed: true,
 		},
 		"size": {
 			Description: "The instance type of the elasticache instance.\n" +
@@ -613,7 +618,15 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	if err != nil {
 		return diag.Errorf("%s", err.Error())
 	}
-	d.Set("engine_version", v.String())
+	ver := duplo.EngineVersion
+	if duplo.CacheType == 0 {
+		ver, err = trimPatchVersion(duplo.EngineVersion)
+		if err != nil {
+			return diag.Errorf("%s", err.Error())
+		}
+	}
+	d.Set("engine_version", ver)
+	d.Set("actual_engine_version", v.String())
 	d.Set("size", duplo.Size)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("encryption_at_rest", duplo.EncryptionAtRest)
@@ -763,14 +776,17 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 	}
 	eng := diff.Get("cache_type").(int)
 	engVer := diff.Get("engine_version").(string)
-	diag := validateClusterEngineVersion(eng, engVer)
-	if diag != nil {
-		return diagsToError(diag)
+	if engVer != "" {
+		diag := validateClusterEngineVersion(eng, engVer)
+		if diag != nil {
+			return diagsToError(diag)
+		}
 	}
 	return nil
 }
 
-/*func normalizeVersion(version string) (string, error) {
+// trims patch version if version is above 5
+func trimPatchVersion(version string) (string, error) {
 	// Validate input format
 	re := regexp.MustCompile(`^\d+(\.\d+){0,2}$`)
 	if !re.MatchString(version) {
@@ -793,7 +809,7 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 	}
 
 	return version, nil
-}*/
+}
 
 const (
 	redisVersionPreV6RegexpPattern  = `^[1-5](\.[[:digit:]]+){2}$`
