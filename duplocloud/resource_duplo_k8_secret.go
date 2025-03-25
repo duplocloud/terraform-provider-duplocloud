@@ -232,9 +232,7 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret, re
 	m := d.Get("secret_labels")
 	if m != nil {
 		for k := range m.(map[string]interface{}) {
-			if _, ok := filter[k]; ok {
-				delete(filter, k)
-			}
+			delete(filter, k)
 		}
 	}
 	op := make(map[string]interface{})
