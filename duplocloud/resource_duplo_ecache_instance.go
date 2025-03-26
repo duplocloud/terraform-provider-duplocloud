@@ -698,19 +698,21 @@ func suppressNoOfShardsDiff(k, old, new string, d *schema.ResourceData) bool {
 	return newValue == oldValue // Suppress diff if between 1 and 500 (inclusive)
 }
 
-func suppressEnginePatchVersion(k, old, new string, d *schema.ResourceData) bool {
-	oldVer := removePatchVersion(old)
-	newVer := removePatchVersion(new)
-	return oldVer == newVer // Suppress diff if patch exist
-}
-
-func removePatchVersion(version string) string {
-	parts := strings.Split(version, ".")
-	if len(parts) >= 2 {
-		return strings.Join(parts[:2], ".")
+/*
+	func suppressEnginePatchVersion(k, old, new string, d *schema.ResourceData) bool {
+		oldVer := removePatchVersion(old)
+		newVer := removePatchVersion(new)
+		return oldVer == newVer // Suppress diff if patch exist
 	}
-	return version
-}
+
+	func removePatchVersion(version string) string {
+		parts := strings.Split(version, ".")
+		if len(parts) >= 2 {
+			return strings.Join(parts[:2], ".")
+		}
+		return version
+	}
+*/
 func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 
 	return func(i interface{}, path cty.Path) diag.Diagnostics {
