@@ -29,12 +29,12 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
-		//"version": {
-		//	Description: "Any of the existing version of the launch template",
-		//	Type:        schema.TypeString,
-		//	Required:    true,
-		//	ForceNew:    true,
-		//},
+		"version": {
+			Description: "Any of the existing version of the launch template",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+		},
 		"default_version": {
 			Description: "The current default version of the launch template.",
 			Type:        schema.TypeString,
@@ -94,7 +94,7 @@ func resourceAwsLaunchTemplate() *schema.Resource {
 func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	tenantId, asgName := idParts[0], idParts[2] //, idParts[3]
+	tenantId, asgName, ver := idParts[0], idParts[2], idParts[3]
 	c := m.(*duplosdk.Client)
 	rp, err := c.GetAwsLaunchTemplate(tenantId, asgName)
 	if err != nil {
@@ -108,7 +108,6 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 		d.SetId("")
 		return nil
 	}
-	ver := "1"
 	fErr := flattenLaunchTemplate(d, rp, ver)
 	if fErr != nil {
 		return diag.Errorf("%s", fErr.Error())
@@ -123,7 +122,7 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.Errorf("%s", err.Error())
 	}
-	d.SetId(tenantId + "/launch-template/" + rq.LaunchTemplateName) // + "/" + rq.SourceVersion)
+	d.SetId(tenantId + "/launch-template/" + rq.LaunchTemplateName + "/" + rq.SourceVersion)
 	diag := resourceAwsLaunchTemplateRead(ctx, d, m)
 	return diag
 
@@ -137,7 +136,7 @@ func resourceAwsLaunchTemplateDelete(ctx context.Context, d *schema.ResourceData
 func expandLaunchTemplate(d *schema.ResourceData) duplosdk.DuploAwsLaunchTemplateRequest {
 	return duplosdk.DuploAwsLaunchTemplateRequest{
 		LaunchTemplateName: d.Get("name").(string),
-		//SourceVersion:      d.Get("version").(string),
+		SourceVersion:      d.Get("version").(string),
 		VersionDescription: d.Get("version_description").(string),
 		LaunchTemplateData: &duplosdk.DuploLaunchTemplateData{
 			InstanceType: duplosdk.DuploStringValue{
@@ -155,13 +154,13 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	if err != nil {
 		return err
 	}
-	var name /*cver,*/, insType, verDesc, dver, imgId string
+	var name, cver, insType, verDesc, dver, imgId string
 	max := 0
 	d.Set("version_metadata", string(b))
 	for _, v := range *rp {
 		if strconv.Itoa(int(v.VersionNumber)) == ver {
 			name = v.LaunchTemplateName
-			//cver = strconv.Itoa(int(v.VersionNumber))
+			cver = strconv.Itoa(int(v.VersionNumber))
 		}
 		if v.DefaultVersion {
 			dver = strconv.Itoa(int(v.VersionNumber))
@@ -171,13 +170,12 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 			insType = v.LaunchTemplateData.InstanceType.Value
 			verDesc = v.VersionDescription
 			imgId = v.LaunchTemplateData.ImageId
-			name = v.LaunchTemplateName
 		}
 	}
 	d.Set("instance_type", insType)
 	d.Set("version_description", verDesc)
 	d.Set("name", name)
-	//	d.Set("version", cver)
+	d.Set("version", cver)
 	d.Set("latest_version", strconv.Itoa(max))
 	d.Set("default_version", dver)
 	d.Set("ami", imgId)
