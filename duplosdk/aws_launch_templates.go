@@ -6,8 +6,8 @@ import (
 )
 
 type DuploAwsLaunchTemplateRequest struct {
-	LaunchTemplateName string                   `json:"LaunchTemplateName"`
-	SourceVersion      string                   `json:"SourceVersion"`
+	LaunchTemplateName string `json:"LaunchTemplateName"`
+	//SourceVersion      string                   `json:"SourceVersion"`
 	VersionDescription string                   `json:"VersionDescription,omitempty"`
 	LaunchTemplateData *DuploLaunchTemplateData `json:"LaunchTemplateData,omitempty"`
 	DefaultVersion     string                   `json:"DefaultVersion,omitempty"`
