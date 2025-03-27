@@ -683,8 +683,11 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 				SkipFinalSnapshot:     skipFinalSnapshot,
 			}
 			err = c.UpdateRDSDBInstance(tenantID, obj)
-		}
 
+		}
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if d.HasChange("enhanced_monitoring") {
@@ -694,10 +697,11 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			ApplyImmediately:     true,
 			MonitoringInterval:   val,
 		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
-	if err != nil {
-		return diag.FromErr(err)
-	}
+
 	if d.HasChange("performance_insights") {
 		obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
 		pI := expandPerformanceInsight(d)
@@ -725,16 +729,16 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 			}
 		}
-
-		// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
-		_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
-
-		// Wait for the instance to become available.
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
-		}
 	}
+	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
+	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+
+	// Wait for the instance to become available.
+	err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+	if err != nil {
+		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+	}
+
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
@@ -1275,7 +1279,7 @@ func rdsInstanceSyncMonitoringInterval(ctx context.Context, c *duplosdk.Client, 
 			if err != nil {
 				return 0, "", err
 			}
-			if monitoringInterval == resp.MonitoringInterval {
+			if monitoringInterval == resp.MonitoringInterval && resp.InstanceStatus == "available" {
 				status = "updated"
 			}
 
