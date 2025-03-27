@@ -36,6 +36,7 @@ resource "duplocloud_aws_launch_template" "lt" {
 - `instance_type` (String) Asg instance type to be used to update the version from the current version
 - `name` (String) The fullname of the asg group
 - `tenant_id` (String) The GUID of the tenant that the launch template will be created in.
+- `version` (String) Any of the existing version of the launch template
 
 ### Optional
 
