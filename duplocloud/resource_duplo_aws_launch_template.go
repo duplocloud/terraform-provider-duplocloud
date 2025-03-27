@@ -32,7 +32,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		"version": {
 			Description: "Any of the existing version of the launch template",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			ForceNew:    true,
 		},
 		"default_version": {
@@ -94,9 +94,22 @@ func resourceAwsLaunchTemplate() *schema.Resource {
 func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	tenantId, asgName, ver := idParts[0], idParts[2], idParts[3]
+	ver := ""
+	tenantId, asgName := idParts[0], idParts[2]
+	if len(idParts) == 4 {
+		ver = idParts[3]
+	}
+
 	c := m.(*duplosdk.Client)
-	rp, err := c.GetAwsLaunchTemplate(tenantId, asgName)
+	fullName := asgName
+	var err1 error
+	if !strings.Contains(asgName, "duploservices") {
+		fullName, err1 = c.GetResourceName("duploservices", tenantId, asgName, false)
+		if err1 != nil {
+			diag.FromErr(err1)
+		}
+	}
+	rp, err := c.GetAwsLaunchTemplate(tenantId, fullName)
 	if err != nil {
 		if err.Status() == 404 {
 			d.SetId("")
@@ -122,7 +135,7 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.Errorf("%s", err.Error())
 	}
-	d.SetId(tenantId + "/launch-template/" + rq.LaunchTemplateName + "/" + rq.SourceVersion)
+	d.SetId(tenantId + "/launch-template/" + rq.LaunchTemplateName)
 	diag := resourceAwsLaunchTemplateRead(ctx, d, m)
 	return diag
 
@@ -159,7 +172,6 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	d.Set("version_metadata", string(b))
 	for _, v := range *rp {
 		if strconv.Itoa(int(v.VersionNumber)) == ver {
-			name = v.LaunchTemplateName
 			cver = strconv.Itoa(int(v.VersionNumber))
 		}
 		if v.DefaultVersion {
@@ -170,6 +182,8 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 			insType = v.LaunchTemplateData.InstanceType.Value
 			verDesc = v.VersionDescription
 			imgId = v.LaunchTemplateData.ImageId
+			name = v.LaunchTemplateName
+			cver = strconv.Itoa(int(v.VersionNumber))
 		}
 	}
 	d.Set("instance_type", insType)
