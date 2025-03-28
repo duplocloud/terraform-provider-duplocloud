@@ -13,13 +13,14 @@ type DuploK8sIngress struct {
 }
 
 type DuploK8sLbConfig struct {
-	IsPublic          bool                      `json:"isPublic,omitempty"`
-	DnsPrefix         string                    `json:"dnsPrefix,omitempty"`
-	WafArn            string                    `json:"wafArn,omitempty"`
-	EnableAccessLogs  bool                      `json:"enableAccessLogs,omitempty"`
-	DropInvalidHeader bool                      `json:"dropInvalidHeader,omitempty"`
-	CertArn           string                    `json:"certArn,omitempty"`
-	Listeners         *DuploK8sIngressListeners `json:"listeners,omitempty"`
+	IsPublic             bool                      `json:"isPublic,omitempty"`
+	DnsPrefix            string                    `json:"dnsPrefix,omitempty"`
+	WafArn               string                    `json:"wafArn,omitempty"`
+	EnableAccessLogs     bool                      `json:"enableAccessLogs,omitempty"`
+	DropInvalidHeader    bool                      `json:"dropInvalidHeader,omitempty"`
+	CertArn              string                    `json:"certArn,omitempty"`
+	Listeners            *DuploK8sIngressListeners `json:"listeners,omitempty"`
+	FrontendPortOverride string                    `json:"frontendPortOverride,omitempty"`
 }
 
 type DuploK8sIngressListeners struct {
