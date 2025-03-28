@@ -248,7 +248,7 @@ Optional:
 - `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - `http_port` (Number) HTTP Listener Port.
 - `https_port` (Number) HTTPS Listener Port.
-- `port_override` (String) Port override for the load balancer.
+- `port_override` (String) Port override for the load balancer. Currently supported for Azure
 
 
 <a id="nestedblock--rule"></a>

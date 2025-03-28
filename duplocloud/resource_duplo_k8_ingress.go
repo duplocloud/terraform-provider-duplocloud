@@ -70,7 +70,7 @@ func k8sIngressSchema() map[string]*schema.Schema {
 						Optional:    true,
 					},
 					"port_override": {
-						Description: "Port override for the load balancer.",
+						Description: "Port override for the load balancer. Currently supported for Azure",
 						Type:        schema.TypeString,
 						Computed:    true,
 						Optional:    true,
