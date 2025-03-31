@@ -27,7 +27,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
   max_instance_count = 2
 
   image_id       = "ami-077e0e0754c311a47" # <== put the AWS duplo docker AMI ID here
-  capacity       = "t2.small"
+  capacity       = "t2.micro"
   agent_platform = 0 # Duplo native container agent
   zone           = 0 # Zone A
   user_account   = duplocloud_tenant.duplo-app.account_name
@@ -49,7 +49,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
   max_instance_count = 2
 
   image_id       = "ami-077e0e0754c311a47" # <== put the AWS duplo docker AMI ID here
-  capacity       = "t2.small"
+  capacity       = "t2.micro"
   agent_platform = 0 # Duplo native container agent
   zone           = 0 # Zone A
   user_account   = duplocloud_tenant.duplo-app.account_name
@@ -72,7 +72,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
   max_instance_count = 2
 
   image_id       = "ami-077e0e0754c311a47" # <== put the AWS duplo docker AMI ID here
-  capacity       = "t2.small"
+  capacity       = "t2.micro"
   agent_platform = 0 # Duplo native container agent
   zone           = 0 # Zone A
   user_account   = duplocloud_tenant.duplo-app.account_name
@@ -100,7 +100,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
   max_instance_count = 2
 
   image_id       = "ami-id" # <== put the AWS duplo docker AMI ID here
-  capacity       = "t2.small"
+  capacity       = "t2.micro"
   agent_platform = 7 # Duplo native container agent
   zone           = 1 # Zone A
   user_account   = "oct15"
@@ -157,7 +157,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
   max_instance_count = 2
 
   image_id       = "ami-077e0e0754c311a47" # <== put the AWS duplo docker AMI ID here
-  capacity       = "t2.small"
+  capacity       = "t2.micro"
   agent_platform = 0      # Duplo native container agent
   zones          = [0, 1] # [Zone A, Zone B]
   user_account   = duplocloud_tenant.duplo-app.account_name
@@ -213,7 +213,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `user_account` (String) The name of the tenant that the host will be created in.
 - `volume` (Block List) Block to specify additional or secondary volume beyond the root device (see [below for nested schema](#nestedblock--volume))
 - `wait_for_capacity` (Boolean) Whether or not to wait until ASG instances to be healthy, after creation. Defaults to `true`.
-- `zone` (Number) The availability zone to launch the host in, expressed as a number and starting at 0. Defaults to `0`.
+- `zone` (String, Deprecated) The availability zone to launch the host in is expressed as a numeric value ranging from 0 to 3.  Defaults to `0`. For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.
 - `zones` (List of Number) The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A to 3 - Zone D, based on the infra setup
 
 ### Read-Only

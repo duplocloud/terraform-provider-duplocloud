@@ -24,7 +24,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	delete(awsASGSchema, "status")
 	delete(awsASGSchema, "identity_role")
 	delete(awsASGSchema, "private_ip_address")
-	//delete(awsASGSchema, "zone")
+	delete(awsASGSchema, "zone")
 
 	awsASGSchema["instance_count"] = &schema.Schema{
 		Description: "The number of instances that should be running in the group.",
@@ -118,17 +118,15 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		DiffSuppressFunc: diffSuppressAsgZones,
 		Computed:         true,
 	}
-	//awsASGSchema["zone"] = &schema.Schema{
-	//
-	//	Description:  "The availability zone to launch the host in, expressed as a numeric value and starting at 0 to 3. Recommended for environment on july release",
-	//	Type:         schema.TypeString,
-	//	Optional:     true,
-	//	ForceNew:     true, // relaunch instance
-	//	Deprecated:   "zone has been deprecated instead use zones, if on evironment above july 2024 release",
-	//	ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[0123]{1}$`), "allowed values 0 - 3"),
-	//	//DiffSuppressFunc: diffSuppressAsgZone,
-	//	Default: "0",
-	//}
+	awsASGSchema["zone"] = &schema.Schema{
+
+		Description: "The availability zone to launch the host in is expressed as a numeric value ranging from 0 to 3. ",
+		Type:        schema.TypeString,
+		Optional:    true,
+		ForceNew:    true, // relaunch instance
+		Deprecated:  "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.",
+		Default:     0,
+	}
 
 	return awsASGSchema
 }
@@ -497,7 +495,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		}
 		asgProfile.Zones = z
 	} else if v, ok := d.GetOk("zone"); ok && v != nil {
-		zn := d.Get("zone").(int) //strconv.Atoi(d.Get("zone").(string))
+		zn, _ := strconv.Atoi(d.Get("zone").(string))
 		asgProfile.Zones = append(asgProfile.Zones, zn)
 	}
 

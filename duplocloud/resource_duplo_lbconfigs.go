@@ -126,13 +126,12 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"backend_protocol_version": {
-			Description:      "Is used for communication between the load balancer and the target instances. This is a required field for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1",
+			Description:      "Is used for communication between the load balancer and the target instances. This field is used to set protocol version for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1",
 			Type:             schema.TypeString,
 			Optional:         true,
-			ForceNew:         true,
-			Default:          "HTTP1",
 			DiffSuppressFunc: diffSuppressStringCase,
 			ValidateFunc:     validation.StringInSlice([]string{"HTTP1", "HTTP2", "GRPC"}, true),
+			Computed:         true,
 		},
 		"frontend_ip": {
 			Type:     schema.TypeString,
@@ -643,9 +642,9 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 			return fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")
 
 		}
-		if ok && lb == 1 && bp == "" {
-			return fmt.Errorf("backend_protocol_version is a required field for ALB load balancer type")
-		}
+		//if ok && lb == 1 && bp == "" {
+		//	return fmt.Errorf("backend_protocol_version is a required field for ALB load balancer type")
+		//}
 		if p == "http" && bp == "grpc" {
 			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, pr)
 		}
