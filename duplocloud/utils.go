@@ -293,6 +293,7 @@ func keyValueFromState(fieldName string, d *schema.ResourceData) *[]duplosdk.Dup
 		for _, raw := range kvs {
 			kv, ok := raw.(map[string]interface{})
 			if !ok {
+				log.Printf("[WARN] Skipping invalid entry (not a map).")
 				continue // Skip invalid entries
 			}
 
