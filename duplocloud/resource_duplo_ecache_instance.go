@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/go-cty/cty"
+	gversion "github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -85,10 +87,15 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "The engine version of the elastic instance.\n" +
 				"See AWS documentation for the [available Redis and Valkey instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) " +
 				"or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).",
-			Type:             schema.TypeString,
-			Optional:         true,
-			ForceNew:         true,
-			DiffSuppressFunc: suppressEnginePatchVersion,
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+			Computed: true,
+			//DiffSuppressFunc: suppressEnginePatchVersion,
+		},
+		"actual_engine_version": {
+			Type:     schema.TypeString,
+			Computed: true,
 		},
 		"size": {
 			Description: "The instance type of the elasticache instance.\n" +
@@ -290,10 +297,10 @@ func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	// Convert the object into Terraform resource data
-	flattenEcacheInstance(duplo, d)
+	diag := flattenEcacheInstance(duplo, d)
 
 	log.Printf("[TRACE] resourceDuploEcacheInstanceRead(%s, %s): end", tenantID, name)
-	return nil
+	return diag
 }
 
 // CREATE resource
@@ -593,7 +600,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 }
 
 // flattenEcacheInstance converts a Duplo SDK object respresenting an ECache instance to terraform resource data.
-func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.ResourceData) {
+func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.ResourceData) diag.Diagnostics {
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("name", duplo.Name)
 	d.Set("identifier", duplo.Identifier)
@@ -608,7 +615,19 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 		}
 	}
 	d.Set("cache_type", duplo.CacheType)
-	d.Set("engine_version", duplo.EngineVersion)
+	v, err := normalizeEngineVersion(duplo.EngineVersion)
+	if err != nil {
+		return diag.Errorf("%s", err.Error())
+	}
+	ver := duplo.EngineVersion
+	if duplo.CacheType == 0 {
+		ver, err = trimPatchVersion(duplo.EngineVersion)
+		if err != nil {
+			return diag.Errorf("%s", err.Error())
+		}
+	}
+	d.Set("engine_version", ver)
+	d.Set("actual_engine_version", v.String())
 	d.Set("size", duplo.Size)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("encryption_at_rest", duplo.EncryptionAtRest)
@@ -624,7 +643,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
-
+	return nil
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
@@ -680,19 +699,21 @@ func suppressNoOfShardsDiff(k, old, new string, d *schema.ResourceData) bool {
 	return newValue == oldValue // Suppress diff if between 1 and 500 (inclusive)
 }
 
-func suppressEnginePatchVersion(k, old, new string, d *schema.ResourceData) bool {
-	oldVer := removePatchVersion(old)
-	newVer := removePatchVersion(new)
-	return oldVer == newVer // Suppress diff if patch exist
-}
-
-func removePatchVersion(version string) string {
-	parts := strings.Split(version, ".")
-	if len(parts) >= 2 {
-		return strings.Join(parts[:2], ".")
+/*
+	func suppressEnginePatchVersion(k, old, new string, d *schema.ResourceData) bool {
+		oldVer := removePatchVersion(old)
+		newVer := removePatchVersion(new)
+		return oldVer == newVer // Suppress diff if patch exist
 	}
-	return version
-}
+
+	func removePatchVersion(version string) string {
+		parts := strings.Split(version, ".")
+		if len(parts) >= 2 {
+			return strings.Join(parts[:2], ".")
+		}
+		return version
+	}
+*/
 func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 
 	return func(i interface{}, path cty.Path) diag.Diagnostics {
@@ -756,5 +777,143 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 	if !ecm && nshard > 0 {
 		return fmt.Errorf("number_of_shards can be set only if cluster mode is enabled")
 	}
+	eng := diff.Get("cache_type").(int)
+	engVer := diff.Get("engine_version").(string)
+	if engVer != "" {
+		diag := validateClusterEngineVersion(eng, engVer)
+		if diag != nil {
+			return diagsToError(diag)
+		}
+	}
 	return nil
+}
+
+// trims patch version if version is above 5
+func trimPatchVersion(version string) (string, error) {
+	// Validate input format
+	re := regexp.MustCompile(`^\d+(\.\d+){0,2}$`)
+	if !re.MatchString(version) {
+		return "", fmt.Errorf("invalid version format: %s", version)
+	}
+
+	// Split version into parts
+	parts := strings.Split(version, ".")
+
+	if len(parts) > 0 {
+		maj, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return "", nil
+		}
+		if maj > 5 && len(parts) == 3 { //if major version is greater than 5 convert version into major.minor format
+			return parts[0] + "." + parts[1], nil
+
+		}
+
+	}
+
+	return version, nil
+}
+
+const (
+	redisVersionPreV6RegexpPattern  = `^[1-5](\.[[:digit:]]+){2}$`
+	redisVersionPostV6RegexpPattern = `^((6)\.x)|([6-9]\.[[:digit:]]+)$`
+
+	redisVersionRegexpPattern = redisVersionPreV6RegexpPattern + "|" + redisVersionPostV6RegexpPattern
+)
+
+var (
+	redisVersionRegexp       = regexp.MustCompile(redisVersionRegexpPattern)
+	redisVersionPostV6Regexp = regexp.MustCompile(redisVersionPostV6RegexpPattern)
+)
+
+func validRedisVersionString(v interface{}, p cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("Invalid type: expected a string.")
+	}
+
+	if !redisVersionRegexp.MatchString(value) {
+		return diag.Errorf(
+			"Invalid Redis version: %q is not valid. For Redis v6 or higher, use <major>.<minor>. "+
+				"For Redis v5 or lower, use <major>.<minor>.<patch>.", value,
+		)
+	}
+
+	return diags
+}
+
+const (
+	versionStringRegexpInternalPattern = `[[:digit:]]+(\.[[:digit:]]+){2}`
+	versionStringRegexpPattern         = "^" + versionStringRegexpInternalPattern + "$"
+)
+
+var versionStringRegexp = regexp.MustCompile(versionStringRegexpPattern)
+
+/*
+	func validMemcachedVersionString(v any, k string) (ws []string, errors []error) {
+		value := v.(string)
+
+		if !versionStringRegexp.MatchString(value) {
+			errors = append(errors, fmt.Errorf("%s: must be a version string matching <major>.<minor>.<patch>", k))
+		}
+
+		return
+	}
+*/
+func validMemcachedVersionString(v interface{}, p cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("Invalid Type Expected a string value.")
+	}
+
+	if !versionStringRegexp.MatchString(value) {
+		diag.Errorf("Invalid Memcached Version value  must be in <major>.<minor>.<patch> format. %s", value)
+	}
+
+	return diags
+}
+func validateClusterEngineVersion(engine int, engineVersion string) diag.Diagnostics {
+	// Memcached: Versions in format <major>.<minor>.<patch>
+	// Redis: Starting with version 6, must match <major>.<minor>, prior to version 6, <major>.<minor>.<patch>
+	// Valkey: Versions in format <major>.<minor>
+	var validator schema.SchemaValidateDiagFunc
+
+	switch engine {
+	case 1:
+		validator = validMemcachedVersionString
+	case 0:
+		validator = validRedisVersionString
+	}
+
+	diags := validator(engineVersion, cty.Path{
+		cty.GetAttrStep{Name: "engine_version"},
+	})
+
+	return diags
+}
+
+// normalizeEngineVersion returns a github.com/hashicorp/go-version Version from:
+// - a regular 1.2.3 version number
+// - either the 6.x or 6.0 version number used for ElastiCache Redis version 6. 6.x will sort to 6.<maxint>
+// - a 7.0 version number used from version 7
+func normalizeEngineVersion(version string) (*gversion.Version, error) {
+	if matches := redisVersionPostV6Regexp.FindStringSubmatch(version); matches != nil {
+		if matches[1] != "" {
+			version = fmt.Sprintf("%s.%d", matches[2], math.MaxInt)
+		}
+	}
+	return gversion.NewVersion(version)
+}
+
+func diagsToError(diags diag.Diagnostics) error {
+	if !diags.HasError() {
+		return nil
+	}
+	var errMsgs []string
+	for _, d := range diags {
+		errMsgs = append(errMsgs, d.Summary)
+	}
+	return fmt.Errorf("%s", strings.Join(errMsgs, "; "))
 }

@@ -7,9 +7,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -139,6 +140,26 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    false,
 			Required:    true,
+		},
+		"init_container_docker_image": {
+			Description: "The docker images to use for the launched init container(s).",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Description: "Init container name.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"image": {
+						Description: "Init container docker image.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+				},
+			},
 		},
 		"tags": {
 			Type:     schema.TypeList,
@@ -279,9 +300,9 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 
 	log.Printf("[TRACE] resourceDuploServiceCreate(%s, %s): start", tenantID, name)
 	rq := duplosdk.DuploReplicationControllerCreateRequest{
-		Name:                              name,
-		OtherDockerHostConfig:             d.Get("other_docker_host_config").(string),
-		OtherDockerConfig:                 d.Get("other_docker_config").(string),
+		Name:                  name,
+		OtherDockerHostConfig: d.Get("other_docker_host_config").(string),
+		// OtherDockerConfig:                 d.Get("other_docker_config").(string),
 		AllocationTags:                    d.Get("allocation_tags").(string),
 		ExtraConfig:                       d.Get("extra_config").(string),
 		Commands:                          d.Get("commands").(string),
@@ -299,6 +320,15 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		ShouldSpreadAcrossZones:           d.Get("should_spread_across_zones").(bool),
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
+	}
+	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
+		updatedOtherDockerConfig, err := updateInitContainerImages(d.Get("other_docker_config").(string), v.([]interface{}))
+		if err != nil {
+			return diag.Errorf("Error updating init container images: %s", err)
+		}
+		rq.OtherDockerConfig = updatedOtherDockerConfig
+	} else {
+		rq.OtherDockerConfig = d.Get("other_docker_config").(string)
 	}
 	hpaSpec, _ := expandHPASpecs(d.Get("hpa_specs").(string))
 	rq.HPASpecs = hpaSpec
@@ -328,9 +358,9 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 
 	log.Printf("[TRACE] resourceDuploServiceUpdate(%s, %s): start", tenantID, name)
 	rq := duplosdk.DuploReplicationControllerUpdateRequest{
-		Name:                              name,
-		OtherDockerHostConfig:             d.Get("other_docker_host_config").(string),
-		OtherDockerConfig:                 d.Get("other_docker_config").(string),
+		Name:                  name,
+		OtherDockerHostConfig: d.Get("other_docker_host_config").(string),
+		// OtherDockerConfig:                 d.Get("other_docker_config").(string),
 		AllocationTags:                    d.Get("allocation_tags").(string),
 		ExtraConfig:                       d.Get("extra_config").(string),
 		Volumes:                           d.Get("volumes").(string),
@@ -346,6 +376,15 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 		ShouldSpreadAcrossZones:           d.Get("should_spread_across_zones").(bool),
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
+	}
+	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
+		updatedOtherDockerConfig, err := updateInitContainerImages(d.Get("other_docker_config").(string), d.Get("init_container_docker_image").([]interface{}))
+		if err != nil {
+			return diag.Errorf("Error updating init container images: %s", err)
+		}
+		rq.OtherDockerConfig = updatedOtherDockerConfig
+	} else {
+		rq.OtherDockerConfig = d.Get("other_docker_config").(string)
 	}
 	hpaSpec, _ := expandHPASpecs(d.Get("hpa_specs").(string))
 	rq.HPASpecs = hpaSpec
@@ -411,6 +450,116 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	log.Printf("[TRACE] resourceDuploServiceDelete(%s, %s): end", tenantID, name)
 	return nil
+}
+
+func extractInitContainerImages(d *schema.ResourceData, otherDockerConfig string) ([]interface{}, error) {
+	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
+		log.Printf("[DEBUG] Start: extractInitContainerImages with other_docker_config: %s", otherDockerConfig)
+		// Parse the JSON string
+		var config map[string]interface{}
+		if err := json.Unmarshal([]byte(otherDockerConfig), &config); err != nil {
+			return nil, fmt.Errorf("failed to parse other_docker_config JSON: %v", err)
+		}
+
+		// Check if "initContainers" key exists
+		initContainersRaw, exists := config["initContainers"]
+		if !exists {
+			return nil, nil
+		}
+
+		// Convert to []interface{}
+		initContainers, ok := initContainersRaw.([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("initContainers is not an array")
+		}
+
+		// Prepare the extracted images list
+		var extractedImages []interface{}
+
+		// Iterate over initContainers safely
+		for _, containerRaw := range initContainers {
+			containerMap, valid := containerRaw.(map[string]interface{})
+			if !valid {
+				continue // Skip invalid entries
+			}
+
+			name, nameExists := containerMap["name"].(string)
+			image, imgExists := containerMap["image"].(string)
+
+			// Ensure both "name" and "image" exist
+			if nameExists && imgExists {
+				delete(containerMap, "image")
+				extractedImages = append(extractedImages, map[string]interface{}{
+					"name":  name,
+					"image": image,
+				})
+			}
+		}
+		odc, err := json.Marshal(config)
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling updated other_docker_config: %v", err)
+		}
+		// Set the updated other_docker_config back to the resource data, This does not have images in initContainers
+		d.Set("other_docker_config", string(odc))
+		log.Printf("[DEBUG] End: extractInitContainerImages with extracted images: %v", extractedImages)
+
+		return extractedImages, nil
+	}
+	return nil, nil
+}
+
+func updateInitContainerImages(otheDockerConfigJSON string, imagesList []interface{}) (string, error) {
+	// Parse the first JSON (initContainers structure)
+	log.Printf("[DEBUG] Start: updateInitContainerImages with other_docker_config: %s", otheDockerConfigJSON)
+	var config map[string]interface{}
+	err := json.Unmarshal([]byte(otheDockerConfigJSON), &config)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse other_docker_config JSON: %v", err)
+	}
+
+	// Convert imagesList into a map for quick lookup
+	imageMap := make(map[string]string)
+	for _, item := range imagesList {
+		if itemMap, ok := item.(map[string]interface{}); ok {
+			if name, ok := itemMap["name"].(string); ok {
+				if image, ok := itemMap["image"].(string); ok {
+					imageMap[name] = image
+				}
+			}
+		}
+	}
+
+	// Check if "initContainers" exists
+	initContainers, ok := config["initContainers"].([]interface{})
+	if !ok {
+		return "", fmt.Errorf("initContainers field is missing or not an array")
+	}
+
+	// Iterate and update image field
+	for _, container := range initContainers {
+		containerMap, ok := container.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if name, exists := containerMap["name"].(string); exists {
+			if newImage, found := imageMap[name]; found {
+				containerMap["image"] = newImage
+			} else {
+				return "", fmt.Errorf("init container %s not found in \"init_container_docker_image\" list", name)
+			}
+		} else {
+			return "", fmt.Errorf("init container name is required in \"initContainers\" from \"other_docker_config\"")
+		}
+	}
+
+	// Convert updated JSON back to string
+	updatedJSON, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal updated other_docker_config JSON: %v", err)
+	}
+	log.Printf("[DEBUG] End: updateInitContainerImages with updated other_docker_config: %s", updatedJSON)
+	return string(updatedJSON), nil
 }
 
 // Internal function to expand other_docker_config JSON into a structure.
