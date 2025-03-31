@@ -130,8 +130,16 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
 	rq := expandLaunchTemplate(d)
+	name := rq.LaunchTemplateName
 	c := m.(*duplosdk.Client)
-	err := c.CreateAwsLaunchTemplate(tenantId, &rq)
+	var err duplosdk.ClientError
+	if !strings.Contains(name, "duploservices") {
+		rq.LaunchTemplateName, err = c.GetResourceName("duploservices", tenantId, name, false)
+		if err != nil {
+			diag.FromErr(err)
+		}
+	}
+	err = c.CreateAwsLaunchTemplate(tenantId, &rq)
 	if err != nil {
 		return diag.Errorf("%s", err.Error())
 	}
@@ -147,6 +155,7 @@ func resourceAwsLaunchTemplateDelete(ctx context.Context, d *schema.ResourceData
 }
 
 func expandLaunchTemplate(d *schema.ResourceData) duplosdk.DuploAwsLaunchTemplateRequest {
+
 	return duplosdk.DuploAwsLaunchTemplateRequest{
 		LaunchTemplateName: d.Get("name").(string),
 		SourceVersion:      d.Get("version").(string),
