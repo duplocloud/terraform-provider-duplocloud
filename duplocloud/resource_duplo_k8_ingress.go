@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -66,6 +67,12 @@ func k8sIngressSchema() map[string]*schema.Schema {
 					"https_port": {
 						Description: "HTTPS Listener Port.",
 						Type:        schema.TypeInt,
+						Optional:    true,
+					},
+					"port_override": {
+						Description: "Port override for the load balancer. Currently supported for Azure",
+						Type:        schema.TypeString,
+						Computed:    true,
 						Optional:    true,
 					},
 				},
@@ -339,6 +346,9 @@ func flattenK8sIngressLBConfig(duplo *duplosdk.DuploK8sLbConfig) map[string]inte
 	if duplo.Listeners != nil && len(duplo.Listeners.Https) > 0 {
 		m["https_port"] = duplo.Listeners.Https[0]
 	}
+	if len(duplo.FrontendPortOverride) > 0 {
+		m["port_override"] = duplo.FrontendPortOverride
+	}
 	return m
 }
 
@@ -423,6 +433,9 @@ func expandK8sIngressLBConfig(m map[string]interface{}) *duplosdk.DuploK8sLbConf
 		}
 	}
 	dcb.Listeners = &l
+	if v, ok := m["port_override"]; ok && v.(string) != "" {
+		dcb.FrontendPortOverride = v.(string)
+	}
 	return dcb
 }
 
