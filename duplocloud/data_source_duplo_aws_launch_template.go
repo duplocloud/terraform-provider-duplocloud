@@ -58,6 +58,7 @@ func dataSourceAwsLaunchTemplate() *schema.Resource {
 func datasourceAwsLaunchTemplateRead(d *schema.ResourceData, m interface{}) error {
 	tenantId := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
+	ver := d.Get("version").(string)
 	asgName := name
 	var err duplosdk.ClientError
 	c := m.(*duplosdk.Client)
@@ -82,39 +83,9 @@ func datasourceAwsLaunchTemplateRead(d *schema.ResourceData, m interface{}) erro
 	}
 	d.SetId(tenantId + "/launch-template/" + asgName)
 
-	fErr := flattenLaunchTemplate(d, rp, "")
+	fErr := flattenLaunchTemplate(d, rp, ver)
 	if fErr != nil {
 		return err
 	}
 	return nil
 }
-
-/*func flattenLaunchTemplateData(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, ver string) error {
-
-	var name, cver, insType, verDesc, dver, imgId string
-	max := 0
-	for _, v := range *rp {
-		if strconv.Itoa(int(v.VersionNumber)) == ver {
-			name = v.LaunchTemplateName
-			cver = strconv.Itoa(int(v.VersionNumber))
-		}
-		if v.DefaultVersion {
-			dver = strconv.Itoa(int(v.VersionNumber))
-		}
-		if max < int(v.VersionNumber) {
-			max = int(v.VersionNumber)
-			insType = v.LaunchTemplateData.InstanceType.Value
-			verDesc = v.VersionDescription
-			imgId = v.LaunchTemplateData.ImageId
-		}
-	}
-	d.Set("instance_type", insType)
-	d.Set("version_description", verDesc)
-	d.Set("name", name)
-	d.Set("version", cver)
-	d.Set("latest_version", strconv.Itoa(max))
-	d.Set("default_version", dver)
-	d.Set("ami", imgId)
-	return nil
-}
-*/
