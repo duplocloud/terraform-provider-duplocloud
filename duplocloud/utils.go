@@ -281,20 +281,38 @@ func keyValueToState(fieldName string, duploObjects *[]duplosdk.DuploKeyStringVa
 func keyValueFromState(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploKeyStringValue {
 	var ary []duplosdk.DuploKeyStringValue
 
-	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
-		kvs := v.([]interface{})
+	if v, ok := d.GetOk(fieldName); ok && v != nil {
+		kvs, ok := v.([]interface{})
+		if !ok || len(kvs) == 0 {
+			return &ary
+		}
+
 		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
 		ary = make([]duplosdk.DuploKeyStringValue, 0, len(kvs))
+
 		for _, raw := range kvs {
-			kv := raw.(map[string]interface{})
-			ary = append(ary, duplosdk.DuploKeyStringValue{
-				Key:   kv["key"].(string),
-				Value: kv["value"].(string),
-			})
+			kv, ok := raw.(map[string]interface{})
+			if !ok {
+				log.Printf("[WARN] Skipping invalid entry (not a map).")
+				continue // Skip invalid entries
+			}
+
+			key, keyOk := kv["key"].(string)
+			value, valueOk := kv["value"].(string)
+
+			if keyOk && valueOk {
+				ary = append(ary, duplosdk.DuploKeyStringValue{
+					Key:   key,
+					Value: value,
+				})
+			} else {
+				log.Printf("[WARN] Skipping entry with invalid key/value: %+v", kv)
+			}
 		}
 	}
 
 	return &ary
+
 }
 
 func customDataExToState(fieldName string, duploObjects *[]duplosdk.DuploCustomDataEx) []interface{} {
