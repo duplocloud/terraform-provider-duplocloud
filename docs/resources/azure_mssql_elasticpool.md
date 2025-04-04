@@ -52,7 +52,7 @@ resource "duplocloud_azure_mssql_elasticpool" "mssql_elasticpool" {
 
 ### Optional
 
-- `max_size_gb` (Number) Maximum allowed data size in GB
+- `max_size_gb` (Number) Maximum allowed data size in GB Defaults to `50`.
 - `sku` (Block List, Max: 1) (see [below for nested schema](#nestedblock--sku))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
