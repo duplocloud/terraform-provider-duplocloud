@@ -605,9 +605,13 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("name", duplo.Name)
 	d.Set("identifier", duplo.Identifier)
 	d.Set("arn", duplo.Arn)
-	d.Set("endpoint", duplo.Endpoint)
-	if duplo.Endpoint != "" {
-		uriParts := strings.SplitN(duplo.Endpoint, ":", 2)
+	endpoint := duplo.Endpoint
+	if endpoint == "" {
+		endpoint = duplo.ConfigurationEndpoint
+	}
+	d.Set("endpoint", endpoint)
+	if endpoint != "" {
+		uriParts := strings.SplitN(endpoint, ":", 2)
 		d.Set("host", uriParts[0])
 		if len(uriParts) == 2 {
 			port, _ := strconv.Atoi(uriParts[1])
