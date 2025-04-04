@@ -71,7 +71,6 @@ func duploAzureMssqlElasticPoolSchema() map[string]*schema.Schema {
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
-			Default:      32,
 			ValidateFunc: validation.IntBetween(50, 4096),
 		},
 	}
