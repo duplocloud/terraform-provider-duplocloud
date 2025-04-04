@@ -125,12 +125,18 @@ func resourceGCPStorageBucketV2Read(ctx context.Context, d *schema.ResourceData,
 	tenantID, name := idParts[0], idParts[1]
 
 	c := m.(*duplosdk.Client)
-
-	// Figure out the full resource name.
-	fullName, clientErr := c.GetDuploServicesNameWithGcp(tenantID, name, false)
+	f, clientErr := c.AdminGetSystemFeatures()
 	if clientErr != nil {
-		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+		return diag.Errorf("Error fetching system feature")
+	}
+	fullName := name
+	if !f.GcpDisableDuploPrefix && !f.GcpDisableTenantPrefix {
+		// Figure out the full resource name.
+		fullName, clientErr = c.GetDuploServicesNameWithGcp(tenantID, name, false)
+		if clientErr != nil {
+			return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
 
+		}
 	}
 	// Get the object from Duplo
 	duplo, err := c.GCPTenantGetV3StorageBucketV2(tenantID, fullName)

@@ -29,6 +29,8 @@ type DuploSystemFeatures struct {
 	TenantNameMaxLength            int                  `json:"TenantNameMaxLength"`
 	AzureResourcePrefix            *AzureResourcePrefix `json:"AzureResourcePrefix,omitempty"`
 	S3BucketNamePrefix             string               `json:"S3BucketNamePrefix"`
+	GcpDisableTenantPrefix         bool                 `json:"GcpDisableTenantPrefix"`
+	GcpDisableDuploPrefix          bool                 `json:"GcpDisableDuploPrefix"`
 }
 
 type AzureResourcePrefix struct {
