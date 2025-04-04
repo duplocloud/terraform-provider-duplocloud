@@ -70,9 +70,8 @@ func duploAzureMssqlElasticPoolSchema() map[string]*schema.Schema {
 			Description:  "Maximum allowed data size in GB",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			ForceNew:     true,
 			Default:      50,
-			ValidateFunc: validation.IntBetween(50, 4096),
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 150, 200, 250, 300, 400, 500, 750, 800, 1024, 1200, 1280, 1536, 1600, 1792, 2000, 2048, 2304, 2500, 2560, 2816, 3000, 3072, 3328, 3584, 3840, 4096}),
 		},
 	}
 }
@@ -82,8 +81,8 @@ func resourceAzureMssqlElasticPool() *schema.Resource {
 		Description: "`duplocloud_azure_mssql_elasticpool` manages an azure mssql elastic pool in Duplo.",
 
 		ReadContext:   resourceAzureMssqlElasticPoolRead,
-		CreateContext: resourceAzureMssqlElasticPoolCreate,
-		UpdateContext: resourceAzureMssqlElasticPoolUpdate,
+		CreateContext: resourceAzureMssqlElasticPoolCreateOrUpdate,
+		UpdateContext: resourceAzureMssqlElasticPoolCreateOrUpdate,
 		DeleteContext: resourceAzureMssqlElasticPoolDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -129,13 +128,13 @@ func resourceAzureMssqlElasticPoolRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func resourceAzureMssqlElasticPoolCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureMssqlElasticPoolCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
 	epName := d.Get("name").(string)
 	serverName := d.Get("server_name").(string)
-	log.Printf("[TRACE] resourceAzureMssqlElasticPoolCreate(%s, %s): start", tenantID, epName)
+	log.Printf("[TRACE] resourceAzureMssqlElasticPoolCreateOrUpdate(%s, %s): start", tenantID, epName)
 	c := m.(*duplosdk.Client)
 
 	rq := expandAzureMssqlElasticPool(d)
@@ -161,13 +160,14 @@ func resourceAzureMssqlElasticPoolCreate(ctx context.Context, d *schema.Resource
 	}
 
 	diags = resourceAzureMssqlElasticPoolRead(ctx, d, m)
-	log.Printf("[TRACE] resourceAzureMssqlElasticPoolCreate(%s, %s): end", tenantID, epName)
+	log.Printf("[TRACE] resourceAzureMssqlElasticPoolCreateOrUpdate(%s, %s): end", tenantID, epName)
 	return diags
 }
 
+/*
 func resourceAzureMssqlElasticPoolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return nil
-}
+}*/
 
 func resourceAzureMssqlElasticPoolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
