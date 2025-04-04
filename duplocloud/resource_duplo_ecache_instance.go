@@ -167,8 +167,9 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 		"enable_cluster_mode": {
 			Description: "Flag to enable/disable redis/valkey cluster mode.",
 			Type:        schema.TypeBool,
-			Computed:    true,
+			Default:     false,
 			Optional:    true,
+			ForceNew:    true,
 		},
 		"number_of_shards": {
 			Description:      "The number of shards to create. Applicable only if enable_cluster_mode is set to true",
@@ -620,7 +621,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 		return diag.Errorf("%s", err.Error())
 	}
 	ver := duplo.EngineVersion
-	if duplo.CacheType == 0 {
+	if duplo.CacheType == 0 || duplo.CacheType == 2 {
 		ver, err = trimPatchVersion(duplo.EngineVersion)
 		if err != nil {
 			return diag.Errorf("%s", err.Error())
@@ -885,6 +886,8 @@ func validateClusterEngineVersion(engine int, engineVersion string) diag.Diagnos
 		validator = validMemcachedVersionString
 	case 0:
 		validator = validRedisVersionString
+	case 2:
+		validator = validValkeyVersionString
 	}
 
 	diags := validator(engineVersion, cty.Path{
@@ -916,4 +919,28 @@ func diagsToError(diags diag.Diagnostics) error {
 		errMsgs = append(errMsgs, d.Summary)
 	}
 	return fmt.Errorf("%s", strings.Join(errMsgs, "; "))
+}
+
+const (
+	valkeyVersionRegexpPattern = `^[7-9]\.[[:digit:]]+$`
+)
+
+var (
+	valkeyVersionRegexp = regexp.MustCompile(valkeyVersionRegexpPattern)
+)
+
+func validValkeyVersionString(v interface{}, p cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("Invalid type: expected a string.")
+	}
+
+	if !valkeyVersionRegexp.MatchString(value) {
+		return diag.Errorf(
+			"Invalid ValKey version: %q is not valid. For Valkey use <major>.<minor>.", value,
+		)
+	}
+
+	return diags
 }

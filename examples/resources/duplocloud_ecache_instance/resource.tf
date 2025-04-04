@@ -29,3 +29,24 @@ resource "duplocloud_ecache_instance" "mycache" {
   }
 
 }
+
+
+resource "duplocloud_ecache_instance" "mycaches" {
+  tenant_id                = duplocloud_tenant.myapp.tenant_id
+  name                     = "myvalkey"
+  cache_type               = 2 //valkey
+  size                     = "cache.t3.medium"
+  engine_version           = "7.2"
+  snapshot_window          = "19:50-20:51"
+  snapshot_retention_limit = 12
+}
+
+resource "duplocloud_ecache_instance" "mycachesnap" {
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
+  name           = "fromsnap"
+  cache_type     = 2
+  size           = "cache.t3.medium"
+  engine_version = "7.2"
+  snapshot_name  = "duploservices-march13-mysnap-snapshot"
+
+}
