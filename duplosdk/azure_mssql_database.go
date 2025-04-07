@@ -23,8 +23,9 @@ type DuploAzureMsSqlDatabaseRequest struct {
 }
 
 type DuploAzureMsSqlElasticPoolRequest struct {
-	Name string                      `json:"name"`
-	Sku  *DuploAzureMsSqlDatabaseSku `json:"sku"`
+	Name         string                      `json:"name"`
+	Sku          *DuploAzureMsSqlDatabaseSku `json:"sku"`
+	MaxSizeBytes int64                       `json:"properties.MaxSizeBytes"`
 }
 
 type DuploAzureMsSqlDatabaseDeleteRequest struct {
@@ -97,6 +98,7 @@ type DuploAzureMsSqlElasticPool struct {
 	ID                      string                      `json:"id"`
 	Name                    string                      `json:"name"`
 	Type                    string                      `json:"type"`
+	MaxSizeBytes            int64                       `json:"properties.MaxSizeBytes"`
 }
 
 func (c *Client) MsSqlServerCreate(tenantID string, rq *DuploAzureMsSqlRequest) ClientError {
