@@ -1,4 +1,4 @@
-# Example: Importing an existing AWS target group attributes.
+# Example: Importing an existing AWS registered targets of target group.
 #  - *TENANT_ID* is the tenant GUID
 #  - *TARGET_GROUP_ARN* is the ARN of target group.
 #

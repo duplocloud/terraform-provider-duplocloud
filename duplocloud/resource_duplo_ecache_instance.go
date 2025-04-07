@@ -75,8 +75,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "The numerical index of elasticache instance type.\n" +
 				"Should be one of:\n\n" +
 				"   - `0` : Redis\n" +
-				"   - `1` : Memcache\n\n" +
-				"   - `2` : Valkey\n\n",
+				"   - `1` : Memcache\n\n",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
@@ -605,9 +604,13 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("name", duplo.Name)
 	d.Set("identifier", duplo.Identifier)
 	d.Set("arn", duplo.Arn)
-	d.Set("endpoint", duplo.Endpoint)
-	if duplo.Endpoint != "" {
-		uriParts := strings.SplitN(duplo.Endpoint, ":", 2)
+	endpoint := duplo.Endpoint
+	if endpoint == "" {
+		endpoint = duplo.ConfigurationEndpoint
+	}
+	d.Set("endpoint", endpoint)
+	if endpoint != "" {
+		uriParts := strings.SplitN(endpoint, ":", 2)
 		d.Set("host", uriParts[0])
 		if len(uriParts) == 2 {
 			port, _ := strconv.Atoi(uriParts[1])

@@ -40,7 +40,7 @@ resource "duplocloud_aws_target_group_target_register" "trgt" {
 
 - `target_group_arn` (String) ARN of the Target Group.
 - `targets` (Block List, Min: 1) List of target id to be associated with target group (see [below for nested schema](#nestedblock--targets))
-- `tenant_id` (String) The GUID of the tenant that the aws target group attributes will be created in.
+- `tenant_id` (String) The GUID of the tenant where duplo will manage register and deregister of aws targets in target group.
 
 ### Optional
 
@@ -76,7 +76,7 @@ Optional:
 Import is supported using the following syntax:
 
 ```shell
-# Example: Importing an existing AWS target group attributes.
+# Example: Importing an existing AWS registered targets of target group.
 #  - *TENANT_ID* is the tenant GUID
 #  - *TARGET_GROUP_ARN* is the ARN of target group.
 #

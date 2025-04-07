@@ -17,7 +17,7 @@ import (
 func duploAwsTargetGroupTargetMngrSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the aws target group attributes will be created in.",
+			Description:  "The GUID of the tenant where duplo will manage register and deregister of aws targets in target group.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
@@ -116,7 +116,7 @@ func resourceAwsTargetGroupTargetRegisterCreate(ctx context.Context, d *schema.R
 	targteGrpArn := d.Get("target_group_arn").(string)
 	tgToken := strings.Split(targteGrpArn, "/")
 	tgName := tgToken[1]
-	log.Printf("[TRACE] resourceAwsTargetGroupAttributesCreate(%s,%s): start", tenantID, tgName)
+	log.Printf("[TRACE] resourceAwsTargetGroupTargetRegisterCreate(%s,%s): start", tenantID, tgName)
 
 	targets := d.Get("targets").([]interface{})
 	req := &duplosdk.DuploTargetGroupTargetRegister{}
@@ -140,7 +140,7 @@ func resourceAwsTargetGroupTargetRegisterCreate(ctx context.Context, d *schema.R
 	d.SetId(id)
 
 	diags := resourceAwsTargetGroupTargetRegisterRead(ctx, d, m)
-	log.Printf("[TRACE] resourceAwsTargetGroupAttributesCreate(%s,%s): end", tenantID, tgName)
+	log.Printf("[TRACE] resourceAwsTargetGroupTargetRegisterCreate(%s,%s): end", tenantID, tgName)
 	return diags
 }
 
