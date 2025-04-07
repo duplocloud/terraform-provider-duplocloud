@@ -55,7 +55,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Type:             schema.TypeString,
 			Required:         true,
 			DiffSuppressFunc: diffSuppressStringCase,
-			ValidateFunc:     validation.StringInSlice([]string{"HTTP", "HTTPS", "TCP", "UDP", "TLS"}, false),
+			ValidateFunc:     validation.StringInSlice([]string{"HTTP", "HTTPS", "TCP", "UDP", "TLS"}, true),
 		},
 		"port": {
 			Description: "The backend port associated with this load balancer configuration.",
@@ -126,12 +126,12 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"backend_protocol_version": {
-			Description:  "Is used for communication between the load balancer and the target instances. This is a required field for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1",
-			Type:         schema.TypeString,
-			Optional:     true,
-			ForceNew:     true,
-			Default:      "HTTP1",
-			ValidateFunc: validation.StringInSlice([]string{"HTTP1", "HTTP2", "GRPC"}, false),
+			Description:      "Is used for communication between the load balancer and the target instances. This field is used to set protocol version for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1",
+			Type:             schema.TypeString,
+			Optional:         true,
+			DiffSuppressFunc: diffSuppressStringCase,
+			ValidateFunc:     validation.StringInSlice([]string{"HTTP1", "HTTP2", "GRPC"}, true),
+			Computed:         true,
 		},
 		"frontend_ip": {
 			Type:     schema.TypeString,
@@ -390,7 +390,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					TenantId:                  tenantID,
 					ReplicationControllerName: name,
 					LbType:                    lbc["lb_type"].(int),
-					Protocol:                  lbc["protocol"].(string),
+					Protocol:                  strings.ToUpper(lbc["protocol"].(string)),
 					Port:                      lbc["port"].(string),
 					HealthCheckURL:            lbc["health_check_url"].(string),
 					CertificateArn:            lbc["certificate_arn"].(string),
@@ -402,7 +402,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					SkipHttpToHttps:           lbc["skip_http_to_https"].(bool),
 				}
 				if v, ok := lbc["backend_protocol_version"]; ok && item.LbType == 1 {
-					item.BeProtocolVersion = v.(string)
+					item.BeProtocolVersion = strings.ToUpper(v.(string))
 				}
 				if v, ok := lbc["health_check"]; ok && len(v.([]interface{})) > 0 {
 					healthcheck := v.([]interface{})[0].(map[string]interface{})
@@ -579,7 +579,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"name":                        lb.ReplicationControllerName,
 		"replication_controller_name": lb.ReplicationControllerName,
 		"lb_type":                     lb.LbType,
-		"protocol":                    lb.Protocol,
+		"protocol":                    strings.ToUpper(lb.Protocol),
 		"port":                        lb.Port,
 		"host_port":                   lb.HostPort,
 		"external_port":               lb.ExternalPort,
@@ -642,9 +642,9 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 			return fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")
 
 		}
-		if ok && lb == 1 && bp == "" {
-			return fmt.Errorf("backend_protocol_version is a required field for ALB load balancer type")
-		}
+		//if ok && lb == 1 && bp == "" {
+		//	return fmt.Errorf("backend_protocol_version is a required field for ALB load balancer type")
+		//}
 		if p == "http" && bp == "grpc" {
 			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, pr)
 		}

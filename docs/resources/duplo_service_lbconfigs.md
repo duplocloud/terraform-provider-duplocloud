@@ -35,13 +35,37 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
   replication_controller_name = duplocloud_duplo_service.myservice.name
 
   lbconfigs {
-    external_port    = 80
-    health_check_url = "/"
-    is_native        = false
-    lb_type          = 1 # Application load balancer
-    port             = "80"
-    protocol         = "http"
+    external_port            = 80
+    health_check_url         = "/"
+    is_native                = false
+    lb_type                  = 1 # Application load balancer
+    port                     = "80"
+    protocol                 = "HTTP"
+    backend_protocol_version = "HTTP1"
+    health_check {
+      healthy_threshold   = 4
+      unhealthy_threshold = 4
+      timeout             = 50
+      interval            = 30
+      http_success_codes  = "200-399"
+    }
+  }
+}
 
+
+resource "duplocloud_duplo_service_lbconfigs" "myservice2" {
+  tenant_id                   = duplocloud_duplo_service.myservice.tenant_id
+  replication_controller_name = duplocloud_duplo_service.myservice.name
+
+  lbconfigs {
+    external_port            = 80
+    health_check_url         = "/"
+    is_native                = false
+    lb_type                  = 1 # Application load balancer
+    port                     = "80"
+    protocol                 = "HTTPS"
+    certificate_arn          = "certificate:arn"
+    backend_protocol_version = "HTTP2"
     health_check {
       healthy_threshold   = 4
       unhealthy_threshold = 4
@@ -104,7 +128,7 @@ Supported protocol based on lb_type:
 Optional:
 
 - `allow_global_access` (Boolean) Applicable for internal lb.
-- `backend_protocol_version` (String) Is used for communication between the load balancer and the target instances. This is a required field for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1 Defaults to `HTTP1`.
+- `backend_protocol_version` (String) Is used for communication between the load balancer and the target instances. This field is used to set protocol version for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1
 - `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - `custom_cidr` (List of String) Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.
 - `external_port` (Number) The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.
