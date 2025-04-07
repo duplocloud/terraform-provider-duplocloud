@@ -197,8 +197,15 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	}
 	d.Set("instance_type", insType)
 	d.Set("version_description", verDesc)
+	n := d.Get("name").(string)
 	d.Set("name", name)
-	d.Set("version", cver)
+	if !strings.Contains(n, "duploservices") {
+		d.Set("name", n)
+	}
+
+	if _, ok := d.GetOk("version"); ok {
+		d.Set("version", cver)
+	}
 	d.Set("latest_version", strconv.Itoa(max))
 	d.Set("default_version", dver)
 	d.Set("ami", imgId)
