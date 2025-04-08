@@ -176,13 +176,11 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	if err != nil {
 		return err
 	}
-	var name, cver, insType, verDesc, dver, imgId string
+	var name, insType, verDesc, dver, imgId string
 	max := 0
 	d.Set("version_metadata", string(b))
 	for _, v := range *rp {
-		if strconv.Itoa(int(v.VersionNumber)) == ver {
-			cver = strconv.Itoa(int(v.VersionNumber))
-		}
+
 		if v.DefaultVersion {
 			dver = strconv.Itoa(int(v.VersionNumber))
 		}
@@ -192,7 +190,6 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 			verDesc = v.VersionDescription
 			imgId = v.LaunchTemplateData.ImageId
 			name = v.LaunchTemplateName
-			cver = strconv.Itoa(int(v.VersionNumber))
 		}
 	}
 	d.Set("instance_type", insType)
@@ -203,8 +200,8 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 		d.Set("name", n)
 	}
 
-	if _, ok := d.GetOk("version"); ok {
-		d.Set("version", cver)
+	if v, ok := d.GetOk("version"); ok && v.(string) != "" {
+		d.Set("version", v.(string))
 	}
 	d.Set("latest_version", strconv.Itoa(max))
 	d.Set("default_version", dver)
