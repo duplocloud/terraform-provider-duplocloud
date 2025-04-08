@@ -571,6 +571,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
 			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
 			SnapshotWindow:           d.Get("snapshot_window").(string),
+			EnableClusterMode:        d.Get("enable_cluster_mode").(bool),
 		},
 	}
 	if ds, ok := d.Get("log_delivery_configuration").(*schema.Set); ok {
@@ -590,11 +591,12 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			data.EnableClusterMode = v.(bool)
 		}
 	}
-	if data.EnableClusterMode {
+	if data.DuploEcacheInstance.EnableClusterMode {
+		data.DuploEcacheInstance.AutomaticFailoverEnabled = true
 		if v, ok := d.GetOk("number_of_shards"); !ok || (v.(int) < 1 && v.(int) > 500) {
-			data.NumberOfShards = 2
+			data.DuploEcacheInstance.NumberOfShards = 2
 		} else {
-			data.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
+			data.DuploEcacheInstance.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
 		}
 	}
 	return data, nil
@@ -775,8 +777,8 @@ func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
 	ecm := diff.Get("enable_cluster_mode").(bool)
 	nshard := diff.Get("number_of_shards").(int)
-	if !ecm && nshard > 0 {
-		return fmt.Errorf("number_of_shards can be set only if cluster mode is enabled")
+	if ecm && nshard == 0 {
+		return fmt.Errorf("number_of_shards is required when cluster mode is enabled")
 	}
 	eng := diff.Get("cache_type").(int)
 	engVer := diff.Get("engine_version").(string)
@@ -785,6 +787,11 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 		if diag != nil {
 			return diagsToError(diag)
 		}
+	}
+	failover := diff.Get("automatic_failover_enabled").(bool)
+	if ecm && !failover {
+		return fmt.Errorf("automatic_failover_enabled should be true for cluster mode")
+
 	}
 	return nil
 }
