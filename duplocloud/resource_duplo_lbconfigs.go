@@ -204,7 +204,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 						Type:         schema.TypeInt,
 						Optional:     true,
 						Computed:     true,
-						ValidateFunc: validation.IntBetween(2, 100),
+						ValidateFunc: validation.IntBetween(2, 120),
 					},
 					"interval": {
 						Description: "Approximate amount of time, in seconds, between health checks of an individual target. Minimum value 5 seconds, Maximum value 300 seconds.",
