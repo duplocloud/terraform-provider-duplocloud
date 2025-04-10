@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -52,8 +53,8 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 
 		"tier": {
 			Description: "The machine type to use. See tiers for more details and supported versions. " +
-				"Postgres supports only shared-core machine types, and custom machine types such as `db-custom-2-13312`." +
-				"See the [Custom Machine Type Documentation](https://cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type#create) to learn about specifying custom machine types.",
+				"Postgres supports only shared-core machine types, and custom machine types, format for custom machine type db-custom-{vCPU}-{memory-in-MB} example `db-custom-2-13312`." +
+				"See the [Machine Type Documentation](https://cloud.google.com/compute/docs/machine-resource) for more infromation on machine types.",
 			Type:     schema.TypeString,
 			Required: true,
 		},
