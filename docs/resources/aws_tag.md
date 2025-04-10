@@ -3,12 +3,12 @@
 page_title: "duplocloud_aws_tag Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_aws_tag manages an AWS custom tag for resources in Duplo.
+  duplocloud_aws_tag manages an AWS RDS tag in Duplo.
 ---
 
 # duplocloud_aws_tag (Resource)
 
-`duplocloud_aws_tag` manages an AWS custom tag for resources in Duplo.
+`duplocloud_aws_tag` manages an AWS RDS tag in Duplo.
 
 
 
@@ -19,7 +19,7 @@ description: |-
 
 - `arn` (String) The resource arn of which custom tag need to be created.
 - `key` (String) The tag name.
-- `tenant_id` (String) The GUID of the tenant that the custom tag for a resource will be created in.
+- `tenant_id` (String) The GUID of the tenant that the RDS tag will be created in.
 - `value` (String) The value of the tag.
 
 ### Optional
