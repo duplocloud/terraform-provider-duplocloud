@@ -739,12 +739,11 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	if d.HasChange("auto_minor_version_upgrade") {
-		obj := duplosdk.DuploAutoMinorUpgrade{}
+		obj := duplosdk.DuploRdsUpdatePayload{}
 		if !isAuroraDB(d) {
-			obj.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
-			obj.DBInstanceIdentifier = identifier
-			obj.ApplyImmediately = true
-			cErr := c.UpdateRDSDBInstanceAutoMinorUpgrade(tenantID, obj)
+			val := d.Get("auto_minor_version_upgrade").(bool)
+			obj.AutoMinorVersionUpgrade = &val
+			cErr := c.UpdateRDSDBInstanceAutoMinorUpgrade(tenantID, identifier, obj)
 			if cErr != nil {
 				return diag.FromErr(cErr)
 			}

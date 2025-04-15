@@ -96,6 +96,7 @@ type DuploRdsUpdatePayload struct {
 	SizeEx                    string `json:"SizeEx,omitempty"`
 	DbParameterGroupName      string `json:"DbParameterGroupName,omitempty"`
 	ClusterParameterGroupName string `json:"ClusterParameterGroupName,omitempty"`
+	AutoMinorVersionUpgrade   *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
 }
 
 type DuploRdsUpdateInstance struct {
@@ -483,10 +484,10 @@ type DuploAutoMinorUpgrade struct {
 	ApplyImmediately        bool   `json:"ApplyImmediately"`
 }
 
-func (c *Client) UpdateRDSDBInstanceAutoMinorUpgrade(tenantID string, duploObject DuploAutoMinorUpgrade) ClientError {
+func (c *Client) UpdateRDSDBInstanceAutoMinorUpgrade(tenantID, instanceId string, duploObject DuploRdsUpdatePayload) ClientError {
 	return c.putAPI(
-		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, duploObject.DBInstanceIdentifier),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/minorVersionUpgrade", tenantID, duploObject.DBInstanceIdentifier),
+		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, instanceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/updatePayload", tenantID, instanceId),
 		&duploObject,
 		nil,
 	)
