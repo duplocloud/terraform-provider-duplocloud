@@ -6,8 +6,9 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -104,28 +105,29 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 		},
 	}
-	awsASGSchema["zone"] = &schema.Schema{
-
-		Description:   "The availability zone to launch the host in, expressed as a number and starting at 0.",
-		Type:          schema.TypeInt,
-		Optional:      true,
-		ForceNew:      true, // relaunch instance
-		Default:       0,
-		Deprecated:    "zone has been deprecated instead use zones",
-		ConflictsWith: []string{"zones"},
-	}
-
 	awsASGSchema["zones"] = &schema.Schema{
-		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0",
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A to 3 - Zone D, based on the infra setup",
 		Type:        schema.TypeList,
 		Optional:    true,
 		ForceNew:    true,
 		Elem: &schema.Schema{
-			Type:     schema.TypeInt,
-			ForceNew: true,
+			Type:         schema.TypeInt,
+			ForceNew:     true,
+			ValidateFunc: validation.IntBetween(0, 3),
 		},
-		ConflictsWith: []string{"zone"},
+		DiffSuppressFunc: diffSuppressAsgZones,
+		Computed:         true,
 	}
+	awsASGSchema["zone"] = &schema.Schema{
+
+		Description: "The availability zone to launch the host in is expressed as a numeric value ranging from 0 to 3. ",
+		Type:        schema.TypeString,
+		Optional:    true,
+		ForceNew:    true, // relaunch instance
+		Deprecated:  "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.",
+		Default:     0,
+	}
+
 	return awsASGSchema
 }
 
@@ -409,12 +411,18 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
-		if len(duplo.Zones) > 0 {
+		_, zok := d.GetOk("zones")
+
+		if len(duplo.Zones) > 0 && zok {
 			i := []interface{}{}
 			for _, v := range duplo.Zones {
 				i = append(i, v)
 			}
 			d.Set("zones", i)
+		} else {
+			if len(duplo.Zones) == 1 {
+				d.Set("zone", duplo.Zones[0])
+			}
 		}
 		d.Set("allocated_public_ip", duplo.AllocatedPublicIP)
 	}
@@ -481,14 +489,14 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		asgProfile.Taints = &obj
 	}
 	z := []int{}
-	if val, ok := d.Get("zones").([]interface{}); ok {
+	if val, ok := d.Get("zones").([]interface{}); ok && len(val) > 0 {
 		for _, dt := range val {
 			z = append(z, dt.(int))
 		}
 		asgProfile.Zones = z
-	} else {
-		z = append(z, d.Get("zone").(int))
-		asgProfile.Zones = z
+	} else if v, ok := d.GetOk("zone"); ok && v != nil {
+		zn, _ := strconv.Atoi(d.Get("zone").(string))
+		asgProfile.Zones = append(asgProfile.Zones, zn)
 	}
 
 	return asgProfile

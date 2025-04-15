@@ -2,9 +2,9 @@ package duplocloud
 
 import (
 	"context"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strconv"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"

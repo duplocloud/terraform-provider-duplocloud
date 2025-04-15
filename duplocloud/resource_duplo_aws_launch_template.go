@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,7 +32,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		"version": {
 			Description: "Any of the existing version of the launch template",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			ForceNew:    true,
 		},
 		"default_version": {
@@ -47,14 +48,15 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		"version_description": {
 			Description: "The version of the launch template",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			ForceNew:    true,
+			Computed:    true,
 		},
 
 		"instance_type": {
 			Description: "Asg instance type to be used to update the version from the current version",
 			Type:        schema.TypeString,
-			Optional:    true,
+			Required:    true,
 			ForceNew:    true,
 		},
 		"ami": {
@@ -62,6 +64,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    true,
+			Computed:    true,
 		},
 		"version_metadata": {
 			Type:     schema.TypeString,
@@ -91,9 +94,22 @@ func resourceAwsLaunchTemplate() *schema.Resource {
 func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	tenantId, asgName, ver := idParts[0], idParts[2], idParts[3]
+	ver := ""
+	tenantId, asgName := idParts[0], idParts[2]
+	if len(idParts) == 4 {
+		ver = idParts[3]
+	}
+
 	c := m.(*duplosdk.Client)
-	rp, err := c.GetAwsLaunchTemplate(tenantId, asgName)
+	fullName := asgName
+	var err1 error
+	if !strings.Contains(asgName, "duploservices") {
+		fullName, err1 = c.GetResourceName("duploservices", tenantId, asgName, false)
+		if err1 != nil {
+			diag.FromErr(err1)
+		}
+	}
+	rp, err := c.GetAwsLaunchTemplate(tenantId, fullName)
 	if err != nil {
 		if err.Status() == 404 {
 			d.SetId("")
@@ -114,12 +130,20 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
 	rq := expandLaunchTemplate(d)
+	name := rq.LaunchTemplateName
 	c := m.(*duplosdk.Client)
-	err := c.CreateAwsLaunchTemplate(tenantId, &rq)
+	var err duplosdk.ClientError
+	if !strings.Contains(name, "duploservices") {
+		rq.LaunchTemplateName, err = c.GetResourceName("duploservices", tenantId, name, false)
+		if err != nil {
+			diag.FromErr(err)
+		}
+	}
+	err = c.CreateAwsLaunchTemplate(tenantId, &rq)
 	if err != nil {
 		return diag.Errorf("%s", err.Error())
 	}
-	d.SetId(tenantId + "/launch-template/" + rq.LaunchTemplateName + "/" + rq.SourceVersion)
+	d.SetId(tenantId + "/launch-template/" + rq.LaunchTemplateName)
 	diag := resourceAwsLaunchTemplateRead(ctx, d, m)
 	return diag
 
@@ -131,6 +155,7 @@ func resourceAwsLaunchTemplateDelete(ctx context.Context, d *schema.ResourceData
 }
 
 func expandLaunchTemplate(d *schema.ResourceData) duplosdk.DuploAwsLaunchTemplateRequest {
+
 	return duplosdk.DuploAwsLaunchTemplateRequest{
 		LaunchTemplateName: d.Get("name").(string),
 		SourceVersion:      d.Get("version").(string),
@@ -151,14 +176,11 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	if err != nil {
 		return err
 	}
-	var name, cver, insType, verDesc, dver, imgId string
+	var name, insType, verDesc, dver, imgId string
 	max := 0
 	d.Set("version_metadata", string(b))
 	for _, v := range *rp {
-		if strconv.Itoa(int(v.VersionNumber)) == ver {
-			name = v.LaunchTemplateName
-			cver = strconv.Itoa(int(v.VersionNumber))
-		}
+
 		if v.DefaultVersion {
 			dver = strconv.Itoa(int(v.VersionNumber))
 		}
@@ -167,12 +189,20 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 			insType = v.LaunchTemplateData.InstanceType.Value
 			verDesc = v.VersionDescription
 			imgId = v.LaunchTemplateData.ImageId
+			name = v.LaunchTemplateName
 		}
 	}
 	d.Set("instance_type", insType)
 	d.Set("version_description", verDesc)
+	n := d.Get("name").(string)
 	d.Set("name", name)
-	d.Set("version", cver)
+	if !strings.Contains(n, "duploservices") {
+		d.Set("name", n)
+	}
+
+	if v, ok := d.GetOk("version"); ok && v.(string) != "" {
+		d.Set("version", v.(string))
+	}
 	d.Set("latest_version", strconv.Itoa(max))
 	d.Set("default_version", dver)
 	d.Set("ami", imgId)

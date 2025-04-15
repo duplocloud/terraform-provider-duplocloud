@@ -8,8 +8,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -52,7 +53,8 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 		},
 		"size": {
 			Description: "The type of the RDS read replica.\n" +
-				"See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).",
+				"See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/)." +
+				"Size should be set as db.serverless if read replica instamce is created as serverless",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
@@ -61,8 +63,9 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 		"availability_zone": {
 			Description: "The AZ for the RDS instance.",
 			Type:        schema.TypeString,
-			Computed:    true,
 			Optional:    true,
+			ForceNew:    true,
+			Computed:    true,
 		},
 		"identifier": {
 			Description: "The full name of the RDS read replica.",
@@ -118,7 +121,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 		"multi_az": {
 			Description: "Specifies if the RDS instance is multi-AZ.",
 			Type:        schema.TypeBool,
-			Computed:    true,
+			Optional:    true,
 		},
 		"kms_key_id": {
 			Description: "The globally unique identifier for the key.",
@@ -139,6 +142,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
+			DiffSuppressFunc: diffIgnoreDefaultParamaterGroupName,
 		},
 		"cluster_parameter_group_name": {
 			Description: "Parameter group associated with this instance's DB Cluster.",
@@ -177,6 +181,33 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 							validation.IntDivisibleBy(31),
 						),
 						DiffSuppressFunc: suppressRetentionPeriodIfPerformanceInsightsDisabled,
+					},
+				},
+			},
+		},
+		"enhanced_monitoring": {
+			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
+		},
+		"v2_scaling_configuration": {
+			Description: "Serverless v2_scaling_configuration min and max scalling capacity. Required during creating a servless read replica.",
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"min_capacity": {
+						Description: "Specifies min scalling capacity.",
+						Type:        schema.TypeFloat,
+						Required:    true,
+					},
+					"max_capacity": {
+						Description: "Specifies max scalling capacity.",
+						Type:        schema.TypeFloat,
+						Required:    true,
 					},
 				},
 			},
@@ -280,11 +311,39 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	if len(errors) > 0 {
 		return errorsToDiagnostics(fmt.Sprintf("Cannot create RDS DB read replica: %s: ", id), errors)
 	}
+	if duplo.SizeEx == "db.serverless" {
+		rq := duplosdk.DuploRdsModifyAuroraV2ServerlessInstanceSize{
+			Identifier:        duploWriterInstance.Identifier,
+			ClusterIdentifier: duplo.ClusterIdentifier,
+			ApplyImmediately:  true,
+			//	SizeEx:            "db.serverless",
+		}
+		if v, ok := d.GetOk("v2_scaling_configuration"); ok {
+			rq.V2ScalingConfiguration = expandV2ScalingConfiguration(v.([]interface{}))
+		} else {
+			return diag.Errorf("v2_scaling_configuration: min_capacity and max_capacity must be provided")
 
+		}
+		err := c.EnableReadReplicaServerlessCreation(tenantID, rq.ClusterIdentifier, rq)
+		if err != nil {
+			return diag.Errorf("%s", err.Error())
+		}
+		//wrtId := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", tenantID, duploWriterInstance.Name)
+		//err1 := readReplicaInstanceWaitUntilUnavailable(ctx, c, wrtId, d.Timeout("create"))
+		//if err1 != nil {
+		//	return diag.Errorf("Error waiting for RDS DB read replica '%s' to be available: %s", id, err)
+		//}
+		//err1 = rdsReadReplicaWaitUntilAvailable(ctx, c, wrtId, d.Timeout("create"))
+		//if err1 != nil {
+		//	return diag.Errorf("Error waiting for RDS DB read replica '%s' to be available: %s", id, err)
+		//}
+
+	}
 	instResp, err := c.RdsInstanceCreate(tenantID, duplo)
 	if err != nil {
 		return diag.Errorf("Error creating RDS DB read replica '%s': %s", id, err)
 	}
+
 	d.SetId(id)
 
 	// Wait up to 60 seconds for Duplo to be able to return the instance details.
@@ -295,9 +354,28 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 	// Wait for the instance to become available.
-	err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("create"))
-	if err != nil {
+	err1 := rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("create"))
+	if err1 != nil {
 		return diag.Errorf("Error waiting for RDS DB read replica '%s' to be available: %s", id, err)
+	}
+
+	if d.HasChange("enhanced_monitoring") {
+		val := d.Get("enhanced_monitoring").(int)
+		err1 = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
+			DBInstanceIdentifier: instResp.Identifier,
+			ApplyImmediately:     true,
+			MonitoringInterval:   val,
+		})
+		if err1 != nil {
+			return diag.FromErr(err1)
+		}
+
+		err1 = rdsInstanceSyncMonitoringInterval(ctx, c, id, d.Timeout("create"), val)
+		if err1 != nil {
+			return diag.Errorf("Error waiting for RDS read replica DB instance '%s' to update enhanced monitoring level: %s", id, err1.Error())
+
+		}
+
 	}
 	//performance insights update for document db specific
 	if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
@@ -308,8 +386,8 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 			return diag.FromErr(insightErr)
 
 		}
-		err = performanceInsightsWaitUntilEnabled(ctx, c, id)
-		if err != nil {
+		err1 = performanceInsightsWaitUntilEnabled(ctx, c, id)
+		if err1 != nil {
 			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 		}
 
@@ -350,40 +428,54 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 		}
 	}
 	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
-	pI := expandPerformanceInsight(d)
-	if pI != nil {
-		period := pI["retention_period"].(int)
-		kmsid := pI["kms_key_id"].(string)
-		enable := duplosdk.PerformanceInsightEnable{
-			EnablePerformanceInsights:          pI["enabled"].(bool),
-			PerformanceInsightsRetentionPeriod: period,
-			PerformanceInsightsKMSKeyId:        kmsid,
+	if d.HasChange("performance_insights") {
+		pI := expandPerformanceInsight(d)
+		if pI != nil && pI["enabled"].(bool) {
+			period := pI["retention_period"].(int)
+			kmsid := pI["kms_key_id"].(string)
+			enable := duplosdk.PerformanceInsightEnable{
+				EnablePerformanceInsights:          pI["enabled"].(bool),
+				PerformanceInsightsRetentionPeriod: period,
+				PerformanceInsightsKMSKeyId:        kmsid,
+			}
+			obj.Enable = &enable
+		} else {
+			disable := duplosdk.PerformanceInsightDisable{
+				EnablePerformanceInsights: false,
+			}
+			obj.Disable = &disable
 		}
-		obj.Enable = &enable
-	} else {
-		disable := duplosdk.PerformanceInsightDisable{
-			EnablePerformanceInsights: false,
+
+		obj.DBInstanceIdentifier = identifier
+		if !isAuroraDB(d) {
+			insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+			if insightErr != nil {
+				return diag.FromErr(insightErr)
+
+			}
+
 		}
-		obj.Disable = &disable
+
+		// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
+		_ = readReplicaInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+
+		// Wait for the instance to become available.
+		err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+		}
 	}
-	obj.DBInstanceIdentifier = identifier
-	if !isAuroraDB(d) {
-		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(insightErr)
-
-		}
-
+	if d.HasChange("enhanced_monitoring") {
+		val := d.Get("enhanced_monitoring").(int)
+		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
+			DBInstanceIdentifier: identifier,
+			ApplyImmediately:     true,
+			MonitoringInterval:   val,
+		})
 	}
-	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
-	_ = readReplicaInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
-
-	// Wait for the instance to become available.
-	err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
 	if err != nil {
-		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+		return diag.FromErr(err)
 	}
-
 	diags := resourceDuploRdsReadReplicaRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsReadReplicaUpdate ******** end")
@@ -519,6 +611,7 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 	jo["replica_status"] = duploObject.InstanceStatus
 	jo["parameter_group_name"] = duploObject.DBParameterGroupName
 	jo["cluster_parameter_group_name"] = duploObject.ClusterParameterGroupName
+	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 
 	clusterIdentifier := duploObject.ClusterIdentifier
 	if len(clusterIdentifier) == 0 {
@@ -597,4 +690,14 @@ func validateRDSReplicaUse(ctx context.Context, diff *schema.ResourceDiff, m int
 	//		//}
 	//	}
 	return nil
+}
+
+func diffIgnoreDefaultParamaterGroupName(k, old, new string, d *schema.ResourceData) bool {
+	o, n := d.GetChange("parameter_group_name")
+	if (o.(string) == "" && strings.Contains(n.(string), "default")) ||
+		(n.(string) == "" && strings.Contains(o.(string), "default")) ||
+		(strings.Contains(o.(string), "default") && strings.Contains(n.(string), "default")) {
+		return true
+	}
+	return false
 }

@@ -31,12 +31,6 @@ resource "duplocloud_s3_bucket_replication" "rep" {
     delete_marker_replication = false
     storage_class             = "STANDARD"
   }
-
-}
-
-resource "duplocloud_s3_bucket_replication" "rep1" {
-  tenant_id     = duplocloud_tenant.myapp.tenant_id
-  source_bucket = "duploservices-tenantname-src-182680712604"
   rules {
     name                      = "tfruleB"
     destination_bucket        = "duploservices-tenantname-dest2-182680712604"
@@ -44,6 +38,6 @@ resource "duplocloud_s3_bucket_replication" "rep1" {
     delete_marker_replication = false
     storage_class             = "STANDARD"
   }
-  depends_on = [duplocloud_s3_bucket_replication.rep]
 
 }
+

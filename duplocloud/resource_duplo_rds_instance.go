@@ -9,10 +9,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -143,13 +144,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description: "A RDS parameter group name to apply to the RDS instance.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Computed:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(1, 255),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
 				validation.StringDoesNotMatch(regexp.MustCompile(`--`), "DB parameter group name cannot contain two hyphens"),
 			),
-			//DiffSuppressFunc: diffSuppressWhenNotCreating,
+			DiffSuppressFunc: diffSuppressDefaultParameterName,
 		},
 		"cluster_parameter_group_name": {
 			Description: "Parameter group associated with this instance's DB Cluster.",
@@ -171,7 +171,8 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 		},
 		"size": {
 			Description: "The instance type of the RDS instance.\n" +
-				"See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/).",
+				"See AWS documentation for the [available instance types](https://aws.amazon.com/rds/instance-types/)." +
+				"Size should be set as db.serverless if rds instamce is created as serverless",
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^db\.`), "RDS instance types must start with 'db.'"),
@@ -192,6 +193,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
+			ForceNew: true,
 			ValidateFunc: validation.StringInSlice(
 				[]string{"gp2", "gp3", "io1", "standard", "aurora", "aurora-iopt1"},
 				false,
@@ -258,19 +260,19 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"v2_scaling_configuration": {
-			Description: "Serverless v2_scaling_configuration min and max scalling capacity.",
+			Description: "Serverless v2_scaling_configuration min and max scaling capacity. This configuration is only applicable for serverless instances",
 			Type:        schema.TypeList,
 			MaxItems:    1,
 			Optional:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"min_capacity": {
-						Description: "Specifies min scalling capacity.",
+						Description: "Specifies min scaling capacity.",
 						Type:        schema.TypeFloat,
 						Required:    true,
 					},
 					"max_capacity": {
-						Description: "Specifies max scalling capacity.",
+						Description: "Specifies max scaling capacity.",
 						Type:        schema.TypeFloat,
 						Required:    true,
 					},
@@ -294,7 +296,6 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			Computed:     true,
 			ValidateFunc: validation.IntInSlice([]int{0, 1, 5, 10, 15, 30, 60}),
 		},
 		"performance_insights": {
@@ -346,7 +347,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
-			ForceNew:    true,
+			//			ForceNew:    true,
 		},
 	}
 }
@@ -448,6 +449,25 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	identifier := createdRds.Identifier
+
+	if d.HasChange("enhanced_monitoring") {
+		val := d.Get("enhanced_monitoring").(int)
+		err = c.RdsUpdateMonitoringInterval(tenantID, duplosdk.DuploMonitoringInterval{
+			DBInstanceIdentifier: identifier,
+			ApplyImmediately:     true,
+			MonitoringInterval:   val,
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		err = rdsInstanceSyncMonitoringInterval(ctx, c, id, d.Timeout("create"), val)
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to update enhanced monitoring level: %s", id, err.Error())
+
+		}
+
+	}
+
 	if d.HasChange("performance_insights") {
 		pI := expandPerformanceInsight(d)
 		if pI != nil && duplo.Engine == RDS_DOCUMENT_DB_ENGINE {
@@ -488,6 +508,7 @@ func resourceDuploRdsInstanceCreate(ctx context.Context, d *schema.ResourceData,
 				DBInstanceIdentifier: identifier,
 				DeletionProtection:   deleteProtection,
 				SkipFinalSnapshot:    skipFinalSnapshot,
+				ApplyImmediately:     true,
 			}
 
 			err = c.UpdateRDSDBInstance(tenantID, obj)
@@ -586,6 +607,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 				return diag.Errorf("Error waiting for RDS DB instance '%s' to update cluster parameter group name: %s", id, err.Error())
 
 			}
+
 		}
 	}
 	// Request the password change in Duplo
@@ -631,6 +653,13 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		if err != nil {
 			return diag.FromErr(err)
 		}
+		_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, d.Timeout("update"))
+
+		// Wait for the instance to become available.
+		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+		}
 	}
 
 	if d.HasChange("backup_retention_period") || d.HasChange("deletion_protection") ||
@@ -661,8 +690,11 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 				SkipFinalSnapshot:     skipFinalSnapshot,
 			}
 			err = c.UpdateRDSDBInstance(tenantID, obj)
-		}
 
+		}
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if d.HasChange("enhanced_monitoring") {
@@ -672,10 +704,11 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			ApplyImmediately:     true,
 			MonitoringInterval:   val,
 		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
-	if err != nil {
-		return diag.FromErr(err)
-	}
+
 	if d.HasChange("performance_insights") {
 		obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
 		pI := expandPerformanceInsight(d)
@@ -703,16 +736,29 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 			}
 		}
+	}
 
-		// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
-		_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
-
-		// Wait for the instance to become available.
-		err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+	if d.HasChange("auto_minor_version_upgrade") {
+		obj := duplosdk.DuploAutoMinorUpgrade{}
+		if !isAuroraDB(d) {
+			obj.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
+			obj.DBInstanceIdentifier = identifier
+			obj.ApplyImmediately = true
+			cErr := c.UpdateRDSDBInstanceAutoMinorUpgrade(tenantID, obj)
+			if cErr != nil {
+				return diag.FromErr(cErr)
+			}
 		}
 	}
+	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
+	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+
+	// Wait for the instance to become available.
+	err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+	if err != nil {
+		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+	}
+
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
@@ -906,6 +952,8 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["identifier"] = duploObject.Identifier
 	jo["arn"] = duploObject.Arn
 	jo["endpoint"] = duploObject.Endpoint
+	jo["deletion_protection"] = duploObject.DeletionProtection
+	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	clusterIdentifier := duploObject.ClusterIdentifier
 	if len(clusterIdentifier) == 0 {
 		clusterIdentifier = duploObject.Identifier
@@ -943,7 +991,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["skip_final_snapshot"] = duploObject.SkipFinalSnapshot
 	jo["store_details_in_secret_manager"] = duploObject.StoreDetailsInSecretManager
 	jo["enable_iam_auth"] = duploObject.EnableIamAuth
-	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 {
+	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 && duploObject.SizeEx == "db.serverless" {
 		d.Set("v2_scaling_configuration", []map[string]interface{}{{
 			"min_capacity": duploObject.V2ScalingConfiguration.MinCapacity,
 			"max_capacity": duploObject.V2ScalingConfiguration.MaxCapacity,
@@ -1084,8 +1132,9 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		perf_insights_configuration := perf_insights_configuration_list[0].(map[string]interface{})
 		perf_insights_enabled = perf_insights_configuration["enabled"].(bool)
 	}
+	s := diff.Get("size").(string)
+
 	if v, ok := nonsup[eng]; perf_insights_enabled && ok {
-		s := diff.Get("size").(string)
 		if _, ok := v[s]; ok {
 			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
 		}
@@ -1103,6 +1152,11 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			if eng != 8 && eng != 9 {
 				return fmt.Errorf("RDS engine %s  do not support storage_type %s ", engines[eng], st)
 			}
+		}
+	}
+	if v, ok := diff.GetOk("v2_scaling_configuration"); ok {
+		if len(v.([]interface{})) > 0 && s != "db.serverless" {
+			return fmt.Errorf("Cannot set v2 scaling configuration for provisioned rds instance")
 		}
 	}
 	return nil
@@ -1232,4 +1286,61 @@ func validateRDSGroupParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		return fmt.Errorf("RDS engine %s  do not support  cluster_parameter_group_name ", engines[eng])
 	}
 	return nil
+}
+
+func rdsInstanceSyncMonitoringInterval(ctx context.Context, c *duplosdk.Client, id string, timeout time.Duration, monitoringInterval int) error {
+	stateConf := &retry.StateChangeConf{
+		Target:       []string{"updated"},
+		Pending:      []string{"updating"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 50 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			status := "updating"
+			resp, err := c.RdsInstanceGet(id)
+			if err != nil {
+				return 0, "", err
+			}
+			if monitoringInterval == resp.MonitoringInterval && resp.InstanceStatus == "available" {
+				status = "updated"
+			}
+
+			return resp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] rdsInstanceSyncMonitoringInterval (%s)", id)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+func diffSuppressDefaultParameterName(k, old, new string, d *schema.ResourceData) bool {
+	// If both values are identical, suppress the diff
+	if old == new {
+		return true
+	}
+
+	// Define the known default prefix (assuming "default" is a prefix)
+	defaultPrefix := "default."
+
+	// Check if the field was not explicitly set in Terraform
+	if !d.HasChange(k) {
+		// If the API returns a default value, suppress the diff
+		if strings.Contains(new, "") && strings.Contains(old, defaultPrefix) {
+			return true
+		}
+	}
+
+	// If both old and new values contain the default prefix, suppress the diff
+	if strings.Contains(old, defaultPrefix) && strings.Contains(new, defaultPrefix) {
+		return true
+	}
+
+	// If transitioning from a default value to a custom value, allow diff
+	// If transitioning from a custom value back to a default value, allow diff
+	if (strings.Contains(old, defaultPrefix) && !strings.Contains(new, defaultPrefix)) ||
+		(!strings.Contains(old, defaultPrefix) && strings.Contains(new, defaultPrefix)) {
+		return false
+	}
+
+	return false
 }

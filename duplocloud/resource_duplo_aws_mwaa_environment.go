@@ -3,9 +3,9 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -85,7 +85,7 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			Optional:    true,
 			ForceNew:    true,
 			ValidateFunc: validation.StringInSlice([]string{
-				"2.4.3", "2.5.1", "2.6.3", "2.7.2", "2.8.1", "2.9.2", "2.10.1",
+				"2.4.3", "2.5.1", "2.6.3", "2.7.2", "2.8.1", "2.9.2", "2.10.1", "2.10.3",
 			}, false),
 		},
 		"environment_class": {

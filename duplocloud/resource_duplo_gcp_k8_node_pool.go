@@ -7,10 +7,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -74,6 +75,13 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
+		},
+		"allocation_tags": {
+			Description: `Allocation tag to give to the nodes 
+			if specified it would be added as a label and that can be used while creating services`,
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
 		},
 		"spot": {
 			Description: "Spot flag for enabling Spot VM",
@@ -470,6 +478,10 @@ func resourceGCPK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, m 
 	if diags != nil {
 		return diags
 	}
+	err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("create"))
+	if err != nil {
+		return diag.Errorf("%s", err.Error())
+	}
 	d.SetId(id)
 	d.Set("name", shortName)
 	resourceGCPNodePoolRead(ctx, d, m)
@@ -545,6 +557,10 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 	req.MachineType = d.Get("machine_type").(string)
 	req.DiscSizeGb = d.Get("disc_size_gb").(int)
 	req.ImageType = d.Get("image_type").(string)
+
+	if val, ok := d.Get("allocation_tags").(string); ok {
+		req.AllocationTags = val
+	}
 	for _, tag := range d.Get("tags").([]interface{}) {
 		req.Tags = append(req.Tags, tag.(string))
 	}
@@ -886,15 +902,17 @@ func resourceGcpNodePoolDelete(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.Errorf("Error deleting node pool '%s': %s", id, err)
 	}
-
+	derr := gcpNodePoolWaitUntilAvailableForDeleted(ctx, c, tenantID, fullName, d.Timeout("delete"))
+	if derr != nil {
+		return diag.Errorf("%s", derr)
+	}
 	// Wait up to 60 seconds for Duplo to delete the node pool.
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp node pool", id, func() (interface{}, duplosdk.ClientError) {
+	diagErr := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp node pool", id, func() (interface{}, duplosdk.ClientError) {
 		return c.GCPK8NodePoolGet(tenantID, fullName)
 	})
-	if diag != nil {
-		return diag
+	if diagErr != nil {
+		return diagErr
 	}
-
 	log.Printf("[TRACE] resourceGcpNodePoolDelete ******** end")
 	return nil
 }
@@ -929,7 +947,8 @@ func resourceGCPK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 		}
 	}
-	if d.HasChange("taints") || d.HasChange("labels") || d.HasChange("tags") || d.HasChange("resource_labels") {
+
+	if d.HasChange("taints") || d.HasChange("labels") || d.HasChange("tags") || d.HasChange("resource_labels") || d.HasChange("allocation_tags") {
 		_, err = gcpNodePoolUpdateTaintAndTags(c, tenantID, fullName, rq)
 		if err != nil {
 			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
@@ -1075,10 +1094,11 @@ func filterOutDefaultLabels(labels map[string]string) map[string]string {
 
 func filterOutDefaultOAuth(oAuths []string) []string {
 	oauthMap := map[string]struct{}{
-		//"https://www.googleapis.com/auth/compute":              {},
-		//"https://www.googleapis.com/auth/devstorage.read_only": {},
-		//"https://www.googleapis.com/auth/logging.write":        {},
-		//"https://www.googleapis.com/auth/monitoring":           {},
+		"https://www.googleapis.com/auth/monitoring.write":     {},
+		"https://www.googleapis.com/auth/logging.write":        {},
+		"https://www.googleapis.com/auth/monitoring":           {},
+		"https://www.googleapis.com/auth/compute":              {},
+		"https://www.googleapis.com/auth/devstorage.read_only": {},
 	}
 	filters := []string{}
 	for _, oAuth := range oAuths {
@@ -1092,4 +1112,52 @@ func filterOutDefaultOAuth(oAuths []string) []string {
 func filterOutDefaultResourceLabels(labels map[string]string) map[string]string {
 	delete(labels, "duplo-tenant")
 	return labels
+}
+
+func gcpNodePoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.GCPK8NodePoolGet(tenantID, name)
+			log.Printf("[TRACE] Node Pool  status is (%s).", rp.Status)
+			status := "pending"
+			if err == nil {
+				if rp.Status == "RUNNING" {
+					status = "ready"
+				} else {
+					status = "pending"
+				}
+			}
+
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] gcpNodePoolWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+func gcpNodePoolWaitUntilAvailableForDeleted(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:      []string{"waiting"},
+		Target:       []string{"available"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			status := "waiting"
+			rp, _ := c.GCPK8NodePoolGet(tenantID, name)
+			if rp != nil && rp.Status == "STOPPING" {
+				status = "available"
+			}
+			return rp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilDeleted (%s/%s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }

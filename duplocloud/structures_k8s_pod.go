@@ -25,7 +25,7 @@ var builtInTolerations = map[string]string{
 
 // Flatteners
 
-func flattenPodSpec(in v1.PodSpec) ([]interface{}, error) {
+func flattenPodSpec(in v1.PodSpec, podSpec interface{}) ([]interface{}, error) {
 	att := make(map[string]interface{})
 	if in.ActiveDeadlineSeconds != nil {
 		att["active_deadline_seconds"] = *in.ActiveDeadlineSeconds
@@ -92,7 +92,31 @@ func flattenPodSpec(in v1.PodSpec) ([]interface{}, error) {
 		att["node_name"] = in.NodeName
 	}
 	if len(in.NodeSelector) > 0 {
-		att["node_selector"] = in.NodeSelector
+		filter := map[string]struct{}{
+			"kubernetes.io/os": {},
+			"tenantname":       {},
+			"allocationtags":   {},
+		}
+
+		temp := make(map[string]interface{})
+
+		psm, ok := podSpec.([]interface{})
+		if ok && len(psm) > 0 {
+			mp := psm[0].(map[string]interface{})
+			ns, ok := mp["node_selector"].(map[string]interface{})
+			if ok {
+				for k := range ns {
+					delete(filter, k)
+				}
+			}
+		}
+		for k, v := range in.NodeSelector {
+			if _, ok := filter[k]; !ok {
+				temp[k] = v
+			}
+		}
+
+		att["node_selector"] = temp
 	}
 	if in.RuntimeClassName != nil {
 		att["runtime_class_name"] = *in.RuntimeClassName
@@ -586,6 +610,7 @@ func flattenSecretProjection(in *v1.SecretProjection) []interface{} {
 			m["key"] = v.Key
 			if v.Mode != nil {
 				m["mode"] = "0" + strconv.FormatInt(int64(*v.Mode), 8)
+
 			}
 			m["path"] = v.Path
 			items[i] = m
@@ -610,6 +635,7 @@ func flattenConfigMapProjection(in *v1.ConfigMapProjection) []interface{} {
 			}
 			if v.Mode != nil {
 				m["mode"] = "0" + strconv.FormatInt(int64(*v.Mode), 8)
+
 			}
 			if v.Path != "" {
 				m["path"] = v.Path
@@ -665,6 +691,9 @@ func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 		obj.ActiveDeadlineSeconds = ptrToInt64(int64(v))
 	}
 
+	if v, ok := in["image_pull_secrets"].([]interface{}); ok && len(v) > 0 {
+		obj.ImagePullSecrets = expandImagePullSecrets(v)
+	}
 	if v, ok := in["affinity"].([]interface{}); ok && len(v) > 0 {
 		a, err := expandAffinity(v)
 		if err != nil {
@@ -924,12 +953,13 @@ func expandItems(items []interface{}) ([]v1.KeyToPath, error) {
 		if v, ok := val["key"]; ok {
 			i.Key = v.(string)
 		}
-		if v, ok := val["mode"]; ok {
-			val, err := strconv.Atoi(v.(string))
+		if v, ok := val["mode"]; ok && v.(string) != "" {
+			num, err := OctalToNumericInt32(v.(string))
 			if err != nil {
 				return nil, err
 			}
-			i.Mode = ptrToInt32(int32(val))
+
+			i.Mode = ptrToInt32(num)
 		}
 		if v, ok := val["path"]; ok {
 			i.Path = v.(string)
@@ -966,8 +996,8 @@ func expandCSI(csi []interface{}) *v1.CSIVolumeSource {
 	if v, ok := csiMap["driver"]; ok {
 		csiBody.Driver = v.(string)
 	}
-	if v, ok := csiMap["volume_attributes"]; ok {
-		csiBody.VolumeAttributes = v.(map[string]string)
+	if v, ok := csiMap["volume_attributes"].(map[string]interface{}); ok && len(v) > 0 {
+		csiBody.VolumeAttributes = expandStringMap(v)
 	}
 	if v, ok := csiMap["fs_type"]; ok {
 		str := v.(string)
@@ -1035,12 +1065,13 @@ func expandDownwardAPIItems(items []interface{}) ([]v1.DownwardAPIVolumeFile, er
 			}
 			i.FieldRef = ref
 		}
-		if v, ok := val["mode"]; ok {
-			val, err := strconv.Atoi(v.(string))
+		if v, ok := val["mode"]; ok && v.(string) != "" {
+			num, err := OctalToNumericInt32(v.(string))
 			if err != nil {
 				return nil, err
 			}
-			i.Mode = ptrToInt32(int32(val))
+
+			i.Mode = ptrToInt32(num)
 		}
 		if v, ok := val["path"]; ok {
 			i.Path = v.(string)
@@ -1269,4 +1300,17 @@ func expandServiceAccountToken(sat []interface{}) *v1.ServiceAccountTokenProject
 		tokenBody.Path = v.(string)
 	}
 	return &tokenBody
+}
+
+func expandImagePullSecrets(val []interface{}) []v1.LocalObjectReference {
+	sec := []v1.LocalObjectReference{}
+	for _, v := range val {
+		m := v.(map[string]interface{})
+
+		se := v1.LocalObjectReference{
+			Name: m["name"].(string),
+		}
+		sec = append(sec, se)
+	}
+	return sec
 }

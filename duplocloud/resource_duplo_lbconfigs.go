@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -42,10 +43,19 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			ForceNew: true,
 		},
 		"protocol": {
-			Description:      "The backend protocol associated with this load balancer configuration.",
+			Description: "The backend protocol associated with this load balancer configuration.\n" +
+				"Supported protocol based on lb_type:\n\n" +
+				"	- `0 (ELB)`: HTTP, HTTPS, TCP, UDP\n" +
+				"	- `1 (ALB)` : HTTP, HTTPS\n" +
+				"	- `3 (K8S Service w/ Cluster IP)`: TCP, UDP\n" +
+				"	- `4 (K8S Service w/ Node Port)` : TCP, UDP\n" +
+				"	- `5 (Azure Shared Application Gateway)`: HTTP, HTTPS\n" +
+				"	- `6 (NLB)` : TCP, UDP, TLS\n" +
+				"	- `7 (Target Group Only)` : HTTP, HTTPS\n",
 			Type:             schema.TypeString,
 			Required:         true,
 			DiffSuppressFunc: diffSuppressStringCase,
+			ValidateFunc:     validation.StringInSlice([]string{"HTTP", "HTTPS", "TCP", "UDP", "TLS"}, true),
 		},
 		"port": {
 			Description: "The backend port associated with this load balancer configuration.",
@@ -116,8 +126,12 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"backend_protocol_version": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description:      "Is used for communication between the load balancer and the target instances. This field is used to set protocol version for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1",
+			Type:             schema.TypeString,
+			Optional:         true,
+			DiffSuppressFunc: diffSuppressStringCase,
+			ValidateFunc:     validation.StringInSlice([]string{"HTTP1", "HTTP2", "GRPC"}, true),
+			Computed:         true,
 		},
 		"frontend_ip": {
 			Type:     schema.TypeString,
@@ -190,7 +204,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 						Type:         schema.TypeInt,
 						Optional:     true,
 						Computed:     true,
-						ValidateFunc: validation.IntBetween(2, 100),
+						ValidateFunc: validation.IntBetween(2, 120),
 					},
 					"interval": {
 						Description: "Approximate amount of time, in seconds, between health checks of an individual target. Minimum value 5 seconds, Maximum value 300 seconds.",
@@ -234,7 +248,8 @@ func resourceDuploServiceLbConfigs() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploServiceLbConfigsSchema(),
+		Schema:        duploServiceLbConfigsSchema(),
+		CustomizeDiff: validateLBConfigParameters,
 	}
 }
 
@@ -375,7 +390,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					TenantId:                  tenantID,
 					ReplicationControllerName: name,
 					LbType:                    lbc["lb_type"].(int),
-					Protocol:                  lbc["protocol"].(string),
+					Protocol:                  strings.ToUpper(lbc["protocol"].(string)),
 					Port:                      lbc["port"].(string),
 					HealthCheckURL:            lbc["health_check_url"].(string),
 					CertificateArn:            lbc["certificate_arn"].(string),
@@ -386,7 +401,9 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
 					SkipHttpToHttps:           lbc["skip_http_to_https"].(bool),
 				}
-
+				if v, ok := lbc["backend_protocol_version"]; ok && item.LbType == 1 {
+					item.BeProtocolVersion = strings.ToUpper(v.(string))
+				}
 				if v, ok := lbc["health_check"]; ok && len(v.([]interface{})) > 0 {
 					healthcheck := v.([]interface{})[0].(map[string]interface{})
 
@@ -479,7 +496,7 @@ func resourceDuploServiceLbConfigsDelete(ctx context.Context, d *schema.Resource
 
 	// Wait 40 more seconds to deal with consistency issues.
 	if diags == nil {
-		time.Sleep(40 * time.Second)
+		time.Sleep(140 * time.Second)
 	}
 
 	log.Printf("[TRACE] resourceDuploServiceLbConfigsDelete(%s, %s): end", tenantID, name)
@@ -562,7 +579,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"name":                        lb.ReplicationControllerName,
 		"replication_controller_name": lb.ReplicationControllerName,
 		"lb_type":                     lb.LbType,
-		"protocol":                    lb.Protocol,
+		"protocol":                    strings.ToUpper(lb.Protocol),
 		"port":                        lb.Port,
 		"host_port":                   lb.HostPort,
 		"external_port":               lb.ExternalPort,
@@ -572,7 +589,6 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"cloud_name":                  lb.CloudName,
 		"health_check_url":            lb.HealthCheckURL,
 		"external_traffic_policy":     lb.ExternalTrafficPolicy,
-		"backend_protocol_version":    lb.BeProtocolVersion,
 		"index":                       lb.LbIndex,
 		"frontend_ip":                 lb.FrontendIP,
 		"is_native":                   lb.IsNative,
@@ -583,6 +599,7 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"custom_cidr":                 lb.CustomCidrs,
 		"allow_global_access":         lb.AllowGlobalAccess,
 		"skip_http_to_https":          lb.SkipHttpToHttps,
+		"backend_protocol_version":    strings.ToUpper(lb.BeProtocolVersion),
 	}
 
 	if lb.HealthCheckConfig != nil {
@@ -601,7 +618,49 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		log.Printf("[DEBUG] HostNames... %v", lb.HostNames)
 		m["host_name"] = (*lb.HostNames)[0]
 	}
+	if lb.LbType != 1 {
+		m["backend_protocol_version"] = "HTTP1"
+
+	}
 
 	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... End")
 	return m
+}
+
+func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+
+	lbconfs := diff.Get("lbconfigs").([]interface{})
+	for _, lb := range lbconfs {
+		m := lb.(map[string]interface{})
+		pr := m["protocol"].(string)
+		p := strings.ToLower(pr)
+		b := m["backend_protocol_version"].(string)
+		bp := strings.ToLower(b)
+
+		lb, ok := m["lb_type"].(int)
+		if ok && lb != 1 && bp != "" && bp != "http1" {
+			return fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")
+
+		}
+		//if ok && lb == 1 && bp == "" {
+		//	return fmt.Errorf("backend_protocol_version is a required field for ALB load balancer type")
+		//}
+		if p == "http" && bp == "grpc" {
+			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, pr)
+		}
+
+		if (lb == 1 || lb == 7 || lb == 5) && (p != "http" && p != "https") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		}
+		if lb == 6 && (p != "tcp" && p != "udp" && p != "tls") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		}
+		if (lb == 3 || lb == 4) && (p != "tcp" && p != "udp") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		}
+		if lb == 0 && p == "tls" {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		}
+	}
+	return nil
 }
