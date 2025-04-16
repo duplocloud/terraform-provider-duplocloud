@@ -780,7 +780,7 @@ func flattenStringMap(duplo map[string]string) map[string]interface{} {
 }
 
 func flattenGcpLabels(d *schema.ResourceData, duplo map[string]string) {
-	duploManagedLabels := []string{"duplo-allow-public-access", "duplo-encryption"}
+	duploManagedLabels := []string{"duplo-allow-public-access", "duplo-encryption", "duplo-tenant"}
 	mp := flattenStringMap(duplo)
 	for _, v := range duploManagedLabels {
 		delete(mp, v)
