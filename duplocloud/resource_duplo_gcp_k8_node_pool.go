@@ -429,7 +429,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 
 func resourceGcpK8NodePool() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_gcp_k8_node_pools` manages a GCP Node Pool in Duplo.",
+		Description: "`duplocloud_gcp_node_pool` manages a GCP Node Pool in Duplo.",
 
 		ReadContext:   resourceGCPNodePoolRead,
 		UpdateContext: resourceGCPK8NodePoolUpdate,
