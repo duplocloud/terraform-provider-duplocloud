@@ -3,12 +3,12 @@
 page_title: "duplocloud_gcp_node_pool Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_gcp_k8_node_pools manages a GCP Node Pool in Duplo.
+  duplocloud_gcp_node_pool manages a GCP Node Pool in Duplo.
 ---
 
 # duplocloud_gcp_node_pool (Resource)
 
-`duplocloud_gcp_k8_node_pools` manages a GCP Node Pool in Duplo.
+`duplocloud_gcp_node_pool` manages a GCP Node Pool in Duplo.
 
 ## Example Usage
 
