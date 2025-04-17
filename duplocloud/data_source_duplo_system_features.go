@@ -107,6 +107,11 @@ func dataSourceDuploSystemFeatures() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+			"tags_based_managed_resources": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 			"duplo_shell_fqdn": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -146,6 +151,14 @@ func dataSourceDuploSystemFeatures() *schema.Resource {
 			},
 			"default_infra_cloud": {
 				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"gcp_disable_tenant_prefix": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+			"gcp_disable_duplo_prefix": {
+				Type:     schema.TypeBool,
 				Computed: true,
 			},
 		},
@@ -236,6 +249,9 @@ func dataSourceDuploSystemFeaturesRead(ctx context.Context, d *schema.ResourceDa
 	if err := d.Set("enabled_flags", resp.EnabledFlags); err != nil {
 		return diag.FromErr(err)
 	}
+	if err := d.Set("tags_based_managed_resources", resp.TagsBasedManagedResources); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set("app_configs", flattenDuploSystemFeaturesAppConfigs(resp.AppConfigs)); err != nil {
 		return diag.FromErr(err)
 	}
@@ -243,6 +259,12 @@ func dataSourceDuploSystemFeaturesRead(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 	if err := d.Set("default_infra_cloud", resp.DefaultInfraCloud); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("gcp_disable_tenant_prefix", resp.GcpDisableTenantPrefix); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("gcp_disable_duplo_prefix", resp.GcpDisableDuploPrefix); err != nil {
 		return diag.FromErr(err)
 	}
 

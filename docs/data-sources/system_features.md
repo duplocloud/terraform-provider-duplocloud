@@ -28,6 +28,8 @@ description: |-
 - `duplo_shell_fqdn` (String)
 - `eks_versions` (List of Object) (see [below for nested schema](#nestedatt--eks_versions))
 - `enabled_flags` (List of String)
+- `gcp_disable_duplo_prefix` (Boolean)
+- `gcp_disable_tenant_prefix` (Boolean)
 - `id` (String) The ID of this resource.
 - `is_aws_admin_jit_enabled` (Boolean)
 - `is_aws_cloud_enabled` (Boolean)
@@ -43,6 +45,7 @@ description: |-
 - `is_signup_enabled` (Boolean)
 - `is_tags_based_resource_mgmt_enabled` (Boolean)
 - `s3_bucket_name_prefix` (String)
+- `tags_based_managed_resources` (List of String)
 - `tenant_name_max_length` (Number)
 
 <a id="nestedatt--app_configs"></a>
