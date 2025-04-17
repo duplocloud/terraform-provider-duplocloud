@@ -254,10 +254,8 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			return diag.Errorf("Error updating tenant %s sql database '%s': %s", tenantID, resp.Name, err)
 		}
 		if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-			err := gcpSqlDBInstanceWaitUntilUnavailable(ctx, c, tenantID, fullName, time.Duration(5*time.Minute))
-			if err != nil {
-				return diag.FromErr(err)
-			}
+			_ = gcpSqlDBInstanceWaitUntilUnavailable(ctx, c, tenantID, fullName, time.Duration(5*time.Minute))
+
 			clientErr := gcpSqlDBInstanceWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 			if clientErr != nil {
 				return diag.FromErr(clientErr)
