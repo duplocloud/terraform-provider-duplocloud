@@ -53,13 +53,13 @@ resource "duplocloud_k8_helm_repository" "repo" {
 
 ### Optional
 
-- `helm_provider` (String) The provider attribute in the spec block of a HelmRepository specifies the cloud or protocol example: generic, oci, aws, gcp, azure
+- `helm_provider` (String) The provider attribute in the spec block of a HelmRepository specifies the cloud  example: generic, aws, gcp, azure
 - `insecure` (Boolean) Set to skip TLS certificate verification when accessing the repository.
 - `interval` (String) The interval associated to helm repository Defaults to `5m0s`.
 - `pass_credentials` (Boolean) Pass credentials even to a different host than the one used in url
 - `suspend` (Boolean) Used to pause the reconciliation of the repository by the controller.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `type` (String) Can be default or oci (for OCI-compliant repos).
+- `type` (String) The Helm repository type. Possible values are default for a Helm HTTP/S repository, or oci for an OCI Helm repository.
 
 ### Read-Only
 
