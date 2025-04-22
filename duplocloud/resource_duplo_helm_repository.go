@@ -61,7 +61,7 @@ func resourceHelmRepository() *schema.Resource {
 				Required:    true,
 			},
 			"type": {
-				Description: "Can be default or oci (for OCI-compliant repos).",
+				Description: "The Helm repository type. Possible values are default for a Helm HTTP/S repository, or oci for an OCI Helm repository.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
@@ -79,7 +79,7 @@ func resourceHelmRepository() *schema.Resource {
 				Computed:    true,
 			},
 			"helm_provider": {
-				Description: "The provider attribute in the spec block of a HelmRepository specifies the cloud or protocol example: generic, oci, aws, gcp, azure ",
+				Description: "The provider attribute in the spec block of a HelmRepository specifies the cloud  example: generic, aws, gcp, azure ",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
