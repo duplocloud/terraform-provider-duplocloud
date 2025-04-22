@@ -92,6 +92,7 @@ func resourceHelmRepository() *schema.Resource {
 			},
 		},
 	}
+
 }
 
 func resourceHelmRepositoryRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
