@@ -130,6 +130,7 @@ type DuploRdsUpdateCluster struct {
 	EnablePerformanceInsights          bool   `json:"EnablePerformanceInsights,omitempty"`
 	PerformanceInsightsRetentionPeriod int    `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string `json:"PerformanceInsightsKMSKeyId,omitempty"`
+	AutoMinorVersionUpgrade            *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
 }
 
 type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
