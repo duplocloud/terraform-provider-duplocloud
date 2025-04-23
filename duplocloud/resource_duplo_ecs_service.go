@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -273,10 +274,6 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Description: "Name of the capacity provider.",
 						Type:        schema.TypeString,
 						Required:    true,
-						ValidateFunc: validation.StringInSlice([]string{
-							"FARGATE",
-							"FARGATE_SPOT",
-						}, false),
 					},
 				},
 			},
