@@ -34,7 +34,7 @@ resource "duplocloud_asg_instance_refresh" "name" {
 ### Required
 
 - `asg_name` (String) The fullname of the asg
-- `tenant_id` (String) The GUID of the tenant that the launch template will be created in.
+- `tenant_id` (String) The GUID of the tenant that the asg will be created in.
 
 ### Optional
 

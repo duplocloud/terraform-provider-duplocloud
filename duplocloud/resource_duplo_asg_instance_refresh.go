@@ -14,7 +14,7 @@ import (
 func asgInstanceRefresh() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the launch template will be created in.",
+			Description:  "The GUID of the tenant that the asg will be created in.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
@@ -30,16 +30,19 @@ func asgInstanceRefresh() map[string]*schema.Schema {
 			Description: "To identify refresh or invoke a refresh",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 		},
 		"auto_rollback": {
 			Description: "Automatically rollback if instance refresh fails",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Computed:    true,
 		},
 		"instance_warmup": {
 			Description: "Number of seconds until a newly launched instance is configured and ready to use. Default behavior is to use the Auto Scaling Group's health check grace period.",
 			Type:        schema.TypeInt,
 			Optional:    true,
+			Computed:    true,
 		},
 		"max_healthy_percentage": {
 			Description:  "Amount of capacity in the Auto Scaling group that can be in service and healthy, or pending, to support your workload when an instance refresh is in place, as a percentage of the desired capacity of the Auto Scaling group.",
