@@ -3,7 +3,7 @@ resource "duplocloud_tenant" "myapp" {
   plan_id      = "default"
 }
 
-
+#EXample for upgrade strategy NODE_POOL_UPDATE_STRATEGY_UNSPECIFIED
 resource "duplocloud_gcp_node_pool" "myNodePool" {
   tenant_id              = duplocloud_tenant.myapp.tenant_id
   name                   = "myNodePool"
@@ -19,11 +19,6 @@ resource "duplocloud_gcp_node_pool" "myNodePool" {
     gpu_driver_installation_config {
       gpu_driver_version = "DEFAULT"
     }
-  }
-  upgrade_settings {
-    strategy        = "NODE_POOL_UPDATE_STRATEGY_UNSPECIFIED"
-    max_surge       = 4
-    max_unavailable = 2
   }
   zones           = ["us-east1-c"]
   location_policy = "BALANCED"
