@@ -3,12 +3,12 @@
 page_title: "duplocloud_asg_instance_refresh Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloudawslaunch_template creates the new version over current launch template version
+  duplocloudasginstance_refresh triggers the instance refresh of asg in duplo
 ---
 
 # duplocloud_asg_instance_refresh (Resource)
 
-duplocloud_aws_launch_template creates the new version over current launch template version
+duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo
 
 ## Example Usage
 

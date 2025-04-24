@@ -58,7 +58,7 @@ func asgInstanceRefresh() map[string]*schema.Schema {
 }
 func resourceAsgInstanceRefresh() *schema.Resource {
 	return &schema.Resource{
-		Description:   "duplocloud_aws_launch_template creates the new version over current launch template version",
+		Description:   "duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo",
 		ReadContext:   resourceASGInstanceRefreshRead,
 		CreateContext: resourceASGInstanceRefreshCreate,
 		UpdateContext: resourceASGInstanceRefreshCreate,
