@@ -18,10 +18,10 @@ resource "duplocloud_tenant" "myapp" {
   plan_id      = "default"
 }
 
-#EXample for upgrade strategy NODE_POOL_UPDATE_STRATEGY_UNSPECIFIED
+#Example for upgrade strategy NODE_POOL_UPDATE_STRATEGY_UNSPECIFIED
 resource "duplocloud_gcp_node_pool" "myNodePool" {
   tenant_id              = duplocloud_tenant.myapp.tenant_id
-  name                   = "myNodePool"
+  name                   = "mynodepool"
   is_autoscaling_enabled = false
   accelerator {
     accelerator_count  = "2"
