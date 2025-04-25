@@ -168,6 +168,8 @@ Should be one of:
    - `0` : Redis
    - `1` : Memcache
 
+   - `2` : Valkey
+
  Defaults to `0`.
 - `enable_cluster_mode` (Boolean) Flag to enable/disable redis/valkey cluster mode.
 - `encryption_at_rest` (Boolean) Enables encryption-at-rest. Defaults to `false`.
