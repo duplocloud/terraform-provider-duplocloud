@@ -52,7 +52,7 @@ resource "duplocloud_aws_elasticsearch" "es-doc" {
 - `selected_zone` (Number) The numerical index of the zone to launch this ElasticSearch instance in.
 - `storage_size` (Number) The storage volume size, in GB, for the ElasticSearch instance.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `use_latest_tls_cipher` (Boolean) Whether or not to use the latest TLS cipher for this ElasticSearch instance.
+- `use_latest_tls_cipher` (Boolean) Whether or not to use the latest TLS cipher for this ElasticSearch instance. For govcloud environments this should be set to true
 - `vpc_options` (Block List) (see [below for nested schema](#nestedblock--vpc_options))
 
 ### Read-Only

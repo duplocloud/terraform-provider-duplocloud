@@ -4,17 +4,24 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+
 	"github.com/hashicorp/go-cty/cty"
+	gversion "github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+)
+
+const (
+	TOTALECACHENAMELENGTH = 40
 )
 
 func ecacheInstanceSchema() map[string]*schema.Schema {
@@ -68,21 +75,27 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "The numerical index of elasticache instance type.\n" +
 				"Should be one of:\n\n" +
 				"   - `0` : Redis\n" +
-				"   - `1` : Memcache\n\n",
+				"   - `1` : Memcache\n\n" +
+				"   - `2` : Valkey\n\n",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
 			Default:      0,
-			ValidateFunc: validation.IntBetween(0, 1),
+			ValidateFunc: validation.IntBetween(0, 2),
 		},
 		"engine_version": {
 			Description: "The engine version of the elastic instance.\n" +
-				"See AWS documentation for the [available Redis instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) " +
+				"See AWS documentation for the [available Redis and Valkey instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) " +
 				"or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).",
-			Type:             schema.TypeString,
-			Optional:         true,
-			ForceNew:         true,
-			DiffSuppressFunc: suppressEnginePatchVersion,
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+			Computed: true,
+			//DiffSuppressFunc: suppressEnginePatchVersion,
+		},
+		"actual_engine_version": {
+			Type:     schema.TypeString,
+			Computed: true,
 		},
 		"size": {
 			Description: "The instance type of the elasticache instance.\n" +
@@ -145,20 +158,20 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"parameter_group_name": {
-			Description: "The REDIS parameter group to supply.",
+			Description: "The REDIS/Valkey parameter group to supply.",
 			Type:        schema.TypeString,
 			Computed:    true,
 			Optional:    true,
 			ForceNew:    true,
 		},
 		"enable_cluster_mode": {
-			Description: "Flag to enable/disable redis cluster mode.",
+			Description: "Flag to enable/disable redis/valkey cluster mode.",
 			Type:        schema.TypeBool,
 			Computed:    true,
 			Optional:    true,
 		},
 		"number_of_shards": {
-			Description:      "The number of shards to create.",
+			Description:      "The number of shards to create. Applicable only if enable_cluster_mode is set to true",
 			Type:             schema.TypeInt,
 			Optional:         true,
 			DiffSuppressFunc: suppressNoOfShardsDiff,
@@ -166,7 +179,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc:     validation.IntBetween(1, 500),
 		},
 		"snapshot_arns": {
-			Description:   "Specify the ARN of a Redis RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html",
+			Description:   "Specify the ARN of a Redis/Valkey RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html",
 			Type:          schema.TypeList,
 			Optional:      true,
 			Computed:      true,
@@ -174,7 +187,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Elem:          &schema.Schema{Type: schema.TypeString},
 		},
 		"snapshot_name": {
-			Description:   "Select the snapshot/backup you want to use for creating redis.",
+			Description:   "Select the snapshot/backup you want to use for creating redis/valkey.",
 			Type:          schema.TypeString,
 			Optional:      true,
 			Computed:      true,
@@ -256,7 +269,8 @@ func resourceDuploEcacheInstance() *schema.Resource {
 			Update: schema.DefaultTimeout(15 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: ecacheInstanceSchema(),
+		Schema:        ecacheInstanceSchema(),
+		CustomizeDiff: validateEcacheParameters,
 	}
 }
 
@@ -283,10 +297,10 @@ func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	// Convert the object into Terraform resource data
-	flattenEcacheInstance(duplo, d)
+	diag := flattenEcacheInstance(duplo, d)
 
 	log.Printf("[TRACE] resourceDuploEcacheInstanceRead(%s, %s): end", tenantID, name)
-	return nil
+	return diag
 }
 
 // CREATE resource
@@ -299,6 +313,17 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	duplo, diagErr := expandEcacheInstance(d)
 	if diagErr != nil {
 		return diagErr
+	}
+	c := m.(*duplosdk.Client)
+
+	fullName, errname := c.GetResourceName("duploservices", tenantID, duplo.Name, false)
+	if errname != nil {
+		return diag.Errorf("resourceDuploEcacheInstanceCreate: Unable to retrieve duplo service name (name: %s, error: %s)", duplo.Name, errname.Error())
+
+	}
+	if !validateStringLength(fullName, TOTALECACHENAMELENGTH) {
+		return diag.Errorf("resourceDuploEcacheInstanceCreate: fullname %s exceeds allowable ecache name length %d)", fullName, TOTALECACHENAMELENGTH)
+
 	}
 
 	duplo.Identifier = duplo.Name
@@ -323,7 +348,6 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Post the object to Duplo
-	c := m.(*duplosdk.Client)
 	_, err = c.EcacheInstanceCreate(tenantID, duplo)
 	if err != nil {
 		return diag.Errorf("Error updating ECache instance '%s': %s", id, err)
@@ -576,14 +600,18 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 }
 
 // flattenEcacheInstance converts a Duplo SDK object respresenting an ECache instance to terraform resource data.
-func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.ResourceData) {
+func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.ResourceData) diag.Diagnostics {
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("name", duplo.Name)
 	d.Set("identifier", duplo.Identifier)
 	d.Set("arn", duplo.Arn)
-	d.Set("endpoint", duplo.Endpoint)
-	if duplo.Endpoint != "" {
-		uriParts := strings.SplitN(duplo.Endpoint, ":", 2)
+	endpoint := duplo.Endpoint
+	if endpoint == "" {
+		endpoint = duplo.ConfigurationEndpoint
+	}
+	d.Set("endpoint", endpoint)
+	if endpoint != "" {
+		uriParts := strings.SplitN(endpoint, ":", 2)
 		d.Set("host", uriParts[0])
 		if len(uriParts) == 2 {
 			port, _ := strconv.Atoi(uriParts[1])
@@ -591,7 +619,19 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 		}
 	}
 	d.Set("cache_type", duplo.CacheType)
-	d.Set("engine_version", duplo.EngineVersion)
+	v, err := normalizeEngineVersion(duplo.EngineVersion)
+	if err != nil {
+		return diag.Errorf("%s", err.Error())
+	}
+	ver := duplo.EngineVersion
+	if duplo.CacheType == 0 {
+		ver, err = trimPatchVersion(duplo.EngineVersion)
+		if err != nil {
+			return diag.Errorf("%s", err.Error())
+		}
+	}
+	d.Set("engine_version", ver)
+	d.Set("actual_engine_version", v.String())
 	d.Set("size", duplo.Size)
 	d.Set("replicas", duplo.Replicas)
 	d.Set("encryption_at_rest", duplo.EncryptionAtRest)
@@ -607,7 +647,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
-
+	return nil
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
@@ -663,19 +703,21 @@ func suppressNoOfShardsDiff(k, old, new string, d *schema.ResourceData) bool {
 	return newValue == oldValue // Suppress diff if between 1 and 500 (inclusive)
 }
 
-func suppressEnginePatchVersion(k, old, new string, d *schema.ResourceData) bool {
-	oldVer := removePatchVersion(old)
-	newVer := removePatchVersion(new)
-	return oldVer == newVer // Suppress diff if patch exist
-}
-
-func removePatchVersion(version string) string {
-	parts := strings.Split(version, ".")
-	if len(parts) >= 2 {
-		return strings.Join(parts[:2], ".")
+/*
+	func suppressEnginePatchVersion(k, old, new string, d *schema.ResourceData) bool {
+		oldVer := removePatchVersion(old)
+		newVer := removePatchVersion(new)
+		return oldVer == newVer // Suppress diff if patch exist
 	}
-	return version
-}
+
+	func removePatchVersion(version string) string {
+		parts := strings.Split(version, ".")
+		if len(parts) >= 2 {
+			return strings.Join(parts[:2], ".")
+		}
+		return version
+	}
+*/
 func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 
 	return func(i interface{}, path cty.Path) diag.Diagnostics {
@@ -731,4 +773,151 @@ func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 
 		return nil
 	}
+}
+
+func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	ecm := diff.Get("enable_cluster_mode").(bool)
+	nshard := diff.Get("number_of_shards").(int)
+	if !ecm && nshard > 0 {
+		return fmt.Errorf("number_of_shards can be set only if cluster mode is enabled")
+	}
+	eng := diff.Get("cache_type").(int)
+	engVer := diff.Get("engine_version").(string)
+	if engVer != "" {
+		diag := validateClusterEngineVersion(eng, engVer)
+		if diag != nil {
+			return diagsToError(diag)
+		}
+	}
+	return nil
+}
+
+// trims patch version if version is above 5
+func trimPatchVersion(version string) (string, error) {
+	// Validate input format
+	re := regexp.MustCompile(`^\d+(\.\d+){0,2}$`)
+	if !re.MatchString(version) {
+		return "", fmt.Errorf("invalid version format: %s", version)
+	}
+
+	// Split version into parts
+	parts := strings.Split(version, ".")
+
+	if len(parts) > 0 {
+		maj, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return "", nil
+		}
+		if maj > 5 && len(parts) == 3 { //if major version is greater than 5 convert version into major.minor format
+			return parts[0] + "." + parts[1], nil
+
+		}
+
+	}
+
+	return version, nil
+}
+
+const (
+	redisVersionPreV6RegexpPattern  = `^[1-5](\.[[:digit:]]+){2}$`
+	redisVersionPostV6RegexpPattern = `^((6)\.x)|([6-9]\.[[:digit:]]+)$`
+
+	redisVersionRegexpPattern = redisVersionPreV6RegexpPattern + "|" + redisVersionPostV6RegexpPattern
+)
+
+var (
+	redisVersionRegexp       = regexp.MustCompile(redisVersionRegexpPattern)
+	redisVersionPostV6Regexp = regexp.MustCompile(redisVersionPostV6RegexpPattern)
+)
+
+func validRedisVersionString(v interface{}, p cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("Invalid type: expected a string.")
+	}
+
+	if !redisVersionRegexp.MatchString(value) {
+		return diag.Errorf(
+			"Invalid Redis version: %q is not valid. For Redis v6 or higher, use <major>.<minor>. "+
+				"For Redis v5 or lower, use <major>.<minor>.<patch>.", value,
+		)
+	}
+
+	return diags
+}
+
+const (
+	versionStringRegexpInternalPattern = `[[:digit:]]+(\.[[:digit:]]+){2}`
+	versionStringRegexpPattern         = "^" + versionStringRegexpInternalPattern + "$"
+)
+
+var versionStringRegexp = regexp.MustCompile(versionStringRegexpPattern)
+
+/*
+	func validMemcachedVersionString(v any, k string) (ws []string, errors []error) {
+		value := v.(string)
+
+		if !versionStringRegexp.MatchString(value) {
+			errors = append(errors, fmt.Errorf("%s: must be a version string matching <major>.<minor>.<patch>", k))
+		}
+
+		return
+	}
+*/
+func validMemcachedVersionString(v interface{}, p cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("Invalid Type Expected a string value.")
+	}
+
+	if !versionStringRegexp.MatchString(value) {
+		diag.Errorf("Invalid Memcached Version value  must be in <major>.<minor>.<patch> format. %s", value)
+	}
+
+	return diags
+}
+func validateClusterEngineVersion(engine int, engineVersion string) diag.Diagnostics {
+	// Memcached: Versions in format <major>.<minor>.<patch>
+	// Redis: Starting with version 6, must match <major>.<minor>, prior to version 6, <major>.<minor>.<patch>
+	// Valkey: Versions in format <major>.<minor>
+	var validator schema.SchemaValidateDiagFunc
+
+	switch engine {
+	case 1:
+		validator = validMemcachedVersionString
+	case 0:
+		validator = validRedisVersionString
+	}
+
+	diags := validator(engineVersion, cty.Path{
+		cty.GetAttrStep{Name: "engine_version"},
+	})
+
+	return diags
+}
+
+// normalizeEngineVersion returns a github.com/hashicorp/go-version Version from:
+// - a regular 1.2.3 version number
+// - either the 6.x or 6.0 version number used for ElastiCache Redis version 6. 6.x will sort to 6.<maxint>
+// - a 7.0 version number used from version 7
+func normalizeEngineVersion(version string) (*gversion.Version, error) {
+	if matches := redisVersionPostV6Regexp.FindStringSubmatch(version); matches != nil {
+		if matches[1] != "" {
+			version = fmt.Sprintf("%s.%d", matches[2], math.MaxInt)
+		}
+	}
+	return gversion.NewVersion(version)
+}
+
+func diagsToError(diags diag.Diagnostics) error {
+	if !diags.HasError() {
+		return nil
+	}
+	var errMsgs []string
+	for _, d := range diags {
+		errMsgs = append(errMsgs, d.Summary)
+	}
+	return fmt.Errorf("%s", strings.Join(errMsgs, "; "))
 }

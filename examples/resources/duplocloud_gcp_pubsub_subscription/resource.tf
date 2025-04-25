@@ -82,7 +82,7 @@ resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
   topic     = "{topic-name}"
 
   cloud_storage_config {
-    bucket = "{cloudstorage-bucketnamr}"
+    bucket = "{cloudstorage-bucketname}"
 
     filename_prefix          = "pre-"
     filename_suffix          = "10"

@@ -26,6 +26,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 # Deploy NGINX using ECS
 resource "duplocloud_ecs_service" "myservice" {
   tenant_id       = duplocloud_tenant.myapp.tenant_id
+  name            = "myecsservice"
   task_definition = duplocloud_ecs_task_definition.myservice.arn
   replicas        = 2
   load_balancer {
@@ -36,6 +37,20 @@ resource "duplocloud_ecs_service" "myservice" {
     enable_access_logs   = false
     drop_invalid_headers = true
     health_check_url     = "https://example.healthcheckurl.com/healthcheck"
+    target_group_count   = 1
+  }
+}
+
+# Example to create ecs service having asg as capacity_provider, for asg created with agent platform ecs
+resource "duplocloud_ecs_service" "myservice" {
+  tenant_id       = duplocloud_tenant.myapp.tenant_id
+  name            = "myservice"
+  task_definition = duplocloud_ecs_task_definition.myservice.arn
+  replicas        = 1
+  capacity_provider_strategy {
+    base              = 0
+    weight            = 1
+    capacity_provider = "<asg-fullname>"
   }
 }
 ```

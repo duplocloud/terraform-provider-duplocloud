@@ -12,9 +12,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 	"unicode"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -282,20 +283,38 @@ func keyValueToState(fieldName string, duploObjects *[]duplosdk.DuploKeyStringVa
 func keyValueFromState(fieldName string, d *schema.ResourceData) *[]duplosdk.DuploKeyStringValue {
 	var ary []duplosdk.DuploKeyStringValue
 
-	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
-		kvs := v.([]interface{})
+	if v, ok := d.GetOk(fieldName); ok && v != nil {
+		kvs, ok := v.([]interface{})
+		if !ok || len(kvs) == 0 {
+			return &ary
+		}
+
 		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
 		ary = make([]duplosdk.DuploKeyStringValue, 0, len(kvs))
+
 		for _, raw := range kvs {
-			kv := raw.(map[string]interface{})
-			ary = append(ary, duplosdk.DuploKeyStringValue{
-				Key:   kv["key"].(string),
-				Value: kv["value"].(string),
-			})
+			kv, ok := raw.(map[string]interface{})
+			if !ok {
+				log.Printf("[WARN] Skipping invalid entry (not a map).")
+				continue // Skip invalid entries
+			}
+
+			key, keyOk := kv["key"].(string)
+			value, valueOk := kv["value"].(string)
+
+			if keyOk && valueOk {
+				ary = append(ary, duplosdk.DuploKeyStringValue{
+					Key:   key,
+					Value: value,
+				})
+			} else {
+				log.Printf("[WARN] Skipping entry with invalid key/value: %+v", kv)
+			}
 		}
 	}
 
 	return &ary
+
 }
 
 func customDataExToState(fieldName string, duploObjects *[]duplosdk.DuploCustomDataEx) []interface{} {
@@ -1025,6 +1044,22 @@ func diffSuppressStringCase(k, old, new string, d *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
 }
 
+func diffSuppressAsgZones(k, old, new string, d *schema.ResourceData) bool {
+	zs := d.Get("zones").([]interface{})
+	z := d.Get("zone")
+
+	if len(zs) == 0 && z != nil {
+		return true
+	}
+	return false
+}
+
+//func diffSuppressAsgZone(k, old, new string, d *schema.ResourceData) bool {
+//	z := d.Get("zone")
+//
+//	return z != nil
+//}
+
 func OctalToNumericInt32(octal string) (int32, error) {
 	var result int64
 	base := int64(8) // Base for octal numbers
@@ -1232,4 +1267,12 @@ func stringInSlice(s string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func gBToBytes(gb int) int64 {
+	return int64(gb) * 1024 * 1024 * 1024
+}
+
+func bytesToGB(bytes int64) int {
+	return int(bytes / (1024 * 1024 * 1024))
 }

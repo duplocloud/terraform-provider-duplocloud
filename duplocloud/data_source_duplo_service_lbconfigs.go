@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-duplocloud/duplosdk"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -18,6 +19,7 @@ func duploLbConfigSchemaComputed() map[string]*schema.Schema {
 		v.Required = false
 		v.Optional = true
 		v.ForceNew = false
+		v.Default = nil
 	}
 	return x
 }
