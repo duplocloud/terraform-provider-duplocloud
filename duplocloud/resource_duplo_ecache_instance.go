@@ -167,7 +167,6 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 		"enable_cluster_mode": {
 			Description: "Flag to enable/disable redis/valkey cluster mode.",
 			Type:        schema.TypeBool,
-			Default:     false,
 			Optional:    true,
 			ForceNew:    true,
 		},
