@@ -3,7 +3,7 @@
 page_title: "duplocloud_asg_instance_refresh Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloudasginstance_refresh triggers the instance refresh of asg in duplo
+  duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo
 ---
 
 # duplocloud_asg_instance_refresh (Resource)
