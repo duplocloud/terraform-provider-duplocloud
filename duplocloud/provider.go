@@ -190,6 +190,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_availability_set":              resourceAzureAvailabilitySet(),
 			"duplocloud_aws_launch_template_default_version": resourceAwsLaunchTemplateDefaultVersion(),
 			"duplocloud_gcp_pubsub_subscription":             resourceGCPPubSubSubscription(),
+			"duplocloud_aws_tag":                             resourceAwsCustomTag(),
 			"duplocloud_aws_target_group_target_register":    resourceAwsTargetGroupTargetRegister(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
