@@ -51,7 +51,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 				"	- `4 (K8S Service w/ Node Port)` : TCP, UDP\n" +
 				"	- `5 (Azure Shared Application Gateway)`: HTTP, HTTPS\n" +
 				"	- `6 (NLB)` : TCP, UDP, TLS\n" +
-				"	- `7 (Target Group Only)` : HTTP, HTTPS\n",
+				"	- `7 (Target Group Only)` : HTTP, HTTPS, TCP, UDP, TLS\n",
 			Type:             schema.TypeString,
 			Required:         true,
 			DiffSuppressFunc: diffSuppressStringCase,
@@ -649,7 +649,7 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, pr)
 		}
 
-		if (lb == 1 || lb == 7 || lb == 5) && (p != "http" && p != "https") {
+		if (lb == 1 || lb == 5) && (p != "http" && p != "https") {
 			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
 		}
 		if lb == 6 && (p != "tcp" && p != "udp" && p != "tls") {
@@ -660,6 +660,13 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		}
 		if lb == 0 && p == "tls" {
 			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		}
+		healthCheck := m["health_check"].([]interface{})
+		if len(healthCheck) > 0 {
+			hm := healthCheck[0].(map[string]interface{})
+			if hm["timeout"].(int) >= hm["interval"].(int) {
+				return fmt.Errorf("health check timeout must be less than health check interval")
+			}
 		}
 	}
 	return nil

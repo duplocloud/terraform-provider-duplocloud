@@ -1168,6 +1168,10 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			return fmt.Errorf("Cannot set v2 scaling configuration for provisioned rds instance")
 		}
 	}
+	if diff.Get("multi_az").(bool) && (eng == 8 || eng == 9 || eng == 16) {
+		return fmt.Errorf("Cannot set multi_az for %s", engines[eng])
+
+	}
 	return nil
 }
 

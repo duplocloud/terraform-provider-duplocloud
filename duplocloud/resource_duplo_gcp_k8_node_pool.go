@@ -330,6 +330,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 		"taints": {
 			Type:     schema.TypeList,
 			Optional: true,
+			Computed: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
@@ -429,7 +430,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 
 func resourceGcpK8NodePool() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_gcp_k8_node_pools` manages a GCP Node Pool in Duplo.",
+		Description: "`duplocloud_gcp_node_pool` manages a GCP Node Pool in Duplo.",
 
 		ReadContext:   resourceGCPNodePoolRead,
 		UpdateContext: resourceGCPK8NodePoolUpdate,
@@ -753,6 +754,9 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 	d.Set("auto_upgrade", duplo.AutoUpgrade)
 	d.Set("zones", duplo.Zones)
 	d.Set("image_type", strings.ToLower(duplo.ImageType))
+	if duplo.LocationPolicy == "" {
+		duplo.LocationPolicy = "BALANCED"
+	}
 	d.Set("location_policy", duplo.LocationPolicy)
 	d.Set("max_node_count", duplo.MaxNodeCount)
 	d.Set("min_node_count", duplo.MinNodeCount)
@@ -856,13 +860,13 @@ func gcpNodePoolAcceleratortoState(accelerator *duplosdk.Accelerator) []map[stri
 	if accelerator.GPUSharingConfig.MaxSharedClientPerGPU != 0 {
 		gpuSharingConfigMap["max_shared_clients_per_gpu"] = strconv.Itoa(accelerator.GPUSharingConfig.MaxSharedClientPerGPU)
 	}
-	state["gpu_sharing_config"] = gpuSharingConfigMap
+	state["gpu_sharing_config"] = []interface{}{gpuSharingConfigMap}
 
 	driverConfig := make(map[string]interface{})
 	if accelerator.GPUDriverInstallationConfig.GPUDriverVersion != "" {
 		driverConfig["gpu_driver_version"] = accelerator.GPUDriverInstallationConfig.GPUDriverVersion
 	}
-	state["gpu_driver_installation_config"] = driverConfig
+	state["gpu_driver_installation_config"] = []interface{}{driverConfig}
 
 	return []map[string]interface{}{state}
 }
