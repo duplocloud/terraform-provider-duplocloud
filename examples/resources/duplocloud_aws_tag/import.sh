@@ -1,4 +1,4 @@
-# Example: Importing an existing AWS SSM Parameter
+# Example: Importing an existing AWS tag
 #  - *TENANT_ID* is the tenant GUID
 #  - *ARN* The resource arn.
 #  - *TAGKEY* Key of the tag
