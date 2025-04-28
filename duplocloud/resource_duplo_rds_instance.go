@@ -767,7 +767,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
-
+	time.Sleep(10 * time.Minute) //sleeping to sync with Backend, backend has delay even after state of rds is available
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
