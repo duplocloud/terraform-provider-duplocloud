@@ -166,8 +166,8 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 		"enable_cluster_mode": {
 			Description: "Flag to enable/disable redis/valkey cluster mode.",
 			Type:        schema.TypeBool,
-			Computed:    true,
 			Optional:    true,
+			ForceNew:    true,
 		},
 		"number_of_shards": {
 			Description:      "The number of shards to create. Applicable only if enable_cluster_mode is set to true",
@@ -569,6 +569,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
 			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
 			SnapshotWindow:           d.Get("snapshot_window").(string),
+			EnableClusterMode:        d.Get("enable_cluster_mode").(bool),
 		},
 	}
 	if ds, ok := d.Get("log_delivery_configuration").(*schema.Set); ok {
@@ -588,11 +589,12 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			data.EnableClusterMode = v.(bool)
 		}
 	}
-	if data.EnableClusterMode {
+	if data.DuploEcacheInstance.EnableClusterMode {
+		data.DuploEcacheInstance.AutomaticFailoverEnabled = true
 		if v, ok := d.GetOk("number_of_shards"); !ok || (v.(int) < 1 && v.(int) > 500) {
-			data.NumberOfShards = 2
+			data.DuploEcacheInstance.NumberOfShards = 2
 		} else {
-			data.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
+			data.DuploEcacheInstance.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
 		}
 	}
 	return data, nil
@@ -623,7 +625,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 		return diag.Errorf("%s", err.Error())
 	}
 	ver := duplo.EngineVersion
-	if duplo.CacheType == 0 {
+	if duplo.CacheType == 0 || duplo.CacheType == 2 {
 		ver, err = trimPatchVersion(duplo.EngineVersion)
 		if err != nil {
 			return diag.Errorf("%s", err.Error())
@@ -777,8 +779,8 @@ func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
 	ecm := diff.Get("enable_cluster_mode").(bool)
 	nshard := diff.Get("number_of_shards").(int)
-	if !ecm && nshard > 0 {
-		return fmt.Errorf("number_of_shards can be set only if cluster mode is enabled")
+	if ecm && nshard == 0 {
+		return fmt.Errorf("number_of_shards is required when cluster mode is enabled")
 	}
 	eng := diff.Get("cache_type").(int)
 	engVer := diff.Get("engine_version").(string)
@@ -787,6 +789,11 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 		if diag != nil {
 			return diagsToError(diag)
 		}
+	}
+	failover := diff.Get("automatic_failover_enabled").(bool)
+	if ecm && !failover {
+		return fmt.Errorf("automatic_failover_enabled should be true for cluster mode")
+
 	}
 	return nil
 }
@@ -888,6 +895,8 @@ func validateClusterEngineVersion(engine int, engineVersion string) diag.Diagnos
 		validator = validMemcachedVersionString
 	case 0:
 		validator = validRedisVersionString
+	case 2:
+		validator = validValkeyVersionString
 	}
 
 	diags := validator(engineVersion, cty.Path{
@@ -919,4 +928,28 @@ func diagsToError(diags diag.Diagnostics) error {
 		errMsgs = append(errMsgs, d.Summary)
 	}
 	return fmt.Errorf("%s", strings.Join(errMsgs, "; "))
+}
+
+const (
+	valkeyVersionRegexpPattern = `^[7-9]\.[[:digit:]]+$`
+)
+
+var (
+	valkeyVersionRegexp = regexp.MustCompile(valkeyVersionRegexpPattern)
+)
+
+func validValkeyVersionString(v interface{}, p cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("Invalid type: expected a string.")
+	}
+
+	if !valkeyVersionRegexp.MatchString(value) {
+		return diag.Errorf(
+			"Invalid ValKey version: %q is not valid. For Valkey use <major>.<minor>.", value,
+		)
+	}
+
+	return diags
 }
