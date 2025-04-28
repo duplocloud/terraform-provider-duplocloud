@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -366,12 +367,12 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 			MonitoringInterval:   val,
 		})
 		if err1 != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(err1)
 		}
 
 		err1 = rdsInstanceSyncMonitoringInterval(ctx, c, id, d.Timeout("create"), val)
 		if err1 != nil {
-			return diag.Errorf("Error waiting for RDS read replica DB instance '%s' to update enhanced monitoring level: %s", id, err.Error())
+			return diag.Errorf("Error waiting for RDS read replica DB instance '%s' to update enhanced monitoring level: %s", id, err1.Error())
 
 		}
 
@@ -427,38 +428,42 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 		}
 	}
 	obj := duplosdk.DuploRdsUpdatePerformanceInsights{}
-	pI := expandPerformanceInsight(d)
-	if pI != nil {
-		period := pI["retention_period"].(int)
-		kmsid := pI["kms_key_id"].(string)
-		enable := duplosdk.PerformanceInsightEnable{
-			EnablePerformanceInsights:          pI["enabled"].(bool),
-			PerformanceInsightsRetentionPeriod: period,
-			PerformanceInsightsKMSKeyId:        kmsid,
+	if d.HasChange("performance_insights") {
+		pI := expandPerformanceInsight(d)
+		if pI != nil && pI["enabled"].(bool) {
+			period := pI["retention_period"].(int)
+			kmsid := pI["kms_key_id"].(string)
+			enable := duplosdk.PerformanceInsightEnable{
+				EnablePerformanceInsights:          pI["enabled"].(bool),
+				PerformanceInsightsRetentionPeriod: period,
+				PerformanceInsightsKMSKeyId:        kmsid,
+			}
+			obj.Enable = &enable
+		} else {
+			disable := duplosdk.PerformanceInsightDisable{
+				EnablePerformanceInsights: false,
+			}
+			obj.Disable = &disable
 		}
-		obj.Enable = &enable
-	} else {
-		disable := duplosdk.PerformanceInsightDisable{
-			EnablePerformanceInsights: false,
-		}
-		obj.Disable = &disable
-	}
-	obj.DBInstanceIdentifier = identifier
-	if !isAuroraDB(d) {
-		insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
-		if insightErr != nil {
-			return diag.FromErr(insightErr)
+
+		obj.DBInstanceIdentifier = identifier
+		if !isAuroraDB(d) {
+			insightErr := c.UpdateDBInstancePerformanceInsight(tenantID, obj)
+			if insightErr != nil {
+				return diag.FromErr(insightErr)
+
+			}
 
 		}
 
-	}
-	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
-	_ = readReplicaInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+		// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
+		_ = readReplicaInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
 
-	// Wait for the instance to become available.
-	err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
-	if err != nil {
-		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+		// Wait for the instance to become available.
+		err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+		}
 	}
 	if d.HasChange("enhanced_monitoring") {
 		val := d.Get("enhanced_monitoring").(int)
