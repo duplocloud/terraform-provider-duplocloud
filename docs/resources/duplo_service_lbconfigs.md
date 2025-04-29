@@ -45,8 +45,8 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
     health_check {
       healthy_threshold   = 4
       unhealthy_threshold = 4
-      timeout             = 50
-      interval            = 30
+      timeout             = 30
+      interval            = 50
       http_success_codes  = "200-399"
     }
   }
@@ -69,8 +69,8 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice2" {
     health_check {
       healthy_threshold   = 4
       unhealthy_threshold = 4
-      timeout             = 50
-      interval            = 30
+      timeout             = 30
+      interval            = 50
       http_success_codes  = "200-399"
     }
   }
