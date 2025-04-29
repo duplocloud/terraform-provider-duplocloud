@@ -254,6 +254,8 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			return diag.Errorf("Error updating tenant %s sql database '%s': %s", tenantID, resp.Name, err)
 		}
 		if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
+			_ = gcpSqlDBInstanceWaitUntilUnavailable(ctx, c, tenantID, fullName, time.Duration(5*time.Minute))
+
 			clientErr := gcpSqlDBInstanceWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 			if clientErr != nil {
 				return diag.FromErr(clientErr)
@@ -347,7 +349,7 @@ func parseGcpSqlDatabaseIdParts(id string) (tenantID, name string, err error) {
 
 func gcpSqlDBInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
 	log.Printf("[DEBUG] gcpSqlDBInstanceWaitUntilReady(%s, %s)", tenantID, name)
-	stateChange := false
+	//stateChange := false
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -357,11 +359,6 @@ func gcpSqlDBInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, ten
 			log.Printf("[TRACE] Gcp sql database instance state is (%s).", rp.Status)
 			status := "pending"
 			if err == nil {
-				if rp.Status == "RUNNABLE" && !stateChange {
-					return rp, status, err
-				} else {
-					stateChange = true
-				}
 				if rp.Status == "RUNNABLE" {
 					status = "ready"
 				} else {
@@ -412,4 +409,27 @@ func passwordRequiredForVersion(ctx context.Context, c *duplosdk.Client, tenantI
 		}
 	}
 	return false, nil
+}
+
+func gcpSqlDBInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, id, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Target:       []string{"unavailable"},
+		Pending:      []string{"RUNNABLE"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.GCPSqlDBInstanceGet(id, name)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.Status != "RUNNABLE" {
+				resp.Status = "unavailable"
+			}
+			return resp, resp.Status, nil
+		},
+	}
+	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }

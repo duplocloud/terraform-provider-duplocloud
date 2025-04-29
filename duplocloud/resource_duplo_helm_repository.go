@@ -2,11 +2,12 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -59,8 +60,39 @@ func resourceHelmRepository() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"type": {
+				Description: "The Helm repository type. Possible values are default for a Helm HTTP/S repository, or oci for an OCI Helm repository.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"insecure": {
+				Description: "Set to skip TLS certificate verification when accessing the repository.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"pass_credentials": {
+				Description: "Pass credentials even to a different host than the one used in url",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"helm_provider": {
+				Description: "The provider attribute in the spec block of a HelmRepository specifies the cloud  example: generic, aws, gcp, azure ",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"suspend": {
+				Description: "Used to pause the reconciliation of the repository by the controller.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
+
 }
 
 func resourceHelmRepositoryRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -149,8 +181,13 @@ func expandHelm(d *schema.ResourceData) duplosdk.DuploHelmRepository {
 		Name: d.Get("name").(string),
 	}
 	obj.Spec = duplosdk.DuploHelmSpec{
-		Interval: d.Get("interval").(string),
-		URL:      d.Get("url").(string),
+		Interval:        d.Get("interval").(string),
+		URL:             d.Get("url").(string),
+		Insecure:        d.Get("insecure").(bool),
+		PassCredentials: d.Get("pass_credentials").(bool),
+		Provider:        d.Get("helm_provider").(string),
+		Suspend:         d.Get("suspend").(bool),
+		Type:            d.Get("type").(string),
 	}
 
 	return obj
@@ -160,4 +197,9 @@ func flattenHelm(d *schema.ResourceData, rb duplosdk.DuploHelmRepository) {
 	d.Set("name", rb.Metadata.Name)
 	d.Set("interval", rb.Spec.Interval)
 	d.Set("url", rb.Spec.URL)
+	d.Set("insecure", rb.Spec.Insecure)
+	d.Set("pass_credentials", rb.Spec.PassCredentials)
+	d.Set("helm_provider", rb.Spec.Provider)
+	d.Set("suspend", rb.Spec.Suspend)
+	d.Set("type", rb.Spec.Type)
 }
