@@ -231,3 +231,22 @@ type DuploLaunchTemplateOperatorResponse struct {
 	Managed   bool   `json:"Managed,omitempty"`
 	Principal string `json:"Principal,omitempty"`
 }
+
+type DuploAsgInstanceRefresh struct {
+	AutoScalingGroupName string `json:"AutoScalingGroupName"`
+	AutoRollback         bool   `json:"AutoRollback"`
+	InstanceWarmup       int    `json:"InstanceWarmup"`
+	MaxHealthyPercentage int    `json:"MaxHealthyPercentage"`
+	MinHealthyPercentage int    `json:"MinHealthyPercentage"`
+}
+
+func (c *Client) AsgInstanceRefresh(tenantId string, rq *DuploAsgInstanceRefresh) ClientError {
+	var rp interface{}
+	err := c.postAPI(
+		fmt.Sprintf("AsgInstanceRefresh(%s, %s)", tenantId, rq.AutoScalingGroupName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/asg/refreshinstances", tenantId),
+		rq,
+		&rp,
+	)
+	return err
+}
