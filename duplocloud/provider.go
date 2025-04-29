@@ -192,6 +192,7 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_pubsub_subscription":             resourceGCPPubSubSubscription(),
 			"duplocloud_aws_tag":                             resourceAwsCustomTag(),
 			"duplocloud_aws_target_group_target_register":    resourceAwsTargetGroupTargetRegister(),
+			"duplocloud_asg_instance_refresh":                resourceAsgInstanceRefresh(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
