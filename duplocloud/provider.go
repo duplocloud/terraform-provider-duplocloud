@@ -190,6 +190,8 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_availability_set":              resourceAzureAvailabilitySet(),
 			"duplocloud_aws_launch_template_default_version": resourceAwsLaunchTemplateDefaultVersion(),
 			"duplocloud_aws_target_group_target_register":    resourceAwsTargetGroupTargetRegister(),
+			"duplocloud_gcp_cloud_queue_task":                resourceGcpCloudQueueTask(),
+			"duplocloud_gcp_cloud_tasks_queue":               resourceGcpCloudTasksQueue(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
