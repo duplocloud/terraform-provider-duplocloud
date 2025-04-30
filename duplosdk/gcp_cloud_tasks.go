@@ -63,15 +63,17 @@ func (c *Client) GCPCloudTasksGet(tenantID, queue, task string) (*DuploGCPCloudT
 }
 
 func (c *Client) GCPCloudTasksDelete(tenantID, queue, task string) ClientError {
+	var resp interface{}
 	return c.deleteAPI(
 		fmt.Sprintf("GCPCloudTasksDelete(%s, %s,%s)", tenantID, queue, task),
 		fmt.Sprintf("v3/subscriptions/%s/google/queues/%s/tasks/%s", tenantID, queue, task),
-		nil)
+		&resp)
 }
 
 func (c *Client) GCPCloudTasksQueueDelete(tenantID, queue string) ClientError {
+	var resp interface{}
 	return c.deleteAPI(
 		fmt.Sprintf("GCPCloudTasksQueueDelete(%s, %s)", tenantID, queue),
 		fmt.Sprintf("v3/subscriptions/%s/google/queues/%s", tenantID, queue),
-		nil)
+		&resp)
 }

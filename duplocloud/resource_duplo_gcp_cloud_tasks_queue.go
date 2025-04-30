@@ -45,6 +45,7 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			MaxItems:    1,
+			ForceNew:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"url": {
@@ -57,7 +58,7 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 						Type:        schema.TypeString,
 						Required:    true,
 					},
-					"header": {
+					"headers": {
 						Description: "",
 						Type:        schema.TypeMap,
 						Elem:        &schema.Schema{Type: schema.TypeString},
@@ -77,6 +78,7 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			MaxItems:    1,
+			ForceNew:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"relative_uri": {
@@ -89,7 +91,7 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 						Type:        schema.TypeString,
 						Required:    true,
 					},
-					"header": {
+					"headers": {
 						Description: "",
 						Type:        schema.TypeMap,
 						Elem:        &schema.Schema{Type: schema.TypeString},
@@ -142,7 +144,7 @@ func resourceGcpCloudQueueTaskRead(ctx context.Context, d *schema.ResourceData, 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	duplo, err := c.GCPCloudTasksGet(tenantID, qName, task)
-	if duplo == nil {
+	if duplo == nil || (err != nil && err.Status() == 404) {
 		d.SetId("") // object missing
 		return nil
 	}
@@ -233,24 +235,45 @@ func expandGcpCloudQueueTask(d *schema.ResourceData) *duplosdk.DuploGCPCloudTask
 	duplo := duplosdk.DuploGCPCloudTasks{
 		TaskName: d.Get("name").(string),
 	}
-	appConfig := d.Get("app_config").([]interface{})
-	if len(appConfig) > 0 {
-		mp := appConfig[0].(map[string]interface{})
+	appConfig := d.Get("app_config")
+	if appConfig != nil && len(appConfig.([]interface{})) > 0 {
+		mp := appConfig.([]interface{})[0].(map[string]interface{})
 		duplo.TaskType = 1
 		duplo.RelativeUri = mp["relative_uri"].(string)
 		duplo.Method = mp["method"].(string)
 		duplo.Body = mp["body"].(string)
-		duplo.Headers = mp["headers"].(map[string]string)
-	}
-	httpTrgt := d.Get("http_target").([]interface{})
+		if v, ok := mp["headers"].(map[string]interface{}); ok && len(v) > 0 {
+			m := map[string]string{}
+			for k, val := range v {
+				if val == nil {
+					m[k] = ""
+				} else {
+					m[k] = val.(string)
+				}
+			}
+			duplo.Headers = m
+		}
 
-	if len(httpTrgt) > 0 {
-		mp := httpTrgt[0].(map[string]interface{})
+	}
+	httpTrgt := d.Get("http_target")
+
+	if httpTrgt != nil && len(httpTrgt.([]interface{})) > 0 {
+		mp := httpTrgt.([]interface{})[0].(map[string]interface{})
 		duplo.TaskType = 0
 		duplo.Url = mp["url"].(string)
 		duplo.Method = mp["method"].(string)
 		duplo.Body = mp["body"].(string)
-		duplo.Headers = mp["headers"].(map[string]string)
+		if v, ok := mp["headers"].(map[string]interface{}); ok && len(v) > 0 {
+			m := map[string]string{}
+			for k, val := range v {
+				if val == nil {
+					m[k] = ""
+				} else {
+					m[k] = val.(string)
+				}
+			}
+			duplo.Headers = m
+		}
 	}
 
 	return &duplo
@@ -318,7 +341,7 @@ func resourceGcpCloudTasksQueueRead(ctx context.Context, d *schema.ResourceData,
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	duplo, err := c.GCPCloudTasksQueueGet(tenantID, qName)
-	if duplo == nil {
+	if duplo == nil || (err != nil && err.Status() == 404) {
 		d.SetId("") // object missing
 		return nil
 	}
