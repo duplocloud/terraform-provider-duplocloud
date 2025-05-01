@@ -373,6 +373,7 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
+
 	duplo, err := c.RdsInstanceGet(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -381,8 +382,16 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 		d.SetId("")
 		return nil
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
+	if isAuroraDB(d) {
+		clust, err := c.DescribeRdsCluster(d.Id())
+		if err != nil {
+			d.SetId("")
+			return diag.Errorf("%s", err.Error())
+		}
+		duplo.DeletionProtection = clust.DeleteProtection
 
+	}
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 	// Convert the object into Terraform resource data
 	jo := rdsInstanceToState(duplo, d)
 	for key, val := range jo {
