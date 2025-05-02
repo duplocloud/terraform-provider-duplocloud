@@ -151,6 +151,10 @@ type DuploMonitoringInterval struct {
 	MonitoringInterval   int    `json:"MonitoringInterval"`
 }
 
+type DuploRDSClusterCompareField struct {
+	DeleteProtection bool `json:"DeletionProtection"`
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -474,4 +478,19 @@ func (c *Client) EnableReadReplicaServerlessCreation(tenantID, cIdentifier strin
 		fmt.Sprintf("ReadReplicaServerlessCreate(%s, %s)", tenantID, cIdentifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/auroraToV2Serverless", tenantID, cIdentifier),
 		&rq, nil)
+}
+
+func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, ClientError) {
+	idParts := strings.SplitN(id, "/", 5)
+	tenantID := idParts[2]
+	name := idParts[4]
+	identifier := EnsureDuploPrefixInRdsIdentifier(name)
+	// Call the API.
+	duploObject := DuploRDSClusterCompareField{}
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
+		fmt.Sprintf("RdsInstanceGet(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, identifier+"-cluster"),
+		&duploObject, &conf)
+	return &duploObject, err
 }
