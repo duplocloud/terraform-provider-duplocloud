@@ -11,3 +11,15 @@ resource "duplocloud_asg_instance_refresh" "name" {
   max_healthy_percentage = 100
   min_healthy_percentage = 90
 }
+
+
+resource "duplocloud_asg_instance_refresh" "name" {
+  asg_name                       = "asg-name"
+  auto_rollback                  = true
+  instance_warmup                = 300
+  max_healthy_percentage         = 100
+  min_healthy_percentage         = 90
+  refresh_identifier             = "5"
+  update_launch_template_version = "1"
+  tenant_id                      = duplocloud_tenant.myapp.tenant_id
+}

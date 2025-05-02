@@ -154,6 +154,11 @@ type DuploMonitoringInterval struct {
 	MonitoringInterval   int    `json:"MonitoringInterval"`
 }
 
+type DuploRDSClusterCompareField struct {
+	DeleteProtection        bool `json:"DeletionProtection"`
+	AutoMinorVersionUpgrade bool `json:"AutoMinorVersionUpgrade"`
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -492,4 +497,19 @@ func (c *Client) UpdateRDSDBInstanceAutoMinorUpgrade(tenantID, instanceId string
 		&duploObject,
 		nil,
 	)
+}
+
+func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, ClientError) {
+	idParts := strings.SplitN(id, "/", 5)
+	tenantID := idParts[2]
+	name := idParts[4]
+	identifier := EnsureDuploPrefixInRdsIdentifier(name)
+	// Call the API.
+	duploObject := DuploRDSClusterCompareField{}
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
+		fmt.Sprintf("RdsInstanceGet(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, identifier+"-cluster"),
+		&duploObject, &conf)
+	return &duploObject, err
 }
