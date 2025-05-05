@@ -121,6 +121,7 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Required: false,
+			ForceNew: true,
 			Default:  0,
 		},
 		"replicas": {

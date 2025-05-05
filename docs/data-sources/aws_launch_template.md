@@ -20,6 +20,10 @@ description: |-
 - `name` (String)
 - `tenant_id` (String)
 
+### Optional
+
+- `version` (String) Any of the existing version of the launch template
+
 ### Read-Only
 
 - `ami` (String)
@@ -27,5 +31,4 @@ description: |-
 - `id` (String) The ID of this resource.
 - `instance_type` (String)
 - `latest_version` (String)
-- `version` (String) Any of the existing version of the launch template
 - `version_description` (String)

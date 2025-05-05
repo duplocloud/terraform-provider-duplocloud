@@ -36,12 +36,12 @@ resource "duplocloud_aws_launch_template" "lt" {
 - `instance_type` (String) Asg instance type to be used to update the version from the current version
 - `name` (String) The fullname of the asg group
 - `tenant_id` (String) The GUID of the tenant that the launch template will be created in.
-- `version` (String) Any of the existing version of the launch template
 
 ### Optional
 
 - `ami` (String) Asg ami to be used to update the version from the current version
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `version` (String) Any of the existing version of the launch template
 - `version_description` (String) The version of the launch template
 
 ### Read-Only
@@ -68,7 +68,7 @@ Import is supported using the following syntax:
 # Example: Importing an existing AWS launch template
 #  - *TENANT_ID* is the tenant GUID
 #  - *NAME* is the name of the AWS launch template
-#  - *VERSION* available version of launch template
+#  - *VERSION* available version of launch template , it is optional, use if needed to import specific version of available launch template
 
 terraform import duplocloud_aws_launch_template.lt *TENANT_ID*/launch-template/*NAME*/*VERSION*
 ```

@@ -235,7 +235,7 @@ func expandGcpCloudQueueTask(d *schema.ResourceData) *duplosdk.DuploGCPCloudTask
 	duplo := duplosdk.DuploGCPCloudTasks{
 		TaskName: d.Get("name").(string),
 	}
-	appConfig := d.Get("app_config")
+	appConfig := d.Get("app_engine")
 	if appConfig != nil && len(appConfig.([]interface{})) > 0 {
 		mp := appConfig.([]interface{})[0].(map[string]interface{})
 		duplo.TaskType = 1
