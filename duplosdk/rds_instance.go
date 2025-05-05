@@ -74,6 +74,7 @@ type DuploRdsInstance struct {
 	EnablePerformanceInsights          bool                    `json:"EnablePerformanceInsights"`
 	PerformanceInsightsRetentionPeriod int                     `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string                  `json:"PerformanceInsightsKMSKeyId,omitempty"`
+	AutoMinorVersionUpgrade            bool                    `json:"AutoMinorVersionUpgrade"`
 	DeletionProtection                 bool                    `json:"DeletionProtection"`
 }
 
@@ -95,6 +96,7 @@ type DuploRdsUpdatePayload struct {
 	SizeEx                    string `json:"SizeEx,omitempty"`
 	DbParameterGroupName      string `json:"DbParameterGroupName,omitempty"`
 	ClusterParameterGroupName string `json:"ClusterParameterGroupName,omitempty"`
+	AutoMinorVersionUpgrade   *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
 }
 
 type DuploRdsUpdateInstance struct {
@@ -128,6 +130,7 @@ type DuploRdsUpdateCluster struct {
 	EnablePerformanceInsights          bool   `json:"EnablePerformanceInsights,omitempty"`
 	PerformanceInsightsRetentionPeriod int    `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string `json:"PerformanceInsightsKMSKeyId,omitempty"`
+	AutoMinorVersionUpgrade            *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
 }
 
 type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
@@ -152,7 +155,8 @@ type DuploMonitoringInterval struct {
 }
 
 type DuploRDSClusterCompareField struct {
-	DeleteProtection bool `json:"DeletionProtection"`
+	DeleteProtection        bool `json:"DeletionProtection"`
+	AutoMinorVersionUpgrade bool `json:"AutoMinorVersionUpgrade"`
 }
 
 /*************************************************
@@ -478,6 +482,21 @@ func (c *Client) EnableReadReplicaServerlessCreation(tenantID, cIdentifier strin
 		fmt.Sprintf("ReadReplicaServerlessCreate(%s, %s)", tenantID, cIdentifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/auroraToV2Serverless", tenantID, cIdentifier),
 		&rq, nil)
+}
+
+type DuploAutoMinorUpgrade struct {
+	DBInstanceIdentifier    string `json:"DBInstanceIdentifier"`
+	AutoMinorVersionUpgrade bool   `json:"AutoMinorVersionUpgrade"`
+	ApplyImmediately        bool   `json:"ApplyImmediately"`
+}
+
+func (c *Client) UpdateRDSDBInstanceAutoMinorUpgrade(tenantID, instanceId string, duploObject DuploRdsUpdatePayload) ClientError {
+	return c.putAPI(
+		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, instanceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/updatePayload", tenantID, instanceId),
+		&duploObject,
+		nil,
+	)
 }
 
 func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, ClientError) {
