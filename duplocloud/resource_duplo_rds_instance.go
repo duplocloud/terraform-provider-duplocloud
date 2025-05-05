@@ -346,8 +346,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description: "Enable or disable auto minor version upgrade",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Default:     false,
-			//			ForceNew:    true,
+			Computed:    true,
 		},
 	}
 }
