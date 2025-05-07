@@ -38,7 +38,7 @@ func mssqlDBRetentionBackup() map[string]*schema.Schema {
 			Type:         schema.TypeInt,
 			Optional:     true,
 			Computed:     true,
-			ValidateFunc: validation.IntBetween(7, 35),
+			ValidateFunc: validation.IntBetween(1, 35),
 		},
 	}
 }
