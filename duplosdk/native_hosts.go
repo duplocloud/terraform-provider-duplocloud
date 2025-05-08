@@ -195,10 +195,12 @@ func (c *Client) LegacyNativeHostImageGetList(tenantID string) (*[]DuploNativeHo
 
 // NativeHostGetList retrieves a list of native hosts via the Duplo API.
 func (c *Client) NativeHostGetList(tenantID string) (*[]DuploNativeHost, ClientError) {
+	conf := NewRetryConf()
+
 	rp := []DuploNativeHost{}
-	err := c.getAPI(fmt.Sprintf("NativeHostGetList(%s)", tenantID),
+	err := c.getAPIWithRetry(fmt.Sprintf("NativeHostGetList(%s)", tenantID),
 		fmt.Sprintf("v2/subscriptions/%s/NativeHostV2", tenantID),
-		&rp)
+		&rp, &conf)
 	return &rp, err
 }
 
@@ -225,10 +227,12 @@ func (c *Client) NativeHostExists(tenantID, instanceID string) (bool, ClientErro
 
 // NativeHostGet retrieves an native host via the Duplo API.
 func (c *Client) NativeHostGet(tenantID, instanceID string) (*DuploNativeHost, ClientError) {
+	conf := NewRetryConf()
+
 	rp := DuploNativeHost{}
-	err := c.getAPI(fmt.Sprintf("NativeHostGet(%s, %s)", tenantID, instanceID),
+	err := c.getAPIWithRetry(fmt.Sprintf("NativeHostGet(%s, %s)", tenantID, instanceID),
 		fmt.Sprintf("v2/subscriptions/%s/NativeHostV2/%s", tenantID, instanceID),
-		&rp)
+		&rp, &conf)
 	return &rp, err
 }
 

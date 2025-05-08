@@ -316,13 +316,9 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	profile, err := c.AsgProfileGet(tenantID, friendlyName)
-	if err != nil {
-		// backend may return a 400 instead of a 404
-		exists, err2 := c.AsgProfileExists(tenantID, friendlyName)
-		if exists || err2 != nil {
-			return diag.Errorf("Unable to retrieve ASG profile '%s': %s", id, err)
-		}
+	profile, cerr := c.AsgProfileGet(tenantID, friendlyName)
+	if cerr != nil && cerr.Status() != 404 {
+		return diag.Errorf("Unable to retrieve ASG profile '%s': %s", id, err)
 	}
 	if profile == nil {
 		d.SetId("") // object missing
