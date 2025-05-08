@@ -36,8 +36,7 @@ func mssqlDBRetentionBackup() map[string]*schema.Schema {
 		"retention_backup": {
 			Description:  "Specify retention backup number of days",
 			Type:         schema.TypeInt,
-			Optional:     true,
-			Computed:     true,
+			Required:     true,
 			ValidateFunc: validation.IntBetween(1, 35),
 		},
 	}
