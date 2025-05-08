@@ -3,12 +3,12 @@
 page_title: "duplocloud_asg_instance_refresh Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloudasginstance_refresh triggers the instance refresh of asg in duplo
+  duplocloudasginstance_refresh triggers the instance refresh of asg in duplo. Change in refresh identifier or any other configuration field will trigger the instance refresh for the ASG instantly
 ---
 
 # duplocloud_asg_instance_refresh (Resource)
 
-duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo
+duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo. Change in refresh identifier or any other configuration field will trigger the instance refresh for the ASG instantly
 
 ## Example Usage
 

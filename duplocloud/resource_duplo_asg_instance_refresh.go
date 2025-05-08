@@ -66,7 +66,7 @@ func asgInstanceRefresh() map[string]*schema.Schema {
 }
 func resourceAsgInstanceRefresh() *schema.Resource {
 	return &schema.Resource{
-		Description:   "duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo",
+		Description:   "duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo. Change in refresh identifier or any other configuration field will trigger the instance refresh for the ASG instantly",
 		ReadContext:   resourceASGInstanceRefreshRead,
 		CreateContext: resourceASGInstanceRefreshCreate,
 		UpdateContext: resourceASGInstanceRefreshCreate,
