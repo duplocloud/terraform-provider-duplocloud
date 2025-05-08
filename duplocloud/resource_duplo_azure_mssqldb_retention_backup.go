@@ -33,7 +33,7 @@ func mssqlDBRetentionBackup() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
-		"retention_backup": {
+		"retention_backup_days": {
 			Description:  "Specify retention backup number of days",
 			Type:         schema.TypeInt,
 			Required:     true,
@@ -78,7 +78,7 @@ func resourceMssqlDBRetentionBackupRead(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.Errorf("resourceMssqlDBRetentionBackupCreateOrUpdate could not fetch retention days for %s db belonging to server %s : %s", db, server, err.Error())
 	}
-	d.Set("retention_backup", rp.RetentionDays)
+	d.Set("retention_backup_days", rp.RetentionDays)
 	d.Set("tenant_id", tenantID)
 	d.Set("server_name", server)
 	d.Set("database_name", db)
@@ -90,7 +90,7 @@ func resourceMssqlDBRetentionBackupCreateOrUpdate(ctx context.Context, d *schema
 	server := d.Get("server_name").(string)
 	db := d.Get("database_name").(string)
 	rq := duplosdk.DuploMyssqlDBRetention{
-		RetentionDays: d.Get("retention_backup").(int),
+		RetentionDays: d.Get("retention_backup_days").(int),
 	}
 	c := m.(*duplosdk.Client)
 	err := c.SetMsSqlDBRetention(tenantId, server, db, rq)
