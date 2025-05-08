@@ -18,7 +18,7 @@ duplocloud_azure_mssqldb_retention_backup sets retention backup days to mssql db
 ### Required
 
 - `database_name` (String) The name of mssql database
-- `retention_backup` (Number) Specify retention backup number of days
+- `retention_backup_days` (Number) Specify retention backup number of days
 - `server_name` (String) The name of mssql server
 - `tenant_id` (String) The GUID of the tenant in which retention backup will be applied for mssql db of an mssql server
 
