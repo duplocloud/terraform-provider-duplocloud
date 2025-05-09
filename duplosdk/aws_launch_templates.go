@@ -233,11 +233,23 @@ type DuploLaunchTemplateOperatorResponse struct {
 }
 
 type DuploAsgInstanceRefresh struct {
-	AutoScalingGroupName string `json:"AutoScalingGroupName"`
-	AutoRollback         bool   `json:"AutoRollback"`
-	InstanceWarmup       int    `json:"InstanceWarmup"`
-	MaxHealthyPercentage int    `json:"MaxHealthyPercentage"`
-	MinHealthyPercentage int    `json:"MinHealthyPercentage"`
+	AutoScalingGroupName string                                      `json:"AutoScalingGroupName"`
+	Preferences          DuploAsgInstanceRefreshPreference           `json:"Preferences"`
+	DesiredConfiguration DuploAsgInstanceRefreshDesiredConfiguration `json:"DesiredConfiguration,omitempty"`
+}
+
+type DuploAsgInstanceRefreshDesiredConfiguration struct {
+	LaunchTemplate DuploAsgInstanceRefreshDesiredConfigurationLaunchTemplate `json:"LaunchTemplate,omitempty"`
+}
+type DuploAsgInstanceRefreshDesiredConfigurationLaunchTemplate struct {
+	LaunchTemplateName string `json:"LaunchTemplateName,omitempty"`
+	Version            string `json:"Version,omitempty"`
+}
+type DuploAsgInstanceRefreshPreference struct {
+	AutoRollback         bool `json:"AutoRollback"`
+	InstanceWarmup       int  `json:"InstanceWarmup"`
+	MaxHealthyPercentage int  `json:"MaxHealthyPercentage"`
+	MinHealthyPercentage int  `json:"MinHealthyPercentage"`
 }
 
 func (c *Client) AsgInstanceRefresh(tenantId string, rq *DuploAsgInstanceRefresh) ClientError {

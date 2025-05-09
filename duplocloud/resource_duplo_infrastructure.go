@@ -151,7 +151,7 @@ func resourceInfrastructure() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(2, 30),
 			},
 			"account_id": {
-				Description: "The cloud account ID.",
+				Description: "The cloud account ID — use this for Azure (Subscription ID) and Google Cloud (Project ID). Not applicable for AWS.",
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Optional:    true,

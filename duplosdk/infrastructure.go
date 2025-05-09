@@ -125,7 +125,7 @@ type DuploInfrastructureVnet struct {
 // DuploInfrastructureConfig represents extended information about a Duplo infrastructure
 type DuploInfrastructureConfig struct {
 	Name                    string                   `json:"Name"`
-	AccountId               string                   `json:"AccountId"`
+	AccountId               string                   `json:"AccountId,omitempty"`
 	Cloud                   int                      `json:"Cloud"`
 	Region                  string                   `json:"Region"`
 	AzCount                 int                      `json:"AzCount"`

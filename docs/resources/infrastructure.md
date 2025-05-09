@@ -264,7 +264,7 @@ resource "duplocloud_infrastructure" "infra" {
 
 ### Optional
 
-- `account_id` (String) The cloud account ID.
+- `account_id` (String) The cloud account ID — use this for Azure (Subscription ID) and Google Cloud (Project ID). Not applicable for AWS.
 - `azcount` (Number) The number of availability zones.  Must be one of: `2`, `3`, or `4`. This is applicable only for AWS.
 - `cloud` (Number) The numerical index of cloud provider to use for the infrastructure.
 Should be one of:

@@ -285,3 +285,28 @@ func (c *Client) MsSqlElasticPoolDelete(tenantID, serverName, epName string) Cli
 		nil,
 	)
 }
+
+type DuploMyssqlDBRetention struct {
+	RetentionDays int `json:"properties.retentionDays"`
+}
+
+func (c *Client) SetMsSqlDBRetention(tenantID string, sname, dname string, rq DuploMyssqlDBRetention) ClientError {
+	var rp interface{}
+	err := c.putAPI(
+		fmt.Sprintf("SetMsSqlDBRetention(%s, %s,%s)", tenantID, sname, dname),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/mssqlservers/%s/databases/%s/backup-policy/shortterm", tenantID, sname, dname),
+		&rq,
+		&rp,
+	)
+	return err
+}
+
+func (c *Client) GetMsSqlDBRetention(tenantID string, sname, dname string) (*DuploMyssqlDBRetention, ClientError) {
+	rq := &DuploMyssqlDBRetention{}
+	err := c.getAPI(
+		fmt.Sprintf("SetMsSqlDBRetention(%s, %s,%s)", tenantID, sname, dname),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/mssqlservers/%s/databases/%s/backup-policy/shortterm", tenantID, sname, dname),
+		rq,
+	)
+	return rq, err
+}
