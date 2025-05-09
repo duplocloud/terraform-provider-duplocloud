@@ -33,7 +33,7 @@ func asgInstanceRefresh() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"auto_rollback": {
-			Description: "Automatically rollback if instance refresh fails",
+			Description: "Automatically rollback if instance refresh fails. This can be set only if update_launch_template_version is specified",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
