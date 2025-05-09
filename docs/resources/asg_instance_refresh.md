@@ -4,11 +4,18 @@ page_title: "duplocloud_asg_instance_refresh Resource - terraform-provider-duplo
 subcategory: ""
 description: |-
   duplocloudasginstance_refresh triggers the instance refresh of asg in duplo. Change in refresh identifier or any other configuration field will trigger the instance refresh for the ASG instantly
+  Note: Following Instance Replacement Method configurations are:
+  1. Launch Before Terminating - Min Healthy Percentage = 100
+  2. Terminate And Launch - Max Healthy Percentage = 100
 ---
 
 # duplocloud_asg_instance_refresh (Resource)
 
 duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo. Change in refresh identifier or any other configuration field will trigger the instance refresh for the ASG instantly
+
+ Note: Following Instance Replacement Method configurations are: 
+1. Launch Before Terminating - Min Healthy Percentage = 100
+2. Terminate And Launch - Max Healthy Percentage = 100
 
 ## Example Usage
 
