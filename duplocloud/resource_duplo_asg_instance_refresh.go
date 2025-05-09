@@ -33,7 +33,7 @@ func asgInstanceRefresh() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"auto_rollback": {
-			Description: "Automatically rollback if instance refresh fails",
+			Description: "Automatically rollback if instance refresh fails. This can be set only if update_launch_template_version is specified",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -66,7 +66,7 @@ func asgInstanceRefresh() map[string]*schema.Schema {
 }
 func resourceAsgInstanceRefresh() *schema.Resource {
 	return &schema.Resource{
-		Description:   "duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo. Change in refresh identifier or any other configuration field will trigger the instance refresh for the ASG instantly",
+		Description:   "duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo. Change in refresh identifier or any other configuration field will trigger the instance refresh for the ASG instantly\n\n Note: Following Instance Replacement Method configurations are: \n1. Launch Before Terminating - Min Healthy Percentage = 100\n2. Terminate And Launch - Max Healthy Percentage = 100",
 		ReadContext:   resourceASGInstanceRefreshRead,
 		CreateContext: resourceASGInstanceRefreshCreate,
 		UpdateContext: resourceASGInstanceRefreshCreate,
