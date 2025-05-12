@@ -157,6 +157,10 @@ func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.Resourc
 		log.Printf("[DEBUG] Received error: %#v", err)
 		return diag.Errorf("Failed to read CronJob. API error: %s", err)
 	}
+	if job == nil {
+		d.SetId("")
+		return nil
+	}
 	log.Printf("[INFO] Received CronJob: %#v", job)
 
 	isAnyHostAllowed := GetIsAnyHostAllowed(job.Metadata.Annotations)
