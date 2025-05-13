@@ -138,6 +138,7 @@ type DuploInfrastructureConfig struct {
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
 	AksConfig               *AksConfig               `json:"AksConfig,omitempty"`
 	ClusterIpv4Cidr         string                   `json:"ClusterIpv4Cidr,omitempty"`
+	DisablePublicSubnet     *bool                    `json:"DisablePublicSubnet,omitempty"`
 	OnPrem                  *DuploOnPrem             `json:"OnPremConfig,omitempty"`
 }
 
