@@ -277,6 +277,11 @@ func resourceAwsSqsQueueUpdate(ctx context.Context, d *schema.ResourceData, m in
 			return diag.Errorf("Error updating tenant %s SQS queue '%s': %s", tenantID, fullname, err)
 		}
 		diags := waitForResourceToBePresentAfterCreate(ctx, d, "SQS Queue", fmt.Sprintf("%s/%s", tenantID, fullname), func() (interface{}, duplosdk.ClientError) {
+			resp, err := c.DuploSQSQueueGetV3(tenantID, fullname)
+
+			if err == nil && resp != nil && resp.Arn == "" {
+				return nil, nil
+			}
 			return c.DuploSQSQueueGetV3(tenantID, fullname)
 		})
 		if diags != nil {
