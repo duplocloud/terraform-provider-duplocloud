@@ -316,7 +316,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	c := m.(*duplosdk.Client)
 
-	fullName, errname := c.GetResourceName("duploservices", tenantID, duplo.Name, false)
+	fullName, errname := c.GetResourceName("duplo", tenantID, duplo.Name, false)
 	if errname != nil {
 		return diag.Errorf("resourceDuploEcacheInstanceCreate: Unable to retrieve duplo service name (name: %s, error: %s)", duplo.Name, errname.Error())
 
