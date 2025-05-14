@@ -234,7 +234,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description: "Specifies if the RDS instance is multi-AZ.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Computed:    true,
+			ForceNew:    true,
 		},
 		"instance_status": {
 			Description: "The current status of the RDS instance.",
@@ -342,6 +342,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional: true,
 			ForceNew: true,
 		},
+		"auto_minor_version_upgrade": {
+			Description: "Enable or disable auto minor version upgrade",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -373,6 +379,7 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
+
 	duplo, err := c.RdsInstanceGet(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -381,8 +388,17 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 		d.SetId("")
 		return nil
 	}
-	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
+	if isAuroraDB(d) {
+		clust, err := c.DescribeRdsCluster(d.Id())
+		if err != nil {
+			d.SetId("")
+			return diag.Errorf("%s", err.Error())
+		}
+		duplo.DeletionProtection = clust.DeleteProtection
+		duplo.AutoMinorVersionUpgrade = clust.AutoMinorVersionUpgrade
 
+	}
+	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 	// Convert the object into Terraform resource data
 	jo := rdsInstanceToState(duplo, d)
 	for key, val := range jo {
@@ -730,6 +746,28 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			}
 		}
 	}
+
+	if d.HasChange("auto_minor_version_upgrade") {
+		val := d.Get("auto_minor_version_upgrade").(bool)
+		if !isAuroraDB(d) {
+			obj := duplosdk.DuploRdsUpdatePayload{}
+			obj.AutoMinorVersionUpgrade = &val
+			cErr := c.UpdateRDSDBInstanceAutoMinorUpgrade(tenantID, identifier, obj)
+			if cErr != nil {
+				return diag.FromErr(cErr)
+			}
+		} else {
+			obj := duplosdk.DuploRdsUpdateCluster{
+				DBClusterIdentifier:     identifier + "-cluster",
+				ApplyImmediately:        true,
+				AutoMinorVersionUpgrade: &val,
+			}
+			err := c.UpdateRdsCluster(tenantID, obj)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
 	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
 	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
 
@@ -738,7 +776,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
-
+	time.Sleep(10 * time.Minute) //sleeping to sync with Backend, backend has delay even after state of rds is available
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
@@ -873,6 +911,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.SkipFinalSnapshot = d.Get("skip_final_snapshot").(bool)
 	duploObject.StoreDetailsInSecretManager = d.Get("store_details_in_secret_manager").(bool)
 	duploObject.EnableIamAuth = d.Get("enable_iam_auth").(bool)
+	duploObject.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
 	if v, ok := d.GetOk("v2_scaling_configuration"); ok {
 		duploObject.V2ScalingConfiguration = expandV2ScalingConfiguration(v.([]interface{}))
 	}
@@ -978,6 +1017,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	}
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
+	jo["auto_minor_version_upgrade"] = duploObject.AutoMinorVersionUpgrade
 	pis := []interface{}{}
 	pi := make(map[string]interface{})
 	pi["enabled"] = duploObject.EnablePerformanceInsights
