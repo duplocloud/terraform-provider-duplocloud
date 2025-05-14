@@ -33,7 +33,7 @@ func asgInstanceRefresh() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"auto_rollback": {
-			Description: "Automatically rollback if instance refresh fails",
+			Description: "Automatically rollback if instance refresh fails. This can be set only if update_launch_template_version is specified",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -57,11 +57,16 @@ func asgInstanceRefresh() map[string]*schema.Schema {
 			Default:     90,
 			Optional:    true,
 		},
+		"update_launch_template_version": {
+			Description: "Launch template version to update",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
 	}
 }
 func resourceAsgInstanceRefresh() *schema.Resource {
 	return &schema.Resource{
-		Description:   "duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo",
+		Description:   "duplocloud_asg_instance_refresh triggers the instance refresh of asg in duplo. Change in refresh identifier or any other configuration field will trigger the instance refresh for the ASG instantly\n\n Note: Following Instance Replacement Method configurations are: \n1. Launch Before Terminating - Min Healthy Percentage = 100\n2. Terminate And Launch - Max Healthy Percentage = 100",
 		ReadContext:   resourceASGInstanceRefreshRead,
 		CreateContext: resourceASGInstanceRefreshCreate,
 		UpdateContext: resourceASGInstanceRefreshCreate,
@@ -102,13 +107,27 @@ func resourceASGInstanceRefreshDelete(ctx context.Context, d *schema.ResourceDat
 }
 
 func expandInstanceRefresh(d *schema.ResourceData) duplosdk.DuploAsgInstanceRefresh {
-
-	return duplosdk.DuploAsgInstanceRefresh{
-		AutoScalingGroupName: d.Get("asg_name").(string),
+	name := d.Get("asg_name").(string)
+	ver := d.Get("update_launch_template_version").(string)
+	config := duplosdk.DuploAsgInstanceRefreshDesiredConfiguration{}
+	if ver != "" {
+		config = duplosdk.DuploAsgInstanceRefreshDesiredConfiguration{
+			LaunchTemplate: duplosdk.DuploAsgInstanceRefreshDesiredConfigurationLaunchTemplate{
+				LaunchTemplateName: name,
+				Version:            ver,
+			},
+		}
+	}
+	preferences := duplosdk.DuploAsgInstanceRefreshPreference{
 		InstanceWarmup:       d.Get("instance_warmup").(int),
 		MaxHealthyPercentage: d.Get("max_healthy_percentage").(int),
 		MinHealthyPercentage: d.Get("min_healthy_percentage").(int),
 		AutoRollback:         d.Get("auto_rollback").(bool),
+	}
+	return duplosdk.DuploAsgInstanceRefresh{
+		AutoScalingGroupName: name,
+		Preferences:          preferences,
+		DesiredConfiguration: config,
 	}
 
 }
