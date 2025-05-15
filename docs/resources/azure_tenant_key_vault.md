@@ -38,6 +38,7 @@ resource "duplocloud_azure_tenant_key_vault" "kv" {
 
 ### Optional
 
+- `purge` (Boolean) Purge the Key Vault. Defaults to `false`.
 - `purge_protection_enabled` (Boolean) Is Purge Protection enabled for this Key Vault?
 - `soft_delete_retention_days` (Number) The number of days that items should be retained for once soft-deleted. This value can be between `7` and `90` (the default) days. Defaults to `90`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
