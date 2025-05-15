@@ -246,3 +246,13 @@ func (c *Client) TenantKeyVaultSecretDelete(tenantID string, vaultName string, s
 		nil,
 	)
 }
+
+func (c *Client) TenantKeyVaultSecretUpdate(tenantID string, rq *DuploAzureTenantKeyVaultSecretRequest) ClientError {
+	resp := &DuploAzureTenantKeyVaultSecret{}
+	return c.putAPI(
+		fmt.Sprintf("TenantKeyVaultSecretUpdate(%s, %s, %s)", tenantID, rq.VaultName, rq.SecretName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/keyvault/%s/secret", tenantID, rq.VaultName),
+		&rq,
+		&resp,
+	)
+}
