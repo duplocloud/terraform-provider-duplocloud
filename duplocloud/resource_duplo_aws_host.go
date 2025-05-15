@@ -386,14 +386,9 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.NativeHostGet(tenantID, instanceID)
-	if err != nil {
-
-		// backend may return a 400 instead of a 404
-		exists, err2 := c.NativeHostExists(tenantID, instanceID)
-		if exists || err2 != nil {
-			return diag.Errorf("Unable to retrieve AWS host '%s': %s", id, err)
-		}
+	duplo, cerr := c.NativeHostGet(tenantID, instanceID)
+	if cerr != nil && cerr.Status() != 404 {
+		return diag.Errorf("Unable to retrieve AWS host '%s': %s", id, cerr)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
