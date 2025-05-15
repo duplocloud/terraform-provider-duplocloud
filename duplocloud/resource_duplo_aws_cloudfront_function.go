@@ -108,12 +108,12 @@ func resourceCloudfrontFunctionRead(ctx context.Context, d *schema.ResourceData,
 
 	// Update the state
 	d.Set("tenant_id", tenantID)
-	d.Set("name", function["Name"])
-	d.Set("code", function["Code"])
-	d.Set("comment", function["Comment"])
-	d.Set("runtime", function["Runtime"])
-	d.Set("function_arn", function["FunctionArn"])
-
+	d.Set("name", rp.Name)
+	d.Set("code", rp.Code)
+	d.Set("comment", rp.Comment)
+	d.Set("runtime", rp.Runtime)
+	d.Set("function_arn", rp.Metadata.ARN)
+	d.Set("status", rp.Status)
 	return nil
 }
 
