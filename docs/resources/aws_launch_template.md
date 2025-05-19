@@ -41,7 +41,7 @@ resource "duplocloud_aws_launch_template" "lt" {
 
 - `ami` (String) Asg ami to be used to update the version from the current version
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `version` (String) Any of the existing version of the launch template
+- `version` (String) Any of the existing version of the launch template, if not provided, the latest version will be used
 - `version_description` (String) The version of the launch template
 
 ### Read-Only
