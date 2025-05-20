@@ -162,10 +162,6 @@ func resourceAwsLambdaPermissionCreate(ctx context.Context, d *schema.ResourceDa
 	return diags
 }
 
-func resourceAwsLambdaPermissionUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
-}
-
 // DELETE resource
 func resourceAwsLambdaPermissionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 

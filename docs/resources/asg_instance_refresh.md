@@ -61,7 +61,7 @@ resource "duplocloud_asg_instance_refresh" "name" {
 - `instance_warmup` (Number) Number of seconds until a newly launched instance is configured and ready to use. Default behavior is to use the Auto Scaling Group's health check grace period.
 - `max_healthy_percentage` (Number) Amount of capacity in the Auto Scaling group that can be in service and healthy, or pending, to support your workload when an instance refresh is in place, as a percentage of the desired capacity of the Auto Scaling group. Defaults to `100`.
 - `min_healthy_percentage` (Number) Amount of capacity in the Auto Scaling group that must remain healthy during an instance refresh to allow the operation to continue, as a percentage of the desired capacity of the Auto Scaling group. Defaults to `90`.
-- `refresh_identifier` (String) To identify refresh or invoke a refresh
+- `refresh_identifier` (String) To identify refresh or invoke a refresh, If not specified system will skip resource creation
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `update_launch_template_version` (String) Launch template version to update
 
