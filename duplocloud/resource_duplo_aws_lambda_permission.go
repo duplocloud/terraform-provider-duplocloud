@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -100,7 +101,7 @@ func resourceAwsLambdaPermissionRead(ctx context.Context, d *schema.ResourceData
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	_, clientErr := c.LambdaPermissionGet(tenantID, functionName)
+	rp, clientErr := c.LambdaPermissionGet(tenantID, functionName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("") // object missing
@@ -108,7 +109,27 @@ func resourceAwsLambdaPermissionRead(ctx context.Context, d *schema.ResourceData
 		}
 		return diag.Errorf("Unable to retrieve tenant %s lambda permission '%s': %s", tenantID, functionName, clientErr)
 	}
+	for _, permission := range *rp {
+		if permission.Sid == sid {
 
+			d.Set("action", permission.Action)
+
+			if d.Get("function_name").(string) != "" {
+				d.Set("function_name", d.Get("function_name").(string))
+			}
+			d.Set("principal", permission.Principal.Service)
+			if d.Get("Qualifier").(string) != "" {
+				d.Set("qualifier", d.Get("Qualifier").(string))
+			}
+			if d.Get("source_account").(string) != "" {
+				d.Set("source_account", d.Get("source_account").(string))
+			}
+			if d.Get("source_arn").(string) != "" {
+				d.Set("source_arn", d.Get("source_arn").(string))
+			}
+			d.Set("statement_id", permission.Sid)
+		}
+	}
 	log.Printf("[TRACE] resourceAwsLambdaPermissionRead(%s, %s): end", tenantID, functionName)
 	return nil
 }
