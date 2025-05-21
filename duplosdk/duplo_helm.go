@@ -19,7 +19,12 @@ type DuploHelmSpec struct {
 	ReleaseName string `json:"releaseName,omitempty"`
 	Chart       *Chart `json:"chart,omitempty"`
 	//Values      map[string]interface{} `json:"values,omitempty"`
-	Values interface{} `json:"values,omitempty"`
+	Values          interface{} `json:"values,omitempty"`
+	Insecure        bool        `json:"Insecure,omitempty"`
+	PassCredentials bool        `json:"PassCredentials,omitempty"`
+	Provider        string      `json:"Provider,omitempty"`
+	Suspend         bool        `json:"Suspend,omitempty"`
+	Type            string      `json:"Type,omitempty"`
 }
 
 type SourceRef struct {

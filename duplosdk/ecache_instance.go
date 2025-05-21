@@ -15,6 +15,7 @@ type DuploEcacheInstance struct {
 	Identifier               string   `json:"Identifier"`
 	Arn                      string   `json:"Arn"`
 	Endpoint                 string   `json:"Endpoint,omitempty"`
+	ConfigurationEndpoint    string   `json:"ConfigurationEndpoint,omitempty"`
 	CacheType                int      `json:"CacheType,omitempty"`
 	EngineVersion            string   `json:"EngineVersion,omitempty"`
 	Size                     string   `json:"Size,omitempty"`

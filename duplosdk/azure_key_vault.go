@@ -171,6 +171,43 @@ func (c *Client) TenantKeyVaultDelete(tenantID string, secretName string) Client
 	)
 }
 
+func (c *Client) TenantKeyVaultPurge(tenantID string, secretName string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("TenantKeyVaultPurge(%s, %s)", tenantID, secretName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/keyvault/%s/purge", tenantID, secretName),
+		nil,
+	)
+}
+
+func (c *Client) TenantGetSoftDeletedKeyVault(tenantID, vaultName string) (*DuploAzureTenantKeyVault, ClientError) {
+
+	list, err := c.TenantKeyVaultListDeletedVaults(tenantID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if list != nil {
+		for _, vault := range *list {
+			if vault.Name == vaultName {
+				return &vault, nil
+			}
+		}
+	}
+	return nil, nil
+
+}
+
+func (c *Client) TenantKeyVaultListDeletedVaults(tenantID string) (*[]DuploAzureTenantKeyVault, ClientError) {
+	resp := []DuploAzureTenantKeyVault{}
+	err := c.getAPI(
+		fmt.Sprintf("TenantKeyVaultListDeletedVaults(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/azure/keyvault/deleted-vaults", tenantID),
+		&resp,
+	)
+	return &resp, err
+}
+
 // Tenant level Key Vault Secret API's
 
 type DuploAzureTenantKeyVaultSecretRequest struct {
@@ -244,5 +281,15 @@ func (c *Client) TenantKeyVaultSecretDelete(tenantID string, vaultName string, s
 		fmt.Sprintf("TenantKeyVaultSecretDelete(%s, %s, %s)", tenantID, vaultName, secretName),
 		fmt.Sprintf("v3/subscriptions/%s/azure/keyvault/%s/secret/%s", tenantID, vaultName, secretName),
 		nil,
+	)
+}
+
+func (c *Client) TenantKeyVaultSecretUpdate(tenantID string, rq *DuploAzureTenantKeyVaultSecretRequest) ClientError {
+	resp := &DuploAzureTenantKeyVaultSecret{}
+	return c.putAPI(
+		fmt.Sprintf("TenantKeyVaultSecretUpdate(%s, %s, %s)", tenantID, rq.VaultName, rq.SecretName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/keyvault/%s/secret", tenantID, rq.VaultName),
+		&rq,
+		&resp,
 	)
 }

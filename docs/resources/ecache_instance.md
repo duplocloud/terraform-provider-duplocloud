@@ -187,6 +187,7 @@ See AWS documentation for the [available Redis instance types](https://docs.aws.
 
 ### Read-Only
 
+- `actual_engine_version` (String)
 - `arn` (String) The ARN of the elasticache instance.
 - `endpoint` (String) The endpoint of the elasticache instance.
 - `host` (String) The DNS hostname of the elasticache instance.

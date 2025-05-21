@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func duploAzureCosmosDBchema() map[string]*schema.Schema {
+func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the host will be created in.",
@@ -43,11 +43,77 @@ func duploAzureCosmosDBchema() map[string]*schema.Schema {
 			Optional:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
-		"location": {
-			Description: "Specifies the primary write region for Cosmos DB.",
-			Type:        schema.TypeString,
-			Required:    true,
+		"consistency_policy": {
+			Description: "",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"max_staleness_prefix": {
+						Description:  "Max number of stale requests tolerated. Accepted range for this values 1 to 2147483647",
+						Type:         schema.TypeFloat,
+						Optional:     true,
+						ValidateFunc: validation.IntBetween(1, 2147483647),
+					},
+					"max_interval_in_seconds": {
+						Description: "Max amount of time staleness (in seconds) is tolerated",
+						Type:        schema.TypeInt,
+						Optional:    true,
+					},
+					"default_consistency_level": {
+						Description:  "Specify the default consistency level and configuration settings of the Cosmos DB account. Possible values include: 'Eventual', 'Session', 'BoundedStaleness','Strong', 'ConsistentPrefix'",
+						Type:         schema.TypeString,
+						Optional:     true,
+						ValidateFunc: validation.StringInSlice([]string{"Eventual", "Session", "BoundedStaleness", "Strong", "ConsistentPrefix"}, false),
+					},
+				},
+			},
 		},
+		"capablities": {
+			Description: "Name of the Cosmos DB capability, for example, 'EnableCassandra' Current values also include 'EnableTable' and 'EnableGremlin'",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Elem: &schema.Schema{
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"EnableCassandra", "EnableTable", "EnableGremlin"}, false),
+			},
+		},
+		"backup_policy": {
+			Description: "Backup policy for cosmos db account",
+			Type:        schema.TypeList,
+			Computed:    true,
+			MaxItems:    1,
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"backup_interval": {
+						Description: "Backup interval in minutes",
+						Optional:    true,
+						Computed:    true,
+						Type:        schema.TypeInt,
+					},
+
+					"backup_retention_interval": {
+						Description: "Backup retention interval in hours",
+						Optional:    true,
+						Type:        schema.TypeInt,
+						Computed:    true,
+					},
+					"type": {
+						Description: "Valid values WellDefined, FullFidelity",
+						Optional:    true,
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+				},
+			},
+		},
+
+		//"location": {
+		//	Description: "Specifies the primary write region for Cosmos DB.",
+		//	Type:        schema.TypeString,
+		//	Required:    true,
+		//},
 		"ip_rules": {
 			Description: "List of IpRules.",
 			Type:        schema.TypeList,
@@ -153,95 +219,61 @@ func duploAzureCosmosDBchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"consistency_policy": {
-			Description: "",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"max_staleness_prefix": {
-						Description:  "Max number of stale requests tolerated. Accepted range for this values 1 to 2147483647",
-						Type:         schema.TypeFloat,
-						Optional:     true,
-						ValidateFunc: validation.IntBetween(1, 2147483647),
-					},
-					"max_interval_in_seconds": {
-						Description: "Max amount of time staleness (in seconds) is tolerated",
-						Type:        schema.TypeInt,
-						Optional:    true,
-					},
-					"default_consistency_level": {
-						Description:  "Specify the default consistency level and configuration settings of the Cosmos DB account. Possible values include: 'Eventual', 'Session', 'BoundedStaleness','Strong', 'ConsistentPrefix'",
-						Type:         schema.TypeString,
-						Optional:     true,
-						ValidateFunc: validation.StringInSlice([]string{"Eventual", "Session", "BoundedStaleness", "Strong", "ConsistentPrefix"}, false),
-					},
-				},
-			},
-		},
-		"capablities": {
-			Description: "Name of the Cosmos DB capability, for example, 'EnableCassandra' Current values also include 'EnableTable' and 'EnableGremlin'",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Elem: &schema.Schema{
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"EnableCassandra", "EnableTable", "EnableGremlin"}, false),
-			},
-		},
-		"virtual_network_rules": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"id": {
-						Description:  "resource ID of a subnet, for example: /subscriptions/{subscriptionId}/resourceGroups/{groupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}",
-						Optional:     true,
-						Type:         schema.TypeString,
-						ValidateFunc: validation.StringMatch(regexp.MustCompile(`^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft\\.Network/virtualNetworks/[^/]+/subnets/[^/]+$`), "invalid virtual_network_rules.id"),
-					},
-					"ignore_missing_vnet_service_endpoint": {
-						Description: "create firewall rule before the virtual network has vnet service endpoint enabled",
-						Optional:    true,
-						Default:     false,
-						Type:        schema.TypeBool,
-					},
-				},
-			},
-		},
-		"api_properties": {
-			Type:     schema.TypeList,
-			Computed: true,
-			MaxItems: 1,
-			Optional: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"server_version": {
-						Description:  "Server version of an a MongoDB account",
-						Optional:     true,
-						Type:         schema.TypeString,
-						ValidateFunc: validation.StringInSlice([]string{"3.2", "3.6", "4.0", "4.2"}, false),
-					},
-				},
-			},
-		},
 
-		"analytical_storage_configuration": {
-			Description: "Specify analytical storage specific properties",
-			Type:        schema.TypeList,
-			Computed:    true,
-			MaxItems:    1,
-			Optional:    true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"schema_type": {
-						Description:  "Valid values WellDefined, FullFidelity",
-						Optional:     true,
-						Type:         schema.TypeString,
-						ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
-					},
-				},
-			},
-		},
+		//"virtual_network_rules": {
+		//	Type:     schema.TypeList,
+		//	Optional: true,
+		//	Elem: &schema.Resource{
+		//		Schema: map[string]*schema.Schema{
+		//			"id": {
+		//				Description:  "resource ID of a subnet, for example: /subscriptions/{subscriptionId}/resourceGroups/{groupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}",
+		//				Optional:     true,
+		//				Type:         schema.TypeString,
+		//				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft\\.Network/virtualNetworks/[^/]+/subnets/[^/]+$`), "invalid virtual_network_rules.id"),
+		//			},
+		//			"ignore_missing_vnet_service_endpoint": {
+		//				Description: "create firewall rule before the virtual network has vnet service endpoint enabled",
+		//				Optional:    true,
+		//				Default:     false,
+		//				Type:        schema.TypeBool,
+		//			},
+		//		},
+		//	},
+		//},
+		//"api_properties": {
+		//	Type:     schema.TypeList,
+		//	Computed: true,
+		//	MaxItems: 1,
+		//	Optional: true,
+		//	Elem: &schema.Resource{
+		//		Schema: map[string]*schema.Schema{
+		//			"server_version": {
+		//				Description:  "Server version of an a MongoDB account",
+		//				Optional:     true,
+		//				Type:         schema.TypeString,
+		//				ValidateFunc: validation.StringInSlice([]string{"3.2", "3.6", "4.0", "4.2"}, false),
+		//			},
+		//		},
+		//	},
+		//},
+
+		//"analytical_storage_configuration": {
+		//	Description: "Specify analytical storage specific properties",
+		//	Type:        schema.TypeList,
+		//	Computed:    true,
+		//	MaxItems:    1,
+		//	Optional:    true,
+		//	Elem: &schema.Resource{
+		//		Schema: map[string]*schema.Schema{
+		//			"schema_type": {
+		//				Description:  "Valid values WellDefined, FullFidelity",
+		//				Optional:     true,
+		//				Type:         schema.TypeString,
+		//				ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
+		//			},
+		//		},
+		//	},
+		//},
 
 		"backup_policy": {
 			Description: "Specify analytical storage specific properties",
@@ -284,109 +316,109 @@ func duploAzureCosmosDBchema() map[string]*schema.Schema {
 			},
 		},
 
-		"cors": {
-			Description: "Specify analytical storage specific properties",
-			Type:        schema.TypeList,
-			Computed:    true,
-			MaxItems:    1,
-			Optional:    true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"allowed_origins": {
-						Description: "Valid values WellDefined, FullFidelity",
-						Optional:    true,
-						Type:        schema.TypeString,
-					},
-					"allowed_methods": {
-						Description: "Valid values WellDefined, FullFidelity",
-						Optional:    true,
-						Type:        schema.TypeString,
-					},
-					"allowed_headers": {
-						Description: "Valid values WellDefined, FullFidelity",
-						Optional:    true,
-						Type:        schema.TypeString,
-					},
-					"exposed_headers": {
-						Description: "Valid values WellDefined, FullFidelity",
-						Optional:    true,
-						Type:        schema.TypeString,
-					},
-					"max_age_in_seconds": {
-						Description: "Valid values WellDefined, FullFidelity",
-						Optional:    true,
-						Type:        schema.TypeFloat,
-					},
-				},
-			},
-		},
+		//"cors": {
+		//	Description: "Specify analytical storage specific properties",
+		//	Type:        schema.TypeList,
+		//	Computed:    true,
+		//	MaxItems:    1,
+		//	Optional:    true,
+		//	Elem: &schema.Resource{
+		//		Schema: map[string]*schema.Schema{
+		//			"allowed_origins": {
+		//				Description: "Valid values WellDefined, FullFidelity",
+		//				Optional:    true,
+		//				Type:        schema.TypeString,
+		//			},
+		//			"allowed_methods": {
+		//				Description: "Valid values WellDefined, FullFidelity",
+		//				Optional:    true,
+		//				Type:        schema.TypeString,
+		//			},
+		//			"allowed_headers": {
+		//				Description: "Valid values WellDefined, FullFidelity",
+		//				Optional:    true,
+		//				Type:        schema.TypeString,
+		//			},
+		//			"exposed_headers": {
+		//				Description: "Valid values WellDefined, FullFidelity",
+		//				Optional:    true,
+		//				Type:        schema.TypeString,
+		//			},
+		//			"max_age_in_seconds": {
+		//				Description: "Valid values WellDefined, FullFidelity",
+		//				Optional:    true,
+		//				Type:        schema.TypeFloat,
+		//			},
+		//		},
+		//	},
+		//},
 
-		"restore_parameters": {
-			Description: "Specify analytical storage specific properties",
-			Type:        schema.TypeList,
-			Computed:    true,
-			MaxItems:    1,
-			Optional:    true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"databases_to_restore": {
-						Description: "Specify analytical storage specific properties",
-						Type:        schema.TypeList,
-						Computed:    true,
-						MaxItems:    1,
-						Optional:    true,
-						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
-								"database_name": {
-									Description:  "Valid values WellDefined, FullFidelity",
-									Optional:     true,
-									Type:         schema.TypeString,
-									ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
-								},
-								"collection_names": {
-									Description: "Valid values WellDefined, FullFidelity",
-									Optional:    true,
-									Type:        schema.TypeList,
-									Elem: &schema.Schema{
-										Type: schema.TypeString,
-									},
-								},
-							},
-						},
-					},
-					"restore_mode": {
-						Description: "Valid values WellDefined, FullFidelity",
-						Optional:    true,
-						Type:        schema.TypeFloat,
-					},
-					"tables_to_restore": {
-						Description: "Valid values WellDefined, FullFidelity",
-						Optional:    true,
-						Type:        schema.TypeList,
-						Elem: &schema.Schema{
-							Type: schema.TypeString,
-						},
-					},
-				},
-			},
-		},
+		//"restore_parameters": {
+		//	Description: "Specify analytical storage specific properties",
+		//	Type:        schema.TypeList,
+		//	Computed:    true,
+		//	MaxItems:    1,
+		//	Optional:    true,
+		//	Elem: &schema.Resource{
+		//		Schema: map[string]*schema.Schema{
+		//			"databases_to_restore": {
+		//				Description: "Specify analytical storage specific properties",
+		//				Type:        schema.TypeList,
+		//				Computed:    true,
+		//				MaxItems:    1,
+		//				Optional:    true,
+		//				Elem: &schema.Resource{
+		//					Schema: map[string]*schema.Schema{
+		//						"database_name": {
+		//							Description:  "Valid values WellDefined, FullFidelity",
+		//							Optional:     true,
+		//							Type:         schema.TypeString,
+		//							ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
+		//						},
+		//						"collection_names": {
+		//							Description: "Valid values WellDefined, FullFidelity",
+		//							Optional:    true,
+		//							Type:        schema.TypeList,
+		//							Elem: &schema.Schema{
+		//								Type: schema.TypeString,
+		//							},
+		//						},
+		//					},
+		//				},
+		//			},
+		//			"restore_mode": {
+		//				Description: "Valid values WellDefined, FullFidelity",
+		//				Optional:    true,
+		//				Type:        schema.TypeFloat,
+		//			},
+		//			"tables_to_restore": {
+		//				Description: "Valid values WellDefined, FullFidelity",
+		//				Optional:    true,
+		//				Type:        schema.TypeList,
+		//				Elem: &schema.Schema{
+		//					Type: schema.TypeString,
+		//				},
+		//			},
+		//		},
+		//	},
+		//},
 
-		"capacity": {
-			Description: "Specifiy capacity property for the account",
-			Type:        schema.TypeList,
-			Optional:    true,
-			MaxItems:    1,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"total_throughput_limit": {
-						Description:  "Total throughput limit imposed on the Account.A totalThroughputLimit of 2000 imposes a strict limit of max throughput that can be provisioned on that account to be 2000. A totalThroughputLimit of -1 indicates no limits on provisioning of throughput.",
-						Type:         schema.TypeInt,
-						Optional:     true,
-						ValidateFunc: validation.IntAtMost(2000),
-					},
-				},
-			},
-		},
+		//"capacity": {
+		//	Description: "Specifiy capacity property for the account",
+		//	Type:        schema.TypeList,
+		//	Optional:    true,
+		//	MaxItems:    1,
+		//	Elem: &schema.Resource{
+		//		Schema: map[string]*schema.Schema{
+		//			"total_throughput_limit": {
+		//				Description:  "Total throughput limit imposed on the Account.A totalThroughputLimit of 2000 imposes a strict limit of max throughput that can be provisioned on that account to be 2000. A totalThroughputLimit of -1 indicates no limits on provisioning of throughput.",
+		//				Type:         schema.TypeInt,
+		//				Optional:     true,
+		//				ValidateFunc: validation.IntAtMost(2000),
+		//			},
+		//		},
+		//	},
+		//},
 		"connector_offer": {
 			Description: "Specify cassandra connector offer type for the Cosmos DB database C*",
 			Optional:    true,

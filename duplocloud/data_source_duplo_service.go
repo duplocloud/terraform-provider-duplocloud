@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -208,7 +209,15 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 		if duplo.Template.Containers != nil && len(*duplo.Template.Containers) > 0 {
 			d.Set("docker_image", (*duplo.Template.Containers)[0].Image)
 		}
+		if len(duplo.Template.OtherDockerConfig) > 0 {
+			initContainerImages, err := extractInitContainerImages(d, duplo.Template.OtherDockerConfig)
+			if err != nil {
+				log.Printf("[DEBUG] flattenDuploService: failed to extract init container images: %s", err)
+			}
+			d.Set("init_container_docker_image", initContainerImages)
+		}
 	}
+
 }
 
 func flattenHPASpecs(field string, from interface{}, to *schema.ResourceData) {

@@ -67,8 +67,8 @@ func retryApiCall(apiCaller string, operationApiCall func() ClientError, conf *R
 		delay := calculateBackoffInterval(apiCaller, attempt, conf.MaxStartingDelay, conf.MaxStartingDelay, conf.MinDelay, conf.MaxDelay, conf.MinJitterDelay)
 		sleepDuration += delay
 		log.Printf("[TRACE] retryApiCall START sleep start (loop_sleep, retry_attempts, api) (%d,%d,%s)", int(delay.Seconds()), attempt, apiCaller)
-		time.Sleep(delay)
 		if attempt > 1 {
+			time.Sleep(delay)
 			log.Printf("[WARN] retryApiCall sleep done (loop_sleep, retry_attempts, api) (%d,%d,%s)", int(delay.Seconds()), attempt, apiCaller)
 		}
 		err = operationApiCall()
