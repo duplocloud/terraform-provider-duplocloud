@@ -43,6 +43,11 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Optional:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"type": {
+			Description: "Specifies the  Cosmos DB account type.",
+			Type:        schema.TypeString,
+			Required:    true,
+		},
 		"consistency_policy": {
 			Description: "",
 			Type:        schema.TypeList,
@@ -109,116 +114,111 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			},
 		},
 
-		//"location": {
-		//	Description: "Specifies the primary write region for Cosmos DB.",
-		//	Type:        schema.TypeString,
-		//	Required:    true,
-		//},
-		"ip_rules": {
-			Description: "List of IpRules.",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-		},
-		"is_virtual_network_filter_enabled": {
-			Description: "Flag to indicate whether to enable/disable Virtual Network ACL rules.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"enable_automatic_failover": {
-			Description: "Enables automatic failover of the write region in the rare event that the region is unavailable due to an outage. Automatic failover will result in a new write region for the account and is chosen based on the failover priorities configured for the account.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"enable_multiple_write_locations": {
-			Description: "Enables the account to write in multiple locations.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"enable_cassandra_connector": {
-			Description: "Enables the cassandra connector on the Cosmos DB C* account",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"disable_key_based_metadata_write_access": {
-			Description: "Disable write operations on metadata resources (databases, containers, throughput) via account keys",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"disable_local_auth": {
-			Description: "Opt-out of local authentication and ensure only MSI and AAD can be used exclusively for authentication.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"enable_free_tier": {
-			Description: "Flag to indicate whether Free Tier is enabled.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"enable_analytical_storage": {
-			Description: "Flag to indicate whether to enable storage analytics.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"identity": {
-			Type:     schema.TypeList,
-			MaxItems: 1,
-			Optional: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-
-					"principal_id": {
-						Description: "System assigned principal id",
-						Type:        schema.TypeString,
-						Computed:    true,
-					},
-					"tenant_id": {
-						Description: "System assigned tenant id",
-						Type:        schema.TypeString,
-						Computed:    true,
-					},
-					"resource_identity_type": {
-						Description:  "Flag to indicate whether to enable storage analytics.",
-						Type:         schema.TypeString,
-						Optional:     true,
-						ValidateFunc: validation.StringInSlice([]string{"SystemAssigned", "UserAssigned", "SystemAssignedUserAssigned", "None"}, false),
-					},
-					"user_assigned_identities": {
-						Description: "List of user identities associated with resource",
-						Optional:    true,
-						Type:        schema.TypeList,
-						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
-								"arm_resource_id": {
-									Description:  "The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'.",
-									Type:         schema.TypeString,
-									Optional:     true,
-									ValidateFunc: validation.StringMatch(regexp.MustCompile(`^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft\\.ManagedIdentity/userAssignedIdentities/[^/]+$`), "invalid arm_resource_id"),
-								},
-								"principal_id": {
-									Description: "User assigned principal id",
-									Type:        schema.TypeString,
-									Computed:    true,
-								},
-								"client_id": {
-									Description: "User assigned client id",
-									Type:        schema.TypeString,
-									Computed:    true,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		//	"ip_rules": {
+		//		Description: "List of IpRules.",
+		//		Type:        schema.TypeList,
+		//		Optional:    true,
+		//		Elem:        &schema.Schema{Type: schema.TypeString},
+		//	},
+		//	"is_virtual_network_filter_enabled": {
+		//		Description: "Flag to indicate whether to enable/disable Virtual Network ACL rules.",
+		//		Type:        schema.TypeBool,
+		//		Optional:    true,
+		//		Default:     false,
+		//	},
+		//	"enable_automatic_failover": {
+		//		Description: "Enables automatic failover of the write region in the rare event that the region is unavailable due to an outage. Automatic failover will result in a new write region for the account and is chosen based on the failover priorities configured for the account.",
+		//		Type:        schema.TypeBool,
+		//		Optional:    true,
+		//		Default:     false,
+		//	},
+		//	"enable_multiple_write_locations": {
+		//		Description: "Enables the account to write in multiple locations.",
+		//		Type:        schema.TypeBool,
+		//		Optional:    true,
+		//		Default:     false,
+		//	},
+		//	"enable_cassandra_connector": {
+		//		Description: "Enables the cassandra connector on the Cosmos DB C* account",
+		//		Type:        schema.TypeBool,
+		//		Optional:    true,
+		//		Default:     false,
+		//	},
+		//	"disable_key_based_metadata_write_access": {
+		//		Description: "Disable write operations on metadata resources (databases, containers, throughput) via account keys",
+		//		Type:        schema.TypeBool,
+		//		Optional:    true,
+		//		Default:     false,
+		//	},
+		//	"disable_local_auth": {
+		//		Description: "Opt-out of local authentication and ensure only MSI and AAD can be used exclusively for authentication.",
+		//		Type:        schema.TypeBool,
+		//		Optional:    true,
+		//		Default:     false,
+		//	},
+		//	"enable_free_tier": {
+		//		Description: "Flag to indicate whether Free Tier is enabled.",
+		//		Type:        schema.TypeBool,
+		//		Optional:    true,
+		//		Default:     false,
+		//	},
+		//	"enable_analytical_storage": {
+		//		Description: "Flag to indicate whether to enable storage analytics.",
+		//		Type:        schema.TypeBool,
+		//		Optional:    true,
+		//		Default:     false,
+		//	},
+		//	"identity": {
+		//		Type:     schema.TypeList,
+		//		MaxItems: 1,
+		//		Optional: true,
+		//		Elem: &schema.Resource{
+		//			Schema: map[string]*schema.Schema{
+		//
+		//				"principal_id": {
+		//					Description: "System assigned principal id",
+		//					Type:        schema.TypeString,
+		//					Computed:    true,
+		//				},
+		//				"tenant_id": {
+		//					Description: "System assigned tenant id",
+		//					Type:        schema.TypeString,
+		//					Computed:    true,
+		//				},
+		//				"resource_identity_type": {
+		//					Description:  "Flag to indicate whether to enable storage analytics.",
+		//					Type:         schema.TypeString,
+		//					Optional:     true,
+		//					ValidateFunc: validation.StringInSlice([]string{"SystemAssigned", "UserAssigned", "SystemAssignedUserAssigned", "None"}, false),
+		//				},
+		//				"user_assigned_identities": {
+		//					Description: "List of user identities associated with resource",
+		//					Optional:    true,
+		//					Type:        schema.TypeList,
+		//					Elem: &schema.Resource{
+		//						Schema: map[string]*schema.Schema{
+		//							"arm_resource_id": {
+		//								Description:  "The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'.",
+		//								Type:         schema.TypeString,
+		//								Optional:     true,
+		//								ValidateFunc: validation.StringMatch(regexp.MustCompile(`^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft\\.ManagedIdentity/userAssignedIdentities/[^/]+$`), "invalid arm_resource_id"),
+		//							},
+		//							"principal_id": {
+		//								Description: "User assigned principal id",
+		//								Type:        schema.TypeString,
+		//								Computed:    true,
+		//							},
+		//							"client_id": {
+		//								Description: "User assigned client id",
+		//								Type:        schema.TypeString,
+		//								Computed:    true,
+		//							},
+		//						},
+		//					},
+		//				},
+		//			},
+		//		},
+		//	},
 
 		//"virtual_network_rules": {
 		//	Type:     schema.TypeList,
@@ -275,46 +275,46 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 		//	},
 		//},
 
-		"backup_policy": {
-			Description: "Specify analytical storage specific properties",
-			Type:        schema.TypeList,
-			Computed:    true,
-			MaxItems:    1,
-			Optional:    true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"migration_state": {
-						Description: "Specify analytical storage specific properties",
-						Type:        schema.TypeList,
-						Computed:    true,
-						MaxItems:    1,
-						Optional:    true,
-						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
-								"status": {
-									Description:  "Valid values WellDefined, FullFidelity",
-									Optional:     true,
-									Type:         schema.TypeString,
-									ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
-								},
-								"target_type": {
-									Description:  "Valid values WellDefined, FullFidelity",
-									Optional:     true,
-									Type:         schema.TypeString,
-									ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
-								},
-								"start_time": {
-									Description:  "Valid values WellDefined, FullFidelity",
-									Optional:     true,
-									Type:         schema.TypeString,
-									ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		//	"backup_policy": {
+		//		Description: "Specify analytical storage specific properties",
+		//		Type:        schema.TypeList,
+		//		Computed:    true,
+		//		MaxItems:    1,
+		//		Optional:    true,
+		//		Elem: &schema.Resource{
+		//			Schema: map[string]*schema.Schema{
+		//				"migration_state": {
+		//					Description: "Specify analytical storage specific properties",
+		//					Type:        schema.TypeList,
+		//					Computed:    true,
+		//					MaxItems:    1,
+		//					Optional:    true,
+		//					Elem: &schema.Resource{
+		//						Schema: map[string]*schema.Schema{
+		//							"status": {
+		//								Description:  "Valid values WellDefined, FullFidelity",
+		//								Optional:     true,
+		//								Type:         schema.TypeString,
+		//								ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
+		//							},
+		//							"target_type": {
+		//								Description:  "Valid values WellDefined, FullFidelity",
+		//								Optional:     true,
+		//								Type:         schema.TypeString,
+		//								ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
+		//							},
+		//							"start_time": {
+		//								Description:  "Valid values WellDefined, FullFidelity",
+		//								Optional:     true,
+		//								Type:         schema.TypeString,
+		//								ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
+		//							},
+		//						},
+		//					},
+		//				},
+		//			},
+		//		},
+		//	},
 
 		//"cors": {
 		//	Description: "Specify analytical storage specific properties",
@@ -419,55 +419,55 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 		//		},
 		//	},
 		//},
-		"connector_offer": {
-			Description: "Specify cassandra connector offer type for the Cosmos DB database C*",
-			Optional:    true,
-			Type:        schema.TypeString,
-		},
-		"key_vault_key_uri": {
-			Description: "The URI of the key vault",
-			Optional:    true,
-			Type:        schema.TypeString,
-		},
-		"default_identity": {
-			Description: "",
-			Optional:    true,
-			Type:        schema.TypeString,
-		},
-		"public_network_access": {
-			Description: "",
-			Optional:    true,
-			Type:        schema.TypeString,
-		},
-		"create_mode": {
-			Description:  "Indicate the mode of account creation. Possible values include: 'Default', 'Restore'",
-			Optional:     true,
-			Type:         schema.TypeString,
-			ValidateFunc: validation.StringInSlice([]string{"Default", "Restore"}, false),
-		},
-		"network_acl_bypass": {
-			Description:  "Indicates what services are allowed to bypass firewall checks. Possible values include: 'None', 'AzureServices'",
-			Optional:     true,
-			Type:         schema.TypeString,
-			ValidateFunc: validation.StringInSlice([]string{"None", "AzureServices"}, false),
-		},
-		"database_account_offer_type": {
-			Description: "",
-			Required:    true,
-			Type:        schema.TypeString,
-		},
-		"network_acl_bypass_resource_ids": {
-			Description: "Resource Ids for Network Acl Bypass for the Cosmos DB account.",
-			Optional:    true,
-			Type:        schema.TypeList,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-		},
+		//	"connector_offer": {
+		//		Description: "Specify cassandra connector offer type for the Cosmos DB database C*",
+		//		Optional:    true,
+		//		Type:        schema.TypeString,
+		//	},
+		//	"key_vault_key_uri": {
+		//		Description: "The URI of the key vault",
+		//		Optional:    true,
+		//		Type:        schema.TypeString,
+		//	},
+		//	"default_identity": {
+		//		Description: "",
+		//		Optional:    true,
+		//		Type:        schema.TypeString,
+		//	},
+		//	"public_network_access": {
+		//		Description: "",
+		//		Optional:    true,
+		//		Type:        schema.TypeString,
+		//	},
+		//	"create_mode": {
+		//		Description:  "Indicate the mode of account creation. Possible values include: 'Default', 'Restore'",
+		//		Optional:     true,
+		//		Type:         schema.TypeString,
+		//		ValidateFunc: validation.StringInSlice([]string{"Default", "Restore"}, false),
+		//	},
+		//	"network_acl_bypass": {
+		//		Description:  "Indicates what services are allowed to bypass firewall checks. Possible values include: 'None', 'AzureServices'",
+		//		Optional:     true,
+		//		Type:         schema.TypeString,
+		//		ValidateFunc: validation.StringInSlice([]string{"None", "AzureServices"}, false),
+		//	},
+		//	"database_account_offer_type": {
+		//		Description: "",
+		//		Required:    true,
+		//		Type:        schema.TypeString,
+		//	},
+		//	"network_acl_bypass_resource_ids": {
+		//		Description: "Resource Ids for Network Acl Bypass for the Cosmos DB account.",
+		//		Optional:    true,
+		//		Type:        schema.TypeList,
+		//		Elem: &schema.Schema{
+		//			Type: schema.TypeString,
+		//		},
+		//	},
 	}
 }
 
-func resourceAzureCosmosDB() *schema.Resource {
+func resourceAzureCosmosDBAccount() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_azure_cosmos_db` manages cosmos db resource for azure",
 
@@ -482,7 +482,7 @@ func resourceAzureCosmosDB() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAzureCosmosDBchema(),
+		Schema: duploAzureCosmosDBAccountchema(),
 	}
 }
 
@@ -523,44 +523,54 @@ func resourceAzureCosmosDBCreate(ctx context.Context, d *schema.ResourceData, m 
 func resourceAzureCosmosDBDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return nil
 }
-
 func expandAzureCosmosDB(d *schema.ResourceData) duplosdk.DuploAzureCosmosDBRequest {
-	obj := duplosdk.DuploAzureCosmosDBRequest{}
+	obj := duplosdk.DuploAzureCosmosDBAccountRequest{}
 	obj.Name = d.Get("name").(string)
 	obj.Kind = d.Get("kind").(string)
-	obj.Identity = expandIdentity(d.Get("identity").([]interface{}))
-	prop := duplosdk.DuploAzureCosmosDBProperties{}
-	prop.Locations = expandStringSlice(d.Get("locations").([]interface{}))
-	prop.IpRules = expandStringSlice(d.Get("ip_rules").([]interface{}))
-	prop.IsVirtualNetworkFilterEnabled = d.Get("is_virtual_network_filter_enabled").(bool)
-	prop.EnableAutomaticFailover = d.Get("enable_automatic_failover").(bool)
-	prop.EnableMultipleWriteLocations = d.Get("enable_multiple_write_locations").(bool)
-	prop.EnableCassandraConnector = d.Get("enable_cassandra_connector").(bool)
-	prop.DisableKeyBasedMetadataWriteAccess = d.Get("disable_key_based_metadata_write_access").(bool)
-	prop.DisableLocalAuth = d.Get("disable_local_auth").(bool)
-	prop.EnableFreeTier = d.Get("enable_free_tier").(bool)
-	prop.EnableAnalyticalStorage = d.Get("enable_analytical_storage").(bool)
-	prop.ConnectorOffer = d.Get("connector_offer").(string)
-	prop.KeyVaultKeyUri = d.Get("key_vault_key_uri").(string)
-	prop.DefaultIdentity = d.Get("default_identity").(string)
-	prop.PublicNetworkAccess = d.Get("public_network_access").(string)
-	prop.CreateMode = d.Get("create_mode").(string)
-	prop.NetworkAclBypass = d.Get("network_acl_bypass").(string)
-	prop.DatabaseAccountOfferType = d.Get("database_account_offer_type").(string)
-	prop.Capabilities = expandCapablities(d.Get("capablities").([]interface{}))
-	prop.ConsistencyPolicy = expandConsistencyPolicy(d.Get("consistency_policy").([]interface{}))
-	prop.VirtualNetworkRules = expandVirtualNetworkRules(d.Get("virtual_network_rules").([]interface{}))
-	prop.ApiProperties = expandApiProperties(d.Get("api_properties").([]interface{}))
-	prop.AnalyticalStorageConfiguration = expandAnalyticalStorageConfiguration(d.Get("analytical_storage_configuration").([]interface{}))
-	prop.BackupPolicy = expandBackupPolicy(d.Get("backup_policy").([]interface{}))
-	prop.Cors = expandCors(d.Get("cors").([]interface{}))
-	prop.RestoreParameters = expandRestoreParams(d.Get("restore_parameters").([]interface{}))
-	prop.Capacity = expandCapacity(d.Get("capacity").([]interface{}))
-	prop.NetworkAclBypassResourceIds = expandStringSlice(d.Get("network_acl_bypass_resource_ids").([]interface{}))
-	obj.Properties = &prop
-	obj.Location = d.Get("location").(string)
-	return obj
+	obj.AccountType = d.Get("type").(string)
+	obj.Locations = expandStringSlice(d.Get("locations").([]interface{}))
+	obj.ConsistencyPolicy = expandConsistencyPolicy(d.Get("consistency_policy").([]interface{}))
+	obj.Capabilities = expandCapablities(d.Get("capablities").([]interface{}))
+	obj.BackupPolicy = expandBackupPolicy(d.Get("backup_policy").([]interface{}))
 }
+
+//func expandAzureCosmosDB(d *schema.ResourceData) duplosdk.DuploAzureCosmosDBRequest {
+//	obj := duplosdk.DuploAzureCosmosDBRequest{}
+//	obj.Name = d.Get("name").(string)
+//	obj.Kind = d.Get("kind").(string)
+//	obj.Identity = expandIdentity(d.Get("identity").([]interface{}))
+//	prop := duplosdk.DuploAzureCosmosDBProperties{}
+//	prop.Locations = expandStringSlice(d.Get("locations").([]interface{}))
+//	prop.IpRules = expandStringSlice(d.Get("ip_rules").([]interface{}))
+//	prop.IsVirtualNetworkFilterEnabled = d.Get("is_virtual_network_filter_enabled").(bool)
+//	prop.EnableAutomaticFailover = d.Get("enable_automatic_failover").(bool)
+//	prop.EnableMultipleWriteLocations = d.Get("enable_multiple_write_locations").(bool)
+//	prop.EnableCassandraConnector = d.Get("enable_cassandra_connector").(bool)
+//	prop.DisableKeyBasedMetadataWriteAccess = d.Get("disable_key_based_metadata_write_access").(bool)
+//	prop.DisableLocalAuth = d.Get("disable_local_auth").(bool)
+//	prop.EnableFreeTier = d.Get("enable_free_tier").(bool)
+//	prop.EnableAnalyticalStorage = d.Get("enable_analytical_storage").(bool)
+//	prop.ConnectorOffer = d.Get("connector_offer").(string)
+//	prop.KeyVaultKeyUri = d.Get("key_vault_key_uri").(string)
+//	prop.DefaultIdentity = d.Get("default_identity").(string)
+//	prop.PublicNetworkAccess = d.Get("public_network_access").(string)
+//	prop.CreateMode = d.Get("create_mode").(string)
+//	prop.NetworkAclBypass = d.Get("network_acl_bypass").(string)
+//	prop.DatabaseAccountOfferType = d.Get("database_account_offer_type").(string)
+//	prop.Capabilities = expandCapablities(d.Get("capablities").([]interface{}))
+//	prop.ConsistencyPolicy = expandConsistencyPolicy(d.Get("consistency_policy").([]interface{}))
+//	prop.VirtualNetworkRules = expandVirtualNetworkRules(d.Get("virtual_network_rules").([]interface{}))
+//	prop.ApiProperties = expandApiProperties(d.Get("api_properties").([]interface{}))
+//	prop.AnalyticalStorageConfiguration = expandAnalyticalStorageConfiguration(d.Get("analytical_storage_configuration").([]interface{}))
+//	prop.BackupPolicy = expandBackupPolicy(d.Get("backup_policy").([]interface{}))
+//	prop.Cors = expandCors(d.Get("cors").([]interface{}))
+//	prop.RestoreParameters = expandRestoreParams(d.Get("restore_parameters").([]interface{}))
+//	prop.Capacity = expandCapacity(d.Get("capacity").([]interface{}))
+//	prop.NetworkAclBypassResourceIds = expandStringSlice(d.Get("network_acl_bypass_resource_ids").([]interface{}))
+//	obj.Properties = &prop
+//	obj.Location = d.Get("location").(string)
+//	return obj
+//}
 
 func flattenAzureCosmosDB(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDBResponse) {
 	d.Set("name", rp.Name)

@@ -166,3 +166,25 @@ func (c *Client) GetCosmosDB(tenantId, name string) (*DuploAzureCosmosDBResponse
 	}
 	return &rp, nil
 }
+
+type DuploAzureCosmosDBAccountRequest struct {
+	Name                           string                               `json:"name"`
+	Kind                           string                               `json:"kind"`
+	AccountType                    string                               `json:"type"`
+	ConsistencyPolicy              *DuploAzureCosmosDBConsistencyPolicy `json:"consistencyPolicy"`
+	Capabilities                   *[]DuploAzureCosmosDBCapability      `json:"Capabilities"`
+	Locations                      []string                             `json:"locations"`
+	BackupPolicyType               int                                  `json:"backupPolicyType,omitempty"`
+	BackupIntervalInMinutes        int                                  `json:"backupIntervalInMinutes,omitempty"`
+	BackupRetentionIntervalInHours int                                  `json:"backupRetentionIntervalInHours,omitempty"`
+	BackupStorageRedundancy        string                               `json:"backupStorageRedundancy,omitempty"`
+}
+
+func (c *Client) CreateCosmosDBAccount(tenantId string, rq DuploAzureCosmosDBAccountRequest) ClientError {
+	rp := make(map[string]interface{})
+	return c.postAPI(fmt.Sprintf("CreateCosmosDBAccount(%s)", tenantId),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts", tenantId),
+		&rq,
+		&rp)
+
+}
