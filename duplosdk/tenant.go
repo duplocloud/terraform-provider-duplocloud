@@ -430,7 +430,7 @@ func (c *Client) TenantGetExtConnSecurityGroupRule(rq *DuploTenantExtConnSecurit
 						FromPort: rq.FromPort,
 						ToPort:   rq.ToPort,
 						Sources: &[]DuploTenantExtConnSecurityGroupSource{{
-							Description: source.Description,
+							Description: (*rule.Sources)[0].Description,
 							Type:        source.Type,
 							Value:       source.Value,
 						}},

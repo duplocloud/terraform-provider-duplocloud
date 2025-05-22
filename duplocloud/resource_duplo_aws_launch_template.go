@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -30,7 +31,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"version": {
-			Description: "Any of the existing version of the launch template",
+			Description: "Any of the existing version of the launch template, if not provided, the latest version will be used",
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    true,
@@ -129,9 +130,13 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 }
 func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
-	rq := expandLaunchTemplate(d)
-	name := rq.LaunchTemplateName
 	c := m.(*duplosdk.Client)
+
+	rq, cerr := expandLaunchTemplate(d, c, tenantId)
+	if cerr != nil {
+		return diag.Errorf("%s", cerr.Error())
+	}
+	name := rq.LaunchTemplateName
 	var err duplosdk.ClientError
 	if !strings.Contains(name, "duploservices") {
 		rq.LaunchTemplateName, err = c.GetResourceName("duploservices", tenantId, name, false)
@@ -139,7 +144,7 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 			diag.FromErr(err)
 		}
 	}
-	err = c.CreateAwsLaunchTemplate(tenantId, &rq)
+	err = c.CreateAwsLaunchTemplate(tenantId, rq)
 	if err != nil {
 		return diag.Errorf("%s", err.Error())
 	}
@@ -154,11 +159,20 @@ func resourceAwsLaunchTemplateDelete(ctx context.Context, d *schema.ResourceData
 
 }
 
-func expandLaunchTemplate(d *schema.ResourceData) duplosdk.DuploAwsLaunchTemplateRequest {
-
-	return duplosdk.DuploAwsLaunchTemplateRequest{
-		LaunchTemplateName: d.Get("name").(string),
-		SourceVersion:      d.Get("version").(string),
+func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId string) (*duplosdk.DuploAwsLaunchTemplateRequest, error) {
+	sv := d.Get("version").(string)
+	name := d.Get("name").(string)
+	if sv == "" {
+		rp, err := c.GetAwsLaunchTemplate(tenantId, name)
+		if err != nil {
+			return nil, err
+		}
+		_, _, _, _, sv, _ = extractASGTemplateDetails(rp)
+		log.Printf("Setting the version to latest version %s since source version not provided ", sv)
+	}
+	return &duplosdk.DuploAwsLaunchTemplateRequest{
+		LaunchTemplateName: name,
+		SourceVersion:      sv,
 		VersionDescription: d.Get("version_description").(string),
 		LaunchTemplateData: &duplosdk.DuploLaunchTemplateData{
 			InstanceType: duplosdk.DuploStringValue{
@@ -166,7 +180,7 @@ func expandLaunchTemplate(d *schema.ResourceData) duplosdk.DuploAwsLaunchTemplat
 			},
 			ImageId: d.Get("ami").(string),
 		},
-	}
+	}, nil
 
 }
 
@@ -176,9 +190,28 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	if err != nil {
 		return err
 	}
+	name, insType, verDesc, dver, lver, imgId := extractASGTemplateDetails(rp)
+	d.Set("version_metadata", string(b))
+	d.Set("instance_type", insType)
+	d.Set("version_description", verDesc)
+	n := d.Get("name").(string)
+	d.Set("name", name)
+	if !strings.Contains(n, "duploservices") {
+		d.Set("name", n)
+	}
+
+	if v, ok := d.GetOk("version"); ok && v.(string) != "" {
+		d.Set("version", v.(string))
+	}
+	d.Set("latest_version", lver)
+	d.Set("default_version", dver)
+	d.Set("ami", imgId)
+	return nil
+}
+
+func extractASGTemplateDetails(rp *[]duplosdk.DuploLaunchTemplateResponse) (string, string, string, string, string, string) {
 	var name, insType, verDesc, dver, imgId string
 	max := 0
-	d.Set("version_metadata", string(b))
 	for _, v := range *rp {
 
 		if v.DefaultVersion {
@@ -192,19 +225,6 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 			name = v.LaunchTemplateName
 		}
 	}
-	d.Set("instance_type", insType)
-	d.Set("version_description", verDesc)
-	n := d.Get("name").(string)
-	d.Set("name", name)
-	if !strings.Contains(n, "duploservices") {
-		d.Set("name", n)
-	}
-
-	if v, ok := d.GetOk("version"); ok && v.(string) != "" {
-		d.Set("version", v.(string))
-	}
-	d.Set("latest_version", strconv.Itoa(max))
-	d.Set("default_version", dver)
-	d.Set("ami", imgId)
-	return nil
+	lver := strconv.Itoa(max)
+	return name, insType, verDesc, dver, lver, imgId
 }
