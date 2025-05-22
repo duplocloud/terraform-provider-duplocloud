@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,6 +33,7 @@ func awsLambdaPermissionSchema() map[string]*schema.Schema {
 			Description: "The Event Source Token to validate.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 		},
 		"function_name": {
 			Description: "Name of the Lambda function whose resource policy you are updating.",
@@ -49,16 +51,19 @@ func awsLambdaPermissionSchema() map[string]*schema.Schema {
 			Description: "Query parameter to specify function version or alias name. The permission will then apply to the specific qualified ARN.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 		},
 		"source_account": {
 			Description: "This parameter is used for S3 and SES. The AWS account ID (without a hyphen) of the source owner.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 		},
 		"source_arn": {
 			Description: "When the principal is an AWS service, the ARN of the specific resource within that service to grant permission to.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 		},
 		"statement_id": {
 			Description: "A unique statement identifier.",
@@ -75,7 +80,7 @@ func resourceAwsLambdaPermission() *schema.Resource {
 
 		ReadContext:   resourceAwsLambdaPermissionRead,
 		CreateContext: resourceAwsLambdaPermissionCreate,
-		UpdateContext: resourceAwsLambdaPermissionUpdate,
+		//UpdateContext: resourceAwsLambdaPermissionUpdate,
 		DeleteContext: resourceAwsLambdaPermissionDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -100,13 +105,25 @@ func resourceAwsLambdaPermissionRead(ctx context.Context, d *schema.ResourceData
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	_, clientErr := c.LambdaPermissionGet(tenantID, functionName)
+	rp, clientErr := c.LambdaPermissionGet(tenantID, functionName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("") // object missing
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s lambda permission '%s': %s", tenantID, functionName, clientErr)
+	}
+	for _, permission := range *rp {
+		if permission.Sid == sid {
+			d.Set("tenant_id", tenantID)
+			d.Set("action", permission.Action)
+			d.Set("function_name", functionName)
+			d.Set("principal", permission.Principal.Service)
+			d.Set("qualifier", d.Get("qualifier").(string))
+			d.Set("source_account", d.Get("source_account").(string))
+			d.Set("source_arn", permission.Condition.Arn["AWS:SourceArn"])
+			d.Set("statement_id", permission.Sid)
+		}
 	}
 
 	log.Printf("[TRACE] resourceAwsLambdaPermissionRead(%s, %s): end", tenantID, functionName)
@@ -143,10 +160,6 @@ func resourceAwsLambdaPermissionCreate(ctx context.Context, d *schema.ResourceDa
 	diags = resourceAwsLambdaPermissionRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsLambdaPermissionCreate(%s, %s): end", tenantID, functionName)
 	return diags
-}
-
-func resourceAwsLambdaPermissionUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
 }
 
 // DELETE resource

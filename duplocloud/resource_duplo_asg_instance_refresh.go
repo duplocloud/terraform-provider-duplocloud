@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
@@ -27,7 +28,7 @@ func asgInstanceRefresh() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"refresh_identifier": {
-			Description: "To identify refresh or invoke a refresh",
+			Description: "To identify instance refresh or invoke a instance refresh.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
@@ -89,7 +90,13 @@ func resourceASGInstanceRefreshRead(ctx context.Context, d *schema.ResourceData,
 }
 func resourceASGInstanceRefreshCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
+
 	rq := expandInstanceRefresh(d)
+	if d.Get("refresh_identifier").(string) == "" {
+		log.Println("Skipping resource creation as refresh_identifier is 0")
+		d.SetId(tenantId + "/asg-refresh/" + rq.AutoScalingGroupName)
+		return nil
+	}
 	c := m.(*duplosdk.Client)
 	err := c.AsgInstanceRefresh(tenantId, &rq)
 	if err != nil {
