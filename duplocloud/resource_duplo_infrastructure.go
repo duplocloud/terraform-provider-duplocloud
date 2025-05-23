@@ -474,13 +474,7 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 	// Wait for 20 minutes to allow infrastructure deletion.
 	// TODO: wait for it completely deleted (add an API that will actually show the status)
 	if d.Get("wait_until_deleted").(bool) {
-		diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure key vault secret", infraName, func() (interface{}, duplosdk.ClientError) {
-			return c.InfrastructureGet(infraName)
-		})
-
-		if diag != nil {
-			return diag
-		}
+		time.Sleep(20 * time.Minute)
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureDelete(%s): end", infraName)
@@ -598,9 +592,10 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 			return true, nil // object missing
 		}
 	}
-	wud := d.Get("wait_until_deleted").(bool)
-	d.Set("wait_until_deleted", wud)
-
+	wud, ok := d.GetOk("wait_until_deleted")
+	if ok {
+		d.Set("wait_until_deleted", wud.(bool))
+	}
 	d.Set("infra_name", infra.Name)
 	d.Set("account_id", infra.AccountId)
 	d.Set("cloud", infra.Cloud)
