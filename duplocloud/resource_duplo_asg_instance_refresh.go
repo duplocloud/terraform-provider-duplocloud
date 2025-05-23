@@ -28,7 +28,7 @@ func asgInstanceRefresh() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"refresh_identifier": {
-			Description: "To identify refresh or invoke a refresh, If not specified system will skip resource creation",
+			Description: "To identify instance refresh or invoke a instance refresh.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,

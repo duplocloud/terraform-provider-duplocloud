@@ -200,10 +200,11 @@ func (c *Client) TenantGetSoftDeletedKeyVault(tenantID, vaultName string) (*Dupl
 
 func (c *Client) TenantKeyVaultListDeletedVaults(tenantID string) (*[]DuploAzureTenantKeyVault, ClientError) {
 	resp := []DuploAzureTenantKeyVault{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("TenantKeyVaultListDeletedVaults(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/azure/keyvault/deleted-vaults", tenantID),
-		&resp,
+		&resp, &conf,
 	)
 	return &resp, err
 }
