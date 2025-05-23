@@ -303,11 +303,10 @@ func resourceInfrastructure() *schema.Resource {
 				Elem:        infrastructureVnetSecurityGroupsSchema(),
 			},
 			"wait_until_deleted": {
-				Description:      "Whether or not to wait until Duplo has destroyed the infrastructure.",
-				Type:             schema.TypeBool,
-				Optional:         true,
-				Default:          false,
-				DiffSuppressFunc: diffSuppressFuncIgnore,
+				Description: "Whether or not to wait until Duplo has destroyed the infrastructure.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"cluster_ip_cidr": {
 				Description: "cluster IP CIDR defines a private IP address range used for internal Kubernetes services.",
@@ -475,8 +474,7 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 	// Wait for 20 minutes to allow infrastructure deletion.
 	// TODO: wait for it completely deleted (add an API that will actually show the status)
 	if d.Get("wait_until_deleted").(bool) {
-		log.Printf("[TRACE] resourceInfrastructureDelete(%s): waiting for 20 minutes because 'wait_until_deleted' is 'true'", infraName)
-		time.Sleep(time.Duration(20) * time.Minute)
+		time.Sleep(20 * time.Minute)
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureDelete(%s): end", infraName)
@@ -594,7 +592,10 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 			return true, nil // object missing
 		}
 	}
-
+	wud, ok := d.GetOk("wait_until_deleted")
+	if ok {
+		d.Set("wait_until_deleted", wud.(bool))
+	}
 	d.Set("infra_name", infra.Name)
 	d.Set("account_id", infra.AccountId)
 	d.Set("cloud", infra.Cloud)
