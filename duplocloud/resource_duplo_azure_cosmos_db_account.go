@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func duploAzureCosmosDBschema() map[string]*schema.Schema {
+func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the host will be created in.",
@@ -482,14 +482,14 @@ func duploAzureCosmosDBschema() map[string]*schema.Schema {
 	}
 }
 
-func resourceAzureCosmosDB() *schema.Resource {
+func resourceAzureCosmosDBAccount() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_azure_cosmos_db` manages cosmos db resource for azure",
 
-		ReadContext:   resourceAzureCosmosDBRead,
-		CreateContext: resourceAzureCosmosDBCreate,
-		UpdateContext: resourceAzureCosmosDBUpdate,
-		DeleteContext: resourceAzureCosmosDBDelete,
+		ReadContext:   resourceAzureCosmosDBAccountRead,
+		CreateContext: resourceAzureCosmosDBAccountCreate,
+		UpdateContext: resourceAzureCosmosDBAccountUpdate,
+		DeleteContext: resourceAzureCosmosDBAccountDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -497,11 +497,11 @@ func resourceAzureCosmosDB() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAzureCosmosDBschema(),
+		Schema: duploAzureCosmosDBAccountchema(),
 	}
 }
 
-func resourceAzureCosmosDBRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureCosmosDBAccountRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
 	c := m.(*duplosdk.Client)
@@ -512,7 +512,7 @@ func resourceAzureCosmosDBRead(ctx context.Context, d *schema.ResourceData, m in
 	flattenAzureCosmosDBAccount(d, *rp)
 	return nil
 }
-func resourceAzureCosmosDBUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureCosmosDBAccountUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
 	rq := expandAzureCosmosDB(d)
@@ -529,7 +529,7 @@ func resourceAzureCosmosDBUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 	return nil
 }
-func resourceAzureCosmosDBCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureCosmosDBAccountCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
 	log.Printf("resourceAzureCosmosDBCreate started for %s", tenantId)
 	rq := expandAzureCosmosDB(d)
@@ -549,10 +549,10 @@ func resourceAzureCosmosDBCreate(ctx context.Context, d *schema.ResourceData, m 
 	return nil
 }
 
-func resourceAzureCosmosDBDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureCosmosDBAccountDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return nil
 }
-func expandAzureCosmosDB(d *schema.ResourceData) duplosdk.DuploAzureCosmosDBAccount {
+func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmosDBAccount {
 	obj := duplosdk.DuploAzureCosmosDBAccount{}
 	obj.Name = d.Get("name").(string)
 	obj.Kind = d.Get("kind").(string)
@@ -570,7 +570,7 @@ func expandAzureCosmosDB(d *schema.ResourceData) duplosdk.DuploAzureCosmosDBAcco
 	obj.IsFreeTierEnabled = d.Get("enable_free_tier").(bool)
 	return obj
 }
-func expandBackupPolicy(inf []interface{}) (int, int, string, string) {
+func expandBackupPolicyAccount(inf []interface{}) (int, int, string, string) {
 	var backupInterval, backupRetentionInterval int
 	var backupType, backupStorageRedundancy string
 	if len(inf) > 0 {
@@ -585,6 +585,76 @@ func expandBackupPolicy(inf []interface{}) (int, int, string, string) {
 		}
 	}
 	return backupInterval, backupRetentionInterval, backupType, backupStorageRedundancy
+}
+
+func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDBAccount) {
+	d.Set("name", rp.Name)
+	d.Set("kind", rp.Kind)
+	d.Set("disable_key_based_metadata_write_access", rp.DisableKeyBasedMetadataWriteAccess)
+	d.Set("enable_free_tier", rp.IsFreeTierEnabled)
+	d.Set("public_network_access", rp.PublicNetworkAccess)
+	if len(*rp.Capabilities) > 0 {
+		d.Set("capabilities", flattenCapablities(*rp.Capabilities))
+	}
+	if rp.ConsistencyPolicy != nil {
+		d.Set("consistency_policy", flattenConsistencyPolicy(*rp.ConsistencyPolicy))
+
+	}
+	d.Set("backup_policy", flattenBackupPolicy(rp))
+
+}
+
+func flattenBackupPolicy(bp duplosdk.DuploAzureCosmosDBAccount) []interface{} {
+	obj := []interface{}{}
+	m := make(map[string]interface{})
+	m1 := make(map[string]interface{})
+	m1["backup_interval"] = bp.BackupIntervalInMinutes
+	m1["backup_retention_interval"] = bp.BackupRetentionIntervalInHours
+	m1["backup_storage_redundancy"] = bp.BackupStorageRedundancy
+	m1["type"] = bp.BackupPolicyType
+	obj = append(obj, m)
+	return obj
+
+}
+func expandCapablities(inf []interface{}) *[]duplosdk.DuploAzureCosmosDBCapability {
+	obj := []duplosdk.DuploAzureCosmosDBCapability{}
+	for _, i := range inf {
+		o := duplosdk.DuploAzureCosmosDBCapability{
+			Name: i.(string),
+		}
+		obj = append(obj, o)
+	}
+	return &obj
+}
+
+func flattenCapablities(cap []duplosdk.DuploAzureCosmosDBCapability) []interface{} {
+	s := []string{}
+	for _, i := range cap {
+		s = append(s, i.Name)
+	}
+	return flattenStringList(s)
+}
+
+func expandConsistencyPolicy(inf []interface{}) *duplosdk.DuploAzureCosmosDBConsistencyPolicy {
+	obj := duplosdk.DuploAzureCosmosDBConsistencyPolicy{}
+	for _, i := range inf {
+		m := i.(map[string]interface{})
+		obj.DefaultConsistencyLevel = m["default_consistency_level"].(string)
+		obj.MaxIntervalInSeconds = m["max_interval_in_seconds"].(int)
+		obj.MaxStalenessPrefix = m["max_staleness_prefix"].(float64)
+	}
+	return &obj
+}
+
+func flattenConsistencyPolicy(cons duplosdk.DuploAzureCosmosDBConsistencyPolicy) []interface{} {
+	obj := []interface{}{}
+	m := make(map[string]interface{})
+	m["default_consistency_level"] = cons.DefaultConsistencyLevel
+	m["max_interval_in_seconds"] = cons.MaxIntervalInSeconds
+	m["max_staleness_prefix"] = cons.MaxStalenessPrefix
+	obj = append(obj, m)
+
+	return obj
 }
 
 /*
