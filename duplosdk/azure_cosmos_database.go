@@ -143,10 +143,10 @@ type DuploAzureCosmosDBManagedServiceIdentityUserAssignedIdentities struct {
 	ClientId    string `json:"clientId"`
 }
 
-func (c *Client) CreateCosmosDB(tenantId string, rq DuploAzureCosmosDBRequest) ClientError {
+func (c *Client) CreateCosmosDB(tenantId string, account string, rq DuploAzureCosmosDB) ClientError {
 	rp := make(map[string]interface{})
 	err := c.postAPI(fmt.Sprintf("CreateCosmosDB(%s)", tenantId),
-		fmt.Sprintf("v3/subscriptions/%s/azure/cosmosDb/account", tenantId),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases", tenantId, account),
 		&rq,
 		&rp)
 	if err != nil {
@@ -182,6 +182,20 @@ type DuploAzureCosmosDBAccount struct {
 	IsFreeTierEnabled                  bool                                 `json:"IsFreeTierEnabled,omitempty"`
 	PublicNetworkAccess                string                               `json:"PublicNetworkAccess,omitempty"`
 	CapacityMode                       string                               `json:"CapacityMode,omitempty"`
+}
+
+type DuploAzureCosmosDB struct {
+	Resource     DuploAzureCosmosDBResource     `json:"Resource"`
+	Name         string                         `json:"Name"`
+	ResourceType DuploAzureCosmosDBResourceType `json:"ResourceType"`
+}
+type DuploAzureCosmosDBResource struct {
+	DatabaseName string `json:"databaseName"`
+}
+
+type DuploAzureCosmosDBResourceType struct {
+	Namespace string `json:"Namespace"`
+	Type      string `json:"Type"`
 }
 
 func (c *Client) CreateCosmosDBAccount(tenantId string, rq DuploAzureCosmosDBAccount) ClientError {
