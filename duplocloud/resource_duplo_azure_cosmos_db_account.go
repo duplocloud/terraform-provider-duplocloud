@@ -506,8 +506,13 @@ func resourceAzureCosmosDBAccountRead(ctx context.Context, d *schema.ResourceDat
 	idParts := strings.Split(id, "/")
 	c := m.(*duplosdk.Client)
 	rp, err := c.GetCosmosDBAccount(idParts[0], idParts[3])
-	if err != nil {
+	if err != nil && err.Status() != 404 {
 		return diag.Errorf("Error fetching cosmos db account %s details for tenantId %s", idParts[2], idParts[0])
+	}
+	if rp == nil {
+		log.Printf("[DEBUG] Cosmos DB account %s not found for tenantId %s, removing from state", idParts[2], idParts[0])
+		d.SetId("")
+		return nil
 	}
 	flattenAzureCosmosDBAccount(d, *rp)
 	return nil
@@ -515,7 +520,7 @@ func resourceAzureCosmosDBAccountRead(ctx context.Context, d *schema.ResourceDat
 func resourceAzureCosmosDBAccountUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	rq := expandAzureCosmosDB(d)
+	rq := expandAzureCosmosDBAccount(d)
 	c := m.(*duplosdk.Client)
 	err := c.UpdateCosmosDBAccount(idParts[0], idParts[1], rq)
 	if err != nil {
@@ -532,7 +537,7 @@ func resourceAzureCosmosDBAccountUpdate(ctx context.Context, d *schema.ResourceD
 func resourceAzureCosmosDBAccountCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
 	log.Printf("resourceAzureCosmosDBCreate started for %s", tenantId)
-	rq := expandAzureCosmosDB(d)
+	rq := expandAzureCosmosDBAccount(d)
 	c := m.(*duplosdk.Client)
 	err := c.CreateCosmosDBAccount(tenantId, rq)
 	if err != nil {
@@ -550,6 +555,13 @@ func resourceAzureCosmosDBAccountCreate(ctx context.Context, d *schema.ResourceD
 }
 
 func resourceAzureCosmosDBAccountDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	id := d.Id()
+	idParts := strings.Split(id, "/")
+	c := m.(*duplosdk.Client)
+	err := c.DeleteCosmosDBAccount(idParts[0], idParts[3])
+	if err != nil {
+		return diag.Errorf("Error deleting cosmos db account %s for tenantId %s : %s", idParts[3], idParts[0], err.Error())
+	}
 	return nil
 }
 func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmosDBAccount {
@@ -570,13 +582,12 @@ func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmo
 	obj.IsFreeTierEnabled = d.Get("enable_free_tier").(bool)
 	return obj
 }
-func expandBackupPolicyAccount(inf []interface{}) (int, int, string, string) {
+func expandBackupPolicy(inf []interface{}) (int, int, string, string) {
 	var backupInterval, backupRetentionInterval int
 	var backupType, backupStorageRedundancy string
 	if len(inf) > 0 {
 		m := inf[0].(map[string]interface{})
-		minf := m["migration_state"].([]interface{})
-		for _, i := range minf {
+		for _, i := range m {
 			mi := i.(map[string]interface{})
 			backupInterval = mi["backup_interval"].(int)
 			backupRetentionInterval = mi["backup_retention_interval"].(int)

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func duploAzureCosmosDBschema() map[string]*schema.Schema {
+func duploAzureCosmosDBContainerSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
 			Description:  "The GUID of the tenant in which the Cosmos DB database will be created for specified account",
@@ -23,11 +23,19 @@ func duploAzureCosmosDBschema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "The name for Cosmsos DB database.",
+			Description: "The name for Cosmsos DB database container name.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
 		},
+
+		"database_name": {
+			Description: "The name for Cosmsos DB database in which container will be created.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+		},
+
 		"account_name": {
 			Description: "Indicates on which account database will be created",
 			Type:        schema.TypeString,
@@ -35,26 +43,38 @@ func duploAzureCosmosDBschema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"type": {
-			Description: "Specifies the Cosmos DB account type. Defaults to 'databaseAccounts/sqlDatabases'",
+			Description: "Specifies the Cosmos DB account type.",
 			Type:        schema.TypeString,
 			Required:    true,
-			Default:     "databaseAccounts/sqlDatabases",
+			Default:     "databaseAccounts/sqlDatabases/containers",
 		},
 		"namespace": {
-			Description: "The Azure resource provider namespace for Cosmos DB. Defaults to 'Microsoft.DocumentDB'. This value is typically not changed and identifies the resource type within Azure.",
+			Description: "The Azure resource provider namespace for Cosmos DB. This value is typically not changed and identifies the resource type within Azure.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Default:     "Microsoft.DocumentDB"},
+			Default:     "Microsoft.DocumentDB",
+		},
+		"partition_key_path": {
+			Description: "The partition key for the Cosmos DB container. This is a required field for creating a Cosmos DB container.",
+			Type:        schema.TypeString,
+			Required:    true,
+		},
+		"partition_key_version": {
+			Description: "The version of the partition key for the Cosmos DB container. This is a required field for creating a Cosmos DB container.",
+			Type:        schema.TypeString,
+			Default:     2,
+			Optional:    true,
+		},
 	}
 }
 
-func resourceAzureCosmosDB() *schema.Resource {
+func resourceAzureCosmosDBContainer() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_azure_cosmos_db` manages cosmos db resource for azure",
 
-		ReadContext:   resourceAzureCosmosDBRead,
-		CreateContext: resourceAzureCosmosDBCreate,
-		DeleteContext: resourceAzureCosmosDBDelete,
+		ReadContext:   resourceAzureCosmosDBContainerRead,
+		CreateContext: resourceAzureCosmosDBContainerCreate,
+		DeleteContext: resourceAzureCosmosDBContainerDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -62,11 +82,11 @@ func resourceAzureCosmosDB() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAzureCosmosDBschema(),
+		Schema: duploAzureCosmosDBContainerSchema(),
 	}
 }
 
-func resourceAzureCosmosDBRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureCosmosDBContainerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
 	c := m.(*duplosdk.Client)
@@ -82,7 +102,7 @@ func resourceAzureCosmosDBRead(ctx context.Context, d *schema.ResourceData, m in
 	flattenAzureCosmosDB(d, *rp)
 	return nil
 }
-func resourceAzureCosmosDBCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureCosmosDBContainerCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
 	log.Printf("resourceAzureCosmosDBCreate started for %s", tenantId)
 	account := d.Get("account_name").(string)
@@ -103,7 +123,7 @@ func resourceAzureCosmosDBCreate(ctx context.Context, d *schema.ResourceData, m 
 	return nil
 }
 
-func resourceAzureCosmosDBDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureCosmosDBContainerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
 	if len(idParts) < 5 {
@@ -122,7 +142,7 @@ func resourceAzureCosmosDBDelete(ctx context.Context, d *schema.ResourceData, m 
 	// Return nil to indicate successful deletion
 	return nil
 }
-func expandAzureCosmosDB(d *schema.ResourceData) duplosdk.DuploAzureCosmosDB {
+func expandAzureCosmosDBContainer(d *schema.ResourceData) duplosdk.DuploAzureCosmosDB {
 	obj := duplosdk.DuploAzureCosmosDB{}
 
 	obj.Resource = duplosdk.DuploAzureCosmosDBResource{
@@ -137,7 +157,7 @@ func expandAzureCosmosDB(d *schema.ResourceData) duplosdk.DuploAzureCosmosDB {
 	return obj
 }
 
-func flattenAzureCosmosDB(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDB) {
+func flattenAzureCosmosDBContainer(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDB) {
 	d.Set("name", rp.Resource.DatabaseName)
 	d.Set("namespace", rp.ResourceType.Namespace)
 	d.Set("type", rp.ResourceType.Type)

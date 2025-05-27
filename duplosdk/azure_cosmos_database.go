@@ -156,10 +156,10 @@ func (c *Client) CreateCosmosDB(tenantId string, account string, rq DuploAzureCo
 	return nil
 }
 
-func (c *Client) GetCosmosDB(tenantId, name string) (*DuploAzureCosmosDBResponse, ClientError) {
-	rp := DuploAzureCosmosDBResponse{}
-	err := c.getAPI(fmt.Sprintf("GetCosmosDB(%s,%s)", tenantId, name),
-		fmt.Sprintf("v3/subscriptions/%s/azure/cosmosDb/account/%s", tenantId, name),
+func (c *Client) GetCosmosDB(tenantId, account, name string) (*DuploAzureCosmosDB, ClientError) {
+	rp := DuploAzureCosmosDB{}
+	err := c.getAPI(fmt.Sprintf("GetCosmosDB(%s,%s,%s)", tenantId, account, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases/%s", tenantId, account, name),
 		&rp)
 	if err != nil {
 		return nil, err
@@ -225,4 +225,29 @@ func (c *Client) UpdateCosmosDBAccount(tenantId string, name string, rq DuploAzu
 		&rq,
 		&rp)
 
+}
+
+func (c *Client) DeleteCosmosDBAccount(tenantId, name string) ClientError {
+	return c.deleteAPI(fmt.Sprintf("DeleteCosmosDBAccount(%s,%s)", tenantId, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s", tenantId, name), nil)
+}
+
+func (c *Client) DeleteCosmosDB(tenantId, account, name string) ClientError {
+	return c.deleteAPI(fmt.Sprintf("DeleteCosmosDB(%s,%s,%s)", tenantId, account, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases/%s", tenantId, account, name), nil)
+}
+
+type DuploAzureCosmosDBContainer struct {
+	Resource     *DuploAzureCosmosDBContainerResource `json:"Resource"`
+	Name         string                               `json:"Name"`
+	ResourceType *DuploAzureCosmosDBResourceType      `json:"ResourceType"`
+}
+type DuploAzureCosmosDBContainerResource struct {
+	ContainerName string                                   `json:"ContainerName"`
+	PartitionKey  *DuploAzureCosmosDBContainerPartitionKey `json:"PartitionKey"`
+}
+
+type DuploAzureCosmosDBContainerPartitionKey struct {
+	Paths   []string `json:"paths"`
+	Version int      `json:"version"`
 }
