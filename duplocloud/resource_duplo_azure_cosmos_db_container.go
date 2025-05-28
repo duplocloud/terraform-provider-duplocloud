@@ -59,18 +59,12 @@ func duploAzureCosmosDBContainerSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 		},
-		"partition_key_version": {
-			Description: "The version of the partition key for the Cosmos DB container. This is a required field for creating a Cosmos DB container.",
-			Type:        schema.TypeString,
-			Default:     2,
-			Optional:    true,
-		},
 	}
 }
 
 func resourceAzureCosmosDBContainer() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_cosmos_db` manages cosmos db resource for azure",
+		Description: "`duplocloud_azure_cosmos_db_container` manages cosmos db resource for azure",
 
 		ReadContext:   resourceAzureCosmosDBContainerRead,
 		CreateContext: resourceAzureCosmosDBContainerCreate,
@@ -89,36 +83,47 @@ func resourceAzureCosmosDBContainer() *schema.Resource {
 func resourceAzureCosmosDBContainerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
+	if len(idParts) != 6 {
+		return diag.Errorf("Invalid resource ID format: %s. Expected format: tenantId/cosmosdb/accountName/databaseName/container/containerName", id)
+	}
 	c := m.(*duplosdk.Client)
-	rp, err := c.GetCosmosDB(idParts[0], idParts[2], idParts[4])
+	tenantId := idParts[0]
+	account := idParts[2]
+	dbName := idParts[3]
+	container := idParts[5]
+	rp, err := c.GetCosmosDBDatabaseContainer(tenantId, account, dbName, container)
 	if err != nil && err.Status() != 404 {
-		return diag.Errorf("Error fetching cosmos db database %s from account %s details for tenantId %s", idParts[0], idParts[2], idParts[0])
+		return diag.Errorf("Error fetching cosmos db container %s associated to database %s from account %s of tenantId %s", container, dbName, account, tenantId)
 	}
 	if rp == nil {
-		log.Printf("[DEBUG] resourceAzureCosmosDBRead: Cosmos DB database %s from account %s for tenantId %s not found, removing from state", idParts[4], idParts[2], idParts[0])
+		log.Printf("[DEBUG] resourceAzureCosmosDBRead: Cosmos DB container %s of database %s from account %s for tenantId %s not found, removing from state", container, dbName, account, tenantId)
 		d.SetId("")
 		return nil
 	}
-	flattenAzureCosmosDB(d, *rp)
+	d.Set("tenant_id", tenantId)
+	d.Set("account_name", account)
+	d.Set("database_name", dbName)
+	flattenAzureCosmosDBContainer(d, *rp)
 	return nil
 }
 func resourceAzureCosmosDBContainerCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantId := d.Get("tenant_id").(string)
-	log.Printf("resourceAzureCosmosDBCreate started for %s", tenantId)
+	log.Printf("resourceAzureCosmosDBContainerCreate started for %s", tenantId)
 	account := d.Get("account_name").(string)
-	rq := expandAzureCosmosDB(d)
+	database := d.Get("database_name").(string)
+	rq := expandAzureCosmosDBContainer(d)
 	c := m.(*duplosdk.Client)
-	err := c.CreateCosmosDB(tenantId, account, rq)
+	err := c.CreateCosmosDBDatabaseContainer(tenantId, account, database, rq)
 	if err != nil {
 		return diag.Errorf("Error creating cosmos db for tenantId %s : %s", tenantId, err.Error())
 	}
-	id := fmt.Sprintf("%s/cosmosdb/%s/database/%s", tenantId, account, rq.Name)
+	id := fmt.Sprintf("%s/cosmosdb/%s/%s/container/%s", tenantId, account, database, rq.Name)
 	d.SetId(id)
 	diag := resourceAzureCosmosDBRead(ctx, d, m)
 	if diag != nil {
 		return diag
 	}
-	log.Printf("resourceAzureCosmosDBCreate end for %s", tenantId)
+	log.Printf("resourceAzureCosmosDBContainerCreate end for %s", tenantId)
 
 	return nil
 }
@@ -131,10 +136,11 @@ func resourceAzureCosmosDBContainerDelete(ctx context.Context, d *schema.Resourc
 	}
 	tenantId := idParts[0]
 	accountName := idParts[2]
-	databaseName := idParts[4]
+	databaseName := idParts[3]
+	containerName := idParts[5]
 	log.Printf("resourceAzureCosmosDBDelete started for %s", tenantId)
 	c := m.(*duplosdk.Client)
-	err := c.DeleteCosmosDB(tenantId, accountName, databaseName)
+	err := c.DeleteCosmosDBDatabaseContainer(tenantId, accountName, databaseName, containerName)
 	if err != nil {
 		return diag.Errorf("Error deleting Cosmos DB database %s from account %s for tenantId %s: %s", databaseName, accountName, tenantId, err.Error())
 	}
@@ -142,14 +148,18 @@ func resourceAzureCosmosDBContainerDelete(ctx context.Context, d *schema.Resourc
 	// Return nil to indicate successful deletion
 	return nil
 }
-func expandAzureCosmosDBContainer(d *schema.ResourceData) duplosdk.DuploAzureCosmosDB {
-	obj := duplosdk.DuploAzureCosmosDB{}
-
-	obj.Resource = duplosdk.DuploAzureCosmosDBResource{
-		DatabaseName: d.Get("name").(string),
+func expandAzureCosmosDBContainer(d *schema.ResourceData) duplosdk.DuploAzureCosmosDBContainer {
+	obj := duplosdk.DuploAzureCosmosDBContainer{}
+	paths := []string{}
+	paths = append(paths, d.Get("partition_key_path").(string))
+	obj.Resource = &duplosdk.DuploAzureCosmosDBContainerResource{
+		ContainerName: d.Get("name").(string),
+		PartitionKey: &duplosdk.DuploAzureCosmosDBContainerPartitionKey{
+			Paths: paths,
+		},
 	}
 
-	obj.ResourceType = duplosdk.DuploAzureCosmosDBResourceType{
+	obj.ResourceType = &duplosdk.DuploAzureCosmosDBResourceType{
 		Namespace: d.Get("namespace").(string),
 		Type:      d.Get("type").(string),
 	}
@@ -157,8 +167,9 @@ func expandAzureCosmosDBContainer(d *schema.ResourceData) duplosdk.DuploAzureCos
 	return obj
 }
 
-func flattenAzureCosmosDBContainer(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDB) {
-	d.Set("name", rp.Resource.DatabaseName)
+func flattenAzureCosmosDBContainer(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDBContainer) {
+	d.Set("name", rp.Resource.ContainerName)
+	d.Set("partition_key_path", rp.Resource.PartitionKey.Paths[0])
 	d.Set("namespace", rp.ResourceType.Namespace)
 	d.Set("type", rp.ResourceType.Type)
 }

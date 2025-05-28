@@ -1,6 +1,10 @@
 package duplosdk
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 type DuploAzureCosmosDBRequest struct {
 	Name       string                                    `json:"name"`
@@ -125,10 +129,9 @@ type DuploAzureCosmosDBCapability struct {
 }
 
 type DuploAzureCosmosDBConsistencyPolicy struct {
-	MaxStalenessPrefix      float64 `json:"maxStalenessPrefix"`
-	MaxIntervalInSeconds    int     `json:"maxIntervalInSeconds"`
-	DefaultConsistencyLevel string  `json:"defaultConsistencyLevel"` //ENUM: Eventual,Session,BoundedStaleness,Strong,
-
+	MaxStalenessPrefix      float64          `json:"maxStalenessPrefix"`
+	MaxIntervalInSeconds    int              `json:"maxIntervalInSeconds"`
+	DefaultConsistencyLevel ConsistencyLevel `json:"defaultConsistencyLevel"` // ENUM: Eventual,Session,BoundedStaleness,Strong,
 }
 
 type DuploAzureCosmosDBManagedServiceIdentity struct {
@@ -250,4 +253,85 @@ type DuploAzureCosmosDBContainerResource struct {
 type DuploAzureCosmosDBContainerPartitionKey struct {
 	Paths   []string `json:"paths"`
 	Version int      `json:"version"`
+}
+
+func (c *Client) GetCosmosDBDatabaseContainer(tenantId, account, dbName, name string) (*DuploAzureCosmosDBContainer, ClientError) {
+	rp := DuploAzureCosmosDBContainer{}
+	err := c.getAPI(fmt.Sprintf("GetCosmosDBDatabaseContainer(%s,%s,%s)", tenantId, account, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases/%s/containers/%s", tenantId, account, dbName, name),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+func (c *Client) CreateCosmosDBDatabaseContainer(tenantId, account, dbName string, rq DuploAzureCosmosDBContainer) ClientError {
+	rp := make(map[string]interface{})
+	return c.postAPI(fmt.Sprintf("CreateCosmosDBDatabaseContainer(%s,%s,%s)", tenantId, account, dbName),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases/%s/containers", tenantId, account, dbName),
+		&rq,
+		&rp)
+}
+func (c *Client) DeleteCosmosDBDatabaseContainer(tenantId, account, dbName, name string) ClientError {
+	return c.deleteAPI(fmt.Sprintf("DeleteCosmosDBDatabaseContainer(%s,%s,%s)", tenantId, account, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases/%s/containers/%s", tenantId, account, dbName, name), nil)
+}
+
+type ConsistencyLevel int
+
+const (
+	Eventual ConsistencyLevel = iota
+	Session
+	BoundedStaleness
+	Strong
+	ConsistentPrefix
+)
+
+var (
+	nameToValue = map[string]ConsistencyLevel{
+		"Eventual":         Eventual,
+		"Session":          Session,
+		"BoundedStaleness": BoundedStaleness,
+		"Strong":           Strong,
+		"ConsistentPrefix": ConsistentPrefix,
+	}
+
+	valueToName = map[ConsistencyLevel]string{
+		Eventual:         "Eventual",
+		Session:          "Session",
+		BoundedStaleness: "BoundedStaleness",
+		Strong:           "Strong",
+		ConsistentPrefix: "ConsistentPrefix",
+	}
+)
+
+func (c *ConsistencyLevel) UnmarshalJSON(data []byte) error {
+	// Try string first
+	var str string
+	if err := json.Unmarshal(data, &str); err == nil {
+		val, ok := nameToValue[strings.TrimSpace(str)]
+		if !ok {
+			return fmt.Errorf("unknown consistency level string: %s", str)
+		}
+		*c = val
+		return nil
+	}
+
+	// Try int fallback
+	var intVal int
+	if err := json.Unmarshal(data, &intVal); err == nil {
+		*c = ConsistencyLevel(intVal)
+		return nil
+	}
+
+	return fmt.Errorf("invalid consistency level: %s", string(data))
+}
+
+func (c ConsistencyLevel) MarshalJSON() ([]byte, error) {
+	name, ok := valueToName[c]
+	if !ok {
+		return nil, fmt.Errorf("unknown consistency level value: %d", c)
+	}
+	return json.Marshal(name)
 }

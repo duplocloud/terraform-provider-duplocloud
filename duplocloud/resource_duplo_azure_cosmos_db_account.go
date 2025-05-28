@@ -106,14 +106,21 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 						Computed:    true,
 					},
 					"backup_storage_redundancy": {
-						Description: "Backup retention interval in hours",
-						Optional:    true,
-						Type:        schema.TypeInt,
-						Computed:    true,
+						Description:  "Backup storage redundancy type. Valid values are Geo, Local, Zone. Defaults to Geo.",
+						Optional:     true,
+						Type:         schema.TypeInt,
+						Computed:     true,
+						ValidateFunc: validation.StringInSlice([]string{"Geo", "Local", "Zone"}, false),
 					},
 					"type": {
-						Description: "Valid values WellDefined, FullFidelity",
-						Optional:    true,
+						Description:  "Valid values Periodic, Continuous",
+						Optional:     true,
+						Type:         schema.TypeString,
+						Default:      "Periodic",
+						ValidateFunc: validation.StringInSlice([]string{"Periodic", "Continuous"}, false),
+					},
+					"continuous_mode_tier": {
+						Description: "The continuous mode tier for the Cosmos DB account. This is only applicable if the backup policy type is Continuous.",
 						Type:        schema.TypeString,
 						Computed:    true,
 					},
@@ -650,7 +657,9 @@ func expandConsistencyPolicy(inf []interface{}) *duplosdk.DuploAzureCosmosDBCons
 	obj := duplosdk.DuploAzureCosmosDBConsistencyPolicy{}
 	for _, i := range inf {
 		m := i.(map[string]interface{})
-		obj.DefaultConsistencyLevel = m["default_consistency_level"].(string)
+		if v, ok := m["default_consistency_level"].(duplosdk.ConsistencyLevel); ok {
+			obj.DefaultConsistencyLevel = v
+		}
 		obj.MaxIntervalInSeconds = m["max_interval_in_seconds"].(int)
 		obj.MaxStalenessPrefix = m["max_staleness_prefix"].(float64)
 	}
