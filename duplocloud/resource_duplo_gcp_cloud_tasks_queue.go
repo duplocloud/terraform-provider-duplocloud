@@ -49,25 +49,27 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"url": {
-						Description: "",
+						Description: "Specify the endpoint URL to which the HTTP request will be sent when the Cloud Tasks queue triggers the HTTP target.",
 						Type:        schema.TypeString,
 						Required:    true,
 					},
 					"method": {
-						Description: "",
-						Type:        schema.TypeString,
-						Required:    true,
+						Description:  "The HTTP method to use for the request. Must be one of: `POST`, `GET`, `PUT`, `DELETE`, `PATCH`, `HEAD`.",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"POST", "GET", "PUT", "DELETE", "PATCH", "HEAD"}, false),
 					},
 					"headers": {
-						Description: "",
+						Description: "A map of HTTP headers to include in the request. Each key is a header name, and each value is the corresponding header value.",
 						Type:        schema.TypeMap,
 						Elem:        &schema.Schema{Type: schema.TypeString},
 						Required:    true,
 					},
 					"body": {
-						Description: "",
+						Description: "The body of the HTTP request. This field is required and must be base64 string.",
 						Type:        schema.TypeString,
 						Optional:    true,
+						ForceNew:    true,
 					},
 				},
 			},
@@ -82,25 +84,30 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"relative_uri": {
-						Description: "",
+						Description: "Specify the relative URL path to which the HTTP request will be sent when the Cloud Tasks queue triggers the App Engine target.",
 						Type:        schema.TypeString,
 						Required:    true,
+						ForceNew:    true,
 					},
 					"method": {
-						Description: "",
-						Type:        schema.TypeString,
-						Required:    true,
+						Description:  "The HTTP method to use for the request. Must be one of: `POST`, `PUT`, `PATCH`.",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"POST", "PUT", "PATCH"}, false),
+						ForceNew:     true,
 					},
 					"headers": {
-						Description: "",
+						Description: "A map of HTTP headers to include in the request. Each key is a header name, and each value is the corresponding header value.",
 						Type:        schema.TypeMap,
 						Elem:        &schema.Schema{Type: schema.TypeString},
 						Required:    true,
+						ForceNew:    true,
 					},
 					"body": {
-						Description: "",
+						Description: "The body of the HTTP request. This field is optional and can be used to send additional data in the request should be base64 encoded.",
 						Type:        schema.TypeString,
 						Required:    true,
+						ForceNew:    true,
 					},
 				},
 			},
@@ -122,7 +129,6 @@ func resourceGcpCloudQueueTask() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(3 * time.Minute),
-			Update: schema.DefaultTimeout(3 * time.Minute),
 			Delete: schema.DefaultTimeout(3 * time.Minute),
 		},
 		Schema: gcpCloudTasksSchema(),
@@ -297,8 +303,7 @@ func gcpCloudTasksQueueSchema() map[string]*schema.Schema {
 		"location": {
 			Description: "The name of the cloud tasks queue",
 			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Computed:    true,
 		},
 		"fullname": {
 			Description: "The full name of the cloud function.",
