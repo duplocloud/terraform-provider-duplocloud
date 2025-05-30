@@ -227,7 +227,10 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.FromErr(err)
 		}
 	}
-
+	werr := asgWaitUntilReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
+	if werr != nil {
+		return diag.FromErr(fmt.Errorf("error waiting for ASG profile '%s' to be ready: %s", rp, werr))
+	}
 	diags = resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): end", rq.TenantId, rq.FriendlyName)
 	return diags
@@ -275,7 +278,10 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		if diags != nil {
 			return diags
 		}
-
+		werr := asgWaitUntilReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
+		if werr != nil {
+			return diag.FromErr(fmt.Errorf("error waiting for ASG profile '%s' to be ready: %s", rp, werr))
+		}
 		//By default, wait until the ASG instances to be healthy.
 		if d.Get("wait_for_capacity") == nil || d.Get("wait_for_capacity").(bool) {
 			err := asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rq.MinSize, rp, d.Timeout("create"))
@@ -588,4 +594,31 @@ func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags strin
 	}
 
 	return false, ""
+}
+
+func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.AsgProfileGet(tenantID, name)
+			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
+			status := "pending"
+			if err == nil {
+				if rp.Created {
+					status = "ready"
+				} else {
+					status = "pending"
+				}
+			}
+
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] asgWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
