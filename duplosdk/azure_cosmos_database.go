@@ -145,7 +145,7 @@ type DuploAzureCosmosDBManagedServiceIdentityUserAssignedIdentities struct {
 }
 
 func (c *Client) CreateCosmosDB(tenantId string, account string, rq DuploAzureCosmosDB) ClientError {
-	rp := make(map[string]interface{})
+	rp := ""
 	err := c.postAPI(fmt.Sprintf("CreateCosmosDB(%s)", tenantId),
 		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases", tenantId, account),
 		&rq,
@@ -179,8 +179,8 @@ type DuploAzureCosmosDBAccount struct {
 	BackupIntervalInMinutes            int                                  `json:"backupIntervalInMinutes,omitempty"`
 	BackupRetentionIntervalInHours     int                                  `json:"backupRetentionIntervalInHours,omitempty"`
 	BackupStorageRedundancy            string                               `json:"backupStorageRedundancy,omitempty"`
-	DisableKeyBasedMetadataWriteAccess bool                                 `json:"DisableKeyBasedMetadataWriteAccess,omitempty"`
-	IsFreeTierEnabled                  bool                                 `json:"IsFreeTierEnabled,omitempty"`
+	DisableKeyBasedMetadataWriteAccess bool                                 `json:"DisableKeyBasedMetadataWriteAccess"`
+	IsFreeTierEnabled                  bool                                 `json:"IsFreeTierEnabled"`
 	PublicNetworkAccess                string                               `json:"PublicNetworkAccess,omitempty"`
 	CapacityMode                       string                               `json:"CapacityMode,omitempty"`
 	ProvisioningState                  string                               `json:"ProvisioningState,omitempty"`
@@ -221,8 +221,8 @@ func (c *Client) GetCosmosDBAccount(tenantId, name string) (*DuploAzureCosmosDBA
 }
 
 func (c *Client) UpdateCosmosDBAccount(tenantId string, name string, rq DuploAzureCosmosDBAccount) ClientError {
-	rp := make(map[string]interface{})
-	return c.postAPI(fmt.Sprintf("UpdateCosmosDBAccount(%s,%s)", tenantId, name),
+	rp := ""
+	return c.putAPI(fmt.Sprintf("UpdateCosmosDBAccount(%s,%s)", tenantId, name),
 		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s", tenantId, name),
 		&rq,
 		&rp)

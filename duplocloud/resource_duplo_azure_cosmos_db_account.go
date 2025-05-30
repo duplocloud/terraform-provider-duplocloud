@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
@@ -40,9 +41,9 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 		},
 		"locations": {
 			Description: "An array that contains the georeplication locations enabled for the Cosmos DB account.",
-			Type:        schema.TypeList,
+			Type:        schema.TypeString,
 			Computed:    true,
-			Elem:        &schema.Schema{Type: schema.TypeMap},
+			//	Elem:        &schema.Schema{Type: schema.TypeMap},
 		},
 		"type": {
 			Description: "Specifies the  Cosmos DB account type.",
@@ -139,6 +140,7 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
+			ForceNew:    true,
 		},
 		"public_network_access": {
 			Description:  "Flag to indicate whether to enable/disable public network access.",
@@ -146,6 +148,7 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Optional:     true,
 			Default:      "Enabled",
 			ValidateFunc: validation.StringInSlice([]string{"Enabled", "Disabled"}, false),
+			ForceNew:     true,
 		},
 		//	"ip_rules": {
 		//		Description: "List of IpRules.",
@@ -541,7 +544,7 @@ func resourceAzureCosmosDBAccountUpdate(ctx context.Context, d *schema.ResourceD
 		return diag.Errorf("Error waiting for cosmos db account %s to be ready for tenantId %s : %s", rq.Name, tenantId, err.Error())
 	}
 
-	diag := resourceAzureCosmosDBRead(ctx, d, m)
+	diag := resourceAzureCosmosDBAccountRead(ctx, d, m)
 	if diag != nil {
 		return diag
 	}
@@ -628,12 +631,8 @@ func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureC
 	}
 	d.Set("backup_policy", flattenBackupPolicy(rp))
 	if rp.Locations != nil {
-		// Ensure rp.Locations is a slice of map[string]interface{}
-		locations := make([]interface{}, 0, len(rp.Locations))
-		for _, loc := range rp.Locations {
-			locations = append(locations, loc)
-		}
-		d.Set("locations", locations)
+		lb, _ := json.Marshal(rp.Locations)
+		d.Set("locations", string(lb))
 	}
 }
 

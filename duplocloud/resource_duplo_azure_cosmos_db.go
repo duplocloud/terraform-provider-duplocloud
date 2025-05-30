@@ -37,14 +37,17 @@ func duploAzureCosmosDBschema() map[string]*schema.Schema {
 		"type": {
 			Description: "Specifies the Cosmos DB account type. Defaults to 'databaseAccounts/sqlDatabases'",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			Default:     "databaseAccounts/sqlDatabases",
+			ForceNew:    true,
 		},
 		"namespace": {
 			Description: "The Azure resource provider namespace for Cosmos DB. Defaults to 'Microsoft.DocumentDB'. This value is typically not changed and identifies the resource type within Azure.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Default:     "Microsoft.DocumentDB"},
+			Default:     "Microsoft.DocumentDB",
+			ForceNew:    true,
+		},
 	}
 }
 
@@ -72,7 +75,7 @@ func resourceAzureCosmosDBRead(ctx context.Context, d *schema.ResourceData, m in
 	c := m.(*duplosdk.Client)
 	rp, err := c.GetCosmosDB(idParts[0], idParts[2], idParts[4])
 	if err != nil && err.Status() != 404 {
-		return diag.Errorf("Error fetching cosmos db database %s from account %s details for tenantId %s", idParts[0], idParts[2], idParts[0])
+		return diag.Errorf("Error fetching cosmos db database %s from account %s details for tenantId %s :%s", idParts[0], idParts[2], idParts[0], err.Error())
 	}
 	if rp == nil {
 		log.Printf("[DEBUG] resourceAzureCosmosDBRead: Cosmos DB database %s from account %s for tenantId %s not found, removing from state", idParts[4], idParts[2], idParts[0])
@@ -94,6 +97,13 @@ func resourceAzureCosmosDBCreate(ctx context.Context, d *schema.ResourceData, m 
 	}
 	id := fmt.Sprintf("%s/cosmosdb/%s/database/%s", tenantId, account, rq.Name)
 	d.SetId(id)
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure cosmosdb database", id, func() (interface{}, duplosdk.ClientError) {
+		return c.GetCosmosDB(tenantId, account, rq.Name)
+	})
+	if diags != nil {
+		return diags
+	}
+
 	diag := resourceAzureCosmosDBRead(ctx, d, m)
 	if diag != nil {
 		return diag
