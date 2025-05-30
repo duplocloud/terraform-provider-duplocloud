@@ -1,9 +1,7 @@
 package duplosdk
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 )
 
 type DuploAzureCosmosDBRequest struct {
@@ -129,9 +127,9 @@ type DuploAzureCosmosDBCapability struct {
 }
 
 type DuploAzureCosmosDBConsistencyPolicy struct {
-	MaxStalenessPrefix      float64          `json:"maxStalenessPrefix"`
-	MaxIntervalInSeconds    int              `json:"maxIntervalInSeconds"`
-	DefaultConsistencyLevel ConsistencyLevel `json:"defaultConsistencyLevel"` // ENUM: Eventual,Session,BoundedStaleness,Strong,
+	MaxStalenessPrefix      int         `json:"maxStalenessPrefix"`
+	MaxIntervalInSeconds    int         `json:"maxIntervalInSeconds"`
+	DefaultConsistencyLevel interface{} `json:"defaultConsistencyLevel"` // ENUM: Eventual,Session,BoundedStaleness,Strong,
 }
 
 type DuploAzureCosmosDBManagedServiceIdentity struct {
@@ -176,7 +174,7 @@ type DuploAzureCosmosDBAccount struct {
 	AccountType                        string                               `json:"type"`
 	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy `json:"consistencyPolicy"`
 	Capabilities                       *[]DuploAzureCosmosDBCapability      `json:"Capabilities"`
-	Locations                          []string                             `json:"locations"`
+	Locations                          []map[string]interface{}             `json:"Locations"`
 	BackupPolicyType                   string                               `json:"backupPolicyType,omitempty"`
 	BackupIntervalInMinutes            int                                  `json:"backupIntervalInMinutes,omitempty"`
 	BackupRetentionIntervalInHours     int                                  `json:"backupRetentionIntervalInHours,omitempty"`
@@ -185,6 +183,7 @@ type DuploAzureCosmosDBAccount struct {
 	IsFreeTierEnabled                  bool                                 `json:"IsFreeTierEnabled,omitempty"`
 	PublicNetworkAccess                string                               `json:"PublicNetworkAccess,omitempty"`
 	CapacityMode                       string                               `json:"CapacityMode,omitempty"`
+	ProvisioningState                  string                               `json:"ProvisioningState,omitempty"`
 }
 
 type DuploAzureCosmosDB struct {
@@ -202,7 +201,7 @@ type DuploAzureCosmosDBResourceType struct {
 }
 
 func (c *Client) CreateCosmosDBAccount(tenantId string, rq DuploAzureCosmosDBAccount) ClientError {
-	rp := make(map[string]interface{})
+	rp := ""
 	return c.postAPI(fmt.Sprintf("CreateCosmosDBAccount(%s)", tenantId),
 		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts", tenantId),
 		&rq,
@@ -213,7 +212,7 @@ func (c *Client) CreateCosmosDBAccount(tenantId string, rq DuploAzureCosmosDBAcc
 func (c *Client) GetCosmosDBAccount(tenantId, name string) (*DuploAzureCosmosDBAccount, ClientError) {
 	rp := DuploAzureCosmosDBAccount{}
 	err := c.getAPI(fmt.Sprintf("GetCosmosDB(%s,%s)", tenantId, name),
-		fmt.Sprintf("v3/subscriptions/%s/azure/cosmosDb/account/%s", tenantId, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s", tenantId, name),
 		&rp)
 	if err != nil {
 		return nil, err
@@ -289,49 +288,11 @@ const (
 )
 
 var (
-	nameToValue = map[string]ConsistencyLevel{
-		"Eventual":         Eventual,
-		"Session":          Session,
-		"BoundedStaleness": BoundedStaleness,
-		"Strong":           Strong,
-		"ConsistentPrefix": ConsistentPrefix,
-	}
-
-	valueToName = map[ConsistencyLevel]string{
-		Eventual:         "Eventual",
-		Session:          "Session",
-		BoundedStaleness: "BoundedStaleness",
-		Strong:           "Strong",
-		ConsistentPrefix: "ConsistentPrefix",
+	ConsistencyLevelMap = map[float64]string{
+		0: "Eventual",
+		1: "Session",
+		2: "BoundedStaleness",
+		3: "Strong",
+		4: "ConsistentPrefix",
 	}
 )
-
-func (c *ConsistencyLevel) UnmarshalJSON(data []byte) error {
-	// Try string first
-	var str string
-	if err := json.Unmarshal(data, &str); err == nil {
-		val, ok := nameToValue[strings.TrimSpace(str)]
-		if !ok {
-			return fmt.Errorf("unknown consistency level string: %s", str)
-		}
-		*c = val
-		return nil
-	}
-
-	// Try int fallback
-	var intVal int
-	if err := json.Unmarshal(data, &intVal); err == nil {
-		*c = ConsistencyLevel(intVal)
-		return nil
-	}
-
-	return fmt.Errorf("invalid consistency level: %s", string(data))
-}
-
-func (c ConsistencyLevel) MarshalJSON() ([]byte, error) {
-	name, ok := valueToName[c]
-	if !ok {
-		return nil, fmt.Errorf("unknown consistency level value: %d", c)
-	}
-	return json.Marshal(name)
-}

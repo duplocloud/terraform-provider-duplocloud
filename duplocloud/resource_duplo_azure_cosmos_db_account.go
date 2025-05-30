@@ -10,6 +10,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -40,14 +41,14 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 		"locations": {
 			Description: "An array that contains the georeplication locations enabled for the Cosmos DB account.",
 			Type:        schema.TypeList,
-			Optional:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeMap},
 		},
 		"type": {
 			Description: "Specifies the  Cosmos DB account type.",
 			Type:        schema.TypeString,
-			Required:    true,
 			Default:     "Microsoft.DocumentDB/databaseAccounts",
+			Optional:    true,
 		},
 		"consistency_policy": {
 			Description: "",
@@ -57,7 +58,7 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 				Schema: map[string]*schema.Schema{
 					"max_staleness_prefix": {
 						Description:  "Max number of stale requests tolerated. Accepted range for this values 1 to 2147483647",
-						Type:         schema.TypeFloat,
+						Type:         schema.TypeInt,
 						Optional:     true,
 						ValidateFunc: validation.IntBetween(1, 2147483647),
 					},
@@ -108,7 +109,7 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 					"backup_storage_redundancy": {
 						Description:  "Backup storage redundancy type. Valid values are Geo, Local, Zone. Defaults to Geo.",
 						Optional:     true,
-						Type:         schema.TypeInt,
+						Type:         schema.TypeString,
 						Computed:     true,
 						ValidateFunc: validation.StringInSlice([]string{"Geo", "Local", "Zone"}, false),
 					},
@@ -514,10 +515,10 @@ func resourceAzureCosmosDBAccountRead(ctx context.Context, d *schema.ResourceDat
 	c := m.(*duplosdk.Client)
 	rp, err := c.GetCosmosDBAccount(idParts[0], idParts[3])
 	if err != nil && err.Status() != 404 {
-		return diag.Errorf("Error fetching cosmos db account %s details for tenantId %s", idParts[2], idParts[0])
+		return diag.Errorf("Error fetching cosmos db account %s details for tenantId %s", idParts[3], idParts[0])
 	}
 	if rp == nil {
-		log.Printf("[DEBUG] Cosmos DB account %s not found for tenantId %s, removing from state", idParts[2], idParts[0])
+		log.Printf("[DEBUG] Cosmos DB account %s not found for tenantId %s, removing from state", idParts[3], idParts[0])
 		d.SetId("")
 		return nil
 	}
@@ -527,13 +528,19 @@ func resourceAzureCosmosDBAccountRead(ctx context.Context, d *schema.ResourceDat
 func resourceAzureCosmosDBAccountUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
+	tenantId, name := idParts[0], idParts[3]
 	rq := expandAzureCosmosDBAccount(d)
 	c := m.(*duplosdk.Client)
-	err := c.UpdateCosmosDBAccount(idParts[0], idParts[1], rq)
-	if err != nil {
-		return diag.Errorf("Error updating cosmos db account %s for tenantId %s : %s", idParts[1], idParts[0], err.Error())
+	cerr := c.UpdateCosmosDBAccount(tenantId, name, rq)
+	if cerr != nil {
+		return diag.Errorf("Error updating cosmos db account %s for tenantId %s : %s", tenantId, name, cerr.Error())
 	}
 	d.SetId(id)
+	err := cosmosDBAccountWaitUntilReady(ctx, c, idParts[0], rq.Name, d.Timeout("update"))
+	if err != nil {
+		return diag.Errorf("Error waiting for cosmos db account %s to be ready for tenantId %s : %s", rq.Name, tenantId, err.Error())
+	}
+
 	diag := resourceAzureCosmosDBRead(ctx, d, m)
 	if diag != nil {
 		return diag
@@ -546,13 +553,17 @@ func resourceAzureCosmosDBAccountCreate(ctx context.Context, d *schema.ResourceD
 	log.Printf("resourceAzureCosmosDBCreate started for %s", tenantId)
 	rq := expandAzureCosmosDBAccount(d)
 	c := m.(*duplosdk.Client)
-	err := c.CreateCosmosDBAccount(tenantId, rq)
-	if err != nil {
-		return diag.Errorf("Error creating cosmos db for tenantId %s : %s", tenantId, err.Error())
+	cerr := c.CreateCosmosDBAccount(tenantId, rq)
+	if cerr != nil {
+		return diag.Errorf("Error creating cosmos db for tenantId %s : %s", tenantId, cerr.Error())
 	}
 	id := fmt.Sprintf("%s/cosmosdb/account/%s", tenantId, rq.Name)
 	d.SetId(id)
-	diag := resourceAzureCosmosDBRead(ctx, d, m)
+	err := cosmosDBAccountWaitUntilReady(ctx, c, tenantId, rq.Name, d.Timeout("create"))
+	if err != nil {
+		return diag.Errorf("Error waiting for cosmos db account %s to be ready for tenantId %s : %s", rq.Name, tenantId, err.Error())
+	}
+	diag := resourceAzureCosmosDBAccountRead(ctx, d, m)
 	if diag != nil {
 		return diag
 	}
@@ -576,11 +587,11 @@ func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmo
 	obj.Name = d.Get("name").(string)
 	obj.Kind = d.Get("kind").(string)
 	obj.AccountType = d.Get("type").(string)
-	obj.Locations = expandStringSlice(d.Get("locations").([]interface{}))
+	obj.Locations = []map[string]interface{}{}
 	obj.ConsistencyPolicy = expandConsistencyPolicy(d.Get("consistency_policy").([]interface{}))
 	obj.Capabilities = expandCapablities(d.Get("capablities").([]interface{}))
 	obj.BackupIntervalInMinutes, obj.BackupRetentionIntervalInHours, obj.BackupPolicyType, obj.BackupStorageRedundancy = expandBackupPolicy(d.Get("backup_policy").([]interface{}))
-	if obj.Capabilities != nil && (*obj.Capabilities)[0].Name == "EnableServerless" {
+	if obj.Capabilities != nil && len(*obj.Capabilities) > 0 && (*obj.Capabilities)[0].Name == "EnableServerless" {
 		obj.CapacityMode = "Serverless"
 	} else {
 		obj.CapacityMode = "Provisioned"
@@ -594,13 +605,10 @@ func expandBackupPolicy(inf []interface{}) (int, int, string, string) {
 	var backupType, backupStorageRedundancy string
 	if len(inf) > 0 {
 		m := inf[0].(map[string]interface{})
-		for _, i := range m {
-			mi := i.(map[string]interface{})
-			backupInterval = mi["backup_interval"].(int)
-			backupRetentionInterval = mi["backup_retention_interval"].(int)
-			backupType = mi["type"].(string)
-			backupStorageRedundancy = mi["backup_storage_redundancy"].(string)
-		}
+		backupInterval = m["backup_interval"].(int)
+		backupRetentionInterval = m["backup_retention_interval"].(int)
+		backupType = m["type"].(string)
+		backupStorageRedundancy = m["backup_storage_redundancy"].(string)
 	}
 	return backupInterval, backupRetentionInterval, backupType, backupStorageRedundancy
 }
@@ -619,17 +627,23 @@ func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureC
 
 	}
 	d.Set("backup_policy", flattenBackupPolicy(rp))
-
+	if rp.Locations != nil {
+		// Ensure rp.Locations is a slice of map[string]interface{}
+		locations := make([]interface{}, 0, len(rp.Locations))
+		for _, loc := range rp.Locations {
+			locations = append(locations, loc)
+		}
+		d.Set("locations", locations)
+	}
 }
 
 func flattenBackupPolicy(bp duplosdk.DuploAzureCosmosDBAccount) []interface{} {
 	obj := []interface{}{}
 	m := make(map[string]interface{})
-	m1 := make(map[string]interface{})
-	m1["backup_interval"] = bp.BackupIntervalInMinutes
-	m1["backup_retention_interval"] = bp.BackupRetentionIntervalInHours
-	m1["backup_storage_redundancy"] = bp.BackupStorageRedundancy
-	m1["type"] = bp.BackupPolicyType
+	m["backup_interval"] = bp.BackupIntervalInMinutes
+	m["backup_retention_interval"] = bp.BackupRetentionIntervalInHours
+	m["backup_storage_redundancy"] = bp.BackupStorageRedundancy
+	m["type"] = bp.BackupPolicyType
 	obj = append(obj, m)
 	return obj
 
@@ -657,11 +671,11 @@ func expandConsistencyPolicy(inf []interface{}) *duplosdk.DuploAzureCosmosDBCons
 	obj := duplosdk.DuploAzureCosmosDBConsistencyPolicy{}
 	for _, i := range inf {
 		m := i.(map[string]interface{})
-		if v, ok := m["default_consistency_level"].(duplosdk.ConsistencyLevel); ok {
-			obj.DefaultConsistencyLevel = v
+		if v, ok := m["default_consistency_level"]; ok {
+			obj.DefaultConsistencyLevel = v.(string)
 		}
 		obj.MaxIntervalInSeconds = m["max_interval_in_seconds"].(int)
-		obj.MaxStalenessPrefix = m["max_staleness_prefix"].(float64)
+		obj.MaxStalenessPrefix = m["max_staleness_prefix"].(int)
 	}
 	return &obj
 }
@@ -669,7 +683,7 @@ func expandConsistencyPolicy(inf []interface{}) *duplosdk.DuploAzureCosmosDBCons
 func flattenConsistencyPolicy(cons duplosdk.DuploAzureCosmosDBConsistencyPolicy) []interface{} {
 	obj := []interface{}{}
 	m := make(map[string]interface{})
-	m["default_consistency_level"] = cons.DefaultConsistencyLevel
+	m["default_consistency_level"] = duplosdk.ConsistencyLevelMap[cons.DefaultConsistencyLevel.(float64)]
 	m["max_interval_in_seconds"] = cons.MaxIntervalInSeconds
 	m["max_staleness_prefix"] = cons.MaxStalenessPrefix
 	obj = append(obj, m)
@@ -961,3 +975,30 @@ func flattenCapacity(c duplosdk.DuploAzureCosmosDBCapacity) []interface{} {
 }
 
 */
+
+func cosmosDBAccountWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.GetCosmosDBAccount(tenantID, name)
+			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
+			status := "pending"
+			if err == nil {
+				if rp.ProvisioningState == "Succeeded" {
+					status = "ready"
+				} else {
+					status = "pending"
+				}
+			}
+
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] cosmosDBAccountWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
