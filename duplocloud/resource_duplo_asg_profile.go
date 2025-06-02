@@ -605,10 +605,14 @@ func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string,
 			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
 			status := "pending"
 			if err == nil {
-				if rp.Created {
+				if rp.Created == nil {
 					status = "ready"
 				} else {
-					status = "pending"
+					if *rp.Created {
+						status = "ready"
+					} else {
+						status = "pending"
+					}
 				}
 			}
 
