@@ -39,7 +39,7 @@ type DuploAsgProfile struct {
 	EnabledMetrics      *[]string                          `json:"EnabledMetrics,omitempty"`
 	ExtraNodeLabels     *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
 	Taints              *[]DuploTaints                     `json:"Taints,omitempty"`
-	Created             bool                               `json:"Created"`
+	Created             *bool                              `json:"Created,omitempty"`
 }
 
 type DuploAsgProfileDeleteReq struct {
