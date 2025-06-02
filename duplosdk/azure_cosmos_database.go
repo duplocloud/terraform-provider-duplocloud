@@ -266,7 +266,7 @@ func (c *Client) GetCosmosDBDatabaseContainer(tenantId, account, dbName, name st
 }
 
 func (c *Client) CreateCosmosDBDatabaseContainer(tenantId, account, dbName string, rq DuploAzureCosmosDBContainer) ClientError {
-	rp := make(map[string]interface{})
+	rp := ""
 	return c.postAPI(fmt.Sprintf("CreateCosmosDBDatabaseContainer(%s,%s,%s)", tenantId, account, dbName),
 		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases/%s/containers", tenantId, account, dbName),
 		&rq,

@@ -525,6 +525,7 @@ func resourceAzureCosmosDBAccountRead(ctx context.Context, d *schema.ResourceDat
 		d.SetId("")
 		return nil
 	}
+	d.Set("tenant_id", idParts[0])
 	flattenAzureCosmosDBAccount(d, *rp)
 	return nil
 }

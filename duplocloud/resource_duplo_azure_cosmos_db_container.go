@@ -45,19 +45,22 @@ func duploAzureCosmosDBContainerSchema() map[string]*schema.Schema {
 		"type": {
 			Description: "Specifies the Cosmos DB account type.",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			Default:     "databaseAccounts/sqlDatabases/containers",
+			ForceNew:    true,
 		},
 		"namespace": {
 			Description: "The Azure resource provider namespace for Cosmos DB. This value is typically not changed and identifies the resource type within Azure.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Default:     "Microsoft.DocumentDB",
+			ForceNew:    true,
 		},
 		"partition_key_path": {
 			Description: "The partition key for the Cosmos DB container. This is a required field for creating a Cosmos DB container.",
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 		},
 	}
 }
@@ -119,9 +122,15 @@ func resourceAzureCosmosDBContainerCreate(ctx context.Context, d *schema.Resourc
 	}
 	id := fmt.Sprintf("%s/cosmosdb/%s/%s/container/%s", tenantId, account, database, rq.Name)
 	d.SetId(id)
-	diag := resourceAzureCosmosDBRead(ctx, d, m)
-	if diag != nil {
-		return diag
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure cosmosdb container", id, func() (interface{}, duplosdk.ClientError) {
+		return c.GetCosmosDBDatabaseContainer(tenantId, account, database, rq.Name)
+	})
+	if diags != nil {
+		return diags
+	}
+	diags = resourceAzureCosmosDBRead(ctx, d, m)
+	if diags != nil {
+		return diags
 	}
 	log.Printf("resourceAzureCosmosDBContainerCreate end for %s", tenantId)
 

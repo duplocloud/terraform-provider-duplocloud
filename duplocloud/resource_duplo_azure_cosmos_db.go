@@ -82,6 +82,8 @@ func resourceAzureCosmosDBRead(ctx context.Context, d *schema.ResourceData, m in
 		d.SetId("")
 		return nil
 	}
+	d.Set("tenant_id", idParts[0])
+	d.Set("account_name", idParts[2])
 	flattenAzureCosmosDB(d, *rp)
 	return nil
 }
