@@ -96,7 +96,7 @@ func resourceAzureCosmosDBContainerRead(ctx context.Context, d *schema.ResourceD
 	container := idParts[5]
 	rp, err := c.GetCosmosDBDatabaseContainer(tenantId, account, dbName, container)
 	if err != nil && err.Status() != 404 {
-		return diag.Errorf("Error fetching cosmos db container %s associated to database %s from account %s of tenantId %s", container, dbName, account, tenantId)
+		return diag.Errorf("Error fetching cosmos db container %s associated to database %s from account %s of tenantId %s : %s", container, dbName, account, tenantId, err.Error())
 	}
 	if rp == nil {
 		log.Printf("[DEBUG] resourceAzureCosmosDBRead: Cosmos DB container %s of database %s from account %s for tenantId %s not found, removing from state", container, dbName, account, tenantId)
@@ -151,7 +151,7 @@ func resourceAzureCosmosDBContainerDelete(ctx context.Context, d *schema.Resourc
 	c := m.(*duplosdk.Client)
 	err := c.DeleteCosmosDBDatabaseContainer(tenantId, accountName, databaseName, containerName)
 	if err != nil {
-		return diag.Errorf("Error deleting Cosmos DB database %s from account %s for tenantId %s: %s", databaseName, accountName, tenantId, err.Error())
+		return diag.Errorf("Error deleting Cosmos DB container %s of database %s from account %s for tenantId %s: %s", containerName, databaseName, accountName, tenantId, err.Error())
 	}
 	log.Printf("resourceAzureCosmosDBDelete end for %s", tenantId)
 	// Return nil to indicate successful deletion

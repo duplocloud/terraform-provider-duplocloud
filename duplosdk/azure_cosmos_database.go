@@ -250,8 +250,8 @@ type DuploAzureCosmosDBContainerResource struct {
 }
 
 type DuploAzureCosmosDBContainerPartitionKey struct {
-	Paths   []string `json:"paths"`
-	Version int      `json:"version"`
+	Paths   []string `json:"Paths"`
+	Version int      `json:"version,omitempty"`
 }
 
 func (c *Client) GetCosmosDBDatabaseContainer(tenantId, account, dbName, name string) (*DuploAzureCosmosDBContainer, ClientError) {
@@ -273,8 +273,9 @@ func (c *Client) CreateCosmosDBDatabaseContainer(tenantId, account, dbName strin
 		&rp)
 }
 func (c *Client) DeleteCosmosDBDatabaseContainer(tenantId, account, dbName, name string) ClientError {
+	rp := ""
 	return c.deleteAPI(fmt.Sprintf("DeleteCosmosDBDatabaseContainer(%s,%s,%s)", tenantId, account, name),
-		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases/%s/containers/%s", tenantId, account, dbName, name), nil)
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases/%s/containers/%s", tenantId, account, dbName, name), &rp)
 }
 
 type ConsistencyLevel int
