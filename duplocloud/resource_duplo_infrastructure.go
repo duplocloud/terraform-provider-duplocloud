@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const DEFAULT_INFRA = "default"
@@ -144,11 +143,10 @@ func resourceInfrastructure() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"infra_name": {
-				Description:  "The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringLenBetween(2, 30),
+				Description: "The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"account_id": {
 				Description: "The cloud account ID — use this for Azure (Subscription ID) and Google Cloud (Project ID). Not applicable for AWS.",
