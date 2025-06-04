@@ -192,22 +192,6 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.Errorf("Error creating ASG profile '%s': no friendly name was received", rq.FriendlyName)
 	}
 
-	// Update minion tags once ASG is created
-	fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
-
-	for _, raw := range *rq.MinionTags {
-		err = c.TenantUpdateCustomData(rq.TenantId, duplosdk.CustomDataUpdate{
-			ComponentId:   fullName,
-			ComponentType: duplosdk.ASG,
-			Key:           raw.Key,
-			Value:         raw.Value,
-		})
-
-		if err != nil {
-			return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
-		}
-	}
-
 	id := fmt.Sprintf("%s/%s", rq.TenantId, rp)
 	log.Printf("[DEBUG] ASG Profile Resource ID- (%s)", id)
 
@@ -227,10 +211,35 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.FromErr(err)
 		}
 	}
-	werr := asgWaitUntilReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
+	werr, executed := asgWaitUntilReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
 	if werr != nil {
 		return diag.FromErr(fmt.Errorf("error waiting for ASG profile '%s' to be ready: %s", rp, werr))
 	}
+	if len(*rq.MinionTags) > 0 && rq.Tags != nil && len(*rq.Tags) > 0 && !executed {
+		time.Sleep(4 * time.Minute) // Wait a second to ensure the ASG profile is created in Duplo.
+	}
+	fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
+
+	for _, raw := range *rq.MinionTags {
+		err = c.TenantUpdateCustomData(rq.TenantId, duplosdk.CustomDataUpdate{
+			ComponentId:   fullName,
+			ComponentType: duplosdk.ASG,
+			Key:           raw.Key,
+			Value:         raw.Value,
+		})
+
+		if err != nil {
+			return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
+		}
+	}
+	//By default, wait until the ASG instances to be healthy.
+	if d.Get("wait_for_capacity") == nil || d.Get("wait_for_capacity").(bool) {
+		err = asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rq.MinSize, rp, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	diags = resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): end", rq.TenantId, rq.FriendlyName)
 	return diags
@@ -278,7 +287,7 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		if diags != nil {
 			return diags
 		}
-		werr := asgWaitUntilReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
+		werr, _ := asgWaitUntilReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
 		if werr != nil {
 			return diag.FromErr(fmt.Errorf("error waiting for ASG profile '%s' to be ready: %s", rp, werr))
 		}
@@ -596,7 +605,8 @@ func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags strin
 	return false, ""
 }
 
-func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) (error, bool) {
+	flag := true
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -607,6 +617,7 @@ func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string,
 			if err == nil {
 				if rp.Created == nil {
 					status = "ready"
+					flag = false
 				} else {
 					if *rp.Created {
 						status = "ready"
@@ -624,5 +635,5 @@ func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string,
 	}
 	log.Printf("[DEBUG] asgWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
-	return err
+	return err, flag
 }
