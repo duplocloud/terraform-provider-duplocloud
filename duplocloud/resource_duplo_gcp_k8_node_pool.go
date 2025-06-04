@@ -330,6 +330,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 		"taints": {
 			Type:     schema.TypeList,
 			Optional: true,
+			Computed: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
@@ -429,7 +430,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 
 func resourceGcpK8NodePool() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_gcp_k8_node_pools` manages a GCP Node Pool in Duplo.",
+		Description: "`duplocloud_gcp_node_pool` manages a GCP Node Pool in Duplo.",
 
 		ReadContext:   resourceGCPNodePoolRead,
 		UpdateContext: resourceGCPK8NodePoolUpdate,
@@ -443,7 +444,8 @@ func resourceGcpK8NodePool() *schema.Resource {
 			Update: schema.DefaultTimeout(30 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
-		Schema: gcpK8NodePoolFunctionSchema(),
+		Schema:        gcpK8NodePoolFunctionSchema(),
+		CustomizeDiff: gcpNodePoolValidateParameters,
 	}
 }
 
@@ -705,10 +707,6 @@ func expandGCPNodePoolAutoScaling(d *schema.ResourceData, req *duplosdk.DuploGCP
 	if val, ok := d.Get("max_node_count").(int); ok {
 		req.MaxNodeCount = &val
 	}
-	if val, ok := d.Get("location_policy").(string); ok {
-		req.LocationPolicy = val
-	}
-
 }
 
 func resourceGCPNodePoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -726,6 +724,10 @@ func resourceGCPNodePoolRead(ctx context.Context, d *schema.ResourceData, m inte
 	c := m.(*duplosdk.Client)
 	duplo, err := c.GCPK8NodePoolGet(tenantID, fullName)
 	if err != nil {
+		if err.Status() == 404 {
+			d.SetId("") // object missing or deleted
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve tenant %s GCP Node Pool Domain '%s': %s", tenantID, fullName, err)
 	}
 
@@ -753,6 +755,9 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 	d.Set("auto_upgrade", duplo.AutoUpgrade)
 	d.Set("zones", duplo.Zones)
 	d.Set("image_type", strings.ToLower(duplo.ImageType))
+	if duplo.LocationPolicy == "" {
+		duplo.LocationPolicy = "BALANCED"
+	}
 	d.Set("location_policy", duplo.LocationPolicy)
 	d.Set("max_node_count", duplo.MaxNodeCount)
 	d.Set("min_node_count", duplo.MinNodeCount)
@@ -856,13 +861,13 @@ func gcpNodePoolAcceleratortoState(accelerator *duplosdk.Accelerator) []map[stri
 	if accelerator.GPUSharingConfig.MaxSharedClientPerGPU != 0 {
 		gpuSharingConfigMap["max_shared_clients_per_gpu"] = strconv.Itoa(accelerator.GPUSharingConfig.MaxSharedClientPerGPU)
 	}
-	state["gpu_sharing_config"] = gpuSharingConfigMap
+	state["gpu_sharing_config"] = []interface{}{gpuSharingConfigMap}
 
 	driverConfig := make(map[string]interface{})
 	if accelerator.GPUDriverInstallationConfig.GPUDriverVersion != "" {
 		driverConfig["gpu_driver_version"] = accelerator.GPUDriverInstallationConfig.GPUDriverVersion
 	}
-	state["gpu_driver_installation_config"] = driverConfig
+	state["gpu_driver_installation_config"] = []interface{}{driverConfig}
 
 	return []map[string]interface{}{state}
 }
@@ -952,12 +957,20 @@ func resourceGCPK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m 
 			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
 
 		}
+		err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("%s", err.Error())
+		}
 	}
 	if d.HasChange("image_type") {
 		_, err = gcpNodePoolImageTypeUpdate(c, tenantID, fullName, rq.ImageType)
 		if err != nil {
 			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
 
+		}
+		err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("%s", err.Error())
 		}
 	}
 
@@ -967,12 +980,20 @@ func resourceGCPK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m 
 			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
 
 		}
+		err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("%s", err.Error())
+		}
 	}
 	if d.HasChange("upgrade_settings") {
 		_, err = gcpNodePoolUpdateUpgradeSetting(c, tenantID, fullName, rq.UpgradeSettings)
 		if err != nil {
 			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
 
+		}
+		err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("%s", err.Error())
 		}
 	}
 	if d.HasChange("initial_node_count") {
@@ -981,23 +1002,26 @@ func resourceGCPK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m 
 			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
 
 		}
+		err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("%s", err.Error())
+		}
 	}
 
 	err = gcpNodePoolAutoScalingUpdate(c, tenantID, fullName, d, *rq)
 	if err != nil {
 		return diag.Errorf("error: %s", err.Error())
 	}
-	duplo, err := c.GCPK8NodePoolGet(tenantID, fullName)
+
+	err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 	if err != nil {
-		return diag.Errorf("Unable to retrieve tenant %s GCP Node Pool Domain '%s': %s", tenantID, fullName, err)
+		return diag.Errorf("%s", err.Error())
 	}
 
-	if duplo == nil {
-		d.SetId("") // object missing or deleted
-		return nil
+	diag := resourceGCPNodePoolRead(ctx, d, m)
+	if diag != nil {
+		return diag
 	}
-
-	setGCPNodePoolStateField(d, duplo, tenantID)
 	log.Printf("[TRACE] resourceGCPK8NodePoolUpdate ******** end")
 
 	return nil
@@ -1005,12 +1029,13 @@ func resourceGCPK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 func gcpNodePoolAutoScalingUpdate(c *duplosdk.Client, tenantID, fullName string, d *schema.ResourceData, r duplosdk.DuploGCPK8NodePool) error {
 
-	if d.HasChange("is_autoscaling_enabled") {
+	if d.HasChange("is_autoscaling_enabled") || d.HasChange("max_node_count") || d.HasChange("min_node_count") || d.HasChange("total_max_node_count") || d.HasChange("total_min_node_count") || d.HasChange("location_policy") {
 		isAutoScalingEnabled := r.IsAutoScalingEnabled
 		rq, err := autoScalingHelper(isAutoScalingEnabled, &r)
 		if err != nil {
 			return err
 		}
+		rq.LocationPolicy = r.LocationPolicy
 		_, err = c.GCPK8NodePoolUpdate(tenantID, fullName, "/autoscaling", rq)
 		if err != nil {
 			return err
@@ -1173,4 +1198,38 @@ func gcpNodePoolWaitUntilAvailableForDeleted(ctx context.Context, c *duplosdk.Cl
 	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilDeleted (%s/%s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func gcpNodePoolValidateParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	autoScaled := diff.Get("is_autoscaling_enabled").(bool)
+	minNodeCount := diff.Get("min_node_count").(int)
+	maxNodeCount := diff.Get("max_node_count").(int)
+	minTotalNodeCount := diff.Get("total_min_node_count").(int)
+	maxTotalNodeCount := diff.Get("total_max_node_count").(int)
+	if !autoScaled {
+		if minNodeCount > 0 {
+			return fmt.Errorf("cannot set min_node_count on autoscaling disabled")
+
+		}
+		if maxNodeCount > 0 {
+			return fmt.Errorf("cannot set max_node_count on autoscaling disabled")
+		}
+		if minTotalNodeCount > 0 {
+			return fmt.Errorf("cannot set total_min_node_count on autoscaling disabled")
+		}
+		if maxTotalNodeCount > 0 {
+			return fmt.Errorf("cannot set total_max_node_count on autoscaling disabled")
+		}
+	} else {
+		if minNodeCount > maxNodeCount {
+			return fmt.Errorf("min_node_count cannot be greater than max_node_count")
+		}
+		if minTotalNodeCount > maxTotalNodeCount {
+			return fmt.Errorf("total_min_node_count cannot be greater than total_max_node_count")
+		}
+		if (minNodeCount > 0 || maxNodeCount > 0) && (minTotalNodeCount > 0 || maxTotalNodeCount > 0) {
+			return fmt.Errorf("either node count  or total node_count should be specified, not both")
+		}
+	}
+	return nil
 }

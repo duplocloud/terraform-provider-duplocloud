@@ -45,8 +45,8 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
     health_check {
       healthy_threshold   = 4
       unhealthy_threshold = 4
-      timeout             = 50
-      interval            = 30
+      timeout             = 30
+      interval            = 50
       http_success_codes  = "200-399"
     }
   }
@@ -69,8 +69,8 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice2" {
     health_check {
       healthy_threshold   = 4
       unhealthy_threshold = 4
-      timeout             = 50
-      interval            = 30
+      timeout             = 30
+      interval            = 50
       http_success_codes  = "200-399"
     }
   }
@@ -123,7 +123,7 @@ Supported protocol based on lb_type:
 	- `4 (K8S Service w/ Node Port)` : TCP, UDP
 	- `5 (Azure Shared Application Gateway)`: HTTP, HTTPS
 	- `6 (NLB)` : TCP, UDP, TLS
-	- `7 (Target Group Only)` : HTTP, HTTPS
+	- `7 (Target Group Only)` : HTTP, HTTPS, TCP, UDP, TLS
 
 Optional:
 
