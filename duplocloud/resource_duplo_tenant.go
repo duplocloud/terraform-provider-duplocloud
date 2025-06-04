@@ -294,5 +294,32 @@ func validateTenantSchema(d *schema.ResourceData, c *duplosdk.Client) diag.Diagn
 	if len(accountName) < 2 || len(accountName) > maxLength {
 		return diag.Errorf("Length of attribute 'account_name' must be between 2 and %d inclusive, got: %d", maxLength, len(accountName))
 	}
+
+	// Validate that the tenant name is not a prefix of any existing tenant name and vice versa
+	// Get all existing tenants
+	existingTenants, err := c.ListTenantsForUser()
+	if err != nil {
+		return diag.Errorf("Error retrieving existing tenants: %s", err)
+	}
+
+	// Check if the new tenant name is a prefix of any existing tenant name or vice versa
+	for _, tenant := range existingTenants {
+		existingName := tenant.AccountName
+
+		// If tenant with same name already exists, throw an error
+		if existingName == accountName {
+			return diag.Errorf("Tenant with name '%s' already exists", accountName)
+		}
+
+		// Check if new tenant name is a prefix of existing tenant name
+		if strings.HasPrefix(existingName, accountName) {
+			return diag.Errorf("Tenant name '%s' cannot be created because it is a prefix of existing tenant '%s'", accountName, existingName)
+		}
+
+		// Check if existing tenant name is a prefix of new tenant name
+		if strings.HasPrefix(accountName, existingName) {
+			return diag.Errorf("Tenant name '%s' cannot be created because existing tenant '%s' is a prefix of it", accountName, existingName)
+		}
+	}
 	return nil
 }
