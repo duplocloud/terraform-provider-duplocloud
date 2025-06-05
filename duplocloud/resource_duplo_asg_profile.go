@@ -215,8 +215,9 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	if werr != nil {
 		return diag.FromErr(fmt.Errorf("error waiting for ASG profile '%s' to be ready: %s", rp, werr))
 	}
-	if len(*rq.MinionTags) > 0 && rq.Tags != nil && len(*rq.Tags) > 0 && !executed {
-		time.Sleep(4 * time.Minute) // Wait a second to ensure the ASG profile is created in Duplo.
+	if !executed {
+		time.Sleep(5 * time.Minute) // Wait to ensure the ASG profile is created in Duplo if polling dint happened
+		// to reduce impact of asg worker failure when tags are passed.
 	}
 	fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
 
