@@ -305,19 +305,21 @@ func validateTenantSchema(d *schema.ResourceData, c *duplosdk.Client) diag.Diagn
 	// Check if the new tenant name is a prefix of any existing tenant name or vice versa
 	for _, tenant := range existingTenants {
 		existingName := tenant.AccountName
+		lowerExistingName := strings.ToLower(existingName)
+		lowerAccountName := strings.ToLower(accountName)
 
-		// If tenant with same name already exists, throw an error
-		if existingName == accountName {
-			return diag.Errorf("Tenant with name '%s' already exists", accountName)
+		// If tenant with same name already exists, throw an error (case insensitive)
+		if lowerExistingName == lowerAccountName {
+			return diag.Errorf("Tenant with name '%s' already exists (matches existing tenant '%s')", accountName, existingName)
 		}
 
-		// Check if new tenant name is a prefix of existing tenant name
-		if strings.HasPrefix(existingName, accountName) {
+		// Check if new tenant name is a prefix of existing tenant name (case insensitive)
+		if strings.HasPrefix(lowerExistingName, lowerAccountName) {
 			return diag.Errorf("Tenant name '%s' cannot be created because it is a prefix of existing tenant '%s'", accountName, existingName)
 		}
 
-		// Check if existing tenant name is a prefix of new tenant name
-		if strings.HasPrefix(accountName, existingName) {
+		// Check if existing tenant name is a prefix of new tenant name (case insensitive)
+		if strings.HasPrefix(lowerAccountName, lowerExistingName) {
 			return diag.Errorf("Tenant name '%s' cannot be created because existing tenant '%s' is a prefix of it", accountName, existingName)
 		}
 	}
