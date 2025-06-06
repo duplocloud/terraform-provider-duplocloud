@@ -227,7 +227,7 @@ func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicat
 	}
 
 	if allResources == nil {
-		return nil, newClientError("replication controller list is nil")
+		return nil, nil
 	}
 
 	// Return the resource, if it exists.
@@ -238,7 +238,7 @@ func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicat
 	}
 
 	// No resource was found.
-	return nil, newClientError(fmt.Sprintf("replication controller '%s' not found in tenantID: %s", name, tenantID))
+	return nil, nil
 }
 
 func (c *Client) ReplicationControllerExists(tenantID, name string) (bool, ClientError) {

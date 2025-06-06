@@ -146,6 +146,38 @@ resource "duplocloud_ecache_instance" "mycaches" {
   
 }
 ```
+
+### Creating an Amazon Valkey with snapshot window
+```terraform
+
+resource "duplocloud_ecache_instance" "mycaches" {
+  tenant_id                = data.duplocloud_tenant.tenant.id
+  name                     = "myvalkey"
+  cache_type               = 2 
+  size                     = "cache.t3.medium"
+  engine_version           = "7.2"
+  snapshot_window          = "19:50-20:51"
+  snapshot_retention_limit = 12
+}
+
+```
+
+### Creating an Amazon Valkey with cluster mode enabled
+```terraform
+resource "duplocloud_ecache_instance" "mycaches" {
+  tenant_id                  = data.duplocloud_tenant.tenant.id
+  name                       = "tf-clust1"
+  cache_type                 = 2
+  size                       = "cache.t3.medium"
+  engine_version             = "7.2"
+  snapshot_window            = "19:50-20:51"
+  snapshot_retention_limit   = 12
+  enable_cluster_mode        = true
+  number_of_shards           = 3
+  automatic_failover_enabled = true
+  replicas                   = 2
+}
+```
 {{ .SchemaMarkdown | trimspace }}
 
 ## Import

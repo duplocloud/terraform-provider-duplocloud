@@ -2,6 +2,9 @@ resource "duplocloud_tenant" "myapp" {
   account_name = "myapp"
   plan_id      = "default"
 }
+variable "engine_version" {
+  type = string
+}
 
 resource "duplocloud_ecache_instance" "mycache" {
   tenant_id                  = duplocloud_tenant.myapp.tenant_id
@@ -28,4 +31,39 @@ resource "duplocloud_ecache_instance" "mycache" {
     log_type         = "engine-log"
   }
 
+}
+
+
+resource "duplocloud_ecache_instance" "mycaches" {
+  tenant_id                = duplocloud_tenant.myapp.tenant_id
+  name                     = "myvalkey"
+  cache_type               = 2 //valkey
+  size                     = "cache.t3.medium"
+  engine_version           = "7.2"
+  snapshot_window          = "19:50-20:51"
+  snapshot_retention_limit = 12
+}
+
+resource "duplocloud_ecache_instance" "mycachesnap" {
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
+  name           = "fromsnap"
+  cache_type     = 2
+  size           = "cache.t3.medium"
+  engine_version = var.engine_version //"7.2"
+  snapshot_name  = "duploservices-march13-mysnap-snapshot"
+
+}
+// Example: cluster mode example
+resource "duplocloud_ecache_instance" "mycaches" {
+  tenant_id                  = duplocloud_tenant.myapp.tenant_id
+  name                       = "tf-clust1"
+  cache_type                 = 2
+  size                       = "cache.t3.medium"
+  engine_version             = var.engine_version //"7.2"
+  snapshot_window            = "19:50-20:51"
+  snapshot_retention_limit   = 12
+  enable_cluster_mode        = true
+  number_of_shards           = 3
+  automatic_failover_enabled = true
+  replicas                   = 2
 }
