@@ -44,7 +44,7 @@ func resourceTenant() *schema.Resource {
 					return strings.ToLower(val.(string))
 				},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return strings.ToLower(old) == strings.ToLower(new)
+					return strings.EqualFold(old, new)
 				},
 			},
 			"plan_id": {
