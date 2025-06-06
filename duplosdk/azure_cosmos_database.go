@@ -173,7 +173,7 @@ type DuploAzureCosmosDBAccount struct {
 	Kind                               string                               `json:"kind"`
 	AccountType                        string                               `json:"type"`
 	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy `json:"consistencyPolicy"`
-	Capabilities                       *[]DuploAzureCosmosDBCapability      `json:"Capabilities"`
+	Capabilities                       *[]DuploAzureCosmosDBCapability      `json:"-"` //Capabilities"`
 	Locations                          []map[string]interface{}             `json:"Locations"`
 	BackupPolicyType                   string                               `json:"backupPolicyType,omitempty"`
 	BackupIntervalInMinutes            int                                  `json:"backupIntervalInMinutes,omitempty"`

@@ -86,6 +86,10 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 				ValidateFunc: validation.StringInSlice([]string{ /*"EnableCassandra", "EnableTable", "EnableGremlin",*/ "EnableServerless"}, false),
 			},
 		},
+		"capacity_mode": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 		"backup_policy": {
 			Description: "Backup policy for cosmos db account",
 			Type:        schema.TypeList,
@@ -623,13 +627,14 @@ func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureC
 	d.Set("disable_key_based_metadata_write_access", rp.DisableKeyBasedMetadataWriteAccess)
 	d.Set("enable_free_tier", rp.IsFreeTierEnabled)
 	d.Set("public_network_access", rp.PublicNetworkAccess)
-	if len(*rp.Capabilities) > 0 {
+	if rp.Capabilities != nil && len(*rp.Capabilities) > 0 {
 		d.Set("capabilities", flattenCapablities(*rp.Capabilities))
 	}
 	if rp.ConsistencyPolicy != nil {
 		d.Set("consistency_policy", flattenConsistencyPolicy(*rp.ConsistencyPolicy))
 
 	}
+	d.Set("capacity_mode", rp.CapacityMode)
 	d.Set("backup_policy", flattenBackupPolicy(rp))
 	if rp.Locations != nil {
 		lb, _ := json.Marshal(rp.Locations)
