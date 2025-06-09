@@ -169,23 +169,27 @@ func (c *Client) GetCosmosDB(tenantId, account, name string) (*DuploAzureCosmosD
 }
 
 type DuploAzureCosmosDBAccount struct {
-	Name                               string                               `json:"name"`
-	Kind                               string                               `json:"kind"`
-	AccountType                        string                               `json:"type"`
-	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy `json:"consistencyPolicy"`
-	Capabilities                       *[]DuploAzureCosmosDBCapability      `json:"-"` //Capabilities"`
-	Locations                          []map[string]interface{}             `json:"Locations"`
-	BackupPolicyType                   string                               `json:"backupPolicyType,omitempty"`
-	BackupIntervalInMinutes            int                                  `json:"backupIntervalInMinutes,omitempty"`
-	BackupRetentionIntervalInHours     int                                  `json:"backupRetentionIntervalInHours,omitempty"`
-	BackupStorageRedundancy            string                               `json:"backupStorageRedundancy,omitempty"`
-	DisableKeyBasedMetadataWriteAccess bool                                 `json:"DisableKeyBasedMetadataWriteAccess"`
-	IsFreeTierEnabled                  bool                                 `json:"IsFreeTierEnabled"`
-	PublicNetworkAccess                string                               `json:"PublicNetworkAccess,omitempty"`
-	CapacityMode                       string                               `json:"CapacityMode,omitempty"`
-	ProvisioningState                  string                               `json:"ProvisioningState,omitempty"`
+	Name                               string                                 `json:"name"`
+	Kind                               string                                 `json:"kind"`
+	AccountType                        string                                 `json:"type"`
+	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy   `json:"consistencyPolicy"`
+	Capabilities                       *[]DuploAzureCosmosDBCapability        `json:"-"` //Capabilities"`
+	Locations                          []map[string]interface{}               `json:"Locations"`
+	BackupPolicyType                   string                                 `json:"backupPolicyType,omitempty"`
+	BackupIntervalInMinutes            int                                    `json:"backupIntervalInMinutes,omitempty"`
+	BackupRetentionIntervalInHours     int                                    `json:"backupRetentionIntervalInHours,omitempty"`
+	BackupStorageRedundancy            string                                 `json:"backupStorageRedundancy,omitempty"`
+	DisableKeyBasedMetadataWriteAccess bool                                   `json:"DisableKeyBasedMetadataWriteAccess"`
+	IsFreeTierEnabled                  bool                                   `json:"IsFreeTierEnabled"`
+	PublicNetworkAccess                string                                 `json:"PublicNetworkAccess,omitempty"`
+	CapacityMode                       string                                 `json:"CapacityMode,omitempty"`
+	ProvisioningState                  string                                 `json:"ProvisioningState,omitempty"`
+	ResourceType                       *DuploAzureCosmosDBAccountResourceType `json:"ResourceType,omitempty"`
 }
-
+type DuploAzureCosmosDBAccountResourceType struct {
+	Namespace string `json:"Namespace"`
+	Type      string `json:"Type"`
+}
 type DuploAzureCosmosDB struct {
 	Resource     DuploAzureCosmosDBResource     `json:"Resource"`
 	Name         string                         `json:"Name"`
@@ -230,13 +234,15 @@ func (c *Client) UpdateCosmosDBAccount(tenantId string, name string, rq DuploAzu
 }
 
 func (c *Client) DeleteCosmosDBAccount(tenantId, name string) ClientError {
+	rp := ""
 	return c.deleteAPI(fmt.Sprintf("DeleteCosmosDBAccount(%s,%s)", tenantId, name),
-		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s", tenantId, name), nil)
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s", tenantId, name), &rp)
 }
 
 func (c *Client) DeleteCosmosDB(tenantId, account, name string) ClientError {
+	rp := ""
 	return c.deleteAPI(fmt.Sprintf("DeleteCosmosDB(%s,%s,%s)", tenantId, account, name),
-		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases/%s", tenantId, account, name), nil)
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/databases/%s", tenantId, account, name), &rp)
 }
 
 type DuploAzureCosmosDBContainer struct {

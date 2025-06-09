@@ -128,7 +128,7 @@ func resourceAzureCosmosDBContainerCreate(ctx context.Context, d *schema.Resourc
 	if diags != nil {
 		return diags
 	}
-	diags = resourceAzureCosmosDBRead(ctx, d, m)
+	diags = resourceAzureCosmosDBContainerRead(ctx, d, m)
 	if diags != nil {
 		return diags
 	}

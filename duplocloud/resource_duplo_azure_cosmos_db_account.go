@@ -77,13 +77,19 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"capablities": {
-			Description: "Name of the Cosmos DB capability, for example, 'EnableServerless'", //' Current values also include 'EnableTable', 'EnableGremlin',
+		"capabilities": {
+			Description: "Name of the Cosmos DB capability", //' Current values also include 'EnableTable', 'EnableGremlin',
 			Type:        schema.TypeList,
 			Optional:    true,
-			Elem: &schema.Schema{
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{ /*"EnableCassandra", "EnableTable", "EnableGremlin",*/ "EnableServerless"}, false),
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Description:  "Name of the Cosmos DB capability, for example, 'EnableServerless'.",
+						Type:         schema.TypeString,
+						ValidateFunc: validation.StringInSlice([]string{ /*"EnableCassandra", "EnableTable", "EnableGremlin",*/ "EnableServerless"}, false),
+						Required:     true,
+					},
+				},
 			},
 		},
 		"capacity_mode": {
@@ -152,7 +158,6 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Optional:     true,
 			Default:      "Enabled",
 			ValidateFunc: validation.StringInSlice([]string{"Enabled", "Disabled"}, false),
-			ForceNew:     true,
 		},
 		//	"ip_rules": {
 		//		Description: "List of IpRules.",
@@ -597,7 +602,7 @@ func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmo
 	obj.AccountType = d.Get("type").(string)
 	obj.Locations = []map[string]interface{}{}
 	obj.ConsistencyPolicy = expandConsistencyPolicy(d.Get("consistency_policy").([]interface{}))
-	obj.Capabilities = expandCapablities(d.Get("capablities").([]interface{}))
+	obj.Capabilities = expandCapablities(d.Get("capabilities").([]interface{}))
 	obj.BackupIntervalInMinutes, obj.BackupRetentionIntervalInHours, obj.BackupPolicyType, obj.BackupStorageRedundancy = expandBackupPolicy(d.Get("backup_policy").([]interface{}))
 	if obj.Capabilities != nil && len(*obj.Capabilities) > 0 && (*obj.Capabilities)[0].Name == "EnableServerless" {
 		obj.CapacityMode = "Serverless"
@@ -606,6 +611,7 @@ func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmo
 	}
 	obj.DisableKeyBasedMetadataWriteAccess = d.Get("disable_key_based_metadata_write_access").(bool)
 	obj.IsFreeTierEnabled = d.Get("enable_free_tier").(bool)
+	obj.PublicNetworkAccess = d.Get("public_network_access").(string)
 	return obj
 }
 func expandBackupPolicy(inf []interface{}) (int, int, string, string) {
@@ -640,6 +646,10 @@ func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureC
 		lb, _ := json.Marshal(rp.Locations)
 		d.Set("locations", string(lb))
 	}
+	if rp.ResourceType != nil {
+		d.Set("type", rp.ResourceType.Namespace+"/"+rp.ResourceType.Type)
+
+	}
 }
 
 func flattenBackupPolicy(bp duplosdk.DuploAzureCosmosDBAccount) []interface{} {
@@ -656,8 +666,9 @@ func flattenBackupPolicy(bp duplosdk.DuploAzureCosmosDBAccount) []interface{} {
 func expandCapablities(inf []interface{}) *[]duplosdk.DuploAzureCosmosDBCapability {
 	obj := []duplosdk.DuploAzureCosmosDBCapability{}
 	for _, i := range inf {
+		mp := i.(map[string]interface{})
 		o := duplosdk.DuploAzureCosmosDBCapability{
-			Name: i.(string),
+			Name: mp["name"].(string),
 		}
 		obj = append(obj, o)
 	}
@@ -665,11 +676,11 @@ func expandCapablities(inf []interface{}) *[]duplosdk.DuploAzureCosmosDBCapabili
 }
 
 func flattenCapablities(cap []duplosdk.DuploAzureCosmosDBCapability) []interface{} {
-	s := []string{}
+	mp := map[string]interface{}{}
 	for _, i := range cap {
-		s = append(s, i.Name)
+		mp["name"] = i.Name
 	}
-	return flattenStringList(s)
+	return []interface{}{mp}
 }
 
 func expandConsistencyPolicy(inf []interface{}) *duplosdk.DuploAzureCosmosDBConsistencyPolicy {
