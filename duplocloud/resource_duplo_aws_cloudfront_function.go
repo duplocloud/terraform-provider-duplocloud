@@ -71,7 +71,7 @@ func resourceCloudfrontFunctionCreate(ctx context.Context, d *schema.ResourceDat
 	// Construct the request
 	req := expandCloudFrontFunction(d)
 	// Call the Duplo API to create the CloudFront function
-	log.Printf("[TRACE] Creating CloudFront function in tenant %s: %v", tenantID, request)
+	log.Printf("[TRACE] Creating CloudFront function in tenant %s: %v", tenantID, req)
 	resp, err := c.CreateCloudFrontFunction(tenantID, req)
 	if err != nil {
 		return diag.Errorf("failed to create CloudFront function: %s", err)
@@ -96,7 +96,6 @@ func resourceCloudfrontFunctionRead(ctx context.Context, d *schema.ResourceData,
 
 	// Call the Duplo API to get the CloudFront function
 	log.Printf("[TRACE] Reading CloudFront function %s in tenant %s", name, tenantID)
-	function := map[string]interface{}{}
 	rp, err := c.GetCloudFrontFunction(tenantID, name)
 	if err != nil {
 		if err.Status() == 404 {
@@ -105,15 +104,8 @@ func resourceCloudfrontFunctionRead(ctx context.Context, d *schema.ResourceData,
 		}
 		return diag.Errorf("failed to read CloudFront function: %s", err)
 	}
-
+	flattenCloudFrontFunction(d, rp)
 	// Update the state
-	d.Set("tenant_id", tenantID)
-	d.Set("name", rp.Name)
-	d.Set("code", rp.Code)
-	d.Set("comment", rp.Comment)
-	d.Set("runtime", rp.Runtime)
-	d.Set("function_arn", rp.Metadata.ARN)
-	d.Set("status", rp.Status)
 	return nil
 }
 
@@ -122,18 +114,20 @@ func resourceCloudfrontFunctionUpdate(ctx context.Context, d *schema.ResourceDat
 	tenantID, name := parseCloudfrontFunctionId(d.Id())
 
 	// Construct the request
-	request := map[string]interface{}{
-		"Name":    name,
-		"Code":    d.Get("code").(string),
-		"Comment": d.Get("comment").(string),
-		"Runtime": d.Get("runtime").(string),
-	}
+	req := expandCloudFrontFunction(d)
 
 	// Call the Duplo API to update the CloudFront function
-	log.Printf("[TRACE] Updating CloudFront function %s in tenant %s: %v", name, tenantID, request)
-	err := c.PutAPI(fmt.Sprintf("v3/subscriptions/%s/aws/cloudfrontFunction/%s", tenantID, name), request)
+	log.Printf("[TRACE] Updating CloudFront function %s in tenant %s: %v", name, tenantID, req)
+	err := c.UpdateCloudFrontFunction(tenantID, name, req)
 	if err != nil {
-		return fmt.Errorf("failed to update CloudFront function: %s", err)
+	}
+
+	if d.Get("publish").(bool) {
+		log.Printf("[TRACE] Publishing CloudFront function %s in tenant %s", name, tenantID)
+		err = c.PublishCloudFrontFunction(tenantID, name)
+		if err != nil {
+			return diag.Errorf("failed to publish CloudFront function: %s", err)
+		}
 	}
 
 	return resourceCloudfrontFunctionRead(ctx, d, m)
@@ -141,7 +135,7 @@ func resourceCloudfrontFunctionUpdate(ctx context.Context, d *schema.ResourceDat
 
 func resourceCloudfrontFunctionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*duplosdk.Client)
-	tenantID, name := parseDuploAwsCloudfrontFunctionId(d.Id())
+	tenantID, name := parseCloudfrontFunctionId(d.Id())
 
 	// Call the Duplo API to delete the CloudFront function
 	log.Printf("[TRACE] Deleting CloudFront function %s in tenant %s", name, tenantID)
@@ -162,7 +156,7 @@ func parseCloudfrontFunctionId(id string) (tenantID, name string) {
 }
 
 func expandCloudFrontFunction(d *schema.ResourceData) *duplosdk.DuploCloudFrontFunction {
-	return &DuploCloudFrontFunction{
+	return &duplosdk.DuploCloudFrontFunction{
 		Name:    d.Get("name").(string),
 		Runtime: d.Get("runtime").(string),
 		Code:    d.Get("code").(string),
@@ -170,7 +164,7 @@ func expandCloudFrontFunction(d *schema.ResourceData) *duplosdk.DuploCloudFrontF
 	}
 }
 
-func FlattenCloudFrontFunction(d *schema.ResourceData, function *duplosdk.DuploCloudFrontFunction) {
+func flattenCloudFrontFunction(d *schema.ResourceData, function *duplosdk.DuploCloudFrontFunction) {
 	if function == nil {
 		return
 	}

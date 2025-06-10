@@ -11,7 +11,7 @@ type DuploCloudFrontFunction struct {
 	Code     string                           `json:"FunctionCode"`
 	Comment  string                           `json:"FunctionConfigComment,omitempty"`
 	Status   string                           `json:"Status,omitempty"`
-	Metadata *DuploCloudFrontFunctionMetadata `json:"FunctionMetadata"`
+	Metadata *DuploCloudFrontFunctionMetadata `json:"FunctionMetadata,omitempty"`
 }
 
 // CloudFrontFunctionUpdateRequest represents a request to update a CloudFront Function.
@@ -48,21 +48,18 @@ func (c *Client) CreateCloudFrontFunction(tenantID string, rq *DuploCloudFrontFu
 }
 
 // UpdateCloudFrontFunction updates an existing CloudFront Function.
-//func (c *Client) UpdateCloudFrontFunction(tenantID, name string, rq *CloudFrontFunctionUpdateRequest) (*CloudFrontFunction, ClientError) {
-//	rp := CloudFrontFunction{}
-//	err := c.putAPI(fmt.Sprintf("v3/subscriptions/%s/cloudfrontFunction/%s", tenantID, name), rq, &rp)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return &rp, nil
-//}
+func (c *Client) UpdateCloudFrontFunction(tenantID, name string, rq *DuploCloudFrontFunction) ClientError {
+	rp := map[string]interface{}{}
+	return c.putAPI(fmt.Sprintf("UpdateCloudFrontFunction(%s,%s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFront/function/%s", tenantID, name), rq, &rp)
+}
 
 // DeleteCloudFrontFunction deletes a CloudFront Function by name.
-//func (c *Client) DeleteCloudFrontFunction(tenantID, name string) ClientError {
-//	return c.deleteAPI(fmt.Sprintf("v3/subscriptions/%s/cloudfrontFunction/%s", tenantID, name), nil)
-//}
+func (c *Client) DeleteCloudFrontFunction(tenantID, name string) ClientError {
+	return c.deleteAPI(fmt.Sprintf("DeleteCloudFrontFunction(%s,%s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFront/function/%s", tenantID, name), nil)
+}
 
-// PublishCloudFrontFunction publishes a CloudFront Function by name.
 func (c *Client) PublishCloudFrontFunction(tenantID, name string) ClientError {
 	rq := map[string]string{
 		"Name": name,
