@@ -239,7 +239,7 @@ resource "duplocloud_tenant_config" "tenant_config" {
 
 ### Required
 
-- `account_name` (String) The name of the tenant. Tenant names are globally unique, and cannot be a prefix of any other tenant name.
+- `account_name` (String) The name of the tenant. Tenant names are globally unique, and cannot be a prefix of any other tenant name. Will be converted to lowercase.
 - `plan_id` (String) The name of the plan under which the tenant will be created.
 
 ### Optional
