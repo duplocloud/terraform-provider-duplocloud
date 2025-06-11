@@ -130,6 +130,7 @@ func resourceCloudfrontFunctionUpdate(ctx context.Context, d *schema.ResourceDat
 	log.Printf("[TRACE] Updating CloudFront function %s in tenant %s: %v", name, tenantID, req)
 	err = c.UpdateCloudFrontFunction(tenantID, fullName, req)
 	if err != nil {
+		return diag.Errorf("failed to update CloudFront function: %s", err)
 	}
 
 	if d.Get("publish").(bool) {
