@@ -873,14 +873,27 @@ func gcpNodePoolAcceleratortoState(accelerator *duplosdk.Accelerator) []map[stri
 }
 
 func gcpNodePoolTaintstoState(taints []duplosdk.GCPNodeTaints) []interface{} {
+	gcpTaints := map[string]struct{}{
+		"node.kubernetes.io/not-ready":                   {},
+		"nvidia.com/gpu":                                 {},
+		"node.kubernetes.io/unreachable":                 {},
+		"node.kubernetes.io/memory-pressure":             {},
+		"node.kubernetes.io/disk-pressure":               {},
+		"node.kubernetes.io/pid-pressure":                {},
+		"node.kubernetes.io/network-unavailable":         {},
+		"node.kubernetes.io/unschedulable":               {},
+		"node.cloudprovider.kubernetes.io/uninitialized": {},
+	}
 	state := make([]interface{}, 0, len(taints))
 	for _, t := range taints {
-		data := map[string]interface{}{
-			"key":    t.Key,
-			"value":  t.Value,
-			"effect": t.Effect,
+		if _, ok := gcpTaints[t.Effect]; !ok {
+			data := map[string]interface{}{
+				"key":    t.Key,
+				"value":  t.Value,
+				"effect": t.Effect,
+			}
+			state = append(state, data)
 		}
-		state = append(state, data)
 	}
 	return state
 }
