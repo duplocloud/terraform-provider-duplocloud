@@ -336,21 +336,8 @@ resource "duplocloud_rds_instance" "mydb" {
   snapshot_id = "rds:duplotest-snapdb-2024-12-17-07-00" //snapshot id is of previously created mysql db of version 5.7.44
 }
 ```
-{{ .SchemaMarkdown | trimspace }}
 
-## Import
-
-Import is supported using the following syntax:
-
-```shell
-# Example: Importing an existing RDS instance
-#  - *TENANT_ID* is the tenant GUID
-#  - *SHORTNAME* is the short name of the database (without the duplo prefix)
-#
-terraform import duplocloud_rds_instance.mydb v2/subscriptions/*TENANT_ID*/RDSDBInstance/*SHORTNAME*
-```
-
-Example to showcase use of parameter group in writer and read replica for aurora cluster instance
+# Example to showcase use of parameter group in writer and read replica for aurora cluster instance
 
 ```
 resource "random_password" "mypassword" {
@@ -388,8 +375,8 @@ resource "duplocloud_rds_read_replica" "replica1" {
   engine_type=duplocloud_rds_instance.app.engine
 }
 ```
-Example to showcase use of parameter group in writer and read replica for standalone instance
 
+# Example to showcase use of parameter group in writer and read replica for standalone instance
 
 ```
 resource "duplocloud_rds_instance" "mydb" {
@@ -421,3 +408,17 @@ resource "duplocloud_rds_read_replica" "replica" {
   parameter_group_name=duplocloud_rds_instance.mydb.parameter_group_name
 }
 ```
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+# Example: Importing an existing RDS instance
+#  - *TENANT_ID* is the tenant GUID
+#  - *SHORTNAME* is the short name of the database (without the duplo prefix)
+#
+terraform import duplocloud_rds_instance.mydb v2/subscriptions/*TENANT_ID*/RDSDBInstance/*SHORTNAME*
+```
+

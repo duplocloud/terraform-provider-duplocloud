@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
@@ -95,7 +96,7 @@ func resourceAwsTagRead(ctx context.Context, d *schema.ResourceData, m interface
 
 func resourceAwsTagCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
-	arn := d.Get("arn").(string)
+	arn := url.QueryEscape(url.QueryEscape(url.QueryEscape(d.Get("arn").(string))))
 	tag := &duplosdk.DuploAWSTag{
 		Key:   d.Get("key").(string),
 		Value: d.Get("value").(string),
