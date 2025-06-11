@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"time"
 )
 
 // CloudFrontFunction represents a CloudFront Function in Duplo.
@@ -20,16 +21,25 @@ type DuploCloudFrontFunctionMetadata struct {
 }
 
 // GetCloudFrontFunction retrieves a CloudFront Function by name.
-func (c *Client) GetCloudFrontFunction(tenantID, name string) (*DuploCloudFrontFunction, ClientError) {
-	rp := DuploCloudFrontFunction{}
-
+func (c *Client) GetCloudFrontFunction(tenantID, name string) (*DuploCloudFrontFunctionResponse, ClientError) {
+	rp := DuploCloudFrontFunctionResponse{}
+	code := ""
 	err := c.getAPI(fmt.Sprintf("GetCloudFrontFunction(%s,%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/cloudfrontFunction/%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudfront/function/%s", tenantID, name),
 		&rp)
 
 	if err != nil {
 		return nil, err
 	}
+	err = c.getAPI(fmt.Sprintf("GetCloudFrontFunction(%s,%s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudfront/function/%s/code?stage=LIVE", tenantID, name),
+		&code)
+
+	if err != nil {
+		return nil, err
+	}
+	rp.FunctionCode = code
+
 	return &rp, nil
 }
 
@@ -37,7 +47,7 @@ func (c *Client) GetCloudFrontFunction(tenantID, name string) (*DuploCloudFrontF
 func (c *Client) CreateCloudFrontFunction(tenantID string, rq *DuploCloudFrontFunction) (*DuploCloudFrontFunction, ClientError) {
 	rp := DuploCloudFrontFunction{}
 	err := c.postAPI(fmt.Sprintf("CreateCloudFrontFunction(%s,%s)", tenantID, rq.Name),
-		fmt.Sprintf("v3/subscriptions/%s/cloudfrontFunction", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFront/function", tenantID),
 		rq,
 		&rp)
 
@@ -66,7 +76,49 @@ func (c *Client) PublishCloudFrontFunction(tenantID, name string) ClientError {
 	}
 	var rp interface{}
 	return c.putAPI(fmt.Sprintf("PublishCloudFrontFunction(%s,%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/cloudfrontFunction/%s/publish", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFront/function/%s/publish", tenantID, name),
 		rq,
 		&rp)
+}
+
+type DuploCloudFrontFunctionResponse struct {
+	ETag             string                                  `json:"ETag"`
+	FunctionSummary  DuploCloudFrontFunctionFunctionSummary  `json:"FunctionSummary"`
+	ResponseMetadata DuploCloudFrontFunctionResponseMetadata `json:"ResponseMetadata"`
+	ContentLength    int                                     `json:"ContentLength"`
+	HttpStatusCode   int                                     `json:"HttpStatusCode"`
+	FunctionCode     string                                  `json:"-"`
+}
+
+type DuploCloudFrontFunctionFunctionSummary struct {
+	FunctionConfig   DuploCloudFrontFunctionFunctionConfig    `json:"FunctionConfig"`
+	FunctionMetadata *DuploCloudFrontFunctionFunctionMetadata `json:"FunctionMetadata,omitempty"`
+	Name             string                                   `json:"Name"`
+	Status           string                                   `json:"Status"`
+}
+
+type DuploCloudFrontFunctionFunctionConfig struct {
+	Comment string                              `json:"Comment"`
+	Runtime DuploCloudFrontFunctionRuntimeValue `json:"Runtime"`
+}
+
+type DuploCloudFrontFunctionRuntimeValue struct {
+	Value string `json:"Value"`
+}
+
+type DuploCloudFrontFunctionFunctionMetadata struct {
+	CreatedTime      time.Time `json:"CreatedTime"`
+	FunctionARN      string    `json:"FunctionARN"`
+	LastModifiedTime time.Time `json:"LastModifiedTime"`
+	Stage            Stage     `json:"Stage"`
+}
+
+type Stage struct {
+	Value string `json:"Value"`
+}
+
+type DuploCloudFrontFunctionResponseMetadata struct {
+	RequestID                string `json:"requestIdField"`
+	ChecksumAlgorithm        int    `json:"<ChecksumAlgorithm>k__BackingField"`
+	ChecksumValidationStatus int    `json:"<ChecksumValidationStatus>k__BackingField"`
 }
