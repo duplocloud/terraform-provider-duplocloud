@@ -193,6 +193,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_tag":                             resourceAwsCustomTag(),
 			"duplocloud_aws_target_group_target_register":    resourceAwsTargetGroupTargetRegister(),
 			"duplocloud_asg_instance_refresh":                resourceAsgInstanceRefresh(),
+			"duplocloud_aws_cloudfront_function":             resourceAwsCloudfrontFunction(),
 			"duplocloud_azure_mssqldb_retention_backup":      resourceMsSQLDBRetentionBackup(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
