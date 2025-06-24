@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -263,6 +264,13 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			ForceNew:         true,
 			ValidateFunc:     validation.StringIsNotWhiteSpace,
 			DiffSuppressFunc: diffSuppressAvailablitySetIdOnCase,
+		},
+		"install_native_agent": {
+			Description: "Bootstrap an AKS host with Duplo's user data, prepending it to custom user data if also provided.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true, // relaunch instance
+			Default:     true,
 		},
 	}
 }
@@ -543,6 +551,18 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 		DiskControlType:   d.Get("disk_control_type").(string),
 		AvailabilitySetId: d.Get("availability_set_id").(string),
 	}
+	if val, ok := d.GetOk("install_native_agent"); ok && val != nil {
+		f := false
+		if val.(bool) {
+			f = true
+			data.InstallDuploNativeAgent = &f
+
+		} else if !val.(bool) {
+			f = false
+			data.InstallDuploNativeAgent = &f
+
+		}
+	}
 	if data.SecurityType == "TrustedLaunch" {
 		data.IsSecureBoot = d.Get("enable_security_boot").(bool)
 		data.IsvTPM = d.Get("enable_vtpm").(bool)
@@ -611,6 +631,9 @@ func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNat
 	d.Set("enable_encrypt_at_host", duplo.IsEncryptAtHost)
 	d.Set("disk_control_type", duplo.DiskControlType)
 	d.Set("availability_set_id", duplo.AvailabilitySetId)
+	if duplo.InstallDuploNativeAgent != nil {
+		d.Set("install_native_agent", *duplo.InstallDuploNativeAgent)
+	}
 }
 
 func flattenTags(tags *[]duplosdk.DuploKeyStringValue) []interface{} {
