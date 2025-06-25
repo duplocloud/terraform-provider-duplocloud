@@ -153,7 +153,7 @@ type DuploLaunchTemplatePlacement struct {
 }
 
 type DuploLaunchTemplateTagSpecification struct {
-	ResourceType string                   `json:"ResourceType,omitempty"`
+	ResourceType DuploStringValue         `json:"ResourceType,omitempty"`
 	Tags         []DuploLaunchTemplateTag `json:"Tags"`
 }
 
@@ -172,13 +172,13 @@ type DuploLaunchTemplateElasticInferenceAccelerator struct {
 }
 
 type DuploLaunchTemplateInstanceMarketOptions struct {
-	MarketType  string                               `json:"MarketType,omitempty"`
+	MarketType  DuploStringValue                     `json:"MarketType,omitempty"`
 	SpotOptions DuploLaunchTemplateSpotMarketOptions `json:"SpotOptions,omitempty"`
 }
 
 type DuploLaunchTemplateSpotMarketOptions struct {
-	MaxPrice         string `json:"MaxPrice,omitempty"`
-	SpotInstanceType string `json:"SpotInstanceType,omitempty"`
+	MaxPrice         string           `json:"MaxPrice,omitempty"`
+	SpotInstanceType DuploStringValue `json:"SpotInstanceType,omitempty"`
 }
 
 type DuploLaunchTemplateCreditSpecification struct {

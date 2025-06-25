@@ -136,12 +136,20 @@ func resourceGcpSqlDBInstanceRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 	c := m.(*duplosdk.Client)
-
-	//fullName := d.Get("fullname").(string)
-	fullName, clientErr := c.GetDuploServicesNameWithGcp(tenantID, name, false)
+	f, clientErr := c.AdminGetSystemFeatures()
 	if clientErr != nil {
-		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+		return diag.Errorf("Error fetching system feature")
 	}
+	fullName := name
+	if !f.GcpDisableDuploPrefix && !f.GcpDisableTenantPrefix {
+		// Figure out the full resource name.
+		fullName, clientErr = c.GetDuploServicesNameWithGcp(tenantID, name, false)
+		if clientErr != nil {
+			return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+
+		}
+	}
+
 	duplo, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
