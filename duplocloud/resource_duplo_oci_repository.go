@@ -34,14 +34,14 @@ func resourceOCIRepository() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Description:  "The GUID of the tenant that the storage bucket will be created in.",
+				Description:  "The GUID of the tenant that the oci repository will be created in.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.IsUUID,
 			},
 			"name": {
-				Description:  "The identifier name for the helm repository in duplocloud",
+				Description:  "The identifier name for the oci repository in duplocloud",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
@@ -74,9 +74,10 @@ func resourceOCIRepository() *schema.Resource {
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"tag": {
-										Type:     schema.TypeString,
-										Optional: true,
-										Default:  "latest",
+										Description: "The tag of oci repository to be attached",
+										Type:        schema.TypeString,
+										Optional:    true,
+										Default:     "latest",
 									},
 								},
 							},

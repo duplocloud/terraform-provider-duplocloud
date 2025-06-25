@@ -38,9 +38,9 @@ resource "duplocloud_k8_oci_repository" "oci" {
 
 ### Required
 
-- `name` (String) The identifier name for the helm repository in duplocloud
+- `name` (String) The identifier name for the oci repository in duplocloud
 - `spec` (Block List, Min: 1, Max: 1) The spec block of the oci repository (see [below for nested schema](#nestedblock--spec))
-- `tenant_id` (String) The GUID of the tenant that the storage bucket will be created in.
+- `tenant_id` (String) The GUID of the tenant that the oci repository will be created in.
 
 ### Optional
 
@@ -67,7 +67,7 @@ Optional:
 
 Optional:
 
-- `tag` (String) Defaults to `latest`.
+- `tag` (String) The tag of oci repository to be attached Defaults to `latest`.
 
 
 
