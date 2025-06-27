@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	dsdk "github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/duplocloud/terraform-provider-duplocloud/internal/duplocloudtest"
 	"github.com/duplocloud/terraform-provider-duplocloud/internal/duplosdktest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -54,7 +54,7 @@ func TestAccResource_duplocloud_aws_host_basic(t *testing.T) {
 					duplocloud_aws_host_basic(rName, hostName, map[string]string{}),
 				),
 				Check: func(state *terraform.State) error {
-					host := duplosdktest.EmuLastCreated().(*duplosdk.DuploNativeHost)
+					host := duplosdktest.EmuLastCreated().(*dsdk.DuploNativeHost)
 					r := "duplocloud_aws_host." + rName
 					return resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(r, "tenant_id", Tenant_testacc1a),
@@ -79,7 +79,7 @@ func TestAccResource_duplocloud_aws_host_basic(t *testing.T) {
 					}),
 				),
 				Check: func(state *terraform.State) error {
-					host := duplosdktest.EmuLastCreated().(*duplosdk.DuploNativeHost)
+					host := duplosdktest.EmuLastCreated().(*dsdk.DuploNativeHost)
 					r := "duplocloud_aws_host." + rName
 					return resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(r, "tenant_id", Tenant_testacc1a),
@@ -102,7 +102,7 @@ func TestAccResource_duplocloud_aws_host_basic(t *testing.T) {
 					}),
 				),
 				Check: func(state *terraform.State) error {
-					host := duplosdktest.EmuLastCreated().(*duplosdk.DuploNativeHost)
+					host := duplosdktest.EmuLastCreated().(*dsdk.DuploNativeHost)
 					r := "duplocloud_aws_host." + rName
 					return resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(r, "tenant_id", Tenant_testacc1a),
