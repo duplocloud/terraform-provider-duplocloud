@@ -1,4 +1,4 @@
 linters-settings:
   Errcheck:
     exclude-functions:
-      - Set
+    -ignore: Set
