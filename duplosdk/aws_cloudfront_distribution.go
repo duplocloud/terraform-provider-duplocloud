@@ -266,6 +266,7 @@ type DuploAwsCloudfrontDistributionConfig struct {
 	ViewerCertificate    *DuploAwsCloudfrontDistributionViewerCertificate    `json:"ViewerCertificate,omitempty"`
 	Logging              *DuploAwsCloudfrontDistributionLoggingConfig        `json:"Logging,omitempty"`
 	WebACLId             string                                              `json:"WebACLId"`
+	CorsAllowedHostNames []string                                            `json:"CorsAllowedHostNames,omitempty"`
 }
 
 func (c *Client) AwsCloudfrontDistributionCreate(tenantID string, rq *DuploAwsCloudfrontDistributionCreate) (*DuploAwsCloudfrontDistribution, ClientError) {
