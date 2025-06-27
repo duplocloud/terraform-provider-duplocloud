@@ -1,4 +1,3 @@
 linters-settings:
-  Errcheck:
-    exclude-functions:
-    -ignore: Set
+  errcheck:
+    ignore: 'Set'
