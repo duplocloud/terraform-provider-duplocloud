@@ -6,7 +6,6 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/duplocloud/terraform-provider-duplocloud/internal/duplosdktest"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
