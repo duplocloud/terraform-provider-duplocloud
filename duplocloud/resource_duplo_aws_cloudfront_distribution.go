@@ -296,6 +296,36 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 		"origin": {
 			Type:     schema.TypeSet,
 			Required: true,
+			DiffSuppressFunc: func(_, old, new string, d *schema.ResourceData) bool {
+				// Suppress diff if only the origin_access_identity has changed, as it is managed by the backend.
+				oldOrigins, newOrigins := d.GetChange("origin")
+				oldSet, _ := oldOrigins.(*schema.Set)
+				newSet, _ := newOrigins.(*schema.Set)
+				if oldSet != nil && newSet != nil && oldSet.Len() == newSet.Len() {
+					for i := 0; i < oldSet.Len(); i++ {
+						oldOrigin := oldSet.List()[i].(map[string]interface{})
+						newOrigin := newSet.List()[i].(map[string]interface{})
+						oldS3 := oldOrigin["s3_origin_config"].([]interface{})
+						newS3 := newOrigin["s3_origin_config"].([]interface{})
+						if len(oldS3) > 0 && len(newS3) > 0 {
+							originConfigOld := oldS3[0].(map[string]interface{})
+							originConfigNew := newS3[0].(map[string]interface{})
+							if originConfigOld["origin_access_identity"].(string) != "" && d.Id() != "" {
+								return true // If the origin_access_identity is set, we want to suppress the diff only if it has changed.
+							}
+							if originConfigOld["origin_access_identity"].(string) != "" && originConfigNew["origin_access_identity"].(string) == "" {
+								return true // If the old origin_access_identity is set and the new one is not, we want to suppress the diff.
+							}
+							if originConfigOld["origin_access_identity"].(string) != originConfigNew["origin_access_identity"].(string) && d.Id() != "" {
+								return true // If the origin_access_identity has changed, we want to suppress the diff only if the resource is already created.
+							}
+						} else if len(oldS3) > 0 && len(newS3) == 0 {
+							return true
+						}
+					}
+				}
+				return false
+			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"connection_attempts": {
@@ -414,12 +444,15 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 					},
 					"s3_origin_config": {
 						Type:     schema.TypeList,
-						Computed: true,
+						Optional: true,
+						MaxItems: 1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
 								"origin_access_identity": {
-									Type:     schema.TypeString,
-									Computed: true,
+									Description: `The CloudFront origin access identity to associate with the origin. This is used to restrict access to the S3 bucket. Duplo assigns this automatically when the "use_origin_access_identity" is set to true. Any explicit value set here will be ignored and duplo created oai will be used.`,
+									Type:        schema.TypeString,
+									Computed:    true,
+									Optional:    true,
 								},
 							},
 						},
