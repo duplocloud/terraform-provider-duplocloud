@@ -414,14 +414,11 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 					},
 					"s3_origin_config": {
 						Type:     schema.TypeList,
-						Optional: true,
 						Computed: true,
-						MaxItems: 1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
 								"origin_access_identity": {
 									Type:     schema.TypeString,
-									Optional: true,
 									Computed: true,
 								},
 							},
@@ -1675,6 +1672,7 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 		for _, origin := range *duplo.Origins.Items {
 			originSet.Add(flattenOrigin(origin, d.Get("use_origin_access_identity").(bool)))
 		}
+		d.Set("origin", originSet)
 	}
 
 	if duplo.OriginGroups.Quantity > 0 {
