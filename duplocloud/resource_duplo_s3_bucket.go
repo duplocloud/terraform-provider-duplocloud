@@ -426,23 +426,27 @@ func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name strin
 	d.Set("default_encryption", []map[string]interface{}{{
 		"method": duplo.DefaultEncryption,
 	}})
-	userAdded := d.Get("managed_policies").([]interface{})
-	// ensure the key exists in the state
-	// Filter out policies that do not exist in userAdded
-	filteredPolicies := []string{}
-	userPoliciesSet := make(map[string]struct{})
-	for _, v := range userAdded {
-		if s, ok := v.(string); ok {
-			userPoliciesSet[s] = struct{}{}
+	userAdded, ok := d.GetOk("managed_policies")
+	if ok {
+		// ensure the key exists in the state
+		// Filter out policies that do not exist in userAdded
+		filteredPolicies := []string{}
+		userPoliciesSet := make(map[string]struct{})
+		for _, v := range userAdded.([]interface{}) {
+			if s, ok := v.(string); ok {
+				userPoliciesSet[s] = struct{}{}
+			}
 		}
-	}
-	for _, policy := range duplo.Policies {
-		if _, exists := userPoliciesSet[policy]; exists {
-			filteredPolicies = append(filteredPolicies, policy)
+
+		for _, policy := range duplo.Policies {
+			if _, exists := userPoliciesSet[policy]; exists {
+				filteredPolicies = append(filteredPolicies, policy)
+			}
 		}
+		duplo.Policies = filteredPolicies
 	}
-	duplo.Policies = filteredPolicies
 	d.Set("managed_policies", duplo.Policies)
+
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("region", duplo.Region)
 }
