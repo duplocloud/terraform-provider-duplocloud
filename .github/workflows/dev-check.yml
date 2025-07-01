@@ -21,7 +21,7 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
       - name: Clean Go Build Cache
-        run: go clean -cache -modcache -testcache -sumcache
+        run: go clean -cache -modcache -testcache
       - 
         name: Run linting
         uses: golangci/golangci-lint-action@v6.1.1
