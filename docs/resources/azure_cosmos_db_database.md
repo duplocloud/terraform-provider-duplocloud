@@ -38,7 +38,7 @@ resource "duplocloud_azure_cosmos_db_database" "db" {
 
 - `namespace` (String) The Azure resource provider namespace for Cosmos DB. Defaults to 'Microsoft.DocumentDB'. This value is typically not changed and identifies the resource type within Azure. Defaults to `Microsoft.DocumentDB`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `type` (String) Specifies the Cosmos DB account type. Defaults to 'databaseAccounts/sqlDatabases' Defaults to `databaseAccounts/sqlDatabases`.
+- `type` (String) Specifies the Cosmos DB account type. Defaults to `databaseAccounts/sqlDatabases`.
 
 ### Read-Only
 

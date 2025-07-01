@@ -35,7 +35,7 @@ func duploAzureCosmosDBschema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"type": {
-			Description: "Specifies the Cosmos DB account type. Defaults to 'databaseAccounts/sqlDatabases'",
+			Description: "Specifies the Cosmos DB account type.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Default:     "databaseAccounts/sqlDatabases",

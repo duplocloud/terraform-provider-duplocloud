@@ -65,10 +65,11 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 						ValidateFunc: validation.IntBetween(1, 2147483647),
 					},
 					"max_interval_in_seconds": {
-						Description: "Max amount of time staleness (in seconds) is tolerated",
-						Type:        schema.TypeInt,
-						Optional:    true,
-						Computed:    true,
+						Description:  "Max amount of time staleness (in seconds) is tolerated",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Computed:     true,
+						ValidateFunc: validation.IntBetween(5, 86400),
 					},
 					"default_consistency_level": {
 						Description:  "Specify the default consistency level and configuration settings of the Cosmos DB account. Possible values include: 'Eventual', 'Session', 'BoundedStaleness','Strong', 'ConsistentPrefix'",
@@ -707,6 +708,21 @@ func validateCosmosDBAccountParameters(ctx context.Context, d *schema.ResourceDi
 			}
 		}
 
+	}
+
+	if d.HasChange("consistency_policy") {
+		consistencyPolicies := d.Get("consistency_policy").([]interface{})
+		if len(consistencyPolicies) > 0 {
+			cp := consistencyPolicies[0].(map[string]interface{})
+			if cp["default_consistency_level"] != nil && cp["default_consistency_level"].(string) != "BoundededStaleness" {
+				if cp["max_staleness_prefix"] != nil && cp["max_staleness_prefix"].(int) != 100 {
+					return fmt.Errorf("max_staleness_prefix must be set to default value 100 for default_consistency_level other than BoundededStaleness")
+				}
+				if cp["max_interval_in_seconds"] != nil && cp["max_interval_in_seconds"].(int) != 5 {
+					return fmt.Errorf("max_interval_in_seconds must be set to default value 5 for default_consistency_level other than BoundededStaleness")
+				}
+			}
+		}
 	}
 	return nil
 }
