@@ -911,8 +911,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 	duploObject.InstanceStatus = d.Get("instance_status").(string)
 	duploObject.SkipFinalSnapshot = d.Get("skip_final_snapshot").(bool)
 	duploObject.StoreDetailsInSecretManager = d.Get("store_details_in_secret_manager").(bool)
-	eiam := d.Get("enable_iam_auth").(bool)
-	duploObject.EnableIamAuth = eiam
+	duploObject.EnableIamAuth = d.Get("enable_iam_auth").(bool)
 	duploObject.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
 	if v, ok := d.GetOk("v2_scaling_configuration"); ok {
 		duploObject.V2ScalingConfiguration = expandV2ScalingConfiguration(v.([]interface{}))
