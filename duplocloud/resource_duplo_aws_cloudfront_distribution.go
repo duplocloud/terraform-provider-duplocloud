@@ -2210,7 +2210,9 @@ func validateCloudDistributionParameters(ctx context.Context, d *schema.Resource
 	maxttl := d.Get("default_cache_behavior.0.max_ttl").(int)
 	minttl := d.Get("default_cache_behavior.0.min_ttl").(int)
 	defttl := d.Get("default_cache_behavior.0.default_ttl").(int)
-	if err := ttlValidation(minttl, maxttl, defttl); err != nil {
+	if d.Get("default_cache_behavior.0.cache_policy_id").(string) != "" && (maxttl > 0 || minttl > 0 || defttl > 0) {
+		return fmt.Errorf("cannot sett default_cache_behavior ttl values if default_cache_behavior.cache_policy_id field is set")
+	} else if err := ttlValidation(minttl, maxttl, defttl); err != nil {
 		return fmt.Errorf("default_cache_behavior: %s", err)
 	}
 	ocb := d.Get("ordered_cache_behavior").([]interface{})
