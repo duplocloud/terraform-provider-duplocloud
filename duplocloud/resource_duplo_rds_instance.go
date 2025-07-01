@@ -291,7 +291,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Type:             schema.TypeBool,
 			Optional:         true,
 			Computed:         true,
-			DiffSuppressFunc: diffSuppressWhenExisting,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"enhanced_monitoring": {
 			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
