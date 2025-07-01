@@ -61,12 +61,14 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 						Description:  "Max number of stale requests tolerated. Accepted range for this values 1 to 2147483647",
 						Type:         schema.TypeInt,
 						Optional:     true,
+						Computed:     true,
 						ValidateFunc: validation.IntBetween(1, 2147483647),
 					},
 					"max_interval_in_seconds": {
 						Description: "Max amount of time staleness (in seconds) is tolerated",
 						Type:        schema.TypeInt,
 						Optional:    true,
+						Computed:    true,
 					},
 					"default_consistency_level": {
 						Description:  "Specify the default consistency level and configuration settings of the Cosmos DB account. Possible values include: 'Eventual', 'Session', 'BoundedStaleness','Strong', 'ConsistentPrefix'",
@@ -698,6 +700,9 @@ func validateCosmosDBAccountParameters(ctx context.Context, d *schema.ResourceDi
 				}
 				if bp["backup_retention_interval"] != nil && bp["backup_retention_interval"].(int) > 0 {
 					return fmt.Errorf("backup_retention_interval cannot be set when backup_policy.type is 'Continuous'")
+				}
+				if bp["backup_storage_redundancy"] != nil && bp["backup_storage_redundancy"].(string) != "" {
+					return fmt.Errorf("backup_storage_redundancy cannot be set manually when backup_policy.type is 'Continuous'")
 				}
 			}
 		}
