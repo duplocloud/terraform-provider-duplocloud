@@ -36,10 +36,16 @@ func resourceTenant() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"account_name": {
-				Description: "The name of the tenant. Tenant names are globally unique, and cannot be a prefix of any other tenant name.",
+				Description: "The name of the tenant. Tenant names are globally unique, and cannot be a prefix of any other tenant name. Will be converted to lowercase.",
 				Type:        schema.TypeString,
 				ForceNew:    true, // Change tenant name
 				Required:    true,
+				StateFunc: func(val interface{}) string {
+					return strings.ToLower(val.(string))
+				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return strings.EqualFold(old, new)
+				},
 			},
 			"plan_id": {
 				Description:  "The name of the plan under which the tenant will be created.",
@@ -160,8 +166,11 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 
 // CREATE resource
 func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	// Convert account_name to lowercase
+	accountName := strings.ToLower(d.Get("account_name").(string))
+
 	rq := duplosdk.DuploTenant{
-		AccountName:          d.Get("account_name").(string),
+		AccountName:          accountName,
 		PlanID:               d.Get("plan_id").(string),
 		ExistingK8sNamespace: d.Get("existing_k8s_namespace").(string),
 	}
