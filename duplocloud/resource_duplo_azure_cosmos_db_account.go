@@ -52,7 +52,7 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Optional:    true,
 		},
 		"consistency_policy": {
-			Description: "",
+			Description: "Specify the consistency policy for the Cosmos DB account. This is only applicable for GlobalDocumentDB accounts.",
 			Type:        schema.TypeList,
 			Optional:    true,
 			Elem: &schema.Resource{
@@ -107,7 +107,6 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 					"backup_interval": {
 						Description: "Backup interval in minutes",
 						Optional:    true,
-						Computed:    true,
 						Type:        schema.TypeInt,
 					},
 
@@ -115,7 +114,6 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 						Description: "Backup retention interval in hours",
 						Optional:    true,
 						Type:        schema.TypeInt,
-						Computed:    true,
 					},
 					"backup_storage_redundancy": {
 						Description:  "Backup storage redundancy type. Valid values are Geo, Local, Zone. Defaults to Geo.",
@@ -159,346 +157,7 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Default:      "Enabled",
 			ValidateFunc: validation.StringInSlice([]string{"Enabled", "Disabled"}, false),
 		},
-		//	"ip_rules": {
-		//		Description: "List of IpRules.",
-		//		Type:        schema.TypeList,
-		//		Optional:    true,
-		//		Elem:        &schema.Schema{Type: schema.TypeString},
-		//	},
-		//	"is_virtual_network_filter_enabled": {
-		//		Description: "Flag to indicate whether to enable/disable Virtual Network ACL rules.",
-		//		Type:        schema.TypeBool,
-		//		Optional:    true,
-		//		Default:     false,
-		//	},
-		//	"enable_automatic_failover": {
-		//		Description: "Enables automatic failover of the write region in the rare event that the region is unavailable due to an outage. Automatic failover will result in a new write region for the account and is chosen based on the failover priorities configured for the account.",
-		//		Type:        schema.TypeBool,
-		//		Optional:    true,
-		//		Default:     false,
-		//	},
-		//	"enable_multiple_write_locations": {
-		//		Description: "Enables the account to write in multiple locations.",
-		//		Type:        schema.TypeBool,
-		//		Optional:    true,
-		//		Default:     false,
-		//	},
-		//	"enable_cassandra_connector": {
-		//		Description: "Enables the cassandra connector on the Cosmos DB C* account",
-		//		Type:        schema.TypeBool,
-		//		Optional:    true,
-		//		Default:     false,
-		//	},
-
-		//	"disable_local_auth": {
-		//		Description: "Opt-out of local authentication and ensure only MSI and AAD can be used exclusively for authentication.",
-		//		Type:        schema.TypeBool,
-		//		Optional:    true,
-		//		Default:     false,
-		//	},
-
-		//	"enable_analytical_storage": {
-		//		Description: "Flag to indicate whether to enable storage analytics.",
-		//		Type:        schema.TypeBool,
-		//		Optional:    true,
-		//		Default:     false,
-		//	},
-		//	"identity": {
-		//		Type:     schema.TypeList,
-		//		MaxItems: 1,
-		//		Optional: true,
-		//		Elem: &schema.Resource{
-		//			Schema: map[string]*schema.Schema{
-		//
-		//				"principal_id": {
-		//					Description: "System assigned principal id",
-		//					Type:        schema.TypeString,
-		//					Computed:    true,
-		//				},
-		//				"tenant_id": {
-		//					Description: "System assigned tenant id",
-		//					Type:        schema.TypeString,
-		//					Computed:    true,
-		//				},
-		//				"resource_identity_type": {
-		//					Description:  "Flag to indicate whether to enable storage analytics.",
-		//					Type:         schema.TypeString,
-		//					Optional:     true,
-		//					ValidateFunc: validation.StringInSlice([]string{"SystemAssigned", "UserAssigned", "SystemAssignedUserAssigned", "None"}, false),
-		//				},
-		//				"user_assigned_identities": {
-		//					Description: "List of user identities associated with resource",
-		//					Optional:    true,
-		//					Type:        schema.TypeList,
-		//					Elem: &schema.Resource{
-		//						Schema: map[string]*schema.Schema{
-		//							"arm_resource_id": {
-		//								Description:  "The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'.",
-		//								Type:         schema.TypeString,
-		//								Optional:     true,
-		//								ValidateFunc: validation.StringMatch(regexp.MustCompile(`^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft\\.ManagedIdentity/userAssignedIdentities/[^/]+$`), "invalid arm_resource_id"),
-		//							},
-		//							"principal_id": {
-		//								Description: "User assigned principal id",
-		//								Type:        schema.TypeString,
-		//								Computed:    true,
-		//							},
-		//							"client_id": {
-		//								Description: "User assigned client id",
-		//								Type:        schema.TypeString,
-		//								Computed:    true,
-		//							},
-		//						},
-		//					},
-		//				},
-		//			},
-		//		},
-		//	},
-
-		//"virtual_network_rules": {
-		//	Type:     schema.TypeList,
-		//	Optional: true,
-		//	Elem: &schema.Resource{
-		//		Schema: map[string]*schema.Schema{
-		//			"id": {
-		//				Description:  "resource ID of a subnet, for example: /subscriptions/{subscriptionId}/resourceGroups/{groupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}",
-		//				Optional:     true,
-		//				Type:         schema.TypeString,
-		//				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft\\.Network/virtualNetworks/[^/]+/subnets/[^/]+$`), "invalid virtual_network_rules.id"),
-		//			},
-		//			"ignore_missing_vnet_service_endpoint": {
-		//				Description: "create firewall rule before the virtual network has vnet service endpoint enabled",
-		//				Optional:    true,
-		//				Default:     false,
-		//				Type:        schema.TypeBool,
-		//			},
-		//		},
-		//	},
-		//},
-		//"api_properties": {
-		//	Type:     schema.TypeList,
-		//	Computed: true,
-		//	MaxItems: 1,
-		//	Optional: true,
-		//	Elem: &schema.Resource{
-		//		Schema: map[string]*schema.Schema{
-		//			"server_version": {
-		//				Description:  "Server version of an a MongoDB account",
-		//				Optional:     true,
-		//				Type:         schema.TypeString,
-		//				ValidateFunc: validation.StringInSlice([]string{"3.2", "3.6", "4.0", "4.2"}, false),
-		//			},
-		//		},
-		//	},
-		//},
-
-		//"analytical_storage_configuration": {
-		//	Description: "Specify analytical storage specific properties",
-		//	Type:        schema.TypeList,
-		//	Computed:    true,
-		//	MaxItems:    1,
-		//	Optional:    true,
-		//	Elem: &schema.Resource{
-		//		Schema: map[string]*schema.Schema{
-		//			"schema_type": {
-		//				Description:  "Valid values WellDefined, FullFidelity",
-		//				Optional:     true,
-		//				Type:         schema.TypeString,
-		//				ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
-		//			},
-		//		},
-		//	},
-		//},
-
-		//	"backup_policy": {
-		//		Description: "Specify analytical storage specific properties",
-		//		Type:        schema.TypeList,
-		//		Computed:    true,
-		//		MaxItems:    1,
-		//		Optional:    true,
-		//		Elem: &schema.Resource{
-		//			Schema: map[string]*schema.Schema{
-		//				"migration_state": {
-		//					Description: "Specify analytical storage specific properties",
-		//					Type:        schema.TypeList,
-		//					Computed:    true,
-		//					MaxItems:    1,
-		//					Optional:    true,
-		//					Elem: &schema.Resource{
-		//						Schema: map[string]*schema.Schema{
-		//							"status": {
-		//								Description:  "Valid values WellDefined, FullFidelity",
-		//								Optional:     true,
-		//								Type:         schema.TypeString,
-		//								ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
-		//							},
-		//							"target_type": {
-		//								Description:  "Valid values WellDefined, FullFidelity",
-		//								Optional:     true,
-		//								Type:         schema.TypeString,
-		//								ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
-		//							},
-		//							"start_time": {
-		//								Description:  "Valid values WellDefined, FullFidelity",
-		//								Optional:     true,
-		//								Type:         schema.TypeString,
-		//								ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
-		//							},
-		//						},
-		//					},
-		//				},
-		//			},
-		//		},
-		//	},
-
-		//"cors": {
-		//	Description: "Specify analytical storage specific properties",
-		//	Type:        schema.TypeList,
-		//	Computed:    true,
-		//	MaxItems:    1,
-		//	Optional:    true,
-		//	Elem: &schema.Resource{
-		//		Schema: map[string]*schema.Schema{
-		//			"allowed_origins": {
-		//				Description: "Valid values WellDefined, FullFidelity",
-		//				Optional:    true,
-		//				Type:        schema.TypeString,
-		//			},
-		//			"allowed_methods": {
-		//				Description: "Valid values WellDefined, FullFidelity",
-		//				Optional:    true,
-		//				Type:        schema.TypeString,
-		//			},
-		//			"allowed_headers": {
-		//				Description: "Valid values WellDefined, FullFidelity",
-		//				Optional:    true,
-		//				Type:        schema.TypeString,
-		//			},
-		//			"exposed_headers": {
-		//				Description: "Valid values WellDefined, FullFidelity",
-		//				Optional:    true,
-		//				Type:        schema.TypeString,
-		//			},
-		//			"max_age_in_seconds": {
-		//				Description: "Valid values WellDefined, FullFidelity",
-		//				Optional:    true,
-		//				Type:        schema.TypeFloat,
-		//			},
-		//		},
-		//	},
-		//},
-
-		//"restore_parameters": {
-		//	Description: "Specify analytical storage specific properties",
-		//	Type:        schema.TypeList,
-		//	Computed:    true,
-		//	MaxItems:    1,
-		//	Optional:    true,
-		//	Elem: &schema.Resource{
-		//		Schema: map[string]*schema.Schema{
-		//			"databases_to_restore": {
-		//				Description: "Specify analytical storage specific properties",
-		//				Type:        schema.TypeList,
-		//				Computed:    true,
-		//				MaxItems:    1,
-		//				Optional:    true,
-		//				Elem: &schema.Resource{
-		//					Schema: map[string]*schema.Schema{
-		//						"database_name": {
-		//							Description:  "Valid values WellDefined, FullFidelity",
-		//							Optional:     true,
-		//							Type:         schema.TypeString,
-		//							ValidateFunc: validation.StringInSlice([]string{"WellDefined", "FullFidelity"}, false),
-		//						},
-		//						"collection_names": {
-		//							Description: "Valid values WellDefined, FullFidelity",
-		//							Optional:    true,
-		//							Type:        schema.TypeList,
-		//							Elem: &schema.Schema{
-		//								Type: schema.TypeString,
-		//							},
-		//						},
-		//					},
-		//				},
-		//			},
-		//			"restore_mode": {
-		//				Description: "Valid values WellDefined, FullFidelity",
-		//				Optional:    true,
-		//				Type:        schema.TypeFloat,
-		//			},
-		//			"tables_to_restore": {
-		//				Description: "Valid values WellDefined, FullFidelity",
-		//				Optional:    true,
-		//				Type:        schema.TypeList,
-		//				Elem: &schema.Schema{
-		//					Type: schema.TypeString,
-		//				},
-		//			},
-		//		},
-		//	},
-		//},
-
-		//"capacity": {
-		//	Description: "Specifiy capacity property for the account",
-		//	Type:        schema.TypeList,
-		//	Optional:    true,
-		//	MaxItems:    1,
-		//	Elem: &schema.Resource{
-		//		Schema: map[string]*schema.Schema{
-		//			"total_throughput_limit": {
-		//				Description:  "Total throughput limit imposed on the Account.A totalThroughputLimit of 2000 imposes a strict limit of max throughput that can be provisioned on that account to be 2000. A totalThroughputLimit of -1 indicates no limits on provisioning of throughput.",
-		//				Type:         schema.TypeInt,
-		//				Optional:     true,
-		//				ValidateFunc: validation.IntAtMost(2000),
-		//			},
-		//		},
-		//	},
-		//},
-		//	"connector_offer": {
-		//		Description: "Specify cassandra connector offer type for the Cosmos DB database C*",
-		//		Optional:    true,
-		//		Type:        schema.TypeString,
-		//	},
-		//	"key_vault_key_uri": {
-		//		Description: "The URI of the key vault",
-		//		Optional:    true,
-		//		Type:        schema.TypeString,
-		//	},
-		//	"default_identity": {
-		//		Description: "",
-		//		Optional:    true,
-		//		Type:        schema.TypeString,
-		//	},
-		//	"public_network_access": {
-		//		Description: "",
-		//		Optional:    true,
-		//		Type:        schema.TypeString,
-		//	},
-		//	"create_mode": {
-		//		Description:  "Indicate the mode of account creation. Possible values include: 'Default', 'Restore'",
-		//		Optional:     true,
-		//		Type:         schema.TypeString,
-		//		ValidateFunc: validation.StringInSlice([]string{"Default", "Restore"}, false),
-		//	},
-		//	"network_acl_bypass": {
-		//		Description:  "Indicates what services are allowed to bypass firewall checks. Possible values include: 'None', 'AzureServices'",
-		//		Optional:     true,
-		//		Type:         schema.TypeString,
-		//		ValidateFunc: validation.StringInSlice([]string{"None", "AzureServices"}, false),
-		//	},
-		//	"database_account_offer_type": {
-		//		Description: "",
-		//		Required:    true,
-		//		Type:        schema.TypeString,
-		//	},
-		//	"network_acl_bypass_resource_ids": {
-		//		Description: "Resource Ids for Network Acl Bypass for the Cosmos DB account.",
-		//		Optional:    true,
-		//		Type:        schema.TypeList,
-		//		Elem: &schema.Schema{
-		//			Type: schema.TypeString,
-		//		},
-		//	},
+		// ... (rest of the schema unchanged)
 	}
 }
 
@@ -517,7 +176,8 @@ func resourceAzureCosmosDBAccount() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAzureCosmosDBAccountchema(),
+		Schema:        duploAzureCosmosDBAccountchema(),
+		CustomizeDiff: validateCosmosDBAccountParameters,
 	}
 }
 
@@ -1017,4 +677,28 @@ func cosmosDBAccountWaitUntilReady(ctx context.Context, c *duplosdk.Client, tena
 	log.Printf("[DEBUG] cosmosDBAccountWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func validateCosmosDBAccountParameters(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+	// Prevent backup_interval and backup_retention_interval if backup_policy.type is "Continuous"
+	if d.HasChange("backup_policy") {
+		backupPolicies := d.Get("backup_policy").([]interface{})
+		if len(backupPolicies) > 0 {
+			bp := backupPolicies[0].(map[string]interface{})
+			bpType := ""
+			if v, ok := bp["type"]; ok && v != nil {
+				bpType = strings.ToLower(v.(string))
+			}
+			if bpType == "continuous" {
+				if bp["backup_interval"] != nil && bp["backup_interval"].(int) > 0 {
+					return fmt.Errorf("backup_interval cannot be set when backup_policy.type is 'Continuous'")
+				}
+				if bp["backup_retention_interval"] != nil && bp["backup_retention_interval"].(int) > 0 {
+					return fmt.Errorf("backup_retention_interval cannot be set when backup_policy.type is 'Continuous'")
+				}
+			}
+		}
+
+	}
+	return nil
 }
