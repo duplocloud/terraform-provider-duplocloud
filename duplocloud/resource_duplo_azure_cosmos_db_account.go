@@ -319,6 +319,9 @@ func flattenBackupPolicy(bp duplosdk.DuploAzureCosmosDBAccount) []interface{} {
 	m["backup_retention_interval"] = bp.BackupRetentionIntervalInHours
 	m["backup_storage_redundancy"] = bp.BackupStorageRedundancy
 	m["type"] = bp.BackupPolicyType
+	if bp.ContinuousModeTier != "" {
+		m["continuous_mode_tier"] = bp.ContinuousModeTier
+	}
 	obj = append(obj, m)
 	return obj
 

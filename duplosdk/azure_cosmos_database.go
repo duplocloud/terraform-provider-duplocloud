@@ -185,6 +185,7 @@ type DuploAzureCosmosDBAccount struct {
 	CapacityMode                       string                                 `json:"CapacityMode,omitempty"`
 	ProvisioningState                  string                                 `json:"ProvisioningState,omitempty"`
 	ResourceType                       *DuploAzureCosmosDBAccountResourceType `json:"ResourceType,omitempty"`
+	ContinuousModeTier                 string                                 `json:"ContinuousModeTier,omitempty"`
 }
 type DuploAzureCosmosDBAccountResourceType struct {
 	Namespace string `json:"Namespace"`
