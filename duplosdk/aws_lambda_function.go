@@ -143,7 +143,7 @@ type DuploLambdaConfigurationRequest struct {
 type DuploLambdaPermissionStatement struct {
 	Sid       string                          `json:"Sid,omitempty"`
 	Effect    string                          `json:"Effect,omitempty"`
-	Principal DuploLambdaPermissionPrincipal  `json:"Principal,omitempty"`
+	Principal *DuploLambdaPermissionPrincipal `json:"Principal,omitempty"`
 	Action    string                          `json:"Action,omitempty"`
 	Resource  string                          `json:"Resource,omitempty"`
 	Condition *DuploLambdaPermissionCondition `json:"Condition,omitempty"`
