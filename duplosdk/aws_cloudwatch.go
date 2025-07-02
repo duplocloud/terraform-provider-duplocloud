@@ -193,7 +193,7 @@ func (c *Client) DuploCloudWatchMetricAlarmDelete(tenantId, fullName string) Cli
 	var rp = ""
 	rq := DuploCloudWatchMetricAlarm{
 		Name:  fullName,
-		State: "Delete",
+		State: "delete",
 	}
 	err := c.postAPI(
 		fmt.Sprintf("DuploCloudWatchMetricAlarmCreate(%s, %s)", tenantId, rq.MetricName),

@@ -287,10 +287,11 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Default:  false,
 		},
 		"enable_iam_auth": {
-			Description: "Whether or not to enable the RDS IAM authentication.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Computed:    true,
+			Description:      "Whether or not to enable the RDS IAM authentication. It can only be set during instance creation.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"enhanced_monitoring": {
 			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
