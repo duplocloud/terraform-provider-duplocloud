@@ -79,7 +79,9 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
 
 ### Optional
 
-- `backup_policy` (Block List, Max: 1) Backup policy for cosmos db account (see [below for nested schema](#nestedblock--backup_policy))
+- `backup_policy` (Block List, Max: 1) Backup policy for cosmos db account. 
+			> ⚠️ **Note:**: 
+			> You can only configure backup_interval, backup_retention_interval and backup_storage_redundancy when the type field is set to periodic (see [below for nested schema](#nestedblock--backup_policy))
 - `capabilities` (Block List) Name of the Cosmos DB capability (see [below for nested schema](#nestedblock--capabilities))
 - `consistency_policy` (Block List) Specify the consistency policy for the Cosmos DB account. This is only applicable for GlobalDocumentDB accounts. (see [below for nested schema](#nestedblock--consistency_policy))
 - `disable_key_based_metadata_write_access` (Boolean) Disable write operations on metadata resources (databases, containers, throughput) via account keys Defaults to `false`.
@@ -99,10 +101,12 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
 
 Optional:
 
-- `backup_interval` (Number) Backup interval in minutes
+- `backup_interval` (Number) Backup interval in minutes. Can be configured when type is set to Periodic
 - `backup_retention_interval` (Number) Backup retention interval in hours
 - `backup_storage_redundancy` (String) Backup storage redundancy type. Valid values are Geo, Local, Zone. Defaults to Geo.
-- `type` (String) Valid values Periodic, Continuous Defaults to `Periodic`.
+- `type` (String) The type of backup. Possible values are Periodic and Continuous
+						> ⚠️ **Note:**: 
+						> Update from Periodic to Continuous type is allowed. To change from Periodic to Continuous resource need to be recreated Defaults to `Periodic`.
 
 Read-Only:
 
@@ -123,8 +127,8 @@ Required:
 Optional:
 
 - `default_consistency_level` (String) Specify the default consistency level and configuration settings of the Cosmos DB account. Possible values include: 'Eventual', 'Session', 'BoundedStaleness','Strong', 'ConsistentPrefix'
-- `max_interval_in_seconds` (Number) Max amount of time staleness (in seconds) is tolerated
-- `max_staleness_prefix` (Number) Max number of stale requests tolerated. Accepted range for this values 1 to 2147483647
+- `max_interval_in_seconds` (Number) When used with the 'Bounded Staleness' consistency level, this value represents the time amount of staleness (in seconds) tolerated. The accepted range for this value is 5 - 86400 (1 day). Required when consistency_level is set to BoundedStaleness.
+- `max_staleness_prefix` (Number) When used with the 'Bounded Staleness' consistency level, this value represents the number of stale requests tolerated. The accepted range for this value is 10 – 2147483647. Defaults to 100. Required when 'consistency_level' is set to 'BoundedStaleness'
 
 
 <a id="nestedblock--timeouts"></a>

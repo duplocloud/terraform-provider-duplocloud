@@ -55,17 +55,18 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Description: "Specify the consistency policy for the Cosmos DB account. This is only applicable for GlobalDocumentDB accounts.",
 			Type:        schema.TypeList,
 			Optional:    true,
+			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"max_staleness_prefix": {
-						Description:  "Max number of stale requests tolerated. Accepted range for this values 1 to 2147483647",
+						Description:  "When used with the 'Bounded Staleness' consistency level, this value represents the number of stale requests tolerated. The accepted range for this value is 10 – 2147483647. Defaults to 100. Required when 'consistency_level' is set to 'BoundedStaleness'",
 						Type:         schema.TypeInt,
 						Optional:     true,
 						Computed:     true,
 						ValidateFunc: validation.IntBetween(1, 2147483647),
 					},
 					"max_interval_in_seconds": {
-						Description:  "Max amount of time staleness (in seconds) is tolerated",
+						Description:  "When used with the 'Bounded Staleness' consistency level, this value represents the time amount of staleness (in seconds) tolerated. The accepted range for this value is 5 - 86400 (1 day). Required when consistency_level is set to BoundedStaleness.",
 						Type:         schema.TypeInt,
 						Optional:     true,
 						Computed:     true,
@@ -100,15 +101,17 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"backup_policy": {
-			Description: "Backup policy for cosmos db account",
-			Type:        schema.TypeList,
-			Computed:    true,
-			MaxItems:    1,
-			Optional:    true,
+			Description: `Backup policy for cosmos db account. 
+			> ⚠️ **Note:**: 
+			> You can only configure backup_interval, backup_retention_interval and backup_storage_redundancy when the type field is set to periodic`,
+			Type:     schema.TypeList,
+			Computed: true,
+			MaxItems: 1,
+			Optional: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"backup_interval": {
-						Description: "Backup interval in minutes",
+						Description: "Backup interval in minutes. Can be configured when type is set to Periodic",
 						Optional:    true,
 						Type:        schema.TypeInt,
 					},
@@ -126,7 +129,9 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 						ValidateFunc: validation.StringInSlice([]string{"Geo", "Local", "Zone"}, false),
 					},
 					"type": {
-						Description:  "Valid values Periodic, Continuous",
+						Description: `The type of backup. Possible values are Periodic and Continuous
+						> ⚠️ **Note:**: 
+						> Update from Periodic to Continuous type is allowed. To change from Periodic to Continuous resource need to be recreated`,
 						Optional:     true,
 						Type:         schema.TypeString,
 						Default:      "Periodic",
@@ -688,6 +693,35 @@ func cosmosDBAccountWaitUntilReady(ctx context.Context, c *duplosdk.Client, tena
 func validateCosmosDBAccountParameters(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	// Prevent backup_interval and backup_retention_interval if backup_policy.type is "Continuous"
 	if d.HasChange("backup_policy") {
+		// Get old and new values of backup_policy
+		oldRaw, newRaw := d.GetChange("backup_policy")
+
+		oldList, okOld := oldRaw.([]interface{})
+		newList, okNew := newRaw.([]interface{})
+
+		if okOld && okNew && len(oldList) > 0 && len(newList) > 0 {
+			oldMap, ok1 := oldList[0].(map[string]interface{})
+			newMap, ok2 := newList[0].(map[string]interface{})
+
+			if ok1 && ok2 {
+				oldType := ""
+				newType := ""
+
+				if v, ok := oldMap["type"]; ok && v != nil {
+					oldType = strings.ToLower(v.(string))
+				}
+				if v, ok := newMap["type"]; ok && v != nil {
+					newType = strings.ToLower(v.(string))
+				}
+
+				// Trigger force recreation only from continuous -> periodic
+				if oldType == "continuous" && newType == "periodic" {
+					return fmt.Errorf("updating resource from Continuous to Perioduic not allowed. Resource need to be recreated")
+				}
+			}
+		}
+
+		// Additional validation logic
 		backupPolicies := d.Get("backup_policy").([]interface{})
 		if len(backupPolicies) > 0 {
 			bp := backupPolicies[0].(map[string]interface{})
@@ -707,20 +741,27 @@ func validateCosmosDBAccountParameters(ctx context.Context, d *schema.ResourceDi
 				}
 			}
 		}
-
 	}
 
+	update := false
 	if d.HasChange("consistency_policy") {
 		consistencyPolicies := d.Get("consistency_policy").([]interface{})
 		if len(consistencyPolicies) > 0 {
 			cp := consistencyPolicies[0].(map[string]interface{})
 			if cp["default_consistency_level"] != nil && cp["default_consistency_level"].(string) != "BoundededStaleness" {
 				if cp["max_staleness_prefix"] != nil && cp["max_staleness_prefix"].(int) != 100 {
-					return fmt.Errorf("max_staleness_prefix must be set to default value 100 for default_consistency_level other than BoundededStaleness")
+					cp["max_staleness_prefix"] = 100
+					update = true
 				}
 				if cp["max_interval_in_seconds"] != nil && cp["max_interval_in_seconds"].(int) != 5 {
-					return fmt.Errorf("max_interval_in_seconds must be set to default value 5 for default_consistency_level other than BoundededStaleness")
+					cp["max_interval_in_seconds"] = 5
+					update = true
+
 				}
+			}
+			if update {
+				err := d.SetNew("consistency_policy", []interface{}{cp})
+				return err
 			}
 		}
 	}
