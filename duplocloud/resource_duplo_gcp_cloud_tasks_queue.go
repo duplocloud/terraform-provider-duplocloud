@@ -54,10 +54,10 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 						Required:    true,
 					},
 					"method": {
-						Description:  "The HTTP method to use for the request. Must be one of: `POST`, `GET`, `PUT`, `DELETE`, `PATCH`, `HEAD`.",
+						Description:  "The HTTP method to use for the request. Must be one of: `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`.",
 						Type:         schema.TypeString,
 						Required:     true,
-						ValidateFunc: validation.StringInSlice([]string{"POST", "GET", "PUT", "DELETE", "PATCH", "HEAD"}, false),
+						ValidateFunc: validation.StringInSlice([]string{"POST", "PUT", "DELETE", "PATCH", "HEAD"}, false),
 					},
 					"headers": {
 						Description: "A map of HTTP headers to include in the request. Each key is a header name, and each value is the corresponding header value.",
