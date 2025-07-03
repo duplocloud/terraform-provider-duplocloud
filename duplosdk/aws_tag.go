@@ -1,6 +1,9 @@
 package duplosdk
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 type DuploAWSTag struct {
 	Key   string `json:"Key"`
@@ -21,7 +24,7 @@ func (c *Client) CreateAWSTag(tenantId, arn string, rq *DuploAWSTag) ClientError
 func (c *Client) GetAWSTag(tenantId, arn, key string) (*DuploAWSTag, ClientError) {
 	rp := DuploAWSTag{}
 	err := c.getAPI(
-		fmt.Sprintf("GetAWSTag(%s, %s,%s)", tenantId, arn, key),
+		fmt.Sprintf("GetAWSTag(%s, %s,%s)", tenantId, url.QueryEscape(arn), key),
 		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/%s", tenantId, arn, key),
 		&rp,
 	)
@@ -30,7 +33,7 @@ func (c *Client) GetAWSTag(tenantId, arn, key string) (*DuploAWSTag, ClientError
 
 func (c *Client) DeleteAWSTag(tenantId, arn, key string) ClientError {
 	err := c.deleteAPI(
-		fmt.Sprintf("DeleteAWSTag(%s, %s,%s)", tenantId, arn, key),
+		fmt.Sprintf("DeleteAWSTag(%s, %s,%s)", tenantId, url.QueryEscape(arn), key),
 		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/%s", tenantId, arn, key),
 		nil,
 	)
@@ -41,7 +44,7 @@ func (c *Client) UpdateAWSTag(tenantId, arn, key string, rq *DuploAWSTag) Client
 	var rp interface{}
 
 	err := c.putAPI(
-		fmt.Sprintf("CreateAWSTag(%s, %s,%s)", tenantId, arn, key),
+		fmt.Sprintf("CreateAWSTag(%s, %s,%s)", tenantId, url.QueryEscape(arn), key),
 		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/%s", tenantId, arn, key),
 		&rq,
 		&rp,

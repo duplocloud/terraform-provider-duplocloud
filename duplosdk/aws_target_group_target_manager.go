@@ -35,12 +35,17 @@ func (c *Client) DuploAwsTargetGroupTargetGet(tenantID, name string) (*DuploTarg
 	if err == nil {
 		for _, v := range rp {
 			m := v.(map[string]interface{})
-
-			obj.Targets = append(obj.Targets, DuploTargetId{
-				Id:               m["Id"].(string),
-				Port:             int(m["Port"].(float64)),
-				AvailabilityZone: m["AvailabilityZone"].(string),
-			})
+			tId := DuploTargetId{}
+			if v, ok := m["Id"]; ok {
+				tId.Id = v.(string)
+			}
+			if v, ok := m["AvailabilityZone"]; ok {
+				tId.AvailabilityZone = v.(string)
+			}
+			if v, ok := m["Port"]; ok {
+				tId.Port = int(v.(float64))
+			}
+			obj.Targets = append(obj.Targets, tId)
 		}
 	}
 

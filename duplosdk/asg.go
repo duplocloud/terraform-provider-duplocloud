@@ -39,6 +39,7 @@ type DuploAsgProfile struct {
 	EnabledMetrics      *[]string                          `json:"EnabledMetrics,omitempty"`
 	ExtraNodeLabels     *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
 	Taints              *[]DuploTaints                     `json:"Taints,omitempty"`
+	Created             *bool                              `json:"Created,omitempty"`
 }
 
 type DuploAsgProfileDeleteReq struct {
@@ -49,10 +50,12 @@ type DuploAsgProfileDeleteReq struct {
 // AsgProfileGetList retrieves a list of ASG profiles via the Duplo API.
 func (c *Client) AsgProfileGetList(tenantID string) (*[]DuploAsgProfile, ClientError) {
 	log.Printf("[DEBUG] Duplo API - Get ASG Profile List(TenantId-%s)", tenantID)
+	conf := NewRetryConf()
+
 	rp := []DuploAsgProfile{}
-	err := c.getAPI(fmt.Sprintf("AsgProfileGetList(%s)", tenantID),
+	err := c.getAPIWithRetry(fmt.Sprintf("AsgProfileGetList(%s)", tenantID),
 		fmt.Sprintf("subscriptions/%s/GetTenantAsgProfiles", tenantID),
-		&rp)
+		&rp, &conf)
 	return &rp, err
 }
 

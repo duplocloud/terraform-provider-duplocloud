@@ -195,6 +195,8 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_cloud_queue_task":                resourceGcpCloudQueueTask(),
 			"duplocloud_gcp_cloud_tasks_queue":               resourceGcpCloudTasksQueue(),
 			"duplocloud_asg_instance_refresh":                resourceAsgInstanceRefresh(),
+			"duplocloud_aws_cloudfront_function":             resourceAwsCloudfrontFunction(),
+			"duplocloud_azure_mssqldb_retention_backup":      resourceMsSQLDBRetentionBackup(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),

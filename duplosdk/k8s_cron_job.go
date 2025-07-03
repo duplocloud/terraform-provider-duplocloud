@@ -45,6 +45,9 @@ func (c *Client) K8sCronJobGet(tenantId, jobName string) (*DuploK8sCronJob, Clie
 		&rp)
 
 	if err != nil {
+		if err.Status() == 404 {
+			return nil, nil
+		}
 		return nil, newClientError(fmt.Sprintf("cronjob %s not found. %s", jobName, err))
 	}
 	// Add the tenant ID, then return the result.

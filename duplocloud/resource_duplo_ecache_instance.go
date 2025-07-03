@@ -75,7 +75,8 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "The numerical index of elasticache instance type.\n" +
 				"Should be one of:\n\n" +
 				"   - `0` : Redis\n" +
-				"   - `1` : Memcache\n\n",
+				"   - `1` : Memcache\n" +
+				"   - `2` : Valkey\n\n",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
@@ -315,7 +316,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	c := m.(*duplosdk.Client)
 
-	fullName, errname := c.GetResourceName("duploservices", tenantID, duplo.Name, false)
+	fullName, errname := c.GetResourceName("duplo", tenantID, duplo.Name, false)
 	if errname != nil {
 		return diag.Errorf("resourceDuploEcacheInstanceCreate: Unable to retrieve duplo service name (name: %s, error: %s)", duplo.Name, errname.Error())
 

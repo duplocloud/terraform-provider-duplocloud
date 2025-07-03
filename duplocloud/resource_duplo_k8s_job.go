@@ -145,11 +145,12 @@ func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, me
 	c := meta.(*duplosdk.Client)
 	job, err := c.K8sJobGet(tenantId, jobName)
 	if err != nil {
-		log.Printf("[DEBUG] Received error: %#v", err)
 		return diag.Errorf("Failed to read Job. API error: %s", err)
 	}
-	log.Printf("[INFO] Received Job: %#v", job)
-
+	if job == nil {
+		d.SetId("")
+		return nil
+	}
 	isAnyHostAllowed := GetIsAnyHostAllowed(job.Metadata.Annotations)
 	job.IsAnyHostAllowed = isAnyHostAllowed
 
