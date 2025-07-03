@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	dsdk "github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/duplocloud/terraform-provider-duplocloud/internal/duplosdktest"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -41,7 +40,7 @@ func TestAccResource_duplocloud_tenant_basic(t *testing.T) {
 						"}",
 				),
 				Check: func(state *terraform.State) error {
-					tenant := duplosdktest.EmuCreated()[0].(*duplosdk.DuploTenant)
+					tenant := duplosdktest.EmuCreated()[0].(*dsdk.DuploTenant)
 					return resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "tenant_id", tenant.TenantID),
 						resource.TestCheckResourceAttr("duplocloud_tenant."+rName, "plan_id", "testacc1"),

@@ -113,15 +113,23 @@ func resourceAwsLambdaPermissionRead(ctx context.Context, d *schema.ResourceData
 		}
 		return diag.Errorf("Unable to retrieve tenant %s lambda permission '%s': %s", tenantID, functionName, clientErr)
 	}
+	if rp == nil {
+		d.SetId("") // object missing
+		return nil
+	}
 	for _, permission := range *rp {
 		if permission.Sid == sid {
 			d.Set("tenant_id", tenantID)
 			d.Set("action", permission.Action)
 			d.Set("function_name", functionName)
-			d.Set("principal", permission.Principal.Service)
+			if permission.Principal != nil {
+				d.Set("principal", permission.Principal.Service)
+			}
 			d.Set("qualifier", d.Get("qualifier").(string))
 			d.Set("source_account", d.Get("source_account").(string))
-			d.Set("source_arn", permission.Condition.Arn["AWS:SourceArn"])
+			if permission.Condition != nil {
+				d.Set("source_arn", permission.Condition.Arn["AWS:SourceArn"])
+			}
 			d.Set("statement_id", permission.Sid)
 		}
 	}
@@ -204,14 +212,30 @@ func parseAwsLambdaPermissionIdParts(id string) (tenantID, name, statementId str
 }
 
 func expandAwsLambdaPermission(d *schema.ResourceData) *duplosdk.DuploLambdaPermissionRequest {
-	return &duplosdk.DuploLambdaPermissionRequest{
-		Action:           d.Get("action").(string),
-		FunctionName:     d.Get("function_name").(string),
-		Principal:        d.Get("principal").(string),
-		EventSourceToken: d.Get("event_source_token").(string),
-		Qualifier:        d.Get("qualifier").(string),
-		SourceAccount:    d.Get("source_account").(string),
-		SourceArn:        d.Get("source_arn").(string),
-		StatementId:      d.Get("statement_id").(string),
+	obj := duplosdk.DuploLambdaPermissionRequest{}
+	if v, ok := d.GetOk("action"); ok && v != nil {
+		obj.Action = v.(string)
 	}
+	if v, ok := d.GetOk("function_name"); ok && v != nil {
+		obj.FunctionName = v.(string)
+	}
+	if v, ok := d.GetOk("principal"); ok && v != nil {
+		obj.Principal = v.(string)
+	}
+	if v, ok := d.GetOk("event_source_token"); ok && v != nil {
+		obj.EventSourceToken = v.(string)
+	}
+	if v, ok := d.GetOk("qualifier"); ok && v != nil {
+		obj.Qualifier = v.(string)
+	}
+	if v, ok := d.GetOk("source_account"); ok && v != nil {
+		obj.SourceAccount = v.(string)
+	}
+	if v, ok := d.GetOk("source_arn"); ok && v != nil {
+		obj.SourceArn = v.(string)
+	}
+	if v, ok := d.GetOk("statement_id"); ok && v != nil {
+		obj.StatementId = v.(string)
+	}
+	return &obj
 }
