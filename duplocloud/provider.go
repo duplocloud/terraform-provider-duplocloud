@@ -195,6 +195,7 @@ func Provider() *schema.Provider {
 			"duplocloud_asg_instance_refresh":                resourceAsgInstanceRefresh(),
 			"duplocloud_aws_cloudfront_function":             resourceAwsCloudfrontFunction(),
 			"duplocloud_azure_mssqldb_retention_backup":      resourceMsSQLDBRetentionBackup(),
+			"duplocloud_k8_oci_repository":                   resourceOCIRepository(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
