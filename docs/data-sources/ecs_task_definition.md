@@ -44,7 +44,7 @@ description: |-
 - `status` (String) The status of the task definition.
 - `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
 - `task_role_arn` (String)
-- `volumes` (String)
+- `volumes` (String) A JSON-encoded string containing a list of volumes that are used by the ECS task definition.
 
 <a id="nestedatt--inference_accelerator"></a>
 ### Nested Schema for `inference_accelerator`
