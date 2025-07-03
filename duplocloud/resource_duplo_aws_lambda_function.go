@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -244,6 +245,7 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			MaxItems:    1,
 			Optional:    true,
+			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 	}
