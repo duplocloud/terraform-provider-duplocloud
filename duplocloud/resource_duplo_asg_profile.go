@@ -181,7 +181,9 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	// Build a request.
 	rq := expandAsgProfile(d)
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): start", rq.TenantId, rq.FriendlyName)
-
+	currentTime := time.Now()
+	formatted := currentTime.Format("02012006150405")
+	rq.FriendlyName += "-" + formatted
 	// Create the ASG Prfoile in Duplo.
 	c := m.(*duplosdk.Client)
 	rp, err := c.AsgProfileCreate(rq)
@@ -191,7 +193,6 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	if rp == "" {
 		return diag.Errorf("Error creating ASG profile '%s': no friendly name was received", rq.FriendlyName)
 	}
-
 	id := fmt.Sprintf("%s/%s", rq.TenantId, rp)
 	log.Printf("[DEBUG] ASG Profile Resource ID- (%s)", id)
 
