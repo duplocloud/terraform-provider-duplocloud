@@ -39,7 +39,7 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
-			ValidateFunc: validation.StringInSlice([]string{"GlobalDocumentDB"}, false),
+			ValidateFunc: validation.StringInSlice([]string{"GlobalDocumentDB"}, false), //, "MongoDB", "Parse"}, false),
 		},
 		"locations": {
 			Description: "An array that contains the georeplication locations enabled for the Cosmos DB account.",
@@ -54,10 +54,11 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Optional:    true,
 		},
 		"consistency_policy": {
-			Description: "Specify the consistency policy for the Cosmos DB account. This is only applicable for GlobalDocumentDB accounts.",
+			Description: "Specify the consistency policy for the Cosmos DB account.",
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
+			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"max_staleness_prefix": {
@@ -271,7 +272,11 @@ func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmo
 	obj.Kind = d.Get("kind").(string)
 	obj.AccountType = d.Get("type").(string)
 	obj.Locations = []map[string]interface{}{}
-	obj.ConsistencyPolicy = expandConsistencyPolicy(d.Get("consistency_policy").([]interface{}))
+	if v, ok := d.GetOk("consistency_policy"); ok {
+		obj.ConsistencyPolicy = expandConsistencyPolicy(v.([]interface{}))
+	} else {
+		obj.ConsistencyPolicy = nil
+	}
 	obj.Capabilities = expandCapablities(d.Get("capabilities").([]interface{}))
 	obj.BackupIntervalInMinutes, obj.BackupRetentionIntervalInHours, obj.BackupPolicyType, obj.BackupStorageRedundancy = expandBackupPolicy(d.Get("backup_policy").([]interface{}))
 	if obj.Capabilities != nil && len(*obj.Capabilities) > 0 && (*obj.Capabilities)[0].Name == "EnableServerless" {
@@ -365,6 +370,7 @@ func expandConsistencyPolicy(inf []interface{}) *duplosdk.DuploAzureCosmosDBCons
 		}
 		obj.MaxIntervalInSeconds = m["max_interval_in_seconds"].(int)
 		obj.MaxStalenessPrefix = m["max_staleness_prefix"].(int)
+
 	}
 	return &obj
 }
