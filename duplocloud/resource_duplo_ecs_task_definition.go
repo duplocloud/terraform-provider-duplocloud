@@ -402,7 +402,7 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	err2 := json.Unmarshal([]byte(vols), &duplo.Volumes)
 	if err2 != nil {
 		log.Printf("[TRACE] expandEcsTaskDefinition: failed to parse volumes: %s", condefs)
-		return nil, err2
+		return nil, fmt.Errorf("invalid json %s", err2)
 	}
 
 	// Next, convert things into structured data.
