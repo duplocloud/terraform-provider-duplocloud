@@ -33,11 +33,13 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringMatch(regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9._-]{0,78}[a-zA-Z0-9_]$"), `The length must be between 1 and 80 characters. The first character must be a letter or number. The last character must be a letter, number, or underscore. The remaining characters must be letters, numbers, periods, underscores, or dashes.`),
 		},
 		"kind": {
-			Description:  "Indicates the type of database account. This can only be set at database account creation. \n Allowed Account Kind : GlobalDocumentDB, MongoDB, Parse",
+			Description: `Indicates the type of database account. This can only be set at database account creation.
+			Allowed Account Kind : GlobalDocumentDB.
+			Future support MongoDB, Parse`,
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
-			ValidateFunc: validation.StringInSlice([]string{"GlobalDocumentDB", "MongoDB", "Parse"}, false),
+			ValidateFunc: validation.StringInSlice([]string{"GlobalDocumentDB"}, false),
 		},
 		"locations": {
 			Description: "An array that contains the georeplication locations enabled for the Cosmos DB account.",

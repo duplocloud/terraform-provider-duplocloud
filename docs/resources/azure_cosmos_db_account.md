@@ -72,8 +72,9 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
 
 ### Required
 
-- `kind` (String) Indicates the type of database account. This can only be set at database account creation. 
- Allowed Account Kind : GlobalDocumentDB, MongoDB, Parse
+- `kind` (String) Indicates the type of database account. This can only be set at database account creation.
+			Allowed Account Kind : GlobalDocumentDB.
+			Future support MongoDB, Parse
 - `name` (String) The name for availability set
 - `tenant_id` (String) The GUID of the tenant that the host will be created in.
 
