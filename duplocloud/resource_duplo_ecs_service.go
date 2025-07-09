@@ -272,7 +272,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 					},
 					"capacity_provider": {
 						Description: "Name of the capacity provider." +
-							"Should be one of:\n" +
+							" Should be one of:\n" +
 							" 	- FARGATE\n" +
 							" 	- FARGATE_SPOT\n" +
 							" 	- ASG fullname: Used when asg created with agent platform ECS",
