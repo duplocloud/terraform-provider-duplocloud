@@ -84,7 +84,7 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
 			> ⚠️ **Note:**: 
 			> You can only configure backup_interval, backup_retention_interval and backup_storage_redundancy when the type field is set to periodic (see [below for nested schema](#nestedblock--backup_policy))
 - `capabilities` (Block List) Name of the Cosmos DB capability (see [below for nested schema](#nestedblock--capabilities))
-- `consistency_policy` (Block List) Specify the consistency policy for the Cosmos DB account. This is only applicable for GlobalDocumentDB accounts. (see [below for nested schema](#nestedblock--consistency_policy))
+- `consistency_policy` (Block List, Max: 1) Specify the consistency policy for the Cosmos DB account. (see [below for nested schema](#nestedblock--consistency_policy))
 - `disable_key_based_metadata_write_access` (Boolean) Disable write operations on metadata resources (databases, containers, throughput) via account keys Defaults to `false`.
 - `enable_free_tier` (Boolean) Flag to indicate whether Free Tier is enabled. Defaults to `false`.
 - `public_network_access` (String) Flag to indicate whether to enable/disable public network access. Defaults to `Enabled`.
