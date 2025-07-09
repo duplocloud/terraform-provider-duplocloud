@@ -64,7 +64,10 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 
 - `ad_domain_type` (String) Specify domain service provided by Microsoft Azure for managing identities and access in the cloud. Valid values are `aadjoin` or `addsjoin`.
 - `admin_password` (String, Sensitive) The password associated with the local administrator account.
-- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
+- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to.
+
+ - 0: Linux Docker/Native
+- 5: Docker Windows Defaults to `0`.
 - `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
 - `availability_set_id` (String) Specify availability set id to which virtual machine should be added to
 - `base64_user_data` (String) Base64 encoded user data to associated with the host.
