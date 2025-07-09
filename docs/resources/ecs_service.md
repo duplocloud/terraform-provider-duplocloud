@@ -87,12 +87,10 @@ resource "duplocloud_ecs_service" "myservice" {
 
 Required:
 
-- `capacity_provider` (String) Name of the capacity provider.
-Valid values are:
-
-FARGATE
-FARGATE_SPOT
-ASG fullname: Used when asg created with agent platform ECS
+- `capacity_provider` (String) Name of the capacity provider.Should be one of:
+ 	- FARGATE
+ 	- FARGATE_SPOT
+ 	- ASG fullname: Used when asg created with agent platform ECS
 
 Optional:
 
