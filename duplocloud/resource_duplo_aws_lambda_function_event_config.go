@@ -158,9 +158,6 @@ func createOrUpdateLambdaEventInvokeConfiguration(ctx context.Context, d *schema
 	tenantId := d.Get("tenant_id").(string)
 
 	request := buildPutLambdaEventInvokeRequest(d)
-	if d.HasChange("max_retry_attempts") || d.HasChange("max_event_age_in_seconds") {
-
-	}
 	err := duploClient.LambdaEventInvokeConfigCreateOrUpdate(tenantId, functionName, request)
 
 	if err != nil {
