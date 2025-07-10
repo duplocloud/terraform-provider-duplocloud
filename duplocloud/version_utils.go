@@ -7,8 +7,9 @@ import (
 )
 
 func extractVersion(input string) string {
-	// Regular expression to match version-like patterns (e.g., 3.07.1, 4.01.2)
-	re := regexp.MustCompile(`\d+\.\d+\.\d+`)
+	// Regular expression to match version-like patterns (e.g. 3, 3.0, 3.07.1, 4.01.2)
+	//re := regexp.MustCompile(`\d+\.\d+\.\d+`)
+	re := regexp.MustCompile(`\d+(?:\.\d+){0,2}`)
 
 	// Find the first version number match
 	version := re.FindString(input)

@@ -74,6 +74,7 @@ type DuploRdsInstance struct {
 	EnablePerformanceInsights          bool                    `json:"EnablePerformanceInsights"`
 	PerformanceInsightsRetentionPeriod int                     `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string                  `json:"PerformanceInsightsKMSKeyId,omitempty"`
+	AutoMinorVersionUpgrade            bool                    `json:"AutoMinorVersionUpgrade"`
 	DeletionProtection                 bool                    `json:"DeletionProtection"`
 }
 
@@ -95,6 +96,7 @@ type DuploRdsUpdatePayload struct {
 	SizeEx                    string `json:"SizeEx,omitempty"`
 	DbParameterGroupName      string `json:"DbParameterGroupName,omitempty"`
 	ClusterParameterGroupName string `json:"ClusterParameterGroupName,omitempty"`
+	AutoMinorVersionUpgrade   *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
 }
 
 type DuploRdsUpdateInstance struct {
@@ -102,6 +104,7 @@ type DuploRdsUpdateInstance struct {
 	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
 	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
 	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot"`
+	ApplyImmediately      bool   `json:"ApplyImmediately"`
 }
 
 type DuploRdsUpdatePerformanceInsights struct {
@@ -127,6 +130,7 @@ type DuploRdsUpdateCluster struct {
 	EnablePerformanceInsights          bool   `json:"EnablePerformanceInsights,omitempty"`
 	PerformanceInsightsRetentionPeriod int    `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string `json:"PerformanceInsightsKMSKeyId,omitempty"`
+	AutoMinorVersionUpgrade            *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
 }
 
 type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
@@ -148,6 +152,11 @@ type DuploMonitoringInterval struct {
 	DBInstanceIdentifier string `json:"DBInstanceIdentifier"`
 	ApplyImmediately     bool   `json:"ApplyImmediately"`
 	MonitoringInterval   int    `json:"MonitoringInterval"`
+}
+
+type DuploRDSClusterCompareField struct {
+	DeleteProtection        bool `json:"DeletionProtection"`
+	AutoMinorVersionUpgrade bool `json:"AutoMinorVersionUpgrade"`
 }
 
 /*************************************************
@@ -226,10 +235,11 @@ func (c *Client) RdsInstanceGet(id string) (*DuploRdsInstance, ClientError) {
 	identifier := EnsureDuploPrefixInRdsIdentifier(name)
 	// Call the API.
 	duploObject := DuploRdsInstance{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("RdsInstanceGet(%s, %s)", tenantID, identifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
-		&duploObject)
+		&duploObject, &conf)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
 	}
@@ -243,10 +253,11 @@ func (c *Client) RdsInstanceGetByName(tenantID, name string) (*DuploRdsInstance,
 	identifier := EnsureDuploPrefixInRdsIdentifier(name)
 	// Call the API.
 	duploObject := DuploRdsInstance{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("RdsInstanceGet(%s, %s)", tenantID, identifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
-		&duploObject)
+		&duploObject, &conf)
 	if err != nil || duploObject.Identifier == "" {
 		return nil, err
 	}
@@ -396,20 +407,23 @@ func (c *Client) RdsTagUpdateV3(tenantID string, tag DuploRDSTag) ClientError {
 
 func (c *Client) RdsTagListV3(tenantID, resourceType, resourceId string) (*[]DuploKeyStringValue, ClientError) {
 	tags := []DuploKeyStringValue{}
-	err := c.getAPI(
+
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("RdsTagListV3(%s, %s)", tenantID, resourceId),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag", tenantID, resourceType, resourceId),
-		&tags,
+		&tags, &conf,
 	)
 	return &tags, err
 }
 
 func (c *Client) RdsTagGetV3(tenantID string, tag DuploRDSTag) (*DuploKeyStringValue, ClientError) {
 	tags := DuploKeyStringValue{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("RdsTagGetV3(%s, %s)", tenantID, tag.ResourceId),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/%s/%s/tag/%s", tenantID, tag.ResourceType, tag.ResourceId, urlSafeBase64Encode(tag.Key)),
-		&tags,
+		&tags, &conf,
 	)
 	return &tags, err
 }
@@ -461,4 +475,41 @@ func (c *Client) RdsInstanceUpdateParameterGroupName(tenantID string, instanceId
 		&rdsUpdate,
 		nil,
 	)
+}
+
+func (c *Client) EnableReadReplicaServerlessCreation(tenantID, cIdentifier string, rq DuploRdsModifyAuroraV2ServerlessInstanceSize) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("ReadReplicaServerlessCreate(%s, %s)", tenantID, cIdentifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/auroraToV2Serverless", tenantID, cIdentifier),
+		&rq, nil)
+}
+
+type DuploAutoMinorUpgrade struct {
+	DBInstanceIdentifier    string `json:"DBInstanceIdentifier"`
+	AutoMinorVersionUpgrade bool   `json:"AutoMinorVersionUpgrade"`
+	ApplyImmediately        bool   `json:"ApplyImmediately"`
+}
+
+func (c *Client) UpdateRDSDBInstanceAutoMinorUpgrade(tenantID, instanceId string, duploObject DuploRdsUpdatePayload) ClientError {
+	return c.putAPI(
+		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, instanceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/updatePayload", tenantID, instanceId),
+		&duploObject,
+		nil,
+	)
+}
+
+func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, ClientError) {
+	idParts := strings.SplitN(id, "/", 5)
+	tenantID := idParts[2]
+	name := idParts[4]
+	identifier := EnsureDuploPrefixInRdsIdentifier(name)
+	// Call the API.
+	duploObject := DuploRDSClusterCompareField{}
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
+		fmt.Sprintf("RdsInstanceGet(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, identifier+"-cluster"),
+		&duploObject, &conf)
+	return &duploObject, err
 }

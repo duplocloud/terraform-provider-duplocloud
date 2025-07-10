@@ -35,6 +35,7 @@ output "metadata" {
 
 ### Optional
 
+- `allocation_tags` (String) Allocation tags is the simplest way to constraint containers/pods with hosts/nodes. DuploCloud/Kubernetes Orchestrator will make sure containers will run on the hosts having same allocation tags.
 - `is_any_host_allowed` (Boolean) Defaults to `false`.
 
 ### Read-Only

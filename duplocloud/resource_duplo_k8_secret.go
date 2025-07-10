@@ -7,8 +7,9 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -222,7 +223,28 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret, re
 
 	// Finally, set the map
 	d.Set("secret_annotations", duplo.SecretAnnotations)
-	d.Set("secret_labels", duplo.SecretLabels)
+	filter := map[string]struct{}{
+		"app":        {},
+		"owner":      {},
+		"tenantid":   {},
+		"tenantname": {},
+	}
+	m := d.Get("secret_labels")
+	if m != nil {
+		for k := range m.(map[string]interface{}) {
+			delete(filter, k)
+		}
+	}
+	op := make(map[string]interface{})
+
+	if duplo.SecretLabels != nil {
+		for k, v := range duplo.SecretLabels {
+			if _, ok := filter[k]; !ok {
+				op[k] = v
+			}
+		}
+	}
+	d.Set("secret_labels", op)
 	log.Printf("[TRACE] K8SecretGetList(%s): received response: %s", duplo.TenantID, duplo)
 
 }

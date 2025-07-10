@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -67,6 +68,12 @@ func duploAzureTenantKeyVaultSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Computed:    true,
 		},
+		"purge": {
+			Description: "Purge the Key Vault.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 	}
 }
 
@@ -85,7 +92,8 @@ func resourceAzureTenantKeyVault() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAzureTenantKeyVaultSchema(),
+		Schema:        duploAzureTenantKeyVaultSchema(),
+		CustomizeDiff: validateKeyVaultParameters,
 	}
 }
 
@@ -165,7 +173,22 @@ func resourceAzureTenantKeyVaultDelete(ctx context.Context, d *schema.ResourceDa
 		}
 		return diag.Errorf("Unable to delete tenant %s azure tenant key vault '%s': %s", tenantID, name, clientErr)
 	}
+	if d.Get("purge").(bool) {
+		diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure tenant key vault", id, func() (interface{}, duplosdk.ClientError) {
+			return c.TenantGetSoftDeletedKeyVault(tenantID, name)
+		})
+		if diags != nil {
+			return diags
+		}
 
+		clientErr := c.TenantKeyVaultPurge(tenantID, name)
+		if clientErr != nil {
+			if clientErr.Status() == 404 {
+				return nil
+			}
+			return diag.Errorf("Unable to delete tenant %s azure tenant key vault '%s': %s", tenantID, name, clientErr)
+		}
+	}
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure tenant key vault", id, func() (interface{}, duplosdk.ClientError) {
 		return c.TenantKeyVaultGet(tenantID, name)
 	})
@@ -206,4 +229,12 @@ func flattenAzureTenantKeyVault(tenantID string, d *schema.ResourceData, duplo *
 	d.Set("vault_uri", duplo.Properties.VaultURI)
 	d.Set("enabled_for_disk_encryption", duplo.Properties.EnabledForDiskEncryption)
 	d.Set("purge_protection_enabled", duplo.Properties.EnablePurgeProtection)
+}
+
+func validateKeyVaultParameters(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	if diff.Get("purge_protection_enabled").(bool) && diff.Get("purge").(bool) {
+		return fmt.Errorf("purge protection cannot be enabled and purge at the same time")
+
+	}
+	return nil
 }

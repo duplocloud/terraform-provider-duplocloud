@@ -6,8 +6,9 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -104,28 +105,29 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 		},
 	}
-	awsASGSchema["zone"] = &schema.Schema{
-
-		Description:   "The availability zone to launch the host in, expressed as a number and starting at 0.",
-		Type:          schema.TypeInt,
-		Optional:      true,
-		ForceNew:      true, // relaunch instance
-		Default:       0,
-		Deprecated:    "zone has been deprecated instead use zones",
-		ConflictsWith: []string{"zones"},
-	}
-
 	awsASGSchema["zones"] = &schema.Schema{
-		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0",
+		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A to 3 - Zone D, based on the infra setup",
 		Type:        schema.TypeList,
 		Optional:    true,
 		ForceNew:    true,
 		Elem: &schema.Schema{
-			Type:     schema.TypeInt,
-			ForceNew: true,
+			Type:         schema.TypeInt,
+			ForceNew:     true,
+			ValidateFunc: validation.IntBetween(0, 3),
 		},
-		ConflictsWith: []string{"zone"},
+		DiffSuppressFunc: diffSuppressAsgZones,
+		Computed:         true,
 	}
+	awsASGSchema["zone"] = &schema.Schema{
+
+		Description: "The availability zone to launch the host in is expressed as a numeric value ranging from 0 to 3. ",
+		Type:        schema.TypeString,
+		Optional:    true,
+		ForceNew:    true, // relaunch instance
+		Deprecated:  "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.",
+		Default:     0,
+	}
+
 	return awsASGSchema
 }
 
@@ -190,7 +192,33 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.Errorf("Error creating ASG profile '%s': no friendly name was received", rq.FriendlyName)
 	}
 
-	// Update minion tags once ASG is created
+	id := fmt.Sprintf("%s/%s", rq.TenantId, rp)
+	log.Printf("[DEBUG] ASG Profile Resource ID- (%s)", id)
+
+	//Wait up to 60 seconds for Duplo to be able to return the ASG details.
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ASG Profile", id, func() (interface{}, duplosdk.ClientError) {
+		return c.AsgProfileGet(rq.TenantId, rp)
+	})
+	if diags != nil {
+		return diags
+	}
+
+	d.SetId(id)
+	//By default, wait until the ASG instances to be healthy.
+	if d.Get("wait_for_capacity") == nil || d.Get("wait_for_capacity").(bool) {
+		err = asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rq.MinSize, rp, d.Timeout("create"))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	werr, executed := asgWaitUntilReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
+	if werr != nil {
+		return diag.FromErr(fmt.Errorf("error waiting for ASG profile '%s' to be ready: %s", rp, werr))
+	}
+	if !executed {
+		time.Sleep(5 * time.Minute) // Wait to ensure the ASG profile is created in Duplo if polling dint happened
+		// to reduce impact of asg worker failure when tags are passed.
+	}
 	fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
 
 	for _, raw := range *rq.MinionTags {
@@ -205,19 +233,6 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
 		}
 	}
-
-	id := fmt.Sprintf("%s/%s", rq.TenantId, rp)
-	log.Printf("[DEBUG] ASG Profile Resource ID- (%s)", id)
-
-	//Wait up to 60 seconds for Duplo to be able to return the ASG details.
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "ASG Profile", id, func() (interface{}, duplosdk.ClientError) {
-		return c.AsgProfileGet(rq.TenantId, rp)
-	})
-	if diags != nil {
-		return diags
-	}
-
-	d.SetId(id)
 	//By default, wait until the ASG instances to be healthy.
 	if d.Get("wait_for_capacity") == nil || d.Get("wait_for_capacity").(bool) {
 		err = asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rq.MinSize, rp, d.Timeout("create"))
@@ -273,7 +288,10 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		if diags != nil {
 			return diags
 		}
-
+		werr, _ := asgWaitUntilReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
+		if werr != nil {
+			return diag.FromErr(fmt.Errorf("error waiting for ASG profile '%s' to be ready: %s", rp, werr))
+		}
 		//By default, wait until the ASG instances to be healthy.
 		if d.Get("wait_for_capacity") == nil || d.Get("wait_for_capacity").(bool) {
 			err := asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rq.MinSize, rp, d.Timeout("create"))
@@ -314,13 +332,9 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	profile, err := c.AsgProfileGet(tenantID, friendlyName)
-	if err != nil {
-		// backend may return a 400 instead of a 404
-		exists, err2 := c.AsgProfileExists(tenantID, friendlyName)
-		if exists || err2 != nil {
-			return diag.Errorf("Unable to retrieve ASG profile '%s': %s", id, err)
-		}
+	profile, cerr := c.AsgProfileGet(tenantID, friendlyName)
+	if cerr != nil && cerr.Status() != 404 {
+		return diag.Errorf("Unable to retrieve ASG profile '%s': %s", id, err)
 	}
 	if profile == nil {
 		d.SetId("") // object missing
@@ -409,9 +423,9 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
-		_, zok := d.GetOk("zone")
+		_, zok := d.GetOk("zones")
 
-		if len(duplo.Zones) > 0 && !zok {
+		if len(duplo.Zones) > 0 && zok {
 			i := []interface{}{}
 			for _, v := range duplo.Zones {
 				i = append(i, v)
@@ -492,8 +506,9 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 			z = append(z, dt.(int))
 		}
 		asgProfile.Zones = z
-	} else {
-		asgProfile.Zones = append(asgProfile.Zones, d.Get("zone").(int))
+	} else if v, ok := d.GetOk("zone"); ok && v != nil {
+		zn, _ := strconv.Atoi(d.Get("zone").(string))
+		asgProfile.Zones = append(asgProfile.Zones, zn)
 	}
 
 	return asgProfile
@@ -589,4 +604,37 @@ func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags strin
 	}
 
 	return false, ""
+}
+
+func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) (error, bool) {
+	flag := true
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.AsgProfileGet(tenantID, name)
+			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
+			status := "pending"
+			if err == nil {
+				if rp.Created == nil {
+					status = "ready"
+					flag = false
+				} else {
+					if *rp.Created {
+						status = "ready"
+					} else {
+						status = "pending"
+					}
+				}
+			}
+
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] asgWaitUntilReady(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err, flag
 }

@@ -7,8 +7,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -138,7 +139,8 @@ func resourceAwsSqsQueue() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAwsSqsQueueSchema(),
+		Schema:        duploAwsSqsQueueSchema(),
+		CustomizeDiff: validateSQSParameter,
 	}
 }
 
@@ -275,6 +277,11 @@ func resourceAwsSqsQueueUpdate(ctx context.Context, d *schema.ResourceData, m in
 			return diag.Errorf("Error updating tenant %s SQS queue '%s': %s", tenantID, fullname, err)
 		}
 		diags := waitForResourceToBePresentAfterCreate(ctx, d, "SQS Queue", fmt.Sprintf("%s/%s", tenantID, fullname), func() (interface{}, duplosdk.ClientError) {
+			resp, err := c.DuploSQSQueueGetV3(tenantID, fullname)
+
+			if err == nil && resp != nil && resp.Arn == "" {
+				return nil, nil
+			}
 			return c.DuploSQSQueueGetV3(tenantID, fullname)
 		})
 		if diags != nil {
@@ -392,5 +399,25 @@ func validateSQSName(c *duplosdk.Client, tId, name string, fifo bool) error {
 	if !b {
 		return fmt.Errorf("invalid name format. Queue names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and have up to 80 characters long which is inclusive of duplo prefix (duploservices-{tenant_name}-) added by the system")
 	}
+	return nil
+}
+
+func validateSQSParameter(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	isFifo := diff.Get("fifo_queue").(bool)
+	if !isFifo {
+		cbd := diff.Get("content_based_deduplication").(bool)
+		if cbd {
+			return fmt.Errorf("cannot enable content_based_deduplication for non fifo queue")
+		}
+		dds := diff.Get("deduplication_scope").(string)
+		if dds != "" {
+			return fmt.Errorf("cannot set deduplication_scope for non fifo queue")
+		}
+		ftl := diff.Get("fifo_throughput_limit").(string)
+		if ftl != "" {
+			return fmt.Errorf("cannot set fifo_throughput_limit for non fifo queue")
+		}
+	}
+
 	return nil
 }

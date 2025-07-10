@@ -1,8 +1,8 @@
 package duplocloud
 
 import (
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/stretchr/testify/assert"
-	"terraform-provider-duplocloud/duplosdk"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

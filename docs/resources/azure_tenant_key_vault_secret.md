@@ -41,7 +41,7 @@ resource "duplocloud_azure_tenant_key_vault_secret" "kv_secret" {
 
 - `name` (String) Specifies the name of the Key Vault Secret.
 - `tenant_id` (String) The GUID of the DuploCloud tenant that the key vault secret will be created in.
-- `value` (String) Specifies the value of the Key Vault Secret. Changing this will create a new version of the Key Vault Secret.
+- `value` (String, Sensitive) Specifies the value of the Key Vault Secret. Changing this will create a new version of the Key Vault Secret.
 - `vault_name` (String) Name of the Key Vault where the Secret should be created.
 
 ### Optional

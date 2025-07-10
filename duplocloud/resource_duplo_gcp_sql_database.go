@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -52,8 +53,8 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 
 		"tier": {
 			Description: "The machine type to use. See tiers for more details and supported versions. " +
-				"Postgres supports only shared-core machine types, and custom machine types such as `db-custom-2-13312`." +
-				"See the [Custom Machine Type Documentation](https://cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type#create) to learn about specifying custom machine types.",
+				"Postgres supports only shared-core machine types, and custom machine types, format for custom machine type db-custom-{vCPU}-{memory-in-MB} example `db-custom-2-13312`." +
+				"See the [Machine Type Documentation](https://cloud.google.com/compute/docs/machine-resource) to learn more about machine types.",
 			Type:     schema.TypeString,
 			Required: true,
 		},
@@ -135,12 +136,20 @@ func resourceGcpSqlDBInstanceRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 	c := m.(*duplosdk.Client)
-
-	//fullName := d.Get("fullname").(string)
-	fullName, clientErr := c.GetDuploServicesNameWithGcp(tenantID, name, false)
+	f, clientErr := c.AdminGetSystemFeatures()
 	if clientErr != nil {
-		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+		return diag.Errorf("Error fetching system feature")
 	}
+	fullName := name
+	if !f.GcpDisableDuploPrefix && !f.GcpDisableTenantPrefix {
+		// Figure out the full resource name.
+		fullName, clientErr = c.GetDuploServicesNameWithGcp(tenantID, name, false)
+		if clientErr != nil {
+			return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+
+		}
+	}
+
 	duplo, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
@@ -253,6 +262,8 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			return diag.Errorf("Error updating tenant %s sql database '%s': %s", tenantID, resp.Name, err)
 		}
 		if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
+			_ = gcpSqlDBInstanceWaitUntilUnavailable(ctx, c, tenantID, fullName, time.Duration(5*time.Minute))
+
 			clientErr := gcpSqlDBInstanceWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 			if clientErr != nil {
 				return diag.FromErr(clientErr)
@@ -346,7 +357,7 @@ func parseGcpSqlDatabaseIdParts(id string) (tenantID, name string, err error) {
 
 func gcpSqlDBInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
 	log.Printf("[DEBUG] gcpSqlDBInstanceWaitUntilReady(%s, %s)", tenantID, name)
-	stateChange := false
+	//stateChange := false
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -356,11 +367,6 @@ func gcpSqlDBInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, ten
 			log.Printf("[TRACE] Gcp sql database instance state is (%s).", rp.Status)
 			status := "pending"
 			if err == nil {
-				if rp.Status == "RUNNABLE" && !stateChange {
-					return rp, status, err
-				} else {
-					stateChange = true
-				}
 				if rp.Status == "RUNNABLE" {
 					status = "ready"
 				} else {
@@ -411,4 +417,27 @@ func passwordRequiredForVersion(ctx context.Context, c *duplosdk.Client, tenantI
 		}
 	}
 	return false, nil
+}
+
+func gcpSqlDBInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, id, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Target:       []string{"unavailable"},
+		Pending:      []string{"RUNNABLE"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.GCPSqlDBInstanceGet(id, name)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.Status != "RUNNABLE" {
+				resp.Status = "unavailable"
+			}
+			return resp, resp.Status, nil
+		},
+	}
+	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }

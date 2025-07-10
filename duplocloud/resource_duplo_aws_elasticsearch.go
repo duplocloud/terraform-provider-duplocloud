@@ -6,8 +6,9 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -74,7 +75,7 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"use_latest_tls_cipher": {
-			Description: "Whether or not to use the latest TLS cipher for this ElasticSearch instance.",
+			Description: "Whether or not to use the latest TLS cipher for this ElasticSearch instance. For govcloud environments this should be set to true",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -598,7 +599,12 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 		}
 	}
 
-	if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") && !strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.")) && (duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
+	if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") &&
+		!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.") &&
+		!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4i.") &&
+		!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4g.") &&
+		!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "R6gd.")) &&
+		(duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
 		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
 			VolumeSize: 20,
 		}
@@ -897,8 +903,13 @@ func validateEBSStorage(ctx context.Context, diff *schema.ResourceDiff, m interf
 	}
 	mp := clusterConfig[0].(map[string]interface{})
 	instanceType := mp["instance_type"].(string)
-	if (!strings.Contains(instanceType, "im4gn.") && !strings.Contains(instanceType, "i3.")) && (storage == 0) {
-		return fmt.Errorf("storage_size cannot be 0 for non ebs storage instance_type (im4gn./i3.)")
+
+	//non ebs no need storage
+	nonEBSInstanceTypes := []string{"im4gn.", "i3.", "i4i.", "i4g.", "R6gd."}
+	for _, prefix := range nonEBSInstanceTypes {
+		if strings.Contains(instanceType, prefix) && storage > 0 {
+			return fmt.Errorf("storage_size must be 0 for non-EBS-backed instance types (%s)", strings.Join(nonEBSInstanceTypes, "/"))
+		}
 	}
 	return nil
 }

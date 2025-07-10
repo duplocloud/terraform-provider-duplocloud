@@ -6,8 +6,9 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -115,9 +116,9 @@ func resourceAwsCloudWatchMetricAlarmRead(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 	log.Printf("[TRACE] resourceAwsCloudWatchMetricAlarmRead(%s, %s): start", tenantID, fullName)
-
+	encodedFullName := base64Encode([]byte(fullName))
 	c := m.(*duplosdk.Client)
-	duplo, clientErr := c.DuploCloudWatchMetricAlarmGet(tenantID, fullName)
+	duplo, clientErr := c.DuploCloudWatchMetricAlarmGet(tenantID, encodedFullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
@@ -156,7 +157,9 @@ func resourceAwsCloudWatchMetricAlarmCreate(ctx context.Context, d *schema.Resou
 	id := fmt.Sprintf("%s/%s", tenantID, resourceId+"-"+rq.MetricName)
 	log.Printf("[TRACE] Get alarm request(%s, %s): start", tenantID, id)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "cloudwatch metric alarm", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DuploCloudWatchMetricAlarmGet(tenantID, resourceId)
+		encodedFullName := base64Encode([]byte(resourceId))
+
+		return c.DuploCloudWatchMetricAlarmGet(tenantID, encodedFullName)
 	})
 	if diags != nil {
 		return diags
@@ -192,7 +195,8 @@ func resourceAwsCloudWatchMetricAlarmUpdate(ctx context.Context, d *schema.Resou
 		}
 
 		diags := waitForResourceToBePresentAfterCreate(ctx, d, "cloudwatch metric alarm", id, func() (interface{}, duplosdk.ClientError) {
-			return c.DuploCloudWatchMetricAlarmGet(tenantID, resourceId)
+			encodedFullName := base64Encode([]byte(resourceId))
+			return c.DuploCloudWatchMetricAlarmGet(tenantID, encodedFullName)
 		})
 		if diags != nil {
 			return diags
@@ -206,29 +210,31 @@ func resourceAwsCloudWatchMetricAlarmUpdate(ctx context.Context, d *schema.Resou
 
 func resourceAwsCloudWatchMetricAlarmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, fullName, err := parseAwsCloudWatchMetricAlarmIdParts(id)
+	tenantID, name, err := parseAwsCloudWatchMetricAlarmIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAwsCloudWatchMetricAlarmDelete(%s, %s): start", tenantID, fullName)
 
+	log.Printf("[TRACE] resourceAwsCloudWatchMetricAlarmDelete(%s, %s): start", tenantID, name)
+	fullName := d.Get("fullname").(string)
+	encodedFullName := base64Encode([]byte(fullName))
 	c := m.(*duplosdk.Client)
-	clientErr := c.DuploCloudWatchMetricAlarmDelete(tenantID, d.Get("fullname").(string))
+	clientErr := c.DuploCloudWatchMetricAlarmDelete(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil
 		}
-		return diag.Errorf("Unable to delete tenant %s cloudwatch metric alarm '%s': %s", tenantID, fullName, clientErr)
+		return diag.Errorf("Unable to delete tenant %s cloudwatch metric alarm '%s': %s", tenantID, name, clientErr)
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "cloudwatch metric alarm", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DuploCloudWatchMetricAlarmGet(tenantID, fullName)
+		return c.DuploCloudWatchMetricAlarmGet(tenantID, encodedFullName)
 	})
 	if diag != nil {
 		return diag
 	}
 
-	log.Printf("[TRACE] resourceAwsCloudWatchMetricAlarmDelete(%s, %s): end", tenantID, fullName)
+	log.Printf("[TRACE] resourceAwsCloudWatchMetricAlarmDelete(%s, %s): end", tenantID, name)
 	return nil
 }
 

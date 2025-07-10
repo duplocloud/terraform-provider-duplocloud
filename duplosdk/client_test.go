@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	. "terraform-provider-duplocloud/internal/duplosdktest"
+	"github.com/duplocloud/terraform-provider-duplocloud/internal/duplosdktest"
 )
 
 // Should collect a response body and deserialize it from JSON
@@ -323,11 +323,11 @@ func TestDeleteAPI_ResponseElided_InvalidResponseJson(t *testing.T) {
 }
 
 func SetupClientOneshot(t *testing.T, expectedMethod string, status int, body string) (srv *httptest.Server, c *Client, err error) {
-	srv = SetupHttptestOneshot(t, expectedMethod, status, body)
+	srv = duplosdktest.SetupHttptestOneshot(t, expectedMethod, status, body)
 	c, err = NewClient(srv.URL, "FAKE")
 	return
 }
 
 func TeardownClient(srv *httptest.Server, c *Client) {
-	TeardownHttptest(srv)
+	duplosdktest.TeardownHttptest(srv)
 }

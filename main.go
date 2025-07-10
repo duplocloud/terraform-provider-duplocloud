@@ -2,11 +2,10 @@ package main
 
 import (
 	"flag"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplocloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-
-	"terraform-provider-duplocloud/duplocloud"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website

@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -188,6 +189,12 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_datafactory":                   resourceAzureDataFactory(),
 			"duplocloud_azure_availability_set":              resourceAzureAvailabilitySet(),
 			"duplocloud_aws_launch_template_default_version": resourceAwsLaunchTemplateDefaultVersion(),
+			"duplocloud_gcp_pubsub_subscription":             resourceGCPPubSubSubscription(),
+			"duplocloud_aws_tag":                             resourceAwsCustomTag(),
+			"duplocloud_aws_target_group_target_register":    resourceAwsTargetGroupTargetRegister(),
+			"duplocloud_asg_instance_refresh":                resourceAsgInstanceRefresh(),
+			"duplocloud_aws_cloudfront_function":             resourceAwsCloudfrontFunction(),
+			"duplocloud_azure_mssqldb_retention_backup":      resourceMsSQLDBRetentionBackup(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
@@ -259,6 +266,7 @@ func Provider() *schema.Provider {
 			"duplocloud_plan_kms_key_v2":            dataSourcePlanKMSListV2(),
 			"duplocloud_azure_availability_set":     dataSourceAzureAvailabilitySet(),
 			"duplocloud_aws_launch_template":        dataSourceAwsLaunchTemplate(),
+			"duplocloud_system_features":            dataSourceDuploSystemFeatures(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

@@ -1,8 +1,8 @@
 package duplocloud
 
 import (
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"strconv"
-	"terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	batchv1 "k8s.io/api/batch/v1"
