@@ -67,7 +67,7 @@ func duploAzureCosmosDBContainerSchema() map[string]*schema.Schema {
 
 func resourceAzureCosmosDBContainer() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_cosmos_db_container` manages cosmos db resource for azure",
+		Description: "`duplocloud_azure_cosmos_db_container` manages cosmos db container resource for azure",
 
 		ReadContext:   resourceAzureCosmosDBContainerRead,
 		CreateContext: resourceAzureCosmosDBContainerCreate,

@@ -3,12 +3,12 @@
 page_title: "duplocloud_azure_cosmos_db_account Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_azure_cosmos_db manages cosmos db resource for azure
+  duplocloud_azure_cosmos_db_account manages cosmos db account resource for azure
 ---
 
 # duplocloud_azure_cosmos_db_account (Resource)
 
-`duplocloud_azure_cosmos_db` manages cosmos db resource for azure
+`duplocloud_azure_cosmos_db_account` manages cosmos db account resource for azure
 
 ## Example Usage
 

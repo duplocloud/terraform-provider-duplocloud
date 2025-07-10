@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -157,7 +158,6 @@ func createOrUpdateLambdaEventInvokeConfiguration(ctx context.Context, d *schema
 	tenantId := d.Get("tenant_id").(string)
 
 	request := buildPutLambdaEventInvokeRequest(d)
-
 	err := duploClient.LambdaEventInvokeConfigCreateOrUpdate(tenantId, functionName, request)
 
 	if err != nil {
