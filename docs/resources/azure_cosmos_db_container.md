@@ -3,12 +3,12 @@
 page_title: "duplocloud_azure_cosmos_db_container Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_azure_cosmos_db_container manages cosmos db resource for azure
+  duplocloud_azure_cosmos_db_container manages cosmos db container resource for azure
 ---
 
 # duplocloud_azure_cosmos_db_container (Resource)
 
-`duplocloud_azure_cosmos_db_container` manages cosmos db resource for azure
+`duplocloud_azure_cosmos_db_container` manages cosmos db container resource for azure
 
 ## Example Usage
 

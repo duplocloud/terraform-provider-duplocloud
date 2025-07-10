@@ -53,7 +53,7 @@ func duploAzureCosmosDBschema() map[string]*schema.Schema {
 
 func resourceAzureCosmosDB() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_cosmos_db_database` manages cosmos db resource for azure",
+		Description: "`duplocloud_azure_cosmos_db_database` manages cosmos db database resource for azure",
 
 		ReadContext:   resourceAzureCosmosDBRead,
 		CreateContext: resourceAzureCosmosDBCreate,

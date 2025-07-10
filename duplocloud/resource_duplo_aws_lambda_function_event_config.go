@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -147,6 +148,26 @@ func resourceAwsLambdaFunctionEventInvokeConfigCreate(ctx context.Context, d *sc
 
 // UPDATE resource
 func resourceAwsLambdaFunctionEventInvokeConfigUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	duploClient := m.(*duplosdk.Client)
+
+	functionName := d.Get("function_name").(string)
+	tenantId := d.Get("tenant_id").(string)
+
+	request := buildPutLambdaEventInvokeRequest(d)
+	if d.HasChange("max_retry_attempts") || d.HasChange("max_event_age_in_seconds") {
+
+	}
+	err := duploClient.LambdaEventInvokeConfigCreateOrUpdate(tenantId, functionName, request)
+
+	if err != nil {
+		return diag.Errorf("Could not successfully create event invoke config for lambda %s", functionName)
+	}
+	id := fmt.Sprintf("%s/%s/eventInvokeConfig", tenantId, functionName)
+	d.SetId(id)
+
+	diags := resourceAwsLambdaFunctionEventInvokeConfigRead(ctx, d, m)
+	log.Printf("[TRACE] createOrUpdateLambdaEventInvokeConfiguration(%s, %s): end", tenantId, functionName)
+	return diags
 	return createOrUpdateLambdaEventInvokeConfiguration(ctx, d, m)
 }
 
@@ -157,7 +178,9 @@ func createOrUpdateLambdaEventInvokeConfiguration(ctx context.Context, d *schema
 	tenantId := d.Get("tenant_id").(string)
 
 	request := buildPutLambdaEventInvokeRequest(d)
+	if d.HasChange("max_retry_attempts") || d.HasChange("max_event_age_in_seconds") {
 
+	}
 	err := duploClient.LambdaEventInvokeConfigCreateOrUpdate(tenantId, functionName, request)
 
 	if err != nil {
