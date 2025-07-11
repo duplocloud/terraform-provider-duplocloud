@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -131,7 +132,11 @@ func resourceAwsLambdaFunctionEventInvokeConfigRead(ctx context.Context, d *sche
 		return diag.Errorf("Unable to retrieve tenant %s lambda function '%s' event invoke config: %s",
 			tenantId, functionName, clientErr)
 	}
-
+	if resource == nil {
+		log.Printf("[TRACE] resourceAwsLambdaFunctionEventInvokeConfigRead(%s, %s): end - recieved empty response", tenantId, functionName)
+		d.SetId("") // object missing
+		return nil
+	}
 	d.Set("tenant_id", tenantId)
 	d.Set("function_name", functionName)
 	applyLambdaEventInvokeConfigToTfResource(d, resource)
@@ -153,7 +158,9 @@ func resourceAwsLambdaFunctionEventInvokeConfigUpdate(ctx context.Context, d *sc
 	tenantId := d.Get("tenant_id").(string)
 
 	request := buildPutLambdaEventInvokeRequest(d)
-
+	if !d.HasChange("destination_config") {
+		request.LambdaFunctionEventInvokeConfiguration.DestinationConfig = nil
+	}
 	err := duploClient.LambdaEventInvokeAsynConfigUpdate(tenantId, functionName, request.LambdaFunctionEventInvokeConfiguration)
 
 	if err != nil {
