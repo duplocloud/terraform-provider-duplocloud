@@ -192,6 +192,9 @@ func Provider() *schema.Provider {
 			"duplocloud_gcp_pubsub_subscription":             resourceGCPPubSubSubscription(),
 			"duplocloud_aws_tag":                             resourceAwsCustomTag(),
 			"duplocloud_aws_target_group_target_register":    resourceAwsTargetGroupTargetRegister(),
+			"duplocloud_azure_cosmos_db_account":             resourceAzureCosmosDBAccount(),
+			"duplocloud_azure_cosmos_db_database":            resourceAzureCosmosDB(),
+			"duplocloud_azure_cosmos_db_container":           resourceAzureCosmosDBContainer(),
 			"duplocloud_asg_instance_refresh":                resourceAsgInstanceRefresh(),
 			"duplocloud_aws_cloudfront_function":             resourceAwsCloudfrontFunction(),
 			"duplocloud_azure_mssqldb_retention_backup":      resourceMsSQLDBRetentionBackup(),
@@ -267,6 +270,8 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_availability_set":     dataSourceAzureAvailabilitySet(),
 			"duplocloud_aws_launch_template":        dataSourceAwsLaunchTemplate(),
 			"duplocloud_system_features":            dataSourceDuploSystemFeatures(),
+			"duplocloud_azure_cosmos_db_account":    dataSourceAzureCosmosDBAccount(),
+			"duplocloud_azure_cosmos_db_database":   dataSourceAzureCosmosDBDatabase(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

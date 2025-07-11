@@ -96,10 +96,11 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"volumes": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
-			Default:  "[]",
+			Description: "A JSON-encoded string containing a list of volumes that are used by the ECS task definition.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+			Default:     "[]",
 		},
 		"cpu": {
 			Type:     schema.TypeString,
@@ -401,7 +402,7 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	err2 := json.Unmarshal([]byte(vols), &duplo.Volumes)
 	if err2 != nil {
 		log.Printf("[TRACE] expandEcsTaskDefinition: failed to parse volumes: %s", condefs)
-		return nil, err
+		return nil, fmt.Errorf("invalid json %s", err2)
 	}
 
 	// Next, convert things into structured data.
