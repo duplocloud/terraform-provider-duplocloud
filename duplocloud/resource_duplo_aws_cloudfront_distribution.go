@@ -1703,7 +1703,8 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 		originSet := schema.NewSet(schema.HashResource(originHashResource()), nil)
 
 		for _, origin := range *duplo.Origins.Items {
-			originSet.Add(flattenOrigin(origin, d.Get("use_origin_access_identity").(bool)))
+			mp := flattenOrigin(origin, d.Get("use_origin_access_identity").(bool))
+			originSet.Add(mp)
 		}
 		d.Set("origin", originSet)
 	}
@@ -2252,7 +2253,7 @@ func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin, useOAI bool) map[string
 	m["connection_attempts"] = or.ConnectionAttempts
 	m["connection_timeout"] = or.ConnectionTimeout
 
-	if or.CustomHeaders != nil {
+	if or.CustomHeaders != nil && or.CustomHeaders.Quantity > 0 {
 		headers := flattenCustomHeaders(or.CustomHeaders)
 		m["custom_header"] = schema.NewSet(
 			schema.HashResource(&schema.Resource{
@@ -2263,6 +2264,22 @@ func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin, useOAI bool) map[string
 			}),
 			castToInterfaceSlice(headers),
 		)
+	} else {
+		//sm := map[string]interface{}{
+		//	//"name":  "",
+		//	//"value": "",
+		//}
+		//inf := make([]interface{}, 1)
+		//inf[0] = m
+		s := schema.NewSet(
+			schema.HashResource(&schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name":  {Type: schema.TypeString, Required: true},
+					"value": {Type: schema.TypeString, Required: true},
+				},
+			}),
+			nil)
+		m["custom_header"] = s
 	}
 
 	if or.CustomOriginConfig != nil {
@@ -2319,4 +2336,78 @@ func flattenS3OriginConfig(cfg *duplosdk.DuploAwsCloudfrontOriginS3Config) map[s
 		"origin_access_identity": cfg.OriginAccessIdentity,
 	}
 
+}
+
+func originGroupHashResource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"origin_id": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"failover_criteria": {
+				Type:     schema.TypeList,
+				Required: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"status_codes": {
+							Type:     schema.TypeSet,
+							Required: true,
+							Elem:     &schema.Schema{Type: schema.TypeInt},
+						},
+					},
+				},
+			},
+			"member": {
+				Type:     schema.TypeList,
+				Required: true,
+				MinItems: 2,
+				MaxItems: 2,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"origin_id": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func lambdaFunctionAssociationHashResource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"event_type": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"lambda_arn": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"include_body": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+		},
+	}
+}
+
+func functionAssociationHashResource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"event_type": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"function_arn": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+	}
 }
