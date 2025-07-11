@@ -901,6 +901,11 @@ func resourceAwsCloudfrontDistributionRead(ctx context.Context, d *schema.Resour
 		}
 		return diag.Errorf("Unable to retrieve tenant %s aws cloudfront distribution%s : %s", tenantID, cfdId, clientErr)
 	}
+	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end - distribution response empty", tenantID, cfdId)
+		d.SetId("")
+		return nil
+	}
 	if len(duplo.Distribution.DistributionConfig.CorsAllowedHostNames) == 0 && d.Get("cors_allowed_host_names") != nil {
 		corsAllowedHostNames := []string{}
 
