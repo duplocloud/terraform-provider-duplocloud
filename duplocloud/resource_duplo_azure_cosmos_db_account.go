@@ -174,7 +174,7 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 
 func resourceAzureCosmosDBAccount() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_cosmos_db` manages cosmos db resource for azure",
+		Description: "`duplocloud_azure_cosmos_db_account` manages cosmos db account resource for azure",
 
 		ReadContext:   resourceAzureCosmosDBAccountRead,
 		CreateContext: resourceAzureCosmosDBAccountCreate,
@@ -756,7 +756,7 @@ func validateCosmosDBAccountParameters(ctx context.Context, d *schema.ResourceDi
 		consistencyPolicies := d.Get("consistency_policy").([]interface{})
 		if len(consistencyPolicies) > 0 {
 			cp := consistencyPolicies[0].(map[string]interface{})
-			if cp["default_consistency_level"] != nil && cp["default_consistency_level"].(string) != "BoundededStaleness" {
+			if cp["default_consistency_level"] != nil && cp["default_consistency_level"].(string) != "BoundedStaleness" {
 				if cp["max_staleness_prefix"] != nil && cp["max_staleness_prefix"].(int) != 100 {
 					cp["max_staleness_prefix"] = 100
 					update = true
