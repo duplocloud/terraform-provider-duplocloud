@@ -901,6 +901,11 @@ func resourceAwsCloudfrontDistributionRead(ctx context.Context, d *schema.Resour
 		}
 		return diag.Errorf("Unable to retrieve tenant %s aws cloudfront distribution%s : %s", tenantID, cfdId, clientErr)
 	}
+	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end - distribution response empty", tenantID, cfdId)
+		d.SetId("")
+		return nil
+	}
 	if len(duplo.Distribution.DistributionConfig.CorsAllowedHostNames) == 0 && d.Get("cors_allowed_host_names") != nil {
 		corsAllowedHostNames := []string{}
 
@@ -1703,7 +1708,8 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 		originSet := schema.NewSet(schema.HashResource(originHashResource()), nil)
 
 		for _, origin := range *duplo.Origins.Items {
-			originSet.Add(flattenOrigin(origin, d.Get("use_origin_access_identity").(bool)))
+			mp := flattenOrigin(origin, d.Get("use_origin_access_identity").(bool))
+			originSet.Add(mp)
 		}
 		d.Set("origin", originSet)
 	}
@@ -2252,7 +2258,7 @@ func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin, useOAI bool) map[string
 	m["connection_attempts"] = or.ConnectionAttempts
 	m["connection_timeout"] = or.ConnectionTimeout
 
-	if or.CustomHeaders != nil {
+	if or.CustomHeaders != nil && or.CustomHeaders.Quantity > 0 {
 		headers := flattenCustomHeaders(or.CustomHeaders)
 		m["custom_header"] = schema.NewSet(
 			schema.HashResource(&schema.Resource{
@@ -2263,6 +2269,22 @@ func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin, useOAI bool) map[string
 			}),
 			castToInterfaceSlice(headers),
 		)
+	} else {
+		//sm := map[string]interface{}{
+		//	//"name":  "",
+		//	//"value": "",
+		//}
+		//inf := make([]interface{}, 1)
+		//inf[0] = m
+		s := schema.NewSet(
+			schema.HashResource(&schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name":  {Type: schema.TypeString, Required: true},
+					"value": {Type: schema.TypeString, Required: true},
+				},
+			}),
+			nil)
+		m["custom_header"] = s
 	}
 
 	if or.CustomOriginConfig != nil {
@@ -2292,8 +2314,7 @@ func flattenCustomOriginConfig(cor *duplosdk.DuploAwsCloudfrontCustomOriginConfi
 	if cor == nil {
 		return nil
 	}
-
-	return map[string]interface{}{
+	m := map[string]interface{}{
 		"http_port":                cor.HTTPPort,
 		"https_port":               cor.HTTPSPort,
 		"origin_keepalive_timeout": cor.OriginKeepaliveTimeout,
@@ -2301,6 +2322,11 @@ func flattenCustomOriginConfig(cor *duplosdk.DuploAwsCloudfrontCustomOriginConfi
 		"origin_protocol_policy":   cor.OriginProtocolPolicy.Value,
 		"origin_ssl_protocols":     castStringSliceToInterface(cor.OriginSslProtocols.Items),
 	}
+	m["origin_ssl_protocols"] = schema.NewSet(
+		schema.HashString,
+		castStringSliceToInterface(cor.OriginSslProtocols.Items),
+	)
+	return m
 }
 func castStringSliceToInterface(in []string) []interface{} {
 	out := make([]interface{}, len(in))

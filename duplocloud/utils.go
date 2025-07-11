@@ -1204,6 +1204,14 @@ func stringInSlice(s string, list []string) bool {
 	return false
 }
 
+func ExpandStringList(inf []interface{}) []string {
+	obj := []string{}
+	for _, i := range inf {
+		obj = append(obj, i.(string))
+	}
+	return obj
+}
+
 func gBToBytes(gb int) int64 {
 	return int64(gb) * 1024 * 1024 * 1024
 }
