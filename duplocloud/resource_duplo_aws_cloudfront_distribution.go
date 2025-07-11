@@ -2309,8 +2309,7 @@ func flattenCustomOriginConfig(cor *duplosdk.DuploAwsCloudfrontCustomOriginConfi
 	if cor == nil {
 		return nil
 	}
-
-	return map[string]interface{}{
+	m := map[string]interface{}{
 		"http_port":                cor.HTTPPort,
 		"https_port":               cor.HTTPSPort,
 		"origin_keepalive_timeout": cor.OriginKeepaliveTimeout,
@@ -2318,6 +2317,11 @@ func flattenCustomOriginConfig(cor *duplosdk.DuploAwsCloudfrontCustomOriginConfi
 		"origin_protocol_policy":   cor.OriginProtocolPolicy.Value,
 		"origin_ssl_protocols":     castStringSliceToInterface(cor.OriginSslProtocols.Items),
 	}
+	m["origin_ssl_protocols"] = schema.NewSet(
+		schema.HashString,
+		castStringSliceToInterface(cor.OriginSslProtocols.Items),
+	)
+	return m
 }
 func castStringSliceToInterface(in []string) []interface{} {
 	out := make([]interface{}, len(in))
