@@ -639,9 +639,14 @@ func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNat
 func flattenTags(tags *[]duplosdk.DuploKeyStringValue) ([]interface{}, bool) {
 	isNativeHost := false
 	if tags != nil {
+
 		managedTags := DuploManagedAzureTags()
 		output := []interface{}{}
 		for _, duploObject := range *tags {
+			if duploObject.Key == "install_duplo_native_agent" && duploObject.Value == "True" {
+				isNativeHost = true
+			}
+
 			if Contains(managedTags, duploObject.Key) {
 				continue
 			}
@@ -650,9 +655,6 @@ func flattenTags(tags *[]duplosdk.DuploKeyStringValue) ([]interface{}, bool) {
 			jo["key"] = duploObject.Key
 			jo["value"] = duploObject.Value
 			output = append(output, jo)
-			if duploObject.Key == "install_duplo_native_agent" && duploObject.Value == "True" {
-				isNativeHost = true
-			}
 		}
 		return output, isNativeHost
 	}
