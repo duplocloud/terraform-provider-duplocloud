@@ -264,7 +264,7 @@ resource "duplocloud_infrastructure" "infra" {
 
 ### Optional
 
-- `account_id` (String) The cloud account ID.
+- `account_id` (String) The cloud account ID — use this for Azure (Subscription ID) and Google Cloud (Project ID). Not applicable for AWS.
 - `azcount` (Number) The number of availability zones.  Must be one of: `2`, `3`, or `4`. This is applicable only for AWS.
 - `cloud` (Number) The numerical index of cloud provider to use for the infrastructure.
 Should be one of:
@@ -281,7 +281,7 @@ Should be one of:
 - `is_serverless_kubernetes` (Boolean) Whether or not to make GKE with autopilot.
 - `setting` (Block List) A list of configuration settings to manage, expressed as key / value pairs. (see [below for nested schema](#nestedblock--setting))
 - `subnet_address_prefix` (String) The address prefixe to use for the subnet. This is applicable only for Azure
-- `subnet_cidr` (Number) The CIDR subnet size (in bits) for the automatically created subnets. This is applicable only for AWS.
+- `subnet_cidr` (Number) The CIDR subnet size (in bits) for the automatically created subnets.
 - `subnet_name` (String) The name of the subnet. This is applicable only for Azure.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `wait_until_deleted` (Boolean) Whether or not to wait until Duplo has destroyed the infrastructure. Defaults to `false`.

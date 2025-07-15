@@ -3,10 +3,10 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -127,7 +127,6 @@ func resourceS3BucketReplicationRead(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("resourceS3BucketReplicationRead: Invalid resource (ID: %s)", id)
 	}
 	tenantID, name := idParts[0], idParts[1]
-
 	c := m.(*duplosdk.Client)
 	duplo, err := getS3BucketReplication(c, tenantID, name)
 	if err != nil {
@@ -139,9 +138,20 @@ func resourceS3BucketReplicationRead(ctx context.Context, d *schema.ResourceData
 		d.SetId("")
 		return nil
 	}
-
 	rp := []map[string]interface{}{}
-	rp = append(rp, duplo...)
+	rules := expandRules(d)
+
+	if len(rules) > 0 {
+
+		for _, v := range duplo {
+			mp := filterRule(v, rules)
+			if mp != nil {
+				rp = append(rp, mp)
+			}
+		}
+	} else {
+		rp = append(rp, duplo...)
+	}
 
 	// Get the object from Duplo
 	d.Set("rules", rp)
@@ -153,6 +163,17 @@ func resourceS3BucketReplicationRead(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
+func filterRule(m map[string]interface{}, filter []duplosdk.DuploS3BucketReplication) map[string]interface{} {
+	for _, v := range filter {
+		if name, ok := m["fullname"]; ok {
+			if strings.Contains(name.(string), v.Rule) {
+				return m
+			}
+
+		}
+	}
+	return nil
+}
 func getS3BucketReplication(c *duplosdk.Client, tenantID, name string) ([]map[string]interface{}, error) {
 	duplo, err := c.TenantGetV3S3BucketReplication(tenantID, name)
 	if err != nil {
@@ -167,6 +188,7 @@ func getS3BucketReplication(c *duplosdk.Client, tenantID, name string) ([]map[st
 	}
 	rules := make([]map[string]interface{}, 0, len(duplo.Rule))
 	for _, data := range duplo.Rule {
+
 		kv := make(map[string]interface{})
 		kv["fullname"] = data.Rule
 		kv["priority"] = data.Priority
@@ -189,27 +211,15 @@ func resourceS3BucketReplicationCreate(ctx context.Context, d *schema.ResourceDa
 	log.Printf("[TRACE] resourceS3BucketReplicationCreate ******** start")
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
-	rules := d.Get("rules").([]interface{})
-	sourceBucket := d.Get("source_bucket").(string)
 	// Create the request object.
-
+	rules := expandRules(d)
+	sourceBucket := rules[0].SourceBucket
 	for _, rule := range rules {
-		kv := rule.(map[string]interface{})
-		duploObject := duplosdk.DuploS3BucketReplication{}
-
-		duploObject.Rule = kv["name"].(string)
-		duploObject.DestinationBucket = kv["destination_bucket"].(string)
-		duploObject.SourceBucket = sourceBucket
-		duploObject.Priority = kv["priority"].(int)
-		duploObject.DeleteMarkerReplication = kv["delete_marker_replication"].(bool)
-		duploObject.StorageClass = kv["storage_class"].(string)
-		// Post the object to Duplo
-		err := c.TenantCreateV3S3BucketReplication(tenantID, duploObject)
+		err := c.TenantCreateV3S3BucketReplication(tenantID, rule)
 		if err != nil {
-			return diag.Errorf("resourceS3BucketReplicationCreate: Unable to create s3 bucket replication for (tenant: %s, source bucket: %s: error: %s)", tenantID, duploObject.SourceBucket, err)
+			return diag.Errorf("resourceS3BucketReplicationCreate: Unable to create s3 bucket replication for (tenant: %s, source bucket: %s: error: %s)", tenantID, rule.SourceBucket, err)
 		}
 		time.Sleep(250 * time.Millisecond)
-
 	}
 	id := fmt.Sprintf("%s/%s", tenantID, sourceBucket)
 
@@ -224,6 +234,25 @@ func resourceS3BucketReplicationCreate(ctx context.Context, d *schema.ResourceDa
 	diags = resourceS3BucketReplicationRead(ctx, d, m)
 	log.Printf("[TRACE] resourceS3BucketReplicationCreate ******** end")
 	return diags
+}
+func expandRules(d *schema.ResourceData) []duplosdk.DuploS3BucketReplication {
+	obj := []duplosdk.DuploS3BucketReplication{}
+	rules := d.Get("rules").([]interface{})
+	sourceBucket := d.Get("source_bucket").(string)
+
+	for _, rule := range rules {
+		kv := rule.(map[string]interface{})
+		duploObject := duplosdk.DuploS3BucketReplication{}
+
+		duploObject.Rule = kv["name"].(string)
+		duploObject.DestinationBucket = kv["destination_bucket"].(string)
+		duploObject.SourceBucket = sourceBucket
+		duploObject.Priority = kv["priority"].(int)
+		duploObject.DeleteMarkerReplication = kv["delete_marker_replication"].(bool)
+		duploObject.StorageClass = kv["storage_class"].(string)
+		obj = append(obj, duploObject)
+	}
+	return obj
 }
 
 // UPDATE resource
@@ -299,9 +328,9 @@ func validateTenantBucket(ctx context.Context, diff *schema.ResourceDiff, m inte
 	tId := diff.Get("tenant_id").(string)
 	sbucket := diff.Get("source_bucket").(string)
 	c := m.(*duplosdk.Client)
-	rp, err := c.TenantGetAwsCloudResource(tId, 1, sbucket)
-	if err != nil || rp == nil {
-		return fmt.Errorf("S3 bucket %s not found in tenant %s", sbucket, tId)
+	_, err := c.TenantGetAwsCloudResource(tId, 1, sbucket)
+	if err != nil {
+		return fmt.Errorf("%s", err.Error())
 	}
 	return nil
 }

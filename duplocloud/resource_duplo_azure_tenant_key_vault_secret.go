@@ -6,8 +6,9 @@ import (
 	"log"
 	"net/url"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -39,14 +40,13 @@ func duploAzureTenantKeyVaultSecretSchema() map[string]*schema.Schema {
 			Description: "Specifies the value of the Key Vault Secret. Changing this will create a new version of the Key Vault Secret.",
 			Type:        schema.TypeString,
 			Required:    true,
-			ForceNew:    true,
+			Sensitive:   true,
 		},
 		"content_type": {
-			Description:      "Specifies the content type for the Key Vault Secret.",
-			Type:             schema.TypeString,
-			Optional:         true,
-			Computed:         true,
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Description: "Specifies the content type for the Key Vault Secret.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
 		},
 		"azure_id": {
 			Description: "The azure ID of the Key Vault secret.",
@@ -148,7 +148,21 @@ func resourceAzureTenantKeyVaultSecretCreate(ctx context.Context, d *schema.Reso
 }
 
 func resourceAzureTenantKeyVaultSecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	id := d.Id()
+	tenantID, _, name, err := parseAzureTenantKeyVaultSecretIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	rq := expandAzureTenantKeyVaultSecret(d)
+	rq.SecretName = name
+	c := m.(*duplosdk.Client)
+
+	cerr := c.TenantKeyVaultSecretUpdate(tenantID, rq)
+	if cerr != nil {
+		diag.FromErr(err)
+	}
+
+	return resourceAzureTenantKeyVaultSecretRead(ctx, d, m)
 }
 
 func resourceAzureTenantKeyVaultSecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

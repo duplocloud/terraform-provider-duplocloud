@@ -19,11 +19,13 @@ type DuploAzureMsSqlDatabaseRequest struct {
 	Sku                     *DuploAzureMsSqlDatabaseSku `json:"sku"`
 	PropertiesCollation     string                      `json:"properties.collation,omitempty"`
 	PropertiesElasticPoolId string                      `json:"properties.elasticPoolId,omitempty"`
+	MaxSizeBytes            int64                       `json:"properties.MaxSizeBytes"`
 }
 
 type DuploAzureMsSqlElasticPoolRequest struct {
-	Name string                      `json:"name"`
-	Sku  *DuploAzureMsSqlDatabaseSku `json:"sku"`
+	Name         string                      `json:"name"`
+	Sku          *DuploAzureMsSqlDatabaseSku `json:"sku"`
+	MaxSizeBytes int64                       `json:"properties.MaxSizeBytes"`
 }
 
 type DuploAzureMsSqlDatabaseDeleteRequest struct {
@@ -96,6 +98,7 @@ type DuploAzureMsSqlElasticPool struct {
 	ID                      string                      `json:"id"`
 	Name                    string                      `json:"name"`
 	Type                    string                      `json:"type"`
+	MaxSizeBytes            int64                       `json:"properties.MaxSizeBytes"`
 }
 
 func (c *Client) MsSqlServerCreate(tenantID string, rq *DuploAzureMsSqlRequest) ClientError {
@@ -281,4 +284,29 @@ func (c *Client) MsSqlElasticPoolDelete(tenantID, serverName, epName string) Cli
 		},
 		nil,
 	)
+}
+
+type DuploMyssqlDBRetention struct {
+	RetentionDays int `json:"properties.retentionDays"`
+}
+
+func (c *Client) SetMsSqlDBRetention(tenantID string, sname, dname string, rq DuploMyssqlDBRetention) ClientError {
+	var rp interface{}
+	err := c.putAPI(
+		fmt.Sprintf("SetMsSqlDBRetention(%s, %s,%s)", tenantID, sname, dname),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/mssqlservers/%s/databases/%s/backup-policy/shortterm", tenantID, sname, dname),
+		&rq,
+		&rp,
+	)
+	return err
+}
+
+func (c *Client) GetMsSqlDBRetention(tenantID string, sname, dname string) (*DuploMyssqlDBRetention, ClientError) {
+	rq := &DuploMyssqlDBRetention{}
+	err := c.getAPI(
+		fmt.Sprintf("SetMsSqlDBRetention(%s, %s,%s)", tenantID, sname, dname),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/mssqlservers/%s/databases/%s/backup-policy/shortterm", tenantID, sname, dname),
+		rq,
+	)
+	return rq, err
 }

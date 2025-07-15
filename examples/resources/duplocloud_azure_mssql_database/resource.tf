@@ -31,3 +31,15 @@ resource "duplocloud_azure_mssql_database" "mssql_database" {
   server_name     = "mysqlserver"
   elastic_pool_id = duplocloud_azure_mssql_elasticpool.mssql_elasticpool.elastic_pool_id
 }
+
+
+resource "duplocloud_azure_mssql_database" "mssql_database" {
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
+  name        = "caroldb"
+  server_name = duplocloud_azure_mssql_server.mssql_server
+  sku {
+    name     = "GP_Gen5"
+    capacity = 2
+  }
+  max_size_gb = 81
+}

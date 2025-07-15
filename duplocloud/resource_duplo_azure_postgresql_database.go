@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -143,12 +144,12 @@ func duploAzurePostgresqlDatabaseSchema() map[string]*schema.Schema {
 
 func resourceAzurePostgresqlDatabase() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_postgresql_database` manages an azure postgresql database in Duplo.",
-
-		ReadContext:   resourceAzurePostgresqlDatabaseRead,
-		CreateContext: resourceAzurePostgresqlDatabaseCreate,
-		UpdateContext: resourceAzurePostgresqlDatabaseUpdate,
-		DeleteContext: resourceAzurePostgresqlDatabaseDelete,
+		Description:        "`duplocloud_azure_postgresql_database` manages an azure postgresql database in Duplo.",
+		DeprecationMessage: "duplocloud_azure_postgresql_database is deprecated. Use duplocloud_azure_postgresql_flexible_database instead.",
+		ReadContext:        resourceAzurePostgresqlDatabaseRead,
+		CreateContext:      resourceAzurePostgresqlDatabaseCreate,
+		UpdateContext:      resourceAzurePostgresqlDatabaseUpdate,
+		DeleteContext:      resourceAzurePostgresqlDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

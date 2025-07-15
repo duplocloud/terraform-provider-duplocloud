@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const DEFAULT_INFRA = "default"
@@ -143,14 +143,13 @@ func resourceInfrastructure() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"infra_name": {
-				Description:  "The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringLenBetween(2, 30),
+				Description: "The name of the infrastructure.  Infrastructure names are globally unique and less than 13 characters.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"account_id": {
-				Description: "The cloud account ID.",
+				Description: "The cloud account ID — use this for Azure (Subscription ID) and Google Cloud (Project ID). Not applicable for AWS.",
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Optional:    true,
@@ -244,7 +243,7 @@ func resourceInfrastructure() *schema.Resource {
 				Required:    true,
 			},
 			"subnet_cidr": {
-				Description: "The CIDR subnet size (in bits) for the automatically created subnets. This is applicable only for AWS.",
+				Description: "The CIDR subnet size (in bits) for the automatically created subnets.",
 				Type:        schema.TypeInt,
 				ForceNew:    true,
 				Optional:    true,
@@ -302,11 +301,10 @@ func resourceInfrastructure() *schema.Resource {
 				Elem:        infrastructureVnetSecurityGroupsSchema(),
 			},
 			"wait_until_deleted": {
-				Description:      "Whether or not to wait until Duplo has destroyed the infrastructure.",
-				Type:             schema.TypeBool,
-				Optional:         true,
-				Default:          false,
-				DiffSuppressFunc: diffSuppressFuncIgnore,
+				Description: "Whether or not to wait until Duplo has destroyed the infrastructure.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"cluster_ip_cidr": {
 				Description: "cluster IP CIDR defines a private IP address range used for internal Kubernetes services.",
@@ -474,8 +472,7 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 	// Wait for 20 minutes to allow infrastructure deletion.
 	// TODO: wait for it completely deleted (add an API that will actually show the status)
 	if d.Get("wait_until_deleted").(bool) {
-		log.Printf("[TRACE] resourceInfrastructureDelete(%s): waiting for 20 minutes because 'wait_until_deleted' is 'true'", infraName)
-		time.Sleep(time.Duration(20) * time.Minute)
+		time.Sleep(20 * time.Minute)
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureDelete(%s): end", infraName)
@@ -593,7 +590,10 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 			return true, nil // object missing
 		}
 	}
-
+	wud, ok := d.GetOk("wait_until_deleted")
+	if ok {
+		d.Set("wait_until_deleted", wud.(bool))
+	}
 	d.Set("infra_name", infra.Name)
 	d.Set("account_id", infra.AccountId)
 	d.Set("cloud", infra.Cloud)

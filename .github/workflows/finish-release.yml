@@ -59,14 +59,12 @@ jobs:
 
           # Determine the new version
           current="$(sed -ne 's/^VERSION=\([0-9\.]*\).*$/\1/p' <Makefile)"
-          bump="$(( ${current##*.} + 1))"
-          prefix="${current%.*}"
-          version="${prefix}.${bump}"
+          new_version=$(echo "$current" | awk -F. '{printf "%d.%d.0", $1, $2+1}'); echo "New Release Version: $new_version"
 
           # Replace the version number in all affected files
-          sed -e 's/^\(VERSION=\)[0-9\.]*/\1'"$version"'/g' -i Makefile
+          sed -e 's/^\(VERSION=\)[0-9\.]*/\1'"$new_version"'/g' -i Makefile
           find examples -name main.tf -exec \
-            sed -e 's/\(version = "\)[0-9\.]*\(".*# RELEASE VERSION\)/\1'"$version"'\2/g' -i \{\} \;
+            sed -e 's/\(version = "\)[0-9\.]*\(".*# RELEASE VERSION\)/\1'"$new_version"'\2/g' -i \{\} \;
 
           # Commit
           git commit -m 'version bump' Makefile examples

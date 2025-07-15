@@ -1091,8 +1091,9 @@ type DuploS3EventLambdaConfiguration struct {
 
 func (c *Client) UpdateS3EventNotification(tenantID, bucketName string, duplo DuploS3EventNotificaition) ClientError {
 	// Apply the settings via Duplo.
+	rp := ""
 	apiName := fmt.Sprintf("UpdateS3EventNotification(%s, %s)", tenantID, bucketName)
-	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/notifications", tenantID, bucketName), &duplo, nil)
+	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/notifications", tenantID, bucketName), &duplo, &rp)
 	if err != nil {
 		return err
 	}

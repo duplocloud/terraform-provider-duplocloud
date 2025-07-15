@@ -6,8 +6,9 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -89,7 +90,7 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"agent_platform": {
-			Description: "The numeric ID of the container agent pool that this host is added to.",
+			Description: "The numeric ID of the container agent pool that this host is added to.\n\n - 0: Linux Docker/Native\n- 5: Docker Windows",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Default:     0,

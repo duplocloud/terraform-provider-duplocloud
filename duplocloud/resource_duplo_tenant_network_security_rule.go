@@ -6,8 +6,9 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -118,7 +119,7 @@ func resourceTenantNetworkSecurityRuleRead(ctx context.Context, d *schema.Resour
 	d.Set("from_port", duplo.FromPort)
 	d.Set("to_port", duplo.ToPort)
 	d.Set("protocol", duplo.Protocol)
-
+	d.Set("description", (*duplo.Sources)[0].Description)
 	if rq.Type == duplosdk.SGSourceTypeTenant {
 		d.Set("source_address", nil)
 		d.Set("source_tenant", (*duplo.Sources)[0].Value)

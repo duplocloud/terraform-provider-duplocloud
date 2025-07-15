@@ -6,8 +6,9 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -39,10 +40,13 @@ func schemaSecurityRule() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"ports": {
-						Description: "The list of ports to which this rule applies. This field is only applicable for UDP, TCP and SCTP protocol.",
+						Description: "The list of ports to which this rule applies. This field is only applicable for UDP, TCP and SCTP protocol. To apply all ports dont specify the field",
 						Type:        schema.TypeList,
 						Optional:    true,
-						Elem:        &schema.Schema{Type: schema.TypeString},
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringNotInSlice([]string{"all", ""}, false),
+						},
 					},
 					"service_protocol": {
 						Description: "The IP protocol to which this rule applies. The protocol type is required when creating a firewall rule. This value can either be one of the following well known protocol strings (tcp, udp, icmp, esp, ah, sctp, ipip, all), or the IP protocol number.",
@@ -238,9 +242,19 @@ func expandGCPSecurityRule(d *schema.ResourceData) (*duplosdk.DuploSecurityRule,
 		pp := duplosdk.DuploSecurityRuleProtocolAndPorts{}
 
 		mpp := spp.(map[string]interface{})
-		for _, p := range mpp["ports"].([]interface{}) {
-			pp.Ports = append(pp.Ports, p.(string))
+		ps := mpp["ports"].([]interface{})
+		for _, p := range ps {
+			//if p == nil {
+			//	pp.Ports = append(pp.Ports, "")
+			//} else {
+			//	pp.Ports = append(pp.Ports, p.(string))
+			//}
+			if p != nil && p.(string) != "all" && p.(string) != "" {
+				pp.Ports = append(pp.Ports, p.(string))
+
+			}
 		}
+
 		pp.ServiceProtocol = mpp["service_protocol"].(string)
 		pps = append(pps, pp)
 
@@ -271,7 +285,7 @@ func flattenGCPSecurityRule(d *schema.ResourceData, rb duplosdk.DuploSecurityRul
 	if len(rb.Denied) > 0 {
 		ppI := make([]interface{}, 0, len(rb.Allowed))
 		d.Set("rule_type", "DENY")
-		for _, v := range rb.Allowed {
+		for _, v := range rb.Denied {
 			mp := make(map[string]interface{})
 			mp["ports"] = v.Ports
 			mp["service_protocol"] = v.ServiceProtocol

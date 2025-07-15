@@ -46,13 +46,13 @@ resource "duplocloud_k8_helm_release" "release" {
 
 ### Required
 
+- `chart` (Block List, Min: 1) Helm chart (see [below for nested schema](#nestedblock--chart))
 - `name` (String) The name of the helm chart
 - `release_name` (String) Provide release name to identify specific deployment of helm chart.
 - `tenant_id` (String) The GUID of the tenant that the storage bucket will be created in.
 
 ### Optional
 
-- `chart` (Block List) Helm chart (see [below for nested schema](#nestedblock--chart))
 - `interval` (String) Interval related to helm release Defaults to `5m0s`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `values` (String) Customise an helm chart.

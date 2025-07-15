@@ -15,6 +15,7 @@ type DuploK8sJob struct {
 	Spec             batchv1.JobSpec   `json:"spec"`
 	Status           batchv1.JobStatus `json:"status"`
 	IsAnyHostAllowed bool              `json:"IsAnyHostAllowed"`
+	AllocationTags   string            `json:"AllocationTags"`
 }
 
 // K8sJobGetList retrieves a list of k8s jobs via the Duplo API.
@@ -44,12 +45,15 @@ func (c *Client) K8sJobGet(tenantId, jobName string) (*DuploK8sJob, ClientError)
 		&rp)
 
 	if err != nil {
+		if err.Status() == 404 {
+			return nil, nil
+		}
 		return nil, newClientError(fmt.Sprintf("job %s not found. %s", jobName, err))
 	}
 	// Add the tenant ID, then return the result.
 	rp.TenantId = tenantId
 
-	return &rp, err
+	return &rp, nil
 }
 
 // K8sJobCreate creates a k8s job via the Duplo API.

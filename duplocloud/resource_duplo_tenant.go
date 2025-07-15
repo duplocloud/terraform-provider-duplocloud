@@ -6,8 +6,9 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -35,10 +36,16 @@ func resourceTenant() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"account_name": {
-				Description: "The name of the tenant. Tenant names are globally unique, and cannot be a prefix of any other tenant name.",
+				Description: "The name of the tenant. Tenant names are globally unique, and cannot be a prefix of any other tenant name. Will be converted to lowercase.",
 				Type:        schema.TypeString,
 				ForceNew:    true, // Change tenant name
 				Required:    true,
+				StateFunc: func(val interface{}) string {
+					return strings.ToLower(val.(string))
+				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return strings.EqualFold(old, new)
+				},
 			},
 			"plan_id": {
 				Description:  "The name of the plan under which the tenant will be created.",
@@ -152,15 +159,18 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 		d.Set("policy", []map[string]interface{}{})
 	}
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-
+	d.Set("allow_deletion", d.Get("allow_deletion").(bool))
 	log.Printf("[TRACE] resourceTenantRead(%s): end", tenantID)
 	return nil
 }
 
 // CREATE resource
 func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	// Convert account_name to lowercase
+	accountName := strings.ToLower(d.Get("account_name").(string))
+
 	rq := duplosdk.DuploTenant{
-		AccountName:          d.Get("account_name").(string),
+		AccountName:          accountName,
 		PlanID:               d.Get("plan_id").(string),
 		ExistingK8sNamespace: d.Get("existing_k8s_namespace").(string),
 	}
@@ -266,11 +276,12 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 			time.Sleep(time.Duration(1) * time.Minute)
 		}
 	} else {
-		log.Printf("[WARN] resourceTenantDelete(%s): will NOT delete the tenant - because 'allow_deletion' is 'false'", tenantID)
+		return diag.Errorf("Will NOT delete the tenant - because allow_deletion is false")
 	}
 
 	log.Printf("[TRACE] resourceTenantDelete(%s): end", tenantID)
 	return nil
+
 }
 
 func parseDuploTenantIdParts(id string) (tenantID string) {
@@ -291,6 +302,35 @@ func validateTenantSchema(d *schema.ResourceData, c *duplosdk.Client) diag.Diagn
 	}
 	if len(accountName) < 2 || len(accountName) > maxLength {
 		return diag.Errorf("Length of attribute 'account_name' must be between 2 and %d inclusive, got: %d", maxLength, len(accountName))
+	}
+
+	// Validate that the tenant name is not a prefix of any existing tenant name and vice versa
+	// Get all existing tenants
+	existingTenants, err := c.ListTenantsForUser()
+	if err != nil {
+		return diag.Errorf("Error retrieving existing tenants: %s", err)
+	}
+
+	// Check if the new tenant name is a prefix of any existing tenant name or vice versa
+	for _, tenant := range existingTenants {
+		existingName := tenant.AccountName
+		lowerExistingName := strings.ToLower(existingName)
+		lowerAccountName := strings.ToLower(accountName)
+
+		// If tenant with same name already exists, throw an error (case insensitive)
+		if lowerExistingName == lowerAccountName {
+			return diag.Errorf("Tenant with name '%s' already exists (matches existing tenant '%s')", accountName, existingName)
+		}
+
+		// Check if new tenant name is a prefix of existing tenant name (case insensitive)
+		if strings.HasPrefix(lowerExistingName, lowerAccountName) {
+			return diag.Errorf("Tenant name '%s' cannot be created because it is a prefix of existing tenant '%s'", accountName, existingName)
+		}
+
+		// Check if existing tenant name is a prefix of new tenant name (case insensitive)
+		if strings.HasPrefix(lowerAccountName, lowerExistingName) {
+			return diag.Errorf("Tenant name '%s' cannot be created because existing tenant '%s' is a prefix of it", accountName, existingName)
+		}
 	}
 	return nil
 }

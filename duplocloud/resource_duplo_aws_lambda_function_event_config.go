@@ -6,8 +6,9 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -36,7 +37,7 @@ func awsLambdaFunctionEventInvokeConfigSchema() map[string]*schema.Schema {
 			Description:  "Maximum number of attempts a Lambda function may retry in case of error",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			ValidateFunc: validation.IntBetween(1, 2),
+			ValidateFunc: validation.IntBetween(0, 2),
 		},
 		"max_event_age_in_seconds": {
 			Description:  "The maximum age of a request that Lambda sends to a function for processing",
@@ -157,7 +158,6 @@ func createOrUpdateLambdaEventInvokeConfiguration(ctx context.Context, d *schema
 	tenantId := d.Get("tenant_id").(string)
 
 	request := buildPutLambdaEventInvokeRequest(d)
-
 	err := duploClient.LambdaEventInvokeConfigCreateOrUpdate(tenantId, functionName, request)
 
 	if err != nil {

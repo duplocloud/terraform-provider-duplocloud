@@ -15,6 +15,7 @@ type DuploEcacheInstance struct {
 	Identifier               string   `json:"Identifier"`
 	Arn                      string   `json:"Arn"`
 	Endpoint                 string   `json:"Endpoint,omitempty"`
+	ConfigurationEndpoint    string   `json:"ConfigurationEndpoint,omitempty"`
 	CacheType                int      `json:"CacheType,omitempty"`
 	EngineVersion            string   `json:"EngineVersion,omitempty"`
 	Size                     string   `json:"Size,omitempty"`
@@ -134,10 +135,11 @@ func (c *Client) EcacheInstanceGet(tenantID, name string) (*DuploEcacheInstance,
 
 	// Call the API.
 	rp := DuploEcacheInstance{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("EcacheInstanceGet(%s, duplo-%s)", tenantID, name),
 		fmt.Sprintf("v2/subscriptions/%s/ECacheDBInstance/duplo-%s", tenantID, name),
-		&rp)
+		&rp, &conf)
 	if err != nil || rp.Identifier == "" {
 		return nil, err
 	}

@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"terraform-provider-duplocloud/duplosdk"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -96,7 +97,10 @@ func resourceAwsCloudWatchEventTargetRead(ctx context.Context, d *schema.Resourc
 		}
 		return diag.Errorf("Unable to retrieve tenant %s cloudwatch event target'%s': %s", tenantID, targetId, clientErr)
 	}
-
+	if duplo == nil {
+		d.SetId("")
+		return nil
+	}
 	d.Set("tenant_id", tenantID)
 	d.Set("arn", duplo.Arn)
 	d.Set("role_arn", duplo.RoleArn)
@@ -114,7 +118,7 @@ func resourceAwsCloudWatchEventTargetCreate(ctx context.Context, d *schema.Resou
 	c := m.(*duplosdk.Client)
 
 	rq := expandCloudWatchEventTarget(d)
-	_, err = c.DuploCloudWatchEventTargetsCreate(tenantID, &duplosdk.DuploCloudWatchEventTargets{
+	err = c.DuploCloudWatchEventTargetsCreate(tenantID, &duplosdk.DuploCloudWatchEventTargets{
 		Rule:         ruleName,
 		EventBusName: d.Get("event_bus_name").(string),
 		Targets:      &[]duplosdk.DuploCloudWatchEventTarget{*rq},
@@ -150,7 +154,7 @@ func resourceAwsCloudWatchEventTargetDelete(ctx context.Context, d *schema.Resou
 	log.Printf("[TRACE] resourceAwsCloudWatchEventTargetDelete(%s, %s, %s): start", tenantID, ruleName, targetId)
 
 	c := m.(*duplosdk.Client)
-	_, clientErr := c.DuploCloudWatchEventTargetsDelete(tenantID, duplosdk.DuploCloudWatchEventTargetsDeleteReq{
+	clientErr := c.DuploCloudWatchEventTargetsDelete(tenantID, duplosdk.DuploCloudWatchEventTargetsDeleteReq{
 		Rule: ruleName,
 		Ids:  []string{targetId},
 	})

@@ -46,6 +46,7 @@ resource "duplocloud_k8s_job" "myapp" {
 
 ### Optional
 
+- `allocation_tags` (String) Allocation tags is the simplest way to constraint containers/pods with hosts/nodes. DuploCloud/Kubernetes Orchestrator will make sure containers will run on the hosts having same allocation tags.
 - `is_any_host_allowed` (Boolean) Defaults to `false`.
 - `spec` (Block List) Spec of the job owned by the cluster (see [below for nested schema](#nestedblock--spec))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
