@@ -227,11 +227,12 @@ func validateDateTimeFormat(v interface{}, p cty.Path) diag.Diagnostics {
 	// Assert the value is a string
 	input, ok := v.(string)
 	if !ok {
-		return diag.Diagnostics{{
-			Severity: diag.Error,
-			Summary:  "Invalid value type",
-			Detail:   "Expected a string for datetime validation.",
-		}}
+		return diag.Diagnostics{
+			diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Invalid value type",
+				Detail:   "Expected a string for datetime validation.",
+			}}
 	}
 
 	// Define the regex pattern for the datetime format

@@ -90,7 +90,7 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"agent_platform": {
-			Description: "The numeric ID of the container agent pool that this host is added to.",
+			Description: "The numeric ID of the container agent pool that this host is added to.\n\n - 0: Linux Docker/Native\n- 5: Docker Windows",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Default:     0,
