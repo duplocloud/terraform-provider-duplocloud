@@ -265,7 +265,7 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			ValidateFunc:     validation.StringIsNotWhiteSpace,
 			DiffSuppressFunc: diffSuppressAvailablitySetIdOnCase,
 		},
-		"install_native_agent": {
+		"install_duplo_native_agent": {
 			Description: "Bootstrap an AKS host with Duplo's user data, prepending it to custom user data if also provided.",
 			Type:        schema.TypeBool,
 			Optional:    true,
@@ -551,7 +551,7 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 		DiskControlType:   d.Get("disk_control_type").(string),
 		AvailabilitySetId: d.Get("availability_set_id").(string),
 	}
-	if val, ok := d.GetOk("install_native_agent"); ok && val != nil {
+	if val, ok := d.GetOk("install_duplo_native_agent"); ok && val != nil {
 		f := false
 		if val.(bool) {
 			f = true
@@ -632,7 +632,7 @@ func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNat
 	d.Set("enable_encrypt_at_host", duplo.IsEncryptAtHost)
 	d.Set("disk_control_type", duplo.DiskControlType)
 	d.Set("availability_set_id", duplo.AvailabilitySetId)
-	d.Set("install_native_agent", isNativeHost)
+	d.Set("install_duplo_native_agent", isNativeHost)
 
 }
 
