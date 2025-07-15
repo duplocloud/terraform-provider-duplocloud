@@ -622,7 +622,8 @@ func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNat
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("status", duplo.Status)
 	d.Set("user_account", duplo.UserAccount)
-	d.Set("tags", flattenTags(duplo.TagsEx))
+	tex, isNativeHost := flattenTags(duplo.TagsEx)
+	d.Set("tags", tex)
 	d.Set("security_type", duplo.SecurityType)
 	if duplo.SecurityType == "TrustedLaunch" {
 		d.Set("enable_security_boot", duplo.IsSecureBoot)
@@ -631,12 +632,12 @@ func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNat
 	d.Set("enable_encrypt_at_host", duplo.IsEncryptAtHost)
 	d.Set("disk_control_type", duplo.DiskControlType)
 	d.Set("availability_set_id", duplo.AvailabilitySetId)
-	if duplo.InstallDuploNativeAgent != nil {
-		d.Set("install_native_agent", *duplo.InstallDuploNativeAgent)
-	}
+	d.Set("install_native_agent", isNativeHost)
+
 }
 
-func flattenTags(tags *[]duplosdk.DuploKeyStringValue) []interface{} {
+func flattenTags(tags *[]duplosdk.DuploKeyStringValue) ([]interface{}, bool) {
+	isNativeHost := false
 	if tags != nil {
 		managedTags := DuploManagedAzureTags()
 		output := []interface{}{}
@@ -649,11 +650,14 @@ func flattenTags(tags *[]duplosdk.DuploKeyStringValue) []interface{} {
 			jo["key"] = duploObject.Key
 			jo["value"] = duploObject.Value
 			output = append(output, jo)
+			if duploObject.Key == "install_duplo_native_agent" && duploObject.Value == "True" {
+				isNativeHost = true
+			}
 		}
-		return output
+		return output, isNativeHost
 	}
 
-	return make([]interface{}, 0)
+	return make([]interface{}, 0), isNativeHost
 }
 
 func virtualMachineWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
