@@ -286,7 +286,7 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
-		"virtual_network_rules": {
+		"virtual_network_rule": {
 			Description: "A list of virtual network rules for the Cosmos DB account. This is used to define which subnets are allowed to access this CosmosDB account",
 			Type:        schema.TypeList,
 			Optional:    true,
@@ -449,6 +449,7 @@ func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmo
 	obj.IsFreeTierEnabled = d.Get("enable_free_tier").(bool)
 	obj.PublicNetworkAccess = d.Get("public_network_access").(string)
 	obj.IsVirtualNetworkFilterEnabled = d.Get("is_virtual_network_filter_enabled").(bool)
+	obj.VirtualNetworkRulesRequest = expandVirtualNetworkRules(d.Get("virtual_network_rule").([]interface{}))
 	return obj
 }
 func expandBackupPolicy(inf []interface{}) (int, int, string, string) {
@@ -495,6 +496,9 @@ func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureC
 	}
 	if len(rp.GeoLocationsResposnse) > 0 {
 		d.Set("geo_location", flattenGeoLocations(rp.GeoLocationsResposnse))
+	}
+	if len(rp.VirtualNetworkRules) > 0 {
+		d.Set("virtual_network_rule", flattenVirtualNetworkRules(rp.VirtualNetworkRules))
 	}
 }
 
@@ -1117,4 +1121,33 @@ func cosomosDbAccountWaitUntilDelete(ctx context.Context, c *duplosdk.Client, te
 	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilDeleted (%s/%s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func expandVirtualNetworkRules(inf []interface{}) []duplosdk.DuploAzureCosmosDBVirtualNetworkRuleRequest {
+	obj := []duplosdk.DuploAzureCosmosDBVirtualNetworkRuleRequest{}
+	for _, i := range inf {
+		m := i.(map[string]interface{})
+		o := duplosdk.DuploAzureCosmosDBVirtualNetworkRuleRequest{
+			Id: struct {
+				ResourceId string `json:"resourceId"`
+			}{
+				ResourceId: m["subnet_id"].(string),
+			},
+			IgnoreMissingVNetServiceEndpoint: m["ignore_missing_vnet_service_endpoint"].(bool),
+		}
+		obj = append(obj, o)
+	}
+	return obj
+}
+
+func flattenVirtualNetworkRules(nr []duplosdk.DuploAzureCosmosDBVirtualNetworkRule) []interface{} {
+	obj := []interface{}{}
+	for _, i := range nr {
+		m := make(map[string]interface{})
+		m["subnet_id"] = i.Id
+		m["ignore_missing_vnet_service_endpoint"] = i.IgnoreMissingVNetServiceEndpoint
+		obj = append(obj, m)
+
+	}
+	return obj
 }

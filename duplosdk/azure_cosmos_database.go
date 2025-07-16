@@ -122,6 +122,13 @@ type DuploAzureCosmosDBVirtualNetworkRule struct {
 	IgnoreMissingVNetServiceEndpoint bool   `json:"ignoreMissingVNetServiceEndpoint"`
 }
 
+type DuploAzureCosmosDBVirtualNetworkRuleRequest struct {
+	Id struct {
+		ResourceId string `json:"resourceId"` // "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}"
+	} `json:"id"`
+	IgnoreMissingVNetServiceEndpoint bool `json:"ignoreMissingVNetServiceEndpoint"`
+}
+
 type DuploAzureCosmosDBCapability struct {
 	Name string `json:"name"`
 }
@@ -169,29 +176,31 @@ func (c *Client) GetCosmosDB(tenantId, account, name string) (*DuploAzureCosmosD
 }
 
 type DuploAzureCosmosDBAccount struct {
-	Name                               string                                     `json:"name"`
-	Kind                               string                                     `json:"kind"`
-	AccountType                        string                                     `json:"type"`
-	DocumentEndpoint                   string                                     `json:"DocumentEndpoint"`
-	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy       `json:"consistencyPolicy,omitempty"`
-	Capabilities                       *[]DuploAzureCosmosDBCapability            `json:"-"` //Capabilities"`
-	Locations                          []map[string]interface{}                   `json:"Locations"`
-	BackupPolicyType                   string                                     `json:"backupPolicyType,omitempty"`
-	BackupIntervalInMinutes            int                                        `json:"backupIntervalInMinutes,omitempty"`
-	BackupRetentionIntervalInHours     int                                        `json:"backupRetentionIntervalInHours,omitempty"`
-	BackupStorageRedundancy            string                                     `json:"backupStorageRedundancy,omitempty"`
-	DisableKeyBasedMetadataWriteAccess bool                                       `json:"DisableKeyBasedMetadataWriteAccess"`
-	IsFreeTierEnabled                  bool                                       `json:"IsFreeTierEnabled"`
-	PublicNetworkAccess                string                                     `json:"PublicNetworkAccess,omitempty"`
-	CapacityMode                       string                                     `json:"CapacityMode,omitempty"`
-	ProvisioningState                  string                                     `json:"ProvisioningState,omitempty"`
-	ResourceType                       *DuploAzureCosmosDBAccountResourceType     `json:"ResourceType,omitempty"`
-	ContinuousModeTier                 string                                     `json:"ContinuousModeTier,omitempty"`
-	WriteLocations                     []DuploAzureCosmosDBAccountLocation        `json:"WriteLocations"`   //,omitempty"`
-	ReadLocations                      []DuploAzureCosmosDBAccountLocation        `json:"ReadLocations"`    //,omitempty"`
-	GeoLocationsResposnse              []DuploAzureCosmosDBAccountLocation        `json:"FailoverPolicies"` //,omitempty"`
-	GeoLocations                       []DuploAzureCosmosDBAccountLocationRequest `json:"locations"`        //,omitempty"`
-	IsVirtualNetworkFilterEnabled      bool                                       `json:"isVirtualNetworkFilterEnabled,omitempty"`
+	Name                               string                                        `json:"name"`
+	Kind                               string                                        `json:"kind"`
+	AccountType                        string                                        `json:"type"`
+	DocumentEndpoint                   string                                        `json:"DocumentEndpoint"`
+	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy          `json:"consistencyPolicy,omitempty"`
+	Capabilities                       *[]DuploAzureCosmosDBCapability               `json:"-"` //Capabilities"`
+	Locations                          []map[string]interface{}                      `json:"Locations"`
+	BackupPolicyType                   string                                        `json:"backupPolicyType,omitempty"`
+	BackupIntervalInMinutes            int                                           `json:"backupIntervalInMinutes,omitempty"`
+	BackupRetentionIntervalInHours     int                                           `json:"backupRetentionIntervalInHours,omitempty"`
+	BackupStorageRedundancy            string                                        `json:"backupStorageRedundancy,omitempty"`
+	DisableKeyBasedMetadataWriteAccess bool                                          `json:"DisableKeyBasedMetadataWriteAccess"`
+	IsFreeTierEnabled                  bool                                          `json:"IsFreeTierEnabled"`
+	PublicNetworkAccess                string                                        `json:"PublicNetworkAccess,omitempty"`
+	CapacityMode                       string                                        `json:"CapacityMode,omitempty"`
+	ProvisioningState                  string                                        `json:"ProvisioningState,omitempty"`
+	ResourceType                       *DuploAzureCosmosDBAccountResourceType        `json:"ResourceType,omitempty"`
+	ContinuousModeTier                 string                                        `json:"ContinuousModeTier,omitempty"`
+	WriteLocations                     []DuploAzureCosmosDBAccountLocation           `json:"WriteLocations"`   //,omitempty"`
+	ReadLocations                      []DuploAzureCosmosDBAccountLocation           `json:"ReadLocations"`    //,omitempty"`
+	GeoLocationsResposnse              []DuploAzureCosmosDBAccountLocation           `json:"FailoverPolicies"` //,omitempty"`
+	GeoLocations                       []DuploAzureCosmosDBAccountLocationRequest    `json:"locations"`        //,omitempty"`
+	IsVirtualNetworkFilterEnabled      bool                                          `json:"isVirtualNetworkFilterEnabled,omitempty"`
+	VirtualNetworkRules                []DuploAzureCosmosDBVirtualNetworkRule        `json:"virtualNetworkRules,omitempty"`
+	VirtualNetworkRulesRequest         []DuploAzureCosmosDBVirtualNetworkRuleRequest `json:"virtualNetworkRulesRequest,omitempty"`
 }
 type DuploAzureCosmosDBAccountResourceType struct {
 	Namespace string `json:"Namespace"`

@@ -136,6 +136,136 @@ func dataSourceAzureCosmosDBAccount() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"endpoint": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The endpoint used to connect to the CosmosDB account.",
+			},
+			"read_endpoints": {
+				Type:        schema.TypeList,
+				Description: "The list of read endpoints for the CosmosDB account.",
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"write_endpoints": {
+				Type:        schema.TypeList,
+				Description: "The list of write endpoints for the CosmosDB account.",
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"primary_master_key": {
+				Type:        schema.TypeString,
+				Description: "The primary key for the CosmosDB account.",
+				Computed:    true,
+				Sensitive:   true, // Sensitive information
+			},
+			"secondary_master_key": {
+				Type:        schema.TypeString,
+				Description: "The secondary key for the CosmosDB account.",
+				Computed:    true,
+				Sensitive:   true, // Sensitive information
+			},
+			"primary_readonly_master_key": {
+				Type:        schema.TypeString,
+				Description: "The primary readonly key for the CosmosDB account.",
+				Computed:    true,
+				Sensitive:   true, // Sensitive information
+			},
+			"secondary_readonly_master_key": {
+				Type:        schema.TypeString,
+				Description: "The secondary readonly key for the CosmosDB account.",
+				Computed:    true,
+				Sensitive:   true, // Sensitive information
+			},
+			"primary_sql_connection_string": {
+				Type:        schema.TypeString,
+				Description: "The primary SQL connection string for the CosmosDB account.",
+				Computed:    true,
+			},
+			"secondary_sql_connection_string": {
+				Type:        schema.TypeString,
+				Description: "The secondary SQL connection string for the CosmosDB account.",
+				Computed:    true,
+			},
+			"primary_readonly_sql_connection_string": {
+				Type:        schema.TypeString,
+				Description: "The primary readonly SQL connection string for the CosmosDB account.",
+				Computed:    true,
+			},
+			"secondary_readonly_sql_connection_string": {
+				Type:        schema.TypeString,
+				Description: "The secondary readonly SQL connection string for the CosmosDB account.",
+				Computed:    true,
+			},
+			"primary_mongo_connection_string": {
+				Type:        schema.TypeString,
+				Description: "The primary MongoDB connection string for the CosmosDB account.",
+				Computed:    true,
+			},
+			"secondary_mongo_connection_string": {
+				Type:        schema.TypeString,
+				Description: "The secondary MongoDB connection string for the CosmosDB account.",
+				Computed:    true,
+			},
+			"primary_readonly_mongo_connection_string": {
+				Type:        schema.TypeString,
+				Description: "The primary readonly MongoDB connection string for the CosmosDB account.",
+				Computed:    true,
+			},
+			"secondary_readonly_mongo_connection_string": {
+				Type:        schema.TypeString,
+				Description: "The secondary readonly MongoDB connection string for the CosmosDB account.",
+				Computed:    true,
+			},
+			"geo_location": {
+				Type:        schema.TypeList,
+				Description: "Specifies a geo_location resource, used to define where data should be replicated with the failover_priority 0 specifying the primary location",
+				Computed:    true,
+
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"location_name": {
+							Description: "The name of the Azure region to host replicated data",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"failover_priority": {
+							Description: "The failover priority of the region. A failover priority of 0 indicates a write region. The maximum value for a failover priority = (total number of regions - 1). Failover priority values must be unique for each of the regions in which the database account exists. Changing this causes the location to be re-provisioned and cannot be changed for the location with failover priority 0",
+							Type:        schema.TypeInt,
+							Computed:    true,
+						},
+						"is_zone_redundant": {
+							Description: "Should zone redundancy be enabled for this region?",
+							Type:        schema.TypeBool,
+							Computed:    true,
+						},
+					},
+				},
+			},
+			"is_virtual_network_filter_enabled": {
+				Description: "Enables virtual network filtering for this Cosmos DB account.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+			"virtual_network_rule": {
+				Description: "A list of virtual network rules for the Cosmos DB account. This is used to define which subnets are allowed to access this CosmosDB account",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"subnet_id": {
+							Description: "The ID of the subnet to allow access to this CosmosDB account. This should be in the format /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"ignore_missing_vnet_service_endpoint": {
+							Description: "If set to true, the specified subnet will be added as a virtual network rule even if its CosmosDB service endpoint is not active",
+							Type:        schema.TypeBool,
+							Computed:    true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
