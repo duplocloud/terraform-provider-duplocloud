@@ -2,10 +2,11 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -55,6 +56,12 @@ func infrastructureSchemaComputed(single bool) map[string]*schema.Schema {
 			Description: "The status of the infrastructure.",
 			Type:        schema.TypeString,
 			Computed:    true,
+		},
+		"nat_ips": {
+			Description: "The NAT IPs for the subnet.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 	}
 
