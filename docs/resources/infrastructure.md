@@ -290,6 +290,7 @@ Should be one of:
 
 - `all_settings` (List of Object) A complete list of configuration settings for this infrastructure, even ones not being managed by this resource. (see [below for nested schema](#nestedatt--all_settings))
 - `id` (String) The ID of this resource.
+- `nat_ips` (List of String) The NAT IPs for the subnet.
 - `private_subnets` (Set of Object) The private subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--private_subnets))
 - `public_subnets` (Set of Object) The public subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--public_subnets))
 - `security_groups` (Set of Object) The security groups for the VPC or VNet. (see [below for nested schema](#nestedatt--security_groups))

@@ -506,3 +506,13 @@ func (c *Client) AzureK8sClusterCreate(infraName string, rq *AksConfig) ClientEr
 		&rq,
 		nil)
 }
+
+func (c *Client) GetGCPInfraNATIPs(infraName string) ([]string, ClientError) {
+	rp := []string{}
+	err := c.getAPI(
+		fmt.Sprintf("GetGCPInfraNATIPs(%s)", infraName),
+		fmt.Sprintf("v3/admin/infrastructure/%s/gcp/nat-ip", infraName),
+		&rp)
+
+	return rp, err
+}
