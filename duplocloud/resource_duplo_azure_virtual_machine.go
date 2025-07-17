@@ -269,8 +269,7 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			Description: "Bootstrap an AKS host with Duplo's user data, prepending it to custom user data if also provided.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			ForceNew:    true, // relaunch instance
-			Default:     true,
+			Computed:    true,
 		},
 	}
 }

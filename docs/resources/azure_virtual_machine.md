@@ -78,7 +78,7 @@ resource "duplocloud_azure_virtual_machine" "az_vm" {
 - `enable_security_boot` (Boolean) Specify to enable Secure Boot for your VM. Used with security_type=TrustedLaunch Defaults to `true`.
 - `enable_vtpm` (Boolean) Specify to enable virtual Trusted Platform Module (vTPM) for Azure VM. Used with security_type=TrustedLaunch Defaults to `true`.
 - `encrypt_disk` (Boolean) Defaults to `false`.
-- `install_duplo_native_agent` (Boolean) Bootstrap an AKS host with Duplo's user data, prepending it to custom user data if also provided. Defaults to `true`.
+- `install_duplo_native_agent` (Boolean) Bootstrap an AKS host with Duplo's user data, prepending it to custom user data if also provided.
 - `is_minion` (Boolean)
 - `join_domain` (Boolean) Join a Windows Server virtual machine to an Azure Active Directory Domain Services. Defaults to `false`.
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
