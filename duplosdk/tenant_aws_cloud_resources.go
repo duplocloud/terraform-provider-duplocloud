@@ -788,6 +788,18 @@ func (c *Client) TenantGetKafkaClusterInfo(tenantID string, arn string) (*DuploK
 	return &rp, err
 }
 
+func (c *Client) UpdateKafkaClusterConfiguration(tenantID string, arn string, rq DuploKafkaConfigurationInfo) (map[string]interface{}, ClientError) {
+	rp := make(map[string]interface{})
+	err := c.postAPI(fmt.Sprintf("UpdateKafkaClusterConfiguration(%s, %s)", tenantID, arn),
+		fmt.Sprintf("v3/subscriptions/%s/aws/kafka/v2/%s", tenantID, arn),
+		map[string]interface{}{"ClusterArn": arn, "ConfigurationInfo": rq},
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return rp, nil
+}
+
 // TenantGetKafkaClusterBootstrapBrokers gets a non-cached view of the kafka cluster's info via Duplo.
 func (c *Client) TenantGetKafkaClusterBootstrapBrokers(tenantID string, arn string) (*DuploKafkaBootstrapBrokers, ClientError) {
 	rp := DuploKafkaBootstrapBrokers{}
