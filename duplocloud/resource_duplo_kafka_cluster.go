@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -137,6 +138,11 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			Computed: true,
 			Elem:     schema.TypeString,
 		},
+
+		"current_version": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 	}
 }
 
@@ -147,7 +153,7 @@ func resourceAwsKafkaCluster() *schema.Resource {
 
 		ReadContext:   resourceKafkaClusterRead,
 		CreateContext: resourceKafkaClusterCreate,
-		//UpdateContext: resourceKafkaClusterUpdate,
+		UpdateContext: resourceKafkaClusterUpdate,
 		DeleteContext: resourceKafkaClusterDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -376,4 +382,39 @@ func duploKafkaClusterWaitUntilReady(ctx context.Context, c *duplosdk.Client, te
 	log.Printf("[DEBUG] duploKafkaClusterWaitUntilReady(%s, %s)", tenantID, arn)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func resourceKafkaClusterUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+	log.Printf("[TRACE] resourceKafkaClusterUpdate ******** start")
+	id := d.Id()
+	idParts := strings.SplitN(id, "/", 2)
+	if len(idParts) < 2 {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
+	tenantID, name := idParts[0], idParts[1]
+	cArn := base64Encode([]byte(d.Get("arn").(string)))
+
+	c := m.(*duplosdk.Client)
+	if d.HasChange("configuration_arn") || d.HasChange("configuration_revision") {
+		rq := duplosdk.DuploKafkaConfigurationInfo{
+			Arn:      d.Get("configuration_arn").(string),
+			Revision: int64(d.Get("configuration_revision").(int)),
+		}
+
+	}
+
+	// Wait for Duplo to be able to return the cluster's details.
+	var rp *duplosdk.DuploKafkaCluster
+
+	// Next, wait for the cluster to become active.
+	err = duploKafkaClusterWaitUntilReady(ctx, c, tenantID, rp.Arn, d.Timeout("update"))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
+
+	diags := resourceKafkaClusterRead(ctx, d, m)
+	log.Printf("[TRACE] resourceKafkaClusterCreate ******** end")
+	return diags
 }
