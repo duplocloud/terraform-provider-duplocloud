@@ -313,6 +313,12 @@ func resourceInfrastructure() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"nat_ips": {
+				Description: "The NAT IPs for the subnet.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -724,7 +730,19 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 			d.Set("security_groups", securityGroups)
 		}
 	}
-
+	if config.Cloud == 3 {
+		natIPs, err := c.GetGCPInfraNATIPs(name)
+		if err != nil {
+			return false, fmt.Errorf("error retrieving GCP NAT IPs for infrastructure '%s': %s", name, err)
+		}
+		if natIPs != nil {
+			natIPsList := make([]interface{}, len(natIPs))
+			for i, ip := range natIPs {
+				natIPsList[i] = ip
+			}
+			d.Set("nat_ips", natIPsList)
+		}
+	}
 	return false, nil
 }
 
