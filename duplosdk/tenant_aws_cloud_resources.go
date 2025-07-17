@@ -788,11 +788,11 @@ func (c *Client) TenantGetKafkaClusterInfo(tenantID string, arn string) (*DuploK
 	return &rp, err
 }
 
-func (c *Client) UpdateKafkaClusterConfiguration(tenantID string, arn string, rq DuploKafkaConfigurationInfo) (map[string]interface{}, ClientError) {
+func (c *Client) UpdateKafkaClusterConfiguration(tenantID string, encodedArn, arn, cv string, rq DuploKafkaConfigurationInfo) (map[string]interface{}, ClientError) {
 	rp := make(map[string]interface{})
-	err := c.postAPI(fmt.Sprintf("UpdateKafkaClusterConfiguration(%s, %s)", tenantID, arn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/kafka/v2/%s", tenantID, arn),
-		map[string]interface{}{"ClusterArn": arn, "ConfigurationInfo": rq},
+	err := c.putAPI(fmt.Sprintf("UpdateKafkaClusterConfiguration(%s, %s)", tenantID, arn),
+		fmt.Sprintf("v3/subscriptions/%s/aws/kafka/v2/%s", tenantID, encodedArn),
+		map[string]interface{}{"ClusterArn": arn, "ConfigurationInfo": rq, "CurrentVersion": cv},
 		&rp)
 	if err != nil {
 		return nil, err
