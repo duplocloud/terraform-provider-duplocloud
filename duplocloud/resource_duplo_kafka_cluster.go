@@ -161,6 +161,7 @@ func resourceAwsKafkaCluster() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Update: schema.DefaultTimeout(60 * time.Minute),
 		},
 		Schema: kafkaClusterSchema(),
 	}
