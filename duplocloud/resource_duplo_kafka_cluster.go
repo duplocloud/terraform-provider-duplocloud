@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -137,6 +138,11 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			Computed: true,
 			Elem:     schema.TypeString,
 		},
+
+		"current_version": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 	}
 }
 
@@ -147,7 +153,7 @@ func resourceAwsKafkaCluster() *schema.Resource {
 
 		ReadContext:   resourceKafkaClusterRead,
 		CreateContext: resourceKafkaClusterCreate,
-		//UpdateContext: resourceKafkaClusterUpdate,
+		UpdateContext: resourceKafkaClusterUpdate,
 		DeleteContext: resourceKafkaClusterDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -226,6 +232,7 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 		if info.EncryptionInfo != nil && info.EncryptionInfo.InTransit != nil && info.EncryptionInfo.InTransit.ClientBroker != nil {
 			d.Set("encryption_in_transit", info.EncryptionInfo.InTransit.ClientBroker.Value)
 		}
+		d.Set("current_version", info.CurrentVersion)
 	}
 	if bootstrap != nil {
 		plaintextBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerString)
@@ -376,4 +383,41 @@ func duploKafkaClusterWaitUntilReady(ctx context.Context, c *duplosdk.Client, te
 	log.Printf("[DEBUG] duploKafkaClusterWaitUntilReady(%s, %s)", tenantID, arn)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func resourceKafkaClusterUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var err error
+	log.Printf("[TRACE] resourceKafkaClusterUpdate ******** start")
+	id := d.Id()
+	idParts := strings.SplitN(id, "/", 2)
+	if len(idParts) < 2 {
+		return diag.Errorf("Invalid resource ID: %s", id)
+	}
+	tenantID, name := idParts[0], idParts[1]
+	arn := d.Get("arn").(string)
+	eArn := base64Encode([]byte(arn))
+	cv := d.Get("current_version").(string)
+	c := m.(*duplosdk.Client)
+	if d.HasChange("configuration_arn") || d.HasChange("configuration_revision") {
+		rq := duplosdk.DuploKafkaConfigurationInfo{
+			Arn:      d.Get("configuration_arn").(string),
+			Revision: int64(d.Get("configuration_revision").(int)),
+		}
+		_, err := c.UpdateKafkaClusterConfiguration(tenantID, eArn, arn, cv, rq)
+		if err != nil {
+			return diag.Errorf("Error updating tenant %s kafka cluster '%s' configuration: %s", tenantID, name, err)
+		}
+		log.Printf("[TRACE] resourceKafkaClusterUpdate ******** end")
+
+	}
+
+	err = duploKafkaClusterWaitUntilReady(ctx, c, tenantID, arn, d.Timeout("update"))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	d.SetId(fmt.Sprintf("%s/%s", tenantID, name))
+
+	diags := resourceKafkaClusterRead(ctx, d, m)
+	log.Printf("[TRACE] resourceKafkaClusterCreate ******** end")
+	return diags
 }
