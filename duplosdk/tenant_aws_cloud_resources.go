@@ -1058,14 +1058,17 @@ func (c *Client) TenantDeleteV3S3BucketReplication(tenantID, sourceBucket, ruleF
 }
 
 type DuploS3EventNotificaition struct {
-	SQSName           string   `json:"SqsName,omitempty"`
-	SQSARN            string   `json:"SqsArn,omitempty"`
-	SNSName           string   `json:"SnsName,omitempty"`
-	SNSARN            string   `json:"SnsArn,omitempty"`
-	LambdaName        string   `json:"LambdaName,omitempty"`
-	LambdaARN         string   `json:"LambdaArn,omitempty"`
-	EventTypes        []string `json:"EventTypes"`
-	EnableEventBridge bool     `json:"EnableEventBridge"`
+	//SQSName           string                             `json:"SqsName,omitempty"`
+	//SQSARN            string                             `json:"SqsArn,omitempty"`
+	//SNSName           string                             `json:"SnsName,omitempty"`
+	//SNSARN            string                             `json:"SnsArn,omitempty"`
+	//LambdaName        string                             `json:"LambdaName,omitempty"`
+	//LambdaARN         string                             `json:"LambdaArn,omitempty"`
+	//EventTypes        []string                           `json:"EventTypes"`
+	EnableEventBridge bool                              `json:"EnableEventBridge"`
+	SQS               []DuploS3EventSQSConfiguration    `json:"QueueConfigurations,omitempty"`
+	SNS               []DuploS3EventSNSConfiguration    `json:"TopicConfigurations,omitempty"`
+	Lambda            []DuploS3EventLambdaConfiguration `json:"LambdaFunctionConfigurations,omitempty"`
 }
 
 type DuploS3EventNotificaitionResponse struct {
@@ -1077,16 +1080,19 @@ type DuploS3EventNotificaitionResponse struct {
 type DuploS3EventSNSConfiguration struct {
 	EventTypes []DuploStringValue `json:"Events"`
 	SNSARN     string             `json:"Topic"`
+	ConfigId   string             `json:"Id,omitempty"`
 }
 
 type DuploS3EventSQSConfiguration struct {
 	EventTypes []DuploStringValue `json:"Events"`
 	SQSARN     string             `json:"Queue"`
+	ConfigId   string             `json:"Id,omitempty"`
 }
 
 type DuploS3EventLambdaConfiguration struct {
 	EventTypes []DuploStringValue `json:"Events"`
 	LambdaARN  string             `json:"FunctionArn"`
+	ConfigId   string             `json:"Id,omitempty"`
 }
 
 func (c *Client) UpdateS3EventNotification(tenantID, bucketName string, duplo DuploS3EventNotificaition) ClientError {
