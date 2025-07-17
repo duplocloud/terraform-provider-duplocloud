@@ -122,6 +122,13 @@ type DuploAzureCosmosDBVirtualNetworkRule struct {
 	IgnoreMissingVNetServiceEndpoint bool   `json:"ignoreMissingVNetServiceEndpoint"`
 }
 
+type DuploAzureCosmosDBVirtualNetworkRuleRequest struct {
+	Id struct {
+		ResourceId string `json:"resourceId"` // "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}"
+	} `json:"id"`
+	IgnoreMissingVNetServiceEndpoint bool `json:"ignoreMissingVNetServiceEndpoint"`
+}
+
 type DuploAzureCosmosDBCapability struct {
 	Name string `json:"name"`
 }
@@ -169,23 +176,31 @@ func (c *Client) GetCosmosDB(tenantId, account, name string) (*DuploAzureCosmosD
 }
 
 type DuploAzureCosmosDBAccount struct {
-	Name                               string                                 `json:"name"`
-	Kind                               string                                 `json:"kind"`
-	AccountType                        string                                 `json:"type"`
-	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy   `json:"consistencyPolicy,omitempty"`
-	Capabilities                       *[]DuploAzureCosmosDBCapability        `json:"-"` //Capabilities"`
-	Locations                          []map[string]interface{}               `json:"Locations"`
-	BackupPolicyType                   string                                 `json:"backupPolicyType,omitempty"`
-	BackupIntervalInMinutes            int                                    `json:"backupIntervalInMinutes,omitempty"`
-	BackupRetentionIntervalInHours     int                                    `json:"backupRetentionIntervalInHours,omitempty"`
-	BackupStorageRedundancy            string                                 `json:"backupStorageRedundancy,omitempty"`
-	DisableKeyBasedMetadataWriteAccess bool                                   `json:"DisableKeyBasedMetadataWriteAccess"`
-	IsFreeTierEnabled                  bool                                   `json:"IsFreeTierEnabled"`
-	PublicNetworkAccess                string                                 `json:"PublicNetworkAccess,omitempty"`
-	CapacityMode                       string                                 `json:"CapacityMode,omitempty"`
-	ProvisioningState                  string                                 `json:"ProvisioningState,omitempty"`
-	ResourceType                       *DuploAzureCosmosDBAccountResourceType `json:"ResourceType,omitempty"`
-	ContinuousModeTier                 string                                 `json:"ContinuousModeTier,omitempty"`
+	Name                               string                                        `json:"name"`
+	Kind                               string                                        `json:"kind"`
+	AccountType                        string                                        `json:"type"`
+	DocumentEndpoint                   string                                        `json:"DocumentEndpoint"`
+	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy          `json:"consistencyPolicy,omitempty"`
+	Capabilities                       *[]DuploAzureCosmosDBCapability               `json:"-"` //Capabilities"`
+	Locations                          []map[string]interface{}                      `json:"Locations"`
+	BackupPolicyType                   string                                        `json:"backupPolicyType,omitempty"`
+	BackupIntervalInMinutes            int                                           `json:"backupIntervalInMinutes,omitempty"`
+	BackupRetentionIntervalInHours     int                                           `json:"backupRetentionIntervalInHours,omitempty"`
+	BackupStorageRedundancy            string                                        `json:"backupStorageRedundancy,omitempty"`
+	DisableKeyBasedMetadataWriteAccess bool                                          `json:"DisableKeyBasedMetadataWriteAccess"`
+	IsFreeTierEnabled                  bool                                          `json:"IsFreeTierEnabled"`
+	PublicNetworkAccess                string                                        `json:"PublicNetworkAccess,omitempty"`
+	CapacityMode                       string                                        `json:"CapacityMode,omitempty"`
+	ProvisioningState                  string                                        `json:"ProvisioningState,omitempty"`
+	ResourceType                       *DuploAzureCosmosDBAccountResourceType        `json:"ResourceType,omitempty"`
+	ContinuousModeTier                 string                                        `json:"ContinuousModeTier,omitempty"`
+	WriteLocations                     []DuploAzureCosmosDBAccountLocation           `json:"WriteLocations"`   //,omitempty"`
+	ReadLocations                      []DuploAzureCosmosDBAccountLocation           `json:"ReadLocations"`    //,omitempty"`
+	GeoLocationsResposnse              []DuploAzureCosmosDBAccountLocation           `json:"FailoverPolicies"` //,omitempty"`
+	GeoLocations                       []DuploAzureCosmosDBAccountLocationRequest    `json:"locations"`        //,omitempty"`
+	IsVirtualNetworkFilterEnabled      bool                                          `json:"isVirtualNetworkFilterEnabled,omitempty"`
+	VirtualNetworkRules                []DuploAzureCosmosDBVirtualNetworkRule        `json:"virtualNetworkRules,omitempty"`
+	VirtualNetworkRulesRequest         []DuploAzureCosmosDBVirtualNetworkRuleRequest `json:"virtualNetworkRulesRequest,omitempty"`
 }
 type DuploAzureCosmosDBAccountResourceType struct {
 	Namespace string `json:"Namespace"`
@@ -203,6 +218,24 @@ type DuploAzureCosmosDBResource struct {
 type DuploAzureCosmosDBResourceType struct {
 	Namespace string `json:"Namespace"`
 	Type      string `json:"Type"`
+}
+
+type DuploAzureCosmosDBAccountLocation struct {
+	Id           string `json:"Id"`
+	LocationName struct {
+		Name        string `json:"Name"`
+		DisplayName string `json:"DisplayName"`
+	} `json:"LocationName"`
+	DocumentEndpoint  string `json:"DocumentEndpoint"`
+	ProvisioningState string `json:"ProvisioningState"`
+	FailoverPriority  int    `json:"FailoverPriority"`
+	IsZoneRedundant   bool   `json:"IsZoneRedundant"`
+}
+
+type DuploAzureCosmosDBAccountLocationRequest struct {
+	LocationName     string `json:"locationName"`
+	FailoverPriority int    `json:"failoverPriority"`
+	IsZoneRedundant  bool   `json:"isZoneRedundant"`
 }
 
 func (c *Client) CreateCosmosDBAccount(tenantId string, rq DuploAzureCosmosDBAccount) ClientError {
@@ -304,3 +337,38 @@ var (
 		4: "ConsistentPrefix",
 	}
 )
+
+type DuploAzureCosmosDBAccountKeys struct {
+	PrimaryMasterKey           string `json:"PrimaryMasterKey"`
+	PrimaryReadonlyMasterKey   string `json:"PrimaryReadonlyMasterKey"`
+	SecondaryMasterKey         string `json:"SecondaryMasterKey"`
+	SecondaryReadonlyMasterKey string `json:"SecondaryReadonlyMasterKey"`
+}
+
+func (c *Client) GetCosmosDBAccountKeys(tenantId, name string) (*DuploAzureCosmosDBAccountKeys, ClientError) {
+	rp := DuploAzureCosmosDBAccountKeys{}
+	err := c.getAPI(fmt.Sprintf("GetCosmosDBAccountKeys(%s,%s)", tenantId, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/listaccountkeys", tenantId, name),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+type DuploAzureCosmosDBAccountConnectionString struct {
+	ConnectionString string `json:"ConnectionString"`
+	KeyKind          string `json:"KeyKind"`
+	KeyType          string `json:"KeyType"`
+}
+
+func (c *Client) GetCosmosDBAccountConnectionStringList(tenantId, name string) ([]DuploAzureCosmosDBAccountConnectionString, ClientError) {
+	rp := []DuploAzureCosmosDBAccountConnectionString{}
+	err := c.getAPI(fmt.Sprintf("GetCosmosDBAccountConnectionStringList(%s,%s)", tenantId, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s/listaccountconnectionstrings", tenantId, name),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return rp, nil
+}
