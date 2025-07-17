@@ -465,7 +465,7 @@ func expandBackupPolicy(inf []interface{}) (int, int, string, string) {
 	return backupInterval, backupRetentionInterval, backupType, backupStorageRedundancy
 }
 
-func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDBAccount) {
+func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDBAccountResponse) {
 	d.Set("name", rp.Name)
 	d.Set("kind", rp.Kind)
 	d.Set("disable_key_based_metadata_write_access", rp.DisableKeyBasedMetadataWriteAccess)
@@ -494,15 +494,15 @@ func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureC
 	if len(rp.ReadLocations) > 0 {
 		d.Set("read_endpoints", flattenLocationEndpoints(rp.ReadLocations))
 	}
-	if len(rp.GeoLocationsResposnse) > 0 {
-		d.Set("geo_location", flattenGeoLocations(rp.GeoLocationsResposnse))
+	if len(rp.GeoLocationsResponse) > 0 {
+		d.Set("geo_location", flattenGeoLocations(rp.GeoLocationsResponse))
 	}
 	if len(rp.VirtualNetworkRules) > 0 {
 		d.Set("virtual_network_rule", flattenVirtualNetworkRules(rp.VirtualNetworkRules))
 	}
 }
 
-func flattenBackupPolicy(bp duplosdk.DuploAzureCosmosDBAccount) []interface{} {
+func flattenBackupPolicy(bp duplosdk.DuploAzureCosmosDBAccountResponse) []interface{} {
 	obj := []interface{}{}
 	m := make(map[string]interface{})
 	m["backup_interval"] = bp.BackupIntervalInMinutes
@@ -1091,7 +1091,7 @@ func flattenGeoLocations(locs []duplosdk.DuploAzureCosmosDBAccountLocation) []in
 	obj := []interface{}{}
 	for _, loc := range locs {
 		m := make(map[string]interface{})
-		m["location_name"] = loc.LocationName
+		m["location_name"] = loc.LocationName.Name
 		m["failover_priority"] = loc.FailoverPriority
 		m["is_zone_redundant"] = loc.IsZoneRedundant
 		obj = append(obj, m)
@@ -1144,7 +1144,7 @@ func flattenVirtualNetworkRules(nr []duplosdk.DuploAzureCosmosDBVirtualNetworkRu
 	obj := []interface{}{}
 	for _, i := range nr {
 		m := make(map[string]interface{})
-		m["subnet_id"] = i.Id
+		m["subnet_id"] = "/subscriptions/" + i.Id.SubscriptionId + "/resourceGroups/" + i.Id.ResourceGroupName + "/providers/Microsoft.Network/virtualNetworks/" + i.Id.Parent.InfraName + "/subnets/" + i.Id.SubnetName
 		m["ignore_missing_vnet_service_endpoint"] = i.IgnoreMissingVNetServiceEndpoint
 		obj = append(obj, m)
 

@@ -118,8 +118,15 @@ type DuploAzureCosmosDBApiProperties struct {
 }
 
 type DuploAzureCosmosDBVirtualNetworkRule struct {
-	Id                               string `json:"id"`
-	IgnoreMissingVNetServiceEndpoint bool   `json:"ignoreMissingVNetServiceEndpoint"`
+	Id struct {
+		SubnetName        string `json:"Name"`
+		ResourceGroupName string `json:"ResourceGroupName"`
+		SubscriptionId    string `json:"SubscriptionId"`
+		Parent            struct {
+			InfraName string `json:"Name"`
+		}
+	} `json:"id"`
+	IgnoreMissingVNetServiceEndpoint bool `json:"ignoreMissingVNetServiceEndpoint"`
 }
 
 type DuploAzureCosmosDBVirtualNetworkRuleRequest struct {
@@ -199,8 +206,33 @@ type DuploAzureCosmosDBAccount struct {
 	GeoLocationsResposnse              []DuploAzureCosmosDBAccountLocation           `json:"FailoverPolicies"` //,omitempty"`
 	GeoLocations                       []DuploAzureCosmosDBAccountLocationRequest    `json:"locations"`        //,omitempty"`
 	IsVirtualNetworkFilterEnabled      bool                                          `json:"isVirtualNetworkFilterEnabled,omitempty"`
-	VirtualNetworkRules                []DuploAzureCosmosDBVirtualNetworkRule        `json:"virtualNetworkRules,omitempty"`
-	VirtualNetworkRulesRequest         []DuploAzureCosmosDBVirtualNetworkRuleRequest `json:"virtualNetworkRulesRequest,omitempty"`
+	VirtualNetworkRulesRequest         []DuploAzureCosmosDBVirtualNetworkRuleRequest `json:"virtualNetworkRules,omitempty"`
+}
+
+type DuploAzureCosmosDBAccountResponse struct {
+	Name                               string                                 `json:"name"`
+	Kind                               string                                 `json:"kind"`
+	AccountType                        string                                 `json:"type"`
+	DocumentEndpoint                   string                                 `json:"DocumentEndpoint"`
+	ConsistencyPolicy                  *DuploAzureCosmosDBConsistencyPolicy   `json:"consistencyPolicy,omitempty"`
+	Capabilities                       *[]DuploAzureCosmosDBCapability        `json:"-"` //Capabilities"`
+	Locations                          []map[string]interface{}               `json:"Locations"`
+	BackupPolicyType                   string                                 `json:"backupPolicyType,omitempty"`
+	BackupIntervalInMinutes            int                                    `json:"backupIntervalInMinutes,omitempty"`
+	BackupRetentionIntervalInHours     int                                    `json:"backupRetentionIntervalInHours,omitempty"`
+	BackupStorageRedundancy            string                                 `json:"backupStorageRedundancy,omitempty"`
+	DisableKeyBasedMetadataWriteAccess bool                                   `json:"DisableKeyBasedMetadataWriteAccess"`
+	IsFreeTierEnabled                  bool                                   `json:"IsFreeTierEnabled"`
+	PublicNetworkAccess                string                                 `json:"PublicNetworkAccess,omitempty"`
+	CapacityMode                       string                                 `json:"CapacityMode,omitempty"`
+	ProvisioningState                  string                                 `json:"ProvisioningState,omitempty"`
+	ResourceType                       *DuploAzureCosmosDBAccountResourceType `json:"ResourceType,omitempty"`
+	ContinuousModeTier                 string                                 `json:"ContinuousModeTier,omitempty"`
+	WriteLocations                     []DuploAzureCosmosDBAccountLocation    `json:"WriteLocations"`   //,omitempty"`
+	ReadLocations                      []DuploAzureCosmosDBAccountLocation    `json:"ReadLocations"`    //,omitempty"`
+	GeoLocationsResponse               []DuploAzureCosmosDBAccountLocation    `json:"FailoverPolicies"` //,omitempty"`
+	IsVirtualNetworkFilterEnabled      bool                                   `json:"isVirtualNetworkFilterEnabled,omitempty"`
+	VirtualNetworkRules                []DuploAzureCosmosDBVirtualNetworkRule `json:"VirtualNetworkRules,omitempty"`
 }
 type DuploAzureCosmosDBAccountResourceType struct {
 	Namespace string `json:"Namespace"`
@@ -247,8 +279,8 @@ func (c *Client) CreateCosmosDBAccount(tenantId string, rq DuploAzureCosmosDBAcc
 
 }
 
-func (c *Client) GetCosmosDBAccount(tenantId, name string) (*DuploAzureCosmosDBAccount, ClientError) {
-	rp := DuploAzureCosmosDBAccount{}
+func (c *Client) GetCosmosDBAccount(tenantId, name string) (*DuploAzureCosmosDBAccountResponse, ClientError) {
+	rp := DuploAzureCosmosDBAccountResponse{}
 	err := c.getAPI(fmt.Sprintf("GetCosmosDB(%s,%s)", tenantId, name),
 		fmt.Sprintf("v3/subscriptions/%s/azure/arm/cosmosDb/accounts/%s", tenantId, name),
 		&rp)
