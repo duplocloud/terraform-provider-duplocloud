@@ -232,6 +232,7 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 		if info.EncryptionInfo != nil && info.EncryptionInfo.InTransit != nil && info.EncryptionInfo.InTransit.ClientBroker != nil {
 			d.Set("encryption_in_transit", info.EncryptionInfo.InTransit.ClientBroker.Value)
 		}
+		d.Set("current_version", info.CurrentVersion)
 	}
 	if bootstrap != nil {
 		plaintextBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerString)
@@ -393,22 +394,24 @@ func resourceKafkaClusterUpdate(ctx context.Context, d *schema.ResourceData, m i
 		return diag.Errorf("Invalid resource ID: %s", id)
 	}
 	tenantID, name := idParts[0], idParts[1]
-	cArn := base64Encode([]byte(d.Get("arn").(string)))
-
+	arn := d.Get("arn").(string)
+	eArn := base64Encode([]byte(arn))
+	cv := d.Get("current_version").(string)
 	c := m.(*duplosdk.Client)
 	if d.HasChange("configuration_arn") || d.HasChange("configuration_revision") {
 		rq := duplosdk.DuploKafkaConfigurationInfo{
 			Arn:      d.Get("configuration_arn").(string),
 			Revision: int64(d.Get("configuration_revision").(int)),
 		}
+		_, err := c.UpdateKafkaClusterConfiguration(tenantID, eArn, arn, cv, rq)
+		if err != nil {
+			return diag.Errorf("Error updating tenant %s kafka cluster '%s' configuration: %s", tenantID, name, err)
+		}
+		log.Printf("[TRACE] resourceKafkaClusterUpdate ******** end")
 
 	}
 
-	// Wait for Duplo to be able to return the cluster's details.
-	var rp *duplosdk.DuploKafkaCluster
-
-	// Next, wait for the cluster to become active.
-	err = duploKafkaClusterWaitUntilReady(ctx, c, tenantID, rp.Arn, d.Timeout("update"))
+	err = duploKafkaClusterWaitUntilReady(ctx, c, tenantID, arn, d.Timeout("update"))
 	if err != nil {
 		return diag.FromErr(err)
 	}
