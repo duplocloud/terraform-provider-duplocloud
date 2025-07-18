@@ -168,7 +168,186 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Default:      "Enabled",
 			ValidateFunc: validation.StringInSlice([]string{"Enabled", "Disabled"}, false),
 		},
+
 		// ... (rest of the schema unchanged)
+		"endpoint": {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "The endpoint used to connect to the CosmosDB account.",
+		},
+		"read_endpoints": {
+			Type:        schema.TypeList,
+			Description: "The list of read endpoints for the CosmosDB account.",
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		"write_endpoints": {
+			Type:        schema.TypeList,
+			Description: "The list of write endpoints for the CosmosDB account.",
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		"primary_master_key": {
+			Type:        schema.TypeString,
+			Description: "The primary key for the CosmosDB account.",
+			Computed:    true,
+			Sensitive:   true, // Sensitive information
+		},
+		"secondary_master_key": {
+			Type:        schema.TypeString,
+			Description: "The secondary key for the CosmosDB account.",
+			Computed:    true,
+			Sensitive:   true, // Sensitive information
+		},
+		"primary_readonly_master_key": {
+			Type:        schema.TypeString,
+			Description: "The primary readonly key for the CosmosDB account.",
+			Computed:    true,
+			Sensitive:   true, // Sensitive information
+		},
+		"secondary_readonly_master_key": {
+			Type:        schema.TypeString,
+			Description: "The secondary readonly key for the CosmosDB account.",
+			Computed:    true,
+			Sensitive:   true, // Sensitive information
+		},
+		"primary_sql_connection_string": {
+			Type:        schema.TypeString,
+			Description: "The primary SQL connection string for the CosmosDB account.",
+			Computed:    true,
+		},
+		"secondary_sql_connection_string": {
+			Type:        schema.TypeString,
+			Description: "The secondary SQL connection string for the CosmosDB account.",
+			Computed:    true,
+		},
+		"primary_readonly_sql_connection_string": {
+			Type:        schema.TypeString,
+			Description: "The primary readonly SQL connection string for the CosmosDB account.",
+			Computed:    true,
+		},
+		"secondary_readonly_sql_connection_string": {
+			Type:        schema.TypeString,
+			Description: "The secondary readonly SQL connection string for the CosmosDB account.",
+			Computed:    true,
+		},
+		"primary_mongo_connection_string": {
+			Type:        schema.TypeString,
+			Description: "The primary MongoDB connection string for the CosmosDB account.",
+			Computed:    true,
+		},
+		"secondary_mongo_connection_string": {
+			Type:        schema.TypeString,
+			Description: "The secondary MongoDB connection string for the CosmosDB account.",
+			Computed:    true,
+		},
+		"primary_readonly_mongo_connection_string": {
+			Type:        schema.TypeString,
+			Description: "The primary readonly MongoDB connection string for the CosmosDB account.",
+			Computed:    true,
+		},
+		"secondary_readonly_mongo_connection_string": {
+			Type:        schema.TypeString,
+			Description: "The secondary readonly MongoDB connection string for the CosmosDB account.",
+			Computed:    true,
+		},
+		"geo_location": {
+			Type:        schema.TypeList,
+			Description: "Specifies a geo_location resource, used to define where data should be replicated with the failover_priority 0 specifying the primary location",
+			Required:    true,
+			ForceNew:    true,
+			MinItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"location_name": {
+						Description: "The name of the Azure region to host replicated data",
+						Type:        schema.TypeString,
+						Required:    true,
+						ForceNew:    true,
+					},
+					"failover_priority": {
+						Description: "The failover priority of the region. A failover priority of 0 indicates a write region. The maximum value for a failover priority = (total number of regions - 1). Failover priority values must be unique for each of the regions in which the database account exists. Changing this causes the location to be re-provisioned and cannot be changed for the location with failover priority 0",
+						Type:        schema.TypeInt,
+						Required:    true,
+					},
+					"is_zone_redundant": {
+						Description: "Should zone redundancy be enabled for this region?",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+						ForceNew:    true,
+					},
+				},
+			},
+		},
+		"is_virtual_network_filter_enabled": {
+			Description: "Enables virtual network filtering for this Cosmos DB account.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+		"virtual_network_rule": {
+			Description: "A list of virtual network rules for the Cosmos DB account. This is used to define which subnets are allowed to access this CosmosDB account",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// Suppress diff if both old and new have the same set of subnet_ids, regardless of order
+				oldRaw, newRaw := d.GetChange("virtual_network_rule")
+				oldSlice, okOld := oldRaw.([]interface{})
+				newSlice, okNew := newRaw.([]interface{})
+				if !okOld || !okNew {
+					return false
+				}
+				if len(oldSlice) != len(newSlice) {
+					return false
+				}
+				if len(oldSlice) == 0 {
+					return true
+				}
+				// Collect subnet_ids from both lists
+				oldMap := make(map[string]bool)
+				for _, v := range oldSlice {
+					if m, ok := v.(map[string]interface{}); ok {
+						if id, ok := m["subnet_id"].(string); ok {
+							oldMap[id] = true
+						}
+					}
+				}
+				newMap := make(map[string]bool)
+				for _, v := range newSlice {
+					if m, ok := v.(map[string]interface{}); ok {
+						if id, ok := m["subnet_id"].(string); ok {
+							newMap[id] = true
+						}
+					}
+				}
+				if len(oldMap) != len(newMap) {
+					return false
+				}
+				for id := range oldMap {
+					if !newMap[id] {
+						return false
+					}
+				}
+				return true
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"subnet_id": {
+						Description: "The ID of the subnet to allow access to this CosmosDB account. This should be in the format /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"ignore_missing_vnet_service_endpoint": {
+						Description: "If set to true, the specified subnet will be added as a virtual network rule even if its CosmosDB service endpoint is not active",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -185,7 +364,8 @@ func resourceAzureCosmosDBAccount() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(30 * time.Minute),
+			Update: schema.DefaultTimeout(60 * time.Minute),
 		},
 		Schema:        duploAzureCosmosDBAccountchema(),
 		CustomizeDiff: validateCosmosDBAccountParameters,
@@ -205,8 +385,23 @@ func resourceAzureCosmosDBAccountRead(ctx context.Context, d *schema.ResourceDat
 		d.SetId("")
 		return nil
 	}
+
 	d.Set("tenant_id", idParts[0])
 	flattenAzureCosmosDBAccount(d, *rp)
+	rps, err := c.GetCosmosDBAccountConnectionStringList(idParts[0], idParts[3])
+	if err != nil && err.Status() != 404 {
+		return diag.Errorf("Error fetching cosmos db account %s details for tenantId %s", idParts[3], idParts[0])
+	}
+	if len(rps) > 0 {
+		flattenConnectionStrings(d, rps)
+	}
+	ak, err := c.GetCosmosDBAccountKeys(idParts[0], idParts[3])
+	if err != nil && err.Status() != 404 {
+		return diag.Errorf("Error fetching cosmos db account %s keys for tenantId %s : %s", idParts[3], idParts[0], err.Error())
+	}
+	if ak != nil {
+		flattenAccountKey(d, ak)
+	}
 	return nil
 }
 func resourceAzureCosmosDBAccountUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -264,6 +459,10 @@ func resourceAzureCosmosDBAccountDelete(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.Errorf("Error deleting cosmos db account %s for tenantId %s : %s", idParts[3], idParts[0], err.Error())
 	}
+	derr := cosomosDbAccountWaitUntilDelete(ctx, c, idParts[0], idParts[3], d.Timeout("delete"))
+	if derr != nil {
+		return diag.Errorf("Error waiting for cosmos db account %s to be deleted for tenantId %s : %s", idParts[3], idParts[0], derr.Error())
+	}
 	return nil
 }
 func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmosDBAccount {
@@ -272,6 +471,10 @@ func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmo
 	obj.Kind = d.Get("kind").(string)
 	obj.AccountType = d.Get("type").(string)
 	obj.Locations = []map[string]interface{}{}
+
+	if v, ok := d.GetOk("geo_location"); ok {
+		obj.GeoLocations = expandGeoLocations(v.([]interface{}))
+	}
 	if v, ok := d.GetOk("consistency_policy"); ok {
 		obj.ConsistencyPolicy = expandConsistencyPolicy(v.([]interface{}))
 	} else {
@@ -287,6 +490,8 @@ func expandAzureCosmosDBAccount(d *schema.ResourceData) duplosdk.DuploAzureCosmo
 	obj.DisableKeyBasedMetadataWriteAccess = d.Get("disable_key_based_metadata_write_access").(bool)
 	obj.IsFreeTierEnabled = d.Get("enable_free_tier").(bool)
 	obj.PublicNetworkAccess = d.Get("public_network_access").(string)
+	obj.IsVirtualNetworkFilterEnabled = d.Get("is_virtual_network_filter_enabled").(bool)
+	obj.VirtualNetworkRulesRequest = expandVirtualNetworkRules(d.Get("virtual_network_rule").([]interface{}))
 	return obj
 }
 func expandBackupPolicy(inf []interface{}) (int, int, string, string) {
@@ -302,12 +507,13 @@ func expandBackupPolicy(inf []interface{}) (int, int, string, string) {
 	return backupInterval, backupRetentionInterval, backupType, backupStorageRedundancy
 }
 
-func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDBAccount) {
+func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureCosmosDBAccountResponse) {
 	d.Set("name", rp.Name)
 	d.Set("kind", rp.Kind)
 	d.Set("disable_key_based_metadata_write_access", rp.DisableKeyBasedMetadataWriteAccess)
 	d.Set("enable_free_tier", rp.IsFreeTierEnabled)
 	d.Set("public_network_access", rp.PublicNetworkAccess)
+	d.Set("endpoint", rp.DocumentEndpoint)
 	if rp.Capabilities != nil && len(*rp.Capabilities) > 0 {
 		d.Set("capabilities", flattenCapablities(*rp.Capabilities))
 	}
@@ -323,11 +529,22 @@ func flattenAzureCosmosDBAccount(d *schema.ResourceData, rp duplosdk.DuploAzureC
 	}
 	if rp.ResourceType != nil {
 		d.Set("type", rp.ResourceType.Namespace+"/"+rp.ResourceType.Type)
-
+	}
+	if len(rp.WriteLocations) > 0 {
+		d.Set("write_endpoints", flattenLocationEndpoints(rp.WriteLocations))
+	}
+	if len(rp.ReadLocations) > 0 {
+		d.Set("read_endpoints", flattenLocationEndpoints(rp.ReadLocations))
+	}
+	if len(rp.GeoLocationsResponse) > 0 {
+		d.Set("geo_location", flattenGeoLocations(rp.GeoLocationsResponse))
+	}
+	if len(rp.VirtualNetworkRules) > 0 {
+		d.Set("virtual_network_rule", flattenVirtualNetworkRules(rp.VirtualNetworkRules))
 	}
 }
 
-func flattenBackupPolicy(bp duplosdk.DuploAzureCosmosDBAccount) []interface{} {
+func flattenBackupPolicy(bp duplosdk.DuploAzureCosmosDBAccountResponse) []interface{} {
 	obj := []interface{}{}
 	m := make(map[string]interface{})
 	m["backup_interval"] = bp.BackupIntervalInMinutes
@@ -773,5 +990,206 @@ func validateCosmosDBAccountParameters(ctx context.Context, d *schema.ResourceDi
 			}
 		}
 	}
+
+	oldRaw, newRaw := d.GetChange("geo_location")
+
+	oldList, okOld := oldRaw.([]interface{})
+	newList, okNew := newRaw.([]interface{})
+	if !okOld || !okNew {
+		return nil
+	}
+
+	// Convert old and new lists into map[location]geo
+	type geoConfig struct {
+		FailoverPriority int
+		Index            int
+	}
+
+	oldMap := map[string]geoConfig{}
+	newMap := map[string]geoConfig{}
+
+	for i, item := range oldList {
+		if item == nil {
+			continue
+		}
+		m := item.(map[string]interface{})
+		location := strings.ToLower(m["location_name"].(string))
+		oldMap[location] = geoConfig{
+			FailoverPriority: m["failover_priority"].(int),
+			Index:            i,
+		}
+	}
+
+	for i, item := range newList {
+		if item == nil {
+			continue
+		}
+		m := item.(map[string]interface{})
+		location := strings.ToLower(m["location_name"].(string))
+		newMap[location] = geoConfig{
+			FailoverPriority: m["failover_priority"].(int),
+			Index:            i,
+		}
+	}
+
+	// Loop through all locations present in both old and new maps
+	for location, oldGeo := range oldMap {
+		newGeo, exists := newMap[location]
+		if !exists {
+			// Region removed – handled elsewhere (ForceNew on geo_location list)
+			continue
+		}
+
+		// Check if failover_priority changed
+		if oldGeo.FailoverPriority != newGeo.FailoverPriority {
+			if oldGeo.FailoverPriority == 0 || newGeo.FailoverPriority == 0 {
+				// Changing write region's priority directly is forbidden
+				return fmt.Errorf(
+					"cannot change failover_priority for location %q with priority 0 (write region must be changed via failover)",
+					location,
+				)
+			}
+
+			// Allow change, but force re-creation of that geo_location block
+			attrPath := fmt.Sprintf("geo_location.%d.failover_priority", newGeo.Index)
+			if err := d.ForceNew(attrPath); err != nil {
+				return fmt.Errorf("failed to mark geo_location.%s for ForceNew: %w", location, err)
+			}
+		}
+	}
+
 	return nil
+}
+
+func flattenConnectionStrings(d *schema.ResourceData, cs []duplosdk.DuploAzureCosmosDBAccountConnectionString) {
+	for _, conn := range cs {
+		kind := strings.ToLower(conn.KeyKind)
+		ktype := strings.ToLower(conn.KeyType)
+		if kind == "primary" && ktype == "sql" {
+			d.Set("primary_sql_connection_string", conn.ConnectionString)
+		}
+		if kind == "secondary" && ktype == "sql" {
+			d.Set("secondary_sql_connection_string", conn.ConnectionString)
+		}
+		if kind == "primaryreadonly" && ktype == "sql" {
+			d.Set("primary_readonly_sql_connection_string", conn.ConnectionString)
+		}
+		if kind == "secondaryreadonly" && ktype == "sql" {
+			d.Set("secondary_readonly_sql_connection_string", conn.ConnectionString)
+		}
+		if kind == "primary" && ktype == "mongo" {
+			d.Set("primary_mongo_connection_string", conn.ConnectionString)
+		}
+		if kind == "secondary" && ktype == "mongo" {
+			d.Set("secondary_mongo_connection_string", conn.ConnectionString)
+		}
+		if kind == "primaryreadonly" && ktype == "mongo" {
+			d.Set("primary_readonly_mongo_connection_string", conn.ConnectionString)
+		}
+		if kind == "secondaryreadonly" && ktype == "mongo" {
+			d.Set("secondary_readonly_mongo_connection_string", conn.ConnectionString)
+		}
+	}
+
+}
+
+func flattenAccountKey(d *schema.ResourceData, ak *duplosdk.DuploAzureCosmosDBAccountKeys) {
+	d.Set("primary_master_key", ak.PrimaryMasterKey)
+	d.Set("secondary_master_key", ak.SecondaryMasterKey)
+	d.Set("primary_readonly_master_key", ak.PrimaryReadonlyMasterKey)
+	d.Set("secondary_readonly_master_key", ak.SecondaryReadonlyMasterKey)
+}
+
+func flattenLocationEndpoints(locations []duplosdk.DuploAzureCosmosDBAccountLocation) []interface{} {
+	obj := []interface{}{}
+	for _, loc := range locations {
+		if loc.DocumentEndpoint != "" {
+			obj = append(obj, loc.DocumentEndpoint)
+		}
+	}
+	return obj
+}
+
+func expandGeoLocations(inf []interface{}) []duplosdk.DuploAzureCosmosDBAccountLocationRequest {
+	objs := []duplosdk.DuploAzureCosmosDBAccountLocationRequest{}
+	for _, i := range inf {
+		obj := duplosdk.DuploAzureCosmosDBAccountLocationRequest{}
+		m := i.(map[string]interface{})
+		if v, ok := m["location_name"]; ok {
+			obj.LocationName = v.(string)
+		}
+		if v, ok := m["failover_priority"]; ok {
+			obj.FailoverPriority = v.(int)
+		}
+		if v, ok := m["is_zone_redundant"]; ok {
+			obj.IsZoneRedundant = v.(bool)
+		}
+		objs = append(objs, obj)
+	}
+	return objs
+}
+
+func flattenGeoLocations(locs []duplosdk.DuploAzureCosmosDBAccountLocation) []interface{} {
+	obj := []interface{}{}
+	for _, loc := range locs {
+		m := make(map[string]interface{})
+		m["location_name"] = loc.LocationName.Name
+		m["failover_priority"] = loc.FailoverPriority
+		m["is_zone_redundant"] = loc.IsZoneRedundant
+		obj = append(obj, m)
+	}
+	return obj
+}
+
+func cosomosDbAccountWaitUntilDelete(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:      []string{"deleting"},
+		Target:       []string{"deleted"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			status := "deleting"
+			rp, err := c.GetCosmosDBAccount(tenantID, name)
+			if err != nil && err.Status() != 404 {
+				return rp, "", err
+			}
+			if rp == nil || (err != nil && err.Status() == 404) {
+				status = "deleted"
+			}
+			return rp, status, nil
+		},
+	}
+	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilDeleted (%s/%s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+func expandVirtualNetworkRules(inf []interface{}) []duplosdk.DuploAzureCosmosDBVirtualNetworkRuleRequest {
+	obj := []duplosdk.DuploAzureCosmosDBVirtualNetworkRuleRequest{}
+	for _, i := range inf {
+		m := i.(map[string]interface{})
+		o := duplosdk.DuploAzureCosmosDBVirtualNetworkRuleRequest{
+			Id: struct {
+				ResourceId string `json:"resourceId"`
+			}{
+				ResourceId: m["subnet_id"].(string),
+			},
+			IgnoreMissingVNetServiceEndpoint: m["ignore_missing_vnet_service_endpoint"].(bool),
+		}
+		obj = append(obj, o)
+	}
+	return obj
+}
+
+func flattenVirtualNetworkRules(nr []duplosdk.DuploAzureCosmosDBVirtualNetworkRule) []interface{} {
+	obj := []interface{}{}
+	for _, i := range nr {
+		m := make(map[string]interface{})
+		m["subnet_id"] = "/subscriptions/" + i.Id.SubscriptionId + "/resourceGroups/" + i.Id.ResourceGroupName + "/providers/Microsoft.Network/virtualNetworks/" + i.Id.Parent.InfraName + "/subnets/" + i.Id.SubnetName
+		m["ignore_missing_vnet_service_endpoint"] = i.IgnoreMissingVNetServiceEndpoint
+		obj = append(obj, m)
+
+	}
+	return obj
 }
