@@ -200,6 +200,7 @@ Optional:
 
 - `create` (String)
 - `delete` (String)
+- `update` (String)
 
 
 <a id="nestedblock--virtual_network_rule"></a>
