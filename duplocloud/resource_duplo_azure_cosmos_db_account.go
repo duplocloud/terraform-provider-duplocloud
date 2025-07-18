@@ -291,6 +291,47 @@ func duploAzureCosmosDBAccountchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// Suppress diff if both old and new have the same set of subnet_ids, regardless of order
+				oldRaw, newRaw := d.GetChange("virtual_network_rule")
+				oldSlice, okOld := oldRaw.([]interface{})
+				newSlice, okNew := newRaw.([]interface{})
+				if !okOld || !okNew {
+					return false
+				}
+				if len(oldSlice) != len(newSlice) {
+					return false
+				}
+				if len(oldSlice) == 0 {
+					return true
+				}
+				// Collect subnet_ids from both lists
+				oldMap := make(map[string]bool)
+				for _, v := range oldSlice {
+					if m, ok := v.(map[string]interface{}); ok {
+						if id, ok := m["subnet_id"].(string); ok {
+							oldMap[id] = true
+						}
+					}
+				}
+				newMap := make(map[string]bool)
+				for _, v := range newSlice {
+					if m, ok := v.(map[string]interface{}); ok {
+						if id, ok := m["subnet_id"].(string); ok {
+							newMap[id] = true
+						}
+					}
+				}
+				if len(oldMap) != len(newMap) {
+					return false
+				}
+				for id := range oldMap {
+					if !newMap[id] {
+						return false
+					}
+				}
+				return true
+			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"subnet_id": {
@@ -323,7 +364,8 @@ func resourceAzureCosmosDBAccount() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(30 * time.Minute),
+			Update: schema.DefaultTimeout(60 * time.Minute),
 		},
 		Schema:        duploAzureCosmosDBAccountchema(),
 		CustomizeDiff: validateCosmosDBAccountParameters,
