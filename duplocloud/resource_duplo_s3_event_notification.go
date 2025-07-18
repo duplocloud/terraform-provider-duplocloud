@@ -28,33 +28,34 @@ func s3EventNotificationSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
-		"destination_name": {
-			Description: "The fully qualified duplo name of specified destination type.",
-			Type:        schema.TypeString,
-			Computed:    true,
+		"enable_event_bridge": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
 		},
-		"destination_type": {
-			Description:  "The type of destination where event notification to be published.",
-			Type:         schema.TypeString,
-			Required:     true,
-			ValidateFunc: validation.StringInSlice([]string{"sns", "sqs", "lambda"}, false),
-		},
-		"events": {
+		"event": {
 			Description: "The list of events that will trigger the notification.",
 			Type:        schema.TypeList,
 			Optional:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
+					"destination_type": {
+						Description:  "The type of destination where event notification to be published.",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"sns", "sqs", "lambda"}, false),
+					},
+					"destination_name": {
+						Description: "The fully qualified duplo name of specified destination type.",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
 					"destination_arn": {
 						Description: "The ARN of the specified destination type.",
 						Type:        schema.TypeString,
 						Required:    true,
 					},
-					"enable_event_bridge": {
-						Type:     schema.TypeBool,
-						Optional: true,
-						Computed: true,
-					},
+
 					"event_types": {
 						Description: `Event types: 
 			's3:TestEvent'<br>
@@ -145,7 +146,7 @@ func resourceS3EventNotificationCreateOrUpdate(ctx context.Context, d *schema.Re
 	rq := expandEventNotification(d)
 
 	// Post the object to Duplo
-	err := c.UpdateS3EventNotification(tenantID, name, *rq)
+	err := c.UpdateS3EventNotification(tenantID, name, rq)
 	if err != nil {
 		return diag.Errorf("resourceS3EventNotificationCreateOrUpdate: Unable to create or update s3 event notification using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
@@ -167,74 +168,85 @@ func resourceS3EventNotificationCreateOrUpdate(ctx context.Context, d *schema.Re
 
 func flattenEventNotification(d *schema.ResourceData, name string, duplo *duplosdk.DuploS3EventNotificaitionResponse) {
 	d.Set("bucket_name", name)
+	i := []interface{}{}
 	if len(*duplo.Lambda) > 0 {
 		for _, l := range *duplo.Lambda {
-			d.Set("destination_type", "lambda")
-			d.Set("destination_arn", l.LambdaARN)
-			d.Set("event_types", StringValueSliceTolist(l.EventTypes))
-			d.Set("destination_name", GetResourceNameFromARN(l.LambdaARN))
-			d.Set("configuration_id", l.ConfigId) // Optional, used to update the configuration.
+			m := make(map[string]interface{})
+			m["destination_type"] = "lambda"
+			m["destination_arn"] = l.LambdaARN
+			m["event_types"] = StringValueSliceTolist(l.EventTypes)
+			m["destination_name"] = GetResourceNameFromARN(l.LambdaARN)
+			m["configuration_id"] = l.ConfigId // Optional, used to update the configuration.
+			i = append(i, m)
 		}
 
 	}
 	if len(*duplo.SNS) > 0 {
 		for _, s := range *duplo.SNS {
-			d.Set("destination_type", "sns")
-			d.Set("destination_arn", s.SNSARN)
-			d.Set("event_types", StringValueSliceTolist(s.EventTypes))
-			d.Set("destination_name", GetResourceNameFromARN(s.SNSARN))
-			d.Set("configuration_id", s.ConfigId) // Optional, used to update the configuration.
-
+			m := make(map[string]interface{})
+			m["destination_type"] = "sns"
+			m["destination_arn"] = s.SNSARN
+			m["event_types"] = StringValueSliceTolist(s.EventTypes)
+			m["destination_name"] = GetResourceNameFromARN(s.SNSARN)
+			m["configuration_id"] = s.ConfigId // Optional, used to update the configuration.
+			i = append(i, m)
 		}
 	}
 	if len(*duplo.SQS) > 0 {
 		for _, q := range *duplo.SQS {
-			d.Set("destination_type", "sqs")
-			d.Set("destination_arn", q.SQSARN)
-			d.Set("event_types", StringValueSliceTolist(q.EventTypes))
-			d.Set("destination_name", GetResourceNameFromARN(q.SQSARN))
-			d.Set("configuration_id", q.ConfigId) // Optional, used to update the configuration.
-
+			m := make(map[string]interface{})
+			m["destination_type"] = "sqs"
+			m["destination_arn"] = q.SQSARN
+			m["event_types"] = StringValueSliceTolist(q.EventTypes)
+			m["destination_name"] = GetResourceNameFromARN(q.SQSARN)
+			m["configuration_id"] = q.ConfigId // Optional, used to update the configuration.
+			i = append(i, m)
 		}
 	}
+	d.Set("event", i)
 }
 
-func expandEventNotification(d *schema.ResourceData) *duplosdk.DuploS3EventNotificaition {
-	destType := d.Get("destination_type").(string)
+func expandEventNotification(d *schema.ResourceData) duplosdk.DuploS3EventNotificaition {
+	events := d.Get("event").([]interface{})
 	obj := duplosdk.DuploS3EventNotificaition{}
-	switch destType {
-	case "lambda":
-		obj.Lambda = append(obj.Lambda, duplosdk.DuploS3EventLambdaConfiguration{
-			LambdaARN: d.Get("destination_arn").(string),
-		})
-		eventTypes := expandStringSet(d.Get("event_types").(*schema.Set))
-		for _, eventType := range eventTypes {
-			obj.Lambda[0].EventTypes = append(obj.Lambda[0].EventTypes, duplosdk.DuploStringValue{
-				Value: eventType})
-		}
 
-	case "sns":
-		obj.SNS = append(obj.SNS, duplosdk.DuploS3EventSNSConfiguration{
-			SNSARN: d.Get("destination_arn").(string),
-		})
-		eventTypes := expandStringSet(d.Get("event_types").(*schema.Set))
-		for _, eventType := range eventTypes {
-			obj.SNS[0].EventTypes = append(obj.SNS[0].EventTypes, duplosdk.DuploStringValue{
-				Value: eventType})
-		}
+	for i, event := range events {
+		m := event.(map[string]interface{})
+		destType := m["destination_type"].(string)
+		switch destType {
+		case "lambda":
+			obj.Lambda = append(obj.Lambda, duplosdk.DuploS3EventLambdaConfiguration{
+				LambdaARN: m["destination_arn"].(string),
+			})
+			eventTypes := expandStringSet(m["event_types"].(*schema.Set))
+			for _, eventType := range eventTypes {
+				obj.Lambda[i].EventTypes = append(obj.Lambda[0].EventTypes, duplosdk.DuploStringValue{
+					Value: eventType})
+			}
 
-	case "sqs":
-		obj.SQS = append(obj.SQS, duplosdk.DuploS3EventSQSConfiguration{
-			SQSARN: d.Get("destination_arn").(string),
-		})
-		eventTypes := expandStringSet(d.Get("event_types").(*schema.Set))
-		for _, eventType := range eventTypes {
-			obj.SQS[0].EventTypes = append(obj.SQS[0].EventTypes, duplosdk.DuploStringValue{
-				Value: eventType})
+		case "sns":
+			obj.SNS = append(obj.SNS, duplosdk.DuploS3EventSNSConfiguration{
+				SNSARN: m["destination_arn"].(string),
+			})
+			eventTypes := expandStringSet(m["event_types"].(*schema.Set))
+			for _, eventType := range eventTypes {
+				obj.SNS[i].EventTypes = append(obj.SNS[0].EventTypes, duplosdk.DuploStringValue{
+					Value: eventType})
+			}
+
+		case "sqs":
+			obj.SQS = append(obj.SQS, duplosdk.DuploS3EventSQSConfiguration{
+				SQSARN: m["destination_arn"].(string),
+			})
+			eventTypes := expandStringSet(m["event_types"].(*schema.Set))
+			for _, eventType := range eventTypes {
+				obj.SQS[i].EventTypes = append(obj.SQS[i].EventTypes, duplosdk.DuploStringValue{
+					Value: eventType})
+			}
 		}
 	}
 	obj.EnableEventBridge = d.Get("enable_event_bridge").(bool)
-	return &obj
+	return obj
 }
 
 func resourceS3EventNotificationDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

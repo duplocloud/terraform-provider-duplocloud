@@ -59,13 +59,28 @@ resource "duplocloud_s3_event_notification" "event" {
 ### Required
 
 - `bucket_name` (String) The fully qualified duplo name of the S3 bucket.
-- `destination_name` (String) The fully qualified duplo name of specified destination type.
-- `destination_type` (String) The type of destination where event notification to be published.
 - `tenant_id` (String) The GUID of the tenant that the S3 bucket will be created in.
 
 ### Optional
 
 - `enable_event_bridge` (Boolean)
+- `event` (Block List) The list of events that will trigger the notification. (see [below for nested schema](#nestedblock--event))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
+
+<a id="nestedblock--event"></a>
+### Nested Schema for `event`
+
+Required:
+
+- `destination_arn` (String) The ARN of the specified destination type.
+- `destination_type` (String) The type of destination where event notification to be published.
+
+Optional:
+
 - `event_types` (Set of String) Event types: 
 			's3:TestEvent'<br>
 			's3:ObjectCreated:*'<br>
@@ -78,12 +93,12 @@ resource "duplocloud_s3_event_notification" "event" {
 			's3:ObjectRemoved:DeleteMarkerCreated'<br>
 			's3:ObjectRestore:*'<br>
 			's3:ObjectRestore:Post'<br>
-- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
-### Read-Only
+Read-Only:
 
-- `destination_arn` (String) The ARN of the specified destination type.
-- `id` (String) The ID of this resource.
+- `configuration_id` (String) The configuration ID of the S3 event notification.
+- `destination_name` (String) The fully qualified duplo name of specified destination type.
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
