@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -76,9 +77,17 @@ func resourceUser() *schema.Resource {
 			"permissions": {
 				Description: "The list of permissions assigned to the user.",
 				Type:        schema.TypeList,
-				Computed:    true,
 				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+						v := val.(string)
+						if v == "" {
+							errs = append(errs, fmt.Errorf("%q must not be an empty string", key))
+						}
+						return
+					},
+				},
 			},
 		},
 	}
