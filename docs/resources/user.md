@@ -33,6 +33,7 @@ resource "duplocloud_user" "myuser" {
 ### Optional
 
 - `is_readonly` (Boolean) Defaults to `false`.
+- `permissions` (List of String) The list of permissions assigned to the user.
 - `reallocate_vpn_address` (Boolean) Defaults to `false`.
 - `regenerate_vpn_password` (Boolean) Defaults to `false`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
