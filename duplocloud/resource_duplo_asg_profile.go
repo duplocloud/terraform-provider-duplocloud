@@ -127,6 +127,11 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Deprecated:  "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.",
 		Default:     0,
 	}
+	awsASGSchema["taints"].ForceNew = false
+	awsASGSchema["direct_address"] = &schema.Schema{
+		Type:     schema.TypeString,
+		Computed: true,
+	}
 
 	return awsASGSchema
 }
@@ -316,6 +321,94 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		}
 	}
 
+	if d.HasChange("taints") {
+		taintsToCreate := []duplosdk.DuploMinionTaint{}
+		taintsToDelete := []string{}
+
+		/*
+			_, newRaw := d.GetChange("taints")
+			oldTaints := map[string]map[string]interface{}{}
+			newTaints := map[string]map[string]interface{}{}
+			taintsToUpdate := []duplosdk.DuploMinionTaint{}
+			// Build maps for old and new taints keyed by "key"
+			for _, t := range d.Get("existing_taints").([]interface{}) {
+				taint := t.(map[string]interface{})
+				oldTaints[taint["key"].(string)] = taint
+			}
+			for _, t := range newRaw.([]interface{}) {
+				taint := t.(map[string]interface{})
+				newTaints[taint["key"].(string)] = taint
+			}
+
+			// Handle deletes and updates
+			for key, oldTaint := range oldTaints {
+				newTaint, exists := newTaints[key]
+				if !exists {
+					taintsToDelete = append(taintsToDelete, oldTaint["key"].(string))
+					// Key present in old, not in new: delete
+				}
+				// Key present in both, check for update or effect change
+				if oldTaint["value"].(string) != newTaint["value"].(string) ||
+					oldTaint["effect"].(string) != newTaint["effect"].(string) {
+					// If effect changed, delete and create
+					if oldTaint["effect"].(string) != newTaint["effect"].(string) {
+						taintsToDelete = append(taintsToDelete, oldTaint["key"].(string))
+						taintsToCreate = append(taintsToCreate, duplosdk.DuploMinionTaint{
+							Key:    newTaint["key"].(string),
+							Value:  newTaint["value"].(string),
+							Effect: newTaint["effect"].(string),
+						})
+					} else {
+						// Only value changed, update
+						taintsToUpdate = append(taintsToUpdate, duplosdk.DuploMinionTaint{
+							Key:    newTaint["key"].(string),
+							Value:  newTaint["value"].(string),
+							Effect: newTaint["effect"].(string),
+						})
+					}
+				}
+			}
+
+			// Handle creates
+			for key, newTaint := range newTaints {
+				if _, exists := oldTaints[key]; !exists {
+					taintsToCreate = append(taintsToCreate, duplosdk.DuploMinionTaint{
+						Key:    newTaint["key"].(string),
+						Value:  newTaint["value"].(string),
+						Effect: newTaint["effect"].(string),
+					})
+				}
+			}*/
+		taints := d.Get("taints").([]interface{})
+		for _, taint := range taints {
+			m := taint.(map[string]interface{})
+			taintsToDelete = append(taintsToDelete, m["key"].(string))
+			taintsToCreate = append(taintsToCreate, duplosdk.DuploMinionTaint{
+				Key:    m["key"].(string),
+				Value:  m["value"].(string),
+				Effect: m["effect"].(string),
+			})
+		}
+		directAddress := d.Get("direct_address").(string)
+		if len(taintsToDelete) > 0 {
+			err := c.DeleteAsgTaints(rq.TenantId, directAddress, taintsToDelete)
+			if err != nil {
+				return diag.FromErr(fmt.Errorf("error deleting ASG profile '%s' taints: %v", rq.FriendlyName, err))
+			}
+		}
+		if len(taintsToCreate) > 0 {
+			err := c.CreateAsgTaints(rq.TenantId, directAddress, taintsToCreate)
+			if err != nil {
+				return diag.FromErr(fmt.Errorf("error creating ASG profile '%s' taints: %v", rq.FriendlyName, err))
+			}
+		}
+		//if len(taintsToUpdate) > 0 {
+		//	err := c.UpdateAsgTaints(rq.TenantId, rq.FriendlyName, taintsToUpdate)
+		//	if err != nil {
+		//		return diag.FromErr(fmt.Errorf("error updating ASG profile '%s' taints: %v", rq.FriendlyName, err))
+		//	}
+		//}
+	}
 	diags := resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): end", tenantID, friendlyName)
 	return diags
@@ -341,9 +434,13 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 		d.SetId("") // object missing
 		return nil
 	}
+	minion, _ := c.GetAsgMinion(tenantID, profile.FriendlyName)
 
 	// Apply the data
 	asgProfileToState(d, profile)
+	if minion != nil {
+		d.Set("direct_address", minion.DirectAddress)
+	}
 	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceAwsASGRead(%s): end", id)
 	return nil
@@ -444,7 +541,9 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("volume", flattenNativeHostVolumes(duplo.Volumes))
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 	if duplo.Taints != nil {
-		d.Set("taints", flattenTaints(*duplo.Taints))
+		tn := flattenTaints(*duplo.Taints)
+		d.Set("taints", tn)
+		d.Set("existing_taints", tn)
 	}
 }
 

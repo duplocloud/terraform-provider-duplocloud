@@ -413,6 +413,7 @@ type DuploMinion struct {
 	AgentPlatform    int                    `json:"AgentPlatform"`
 	Cloud            int                    `json:"Cloud"`
 	Taints           []DuploMinionTaint     `json:"Taints"`
+	AsgName          string                 `json:"AsgName,omitempty"`
 }
 
 type DuploMinionDeleteReq struct {
@@ -1067,4 +1068,52 @@ func (c *Client) TenantDeleteV3S3BucketReplication(tenantID, sourceBucket, ruleF
 	return c.deleteAPI(fmt.Sprintf("TenantDeleteV3S3BucketReplication(%s, %s,%s)", tenantID, sourceBucket, ruleFullName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/replication/%s", tenantID, sourceBucket, ruleFullName),
 		nil)
+}
+
+func (c *Client) UpdateAsgTaints(tenantID, asg string, taints []DuploMinionTaint) ClientError {
+	// Apply the settings via Duplo.
+	apiName := fmt.Sprintf("UpdateAsgTaints(%s, %s)", tenantID, asg)
+	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/k8s/node/%s/taints", tenantID, asg), &taints, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (c *Client) CreateAsgTaints(tenantID, asg string, taints []DuploMinionTaint) ClientError {
+	// Apply the settings via Duplo.
+	apiName := fmt.Sprintf("CreateAsgTaints(%s, %s)", tenantID, asg)
+	err := c.postAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/k8s/node/%s/taints", tenantID, asg), &taints, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (c *Client) DeleteAsgTaints(tenantID, asg string, taints []string) ClientError {
+	// Apply the settings via Duplo.
+	apiName := fmt.Sprintf("DeleteAsgTaints(%s, %s)", tenantID, asg)
+	err := c.deleteAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/k8s/node/%s/taints", tenantID, asg), &taints)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func (c *Client) GetAsgMinion(tenantID, asg string) (*DuploMinion, ClientError) {
+	list, err := c.TenantListMinions(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	for _, minion := range *list {
+		if minion.Cloud == 0 && asg == minion.AsgName {
+			return &minion, nil
+		}
+	}
+	return nil, nil
 }
