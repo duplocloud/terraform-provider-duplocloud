@@ -9,17 +9,23 @@ const (
 )
 
 type DuploGCPSqlDBInstance struct {
-	Name            string            `json:"Name"`
-	DatabaseVersion string            `json:"DatabaseVersion"`
-	Tier            string            `json:"Tier"`
-	DataDiskSizeGb  int               `json:"DataDiskSizeGb"`
-	Status          string            `json:"Status,omitempty"`
-	ResourceType    int               `json:"ResourceType,omitempty"`
-	Labels          map[string]string `json:"labels,omitempty"`
-	SelfLink        string            `json:"SelfLink,omitempty"`
-	RootPassword    string            `json:"RootPassword,omitempty"`
-	IPAddress       []string          `json:"IpAddress,omitempty"`
-	ConnectionName  string            `json:"ConnectionName,omitempty"`
+	Name            string                      `json:"Name"`
+	DatabaseVersion string                      `json:"DatabaseVersion"`
+	Tier            string                      `json:"Tier"`
+	DataDiskSizeGb  int                         `json:"DataDiskSizeGb"`
+	Status          string                      `json:"Status,omitempty"`
+	ResourceType    int                         `json:"ResourceType,omitempty"`
+	Labels          map[string]string           `json:"labels,omitempty"`
+	SelfLink        string                      `json:"SelfLink,omitempty"`
+	RootPassword    string                      `json:"RootPassword,omitempty"`
+	IPAddress       []string                    `json:"IpAddress,omitempty"`
+	ConnectionName  string                      `json:"ConnectionName,omitempty"`
+	DatabaseFlags   []DuploGCPSqlDBInstanceFlag `json:"DatabaseFlags,omitempty"`
+}
+
+type DuploGCPSqlDBInstanceFlag struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 func (c *Client) GCPSqlDBInstanceCreate(tenantID string, rq *DuploGCPSqlDBInstance) (*DuploGCPSqlDBInstance, ClientError) {

@@ -217,7 +217,7 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 			d.Set("init_container_docker_image", initContainerImages)
 		}
 	}
-
+	d.Set("app_name", duplo.AppName)
 }
 
 func flattenHPASpecs(field string, from interface{}, to *schema.ResourceData) {

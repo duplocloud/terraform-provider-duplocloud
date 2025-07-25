@@ -85,3 +85,14 @@ resource "duplocloud_duplo_service" "myservice" {
     ]
   )
 }
+
+# Simple Example 6:  App Name example
+resource "duplocloud_duplo_service" "myservice" {
+  tenant_id = duplocloud_tenant.myapp.tenant_id
+
+  name           = "myservice"
+  agent_platform = 7 # Duplo native container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+  app_name       = "appname"
+}
