@@ -38,6 +38,11 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
     backup_storage_redundancy = "Geo"
     type                      = "Periodic"
   }
+  geo_location {
+    location_name     = "centralus"
+    failover_priority = 0
+  }
+
   enable_free_tier = true #applicable only for provisioned type databases
 }
 
@@ -64,6 +69,11 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
     backup_storage_redundancy = "Geo"
     type                      = "Periodic"
   }
+  geo_location {
+    location_name     = "centralus"
+    failover_priority = 0
+  }
+
 }
 
 
