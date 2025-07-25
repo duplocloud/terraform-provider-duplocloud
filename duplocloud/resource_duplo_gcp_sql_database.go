@@ -104,7 +104,6 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Description: "List of database flags to be set on the database instance. Please refer to the [Database Flags Documentation](https://cloud.google.com/sql/docs/mysql/flags) for more details on available flags.",
 			Type:        schema.TypeList,
 			Optional:    true,
-			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"name": {
