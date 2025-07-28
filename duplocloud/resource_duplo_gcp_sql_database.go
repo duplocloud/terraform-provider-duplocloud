@@ -375,6 +375,8 @@ func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInsta
 			}
 			rq.DatabaseFlags = append(rq.DatabaseFlags, flag)
 		}
+	} else {
+		rq.DatabaseFlags = []duplosdk.DuploGCPSqlDBInstanceFlag{}
 	}
 	return rq
 }
