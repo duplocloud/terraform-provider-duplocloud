@@ -48,6 +48,7 @@ type DuploEcsTaskDef struct {
 	Status                  *DuploStringValue                      `json:"Status,omitempty"`
 	Volumes                 []map[string]interface{}               `json:"Volumes,omitempty"`
 	RuntimePlatform         *DuploEcsTaskDefRuntimePlatform        `json:"runtimePlatform,omitempty"`
+	Compatibilities         []string                               `json:"Compatibilities,omitempty"`
 }
 
 type DuploEcsTaskDefRuntimePlatform struct {
