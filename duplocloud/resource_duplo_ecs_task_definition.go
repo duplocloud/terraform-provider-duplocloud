@@ -386,8 +386,13 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	// Next, convert sets into lists
 	rcs := d.Get("requires_compatibilities").(*schema.Set)
 	dorcs := make([]string, 0, rcs.Len())
-	for _, rc := range rcs.List() {
-		dorcs = append(dorcs, rc.(string))
+	if rcs.Len() > 0 {
+
+		for _, rc := range rcs.List() {
+			dorcs = append(dorcs, rc.(string))
+		}
+	} else {
+		dorcs = nil
 	}
 	duplo.RequiresCompatibilities = dorcs
 
@@ -446,7 +451,13 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("ipc_mode", duplo.IpcMode)
 	d.Set("pid_mode", duplo.PidMode)
 	// stop updating state unitl we have EC2 support
-	// d.Set("requires_compatibilities", duplo.RequiresCompatibilities)
+	if len(duplo.Compatibilities) > 0 {
+		inf := []interface{}{}
+		for _, comp := range duplo.Compatibilities {
+			inf = append(inf, comp)
+		}
+		d.Set("requires_compatibilities", inf)
+	}
 	if duplo.NetworkMode != nil {
 		d.Set("network_mode", duplo.NetworkMode.Value)
 	}
