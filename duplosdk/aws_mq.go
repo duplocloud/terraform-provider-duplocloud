@@ -36,6 +36,7 @@ type DuploAWSMQ struct {
 	SecurityGroups                  []string                   `json:"SecurityGroups"`
 	SubnetIds                       []string                   `json:"SubnetIds"`
 	Tags                            map[string]string          `json:"Tags"`
+	BrokerId                        string                     `json:"Name"`
 }
 
 type DuploAWSMQUser struct {
@@ -79,15 +80,15 @@ type DuploMQMaintenanceWindow struct {
 	DayOfWeek DayOfWeek `json:"DayOfWeek"`
 }
 
-func (c *Client) DuploAWSMQBrokerCreate(tenantID string, rq *DuploAWSMQ) ClientError {
-	var rp interface{}
+func (c *Client) DuploAWSMQBrokerCreate(tenantID string, rq *DuploAWSMQ) (*DuploMQBrokerResponse, ClientError) {
+	rp := DuploMQBrokerResponse{}
 	err := c.postAPI(
 		fmt.Sprintf("DuploAWSMQBrokerCreate(%s, %s)", tenantID, rq.BrokerName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker", tenantID),
 		&rq,
 		&rp,
 	)
-	return err
+	return &rp, err
 }
 
 func (c *Client) DuploAWSMQBrokerDelete(tenantID string, brokerID string) ClientError {
@@ -98,8 +99,8 @@ func (c *Client) DuploAWSMQBrokerDelete(tenantID string, brokerID string) Client
 	)
 }
 
-func (c *Client) DuploAWSMQBrokerGet(tenantID, brokerID string) (*DuploAWSMQ, ClientError) {
-	rp := DuploAWSMQ{}
+func (c *Client) DuploAWSMQBrokerGet(tenantID, brokerID string) (*DuploMQBrokerResponse, ClientError) {
+	rp := DuploMQBrokerResponse{}
 	err := c.getAPI(
 		fmt.Sprintf("DuploAWSMQBrokerGet(%s,%s)", tenantID, brokerID),
 		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/%s", tenantID, brokerID),
@@ -145,4 +146,61 @@ func (c *Client) TenantGetSnsTopic(tenantID string, arn string) (*DuploSnsTopicR
 		}
 	}
 	return nil, nil
+}
+
+type DuploMQBrokerResponse struct {
+	AutoMinorVersionUpgrade bool     `json:"AutoMinorVersionUpgrade"`
+	ActionsRequired         []string `json:"ActionsRequired"`
+	AuthenticationStrategy  struct {
+		Value string `json:"Value"`
+	} `json:"AuthenticationStrategy"`
+	BrokerInstances []interface{} `json:"BrokerInstances"`
+	Configurations  struct {
+		History []interface{} `json:"History"`
+	} `json:"Configurations"`
+	EncryptionOptions *DuploMQEncryptionOptions `json:"EncryptionOptions"`
+	EngineVersion     string                    `json:"EngineVersion"`
+	Logs              struct {
+		Audit           bool   `json:"Audit"`
+		AuditLogGroup   string `json:"AuditLogGroup"`
+		General         bool   `json:"General"`
+		GeneralLogGroup string `json:"GeneralLogGroup"`
+	} `json:"Logs"`
+	MaintenanceWindowStartTime struct {
+		DayOfWeek struct {
+			Value string `json:"Value"`
+		} `json:"DayOfWeek"`
+		TimeOfDay string `json:"TimeOfDay"`
+		TimeZone  string `json:"TimeZone"`
+	} `json:"MaintenanceWindowStartTime"`
+	PendingSecurityGroups []string `json:"PendingSecurityGroups"`
+	PubliclyAccessible    bool     `json:"PubliclyAccessible"`
+	SecurityGroups        []string `json:"SecurityGroups"`
+	StorageType           struct {
+		Value string `json:"Value"`
+	} `json:"StorageType"`
+	SubnetIds []string          `json:"SubnetIds"`
+	Tags      map[string]string `json:"Tags"`
+	Users     []struct {
+		PendingChange struct {
+			Value string `json:"Value"`
+		} `json:"PendingChange"`
+		Username string `json:"Username"`
+	} `json:"Users"`
+	BrokerArn   string `json:"BrokerArn"`
+	BrokerId    string `json:"BrokerId"`
+	BrokerName  string `json:"BrokerName"`
+	BrokerState struct {
+		Value string `json:"Value"`
+	} `json:"BrokerState"`
+	Created        string `json:"Created"`
+	DeploymentMode struct {
+		Value string `json:"Value"`
+	} `json:"DeploymentMode"`
+	EngineType struct {
+		Value string `json:"Value"`
+	} `json:"EngineType"`
+	HostInstanceType string `json:"HostInstanceType"`
+	ResourceType     int    `json:"ResourceType"`
+	Name             string `json:"Name"`
 }

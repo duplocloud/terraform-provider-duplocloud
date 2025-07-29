@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -27,26 +28,35 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 		"engine_type": {
 			Type:         schema.TypeString,
 			Required:     true,
+			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"ACTIVEMQ", "RABBITMQ"}, false),
 			Description:  "The type of broker engine. Valid values: ACTIVEMQ, RABBITMQ.",
 		},
 		"deployment_mode": {
 			Type:         schema.TypeString,
 			Optional:     true,
+			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"ACTIVE_STANDBY_MULTI_AZ", "CLUSTER_MULTI_AZ", "SINGLE_INSTANCE"}, false),
 			Description:  "The deployment mode of the broker. Valid values: ACTIVE_STANDBY_MULTI_AZ, CLUSTER_MULTI_AZ, SINGLE_INSTANCE.",
 		},
 		"broker_storage_type": {
 			Type:         schema.TypeString,
 			Optional:     true,
+			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"EBS", "EFS"}, false),
 			Description:  "The storage type of the broker. Valid values: EBS, EFS.",
 		},
 		"broker_name": {
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 			Description: "The name of the broker.",
 		},
+		"broker_fullname": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+
 		"host_instance_type": {
 			Type:        schema.TypeString,
 			Required:    true,
@@ -205,6 +215,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 		"encryption_options": {
 			Type:        schema.TypeList,
 			Optional:    true,
+			Computed:    true,
 			MaxItems:    1,
 			Description: "Encryption options for the broker.",
 			Elem: &schema.Resource{
@@ -245,6 +256,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 		"maintenance_window": {
 			Type:        schema.TypeList,
 			Optional:    true,
+			Computed:    true,
 			MaxItems:    1,
 			Description: "Maintenance window start time.",
 			Elem: &schema.Resource{
@@ -291,6 +303,10 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 			Description: "A map of tags to assign to the resource.",
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"broker_id": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 	}
 }
 
@@ -317,25 +333,12 @@ func resourceAwsMQBroker() *schema.Resource {
 func resourceAwsMQRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
 	id := d.Id()
-	tenantID, url, err := parseAwsSqsQueueIdParts(id)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	idParts := strings.Split(id, "/")
+	tenantID, brokerID := idParts[0], idParts[1]
 	c := m.(*duplosdk.Client)
 
-	accountID, err := c.TenantGetAwsAccountID(tenantID)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	fullname, err := c.ExtractSqsFullname(tenantID, url)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): start", tenantID, url)
-
-	queue, clientErr := c.DuploSQSQueueGetV3(tenantID, fullname)
-	if queue == nil {
+	duplo, clientErr := c.DuploAWSMQBrokerGet(tenantID, brokerID)
+	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
 	}
@@ -344,48 +347,10 @@ func resourceAwsMQRead(ctx context.Context, d *schema.ResourceData, m interface{
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve tenant %s sqs queue %s : %s", tenantID, url, clientErr)
+		return diag.Errorf("Unable to retrieve tenant %s Amazon MQ broker %s : %s", tenantID, brokerID, clientErr)
 	}
-
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.Set("arn", queue.Arn)
-	d.Set("tenant_id", tenantID)
-	d.Set("url", queue.Url)
-	d.Set("fullname", fullname)
-	d.Set("fifo_queue", queue.QueueType == 1)
-	d.Set("content_based_deduplication", queue.ContentBasedDeduplication)
-	d.Set("message_retention_seconds", queue.MessageRetentionPeriod)
-	d.Set("visibility_timeout_seconds", queue.VisibilityTimeout)
-	d.Set("delay_seconds", queue.DelaySeconds)
-	if queue.QueueType == 1 {
-		if queue.DeduplicationScope == 0 {
-			d.Set("deduplication_scope", "queue")
-		} else {
-			d.Set("deduplication_scope", "messageGroup")
-		}
-		if queue.FifoThroughputLimit == 0 {
-			d.Set("fifo_throughput_limit", "perQueue")
-		} else {
-			d.Set("fifo_throughput_limit", "perMessageGroupId")
-		}
-	}
-	if queue.DeadLetterTargetQueueName != "" {
-		dlq_config := make(map[string]interface{})
-		dlq_config["target_sqs_dlq_name"] = queue.DeadLetterTargetQueueName
-		dlq_config["max_message_receive_attempts"] = queue.MaxMessageTimesReceivedBeforeDeadLetterQueue
-		d.Set("dead_letter_queue_configuration", []interface{}{dlq_config})
-	}
-
-	name, _ := duplosdk.UnwrapName(prefix, accountID, fullname, true)
-	if queue.QueueType == 1 {
-		name = strings.TrimSuffix(name, ".fifo")
-	}
-	d.Set("name", name)
-	log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): end", tenantID, name)
+	flattenAwsMqBroker(d, duplo)
+	log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): end", tenantID, duplo.BrokerName)
 	return nil
 }
 
@@ -395,27 +360,20 @@ func resourceAwsMQCreate(ctx context.Context, d *schema.ResourceData, m interfac
 	rq := expandAwsMqBroker(d)
 	log.Printf("[TRACE] resourceAwsSqsQueueCreate(%s, %s): start", tenantID, rq.BrokerName)
 
-	cerr := c.DuploAWSMQBrokerCreate(tenantID, rq)
+	rp, cerr := c.DuploAWSMQBrokerCreate(tenantID, rq)
 	if cerr != nil {
-		return diag.Errorf("Error creating tenant %s SQS queue '%s': %s", tenantID, rq.BrokerName, cerr)
+		return diag.Errorf("Error creating tenant %s Amazon MQ broker '%s': %s", tenantID, rq.BrokerName, cerr)
 	}
-	//	diags := waitForResourceToBePresentAfterCreate(ctx, d, "SQS Queue", fmt.Sprintf("%s/%s", tenantID, name), func() (interface{}, duplosdk.ClientError) {
-	//		resp, err = c.DuploSQSQueueGetV3(tenantID, fullname)
-	//		// wait for an Arn to be available
-	//		if err == nil && resp != nil && resp.Arn == "" {
-	//			return nil, nil
-	//		}
-	//		return c.DuploSQSQueueGetV3(tenantID, fullname)
-	//	})
-	//	if diags != nil {
-	//		return diags
-	//	}
-	id := fmt.Sprintf("%s/%s", tenantID, rq.BrokerName)
+	err := waitUntilMQBrokerReady(ctx, c, tenantID, rp.BrokerId, d.Timeout("create"))
+	if err != nil {
+		return diag.Errorf("%s", err.Error())
+	}
+	id := fmt.Sprintf("%s/%s", tenantID, rp.BrokerId)
 	d.SetId(id)
 
-	//	diags = resourceAwsSqsQueueRead(ctx, d, m)
+	diags := resourceAwsMQRead(ctx, d, m)
 	//	log.Printf("[TRACE] resourceAwsSqsQueueCreate(%s, %s): end", tenantID, name)
-	return nil
+	return diags
 }
 
 func resourceAwsMQUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -574,38 +532,129 @@ func expandAwsMqBrokerUsers(v interface{}) []duplosdk.DuploAWSMQUser {
 
 func resourceAwsMQDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, url, err := parseAwsSqsQueueIdParts(id)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	log.Printf("[TRACE] resourceAwsSqsQueueDelete(%s, %s): start", tenantID, url)
+	idParts := strings.Split(id, "/")
+	tenantID, brokerID := idParts[0], idParts[1]
+
+	log.Printf("[TRACE] resourceAwsMQDelete(%s, %s): start", tenantID, brokerID)
 
 	c := m.(*duplosdk.Client)
 
-	fullname, err := c.ExtractSqsFullname(tenantID, url)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	clientErr := c.DuploSQSQueueDeleteV3(tenantID, fullname)
+	clientErr := c.DuploAWSMQBrokerDelete(tenantID, brokerID)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil
 		}
-		return diag.Errorf("Unable to delete tenant %s sqs queue '%s': %s", tenantID, fullname, clientErr)
+		return diag.Errorf("Unable to delete tenant %s Amazon MQ Broker '%s': %s", tenantID, brokerID, clientErr)
 	}
 
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "SQS Queue", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DuploSQSQueueGetV3(tenantID, fullname)
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "Amazon MQ Broker", id, func() (interface{}, duplosdk.ClientError) {
+		return c.DuploAWSMQBrokerGet(tenantID, brokerID)
 	})
 	if diag != nil {
 		return diag
 	}
 
-	log.Printf("[TRACE] resourceAwsSqsQueueDelete(%s, %s): end", tenantID, fullname)
+	log.Printf("[TRACE] resourceAwsMQDelete(%s, %s): end", tenantID, brokerID)
 	return nil
 }
 
+// flattenAwsMqBroker updates ResourceData from DuploMQBrokerResponse.
+func flattenAwsMqBroker(d *schema.ResourceData, resp *duplosdk.DuploMQBrokerResponse) error {
+	if err := d.Set("engine_type", resp.EngineType.Value); err != nil {
+		return err
+	}
+	if err := d.Set("broker_fullname", resp.BrokerName); err != nil {
+		return err
+	}
+	if err := d.Set("host_instance_type", resp.HostInstanceType); err != nil {
+		return err
+	}
+	if err := d.Set("engine_version", resp.EngineVersion); err != nil {
+		return err
+	}
+	if err := d.Set("authentication_strategy", resp.AuthenticationStrategy.Value); err != nil {
+		return err
+	}
+	if err := d.Set("auto_minor_version_upgrade", resp.AutoMinorVersionUpgrade); err != nil {
+		return err
+	}
+	if err := d.Set("publicly_accessible", resp.PubliclyAccessible); err != nil {
+		return err
+	}
+	if err := d.Set("security_groups", resp.SecurityGroups); err != nil {
+		return err
+	}
+	if err := d.Set("subnet_ids", resp.SubnetIds); err != nil {
+		return err
+	}
+	if err := d.Set("tags", resp.Tags); err != nil {
+		return err
+	}
+	if resp.DeploymentMode.Value != "" {
+		if err := d.Set("deployment_mode", resp.DeploymentMode.Value); err != nil {
+			return err
+		}
+	}
+	if resp.StorageType.Value != "" {
+		if err := d.Set("broker_storage_type", resp.StorageType.Value); err != nil {
+			return err
+		}
+	}
+	// Users
+	users := make([]map[string]interface{}, 0, len(resp.Users))
+	for _, u := range resp.Users {
+		user := map[string]interface{}{
+			"user_name": u.Username,
+			// password is not returned in response, so leave empty
+			//"password": "",
+		}
+		users = append(users, user)
+	}
+	if err := d.Set("users", users); err != nil {
+		return err
+	}
+	// Encryption options
+	if resp.EncryptionOptions != nil {
+		enc := map[string]interface{}{}
+		if resp.EncryptionOptions.KmsKeyId != "" {
+			enc["kms_key_id"] = resp.EncryptionOptions.KmsKeyId
+		}
+		enc["use_aws_owned_key"] = resp.EncryptionOptions.UseAwsOwnedKey
+		if err := d.Set("encryption_options", []interface{}{enc}); err != nil {
+			return err
+		}
+	}
+	// Logs
+	logs := map[string]interface{}{
+		"general": resp.Logs.General,
+		"audit":   resp.Logs.Audit,
+	}
+	if err := d.Set("logs", []interface{}{logs}); err != nil {
+		return err
+	}
+	// Maintenance window
+	if resp.MaintenanceWindowStartTime.DayOfWeek.Value != "" ||
+		resp.MaintenanceWindowStartTime.TimeOfDay != "" ||
+		resp.MaintenanceWindowStartTime.TimeZone != "" {
+		mw := map[string]interface{}{
+			"day_of_week": resp.MaintenanceWindowStartTime.DayOfWeek.Value,
+			"time_of_day": resp.MaintenanceWindowStartTime.TimeOfDay,
+			"time_zone":   resp.MaintenanceWindowStartTime.TimeZone,
+		}
+		if err := d.Set("maintenance_window", []interface{}{mw}); err != nil {
+			return err
+		}
+	}
+	// Set computed broker_id
+	if resp.BrokerId != "" {
+		if err := d.Set("broker_id", resp.BrokerId); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+/*
 func flattenAwsMqBroker(d *schema.ResourceData, req *duplosdk.DuploAWSMQ) error {
 	if err := d.Set("engine_type", string(req.EngineType)); err != nil {
 		return err
@@ -737,4 +786,27 @@ func flattenAwsMqBroker(d *schema.ResourceData, req *duplosdk.DuploAWSMQ) error 
 		}
 	}
 	return nil
+}
+*/
+
+func waitUntilMQBrokerReady(ctx context.Context, c *duplosdk.Client, tenantID string, brokerId string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.DuploAWSMQBrokerGet(tenantID, brokerId)
+			//			log.Printf("[TRACE] Dynamodb status is (%s).", rp.TableStatus.Value)
+			status := "pending"
+			if rp != nil && rp.BrokerState.Value == "RUNNING" {
+				status = "ready"
+			}
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] waitUntilMQBrokerReady(%s, %s)", tenantID, brokerId)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
