@@ -6,18 +6,36 @@ import (
 	"time"
 )
 
+type (
+	DataReplicationMode    string
+	AuthenticationStrategy string
+	EngineType             string
+	DeploymentMode         string
+	BrokerStorageType      string
+	DayOfWeek              string
+)
 type DuploAWSMQ struct {
-	EngineType              string           `json:"EngineType"`
-	DeploymentMode          string           `json:"DeploymentMode,omitempty"`
-	BrokerStorageType       string           `json:"BrokerStorageType,omitempty"`
-	BrokerName              string           `json:"BrokerName"`
-	HostInstanceType        string           `json:"HostInstanceType"`
-	EngineVersion           string           `json:"EngineVersion"`
-	AuthenticationStrategy  string           `json:"AuthenticationStrategy"` //LDAP, SIMPLE
-	AutoMinorVersionUpgrade bool             `json:"AutoMinorVersionUpgrade"`
-	Users                   []DuploAWSMQUser `json:"Users"`
-	LdapServerMetadata      LDAPMetadata     `json:"LdapServerMetadata"`
-	Configuration           MQConfiguration  `json:"Configuration"`
+	EngineType                      EngineType                 `json:"EngineType"`                  //ACTIVEMQ, RABBITMQ
+	DeploymentMode                  DeploymentMode             `json:"DeploymentMode,omitempty"`    //ACTIVE_STANDBY_MULTI_AZ, CLUSTER_MULTI_AZ, SINGLE_INSTANCE
+	BrokerStorageType               BrokerStorageType          `json:"BrokerStorageType,omitempty"` //EBS, EFS
+	BrokerName                      string                     `json:"BrokerName"`
+	HostInstanceType                string                     `json:"HostInstanceType"`
+	EngineVersion                   string                     `json:"EngineVersion"`
+	AuthenticationStrategy          AuthenticationStrategy     `json:"AuthenticationStrategy"` //LDAP, SIMPLE
+	AutoMinorVersionUpgrade         bool                       `json:"AutoMinorVersionUpgrade"`
+	Users                           []DuploAWSMQUser           `json:"Users"`
+	LdapServerMetadata              *DuploMQLDAPMetadata       `json:"LdapServerMetadata,omitempty"`
+	Configuration                   *DuplocloudMQConfiguration `json:"Configuration,omitempty"`
+	CreatorRequestId                string                     `json:"CreatorRequestId,omitempty"`                //make this field compute. add field is_app_idempotent, is set to true create uuid and set it to CreatorRequestId
+	DataReplicationMode             DataReplicationMode        `json:"DataReplicationMode"`                       //CRDR, NONE
+	DataReplicationPrimaryBrokerArn string                     `json:"DataReplicationPrimaryBrokerArn,omitempty"` // required when CRDR
+	EncryptionOptions               *DuploMQEncryptionOptions  `json:"EncryptionOptions,omitempty"`
+	Logs                            *DuploMQLogs               `json:"Logs"`
+	MaintenanceWindow               *DuploMQMaintenanceWindow  `json:"MaintenanceWindowStartTime,omitempty"`
+	PubliclyAccessible              bool                       `json:"PubliclyAccessible"`
+	SecurityGroups                  []string                   `json:"SecurityGroups"`
+	SubnetIds                       []string                   `json:"SubnetIds"`
+	Tags                            map[string]string          `json:"Tags"`
 }
 
 type DuploAWSMQUser struct {
@@ -26,7 +44,7 @@ type DuploAWSMQUser struct {
 	Groups   []string `json:"Groups"`
 }
 
-type LDAPMetadata struct {
+type DuploMQLDAPMetadata struct {
 	Hosts                  []string `json:"Hosts"`
 	RoleBase               string   `json:"RoleBase"`
 	RoleName               string   `json:"RoleName"`
@@ -40,35 +58,51 @@ type LDAPMetadata struct {
 	UserSearchSubtree      bool     `json:"UserSearchSubtree"`
 }
 
-type MQConfiguration struct {
+type DuplocloudMQConfiguration struct {
 	Id       string `json:"Id"`
 	Revision int    `json:"Revision"`
 }
 
-func (c *Client) DuploSnsTopicCreate(tenantID string, rq *DuploSnsTopic) (*DuploSnsTopicResource, ClientError) {
-	rp := &DuploSnsTopicResource{}
+type DuploMQEncryptionOptions struct {
+	KmsKeyId       string `json:"KmsKeyId"`
+	UseAwsOwnedKey bool   `json:"UseAwsOwnedKey"`
+}
+
+type DuploMQLogs struct {
+	Audit   bool `json:"Audit"` //not aplicable for rabbit mq
+	General bool `json:"General"`
+}
+
+type DuploMQMaintenanceWindow struct {
+	TimeOfDay string    `json:"TimeOfDay"`
+	TimeZone  string    `json:"TimeZone"`
+	DayOfWeek DayOfWeek `json:"DayOfWeek"`
+}
+
+func (c *Client) DuploAWSMQBrokerCreate(tenantID string, rq *DuploAWSMQ) ClientError {
+	var rp interface{}
 	err := c.postAPI(
-		fmt.Sprintf("DuploSnsTopicCreate(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/snsTopic", tenantID),
+		fmt.Sprintf("DuploAWSMQBrokerCreate(%s, %s)", tenantID, rq.BrokerName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker", tenantID),
 		&rq,
 		&rp,
 	)
-	return rp, err
+	return err
 }
 
-func (c *Client) DuploSnsTopicDelete(tenantID string, arn string) ClientError {
+func (c *Client) DuploAWSMQBrokerDelete(tenantID string, brokerID string) ClientError {
 	return c.deleteAPI(
-		fmt.Sprintf("DuploSnsTopicDelete(%s, %s)", tenantID, arn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/snsTopic/%s", tenantID, arn),
+		fmt.Sprintf("DuploSnsTopicDelete(%s, %s)", tenantID, brokerID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/%s", tenantID, brokerID),
 		nil,
 	)
 }
 
-func (c *Client) TenantListSnsTopic(tenantID string) (*[]DuploSnsTopicResource, ClientError) {
-	rp := []DuploSnsTopicResource{}
+func (c *Client) DuploAWSMQBrokerGet(tenantID, brokerID string) (*DuploAWSMQ, ClientError) {
+	rp := DuploAWSMQ{}
 	err := c.getAPI(
-		fmt.Sprintf("TenantListSnsTopic(%s)", tenantID),
-		fmt.Sprintf("v3/subscriptions/%s/aws/snsTopic", tenantID),
+		fmt.Sprintf("DuploAWSMQBrokerGet(%s,%s)", tenantID, brokerID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/%s", tenantID, brokerID),
 		&rp,
 	)
 	return &rp, err

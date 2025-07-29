@@ -2,8 +2,6 @@ package duplosdk
 
 import (
 	"fmt"
-	"strings"
-	"time"
 )
 
 type DuploSnsTopic struct {
@@ -73,43 +71,4 @@ func (c *Client) TenantListSnsTopic(tenantID string) (*[]DuploSnsTopicResource, 
 		&rp,
 	)
 	return &rp, err
-}
-
-func (c *Client) TenantGetSnsTopicAttributes(tenantID string, topicArn string) (*DuploSnsTopicAttributes, ClientError) {
-	rp := DuploSnsTopicAttributes{}
-	_, err := RetryWithExponentialBackoff(func() (interface{}, ClientError) {
-		err := c.getAPI(
-			fmt.Sprintf("TenantListSnsTopicAttributes(%s)", tenantID),
-			fmt.Sprintf("v3/subscriptions/%s/aws/snsTopic/%s/attributes", tenantID, topicArn),
-			&rp,
-		)
-		return &rp, err
-	},
-		RetryConfig{
-			MinDelay:  1 * time.Second,
-			MaxDelay:  5 * time.Second,
-			MaxJitter: 2000,
-			Timeout:   60 * time.Second,
-			IsRetryable: func(error ClientError) bool {
-				return error.Status() == 400 || strings.Contains(error.Error(), "context deadline exceeded")
-			},
-		})
-
-	return &rp, err
-}
-
-func (c *Client) TenantGetSnsTopic(tenantID string, arn string) (*DuploSnsTopicResource, ClientError) {
-	list, err := c.TenantListSnsTopic(tenantID)
-	if err != nil {
-		return nil, err
-	}
-
-	if list != nil {
-		for _, topic := range *list {
-			if topic.Name == arn {
-				return &topic, nil
-			}
-		}
-	}
-	return nil, nil
 }

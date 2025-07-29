@@ -194,6 +194,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_cosmos_db_container":           resourceAzureCosmosDBContainer(),
 			"duplocloud_asg_instance_refresh":                resourceAsgInstanceRefresh(),
 			"duplocloud_azure_mssqldb_retention_backup":      resourceMsSQLDBRetentionBackup(),
+			"duplocloud_aws_mq_broker":                       resourceAwsMQBroker(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
