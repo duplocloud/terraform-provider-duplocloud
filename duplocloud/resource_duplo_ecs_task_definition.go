@@ -475,7 +475,7 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("inference_accelerator", ecsInferenceAcceleratorsToState(duplo.InferenceAccelerators))
 	d.Set("requires_attributes", ecsRequiresAttributesToState(duplo.RequiresAttributes))
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("runtime_platform", ecsPlatformRuntimeToState)
+	d.Set("runtime_platform", ecsPlatformRuntimeToState(duplo.RuntimePlatform))
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
@@ -649,8 +649,15 @@ func ecsPlacementConstraintsToState(pcs *[]duplosdk.DuploEcsTaskDefPlacementCons
 }
 
 func ecsPlatformRuntimeToState(p *duplosdk.DuploEcsTaskDefRuntimePlatform) []interface{} {
-	if p != nil {
-		return nil
+	if p == nil {
+		p = &duplosdk.DuploEcsTaskDefRuntimePlatform{
+			CPUArchitecture: duplosdk.DuploStringValue{
+				Value: "X86_64",
+			},
+			OSFamily: duplosdk.DuploStringValue{
+				Value: "LINUX",
+			},
+		}
 	}
 
 	results := make([]interface{}, 0)
