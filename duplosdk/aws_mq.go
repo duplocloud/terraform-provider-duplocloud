@@ -15,28 +15,28 @@ type (
 	DayOfWeek              string
 )
 type DuploAWSMQ struct {
-	EngineType                      EngineType                 `json:"EngineType"`                  //ACTIVEMQ, RABBITMQ
-	DeploymentMode                  DeploymentMode             `json:"DeploymentMode,omitempty"`    //ACTIVE_STANDBY_MULTI_AZ, CLUSTER_MULTI_AZ, SINGLE_INSTANCE
-	BrokerStorageType               BrokerStorageType          `json:"BrokerStorageType,omitempty"` //EBS, EFS
-	BrokerName                      string                     `json:"BrokerName"`
-	HostInstanceType                string                     `json:"HostInstanceType"`
-	EngineVersion                   string                     `json:"EngineVersion"`
-	AuthenticationStrategy          AuthenticationStrategy     `json:"AuthenticationStrategy"` //LDAP, SIMPLE
-	AutoMinorVersionUpgrade         bool                       `json:"AutoMinorVersionUpgrade"`
-	Users                           []DuploAWSMQUser           `json:"Users"`
-	LdapServerMetadata              *DuploMQLDAPMetadata       `json:"LdapServerMetadata,omitempty"`
-	Configuration                   *DuplocloudMQConfiguration `json:"Configuration,omitempty"`
-	CreatorRequestId                string                     `json:"CreatorRequestId,omitempty"`                //make this field compute. add field is_app_idempotent, is set to true create uuid and set it to CreatorRequestId
-	DataReplicationMode             DataReplicationMode        `json:"DataReplicationMode"`                       //CRDR, NONE
-	DataReplicationPrimaryBrokerArn string                     `json:"DataReplicationPrimaryBrokerArn,omitempty"` // required when CRDR
-	EncryptionOptions               *DuploMQEncryptionOptions  `json:"EncryptionOptions,omitempty"`
-	Logs                            *DuploMQLogs               `json:"Logs"`
-	MaintenanceWindow               *DuploMQMaintenanceWindow  `json:"MaintenanceWindowStartTime,omitempty"`
-	PubliclyAccessible              bool                       `json:"PubliclyAccessible"`
-	SecurityGroups                  []string                   `json:"SecurityGroups"`
-	SubnetIds                       []string                   `json:"SubnetIds"`
-	Tags                            map[string]string          `json:"Tags"`
-	BrokerId                        string                     `json:"Name"`
+	EngineType                      EngineType                 `json:"engineType"`               //ACTIVEMQ, RABBITMQ
+	DeploymentMode                  DeploymentMode             `json:"deploymentMode,omitempty"` //ACTIVE_STANDBY_MULTI_AZ, CLUSTER_MULTI_AZ, SINGLE_INSTANCE
+	BrokerStorageType               BrokerStorageType          `json:"storageType,omitempty"`    //EBS, EFS
+	BrokerName                      string                     `json:"brokerName"`
+	HostInstanceType                string                     `json:"hostInstanceType"`
+	EngineVersion                   string                     `json:"engineVersion"`
+	AuthenticationStrategy          AuthenticationStrategy     `json:"authenticationStrategy"` //LDAP, SIMPLE
+	AutoMinorVersionUpgrade         bool                       `json:"autoMinorVersionUpgrade"`
+	Users                           []DuploAWSMQUser           `json:"users"`
+	LdapServerMetadata              *DuploMQLDAPMetadata       `json:"ldapServerMetadata,omitempty"`
+	Configuration                   *DuplocloudMQConfiguration `json:"configuration,omitempty"`
+	CreatorRequestId                string                     `json:"creatorRequestId,omitempty"`                //make this field compute. add field is_app_idempotent, is set to true create uuid and set it to CreatorRequestId
+	DataReplicationMode             DataReplicationMode        `json:"dataReplicationMode"`                       //CRDR, NONE
+	DataReplicationPrimaryBrokerArn string                     `json:"dataReplicationPrimaryBrokerArn,omitempty"` // required when CRDR
+	EncryptionOptions               *DuploMQEncryptionOptions  `json:"encryptionOptions,omitempty"`
+	Logs                            *DuploMQLogs               `json:"logs"`
+	MaintenanceWindow               *DuploMQMaintenanceWindow  `json:"maintenanceWindowStartTime,omitempty"`
+	PubliclyAccessible              bool                       `json:"publiclyAccessible"`
+	SecurityGroups                  []string                   `json:"securityGroups"`
+	SubnetIds                       []string                   `json:"subnetIds"`
+	Tags                            map[string]string          `json:"tags"`
+	BrokerId                        string                     `json:"name"`
 }
 
 type DuploAWSMQUser struct {
@@ -185,7 +185,9 @@ type DuploMQBrokerResponse struct {
 		PendingChange struct {
 			Value string `json:"Value"`
 		} `json:"PendingChange"`
-		Username string `json:"Username"`
+		Username string   `json:"Username"`
+		Password string   `json:"Password"`
+		Groups   []string `json:"Groups"`
 	} `json:"Users"`
 	BrokerArn   string `json:"BrokerArn"`
 	BrokerId    string `json:"BrokerId"`

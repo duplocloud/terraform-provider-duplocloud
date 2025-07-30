@@ -94,12 +94,21 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 						Required:    true,
 						Sensitive:   true,
 						Description: "The password.",
+						DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+							// Suppress diff if the password is empty in state (read context sets it as empty string)
+							return old == "" && new != ""
+						},
 					},
 					"groups": {
 						Type:        schema.TypeList,
 						Optional:    true,
+						Computed:    true,
 						Description: "Groups for the user.",
-						Elem:        &schema.Schema{Type: schema.TypeString},
+						DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+							// Suppress diff if groups is empty in state (read context sets it as empty string)
+							return old == "" && new != ""
+						},
+						Elem: &schema.Schema{Type: schema.TypeString},
 					},
 				},
 			},
@@ -601,18 +610,19 @@ func flattenAwsMqBroker(d *schema.ResourceData, resp *duplosdk.DuploMQBrokerResp
 		}
 	}
 	// Users
-	users := make([]map[string]interface{}, 0, len(resp.Users))
-	for _, u := range resp.Users {
-		user := map[string]interface{}{
-			"user_name": u.Username,
-			// password is not returned in response, so leave empty
-			//"password": "",
-		}
-		users = append(users, user)
-	}
-	if err := d.Set("users", users); err != nil {
-		return err
-	}
+	//users := make([]map[string]interface{}, 0, len(resp.Users))
+	//for _, u := range resp.Users {
+	//	user := map[string]interface{}{
+	//		"user_name": u.Username,
+	//		// password is not returned in response, so leave empty
+	//		"password": u.Password,
+	//		"groups":   u.Groups,
+	//	}
+	//	users = append(users, user)
+	//}
+	//if err := d.Set("users", users); err != nil {
+	//	return err
+	//}
 	// Encryption options
 	if resp.EncryptionOptions != nil {
 		enc := map[string]interface{}{}
