@@ -332,8 +332,8 @@ func resourceAwsMQBroker() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAwsMqBrokerSchema(),
-		//CustomizeDiff: validateSQSParameter,
+		Schema:        duploAwsMqBrokerSchema(),
+		CustomizeDiff: validateMQParameter,
 	}
 }
 
@@ -736,4 +736,21 @@ func expandAwsMqBrokerUpdate(d *schema.ResourceData, brokerId string) *duplosdk.
 	}
 
 	return req
+}
+
+func validateMQParameter(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	bst := diff.Get("broker_storage_type").(string)
+	dm := diff.Get("deployment_mode").(string)
+	hit := diff.Get("host_instance_type").(string)
+	et := diff.Get("engine_type").(string)
+	if et == "ACTIVE_MQ" {
+		if dm == "SINGLE_INSTANCE" && bst == "EBS" && !strings.Contains(hit, "m5") {
+			return fmt.Errorf("storage type EBS is supported by m5 instance type family ")
+		}
+		if dm == "ACTIVE_STANDBY_MULTI_AZ" && bst == "EBS" {
+			return fmt.Errorf("storage type EBS is not supported for ACTIVE_STANDBY_MULTI_AZ deployment mode")
+
+		}
+	}
+	return nil
 }
