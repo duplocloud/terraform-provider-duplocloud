@@ -30,10 +30,10 @@ description: |-
 - `full_family_name` (String) The name of the task definition to create.
 - `id` (String) The ID of this resource.
 - `inference_accelerator` (Set of Object) (see [below for nested schema](#nestedatt--inference_accelerator))
-- `ipc_mode` (String)
+- `ipc_mode` (String) valid values are `host`, `none`, `task`
 - `memory` (String)
-- `network_mode` (String)
-- `pid_mode` (String)
+- `network_mode` (String) Valid values are `bridge`,`host`,`awsvpc`,`none`
+- `pid_mode` (String) Valida values are `host`, `task`
 - `placement_constraints` (Set of Object) (see [below for nested schema](#nestedatt--placement_constraints))
 - `prevent_tf_destroy` (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`.
 - `proxy_configuration` (List of Object) (see [below for nested schema](#nestedatt--proxy_configuration))
