@@ -2,8 +2,6 @@ package duplosdk
 
 import (
 	"fmt"
-	"strings"
-	"time"
 )
 
 type (
@@ -40,9 +38,9 @@ type DuploAWSMQ struct {
 }
 
 type DuploAWSMQUser struct {
-	UserName string   `json:"UserName"`
-	Password string   `json:"Password"`
-	Groups   []string `json:"Groups"`
+	UserName string   `json:"username"`
+	Password string   `json:"password"`
+	Groups   []string `json:"groups"`
 }
 
 type DuploMQLDAPMetadata struct {
@@ -109,45 +107,6 @@ func (c *Client) DuploAWSMQBrokerGet(tenantID, brokerID string) (*DuploMQBrokerR
 	return &rp, err
 }
 
-func (c *Client) TenantGetSnsTopicAttributes(tenantID string, topicArn string) (*DuploSnsTopicAttributes, ClientError) {
-	rp := DuploSnsTopicAttributes{}
-	_, err := RetryWithExponentialBackoff(func() (interface{}, ClientError) {
-		err := c.getAPI(
-			fmt.Sprintf("TenantListSnsTopicAttributes(%s)", tenantID),
-			fmt.Sprintf("v3/subscriptions/%s/aws/snsTopic/%s/attributes", tenantID, topicArn),
-			&rp,
-		)
-		return &rp, err
-	},
-		RetryConfig{
-			MinDelay:  1 * time.Second,
-			MaxDelay:  5 * time.Second,
-			MaxJitter: 2000,
-			Timeout:   60 * time.Second,
-			IsRetryable: func(error ClientError) bool {
-				return error.Status() == 400 || strings.Contains(error.Error(), "context deadline exceeded")
-			},
-		})
-
-	return &rp, err
-}
-
-func (c *Client) TenantGetSnsTopic(tenantID string, arn string) (*DuploSnsTopicResource, ClientError) {
-	list, err := c.TenantListSnsTopic(tenantID)
-	if err != nil {
-		return nil, err
-	}
-
-	if list != nil {
-		for _, topic := range *list {
-			if topic.Name == arn {
-				return &topic, nil
-			}
-		}
-	}
-	return nil, nil
-}
-
 type DuploMQBrokerResponse struct {
 	AutoMinorVersionUpgrade bool     `json:"AutoMinorVersionUpgrade"`
 	ActionsRequired         []string `json:"ActionsRequired"`
@@ -205,4 +164,28 @@ type DuploMQBrokerResponse struct {
 	HostInstanceType string `json:"HostInstanceType"`
 	ResourceType     int    `json:"ResourceType"`
 	Name             string `json:"Name"`
+}
+
+type DuploAWSMQBrokerUpdateRequest struct {
+	AuthenticationStrategy  AuthenticationStrategy     `json:"authenticationStrategy,omitempty"`
+	AutoMinorVersionUpgrade bool                       `json:"autoMinorVersionUpgrade,omitempty"`
+	BrokerId                string                     `json:"brokerId"`
+	Configuration           *DuplocloudMQConfiguration `json:"configuration,omitempty"`
+	DataReplicationMode     DataReplicationMode        `json:"dataReplicationMode,omitempty"`
+	EngineVersion           string                     `json:"engineVersion,omitempty"`
+	HostInstanceType        string                     `json:"hostInstanceType,omitempty"`
+	LdapServerMetadata      *DuploMQLDAPMetadata       `json:"ldapServerMetadata,omitempty"`
+	Logs                    *DuploMQLogs               `json:"logs,omitempty"`
+	MaintenanceWindow       *DuploMQMaintenanceWindow  `json:"maintenanceWindowStartTime,omitempty"`
+	SecurityGroups          []string                   `json:"securityGroups,omitempty"`
+}
+
+func (c *Client) DuploAWSMQBrokerUpdate(tenantID, brokerID string, rq DuploAWSMQBrokerUpdateRequest) ClientError {
+	var rp interface{}
+	err := c.putAPI(
+		fmt.Sprintf("DuploAWSMQBrokerUpdate(%s,%s)", tenantID, brokerID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/%s", tenantID, brokerID), &rq,
+		&rp,
+	)
+	return err
 }

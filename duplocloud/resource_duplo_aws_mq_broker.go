@@ -79,39 +79,36 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 			Description: "Enables automatic upgrades to new minor versions.",
 		},
 		"users": {
-			Type:        schema.TypeList,
-			Required:    true,
-			Description: "List of users for the broker.",
+			Type:             schema.TypeList,
+			Optional:         true,
+			Description:      "List of users for the broker.",
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"user_name": {
 						Type:        schema.TypeString,
 						Required:    true,
 						Description: "The username.",
+						ForceNew:    true,
 					},
 					"password": {
 						Type:        schema.TypeString,
 						Required:    true,
 						Sensitive:   true,
 						Description: "The password.",
-						DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-							// Suppress diff if the password is empty in state (read context sets it as empty string)
-							return old == "" && new != ""
-						},
+						ForceNew:    true,
 					},
 					"groups": {
 						Type:        schema.TypeList,
 						Optional:    true,
 						Computed:    true,
-						Description: "Groups for the user.",
-						DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-							// Suppress diff if groups is empty in state (read context sets it as empty string)
-							return old == "" && new != ""
-						},
-						Elem: &schema.Schema{Type: schema.TypeString},
+						Description: "Groups to which the user belongs.",
+						Elem:        &schema.Schema{Type: schema.TypeString},
+						ForceNew:    true,
 					},
 				},
 			},
+			ConflictsWith: []string{"ldap_server_metadata"},
 		},
 		"ldap_server_metadata": {
 			Type:        schema.TypeList,
@@ -179,6 +176,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 					},
 				},
 			},
+			ConflictsWith: []string{"users"},
 		},
 		"configuration": {
 			Type:        schema.TypeList,
@@ -343,7 +341,9 @@ func resourceAwsMQRead(ctx context.Context, d *schema.ResourceData, m interface{
 
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	tenantID, brokerID := idParts[0], idParts[1]
+	tenantID, brokerID, name := idParts[0], idParts[1], idParts[2]
+	log.Printf("[TRACE] resourceAwsMQRead(%s, %s): start", tenantID, name)
+
 	c := m.(*duplosdk.Client)
 
 	duplo, clientErr := c.DuploAWSMQBrokerGet(tenantID, brokerID)
@@ -359,7 +359,7 @@ func resourceAwsMQRead(ctx context.Context, d *schema.ResourceData, m interface{
 		return diag.Errorf("Unable to retrieve tenant %s Amazon MQ broker %s : %s", tenantID, brokerID, clientErr)
 	}
 	flattenAwsMqBroker(d, duplo)
-	log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): end", tenantID, duplo.BrokerName)
+	log.Printf("[TRACE] resourceAwsMQRead(%s, %s): end", tenantID, name)
 	return nil
 }
 
@@ -367,7 +367,7 @@ func resourceAwsMQCreate(ctx context.Context, d *schema.ResourceData, m interfac
 	tenantID := d.Get("tenant_id").(string)
 	c := m.(*duplosdk.Client)
 	rq := expandAwsMqBroker(d)
-	log.Printf("[TRACE] resourceAwsSqsQueueCreate(%s, %s): start", tenantID, rq.BrokerName)
+	log.Printf("[TRACE] resourceAwsMQCreate(%s, %s): start", tenantID, rq.BrokerName)
 
 	rp, cerr := c.DuploAWSMQBrokerCreate(tenantID, rq)
 	if cerr != nil {
@@ -377,48 +377,32 @@ func resourceAwsMQCreate(ctx context.Context, d *schema.ResourceData, m interfac
 	if err != nil {
 		return diag.Errorf("%s", err.Error())
 	}
-	id := fmt.Sprintf("%s/%s", tenantID, rp.BrokerId)
+	id := fmt.Sprintf("%s/%s/%s", tenantID, rp.BrokerId, rq.BrokerName)
 	d.SetId(id)
 
 	diags := resourceAwsMQRead(ctx, d, m)
-	//	log.Printf("[TRACE] resourceAwsSqsQueueCreate(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceAwsMQCreate(%s, %s): end", tenantID, rq.BrokerName)
 	return diags
 }
 
 func resourceAwsMQUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	id := d.Id()
+	idParts := strings.Split(id, "/")
+	tenantID, brokerID, name := idParts[0], idParts[1], idParts[2]
+	log.Printf("[TRACE] resourceAwsMQUpdate(%s, %s): start", tenantID, name)
 
-	if d.HasChanges("message_retention_seconds", "visibility_timeout_seconds", "content_based_deduplication", "deduplication_scope", "fifo_throughput_limit", "delay_seconds", "dead_letter_queue_configuration") {
-		var err error
-
-		tenantID := d.Get("tenant_id").(string)
-		fullname := d.Get("fullname").(string)
-		url := d.Get("url").(string)
-		log.Printf("[TRACE] resourceAwsSqsQueueUpdate(%s, %s): start", tenantID, fullname)
-		c := m.(*duplosdk.Client)
-
-		rq := expandAwsSqsQueue(d)
-		rq.Name = fullname
-		rq.Url = url
-		_, err = c.DuploSQSQueueUpdateV3(tenantID, rq)
-		if err != nil {
-			return diag.Errorf("Error updating tenant %s SQS queue '%s': %s", tenantID, fullname, err)
-		}
-		diags := waitForResourceToBePresentAfterCreate(ctx, d, "SQS Queue", fmt.Sprintf("%s/%s", tenantID, fullname), func() (interface{}, duplosdk.ClientError) {
-			resp, err := c.DuploSQSQueueGetV3(tenantID, fullname)
-
-			if err == nil && resp != nil && resp.Arn == "" {
-				return nil, nil
-			}
-			return c.DuploSQSQueueGetV3(tenantID, fullname)
-		})
-		if diags != nil {
-			return diags
-		}
-
-		diags = resourceAwsSqsQueueRead(ctx, d, m)
-		log.Printf("[TRACE] resourceAwsSqsQueueUpdate(%s, %s): end", tenantID, fullname)
-		return diags
+	c := m.(*duplosdk.Client)
+	rq := expandAwsMqBrokerUpdate(d, brokerID)
+	cerr := c.DuploAWSMQBrokerUpdate(tenantID, brokerID, *rq)
+	if cerr != nil {
+		return diag.Errorf("error updating tenant %s aws amazon broker %s : %s", tenantID, brokerID, cerr.Error())
 	}
+	err := waitUntilMQBrokerReady(ctx, c, tenantID, brokerID, d.Timeout("update"))
+	if err != nil {
+		return diag.Errorf("%s", err.Error())
+	}
+	log.Printf("[TRACE] resourceAwsMQUpdate(%s, %s): end", tenantID, name)
+
 	return nil
 }
 
@@ -531,9 +515,12 @@ func expandAwsMqBrokerUsers(v interface{}) []duplosdk.DuploAWSMQUser {
 			UserName: userMap["user_name"].(string),
 			Password: userMap["password"].(string),
 		}
-		if groups, ok := userMap["groups"]; ok && groups != nil {
-			user.Groups = expandStringList(groups.([]interface{}))
+		gs := userMap["groups"].([]interface{})
+		gstr := []string{}
+		for _, g := range gs {
+			gstr = append(gstr, g.(string))
 		}
+		user.Groups = gstr
 		users = append(users, user)
 	}
 	return users
@@ -610,19 +597,23 @@ func flattenAwsMqBroker(d *schema.ResourceData, resp *duplosdk.DuploMQBrokerResp
 		}
 	}
 	// Users
-	//users := make([]map[string]interface{}, 0, len(resp.Users))
-	//for _, u := range resp.Users {
-	//	user := map[string]interface{}{
-	//		"user_name": u.Username,
-	//		// password is not returned in response, so leave empty
-	//		"password": u.Password,
-	//		"groups":   u.Groups,
-	//	}
-	//	users = append(users, user)
-	//}
-	//if err := d.Set("users", users); err != nil {
-	//	return err
-	//}
+	users := make([]map[string]interface{}, 0, len(resp.Users))
+	for _, u := range resp.Users {
+		user := map[string]interface{}{
+			"user_name": u.Username,
+			// password is not returned in response, so leave empty
+			"password": u.Password,
+		}
+		if len(u.Groups) == 0 {
+			user["groups"] = nil
+		} else {
+			user["groups"] = u.Groups
+		}
+		users = append(users, user)
+	}
+	if err := d.Set("users", users); err != nil {
+		return err
+	}
 	// Encryption options
 	if resp.EncryptionOptions != nil {
 		enc := map[string]interface{}{}
@@ -664,141 +655,6 @@ func flattenAwsMqBroker(d *schema.ResourceData, resp *duplosdk.DuploMQBrokerResp
 	return nil
 }
 
-/*
-func flattenAwsMqBroker(d *schema.ResourceData, req *duplosdk.DuploAWSMQ) error {
-	if err := d.Set("engine_type", string(req.EngineType)); err != nil {
-		return err
-	}
-	if err := d.Set("broker_name", req.BrokerName); err != nil {
-		return err
-	}
-	if err := d.Set("host_instance_type", req.HostInstanceType); err != nil {
-		return err
-	}
-	if err := d.Set("engine_version", req.EngineVersion); err != nil {
-		return err
-	}
-	if err := d.Set("authentication_strategy", string(req.AuthenticationStrategy)); err != nil {
-		return err
-	}
-	if err := d.Set("auto_minor_version_upgrade", req.AutoMinorVersionUpgrade); err != nil {
-		return err
-	}
-	if err := d.Set("data_replication_mode", string(req.DataReplicationMode)); err != nil {
-		return err
-	}
-	if err := d.Set("publicly_accessible", req.PubliclyAccessible); err != nil {
-		return err
-	}
-	if err := d.Set("security_groups", req.SecurityGroups); err != nil {
-		return err
-	}
-	if err := d.Set("subnet_ids", req.SubnetIds); err != nil {
-		return err
-	}
-	if err := d.Set("tags", req.Tags); err != nil {
-		return err
-	}
-	if req.DeploymentMode != "" {
-		if err := d.Set("deployment_mode", string(req.DeploymentMode)); err != nil {
-			return err
-		}
-	}
-	if req.BrokerStorageType != "" {
-		if err := d.Set("broker_storage_type", string(req.BrokerStorageType)); err != nil {
-			return err
-		}
-	}
-	if req.CreatorRequestId != "" {
-		if err := d.Set("creator_request_id", req.CreatorRequestId); err != nil {
-			return err
-		}
-	}
-	if req.DataReplicationPrimaryBrokerArn != "" {
-		if err := d.Set("data_replication_primary_broker_arn", req.DataReplicationPrimaryBrokerArn); err != nil {
-			return err
-		}
-	}
-	// Users
-	users := make([]map[string]interface{}, 0, len(req.Users))
-	for _, u := range req.Users {
-		user := map[string]interface{}{
-			"user_name": u.UserName,
-			"password":  u.Password,
-		}
-		if len(u.Groups) > 0 {
-			user["groups"] = u.Groups
-		}
-		users = append(users, user)
-	}
-	if err := d.Set("users", users); err != nil {
-		return err
-	}
-	// LDAP server metadata
-	if req.LdapServerMetadata != nil {
-		ldap := map[string]interface{}{
-			"hosts":                    req.LdapServerMetadata.Hosts,
-			"role_base":                req.LdapServerMetadata.RoleBase,
-			"role_name":                req.LdapServerMetadata.RoleName,
-			"role_search_matching":     req.LdapServerMetadata.RoleSearchMatching,
-			"role_search_subtree":      req.LdapServerMetadata.RoleSearchSubtree,
-			"service_account_password": req.LdapServerMetadata.ServiceAccountPassword,
-			"service_account_username": req.LdapServerMetadata.ServiceAccountUsername,
-			"user_base":                req.LdapServerMetadata.UserBase,
-			"user_role_name":           req.LdapServerMetadata.UserRoleName,
-			"user_search_matching":     req.LdapServerMetadata.UserSearchMatching,
-			"user_search_subtree":      req.LdapServerMetadata.UserSearchSubtree,
-		}
-		if err := d.Set("ldap_server_metadata", []interface{}{ldap}); err != nil {
-			return err
-		}
-	}
-	// Configuration
-	if req.Configuration != nil {
-		conf := map[string]interface{}{
-			"id":       req.Configuration.Id,
-			"revision": req.Configuration.Revision,
-		}
-		if err := d.Set("configuration", []interface{}{conf}); err != nil {
-			return err
-		}
-	}
-	// Encryption options
-	if req.EncryptionOptions != nil {
-		enc := map[string]interface{}{}
-		if req.EncryptionOptions.KmsKeyId != "" {
-			enc["kms_key_id"] = req.EncryptionOptions.KmsKeyId
-		}
-		enc["use_aws_owned_key"] = req.EncryptionOptions.UseAwsOwnedKey
-		if err := d.Set("encryption_options", []interface{}{enc}); err != nil {
-			return err
-		}
-	}
-	// Logs
-	if req.Logs != nil {
-		logs := map[string]interface{}{
-			"general": req.Logs.General,
-		}
-		logs["audit"] = req.Logs.Audit
-		if err := d.Set("logs", []interface{}{logs}); err != nil {
-			return err
-		}
-	}
-	// Maintenance window
-	if req.MaintenanceWindow != nil {
-		mw := map[string]interface{}{
-			"time_of_day": req.MaintenanceWindow.TimeOfDay,
-			"time_zone":   req.MaintenanceWindow.TimeZone,
-			"day_of_week": string(req.MaintenanceWindow.DayOfWeek),
-		}
-		if err := d.Set("maintenance_window", []interface{}{mw}); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-*/
-
 func waitUntilMQBrokerReady(ctx context.Context, c *duplosdk.Client, tenantID string, brokerId string, timeout time.Duration) error {
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
@@ -819,4 +675,65 @@ func waitUntilMQBrokerReady(ctx context.Context, c *duplosdk.Client, tenantID st
 	log.Printf("[DEBUG] waitUntilMQBrokerReady(%s, %s)", tenantID, brokerId)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func expandAwsMqBrokerUpdate(d *schema.ResourceData, brokerId string) *duplosdk.DuploAWSMQBrokerUpdateRequest {
+	req := &duplosdk.DuploAWSMQBrokerUpdateRequest{
+		HostInstanceType:        d.Get("host_instance_type").(string),
+		EngineVersion:           d.Get("engine_version").(string),
+		AuthenticationStrategy:  duplosdk.AuthenticationStrategy(d.Get("authentication_strategy").(string)),
+		AutoMinorVersionUpgrade: d.Get("auto_minor_version_upgrade").(bool),
+		DataReplicationMode:     duplosdk.DataReplicationMode(d.Get("data_replication_mode").(string)),
+		SecurityGroups:          expandStringList(d.Get("security_groups").([]interface{})),
+		BrokerId:                brokerId,
+	}
+
+	if v, ok := d.GetOk("ldap_server_metadata"); ok && len(v.([]interface{})) > 0 {
+		ldap := v.([]interface{})[0].(map[string]interface{})
+		req.LdapServerMetadata = &duplosdk.DuploMQLDAPMetadata{
+			Hosts:                  expandStringList(ldap["hosts"].([]interface{})),
+			RoleBase:               ldap["role_base"].(string),
+			RoleName:               ldap["role_name"].(string),
+			RoleSearchMatching:     ldap["role_search_matching"].(string),
+			RoleSearchSubtree:      ldap["role_search_subtree"].(bool),
+			ServiceAccountPassword: ldap["service_account_password"].(string),
+			ServiceAccountUsername: ldap["service_account_username"].(string),
+			UserBase:               ldap["user_base"].(string),
+			UserRoleName:           ldap["user_role_name"].(string),
+			UserSearchMatching:     ldap["user_search_matching"].(string),
+			UserSearchSubtree:      ldap["user_search_subtree"].(bool),
+		}
+	}
+
+	// Configuration
+	if v, ok := d.GetOk("configuration"); ok && len(v.([]interface{})) > 0 {
+		conf := v.([]interface{})[0].(map[string]interface{})
+		req.Configuration = &duplosdk.DuplocloudMQConfiguration{
+			Id:       conf["id"].(string),
+			Revision: conf["revision"].(int),
+		}
+	}
+
+	// Logs
+	if v, ok := d.GetOk("logs"); ok && len(v.([]interface{})) > 0 {
+		logs := v.([]interface{})[0].(map[string]interface{})
+		req.Logs = &duplosdk.DuploMQLogs{
+			General: logs["general"].(bool),
+		}
+		if a, ok := logs["audit"]; ok && a != nil {
+			req.Logs.Audit = a.(bool)
+		}
+	}
+
+	// Maintenance window
+	if v, ok := d.GetOk("maintenance_window"); ok && len(v.([]interface{})) > 0 {
+		mw := v.([]interface{})[0].(map[string]interface{})
+		req.MaintenanceWindow = &duplosdk.DuploMQMaintenanceWindow{
+			TimeOfDay: mw["time_of_day"].(string),
+			TimeZone:  mw["time_zone"].(string),
+			DayOfWeek: duplosdk.DayOfWeek(mw["day_of_week"].(string)),
+		}
+	}
+
+	return req
 }
