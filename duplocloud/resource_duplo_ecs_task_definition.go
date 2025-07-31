@@ -126,6 +126,7 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"bridge", "host", "awsvpc", "none"}, false),
 			Default:      "awsvpc",
+			Description:  "Valid values are `bridge`,`host`,`awsvpc`,`none`",
 		},
 		"placement_constraints": {
 			Type:     schema.TypeSet,
@@ -178,12 +179,14 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Optional:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"host", "none", "task"}, false),
+			Description:  "valid values are `host`, `none`, `task`",
 		},
 		"pid_mode": {
 			Type:         schema.TypeString,
 			Optional:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"host", "task"}, false),
+			Description:  "Valida values are `host`, `task`",
 		},
 		"proxy_configuration": {
 			Type:     schema.TypeList,

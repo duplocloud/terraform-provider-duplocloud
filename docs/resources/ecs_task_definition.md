@@ -133,10 +133,10 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 
 - `cpu` (String)
 - `inference_accelerator` (Block Set) (see [below for nested schema](#nestedblock--inference_accelerator))
-- `ipc_mode` (String)
+- `ipc_mode` (String) valid values are `host`, `none`, `task`
 - `memory` (String)
-- `network_mode` (String) Defaults to `awsvpc`.
-- `pid_mode` (String)
+- `network_mode` (String) Valid values are `bridge`,`host`,`awsvpc`,`none` Defaults to `awsvpc`.
+- `pid_mode` (String) Valida values are `host`, `task`
 - `placement_constraints` (Block Set, Max: 10) (see [below for nested schema](#nestedblock--placement_constraints))
 - `prevent_tf_destroy` (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`. Defaults to `true`.
 - `proxy_configuration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--proxy_configuration))
