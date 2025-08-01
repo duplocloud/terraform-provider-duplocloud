@@ -56,6 +56,7 @@ resource "duplocloud_gcp_sql_database_instance" "sql" {
 
 ### Optional
 
+- `database_flag` (Block List) List of database flags to be set on the database instance. Please refer to the [Database Flags Documentation](https://cloud.google.com/sql/docs/mysql/flags) for more details on available flags. (see [below for nested schema](#nestedblock--database_flag))
 - `disk_size` (Number) The size of data disk, in GB. Size of a running instance cannot be reduced but can be increased. The minimum value is 10GB.
 - `labels` (Map of String) Map of string keys and values that can be used to organize and categorize this resource.
 - `need_backup` (Boolean) Flag to enable backup process on delete of database Defaults to `true`.
@@ -70,6 +71,15 @@ resource "duplocloud_gcp_sql_database_instance" "sql" {
 - `id` (String) The ID of this resource.
 - `ip_address` (List of String) List of IP addresses of the database.
 - `self_link` (String) The SelfLink of the sql database.
+
+<a id="nestedblock--database_flag"></a>
+### Nested Schema for `database_flag`
+
+Required:
+
+- `name` (String) The name of the database flag.
+- `value` (String) The value of the database flag.
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

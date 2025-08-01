@@ -16,6 +16,7 @@ type DuploUser struct {
 	IsVpnConfigCreated      bool      `json:"IsVpnConfigCreated,omitempty"`
 	IsConfirmationEmailSent bool      `json:"IsConfirmationEmailSent,omitempty"`
 	State                   string    `json:"State,omitempty"`
+	Permissions             []string  `json:"Permissions,omitempty"`
 }
 
 func (c *Client) UserGet(userName string) (*DuploUser, ClientError) {
