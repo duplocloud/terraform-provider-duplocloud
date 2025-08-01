@@ -745,11 +745,25 @@ func validateMQParameter(ctx context.Context, diff *schema.ResourceDiff, m inter
 	et := diff.Get("engine_type").(string)
 	if et == "ACTIVE_MQ" {
 		if dm == "SINGLE_INSTANCE" && bst == "EBS" && !strings.Contains(hit, "m5") {
-			return fmt.Errorf("storage type EBS is supported by m5 instance type family ")
+			return fmt.Errorf("ACTIVE_MQ storage type EBS is supported by m5 instance type family ")
 		}
 		if dm == "ACTIVE_STANDBY_MULTI_AZ" && bst == "EBS" {
-			return fmt.Errorf("storage type EBS is not supported for ACTIVE_STANDBY_MULTI_AZ deployment mode")
+			return fmt.Errorf("ACTIVE_MQ storage type EBS is not supported for ACTIVE_STANDBY_MULTI_AZ deployment mode")
 
+		}
+	}
+	if et == "RABBIT_MQ" {
+		if dm == "ACTIVE_STANDBY_MULTI_AZ" {
+			return fmt.Errorf("RABBIT_MQ deployment mode ACTIVE_STANDBY_MULTI_AZ is not supported")
+		}
+		if bst == "EFS" {
+			return fmt.Errorf("RABBIT_MQ storage type EFS is not supported")
+		}
+		if dm == "CLUSTER_MULTI_AZ" && strings.Contains(hit, "t3") {
+			return fmt.Errorf("RABBIT_MQ cluster mode do not support t3 family storage type")
+		}
+		if v, ok := diff.GetOk("ldap_server_metadata"); ok && len(v.([]interface{})) > 0 {
+			return fmt.Errorf("RABBIT_MQ do not support ldap_server_metadata block")
 		}
 	}
 	return nil
