@@ -126,6 +126,7 @@ func duploAzureMssqlServerSchema() map[string]*schema.Schema {
 						ValidateFunc: validation.StringInSlice([]string{"User", "Group", "Application"}, false),
 					},
 					"administrator_type": {
+						Description:  "Specifies this field only if this admin is from Azure AD. Valid value ActiveDirectory",
 						Type:         schema.TypeString,
 						Optional:     true,
 						ValidateFunc: validation.StringInSlice([]string{"ActiveDirectory"}, false),
