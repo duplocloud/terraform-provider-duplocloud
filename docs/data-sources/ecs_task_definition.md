@@ -38,7 +38,7 @@ description: |-
 - `prevent_tf_destroy` (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`.
 - `proxy_configuration` (List of Object) (see [below for nested schema](#nestedatt--proxy_configuration))
 - `requires_attributes` (Set of Object) (see [below for nested schema](#nestedatt--requires_attributes))
-- `requires_compatibilities` (Set of String) Requires compatibilities for running jobs. Valid values are [FARGATE]
+- `requires_compatibilities` (Set of String) Requires compatibilities for running jobs.
 - `revision` (Number) The current revision of the task definition.
 - `runtime_platform` (List of Object) Configuration block for runtime_platform that containers in your task may use. Required on ecs tasks that are hosted on Fargate. (see [below for nested schema](#nestedatt--runtime_platform))
 - `status` (String) The status of the task definition.

@@ -166,12 +166,11 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 		},
 		"requires_compatibilities": {
 			Type:        schema.TypeSet,
-			Description: "Requires compatibilities for running jobs. Valid values are [FARGATE]",
+			Description: "Requires compatibilities for running jobs.",
 			Optional:    true,
 			Computed:    true,
 			Elem: &schema.Schema{
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"FARGATE"}, false),
+				Type: schema.TypeString,
 			},
 		},
 		"ipc_mode": {
