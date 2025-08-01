@@ -165,10 +165,11 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			},
 		},
 		"requires_compatibilities": {
-			Type:        schema.TypeSet,
-			Description: "Requires compatibilities for running jobs.",
-			Optional:    true,
-			Computed:    true,
+			Type:             schema.TypeSet,
+			Description:      "Requires compatibilities for running jobs.",
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
