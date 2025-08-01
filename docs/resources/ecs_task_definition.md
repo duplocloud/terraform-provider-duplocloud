@@ -133,15 +133,15 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 
 - `cpu` (String)
 - `inference_accelerator` (Block Set) (see [below for nested schema](#nestedblock--inference_accelerator))
-- `ipc_mode` (String)
+- `ipc_mode` (String) valid values are `host`, `none`, `task`
 - `memory` (String)
-- `network_mode` (String) Defaults to `awsvpc`.
-- `pid_mode` (String)
+- `network_mode` (String) Valid values are `bridge`,`host`,`awsvpc`,`none` Defaults to `awsvpc`.
+- `pid_mode` (String) Valida values are `host`, `task`
 - `placement_constraints` (Block Set, Max: 10) (see [below for nested schema](#nestedblock--placement_constraints))
 - `prevent_tf_destroy` (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`. Defaults to `true`.
 - `proxy_configuration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--proxy_configuration))
 - `requires_attributes` (Block Set) (see [below for nested schema](#nestedblock--requires_attributes))
-- `requires_compatibilities` (Set of String) Requires compatibilities for running jobs. Valid values are [FARGATE]
+- `requires_compatibilities` (Set of String) Requires compatibilities for running jobs.
 - `runtime_platform` (Block List, Max: 1) Configuration block for runtime_platform that containers in your task may use. Required on ecs tasks that are hosted on Fargate. (see [below for nested schema](#nestedblock--runtime_platform))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `volumes` (String) A JSON-encoded string containing a list of volumes that are used by the ECS task definition. Defaults to `[]`.

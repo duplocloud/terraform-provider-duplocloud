@@ -100,6 +100,25 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     true,
 		},
+		"database_flag": {
+			Description: "List of database flags to be set on the database instance. Please refer to the [Database Flags Documentation](https://cloud.google.com/sql/docs/mysql/flags) for more details on available flags.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Description: "The name of the database flag.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"value": {
+						Description: "The value of the database flag.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -247,7 +266,7 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		d.SetId("") // object missing
 		return nil
 	}
-	if d.HasChanges("tier", "disk_size", "labels", "database_version") {
+	if d.HasChanges("tier", "disk_size", "labels", "database_version", "database_flag") {
 		requestedVersion := d.Get("database_version").(string)
 
 		// Validate the database version
@@ -324,6 +343,7 @@ func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name strin
 	d.Set("connection_name", duplo.ConnectionName)
 	flattenGcpLabels(d, duplo.Labels)
 	flattenIPAddress(d, duplo.IPAddress)
+	flattenDatabasFlags(d, duplo.DatabaseFlags)
 
 }
 
@@ -341,6 +361,22 @@ func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInsta
 		for key, value := range v.(map[string]interface{}) {
 			rq.Labels[key] = value.(string)
 		}
+	}
+	if v, ok := d.GetOk("database_flag"); ok && !isInterfaceNil(v) {
+		rq.DatabaseFlags = make([]duplosdk.DuploGCPSqlDBInstanceFlag, 0, len(v.([]interface{})))
+		for _, item := range v.([]interface{}) {
+			if item == nil {
+				continue
+			}
+			m := item.(map[string]interface{})
+			flag := duplosdk.DuploGCPSqlDBInstanceFlag{
+				Name:  m["name"].(string),
+				Value: m["value"].(string),
+			}
+			rq.DatabaseFlags = append(rq.DatabaseFlags, flag)
+		}
+	} else {
+		rq.DatabaseFlags = []duplosdk.DuploGCPSqlDBInstanceFlag{}
 	}
 	return rq
 }
@@ -440,4 +476,16 @@ func gcpSqlDBInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Clien
 	log.Printf("[DEBUG] RdsInstanceWaitUntilUnavailable (%s)", id)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func flattenDatabasFlags(d *schema.ResourceData, flags []duplosdk.DuploGCPSqlDBInstanceFlag) {
+	i := make([]interface{}, 0, len(flags))
+	for _, flag := range flags {
+		mp := map[string]interface{}{}
+		mp["name"] = flag.Name
+		mp["value"] = flag.Value
+		i = append(i, mp)
+	}
+
+	d.Set("database_flag", i)
 }
