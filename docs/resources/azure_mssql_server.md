@@ -81,7 +81,7 @@ Required:
 Optional:
 
 - `ad_authentication_only` (Boolean) Specifies whether only AD Users and administrators can be used to login (`true`) or also local database users (`false`).
-- `administrator_type` (String)
+- `administrator_type` (String) Implicitly inferred. Valid value ActiveDirectory
 - `principal_type` (String) Specify the type of the principal: `User`, `Group`, or `Application`
 
 
