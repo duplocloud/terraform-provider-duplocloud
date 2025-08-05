@@ -54,7 +54,7 @@ func k8sIngressSchema() map[string]*schema.Schema {
 						Required:    true,
 					},
 					"certificate_arn": {
-						Description: "The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.",
+						Description: "The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS. Multiple ARNs can be attached, separated by commas.",
 						Type:        schema.TypeString,
 						Computed:    true,
 						Optional:    true,

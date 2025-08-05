@@ -102,7 +102,7 @@ resource "duplocloud_k8_ingress" "ingress" {
   lbconfig {
     is_internal     = false
     dns_prefix      = "external-echo"
-    certificate_arn = "put your certificate ARN here"
+    certificate_arn = "<cert-arn1>,<cert-arn2>,..."
     https_port      = 443
   }
 
@@ -245,7 +245,7 @@ Required:
 
 Optional:
 
-- `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
+- `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS. Multiple ARNs can be attached, separated by commas.
 - `http_port` (Number) HTTP Listener Port.
 - `https_port` (Number) HTTPS Listener Port.
 - `port_override` (String) Port override for the load balancer. Currently supported for Azure
