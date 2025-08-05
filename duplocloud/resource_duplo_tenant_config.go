@@ -2,9 +2,10 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -171,9 +172,14 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	// Delete the configuration with Duplo
 	c := m.(*duplosdk.Client)
-	all, err := c.TenantGetConfig(tenantID)
+	all, cerr := c.TenantGetConfig(tenantID)
 
-	if err != nil {
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
+
 		return diag.Errorf("Error fetching tenant config for '%s': %s", tenantID, err)
 	}
 
@@ -185,7 +191,6 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 	} else {
 		err = c.TenantChangeConfig(tenantID, previous, desired)
 	}
-
 	if err != nil {
 		return diag.Errorf("Error deleting tenant config for '%s': %s", tenantID, err)
 	}
@@ -222,11 +227,13 @@ func expandTenantConfig(fieldName string, d *schema.ResourceData) *[]duplosdk.Du
 		log.Printf("[TRACE] expandTenantConfig ********: found %s", fieldName)
 		ary = make([]duplosdk.DuploKeyStringValue, 0, len(kvs))
 		for _, raw := range kvs {
-			kv := raw.(map[string]interface{})
-			ary = append(ary, duplosdk.DuploKeyStringValue{
-				Key:   kv["key"].(string),
-				Value: kv["value"].(string),
-			})
+			if raw != nil {
+				kv := raw.(map[string]interface{})
+				ary = append(ary, duplosdk.DuploKeyStringValue{
+					Key:   kv["key"].(string),
+					Value: kv["value"].(string),
+				})
+			}
 		}
 	}
 
