@@ -123,7 +123,7 @@ func duploAzurePostgresqlFlexibleDatabaseSchemav2() map[string]*schema.Schema {
 			Optional:    true,
 			Description: "The ID of the private DNS zone to create the PostgreSQL Flexible Server. The private_dns_zone_id will be required when setting a delegated_subnet_id. For existing flexible servers who don't want to be recreated, you need to provide the private_dns_zone_id to the service team to manually migrate to the specified private DNS zone. The azurerm_private_dns_zone should end with suffix .postgres.database.azure.com.",
 		},
-		"public_network_access_enabled": {
+		"public_network_access": {
 			Type:         schema.TypeString,
 			Optional:     true,
 			Description:  "Whether public network access is allowed for this server.",
@@ -138,9 +138,10 @@ func duploAzurePostgresqlFlexibleDatabaseSchemav2() map[string]*schema.Schema {
 			Description:  "The Azure Availability Zone where the primary PostgreSQL Flexible Server will be deployed. It enables zone-level redundancy for increased fault tolerance. When High Availability (HA) is enabled in ZoneRedundant mode, the standby replica is automatically placed in a different zone. Valid values are `1`, `2`, or `3`, depending on the region's supported zones",
 		},
 		"tags": {
-			Type:     schema.TypeMap,
-			Computed: true,
-			Elem:     schema.TypeString,
+			Description: "A mapping of tags which should be assigned to the PostgreSQL Flexible Server",
+			Type:        schema.TypeMap,
+			Computed:    true,
+			Elem:        schema.TypeString,
 		},
 		"location": {
 			Type:     schema.TypeString,
@@ -224,7 +225,7 @@ func resourceAzurePostgresqlFlexibleDatabasev2Read(ctx context.Context, d *schem
 	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseRead(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	duplo, clientErr := c.PostgresqlFlexibleDatabaseGet(tenantID, name)
+	duplo, clientErr := c.PostgresqlFlexibleDatabaseV2Get(tenantID, name)
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
@@ -272,17 +273,7 @@ func resourceAzurePostgresqlFlexibleDatabasev2Create(ctx context.Context, d *sch
 			return diag.FromErr(err)
 		}
 	}
-	adcs := expanADConfig(d)
-	for _, adc := range adcs {
-		cerr := c.PostgresqlFlexibleDatabaseUpdateADConfig(tenantID, name, adc.ObjectId, adc)
-		if cerr != nil {
-			return diag.Errorf("Failed to Active directory user for tenantId %s postgres flexible server %s", tenantID, name)
-		}
-		err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"), "create")
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
+
 	diags = resourceAzurePostgresqlFlexibleDatabasev2Read(ctx, d, m)
 	//	if !diags.HasError() {
 	//		d.Set("AdminLoginPassword", password)
@@ -315,17 +306,6 @@ func resourceAzurePostgresqlFlexibleDatabasev2Update(ctx context.Context, d *sch
 			return diag.FromErr(err)
 		}
 	}
-	adcs := expanADConfig(d)
-	for _, adc := range adcs {
-		cerr := c.PostgresqlFlexibleDatabaseUpdateADConfig(tenantID, name, adc.ObjectId, adc)
-		if cerr != nil {
-			return diag.Errorf("Failed to Active directory user for tenantId %s postgres flexible server %s", tenantID, name)
-		}
-		err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"), "create")
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
 
 	diags := resourceAzurePostgresqlFlexibleDatabasev2Read(ctx, d, m)
 	//if !diags.HasError() {
@@ -333,37 +313,6 @@ func resourceAzurePostgresqlFlexibleDatabasev2Update(ctx context.Context, d *sch
 	//}
 	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseUpdate(%s, %s): end", tenantID, name)
 	return diags
-}
-
-func resourceAzurePostgresqlFlexibleDatabasv2eDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	id := d.Id()
-	tenantID, name, err := parseAzurePostgresqlDatabaseIdParts(id)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabasv2eDelete(%s, %s): start", tenantID, name)
-
-	c := m.(*duplosdk.Client)
-	clientErr := c.PostgresqlFlexibleDatabaseV2Delete(tenantID, name)
-	if clientErr != nil {
-		if clientErr.Status() == 404 {
-			return nil
-		}
-		return diag.Errorf("Unable to delete tenant %s azure postgresql database '%s': %s", tenantID, name, clientErr)
-	}
-
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure postgresql flexible database", id, func() (interface{}, duplosdk.ClientError) {
-		if rp, err := c.PostgresqlFlexibleDatabaseV2Get(tenantID, name); err != nil {
-			return rp, err
-		}
-		return nil, nil
-	})
-	if diag != nil {
-		return diag
-	}
-
-	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseDelete(%s, %s): end", tenantID, name)
-	return nil
 }
 
 func expandAzurePostgresqlFlexibleDatabasev2(d *schema.ResourceData) *duplosdk.DuploAzurePostgresqlFlexibleV2Request {
@@ -382,7 +331,7 @@ func expandAzurePostgresqlFlexibleDatabasev2(d *schema.ResourceData) *duplosdk.D
 	req.Storage.StorageSize = d.Get("storage_gb").(int)
 	req.Network.Subnet.ResourceId = d.Get("delegated_subnet_id").(string)
 	req.Network.PrivateDnsZone.ResourceId = d.Get("private_dns_zone_id").(string)
-	req.Network.PublicNetworkAccess = d.Get("public_network_access_enabled").(string)
+	req.Network.PublicNetworkAccess = d.Get("public_network_access").(string)
 	req.BackUp.RetentionDays = d.Get("backup_retention_days").(int)
 	req.BackUp.GeoRedundantBackUp = d.Get("geo_redundant_backup").(string)
 	req.AvailabilityZone = d.Get("availability_zone").(string)
@@ -391,23 +340,7 @@ func expandAzurePostgresqlFlexibleDatabasev2(d *schema.ResourceData) *duplosdk.D
 	return req
 }
 
-func expanADConfig(d *schema.ResourceData) []duplosdk.DuploAzurePostgresqlFlexibleV2ADConfig {
-	obj := []duplosdk.DuploAzurePostgresqlFlexibleV2ADConfig{}
-	adcs := d.Get("acitve_directory_config").([]interface{})
-	for _, adc := range adcs {
-		m := adc.(map[string]interface{})
-
-		obj = append(obj, duplosdk.DuploAzurePostgresqlFlexibleV2ADConfig{
-			ADPrincipalName: m["principal_name"].(string),
-			ADTenantId:      m["tenant_id"].(string),
-			ADPrincipalType: m["principal_type"].(string),
-			ObjectId:        m["object_id"].(string),
-		})
-	}
-	return obj
-}
-
-func flattenAzurePostgresqlFlexibleDatabasev2(d *schema.ResourceData, duplo *duplosdk.DuploAzurePostgresqlFlexible) {
+func flattenAzurePostgresqlFlexibleDatabasev2(d *schema.ResourceData, duplo *duplosdk.DuploAzurePostgresqlFlexibleV2) {
 	d.Set("name", duplo.Name)
 	d.Set("service_tier", duplo.Sku.Tier)
 	d.Set("hardware", duplo.Sku.Name)
@@ -463,18 +396,18 @@ func verifyPSQLFlexiV2Parameters(ctx context.Context, diff *schema.ResourceDiff,
 	}
 	old, new := diff.GetChange("storage_gb")
 	if new.(int) < old.(int) {
-		return fmt.Errorf("storage downgrade not allowed.")
+		return fmt.Errorf("storage downgrade not allowed")
 	}
 	oldR, newR := diff.GetChange("backup_retention_days")
 	if newR.(int) < oldR.(int) {
-		return fmt.Errorf("Reducing the value of backup_retention_days is not allowed.")
+		return fmt.Errorf("reducing the value of backup_retention_days is not allowed")
 	}
 	if oldH.(string) != "Disabled" && oldH.(string) != "" && newS.(string) == "Burstable" {
 		return fmt.Errorf("disable high_availability before updating to Burstable compute/service tier")
 	}
 
 	if diff.Get("delegated_subnet_id").(string) != "" && diff.Get("private_dns_zone_id") == "" {
-
+		return fmt.Errorf("private_dns_zone_id is required when delegated_subnet_id is set")
 	}
 
 	return nil

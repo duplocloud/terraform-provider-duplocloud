@@ -256,6 +256,32 @@ type DuploAzurePostgresqlFlexibleV2Request struct {
 	AvailabilityZone string `json:"AvailabilityZone,omitempty"`
 }
 
+type DuploAzurePostgresqlFlexibleV2 struct {
+	Name string `json:"name"`
+	Sku  struct {
+		Tier string `json:"tier"`
+		Name string `json:"name"`
+	} `json:"sku"`
+	BackUp struct {
+		RetentionDays      int    `json:"backupRetentionDays"`
+		GeoRedundantBackUp string `json:"geoRedundantBackup"`
+	} `json:"properties.backup"`
+	HighAvailability struct {
+		Mode string `json:"mode"`
+	} `json:"properties.highAvailability"`
+	Storage struct {
+		StorageSize int `json:"storageSizeGB"`
+	} `json:"properties.storage"`
+
+	Subnet string `json:"id"`
+
+	AdminUserName string                 `json:"properties.administratorLogin"`
+	Location      string                 `json:"location"`
+	Version       string                 `json:"properties.version"`
+	State         string                 `json:"properties.state"`
+	Tags          map[string]interface{} `json:"tags"`
+}
+
 type DuploAzurePostgresqlFlexibleV2ADConfig struct {
 	ADPrincipalName string `json:"PrincipalName"`
 	ADTenantId      string `json:"TenantId"`
@@ -263,7 +289,7 @@ type DuploAzurePostgresqlFlexibleV2ADConfig struct {
 	ObjectId        string `json:"-"`
 }
 
-func (c *Client) PostgresqlFlexibleDatabaseUpdateADConfig(tenantID, dbName, objId string, rq DuploAzurePostgresqlFlexibleV2ADConfig) ClientError {
+func (c *Client) PostgresqlFlexibleDatabaseUpdateADConfig(tenantID, dbName, objId string, rq *DuploAzurePostgresqlFlexibleV2ADConfig) ClientError {
 	var rp interface{}
 	err := c.putAPI(
 		fmt.Sprintf("PostgresqlFlexibleDatabaseUpdateADConfig(%s, %s)", tenantID, dbName),
@@ -304,8 +330,8 @@ func (c *Client) PostgresqlFlexibleDatabaseV2Delete(tenantID string, name string
 	)
 }
 
-func (c *Client) PostgresqlFlexibleDatabaseV2Get(tenantID, name string) (*DuploAzurePostgresqlFlexible, ClientError) {
-	rp := DuploAzurePostgresqlFlexible{}
+func (c *Client) PostgresqlFlexibleDatabaseV2Get(tenantID, name string) (*DuploAzurePostgresqlFlexibleV2, ClientError) {
+	rp := DuploAzurePostgresqlFlexibleV2{}
 	err := c.getAPI(
 		fmt.Sprintf("PostgresqlFlexibleDatabaseV2Get(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/azure/arm/postgres/flexiServer/%s", tenantID, name),
