@@ -104,12 +104,10 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.K8SecretGet(tenantId, name)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	if rp == nil || rp.SecretName == "" {
+	rp, cerr := c.K8SecretGet(tenantId, name)
+	if cerr != nil {
 		d.SetId("")
+		log.Printf("%s", cerr.Error())
 		return nil
 	}
 
