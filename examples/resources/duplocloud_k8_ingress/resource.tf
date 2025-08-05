@@ -87,7 +87,7 @@ resource "duplocloud_k8_ingress" "ingress" {
   lbconfig {
     is_internal     = false
     dns_prefix      = "external-echo"
-    certificate_arn = "put your certificate ARN here"
+    certificate_arn = "<cert-arn1>,<cert-arn2>,..."
     https_port      = 443
   }
 
