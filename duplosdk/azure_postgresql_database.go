@@ -256,32 +256,6 @@ type DuploAzurePostgresqlFlexibleV2Request struct {
 	AvailabilityZone string `json:"AvailabilityZone,omitempty"`
 }
 
-type DuploAzurePostgresqlFlexibleV2 struct {
-	Name string `json:"name"`
-	Sku  struct {
-		Tier string `json:"tier"`
-		Name string `json:"name"`
-	} `json:"sku"`
-	BackUp struct {
-		RetentionDays      int    `json:"backupRetentionDays"`
-		GeoRedundantBackUp string `json:"geoRedundantBackup"`
-	} `json:"properties.backup"`
-	HighAvailability struct {
-		Mode string `json:"mode"`
-	} `json:"properties.highAvailability"`
-	Storage struct {
-		StorageSize int `json:"storageSizeGB"`
-	} `json:"properties.storage"`
-
-	Subnet string `json:"id"`
-
-	AdminUserName string                 `json:"properties.administratorLogin"`
-	Location      string                 `json:"location"`
-	Version       string                 `json:"properties.version"`
-	State         string                 `json:"properties.state"`
-	Tags          map[string]interface{} `json:"tags"`
-}
-
 type DuploAzurePostgresqlFlexibleV2ADConfig struct {
 	ADPrincipalName string `json:"PrincipalName"`
 	ADTenantId      string `json:"TenantId"`
@@ -315,7 +289,7 @@ func (c *Client) PostgresqlFlexibleDatabaseV2Update(tenantID string, rq *DuploAz
 	rp := map[string]interface{}{}
 	err := c.putAPI(
 		fmt.Sprintf("PostgresqlFlexibleDatabaseV2Update(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("v3/subscriptions/%s/azure/arm/postgres/flexiServer/%s", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/postgres/flexiServer", tenantID),
 		&rq,
 		&rp,
 	)
@@ -338,4 +312,47 @@ func (c *Client) PostgresqlFlexibleDatabaseV2Get(tenantID, name string) (*DuploA
 		&rp,
 	)
 	return &rp, err
+}
+
+type DuploAzurePostgresqlFlexibleV2 struct {
+	Name string `json:"Name"`
+	Sku  struct {
+		Tier string `json:"Tier"`
+		Name string `json:"Name"`
+	} `json:"Sku"`
+	BackUp struct {
+		RetentionDays      int    `json:"BackupRetentionDays"`
+		GeoRedundantBackUp string `json:"GeoRedundantBackup"`
+	} `json:"Backup"`
+	HighAvailability struct {
+		Mode string `json:"Mode"`
+	} `json:"HighAvailability"`
+	Storage struct {
+		StorageSize int `json:"StorageSizeInGB"`
+	} `json:"Storage"`
+
+	Network struct {
+		PublicNetworkAccess string `json:"PublicNetworkAccess"`
+		Subnet              string `json:"DelegatedSubnetResourceId"`
+		PrivateDnsZone      string `json:"PrivateDnsZoneArmResourceId"`
+	} `json:"Network"`
+
+	AuthConfig *struct {
+		ActiveDirectoryAuth string `json:"ActiveDirectoryAuth"`
+		PasswordAuth        string `json:"PasswordAuth"`
+		TenantId            string `json:"TenantId"`
+	} `json:"AuthConfig"`
+
+	AdminUserName string `json:"AdministratorLogin"`
+	Location      struct {
+		Name string `json:"Name"`
+	} `json:"Location"`
+
+	Version                    string                 `json:"Version"`
+	State                      string                 `json:"State"`
+	Tags                       map[string]interface{} `json:"tags"`
+	AzureResourceId            string                 `json:"Id"`
+	FullyQualifiedDomainName   string                 `json:"FullyQualifiedDomainName"`
+	PrivateEndpointConnections []string               `json:"PrivateEndpointConnections"`
+	AvailabilityZone           string                 `json:"AvailabilityZone"`
 }

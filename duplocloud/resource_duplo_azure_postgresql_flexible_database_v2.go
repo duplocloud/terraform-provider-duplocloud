@@ -167,29 +167,26 @@ func duploAzurePostgresqlFlexibleDatabaseSchemav2() map[string]*schema.Schema {
 			ValidateFunc: validation.StringInSlice([]string{"Enabled", "Disabled"}, false),
 			Description:  "Whether password authentication is allowed to access the PostgreSQL Flexible Server",
 		},
-		"acitve_directory_config": {
+		"azure_resource_id": {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "Id of postgresql flexible server returned from azure",
+		},
+		"private_connection_endpoints": {
 			Type:     schema.TypeList,
-			Optional: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"principal_name": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-					"tenant_id": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-					"principal_type": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-					"object_id": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-				},
+			Computed: true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
 			},
+		},
+		"active_directory_tenant_id": {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "Id of postgresql flexible server returned from azure",
+		},
+		"fully_qualified_domain_name": {
+			Type:     schema.TypeString,
+			Computed: true,
 		},
 	}
 }
@@ -350,9 +347,22 @@ func flattenAzurePostgresqlFlexibleDatabasev2(d *schema.ResourceData, duplo *dup
 	d.Set("backup_retention_days", duplo.BackUp.RetentionDays)
 	d.Set("geo_redundant_backup", duplo.BackUp.GeoRedundantBackUp)
 	d.Set("high_availability", duplo.HighAvailability.Mode)
-	//d.Set("subnet", duplo.)
+	d.Set("delegated_subnet_id", duplo.Network.Subnet)
+	d.Set("private_dns_zone_id", duplo.Network.PrivateDnsZone)
+	d.Set("public_network_access", duplo.Network.PublicNetworkAccess)
 	d.Set("tags", duplo.Tags)
-	d.Set("location", duplo.Location)
+	d.Set("location", duplo.Location.Name)
+	d.Set("active_directory_authentication", duplo.AuthConfig.ActiveDirectoryAuth)
+	d.Set("password_authentication", duplo.AuthConfig.PasswordAuth)
+	d.Set("active_directory_tenant_id", duplo.AuthConfig.TenantId)
+	d.Set("azure_resource_id", duplo.AzureResourceId)
+	d.Set("availability_zone", duplo.AvailabilityZone)
+	d.Set("fully_qualified_domain_name", duplo.FullyQualifiedDomainName)
+	con := []interface{}{}
+	for _, pc := range duplo.PrivateEndpointConnections {
+		con = append(con, pc)
+	}
+	d.Set("private_connection_endpoints", con)
 
 }
 

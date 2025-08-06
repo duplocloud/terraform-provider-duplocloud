@@ -65,8 +65,7 @@ func resourceAzurePostgresqlFlexibleDatabaseAD() *schema.Resource {
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 			Update: schema.DefaultTimeout(30 * time.Minute),
 		},
-		Schema:        duploAzurePostgresqlFlexibleDatabaseADSchema(),
-		CustomizeDiff: verifyPSQLFlexiV2Parameters,
+		Schema: duploAzurePostgresqlFlexibleDatabaseADSchema(),
 	}
 }
 
