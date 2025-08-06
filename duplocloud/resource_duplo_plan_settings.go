@@ -110,6 +110,7 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 	if (err != nil && err.Status() == 404) || settings == nil {
 		d.SetId("")
 		log.Printf("plan settings not found for plan %s", planID)
+		return nil
 	}
 	// Get plan DNS config.  If the config is "global", that means there is no plan DNS config.
 	dns, err := c.PlanGetDnsConfig(planID)
@@ -120,6 +121,7 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 	if (err != nil && err.Status() == 404) || settings == nil {
 		d.SetId("")
 		log.Printf("plan settings DNS config not found for plan %s", planID)
+		return nil
 	}
 
 	if dns != nil && dns.IsGlobalDNS {
@@ -134,6 +136,7 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 	if (err != nil && err.Status() == 404) || settings == nil {
 		d.SetId("")
 		log.Printf("plan settings not found for plan %s", planID)
+		return nil
 	}
 
 	// Set the simple fields first.
