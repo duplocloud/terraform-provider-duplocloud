@@ -110,6 +110,7 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 	if (err != nil && err.Status() == 404) || settings == nil {
 		d.SetId("")
 		log.Printf("plan settings not found for plan %s", planID)
+		return nil
 	}
 	// Get plan DNS config.  If the config is "global", that means there is no plan DNS config.
 	dns, err := c.PlanGetDnsConfig(planID)
@@ -120,6 +121,7 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 	if (err != nil && err.Status() == 404) || settings == nil {
 		d.SetId("")
 		log.Printf("plan settings DNS config not found for plan %s", planID)
+		return nil
 	}
 
 	if dns != nil && dns.IsGlobalDNS {
@@ -128,8 +130,13 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Get plan metadata.
 	allMetadata, err := c.PlanMetadataGetList(planID)
-	if err != nil {
-		return diag.Errorf("failed to retrieve plan metadata for '%s': %s", planID, err)
+	if err != nil && err.Status() != 404 {
+		return diag.Errorf("failed to retrieve plan settings for '%s': %s", planID, err)
+	}
+	if (err != nil && err.Status() == 404) || settings == nil {
+		d.SetId("")
+		log.Printf("plan settings not found for plan %s", planID)
+		return nil
 	}
 
 	// Set the simple fields first.
@@ -217,24 +224,39 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 	if _, ok := d.GetOk("unrestricted_ext_lb"); ok {
 		settings.UnrestrictedExtLB = false
 		_, err := c.PlanUpdateSettings(planID, settings)
-		if err != nil {
-			return diag.Errorf("failed to remove plan settings for '%s': %s", planID, err)
+		if err != nil && err.Status() != 404 {
+			return diag.Errorf("failed to update plan settings for '%s': %s", planID, err)
 		}
+		if (err != nil && err.Status() == 404) || settings == nil {
+			log.Printf("plan settings not found for plan %s", planID)
+			return nil
+		}
+
 	}
 
 	// Undo the plan DNS.
 	if _, ok := d.GetOk("dns_setting"); ok {
 		err := c.PlanDeleteDnsConfig(planID)
-		if err != nil {
+		if err != nil && err.Status() != 404 {
 			return diag.Errorf("failed to remove plan DNS config for '%s': %s", planID, err)
 		}
+		if (err != nil && err.Status() == 404) || settings == nil {
+			log.Printf("plan settings dns config not found for plan %s", planID)
+			return nil
+		}
+
 	}
 
 	// Undo the plan metadata
 	if _, ok := d.GetOk("metadata"); ok {
 		allMetadata, err := c.PlanMetadataGetList(planID)
-		if err != nil {
+
+		if err != nil && err.Status() != 404 {
 			return diag.Errorf("failed to retrieve plan metadata for '%s': %s", planID, err)
+		}
+		if (err != nil && err.Status() == 404) || settings == nil {
+			log.Printf("plan settings metadata not found for plan %s", planID)
+			return nil
 		}
 
 		// Get the previous and desired plan configs
@@ -245,6 +267,13 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 		err = c.PlanChangeMetadata(planID, previous, desired)
 		if err != nil {
 			return diag.Errorf("failed to remove plan metadata for '%s': %s", planID, err)
+		}
+		if err != nil && err.Status() != 404 {
+			return diag.Errorf("failed to remove plan metadata for '%s': %s", planID, err)
+		}
+		if (err != nil && err.Status() == 404) || settings == nil {
+			log.Printf("plan settings metadata not found for plan %s", planID)
+			return nil
 		}
 	}
 
