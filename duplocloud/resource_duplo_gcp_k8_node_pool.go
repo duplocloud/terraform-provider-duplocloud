@@ -725,6 +725,7 @@ func resourceGCPNodePoolRead(ctx context.Context, d *schema.ResourceData, m inte
 	duplo, err := c.GCPK8NodePoolGet(tenantID, fullName)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("GCP node pool %s not found", fullName)
 			d.SetId("") // object missing or deleted
 			return nil
 		}
@@ -732,6 +733,7 @@ func resourceGCPNodePoolRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 
 	if duplo == nil {
+		log.Printf("GCP node pool %s not found", fullName)
 		d.SetId("") // object missing or deleted
 		return nil
 	}
@@ -917,8 +919,12 @@ func resourceGcpNodePoolDelete(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	err = c.GCPK8NodePoolDelete(tenantID, fullName)
-	if err != nil {
+	if err != nil && err.Status() != 404 {
 		return diag.Errorf("Error deleting node pool '%s': %s", id, err)
+	}
+	if err != nil && err.Status() == 404 {
+		log.Printf("GCP node pool %s not found", fullName)
+		return nil
 	}
 	derr := gcpNodePoolWaitUntilAvailableForDeleted(ctx, c, tenantID, fullName, d.Timeout("delete"))
 	if derr != nil {

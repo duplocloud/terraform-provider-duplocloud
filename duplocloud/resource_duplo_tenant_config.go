@@ -81,12 +81,14 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 	tenant, err := c.TenantGetV2(tenantID)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("Tenant config for tenant %s not found", tenantID)
 			d.SetId("")
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
 	}
 	if tenant == nil {
+		log.Printf("Tenant config for tenant %s not found", tenantID)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -176,6 +178,7 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	if cerr != nil {
 		if cerr.Status() == 404 {
+			log.Printf("Tenant config for tenant %s not found", tenantID)
 			d.SetId("")
 			return nil
 		}
