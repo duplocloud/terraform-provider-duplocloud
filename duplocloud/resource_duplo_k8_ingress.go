@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sort"
 	"strings"
 	"time"
 
@@ -57,39 +56,18 @@ func k8sIngressSchema() map[string]*schema.Schema {
 					"certificate_arn": {
 						Description: "The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.",
 						Type:        schema.TypeString,
-						Computed:    true,
-						Optional:    true,
-						Deprecated:  "This field has been deprecated use certificate_arns",
-						DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-							normalize := func(s string) []string {
-								items := strings.Split(s, ",")
-								for i := range items {
-									items[i] = strings.TrimSpace(items[i])
-								}
-								sort.Strings(items)
-								return items
-							}
-
-							oldList := normalize(old)
-							newList := normalize(new)
-
-							// Compare sorted lists
-							if len(oldList) != len(newList) {
-								return false
-							}
-							for i := range oldList {
-								if oldList[i] != newList[i] {
-									return false
-								}
-							}
-							return true
-						},
+						//Computed:      true,
+						Optional:      true,
+						Deprecated:    "This field has been deprecated use certificate_arns",
+						ConflictsWith: []string{"lbconfig.0.certificate_arns"},
 					},
 					"certificate_arns": {
 						Description: "The list of ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.",
 						Type:        schema.TypeList,
-						Computed:    true,
-						Optional:    true,
+						//Computed:      true,
+						Optional:      true,
+						ConflictsWith: []string{"lbconfig.0.certificate_arn"},
+
 						Elem: &schema.Schema{
 							Type: schema.TypeString,
 						},
@@ -354,8 +332,18 @@ func flattenK8sIngress(tenantId string, d *schema.ResourceData, duplo *duplosdk.
 
 	// Set LBConfig
 	if duplo.LbConfig != nil {
-		depCertField := d.Get("lbconfig.0.certificate_arn").(string)
-		d.Set("lbconfig", []interface{}{flattenK8sIngressLBConfig(duplo.LbConfig, depCertField)})
+		confHandler := map[string]bool{
+			"arn":  false,
+			"arns": false,
+		}
+		arn := d.Get("lbconfig.0.certificate_arn").(string)
+		arns := d.Get("lbconfig.0.certificate_arns").([]interface{})
+		if arn != "" {
+			confHandler["arn"] = true
+		} else if len(arns) > 0 {
+			confHandler["arns"] = true
+		}
+		d.Set("lbconfig", []interface{}{flattenK8sIngressLBConfig(duplo.LbConfig, confHandler)})
 	}
 
 	// Set Rules
@@ -371,28 +359,27 @@ func flattenK8sIngress(tenantId string, d *schema.ResourceData, duplo *duplosdk.
 	}
 }
 
-func flattenK8sIngressLBConfig(duplo *duplosdk.DuploK8sLbConfig, depCertField string) map[string]interface{} {
+func flattenK8sIngressLBConfig(duplo *duplosdk.DuploK8sLbConfig, confHandler map[string]bool) map[string]interface{} {
 	m := map[string]interface{}{
 		"is_internal": !duplo.IsPublic,
 		"dns_prefix":  duplo.DnsPrefix,
 	}
-	certArns := strings.Split(duplo.CertArn, ",")
-	if len(certArns) > 0 {
-		arns := make([]interface{}, 0, len(certArns))
-		xs := []string{}
-		for _, certArn := range certArns {
-			arns = append(arns, certArn)
-			if strings.Contains(depCertField, certArn) {
-				xs = append(xs, certArn)
-			}
-		}
-		if depCertField == "" {
-			m["certificate_arn"] = nil
-		} else {
-			m["certificate_arn"] = strings.Join(xs, ",")
-		}
-		m["certificate_arns"] = arns
+	if confHandler["arn"] {
+		m["certificate_arn"] = duplo.CertArn
 	}
+
+	if confHandler["arns"] {
+		certArns := strings.Split(duplo.CertArn, ",")
+		if len(certArns) > 0 {
+			arns := make([]interface{}, 0, len(certArns))
+			for _, certArn := range certArns {
+				arns = append(arns, certArn)
+			}
+
+			m["certificate_arns"] = arns
+		}
+	}
+
 	if duplo.Listeners != nil && len(duplo.Listeners.Http) > 0 {
 		m["http_port"] = duplo.Listeners.Http[0]
 	}
