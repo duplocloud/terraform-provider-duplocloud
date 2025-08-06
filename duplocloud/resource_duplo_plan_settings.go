@@ -2,9 +2,10 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -103,15 +104,24 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Get "special" plan settings.
 	settings, err := c.PlanGetSettings(planID)
-	if err != nil {
+	if err != nil && err.Status() != 404 {
 		return diag.Errorf("failed to retrieve plan settings for '%s': %s", planID, err)
 	}
-
+	if (err != nil && err.Status() == 404) || settings == nil {
+		d.SetId("")
+		log.Printf("plan settings not found for plan %s", planID)
+	}
 	// Get plan DNS config.  If the config is "global", that means there is no plan DNS config.
 	dns, err := c.PlanGetDnsConfig(planID)
-	if err != nil {
+	if err != nil && err.Status() != 404 {
 		return diag.Errorf("failed to retrieve plan DNS config for '%s': %s", planID, err)
 	}
+
+	if (err != nil && err.Status() == 404) || settings == nil {
+		d.SetId("")
+		log.Printf("plan settings DNS config not found for plan %s", planID)
+	}
+
 	if dns != nil && dns.IsGlobalDNS {
 		dns = nil
 	}
@@ -198,7 +208,8 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 	}
 
 	// Skip if plan does not exist.
-	if settings == nil {
+	if (err != nil && err.Status() == 404) || settings == nil {
+		log.Printf("plan settings not found for plan %s", planID)
 		return nil
 	}
 

@@ -132,6 +132,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 	duplo, err := c.TenantGetV2(tenantID)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("Tenant %s not found", tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -255,6 +256,7 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 		duplo, err := c.TenantGetV2(tenantID)
 		if err != nil {
 			if err.Status() == 404 {
+				log.Printf("Tenant %s not found", tenantID)
 				return nil
 			}
 			return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
@@ -265,6 +267,7 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 		err = c.TenantDelete(tenantID)
 		if err != nil {
 			if err.Status() == 404 {
+				log.Printf("Tenant %s not found", tenantID)
 				return nil
 			}
 			return diag.Errorf("Error deleting tenant '%s': %s", tenantID, err)
