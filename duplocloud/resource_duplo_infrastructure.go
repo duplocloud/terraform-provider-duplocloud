@@ -339,11 +339,12 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	missing, err := infrastructureRead(c, d, name)
-	if err != nil {
+	if err != nil && err.Status() != 404 {
 		return diag.Errorf("Unable to retrieve infrastructure '%s': %s", name, err)
 	}
-	if missing {
+	if (err != nil && err.Status() == 404) || missing {
 		d.SetId("") // object missing
+		log.Printf("Infrastructure not found")
 		return nil
 	}
 
@@ -580,7 +581,7 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 	return err
 }
 
-func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string) (bool, error) {
+func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string) (bool, duplosdk.ClientError) {
 	var infra *duplosdk.DuploInfrastructureConfig
 	config, err := c.InfrastructureGetConfig(name)
 	if err != nil {
@@ -735,7 +736,7 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	if config.Cloud == 3 {
 		natIPs, err := c.GetGCPInfraNATIPs(name)
 		if err != nil {
-			return false, fmt.Errorf("error retrieving GCP NAT IPs for infrastructure '%s': %s", name, err)
+			return false, err
 		}
 		if natIPs != nil {
 			natIPsList := make([]interface{}, len(natIPs))
