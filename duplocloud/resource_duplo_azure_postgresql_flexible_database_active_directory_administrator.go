@@ -24,33 +24,40 @@ func duploAzurePostgresqlFlexibleDatabaseADSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"db_name": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Description: "Postgres flexible server database name",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"principal_name": {
-			Type:     schema.TypeString,
-			Required: true,
+			Description: "Azure account user name",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
 		},
 		"azure_tenant_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			Description: "Azure GUID of the tenant",
 		},
 		"principal_type": {
-			Type:     schema.TypeString,
-			Required: true,
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringInSlice([]string{"User", "Group", "ServicePrincipal"}, false),
+			Description:  "Specify the type of Azure AD identity being used for that administrator.",
 		},
 		"object_id": {
-			Type:     schema.TypeString,
-			Required: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+			Description: "The Azure Active Directory (AAD) Object ID of the user, group, or service principal. This is a globally unique identifier assigned by AAD to each identity, used to manage access and authentication across Azure resources.",
 		},
 	}
 }
 
 func resourceAzurePostgresqlFlexibleDatabaseAD() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_postgresql_flexible_db_ad_administrator` manages an azure postgresql flexible  active directory configuration.",
+		Description: "`duplocloud_azure_postgresql_flexible_db_ad_administrator` manages an azure postgresql flexible  active directory configuration. Supported with duplocloud_azure_postgresql_flexible_database_v2",
 
 		ReadContext:   resourceAzurePostgresqlFlexibleDatabaseADRead,
 		CreateContext: resourceAzurePostgresqlFlexibleDatabaseADCreateOrUpdate,
@@ -71,14 +78,13 @@ func resourceAzurePostgresqlFlexibleDatabaseAD() *schema.Resource {
 
 func resourceAzurePostgresqlFlexibleDatabaseADRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, name, err := parseAzurePostgresqlDatabaseIdParts(id)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	idParts := strings.Split(id, "/")
+	tenantID, name, objectId := idParts[0], idParts[1], idParts[2]
+
 	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseADRead(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	duplo, clientErr := c.PostgresqlFlexibleDatabaseGet(tenantID, name)
+	duplo, clientErr := c.PostgresqlFlexibleDatabaseADGet(tenantID, name, objectId)
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
@@ -90,14 +96,17 @@ func resourceAzurePostgresqlFlexibleDatabaseADRead(ctx context.Context, d *schem
 		}
 		return diag.Errorf("Unable to retrieve tenant %s azure postgresql flexible database %s : %s", tenantID, name, clientErr)
 	}
-	// TODO Set ccomputed attributes from duplo object to tf state.
-	//	flattenAzurePostgresqlFlexibleDatabasev2(d, duplo)
+	d.Set("tenant_id", tenantID)
+	d.Set("object_id", objectId)
+	d.Set("azure_tenant_id", duplo.ADTenantId)
+	d.Set("principal_name", duplo.ADPrincipalName)
+	d.Set("principal_type", duplo.ADPrincipalType)
+	d.Set("db_name", name)
 	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseADRead(%s, %s): end", tenantID, name)
 	return nil
 }
 
 func resourceAzurePostgresqlFlexibleDatabaseADCreateOrUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var err error
 
 	tenantID := d.Get("tenant_id").(string)
 	objectId := d.Get("object_id").(string)
@@ -112,12 +121,12 @@ func resourceAzurePostgresqlFlexibleDatabaseADCreateOrUpdate(ctx context.Context
 	id := fmt.Sprintf("%s/%s/%s", tenantID, name, objectId)
 	d.SetId(id)
 
-	err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"), "create")
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	//err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"), "create")
+	//if err != nil {
+	//	return diag.FromErr(err)
+	//}
 
-	diags := resourceAzurePostgresqlFlexibleDatabasev2Read(ctx, d, m)
+	diags := resourceAzurePostgresqlFlexibleDatabaseADRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseADCreateOrUpdate(%s, %s): end", tenantID, name)
 	return diags
 }
@@ -131,31 +140,14 @@ func expandADConfig(d *schema.ResourceData) duplosdk.DuploAzurePostgresqlFlexibl
 	}
 }
 
-/*
-func flattenAzurePostgresqlFlexibleDatabaseAD(d *schema.ResourceData, duplo *duplosdk.DuploAzurePostgresqlFlexibleV2) {
-	d.Set("principal_name", duplo.Activ)
-	d.Set("azure_tenant_id", duplo)
-	d.Set("principal_type", duplo.Sku.Name)
-	d.Set("administrator_login", duplo.AdminUserName)
-	d.Set("storage_gb", duplo.Storage.StorageSize)
-	d.Set("version", duplo.Version)
-	d.Set("backup_retention_days", duplo.BackUp.RetentionDays)
-	d.Set("geo_redundant_backup", duplo.BackUp.GeoRedundantBackUp)
-	d.Set("high_availability", duplo.HighAvailability.Mode)
-	//d.Set("subnet", duplo.)
-	d.Set("tags", duplo.Tags)
-	d.Set("location", duplo.Location)
-
-}*/
-
 func resourceAzurePostgresqlFlexibleDatabaseADDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	idParts := strings.Split("/", id)
+	idParts := strings.Split(id, "/")
 	tenantID, name, objectId := idParts[0], idParts[1], idParts[2]
 	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseADDelete(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	clientErr := c.PostgresqlFlexibleDatabaseUpdateADConfig(tenantID, name, objectId, nil)
+	clientErr := c.PostgresqlFlexibleDatabaseADDelete(tenantID, name, objectId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil

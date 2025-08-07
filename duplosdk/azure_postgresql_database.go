@@ -267,11 +267,30 @@ func (c *Client) PostgresqlFlexibleDatabaseUpdateADConfig(tenantID, dbName, objI
 	var rp interface{}
 	err := c.postAPI(
 		fmt.Sprintf("PostgresqlFlexibleDatabaseUpdateADConfig(%s, %s)", tenantID, dbName),
-		fmt.Sprintf("subscriptions/%s/azure/arm/postgres/flexiServer/%s/authentication/%s", tenantID, dbName, objId),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/postgres/flexiServer/%s/authentication/%s", tenantID, dbName, objId),
 		&rq,
 		&rp,
 	)
 	return err
+}
+
+func (c *Client) PostgresqlFlexibleDatabaseADDelete(tenantID string, name, objectId string) ClientError {
+	var rp interface{}
+	return c.deleteAPI(
+		fmt.Sprintf("PostgresqlFlexibleDatabaseDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/postgres/flexiServer/%s/authentication/%s", tenantID, name, objectId),
+		&rp,
+	)
+}
+
+func (c *Client) PostgresqlFlexibleDatabaseADGet(tenantID string, name, objectId string) (*DuploAzurePostgresqlFlexibleV2ADConfig, ClientError) {
+	rp := DuploAzurePostgresqlFlexibleV2ADConfig{}
+	err := c.getAPI(
+		fmt.Sprintf("PostgresqlFlexibleDatabaseDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/postgres/flexiServer/%s/authentication/%s", tenantID, name, objectId),
+		&rp,
+	)
+	return &rp, err
 }
 
 func (c *Client) PostgresqlFlexibleDatabaseV2Create(tenantID string, rq *DuploAzurePostgresqlFlexibleV2Request) (map[string]interface{}, ClientError) {
