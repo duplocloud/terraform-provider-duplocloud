@@ -265,7 +265,7 @@ type DuploAzurePostgresqlFlexibleV2ADConfig struct {
 
 func (c *Client) PostgresqlFlexibleDatabaseUpdateADConfig(tenantID, dbName, objId string, rq *DuploAzurePostgresqlFlexibleV2ADConfig) ClientError {
 	var rp interface{}
-	err := c.putAPI(
+	err := c.postAPI(
 		fmt.Sprintf("PostgresqlFlexibleDatabaseUpdateADConfig(%s, %s)", tenantID, dbName),
 		fmt.Sprintf("subscriptions/%s/azure/arm/postgres/flexiServer/%s/authentication/%s", tenantID, dbName, objId),
 		&rq,
