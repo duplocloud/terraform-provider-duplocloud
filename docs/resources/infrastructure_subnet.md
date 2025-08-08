@@ -28,7 +28,7 @@ resource "duplocloud_infrastructure_subnet" "az-subnet" {
   infra_name        = "myinfra"
   cidr_block        = "10.34.1.0/24"
   type              = "appgwsubnet"
-  service_endpoints = ["Microsoft.Storage"]
+  service_endpoints = ["Microsoft.App/environments"]
 }
 ```
 
@@ -40,12 +40,12 @@ resource "duplocloud_infrastructure_subnet" "az-subnet" {
 - `cidr_block` (String)
 - `infra_name` (String)
 - `name` (String)
-- `type` (String) Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace`, `mysql-flexiserver`, `postgres-flexiserver` is used for azure.
+- `type` (String) Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace`, `mysql-flexiserver`, `postgres-flexiserver` ,`app-service-plan`,`sql-server`,`cosmos-db` is used for azure.
 
 ### Optional
 
 - `isolated_network` (Boolean) Determines whether the isolated network is enabled. This is applicable only for Azure subnets. Defaults to `false`.
-- `service_endpoints` (Set of String) The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.AzureActiveDirectory`, `Microsoft.AzureCosmosDB`, `Microsoft.ContainerRegistry`, `Microsoft.EventHub`, `Microsoft.KeyVault`, `Microsoft.ServiceBus`,`Microsoft.Sql`, `Microsoft.Storage` and `Microsoft.Web`. This is applicable only for Azure subnets.
+- `service_endpoints` (Set of String) The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.Databricks/workspaces`,`Microsoft.DBforMySQL/flexibleServers`,`Microsoft.DBforPostgreSQL/flexibleServers`,`Microsoft.App/environments`, `Microsoft.AzureCosmosDB/clusters`, `Microsoft.Sql/managedInstances` and `Microsoft.Web/serverFarms`. This is applicable only for Azure subnets.
 - `tags` (Map of String)
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `zone` (String) The Duplo zone that the subnet resides in.  Will be one of:  `"A"`, `"B"`, `"C"`, or `"D"`. This is applicable only for AWS subnets.
