@@ -97,15 +97,32 @@ func (c *Client) AsgProfileCreate(rq *DuploAsgProfile) (string, ClientError) {
 	return c.AsgProfileCreateOrUpdate(rq, false)
 }
 
+// AsgProfileUpdate updates an ASG profile via the Duplo API.
+func (c *Client) AsgProfileUpdate(rq *DuploAsgProfile) ClientError {
+	err := c.AsgProfileUpdateV3(rq)
+	if err != nil && err.Status() != 404 {
+		_, err := c.AsgProfileCreateOrUpdate(rq, true)
+
+		return err
+	}
+	return err
+}
+
 // AsgProfileCreateOrUpdate creates or updates a AASG profile via the Duplo API.
 func (c *Client) AsgProfileCreateOrUpdate(rq *DuploAsgProfile, updating bool) (string, ClientError) {
 
 	// Build the request
 	var verb, msg, api string
 
-	verb = "POST"
-	msg = fmt.Sprintf("AsgProfileCreateOrUpdate(%s, %s)", rq.TenantId, rq.FriendlyName)
-	api = fmt.Sprintf("subscriptions/%s/UpdateTenantAsgProfile", rq.TenantId)
+	if updating {
+		verb = "POST"
+		msg = fmt.Sprintf("AsgProfileCreateOrUpdate(%s, %s)", rq.TenantId, rq.FriendlyName)
+		api = fmt.Sprintf("subscriptions/%s/UpdateTenantAsgProfile", rq.TenantId)
+	} else {
+		verb = "POST"
+		msg = fmt.Sprintf("AsgProfileCreateOrUpdate(%s, %s)", rq.TenantId, rq.FriendlyName)
+		api = fmt.Sprintf("subscriptions/%s/UpdateTenantAsgProfile", rq.TenantId)
+	}
 
 	// Call the API.
 	rp := ""
@@ -116,8 +133,7 @@ func (c *Client) AsgProfileCreateOrUpdate(rq *DuploAsgProfile, updating bool) (s
 	return rp, err
 }
 
-// AsgProfileUpdate updates an ASG profile via the Duplo API.
-func (c *Client) AsgProfileUpdate(rq *DuploAsgProfile) ClientError {
+func (c *Client) AsgProfileUpdateV3(rq *DuploAsgProfile) ClientError {
 
 	// Build the request
 	var rp interface{}
