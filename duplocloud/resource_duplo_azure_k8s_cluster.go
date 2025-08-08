@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -162,8 +163,8 @@ func resourceAzureK8sClusterDelete(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.AksConfig {
-	body := &duplosdk.AksConfig{
+func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.DuploAksConfig {
+	body := &duplosdk.DuploAksConfig{
 		Name:              d.Get("name").(string),
 		PrivateCluster:    d.Get("private_cluster_enabled").(bool),
 		K8sVersion:        d.Get("kubernetes_version").(string),
@@ -180,7 +181,7 @@ func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.AksConfig {
 	return body
 }
 
-func flattenAzureK8sCluster(d *schema.ResourceData, duplo *duplosdk.AksConfig) {
+func flattenAzureK8sCluster(d *schema.ResourceData, duplo *duplosdk.DuploAksConfig) {
 	d.Set("name", duplo.Name)
 	d.Set("private_cluster_enabled", duplo.PrivateCluster)
 	d.Set("kubernetes_version", duplo.K8sVersion)
