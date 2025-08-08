@@ -98,8 +98,14 @@ func (c *Client) AsgProfileCreate(rq *DuploAsgProfile) (string, ClientError) {
 }
 
 // AsgProfileUpdate updates an ASG profile via the Duplo API.
-func (c *Client) AsgProfileUpdate(rq *DuploAsgProfile) (string, ClientError) {
-	return c.AsgProfileCreateOrUpdate(rq, true)
+func (c *Client) AsgProfileUpdate(rq *DuploAsgProfile) ClientError {
+	err := c.AsgProfileUpdateV3(rq)
+	if err != nil && err.Status() != 404 {
+		_, err := c.AsgProfileCreateOrUpdate(rq, true)
+
+		return err
+	}
+	return err
 }
 
 // AsgProfileCreateOrUpdate creates or updates a AASG profile via the Duplo API.
@@ -125,6 +131,16 @@ func (c *Client) AsgProfileCreateOrUpdate(rq *DuploAsgProfile, updating bool) (s
 		return rp, err
 	}
 	return rp, err
+}
+
+func (c *Client) AsgProfileUpdateV3(rq *DuploAsgProfile) ClientError {
+
+	// Build the request
+	var rp interface{}
+	return c.putAPI(fmt.Sprintf("AsgProfileUpdate(%s, %s)", rq.TenantId, rq.FriendlyName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/asg", rq.TenantId), rq,
+		&rp)
+
 }
 
 // AsgProfileDelete deletes a ASG profile via the Duplo API.
