@@ -71,13 +71,16 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				ForceNew:    true,
 			},
 			"service_endpoints": {
-				Description: "The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.Databricks/workspaces`,`Microsoft.DBforMySQL/flexibleServers`,`Microsoft.DBforPostgreSQL/flexibleServers`,`Microsoft.App/environments`, `Microsoft.AzureCosmosDB/clusters`, `Microsoft.Sql/managedInstances` and `Microsoft.Web/serverFarms`. This is applicable only for Azure subnets.",
+				Description: "The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.AzureActiveDirectory`, `Microsoft.AzureCosmosDB`, `Microsoft.ContainerRegistry`, `Microsoft.EventHub`, `Microsoft.KeyVault`, `Microsoft.ServiceBus`,`Microsoft.Sql`, `Microsoft.Storage` and `Microsoft.Web`. This is applicable only for Azure subnets.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				ForceNew:    true,
+
+				Elem: &schema.Schema{Type: schema.TypeString},
 			},
 			"tags":     tagsSchema(),
 			"tags_all": tagsSchemaComputed(),
