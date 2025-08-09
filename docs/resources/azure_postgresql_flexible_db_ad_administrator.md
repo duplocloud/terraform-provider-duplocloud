@@ -39,13 +39,34 @@ resource "duplocloud_azure_postgresql_flexible_database_v2" "db" {
   public_network_access           = "Disabled"
 }
 
+
 resource "duplocloud_azure_postgresql_flexible_db_ad_administrator" "adauth" {
   tenant_id       = duplocloud_azure_postgresql_flexible_database_v2.db.tenant_id
   db_name         = duplocloud_azure_postgresql_flexible_database_v2.db.name
   azure_tenant_id = duplocloud_azure_postgresql_flexible_database_v2.db.active_directory_tenant_id
-  principal_name  = "nikhil.nambiar@duplocloud.net"
+  principal_name  = "abc@xyz.com"
   principal_type  = "User"
   object_id       = "33b6ac35-ec39-4d5a-a42d-3bb4b4f56312"
+}
+
+
+resource "duplocloud_azure_postgresql_flexible_db_ad_administrator" "adauth1" {
+  tenant_id       = duplocloud_azure_postgresql_flexible_database_v2.db.tenant_id
+  db_name         = duplocloud_azure_postgresql_flexible_database_v2.db.name
+  azure_tenant_id = duplocloud_azure_postgresql_flexible_database_v2.db.active_directory_tenant_id
+  principal_name  = "testdbgrp"
+  principal_type  = "Group"
+  object_id       = "52af6ab7-ea15-4390-a707-b72bc691eb5c"
+}
+
+
+resource "duplocloud_azure_postgresql_flexible_db_ad_administrator" "adauth2" {
+  tenant_id       = duplocloud_azure_postgresql_flexible_database_v2.db.tenant_id
+  db_name         = duplocloud_azure_postgresql_flexible_database_v2.db.name
+  azure_tenant_id = duplocloud_azure_postgresql_flexible_database_v2.db.active_directory_tenant_id
+  principal_name  = "Elasticsearch"
+  principal_type  = "ServicePrincipal"
+  object_id       = "190f2be3-79a6-4e64-ac2f-18308ab3305d"
 }
 ```
 

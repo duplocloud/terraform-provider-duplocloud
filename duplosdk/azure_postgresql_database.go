@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -260,7 +261,7 @@ type DuploAzurePostgresqlFlexibleV2ADConfig struct {
 	ADPrincipalName string `json:"PrincipalName"`
 	ADTenantId      string `json:"TenantId"`
 	ADPrincipalType string `json:"PrincipalType"`
-	ObjectId        string `json:"-"`
+	ObjectId        string `json:"ObjectId"`
 }
 
 func (c *Client) PostgresqlFlexibleDatabaseUpdateADConfig(tenantID, dbName, objId string, rq *DuploAzurePostgresqlFlexibleV2ADConfig) ClientError {
@@ -283,14 +284,20 @@ func (c *Client) PostgresqlFlexibleDatabaseADDelete(tenantID string, name, objec
 	)
 }
 
-func (c *Client) PostgresqlFlexibleDatabaseADGet(tenantID string, name, objectId string) (*DuploAzurePostgresqlFlexibleV2ADConfig, ClientError) {
-	rp := DuploAzurePostgresqlFlexibleV2ADConfig{}
+func (c *Client) PostgresqlFlexibleDatabaseADGet(tenantID string, name, objectId, principalType string) (*DuploAzurePostgresqlFlexibleV2ADConfig, ClientError) {
+	rp := []DuploAzurePostgresqlFlexibleV2ADConfig{}
 	err := c.getAPI(
 		fmt.Sprintf("PostgresqlFlexibleDatabaseDelete(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/azure/arm/postgres/flexiServer/%s/authentication/%s", tenantID, name, objectId),
+		fmt.Sprintf("v3/subscriptions/%s/azure/arm/postgres/flexiServer/%s/authentication", tenantID, name),
 		&rp,
 	)
-	return &rp, err
+	for _, ad := range rp {
+		log.Printf("[Devug] match response AD %s/%s == %s/%s", ad.ObjectId, ad.ADPrincipalType, objectId, principalType)
+		if ad.ObjectId == objectId && ad.ADPrincipalType == principalType {
+			return &ad, nil
+		}
+	}
+	return nil, err
 }
 
 func (c *Client) PostgresqlFlexibleDatabaseV2Create(tenantID string, rq *DuploAzurePostgresqlFlexibleV2Request) (map[string]interface{}, ClientError) {
