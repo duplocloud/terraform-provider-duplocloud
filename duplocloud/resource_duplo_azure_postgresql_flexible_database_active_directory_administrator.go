@@ -10,6 +10,7 @@ import (
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -79,12 +80,12 @@ func resourceAzurePostgresqlFlexibleDatabaseAD() *schema.Resource {
 func resourceAzurePostgresqlFlexibleDatabaseADRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	tenantID, name, objectId := idParts[0], idParts[1], idParts[2]
+	tenantID, name, objectId, principalType := idParts[0], idParts[1], idParts[2], idParts[3]
 
 	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseADRead(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	duplo, clientErr := c.PostgresqlFlexibleDatabaseADGet(tenantID, name, objectId)
+	duplo, clientErr := c.PostgresqlFlexibleDatabaseADGet(tenantID, name, objectId, principalType)
 	if duplo == nil {
 		d.SetId("") // object missing
 		return nil
@@ -118,14 +119,17 @@ func resourceAzurePostgresqlFlexibleDatabaseADCreateOrUpdate(ctx context.Context
 	if cerr != nil {
 		return diag.Errorf("Failed to Active directory user for tenantId %s postgres flexible server %s", tenantID, name)
 	}
-	id := fmt.Sprintf("%s/%s/%s", tenantID, name, objectId)
+	id := fmt.Sprintf("%s/%s/%s/%s", tenantID, name, objectId, adc.ADPrincipalType)
 	d.SetId(id)
 
 	//err = postgresqlFlexibleDBWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"), "create")
 	//if err != nil {
 	//	return diag.FromErr(err)
 	//}
-
+	err := waitUntilADconfigured(ctx, c, tenantID, name, objectId, adc.ADPrincipalType, d.Timeout("create"))
+	if err != nil {
+		return diag.Errorf("Error waiting for active directory configuration for tenant %s postgres flexible server %s: %s", tenantID, name, err)
+	}
 	diags := resourceAzurePostgresqlFlexibleDatabaseADRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseADCreateOrUpdate(%s, %s): end", tenantID, name)
 	return diags
@@ -147,14 +151,62 @@ func resourceAzurePostgresqlFlexibleDatabaseADDelete(ctx context.Context, d *sch
 	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseADDelete(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	clientErr := c.PostgresqlFlexibleDatabaseADDelete(tenantID, name, objectId)
-	if clientErr != nil {
-		if clientErr.Status() == 404 {
-			return nil
-		}
-		return diag.Errorf("Unable to delete tenant %s azure postgresql database '%s': %s", tenantID, name, clientErr)
+	//err is set to nil for 404 so no need to check for it
+	err := ensureADconfiguredDelete(ctx, c, tenantID, name, objectId, d.Timeout("delete"))
+	if err != nil {
+		return diag.Errorf("Unable to delete tenant %s azure postgresql database active directory authentication '%s': %s", tenantID, name, err)
 	}
 
 	log.Printf("[TRACE] resourceAzurePostgresqlFlexibleDatabaseADDelete(%s, %s): end", tenantID, name)
 	return nil
+}
+
+func waitUntilADconfigured(ctx context.Context, c *duplosdk.Client, tenantID, name, objectId, principalType string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			rp, err := c.PostgresqlFlexibleDatabaseADGet(tenantID, name, objectId, principalType)
+			status := "pending"
+			if rp != nil {
+				status = "ready"
+			}
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] waitUntilADconfigured(%s, %s,%s)", tenantID, name, objectId)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+func ensureADconfiguredDelete(ctx context.Context, c *duplosdk.Client, tenantID, name, objectId string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"ready"},
+		Refresh: func() (interface{}, string, error) {
+			err := c.PostgresqlFlexibleDatabaseADDelete(tenantID, name, objectId)
+			if err == nil {
+				log.Printf("Delete status ready")
+				return "deleted", "ready", nil
+			}
+			if err.Status() == 404 {
+				log.Printf("Delete status ready (404)")
+				return "deleted", "ready", nil
+			}
+			if strings.Contains(err.Error(), "is busy with another operation") {
+				return nil, "pending", nil
+			}
+			return nil, "pending", err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] waitUntilADconfigured(%s, %s,%s)", tenantID, name, objectId)
+	_, err := stateConf.WaitForStateContext(ctx)
+
+	return err
 }
