@@ -100,7 +100,7 @@ func (c *Client) AsgProfileCreate(rq *DuploAsgProfile) (string, ClientError) {
 // AsgProfileUpdate updates an ASG profile via the Duplo API.
 func (c *Client) AsgProfileUpdate(rq *DuploAsgProfile) ClientError {
 	err := c.AsgProfileUpdateV3(rq)
-	if err != nil && err.Status() != 404 {
+	if err != nil {
 		_, err := c.AsgProfileCreateOrUpdate(rq, true)
 
 		return err
