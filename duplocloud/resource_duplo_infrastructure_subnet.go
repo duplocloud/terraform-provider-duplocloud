@@ -54,7 +54,7 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				ForceNew: true,
 			},
 			"type": {
-				Description:  "Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace`, `mysql-flexiserver`, `postgres-flexiserver` ,`app-service-plan`,`sql-server`,`cosmos-db` is used for azure. Delegation configuration will be handled by Duplo",
+				Description:  "Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace`, `mysql-flexiserver`, `postgres-flexiserver` ,`app-service-plan`,`sql-server`,`cosmos-db` is used for azure. <br>`NOTE` :In Azure Delegation subnet configuration will be handled by Duplo based on Azure specific subnet type)",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,

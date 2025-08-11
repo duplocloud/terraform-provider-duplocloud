@@ -47,7 +47,7 @@ resource "duplocloud_infrastructure_subnet" "az-subnet" {
 - `cidr_block` (String)
 - `infra_name` (String)
 - `name` (String)
-- `type` (String) Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace`, `mysql-flexiserver`, `postgres-flexiserver` ,`app-service-plan`,`sql-server`,`cosmos-db` is used for azure. Delegation configuration will be handled by Duplo
+- `type` (String) Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace`, `mysql-flexiserver`, `postgres-flexiserver` ,`app-service-plan`,`sql-server`,`cosmos-db` is used for azure. <br>`NOTE` :In Azure Delegation subnet configuration will be handled by Duplo based on Azure specific subnet type)
 
 ### Optional
 
