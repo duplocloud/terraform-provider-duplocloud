@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -53,11 +54,11 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				ForceNew: true,
 			},
 			"type": {
-				Description:  "Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace`, `mysql-flexiserver`, `postgres-flexiserver` is used for azure.",
+				Description:  "Specify subnet type. `private` and `public` is used for AWS subnet. Will be one of `none`, `appgwsubnet`, `appgw-internal-subnet`, `azurebastionsubnet`, `managedinstance`, `databrick-workspace`, `mysql-flexiserver`, `postgres-flexiserver` ,`app-service-plan`,`sql-server`,`cosmos-db` is used for azure. <br>`NOTE` :In Azure Delegation subnet configuration will be handled by Duplo based on Azure specific subnet type)",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"private", "public", "none", "appgwsubnet", "appgw-internal-subnet", "azurebastionsubnet", "managedinstance", "databrick-workspace", "mysql-flexiserver", "postgres-flexiserver"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"private", "public", "none", "appgwsubnet", "appgw-internal-subnet", "azurebastionsubnet", "managedinstance", "databrick-workspace", "mysql-flexiserver", "postgres-flexiserver", "app-service-plan", "sql-server", "cosmos-db"}, false),
 			},
 			"zone": {
 				Description: "The Duplo zone that the subnet resides in.  Will be one of:  `\"A\"`, `\"B\"`, `\"C\"`, or `\"D\"`. This is applicable only for AWS subnets.",
@@ -70,13 +71,16 @@ func resourceInfrastructureSubnet() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				ForceNew:    true,
 			},
 			"service_endpoints": {
-				Description: "The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.AzureActiveDirectory`, `Microsoft.AzureCosmosDB`, `Microsoft.ContainerRegistry`, `Microsoft.EventHub`, `Microsoft.KeyVault`, `Microsoft.ServiceBus`,`Microsoft.Sql`, `Microsoft.Storage` and `Microsoft.Web`. This is applicable only for Azure subnets.",
+				Description: "The list of Service endpoints to associate with the azure subnet. Possible values include: `Microsoft.Storage`, `Microsoft.Sql`, `Microsoft.AzureActiveDirectory`, `Microsoft.AzureCosmosDB`, `Microsoft.Web`, `Microsoft.NetworkServiceEndpointTest`, `Microsoft.KeyVault`, `Microsoft.EventHub`, `Microsoft.ServiceBus`, `Microsoft.ContainerRegistry`, `Microsoft.CognitiveServices`, `Microsoft.Storage.Global`. This is applicable only for Azure subnets.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				ForceNew:    true,
+
+				Elem: &schema.Schema{Type: schema.TypeString},
 			},
 			"tags":     tagsSchema(),
 			"tags_all": tagsSchemaComputed(),
