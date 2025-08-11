@@ -73,6 +73,98 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"enable_workload_identity": {
+			Description: "Enable Workload Identity for the AKS cluster. This allows Kubernetes workloads to access Azure resources using Azure AD identities.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"enable_blob_csi_driver": {
+			Description: "Enable the Azure Blob CSI driver for the AKS cluster. This allows Kubernetes workloads to use Azure Blob Storage as persistent storage.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"disable_run_command": {
+			Description: "Disable the Run Command feature for the AKS cluster. This prevents the use of the Azure CLI to run commands directly on the nodes.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"add_critical_taint_to_system_agent_pool": {
+			Description: "Add a critical taint to the system agent pool. This prevents the scheduler from scheduling non-critical pods on the system agent pool.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"enable_image_cleaner": {
+			Description: "Enable the image cleaner for the AKS cluster. This helps to clean up unused container images in the cluster.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"image_cleaner_interval_in_days": {
+			Description: "Interval in days for the image cleaner to run. This determines how often the image cleaner will check for unused images.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Default:     false,
+		},
+
+		"pricing_tier": {
+			Description: "Pricing tier for the AKS cluster. Valid values are: `Free`, `Standard`, and `Premium`. This determines the level of support and features available for the AKS cluster.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"linux_admin_username": {
+			Description: "The username for the Linux administrator of the AKS cluster. This user will have administrative access to the nodes in the cluster.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"linux_ssh_public_key": {
+			Description: "The SSH public key for the Linux administrator of the AKS cluster. This key will be used to access the nodes in the cluster via SSH.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"system_agent_pool_taints": {
+			Description: "Taints to be applied to the system agent pool.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		"aad_config": {
+			Description: "Azure Active Directory configuration for the AKS cluster.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"ad_tenant_id": {
+						Description: "The Azure Active Directory tenant ID.",
+						Type:        schema.TypeString,
+						Required:    true,
+						ForceNew:    true,
+					},
+					"enable_aad": {
+						Description: "Enable Azure Active Directory integration.",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+					},
+					"enable_rbac": {
+						Description: "Enable Azure RBAC for Kubernetes authorization.",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+					},
+					"admin_group_object_ids": {
+						Description: "List of Azure AD group object IDs that have admin access to the AKS cluster.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -173,11 +265,38 @@ func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.DuploAksConfig {
 		OutboundType:      d.Get("outbound_type").(string),
 		NodeResourceGroup: d.Get("resource_group_name").(string),
 		CreateAndManage:   true,
+		//===
+		EnableWorkloadIdentity:            d.Get("enable_workload_identity").(bool),
+		EnableBlobCsiDriver:               d.Get("enable_blob_csi_driver").(bool),
+		DisableRunCommand:                 d.Get("disable_run_command").(bool),
+		AddCriticalTaintToSystemAgentPool: d.Get("add_critical_taint_to_system_agent_pool").(bool),
+		EnableImageCleaner:                d.Get("enable_image_cleaner").(bool),
+		ImageCleanerIntervalInDays:        d.Get("image_cleaner_interval_in_days").(int),
+		PricingTier:                       d.Get("pricing_tier").(string),
+		LinuxAdminUsername:                d.Get("linux_admin_username").(string),
+		LinuxSshPublicKey:                 d.Get("linux_ssh_public_key").(string),
 	}
+	if v, ok := d.GetOk("system_agent_pool_taints"); ok && len(v.([]interface{})) > 0 {
+		for _, taint := range v.([]interface{}) {
+			body.SystemAgentPoolTaints = append(body.SystemAgentPoolTaints, taint.(string))
+		}
+	}
+
 	if body.Name == "" {
 		body.Name = d.Get("infra_name").(string)
 	}
 
+	if v, ok := d.GetOk("aad_config"); ok && len(v.([]interface{})) > 0 {
+		aadConfig := v.([]interface{})[0].(map[string]interface{})
+		body.AadConfig = &duplosdk.DuploAksAadConfig{
+			ADTenantId:          aadConfig["ad_tenant_id"].(string),
+			IsManagedAadEnabled: aadConfig["enable_aad"].(bool),
+			IsAzureRbacEnabled:  aadConfig["enable_rbac"].(bool),
+		}
+		for _, val := range aadConfig["admin_group_object_ids"].([]interface{}) {
+			body.AadConfig.AdminGroupObjectIds = append(body.AadConfig.AdminGroupObjectIds, val.(string))
+		}
+	}
 	return body
 }
 
@@ -189,4 +308,39 @@ func flattenAzureK8sCluster(d *schema.ResourceData, duplo *duplosdk.DuploAksConf
 	d.Set("network_plugin", duplo.NetworkPlugin)
 	d.Set("outbound_type", duplo.OutboundType)
 	d.Set("resource_group_name", duplo.NodeResourceGroup)
+	d.Set("enable_workload_identity", duplo.EnableWorkloadIdentity)
+	d.Set("enable_blob_csi_driver", duplo.EnableBlobCsiDriver)
+	d.Set("disable_run_command", duplo.DisableRunCommand)
+	d.Set("add_critical_taint_to_system_agent_pool", duplo.AddCriticalTaintToSystemAgentPool)
+	d.Set("enable_image_cleaner", duplo.EnableImageCleaner)
+	d.Set("image_cleaner_interval_in_days", duplo.ImageCleanerIntervalInDays)
+	d.Set("pricing_tier", duplo.PricingTier)
+	d.Set("linux_admin_username", duplo.LinuxAdminUsername)
+	d.Set("linux_ssh_public_key", duplo.LinuxSshPublicKey)
+
+	if len(duplo.SystemAgentPoolTaints) > 0 {
+		s := []interface{}{}
+		for _, taint := range duplo.SystemAgentPoolTaints {
+			s = append(s, taint)
+		}
+		d.Set("system_agent_pool_taints", s)
+	}
+	if duplo.AadConfig != nil {
+		m := map[string]interface{}{
+			"ad_tenant_id":           duplo.AadConfig.ADTenantId,
+			"enable_aad":             duplo.AadConfig.IsManagedAadEnabled,
+			"enable_rbac":            duplo.AadConfig.IsAzureRbacEnabled,
+			"admin_group_object_ids": duplo.AadConfig.AdminGroupObjectIds,
+		}
+		if len(duplo.AadConfig.AdminGroupObjectIds) > 0 {
+			s := []interface{}{}
+			for _, conf := range duplo.AadConfig.AdminGroupObjectIds {
+				s = append(s, conf)
+			}
+			m["system_agent_pool_taints"] = s
+		}
+		d.Set("aad_config", []interface{}{m})
+
+	}
+
 }
