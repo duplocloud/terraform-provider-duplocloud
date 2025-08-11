@@ -114,27 +114,33 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 			Description: "Pricing tier for the AKS cluster. Valid values are: `Free`, `Standard`, and `Premium`. This determines the level of support and features available for the AKS cluster.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 		},
 		"linux_admin_username": {
 			Description: "The username for the Linux administrator of the AKS cluster. This user will have administrative access to the nodes in the cluster.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 		},
 		"linux_ssh_public_key": {
 			Description: "The SSH public key for the Linux administrator of the AKS cluster. This key will be used to access the nodes in the cluster via SSH.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 		},
 		"system_agent_pool_taints": {
-			Description: "Taints to be applied to the system agent pool.",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
+			Description:      "Taints to be applied to the system agent pool.",
+			Type:             schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Elem:             &schema.Schema{Type: schema.TypeString},
 		},
-		"aad_config": {
+		"active_directory_config": {
 			Description: "Azure Active Directory configuration for the AKS cluster.",
 			Type:        schema.TypeList,
 			Optional:    true,
+			Computed:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -144,7 +150,7 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 						Required:    true,
 						ForceNew:    true,
 					},
-					"enable_aad": {
+					"enable_ad": {
 						Description: "Enable Azure Active Directory integration.",
 						Type:        schema.TypeBool,
 						Optional:    true,
@@ -157,10 +163,12 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 						Default:     false,
 					},
 					"admin_group_object_ids": {
-						Description: "List of Azure AD group object IDs that have admin access to the AKS cluster.",
-						Type:        schema.TypeList,
-						Optional:    true,
-						Elem:        &schema.Schema{Type: schema.TypeString},
+						Description:      "List of Azure AD group object IDs that have admin access to the AKS cluster.",
+						Type:             schema.TypeList,
+						Optional:         true,
+						DiffSuppressFunc: diffSuppressWhenNotCreating,
+						Computed:         true,
+						Elem:             &schema.Schema{Type: schema.TypeString},
 					},
 				},
 			},
@@ -257,15 +265,14 @@ func resourceAzureK8sClusterDelete(ctx context.Context, d *schema.ResourceData, 
 
 func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.DuploAksConfig {
 	body := &duplosdk.DuploAksConfig{
-		Name:              d.Get("name").(string),
-		PrivateCluster:    d.Get("private_cluster_enabled").(bool),
-		K8sVersion:        d.Get("kubernetes_version").(string),
-		VmSize:            d.Get("vm_size").(string),
-		NetworkPlugin:     d.Get("network_plugin").(string),
-		OutboundType:      d.Get("outbound_type").(string),
-		NodeResourceGroup: d.Get("resource_group_name").(string),
-		CreateAndManage:   true,
-		//===
+		Name:                              d.Get("name").(string),
+		PrivateCluster:                    d.Get("private_cluster_enabled").(bool),
+		K8sVersion:                        d.Get("kubernetes_version").(string),
+		VmSize:                            d.Get("vm_size").(string),
+		NetworkPlugin:                     d.Get("network_plugin").(string),
+		OutboundType:                      d.Get("outbound_type").(string),
+		NodeResourceGroup:                 d.Get("resource_group_name").(string),
+		CreateAndManage:                   true,
 		EnableWorkloadIdentity:            d.Get("enable_workload_identity").(bool),
 		EnableBlobCsiDriver:               d.Get("enable_blob_csi_driver").(bool),
 		DisableRunCommand:                 d.Get("disable_run_command").(bool),
@@ -286,11 +293,11 @@ func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.DuploAksConfig {
 		body.Name = d.Get("infra_name").(string)
 	}
 
-	if v, ok := d.GetOk("aad_config"); ok && len(v.([]interface{})) > 0 {
+	if v, ok := d.GetOk("active_directory_config"); ok && len(v.([]interface{})) > 0 {
 		aadConfig := v.([]interface{})[0].(map[string]interface{})
 		body.AadConfig = &duplosdk.DuploAksAadConfig{
 			ADTenantId:          aadConfig["ad_tenant_id"].(string),
-			IsManagedAadEnabled: aadConfig["enable_aad"].(bool),
+			IsManagedAadEnabled: aadConfig["enable_ad"].(bool),
 			IsAzureRbacEnabled:  aadConfig["enable_rbac"].(bool),
 		}
 		for _, val := range aadConfig["admin_group_object_ids"].([]interface{}) {
@@ -324,11 +331,13 @@ func flattenAzureK8sCluster(d *schema.ResourceData, duplo *duplosdk.DuploAksConf
 			s = append(s, taint)
 		}
 		d.Set("system_agent_pool_taints", s)
+	} else {
+		d.Set("system_agent_pool_taints", make([]interface{}, 0))
 	}
 	if duplo.AadConfig != nil {
 		m := map[string]interface{}{
 			"ad_tenant_id":           duplo.AadConfig.ADTenantId,
-			"enable_aad":             duplo.AadConfig.IsManagedAadEnabled,
+			"enable_ad":              duplo.AadConfig.IsManagedAadEnabled,
 			"enable_rbac":            duplo.AadConfig.IsAzureRbacEnabled,
 			"admin_group_object_ids": duplo.AadConfig.AdminGroupObjectIds,
 		}
@@ -338,8 +347,10 @@ func flattenAzureK8sCluster(d *schema.ResourceData, duplo *duplosdk.DuploAksConf
 				s = append(s, conf)
 			}
 			m["system_agent_pool_taints"] = s
+		} else {
+			m["system_agent_pool_taints"] = make([]interface{}, 0)
 		}
-		d.Set("aad_config", []interface{}{m})
+		d.Set("active_directory_config", []interface{}{m})
 
 	}
 
