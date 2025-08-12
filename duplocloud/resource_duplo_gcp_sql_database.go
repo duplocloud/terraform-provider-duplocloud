@@ -53,8 +53,8 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 
 		"tier": {
 			Description: "The machine type to use. See tiers for more details and supported versions. " +
-				"Postgres supports only shared-core machine types, and custom machine types such as `db-custom-2-13312`." +
-				"See the [Custom Machine Type Documentation](https://cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type#create) to learn about specifying custom machine types.",
+				"Postgres supports only shared-core machine types, and custom machine types, format for custom machine type db-custom-{vCPU}-{memory-in-MB} example `db-custom-2-13312`." +
+				"See the [Machine Type Documentation](https://cloud.google.com/compute/docs/machine-resource) to learn more about machine types.",
 			Type:     schema.TypeString,
 			Required: true,
 		},
@@ -104,7 +104,6 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Description: "List of database flags to be set on the database instance. Please refer to the [Database Flags Documentation](https://cloud.google.com/sql/docs/mysql/flags) for more details on available flags.",
 			Type:        schema.TypeList,
 			Optional:    true,
-			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"name": {
@@ -376,6 +375,8 @@ func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInsta
 			}
 			rq.DatabaseFlags = append(rq.DatabaseFlags, flag)
 		}
+	} else {
+		rq.DatabaseFlags = []duplosdk.DuploGCPSqlDBInstanceFlag{}
 	}
 	return rq
 }

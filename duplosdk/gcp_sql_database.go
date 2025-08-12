@@ -20,7 +20,7 @@ type DuploGCPSqlDBInstance struct {
 	RootPassword    string                      `json:"RootPassword,omitempty"`
 	IPAddress       []string                    `json:"IpAddress,omitempty"`
 	ConnectionName  string                      `json:"ConnectionName,omitempty"`
-	DatabaseFlags   []DuploGCPSqlDBInstanceFlag `json:"DatabaseFlags,omitempty"`
+	DatabaseFlags   []DuploGCPSqlDBInstanceFlag `json:"DatabaseFlags"`
 }
 
 type DuploGCPSqlDBInstanceFlag struct {

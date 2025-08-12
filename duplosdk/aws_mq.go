@@ -38,9 +38,11 @@ type DuploAWSMQ struct {
 }
 
 type DuploAWSMQUser struct {
-	UserName string   `json:"username"`
-	Password string   `json:"password"`
-	Groups   []string `json:"groups"`
+	UserName        string   `json:"username"`
+	Password        string   `json:"password"`
+	Groups          []string `json:"groups"`
+	ConsoleAccess   bool     `json:"consoleAccess"`   // for rabbitmq
+	ReplicationUser bool     `json:"replicationUser"` // for rabbitmq
 }
 
 type DuploMQLDAPMetadata struct {
@@ -87,6 +89,16 @@ func (c *Client) DuploAWSMQBrokerCreate(tenantID string, rq *DuploAWSMQ) (*Duplo
 		&rp,
 	)
 	return &rp, err
+}
+
+func (c *Client) DuploAWSMQBrokerReeboot(tenantID, brokerId, name string) ClientError {
+	err := c.postAPI(
+		fmt.Sprintf("DuploAWSMQBrokerReeboot(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/%s/reboot", tenantID, brokerId),
+		nil,
+		nil,
+	)
+	return err
 }
 
 func (c *Client) DuploAWSMQBrokerDelete(tenantID string, brokerID string) ClientError {
@@ -138,8 +150,8 @@ type DuploMQBrokerResponse struct {
 	StorageType           struct {
 		Value string `json:"Value"`
 	} `json:"StorageType"`
-	SubnetIds []string          `json:"SubnetIds"`
-	Tags      map[string]string `json:"Tags"`
+	SubnetIds []string               `json:"SubnetIds"`
+	Tags      map[string]interface{} `json:"Tags"`
 	Users     []struct {
 		PendingChange struct {
 			Value string `json:"Value"`

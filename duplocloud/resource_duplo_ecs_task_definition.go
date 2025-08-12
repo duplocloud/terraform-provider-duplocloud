@@ -126,6 +126,7 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"bridge", "host", "awsvpc", "none"}, false),
 			Default:      "awsvpc",
+			Description:  "Valid values are `bridge`,`host`,`awsvpc`,`none`",
 		},
 		"placement_constraints": {
 			Type:     schema.TypeSet,
@@ -164,13 +165,13 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			},
 		},
 		"requires_compatibilities": {
-			Type:        schema.TypeSet,
-			Description: "Requires compatibilities for running jobs. Valid values are [FARGATE]",
-			Optional:    true,
-			Computed:    true,
+			Type:             schema.TypeSet,
+			Description:      "Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.",
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 			Elem: &schema.Schema{
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"FARGATE"}, false),
+				Type: schema.TypeString,
 			},
 		},
 		"ipc_mode": {
@@ -178,12 +179,14 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Optional:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"host", "none", "task"}, false),
+			Description:  "valid values are `host`, `none`, `task`",
 		},
 		"pid_mode": {
 			Type:         schema.TypeString,
 			Optional:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"host", "task"}, false),
+			Description:  "Valida values are `host`, `task`",
 		},
 		"proxy_configuration": {
 			Type:     schema.TypeList,
@@ -386,8 +389,13 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	// Next, convert sets into lists
 	rcs := d.Get("requires_compatibilities").(*schema.Set)
 	dorcs := make([]string, 0, rcs.Len())
-	for _, rc := range rcs.List() {
-		dorcs = append(dorcs, rc.(string))
+	if rcs.Len() > 0 {
+
+		for _, rc := range rcs.List() {
+			dorcs = append(dorcs, rc.(string))
+		}
+	} else {
+		dorcs = nil
 	}
 	duplo.RequiresCompatibilities = dorcs
 
@@ -446,7 +454,13 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("ipc_mode", duplo.IpcMode)
 	d.Set("pid_mode", duplo.PidMode)
 	// stop updating state unitl we have EC2 support
-	// d.Set("requires_compatibilities", duplo.RequiresCompatibilities)
+	if len(duplo.Compatibilities) > 0 {
+		inf := []interface{}{}
+		for _, comp := range duplo.Compatibilities {
+			inf = append(inf, comp)
+		}
+		d.Set("requires_compatibilities", inf)
+	}
 	if duplo.NetworkMode != nil {
 		d.Set("network_mode", duplo.NetworkMode.Value)
 	}
@@ -464,7 +478,7 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("inference_accelerator", ecsInferenceAcceleratorsToState(duplo.InferenceAccelerators))
 	d.Set("requires_attributes", ecsRequiresAttributesToState(duplo.RequiresAttributes))
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("runtime_platform", ecsPlatformRuntimeToState)
+	d.Set("runtime_platform", ecsPlatformRuntimeToState(duplo.RuntimePlatform))
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
@@ -638,8 +652,15 @@ func ecsPlacementConstraintsToState(pcs *[]duplosdk.DuploEcsTaskDefPlacementCons
 }
 
 func ecsPlatformRuntimeToState(p *duplosdk.DuploEcsTaskDefRuntimePlatform) []interface{} {
-	if p != nil {
-		return nil
+	if p == nil {
+		p = &duplosdk.DuploEcsTaskDefRuntimePlatform{
+			CPUArchitecture: duplosdk.DuploStringValue{
+				Value: "X86_64",
+			},
+			OSFamily: duplosdk.DuploStringValue{
+				Value: "LINUX",
+			},
+		}
 	}
 
 	results := make([]interface{}, 0)
