@@ -349,12 +349,6 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
-		"auto_scaling": {
-			Description: "Enable or disable storage auto scaling for the RDS instance.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
 	}
 }
 
@@ -939,7 +933,6 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 		duploObject.PerformanceInsightsKMSKeyId = kmsid
 
 	}
-	duploObject.IsAutoScalingEnabled = d.Get("auto_scaling").(bool)
 	return duploObject, nil
 }
 
@@ -1025,7 +1018,6 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
 	jo["auto_minor_version_upgrade"] = duploObject.AutoMinorVersionUpgrade
-	jo["auto_scaling"] = duploObject.IsAutoScalingEnabled
 	pis := []interface{}{}
 	pi := make(map[string]interface{})
 	pi["enabled"] = duploObject.EnablePerformanceInsights
