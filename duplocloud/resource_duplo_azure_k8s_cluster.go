@@ -104,10 +104,11 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"image_cleaner_interval_in_days": {
-			Description: "Interval in days for the image cleaner to run. This determines how often the image cleaner will check for unused images.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Default:     false,
+			Description:  "Interval in days for the image cleaner to run. This determines how often the image cleaner will check for unused images. Valid values are between 1 and 90.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Default:      30,
+			ValidateFunc: validation.IntBetween(1, 90),
 		},
 
 		"pricing_tier": {
