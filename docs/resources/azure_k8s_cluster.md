@@ -78,7 +78,6 @@ resource "duplocloud_azure_k8s_cluster" "ac" {
 - `pricing_tier` (String) Pricing tier for the AKS cluster. Valid values are: `Free`, `Standard`, and `Premium`. This determines the level of support and features available for the AKS cluster.
 - `private_cluster_enabled` (Boolean) Should this Kubernetes Cluster have its API server only exposed on internal IP addresses? This provides a Private IP Address for the Kubernetes API on the Virtual Network where the Kubernetes Cluster is located. Defaults to `false`.
 - `resource_group_name` (String) The name of the aks resource group.
-- `system_agent_pool_taints` (List of String) Taints to be applied to the system agent pool.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `vm_size` (String) The size of the Virtual Machine.
 

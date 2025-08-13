@@ -128,14 +128,15 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		/*Future enhancement
 		"system_agent_pool_taints": {
-			Description:      "Taints to be applied to the system agent pool.",
-			Type:             schema.TypeList,
-			Optional:         true,
-			Computed:         true,
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
-			Elem:             &schema.Schema{Type: schema.TypeString},
-		},
+				Description:      "Taints to be applied to the system agent pool.",
+				Type:             schema.TypeList,
+				Optional:         true,
+				Computed:         true,
+				DiffSuppressFunc: diffSuppressWhenNotCreating,
+				Elem:             &schema.Schema{Type: schema.TypeString},
+			},*/
 		"active_directory_config": {
 			Description: "Azure Active Directory configuration for the AKS cluster.",
 			Type:        schema.TypeList,
@@ -283,11 +284,11 @@ func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.DuploAksConfig {
 		LinuxAdminUsername:                d.Get("linux_admin_username").(string),
 		LinuxSshPublicKey:                 d.Get("linux_ssh_public_key").(string),
 	}
-	if v, ok := d.GetOk("system_agent_pool_taints"); ok && len(v.([]interface{})) > 0 {
+	/*	if v, ok := d.GetOk("system_agent_pool_taints"); ok && len(v.([]interface{})) > 0 {
 		for _, taint := range v.([]interface{}) {
 			body.SystemAgentPoolTaints = append(body.SystemAgentPoolTaints, taint.(string))
 		}
-	}
+	}*/
 
 	if body.Name == "" {
 		body.Name = d.Get("infra_name").(string)
@@ -324,16 +325,16 @@ func flattenAzureK8sCluster(d *schema.ResourceData, duplo *duplosdk.DuploAksConf
 	d.Set("pricing_tier", duplo.PricingTier)
 	d.Set("linux_admin_username", duplo.LinuxAdminUsername)
 	d.Set("linux_ssh_public_key", duplo.LinuxSshPublicKey)
-
-	if len(duplo.SystemAgentPoolTaints) > 0 {
-		s := []interface{}{}
-		for _, taint := range duplo.SystemAgentPoolTaints {
-			s = append(s, taint)
-		}
-		d.Set("system_agent_pool_taints", s)
-	} else {
-		d.Set("system_agent_pool_taints", make([]interface{}, 0))
-	}
+	/*
+		if len(duplo.SystemAgentPoolTaints) > 0 {
+			s := []interface{}{}
+			for _, taint := range duplo.SystemAgentPoolTaints {
+				s = append(s, taint)
+			}
+			d.Set("system_agent_pool_taints", s)
+		} else {
+			d.Set("system_agent_pool_taints", make([]interface{}, 0))
+		}*/
 	if duplo.AadConfig != nil {
 		m := map[string]interface{}{
 			"ad_tenant_id":           duplo.AadConfig.ADTenantId,
