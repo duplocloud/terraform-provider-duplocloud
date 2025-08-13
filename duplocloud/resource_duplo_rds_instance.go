@@ -349,7 +349,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
-		"storage_auto_scalling": {
+		"storage_autoscaling": {
 			Optional: true,
 			MaxItems: 1,
 			Type:     schema.TypeList,
@@ -790,11 +790,11 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	if d.HasChange("storage_auto_scalling") {
-		if d.Get("storage_auto_scalling.0.enable").(bool) {
+	if d.HasChange("storage_autoscaling") {
+		if d.Get("storage_autoscaling.0.enable").(bool) {
 			obj := duplosdk.DuploRDSStorageAutoScalling{
-				IsAutoScalingEnabled: d.Get("storage_auto_scalling.0.enable").(bool),
-				MaxAllocatedStorage:  d.Get("storage_auto_scalling.0.max_allocated_storage").(int),
+				IsAutoScalingEnabled: d.Get("storage_autoscaling.0.enable").(bool),
+				MaxAllocatedStorage:  d.Get("storage_autoscaling.0.max_allocated_storage").(int),
 			}
 			cerr := c.UpdateRDSDBInstanceStorageAutoScalling(tenantID, identifier, obj)
 			if cerr != nil {
@@ -975,9 +975,9 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 
 	}
 
-	duploObject.IsAutoScalingEnabled = d.Get("storage_auto_scalling.0.enable").(bool)
+	duploObject.IsAutoScalingEnabled = d.Get("storage_autoscaling.0.enable").(bool)
 	if duploObject.IsAutoScalingEnabled {
-		duploObject.MaxAllocatedStorage = d.Get("storage_auto_scalling.0.max_allocated_storage").(int)
+		duploObject.MaxAllocatedStorage = d.Get("storage_autoscaling.0.max_allocated_storage").(int)
 	}
 
 	return duploObject, nil
@@ -1077,7 +1077,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 			"enable":                duploObject.IsAutoScalingEnabled,
 			"max_allocated_storage": duploObject.AllocatedStorage,
 		}
-		jo["storage_auto_scalling"] = []interface{}{mp}
+		jo["storage_autoscaling"] = []interface{}{mp}
 
 	}
 	jsonData2, _ := json.Marshal(jo)
@@ -1237,13 +1237,13 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		return fmt.Errorf("Cannot set multi_az for %s", engines[eng])
 
 	}
-	if diff.HasChange("storage_auto_scalling") {
-		if sas, ok := diff.GetOk("storage_auto_scalling"); ok {
+	if diff.HasChange("storage_autoscaling") {
+		if sas, ok := diff.GetOk("storage_autoscaling"); ok {
 			for _, sa := range sas.([]interface{}) {
 				m := sa.(map[string]interface{})
 				if m["enable"].(bool) {
 					if st == "standard" || st == "aurora" || st == "aurora-iopt1" {
-						return fmt.Errorf("storage_auto_scalling is not supported for %s storage type", st)
+						return fmt.Errorf("storage_autoscaling is not supported for %s storage type", st)
 					}
 					th := m["max_allocated_storage"].(int)
 					as := diff.Get("allocated_storage").(int)
