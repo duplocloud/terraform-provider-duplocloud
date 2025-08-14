@@ -68,7 +68,7 @@ resource "duplocloud_azure_k8s_cluster" "ac" {
 - `enable_blob_csi_driver` (Boolean) Enable the Azure Blob CSI driver for the AKS cluster. This allows Kubernetes workloads to use Azure Blob Storage as persistent storage. Defaults to `false`.
 - `enable_image_cleaner` (Boolean) Enable the image cleaner for the AKS cluster. This helps to clean up unused container images in the cluster. Defaults to `false`.
 - `enable_workload_identity` (Boolean) Enable Workload Identity for the AKS cluster. This allows Kubernetes workloads to access Azure resources using Azure AD identities. Defaults to `false`.
-- `image_cleaner_interval_in_days` (Number) Interval in days for the image cleaner to run. This determines how often the image cleaner will check for unused images. Defaults to `false`.
+- `image_cleaner_interval_in_days` (Number) Interval in days for the image cleaner to run. This determines how often the image cleaner will check for unused images. Valid values are between 1 and 90. Defaults to `30`.
 - `kubernetes_version` (String) Version of Kubernetes specified when creating the AKS managed cluster.
 - `linux_admin_username` (String) The username for the Linux administrator of the AKS cluster. This user will have administrative access to the nodes in the cluster.
 - `linux_ssh_public_key` (String) The SSH public key for the Linux administrator of the AKS cluster. This key will be used to access the nodes in the cluster via SSH.
@@ -78,7 +78,6 @@ resource "duplocloud_azure_k8s_cluster" "ac" {
 - `pricing_tier` (String) Pricing tier for the AKS cluster. Valid values are: `Free`, `Standard`, and `Premium`. This determines the level of support and features available for the AKS cluster.
 - `private_cluster_enabled` (Boolean) Should this Kubernetes Cluster have its API server only exposed on internal IP addresses? This provides a Private IP Address for the Kubernetes API on the Virtual Network where the Kubernetes Cluster is located. Defaults to `false`.
 - `resource_group_name` (String) The name of the aks resource group.
-- `system_agent_pool_taints` (List of String) Taints to be applied to the system agent pool.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `vm_size` (String) The size of the Virtual Machine.
 

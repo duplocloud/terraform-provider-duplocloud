@@ -23,29 +23,33 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"name": {
-			Description: "The name of the aks. If not specified default name would be infra name",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Description:      "The name of the aks. If not specified default name would be infra name",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"resource_group_name": {
-			Description: "The name of the aks resource group.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Description:      "The name of the aks resource group.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 
 		"vm_size": {
-			Description: "The size of the Virtual Machine.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Description:      "The size of the Virtual Machine.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"kubernetes_version": {
-			Description: "Version of Kubernetes specified when creating the AKS managed cluster.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Description:      "Version of Kubernetes specified when creating the AKS managed cluster.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"network_plugin": {
 			Description: "Network plugin to use for networking. Valid values are: `azure` and `kubenet`.",
@@ -56,6 +60,7 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 				"azure",
 				"kubenet",
 			}, false),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"outbound_type": {
 			Description: "The outbound (egress) routing method which should be used for this Kubernetes Cluster. Valid values are: `loadBalancer` and `userDefinedRouting`.",
@@ -66,101 +71,119 @@ func duploAzureK8sClusterSchema() map[string]*schema.Schema {
 				"loadBalancer",
 				"userDefinedRouting",
 			}, false),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"private_cluster_enabled": {
-			Description: "Should this Kubernetes Cluster have its API server only exposed on internal IP addresses? This provides a Private IP Address for the Kubernetes API on the Virtual Network where the Kubernetes Cluster is located.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
+			Description:      "Should this Kubernetes Cluster have its API server only exposed on internal IP addresses? This provides a Private IP Address for the Kubernetes API on the Virtual Network where the Kubernetes Cluster is located.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          false,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"enable_workload_identity": {
-			Description: "Enable Workload Identity for the AKS cluster. This allows Kubernetes workloads to access Azure resources using Azure AD identities.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
+			Description:      "Enable Workload Identity for the AKS cluster. This allows Kubernetes workloads to access Azure resources using Azure AD identities.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          false,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"enable_blob_csi_driver": {
-			Description: "Enable the Azure Blob CSI driver for the AKS cluster. This allows Kubernetes workloads to use Azure Blob Storage as persistent storage.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
+			Description:      "Enable the Azure Blob CSI driver for the AKS cluster. This allows Kubernetes workloads to use Azure Blob Storage as persistent storage.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          false,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"disable_run_command": {
-			Description: "Disable the Run Command feature for the AKS cluster. This prevents the use of the Azure CLI to run commands directly on the nodes.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
+			Description:      "Disable the Run Command feature for the AKS cluster. This prevents the use of the Azure CLI to run commands directly on the nodes.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          false,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"add_critical_taint_to_system_agent_pool": {
-			Description: "Add a critical taint to the system agent pool. This prevents the scheduler from scheduling non-critical pods on the system agent pool.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
+			Description:      "Add a critical taint to the system agent pool. This prevents the scheduler from scheduling non-critical pods on the system agent pool.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          false,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"enable_image_cleaner": {
-			Description: "Enable the image cleaner for the AKS cluster. This helps to clean up unused container images in the cluster.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
+			Description:      "Enable the image cleaner for the AKS cluster. This helps to clean up unused container images in the cluster.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          false,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"image_cleaner_interval_in_days": {
-			Description: "Interval in days for the image cleaner to run. This determines how often the image cleaner will check for unused images.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Default:     false,
+			Description:      "Interval in days for the image cleaner to run. This determines how often the image cleaner will check for unused images. Valid values are between 1 and 90.",
+			Type:             schema.TypeInt,
+			Optional:         true,
+			Default:          30,
+			ValidateFunc:     validation.IntBetween(1, 90),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 
 		"pricing_tier": {
-			Description: "Pricing tier for the AKS cluster. Valid values are: `Free`, `Standard`, and `Premium`. This determines the level of support and features available for the AKS cluster.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-		},
-		"linux_admin_username": {
-			Description: "The username for the Linux administrator of the AKS cluster. This user will have administrative access to the nodes in the cluster.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-		},
-		"linux_ssh_public_key": {
-			Description: "The SSH public key for the Linux administrator of the AKS cluster. This key will be used to access the nodes in the cluster via SSH.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-		},
-		"system_agent_pool_taints": {
-			Description:      "Taints to be applied to the system agent pool.",
-			Type:             schema.TypeList,
+			Description:      "Pricing tier for the AKS cluster. Valid values are: `Free`, `Standard`, and `Premium`. This determines the level of support and features available for the AKS cluster.",
+			Type:             schema.TypeString,
 			Optional:         true,
 			Computed:         true,
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
-			Elem:             &schema.Schema{Type: schema.TypeString},
 		},
+		"linux_admin_username": {
+			Description:      "The username for the Linux administrator of the AKS cluster. This user will have administrative access to the nodes in the cluster.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
+		"linux_ssh_public_key": {
+			Description:      "The SSH public key for the Linux administrator of the AKS cluster. This key will be used to access the nodes in the cluster via SSH.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+		},
+		/*Future enhancement
+		"system_agent_pool_taints": {
+				Description:      "Taints to be applied to the system agent pool.",
+				Type:             schema.TypeList,
+				Optional:         true,
+				Computed:         true,
+				DiffSuppressFunc: diffSuppressWhenNotCreating,
+				Elem:             &schema.Schema{Type: schema.TypeString},
+			},*/
 		"active_directory_config": {
-			Description: "Azure Active Directory configuration for the AKS cluster.",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Computed:    true,
-			MaxItems:    1,
+			Description:      "Azure Active Directory configuration for the AKS cluster.",
+			Type:             schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			MaxItems:         1,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"ad_tenant_id": {
-						Description: "The Azure Active Directory tenant ID.",
-						Type:        schema.TypeString,
-						Required:    true,
-						ForceNew:    true,
+						Description:      "The Azure Active Directory tenant ID.",
+						Type:             schema.TypeString,
+						Required:         true,
+						ForceNew:         true,
+						DiffSuppressFunc: diffSuppressWhenNotCreating,
 					},
 					"enable_ad": {
-						Description: "Enable Azure Active Directory integration.",
-						Type:        schema.TypeBool,
-						Optional:    true,
-						Default:     false,
+						Description:      "Enable Azure Active Directory integration.",
+						Type:             schema.TypeBool,
+						Optional:         true,
+						Default:          false,
+						DiffSuppressFunc: diffSuppressWhenNotCreating,
 					},
 					"enable_rbac": {
-						Description: "Enable Azure RBAC for Kubernetes authorization.",
-						Type:        schema.TypeBool,
-						Optional:    true,
-						Default:     false,
+						Description:      "Enable Azure RBAC for Kubernetes authorization.",
+						Type:             schema.TypeBool,
+						Optional:         true,
+						Default:          false,
+						DiffSuppressFunc: diffSuppressWhenNotCreating,
 					},
 					"admin_group_object_ids": {
 						Description:      "List of Azure AD group object IDs that have admin access to the AKS cluster.",
@@ -283,11 +306,11 @@ func expandAzureK8sCluster(d *schema.ResourceData) *duplosdk.DuploAksConfig {
 		LinuxAdminUsername:                d.Get("linux_admin_username").(string),
 		LinuxSshPublicKey:                 d.Get("linux_ssh_public_key").(string),
 	}
-	if v, ok := d.GetOk("system_agent_pool_taints"); ok && len(v.([]interface{})) > 0 {
+	/*	if v, ok := d.GetOk("system_agent_pool_taints"); ok && len(v.([]interface{})) > 0 {
 		for _, taint := range v.([]interface{}) {
 			body.SystemAgentPoolTaints = append(body.SystemAgentPoolTaints, taint.(string))
 		}
-	}
+	}*/
 
 	if body.Name == "" {
 		body.Name = d.Get("infra_name").(string)
@@ -324,16 +347,16 @@ func flattenAzureK8sCluster(d *schema.ResourceData, duplo *duplosdk.DuploAksConf
 	d.Set("pricing_tier", duplo.PricingTier)
 	d.Set("linux_admin_username", duplo.LinuxAdminUsername)
 	d.Set("linux_ssh_public_key", duplo.LinuxSshPublicKey)
-
-	if len(duplo.SystemAgentPoolTaints) > 0 {
-		s := []interface{}{}
-		for _, taint := range duplo.SystemAgentPoolTaints {
-			s = append(s, taint)
-		}
-		d.Set("system_agent_pool_taints", s)
-	} else {
-		d.Set("system_agent_pool_taints", make([]interface{}, 0))
-	}
+	/*
+		if len(duplo.SystemAgentPoolTaints) > 0 {
+			s := []interface{}{}
+			for _, taint := range duplo.SystemAgentPoolTaints {
+				s = append(s, taint)
+			}
+			d.Set("system_agent_pool_taints", s)
+		} else {
+			d.Set("system_agent_pool_taints", make([]interface{}, 0))
+		}*/
 	if duplo.AadConfig != nil {
 		m := map[string]interface{}{
 			"ad_tenant_id":           duplo.AadConfig.ADTenantId,

@@ -142,25 +142,25 @@ type DuploInfrastructureConfig struct {
 }
 
 type DuploAksConfig struct {
-	Name                              string             `json:"Name"`
-	CreateAndManage                   bool               `json:"CreateAndManage"`
-	PrivateCluster                    bool               `json:"PrivateCluster"`
-	K8sVersion                        string             `json:"K8sVersion,omitempty"`
-	VmSize                            string             `json:"VmSize,omitempty"`
-	NetworkPlugin                     string             `json:"NetworkPlugin,omitempty"`
-	OutboundType                      string             `json:"OutboundType,omitempty"`
-	NodeResourceGroup                 string             `json:"NodeResourceGroup"`
-	EnableWorkloadIdentity            bool               `json:"EnableWorkloadIdentity"`
-	EnableBlobCsiDriver               bool               `json:"EnableBlobCsiDriver"`
-	DisableRunCommand                 bool               `json:"DisableRunCommand"`
-	AddCriticalTaintToSystemAgentPool bool               `json:"AddCriticalTaintToSystemAgentPool"`
-	EnableImageCleaner                bool               `json:"EnableImageCleaner"`
-	ImageCleanerIntervalInDays        int                `json:"ImageCleanerIntervalInDays"`
-	PricingTier                       string             `json:"PricingTier"`
-	LinuxAdminUsername                string             `json:"LinuxAdminUsername"`
-	LinuxSshPublicKey                 string             `json:"LinuxSshPublicKey"`
-	SystemAgentPoolTaints             []string           `json:"SystemAgentPoolTaints"`
-	AadConfig                         *DuploAksAadConfig `json:"AadConfig,omitempty"`
+	Name                              string `json:"Name"`
+	CreateAndManage                   bool   `json:"CreateAndManage"`
+	PrivateCluster                    bool   `json:"PrivateCluster"`
+	K8sVersion                        string `json:"K8sVersion,omitempty"`
+	VmSize                            string `json:"VmSize,omitempty"`
+	NetworkPlugin                     string `json:"NetworkPlugin,omitempty"`
+	OutboundType                      string `json:"OutboundType,omitempty"`
+	NodeResourceGroup                 string `json:"NodeResourceGroup"`
+	EnableWorkloadIdentity            bool   `json:"EnableWorkloadIdentity"`
+	EnableBlobCsiDriver               bool   `json:"EnableBlobCsiDriver"`
+	DisableRunCommand                 bool   `json:"DisableRunCommand"`
+	AddCriticalTaintToSystemAgentPool bool   `json:"AddCriticalTaintToSystemAgentPool"`
+	EnableImageCleaner                bool   `json:"EnableImageCleaner"`
+	ImageCleanerIntervalInDays        int    `json:"ImageCleanerIntervalInDays"`
+	PricingTier                       string `json:"PricingTier"`
+	LinuxAdminUsername                string `json:"LinuxAdminUsername"`
+	LinuxSshPublicKey                 string `json:"LinuxSshPublicKey"`
+	//SystemAgentPoolTaints             []string           `json:"SystemAgentPoolTaints"`
+	AadConfig *DuploAksAadConfig `json:"AadConfig,omitempty"`
 }
 
 type DuploAksAadConfig struct {
