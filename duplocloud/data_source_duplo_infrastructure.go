@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func infrastructureSchemaComputed(single bool) map[string]*schema.Schema {
@@ -71,6 +72,7 @@ func infrastructureSchemaComputed(single bool) map[string]*schema.Schema {
 			Type:         schema.TypeString,
 			Optional:     true,
 			ExactlyOneOf: []string{"infra_name", "tenant_id"},
+			ValidateFunc: validation.IsUUID,
 		}
 		result["infra_name"] = &schema.Schema{
 			Description:  "The name of the infrastructure to look up. Must be specified if `tenant_id` is blank.",

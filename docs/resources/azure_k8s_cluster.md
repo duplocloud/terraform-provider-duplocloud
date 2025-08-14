@@ -68,7 +68,7 @@ resource "duplocloud_azure_k8s_cluster" "ac" {
 - `enable_blob_csi_driver` (Boolean) Enable the Azure Blob CSI driver for the AKS cluster. This allows Kubernetes workloads to use Azure Blob Storage as persistent storage. Defaults to `false`.
 - `enable_image_cleaner` (Boolean) Enable the image cleaner for the AKS cluster. This helps to clean up unused container images in the cluster. Defaults to `false`.
 - `enable_workload_identity` (Boolean) Enable Workload Identity for the AKS cluster. This allows Kubernetes workloads to access Azure resources using Azure AD identities. Defaults to `false`.
-- `image_cleaner_interval_in_days` (Number) Interval in days for the image cleaner to run. This determines how often the image cleaner will check for unused images. Defaults to `false`.
+- `image_cleaner_interval_in_days` (Number) Interval in days for the image cleaner to run. This determines how often the image cleaner will check for unused images. Valid values are between 1 and 90. Defaults to `30`.
 - `kubernetes_version` (String) Version of Kubernetes specified when creating the AKS managed cluster.
 - `linux_admin_username` (String) The username for the Linux administrator of the AKS cluster. This user will have administrative access to the nodes in the cluster.
 - `linux_ssh_public_key` (String) The SSH public key for the Linux administrator of the AKS cluster. This key will be used to access the nodes in the cluster via SSH.
