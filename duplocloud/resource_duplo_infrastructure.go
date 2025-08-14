@@ -743,6 +743,8 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 			}
 			d.Set("nat_ips", natIPsList)
 		}
+	} else {
+		d.Set("nat_ips", make([]interface{}, 0))
 	}
 	return false, nil
 }

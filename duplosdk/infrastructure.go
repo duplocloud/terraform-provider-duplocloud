@@ -136,20 +136,38 @@ type DuploInfrastructureConfig struct {
 	Vnet                    *DuploInfrastructureVnet `json:"Vnet"`
 	ProvisioningStatus      string                   `json:"ProvisioningStatus"`
 	CustomData              *[]DuploKeyStringValue   `json:"CustomData,omitempty"`
-	AksConfig               *AksConfig               `json:"AksConfig,omitempty"`
+	AksConfig               *DuploAksConfig          `json:"AksConfig,omitempty"`
 	ClusterIpv4Cidr         string                   `json:"ClusterIpv4Cidr,omitempty"`
 	OnPrem                  *DuploOnPrem             `json:"OnPremConfig,omitempty"`
 }
 
-type AksConfig struct {
-	Name              string `json:"Name"`
-	CreateAndManage   bool   `json:"CreateAndManage"`
-	PrivateCluster    bool   `json:"PrivateCluster"`
-	K8sVersion        string `json:"K8sVersion,omitempty"`
-	VmSize            string `json:"VmSize,omitempty"`
-	NetworkPlugin     string `json:"NetworkPlugin,omitempty"`
-	OutboundType      string `json:"OutboundType,omitempty"`
-	NodeResourceGroup string `json:"NodeResourceGroup"`
+type DuploAksConfig struct {
+	Name                              string `json:"Name"`
+	CreateAndManage                   bool   `json:"CreateAndManage"`
+	PrivateCluster                    bool   `json:"PrivateCluster"`
+	K8sVersion                        string `json:"K8sVersion,omitempty"`
+	VmSize                            string `json:"VmSize,omitempty"`
+	NetworkPlugin                     string `json:"NetworkPlugin,omitempty"`
+	OutboundType                      string `json:"OutboundType,omitempty"`
+	NodeResourceGroup                 string `json:"NodeResourceGroup"`
+	EnableWorkloadIdentity            bool   `json:"EnableWorkloadIdentity"`
+	EnableBlobCsiDriver               bool   `json:"EnableBlobCsiDriver"`
+	DisableRunCommand                 bool   `json:"DisableRunCommand"`
+	AddCriticalTaintToSystemAgentPool bool   `json:"AddCriticalTaintToSystemAgentPool"`
+	EnableImageCleaner                bool   `json:"EnableImageCleaner"`
+	ImageCleanerIntervalInDays        int    `json:"ImageCleanerIntervalInDays"`
+	PricingTier                       string `json:"PricingTier"`
+	LinuxAdminUsername                string `json:"LinuxAdminUsername"`
+	LinuxSshPublicKey                 string `json:"LinuxSshPublicKey"`
+	//SystemAgentPoolTaints             []string           `json:"SystemAgentPoolTaints"`
+	AadConfig *DuploAksAadConfig `json:"AadConfig,omitempty"`
+}
+
+type DuploAksAadConfig struct {
+	IsAzureRbacEnabled  bool     `json:"IsAzureRbacEnabled"`
+	IsManagedAadEnabled bool     `json:"IsManagedAadEnabled"`
+	ADTenantId          string   `json:"TenantId"`
+	AdminGroupObjectIds []string `json:"AdminGroupObjectIds"`
 }
 
 type DuploAzureLogAnalyticsWorkspace struct {
@@ -499,7 +517,7 @@ func (c *Client) NetworkSgRuleGet(infraName, sgName, ruleName string) (*DuploInf
 	return nil, nil
 }
 
-func (c *Client) AzureK8sClusterCreate(infraName string, rq *AksConfig) ClientError {
+func (c *Client) AzureK8sClusterCreate(infraName string, rq *DuploAksConfig) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("AzureK8sClusterCreate(%s,%s)", infraName, rq.Name),
 		fmt.Sprintf("adminproxy/UpdateInfrastructureAksConfig/%s", infraName),
