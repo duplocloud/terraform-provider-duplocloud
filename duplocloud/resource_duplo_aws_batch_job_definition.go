@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -230,12 +231,14 @@ func resourceAwsBatchJobDefinitionRead(ctx context.Context, d *schema.ResourceDa
 	jq, clientErr := c.AwsBatchJobDefinitionGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsBatchJobDefinitionRead(%s, %s): object missing", tenantID, name)
 			d.SetId("")
 			return nil
 		}
 		return diag.FromErr(clientErr)
 	}
 	if jq == nil {
+		log.Printf("[TRACE] resourceAwsBatchJobDefinitionRead(%s, %s): object missing", tenantID, name)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -289,11 +292,16 @@ func resourceAwsBatchJobDefinitionDelete(ctx context.Context, d *schema.Resource
 	c := m.(*duplosdk.Client)
 	fullName, _ := c.GetDuploServicesName(tenantID, name)
 
-	jq, err := c.AwsBatchJobDefinitionGetAllRevisions(tenantID, fullName)
-	if err != nil {
-		return diag.FromErr(err)
+	jq, clientErr := c.AwsBatchJobDefinitionGetAllRevisions(tenantID, fullName)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsBatchJobDefinitionDelete(%s, %s): object missing", tenantID, name)
+			return nil
+		}
+		return diag.FromErr(clientErr)
 	}
 	if jq == nil {
+		log.Printf("[TRACE] resourceAwsBatchJobDefinitionDelete(%s, %s): object missing", tenantID, name)
 		return nil
 	}
 	for _, data := range *jq {
