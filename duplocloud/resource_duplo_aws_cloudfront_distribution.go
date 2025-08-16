@@ -896,6 +896,7 @@ func resourceAwsCloudfrontDistributionRead(ctx context.Context, d *schema.Resour
 	duplo, clientErr := c.AwsCloudfrontDistributionGet(tenantID, cfdId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end - distribution not found", tenantID, cfdId)
 			d.SetId("")
 			return nil
 		}
@@ -1038,6 +1039,7 @@ func resourceAwsCloudfrontDistributionDelete(ctx context.Context, d *schema.Reso
 		clientErr := c.AwsCloudfrontDistributionDisable(tenantID, cfdId)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
+				log.Printf("[TRACE] Cloudfront distribution disabled before delete. (%s, %s): nd", tenantID, cfdId)
 				return nil
 			}
 			return diag.Errorf("Unable to disable tenant %s aws cloudfront distribution '%s': %s", tenantID, cfdId, clientErr)
@@ -1053,6 +1055,7 @@ func resourceAwsCloudfrontDistributionDelete(ctx context.Context, d *schema.Reso
 	clientErr := c.AwsCloudfrontDistributionDelete(tenantID, cfdId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsCloudfrontDistributionDelete(%s, %s): end", tenantID, cfdId)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s aws cloudfront distribution '%s': %s", tenantID, cfdId, clientErr)

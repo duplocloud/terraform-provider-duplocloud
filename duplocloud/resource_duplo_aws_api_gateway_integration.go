@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -76,6 +77,7 @@ func resourceAwsApiGatewayIntegrationRead(ctx context.Context, d *schema.Resourc
 	duplo, clientErr := c.TenantGetAPIGateway(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsApiGatewayIntegrationRead(%s, %s): aws api gateway integration not found", tenantID, fullname)
 			d.SetId("")
 			return nil
 		}
@@ -137,6 +139,7 @@ func resourceAwsApiGatewayIntegrationDelete(ctx context.Context, d *schema.Resou
 	clientErr := c.TenantDeleteAPIGateway(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsApiGatewayIntegrationDelete(%s, %s): aws api gateway integration not found", tenantID, fullname)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s aws api gateway integration '%s': %s", tenantID, fullname, clientErr)

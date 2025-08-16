@@ -390,7 +390,13 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 	if cerr != nil && cerr.Status() != 404 {
 		return diag.Errorf("Unable to retrieve AWS host '%s': %s", id, cerr)
 	}
+	if cerr != nil && cerr.Status() == 404 {
+		log.Printf("[TRACE] resourceAwsHostRead(%s): not found", id)
+		d.SetId("") // object missing
+		return nil
+	}
 	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsHostRead(%s): not found", id)
 		d.SetId("") // object missing
 		return nil
 	}

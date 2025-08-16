@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -161,10 +162,16 @@ func resourceAwsApiGatewayEventRead(ctx context.Context, d *schema.ResourceData,
 	duplo, clientErr := c.ApiGatewayEventGet(tenantID, apigatewayid, method, path)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsApiGatewayEventRead(%s, %s): API Gateway Event not found", tenantID, apigatewayid+"--"+method+"--"+path)
 			d.SetId("") // object missing
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s API Gateway Event '%s': %s", tenantID, apigatewayid+"--"+method+"--"+path, clientErr)
+	}
+	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsApiGatewayEventRead(%s, %s): API Gateway Event not found", tenantID, apigatewayid+"--"+method+"--"+path)
+		d.SetId("") // object missing
+		return nil
 	}
 
 	d.Set("tenant_id", tenantID)
@@ -310,6 +317,7 @@ func resourceAwsApiGatewayEventDelete(ctx context.Context, d *schema.ResourceDat
 	clientErr := c.ApiGatewayEventDelete(tenantID, apigatewayid, method, path)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsApiGatewayEventDelete(%s, %s): API Gateway Event not found", tenantID, apigatewayid+"--"+method+"--"+path)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s API Gateway Event '%s': %s", tenantID, apigatewayid+"--"+method+"--"+path, clientErr)
