@@ -536,9 +536,18 @@ func flattenConfigMapVolumeSource(in *v1.ConfigMapVolumeSource) []interface{} {
 
 func flattenEmptyDirVolumeSource(in *v1.EmptyDirVolumeSource) []interface{} {
 	att := make(map[string]interface{})
-	att["medium"] = string(in.Medium)
+	medium := string(in.Medium)
+	flag := 0
+	if medium != "" {
+		att["medium"] = medium
+		flag = 1
+	}
 	if in.SizeLimit != nil {
 		att["size_limit"] = in.SizeLimit.String()
+		flag = 1
+	}
+	if flag == 0 {
+		return nil
 	}
 	return []interface{}{att}
 }
@@ -1096,7 +1105,9 @@ func expandEmptyDir(dir []interface{}) (*v1.EmptyDirVolumeSource, error) {
 	dirBody := v1.EmptyDirVolumeSource{}
 	dirMap := dir[0].(map[string]interface{})
 	if v, ok := dirMap["medium"]; ok {
-		dirBody.Medium = v.(v1.StorageMedium)
+		med := v.(string)
+
+		dirBody.Medium = v1.StorageMedium(med)
 	}
 	if v, ok := dirMap["size_limit"]; ok {
 

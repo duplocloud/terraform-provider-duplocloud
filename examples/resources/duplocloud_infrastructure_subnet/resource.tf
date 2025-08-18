@@ -15,3 +15,10 @@ resource "duplocloud_infrastructure_subnet" "az-subnet" {
   type              = "appgwsubnet"
   service_endpoints = ["Microsoft.Storage"]
 }
+//Azure example with delegated subnet.
+resource "duplocloud_infrastructure_subnet" "az-subnet" {
+  name       = "mySubnet"
+  infra_name = "myinfra"
+  cidr_block = "10.44.80.0/24"
+  type       = "app-service-plan"
+}

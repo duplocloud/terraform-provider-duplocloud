@@ -2,9 +2,11 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	"fmt"
 	"log"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -15,7 +17,7 @@ func resourceUser() *schema.Resource {
 		Description:   "`duplocloud_user` manages a user in Duplo.",
 		ReadContext:   resourceUserRead,
 		CreateContext: resourceUserCreate,
-		UpdateContext: resourceUserCreate,
+		UpdateContext: resourceUserUpdate,
 		DeleteContext: resourceUserDelete,
 
 		Timeouts: &schema.ResourceTimeout{
@@ -72,6 +74,21 @@ func resourceUser() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"permissions": {
+				Description: "The list of permissions assigned to the user.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+						v := val.(string)
+						if v == "" {
+							errs = append(errs, fmt.Errorf("%q must not be an empty string", key))
+						}
+						return
+					},
+				},
+			},
 		},
 	}
 }
@@ -105,7 +122,14 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	d.Set("is_vpn_config_created", duplo.IsVpnConfigCreated)
 	d.Set("is_confirmation_email_sent", duplo.IsConfirmationEmailSent)
 	d.Set("current_session_token", duplo.CurrentSessionToken)
+	p := []interface{}{}
+	for _, perm := range duplo.Permissions {
+		if perm != "" {
+			p = append(p, perm)
+		}
+	}
 
+	d.Set("permissions", p)
 	log.Printf("[TRACE] resourceUserRead(%s): end", id)
 	return nil
 }
@@ -123,7 +147,13 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, m interface
 	if v, ok := getAsStringArray(d, "roles"); ok && v != nil {
 		rq.Roles = v
 	}
-
+	if v, ok := d.GetOk("permissions"); ok && len(v.([]interface{})) > 0 {
+		for _, perm := range v.([]interface{}) {
+			if permStr, ok := perm.(string); ok && permStr != "" {
+				rq.Permissions = append(rq.Permissions, permStr)
+			}
+		}
+	}
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
 	resp, err := c.UserCreate(rq)
@@ -151,6 +181,56 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, m interface
 	}
 
 	log.Printf("[TRACE] resourceUserCreate(%s): end", userName)
+	return nil
+}
+
+func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	userName := d.Get("username").(string)
+	log.Printf("[TRACE] resourceUserUpdate(%s): start", userName)
+	rq := duplosdk.DuploUser{
+		Username:              userName,
+		IsReadOnly:            d.Get("is_readonly").(bool),
+		ReallocateVpnAddress:  d.Get("reallocate_vpn_address").(bool),
+		RegenerateVpnPassword: d.Get("regenerate_vpn_password").(bool),
+		State:                 "updated",
+	}
+	if v, ok := getAsStringArray(d, "roles"); ok && v != nil {
+		rq.Roles = v
+	}
+	if v, ok := d.GetOk("permissions"); ok && len(v.([]interface{})) > 0 {
+		for _, perm := range v.([]interface{}) {
+			if permStr, ok := perm.(string); ok && permStr != "" {
+				rq.Permissions = append(rq.Permissions, permStr)
+			}
+		}
+	}
+	// Post the object to Duplo
+	c := m.(*duplosdk.Client)
+	resp, err := c.UserCreate(rq)
+	if err != nil {
+		return diag.Errorf("Unable to update User '%s': %s", userName, err)
+	}
+
+	var rp *duplosdk.DuploUser
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "User", userName, func() (interface{}, duplosdk.ClientError) {
+		rp, err = c.UserGet(userName)
+		return rp, err
+	})
+	if diags != nil {
+		return diags
+	}
+
+	d.SetId(userName)
+	d.Set("vpn_static_ip", resp.VpnStaticIp)
+	d.Set("is_vpn_config_created", resp.IsVpnConfigCreated)
+	d.Set("is_confirmation_email_sent", resp.IsConfirmationEmailSent)
+	d.Set("current_session_token", resp.CurrentSessionToken)
+	diags = resourceUserRead(ctx, d, m)
+	if diags != nil {
+		return diags
+	}
+
+	log.Printf("[TRACE] resourceUserUpdate(%s): end", userName)
 	return nil
 }
 
