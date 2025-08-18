@@ -164,6 +164,7 @@ type DuploRDSClusterCompareField struct {
 type DuploRDSStorageAutoScalling struct {
 	IsAutoScalingEnabled bool `json:"IsAutoScalingEnabled"`
 	MaxAllocatedStorage  int  `json:"MaxAllocatedStorage"`
+	ApplyImmediately     bool `json:"ApplyImmediately"`
 }
 
 /*************************************************
@@ -522,6 +523,15 @@ func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, Cl
 }
 
 func (c *Client) UpdateRDSDBInstanceStorageAutoScalling(tenantID string, identifier string, duploObject DuploRDSStorageAutoScalling) ClientError {
+	return c.putAPI(
+		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
+		&duploObject,
+		nil,
+	)
+}
+
+func (c *Client) UpdateRDSDBInstancePassThrough(tenantID string, identifier string, duploObject DuploRDSStorageAutoScalling) ClientError {
 	return c.putAPI(
 		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, identifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/updatePayload", tenantID, identifier),

@@ -795,17 +795,11 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 			obj := duplosdk.DuploRDSStorageAutoScalling{
 				IsAutoScalingEnabled: d.Get("storage_autoscaling.0.enable").(bool),
 				MaxAllocatedStorage:  d.Get("storage_autoscaling.0.max_allocated_storage").(int),
+				ApplyImmediately:     true,
 			}
 			cerr := c.UpdateRDSDBInstanceStorageAutoScalling(tenantID, identifier, obj)
 			if cerr != nil {
 				return diag.FromErr(err)
-			}
-			_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, d.Timeout("update"))
-
-			// Wait for the instance to become available.
-			err := rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
-			if err != nil {
-				return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 			}
 		}
 
@@ -1075,7 +1069,7 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	if duploObject.IsAutoScalingEnabled {
 		mp := map[string]interface{}{
 			"enable":                duploObject.IsAutoScalingEnabled,
-			"max_allocated_storage": duploObject.AllocatedStorage,
+			"max_allocated_storage": duploObject.MaxAllocatedStorage,
 		}
 		jo["storage_autoscaling"] = []interface{}{mp}
 
