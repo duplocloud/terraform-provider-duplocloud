@@ -287,10 +287,11 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Default:  false,
 		},
 		"enable_iam_auth": {
-			Description: "Whether or not to enable the RDS IAM authentication.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Computed:    true,
+			Description:      "Whether or not to enable the RDS IAM authentication. It can only be set during instance creation.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"enhanced_monitoring": {
 			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
@@ -919,7 +920,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 		return nil, errors.New("v2_scaling_configuration: min_capacity and max_capacity must be provided")
 	}
 	if duploObject.MultiAZ && duploObject.AvailabilityZone != "" {
-		return nil, errors.New("multi_az and availability_zone can not be set together.")
+		return nil, errors.New("multi_az and availability_zone can not be set together")
 	}
 	duploObject.DatabaseName = d.Get("db_name").(string)
 	pI := expandPerformanceInsight(d)
@@ -932,7 +933,6 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 		duploObject.PerformanceInsightsKMSKeyId = kmsid
 
 	}
-
 	return duploObject, nil
 }
 

@@ -116,26 +116,24 @@ func (c *Client) DuploCloudWatchEventRuleGet(tenantID string, ruleName string) (
 	return nil, err
 }
 
-func (c *Client) DuploCloudWatchEventTargetsCreate(tenantID string, rq *DuploCloudWatchEventTargets) (*map[string]interface{}, ClientError) {
-	rp := map[string]interface{}{}
+func (c *Client) DuploCloudWatchEventTargetsCreate(tenantID string, rq *DuploCloudWatchEventTargets) ClientError {
 	err := c.postAPI(
 		fmt.Sprintf("DuploCloudWatchEventTargetCreate(%s, %s)", tenantID, rq.Rule),
 		fmt.Sprintf("v3/subscriptions/%s/aws/eventTargets", tenantID),
 		&rq,
-		&rp,
+		nil,
 	)
-	return &rp, err
+	return err
 }
 
-func (c *Client) DuploCloudWatchEventTargetsDelete(tenantID string, rq DuploCloudWatchEventTargetsDeleteReq) (*map[string]interface{}, ClientError) {
-	rp := map[string]interface{}{}
+func (c *Client) DuploCloudWatchEventTargetsDelete(tenantID string, rq DuploCloudWatchEventTargetsDeleteReq) ClientError {
 	err := c.postAPI(
 		fmt.Sprintf("DuploCloudWatchEventTargetsDelete(%s, %s)", tenantID, rq.Rule),
 		fmt.Sprintf("v3/subscriptions/%s/aws/deleteEventTargets", tenantID),
 		&rq,
-		&rp,
+		nil,
 	)
-	return &rp, err
+	return err
 }
 
 func (c *Client) DuploCloudWatchEventTargetsList(tenantID string, ruleName string) (*[]DuploCloudWatchEventTarget, ClientError) {
@@ -193,7 +191,7 @@ func (c *Client) DuploCloudWatchMetricAlarmDelete(tenantId, fullName string) Cli
 	var rp = ""
 	rq := DuploCloudWatchMetricAlarm{
 		Name:  fullName,
-		State: "Delete",
+		State: "delete",
 	}
 	err := c.postAPI(
 		fmt.Sprintf("DuploCloudWatchMetricAlarmCreate(%s, %s)", tenantId, rq.MetricName),

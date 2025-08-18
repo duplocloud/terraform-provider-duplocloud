@@ -43,7 +43,7 @@ func (c *Client) K8SecretGet(tenantID, secretName string) (*DuploK8sSecret, Clie
 		return nil, newClientError(fmt.Sprintf("failed to get secret list: %s", err))
 	}
 
-	if list == nil {
+	if list == nil || len(*list) == 0 {
 		return nil, newClientError("secret list is nil")
 	}
 

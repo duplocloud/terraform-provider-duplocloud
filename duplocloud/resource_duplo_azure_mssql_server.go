@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -89,6 +90,49 @@ func duploAzureMssqlServerSchema() map[string]*schema.Schema {
 			Type:     schema.TypeMap,
 			Computed: true,
 			Elem:     schema.TypeString,
+		},
+		"active_directory_administrator": {
+			Description:      "Allows you to set a user or group as the AD administrator for an Azure SQL server.",
+			Type:             schema.TypeList,
+			MaxItems:         1,
+			Optional:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"login": {
+						Description: "The login name of the principal to set as the server administrator",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"object_id": {
+						Description: "The ID of the principal to set as the server administrator",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"tenant_id": {
+						Description: "The Azure Tenant ID",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"ad_authentication_only": {
+						Description: "Specifies whether only AD Users and administrators can be used to login (`true`) or also local database users (`false`).",
+						Type:        schema.TypeBool,
+						Optional:    true,
+					},
+					"principal_type": {
+						Description:  "Specify the type of the principal: `User`, `Group`, or `Application`",
+						Type:         schema.TypeString,
+						Optional:     true,
+						ValidateFunc: validation.StringInSlice([]string{"User", "Group", "Application"}, false),
+					},
+					"administrator_type": {
+						Description:  "Implicitly inferred. Valid value ActiveDirectory",
+						Type:         schema.TypeString,
+						Optional:     true,
+						ValidateFunc: validation.StringInSlice([]string{"ActiveDirectory"}, false),
+					},
+				},
+			},
 		},
 	}
 }
@@ -210,7 +254,7 @@ func resourceAzureMssqlServerDelete(ctx context.Context, d *schema.ResourceData,
 }
 
 func expandAzureMssqlServer(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlRequest {
-	return &duplosdk.DuploAzureMsSqlRequest{
+	obj := &duplosdk.DuploAzureMsSqlRequest{
 		Name:                                 d.Get("name").(string),
 		PropertiesVersion:                    d.Get("version").(string),
 		PropertiesAdministratorLogin:         d.Get("administrator_login").(string),
@@ -218,6 +262,19 @@ func expandAzureMssqlServer(d *schema.ResourceData) *duplosdk.DuploAzureMsSqlReq
 		PropertiesPublicNetworkAccess:        d.Get("public_network_access").(string),
 		PropertiesMinimalTLSVersion:          d.Get("minimum_tls_version").(string),
 	}
+	ada, ok := d.GetOk("active_directory_administrator")
+	if ok {
+		for _, i := range ada.([]interface{}) {
+			m := i.(map[string]interface{})
+			obj.ADLogin = m["login"].(string)
+			obj.ObjectId = m["object_id"].(string)
+			obj.ADTenantId = m["tenant_id"].(string)
+			obj.ADPrincipalType = m["principal_type"].(string)
+			obj.IsAzureADOnlyAuthenticationEnabled = m["ad_authentication_only"].(bool)
+			obj.ADAdministratorType = m["administrator_type"].(string)
+		}
+	}
+	return obj
 }
 
 func parseAzureMssqlServerIdParts(id string) (tenantID, name string, err error) {
@@ -238,6 +295,26 @@ func flattenAzureMssqlServer(d *schema.ResourceData, duplo *duplosdk.DuploAzureM
 	d.Set("version", duplo.PropertiesVersion)
 	d.Set("fqdn", duplo.PropertiesFullyQualifiedDomainName)
 	d.Set("tags", duplo.Tags)
+	/* //commenting since get api doesnt return the value for now and to avoid diff
+	m := make(map[string]interface{})
+	if duplo.ADLogin != "" {
+		m["login"] = duplo.ADLogin
+	}
+	if duplo.ObjectId != "" {
+		m["object_id"] = duplo.ObjectId
+	}
+	if duplo.ADTenantId != "" {
+		m["tenant_id"] = duplo.ADTenantId
+	}
+	if duplo.ADPrincipalType != "" {
+		m["principal_type"] = duplo.ADPrincipalType
+	}
+	if duplo.ADAdministratorType != "" {
+		m["administrator_type"] = duplo.ADAdministratorType
+	}
+	m["ad_authentication_only"] = duplo.IsAzureADOnlyAuthenticationEnabled
+	d.Set("active_directory_administrator", []interface{}{m})
+	*/
 }
 
 func mssqlSeverWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
