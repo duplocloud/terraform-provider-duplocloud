@@ -337,6 +337,7 @@ Should be one of:
  Defaults to `0`.
 - `allocation_tags` (String)
 - `any_host_allowed` (Boolean) Whether or not the service can run on hosts in other tenants (within the the same plan as the current tenant). Defaults to `false`.
+- `app_name` (String) The name of the app where service will be a part
 - `cloud` (Number) The numeric ID of the cloud provider to launch the service in.
 Should be one of:
 
