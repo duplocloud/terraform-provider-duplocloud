@@ -917,7 +917,7 @@ func base64IsEncoded(data string) bool {
 }
 
 func DuploManagedAzureTags() []string {
-	return []string{"TENANT_NAME", "TENANT_ID", "duplo-project", "duplo_creation_time", "duplo_sync_vm", "owner", "duplo_aaddomainjoin", "duplo_domainjoin", "duplo_associated_nic_name"}
+	return []string{"TENANT_NAME", "TENANT_ID", "duplo-project", "duplo_creation_time", "duplo_sync_vm", "owner", "duplo_aaddomainjoin", "duplo_domainjoin", "duplo_associated_nic_name", "install_duplo_native_agent"}
 }
 
 func Contains(s []string, e string) bool {
@@ -1267,6 +1267,14 @@ func stringInSlice(s string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func ExpandStringList(inf []interface{}) []string {
+	obj := []string{}
+	for _, i := range inf {
+		obj = append(obj, i.(string))
+	}
+	return obj
 }
 
 func gBToBytes(gb int) int64 {

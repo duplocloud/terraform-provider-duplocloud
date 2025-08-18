@@ -136,7 +136,12 @@ resource "duplocloud_aws_host" "host" {
 
 ### Optional
 
-- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
+- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to.
+ - 0: Linux Docker/Native
+- 	4: None
+- 5: Docker Windows
+- 7: EKS Linux
+- 8: ECS Defaults to `0`.
 - `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
 - `cloud` (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.

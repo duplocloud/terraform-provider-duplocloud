@@ -181,7 +181,6 @@ func createOrUpdateLambdaEventInvokeConfiguration(ctx context.Context, d *schema
 	tenantId := d.Get("tenant_id").(string)
 
 	request := buildPutLambdaEventInvokeRequest(d)
-
 	err := duploClient.LambdaEventInvokeConfigCreateOrUpdate(tenantId, functionName, request)
 
 	if err != nil {
