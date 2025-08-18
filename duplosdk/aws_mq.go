@@ -28,7 +28,7 @@ type DuploAWSMQ struct {
 	DataReplicationMode             DataReplicationMode        `json:"dataReplicationMode"`                       //CRDR, NONE
 	DataReplicationPrimaryBrokerArn string                     `json:"dataReplicationPrimaryBrokerArn,omitempty"` // required when CRDR
 	EncryptionOptions               *DuploMQEncryptionOptions  `json:"encryptionOptions,omitempty"`
-	Logs                            *DuploMQLogs               `json:"logs"`
+	Logs                            *DuploMQLogs               `json:"logs,omitempty"`
 	MaintenanceWindow               *DuploMQMaintenanceWindow  `json:"maintenanceWindowStartTime,omitempty"`
 	PubliclyAccessible              bool                       `json:"publiclyAccessible"`
 	SecurityGroups                  []string                   `json:"securityGroups"`
@@ -70,8 +70,8 @@ type DuploMQEncryptionOptions struct {
 }
 
 type DuploMQLogs struct {
-	Audit   bool `json:"Audit"` //not aplicable for rabbit mq
-	General bool `json:"General"`
+	Audit   *bool `json:"Audit,omitempty"` //not aplicable for rabbit mq
+	General bool  `json:"General"`
 }
 
 type DuploMQMaintenanceWindow struct {
@@ -132,7 +132,7 @@ type DuploMQBrokerResponse struct {
 	EncryptionOptions *DuploMQEncryptionOptions `json:"EncryptionOptions"`
 	EngineVersion     string                    `json:"EngineVersion"`
 	Logs              struct {
-		Audit           bool   `json:"Audit"`
+		Audit           *bool  `json:"Audit,omitempty"`
 		AuditLogGroup   string `json:"AuditLogGroup"`
 		General         bool   `json:"General"`
 		GeneralLogGroup string `json:"GeneralLogGroup"`

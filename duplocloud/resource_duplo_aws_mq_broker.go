@@ -83,7 +83,14 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringInSlice([]string{"LDAP", "SIMPLE"}, false),
-			Description:  "The authentication strategy. Valid values: LDAP, SIMPLE.",
+			Description:  "The authentication strategy. Valid values: LDAP, SIMPLE., RABBITMQ only supports SIMPLE and its not updatable after creation of RABBITMQ.",
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// Suppress diff if the engine type is RABBITMQ and the authentication strategy is SIMPLE
+				if strings.EqualFold(d.Get("engine_type").(string), "RABBITMQ") && !strings.EqualFold(d.Get("authentication_strategy").(string), "SIMPLE") {
+					return true
+				}
+				return false
+			},
 		},
 		"auto_minor_version_upgrade": {
 			Type:        schema.TypeBool,
@@ -97,7 +104,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 		"users": {
 			Type:        schema.TypeSet,
 			Optional:    true,
-			Description: "List of users for the broker.",
+			Description: "List of users for the broker. User not updatable after creation for RABBITMQ.",
 			Set:         resourceUserHash,
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 				// AWS currently does not support updating the RabbitMQ users beyond resource creation.
@@ -149,7 +156,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			MaxItems:    1,
-			Description: "LDAP server metadata.",
+			Description: "LDAP server metadata. Not applicable for RabbitMQ.",
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"hosts": {
@@ -252,12 +259,13 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 		"data_replication_primary_broker_arn": {
 			Type:        schema.TypeString,
 			Optional:    true,
+			ForceNew:    true,
 			Description: "ARN of the primary broker for data replication. Required when data_replication_mode is CRDR.",
 		},
 		"encryption_options": {
 			Type:        schema.TypeList,
 			Optional:    true,
-			Computed:    true,
+			ForceNew:    true,
 			MaxItems:    1,
 			Description: "Encryption options for the broker.",
 			Elem: &schema.Resource{
@@ -265,11 +273,13 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 					"kms_key_id": {
 						Type:        schema.TypeString,
 						Optional:    true,
+						ForceNew:    true,
 						Description: "KMS Key ID for encryption.",
 					},
 					"use_aws_owned_key": {
 						Type:        schema.TypeBool,
 						Optional:    true,
+						ForceNew:    true,
 						Description: "Whether to use AWS owned key.",
 					},
 				},
@@ -286,6 +296,10 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 						Type:        schema.TypeBool,
 						Optional:    true,
 						Description: "Enable audit logging (not applicable for RabbitMQ).",
+						DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+							// Suppress diff if the engine type is RABBITMQ and the authentication strategy is SIMPLE
+							return strings.EqualFold(d.Get("engine_type").(string), "RABBITMQ")
+						},
 					},
 					"general": {
 						Type:        schema.TypeBool,
@@ -330,12 +344,16 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 		"security_groups": {
 			Type:        schema.TypeList,
 			Required:    true,
-			Description: "List of security group IDs.",
+			Description: "List of security group IDs. SG cannot be updated after creation for RABBITMQ.",
 			Elem:        &schema.Schema{Type: schema.TypeString},
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				return strings.EqualFold(d.Get("engine_type").(string), "RABBITMQ")
+			},
 		},
 		"subnet_ids": {
 			Type:        schema.TypeList,
-			Required:    true,
+			Optional:    true,
+			Computed:    true,
 			Description: "List of subnet IDs.",
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
@@ -523,7 +541,11 @@ func expandAwsMqBroker(d *schema.ResourceData) *duplosdk.DuploAWSMQ {
 			General: logs["general"].(bool),
 		}
 		if a, ok := logs["audit"]; ok && a != nil {
-			req.Logs.Audit = a.(bool)
+			nullBool := a.(bool)
+			req.Logs.Audit = &nullBool
+		}
+		if req.EngineType == "RABBITMQ" {
+			req.Logs.Audit = nil
 		}
 	}
 
@@ -726,62 +748,88 @@ func waitUntilMQBrokerReady(ctx context.Context, c *duplosdk.Client, tenantID st
 
 func expandAwsMqBrokerUpdate(d *schema.ResourceData, brokerId string) *duplosdk.DuploAWSMQBrokerUpdateRequest {
 	req := &duplosdk.DuploAWSMQBrokerUpdateRequest{
-		HostInstanceType:        d.Get("host_instance_type").(string),
-		EngineVersion:           d.Get("engine_version").(string),
-		AuthenticationStrategy:  duplosdk.AuthenticationStrategy(d.Get("authentication_strategy").(string)),
-		AutoMinorVersionUpgrade: d.Get("auto_minor_version_upgrade").(bool),
-		DataReplicationMode:     duplosdk.DataReplicationMode(d.Get("data_replication_mode").(string)),
-		SecurityGroups:          expandStringList(d.Get("security_groups").([]interface{})),
-		BrokerId:                brokerId,
+		BrokerId: brokerId,
+	}
+	if d.HasChange("host_instance_type") {
+		req.HostInstanceType = d.Get("host_instance_type").(string)
+
+	}
+	if d.HasChange("engine_version") {
+		req.EngineVersion = d.Get("engine_version").(string)
+	}
+	if d.HasChange("auto_minor_version_upgrade") {
+		req.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
 	}
 
-	if v, ok := d.GetOk("ldap_server_metadata"); ok && len(v.([]interface{})) > 0 {
-		ldap := v.([]interface{})[0].(map[string]interface{})
-		req.LdapServerMetadata = &duplosdk.DuploMQLDAPMetadata{
-			Hosts:                  expandStringList(ldap["hosts"].([]interface{})),
-			RoleBase:               ldap["role_base"].(string),
-			RoleName:               ldap["role_name"].(string),
-			RoleSearchMatching:     ldap["role_search_matching"].(string),
-			RoleSearchSubtree:      ldap["role_search_subtree"].(bool),
-			ServiceAccountPassword: ldap["service_account_password"].(string),
-			ServiceAccountUsername: ldap["service_account_username"].(string),
-			UserBase:               ldap["user_base"].(string),
-			UserRoleName:           ldap["user_role_name"].(string),
-			UserSearchMatching:     ldap["user_search_matching"].(string),
-			UserSearchSubtree:      ldap["user_search_subtree"].(bool),
+	if d.HasChange("data_replication_mode") {
+		req.DataReplicationMode = duplosdk.DataReplicationMode(d.Get("data_replication_mode").(string))
+
+	}
+
+	if d.HasChange("authentication_strategy") {
+		req.AuthenticationStrategy = duplosdk.AuthenticationStrategy(d.Get("authentication_strategy").(string))
+	}
+	if d.HasChange("security_groups") {
+		req.SecurityGroups = expandStringList(d.Get("security_groups").([]interface{}))
+	}
+	if d.HasChange("ldap_server_metadata") {
+		if v, ok := d.GetOk("ldap_server_metadata"); ok && len(v.([]interface{})) > 0 {
+			ldap := v.([]interface{})[0].(map[string]interface{})
+			req.LdapServerMetadata = &duplosdk.DuploMQLDAPMetadata{
+				Hosts:                  expandStringList(ldap["hosts"].([]interface{})),
+				RoleBase:               ldap["role_base"].(string),
+				RoleName:               ldap["role_name"].(string),
+				RoleSearchMatching:     ldap["role_search_matching"].(string),
+				RoleSearchSubtree:      ldap["role_search_subtree"].(bool),
+				ServiceAccountPassword: ldap["service_account_password"].(string),
+				ServiceAccountUsername: ldap["service_account_username"].(string),
+				UserBase:               ldap["user_base"].(string),
+				UserRoleName:           ldap["user_role_name"].(string),
+				UserSearchMatching:     ldap["user_search_matching"].(string),
+				UserSearchSubtree:      ldap["user_search_subtree"].(bool),
+			}
 		}
 	}
-
 	// Configuration
-	if v, ok := d.GetOk("configuration"); ok && len(v.([]interface{})) > 0 {
-		conf := v.([]interface{})[0].(map[string]interface{})
-		req.Configuration = &duplosdk.DuplocloudMQConfiguration{
-			Id:       conf["id"].(string),
-			Revision: conf["revision"].(int),
+	if d.HasChange("configuration") {
+		if v, ok := d.GetOk("configuration"); ok && len(v.([]interface{})) > 0 {
+			conf := v.([]interface{})[0].(map[string]interface{})
+			req.Configuration = &duplosdk.DuplocloudMQConfiguration{
+				Id:       conf["id"].(string),
+				Revision: conf["revision"].(int),
+			}
 		}
 	}
-
 	// Logs
-	if v, ok := d.GetOk("logs"); ok && len(v.([]interface{})) > 0 {
-		logs := v.([]interface{})[0].(map[string]interface{})
-		req.Logs = &duplosdk.DuploMQLogs{
-			General: logs["general"].(bool),
-		}
-		if a, ok := logs["audit"]; ok && a != nil {
-			req.Logs.Audit = a.(bool)
+	if d.HasChange("logs") {
+
+		if v, ok := d.GetOk("logs"); ok && len(v.([]interface{})) > 0 {
+			logs := v.([]interface{})[0].(map[string]interface{})
+			req.Logs = &duplosdk.DuploMQLogs{
+				General: logs["general"].(bool),
+			}
+			if a, ok := logs["audit"]; ok && a != nil {
+				nullBool := a.(bool)
+				req.Logs.Audit = &nullBool
+			}
+			if d.Get("engine_type").(string) == "RABBITMQ" {
+				// AWS does not return audit logging for RabbitMQ, so we set it to false.
+				req.Logs.Audit = nil
+			}
+
 		}
 	}
-
 	// Maintenance window
-	if v, ok := d.GetOk("maintenance_window"); ok && len(v.([]interface{})) > 0 {
-		mw := v.([]interface{})[0].(map[string]interface{})
-		req.MaintenanceWindow = &duplosdk.DuploMQMaintenanceWindow{
-			TimeOfDay: mw["time_of_day"].(string),
-			TimeZone:  mw["time_zone"].(string),
-			DayOfWeek: duplosdk.DayOfWeek(mw["day_of_week"].(string)),
+	if d.HasChange("maintenance_window") {
+		if v, ok := d.GetOk("maintenance_window"); ok && len(v.([]interface{})) > 0 {
+			mw := v.([]interface{})[0].(map[string]interface{})
+			req.MaintenanceWindow = &duplosdk.DuploMQMaintenanceWindow{
+				TimeOfDay: mw["time_of_day"].(string),
+				TimeZone:  mw["time_zone"].(string),
+				DayOfWeek: duplosdk.DayOfWeek(mw["day_of_week"].(string)),
+			}
 		}
 	}
-
 	return req
 }
 
