@@ -239,6 +239,12 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"app_name": {
+			Description: "The name of the app where service will be a part",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -321,6 +327,7 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		ShouldSpreadAcrossZones:           d.Get("should_spread_across_zones").(bool),
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
+		AppName:                           d.Get("app_name").(string),
 	}
 	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
 		updatedOtherDockerConfig, err := updateInitContainerImages(d.Get("other_docker_config").(string), v.([]interface{}))
@@ -377,6 +384,7 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 		ShouldSpreadAcrossZones:           d.Get("should_spread_across_zones").(bool),
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
+		AppName:                           d.Get("app_name").(string),
 	}
 	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
 		updatedOtherDockerConfig, err := updateInitContainerImages(d.Get("other_docker_config").(string), d.Get("init_container_docker_image").([]interface{}))

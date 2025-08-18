@@ -31,8 +31,9 @@ func (c *Client) GetCloudFrontFunction(tenantID, name string) (*DuploCloudFrontF
 	if err != nil {
 		return nil, err
 	}
+
 	err = c.getAPI(fmt.Sprintf("GetCloudFrontFunction(%s,%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/cloudfront/function/%s/code?stage=LIVE", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudfront/function/%s/code?stage=%s", tenantID, name, rp.FunctionSummary.FunctionMetadata.Stage.Value),
 		&code)
 
 	if err != nil {

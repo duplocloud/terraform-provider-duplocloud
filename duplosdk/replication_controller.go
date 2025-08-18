@@ -31,6 +31,7 @@ type DuploReplicationController struct {
 	Tags                              *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
 	Index                             int                    `json:"Index"`
+	AppName                           string                 `json:"AppName,omitempty"`
 }
 
 // DuploPodTemplate represents a pod template in the Duplo SDK
@@ -160,6 +161,7 @@ type DuploReplicationControllerCreateRequest struct {
 	Commands string `json:"Commands,omitempty"`
 
 	// TODO: DeviceIds
+	AppName string `json:"AppName,omitempty"`
 }
 
 type DuploReplicationControllerUpdateRequest struct {
@@ -182,6 +184,7 @@ type DuploReplicationControllerUpdateRequest struct {
 	OtherDockerConfig                 string                 `json:"OtherDockerConfig,omitempty"`
 	OtherDockerHostConfig             string                 `json:"OtherDockerHostConfig,omitempty"`
 	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
+	AppName                           string                 `json:"AppName,omitempty"`
 }
 
 type DuploReplicationControllerDeleteRequest struct {

@@ -38,6 +38,11 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
     backup_storage_redundancy = "Geo"
     type                      = "Periodic"
   }
+  geo_location {
+    location_name     = "centralus"
+    failover_priority = 0
+  }
+
   enable_free_tier = true #applicable only for provisioned type databases
 }
 
@@ -64,6 +69,41 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
     backup_storage_redundancy = "Geo"
     type                      = "Periodic"
   }
+  geo_location {
+    location_name     = "centralus"
+    failover_priority = 0
+  }
+
+}
+
+
+resource "duplocloud_azure_cosmos_db_account" "account" {
+  tenant_id = "8ea6f24e-0f13-4ad5-999f-8a2acc18438e"
+  name      = "act13"
+  kind      = "GlobalDocumentDB"
+  consistency_policy {
+    default_consistency_level = "Session"
+  }
+  backup_policy {
+    backup_interval           = 240
+    backup_retention_interval = 8
+    backup_storage_redundancy = "Geo"
+    type                      = "Periodic"
+  }
+  #enable_free_tier = true
+  geo_location {
+    location_name     = "centralus"
+    failover_priority = 0
+  }
+  is_virtual_network_filter_enabled = true
+  virtual_network_rule {
+    subnet_id                            = "/subscriptions/143ffc59-9394-4ec6-8f5a-c408a238be62/resourceGroups/duploinfra-denisr-dev/providers/Microsoft.Network/virtualNetworks/denisr-dev/subnets/duploinfra-sql-managed-instance"
+    ignore_missing_vnet_service_endpoint = false
+  }
+  virtual_network_rule {
+    subnet_id                            = "/subscriptions/143ffc59-9394-4ec6-8f5a-c408a238be62/resourceGroups/duploinfra-denisr-dev/providers/Microsoft.Network/virtualNetworks/denisr-dev/subnets/duploinfra-sql-managed-instance-01"
+    ignore_missing_vnet_service_endpoint = false
+  }
 }
 ```
 
@@ -72,6 +112,7 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
 
 ### Required
 
+- `geo_location` (Block List, Min: 1) Specifies a geo_location resource, used to define where data should be replicated with the failover_priority 0 specifying the primary location (see [below for nested schema](#nestedblock--geo_location))
 - `kind` (String) Indicates the type of database account. This can only be set at database account creation.
 			Allowed Account Kind : GlobalDocumentDB.
 			Future support MongoDB, Parse
@@ -87,15 +128,45 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
 - `consistency_policy` (Block List, Max: 1) Specify the consistency policy for the Cosmos DB account. (see [below for nested schema](#nestedblock--consistency_policy))
 - `disable_key_based_metadata_write_access` (Boolean) Disable write operations on metadata resources (databases, containers, throughput) via account keys Defaults to `false`.
 - `enable_free_tier` (Boolean) Flag to indicate whether Free Tier is enabled. Defaults to `false`.
+- `is_virtual_network_filter_enabled` (Boolean) Enables virtual network filtering for this Cosmos DB account.
 - `public_network_access` (String) Flag to indicate whether to enable/disable public network access. Defaults to `Enabled`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `type` (String) Specifies the  Cosmos DB account type. Defaults to `Microsoft.DocumentDB/databaseAccounts`.
+- `virtual_network_rule` (Block List) A list of virtual network rules for the Cosmos DB account. This is used to define which subnets are allowed to access this CosmosDB account (see [below for nested schema](#nestedblock--virtual_network_rule))
 
 ### Read-Only
 
 - `capacity_mode` (String)
+- `endpoint` (String) The endpoint used to connect to the CosmosDB account.
 - `id` (String) The ID of this resource.
 - `locations` (String) An array that contains the georeplication locations enabled for the Cosmos DB account.
+- `primary_master_key` (String, Sensitive) The primary key for the CosmosDB account.
+- `primary_mongo_connection_string` (String) The primary MongoDB connection string for the CosmosDB account.
+- `primary_readonly_master_key` (String, Sensitive) The primary readonly key for the CosmosDB account.
+- `primary_readonly_mongo_connection_string` (String) The primary readonly MongoDB connection string for the CosmosDB account.
+- `primary_readonly_sql_connection_string` (String) The primary readonly SQL connection string for the CosmosDB account.
+- `primary_sql_connection_string` (String) The primary SQL connection string for the CosmosDB account.
+- `read_endpoints` (List of String) The list of read endpoints for the CosmosDB account.
+- `secondary_master_key` (String, Sensitive) The secondary key for the CosmosDB account.
+- `secondary_mongo_connection_string` (String) The secondary MongoDB connection string for the CosmosDB account.
+- `secondary_readonly_master_key` (String, Sensitive) The secondary readonly key for the CosmosDB account.
+- `secondary_readonly_mongo_connection_string` (String) The secondary readonly MongoDB connection string for the CosmosDB account.
+- `secondary_readonly_sql_connection_string` (String) The secondary readonly SQL connection string for the CosmosDB account.
+- `secondary_sql_connection_string` (String) The secondary SQL connection string for the CosmosDB account.
+- `write_endpoints` (List of String) The list of write endpoints for the CosmosDB account.
+
+<a id="nestedblock--geo_location"></a>
+### Nested Schema for `geo_location`
+
+Required:
+
+- `failover_priority` (Number) The failover priority of the region. A failover priority of 0 indicates a write region. The maximum value for a failover priority = (total number of regions - 1). Failover priority values must be unique for each of the regions in which the database account exists. Changing this causes the location to be re-provisioned and cannot be changed for the location with failover priority 0
+- `location_name` (String) The name of the Azure region to host replicated data
+
+Optional:
+
+- `is_zone_redundant` (Boolean) Should zone redundancy be enabled for this region? Defaults to `false`.
+
 
 <a id="nestedblock--backup_policy"></a>
 ### Nested Schema for `backup_policy`
@@ -139,6 +210,19 @@ Optional:
 
 - `create` (String)
 - `delete` (String)
+- `update` (String)
+
+
+<a id="nestedblock--virtual_network_rule"></a>
+### Nested Schema for `virtual_network_rule`
+
+Required:
+
+- `subnet_id` (String) The ID of the subnet to allow access to this CosmosDB account. This should be in the format /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
+
+Optional:
+
+- `ignore_missing_vnet_service_endpoint` (Boolean) If set to true, the specified subnet will be added as a virtual network rule even if its CosmosDB service endpoint is not active Defaults to `false`.
 
 ## Import
 

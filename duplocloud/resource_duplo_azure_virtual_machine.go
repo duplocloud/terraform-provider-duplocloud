@@ -265,6 +265,12 @@ func duploAzureVirtualMachineSchema() map[string]*schema.Schema {
 			ValidateFunc:     validation.StringIsNotWhiteSpace,
 			DiffSuppressFunc: diffSuppressAvailablitySetIdOnCase,
 		},
+		"install_duplo_native_agent": {
+			Description: "Bootstrap an AKS host with Duplo's user data, prepending it to custom user data if also provided.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -544,6 +550,18 @@ func expandAzureVirtualMachine(d *schema.ResourceData) *duplosdk.DuploNativeHost
 		DiskControlType:   d.Get("disk_control_type").(string),
 		AvailabilitySetId: d.Get("availability_set_id").(string),
 	}
+	if val, ok := d.GetOk("install_duplo_native_agent"); ok && val != nil {
+		f := false
+		if val.(bool) {
+			f = true
+			data.InstallDuploNativeAgent = &f
+
+		} else if !val.(bool) {
+			f = false
+			data.InstallDuploNativeAgent = &f
+
+		}
+	}
 	if data.SecurityType == "TrustedLaunch" {
 		data.IsSecureBoot = d.Get("enable_security_boot").(bool)
 		data.IsvTPM = d.Get("enable_vtpm").(bool)
@@ -603,7 +621,8 @@ func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNat
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("status", duplo.Status)
 	d.Set("user_account", duplo.UserAccount)
-	d.Set("tags", flattenTags(duplo.TagsEx))
+	tex, isNativeHost := flattenTags(duplo.TagsEx)
+	d.Set("tags", tex)
 	d.Set("security_type", duplo.SecurityType)
 	if duplo.SecurityType == "TrustedLaunch" {
 		d.Set("enable_security_boot", duplo.IsSecureBoot)
@@ -612,13 +631,21 @@ func flattenAzureVirtualMachine(d *schema.ResourceData, duplo *duplosdk.DuploNat
 	d.Set("enable_encrypt_at_host", duplo.IsEncryptAtHost)
 	d.Set("disk_control_type", duplo.DiskControlType)
 	d.Set("availability_set_id", duplo.AvailabilitySetId)
+	d.Set("install_duplo_native_agent", isNativeHost)
+
 }
 
-func flattenTags(tags *[]duplosdk.DuploKeyStringValue) []interface{} {
+func flattenTags(tags *[]duplosdk.DuploKeyStringValue) ([]interface{}, bool) {
+	isNativeHost := false
 	if tags != nil {
+
 		managedTags := DuploManagedAzureTags()
 		output := []interface{}{}
 		for _, duploObject := range *tags {
+			if duploObject.Key == "install_duplo_native_agent" && duploObject.Value == "True" {
+				isNativeHost = true
+			}
+
 			if Contains(managedTags, duploObject.Key) {
 				continue
 			}
@@ -628,10 +655,10 @@ func flattenTags(tags *[]duplosdk.DuploKeyStringValue) []interface{} {
 			jo["value"] = duploObject.Value
 			output = append(output, jo)
 		}
-		return output
+		return output, isNativeHost
 	}
 
-	return make([]interface{}, 0)
+	return make([]interface{}, 0), isNativeHost
 }
 
 func virtualMachineWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {

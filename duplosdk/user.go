@@ -16,6 +16,7 @@ type DuploUser struct {
 	IsVpnConfigCreated      bool      `json:"IsVpnConfigCreated,omitempty"`
 	IsConfirmationEmailSent bool      `json:"IsConfirmationEmailSent,omitempty"`
 	State                   string    `json:"State,omitempty"`
+	Permissions             []string  `json:"Permissions,omitempty"`
 }
 
 func (c *Client) UserGet(userName string) (*DuploUser, ClientError) {
@@ -104,7 +105,7 @@ func (c *Client) GrantUserTenantAccess(rq *DuploUserTenantAccess) ClientError {
 
 func (c *Client) GetUserTenantAccessInfo(userName, tenantId string) (*DuploUserTenantAccessResponse, ClientError) {
 	rp := []DuploUserTenantAccessResponse{}
-	err := c.getAPI("GetUserTenantAccessInfo", fmt.Sprintf("v3/admin/user/%s/tenantAccess", url.PathEscape(userName)), &rp)
+	err := c.getAPI("GetUserTenantAccessInfo", fmt.Sprintf("v3/admin/user/%s/tenantAccess?adminAccess=false", url.PathEscape(userName)), &rp)
 	for _, d := range rp {
 		if d.TenantId == tenantId {
 			return &d, nil
