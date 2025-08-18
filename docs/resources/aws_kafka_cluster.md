@@ -51,6 +51,7 @@ See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguid
 
 - `arn` (String) The ARN of the Kafka cluster.
 - `az_distribution` (String) The availability zone distribution used by the cluster.
+- `current_version` (String)
 - `fullname` (String) The full name of the Kakfa cluster.
 - `id` (String) The ID of this resource.
 - `number_of_broker_nodes` (Number) The desired total number of broker nodes in the kafka cluster.
@@ -69,6 +70,7 @@ Optional:
 
 - `create` (String)
 - `delete` (String)
+- `update` (String)
 
 ## Import
 

@@ -91,7 +91,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"agent_platform": {
-			Description: "The numeric ID of the container agent pool that this host is added to.",
+			Description: "The numeric ID of the container agent pool that this host is added to.\n - 0: Linux Docker/Native\n- 	4: None\n- 5: Docker Windows\n- 7: EKS Linux\n- 8: ECS",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			ForceNew:    true, // relaunch instance

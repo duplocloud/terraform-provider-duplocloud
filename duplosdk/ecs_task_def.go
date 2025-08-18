@@ -42,12 +42,13 @@ type DuploEcsTaskDef struct {
 	PlacementConstraints    *[]DuploEcsTaskDefPlacementConstraint  `json:"PlacementConstraints,omitempty"`
 	ProxyConfiguration      *DuploEcsTaskDefProxyConfig            `json:"ProxyConfiguration,omitempty"`
 	RequiresAttributes      *[]DuploName                           `json:"RequiresAttributes,omitempty"`
-	RequiresCompatibilities []string                               `json:"RequiresCompatibilities,omitempty"`
+	RequiresCompatibilities []string                               `json:"RequiresCompatibilities"`
 	Tags                    *[]DuploKeyStringValue                 `json:"Tags,omitempty"`
 	InferenceAccelerators   *[]DuploEcsTaskDefInferenceAccelerator `json:"InferenceAccelerators,omitempty"`
 	Status                  *DuploStringValue                      `json:"Status,omitempty"`
 	Volumes                 []map[string]interface{}               `json:"Volumes,omitempty"`
 	RuntimePlatform         *DuploEcsTaskDefRuntimePlatform        `json:"runtimePlatform,omitempty"`
+	Compatibilities         []string                               `json:"Compatibilities,omitempty"`
 }
 
 type DuploEcsTaskDefRuntimePlatform struct {

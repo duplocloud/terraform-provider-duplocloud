@@ -955,7 +955,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 		return nil, errors.New("v2_scaling_configuration: min_capacity and max_capacity must be provided")
 	}
 	if duploObject.MultiAZ && duploObject.AvailabilityZone != "" {
-		return nil, errors.New("multi_az and availability_zone can not be set together.")
+		return nil, errors.New("multi_az and availability_zone can not be set together")
 	}
 	duploObject.DatabaseName = d.Get("db_name").(string)
 	pI := expandPerformanceInsight(d)

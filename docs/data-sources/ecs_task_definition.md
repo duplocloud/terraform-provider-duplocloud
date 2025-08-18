@@ -30,21 +30,21 @@ description: |-
 - `full_family_name` (String) The name of the task definition to create.
 - `id` (String) The ID of this resource.
 - `inference_accelerator` (Set of Object) (see [below for nested schema](#nestedatt--inference_accelerator))
-- `ipc_mode` (String)
+- `ipc_mode` (String) valid values are `host`, `none`, `task`
 - `memory` (String)
-- `network_mode` (String)
-- `pid_mode` (String)
+- `network_mode` (String) Valid values are `bridge`,`host`,`awsvpc`,`none`
+- `pid_mode` (String) Valida values are `host`, `task`
 - `placement_constraints` (Set of Object) (see [below for nested schema](#nestedatt--placement_constraints))
 - `prevent_tf_destroy` (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`.
 - `proxy_configuration` (List of Object) (see [below for nested schema](#nestedatt--proxy_configuration))
 - `requires_attributes` (Set of Object) (see [below for nested schema](#nestedatt--requires_attributes))
-- `requires_compatibilities` (Set of String) Requires compatibilities for running jobs. Valid values are [FARGATE]
+- `requires_compatibilities` (Set of String) Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.
 - `revision` (Number) The current revision of the task definition.
 - `runtime_platform` (List of Object) Configuration block for runtime_platform that containers in your task may use. Required on ecs tasks that are hosted on Fargate. (see [below for nested schema](#nestedatt--runtime_platform))
 - `status` (String) The status of the task definition.
 - `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
 - `task_role_arn` (String)
-- `volumes` (String)
+- `volumes` (String) A JSON-encoded string containing a list of volumes that are used by the ECS task definition.
 
 <a id="nestedatt--inference_accelerator"></a>
 ### Nested Schema for `inference_accelerator`
