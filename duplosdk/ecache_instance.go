@@ -37,6 +37,7 @@ type DuploEcacheInstance struct {
 	SecondaryTenantId                 string   `json:"SecondaryTenantId,omitempty"`
 	GlobalReplicationGroupDescription string   `json:"GlobalReplicationGroupDescription,omitempty"`
 	GlobalReplicationGroupId          string   `json:"GlobalReplicationGroupId,omitempty"`
+	IsPrimary                         bool     `json:"IsPrimary,omitempty"`
 }
 
 type AddDuploEcacheInstanceRequest struct {

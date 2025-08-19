@@ -251,6 +251,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 		"global_replication_group": {
 			Type:     schema.TypeList,
 			Optional: true,
+			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"group_id": {
@@ -267,6 +268,11 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 						Description: "Specify secondary tenant id",
 						Type:        schema.TypeString,
 						Required:    true,
+					},
+					"is_primary": {
+						Description: "Flag to indicate if this is primary replication group",
+						Type:        schema.TypeBool,
+						Computed:    true,
 					},
 				},
 			},
@@ -675,6 +681,14 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
+	if duplo.IsGlobal {
+		m := make(map[string]interface{})
+		m["group_id"] = duplo.GlobalReplicationGroupId
+		m["description"] = duplo.GlobalReplicationGroupDescription
+		m["secondary_tenant_id"] = duplo.SecondaryTenantId
+		m["is_primary"] = duplo.IsPrimary
+		d.Set("global_replication_group", []interface{}{m})
+	}
 	return nil
 }
 
