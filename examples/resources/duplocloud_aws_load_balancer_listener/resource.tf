@@ -11,10 +11,47 @@ resource "duplocloud_aws_load_balancer" "myapp" {
   drop_invalid_headers = true
 }
 
+
+
 resource "duplocloud_aws_load_balancer_listener" "myapp-listener" {
   tenant_id          = duplocloud_tenant.myapp.tenant_id
   load_balancer_name = duplocloud_aws_load_balancer.myapp.name
   port               = 8443
-  protocol           = "https"
-  target_group_arn   = "arn:aws:elasticloadbalancing:us-west-2:1234567890:targetgroup/duplo2-stage-antcmw-http4000/fc6f818e85fa737a"
+  protocol           = "TCP"
+  default_actions {
+    forward {
+      target_group_arn = "arn:aws:elasticloadbalancing:us-west-2:100000004:targetgroup/tg1/cc3e8ee8256682dd"
+    }
+  }
+}
+
+
+
+resource "duplocloud_aws_load_balancer_listener" "myapp-listener" {
+  tenant_id          = duplocloud_tenant.myapp.tenant_id
+  load_balancer_name = duplocloud_aws_load_balancer.myapp.name
+  port               = 80
+  protocol           = "HTTP"
+  default_actions {
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Hello, World!"
+      status_code  = "200"
+    }
+  }
+}
+
+resource "duplocloud_aws_load_balancer_listener" "myapp-listener1" {
+  tenant_id          = duplocloud_tenant.myapp.tenant_id
+  load_balancer_name = duplocloud_aws_load_balancer.myapp.name
+  port               = 5580
+  protocol           = "HTTP"
+  default_actions {
+    redirect {
+      path        = "/api"
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
 }

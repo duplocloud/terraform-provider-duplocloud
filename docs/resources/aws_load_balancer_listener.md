@@ -26,12 +26,49 @@ resource "duplocloud_aws_load_balancer" "myapp" {
   drop_invalid_headers = true
 }
 
+
+
 resource "duplocloud_aws_load_balancer_listener" "myapp-listener" {
   tenant_id          = duplocloud_tenant.myapp.tenant_id
   load_balancer_name = duplocloud_aws_load_balancer.myapp.name
   port               = 8443
-  protocol           = "https"
-  target_group_arn   = "arn:aws:elasticloadbalancing:us-west-2:1234567890:targetgroup/duplo2-stage-antcmw-http4000/fc6f818e85fa737a"
+  protocol           = "TCP"
+  default_actions {
+    forward {
+      target_group_arn = "arn:aws:elasticloadbalancing:us-west-2:100000004:targetgroup/tg1/cc3e8ee8256682dd"
+    }
+  }
+}
+
+
+
+resource "duplocloud_aws_load_balancer_listener" "myapp-listener" {
+  tenant_id          = duplocloud_tenant.myapp.tenant_id
+  load_balancer_name = duplocloud_aws_load_balancer.myapp.name
+  port               = 80
+  protocol           = "HTTP"
+  default_actions {
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Hello, World!"
+      status_code  = "200"
+    }
+  }
+}
+
+resource "duplocloud_aws_load_balancer_listener" "myapp-listener1" {
+  tenant_id          = duplocloud_tenant.myapp.tenant_id
+  load_balancer_name = duplocloud_aws_load_balancer.myapp.name
+  port               = 5580
+  protocol           = "HTTP"
+  default_actions {
+    redirect {
+      path        = "/api"
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
 }
 ```
 
@@ -43,23 +80,67 @@ resource "duplocloud_aws_load_balancer_listener" "myapp-listener" {
 - `load_balancer_name` (String) The short name of the load balancer.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
 - `port` (Number) Port on which the load balancer is listening.
 - `protocol` (String) Protocol for connections from clients to the load balancer.
-- `target_group_arn` (String) ARN of the Target Group to which to route traffic.
 - `tenant_id` (String) The GUID of the tenant that the load balancer will be created in.
 
 ### Optional
 
 - `certificate_arn` (String) The ARN of the certificate to attach to the listener.
+- `default_actions` (Block List, Max: 1) (see [below for nested schema](#nestedblock--default_actions))
+- `target_group_arn` (String) ARN of the Target Group to which to route traffic.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `arn` (String) ARN of the listener.
 - `certificates` (List of Object) (see [below for nested schema](#nestedatt--certificates))
-- `default_actions` (List of Object) (see [below for nested schema](#nestedatt--default_actions))
 - `id` (String) The ID of this resource.
 - `load_balancer_arn` (String)
 - `load_balancer_fullname` (String) The full name of the load balancer.
 - `ssl_policy` (String)
+
+<a id="nestedblock--default_actions"></a>
+### Nested Schema for `default_actions`
+
+Optional:
+
+- `fixed_response` (Block List, Max: 1) (see [below for nested schema](#nestedblock--default_actions--fixed_response))
+- `forward` (Block List, Max: 1) (see [below for nested schema](#nestedblock--default_actions--forward))
+- `redirect` (Block List, Max: 1) (see [below for nested schema](#nestedblock--default_actions--redirect))
+
+<a id="nestedblock--default_actions--fixed_response"></a>
+### Nested Schema for `default_actions.fixed_response`
+
+Optional:
+
+- `content_type` (String) Defaults to `text/plain`.
+- `message_body` (String)
+- `status_code` (String) Defaults to `200`.
+
+
+<a id="nestedblock--default_actions--forward"></a>
+### Nested Schema for `default_actions.forward`
+
+Required:
+
+- `target_group_arn` (String)
+
+
+<a id="nestedblock--default_actions--redirect"></a>
+### Nested Schema for `default_actions.redirect`
+
+Required:
+
+- `port` (String)
+- `protocol` (String)
+- `status_code` (String)
+
+Optional:
+
+- `host` (String) Defaults to `#{host}`.
+- `path` (String) Defaults to `/#{path}`.
+- `query` (String) Defaults to `#{query}`.
+
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -77,16 +158,6 @@ Read-Only:
 
 - `arn` (String)
 - `is_default` (Boolean)
-
-
-<a id="nestedatt--default_actions"></a>
-### Nested Schema for `default_actions`
-
-Read-Only:
-
-- `order` (Number)
-- `target_group_arn` (String)
-- `type` (String)
 
 ## Import
 

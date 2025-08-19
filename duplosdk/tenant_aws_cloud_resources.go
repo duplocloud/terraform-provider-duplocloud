@@ -163,16 +163,34 @@ type DuploAwsLbListenerCertificate struct {
 
 // DuploAwsLbListenerAction represents a AWS load balancer listener action
 type DuploAwsLbListenerAction struct {
-	Order          int               `json:"Order"`
-	TargetGroupArn string            `json:"TargetGroupArn"`
-	Type           *DuploStringValue `json:"Type,omitempty"`
+	Order               int                       `json:"Order"`
+	TargetGroupArn      string                    `json:"TargetGroupArn"`
+	Type                *DuploStringValue         `json:"Type,omitempty"`
+	FixedResponseConfig *DuploFixedResponseConfig `json:"FixedResponseConfig,omitempty"`
+	RedirectConfig      *DuploRedirectConfig      `json:"RedirectConfig,omitempty"`
 }
 
 type DuploAwsLbListenerActionCreate struct {
-	TargetGroupArn string `json:"TargetGroupArn"`
-	Type           string `json:"Type,omitempty"`
+	TargetGroupArn      string                    `json:"TargetGroupArn,omitempty"`
+	Type                DuploStringValue          `json:"Type"`
+	FixedResponseConfig *DuploFixedResponseConfig `json:"FixedResponseConfig,omitempty"`
+	RedirectConfig      *DuploRedirectConfig      `json:"RedirectConfig,omitempty"`
 }
 
+type DuploFixedResponseConfig struct {
+	ContentType string `json:"ContentType,omitempty"`
+	MessageBody string `json:"MessageBody,omitempty"`
+	StatusCode  string `json:"StatusCode,omitempty"`
+}
+
+type DuploRedirectConfig struct {
+	StatusCode *DuploStringValue `json:"StatusCode,omitempty"`
+	Port       string            `json:"Port,omitempty"`
+	Protocol   string            `json:"Protocol,omitempty"`
+	Host       string            `json:"Host,omitempty"`
+	Path       string            `json:"Path,omitempty"`
+	Query      string            `json:"Query,omitempty"`
+}
 type DuploAwsLbListenerDeleteRequest struct {
 	ListenerArn string `json:"ListenerArn"`
 }
@@ -913,7 +931,7 @@ func (c *Client) TenantUpdateCustomData(tenantID string, customeData CustomDataU
 		nil)
 }
 
-func (c *Client) TenantApplicationLbListenersByTargetGrpArn(tenantID string, fullName string, targetGrpArn string, port int) (*DuploAwsLbListener, ClientError) {
+func (c *Client) TenantApplicationLbListenersByTargetGrpArn(tenantID string, fullName, actionType string, port int) (*DuploAwsLbListener, ClientError) {
 	rp := []DuploAwsLbListener{}
 
 	err := c.getAPI("TenantListApplicationLbListeners",
@@ -921,7 +939,7 @@ func (c *Client) TenantApplicationLbListenersByTargetGrpArn(tenantID string, ful
 		&rp)
 	for _, item := range rp {
 		for _, action := range item.DefaultActions {
-			if action.TargetGroupArn == targetGrpArn && port == item.Port {
+			if action.Type.Value == actionType && port == item.Port {
 				return &item, nil
 			}
 		}
