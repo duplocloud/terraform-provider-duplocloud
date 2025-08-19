@@ -62,11 +62,14 @@ func nativeGcpHostSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"agent_platform": {
-			Description: "The numeric ID of the container agent pool that this host is added to.\n - 0: Linux Docker/Native\n- 	4: None\n- 5: Docker Windows",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			ForceNew:    true, // relaunch instance
-			Default:     0,
+			Description: "The numeric ID of the container agent pool that this host is added to.\n" +
+				"Should be one of:\n\n" +
+				"   - `0` : Duplo Native container agent\n" +
+				"   - `7` : Linux container agent for Kubernetes\n",
+			Type:     schema.TypeInt,
+			Optional: true,
+			ForceNew: true, // relaunch instance
+			Default:  0,
 		},
 		"tags": {
 			Description: "List of network tags that can be added to the vm",
@@ -101,7 +104,7 @@ func nativeGcpHostSchema() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			Elem:             &schema.Schema{Type: schema.TypeString},
-			DiffSuppressFunc: diffSuppressOnComputedDataOnMetadataBlock,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"labels": {
 			Description:      "A set of key/value label pairs assigned to the vm",
