@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -46,10 +47,11 @@ func awsLoadBalancerListenerSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"target_group_arn": {
-			Description: "ARN of the Target Group to which to route traffic.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:   "ARN of the Target Group to which to route traffic.",
+			Type:          schema.TypeString,
+			Optional:      true,
+			ForceNew:      true,
+			ConflictsWith: []string{"default_actions"},
 		},
 		"certificate_arn": {
 			Description: "The ARN of the certificate to attach to the listener.",
@@ -79,21 +81,97 @@ func awsLoadBalancerListenerSchema() map[string]*schema.Schema {
 			},
 		},
 		"default_actions": {
-			Type:     schema.TypeList,
-			Computed: true,
+			Type:          schema.TypeList,
+			Optional:      true,
+			ForceNew:      true,
+			MaxItems:      1,
+			ConflictsWith: []string{"target_group_arn"},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"target_group_arn": {
-						Type:     schema.TypeString,
-						Computed: true,
+					"forward": {
+						Type:     schema.TypeList,
+						Optional: true,
+						MaxItems: 1,
+						ConflictsWith: []string{
+							"default_actions.0.fixed_response",
+							"default_actions.0.redirect",
+						},
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"target_group_arn": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+							},
+						},
 					},
-					"type": {
-						Type:     schema.TypeString,
-						Computed: true,
+					"fixed_response": {
+						Type:     schema.TypeList,
+						Optional: true,
+						MaxItems: 1,
+						ConflictsWith: []string{
+							"default_actions.0.forward",
+							"default_actions.0.redirect",
+						},
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"content_type": {
+									Type:         schema.TypeString,
+									Optional:     true,
+									Default:      "text/plain",
+									ValidateFunc: validation.StringInSlice([]string{"text/plain", "text/css", "application/javascript", "application/json", "text/html"}, false),
+								},
+								"message_body": {
+									Type:     schema.TypeString,
+									Optional: true,
+								},
+								"status_code": {
+									Type:     schema.TypeString,
+									Optional: true,
+									Default:  "200",
+								},
+							},
+						},
 					},
-					"order": {
-						Type:     schema.TypeInt,
-						Computed: true,
+					"redirect": {
+						Type:     schema.TypeList,
+						Optional: true,
+						MaxItems: 1,
+						ConflictsWith: []string{
+							"default_actions.0.fixed_response",
+							"default_actions.0.forward",
+						},
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"status_code": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"port": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"protocol": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"host": {
+									Type:     schema.TypeString,
+									Optional: true,
+									Default:  "#{host}",
+								},
+								"path": {
+									Type:     schema.TypeString,
+									Optional: true,
+									Default:  "/#{path}",
+								},
+								"query": {
+									Type:     schema.TypeString,
+									Optional: true,
+									Default:  "#{query}",
+								},
+							},
+						},
 					},
 				},
 			},
@@ -107,6 +185,7 @@ func awsLoadBalancerListenerSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 	}
+
 }
 
 // Resource for managing an AWS load balancer listener
@@ -171,7 +250,6 @@ func resourceAwsLoadBalancerListenerRead(ctx context.Context, d *schema.Resource
 func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceAwsLoadBalancerListenerCreate - start")
 	// Create the request object.
-	targetArn := d.Get("target_group_arn").(string)
 	lbShortName := d.Get("load_balancer_name").(string)
 	log.Printf("[TRACE] lbShortName - %s", lbShortName)
 	rq := expandAwsLoadBalancerListener(d)
@@ -190,21 +268,23 @@ func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.Resour
 	if err != nil {
 		return diag.Errorf("Error while creating listener rule for tenant %s load balancer '%s': %s", tenantID, lbName, err)
 	}
-	listener, err := c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn, rq.Port)
-
+	listener, err := c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, rq.DefaultActions[0].Type.Value, rq.Port)
+	if err != nil {
+		return diag.Errorf("Error while retrieving listener rule for tenant %s load balancer '%s': %s", tenantID, lbName, err)
+	}
 	id := fmt.Sprintf("%s/%s/%s", tenantID, lbName, listener.ListenerArn)
 
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "load balancer listener", id, func() (interface{}, duplosdk.ClientError) {
-		listener, err = c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn, rq.Port)
-		return listener, err
-	})
-	if diags != nil {
-		return diags
-	}
+	//diags := waitForResourceToBePresentAfterCreate(ctx, d, "load balancer listener", id, func() (interface{}, duplosdk.ClientError) {
+	//	listener, err = c.TenantApplicationLbListenersByTargetGrpArn(tenantID, lbFullName, targetArn, rq.Port)
+	//	return listener, err
+	//})
+	//if diags != nil {
+	//	return diags
+	//}
 	d.SetId(id)
 	d.Set("arn", listener.ListenerArn)
 
-	diags = resourceAwsLoadBalancerListenerRead(ctx, d, m)
+	diags := resourceAwsLoadBalancerListenerRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsLoadBalancerListenerCreate - end")
 	return diags
 }
@@ -259,7 +339,46 @@ func expandAwsLoadBalancerListener(d *schema.ResourceData) duplosdk.DuploAwsLbLi
 	targetArn := d.Get("target_group_arn").(string)
 	action := duplosdk.DuploAwsLbListenerActionCreate{
 		TargetGroupArn: targetArn,
-		Type:           "Forward",
+	}
+	action.Type.Value = "forward"
+	actn := d.Get("default_actions").([]interface{})
+	// Ensure the default_actions is initialized
+	if len(actn) > 0 {
+		actionMap := actn[0].(map[string]interface{})
+		fr := actionMap["fixed_response"].([]interface{})
+		if len(fr) > 0 {
+			m := fr[0].(map[string]interface{})
+			frwdResp := duplosdk.DuploFixedResponseConfig{
+				ContentType: m["content_type"].(string),
+				MessageBody: m["message_body"].(string),
+				StatusCode:  m["status_code"].(string),
+			}
+			action.FixedResponseConfig = &frwdResp
+			action.Type.Value = "fixed-response"
+		}
+
+		r := actionMap["redirect"].([]interface{})
+		if len(r) > 0 {
+			m := r[0].(map[string]interface{})
+			redirct := duplosdk.DuploRedirectConfig{
+				Port:     m["port"].(string),
+				Protocol: m["protocol"].(string),
+				Host:     m["host"].(string),
+				Path:     m["path"].(string),
+				Query:    m["query"].(string),
+			}
+			redirct.StatusCode = &duplosdk.DuploStringValue{
+				Value: m["status_code"].(string),
+			}
+			action.RedirectConfig = &redirct
+			action.Type.Value = "redirect"
+		}
+		f := actionMap["forward"].([]interface{})
+		if len(f) > 0 {
+			m := f[0].(map[string]interface{})
+			action.TargetGroupArn = m["target_group_arn"].(string)
+			action.Type.Value = "forward"
+		}
 	}
 	log.Printf("[TRACE] action- %+v", action)
 	protocol := d.Get("protocol").(string)
@@ -309,18 +428,49 @@ func flattenAwsLoadBalancerListener(d *schema.ResourceData, tenantID string, lbN
 	}
 
 	d.Set("certificates", certs)
-
+	tga := d.Get("target_group_arn").(string)
+	// Ensure the target_group_arn is set to nil if not present
 	actions := make([]map[string]interface{}, 0, len(duplo.DefaultActions))
-	for i := range duplo.DefaultActions {
-		action := map[string]interface{}{
-			"target_group_arn": duplo.DefaultActions[i].TargetGroupArn,
-			"order":            duplo.DefaultActions[i].Order,
+	for _, defaultAction := range duplo.DefaultActions {
+		if defaultAction.Type.Value == "forward" && tga == "" {
+			actions = append(actions, map[string]interface{}{
+				"type": "forward",
+				"forward": []map[string]interface{}{
+					{
+						"target_group_arn": defaultAction.TargetGroupArn,
+					},
+				},
+			})
+		} else {
+			d.Set("target_group_arn", defaultAction.TargetGroupArn)
 		}
-		if duplo.DefaultActions[i].Type != nil {
-			action["type"] = duplo.DefaultActions[i].Type.Value
+		if defaultAction.Type.Value == "fixed-response" {
+			actions = append(actions, map[string]interface{}{
+				"type": "fixed-response",
+				"fixed_response": []map[string]interface{}{
+					{
+						"content_type": defaultAction.FixedResponseConfig.ContentType,
+						"message_body": defaultAction.FixedResponseConfig.MessageBody,
+						"status_code":  defaultAction.FixedResponseConfig.StatusCode,
+					},
+				},
+			})
 		}
-		actions = append(actions, action)
-		d.Set("target_group_arn", duplo.DefaultActions[i].TargetGroupArn)
+		if defaultAction.Type.Value == "redirect" {
+			actions = append(actions, map[string]interface{}{
+				"type": "redirect",
+				"redirect": []map[string]interface{}{
+					{
+						"status_code": defaultAction.RedirectConfig.StatusCode.Value,
+						"port":        defaultAction.RedirectConfig.Port,
+						"protocol":    defaultAction.RedirectConfig.Protocol,
+						"host":        defaultAction.RedirectConfig.Host,
+						"path":        defaultAction.RedirectConfig.Path,
+						"query":       defaultAction.RedirectConfig.Query,
+					},
+				},
+			})
+		}
 	}
 
 	d.Set("default_actions", actions)
