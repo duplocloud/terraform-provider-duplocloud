@@ -513,3 +513,83 @@ func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, Cl
 		&duploObject, &conf)
 	return &duploObject, err
 }
+
+//global database
+
+type DuploRDSGlobalDatabaseResponse struct {
+	GlobalInfo struct {
+		ClusterId     string   `json:"clusterId"`
+		Engine        string   `json:"engine"`
+		EngineVersion string   `json:"engineVersion"`
+		Status        string   `json:"status"`
+		Regions       []string `json:"regions"`
+		PrimaryRegion string   `json:"primaryRegion"`
+	} `json:"globalInfo"`
+	Region struct {
+		Region    string `json:"region"`
+		ClusterId string `json:"clusterId"`
+		Role      string `json:"role"`
+		Status    string `json:"status"`
+		TenantId  string `json:"tenantId"`
+	} `json:"region"`
+}
+
+type DuploRDSGlobalDatabaseRegionInfo struct {
+	GlobalInfo struct {
+		ClusterId     string   `json:"clusterId"`
+		Engine        string   `json:"engine"`
+		EngineVersion string   `json:"engineVersion"`
+		Status        string   `json:"status"`
+		Regions       []string `json:"regions"`
+		PrimaryRegion string   `json:"primaryRegion"`
+	} `json:"globalInfo"`
+	Regions []struct {
+		Region    string `json:"region"`
+		ClusterId string `json:"clusterId"`
+		Role      string `json:"role"`
+		Status    string `json:"status"`
+		TenantId  string `json:"tenantId"`
+	} `json:"region"`
+	IsGlobal bool `json:"isGlobal"`
+}
+
+type DuploRDSGlobalDatabase struct {
+	TenantID string `json:"tenantId"`
+}
+
+func (c *Client) CreateRDSDBSecondaryDB(tenantID, instanceId, region string, rq DuploRDSGlobalDatabase) (*DuploRDSGlobalDatabaseResponse, ClientError) {
+	rp := DuploRDSGlobalDatabaseResponse{}
+	err := c.putAPI(
+		fmt.Sprintf("CreateRDSDBSecondaryDB(%s, %s)", tenantID, instanceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions/%s", tenantID, instanceId, region),
+		&rq,
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) GetGloabalRegions(tenantID, identifier string) (*DuploRDSGlobalDatabaseResponse, ClientError) {
+	rp := DuploRDSGlobalDatabaseResponse{}
+	err := c.getAPI(
+		fmt.Sprintf("GetGloabalRegions(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions", tenantID, identifier),
+		&rp)
+	return &rp, err
+}
+
+func (c *Client) DeleteRDSDBSecondaryDB(tenantID, instanceId, region string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("DeleteRDSDBSecondaryDB(%s, %s, %s)", tenantID, instanceId, region),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions/%s", tenantID, instanceId, region),
+		nil,
+	)
+}
+
+func (c *Client) GetGloabalRegion(tenantID, identifier, region string) (*DuploRDSGlobalDatabaseResponse, ClientError) {
+	rp := DuploRDSGlobalDatabaseResponse{}
+	err := c.getAPI(
+		fmt.Sprintf("GetGloabalRegion(%s, %s,%s)", tenantID, identifier, region),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions/%s", tenantID, identifier, region),
+		&rp)
+	return &rp, err
+}
