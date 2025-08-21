@@ -167,6 +167,7 @@ func resourceAwsRdsGlobalDatabaseDelete(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
+/*
 func validateGlobalDatabaseParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
 	c := &duplosdk.Client{}
 	tenantId := diff.Get("tenant_id").(string)
@@ -188,7 +189,7 @@ func validateGlobalDatabaseParameters(ctx context.Context, diff *schema.Resource
 		}
 	}
 	return nil
-}
+}*/
 
 func waitUntilSecondoryDBReady(ctx context.Context, c *duplosdk.Client, tenantID, identifier, region string, timeout time.Duration, global bool) error {
 	stateConf := &retry.StateChangeConf{
