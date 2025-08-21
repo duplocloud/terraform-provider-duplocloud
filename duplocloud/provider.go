@@ -196,6 +196,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_mssqldb_retention_backup":                resourceMsSQLDBRetentionBackup(),
 			"duplocloud_azure_postgresql_flexible_database_v2":         resourceAzurePostgresqlFlexibleDatabaseV2(),
 			"duplocloud_azure_postgresql_flexible_db_ad_administrator": resourceAzurePostgresqlFlexibleDatabaseAD(),
+			"duplocloud_aws_rds_global_secondary":                      resourceAwsRdsGlobalDatabase(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
