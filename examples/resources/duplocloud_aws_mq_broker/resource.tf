@@ -16,12 +16,12 @@ resource "duplocloud_aws_mq_broker" "example" {
   data_replication_mode       = "NONE"
   publicly_accessible         = false 
   security_groups             = ["sg-0aead878f4e404689"]
-  subnet_ids                  = ["subnet-0c9a95f287b4fc38f"]//, "subnet-09252308e1a093bda"]
+  subnet_ids                  = ["subnet-0c9a95f287b4fc38f"]
   logs {
     general = true
     audit   = false
   }
-  users {
+  user {
     user_name = "admin"
     password  = "q2eqsaxasd121312sQsdfweqw"
     groups=["admins"]
@@ -44,7 +44,7 @@ resource "duplocloud_aws_mq_broker" "example" {
 
 
 resource "duplocloud_aws_mq_broker" "example" {
-  tenant_id                   = "673d09fd-4cbf-4261-8541-902994841b0f"
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
   engine_type                 = "ACTIVEMQ"
   deployment_mode             = "SINGLE_INSTANCE"
   broker_storage_type         = "EBS"
@@ -61,7 +61,10 @@ resource "duplocloud_aws_mq_broker" "example" {
     general = true
     audit   = false
   }
-  
+  user {
+    user_name = "admin"
+    password  = "q2eqsaxasd121312sQsdfweqw"
+  }
  ldap_server_metadata {
    hosts                      = ["ldap.example.com"]
    role_base                  = "ou=roles,dc=example,dc=com"
@@ -79,7 +82,7 @@ resource "duplocloud_aws_mq_broker" "example" {
 
 
 resource "duplocloud_aws_mq_broker" "example" {
-  tenant_id                   = "673d09fd-4cbf-4261-8541-902994841b0f"
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
   engine_type                 = "RABBITMQ"
   deployment_mode             = "SINGLE_INSTANCE"
   broker_storage_type         = "EBS"
@@ -91,14 +94,35 @@ resource "duplocloud_aws_mq_broker" "example" {
   data_replication_mode       = "NONE"
   publicly_accessible         = false 
   security_groups             = ["sg-0aead878f4e404689"]
-  #subnet_ids                  = ["subnet-0c9a95f287b4fc38f"]//, "subnet-09252308e1a093bda"]
   logs {
     general = false
-    #audit   = false
   }
-  users {
+  user {
     user_name = "admin"
     password  = "q2eqsaxasd121312sQsdfweqw"
     groups=["admins"]
+  }
+}
+
+
+resource "duplocloud_aws_mq_broker" "example" {
+  tenant_id                   = duplocloud_tenant.myapp.tenant_id
+  engine_type                 = "RABBITMQ"
+  deployment_mode             = "CLUSTER_MULTI_AZ"
+  broker_storage_type         = "EBS"
+  broker_name                 = "example5"
+  host_instance_type          = "mq.m7g.medium"
+  engine_version              = "3.13"
+  authentication_strategy     = "SIMPLE"
+  auto_minor_version_upgrade  = true
+  data_replication_mode       = "NONE"
+  publicly_accessible         = false 
+  security_groups             = ["sg-0aead878f4e404689"]
+  logs {
+    general = false
+  }
+  user {
+    user_name = "admin"
+    password  = "q2eqsaxasd121312sQsdfweqw"
   }
 }

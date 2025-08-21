@@ -197,6 +197,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_mq_broker":                                 resourceAwsMQBroker(),
 			"duplocloud_azure_postgresql_flexible_database_v2":         resourceAzurePostgresqlFlexibleDatabaseV2(),
 			"duplocloud_azure_postgresql_flexible_db_ad_administrator": resourceAzurePostgresqlFlexibleDatabaseAD(),
+			"duplocloud_aws_mq_config":                                 resourceAwsMQConfig(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),

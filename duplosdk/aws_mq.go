@@ -150,19 +150,12 @@ type DuploMQBrokerResponse struct {
 	StorageType           struct {
 		Value string `json:"Value"`
 	} `json:"StorageType"`
-	SubnetIds []string               `json:"SubnetIds"`
-	Tags      map[string]interface{} `json:"Tags"`
-	Users     []struct {
-		PendingChange struct {
-			Value string `json:"Value"`
-		} `json:"PendingChange"`
-		Username string   `json:"Username"`
-		Password string   `json:"Password"`
-		Groups   []string `json:"Groups"`
-	} `json:"Users"`
-	BrokerArn   string `json:"BrokerArn"`
-	BrokerId    string `json:"BrokerId"`
-	BrokerName  string `json:"BrokerName"`
+	SubnetIds   []string          `json:"SubnetIds"`
+	Tags        map[string]string `json:"Tags"`
+	Users       []DuploAWSMQUser  `json:"Users"`
+	BrokerArn   string            `json:"BrokerArn"`
+	BrokerId    string            `json:"BrokerId"`
+	BrokerName  string            `json:"BrokerName"`
 	BrokerState struct {
 		Value string `json:"Value"`
 	} `json:"BrokerState"`
@@ -190,6 +183,7 @@ type DuploAWSMQBrokerUpdateRequest struct {
 	Logs                    *DuploMQLogs               `json:"logs,omitempty"`
 	MaintenanceWindow       *DuploMQMaintenanceWindow  `json:"maintenanceWindowStartTime,omitempty"`
 	SecurityGroups          []string                   `json:"securityGroups,omitempty"`
+	Tags                    map[string]string          `json:"Tags"`
 }
 
 func (c *Client) DuploAWSMQBrokerUpdate(tenantID, brokerID string, rq DuploAWSMQBrokerUpdateRequest) ClientError {
@@ -200,4 +194,63 @@ func (c *Client) DuploAWSMQBrokerUpdate(tenantID, brokerID string, rq DuploAWSMQ
 		&rp,
 	)
 	return err
+}
+
+type DuploAwsMQConfig struct {
+	AuthenticationStrategy string                 `json:"AuthenticationStrategy"`
+	EngineType             string                 `json:"EngineType"`
+	EngineVersion          string                 `json:"EngineVersion"`
+	Name                   string                 `json:"Name"`
+	Tags                   map[string]interface{} `json:"Tags"`
+}
+
+type DuploAwsMQConfigResponse struct {
+	AuthenticationStrategy DuploStringValue       `json:"AuthenticationStrategy"`
+	EngineType             DuploStringValue       `json:"EngineType"`
+	EngineVersion          string                 `json:"EngineVersion"`
+	Name                   string                 `json:"Name"`
+	Tags                   map[string]interface{} `json:"Tags"`
+	ConfigId               string                 `json:"Id"`
+	Arn                    string                 `json:"Arn"`
+	LatestRevision         struct {
+		Description string `json:"Description"`
+		Revision    int    `json:"Revision"`
+	} `json:"Revision"`
+}
+
+type DuploAwsMQConfigUpdate struct {
+	ConfigurationId string `json:"ConfigurationId"`
+	Data            string `json:"Data"`
+	Description     string `json:"EngineVersion"`
+}
+
+func (c *Client) DuploAWSMQConfigUpdate(tenantID, brokerID string, rq DuploAwsMQConfigUpdate) ClientError {
+	var rp interface{}
+	err := c.putAPI(
+		fmt.Sprintf("DuploAWSMQConfgiUpdate(%s,%s)", tenantID, rq.ConfigurationId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/config/%s", tenantID, rq.ConfigurationId),
+		&rq,
+		&rp)
+	return err
+}
+
+func (c *Client) DuploAWSMQConfigCreate(tenantID string, rq DuploAwsMQConfig) (map[string]interface{}, ClientError) {
+	rp := make(map[string]interface{})
+	err := c.postAPI(
+		fmt.Sprintf("DuploAWSMQConfigCreate(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/config", tenantID),
+		&rq,
+		&rp,
+	)
+	return rp, err
+}
+
+func (c *Client) DuploAWSMQConfigGet(tenantID, cID string) (*DuploAwsMQConfigResponse, ClientError) {
+	rp := DuploAwsMQConfigResponse{}
+	err := c.getAPI(
+		fmt.Sprintf("DuploAWSMQConfigGet(%s,%s)", tenantID, cID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/config/%s/revision", tenantID, cID),
+		&rp,
+	)
+	return &rp, err
 }

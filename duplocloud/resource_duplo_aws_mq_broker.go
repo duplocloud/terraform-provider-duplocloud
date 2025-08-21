@@ -101,21 +101,19 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"users": {
-			Type:        schema.TypeSet,
-			Optional:    true,
-			Description: "List of users for the broker. User not updatable after creation for RABBITMQ.",
-			Set:         resourceUserHash,
+		"user": {
+			Type:        schema.TypeList,
+			Required:    true,
+			Description: "Set of users for the broker. User not updatable after creation for RABBITMQ.",
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				// AWS currently does not support updating the RabbitMQ users beyond resource creation.
-				// User list is not returned back after creation.
-				// Updates to users can only be in the RabbitMQ UI.
 				if v := d.Get("engine_type").(string); strings.EqualFold(v, "RABBITMQ") && d.Get("arn").(string) != "" {
 					return true
 				}
 
 				return false
-			}, Elem: &schema.Resource{
+			},
+			ValidateFunc: validateMQUsers,
+			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"user_name": {
 						Type:        schema.TypeString,
@@ -131,7 +129,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 						//ForceNew:    true,
 					},
 					"groups": {
-						Type:        schema.TypeSet,
+						Type:        schema.TypeList,
 						Optional:    true,
 						Computed:    true,
 						Description: "Groups to which the user belongs.",
@@ -150,7 +148,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 					},
 				},
 			},
-			ConflictsWith: []string{"ldap_server_metadata"},
+			//ConflictsWith: []string{"ldap_server_metadata"},
 		},
 		"ldap_server_metadata": {
 			Type:        schema.TypeList,
@@ -218,7 +216,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 					},
 				},
 			},
-			ConflictsWith: []string{"users"},
+			//ConflictsWith: []string{"users"},
 		},
 		"configuration": {
 			Type:        schema.TypeList,
@@ -263,16 +261,18 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 			Description: "ARN of the primary broker for data replication. Required when data_replication_mode is CRDR.",
 		},
 		"encryption_options": {
-			Type:        schema.TypeList,
-			Optional:    true,
-			ForceNew:    true,
-			MaxItems:    1,
-			Description: "Encryption options for the broker.",
+			Type:             schema.TypeList,
+			Optional:         true,
+			ForceNew:         true,
+			MaxItems:         1,
+			Description:      "Encryption options for the broker.",
+			DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"kms_key_id": {
 						Type:        schema.TypeString,
 						Optional:    true,
+						Computed:    true,
 						ForceNew:    true,
 						Description: "KMS Key ID for encryption.",
 					},
@@ -280,6 +280,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 						Type:        schema.TypeBool,
 						Optional:    true,
 						ForceNew:    true,
+						Default:     true,
 						Description: "Whether to use AWS owned key.",
 					},
 				},
@@ -297,7 +298,6 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 						Optional:    true,
 						Description: "Enable audit logging (not applicable for RabbitMQ).",
 						DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-							// Suppress diff if the engine type is RABBITMQ and the authentication strategy is SIMPLE
 							return strings.EqualFold(d.Get("engine_type").(string), "RABBITMQ")
 						},
 					},
@@ -360,6 +360,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 		"tags": {
 			Type:        schema.TypeMap,
 			Optional:    true,
+			Computed:    true,
 			Description: "A map of tags to assign to the resource.",
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
@@ -372,7 +373,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 
 func resourceAwsMQBroker() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_aws_sqs_queue` manages a SQS queue in Duplo.",
+		Description: "`duplocloud_aws_mq_broker` manages Amazon MQ broker in Duplo.",
 
 		ReadContext:   resourceAwsMQRead,
 		CreateContext: resourceAwsMQCreate,
@@ -383,6 +384,7 @@ func resourceAwsMQBroker() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute),
+			Update: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema:        duploAwsMqBrokerSchema(),
@@ -400,16 +402,16 @@ func resourceAwsMQRead(ctx context.Context, d *schema.ResourceData, m interface{
 	c := m.(*duplosdk.Client)
 
 	duplo, clientErr := c.DuploAWSMQBrokerGet(tenantID, brokerID)
-	if duplo == nil {
-		d.SetId("") // object missing
-		return nil
-	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s Amazon MQ broker %s : %s", tenantID, brokerID, clientErr)
+	}
+	if duplo == nil {
+		d.SetId("") // object missing
+		return nil
 	}
 	flattenAwsMqBroker(d, duplo)
 	log.Printf("[TRACE] resourceAwsMQRead(%s, %s): end", tenantID, name)
@@ -493,7 +495,7 @@ func expandAwsMqBroker(d *schema.ResourceData) *duplosdk.DuploAWSMQ {
 	}
 
 	// Users
-	req.Users = expandAwsMqBrokerUsers(d.Get("users").(*schema.Set).List())
+	req.Users = expandAwsMqBrokerUsers(d.Get("user").([]interface{}))
 
 	// LDAP server metadata
 	if v, ok := d.GetOk("ldap_server_metadata"); ok && len(v.([]interface{})) > 0 {
@@ -579,7 +581,7 @@ func expandAwsMqBrokerUsers(v interface{}) []duplosdk.DuploAWSMQUser {
 			ConsoleAccess:   userMap["console_access"].(bool),
 			ReplicationUser: userMap["replication_user"].(bool),
 		}
-		gs := userMap["groups"].(*schema.Set).List()
+		gs := userMap["groups"].([]interface{})
 		gstr := []string{}
 		for _, g := range gs {
 			gstr = append(gstr, g.(string))
@@ -651,7 +653,6 @@ func flattenAwsMqBroker(d *schema.ResourceData, resp *duplosdk.DuploMQBrokerResp
 	if err := d.Set("subnet_ids", resp.SubnetIds); err != nil {
 		return err
 	}
-
 	if err := d.Set("tags", filterDuploDefinedTagsAsMap(resp.Tags)); err != nil {
 		return err
 	}
@@ -666,21 +667,18 @@ func flattenAwsMqBroker(d *schema.ResourceData, resp *duplosdk.DuploMQBrokerResp
 		}
 	}
 	// Users
-	users := make([]map[string]interface{}, 0, len(resp.Users))
-	for _, u := range resp.Users {
-		user := map[string]interface{}{
-			"user_name": u.Username,
-			// password is not returned in response, so leave empty
-			"password": u.Password,
-		}
-		if len(u.Groups) == 0 {
-			user["groups"] = nil
-		} else {
-			user["groups"] = u.Groups
-		}
-		users = append(users, user)
-	}
-	if err := d.Set("users", users); err != nil {
+	//users := make([]map[string]interface{}, 0, len(resp.Users))
+	//for _, u := range resp.Users {
+	//	user := map[string]interface{}{
+	//		"user_name": u.UserName,
+	//		// password is not returned in response, so leave empty
+	//		//	"password": u.Password,
+	//		//	"groups": u.Groups,
+	//	}
+	//
+	//	users = append(users, user)
+	//}
+	if err := d.Set("user", flattenUsers(resp.Users, d.Get("user").([]interface{}))); err != nil {
 		return err
 	}
 	// Encryption options
@@ -830,6 +828,10 @@ func expandAwsMqBrokerUpdate(d *schema.ResourceData, brokerId string) *duplosdk.
 			}
 		}
 	}
+	if d.HasChange("tags") {
+		req.Tags = expandStringMap(d.Get("tags").(map[string]interface{}))
+	}
+
 	return req
 }
 
@@ -905,18 +907,114 @@ func stringHashcode(s string) int {
 	return 0
 }
 
-func flattenUsers(users []map[string]interface{}, cfgUsers []duplosdk.DuploAWSMQUser) *schema.Set {
-	out := make([]any, 0)
-
+/*
+//set flattent logic
+func flattenUsers(users []duplosdk.DuploAWSMQUser, cfgUsers []any) *schema.Set {
+	existingPairs := make(map[string]string)
 	for _, u := range cfgUsers {
-		userMap := map[string]interface{}{
-			"user_name":        u.UserName,
-			"console_access":   u.ConsoleAccess,
-			"replication_user": u.ReplicationUser,
-			"groups":           flattenStringSet(u.Groups),
-		}
-		out = append(out, userMap)
+		user := u.(map[string]any)
+		username := user["user_name"].(string)
+		existingPairs[username] = user["password"].(string)
 	}
 
+	out := make([]any, 0)
+	for _, u := range users {
+		m := map[string]any{
+			"user_name": u.UserName,
+		}
+		password := ""
+		if p, ok := existingPairs[u.UserName]; ok {
+			password = p
+		}
+		if password != "" {
+			m["password"] = password
+		}
+		//		if u.ConsoleAccess != nil {
+		m["console_access"] = u.ConsoleAccess
+		//		}
+		//	if u.ReplicationUser != nil {
+		m["replication_user"] = u.ReplicationUser
+		//	}
+		if len(u.Groups) > 0 {
+			m["groups"] = flattenStringValueSet(u.Groups)
+		}
+		out = append(out, m)
+	}
 	return schema.NewSet(resourceUserHash, out)
+}
+
+func flattenStringValueList(list []string) []any {
+	vs := make([]any, 0, len(list))
+	for _, v := range list {
+		vs = append(vs, v)
+	}
+	return vs
+}
+
+func flattenStringValueSet(list []string) *schema.Set {
+	return schema.NewSet(schema.HashString, flattenStringValueList(list))
+}
+*/
+
+func flattenUsers(users []duplosdk.DuploAWSMQUser, cfgUsers []interface{}) []interface{} {
+	inte := []interface{}{}
+	for i, u := range users {
+		um := cfgUsers[i].(map[string]interface{})
+		if um["user_name"] == u.UserName {
+			m := make(map[string]interface{})
+			m["user_name"] = u.UserName
+			m["password"] = um["password"]
+			m["console_access"] = u.ConsoleAccess
+			m["groups"] = u.Groups
+			m["replication_user"] = u.ReplicationUser
+			inte = append(inte, m)
+		}
+	}
+	return inte
+}
+
+func validateMQUsers(val interface{}, key string) (warns []string, errs []error) {
+	users, ok := val.([]interface{})
+	if !ok {
+		errs = append(errs, fmt.Errorf("invalid type for %s: expected list", key))
+		return
+	}
+
+	userNames := make(map[string]struct{})
+	for i, u := range users {
+		userMap, ok := u.(map[string]interface{})
+		if !ok {
+			errs = append(errs, fmt.Errorf("invalid user at index %d in %s: expected map", i, key))
+			continue
+		}
+		userName, ok := userMap["user_name"].(string)
+		if !ok || userName == "" {
+			errs = append(errs, fmt.Errorf("user_name is required and must be a string at index %d in %s", i, key))
+			continue
+		}
+		if _, exists := userNames[userName]; exists {
+			errs = append(errs, fmt.Errorf("duplicate user_name '%s' found in %s", userName, key))
+		}
+		userNames[userName] = struct{}{}
+
+		// Validate groups uniqueness
+		if groupsRaw, ok := userMap["groups"]; ok {
+			groups, ok := groupsRaw.([]interface{})
+			if ok {
+				groupSet := make(map[string]struct{})
+				for _, g := range groups {
+					groupStr, ok := g.(string)
+					if !ok {
+						errs = append(errs, fmt.Errorf("group value must be a string at index %d in user '%s'", i, userName))
+						continue
+					}
+					if _, exists := groupSet[groupStr]; exists {
+						errs = append(errs, fmt.Errorf("duplicate group '%s' found in user '%s'", groupStr, userName))
+					}
+					groupSet[groupStr] = struct{}{}
+				}
+			}
+		}
+	}
+	return
 }
