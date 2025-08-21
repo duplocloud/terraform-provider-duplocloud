@@ -206,8 +206,10 @@ func waitUntilSecondoryDBReady(ctx context.Context, c *duplosdk.Client, tenantID
 				} else {
 					status = "pending"
 				}
+			} else if strings.Contains(err.Error(), "not found") {
+				status = "pending"
+				err = nil
 			}
-
 			return rp, status, err
 		},
 		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
