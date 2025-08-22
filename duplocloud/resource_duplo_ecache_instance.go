@@ -251,34 +251,16 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"global_replication_group": {
-			Type:     schema.TypeList,
-			Optional: true,
-			ForceNew: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"group_id": {
-						Description: "Specify global replication group id",
-						Type:        schema.TypeString,
-						Required:    true,
-					},
-					"description": {
-						Description: "Specify global replication description",
-						Type:        schema.TypeString,
-						Required:    true,
-					},
-					"secondary_tenant_id": {
-						Description: "Specify secondary tenant id",
-						Type:        schema.TypeString,
-						Required:    true,
-					},
-					"is_primary": {
-						Description: "Flag to indicate if this is primary replication group",
-						Type:        schema.TypeBool,
-						Computed:    true,
-					},
-				},
-			},
+		"is_primary": {
+			Description: "Flag to indicate if this is primary replication group",
+			Type:        schema.TypeBool,
+			Computed:    true,
+		},
+		"is_global": {
+			Description: "Flag to specify instance is part of global datastore",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true,
 		},
 	}
 }
@@ -377,9 +359,16 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Post the object to Duplo
-	_, err = c.EcacheInstanceCreate(tenantID, duplo)
-	if err != nil {
-		return diag.Errorf("Error updating ECache instance '%s': %s", id, err)
+	if duplo.IsGlobal {
+		err := c.DuploPrimaryEcacheCreate(tenantID, &duplo.DuploEcacheInstance)
+		if err != nil {
+			return diag.Errorf("Error creating primary ECache instance '%s': %s", id, err)
+		}
+	} else {
+		_, err = c.EcacheInstanceCreate(tenantID, duplo)
+		if err != nil {
+			return diag.Errorf("Error updating ECache instance '%s': %s", id, err)
+		}
 	}
 	d.SetId(id)
 
@@ -600,6 +589,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
 			SnapshotWindow:           d.Get("snapshot_window").(string),
 			EnableClusterMode:        d.Get("enable_cluster_mode").(bool),
+			IsGlobal:                 d.Get("is_global").(bool),
 		},
 	}
 	if ds, ok := d.Get("log_delivery_configuration").(*schema.Set); ok {
@@ -626,13 +616,6 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 		} else {
 			data.DuploEcacheInstance.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
 		}
-	}
-	if v, ok := d.Get("global_replication_group").([]interface{}); ok && len(v) > 0 {
-		m := v[0].(map[string]interface{})
-		data.IsGlobal = true
-		data.SecondaryTenantId = m["secondary_tenant_id"].(string)
-		data.GlobalReplicationGroupDescription = m["description"].(string)
-		data.GlobalReplicationGroupId = m["group_id"].(string)
 	}
 	return data, nil
 }
@@ -685,14 +668,8 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
-	if duplo.IsGlobal {
-		m := make(map[string]interface{})
-		m["group_id"] = duplo.GlobalReplicationGroupId
-		m["description"] = duplo.GlobalReplicationGroupDescription
-		m["secondary_tenant_id"] = duplo.SecondaryTenantId
-		m["is_primary"] = duplo.IsPrimary
-		d.Set("global_replication_group", []interface{}{m})
-	}
+	d.Set("is_global", duplo.IsPrimary)
+	d.Set("is_primary", duplo.IsPrimary)
 	return nil
 }
 
@@ -843,8 +820,8 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 		return fmt.Errorf("cannot set snapshot_retention_limit for memcache")
 
 	}
-	grg := diff.Get("global_replication_group").([]interface{})
-	if len(grg) > 0 && eng != 0 {
+	grg := diff.Get("is_global").(bool)
+	if grg && eng != 0 {
 		return fmt.Errorf("global_replication_group is only supported for Redis engine")
 	}
 	return nil

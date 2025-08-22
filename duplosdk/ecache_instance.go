@@ -165,3 +165,33 @@ func (c *Client) EcacheInstanceGet(tenantID, name string) (*DuploEcacheInstance,
 	rp.Name = name
 	return &rp, nil
 }
+
+type DuploEcacheGlobalPrimaryInstance struct {
+	// NOTE: The TenantID field does not come from the backend - we synthesize it
+	TenantID string `json:"-"`
+
+	// NOTE: The Name field does not come from the backend - we synthesize it
+	Name string `json:"Name"`
+
+	Identifier               string `json:"Identifier"`
+	CacheType                int    `json:"CacheType,omitempty"`
+	EngineVersion            string `json:"EngineVersion,omitempty"`
+	Size                     string `json:"Size,omitempty"`
+	Replicas                 int    `json:"Replicas,omitempty"`
+	ParameterGroupName       string `json:"ParameterGroupName,omitempty"`
+	EnableClusterMode        bool   `json:"ClusteringEnabled,omitempty"`
+	AutomaticFailoverEnabled bool   `json:"AutomaticFailoverEnabled,omitempty"`
+	NumberOfShards           int    `json:"NoOfShards,omitempty"`
+	IsGlobal                 bool   `json:"IsGlobal"`
+	IsPrimary                bool   `json:"IsPrimary,omitempty"`
+}
+
+func (c *Client) DuploPrimaryEcacheCreate(tenantID string, rq *DuploEcacheInstance) ClientError {
+	rp := map[string]interface{}{}
+	return c.postAPI(
+		fmt.Sprintf("DuploPrimaryEcacheCreate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("subscriptions/%s/CreatePrimaryECacheInstance", tenantID),
+		&rq,
+		&rp,
+	)
+}
