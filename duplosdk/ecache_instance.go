@@ -135,7 +135,18 @@ func (c *Client) EcacheInstanceDelete(tenantID, name string) ClientError {
 		nil)
 }
 
-// EcacheInstanceGet retrieves an ECache instance via the Duplo API.
+type DuplocloudEcacheSnapshotRetentionLimitUpdateRequest struct {
+	Identifier             string `json:"Identifier"`
+	SnapshotRetentionLimit string `json:"SnapshotRetentionLimit"`
+}
+
+func (c *Client) EcacheInstanceUpdateSnapshotRetentionLimit(tenantID, name string, rq DuplocloudEcacheSnapshotRetentionLimitUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateSnapshotRetentionLimit(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateRetentionLimit", tenantID),
+		&rq, nil)
+}
+
 func (c *Client) EcacheInstanceGet(tenantID, name string) (*DuploEcacheInstance, ClientError) {
 
 	// Call the API.
