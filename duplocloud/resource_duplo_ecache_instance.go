@@ -364,6 +364,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.Errorf("Error creating primary ECache instance '%s': %s", id, err)
 		}
+		time.Sleep(4 * time.Minute)
 	} else {
 		_, err = c.EcacheInstanceCreate(tenantID, duplo)
 		if err != nil {
@@ -668,7 +669,6 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
-	d.Set("is_global", duplo.IsPrimary)
 	d.Set("is_primary", duplo.IsPrimary)
 	return nil
 }

@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"log"
 )
 
 // DuploEcacheInstance is a Duplo SDK object that represents an ECache instance
@@ -194,4 +195,119 @@ func (c *Client) DuploPrimaryEcacheCreate(tenantID string, rq *DuploEcacheInstan
 		&rq,
 		&rp,
 	)
+}
+
+type DuploEcacheGlobalDatastore struct {
+	Description              string `json:"GlobalReplicationGroupDescription"`
+	GlobalReplicationGroupId string `json:"GlobalReplicationGroupIdSuffix"`
+	PrimaryInstance          string `json:"PrimaryReplicationGroupId"`
+}
+
+type DuploEcacheGlobalDatastoreResponse struct {
+	GlobalReplicationGroup struct {
+		GlobalReplicationGroupId string `json:"GlobalReplicationGroupId"`
+	} `json:"GlobalReplicationGroup,omitempty"`
+	GlobalReplicationGroupId          string `json:"GlobalReplicationGroupId"`
+	GlobalReplicationGroupDescription string `json:"GlobalReplicationGroupDescription"`
+	Members                           []struct {
+		ReplicationGroupId string `json:"ReplicationGroupId"`
+		Role               string `json:"Role"`
+		Status             string `json:"Status"`
+	} `json:"Members,omitempty"`
+	Status string `json:"Status"`
+}
+
+func (c *Client) DuploEcacheGlobalDatastoreCreate(tenantID string, rq *DuploEcacheGlobalDatastore) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
+	rp := DuploEcacheGlobalDatastoreResponse{}
+	err := c.postAPI(
+		fmt.Sprintf("DuploEcacheGlobalDatastoreCreate(%s,%s)", tenantID, rq.GlobalReplicationGroupId),
+		fmt.Sprintf("v3/subscriptions/%s/CreateGlobalECacheDatastore", tenantID),
+		&rq,
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) DuploEcacheGlobalDatastoreGet(tenantID, name string) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
+
+	// Call the API.
+	rp := []DuploEcacheGlobalDatastoreResponse{}
+	err := c.getAPI(
+		fmt.Sprintf("EcacheInstanceGet(%s,%s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/ListECacheGlobalDatastore", tenantID),
+		&rp)
+
+	for _, gds := range rp {
+		log.Println("Respnse of DuploEcacheGlobalDatastoreGet \n ", gds)
+		if gds.GlobalReplicationGroupId == name {
+			log.Println("Name ", name, " Status ", gds.Status)
+			return &gds, nil
+		}
+	}
+	return nil, err
+}
+
+func (c *Client) DuploEcacheGlobalDatastoreDelete(tenantID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("DuploEcacheGlobalDatastoreDelete(%s,%s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/DeleteGlobalECacheDatastore/%s", tenantID, name),
+		nil,
+	)
+
+}
+
+type DuploEcacheReplicationGroup struct {
+	Description              string `json:"GlobalReplicationGroupDescription"`
+	GlobalReplicationGroupId string `json:"GlobalReplicationGroupId"`
+	SecondaryTenantId        string `json:"TenantId"`
+	Port                     int    `json:"Port"`
+	ReplicationGroupId       string `json:"ReplicationGroupId"`
+}
+
+func (c *Client) DuploEcacheReplicationGroupCreate(tenantID string, rq *DuploEcacheReplicationGroup) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
+	rp := DuploEcacheGlobalDatastoreResponse{}
+	err := c.postAPI(
+		fmt.Sprintf("DuploEcacheReplicationGroupCreate(%s,%s)", tenantID, rq.ReplicationGroupId),
+		fmt.Sprintf("v3/subscriptions/%s/AssociateNewECacheGroup", tenantID),
+		&rq,
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) DuploEcacheReplicationGroupGet(tenantID, gDatastore, name string) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
+
+	// Call the API.
+	rp := []DuploEcacheGlobalDatastoreResponse{}
+	err := c.getAPI(
+		fmt.Sprintf("DuploEcacheReplicationGroupGet(%s,%s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/ListECacheGlobalDatastore", tenantID),
+		&rp)
+
+	for _, gds := range rp {
+		if gds.GlobalReplicationGroupId == gDatastore {
+			for _, m := range gds.Members {
+				if m.ReplicationGroupId == name {
+					return &gds, nil
+				}
+			}
+		}
+	}
+	return nil, err
+}
+
+func (c *Client) DuploEcacheReplicationGroupDisassociate(tenantID, secTenantId, glbDatastore, name string) ClientError {
+	var rp interface{}
+	req := map[string]interface{}{
+		"GlobalReplicationGroupId": glbDatastore,
+		"ReplicationGroupId":       name,
+		"TenantId":                 secTenantId,
+	}
+	return c.postAPI(
+		fmt.Sprintf("DuploEcacheReplicationGroupDisassociate(%s,%s,%s)", tenantID, glbDatastore, name),
+		fmt.Sprintf("v3/subscriptions/%s/DisassociateECacheGroup/%s/%s", tenantID, glbDatastore, name),
+		&req,
+		&rp,
+	)
+
 }
