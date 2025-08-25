@@ -56,6 +56,11 @@ func ecacheReplicationGroupSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    true,
 		},
+		"identifier": {
+			Description: "Fullname for secondary regional cluster",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
@@ -99,7 +104,7 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 		return diag.Errorf("%s", cerr)
 	}
 	id := fmt.Sprintf("%s/ecacheReplicationGroup/%s/%s/%s", tenantID, rq.SecondaryTenantId, rq.GlobalReplicationGroupId, rq.ReplicationGroupId)
-	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, rq.GlobalReplicationGroupId, rq.ReplicationGroupId)
+	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, rq.GlobalReplicationGroupId, rq.SecondaryTenantId, rp.ReplicationGroup.ReplicationGroupId)
 	if err != nil {
 		return diag.Errorf("%s", cerr)
 
@@ -111,7 +116,7 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 	return diags
 }
 
-func replicationGroupWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, tenantID, gDatastore, name string) error {
+func replicationGroupWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, tenantID, gDatastore, secTenantId, name string) error {
 	stateConf := &retry.StateChangeConf{
 		Pending:      []string{"pending"},
 		Target:       []string{"ready"},
@@ -119,7 +124,7 @@ func replicationGroupWaitUntilAvailable(ctx context.Context, c *duplosdk.Client,
 		PollInterval: 30 * time.Second,
 		Timeout:      20 * time.Minute,
 		Refresh: func() (interface{}, string, error) {
-			resp, err := c.DuploEcacheReplicationGroupGet(tenantID, gDatastore, name)
+			resp, err := c.DuploEcacheReplicationGroupGet(tenantID, gDatastore, secTenantId, name)
 			status := "pending"
 			if resp.Status == "available" {
 				status = "ready"
@@ -145,8 +150,9 @@ func resourceDuploEcacheReplicationGroupRead(ctx context.Context, d *schema.Reso
 	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupRead(%s,%s,%s, %s): start", tenantID, secTenantId, globalDatastore, name)
 
 	// Get the object from Duplo, detecting a missing object
+	fullName := "duplo-" + name
 	c := m.(*duplosdk.Client)
-	duplo, err := c.DuploEcacheReplicationGroupGet(tenantID, globalDatastore, name)
+	duplo, err := c.DuploEcacheReplicationGroupGet(tenantID, globalDatastore, secTenantId, fullName)
 	if err != nil {
 		if err.Status() == 404 {
 			log.Printf("Unable to fetch Ecache Replication Group")
@@ -165,6 +171,7 @@ func resourceDuploEcacheReplicationGroupRead(ctx context.Context, d *schema.Reso
 	d.Set("description", duplo.GlobalReplicationGroupDescription)
 	d.Set("secondary_cluster_name", name)
 	d.Set("global_datastore_id", duplo.GlobalReplicationGroupId)
+	d.Set("identifier", fullName)
 	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupRead(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -186,7 +193,7 @@ func resourceDuploEcacheReplicationGroupDelete(ctx context.Context, d *schema.Re
 		return diag.FromErr(cerr)
 	}
 	time.Sleep(2 * time.Minute)
-	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, globalDatastore, name)
+	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, globalDatastore, secTenantId, name)
 	if err != nil {
 		return diag.Errorf("%s", cerr)
 

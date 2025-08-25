@@ -213,8 +213,12 @@ type DuploEcacheGlobalDatastoreResponse struct {
 		ReplicationGroupId string `json:"ReplicationGroupId"`
 		Role               string `json:"Role"`
 		Status             string `json:"Status"`
+		TenantId           string `json:"TenantId"`
 	} `json:"Members,omitempty"`
-	Status string `json:"Status"`
+	Status           string `json:"Status"`
+	ReplicationGroup struct {
+		ReplicationGroupId string `json:"ReplicationGroupId"`
+	} `json:"ReplicationGroup,omitempty"`
 }
 
 func (c *Client) DuploEcacheGlobalDatastoreCreate(tenantID string, rq *DuploEcacheGlobalDatastore) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
@@ -275,7 +279,7 @@ func (c *Client) DuploEcacheReplicationGroupCreate(tenantID string, rq *DuploEca
 	return &rp, err
 }
 
-func (c *Client) DuploEcacheReplicationGroupGet(tenantID, gDatastore, name string) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
+func (c *Client) DuploEcacheReplicationGroupGet(tenantID, gDatastore, scTenantId, name string) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
 
 	// Call the API.
 	rp := []DuploEcacheGlobalDatastoreResponse{}
@@ -287,7 +291,7 @@ func (c *Client) DuploEcacheReplicationGroupGet(tenantID, gDatastore, name strin
 	for _, gds := range rp {
 		if gds.GlobalReplicationGroupId == gDatastore {
 			for _, m := range gds.Members {
-				if m.ReplicationGroupId == name {
+				if m.ReplicationGroupId == name && scTenantId == m.TenantId {
 					return &gds, nil
 				}
 			}
