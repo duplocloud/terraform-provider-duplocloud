@@ -191,7 +191,7 @@ func (c *Client) DuploPrimaryEcacheCreate(tenantID string, rq *DuploEcacheInstan
 	rp := map[string]interface{}{}
 	return c.postAPI(
 		fmt.Sprintf("DuploPrimaryEcacheCreate(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("subscriptions/%s/CreatePrimaryECacheInstance", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/globaldatastore/createprimary", tenantID),
 		&rq,
 		&rp,
 	)
@@ -207,25 +207,28 @@ type DuploEcacheGlobalDatastoreResponse struct {
 	GlobalReplicationGroup struct {
 		GlobalReplicationGroupId string `json:"GlobalReplicationGroupId"`
 	} `json:"GlobalReplicationGroup,omitempty"`
-	GlobalReplicationGroupId          string `json:"GlobalReplicationGroupId"`
-	GlobalReplicationGroupDescription string `json:"GlobalReplicationGroupDescription"`
-	Members                           []struct {
-		ReplicationGroupId string `json:"ReplicationGroupId"`
-		Role               string `json:"Role"`
-		Status             string `json:"Status"`
-		TenantId           string `json:"TenantId"`
-	} `json:"Members,omitempty"`
-	Status           string `json:"Status"`
-	ReplicationGroup struct {
+	GlobalReplicationGroupId          string                         `json:"GlobalReplicationGroupId"`
+	GlobalReplicationGroupDescription string                         `json:"GlobalReplicationGroupDescription"`
+	Members                           []DuploEcacheReplicationMember `json:"Members,omitempty"`
+	Status                            string                         `json:"Status"`
+	ReplicationGroup                  struct {
 		ReplicationGroupId string `json:"ReplicationGroupId"`
 	} `json:"ReplicationGroup,omitempty"`
+}
+
+type DuploEcacheReplicationMember struct {
+	ReplicationGroupId     string `json:"ReplicationGroupId"`
+	Role                   string `json:"Role"`
+	Status                 string `json:"Status"`
+	TenantId               string `json:"TenantId"`
+	ReplicationGroupRegion string `json:"ReplicationGroupRegion"`
 }
 
 func (c *Client) DuploEcacheGlobalDatastoreCreate(tenantID string, rq *DuploEcacheGlobalDatastore) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
 	rp := DuploEcacheGlobalDatastoreResponse{}
 	err := c.postAPI(
 		fmt.Sprintf("DuploEcacheGlobalDatastoreCreate(%s,%s)", tenantID, rq.GlobalReplicationGroupId),
-		fmt.Sprintf("v3/subscriptions/%s/CreateGlobalECacheDatastore", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/globaldatastore", tenantID),
 		&rq,
 		&rp,
 	)
@@ -238,7 +241,7 @@ func (c *Client) DuploEcacheGlobalDatastoreGet(tenantID, name string) (*DuploEca
 	rp := []DuploEcacheGlobalDatastoreResponse{}
 	err := c.getAPI(
 		fmt.Sprintf("EcacheInstanceGet(%s,%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/ListECacheGlobalDatastore", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/globaldatastore", tenantID),
 		&rp)
 
 	for _, gds := range rp {
@@ -254,7 +257,7 @@ func (c *Client) DuploEcacheGlobalDatastoreGet(tenantID, name string) (*DuploEca
 func (c *Client) DuploEcacheGlobalDatastoreDelete(tenantID, name string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("DuploEcacheGlobalDatastoreDelete(%s,%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/DeleteGlobalECacheDatastore/%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/globaldatastore/%s", tenantID, name),
 		nil,
 	)
 
@@ -272,32 +275,32 @@ func (c *Client) DuploEcacheReplicationGroupCreate(tenantID string, rq *DuploEca
 	rp := DuploEcacheGlobalDatastoreResponse{}
 	err := c.postAPI(
 		fmt.Sprintf("DuploEcacheReplicationGroupCreate(%s,%s)", tenantID, rq.ReplicationGroupId),
-		fmt.Sprintf("v3/subscriptions/%s/AssociateNewECacheGroup", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/globaldatastore/associate", tenantID),
 		&rq,
 		&rp,
 	)
 	return &rp, err
 }
 
-func (c *Client) DuploEcacheReplicationGroupGet(tenantID, gDatastore, scTenantId, name string) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
+func (c *Client) DuploEcacheReplicationGroupGet(tenantID, gDatastore, scTenantId, name string) (*DuploEcacheGlobalDatastoreResponse, *DuploEcacheReplicationMember, ClientError) {
 
 	// Call the API.
 	rp := []DuploEcacheGlobalDatastoreResponse{}
 	err := c.getAPI(
 		fmt.Sprintf("DuploEcacheReplicationGroupGet(%s,%s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/ListECacheGlobalDatastore", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/globaldatastore", tenantID),
 		&rp)
 
 	for _, gds := range rp {
 		if gds.GlobalReplicationGroupId == gDatastore {
 			for _, m := range gds.Members {
 				if m.ReplicationGroupId == name && scTenantId == m.TenantId {
-					return &gds, nil
+					return &gds, &m, nil
 				}
 			}
 		}
 	}
-	return nil, err
+	return nil, nil, err
 }
 
 func (c *Client) DuploEcacheReplicationGroupDisassociate(tenantID, secTenantId, glbDatastore, name string) ClientError {
@@ -305,11 +308,11 @@ func (c *Client) DuploEcacheReplicationGroupDisassociate(tenantID, secTenantId, 
 	req := map[string]interface{}{
 		"GlobalReplicationGroupId": glbDatastore,
 		"ReplicationGroupId":       name,
-		"TenantId":                 secTenantId,
+		"Region":                   secTenantId,
 	}
 	return c.postAPI(
 		fmt.Sprintf("DuploEcacheReplicationGroupDisassociate(%s,%s,%s)", tenantID, glbDatastore, name),
-		fmt.Sprintf("v3/subscriptions/%s/DisassociateECacheGroup/%s/%s", tenantID, glbDatastore, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/globaldatastore/disassociate", tenantID),
 		&req,
 		&rp,
 	)

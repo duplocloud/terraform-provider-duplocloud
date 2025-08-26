@@ -61,6 +61,11 @@ func ecacheReplicationGroupSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"secondary_region": {
+			Description: "Region of secondary cluster",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
@@ -124,9 +129,9 @@ func replicationGroupWaitUntilAvailable(ctx context.Context, c *duplosdk.Client,
 		PollInterval: 30 * time.Second,
 		Timeout:      20 * time.Minute,
 		Refresh: func() (interface{}, string, error) {
-			resp, err := c.DuploEcacheReplicationGroupGet(tenantID, gDatastore, secTenantId, name)
+			resp, _, err := c.DuploEcacheReplicationGroupGet(tenantID, gDatastore, secTenantId, name)
 			status := "pending"
-			if resp.Status == "available" {
+			if resp != nil && resp.Status == "available" {
 				status = "ready"
 			}
 
@@ -152,7 +157,7 @@ func resourceDuploEcacheReplicationGroupRead(ctx context.Context, d *schema.Reso
 	// Get the object from Duplo, detecting a missing object
 	fullName := "duplo-" + name
 	c := m.(*duplosdk.Client)
-	duplo, err := c.DuploEcacheReplicationGroupGet(tenantID, globalDatastore, secTenantId, fullName)
+	duplo, member, err := c.DuploEcacheReplicationGroupGet(tenantID, globalDatastore, secTenantId, fullName)
 	if err != nil {
 		if err.Status() == 404 {
 			log.Printf("Unable to fetch Ecache Replication Group")
@@ -172,6 +177,7 @@ func resourceDuploEcacheReplicationGroupRead(ctx context.Context, d *schema.Reso
 	d.Set("secondary_cluster_name", name)
 	d.Set("global_datastore_id", duplo.GlobalReplicationGroupId)
 	d.Set("identifier", fullName)
+	d.Set("secondary_region", member.ReplicationGroupRegion)
 	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupRead(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -183,8 +189,10 @@ func resourceDuploEcacheReplicationGroupDelete(ctx context.Context, d *schema.Re
 		return diag.Errorf("invalid resource id %s", id)
 	}
 	tenantID, secTenantId, globalDatastore, name := idParts[0], idParts[2], idParts[3], idParts[4]
+	fullName := "duplo-" + name
+
 	c := m.(*duplosdk.Client)
-	cerr := c.DuploEcacheReplicationGroupDisassociate(tenantID, secTenantId, globalDatastore, name)
+	cerr := c.DuploEcacheReplicationGroupDisassociate(tenantID, d.Get("secondary_region").(string), globalDatastore, fullName)
 	if cerr != nil {
 		if cerr.Status() == 404 {
 			log.Printf("Unable to disassociate Replication group from Datastore %s", cerr.Error())
@@ -193,9 +201,9 @@ func resourceDuploEcacheReplicationGroupDelete(ctx context.Context, d *schema.Re
 		return diag.FromErr(cerr)
 	}
 	time.Sleep(2 * time.Minute)
-	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, globalDatastore, secTenantId, name)
+	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, globalDatastore, secTenantId, fullName)
 	if err != nil {
-		return diag.Errorf("%s", cerr)
+		return diag.Errorf("Unable to delete secondary redis cluster after disassociation %s", cerr)
 
 	}
 	err = c.EcacheInstanceDelete(tenantID, name)
