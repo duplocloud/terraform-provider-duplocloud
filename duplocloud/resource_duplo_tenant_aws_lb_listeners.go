@@ -52,6 +52,7 @@ func awsLoadBalancerListenerSchema() map[string]*schema.Schema {
 			Optional:      true,
 			ForceNew:      true,
 			ConflictsWith: []string{"default_actions"},
+			Deprecated:    "target_group_arn has moved to default_actions.forward.target_group_arn. This field is available for backward compatibility. We recommend to use default_actions block",
 		},
 		"certificate_arn": {
 			Description: "The ARN of the certificate to attach to the listener.",
@@ -204,7 +205,8 @@ func resourceAwsLoadBalancerListener() *schema.Resource {
 			Create: schema.DefaultTimeout(3 * time.Minute),
 			Delete: schema.DefaultTimeout(3 * time.Minute),
 		},
-		Schema: awsLoadBalancerListenerSchema(),
+		Schema:        awsLoadBalancerListenerSchema(),
+		CustomizeDiff: resourceAwsLoadBalancerListenerCustomizeDiff,
 	}
 }
 
@@ -344,40 +346,42 @@ func expandAwsLoadBalancerListener(d *schema.ResourceData) duplosdk.DuploAwsLbLi
 	actn := d.Get("default_actions").([]interface{})
 	// Ensure the default_actions is initialized
 	if len(actn) > 0 {
-		actionMap := actn[0].(map[string]interface{})
-		fr := actionMap["fixed_response"].([]interface{})
-		if len(fr) > 0 {
-			m := fr[0].(map[string]interface{})
-			frwdResp := duplosdk.DuploFixedResponseConfig{
-				ContentType: m["content_type"].(string),
-				MessageBody: m["message_body"].(string),
-				StatusCode:  m["status_code"].(string),
+		if actn[0] != nil {
+			actionMap := actn[0].(map[string]interface{})
+			fr := actionMap["fixed_response"].([]interface{})
+			if len(fr) > 0 {
+				m := fr[0].(map[string]interface{})
+				frwdResp := duplosdk.DuploFixedResponseConfig{
+					ContentType: m["content_type"].(string),
+					MessageBody: m["message_body"].(string),
+					StatusCode:  m["status_code"].(string),
+				}
+				action.FixedResponseConfig = &frwdResp
+				action.Type.Value = "fixed-response"
 			}
-			action.FixedResponseConfig = &frwdResp
-			action.Type.Value = "fixed-response"
-		}
 
-		r := actionMap["redirect"].([]interface{})
-		if len(r) > 0 {
-			m := r[0].(map[string]interface{})
-			redirct := duplosdk.DuploRedirectConfig{
-				Port:     m["port"].(string),
-				Protocol: m["protocol"].(string),
-				Host:     m["host"].(string),
-				Path:     m["path"].(string),
-				Query:    m["query"].(string),
+			r := actionMap["redirect"].([]interface{})
+			if len(r) > 0 {
+				m := r[0].(map[string]interface{})
+				redirct := duplosdk.DuploRedirectConfig{
+					Port:     m["port"].(string),
+					Protocol: m["protocol"].(string),
+					Host:     m["host"].(string),
+					Path:     m["path"].(string),
+					Query:    m["query"].(string),
+				}
+				redirct.StatusCode = &duplosdk.DuploStringValue{
+					Value: m["status_code"].(string),
+				}
+				action.RedirectConfig = &redirct
+				action.Type.Value = "redirect"
 			}
-			redirct.StatusCode = &duplosdk.DuploStringValue{
-				Value: m["status_code"].(string),
+			f := actionMap["forward"].([]interface{})
+			if len(f) > 0 {
+				m := f[0].(map[string]interface{})
+				action.TargetGroupArn = m["target_group_arn"].(string)
+				action.Type.Value = "forward"
 			}
-			action.RedirectConfig = &redirct
-			action.Type.Value = "redirect"
-		}
-		f := actionMap["forward"].([]interface{})
-		if len(f) > 0 {
-			m := f[0].(map[string]interface{})
-			action.TargetGroupArn = m["target_group_arn"].(string)
-			action.Type.Value = "forward"
 		}
 	}
 	log.Printf("[TRACE] action- %+v", action)
@@ -477,3 +481,24 @@ func flattenAwsLoadBalancerListener(d *schema.ResourceData, tenantID string, lbN
 	d.Set("load_balancer_arn", duplo.LoadBalancerArn)
 	d.Set("ssl_policy", duplo.SSLPolicy)
 }
+
+func resourceAwsLoadBalancerListenerCustomizeDiff(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+	targetArn := d.Get("target_group_arn")
+	defaultActions := d.Get("default_actions")
+
+	if targetArn == nil || targetArn == "" {
+		action := defaultActions.([]interface{})
+		// If target_group_arn is not set, default_actions must be present and non-empty
+		if defaultActions == nil || len(action) == 0 || action[0] == nil {
+			return fmt.Errorf("Either 'target_group_arn' or 'default_actions' block must be specified")
+		}
+	} else {
+		// If target_group_arn is set, default_actions must not be set
+		if defaultActions != nil && len(defaultActions.([]interface{})) > 0 {
+			return fmt.Errorf("'target_group_arn' and 'default_actions' cannot both be specified")
+		}
+	}
+	return nil
+}
+
+// Add this to your resource definition:
