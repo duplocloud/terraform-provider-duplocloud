@@ -86,7 +86,7 @@ resource "duplocloud_aws_load_balancer_listener" "myapp-listener1" {
 
 - `certificate_arn` (String) The ARN of the certificate to attach to the listener.
 - `default_actions` (Block List, Max: 1) (see [below for nested schema](#nestedblock--default_actions))
-- `target_group_arn` (String) ARN of the Target Group to which to route traffic.
+- `target_group_arn` (String, Deprecated) ARN of the Target Group to which to route traffic. target_group_arn has moved to default_actions.forward.target_group_arn. This field is available for backward compatibility. We recommend to use default_actions block
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
