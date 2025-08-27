@@ -178,6 +178,7 @@ func resourceDuploEcacheReplicationGroupRead(ctx context.Context, d *schema.Reso
 	d.Set("global_datastore_id", duplo.GlobalReplicationGroupId)
 	d.Set("identifier", fullName)
 	d.Set("secondary_region", member.ReplicationGroupRegion)
+	d.Set("secondary_tenant_id", secTenantId)
 	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupRead(%s, %s): end", tenantID, name)
 	return nil
 }

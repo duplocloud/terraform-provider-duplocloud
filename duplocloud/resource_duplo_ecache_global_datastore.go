@@ -133,10 +133,9 @@ func resourceDuploEcacheGlobalDatastoreRead(ctx context.Context, d *schema.Resou
 	}
 	tenantID, name := idParts[0], idParts[2]
 	log.Printf("[TRACE] resourceDuploEcacheGlobalDatastoreRead(%s, %s): start", tenantID, name)
-
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.DuploEcacheGlobalDatastoreGet(tenantID, name)
+	duplo, err := c.DuploEcacheGlobalDatastoreGet(tenantID, d.Get("fullname").(string))
 	if err != nil {
 		if err.Status() == 404 {
 			log.Printf("Unable to fetch Ecache Global Datastore")
@@ -151,8 +150,15 @@ func resourceDuploEcacheGlobalDatastoreRead(ctx context.Context, d *schema.Resou
 	}
 
 	// Convert the object into Terraform resource data
-	d.Set("fullname", name)
+	d.Set("tenant_id", tenantID)
+	d.Set("name", name)
+	d.Set("fullname", duplo.GlobalReplicationGroup)
 	d.Set("description", duplo.GlobalReplicationGroupDescription)
+	for _, member := range duplo.Members {
+		if member.Role == "PRIMARY" {
+			d.Set("primary_instance_name", member.ReplicationGroupId)
+		}
+	}
 	log.Printf("[TRACE] resourceDuploEcacheGlobalDatastoreRead(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -164,8 +170,10 @@ func resourceDuploEcacheGlobalDatastoreDelete(ctx context.Context, d *schema.Res
 		return diag.Errorf("invalid resource id %s", id)
 	}
 	tenantID, name := idParts[0], idParts[2]
+	log.Printf("[TRACE] resourceDuploEcacheGlobalDatastoreDelete(%s, %s): start", tenantID, name)
+
 	c := m.(*duplosdk.Client)
-	err := c.DuploEcacheGlobalDatastoreDelete(tenantID, name)
+	err := c.DuploEcacheGlobalDatastoreDelete(tenantID, d.Get("fullname").(string))
 	if err != nil {
 		if err.Status() == 404 {
 			log.Printf("Unable to delete Ecache Global Datastore %s", err.Error())
@@ -173,6 +181,7 @@ func resourceDuploEcacheGlobalDatastoreDelete(ctx context.Context, d *schema.Res
 		}
 		return diag.FromErr(err)
 	}
+	log.Printf("[TRACE] resourceDuploEcacheGlobalDatastoreDelete(%s, %s): end", tenantID, name)
 
 	return nil
 }
