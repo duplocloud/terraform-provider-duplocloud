@@ -467,7 +467,7 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	if duplo.Status != nil {
 		d.Set("status", duplo.Status.Value)
 	}
-
+	d.Set("container_definitions", filterContainerDefinition(d.Get("container_definitions").(string), duplo.ContainerDefinitions))
 	// Next, convert things into embedded JSON
 	toJsonStringState("container_definitions_updates", duplo.ContainerDefinitions, d)
 	toJsonStringState("volumes", duplo.Volumes, d)
@@ -479,6 +479,16 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("requires_attributes", ecsRequiresAttributesToState(duplo.RequiresAttributes))
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("runtime_platform", ecsPlatformRuntimeToState(duplo.RuntimePlatform))
+	if !strings.Contains(d.Get("family").(string), "duploservices-") {
+		parts := strings.SplitN(duplo.Family, "-", 3)
+
+		if len(parts) == 3 {
+			d.Set("family", parts[2])
+		}
+	} else {
+		d.Set("family", duplo.Family)
+
+	}
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
@@ -893,4 +903,14 @@ func validateInput(ctx context.Context, diff *schema.ResourceDiff, m interface{}
 	}
 
 	return nil
+}
+
+func filterContainerDefinition(stateConf string, respConf []map[string]interface{}) string {
+	if encoded, err := json.Marshal(respConf); err == nil {
+		str := string(encoded)
+		if stateConf == "" {
+			return str
+		}
+	}
+	return stateConf
 }

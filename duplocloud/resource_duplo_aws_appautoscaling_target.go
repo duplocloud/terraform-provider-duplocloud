@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -99,12 +100,14 @@ func resourceAwsAppautoscalingTargetRead(ctx context.Context, d *schema.Resource
 	})
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsAppautoscalingTargetRead(%s, %s): object already deleted", tenantID, name)
 			d.SetId("")
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s aws autoscaling target %s : %s", tenantID, name, clientErr)
 	}
 	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsAppautoscalingTargetRead(%s, %s): object already deleted", tenantID, name)
 		d.SetId("") // object missing or deleted
 		return nil
 	}
@@ -166,8 +169,10 @@ func resourceAwsAppautoscalingTargetDelete(ctx context.Context, d *schema.Resour
 	c := m.(*duplosdk.Client)
 	exist, _ := c.DuploAwsAutoscalingTargetExists(tenantID, getRq)
 	if !exist {
+		log.Printf("[TRACE] resourceAwsAppautoscalingTargetDelete(%s, %s): aws autoscaling target not found", tenantID, name)
 		return nil
 	}
+
 	clientErr := c.DuploAwsAutoscalingTargetDelete(tenantID, duplosdk.DuploAwsAutoscalingTargetDeleteReq{
 		ServiceNamespace:  namespace,
 		ScalableDimension: dimension,
@@ -175,7 +180,9 @@ func resourceAwsAppautoscalingTargetDelete(ctx context.Context, d *schema.Resour
 	})
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsAppautoscalingTargetDelete(%s, %s): object already deleted", tenantID, name)
 			return nil
+
 		}
 		return diag.Errorf("Unable to delete tenant %s aws autoscaling target '%s': %s", tenantID, name, clientErr)
 	}

@@ -3,9 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -206,10 +208,14 @@ func resourceFileSystemPolicyRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("reading EFS File System Lifecycle Policy (%s): %s", d.Id(), err)
 	}
 
-	output, err := c.DuploAWsLifecyclePolicyGet(tenantID, fsID)
+	output, cerr := c.DuploAWsLifecyclePolicyGet(tenantID, fsID)
 
-	if err != nil {
-		return diag.Errorf("reading EFS File System Lifecycle Policy (%s): %s", d.Id(), err)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsEFSLifecyclesRead(%s, %s): not found", tenantID, fsID)
+			return nil
+		}
+		return diag.Errorf("reading EFS File System Lifecycle Policy (%s): %s", d.Id(), cerr)
 	}
 
 	d.Set("lifecycle_policy", output)

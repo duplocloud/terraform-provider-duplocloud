@@ -17,7 +17,7 @@ type DuploSQSQueue struct {
 	DeduplicationScope                           int    `json:"DeduplicationScope"`
 	FifoThroughputLimit                          int    `json:"FifoThroughputLimit"`
 	ResourceType                                 int    `json:"ResourceType,omitempty"`
-	DelaySeconds                                 int    `json:"DelaySeconds,omitempty" validate:"required,gte=0,lte=900"`
+	DelaySeconds                                 int    `json:"DelaySeconds" validate:"required,gte=0,lte=900"`
 	DeadLetterTargetQueueName                    string `json:"DeadLetterTargetQueueName,omitempty"`
 	MaxMessageTimesReceivedBeforeDeadLetterQueue int    `json:"MaxMessageTimesReceivedBeforeDeadLetterQueue,omitempty"`
 }

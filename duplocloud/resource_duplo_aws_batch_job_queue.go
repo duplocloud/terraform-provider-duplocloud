@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -111,12 +112,14 @@ func resourceAwsBatchJobQueueRead(ctx context.Context, d *schema.ResourceData, m
 	jq, clientErr := c.AwsBatchJobQueueGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsBatchJobQueueRead(%s, %s): object missing", tenantID, name)
 			d.SetId("")
 			return nil
 		}
 		return diag.FromErr(clientErr)
 	}
 	if jq == nil {
+		log.Printf("[TRACE] resourceAwsBatchJobQueueRead(%s, %s): object missing", tenantID, name)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -223,11 +226,16 @@ func resourceAwsBatchJobQueueDelete(ctx context.Context, d *schema.ResourceData,
 	c := m.(*duplosdk.Client)
 	fullName, _ := c.GetDuploServicesName(tenantID, name)
 
-	jq, err := c.AwsBatchJobQueueGet(tenantID, fullName)
-	if err != nil {
-		return diag.FromErr(err)
+	jq, cerr := c.AwsBatchJobQueueGet(tenantID, fullName)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsBatchJobQueueDelete(%s, %s): object missing", tenantID, name)
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if jq == nil {
+		log.Printf("[TRACE] resourceAwsBatchJobQueueDelete(%s, %s): object missing", tenantID, name)
 		return nil
 	}
 
@@ -251,6 +259,7 @@ func resourceAwsBatchJobQueueDelete(ctx context.Context, d *schema.ResourceData,
 	clientErr := c.AwsBatchJobQueueDelete(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsBatchJobQueueDelete(%s, %s): object missing", tenantID, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s aws batch Job queue '%s': %s", tenantID, name, clientErr)
