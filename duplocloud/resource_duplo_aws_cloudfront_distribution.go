@@ -1686,7 +1686,13 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 		d.Set("web_acl_id", duplo.WebACLId)
 	}
 	if duplo.CustomErrorResponses != nil {
-		d.Set("custom_error_response", flattenCustomErrorResponses(duplo.CustomErrorResponses))
+		errorSet := schema.NewSet(schema.HashResource(customErrorHashResource()), nil)
+		for _, v := range *duplo.CustomErrorResponses.Items {
+			m := flattenCustomErrorResponse(v)
+			errorSet.Add(m)
+		}
+		d.Set("custom_error_response", errorSet)
+
 	}
 	if duplo.CacheBehaviors != nil {
 		d.Set("ordered_cache_behavior", flattenCacheBehaviors(duplo.CacheBehaviors))
@@ -1863,6 +1869,7 @@ func flattenViewerCertificate(vc *duplosdk.DuploAwsCloudfrontDistributionViewerC
 	return []interface{}{m}
 }
 
+/*
 func flattenCustomErrorResponses(ers *duplosdk.DuploAwsCloudfrontDistributionCustomErrorResponses) []map[string]interface{} {
 	s := []map[string]interface{}{}
 	for _, v := range *ers.Items {
@@ -1870,13 +1877,14 @@ func flattenCustomErrorResponses(ers *duplosdk.DuploAwsCloudfrontDistributionCus
 	}
 	// return schema.NewSet(CustomErrorResponseHash, s)
 	return s
-}
+}*/
 
 func flattenCustomErrorResponse(er duplosdk.DuploAwsCloudfrontDistributionCustomErrorResponse) map[string]interface{} {
 	m := make(map[string]interface{})
 	m["error_code"] = er.ErrorCode
 	m["error_caching_min_ttl"] = er.ErrorCachingMinTTL
-	m["response_code"] = er.ResponseCode
+	v, _ := strconv.Atoi(er.ResponseCode)
+	m["response_code"] = v
 	m["response_page_path"] = er.ResponsePagePath
 	return m
 }
@@ -2042,6 +2050,34 @@ func originHashResource() *schema.Resource {
 						},
 					},
 				},
+			},
+		},
+	}
+
+}
+
+func customErrorHashResource() *schema.Resource {
+
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"error_caching_min_ttl": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+			"error_code": {
+				Type:     schema.TypeInt,
+				Required: true,
+			},
+			"response_code": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+			"response_page_path": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 		},
 	}
