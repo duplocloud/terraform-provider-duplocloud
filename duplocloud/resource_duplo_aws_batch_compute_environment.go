@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -307,12 +308,14 @@ func resourceAwsBatchComputeEnvironmentRead(ctx context.Context, d *schema.Resou
 	ce, clientErr := c.AwsBatchComputeEnvironmentGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsBatchComputeEnvironmentRead(%s, %s): not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
 		return diag.FromErr(clientErr)
 	}
 	if ce == nil {
+		log.Printf("[TRACE] resourceAwsBatchComputeEnvironmentRead(%s, %s): not found", tenantID, name)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -436,9 +439,13 @@ func resourceAwsBatchComputeEnvironmentDelete(ctx context.Context, d *schema.Res
 	c := m.(*duplosdk.Client)
 	fullName, _ := c.GetDuploServicesName(tenantID, name)
 
-	ce, err := c.AwsBatchComputeEnvironmentGet(tenantID, fullName)
-	if err != nil {
-		return diag.FromErr(err)
+	ce, cerr := c.AwsBatchComputeEnvironmentGet(tenantID, fullName)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsBatchComputeEnvironmentDelete(%s, %s): not found", tenantID, fullName)
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if ce == nil {
 		return nil
@@ -450,6 +457,7 @@ func resourceAwsBatchComputeEnvironmentDelete(ctx context.Context, d *schema.Res
 		clientErr := c.AwsBatchComputeEnvironmentDisable(tenantID, fullName)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
+				log.Printf("[TRACE] resourceAwsBatchComputeEnvironmentDelete(%s, %s): not found", tenantID, fullName)
 				return nil
 			}
 			return diag.Errorf("Unable to disable tenant %s aws  batch compute environment '%s': %s", tenantID, fullName, clientErr)
@@ -464,6 +472,7 @@ func resourceAwsBatchComputeEnvironmentDelete(ctx context.Context, d *schema.Res
 	clientErr := c.AwsBatchComputeEnvironmentDelete(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsBatchComputeEnvironmentDelete(%s, %s): not found", tenantID, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s aws batch compute environment '%s': %s", tenantID, name, clientErr)

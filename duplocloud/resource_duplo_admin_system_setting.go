@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -64,12 +65,14 @@ func resourceAdminSystemSettingRead(ctx context.Context, d *schema.ResourceData,
 	duplo, clientErr := c.SystemSettingGet(key)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAdminSystemSettingRead(%s, %s): admin system setting not found", keyType, key)
 			d.SetId("")
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve admin system setting %s of type %s : %s", key, keyType, clientErr)
 	}
 	if duplo == nil {
+		log.Printf("[TRACE] resourceAdminSystemSettingRead(%s, %s): admin system setting not found", keyType, key)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -125,6 +128,7 @@ func resourceAdminSystemSettingDelete(ctx context.Context, d *schema.ResourceDat
 	clientErr := c.SystemSettingDelete(key)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAdminSystemSettingDelete(%s, %s): admin system setting not found", keyType, key)
 			return nil
 		}
 		return diag.Errorf("Unable to delete key type %s admin system setting '%s': %s", keyType, key, clientErr)

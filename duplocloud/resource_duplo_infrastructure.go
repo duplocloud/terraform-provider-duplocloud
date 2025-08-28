@@ -615,7 +615,9 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	d.Set("status", infra.ProvisioningStatus)
 
 	d.Set("all_settings", keyValueToState("all_settings", config.CustomData))
-
+	if config.ClusterIpv4Cidr != "" {
+		d.Set("cluster_ip_cidr", config.ClusterIpv4Cidr)
+	}
 	// Build a list of current state, to replace the user-supplied settings.
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
 		d.Set("setting", keyValueToState("setting", selectKeyValues(config.CustomData, *v)))
