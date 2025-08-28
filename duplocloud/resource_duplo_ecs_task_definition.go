@@ -309,6 +309,13 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 	}
 	// Convert the object into Terraform resource data
 	flattenEcsTaskDefinition(rp, d)
+	// this is to check if the flow happened after create context
+	if v := ctx.Value(flowContextKey); v != nil && v.(string) == "normal" {
+		d.Set("prevent_tf_destroy", d.Get("prevent_tf_destroy").(bool))
+	} else { //on import provider doesnot set default value.
+		d.Set("prevent_tf_destroy", true)
+	}
+
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead(%s, %s): end", tenantID, arn)
 	return nil
 }
