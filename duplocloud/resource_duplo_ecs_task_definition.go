@@ -18,6 +18,10 @@ import (
 	"github.com/ucarion/jcs"
 )
 
+type flowContextKeyType string
+
+const flowContextKey flowContextKeyType = "flow"
+
 // ecsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
 func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -309,6 +313,13 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 	}
 	// Convert the object into Terraform resource data
 	flattenEcsTaskDefinition(rp, d)
+	// this is to check if the flow happened after create context
+	if v := ctx.Value(flowContextKey); v != nil && v.(string) == "normal" {
+		d.Set("prevent_tf_destroy", d.Get("prevent_tf_destroy").(bool))
+	} else { //on import provider doesnot set default value.
+		d.Set("prevent_tf_destroy", true)
+	}
+
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead(%s, %s): end", tenantID, arn)
 	return nil
 }
@@ -330,6 +341,8 @@ func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.Resourc
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
+
 	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", tenantID, arn))
 
 	diags := resourceDuploEcsTaskDefinitionRead(ctx, d, m)
