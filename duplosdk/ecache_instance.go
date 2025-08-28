@@ -255,10 +255,11 @@ func (c *Client) DuploEcacheGlobalDatastoreGet(tenantID, name string) (*DuploEca
 }
 
 func (c *Client) DuploEcacheGlobalDatastoreDelete(tenantID, name string) ClientError {
+	var rp interface{}
 	return c.deleteAPI(
 		fmt.Sprintf("DuploEcacheGlobalDatastoreDelete(%s,%s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/globaldatastore/%s", tenantID, name),
-		nil,
+		&rp,
 	)
 
 }

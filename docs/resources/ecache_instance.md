@@ -207,6 +207,7 @@ Should be one of:
 - `encryption_in_transit` (Boolean) Enables encryption-in-transit. Defaults to `false`.
 - `engine_version` (String) The engine version of the elastic instance.
 See AWS documentation for the [available Redis and Valkey instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).
+- `is_global` (Boolean) Flag to specify instance is part of global datastore
 - `kms_key_id` (String) The globally unique identifier for the key.
 - `log_delivery_configuration` (Block Set, Max: 2) (see [below for nested schema](#nestedblock--log_delivery_configuration))
 - `number_of_shards` (Number) The number of shards to create. Applicable only if enable_cluster_mode is set to true
@@ -227,6 +228,7 @@ See AWS documentation for the [available Redis and Valkey instance types](https:
 - `id` (String) The ID of this resource.
 - `identifier` (String) The full name of the elasticache instance.
 - `instance_status` (String) The status of the elasticache instance.
+- `is_primary` (Boolean) Flag to indicate if this is primary replication group
 - `port` (Number) The listening port of the elasticache instance.
 
 <a id="nestedblock--log_delivery_configuration"></a>

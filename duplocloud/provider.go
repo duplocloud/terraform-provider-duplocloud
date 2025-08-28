@@ -201,7 +201,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_target_group_target_register":              resourceAwsTargetGroupTargetRegister(),
 			"duplocloud_aws_cloudfront_function":                       resourceAwsCloudfrontFunction(),
 			"duplocloud_ecache_global_datastore":                       resourceDuploEcacheGlobalDatastore(),
-			"duplocloud_ecache_global_secondary_cluster":               resourceDuploEcacheReplicationGroup(),
+			"duplocloud_ecache_associate_global_secondary_cluster":     resourceDuploEcacheReplicationGroup(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),

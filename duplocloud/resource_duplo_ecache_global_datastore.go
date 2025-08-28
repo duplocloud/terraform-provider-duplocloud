@@ -135,7 +135,7 @@ func resourceDuploEcacheGlobalDatastoreRead(ctx context.Context, d *schema.Resou
 	log.Printf("[TRACE] resourceDuploEcacheGlobalDatastoreRead(%s, %s): start", tenantID, name)
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.DuploEcacheGlobalDatastoreGet(tenantID, d.Get("fullname").(string))
+	duplo, err := c.DuploEcacheGlobalDatastoreGet(tenantID, name)
 	if err != nil {
 		if err.Status() == 404 {
 			log.Printf("Unable to fetch Ecache Global Datastore")
@@ -148,11 +148,11 @@ func resourceDuploEcacheGlobalDatastoreRead(ctx context.Context, d *schema.Resou
 		d.SetId("")
 		return nil
 	}
-
+	sn := strings.Split(name, "duplo-")
 	// Convert the object into Terraform resource data
 	d.Set("tenant_id", tenantID)
-	d.Set("name", name)
-	d.Set("fullname", duplo.GlobalReplicationGroup)
+	d.Set("global_replication_group_name", sn[1])
+	d.Set("fullname", duplo.GlobalReplicationGroupId)
 	d.Set("description", duplo.GlobalReplicationGroupDescription)
 	for _, member := range duplo.Members {
 		if member.Role == "PRIMARY" {
@@ -171,17 +171,45 @@ func resourceDuploEcacheGlobalDatastoreDelete(ctx context.Context, d *schema.Res
 	}
 	tenantID, name := idParts[0], idParts[2]
 	log.Printf("[TRACE] resourceDuploEcacheGlobalDatastoreDelete(%s, %s): start", tenantID, name)
-
+	fullName := d.Get("fullname").(string)
 	c := m.(*duplosdk.Client)
-	err := c.DuploEcacheGlobalDatastoreDelete(tenantID, d.Get("fullname").(string))
-	if err != nil {
-		if err.Status() == 404 {
-			log.Printf("Unable to delete Ecache Global Datastore %s", err.Error())
+	cerr := c.DuploEcacheGlobalDatastoreDelete(tenantID, fullName)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("Unable to delete Ecache Global Datastore %s", cerr.Error())
 			return nil
 		}
-		return diag.FromErr(err)
+		return diag.FromErr(cerr)
 	}
+	err := globalDatastoreWaitUntilUnAvailable(ctx, c, tenantID, fullName)
+	if err != nil {
+		return diag.Errorf("Unable to delete secondary redis cluster after disassociation %s", cerr)
+
+	}
+	time.Sleep(10 * time.Minute)
 	log.Printf("[TRACE] resourceDuploEcacheGlobalDatastoreDelete(%s, %s): end", tenantID, name)
 
 	return nil
+}
+
+func globalDatastoreWaitUntilUnAvailable(ctx context.Context, c *duplosdk.Client, tenantID, name string) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:      []string{"pending"},
+		Target:       []string{"ready"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.DuploEcacheGlobalDatastoreGet(tenantID, name)
+			status := "pending"
+			if resp == nil {
+				status = "ready"
+			}
+
+			return resp, status, err
+		},
+	}
+	log.Printf("[DEBUG] globalDatastoreWaitUntilAvailable (%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }

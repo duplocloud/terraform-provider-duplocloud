@@ -72,7 +72,7 @@ func ecacheReplicationGroupSchema() map[string]*schema.Schema {
 // SCHEMA for resource crud
 func resourceDuploEcacheReplicationGroup() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_ecache_global_secondary_cluster` used to manage Amazon ElastiCache global datastore's secondary regional cluster" +
+		Description: "`duplocloud_ecache_associate_global_secondary_cluster` used to associate Amazon ElastiCache  secondary regional cluster to global datastore's" +
 			"<p>This resource currently supports, define and manage only Redis based regional cluster" +
 			"</p>",
 
@@ -106,12 +106,12 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 	c := m.(*duplosdk.Client)
 	rp, cerr := c.DuploEcacheReplicationGroupCreate(tenantID, &rq)
 	if cerr != nil {
-		return diag.Errorf("%s", cerr)
+		return diag.Errorf("DuploEcacheReplicationGroupCreate failed to create global datastore : %s", cerr)
 	}
 	id := fmt.Sprintf("%s/ecacheReplicationGroup/%s/%s/%s", tenantID, rq.SecondaryTenantId, rq.GlobalReplicationGroupId, rq.ReplicationGroupId)
 	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, rq.GlobalReplicationGroupId, rq.SecondaryTenantId, rp.ReplicationGroup.ReplicationGroupId)
 	if err != nil {
-		return diag.Errorf("%s", cerr)
+		return diag.Errorf("replicationGroupWaitUntilAvailable %s", cerr)
 
 	}
 	d.SetId(id)
@@ -191,6 +191,7 @@ func resourceDuploEcacheReplicationGroupDelete(ctx context.Context, d *schema.Re
 	}
 	tenantID, secTenantId, globalDatastore, name := idParts[0], idParts[2], idParts[3], idParts[4]
 	fullName := "duplo-" + name
+	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupDelete(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
 	cerr := c.DuploEcacheReplicationGroupDisassociate(tenantID, d.Get("secondary_region").(string), globalDatastore, fullName)
@@ -202,12 +203,13 @@ func resourceDuploEcacheReplicationGroupDelete(ctx context.Context, d *schema.Re
 		return diag.FromErr(cerr)
 	}
 	time.Sleep(2 * time.Minute)
-	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, globalDatastore, secTenantId, fullName)
+	err := replicationGroupWaitUntilUnAvailable(ctx, c, tenantID, globalDatastore, secTenantId, fullName)
 	if err != nil {
 		return diag.Errorf("Unable to delete secondary redis cluster after disassociation %s", cerr)
 
 	}
-	err = c.EcacheInstanceDelete(tenantID, name)
+	log.Printf("[TRACE] Secondary cluster %s disassociated \n Started cluster cleanup", fullName)
+	err = c.EcacheInstanceDelete(secTenantId, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -221,6 +223,29 @@ func resourceDuploEcacheReplicationGroupDelete(ctx context.Context, d *schema.Re
 	if diag == nil {
 		time.Sleep(time.Duration(90) * time.Second)
 	}
+	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupDelete(%s, %s): end", tenantID, name)
 
 	return nil
+}
+
+func replicationGroupWaitUntilUnAvailable(ctx context.Context, c *duplosdk.Client, tenantID, gDatastore, secTenantId, name string) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:      []string{"pending"},
+		Target:       []string{"ready"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
+		Refresh: func() (interface{}, string, error) {
+			resp, _, err := c.DuploEcacheReplicationGroupGet(tenantID, gDatastore, secTenantId, name)
+			status := "pending"
+			if resp == nil {
+				status = "ready"
+			}
+
+			return resp, status, err
+		},
+	}
+	log.Printf("[DEBUG] replicationGroupWaitUntilAvailable (%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
 }
