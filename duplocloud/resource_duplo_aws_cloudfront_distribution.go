@@ -1869,6 +1869,7 @@ func flattenViewerCertificate(vc *duplosdk.DuploAwsCloudfrontDistributionViewerC
 	return []interface{}{m}
 }
 
+/*
 func flattenCustomErrorResponses(ers *duplosdk.DuploAwsCloudfrontDistributionCustomErrorResponses) []map[string]interface{} {
 	s := []map[string]interface{}{}
 	for _, v := range *ers.Items {
@@ -1876,7 +1877,7 @@ func flattenCustomErrorResponses(ers *duplosdk.DuploAwsCloudfrontDistributionCus
 	}
 	// return schema.NewSet(CustomErrorResponseHash, s)
 	return s
-}
+}*/
 
 func flattenCustomErrorResponse(er duplosdk.DuploAwsCloudfrontDistributionCustomErrorResponse) map[string]interface{} {
 	m := make(map[string]interface{})
