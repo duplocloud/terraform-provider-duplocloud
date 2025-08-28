@@ -18,6 +18,10 @@ import (
 	"github.com/ucarion/jcs"
 )
 
+type flowContextKeyType string
+
+const flowContextKey flowContextKeyType = "flow"
+
 // ecsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
 func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
