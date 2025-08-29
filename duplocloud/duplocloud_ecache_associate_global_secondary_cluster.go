@@ -102,7 +102,7 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 		return diag.Errorf("DuploEcacheReplicationGroupCreate failed to create global datastore : %s", cerr)
 	}
 	id := fmt.Sprintf("%s/ecacheReplicationGroup/%s/%s/%s", tenantID, rq.SecondaryTenantId, rq.GlobalReplicationGroupId, rq.ReplicationGroupId)
-	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, rq.GlobalReplicationGroupId, rq.SecondaryTenantId, rp.ReplicationGroupId)
+	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, rq.GlobalReplicationGroupId, rq.SecondaryTenantId, rp.ReplicationGroupId, d.Timeout("create"))
 	if err != nil {
 		return diag.Errorf("replicationGroupWaitUntilAvailable %s", cerr)
 
@@ -114,17 +114,17 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 	return diags
 }
 
-func replicationGroupWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, tenantID, gDatastore, secTenantId, name string) error {
+func replicationGroupWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, tenantID, gDatastore, secTenantId, name string, d time.Duration) error {
 	stateConf := &retry.StateChangeConf{
 		Pending:      []string{"pending"},
 		Target:       []string{"ready"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
+		Timeout:      d,
 		Refresh: func() (interface{}, string, error) {
-			resp, _, err := c.DuploEcacheReplicationGroupGet(tenantID, gDatastore, secTenantId, name)
+			resp, m, err := c.DuploEcacheReplicationGroupGet(tenantID, gDatastore, secTenantId, name)
 			status := "pending"
-			if resp != nil && resp.Status == "available" {
+			if resp != nil && resp.Status == "available" && m.Status == "associated" {
 				status = "ready"
 			}
 
@@ -196,7 +196,7 @@ func resourceDuploEcacheReplicationGroupDelete(ctx context.Context, d *schema.Re
 		return diag.FromErr(cerr)
 	}
 	time.Sleep(2 * time.Minute)
-	err := replicationGroupWaitUntilUnAvailable(ctx, c, tenantID, globalDatastore, secTenantId, fullName)
+	err := replicationGroupWaitUntilUnAvailable(ctx, c, tenantID, globalDatastore, secTenantId, fullName, d.Timeout("delete"))
 	if err != nil {
 		return diag.Errorf("Unable to delete secondary redis cluster after disassociation %s", cerr)
 
@@ -221,13 +221,13 @@ func resourceDuploEcacheReplicationGroupDelete(ctx context.Context, d *schema.Re
 	return nil
 }
 
-func replicationGroupWaitUntilUnAvailable(ctx context.Context, c *duplosdk.Client, tenantID, gDatastore, secTenantId, name string) error {
+func replicationGroupWaitUntilUnAvailable(ctx context.Context, c *duplosdk.Client, tenantID, gDatastore, secTenantId, name string, d time.Duration) error {
 	stateConf := &retry.StateChangeConf{
 		Pending:      []string{"pending"},
 		Target:       []string{"ready"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
+		Timeout:      d,
 		Refresh: func() (interface{}, string, error) {
 			resp, _, err := c.DuploEcacheReplicationGroupGet(tenantID, gDatastore, secTenantId, name)
 			status := "pending"
