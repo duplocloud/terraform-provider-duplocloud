@@ -89,7 +89,7 @@ func resourceDuploEcacheGlobalDatastoreCreate(ctx context.Context, d *schema.Res
 		return diag.Errorf("DuploEcacheGlobalDatastoreCreate failed to create global datastore %s", cerr)
 	}
 	id := fmt.Sprintf("%s/ecacheGlobalDatastore/%s", tenantID, rp.GlobalReplicationGroup.GlobalReplicationGroupId)
-	err := globalDatastoreWaitUntilAvailable(ctx, c, tenantID, rp.GlobalReplicationGroup.GlobalReplicationGroupId)
+	err := globalDatastoreWaitUntilAvailable(ctx, c, tenantID, rp.GlobalReplicationGroup.GlobalReplicationGroupId, d.Timeout("create"))
 	if err != nil {
 		return diag.Errorf("globalDatastoreWaitUntilAvailable Waiting for global datastore to be available failed %s", cerr)
 
@@ -101,13 +101,13 @@ func resourceDuploEcacheGlobalDatastoreCreate(ctx context.Context, d *schema.Res
 	return diags
 }
 
-func globalDatastoreWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, tenantID, name string) error {
+func globalDatastoreWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, tenantID, name string, timeout time.Duration) error {
 	stateConf := &retry.StateChangeConf{
 		Pending:      []string{"pending"},
 		Target:       []string{"ready"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
+		Timeout:      timeout,
 		Refresh: func() (interface{}, string, error) {
 			resp, err := c.DuploEcacheGlobalDatastoreGet(tenantID, name)
 			status := "pending"
@@ -181,7 +181,7 @@ func resourceDuploEcacheGlobalDatastoreDelete(ctx context.Context, d *schema.Res
 		}
 		return diag.FromErr(cerr)
 	}
-	err := globalDatastoreWaitUntilUnAvailable(ctx, c, tenantID, fullName)
+	err := globalDatastoreWaitUntilUnAvailable(ctx, c, tenantID, fullName, d.Timeout("delete"))
 	if err != nil {
 		return diag.Errorf("Unable to delete secondary redis cluster after disassociation %s", cerr)
 
@@ -192,13 +192,13 @@ func resourceDuploEcacheGlobalDatastoreDelete(ctx context.Context, d *schema.Res
 	return nil
 }
 
-func globalDatastoreWaitUntilUnAvailable(ctx context.Context, c *duplosdk.Client, tenantID, name string) error {
+func globalDatastoreWaitUntilUnAvailable(ctx context.Context, c *duplosdk.Client, tenantID, name string, timeout time.Duration) error {
 	stateConf := &retry.StateChangeConf{
 		Pending:      []string{"pending"},
 		Target:       []string{"ready"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
+		Timeout:      timeout,
 		Refresh: func() (interface{}, string, error) {
 			resp, err := c.DuploEcacheGlobalDatastoreGet(tenantID, name)
 			status := "pending"
