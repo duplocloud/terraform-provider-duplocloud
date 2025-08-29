@@ -91,7 +91,7 @@ func resourceDuploEcacheGlobalDatastoreCreate(ctx context.Context, d *schema.Res
 	id := fmt.Sprintf("%s/ecacheGlobalDatastore/%s", tenantID, rp.GlobalReplicationGroup.GlobalReplicationGroupId)
 	err := globalDatastoreWaitUntilAvailable(ctx, c, tenantID, rp.GlobalReplicationGroup.GlobalReplicationGroupId, d.Timeout("create"))
 	if err != nil {
-		return diag.Errorf("globalDatastoreWaitUntilAvailable Waiting for global datastore to be available failed %s", cerr)
+		return diag.Errorf("globalDatastoreWaitUntilAvailable Waiting for global datastore to be available failed %s", err)
 
 	}
 	d.SetId(id)
@@ -111,7 +111,7 @@ func globalDatastoreWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, 
 		Refresh: func() (interface{}, string, error) {
 			resp, err := c.DuploEcacheGlobalDatastoreGet(tenantID, name)
 			status := "pending"
-			if resp != nil && resp.Status == "primary-only" {
+			if resp != nil && (resp.Status == "primary-only" || resp.Status == "available") {
 				status = "ready"
 			}
 
@@ -183,7 +183,7 @@ func resourceDuploEcacheGlobalDatastoreDelete(ctx context.Context, d *schema.Res
 	}
 	err := globalDatastoreWaitUntilUnAvailable(ctx, c, tenantID, fullName, d.Timeout("delete"))
 	if err != nil {
-		return diag.Errorf("Unable to delete secondary redis cluster after disassociation %s", cerr)
+		return diag.Errorf("Unable to delete secondary redis cluster after disassociation %s", err)
 
 	}
 	time.Sleep(10 * time.Minute)
