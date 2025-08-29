@@ -44,12 +44,6 @@ func ecacheReplicationGroupSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
-		"port": {
-			Description: "Specify port for secondary cluster",
-			Type:        schema.TypeInt,
-			Required:    true,
-			ForceNew:    true,
-		},
 		"secondary_cluster_name": {
 			Description: "The name of the elasticache instance that need to be created as secondary regional cluster.",
 			Type:        schema.TypeString,
@@ -83,7 +77,7 @@ func resourceDuploEcacheReplicationGroup() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(29 * time.Minute),
+			Create: schema.DefaultTimeout(40 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: ecacheReplicationGroupSchema(),
@@ -98,7 +92,6 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 		Description:              d.Get("description").(string),
 		SecondaryTenantId:        d.Get("secondary_tenant_id").(string),
 		GlobalReplicationGroupId: d.Get("global_datastore_id").(string),
-		Port:                     d.Get("port").(int),
 		ReplicationGroupId:       d.Get("secondary_cluster_name").(string),
 	}
 	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupCreate(%s): start", tenantID)
@@ -109,7 +102,7 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 		return diag.Errorf("DuploEcacheReplicationGroupCreate failed to create global datastore : %s", cerr)
 	}
 	id := fmt.Sprintf("%s/ecacheReplicationGroup/%s/%s/%s", tenantID, rq.SecondaryTenantId, rq.GlobalReplicationGroupId, rq.ReplicationGroupId)
-	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, rq.GlobalReplicationGroupId, rq.SecondaryTenantId, rp.ReplicationGroup.ReplicationGroupId)
+	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, rq.GlobalReplicationGroupId, rq.SecondaryTenantId, rp.ReplicationGroupId)
 	if err != nil {
 		return diag.Errorf("replicationGroupWaitUntilAvailable %s", cerr)
 

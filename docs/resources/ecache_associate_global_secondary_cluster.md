@@ -46,7 +46,6 @@ resource "duplocloud_ecache_associate_global_secondary_cluster" "rg" {
   global_datastore_id    = duplocloud_ecache_global_datastore.gds.fullname
   description            = "secondary cluster"
   secondary_cluster_name = "red11sc"
-  port                   = 7688
 }
 ```
 
@@ -56,7 +55,6 @@ resource "duplocloud_ecache_associate_global_secondary_cluster" "rg" {
 ### Required
 
 - `global_datastore_id` (String) Specify the global datastore name with which the secondary regional cluster should be associated.
-- `port` (Number) Specify port for secondary cluster
 - `secondary_cluster_name` (String) The name of the elasticache instance that need to be created as secondary regional cluster.
 - `secondary_tenant_id` (String) The tenant_id where secondary cluster need to be created. **NOTE** The tenant_id must belong to a region different from that of the primary cluster.
 - `tenant_id` (String) The GUID of the tenant that the elasticache instance datastore has been created in.

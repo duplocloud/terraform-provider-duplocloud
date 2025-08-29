@@ -214,6 +214,7 @@ type DuploEcacheGlobalDatastoreResponse struct {
 	ReplicationGroup                  struct {
 		ReplicationGroupId string `json:"ReplicationGroupId"`
 	} `json:"ReplicationGroup,omitempty"`
+	ReplicationGroupId string `json:"ReplicationGroupId"`
 }
 
 type DuploEcacheReplicationMember struct {
@@ -268,7 +269,6 @@ type DuploEcacheReplicationGroup struct {
 	Description              string `json:"GlobalReplicationGroupDescription"`
 	GlobalReplicationGroupId string `json:"GlobalReplicationGroupId"`
 	SecondaryTenantId        string `json:"TenantId"`
-	Port                     int    `json:"Port"`
 	ReplicationGroupId       string `json:"ReplicationGroupId"`
 }
 
