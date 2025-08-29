@@ -31,5 +31,4 @@ resource "duplocloud_ecache_associate_global_secondary_cluster" "rg" {
   global_datastore_id    = duplocloud_ecache_global_datastore.gds.fullname
   description            = "secondary cluster"
   secondary_cluster_name = "red11sc"
-  port                   = 7688
 }

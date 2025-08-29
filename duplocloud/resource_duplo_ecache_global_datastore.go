@@ -86,12 +86,12 @@ func resourceDuploEcacheGlobalDatastoreCreate(ctx context.Context, d *schema.Res
 	c := m.(*duplosdk.Client)
 	rp, cerr := c.DuploEcacheGlobalDatastoreCreate(tenantID, &rq)
 	if cerr != nil {
-		return diag.Errorf("%s", cerr)
+		return diag.Errorf("DuploEcacheGlobalDatastoreCreate failed to create global datastore %s", cerr)
 	}
 	id := fmt.Sprintf("%s/ecacheGlobalDatastore/%s", tenantID, rp.GlobalReplicationGroup.GlobalReplicationGroupId)
 	err := globalDatastoreWaitUntilAvailable(ctx, c, tenantID, rp.GlobalReplicationGroup.GlobalReplicationGroupId)
 	if err != nil {
-		return diag.Errorf("%s", cerr)
+		return diag.Errorf("globalDatastoreWaitUntilAvailable Waiting for global datastore to be available failed %s", cerr)
 
 	}
 	d.SetId(id)
@@ -140,7 +140,7 @@ func resourceDuploEcacheGlobalDatastoreRead(ctx context.Context, d *schema.Resou
 		if err.Status() == 404 {
 			log.Printf("Unable to fetch Ecache Global Datastore")
 			d.SetId("")
-			return nil
+			return diag.Errorf("DuploEcacheGlobalDatastoreGet Unable to fetch Ecache Global Datastore %s", err)
 		}
 		return diag.FromErr(err)
 	}
