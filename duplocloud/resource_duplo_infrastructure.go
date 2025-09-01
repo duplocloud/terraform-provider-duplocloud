@@ -444,7 +444,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 			err = c.InfrastructureChangeSetting(infraName, existing, settings)
 		}
 		if err != nil {
-			return diag.Errorf("Duplocloud resource '%s'\n%s", d.Id, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", d.Id(), err)
 		}
 	}
 
