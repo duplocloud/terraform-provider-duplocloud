@@ -324,7 +324,7 @@ func validateTenantSchema(d *schema.ResourceData, c *duplosdk.Client) diag.Diagn
 
 		// If tenant with same name already exists, throw an error (case insensitive)
 		if lowerExistingName == lowerAccountName {
-			return diag.Errorf("Tenant with name '%s' already exists (matches existing tenant '%s')", accountName, existingName)
+			return diag.Errorf("Duplocloud resource 'v2/admin/TenantV2/%s'\n status: 404, message: %s: This tenant already exists.", tenant.TenantID, lowerExistingName)
 		}
 
 		// Check if new tenant name is a prefix of existing tenant name (case insensitive)
