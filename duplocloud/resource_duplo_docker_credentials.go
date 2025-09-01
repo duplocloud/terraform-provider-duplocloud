@@ -71,6 +71,11 @@ func resourceDockerCredsRead(ctx context.Context, d *schema.ResourceData, m inte
 	c := m.(*duplosdk.Client)
 	rp, err := c.TenantGetDockerCredentials(tenantID)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceDockerCredsRead: Docker credentials not found for tenantId %s, removing from state", tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 
@@ -132,6 +137,10 @@ func resourceDockerCredsDelete(ctx context.Context, d *schema.ResourceData, m in
 	})
 
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceDockerCredsDelete: Docker credentials not found for tenantId %s, removing from state", tenantID)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 

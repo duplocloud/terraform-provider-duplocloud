@@ -316,13 +316,18 @@ func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.EcacheInstanceGet(tenantID, name)
+	duplo, cerr := c.EcacheInstanceGet(tenantID, name)
 	if duplo == nil {
 		d.SetId("")
 		return nil
 	}
-	if err != nil {
-		return diag.FromErr(err)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceDuploEcacheInstanceRead: Ecache Instance %s not found for tenantId %s, removing from state", name, tenantID)
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 
 	// Convert the object into Terraform resource data
@@ -446,9 +451,13 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
-	err = c.EcacheInstanceDelete(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	cerr := c.EcacheInstanceDelete(tenantID, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceDuploEcacheInstanceDelete: Ecache Instance %s not found for tenantId %s, removing from state", name, tenantID)
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 
 	// Wait up to 60 seconds for Duplo to show the object as deleted.

@@ -303,9 +303,14 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.EcsTaskDefinitionGetV2(tenantID, arn)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, cerr := c.EcsTaskDefinitionGetV2(tenantID, arn)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceDuploEcacheGlobalDatastoreRead: Ecache Global Datastore not found for tenantId %s, removing from state", tenantID)
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if rp == nil || rp.Arn == "" {
 		d.SetId("")
@@ -369,9 +374,13 @@ func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.Resourc
 	log.Printf("[TRACE] Prevent destroy is %t", preventDestroy)
 	if !preventDestroy {
 		c := m.(*duplosdk.Client)
-		err = c.EcsTaskDefinitionDelete(tenantID, arn)
-		if err != nil {
-			return diag.FromErr(err)
+		cerr := c.EcsTaskDefinitionDelete(tenantID, arn)
+		if cerr != nil {
+			if cerr.Status() == 404 {
+				log.Printf("[DEBUG] resourceDuploEcacheGlobalDatastoreRead: Ecache Global Datastore not found for tenantId %s, removing from state", tenantID)
+				return nil
+			}
+			return diag.FromErr(cerr)
 		}
 		// Wait for the task definition to be missing
 		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "ECS Task Defnition", id, func() (interface{}, duplosdk.ClientError) {

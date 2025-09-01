@@ -320,6 +320,7 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 	if clientError != nil {
 		// TODO - Remove ServiceNotFoundException check once backend returns error code 404, Currenlty its 400.
 		if clientError.Status() == 404 || strings.Contains(clientError.Error(), "ServiceNotFoundException") {
+			log.Printf("[DEBUG] resourceDuploEcsServiceRead: ECS Service %s not found for tenantId %s, removing from state", d.Id(), d.Get("tenant_id"))
 			d.SetId("")
 			return nil
 		}
@@ -407,6 +408,7 @@ func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, 
 		if err != nil {
 			// TODO - Remove ServiceNotFoundException check once backend returns error code 404, Currenlty its 400.
 			if err.Status() == 404 || strings.Contains(err.Error(), "ServiceNotFoundException") {
+				log.Printf("[DEBUG] resourceDuploEcsServiceDelete: ECS Service %s not found for tenantId %s, removing from state", d.Id(), d.Get("tenant_id"))
 				return nil
 			}
 			return diag.FromErr(err)

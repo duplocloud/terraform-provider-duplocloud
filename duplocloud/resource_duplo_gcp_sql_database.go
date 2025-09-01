@@ -172,6 +172,7 @@ func resourceGcpSqlDBInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	duplo, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpSqlDBInstanceRead: SQL database %s not found for tenantId %s, removing from state", fullName, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -309,6 +310,7 @@ func resourceGcpSqlDBInstanceDelete(ctx context.Context, d *schema.ResourceData,
 	resp, clientErr := c.GCPSqlDBInstanceGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpSqlDBInstanceDelete: SQL database %s not found for tenantId %s, removing from state", fullName, tenantID)
 			d.SetId("")
 			return nil
 		}
