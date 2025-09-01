@@ -104,23 +104,23 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 	// Get "special" plan settings.
 	settings, err := c.PlanGetSettings(planID)
 	if err != nil && err.Status() != 404 {
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 	}
 	if (err != nil && err.Status() == 404) || settings == nil {
 		d.SetId("")
 		log.Printf("plan settings resource id %s : \n [Error] %s", planID, err)
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 	}
 	// Get plan DNS config.  If the config is "global", that means there is no plan DNS config.
 	dns, err := c.PlanGetDnsConfig(planID)
 	if err != nil && err.Status() != 404 {
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 	}
 
 	if (err != nil && err.Status() == 404) || settings == nil {
 		d.SetId("")
 		log.Printf("plan settings DNS config not found for plan %s", planID)
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 	}
 
 	if dns != nil && dns.IsGlobalDNS {
@@ -130,12 +130,12 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 	// Get plan metadata.
 	allMetadata, err := c.PlanMetadataGetList(planID)
 	if err != nil && err.Status() != 404 {
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 	}
 	if (err != nil && err.Status() == 404) || settings == nil {
 		d.SetId("")
 		log.Printf("plan settings not found for plan %s", planID)
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 	}
 
 	// Set the simple fields first.
@@ -168,7 +168,7 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 		}
 		_, err := c.PlanUpdateSettings(planID, &settings)
 		if err != nil {
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 		}
 	}
 
@@ -177,7 +177,7 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 		dns := expandDnsSetting(v.([]interface{})[0].(map[string]interface{}))
 		_, err := c.PlanUpdateDnsConfig(planID, dns)
 		if err != nil {
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 		}
 	}
 
@@ -185,13 +185,13 @@ func resourcePlanSettingsCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	if _, ok := d.GetOk("metadata"); ok || d.HasChange("metadata") {
 		allMetadata, err := c.PlanMetadataGetList(planID)
 		if err != nil {
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 		}
 
 		previous, desired := getPlanMetadataChange(allMetadata, d)
 		err = c.PlanChangeMetadata(planID, previous, desired)
 		if err != nil {
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 		}
 	}
 
@@ -210,7 +210,7 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 	// Get "special" plan settings.
 	settings, err := c.PlanGetSettings(planID)
 	if err != nil && err.Status() != 404 {
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 	}
 
 	// Skip if plan does not exist.
@@ -224,7 +224,7 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 		settings.UnrestrictedExtLB = false
 		_, err := c.PlanUpdateSettings(planID, settings)
 		if err != nil && err.Status() != 404 {
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 		}
 		if (err != nil && err.Status() == 404) || settings == nil {
 			log.Printf("plan settings not found for plan %s", planID)
@@ -237,7 +237,7 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 	if _, ok := d.GetOk("dns_setting"); ok {
 		err := c.PlanDeleteDnsConfig(planID)
 		if err != nil && err.Status() != 404 {
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 		}
 		if (err != nil && err.Status() == 404) || settings == nil {
 			log.Printf("plan settings dns config not found for plan %s", planID)
@@ -251,7 +251,7 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 		allMetadata, err := c.PlanMetadataGetList(planID)
 
 		if err != nil && err.Status() != 404 {
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 		}
 		if (err != nil && err.Status() == 404) || settings == nil {
 			log.Printf("plan settings metadata not found for plan %s", planID)
@@ -265,10 +265,10 @@ func resourcePlanSettingsDelete(ctx context.Context, d *schema.ResourceData, m i
 		// Apply the changes via Duplo
 		err = c.PlanChangeMetadata(planID, previous, desired)
 		if err != nil {
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 		}
 		if err != nil && err.Status() != 404 {
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", planID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
 		}
 		if (err != nil && err.Status() == 404) || settings == nil {
 			log.Printf("plan settings metadata not found for plan %s", planID)

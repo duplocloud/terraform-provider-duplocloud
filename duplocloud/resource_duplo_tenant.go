@@ -136,7 +136,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -200,7 +200,7 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	if err != nil {
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", accountName, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", accountName, err)
 
 	}
 
@@ -260,7 +260,7 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 				log.Printf("Tenant %s not found", tenantID)
 				return nil
 			}
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 		}
 		if duplo == nil {
 			return nil
@@ -271,7 +271,7 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 				log.Printf("Tenant %s not found", tenantID)
 				return nil
 			}
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 
 		}
 

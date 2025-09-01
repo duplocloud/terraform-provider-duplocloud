@@ -83,14 +83,14 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 		if err.Status() == 404 {
 			log.Printf("Tenant config for tenant %s not found", tenantID)
 			d.SetId("")
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", tenantID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 		}
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 	}
 	if tenant == nil {
 		log.Printf("Tenant config for tenant %s not found", tenantID)
 		d.SetId("") // object missing
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", tenantID, "object missing")
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, "object missing")
 
 	}
 	duplo, err := c.TenantGetConfig(tenantID)
@@ -99,7 +99,7 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -134,7 +134,7 @@ func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	c := m.(*duplosdk.Client)
 	config, err := c.TenantGetConfig(tenantID)
 	if err != nil {
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 
 	}
 	var existing *[]duplosdk.DuploKeyStringValue
@@ -159,7 +159,7 @@ func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 		err = c.TenantChangeConfig(tenantID, existing, settings)
 	}
 	if err != nil {
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 	}
 	d.SetId(tenantID)
 
@@ -197,7 +197,7 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 		err = c.TenantChangeConfig(tenantID, previous, desired)
 	}
 	if err != nil {
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 	}
 
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): end", tenantID)

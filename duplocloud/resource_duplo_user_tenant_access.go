@@ -69,7 +69,7 @@ func resourceUserTenantAccessRead(ctx context.Context, d *schema.ResourceData, m
 	c := m.(*duplosdk.Client)
 	duplo, err := c.GetUserTenantAccessInfo(idParts[0], idParts[1])
 	if err != nil {
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -106,9 +106,9 @@ func resourceUserTenantAccessCreate(ctx context.Context, d *schema.ResourceData,
 		if err.Status() == 404 {
 			log.Printf("Tenant config for tenant %s not found", id)
 			d.SetId("")
-			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 		}
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
 
 	var rp *duplosdk.DuploUser
@@ -156,7 +156,7 @@ func resourceUserTenantAccessDelete(ctx context.Context, d *schema.ResourceData,
 		if err.Status() == 404 {
 			return nil
 		}
-		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "User", id, func() (interface{}, duplosdk.ClientError) {
