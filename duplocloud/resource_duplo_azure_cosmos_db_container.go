@@ -101,7 +101,7 @@ func resourceAzureCosmosDBContainerRead(ctx context.Context, d *schema.ResourceD
 	if err != nil && err.Status() == 404 {
 		log.Printf("[DEBUG] resourceAzureCosmosDBRead: Cosmos DB container %s of database %s from account %s for tenantId %s not found, removing from state", container, dbName, account, tenantId)
 		d.SetId("")
-return nil
+		return nil
 	}
 	if rp == nil {
 		log.Printf("[DEBUG] resourceAzureCosmosDBRead: Cosmos DB container %s of database %s from account %s for tenantId %s not found, removing from state", container, dbName, account, tenantId)
