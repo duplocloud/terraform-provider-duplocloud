@@ -340,12 +340,13 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 	missing, err := infrastructureRead(c, d, name)
 	if err != nil && err.Status() != 404 {
-		return diag.Errorf("Unable to retrieve infrastructure '%s': %s", name, err)
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 	}
 	if (err != nil && err.Status() == 404) || missing {
 		d.SetId("") // object missing
 		log.Printf("Infrastructure not found")
-		return nil
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureRead(%s): end", name)
@@ -365,14 +366,15 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 	// Post the object to Duplo.
+	id := fmt.Sprintf("v2/admin/InfrastructureV2/%s", rq.Name)
+
 	c := m.(*duplosdk.Client)
 	err = c.InfrastructureCreate(rq)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the infrastructure details.
-	id := fmt.Sprintf("v2/admin/InfrastructureV2/%s", rq.Name)
 	diags = waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, duplosdk.ClientError) {
 		return c.InfrastructureGetConfig(rq.Name)
 	})
@@ -384,7 +386,7 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 	// Then, wait until the infrastructure is completely ready.
 	err = duploInfrastructureWaitUntilReady(ctx, c, rq.Name, d.Timeout("create"))
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 	}
 
 	diags = resourceInfrastructureRead(ctx, d, m)
@@ -417,7 +419,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 	// Apply any settings changes.
 	config, err := c.InfrastructureGetSetting(infraName)
 	if err != nil {
-		return diag.Errorf("Error retrieving infrastructure settings for '%s': %s", infraName, err)
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", d.Id(), err)
 	}
 	if d.HasChange("setting") {
 		var existing *[]duplosdk.DuploKeyStringValue
@@ -442,7 +444,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 			err = c.InfrastructureChangeSetting(infraName, existing, settings)
 		}
 		if err != nil {
-			return diag.Errorf("Error updating infrastructure settings for '%s': %s", infraName, err)
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", d.Id, err)
 		}
 	}
 
@@ -475,7 +477,7 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 		if err.Status() == 404 {
 			return nil
 		}
-		return diag.FromErr(err)
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", d.Id(), err)
 	}
 
 	// Wait for 20 minutes to allow infrastructure deletion.

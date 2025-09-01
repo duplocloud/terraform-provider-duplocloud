@@ -459,21 +459,23 @@ func resourceGCPK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, m 
 	// Create the request object.
 	rq, err := expandGCPNodePool(d)
 	if err != nil {
-		return diag.Errorf("Error fetching request for %s : %s", tenantID, err.Error())
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", rq.Name, err)
 
 	}
 	// Post the object to Duplo
 	shortName := rq.Name
-	resp, err := c.GCPK8NodePoolCreate(tenantID, rq)
-	if err != nil {
-		return diag.Errorf("Error creating tenant %s gcp node pool '%s': %s", tenantID, resp.Name, err)
-	}
 	fullName, clientErr := c.GetDuploServicesName(tenantID, shortName)
 	if clientErr != nil {
-		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", tenantID, err)
 	}
 
+	_, cerr := c.GCPK8NodePoolCreate(tenantID, rq)
 	id := fmt.Sprintf("%s/%s", tenantID, fullName)
+
+	if cerr != nil {
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, cerr)
+	}
+
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "gcp node pool", id, func() (interface{}, duplosdk.ClientError) {
 		return c.GCPK8NodePoolGet(tenantID, fullName)
 	})
@@ -482,7 +484,7 @@ func resourceGCPK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, m 
 	}
 	err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("create"))
 	if err != nil {
-		return diag.Errorf("%s", err.Error())
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 	}
 	d.SetId(id)
 	d.Set("name", shortName)
@@ -727,9 +729,10 @@ func resourceGCPNodePoolRead(ctx context.Context, d *schema.ResourceData, m inte
 		if err.Status() == 404 {
 			log.Printf("GCP node pool %s not found", fullName)
 			d.SetId("") // object missing or deleted
-			return nil
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 		}
-		return diag.Errorf("Unable to retrieve tenant %s GCP Node Pool Domain '%s': %s", tenantID, fullName, err)
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+
 	}
 
 	if duplo == nil {
@@ -909,18 +912,19 @@ func resourceGcpNodePoolDelete(ctx context.Context, d *schema.ResourceData, m in
 	idParts := strings.SplitN(id, "/", 2)
 	tenantID := idParts[0]
 	fullName := idParts[1]
-	resp, err := c.GCPK8NodePoolGet(tenantID, fullName)
+	_, err := c.GCPK8NodePoolGet(tenantID, fullName)
 	if err != nil {
 		if err.Status() == 404 {
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve tenant %s gcp node pool %s : %s", tenantID, resp.Name, err)
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+
 	}
 
 	err = c.GCPK8NodePoolDelete(tenantID, fullName)
 	if err != nil && err.Status() != 404 {
-		return diag.Errorf("Error deleting node pool '%s': %s", id, err)
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 	}
 	if err != nil && err.Status() == 404 {
 		log.Printf("GCP node pool %s not found", fullName)
@@ -928,7 +932,8 @@ func resourceGcpNodePoolDelete(ctx context.Context, d *schema.ResourceData, m in
 	}
 	derr := gcpNodePoolWaitUntilAvailableForDeleted(ctx, c, tenantID, fullName, d.Timeout("delete"))
 	if derr != nil {
-		return diag.Errorf("%s", derr)
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
+
 	}
 	// Wait up to 60 seconds for Duplo to delete the node pool.
 	diagErr := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp node pool", id, func() (interface{}, duplosdk.ClientError) {
@@ -953,75 +958,75 @@ func resourceGCPK8NodePoolUpdate(ctx context.Context, d *schema.ResourceData, m 
 	tenantID, fullName := idParts[0], idParts[1]
 	rq, err := expandGCPNodePool(d)
 	if err != nil {
-		return diag.Errorf("Error fetching request for %s : %s", tenantID, err.Error())
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 
 	}
 	c := m.(*duplosdk.Client)
 	if d.HasChange("zones") {
 		_, err = gcpNodePoolZoneUpdate(c, tenantID, fullName, rq.Zones)
 		if err != nil {
-			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 
 		}
 		err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 		if err != nil {
-			return diag.Errorf("%s", err.Error())
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 		}
 	}
 	if d.HasChange("image_type") {
 		_, err = gcpNodePoolImageTypeUpdate(c, tenantID, fullName, rq.ImageType)
 		if err != nil {
-			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 
 		}
 		err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 		if err != nil {
-			return diag.Errorf("%s", err.Error())
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 		}
 	}
 
 	if d.HasChange("taints") || d.HasChange("labels") || d.HasChange("tags") || d.HasChange("resource_labels") || d.HasChange("allocation_tags") {
 		_, err = gcpNodePoolUpdateTaintAndTags(c, tenantID, fullName, rq)
 		if err != nil {
-			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 
 		}
 		err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 		if err != nil {
-			return diag.Errorf("%s", err.Error())
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 		}
 	}
 	if d.HasChange("upgrade_settings") {
 		_, err = gcpNodePoolUpdateUpgradeSetting(c, tenantID, fullName, rq.UpgradeSettings)
 		if err != nil {
-			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 
 		}
 		err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 		if err != nil {
-			return diag.Errorf("%s", err.Error())
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 		}
 	}
 	if d.HasChange("initial_node_count") {
 		_, err = gcpNodePoolUpdateInitialNodeCount(c, tenantID, fullName, rq.InitialNodeCount)
 		if err != nil {
-			return diag.Errorf("Error updating request for %s : %s", tenantID, err.Error())
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 
 		}
 		err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 		if err != nil {
-			return diag.Errorf("%s", err.Error())
+			return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 		}
 	}
 
 	err = gcpNodePoolAutoScalingUpdate(c, tenantID, fullName, d, *rq)
 	if err != nil {
-		return diag.Errorf("error: %s", err.Error())
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 	}
 
 	err = gcpNodePoolWaitUntilReady(ctx, c, tenantID, fullName, d.Timeout("update"))
 	if err != nil {
-		return diag.Errorf("%s", err.Error())
+		return diag.Errorf("Duplocloud resource id '%s' \n[Error]: %s", id, err)
 	}
 
 	diag := resourceGCPNodePoolRead(ctx, d, m)
