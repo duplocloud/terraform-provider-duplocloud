@@ -113,12 +113,14 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 	rp, err := c.GetAwsLaunchTemplate(tenantId, fullName)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLaunchTemplateRead(%s, %s): object missing", tenantId, fullName)
 			d.SetId("")
 		}
 		return diag.Errorf("%s", err.Error())
 
 	}
 	if rp == nil {
+		log.Printf("[TRACE] resourceAwsLaunchTemplateRead(%s, %s): object missing", tenantId, fullName)
 		d.SetId("")
 		return nil
 	}
