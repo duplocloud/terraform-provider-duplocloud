@@ -82,26 +82,28 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 	if len(idParts) != 3 {
 		return diag.Errorf("Invalid ID format for RDS Global Database: %s", id)
 	}
-	tenantId, clusterId, region := idParts[0], idParts[1], idParts[2]
-	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseRead(%s, %s, %s): start", tenantId, clusterId, region)
+	tenantId, gclusterId, region := idParts[0], idParts[1], idParts[2]
+	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseRead(%s, %s, %s): start", tenantId, gclusterId, region)
 
 	c := m.(*duplosdk.Client)
 
-	rp, cerr := c.GetGloabalRegion(tenantId, clusterId, region)
+	rp, cerr := c.GetGloabalRegion(tenantId, gclusterId, region)
 
 	if cerr != nil {
 		if cerr.Status() == 404 {
 			d.SetId("")
-			return nil
+			return diag.Errorf("%s", cerr.Error())
 		}
 		return diag.Errorf("Unable to fetch details of secondary region cluster %s", cerr.Error())
 	}
 
 	d.Set("tenant_id", tenantId)
 	d.Set("secondary_tenant_id", rp.Region.TenantId)
-	d.Set("global_id", rp.GlobalInfo.ClusterId)
+	d.Set("global_id", rp.GlobalInfo.GlobalClusterId)
 	d.Set("secondary_identifier", rp.Region.ClusterId)
-	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseRead(%s, %s, %s): end", tenantId, clusterId, region)
+	d.Set("region", rp.Region.Region)
+	d.Set("identifier", rp.GlobalInfo.PrimaryClusterId)
+	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseRead(%s, %s, %s): end", tenantId, gclusterId, region)
 	return nil
 }
 
@@ -120,13 +122,13 @@ func resourceAwsRdsGlobalDatabaseCreate(ctx context.Context, d *schema.ResourceD
 	if cerr != nil {
 		return diag.Errorf("Error creating secondary region RDS Global Database: %s", cerr)
 	}
-	id := fmt.Sprintf("%s/%s/%s", tenantID, rp.Region.ClusterId, rp.Region.Region)
+	id := fmt.Sprintf("%s/%s/%s", tenantID, rp.GlobalInfo.GlobalClusterId, rp.Region.Region)
 	time.Sleep(120 * time.Second)
 	//err := waitUntilSecondoryDBReady(ctx, c, tenantID, rp.GlobalInfo.ClusterId, rp.Region.Region, d.Timeout("create"), true)
 	//if err != nil {
 	//	return diag.Errorf("Error waiting for global region RDS Global Database group to be ready: %s", err)
 	//}
-	err := waitUntilSecondoryDBReady(ctx, c, tenantID, rp.Region.ClusterId, rp.Region.Region, d.Timeout("create"), false)
+	err := waitUntilSecondoryDBReady(ctx, c, secTenantId, rp.Region.ClusterId, rp.Region.Region, d.Timeout("create"), false)
 	if err != nil {
 		return diag.Errorf("Error waiting for secondary region RDS Global Database to be ready: %s", err)
 	}

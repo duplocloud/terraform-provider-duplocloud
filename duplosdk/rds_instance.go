@@ -518,20 +518,21 @@ func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, Cl
 
 type DuploRDSGlobalDatabaseResponse struct {
 	GlobalInfo struct {
-		ClusterId     string   `json:"clusterId"`
-		Engine        string   `json:"engine"`
-		EngineVersion string   `json:"engineVersion"`
-		Status        string   `json:"status"`
-		Regions       []string `json:"regions"`
-		PrimaryRegion string   `json:"primaryRegion"`
-	} `json:"globalInfo"`
+		GlobalClusterId  string   `json:"GlobalClusterId"`
+		Engine           string   `json:"Engine"`
+		EngineVersion    string   `json:"EngineVersion"`
+		Status           string   `json:"Status"`
+		Regions          []string `json:"Regions"`
+		PrimaryRegion    string   `json:"PrimaryRegion"`
+		PrimaryClusterId string   `json:"PrimaryClusterId"`
+	} `json:"GlobalInfo"`
 	Region struct {
-		Region    string `json:"region"`
-		ClusterId string `json:"clusterId"`
-		Role      string `json:"role"`
-		Status    string `json:"status"`
-		TenantId  string `json:"tenantId"`
-	} `json:"region"`
+		Region    string `json:"Region"`
+		ClusterId string `json:"ClusterId"`
+		Role      string `json:"Role"`
+		Status    string `json:"Status"`
+		TenantId  string `json:"TenantId"`
+	} `json:"Region"`
 }
 
 type DuploRDSGlobalDatabaseRegionInfo struct {
@@ -578,10 +579,11 @@ func (c *Client) GetGloabalRegions(tenantID, identifier string) (*DuploRDSGlobal
 }
 
 func (c *Client) DeleteRDSDBSecondaryDB(tenantID, instanceId, region string) ClientError {
+	var rp interface{}
 	return c.deleteAPI(
 		fmt.Sprintf("DeleteRDSDBSecondaryDB(%s, %s, %s)", tenantID, instanceId, region),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions/%s", tenantID, instanceId, region),
-		nil,
+		&rp,
 	)
 }
 
