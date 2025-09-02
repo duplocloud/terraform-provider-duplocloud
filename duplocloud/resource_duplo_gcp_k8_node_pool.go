@@ -1147,9 +1147,7 @@ func filterOutDefaultLabels(labels map[string]interface{}) map[string]interface{
 }
 func filterOutResourceLabelFromLabel(labels, resourceLabel map[string]interface{}) map[string]interface{} {
 	for k := range resourceLabel {
-		if _, ok := labels[k]; ok {
-			delete(labels, k)
-		}
+		delete(labels, k)
 	}
 
 	return labels
