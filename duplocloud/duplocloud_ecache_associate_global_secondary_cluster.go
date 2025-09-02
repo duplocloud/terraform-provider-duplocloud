@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -59,6 +60,17 @@ func ecacheReplicationGroupSchema() map[string]*schema.Schema {
 			Description: "Region of secondary cluster",
 			Type:        schema.TypeString,
 			Computed:    true,
+		},
+		"secondary_kms_key": {
+			Description: "Specify kms key for secondary cluster",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"auth_token": {
+			Description:  "Region of secondary cluster",
+			Type:         schema.TypeString,
+			Optional:     true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^.{16,}$`), "must be atleast 16 character "),
 		},
 	}
 }
