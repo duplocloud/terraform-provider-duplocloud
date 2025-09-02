@@ -651,14 +651,8 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
-	if duplo.IsGlobal {
-		m := make(map[string]interface{})
-		m["group_id"] = duplo.GlobalReplicationGroupId
-		m["description"] = duplo.GlobalReplicationGroupDescription
-		m["secondary_tenant_id"] = duplo.SecondaryTenantId
-		m["is_primary"] = duplo.IsPrimary
-		d.Set("global_replication_group", []interface{}{m})
-	}
+	d.Set("is_primary", duplo.IsPrimary)
+
 	return nil
 }
 
@@ -805,10 +799,6 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 	if ecm && !failover {
 		return fmt.Errorf("automatic_failover_enabled should be true for cluster mode")
 
-	}
-	grg := diff.Get("global_replication_group").([]interface{})
-	if len(grg) > 0 && eng != 0 {
-		return fmt.Errorf("global_replication_group is only supported for Redis engine")
 	}
 	return nil
 }
