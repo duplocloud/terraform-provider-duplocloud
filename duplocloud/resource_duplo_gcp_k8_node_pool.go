@@ -253,6 +253,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			Computed:    true,
+			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"strategy": {
@@ -590,7 +591,7 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 		}
 	}
 	if val, ok := d.Get("labels").(map[string]interface{}); ok {
-		req.Labels = make(map[string]string)
+		req.Labels = make(map[string]interface{})
 		for k, v := range val {
 			req.Labels[k] = v.(string)
 		}
@@ -628,7 +629,7 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 		}
 	}
 	if val, ok := d.Get("metadata").(map[string]interface{}); ok {
-		metadata := make(map[string]string)
+		metadata := make(map[string]interface{})
 		for key, value := range val {
 			if strVal, ok := value.(string); ok {
 				metadata[key] = strVal
@@ -638,7 +639,7 @@ func expandGCPNodePoolConfig(d *schema.ResourceData, req *duplosdk.DuploGCPK8Nod
 	}
 
 	if val, ok := d.Get("resource_labels").(map[string]interface{}); ok {
-		resourceLabels := make(map[string]string)
+		resourceLabels := make(map[string]interface{})
 		for key, value := range val {
 			if strVal, ok := value.(string); ok {
 				resourceLabels[key] = strVal
@@ -754,7 +755,7 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, duplo.Name))
 	d.Set("tenant_id", tenantID)
-	d.Set("name", getGCPNodePoolShortName(duplo.Name, duplo.ResourceLabels["duplo-tenant"]))
+	d.Set("name", getGCPNodePoolShortName(duplo.Name, duplo.ResourceLabels["duplo-tenant"].(string)))
 	d.Set("fullname", duplo.Name)
 	d.Set("is_autoscaling_enabled", duplo.IsAutoScalingEnabled)
 	d.Set("auto_upgrade", duplo.AutoUpgrade)
@@ -775,8 +776,8 @@ func setGCPNodePoolStateField(d *schema.ResourceData, duplo *duplosdk.DuploGCPK8
 	d.Set("disc_size_gb", duplo.DiscSizeGb)
 	d.Set("disc_type", duplo.DiscType)
 	d.Set("machine_type", duplo.MachineType)
-	d.Set("metadata", duplo.Metadata)
-	d.Set("labels", filterOutDefaultLabels(duplo.Labels))
+	d.Set("metadata", filterOutDefaultMetaData(duplo.Metadata))
+	d.Set("labels", filterOutResourceLabelFromLabel(filterOutDefaultLabels(duplo.Labels), duplo.ResourceLabels))
 	d.Set("spot", duplo.Spot)
 	d.Set("tags", filterOutDefaultTags(duplo.Tags))
 	d.Set("taints", gcpNodePoolTaintstoState(duplo.Taints))
@@ -841,7 +842,11 @@ func gcpNodePoolLoggingConfigToState(loggingConfig *duplosdk.GCPLoggingConfig) [
 func gcpNodePoolLinuxConfigToState(linuxConfig *duplosdk.GCPLinuxNodeConfig) []map[string]interface{} {
 	state := make(map[string]interface{})
 	if linuxConfig != nil {
-		state["cgroup_mode"] = []string{linuxConfig.CGroupMode}
+		state["cgroup_mode"] = linuxConfig.CGroupMode
+		if linuxConfig.CGroupMode == "" {
+			state["cgroup_mode"] = "CGROUP_MODE_UNSPECIFIED"
+
+		}
 		state["sysctls"] = linuxConfig.SysCtls
 	}
 	return []map[string]interface{}{state}
@@ -1135,10 +1140,23 @@ func filterOutDefaultTags(tags []string) []string {
 	return trimStringsByPosition(tags, 3)
 }
 
-func filterOutDefaultLabels(labels map[string]string) map[string]string {
+func filterOutDefaultLabels(labels map[string]interface{}) map[string]interface{} {
 	delete(labels, "tenantname")
 	delete(labels, "duplo-tenant")
 	return labels
+}
+func filterOutResourceLabelFromLabel(labels, resourceLabel map[string]interface{}) map[string]interface{} {
+	for k := range resourceLabel {
+		if _, ok := labels[k]; ok {
+			delete(labels, k)
+		}
+	}
+
+	return labels
+}
+func filterOutDefaultMetaData(m map[string]interface{}) map[string]interface{} {
+	delete(m, "disable-legacy-endpoints")
+	return m
 }
 
 func filterOutDefaultOAuth(oAuths []string) []string {
@@ -1158,8 +1176,9 @@ func filterOutDefaultOAuth(oAuths []string) []string {
 	return filters
 }
 
-func filterOutDefaultResourceLabels(labels map[string]string) map[string]string {
+func filterOutDefaultResourceLabels(labels map[string]interface{}) map[string]interface{} {
 	delete(labels, "duplo-tenant")
+	delete(labels, "goog-gke-node-pool-provisioning-model")
 	return labels
 }
 
