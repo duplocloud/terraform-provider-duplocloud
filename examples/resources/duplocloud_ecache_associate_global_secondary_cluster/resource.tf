@@ -14,6 +14,9 @@ resource "duplocloud_ecache_instance" "re" {
   enable_cluster_mode        = true
   number_of_shards           = 2
   automatic_failover_enabled = true
+  encryption_in_transit      = true
+  kms_key_id                 = "ebdc0518-e512-4cf8-b09a-5cbf2797a736"
+  auth_token                 = "qasxdqwdqadasdqxqwqwsxqswdsqxqwxqwxwqqw"
 }
 
 resource "duplocloud_ecache_global_datastore" "gds" {
@@ -31,4 +34,7 @@ resource "duplocloud_ecache_associate_global_secondary_cluster" "rg" {
   global_datastore_id    = duplocloud_ecache_global_datastore.gds.fullname
   description            = "secondary cluster"
   secondary_cluster_name = "red11sc"
+  secondary_kms_key      = "9b513a7a-b4d9-4e1d-9606-bba6e2c5a449"
+  auth_token             = "qasxdqwdqadasdqxqwqwsxqswdsqxqwxqwxwqqw"
+
 }
