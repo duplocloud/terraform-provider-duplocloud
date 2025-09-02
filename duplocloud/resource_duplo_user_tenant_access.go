@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -68,7 +69,7 @@ func resourceUserTenantAccessRead(ctx context.Context, d *schema.ResourceData, m
 	c := m.(*duplosdk.Client)
 	duplo, err := c.GetUserTenantAccessInfo(idParts[0], idParts[1])
 	if err != nil {
-		return diag.Errorf("Unable to retrieve User '%s': %s", id, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -97,9 +98,17 @@ func resourceUserTenantAccessCreate(ctx context.Context, d *schema.ResourceData,
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
+	id := fmt.Sprintf("%s/%s", rq.Username, rq.TenantId)
+	d.SetId(id)
+
 	err := c.GrantUserTenantAccess(&rq)
 	if err != nil {
-		return diag.Errorf("Unable to grant tenant %s access to User '%s' : %s", rq.TenantId, rq.Username, err)
+		if err.Status() == 404 {
+			log.Printf("Tenant config for tenant %s not found", id)
+			d.SetId("")
+			return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
+		}
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
 
 	var rp *duplosdk.DuploUser
@@ -111,7 +120,6 @@ func resourceUserTenantAccessCreate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%s/%s", rq.Username, rq.TenantId))
 	diags = resourceUserTenantAccessRead(ctx, d, m)
 	log.Printf("[TRACE] resourceUserTenantAccessCreate(%s): end", userName)
 	return diags
@@ -145,8 +153,12 @@ func resourceUserTenantAccessDelete(ctx context.Context, d *schema.ResourceData,
 	c := m.(*duplosdk.Client)
 	err := c.GrantUserTenantAccess(&rq)
 	if err != nil {
-		return diag.Errorf("Unable to remove tenant %s access from User '%s' : %s", rq.TenantId, rq.Username, err)
+		if err.Status() == 404 {
+			return nil
+		}
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
+
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "User", id, func() (interface{}, duplosdk.ClientError) {
 		if rp, err := c.GetUserTenantAccessInfo(rq.Username, rq.TenantId); rp != nil || err != nil {
 			return rp, err
