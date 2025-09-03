@@ -806,10 +806,6 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 		return fmt.Errorf("automatic_failover_enabled should be true for cluster mode")
 
 	}
-	grg := diff.Get("global_replication_group").([]interface{})
-	if len(grg) > 0 && eng != 0 {
-		return fmt.Errorf("global_replication_group is only supported for Redis engine")
-	}
 	return nil
 }
 
