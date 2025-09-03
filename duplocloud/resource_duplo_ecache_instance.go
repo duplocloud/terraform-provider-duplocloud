@@ -251,34 +251,11 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"global_replication_group": {
-			Type:     schema.TypeList,
-			Optional: true,
-			ForceNew: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"group_id": {
-						Description: "Specify global replication group id",
-						Type:        schema.TypeString,
-						Required:    true,
-					},
-					"description": {
-						Description: "Specify global replication description",
-						Type:        schema.TypeString,
-						Required:    true,
-					},
-					"secondary_tenant_id": {
-						Description: "Specify secondary tenant id",
-						Type:        schema.TypeString,
-						Required:    true,
-					},
-					"is_primary": {
-						Description: "Flag to indicate if this is primary replication group",
-						Type:        schema.TypeBool,
-						Computed:    true,
-					},
-				},
-			},
+
+		"is_primary": {
+			Description: "Flag to indicate if this is primary replication group",
+			Type:        schema.TypeBool,
+			Computed:    true,
 		},
 	}
 }
@@ -626,13 +603,6 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 		} else {
 			data.DuploEcacheInstance.NumberOfShards = v.(int) //number of shards accepted if cluster mode is enabled
 		}
-	}
-	if v, ok := d.Get("global_replication_group").([]interface{}); ok && len(v) > 0 {
-		m := v[0].(map[string]interface{})
-		data.IsGlobal = true
-		data.SecondaryTenantId = m["secondary_tenant_id"].(string)
-		data.GlobalReplicationGroupDescription = m["description"].(string)
-		data.GlobalReplicationGroupId = m["group_id"].(string)
 	}
 	return data, nil
 }

@@ -373,7 +373,7 @@ func expandGcpHost(d *schema.ResourceData) duplosdk.DuploGcpHost {
 		obj.Metadata = v.(map[string]interface{})
 	}
 	if v, ok := d.GetOk("labels"); ok {
-		obj.Labels = make(map[string]string)
+		obj.Labels = make(map[string]interface{})
 		for k, vl := range v.(map[string]interface{}) {
 			obj.Labels[k] = vl.(string)
 
@@ -412,7 +412,7 @@ func expandGcpHostOnUpdate(d *schema.ResourceData) duplosdk.DuploGcpHost {
 		obj.Metadata = v.(map[string]interface{})
 	}
 	if v, ok := d.GetOk("labels"); ok {
-		obj.Labels = make(map[string]string)
+		obj.Labels = make(map[string]interface{})
 		for k, vl := range v.(map[string]interface{}) {
 			obj.Labels[k] = vl.(string)
 
