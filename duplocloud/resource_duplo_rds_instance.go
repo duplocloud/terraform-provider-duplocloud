@@ -383,6 +383,11 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 
 	duplo, err := c.RdsInstanceGet(d.Id())
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploRdsInstanceRead(%s): object not found", d.Id())
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	if duplo == nil {
@@ -794,6 +799,10 @@ func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData,
 	id := d.Id()
 	_, err := c.RdsInstanceDelete(d.Id())
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploRdsInstanceDelete(%s): object not found", id)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB instance", id, func() (interface{}, duplosdk.ClientError) {

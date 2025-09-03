@@ -225,6 +225,11 @@ func resourceAwsLoadBalancerListenerRead(ctx context.Context, d *schema.Resource
 	// Get all listeners from duplo
 	duplo, err := c.TenantListApplicationLbListeners(tenantID, lbName)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLoadBalancerListenerRead(%s, %s, %s): object not found", tenantID, lbName, arn)
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	lbFullName, err := c.TenantGetApplicationLbFullName(tenantID, lbName)
@@ -233,6 +238,11 @@ func resourceAwsLoadBalancerListenerRead(ctx context.Context, d *schema.Resource
 		return nil
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLoadBalancerListenerRead(%s, %s, %s): object not found", tenantID, lbName, arn)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve listener for tenant %s load balancer '%s': %s", tenantID, lbName, err)
 	}
 
@@ -312,6 +322,10 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 
 	listeners, err := c.TenantListApplicationLbListeners(tenantId, d.Get("load_balancer_name").(string))
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLoadBalancerListenerDelete(%s, %s, %s): object not found", tenantId, lbFullName, listenerArn)			
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	if listeners != nil && len(*listeners) == 0 {
@@ -321,6 +335,10 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 
 	err = c.TenantDeleteApplicationLbListener(tenantId, lbFullName, listenerArn)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLoadBalancerListenerDelete(%s, %s, %s): object not found", tenantId, lbFullName, listenerArn)
+			return nil
+		}
 		return diag.Errorf("Error deleting load balancer listener '%s': %s", id, err)
 	}
 
