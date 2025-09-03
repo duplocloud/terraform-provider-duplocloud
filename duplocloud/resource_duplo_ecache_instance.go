@@ -830,10 +830,9 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 			return diagsToError(diag)
 		}
 	}
-	}
 	if diff.Get("snapshot_retention_limit").(int) > 0 && diff.Get("cache_type") == 1 {
 		return fmt.Errorf("cannot set snapshot_retention_limit for memcache")
-
+	}
 	// Safely get automatic_failover_enabled with nil check
 	failoverVal := diff.Get("automatic_failover_enabled")
 	failover := false
