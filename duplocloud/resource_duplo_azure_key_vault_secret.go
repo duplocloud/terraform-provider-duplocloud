@@ -108,6 +108,7 @@ func resourceAzureKeyVaultSecretRead(ctx context.Context, d *schema.ResourceData
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureKeyVaultSecretRead: Azure key vault secret %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -165,6 +166,7 @@ func resourceAzureKeyVaultSecretDelete(ctx context.Context, d *schema.ResourceDa
 	clientErr := c.KeyVaultSecretDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureKeyVaultSecretDelete: Azure key vault secret %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure key vault secret '%s': %s", tenantID, name, clientErr)

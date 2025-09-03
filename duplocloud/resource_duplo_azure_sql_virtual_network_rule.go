@@ -96,6 +96,7 @@ func resourceAzureSqlServerVnetRuleRead(ctx context.Context, d *schema.ResourceD
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureSqlServerVnetRuleRead: Azure sql virtual network rule %s not found for tenantId %s, removing from state", ruleName, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -163,6 +164,7 @@ func resourceAzureSqlServerVnetRuleDelete(ctx context.Context, d *schema.Resourc
 	clientErr := c.AzureSqlServerVnetRuleDelete(tenantID, serverName, ruleName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureSqlServerVnetRuleDelete: Azure sql virtual network rule %s not found for tenantId %s, removing from state", ruleName, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure sql virtual network rule '%s', '%s': %s", tenantID, serverName, ruleName, clientErr)

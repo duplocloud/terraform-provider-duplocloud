@@ -215,6 +215,7 @@ func resourceAgentK8NodePoolRead(ctx context.Context, d *schema.ResourceData, m 
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAgentK8NodePoolRead: Azure node pool %s not found for tenantId %s, removing from state", friendlyName, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -324,6 +325,7 @@ func resourceAgentK8NodePoolDelete(ctx context.Context, d *schema.ResourceData, 
 	clientErr := c.AzureK8NodePoolDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAgentK8NodePoolDelete: Azure node pool %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure node pool '%s': %s", tenantID, name, clientErr)
