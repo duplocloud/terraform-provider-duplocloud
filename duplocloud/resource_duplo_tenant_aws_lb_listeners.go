@@ -323,7 +323,7 @@ func resourceAwsLoadBalancerListenerDelete(ctx context.Context, d *schema.Resour
 	listeners, err := c.TenantListApplicationLbListeners(tenantId, d.Get("load_balancer_name").(string))
 	if err != nil {
 		if err.Status() == 404 {
-			log.Printf("[TRACE] resourceAwsLoadBalancerListenerDelete(%s, %s, %s): object not found", tenantId, lbFullName, listenerArn)			
+			log.Printf("[TRACE] resourceAwsLoadBalancerListenerDelete(%s, %s, %s): object not found", tenantId, lbFullName, listenerArn)
 			return nil
 		}
 		return diag.FromErr(err)
