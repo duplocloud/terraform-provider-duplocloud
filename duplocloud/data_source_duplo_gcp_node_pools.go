@@ -2,9 +2,10 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -397,7 +398,7 @@ func dataSourceGCPNodePoolList(ctx context.Context, d *schema.ResourceData, m in
 func setGCPNodePoolStateFieldList(duplo *duplosdk.DuploGCPK8NodePool) map[string]interface{} {
 	// Set simple fields first.
 	return map[string]interface{}{
-		"name":                     getGCPNodePoolShortName(duplo.Name, duplo.ResourceLabels["duplo-tenant"]),
+		"name":                     getGCPNodePoolShortName(duplo.Name, duplo.ResourceLabels["duplo-tenant"].(string)),
 		"fullname":                 duplo.Name,
 		"is_autoscaling_enabled":   duplo.IsAutoScalingEnabled,
 		"auto_upgrade":             duplo.AutoUpgrade,
