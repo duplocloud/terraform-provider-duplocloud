@@ -103,6 +103,11 @@ func resourcePlanCertificatesRead(ctx context.Context, d *schema.ResourceData, m
 	if duplo == nil {
 		plan, err := c.PlanGet(planID)
 		if err != nil {
+			if err.Status() == 404 {
+				log.Printf("[TRACE] resourcePlanCertificatesRead(%s): object not found", planID)
+				d.SetId("")
+				return nil
+			}
 			return diag.Errorf("failed to read plan certificates: %s", err)
 		}
 		if plan == nil {
@@ -181,6 +186,10 @@ func resourcePlanCertificatesDelete(ctx context.Context, d *schema.ResourceData,
 		err = c.PlanChangeCertificates(planID, previous, desired)
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourcePlanCertificatesDelete(%s): object not found", planID)
+			return nil
+		}
 		return diag.Errorf("Error updating plan certificates for '%s': %s", planID, err)
 	}
 

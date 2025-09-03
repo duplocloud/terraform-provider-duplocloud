@@ -76,6 +76,11 @@ func resourcePlanConfigsRead(ctx context.Context, d *schema.ResourceData, m inte
 	// First, try the newer method of getting the plan configs.
 	duplo, err := c.PlanConfigGetList(planID)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourcePlanConfigsRead(%s): object not found", planID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("failed to retrieve plan configs for '%s': %s", planID, err)
 	}
 
@@ -148,6 +153,10 @@ func resourcePlanConfigsDelete(ctx context.Context, d *schema.ResourceData, m in
 		err = c.PlanChangeConfigs(planID, previous, desired)
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourcePlanConfigsDelete(%s): object not found", planID)
+			return nil
+		}
 		return diag.Errorf("Error updating plan configs for '%s': %s", planID, err)
 	}
 

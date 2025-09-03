@@ -152,12 +152,18 @@ func resourceKubernetesCronJobV1Beta1Read(ctx context.Context, d *schema.Resourc
 	log.Printf("[INFO] Reading cron job %s/%s", tenantId, jobName)
 
 	c := meta.(*duplosdk.Client)
-	job, err := c.K8sCronJobGet(tenantId, jobName)
-	if err != nil {
-		log.Printf("[DEBUG] Received error: %#v", err)
-		return diag.Errorf("Failed to read CronJob. API error: %s", err)
+	job, cerr := c.K8sCronJobGet(tenantId, jobName)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8CronJobRead(%s, %s): object not found", tenantId, jobName)
+			d.SetId("")
+			return nil
+		}
+		log.Printf("[DEBUG] Received error: %#v", cerr)
+		return diag.Errorf("Failed to read CronJob. API error: %s", cerr)
 	}
 	if job == nil {
+		log.Printf("[TRACE] resourceK8CronJobRead(%s, %s): object not found", tenantId, jobName)
 		d.SetId("")
 		return nil
 	}
@@ -238,6 +244,7 @@ func resourceKubernetesCronJobV1Beta1Delete(ctx context.Context, d *schema.Resou
 		clientError := c.K8sCronJobDelete(tenantId, name)
 		if clientError != nil {
 			if clientError.Status() == 404 {
+				log.Printf("[TRACE] resourceK8CronJobDelete(%s, %s): object not found", tenantId, name)
 				d.SetId("")
 				return nil
 			}

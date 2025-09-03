@@ -69,6 +69,11 @@ func resourcePlanKMSRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	duplo, err := c.PlanGetKMSKey(planID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourcePlanKMSRead(%s): object not found", planID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("failed to retrieve plan kms for '%s': %s", planID, err)
 	}
 
@@ -138,6 +143,10 @@ func resourcePlanKMSDelete(ctx context.Context, d *schema.ResourceData, m interf
 	c := m.(*duplosdk.Client)
 	clientErr := c.PlanKMSDelete(planID, name)
 	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourcePlanKMSDelete(%s): object not found", planID)
+			return nil
+		}
 		return diag.Errorf("error: %s", clientErr.Error())
 	}
 
