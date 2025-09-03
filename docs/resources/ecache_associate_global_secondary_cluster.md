@@ -29,6 +29,10 @@ resource "duplocloud_ecache_instance" "re" {
   enable_cluster_mode        = true
   number_of_shards           = 2
   automatic_failover_enabled = true
+  encryption_in_transit      = true
+  encryption_at_rest         = true
+  kms_key_id                 = "ebdc0518-e512-4cf8-b09a-5cbf2797a736"
+  auth_token                 = "qasxdqwdqadasdqxqwqwsxqswdsqxqwxqwxwqqw"
 }
 
 resource "duplocloud_ecache_global_datastore" "gds" {
