@@ -225,6 +225,7 @@ func resourceTargetGroupRead(ctx context.Context, d *schema.ResourceData, m inte
 	rp, clientErr := c.DuploTargetGroupGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceTargetGroupRead(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -425,6 +426,7 @@ func resourceTargetGroupDelete(ctx context.Context, d *schema.ResourceData, m in
 	rp, clientErr := c.DuploTargetGroupGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceTargetGroupDelete(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -434,6 +436,7 @@ func resourceTargetGroupDelete(ctx context.Context, d *schema.ResourceData, m in
 		clientErr := c.DuploTargetGroupDelete(tenantID, name)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
+				log.Printf("[TRACE] resourceTargetGroupDelete(%s, %s): object not found", tenantID, name)
 				d.SetId("")
 				return nil
 			}

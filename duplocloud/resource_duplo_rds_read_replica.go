@@ -245,6 +245,11 @@ func resourceDuploRdsReadReplicaRead(ctx context.Context, d *schema.ResourceData
 	c := m.(*duplosdk.Client)
 	duplo, err := c.RdsInstanceGet(d.Id())
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploRdsReadReplicaRead(%s): object not found", d.Id())
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	if duplo == nil {
@@ -491,6 +496,10 @@ func resourceDuploRdsReadReplicaDelete(ctx context.Context, d *schema.ResourceDa
 	id := d.Id()
 	_, err := c.RdsInstanceDelete(d.Id())
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploRdsReadReplicaDelete(%s): object not found", id)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB Read Replica", id, func() (interface{}, duplosdk.ClientError) {

@@ -68,6 +68,7 @@ func resourceTenantExpiryRead(ctx context.Context, d *schema.ResourceData, m int
 	tenantCleanUpTimers, err := c.GetTenantCleanUpTimers(tenantId)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantExpiryRead(%s): object not found", tenantId)
 			d.SetId("")
 			return nil
 		}
@@ -105,6 +106,10 @@ func resourceTenantCleanUpTimersDelete(ctx context.Context, d *schema.ResourceDa
 	c := m.(*duplosdk.Client)
 	err := c.UpdateTenantCleanUpTimers(&rq)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantCleanUpTimersDelete(%s): object not found", rq.TenantId)
+			return nil
+		}
 		return diag.Errorf("Error deleting tenant cleanup timers '%s': %s", rq.TenantId, err)
 	}
 
