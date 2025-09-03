@@ -223,6 +223,8 @@ type DuploEcacheReplicationMember struct {
 	Status                 string `json:"Status"`
 	TenantId               string `json:"TenantId"`
 	ReplicationGroupRegion string `json:"ReplicationGroupRegion"`
+	KmsKeyId               string `json:"KmsKeyId"`
+	AuthToken              string `json:"AuthToken"`
 }
 
 func (c *Client) DuploEcacheGlobalDatastoreCreate(tenantID string, rq *DuploEcacheGlobalDatastore) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
@@ -270,6 +272,8 @@ type DuploEcacheReplicationGroup struct {
 	GlobalReplicationGroupId string `json:"GlobalReplicationGroupId"`
 	SecondaryTenantId        string `json:"TenantId"`
 	ReplicationGroupId       string `json:"ReplicationGroupId"`
+	KmsKeyId                 string `json:"KmsKeyId,omitempty"`
+	AuthToken                string `json:"AuthToken,omitempty"`
 }
 
 func (c *Client) DuploEcacheReplicationGroupCreate(tenantID string, rq *DuploEcacheReplicationGroup) (*DuploEcacheGlobalDatastoreResponse, ClientError) {

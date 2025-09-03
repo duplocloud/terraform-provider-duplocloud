@@ -788,28 +788,56 @@ func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 }
 
 func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
-	ecm := diff.Get("enable_cluster_mode").(bool)
-	nshard := diff.Get("number_of_shards").(int)
+	// Safely get enable_cluster_mode with nil check
+	ecmVal := diff.Get("enable_cluster_mode")
+	ecm := false
+	if ecmVal != nil {
+		ecm = ecmVal.(bool)
+	}
+
+	// Safely get number_of_shards with nil check
+	nshardVal := diff.Get("number_of_shards")
+	nshard := 0
+	if nshardVal != nil {
+		nshard = nshardVal.(int)
+	}
+
 	if ecm && nshard == 0 {
 		return fmt.Errorf("number_of_shards is required when cluster mode is enabled")
 	}
-	eng := diff.Get("cache_type").(int)
-	engVer := diff.Get("engine_version").(string)
+
+	// Safely get cache_type with nil check
+	engVal := diff.Get("cache_type")
+	eng := 0 // Default to Redis (0)
+	if engVal != nil {
+		eng = engVal.(int)
+	}
+
+	// Safely get engine_version with nil check
+	engVerVal := diff.Get("engine_version")
+	engVer := ""
+	if engVerVal != nil {
+		engVer = engVerVal.(string)
+	}
+
 	if engVer != "" {
 		diag := validateClusterEngineVersion(eng, engVer)
 		if diag != nil {
 			return diagsToError(diag)
 		}
 	}
-	failover := diff.Get("automatic_failover_enabled").(bool)
+
+	// Safely get automatic_failover_enabled with nil check
+	failoverVal := diff.Get("automatic_failover_enabled")
+	failover := false
+	if failoverVal != nil {
+		failover = failoverVal.(bool)
+	}
+
 	if ecm && !failover {
 		return fmt.Errorf("automatic_failover_enabled should be true for cluster mode")
+	}
 
-	}
-	grg := diff.Get("global_replication_group").([]interface{})
-	if len(grg) > 0 && eng != 0 {
-		return fmt.Errorf("global_replication_group is only supported for Redis engine")
-	}
 	return nil
 }
 
