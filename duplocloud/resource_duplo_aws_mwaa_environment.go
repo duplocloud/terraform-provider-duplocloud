@@ -320,6 +320,7 @@ func resourceMwaaAirflowRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceMwaaAirflowRead(%s, %s): object missing", tenantID, fullname)
 			d.SetId("")
 			return nil
 		}
@@ -522,6 +523,7 @@ func resourceMwaaAirflowDelete(ctx context.Context, d *schema.ResourceData, m in
 	clientErr := c.MwaaAirflowDelete(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceMwaaAirflowDelete(%s, %s): object missing", tenantID, fullname)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s mwaa airflow detail '%s': %s", tenantID, name, clientErr)

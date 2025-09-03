@@ -563,6 +563,7 @@ func resourceAwsLbListenerRuleRead(ctx context.Context, d *schema.ResourceData, 
 	if clientErr != nil {
 		if clientErr.Status() == 404 || (clientErr.Status() == 400 && clientErr.Response()["Message"] == "One or more listeners not found") { // TODO : remove second condition after backend API fixes.
 			d.SetId("") // object missing
+			log.Printf("[TRACE] resourceAwsLbListenerRuleRead(%s, %s, %s): object missing", tenantID, listenerArn, ruleArn)
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s listener rule '%s': %s", tenantID, ruleArn, clientErr)
@@ -690,6 +691,7 @@ func resourceAwsLbListenerRuleDelete(ctx context.Context, d *schema.ResourceData
 	clientErr := c.DuploAwsLbListenerRuleDelete(tenantID, listenerArn, ruleArn)
 	if clientErr != nil {
 		if clientErr.Status() == 404 || (clientErr.Status() == 400 && clientErr.Response()["Message"] == "One or more listeners not found") { // TODO : remove second condition after backend API fixes.
+			log.Printf("[TRACE] resourceAwsLbListenerRuleDelete(%s, %s, %s): object missing", tenantID, listenerArn, ruleArn)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s listener rule '%s': %s", tenantID, ruleArn, clientErr)
