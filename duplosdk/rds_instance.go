@@ -578,10 +578,10 @@ func (c *Client) GetGloabalRegions(tenantID, identifier string) (*DuploRDSGlobal
 	return &rp, err
 }
 
-func (c *Client) DeleteRDSDBSecondaryDB(tenantID, instanceId, region string) ClientError {
+func (c *Client) DisassociateRDSDRegionalCluster(tenantID, instanceId, region string) ClientError {
 	var rp interface{}
 	return c.deleteAPI(
-		fmt.Sprintf("DeleteRDSDBSecondaryDB(%s, %s, %s)", tenantID, instanceId, region),
+		fmt.Sprintf("DisassociateRDSDRegionalCluster(%s, %s, %s)", tenantID, instanceId, region),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions/%s", tenantID, instanceId, region),
 		&rp,
 	)

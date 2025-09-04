@@ -53,6 +53,10 @@ func duploAwsRdsGlobalDatabaseSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			Required:    true,
 		},
+		"primary_region": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 	}
 }
 
@@ -79,10 +83,10 @@ func resourceAwsRdsGlobalDatabase() *schema.Resource {
 func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	if len(idParts) != 3 {
+	if len(idParts) != 4 {
 		return diag.Errorf("Invalid ID format for RDS Global Database: %s", id)
 	}
-	tenantId, gclusterId, region := idParts[0], idParts[1], idParts[2]
+	tenantId, gclusterId, pregion, region := idParts[0], idParts[1], idParts[2], idParts[3]
 	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseRead(%s, %s, %s): start", tenantId, gclusterId, region)
 
 	c := m.(*duplosdk.Client)
@@ -91,8 +95,12 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 
 	if cerr != nil {
 		if cerr.Status() == 404 {
-			d.SetId("")
-			return diag.Errorf("%s", cerr.Error())
+			rp, cerr = c.GetGloabalRegion(tenantId, gclusterId, pregion)
+			if cerr.Status() == 404 {
+
+				d.SetId("")
+				return diag.Errorf("%s", cerr.Error())
+			}
 		}
 		return diag.Errorf("Unable to fetch details of secondary region cluster %s", cerr.Error())
 	}
@@ -100,9 +108,12 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 	d.Set("tenant_id", tenantId)
 	d.Set("secondary_tenant_id", rp.Region.TenantId)
 	d.Set("global_id", rp.GlobalInfo.GlobalClusterId)
-	d.Set("secondary_identifier", rp.Region.ClusterId)
-	d.Set("region", rp.Region.Region)
+	if strings.EqualFold(rp.Region.Role, "secondary") {
+		d.Set("secondary_identifier", rp.Region.ClusterId)
+		d.Set("region", rp.Region.Region)
+	}
 	d.Set("identifier", rp.GlobalInfo.PrimaryClusterId)
+	d.Set("primary_region", rp.GlobalInfo.PrimaryRegion)
 	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseRead(%s, %s, %s): end", tenantId, gclusterId, region)
 	return nil
 }
@@ -117,18 +128,21 @@ func resourceAwsRdsGlobalDatabaseCreate(ctx context.Context, d *schema.ResourceD
 	}
 	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseCreate(%s, %s, %s, %s): start", tenantID, identifier, region, secTenantId)
 	c := m.(*duplosdk.Client)
-
+	trp, cerr := c.TenantFeaturesGet(tenantID)
+	if cerr != nil {
+		return diag.Errorf("Failed to get tenant %s details : %s", tenantID, cerr)
+	}
 	rp, cerr := c.CreateRDSDBSecondaryDB(tenantID, identifier, region, req)
 	if cerr != nil {
 		return diag.Errorf("Error creating secondary region RDS Global Database: %s", cerr)
 	}
-	id := fmt.Sprintf("%s/%s/%s", tenantID, rp.GlobalInfo.GlobalClusterId, rp.Region.Region)
+	id := fmt.Sprintf("%s/%s/%s/%s", tenantID, rp.GlobalInfo.GlobalClusterId, trp.Region, rp.Region.Region)
 	time.Sleep(120 * time.Second)
 	//err := waitUntilSecondoryDBReady(ctx, c, tenantID, rp.GlobalInfo.ClusterId, rp.Region.Region, d.Timeout("create"), true)
 	//if err != nil {
 	//	return diag.Errorf("Error waiting for global region RDS Global Database group to be ready: %s", err)
 	//}
-	err := waitUntilSecondoryDBReady(ctx, c, secTenantId, rp.Region.ClusterId, rp.Region.Region, d.Timeout("create"), false)
+	err := waitUntilGlobalConfigReady(ctx, c, secTenantId, rp.Region.ClusterId, rp.Region.Region, d.Timeout("create"), false)
 	if err != nil {
 		return diag.Errorf("Error waiting for secondary region RDS Global Database to be ready: %s", err)
 	}
@@ -142,27 +156,55 @@ func resourceAwsRdsGlobalDatabaseCreate(ctx context.Context, d *schema.ResourceD
 func resourceAwsRdsGlobalDatabaseDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	if len(idParts) != 3 {
+	if len(idParts) != 4 {
 		return diag.Errorf("Invalid ID format for RDS Global Database: %s", id)
 	}
-	tenantId, clusterId, region := idParts[0], idParts[1], idParts[2]
+	tenantId, clusterId, pRegion, region := idParts[0], idParts[1], idParts[2], idParts[3]
 	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseDelete(%s, %s, %s): start", tenantId, clusterId, region)
 
 	c := m.(*duplosdk.Client)
-	clientErr := c.DeleteRDSDBSecondaryDB(tenantId, clusterId, region)
+	// Disassociate secondary cluster
+	if region != "" {
+		clientErr := c.DisassociateRDSDRegionalCluster(tenantId, clusterId, region)
+		if clientErr != nil {
+			if clientErr.Status() == 404 {
+				return nil
+			}
+			return diag.Errorf("Unable to dissassociate secondary cluster from - (Tenant: %s,  Cluster: %s, Region: %s) : %s", tenantId, clusterId, region, clientErr)
+		}
+		err := waitUntilGlobalConfigReady(ctx, c, tenantId, clusterId, pRegion, d.Timeout("delete"), true)
+		if err != nil {
+			return diag.Errorf("Error waiting for global region RDS Global Database group to be ready: %s", err)
+		}
+
+		//Remove secondary cluster
+		secTenant := d.Get("secondary_tenant_id").(string)
+		secClust := d.Get("secondary_identifier").(string)
+		_, cerr := c.RdsInstanceDelete(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", secTenant, secClust))
+		if cerr != nil {
+			return diag.FromErr(cerr)
+		}
+		diags := waitForResourceToBeMissingAfterDelete(ctx, d, "Secondary Aurora RDS cluster", id, func() (interface{}, duplosdk.ClientError) {
+			return c.RdsInstanceGet(id)
+		})
+		if diags != nil {
+			return diags
+		}
+	}
+	err := waitUntilGlobalConfigReady(ctx, c, tenantId, clusterId, pRegion, d.Timeout("delete"), true)
+	if err != nil {
+		return diag.Errorf("Error waiting for global region RDS Global Database group to be ready: %s", err)
+	}
+
+	//Disassociate primary cluster, which removes global cluster also
+	clientErr := c.DisassociateRDSDRegionalCluster(tenantId, clusterId, pRegion)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil
 		}
-		return diag.Errorf("Unable to delete rds tag - (Tenant: %s,  Cluster: %s, Region: %s) : %s", tenantId, clusterId, region, clientErr)
-	}
-
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS Secondary region cluster", id, func() (interface{}, duplosdk.ClientError) {
-		return c.GetGloabalRegion(tenantId, clusterId, region)
-
-	})
-	if diag != nil {
-		return diag
+		if !strings.Contains(clientErr.Error(), "until all secondary regions are removed") {
+			return diag.Errorf("Unable to dissassociate primary cluster from - (Tenant: %s,  Cluster: %s, Region: %s) : %s", tenantId, clusterId, region, clientErr)
+		}
 	}
 
 	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseDelete(%s, %s, %s): end", tenantId, clusterId, region)
@@ -193,7 +235,7 @@ func validateGlobalDatabaseParameters(ctx context.Context, diff *schema.Resource
 	return nil
 }*/
 
-func waitUntilSecondoryDBReady(ctx context.Context, c *duplosdk.Client, tenantID, identifier, region string, timeout time.Duration, global bool) error {
+func waitUntilGlobalConfigReady(ctx context.Context, c *duplosdk.Client, tenantID, identifier, region string, timeout time.Duration, global bool) error {
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -203,7 +245,7 @@ func waitUntilSecondoryDBReady(ctx context.Context, c *duplosdk.Client, tenantID
 			if err == nil {
 				if global && rp.GlobalInfo.Status == "available" {
 					status = "ready"
-				} else if !global && rp.Region.Status == "available" {
+				} else if !global && rp.Region.Status == "created" {
 					status = "ready"
 
 				} else {
