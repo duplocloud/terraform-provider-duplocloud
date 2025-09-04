@@ -188,6 +188,9 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.Errorf("Tenant details : %s", err)
 	}
 	list, err := c.AsgProfileGetList(rq.TenantId)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	for _, profile := range *list {
 		if profile.FriendlyName == prefix+"-"+rq.FriendlyName {
 			return diag.Errorf("ASG '%s' already exists.\n If you are using `create_before_destroy` to update ASG, use a duplocloud_aws_launch_template to create a new version and refresh the ASG with the duplocloud_asg_instance_refresh resource.\n To change the default version 'duplocloud_aws_launch_template_default_version' should be used", rq.FriendlyName)
