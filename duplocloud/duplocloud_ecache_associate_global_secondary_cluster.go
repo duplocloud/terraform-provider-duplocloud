@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -60,6 +61,23 @@ func ecacheReplicationGroupSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"secondary_kms_key": {
+			Description: "Specify kms key for secondary cluster",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+		},
+		"auth_token": {
+			Description: "Set a password for authenticating to the ElastiCache instance.\n\n" +
+				"See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.",
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(16, 128),
+				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9!&#$<>^-]*$`), "Invalid AWS Elasticache Redis password"),
+			),
+		},
 	}
 }
 
@@ -93,6 +111,8 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 		SecondaryTenantId:        d.Get("secondary_tenant_id").(string),
 		GlobalReplicationGroupId: d.Get("global_datastore_id").(string),
 		ReplicationGroupId:       d.Get("secondary_cluster_name").(string),
+		KmsKeyId:                 d.Get("secondary_kms_key").(string),
+		AuthToken:                d.Get("auth_token").(string),
 	}
 	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupCreate(%s): start", tenantID)
 
@@ -172,6 +192,8 @@ func resourceDuploEcacheReplicationGroupRead(ctx context.Context, d *schema.Reso
 	d.Set("identifier", fullName)
 	d.Set("secondary_region", member.ReplicationGroupRegion)
 	d.Set("secondary_tenant_id", secTenantId)
+	d.Set("secondary_kms_key", member.KmsKeyId)
+	d.Set("auth_token", member.AuthToken)
 	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupRead(%s, %s): end", tenantID, name)
 	return nil
 }

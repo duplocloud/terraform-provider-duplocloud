@@ -14,7 +14,7 @@ type DuploGCPK8NodePool struct {
 	ImageType            string                 `json:"ImageType" default:"cos_containerd"`
 	InitialNodeCount     int                    `json:"InitialNodeCount"`
 	IsAutoScalingEnabled bool                   `json:"IsAutoscalingEnabled"`
-	Labels               map[string]string      `json:"Labels"`
+	Labels               map[string]interface{} `json:"Labels"`
 	LinuxNodeConfig      *GCPLinuxNodeConfig    `json:"LinuxNodeConfig"`
 	LocationPolicy       string                 `json:"LocationPolicy" default:"BALANCED"`
 	LoggingConfig        *GCPLoggingConfig      `json:"LoggingConfig"`
@@ -29,11 +29,11 @@ type DuploGCPK8NodePool struct {
 	Taints               []GCPNodeTaints        `json:"Taints"`
 	UpgradeSettings      *GCPNodeUpgradeSetting `json:"UpgradeSettings"`
 	Zones                []string               `json:"Zones"`
-	Metadata             map[string]string      `json:"Metadata"`
+	Metadata             map[string]interface{} `json:"Metadata"`
 	TotalMaxNodeCount    *int                   `json:"TotalMaxNodeCount"`
 	TotalMinNodeCount    *int                   `json:"TotalMinNodeCount"`
 	Accelerator          *Accelerator           `json:"Accelerator,omitempty"`
-	ResourceLabels       map[string]string      `json:"ResourceLabels"`
+	ResourceLabels       map[string]interface{} `json:"ResourceLabels"`
 	Status               string                 `json:"Status"`
 }
 

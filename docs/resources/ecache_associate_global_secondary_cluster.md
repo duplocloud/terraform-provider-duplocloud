@@ -29,6 +29,10 @@ resource "duplocloud_ecache_instance" "re" {
   enable_cluster_mode        = true
   number_of_shards           = 2
   automatic_failover_enabled = true
+  encryption_in_transit      = true
+  encryption_at_rest         = true
+  kms_key_id                 = "ebdc0518-e512-4cf8-b09a-5cbf2797a736"
+  auth_token                 = "qasxdqwdqadasdqxqwqwsxqswdsqxqwxqwxwqqw"
 }
 
 resource "duplocloud_ecache_global_datastore" "gds" {
@@ -61,7 +65,11 @@ resource "duplocloud_ecache_associate_global_secondary_cluster" "rg" {
 
 ### Optional
 
+- `auth_token` (String) Set a password for authenticating to the ElastiCache instance.
+
+See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.
 - `description` (String) The description for secondary cluster
+- `secondary_kms_key` (String) Specify kms key for secondary cluster
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
