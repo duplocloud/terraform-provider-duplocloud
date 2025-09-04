@@ -184,7 +184,9 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	// Create the ASG Prfoile in Duplo.
 	c := m.(*duplosdk.Client)
 	prefix, err := c.GetDuploServicesPrefix(rq.TenantId)
-
+	if err != nil {
+		return diag.Errorf("Tenant details : %s", err)
+	}
 	list, err := c.AsgProfileGetList(rq.TenantId)
 	for _, profile := range *list {
 		if profile.FriendlyName == prefix+"-"+rq.FriendlyName {
