@@ -112,7 +112,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 
 				return false
 			},
-			ValidateFunc: validateMQUsers,
+			//ValidateFunc: validateMQUsers,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"user_name": {

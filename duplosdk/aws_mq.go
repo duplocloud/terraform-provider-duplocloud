@@ -246,11 +246,19 @@ func (c *Client) DuploAWSMQConfigCreate(tenantID string, rq DuploAwsMQConfig) (m
 }
 
 func (c *Client) DuploAWSMQConfigGet(tenantID, cID string) (*DuploAwsMQConfigResponse, ClientError) {
-	rp := DuploAwsMQConfigResponse{}
+	rp := []DuploAwsMQConfigResponse{}
 	err := c.getAPI(
 		fmt.Sprintf("DuploAWSMQConfigGet(%s,%s)", tenantID, cID),
 		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/config/%s/revision", tenantID, cID),
 		&rp,
 	)
-	return &rp, err
+	max := 0
+	max_index := 0
+	for i, rs := range rp {
+		if rs.LatestRevision.Revision > max {
+			max = rs.LatestRevision.Revision
+			max_index = i
+		}
+	}
+	return &rp[max_index], err
 }

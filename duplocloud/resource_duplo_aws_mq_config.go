@@ -64,6 +64,12 @@ func duploAwsMQConfigSchema() map[string]*schema.Schema {
 			Required:     true,
 			ValidateFunc: validation.StringInSlice([]string{"ACTIVEMQ", "RABBITMQ"}, false),
 		},
+		"engine_version": {
+			Description: "Specify valid engine version based on engine type",
+			Type:        schema.TypeString,
+			Required:    true,
+		},
+
 		"tags": {
 			Type:        schema.TypeMap,
 			Optional:    true,
@@ -148,7 +154,7 @@ func resourceAwsMQConfigCreate(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.Errorf("Error creating aws MQ configuration - (Tenant: %s,  Name: %s) : %s", tenantID, req.Name, err)
 	}
-	id := fmt.Sprintf("%s/%s", tenantID, rp["id"].(string))
+	id := fmt.Sprintf("%s/%s", tenantID, rp["Id"].(string))
 
 	d.SetId(id)
 
