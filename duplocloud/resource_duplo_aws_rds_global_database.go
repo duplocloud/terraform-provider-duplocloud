@@ -86,7 +86,7 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 	if len(idParts) != 4 {
 		return diag.Errorf("Invalid ID format for RDS Global Database: %s", id)
 	}
-	tenantId, gclusterId, pregion, region := idParts[0], idParts[1], idParts[2], idParts[3]
+	tenantId, gclusterId, _, region := idParts[0], idParts[1], idParts[2], idParts[3]
 	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseRead(%s, %s, %s): start", tenantId, gclusterId, region)
 
 	c := m.(*duplosdk.Client)
@@ -95,22 +95,27 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 
 	if cerr != nil {
 		if cerr.Status() == 404 {
-			rp, cerr = c.GetGloabalRegion(tenantId, gclusterId, pregion)
-			if cerr.Status() == 404 {
-
-				d.SetId("")
-				return diag.Errorf("%s", cerr.Error())
-			}
+			//	rp, cerr = c.GetGloabalRegion(tenantId, gclusterId, pregion)
+			//	if cerr != nil && cerr.Status() == 404 {
+			//
+			d.SetId("")
+			return diag.Errorf("%s", cerr.Error())
+			//	}
+		} else {
+			return diag.Errorf("Unable to fetch details of secondary region cluster %s", cerr.Error())
 		}
-		return diag.Errorf("Unable to fetch details of secondary region cluster %s", cerr.Error())
 	}
 
 	d.Set("tenant_id", tenantId)
-	d.Set("secondary_tenant_id", rp.Region.TenantId)
 	d.Set("global_id", rp.GlobalInfo.GlobalClusterId)
 	if strings.EqualFold(rp.Region.Role, "secondary") {
 		d.Set("secondary_identifier", rp.Region.ClusterId)
 		d.Set("region", rp.Region.Region)
+		d.Set("secondary_tenant_id", rp.Region.TenantId)
+	} else {
+		d.Set("secondary_identifier", d.Get("secondary_identifier"))
+		d.Set("region", d.Get("region"))
+		d.Set("secondary_tenant_id", d.Get("secondary_tenant_id"))
 	}
 	d.Set("identifier", rp.GlobalInfo.PrimaryClusterId)
 	d.Set("primary_region", rp.GlobalInfo.PrimaryRegion)
@@ -164,47 +169,30 @@ func resourceAwsRdsGlobalDatabaseDelete(ctx context.Context, d *schema.ResourceD
 
 	c := m.(*duplosdk.Client)
 	// Disassociate secondary cluster
-	if region != "" {
-		clientErr := c.DisassociateRDSDRegionalCluster(tenantId, clusterId, region)
-		if clientErr != nil {
-			if clientErr.Status() == 404 {
-				return nil
-			}
-			return diag.Errorf("Unable to dissassociate secondary cluster from - (Tenant: %s,  Cluster: %s, Region: %s) : %s", tenantId, clusterId, region, clientErr)
+	clientErr := c.DisassociateRDSDRegionalCluster(tenantId, clusterId, region)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			return nil
 		}
-		err := waitUntilGlobalConfigReady(ctx, c, tenantId, clusterId, pRegion, d.Timeout("delete"), true)
-		if err != nil {
-			return diag.Errorf("Error waiting for global region RDS Global Database group to be ready: %s", err)
-		}
-
-		//Remove secondary cluster
-		secTenant := d.Get("secondary_tenant_id").(string)
-		secClust := d.Get("secondary_identifier").(string)
-		_, cerr := c.RdsInstanceDelete(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", secTenant, secClust))
-		if cerr != nil {
-			return diag.FromErr(cerr)
-		}
-		diags := waitForResourceToBeMissingAfterDelete(ctx, d, "Secondary Aurora RDS cluster", id, func() (interface{}, duplosdk.ClientError) {
-			return c.RdsInstanceGet(id)
-		})
-		if diags != nil {
-			return diags
-		}
+		return diag.Errorf("Unable to dissassociate secondary cluster from - (Tenant: %s,  Cluster: %s, Region: %s) : %s", tenantId, clusterId, region, clientErr)
 	}
 	err := waitUntilGlobalConfigReady(ctx, c, tenantId, clusterId, pRegion, d.Timeout("delete"), true)
 	if err != nil {
 		return diag.Errorf("Error waiting for global region RDS Global Database group to be ready: %s", err)
 	}
 
-	//Disassociate primary cluster, which removes global cluster also
-	clientErr := c.DisassociateRDSDRegionalCluster(tenantId, clusterId, pRegion)
-	if clientErr != nil {
-		if clientErr.Status() == 404 {
-			return nil
-		}
-		if !strings.Contains(clientErr.Error(), "until all secondary regions are removed") {
-			return diag.Errorf("Unable to dissassociate primary cluster from - (Tenant: %s,  Cluster: %s, Region: %s) : %s", tenantId, clusterId, region, clientErr)
-		}
+	//Remove secondary cluster
+	secTenant := d.Get("secondary_tenant_id").(string)
+	secClust := d.Get("secondary_identifier").(string)
+	_, cerr := c.RdsInstanceDelete(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", secTenant, secClust))
+	if cerr != nil {
+		return diag.FromErr(cerr)
+	}
+	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "Secondary Aurora RDS cluster", id, func() (interface{}, duplosdk.ClientError) {
+		return c.RdsInstanceGet(id)
+	})
+	if diags != nil {
+		return diags
 	}
 
 	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseDelete(%s, %s, %s): end", tenantId, clusterId, region)

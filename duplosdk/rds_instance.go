@@ -76,6 +76,7 @@ type DuploRdsInstance struct {
 	PerformanceInsightsKMSKeyId        string                  `json:"PerformanceInsightsKMSKeyId,omitempty"`
 	AutoMinorVersionUpgrade            bool                    `json:"AutoMinorVersionUpgrade"`
 	DeletionProtection                 bool                    `json:"DeletionProtection"`
+	IsGlobalClusterMember              bool                    `json:"IsGlobalClusterMember"`
 }
 
 type V2ScalingConfiguration struct {

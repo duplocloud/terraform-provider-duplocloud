@@ -792,6 +792,21 @@ func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData,
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
 	id := d.Id()
+	duplo, _ := c.RdsInstanceGet(d.Id())
+	if duplo.IsGlobalClusterMember {
+		idParts := strings.SplitN(id, "/", 5)
+		tenantId := idParts[2]
+		identifier := d.Get("cluster_identifier").(string)
+		region := duplo.AvailabilityZone[:len(duplo.AvailabilityZone)-1]
+		clientErr := c.DisassociateRDSDRegionalCluster(tenantId, identifier, region)
+		if clientErr != nil {
+			if clientErr.Status() == 404 {
+				return nil
+			}
+			return diag.Errorf("Unable to dissassociate secondary cluster from - (Tenant: %s,  Cluster: %s, Region: %s) : %s", tenantId, identifier, region, clientErr)
+		}
+
+	}
 	_, err := c.RdsInstanceDelete(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
