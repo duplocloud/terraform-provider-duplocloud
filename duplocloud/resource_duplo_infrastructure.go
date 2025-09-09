@@ -345,7 +345,7 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 	if (err != nil && err.Status() == 404) || missing {
 		d.SetId("") // object missing
 		log.Printf("Infrastructure not found")
-		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
+		return nil
 
 	}
 
