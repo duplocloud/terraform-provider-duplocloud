@@ -33,6 +33,11 @@ func duploAwsMQConfigSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			Required:    true,
 		},
+		"fullname": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+
 		"configuration_id": {
 			Type:     schema.TypeString,
 			Computed: true,
@@ -71,11 +76,9 @@ func duploAwsMQConfigSchema() map[string]*schema.Schema {
 		},
 
 		"tags": {
-			Type:        schema.TypeMap,
-			Optional:    true,
-			Computed:    true,
-			Description: "A map of tags to assign to the resource.",
-			Elem:        &schema.Schema{Type: schema.TypeString},
+			Type:     schema.TypeMap,
+			Computed: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 	}
 }
@@ -104,14 +107,14 @@ func resourceAwsMQConfig() *schema.Resource {
 func resourceAwsMQConfigRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	if len(idParts) != 2 {
+	if len(idParts) != 3 {
 		return diag.Errorf("invalid resource id")
 	}
 	log.Printf("[TRACE] resourceAwsMQConfigRead(%s, %s): start", idParts[0], idParts[1])
 
 	c := m.(*duplosdk.Client)
 
-	rp, clientErr := c.DuploAWSMQConfigGet(idParts[0], idParts[1])
+	rp, clientErr := c.DuploAWSMQConfigGet(idParts[0], idParts[2])
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			d.SetId("")
@@ -125,14 +128,16 @@ func resourceAwsMQConfigRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 
 	d.Set("tenant_id", idParts[0])
-	d.Set("configuration_id", idParts[1])
-	d.Set("name", rp.Name)
+	d.Set("configuration_id", idParts[2])
+	d.Set("name", idParts[1])
+	d.Set("fullname", rp.Name)
+
 	d.Set("engine_type", rp.EngineType.Value)
 	d.Set("engine_version", rp.EngineVersion)
 	d.Set("authentication_strategy", rp.AuthenticationStrategy.Value)
 	d.Set("latest_version", rp.LatestRevision.Revision)
 	d.Set("arn", rp.Arn)
-	d.Set("tags", rp.Tags)
+	d.Set("tags", filterDuploDefinedTagsAsMap(rp.Tags))
 	d.Set("description", rp.LatestRevision.Description)
 	log.Printf("[TRACE] resourceAwsMQConfigRead(%s, %s): end", idParts[0], idParts[1])
 	return nil
@@ -145,7 +150,6 @@ func resourceAwsMQConfigCreate(ctx context.Context, d *schema.ResourceData, m in
 		EngineType:             d.Get("engine_type").(string),
 		EngineVersion:          d.Get("engine_version").(string),
 		Name:                   d.Get("name").(string),
-		Tags:                   d.Get("tags").(map[string]interface{}),
 	}
 	log.Printf("[TRACE] resourceAwsMQConfigCreate(%s,%s): start", tenantID, req.Name)
 	c := m.(*duplosdk.Client)
@@ -154,7 +158,7 @@ func resourceAwsMQConfigCreate(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.Errorf("Error creating aws MQ configuration - (Tenant: %s,  Name: %s) : %s", tenantID, req.Name, err)
 	}
-	id := fmt.Sprintf("%s/%s", tenantID, rp["Id"].(string))
+	id := fmt.Sprintf("%s/%s/%s", tenantID, req.Name, rp["Id"].(string))
 
 	d.SetId(id)
 
@@ -166,7 +170,7 @@ func resourceAwsMQConfigCreate(ctx context.Context, d *schema.ResourceData, m in
 func resourceAwsMQConfigUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	if len(idParts) != 2 {
+	if len(idParts) != 3 {
 		return diag.Errorf("invalid resource id")
 	}
 	log.Printf("[TRACE] resourceAwsMQConfigUpdate(%s, %s): start", idParts[0], idParts[1])
@@ -183,8 +187,8 @@ func resourceAwsMQConfigUpdate(ctx context.Context, d *schema.ResourceData, m in
 		update = true
 	}
 	if update {
-		rq.ConfigurationId = idParts[1]
-		cerr := c.DuploAWSMQConfigUpdate(idParts[0], idParts[1], rq)
+		rq.ConfigurationId = idParts[2]
+		cerr := c.DuploAWSMQConfigUpdate(idParts[0], idParts[2], rq)
 		if cerr != nil {
 			return diag.Errorf("Updating MQ config %s for tenant %s failed : %s", rq.ConfigurationId, idParts[0], cerr.Error())
 		}
@@ -202,9 +206,6 @@ func resourceAwsMQConfigCustomizeDiff(ctx context.Context, d *schema.ResourceDif
 	if id != "" {
 		if d.Get("data").(string) == "" {
 			return fmt.Errorf("the 'data' field can be set only during update")
-		}
-		if d.Get("description").(string) == "" {
-			return fmt.Errorf("the 'description' field can be set only during update")
 		}
 	}
 	return nil

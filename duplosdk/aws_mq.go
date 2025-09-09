@@ -215,7 +215,7 @@ type DuploAwsMQConfigResponse struct {
 	LatestRevision         struct {
 		Description string `json:"Description"`
 		Revision    int    `json:"Revision"`
-	} `json:"Revision"`
+	} `json:"LatestRevision"`
 }
 
 type DuploAwsMQConfigUpdate struct {
@@ -246,19 +246,12 @@ func (c *Client) DuploAWSMQConfigCreate(tenantID string, rq DuploAwsMQConfig) (m
 }
 
 func (c *Client) DuploAWSMQConfigGet(tenantID, cID string) (*DuploAwsMQConfigResponse, ClientError) {
-	rp := []DuploAwsMQConfigResponse{}
+	rp := DuploAwsMQConfigResponse{}
 	err := c.getAPI(
 		fmt.Sprintf("DuploAWSMQConfigGet(%s,%s)", tenantID, cID),
-		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/config/%s/revision", tenantID, cID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/mq/broker/config/%s", tenantID, cID),
 		&rp,
 	)
-	max := 0
-	max_index := 0
-	for i, rs := range rp {
-		if rs.LatestRevision.Revision > max {
-			max = rs.LatestRevision.Revision
-			max_index = i
-		}
-	}
-	return &rp[max_index], err
+
+	return &rp, err
 }
