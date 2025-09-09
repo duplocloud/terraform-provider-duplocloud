@@ -90,7 +90,7 @@ resource "duplocloud_aws_mq_broker" "example" {
   host_instance_type         = "mq.t3.micro"
   engine_version             = "3.13"
   authentication_strategy    = "SIMPLE"
-  auto_minor_version_upgrade = true 
+  auto_minor_version_upgrade = true
   data_replication_mode      = "NONE"
   publicly_accessible        = false
   security_groups            = ["sg-0aead878f4e404689"]
