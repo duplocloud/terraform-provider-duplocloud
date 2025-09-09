@@ -1,10 +1,8 @@
 package duplocloud
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"hash/crc32"
 	"log"
 	"strings"
 	"time"
@@ -407,9 +405,9 @@ func resourceAwsMQRead(ctx context.Context, d *schema.ResourceData, m interface{
 		d.SetId("") // object missing
 		return nil
 	}
-	flattenAwsMqBroker(d, duplo)
+	err := flattenAwsMqBroker(d, duplo)
 	log.Printf("[TRACE] resourceAwsMQRead(%s, %s): end", tenantID, name)
-	return nil
+	return diag.FromErr(err)
 }
 
 func resourceAwsMQCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -869,87 +867,6 @@ func removePatchVersion(version string) string {
 	return fmt.Sprintf("%s.%s", parts[0], parts[1]) // Return only major and minor versions
 }
 
-func resourceUserHash(v any) int {
-	var buf bytes.Buffer
-
-	m := v.(map[string]any)
-	if ca, ok := m["console_access"]; ok {
-		fmt.Fprintf(&buf, "%t-", ca.(bool))
-	} else {
-		buf.WriteString("false-")
-	}
-	if g, ok := m["groups"]; ok {
-		fmt.Fprintf(&buf, "%v-", g.(*schema.Set).List())
-	}
-	if p, ok := m["password"]; ok {
-		fmt.Fprintf(&buf, "%s-", p.(string))
-	}
-	fmt.Fprintf(&buf, "%s-", m["user_name"].(string))
-
-	return stringHashcode(buf.String())
-}
-
-func stringHashcode(s string) int {
-	v := int(crc32.ChecksumIEEE([]byte(s)))
-	if v >= 0 {
-		return v
-	}
-	if -v >= 0 {
-		return -v
-	}
-	// v == MinInt
-	return 0
-}
-
-/*
-//set flattent logic
-func flattenUsers(users []duplosdk.DuploAWSMQUser, cfgUsers []any) *schema.Set {
-	existingPairs := make(map[string]string)
-	for _, u := range cfgUsers {
-		user := u.(map[string]any)
-		username := user["user_name"].(string)
-		existingPairs[username] = user["password"].(string)
-	}
-
-	out := make([]any, 0)
-	for _, u := range users {
-		m := map[string]any{
-			"user_name": u.UserName,
-		}
-		password := ""
-		if p, ok := existingPairs[u.UserName]; ok {
-			password = p
-		}
-		if password != "" {
-			m["password"] = password
-		}
-		//		if u.ConsoleAccess != nil {
-		m["console_access"] = u.ConsoleAccess
-		//		}
-		//	if u.ReplicationUser != nil {
-		m["replication_user"] = u.ReplicationUser
-		//	}
-		if len(u.Groups) > 0 {
-			m["groups"] = flattenStringValueSet(u.Groups)
-		}
-		out = append(out, m)
-	}
-	return schema.NewSet(resourceUserHash, out)
-}
-
-func flattenStringValueList(list []string) []any {
-	vs := make([]any, 0, len(list))
-	for _, v := range list {
-		vs = append(vs, v)
-	}
-	return vs
-}
-
-func flattenStringValueSet(list []string) *schema.Set {
-	return schema.NewSet(schema.HashString, flattenStringValueList(list))
-}
-*/
-
 func flattenUsers(users []duplosdk.DuploAWSMQUser, cfgUsers []interface{}) []interface{} {
 	inte := []interface{}{}
 	for i, u := range users {
@@ -966,51 +883,3 @@ func flattenUsers(users []duplosdk.DuploAWSMQUser, cfgUsers []interface{}) []int
 	}
 	return inte
 }
-
-/*
-func validateMQUsers(val interface{}, key string) (warns []string, errs []error) {
-	users, ok := val.([]interface{})
-	if !ok {
-		errs = append(errs, fmt.Errorf("invalid type for %s: expected list", key))
-		return
-	}
-
-	userNames := make(map[string]struct{})
-	for i, u := range users {
-		userMap, ok := u.(map[string]interface{})
-		if !ok {
-			errs = append(errs, fmt.Errorf("invalid user at index %d in %s: expected map", i, key))
-			continue
-		}
-		userName, ok := userMap["user_name"].(string)
-		if !ok || userName == "" {
-			errs = append(errs, fmt.Errorf("user_name is required and must be a string at index %d in %s", i, key))
-			continue
-		}
-		if _, exists := userNames[userName]; exists {
-			errs = append(errs, fmt.Errorf("duplicate user_name '%s' found in %s", userName, key))
-		}
-		userNames[userName] = struct{}{}
-
-		// Validate groups uniqueness
-		if groupsRaw, ok := userMap["groups"]; ok {
-			groups, ok := groupsRaw.([]interface{})
-			if ok {
-				groupSet := make(map[string]struct{})
-				for _, g := range groups {
-					groupStr, ok := g.(string)
-					if !ok {
-						errs = append(errs, fmt.Errorf("group value must be a string at index %d in user '%s'", i, userName))
-						continue
-					}
-					if _, exists := groupSet[groupStr]; exists {
-						errs = append(errs, fmt.Errorf("duplicate group '%s' found in user '%s'", groupStr, userName))
-					}
-					groupSet[groupStr] = struct{}{}
-				}
-			}
-		}
-	}
-	return
-}
-*/
