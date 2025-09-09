@@ -112,21 +112,18 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 
 				return false
 			},
-			//ValidateFunc: validateMQUsers,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"user_name": {
 						Type:        schema.TypeString,
 						Required:    true,
 						Description: "The username.",
-						//ForceNew:    true,
 					},
 					"password": {
 						Type:        schema.TypeString,
 						Required:    true,
 						Sensitive:   true,
 						Description: "The password.",
-						//ForceNew:    true,
 					},
 					"groups": {
 						Type:        schema.TypeList,
@@ -134,7 +131,6 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 						Computed:    true,
 						Description: "Groups to which the user belongs.",
 						Elem:        &schema.Schema{Type: schema.TypeString},
-						//ForceNew:    true,
 					},
 					"console_access": {
 						Type:     schema.TypeBool,
@@ -148,7 +144,6 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 					},
 				},
 			},
-			//ConflictsWith: []string{"ldap_server_metadata"},
 		},
 		"ldap_server_metadata": {
 			Type:        schema.TypeList,
@@ -216,7 +211,6 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 					},
 				},
 			},
-			//ConflictsWith: []string{"users"},
 		},
 		"configuration": {
 			Type:        schema.TypeList,
@@ -973,6 +967,7 @@ func flattenUsers(users []duplosdk.DuploAWSMQUser, cfgUsers []interface{}) []int
 	return inte
 }
 
+/*
 func validateMQUsers(val interface{}, key string) (warns []string, errs []error) {
 	users, ok := val.([]interface{})
 	if !ok {
@@ -1018,3 +1013,4 @@ func validateMQUsers(val interface{}, key string) (warns []string, errs []error)
 	}
 	return
 }
+*/
