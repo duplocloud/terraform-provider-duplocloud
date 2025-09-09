@@ -730,7 +730,7 @@ func resourceGCPNodePoolRead(ctx context.Context, d *schema.ResourceData, m inte
 		if err.Status() == 404 {
 			log.Printf("GCP node pool %s not found", fullName)
 			d.SetId("") // object missing or deleted
-			return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
+			return nil
 		}
 		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 
