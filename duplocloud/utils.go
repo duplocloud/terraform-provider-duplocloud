@@ -1284,3 +1284,18 @@ func gBToBytes(gb int) int64 {
 func bytesToGB(bytes int64) int {
 	return int(bytes / (1024 * 1024 * 1024))
 }
+
+func filterDuploDefinedTagsAsMap(tag any) map[string]interface{} {
+	m := make(map[string]interface{})
+	duploTag := map[string]struct{}{
+		"duplo-project":         {},
+		"TENANT_NAME":           {},
+		"duplo_lifecycle_owner": {},
+	}
+	for k, v := range tag.(map[string]interface{}) {
+		if _, ok := duploTag[k]; !ok {
+			m[k] = v
+		}
+	}
+	return m
+}
