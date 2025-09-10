@@ -41,6 +41,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 				If unspecified, the default machine type is e2-medium.`,
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"disc_size_gb": {
 			Description: `Size of the disk attached to each node, specified in GB. The smallest allowed disk size is 10GB.
