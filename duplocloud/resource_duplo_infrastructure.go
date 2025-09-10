@@ -303,10 +303,11 @@ func resourceInfrastructure() *schema.Resource {
 				Elem:        infrastructureVnetSecurityGroupsSchema(),
 			},
 			"wait_until_deleted": {
-				Description: "Whether or not to wait until Duplo has destroyed the infrastructure.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
+				Description:      "Whether or not to wait until Duplo has destroyed the infrastructure.",
+				Type:             schema.TypeBool,
+				Optional:         true,
+				Default:          false,
+				DiffSuppressFunc: diffSuppressWhenNotCreating,
 			},
 			"cluster_ip_cidr": {
 				Description: "cluster IP CIDR defines a private IP address range used for internal Kubernetes services.",
@@ -338,7 +339,7 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	missing, err := infrastructureRead(c, d, name)
+	missing, err := infrastructureRead(ctx, c, d, name)
 	if err != nil && err.Status() != 404 {
 		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
@@ -388,6 +389,7 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 	if err != nil {
 		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
 
 	diags = resourceInfrastructureRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureCreate(%s): end", rq.Name)
@@ -583,7 +585,7 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 	return err
 }
 
-func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string) (bool, duplosdk.ClientError) {
+func infrastructureRead(ctx context.Context, c *duplosdk.Client, d *schema.ResourceData, name string) (bool, duplosdk.ClientError) {
 	var infra *duplosdk.DuploInfrastructureConfig
 	config, err := c.InfrastructureGetConfig(name)
 	if err != nil {
@@ -623,6 +625,11 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 		d.Set("cluster_ip_cidr", config.ClusterIpv4Cidr)
 	}
 	// Build a list of current state, to replace the user-supplied settings.
+	v := ctx.Value(flowContextKey)
+	if v == nil {
+		d.Set("setting", filterInfraSetting(infra.Cloud, *config.CustomData))
+
+	}
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
 		d.Set("setting", keyValueToState("setting", selectKeyValues(config.CustomData, *v)))
 	} else {
@@ -776,4 +783,34 @@ func validateInfraSchema(d *schema.ResourceData) diag.Diagnostics {
 	}
 	log.Printf("[TRACE] validateInfraSchema: end")
 	return nil
+}
+
+func filterInfraSetting(cloud int, settings []duplosdk.DuploKeyStringValue) []interface{} {
+	var m map[string]struct{}
+	if cloud == 3 {
+		m = map[string]struct{}{
+			"GkeEndpointVisibility":    {},
+			"GkeChannel":               {},
+			"K8sVersion":               {},
+			"EnableHelmOperatorFluxV2": {},
+			"K8sHelmOperator":          {},
+		}
+	}
+	if cloud == 0 {
+		m = map[string]struct{}{
+			"K8sVersion":                 {},
+			"EksEndpointVisibility":      {},
+			"EksControlplaneLogs":        {},
+			"EnableDefaultEbsEncryption": {},
+			"EnableHelmOperatorFluxV2":   {},
+			"K8sHelmOperator":            {},
+		}
+	}
+	filteredSet := []duplosdk.DuploKeyStringValue{}
+	for _, setting := range settings {
+		if _, ok := m[setting.Key]; !ok {
+			filteredSet = append(filteredSet, setting)
+		}
+	}
+	return keyValueToState("setting", &filteredSet)
 }
