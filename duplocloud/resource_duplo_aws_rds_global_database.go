@@ -95,12 +95,9 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 
 	if cerr != nil {
 		if cerr.Status() == 404 {
-			//	rp, cerr = c.GetGloabalRegion(tenantId, gclusterId, pregion)
-			//	if cerr != nil && cerr.Status() == 404 {
-			//
+			log.Printf("[WARN] RDS Global Database %s/%s/%s not found, removing from state", tenantId, gclusterId, region)
 			d.SetId("")
-			return diag.Errorf("%s", cerr.Error())
-			//	}
+			return nil
 		} else {
 			return diag.Errorf("Unable to fetch details of secondary region cluster %s", cerr.Error())
 		}
@@ -125,36 +122,39 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 
 func resourceAwsRdsGlobalDatabaseCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
-	region := d.Get("region").(string)
+	secRegion := d.Get("region").(string)
 	identifier := d.Get("identifier").(string)
 	secTenantId := d.Get("secondary_tenant_id").(string)
 	req := duplosdk.DuploRDSGlobalDatabase{
 		TenantID: secTenantId,
 	}
-	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseCreate(%s, %s, %s, %s): start", tenantID, identifier, region, secTenantId)
+	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseCreate(%s, %s, %s, %s): start", tenantID, identifier, secRegion, secTenantId)
 	c := m.(*duplosdk.Client)
 	trp, cerr := c.TenantFeaturesGet(tenantID)
 	if cerr != nil {
 		return diag.Errorf("Failed to get tenant %s details : %s", tenantID, cerr)
 	}
-	rp, cerr := c.CreateRDSDBSecondaryDB(tenantID, identifier, region, req)
+	rp, cerr := c.CreateRDSDBSecondaryDB(tenantID, identifier, secRegion, req)
 	if cerr != nil {
 		return diag.Errorf("Error creating secondary region RDS Global Database: %s", cerr)
 	}
-	id := fmt.Sprintf("%s/%s/%s/%s", tenantID, rp.GlobalInfo.GlobalClusterId, trp.Region, rp.Region.Region)
+	globalCluster := rp.GlobalInfo.GlobalClusterId
+	pRegion := trp.Region
+	secCluster := rp.Region.ClusterId
+	id := fmt.Sprintf("%s/%s/%s/%s", tenantID, globalCluster, pRegion, secRegion)
 	time.Sleep(120 * time.Second)
 	//err := waitUntilSecondoryDBReady(ctx, c, tenantID, rp.GlobalInfo.ClusterId, rp.Region.Region, d.Timeout("create"), true)
 	//if err != nil {
 	//	return diag.Errorf("Error waiting for global region RDS Global Database group to be ready: %s", err)
 	//}
-	err := waitUntilGlobalConfigReady(ctx, c, secTenantId, rp.Region.ClusterId, rp.Region.Region, d.Timeout("create"), false)
+	err := waitUntilGlobalConfigReady(ctx, c, secTenantId, secCluster, secRegion, d.Timeout("create"), false)
 	if err != nil {
 		return diag.Errorf("Error waiting for secondary region RDS Global Database to be ready: %s", err)
 	}
 	d.SetId(id)
 
 	diags := resourceAwsRdsGlobalDatabaseRead(ctx, d, m)
-	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseCreate(%s, %s, %s, %s): end", tenantID, identifier, region, secTenantId)
+	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseCreate(%s, %s, %s, %s): end", tenantID, identifier, secRegion, secTenantId)
 	return diags
 }
 
@@ -180,15 +180,29 @@ func resourceAwsRdsGlobalDatabaseDelete(ctx context.Context, d *schema.ResourceD
 	if err != nil {
 		return diag.Errorf("Error waiting for global region RDS Global Database group to be ready: %s", err)
 	}
-
-	//Remove secondary cluster
 	secTenant := d.Get("secondary_tenant_id").(string)
 	secClust := d.Get("secondary_identifier").(string)
+
+	iId := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", secTenant, secClust)
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "RDS DB instance", iId, func() (interface{}, duplosdk.ClientError) {
+		return c.RdsInstanceGet(id)
+	})
+	if diags != nil {
+		return diags
+	}
+
+	// Wait for the instance to become available.
+	err = rdsInstanceWaitUntilAvailable(ctx, c, iId, d.Timeout("delete"))
+	if err != nil {
+		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+	}
+
+	//Remove secondary cluster
 	_, cerr := c.RdsInstanceDelete(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", secTenant, secClust))
 	if cerr != nil {
 		return diag.FromErr(cerr)
 	}
-	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "Secondary Aurora RDS cluster", id, func() (interface{}, duplosdk.ClientError) {
+	diags = waitForResourceToBeMissingAfterDelete(ctx, d, "Secondary Aurora RDS cluster", id, func() (interface{}, duplosdk.ClientError) {
 		return c.RdsInstanceGet(id)
 	})
 	if diags != nil {
@@ -228,6 +242,8 @@ func waitUntilGlobalConfigReady(ctx context.Context, c *duplosdk.Client, tenantI
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
 		Refresh: func() (interface{}, string, error) {
+			log.Printf("[DEBUG] waitUntilSecondoryDBReady(%s, %s,%s) attempt", tenantID, identifier, region)
+
 			rp, err := c.GetGloabalRegion(tenantID, identifier, region)
 			status := "pending"
 			if err == nil {
@@ -239,7 +255,7 @@ func waitUntilGlobalConfigReady(ctx context.Context, c *duplosdk.Client, tenantI
 				} else {
 					status = "pending"
 				}
-			} else if strings.Contains(err.Error(), "not found") {
+			} else if err.Status() == 404 {
 				status = "pending"
 				err = nil
 			}
@@ -249,7 +265,7 @@ func waitUntilGlobalConfigReady(ctx context.Context, c *duplosdk.Client, tenantI
 		PollInterval: 30 * time.Second,
 		Timeout:      timeout,
 	}
-	log.Printf("[DEBUG] waitUntilSecondoryDBReady(%s, %s,%s)", tenantID, identifier, region)
+	log.Printf("[DEBUG] waitUntilSecondoryDBReady(%s, %s,%s) done", tenantID, identifier, region)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
