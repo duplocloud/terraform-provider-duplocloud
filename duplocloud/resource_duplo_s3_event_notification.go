@@ -152,7 +152,7 @@ func resourceS3EventNotificationCreateOrUpdate(ctx context.Context, d *schema.Re
 	}
 
 	id := fmt.Sprintf("%s/%s/event_notification", tenantID, name)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "S3 bucket", id, func() (interface{}, duplosdk.ClientError) {
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "S3 event notification", id, func() (interface{}, duplosdk.ClientError) {
 		return c.GetS3EventNotification(tenantID, name)
 	})
 	if diags != nil {
@@ -260,7 +260,7 @@ func resourceS3EventNotificationDelete(ctx context.Context, d *schema.ResourceDa
 
 	err := c.UpdateS3EventNotification(tenantID, name, *rq)
 	if err != nil {
-		return diag.Errorf("resourceS3EventNotificationCreateOrUpdate: Unable to create or update s3 event notification using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
+		return diag.Errorf("resourceS3EventNotificationCreateOrUpdate: Unable to remove s3 event notification using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 	//diag := waitForResourceToBeMissingAfterDelete(ctx, d, "s3 event notification", id, func() (interface{}, duplosdk.ClientError) {
 	//	return c.GetS3EventNotification(tenantID, name)

@@ -23,7 +23,7 @@ resource "duplocloud_tenant" "myapp" {
 
 resource "duplocloud_s3_event_notification" "event" {
   tenant_id           = duplocloud_tenant.myapp.tenant_id
-  bucket_name         = "duploservices--<tenantname>-<bucket>"
+  bucket_name         = "duploservices-<tenantname>-<bucket>"
   destination_type    = "lambda"
   destination_name    = "duploservices-<tenantname>-<lambdafunctionname>"
   event_types         = ["s3:ObjectCreated:Put", "s3:ObjectRemoved:DeleteMarkerCreated"]
@@ -34,7 +34,7 @@ resource "duplocloud_s3_event_notification" "event" {
 
 resource "duplocloud_s3_event_notification" "event" {
   tenant_id           = duplocloud_tenant.myapp.tenant_id
-  bucket_name         = "duploservices--<tenantname>-<bucket>"
+  bucket_name         = "duploservices-<tenantname>-<bucket>"
   destination_type    = "sqs"
   destination_name    = "duploservices-<tenantname>-<sqsname>"
   event_types         = ["s3:ObjectCreated:Put", "s3:ObjectRemoved:DeleteMarkerCreated"]
@@ -45,7 +45,7 @@ resource "duplocloud_s3_event_notification" "event" {
 
 resource "duplocloud_s3_event_notification" "event" {
   tenant_id           = duplocloud_tenant.myapp.tenant_id
-  bucket_name         = "duploservices--<tenantname>-<bucket>"
+  bucket_name         = "duploservices-<tenantname>-<bucket>"
   destination_type    = "sns"
   destination_name    = "duploservices-<tenantname>-<snsname>"
   event_types         = ["s3:ObjectCreated:Put", "s3:ObjectRemoved:DeleteMarkerCreated"]

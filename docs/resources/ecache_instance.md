@@ -227,6 +227,7 @@ See AWS documentation for the [available Redis and Valkey instance types](https:
 - `id` (String) The ID of this resource.
 - `identifier` (String) The full name of the elasticache instance.
 - `instance_status` (String) The status of the elasticache instance.
+- `is_primary` (Boolean) Flag to indicate if this is primary replication group
 - `port` (Number) The listening port of the elasticache instance.
 
 <a id="nestedblock--log_delivery_configuration"></a>
