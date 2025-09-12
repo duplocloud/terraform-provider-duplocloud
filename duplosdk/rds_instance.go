@@ -530,12 +530,3 @@ func (c *Client) UpdateRDSDBInstanceStorageAutoScalling(tenantID string, identif
 		nil,
 	)
 }
-
-func (c *Client) UpdateRDSDBInstancePassThrough(tenantID string, identifier string, duploObject DuploRDSStorageAutoScalling) ClientError {
-	return c.putAPI(
-		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, identifier),
-		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/updatePayload", tenantID, identifier),
-		&duploObject,
-		nil,
-	)
-}

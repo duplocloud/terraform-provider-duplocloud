@@ -351,6 +351,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 		},
 		"storage_autoscaling": {
 			Optional: true,
+			Computed: true,
 			MaxItems: 1,
 			Type:     schema.TypeList,
 			Elem: &schema.Resource{
