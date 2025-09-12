@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -99,9 +100,13 @@ func resourceAwsEcrRepositoryRead(ctx context.Context, d *schema.ResourceData, m
 
 	// Retrieve the objects from duplo.
 	c := m.(*duplosdk.Client)
-	repository, err := c.AwsEcrRepositoryGet(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	repository, cerr := c.AwsEcrRepositoryGet(tenantID, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsEcrRepositoryRead(%s, %s): not found", tenantID, name)
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 
 	flattenEcrRepository(d, repository, tenantID)
@@ -175,6 +180,7 @@ func resourceAwsEcrRepositoryDelete(ctx context.Context, d *schema.ResourceData,
 	clientErr := c.AwsEcrRepositoryDelete(tenantID, name, forceDelete)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsEcrRepositoryDelete(%s, %s): not found", tenantID, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s aws ecr repository '%s': %s", tenantID, name, clientErr)

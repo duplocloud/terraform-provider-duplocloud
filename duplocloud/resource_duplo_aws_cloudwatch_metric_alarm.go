@@ -121,6 +121,7 @@ func resourceAwsCloudWatchMetricAlarmRead(ctx context.Context, d *schema.Resourc
 	duplo, clientErr := c.DuploCloudWatchMetricAlarmGet(tenantID, encodedFullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsCloudWatchMetricAlarmRead(%s, %s): end", tenantID, fullName)
 			d.SetId("")
 			return nil
 		}
@@ -128,6 +129,7 @@ func resourceAwsCloudWatchMetricAlarmRead(ctx context.Context, d *schema.Resourc
 	}
 
 	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsCloudWatchMetricAlarmRead(%s, %s): end", tenantID, fullName)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -222,6 +224,7 @@ func resourceAwsCloudWatchMetricAlarmDelete(ctx context.Context, d *schema.Resou
 	clientErr := c.DuploCloudWatchMetricAlarmDelete(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsCloudWatchMetricAlarmDelete(%s, %s): not found", tenantID, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s cloudwatch metric alarm '%s': %s", tenantID, name, clientErr)

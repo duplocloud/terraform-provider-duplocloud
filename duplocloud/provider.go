@@ -201,6 +201,8 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_cosmos_db_container":                     resourceAzureCosmosDBContainer(),
 			"duplocloud_azure_postgresql_flexible_database_v2":         resourceAzurePostgresqlFlexibleDatabaseV2(),
 			"duplocloud_azure_postgresql_flexible_db_ad_administrator": resourceAzurePostgresqlFlexibleDatabaseAD(),
+			"duplocloud_ecache_global_datastore":                       resourceDuploEcacheGlobalDatastore(),
+			"duplocloud_ecache_associate_global_secondary_cluster":     resourceDuploEcacheReplicationGroup(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
