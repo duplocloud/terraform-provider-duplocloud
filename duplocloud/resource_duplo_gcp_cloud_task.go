@@ -24,13 +24,13 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"queue_name": {
-			Description: "The name of the cloud tasks queue",
+			Description: "The name of the  queue",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
 		},
 		"name": {
-			Description: "The name of the cloud tasks queue",
+			Description: "The name of the task",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
@@ -52,18 +52,21 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 						Description: "Specify the endpoint URL to which the HTTP request will be sent when the Cloud Tasks queue triggers the HTTP target.",
 						Type:        schema.TypeString,
 						Required:    true,
+						ForceNew:    true,
 					},
 					"method": {
 						Description:  "The HTTP method to use for the request. Must be one of: `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`.",
 						Type:         schema.TypeString,
 						Required:     true,
+						ForceNew:     true,
 						ValidateFunc: validation.StringInSlice([]string{"POST", "PUT", "DELETE", "PATCH", "HEAD"}, false),
 					},
 					"headers": {
 						Description: "A map of HTTP headers to include in the request. Each key is a header name, and each value is the corresponding header value.",
 						Type:        schema.TypeMap,
 						Elem:        &schema.Schema{Type: schema.TypeString},
-						Required:    true,
+						Optional:    true,
+						ForceNew:    true,
 					},
 					"body": {
 						Description: "The body of the HTTP request. This field is required and must be base64 string.",
@@ -100,7 +103,7 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 						Description: "A map of HTTP headers to include in the request. Each key is a header name, and each value is the corresponding header value.",
 						Type:        schema.TypeMap,
 						Elem:        &schema.Schema{Type: schema.TypeString},
-						Required:    true,
+						Optional:    true,
 						ForceNew:    true,
 					},
 					"body": {
@@ -117,13 +120,13 @@ func gcpCloudTasksSchema() map[string]*schema.Schema {
 }
 
 // Resource for managing a GCP cloud function
-func resourceGcpCloudQueueTask() *schema.Resource {
+func resourceGcpCloudTask() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_gcp_cloud_queue_task` manages a GCP cloud task for respective queue in Duplo.",
+		Description: "`duplocloud_gcp_cloud_task` manages a GCP cloud task for respective queue in Duplo.",
 
-		ReadContext:   resourceGcpCloudQueueTaskRead,
-		CreateContext: resourceGcpCloudQueueTaskCreate,
-		DeleteContext: resourceGcpCloudQueueTaskDelete,
+		ReadContext:   resourceGcpCloudTaskRead,
+		CreateContext: resourceGcpCloudTaskCreate,
+		DeleteContext: resourceGcpCloudTaskDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -136,8 +139,8 @@ func resourceGcpCloudQueueTask() *schema.Resource {
 }
 
 // READ resource
-func resourceGcpCloudQueueTaskRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGcpCloudQueueTaskRead ******** start")
+func resourceGcpCloudTaskRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceGcpCloudTaskRead ******** start")
 
 	// Parse the identifying attributes
 	id := d.Id()
@@ -160,17 +163,17 @@ func resourceGcpCloudQueueTaskRead(ctx context.Context, d *schema.ResourceData, 
 
 	// Set simple fields first.
 	d.SetId(fmt.Sprintf("%s/queue/%s/task/%s", tenantID, qName, task))
-	resourceGcpCloudQueueTaskSetData(d, tenantID, qName, task, duplo)
-	log.Printf("[TRACE] resourceGcpCloudQueueTaskRead ******** end")
+	resourceGcpCloudTaskSetData(d, tenantID, qName, task, duplo)
+	log.Printf("[TRACE] resourceGcpCloudTaskRead ******** end")
 	return nil
 }
 
 // CREATE resource
-func resourceGcpCloudQueueTaskCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGcpCloudQueueTaskCreate ******** start")
+func resourceGcpCloudTaskCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceGcpCloudTaskCreate ******** start")
 
 	// Create the request object.
-	rq := expandGcpCloudQueueTask(d)
+	rq := expandGcpCloudTask(d)
 
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
@@ -184,15 +187,20 @@ func resourceGcpCloudQueueTaskCreate(ctx context.Context, d *schema.ResourceData
 	// Wait for Duplo to be able to return the cloud function's details.
 	id := fmt.Sprintf("%s/queue/%s/task/%s", tenantID, queueName, rq.TaskName)
 	d.SetId(id)
-
-	resourceGcpCloudQueueTaskRead(ctx, d, m)
-	log.Printf("[TRACE] resourceGcpCloudQueueTaskCreate ******** end")
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "gcp cloud task", id, func() (interface{}, duplosdk.ClientError) {
+		return c.GCPCloudTasksGet(tenantID, queueName, rq.TaskName)
+	})
+	if diags != nil {
+		return diags
+	}
+	resourceGcpCloudTaskRead(ctx, d, m)
+	log.Printf("[TRACE] resourceGcpCloudTaskCreate ******** end")
 	return nil
 }
 
 // DELETE resource
-func resourceGcpCloudQueueTaskDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGcpCloudQueueTaskDelete ******** start")
+func resourceGcpCloudTaskDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	log.Printf("[TRACE] resourceGcpCloudTaskDelete ******** start")
 
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
@@ -206,12 +214,18 @@ func resourceGcpCloudQueueTaskDelete(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.Errorf("Error deleting cloud queue %s task '%s': %s", qName, task, err)
 	}
+	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp cloud task", id, func() (interface{}, duplosdk.ClientError) {
+		return c.GCPCloudTasksGet(tenantID, qName, task)
+	})
+	if diag != nil {
+		return diag
+	}
 
-	log.Printf("[TRACE] resourceGcpCloudQueueTaskDelete ******** end")
+	log.Printf("[TRACE] resourceGcpCloudTaskDelete ******** end")
 	return nil
 }
 
-func resourceGcpCloudQueueTaskSetData(d *schema.ResourceData, tenantID string, qName, name string, duplo *duplosdk.DuploGCPCloudTasks) {
+func resourceGcpCloudTaskSetData(d *schema.ResourceData, tenantID string, qName, name string, duplo *duplosdk.DuploGCPCloudTasks) {
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	d.Set("fullname", duplo.TaskName)
@@ -236,7 +250,7 @@ func resourceGcpCloudQueueTaskSetData(d *schema.ResourceData, tenantID string, q
 	}
 }
 
-func expandGcpCloudQueueTask(d *schema.ResourceData) *duplosdk.DuploGCPCloudTasks {
+func expandGcpCloudTask(d *schema.ResourceData) *duplosdk.DuploGCPCloudTasks {
 
 	duplo := duplosdk.DuploGCPCloudTasks{
 		TaskName: d.Get("name").(string),
@@ -282,142 +296,5 @@ func expandGcpCloudQueueTask(d *schema.ResourceData) *duplosdk.DuploGCPCloudTask
 		}
 	}
 
-	return &duplo
-}
-
-func gcpCloudTasksQueueSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"tenant_id": {
-			Description:  "The GUID of the tenant through which the gcp cloud tasks queue will be registered.",
-			Type:         schema.TypeString,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.IsUUID,
-		},
-		"name": {
-			Description: "The name of the cloud tasks queue",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
-		},
-		"location": {
-			Description: "The name of the cloud tasks queue",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"fullname": {
-			Description: "The full name of the cloud function.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-	}
-}
-
-func resourceGcpCloudTasksQueue() *schema.Resource {
-	return &schema.Resource{
-		Description: "`duplocloud_gcp_cloud_tasks_queue` manages a GCP queue for publishing tasks.",
-
-		ReadContext:   resourceGcpCloudTasksQueueRead,
-		CreateContext: resourceGcpCloudTasksQueueCreate,
-		DeleteContext: resourceGcpCloudTasksQueueDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(3 * time.Minute),
-			Update: schema.DefaultTimeout(3 * time.Minute),
-			Delete: schema.DefaultTimeout(3 * time.Minute),
-		},
-		Schema: gcpCloudTasksQueueSchema(),
-	}
-}
-
-func resourceGcpCloudTasksQueueRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGcpCloudTasksQueueRead ******** start")
-
-	// Parse the identifying attributes
-	id := d.Id()
-	idParts := strings.Split(id, "/")
-	if len(idParts) < 4 {
-		return diag.Errorf("Invalid resource ID: %s", id)
-	}
-	tenantID, qName := idParts[0], idParts[3]
-
-	// Get the object from Duplo, detecting a missing object
-	c := m.(*duplosdk.Client)
-	duplo, err := c.GCPCloudTasksQueueGet(tenantID, qName)
-	if duplo == nil || (err != nil && err.Status() == 404) {
-		d.SetId("") // object missing
-		return nil
-	}
-	if err != nil {
-		return diag.Errorf("Unable to retrieve tenant %s cloud task's queue '%s' : %s", tenantID, qName, err)
-	}
-
-	// Set simple fields first.
-	d.SetId(fmt.Sprintf("%s/tasks/queue/%s", tenantID, qName))
-	resourceGcpCloudTasksQueueSetData(d, tenantID, qName, duplo)
-	log.Printf("[TRACE] resourceGcpCloudTasksQueueRead ******** end")
-	return nil
-}
-
-// CREATE resource
-func resourceGcpCloudTasksQueueCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGcpCloudTasksQueueCreate ******** start")
-
-	// Create the request object.
-	rq := expandGcpCloudTasksQueue(d)
-
-	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
-	// Post the object to Duplo
-	err := c.GcpCloudTasksQueueCreate(tenantID, rq)
-	if err != nil {
-		return diag.Errorf("Error creating tenant %s cloud task's queue %s : %s", tenantID, rq.QueueName, err)
-	}
-
-	id := fmt.Sprintf("%s/tasks/queue/%s", tenantID, rq.QueueName)
-	d.SetId(id)
-
-	resourceGcpCloudTasksQueueRead(ctx, d, m)
-	log.Printf("[TRACE] resourceGcpCloudTasksQueueCreate ******** end")
-	return nil
-}
-
-// DELETE resource
-func resourceGcpCloudTasksQueueDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	log.Printf("[TRACE] resourceGcpCloudTasksQueueDelete ******** start")
-
-	// Delete the object with Duplo
-	c := m.(*duplosdk.Client)
-	id := d.Id()
-	idParts := strings.Split(id, "/")
-	if len(idParts) < 4 {
-		return diag.Errorf("Invalid resource ID: %s", id)
-	}
-	tenantID, qName := idParts[0], idParts[3]
-
-	err := c.GCPCloudTasksQueueDelete(tenantID, qName)
-	if err != nil {
-		return diag.Errorf("Error deleting cloud tasks queue %s : %s", qName, err)
-	}
-
-	log.Printf("[TRACE] resourceGcpCloudTasksQueueDelete ******** end")
-	return nil
-}
-
-func resourceGcpCloudTasksQueueSetData(d *schema.ResourceData, tenantID string, name string, duplo *duplosdk.DuploGCPCloudTaskQueue) {
-	d.Set("tenant_id", tenantID)
-	d.Set("name", name)
-	d.Set("location", duplo.Location)
-	d.Set("fullname", duplo.QueueName)
-}
-
-func expandGcpCloudTasksQueue(d *schema.ResourceData) *duplosdk.DuploGCPCloudTaskQueue {
-
-	duplo := duplosdk.DuploGCPCloudTaskQueue{
-		QueueName: d.Get("name").(string),
-		Location:  d.Get("location").(string),
-	}
 	return &duplo
 }
