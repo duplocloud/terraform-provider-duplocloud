@@ -339,9 +339,14 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
 
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
-	if err != nil {
-		return diag.Errorf("Unable to retrieve duplo service name (name: %s, error: %s)", name, err.Error())
+	prefix, cErr := c.GetDuploServicesPrefix(tenantID)
+	if cErr != nil {
+		if cErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): end", tenantID, name)
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve duplo service name (name: %s, error: %s)", name, cErr.Error())
 	}
 	if !strings.HasPrefix(name, "duploservices-") {
 		fullName = prefix + "-" + name
@@ -350,6 +355,7 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	duplo, clientErr := dynamoDBTableRead(m, tenantID, name, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): end", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -546,6 +552,7 @@ func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceDat
 	if clientErr != nil {
 		log.Printf("Error: Table %s not found err %s, attempting fallback", fullName, clientErr.Error())
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsDynamoDBTableDeleteV2 (tenantID, name, fullName) (%s, %s, %s): not found", tenantID, name, fullName)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s dynamodb table '%s': %s", tenantID, fullName, clientErr)

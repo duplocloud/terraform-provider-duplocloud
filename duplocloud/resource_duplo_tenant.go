@@ -136,7 +136,7 @@ func resourceTenantRead(ctx context.Context, d *schema.ResourceData, m interface
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -200,7 +200,8 @@ func resourceTenantCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	if err != nil {
-		return diag.Errorf("Unable to create tenant '%s': %s", rq.AccountName, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", accountName, err)
+
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the tenant.
@@ -259,7 +260,7 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 				log.Printf("Tenant %s not found", tenantID)
 				return nil
 			}
-			return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 		}
 		if duplo == nil {
 			return nil
@@ -270,7 +271,8 @@ func resourceTenantDelete(ctx context.Context, d *schema.ResourceData, m interfa
 				log.Printf("Tenant %s not found", tenantID)
 				return nil
 			}
-			return diag.Errorf("Error deleting tenant '%s': %s", tenantID, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
+
 		}
 
 		// Wait for 1 minute to allow tenant deletion.
@@ -322,7 +324,7 @@ func validateTenantSchema(d *schema.ResourceData, c *duplosdk.Client) diag.Diagn
 
 		// If tenant with same name already exists, throw an error (case insensitive)
 		if lowerExistingName == lowerAccountName {
-			return diag.Errorf("Tenant with name '%s' already exists (matches existing tenant '%s')", accountName, existingName)
+			return diag.Errorf("Duplocloud resource 'v2/admin/TenantV2/%s'\n status: 404, message: %s: This tenant already exists.", tenant.TenantID, lowerExistingName)
 		}
 
 		// Check if new tenant name is a prefix of existing tenant name (case insensitive)

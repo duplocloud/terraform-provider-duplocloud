@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -263,12 +264,14 @@ func resourceAwsAppautoscalingPolicyRead(ctx context.Context, d *schema.Resource
 	})
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsAppautoscalingPolicyRead(%s, %s): aws autoscaling policy not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s aws autoscaling policy %s : %s", tenantID, name, clientErr)
 	}
 	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsAppautoscalingPolicyRead(%s, %s): aws autoscaling policy not found", tenantID, name)
 		d.SetId("") // object missing or deleted
 		return nil
 	}
@@ -340,6 +343,7 @@ func resourceAwsAppautoscalingPolicyDelete(ctx context.Context, d *schema.Resour
 	}
 	exist, _ := c.DuploAwsAutoscalingPolicyExists(tenantID, getRq)
 	if !exist {
+		log.Printf("[TRACE] resourceAwsAppautoscalingPolicyDelete(%s, %s): aws autoscaling policy not found", tenantID, name)
 		return nil
 	}
 
@@ -351,6 +355,7 @@ func resourceAwsAppautoscalingPolicyDelete(ctx context.Context, d *schema.Resour
 	})
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsAppautoscalingPolicyDelete(%s, %s): aws autoscaling policy not found", tenantID, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s aws autoscaling policy '%s': %s", tenantID, name, clientErr)

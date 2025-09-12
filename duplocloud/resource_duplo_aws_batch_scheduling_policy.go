@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -130,12 +131,14 @@ func resourceAwsBatchSchedulingPolicyRead(ctx context.Context, d *schema.Resourc
 	policy, clientErr := c.AwsBatchSchedulingPolicyGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsBatchSchedulingPolicyRead(%s, %s): object missing", tenantID, name)
 			d.SetId("")
 			return nil
 		}
 		return diag.FromErr(clientErr)
 	}
 	if policy == nil {
+		log.Printf("[TRACE] resourceAwsBatchSchedulingPolicyRead(%s, %s): object missing", tenantID, name)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -223,6 +226,7 @@ func resourceAwsBatchSchedulingPolicyDelete(ctx context.Context, d *schema.Resou
 	clientErr := c.AwsBatchSchedulingPolicyDelete(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsBatchSchedulingPolicyDelete(%s, %s): object missing", tenantID, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s aws batch scheduling policy '%s': %s", tenantID, name, clientErr)
