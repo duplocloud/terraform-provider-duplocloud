@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -208,6 +209,7 @@ func resourceAwsEFSRead(ctx context.Context, d *schema.ResourceData, m interface
 	duplo, clientErr := c.DuploEFSGet(tenantID, efsId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsEFSRead(%s, %s): not found", tenantID, efsId)
 			d.SetId("")
 			return nil
 		}
@@ -216,6 +218,7 @@ func resourceAwsEFSRead(ctx context.Context, d *schema.ResourceData, m interface
 	mnts, clientErr := c.DuploAWsMountTargetGet(tenantID, efsId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsEFSRead(%s, %s): not found", tenantID, efsId)
 			d.SetId("")
 			return nil
 		}
@@ -347,6 +350,7 @@ func resourceAwsEFSDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	_, clientErr := c.DuploEFSDelete(tenantID, efsId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsEFSDelete(%s, %s): not found", tenantID, efsId)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s EFS '%s': %s", tenantID, efsId, clientErr)

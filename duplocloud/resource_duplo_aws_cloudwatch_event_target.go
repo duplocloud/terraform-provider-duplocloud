@@ -92,12 +92,14 @@ func resourceAwsCloudWatchEventTargetRead(ctx context.Context, d *schema.Resourc
 	duplo, clientErr := c.DuploCloudWatchEventTargetGet(tenantID, ruleName, targetId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsCloudWatchEventTargetRead(%s, %s, %s): not found", tenantID, ruleName, targetId)
 			d.SetId("")
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s cloudwatch event target'%s': %s", tenantID, targetId, clientErr)
 	}
 	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsCloudWatchEventTargetRead(%s, %s, %s): not found", tenantID, ruleName, targetId)
 		d.SetId("")
 		return nil
 	}
@@ -160,6 +162,7 @@ func resourceAwsCloudWatchEventTargetDelete(ctx context.Context, d *schema.Resou
 	})
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsCloudWatchEventTargetDelete(%s, %s, %s): not found", tenantID, ruleName, targetId)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s cloudwatch event target '%s': %s", tenantID, ruleName, clientErr)

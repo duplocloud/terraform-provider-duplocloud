@@ -18,6 +18,10 @@ import (
 	"github.com/ucarion/jcs"
 )
 
+type flowContextKeyType string
+
+const flowContextKey flowContextKeyType = "flow"
+
 // ecsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
 func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -309,6 +313,13 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 	}
 	// Convert the object into Terraform resource data
 	flattenEcsTaskDefinition(rp, d)
+	// this is to check if the flow happened after create context
+	if v := ctx.Value(flowContextKey); v != nil && v.(string) == "normal" {
+		d.Set("prevent_tf_destroy", d.Get("prevent_tf_destroy").(bool))
+	} else { //on import provider doesnot set default value.
+		d.Set("prevent_tf_destroy", true)
+	}
+
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead(%s, %s): end", tenantID, arn)
 	return nil
 }
@@ -330,6 +341,8 @@ func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.Resourc
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
+
 	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", tenantID, arn))
 
 	diags := resourceDuploEcsTaskDefinitionRead(ctx, d, m)
@@ -467,7 +480,7 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	if duplo.Status != nil {
 		d.Set("status", duplo.Status.Value)
 	}
-
+	d.Set("container_definitions", filterContainerDefinition(d.Get("container_definitions").(string), duplo.ContainerDefinitions))
 	// Next, convert things into embedded JSON
 	toJsonStringState("container_definitions_updates", duplo.ContainerDefinitions, d)
 	toJsonStringState("volumes", duplo.Volumes, d)
@@ -479,6 +492,16 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("requires_attributes", ecsRequiresAttributesToState(duplo.RequiresAttributes))
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("runtime_platform", ecsPlatformRuntimeToState(duplo.RuntimePlatform))
+	if !strings.Contains(d.Get("family").(string), "duploservices-") {
+		parts := strings.SplitN(duplo.Family, "-", 3)
+
+		if len(parts) == 3 {
+			d.Set("family", parts[2])
+		}
+	} else {
+		d.Set("family", duplo.Family)
+
+	}
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
@@ -893,4 +916,14 @@ func validateInput(ctx context.Context, diff *schema.ResourceDiff, m interface{}
 	}
 
 	return nil
+}
+
+func filterContainerDefinition(stateConf string, respConf []map[string]interface{}) string {
+	if encoded, err := json.Marshal(respConf); err == nil {
+		str := string(encoded)
+		if stateConf == "" {
+			return str
+		}
+	}
+	return stateConf
 }

@@ -331,10 +331,16 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	profile, cerr := c.AsgProfileGet(tenantID, friendlyName)
-	if cerr != nil && cerr.Status() != 404 {
-		return diag.Errorf("Unable to retrieve ASG profile '%s': %s", id, err)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsASGRead(%s): ASG profile not found", id)
+			d.SetId("") // object missing
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve ASG profile '%s': %s", id, cerr)
 	}
 	if profile == nil {
+		log.Printf("[TRACE] resourceAwsASGRead(%s): ASG profile not found", id)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -359,16 +365,23 @@ func resourceAwsASGDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	friendlyName := d.Get("fullname").(string)
 	// Check if the ASG Profile exists
 	c := m.(*duplosdk.Client)
-	exists, err := c.AsgProfileExists(tenantID, friendlyName)
-	if err != nil {
+	exists, cerr := c.AsgProfileExists(tenantID, friendlyName)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsASGDelete(%s): ASG profile not found", id)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	if exists {
-
 		// Delete the ASG Profile from Duplo
-		err = c.AsgProfileDelete(tenantID, friendlyName)
-		if err != nil {
-			return diag.FromErr(err)
+		cerr := c.AsgProfileDelete(tenantID, friendlyName)
+		if cerr != nil {
+			if cerr.Status() == 404 {
+				log.Printf("[TRACE] resourceAwsASGDelete(%s): ASG profile not found", id)
+				return nil
+			}
+			return diag.FromErr(cerr)
 		}
 
 		// Wait for the ASG profile to be missing
