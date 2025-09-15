@@ -260,6 +260,9 @@ func resourceS3EventNotificationDelete(ctx context.Context, d *schema.ResourceDa
 
 	err := c.UpdateS3EventNotification(tenantID, name, *rq)
 	if err != nil {
+		if err.Status() == 404 {
+			return nil
+		}
 		return diag.Errorf("resourceS3EventNotificationCreateOrUpdate: Unable to remove s3 event notification using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 	//diag := waitForResourceToBeMissingAfterDelete(ctx, d, "s3 event notification", id, func() (interface{}, duplosdk.ClientError) {
