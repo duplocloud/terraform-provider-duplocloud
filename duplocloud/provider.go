@@ -199,6 +199,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_rds_global_secondary":                      resourceAwsRdsGlobalDatabase(),
 			"duplocloud_ecache_global_datastore":                       resourceDuploEcacheGlobalDatastore(),
 			"duplocloud_ecache_associate_global_secondary_cluster":     resourceDuploEcacheReplicationGroup(),
+			"duplocloud_aws_tag":                                       resourceAwsCustomTag(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
