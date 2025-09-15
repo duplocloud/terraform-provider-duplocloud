@@ -1,4 +1,4 @@
-# Example: Importing an existing helm repository
+# Example: Importing an existing oci repository
 #  - *TENANT_ID* is the tenant GUID
 #  - *NAME* is the oci repository name
 #

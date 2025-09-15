@@ -100,7 +100,12 @@ func resourceOCIRepositoryRead(ctx context.Context, d *schema.ResourceData, m in
 	c := m.(*duplosdk.Client)
 	duplo, err := c.DuploOCIRepositoryGet(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Unable to retrieve helm repository details for '%s': %s", name, err)
+		if err.Status() == 404 {
+			log.Printf("[WARN] resourceOCIRepositoryRead(%s,%s): end - not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve oci repository details for '%s': %s", name, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -122,7 +127,7 @@ func resourceOCIRepositoryCreate(ctx context.Context, d *schema.ResourceData, m 
 
 	err := c.DuploOCIRepositoryCreate(tenantID, &rq)
 	if err != nil {
-		return diag.Errorf("resourceOCIRepositoryCreate cannot create helm repository %s for tenant %s error: %s", rq.Metadata.Name, tenantID, err.Error())
+		return diag.Errorf("resourceOCIRepositoryCreate cannot create oci repository %s for tenant %s error: %s", rq.Metadata.Name, tenantID, err.Error())
 	}
 	d.SetId(tenantID + "/oci-repository/" + rq.Metadata.Name)
 
@@ -143,7 +148,7 @@ func resourceOCIRepositoryUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 	err := c.DuploOCIRepositoryUpdate(tenantID, &rq)
 	if err != nil {
-		return diag.Errorf("resourceOCIRepositoryUpdate cannot update helm repository %s for tenant %s error: %s", rq.Metadata.Name, tenantID, err.Error())
+		return diag.Errorf("resourceOCIRepositoryUpdate cannot update oci repository %s for tenant %s error: %s", rq.Metadata.Name, tenantID, err.Error())
 	}
 
 	diags := resourceOCIRepositoryRead(ctx, d, m)
@@ -162,7 +167,10 @@ func resourceOCIRepositoryDelete(ctx context.Context, d *schema.ResourceData, m 
 	c := m.(*duplosdk.Client)
 	err := c.DuploOCIRepositoryDelete(tenantID, name)
 	if err != nil {
-		return diag.Errorf("Unable to delete helm repository %s for '%s': %s", name, tenantID, err)
+		if err.Status() == 404 {
+			return nil
+		}
+		return diag.Errorf("Unable to delete oci repository %s for '%s': %s", name, tenantID, err)
 	}
 
 	log.Printf("[TRACE] resourceOCIRepositoryUpdate(%s,%s): end", tenantID, name)
