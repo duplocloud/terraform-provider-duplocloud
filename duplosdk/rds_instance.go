@@ -528,11 +528,12 @@ type DuploRDSGlobalDatabaseResponse struct {
 		PrimaryClusterId string   `json:"PrimaryClusterId"`
 	} `json:"GlobalInfo"`
 	Region struct {
-		Region    string `json:"Region"`
-		ClusterId string `json:"ClusterId"`
-		Role      string `json:"Role"`
-		Status    string `json:"Status"`
-		TenantId  string `json:"TenantId"`
+		Region     string `json:"Region"`
+		ClusterId  string `json:"ClusterId"`
+		Role       string `json:"Role"`
+		Status     string `json:"Status"`
+		TenantId   string `json:"TenantId"`
+		InstanceId string `json:"InstanceId"`
 	} `json:"Region"`
 }
 

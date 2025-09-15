@@ -42,7 +42,12 @@ func duploAwsRdsGlobalDatabaseSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		"secondary_identifier": {
+		"secondary_cluster": {
+			Description: "The identifier of the secondary cluster.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"secondary_instance": {
 			Description: "The identifier of the secondary Database.",
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -66,7 +71,6 @@ func resourceAwsRdsGlobalDatabase() *schema.Resource {
 
 		ReadContext:   resourceAwsRdsGlobalDatabaseRead,
 		CreateContext: resourceAwsRdsGlobalDatabaseCreate,
-		//UpdateContext: resourceAwsRdsGlobalDatabaseCreate,
 		DeleteContext: resourceAwsRdsGlobalDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -76,7 +80,6 @@ func resourceAwsRdsGlobalDatabase() *schema.Resource {
 			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
 		Schema: duploAwsRdsGlobalDatabaseSchema(),
-		//CustomizeDiff: validateGlobalDatabaseParameters,
 	}
 }
 
@@ -106,11 +109,13 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 	d.Set("tenant_id", tenantId)
 	d.Set("global_id", rp.GlobalInfo.GlobalClusterId)
 	if strings.EqualFold(rp.Region.Role, "secondary") {
-		d.Set("secondary_identifier", rp.Region.ClusterId)
+		d.Set("secondary_cluster", rp.Region.ClusterId)
+		d.Set("secondary_instance", rp.Region.InstanceId)
 		d.Set("region", rp.Region.Region)
 		d.Set("secondary_tenant_id", rp.Region.TenantId)
 	} else {
-		d.Set("secondary_identifier", d.Get("secondary_identifier"))
+		d.Set("secondary_cluster", rp.Region.ClusterId)
+		d.Set("secondary_instance", d.Get("secondary_instance"))
 		d.Set("region", d.Get("region"))
 		d.Set("secondary_tenant_id", d.Get("secondary_tenant_id"))
 	}
@@ -143,10 +148,6 @@ func resourceAwsRdsGlobalDatabaseCreate(ctx context.Context, d *schema.ResourceD
 	secCluster := rp.Region.ClusterId
 	id := fmt.Sprintf("%s/%s/%s/%s", tenantID, globalCluster, pRegion, secRegion)
 	time.Sleep(120 * time.Second)
-	//err := waitUntilSecondoryDBReady(ctx, c, tenantID, rp.GlobalInfo.ClusterId, rp.Region.Region, d.Timeout("create"), true)
-	//if err != nil {
-	//	return diag.Errorf("Error waiting for global region RDS Global Database group to be ready: %s", err)
-	//}
 	err := waitUntilGlobalConfigReady(ctx, c, secTenantId, secCluster, secRegion, d.Timeout("create"), false)
 	if err != nil {
 		return diag.Errorf("Error waiting for secondary region RDS Global Database to be ready: %s", err)
@@ -181,11 +182,11 @@ func resourceAwsRdsGlobalDatabaseDelete(ctx context.Context, d *schema.ResourceD
 		return diag.Errorf("Error waiting for global region RDS Global Database group to be ready: %s", err)
 	}
 	secTenant := d.Get("secondary_tenant_id").(string)
-	secClust := d.Get("secondary_identifier").(string)
+	secClust := d.Get("secondary_instance").(string)
 
 	iId := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", secTenant, secClust)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "RDS DB instance", iId, func() (interface{}, duplosdk.ClientError) {
-		return c.RdsInstanceGet(id)
+		return c.RdsInstanceGet(iId)
 	})
 	if diags != nil {
 		return diags
@@ -202,8 +203,8 @@ func resourceAwsRdsGlobalDatabaseDelete(ctx context.Context, d *schema.ResourceD
 	if cerr != nil {
 		return diag.FromErr(cerr)
 	}
-	diags = waitForResourceToBeMissingAfterDelete(ctx, d, "Secondary Aurora RDS cluster", id, func() (interface{}, duplosdk.ClientError) {
-		return c.RdsInstanceGet(id)
+	diags = waitForResourceToBeMissingAfterDelete(ctx, d, "Secondary Aurora RDS cluster", iId, func() (interface{}, duplosdk.ClientError) {
+		return c.RdsInstanceGet(iId)
 	})
 	if diags != nil {
 		return diags
@@ -249,7 +250,7 @@ func waitUntilGlobalConfigReady(ctx context.Context, c *duplosdk.Client, tenantI
 			if err == nil {
 				if global && rp.GlobalInfo.Status == "available" {
 					status = "ready"
-				} else if !global && rp.Region.Status == "created" {
+				} else if !global && rp.Region.Status == "available" {
 					status = "ready"
 
 				} else {
