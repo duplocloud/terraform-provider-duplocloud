@@ -128,6 +128,9 @@ func resourceGcpCloudQueueDelete(ctx context.Context, d *schema.ResourceData, m 
 
 	err := c.GCPCloudTasksQueueDelete(tenantID, qName)
 	if err != nil {
+		if err.Status() == 404 {
+			return nil
+		}
 		return diag.Errorf("Error deleting cloud tasks queue %s : %s", qName, err)
 	}
 

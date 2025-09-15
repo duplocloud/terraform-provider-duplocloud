@@ -212,6 +212,9 @@ func resourceGcpCloudTaskDelete(ctx context.Context, d *schema.ResourceData, m i
 	tenantID, qName, task := idParts[0], idParts[2], idParts[4]
 	err := c.GCPCloudTasksDelete(tenantID, qName, task)
 	if err != nil {
+		if err.Status() == 404 {
+			return nil
+		}
 		return diag.Errorf("Error deleting cloud queue %s task '%s': %s", qName, task, err)
 	}
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp cloud task", id, func() (interface{}, duplosdk.ClientError) {
