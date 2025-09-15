@@ -109,7 +109,7 @@ func resourcePlanSettingsRead(ctx context.Context, d *schema.ResourceData, m int
 	if (err != nil && err.Status() == 404) || settings == nil {
 		d.SetId("")
 		log.Printf("plan settings resource id %s : \n [Error] %s", planID, err)
-		return diag.Errorf("Duplocloud resource '%s'\n%s", planID, err)
+		return nil
 	}
 	// Get plan DNS config.  If the config is "global", that means there is no plan DNS config.
 	dns, err := c.PlanGetDnsConfig(planID)

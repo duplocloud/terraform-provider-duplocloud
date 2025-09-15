@@ -201,7 +201,7 @@ func dataSourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	// Get the object from Duplo, detecting a missing object
-	missing, err := infrastructureRead(c, d, name)
+	missing, err := infrastructureRead(ctx, c, d, name)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve infrastructure '%s': %s", name, err)
 	}
