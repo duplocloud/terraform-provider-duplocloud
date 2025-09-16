@@ -181,7 +181,7 @@ func resourceAzureTenantKeyVaultSecretDelete(ctx context.Context, d *schema.Reso
 		}
 		return diag.Errorf("Unable to delete tenant %s azure tenant key vault secret'%s': %s", tenantID, name, clientErr)
 	}
-
+	time.Sleep(30 * time.Second)
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure tenant key vault secret", id, func() (interface{}, duplosdk.ClientError) {
 		return c.TenantKeyVaultSecretGet(tenantID, vaultName, name)
 	})
