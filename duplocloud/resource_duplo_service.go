@@ -451,9 +451,9 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 			return nil, nil
 		})
 
-		// Wait 240 more seconds to deal with consistency issues. let's wait longer, GCP has to do a lot.
+		// Wait 2 min more to deal with consistency issues. let's wait longer, GCP has to do a lot.
 		if diags == nil {
-			time.Sleep(240 * time.Second)
+			time.Sleep(2 * time.Minute)
 		}
 	}
 
