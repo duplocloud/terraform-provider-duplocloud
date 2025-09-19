@@ -576,25 +576,25 @@ func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func expandTags(fieldName string, d *schema.ResourceData) *[]duplosdk.DyanmoDbV2Tag {
-	var ary []duplosdk.DyanmoDbV2Tag
-
-	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
-		kvs := v.([]interface{})
-		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
-		ary = make([]duplosdk.DyanmoDbV2Tag, 0, len(kvs))
-		for _, raw := range kvs {
-			kv := raw.(map[string]interface{})
-			ary = append(ary, duplosdk.DyanmoDbV2Tag{
-				Key:   kv["key"].(string),
-				Value: kv["value"].(string),
-				//				DeleteTag: kv["delete_tag"].(bool),
-			})
-		}
-	}
-
-	return &ary
-}
+//func expandTags(fieldName string, d *schema.ResourceData) *[]duplosdk.DyanmoDbV2Tag {
+//	var ary []duplosdk.DyanmoDbV2Tag
+//
+//	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
+//		kvs := v.([]interface{})
+//		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
+//		ary = make([]duplosdk.DyanmoDbV2Tag, 0, len(kvs))
+//		for _, raw := range kvs {
+//			kv := raw.(map[string]interface{})
+//			ary = append(ary, duplosdk.DyanmoDbV2Tag{
+//				Key:   kv["key"].(string),
+//				Value: kv["value"].(string),
+//				//				DeleteTag: kv["delete_tag"].(bool),
+//			})
+//		}
+//	}
+//
+//	return &ary
+//}
 
 func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRequestV2, error) {
 
@@ -1191,36 +1191,36 @@ func shouldUpdateSSESepecification(
 	return !(table.SSEDescription.Status.Value == status)
 }
 
-func removeTags(desired, previous []duplosdk.DuploKeyStringValue) []string {
-	del := []string{}
-	newMap := make(map[string]string)
+//func removeTags(desired, previous []duplosdk.DuploKeyStringValue) []string {
+//	del := []string{}
+//	newMap := make(map[string]string)
+//
+//	for _, new := range desired {
+//		newMap[new.Key] = new.Value
+//	}
+//	filtered := filterDuploDefinedTags(previous)
+//	for _, old := range filtered {
+//		if _, ok := newMap[old.Key]; !ok {
+//			del = append(del, old.Key)
+//		}
+//	}
+//	return del
+//}
 
-	for _, new := range desired {
-		newMap[new.Key] = new.Value
-	}
-	filtered := filterDuploDefinedTags(previous)
-	for _, old := range filtered {
-		if _, ok := newMap[old.Key]; !ok {
-			del = append(del, old.Key)
-		}
-	}
-	return del
-}
-
-func filterDuploDefinedTags(tag []duplosdk.DuploKeyStringValue) []duplosdk.DuploKeyStringValue {
-	duploTag := map[string]struct{}{
-		"duplo-project":         {},
-		"TENANT_NAME":           {},
-		"duplo_lifecycle_owner": {},
-	}
-	filtered := []duplosdk.DuploKeyStringValue{}
-	for _, v := range tag {
-		if _, ok := duploTag[v.Key]; !ok {
-			filtered = append(filtered, v)
-		}
-	}
-	return filtered
-}
+//func filterDuploDefinedTags(tag []duplosdk.DuploKeyStringValue) []duplosdk.DuploKeyStringValue {
+//	duploTag := map[string]struct{}{
+//		"duplo-project":         {},
+//		"TENANT_NAME":           {},
+//		"duplo_lifecycle_owner": {},
+//	}
+//	filtered := []duplosdk.DuploKeyStringValue{}
+//	for _, v := range tag {
+//		if _, ok := duploTag[v.Key]; !ok {
+//			filtered = append(filtered, v)
+//		}
+//	}
+//	return filtered
+//}
 
 //func flattenDynoamoTag(tag []duplosdk.DuploKeyStringValue) []interface{} {
 //	filtered := filterDuploDefinedTags(tag)
