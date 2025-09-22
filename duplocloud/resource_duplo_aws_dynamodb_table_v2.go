@@ -82,8 +82,9 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Optional: true,
 			//Computed: true,
-			Elem:       KeyValueSchema(),
-			Deprecated: "Use the `duplocloud_aws_tag` resource to manage tags for this resource.",
+			Elem:             KeyValueSchema(),
+			Deprecated:       "Use the `duplocloud_aws_tag` resource to manage tags for this resource.",
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 
 		"attribute": {
