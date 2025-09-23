@@ -41,6 +41,7 @@ func gcpK8NodePoolFunctionSchema() map[string]*schema.Schema {
 				If unspecified, the default machine type is e2-medium.`,
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"disc_size_gb": {
 			Description: `Size of the disk attached to each node, specified in GB. The smallest allowed disk size is 10GB.
@@ -730,7 +731,7 @@ func resourceGCPNodePoolRead(ctx context.Context, d *schema.ResourceData, m inte
 		if err.Status() == 404 {
 			log.Printf("GCP node pool %s not found", fullName)
 			d.SetId("") // object missing or deleted
-			return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
+			return nil
 		}
 		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 
