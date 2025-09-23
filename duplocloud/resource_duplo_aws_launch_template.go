@@ -305,6 +305,7 @@ func expandBlockDeviceMappings(d *schema.ResourceData) []duplosdk.DuploLaunchTem
 					DeleteOnTermination: ebsMap["delete_on_termination"].(bool),
 					Encrypted:           ebsMap["encrypted"].(bool),
 					VolumeSize:          ebsMap["volume_size"].(int),
+					Throughput:          ebsMap["throughput"].(int),
 				}
 				if v, ok := ebsMap["iops"].(int); ok && v != 0 {
 					ebsObj.Iops = v
@@ -320,9 +321,6 @@ func expandBlockDeviceMappings(d *schema.ResourceData) []duplosdk.DuploLaunchTem
 				}
 				if v, ok := bdmMap["volume_initialization_rate"].(int); ok && v != 0 {
 					ebsObj.VolumeInitializationRate = v
-				}
-				if v, ok := bdmMap["throughput"].(int); ok && v != 0 {
-					ebsObj.Throughput = v
 				}
 				bdmObj.Ebs = &ebsObj
 			}
