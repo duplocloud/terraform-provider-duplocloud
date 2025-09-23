@@ -37,7 +37,7 @@ resource "duplocloud_rds_instance" "mydb" {
 
 resource "duplocloud_aws_rds_global_secondary" "gs" {
   tenant_id           = duplocloud_tenant.myapp.tenant_id
-  identifier          = duplocloud_rds_instance.mydb.cluster_identifier
+  cluster_identifier  = duplocloud_rds_instance.mydb.cluster_identifier
   secondary_tenant_id = "a54598b1-0d8f-4a7b-ba7e-4a20f890a57d"
   region              = "us-east-2"
 }
