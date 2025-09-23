@@ -31,6 +31,7 @@ Read-Only:
 
 - `agent_platform` (Number)
 - `allocated_public_ip` (Boolean)
+- `arn` (String)
 - `base64_user_data` (String)
 - `can_scale_from_zero` (Boolean)
 - `capacity` (String)
