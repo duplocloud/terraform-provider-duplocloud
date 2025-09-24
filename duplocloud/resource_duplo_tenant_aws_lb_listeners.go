@@ -205,8 +205,7 @@ func resourceAwsLoadBalancerListener() *schema.Resource {
 			Create: schema.DefaultTimeout(3 * time.Minute),
 			Delete: schema.DefaultTimeout(3 * time.Minute),
 		},
-		Schema:        awsLoadBalancerListenerSchema(),
-		CustomizeDiff: resourceAwsLoadBalancerListenerCustomizeDiff,
+		Schema: awsLoadBalancerListenerSchema(),
 	}
 }
 
@@ -254,6 +253,10 @@ func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.Resour
 	// Create the request object.
 	lbShortName := d.Get("load_balancer_name").(string)
 	log.Printf("[TRACE] lbShortName - %s", lbShortName)
+	verr := resourceAwsLoadBalancerListenerParameterValidation(ctx, d, m)
+	if verr != nil {
+		return diag.FromErr(verr)
+	}
 	rq := expandAwsLoadBalancerListener(d)
 
 	c := m.(*duplosdk.Client)
@@ -477,7 +480,7 @@ func flattenAwsLoadBalancerListener(d *schema.ResourceData, tenantID string, lbN
 	d.Set("ssl_policy", duplo.SSLPolicy)
 }
 
-func resourceAwsLoadBalancerListenerCustomizeDiff(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+func resourceAwsLoadBalancerListenerParameterValidation(ctx context.Context, d *schema.ResourceData, m interface{}) error {
 	targetArn := d.Get("target_group_arn")
 	defaultActions := d.Get("default_actions")
 
