@@ -138,9 +138,9 @@ func resourceDuploEcacheGlobalDatastoreRead(ctx context.Context, d *schema.Resou
 	duplo, err := c.DuploEcacheGlobalDatastoreGet(tenantID, name)
 	if err != nil {
 		if err.Status() == 404 {
-			log.Printf("Unable to fetch Ecache Global Datastore")
+			log.Printf("[DEBUG] resourceDuploEcacheGlobalDatastoreRead: Ecache Global Datastore %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
-			return diag.Errorf("DuploEcacheGlobalDatastoreGet Unable to fetch Ecache Global Datastore %s", err)
+			return nil
 		}
 		return diag.FromErr(err)
 	}
@@ -176,7 +176,7 @@ func resourceDuploEcacheGlobalDatastoreDelete(ctx context.Context, d *schema.Res
 	cerr := c.DuploEcacheGlobalDatastoreDelete(tenantID, fullName)
 	if cerr != nil {
 		if cerr.Status() == 404 {
-			log.Printf("Unable to delete Ecache Global Datastore %s", cerr.Error())
+			log.Printf("[DEBUG] resourceDuploEcacheGlobalDatastoreDelete: Ecache Global Datastore %s not found for tenantId %s, removing from state", fullName, tenantID)
 			return nil
 		}
 		return diag.FromErr(cerr)

@@ -123,6 +123,11 @@ func resourceGcpFirestoreRead(ctx context.Context, d *schema.ResourceData, m int
 		return nil
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpFirestoreRead: Firestore %s not found for tenantId %s, removing from state", fullname, tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve tenant %s firestore '%s': %s", tenantID, fullname, err)
 	}
 	name := d.Get("name").(string)
@@ -208,6 +213,10 @@ func resourceGcpFirestoreDelete(ctx context.Context, d *schema.ResourceData, m i
 	fullName := d.Get("fullname").(string)
 	err := c.FirestoreDelete(idParts[0], fullName)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpFirestoreDelete: Firestore %s not found for tenantId %s, removing from state", fullName, idParts[0])
+			return nil
+		}
 		return diag.Errorf("Error deleting firestore '%s': %s", id, err)
 	}
 
