@@ -114,6 +114,11 @@ func resourcePlanImagesRead(ctx context.Context, d *schema.ResourceData, m inter
 	if duplo == nil {
 		plan, err := c.PlanGet(planID)
 		if err != nil {
+			if err.Status() == 404 {
+				log.Printf("[TRACE] resourcePlanImagesRead(%s): object not found", planID)
+				d.SetId("")
+				return nil
+			}
 			return diag.Errorf("failed to read plan images: %s", err)
 		}
 		if plan == nil {
@@ -192,6 +197,10 @@ func resourcePlanImagesDelete(ctx context.Context, d *schema.ResourceData, m int
 		err = c.PlanChangeImages(planID, previous, desired)
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourcePlanImagesDelete(%s): object not found", planID)
+			return nil
+		}
 		return diag.Errorf("Error updating plan images for '%s': %s", planID, err)
 	}
 

@@ -107,6 +107,11 @@ func resourcePlanWafReadV2(ctx context.Context, d *schema.ResourceData, m interf
 	if duplo == nil {
 		plan, err := c.PlanGet(planID)
 		if err != nil {
+			if err.Status() == 404 {
+				log.Printf("[TRACE] resourcePlanWafReadV2(%s): object not found", planID)
+				d.SetId("")
+				return nil
+			}
 			return diag.Errorf("failed to read plan certificates: %s", err)
 		}
 		if plan == nil {
@@ -204,6 +209,10 @@ func resourcePlanWafDeleteV2(ctx context.Context, d *schema.ResourceData, m inte
 		err = c.PlanChangeWafs(planID, previous, desired)
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourcePlanWafDeleteV2(%s): object not found", planID)
+			return nil
+		}
 		return diag.Errorf("Error updating plan certificates for '%s': %s", planID, err)
 	}
 
