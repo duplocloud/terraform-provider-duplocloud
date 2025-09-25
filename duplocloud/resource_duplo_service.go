@@ -287,6 +287,11 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 	c := m.(*duplosdk.Client)
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceRead(%s, %s): object not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	if duplo == nil {
@@ -424,6 +429,10 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceDelete(%s, %s): object not found", tenantID, name)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 
