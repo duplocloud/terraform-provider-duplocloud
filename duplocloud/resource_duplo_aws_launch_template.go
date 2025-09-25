@@ -71,6 +71,109 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"block_device_mapping": {
+			Type:        schema.TypeList,
+			Optional:    true,
+			ForceNew:    true,
+			Description: "Configure additional volumes of the instance besides specified by the AMI",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"device_name": {
+						Type:        schema.TypeString,
+						Required:    true,
+						ForceNew:    true,
+						Description: "The name of the device to mount",
+					},
+					"ebs": {
+						Type:        schema.TypeList,
+						Optional:    true,
+						MaxItems:    1,
+						ForceNew:    true,
+						Description: "Configure EBS volume properties.",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"delete_on_termination": {
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     true,
+									ForceNew:    true,
+									Description: "Whether the volume should be destroyed on instance termination",
+								},
+								"encrypted": {
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     false,
+									ForceNew:    true,
+									Description: "Enables EBS encryption on the volume. Cannot be used with snapshot_id",
+								},
+								"iops": {
+									Type:        schema.TypeInt,
+									Optional:    true,
+									ForceNew:    true,
+									Description: "The amount of provisioned IOPS. This must be set with a volume_type of 'io1/io2/gp3'",
+								},
+								"snapshot_id": {
+									Type:        schema.TypeString,
+									Optional:    true,
+									ForceNew:    true,
+									Description: "The Snapshot ID to mount. Should not be used if encrypted is true",
+								},
+								"volume_size": {
+									Type:     schema.TypeInt,
+									Optional: true,
+									ForceNew: true,
+									Description: `The size of the volume in gigabytes.\n
+									gp2 and gp3: 1 - 16,384 GiB\n+
+									io1: 4 - 16,384 GiB
+									io2: 4 - 65,536 GiB
+									st1 and sc1: 125 - 16,384 GiB
+									standard: 1 - 1024 GiB`,
+								},
+								"throughput": {
+									Type:         schema.TypeInt,
+									Optional:     true,
+									ForceNew:     true,
+									Description:  "The throughput to provision for a 'gp3' volume in MiB/s. Minumum value of 125 and maximum of 1000.",
+									ValidateFunc: validation.IntBetween(125, 1000),
+								},
+								"volume_type": {
+									Type:         schema.TypeString,
+									Optional:     true,
+									ForceNew:     true,
+									Description:  "The volume type. Can be one of standard, gp2, gp3, io1, io2, sc1 or st1",
+									ValidateFunc: validation.StringInSlice([]string{"standard", "gp2", "gp3", "io1", "io2", "sc1", "st1"}, false),
+								},
+								"volume_initialization_rate": {
+									Type:         schema.TypeInt,
+									Optional:     true,
+									ForceNew:     true,
+									Description:  "The volume initialization rate in MiB/s, with a minimum of 100 MiB/s and maximum of 300 MiB/s.",
+									ValidateFunc: validation.IntBetween(100, 300),
+								},
+								"kms_key_id": {
+									Type:        schema.TypeString,
+									Optional:    true,
+									ForceNew:    true,
+									Description: "The ARN of the KMS Key to use when encrypting the volume (if encrypted is true).",
+								},
+							},
+						},
+					},
+					"no_device": {
+						Type:        schema.TypeString,
+						Optional:    true,
+						ForceNew:    true,
+						Description: "Suppresses the specified device included in the AMI's block device mapping.",
+					},
+					"virtual_name": {
+						Type:        schema.TypeString,
+						Optional:    true,
+						ForceNew:    true,
+						Description: "The virtual device name (ephemeralN). Instance store volumes are numbered starting from 0. An instance type with 2 available instance store volumes can specify mappings for ephemeral0 and ephemeral1. The number of available instance store volumes depends on the instance type. After you connect to the instance, you must mount the volume.",
+					},
+				},
+			},
+		},
 	}
 }
 func resourceAwsLaunchTemplate() *schema.Resource {
@@ -122,6 +225,7 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 		d.SetId("")
 		return nil
 	}
+	d.Set("tenant_id", tenantId)
 	fErr := flattenLaunchTemplate(d, rp, ver)
 	if fErr != nil {
 		return diag.Errorf("%s", fErr.Error())
@@ -167,9 +271,11 @@ func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId s
 		if err != nil {
 			return nil, err
 		}
-		_, _, _, _, sv, _ = extractASGTemplateDetails(rp)
+		m := extractASGTemplateDetails(rp)
+		sv = m["latest_version"].(string)
 		log.Printf("Setting the version to latest version %s since source version not provided ", sv)
 	}
+
 	return &duplosdk.DuploAwsLaunchTemplateRequest{
 		LaunchTemplateName: name,
 		SourceVersion:      sv,
@@ -178,53 +284,136 @@ func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId s
 			InstanceType: duplosdk.DuploStringValue{
 				Value: d.Get("instance_type").(string),
 			},
-			ImageId: d.Get("ami").(string),
+			ImageId:             d.Get("ami").(string),
+			BlockDeviceMappings: expandBlockDeviceMappings(d),
 		},
 	}, nil
 
 }
 
+func expandBlockDeviceMappings(d *schema.ResourceData) []duplosdk.DuploLaunchTemplateBlockDeviceMappingRequest {
+	var blockDeviceMappings []duplosdk.DuploLaunchTemplateBlockDeviceMappingRequest
+	if v, ok := d.GetOk("block_device_mapping"); ok {
+		for _, bdm := range v.([]interface{}) {
+			bdmMap := bdm.(map[string]interface{})
+			bdmObj := duplosdk.DuploLaunchTemplateBlockDeviceMappingRequest{
+				DeviceName: bdmMap["device_name"].(string),
+			}
+			if ebsList, ok := bdmMap["ebs"].([]interface{}); ok && len(ebsList) > 0 {
+				ebsMap := ebsList[0].(map[string]interface{})
+				ebsObj := duplosdk.DuploLaunchTemplateEbsBlockDeviceRequest{
+					DeleteOnTermination: ebsMap["delete_on_termination"].(bool),
+					Encrypted:           ebsMap["encrypted"].(bool),
+					VolumeSize:          ebsMap["volume_size"].(int),
+					Throughput:          ebsMap["throughput"].(int),
+				}
+				if v, ok := ebsMap["iops"].(int); ok && v != 0 {
+					ebsObj.Iops = v
+				}
+				if v, ok := ebsMap["snapshot_id"].(string); ok && v != "" {
+					ebsObj.SnapshotId = v
+				}
+				if v, ok := ebsMap["volume_type"].(string); ok && v != "" {
+					ebsObj.VolumeType = v
+				}
+				if v, ok := ebsMap["kms_key_id"].(string); ok && v != "" {
+					ebsObj.KmsKeyId = v
+				}
+				if v, ok := bdmMap["volume_initialization_rate"].(int); ok && v != 0 {
+					ebsObj.VolumeInitializationRate = v
+				}
+				bdmObj.Ebs = &ebsObj
+			}
+			if v, ok := bdmMap["no_device"].(string); ok && v != "" {
+				bdmObj.NoDevice = v
+			}
+			if v, ok := bdmMap["virtual_name"].(string); ok && v != "" {
+				bdmObj.VirtualName = v
+			}
+
+			blockDeviceMappings = append(blockDeviceMappings, bdmObj)
+		}
+	}
+	return blockDeviceMappings
+}
 func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, ver string) error {
 
 	b, err := json.Marshal(rp)
 	if err != nil {
 		return err
 	}
-	name, insType, verDesc, dver, lver, imgId := extractASGTemplateDetails(rp)
+	m := extractASGTemplateDetails(rp)
 	d.Set("version_metadata", string(b))
-	d.Set("instance_type", insType)
-	d.Set("version_description", verDesc)
+	d.Set("instance_type", m["instance_type"])
+	d.Set("version_description", m["ver_desc"])
 	n := d.Get("name").(string)
-	d.Set("name", name)
-	if !strings.Contains(n, "duploservices") {
+	d.Set("name", m["name"])
+	if n != "" && !strings.Contains(n, "duploservices") {
 		d.Set("name", n)
 	}
 
 	if v, ok := d.GetOk("version"); ok && v.(string) != "" {
 		d.Set("version", v.(string))
+	} else {
+		d.Set("version", m["latest_version"])
 	}
-	d.Set("latest_version", lver)
-	d.Set("default_version", dver)
-	d.Set("ami", imgId)
+	d.Set("latest_version", m["latest_version"])
+	d.Set("default_version", m["default_version"])
+	d.Set("ami", m["image_id"])
+	d.Set("block_device_mapping", m["block_device_mapping"])
 	return nil
 }
 
-func extractASGTemplateDetails(rp *[]duplosdk.DuploLaunchTemplateResponse) (string, string, string, string, string, string) {
-	var name, insType, verDesc, dver, imgId string
+func extractASGTemplateDetails(rp *[]duplosdk.DuploLaunchTemplateResponse) map[string]interface{} {
 	max := 0
+	lt := map[string]interface{}{}
 	for _, v := range *rp {
 
 		if v.DefaultVersion {
-			dver = strconv.Itoa(int(v.VersionNumber))
+			lt["default_version"] = strconv.Itoa(int(v.VersionNumber))
 		}
 		if max < int(v.VersionNumber) {
 			max = int(v.VersionNumber)
-			insType = v.LaunchTemplateData.InstanceType.Value
-			verDesc = v.VersionDescription
-			imgId = v.LaunchTemplateData.ImageId
-			name = v.LaunchTemplateName
+			lt["instance_type"] = v.LaunchTemplateData.InstanceType.Value
+			lt["ver_desc"] = v.VersionDescription
+			lt["image_id"] = v.LaunchTemplateData.ImageId
+			lt["name"] = v.LaunchTemplateName
+			lt["block_device_mapping"] = flattenBlockDeviceMappings(v.LaunchTemplateData.BlockDeviceMappings)
 		}
 	}
-	lver := strconv.Itoa(max)
-	return name, insType, verDesc, dver, lver, imgId
+	lt["latest_version"] = strconv.Itoa(max)
+	return lt
+}
+
+func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMappingResponse) []interface{} {
+	bdmI := []interface{}{}
+	for _, bdm := range bdms {
+		bdmMap := map[string]interface{}{
+			"device_name": bdm.DeviceName,
+		}
+		if bdm.Ebs != nil {
+			ebsMap := map[string]interface{}{
+				"delete_on_termination":      bdm.Ebs.DeleteOnTermination,
+				"encrypted":                  bdm.Ebs.Encrypted,
+				"volume_size":                bdm.Ebs.VolumeSize,
+				"volume_type":                bdm.Ebs.VolumeType.Value,
+				"kms_key_id":                 bdm.Ebs.KmsKeyId,
+				"iops":                       bdm.Ebs.Iops,
+				"throughput":                 bdm.Ebs.Throughput,
+				"volume_initialization_rate": bdm.Ebs.VolumeInitializationRate,
+			}
+			if bdm.Ebs.SnapshotId != "" {
+				ebsMap["snapshot_id"] = bdm.Ebs.SnapshotId
+			}
+			bdmMap["ebs"] = []interface{}{ebsMap}
+		}
+		if bdm.NoDevice != "" {
+			bdmMap["no_device"] = bdm.NoDevice
+		}
+		if bdm.VirtualName != "" {
+			bdmMap["virtual_name"] = bdm.VirtualName
+		}
+		bdmI = append(bdmI, bdmMap)
+	}
+	return bdmI
 }
