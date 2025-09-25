@@ -186,6 +186,11 @@ func createOrUpdateLambdaEventInvokeConfiguration(ctx context.Context, d *schema
 	if err != nil {
 		return diag.Errorf("Could not successfully create event invoke config for lambda %s", functionName)
 	}
+	request.DestinationConfig = nil
+	err = duploClient.LambdaEventInvokeAsynConfigUpdate(tenantId, functionName, request.LambdaFunctionEventInvokeConfiguration)
+	if err != nil {
+		return diag.Errorf("Could not successfully update event invoke config for lambda %s", functionName)
+	}
 	id := fmt.Sprintf("%s/%s/eventInvokeConfig", tenantId, functionName)
 	d.SetId(id)
 
