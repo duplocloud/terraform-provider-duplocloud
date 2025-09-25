@@ -2,10 +2,12 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -62,6 +64,7 @@ func resourceAwsLaunchTemplateDefaultVersionRead(ctx context.Context, d *schema.
 	rp, err := c.GetAwsLaunchTemplate(tenantId, asgName)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLaunchTemplateDefaultVersionRead(%s, %s): object missing", tenantId, asgName)
 			d.SetId("")
 		}
 		return diag.Errorf("%s", err.Error())

@@ -108,6 +108,7 @@ func resourceAwsLambdaPermissionRead(ctx context.Context, d *schema.ResourceData
 	rp, clientErr := c.LambdaPermissionGet(tenantID, functionName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLambdaPermissionRead(%s, %s, %s): object missing", tenantID, functionName, sid)
 			d.SetId("") // object missing
 			return nil
 		}
@@ -185,6 +186,7 @@ func resourceAwsLambdaPermissionDelete(ctx context.Context, d *schema.ResourceDa
 	clientErr := c.LambdaPermissionDelete(tenantID, functionName, sid)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLambdaPermissionDelete(%s, %s, %s): object missing", tenantID, functionName, sid)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s lambda permission '%s': %s", tenantID, functionName, clientErr)
