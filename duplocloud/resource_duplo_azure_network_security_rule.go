@@ -145,6 +145,7 @@ func resourceAzureNetworkSgRuleRead(ctx context.Context, d *schema.ResourceData,
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureNetworkSgRuleRead: Azure network security rule %s not found for tenantId %s, removing from state", ruleName, infraName)
 			d.SetId("")
 			return nil
 		}
@@ -213,6 +214,7 @@ func resourceAzureNetworkSgRuleDelete(ctx context.Context, d *schema.ResourceDat
 	})
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureNetworkSgRuleDelete: Azure network security rule %s not found for tenantId %s, removing from state", ruleName, infraName)
 			return nil
 		}
 		return diag.Errorf("Unable to delete security group rule '%s': %s", ruleName, clientErr)

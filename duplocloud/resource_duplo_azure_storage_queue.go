@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -77,6 +78,7 @@ func resourceAzureStorageQueueRead(ctx context.Context, d *schema.ResourceData, 
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureStorageQueueRead: Azure storage class queue %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -130,9 +132,13 @@ func resourceAzureStorageQueueDelete(ctx context.Context, d *schema.ResourceData
 	log.Printf("[TRACE] resourceAzureStorageQueueDelete(%s, %s, %s): start", tenantID, storageAccountName, name)
 
 	c := m.(*duplosdk.Client)
-	err = c.AzureStorageAccountQueueDelete(tenantID, storageAccountName, name)
-	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure storage class queue '%s': %s", tenantID, name, err)
+	cerr := c.AzureStorageAccountQueueDelete(tenantID, storageAccountName, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureStorageQueueDelete: Azure storage class queue %s not found for tenantId %s, removing from state", name, tenantID)
+			return nil
+		}
+		return diag.Errorf("Error creating tenant %s azure storage class queue '%s': %s", tenantID, name, cerr)
 	}
 	log.Printf("[TRACE] resourceAzureStorageQueueDelete(%s, %s): end", tenantID, name)
 

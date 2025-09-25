@@ -87,6 +87,7 @@ func resourceAzureSqlFirewallRuleRead(ctx context.Context, d *schema.ResourceDat
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureSqlFirewallRuleRead: Azure sql firewall rule %s not found for tenantId %s, removing from state", ruleName, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -145,6 +146,7 @@ func resourceAzureSqlFirewallRuleDelete(ctx context.Context, d *schema.ResourceD
 	clientErr := c.AzureSqlServerFirewallRuleDelete(tenantID, serverName, ruleName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureSqlFirewallRuleDelete: Azure sql firewall rule %s not found for tenantId %s, removing from state", ruleName, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure sql firewall rule '%s', '%s': %s", tenantID, serverName, ruleName, clientErr)
