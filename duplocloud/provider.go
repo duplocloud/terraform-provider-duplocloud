@@ -202,6 +202,8 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_cloudfront_function":                       resourceAwsCloudfrontFunction(),
 			"duplocloud_ecache_global_datastore":                       resourceDuploEcacheGlobalDatastore(),
 			"duplocloud_ecache_associate_global_secondary_cluster":     resourceDuploEcacheReplicationGroup(),
+			"duplocloud_aws_mq_config":                                 resourceAwsMQConfig(),
+			"duplocloud_aws_mq_broker":                                 resourceAwsMQBroker(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
