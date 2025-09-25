@@ -257,19 +257,6 @@ func buildPutLambdaEventInvokeRequest(d *schema.ResourceData) duplosdk.PutLambda
 	return request
 }
 
-func asyncInvocation(d *schema.ResourceData) duplosdk.PutLambdaFunctionEventInvokeConfiguration {
-	request := duplosdk.PutLambdaFunctionEventInvokeConfiguration{
-		LambdaFunctionEventInvokeConfiguration: duplosdk.LambdaFunctionEventInvokeConfiguration{
-			FunctionName:      d.Get("function_name").(string),
-			DestinationConfig: &duplosdk.DestinationConfiguration{},
-		},
-	}
-	addIfDefined(&request, "MaximumEventAgeInSeconds", d.Get("max_event_age_in_seconds").(int))
-	addIfDefined(&request, "MaximumRetryAttempts", d.Get("max_retry_attempts").(int))
-	addIfDefined(&request, "Qualifier", d.Get("qualifier").(string))
-	return request
-}
-
 func applyLambdaEventInvokeConfigToTfResource(d *schema.ResourceData, resource *duplosdk.LambdaFunctionEventInvokeConfiguration) {
 	d.Set("max_retry_attempts", resource.MaximumRetryAttempts)
 	d.Set("max_event_age_in_seconds", resource.MaximumEventAgeInSeconds)
