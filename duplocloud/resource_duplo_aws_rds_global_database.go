@@ -24,7 +24,7 @@ func duploAwsRdsGlobalDatabaseSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
-		"identifier": {
+		"cluster_identifier": {
 			Description: "The identifier of the primary Database.",
 			Type:        schema.TypeString,
 			ForceNew:    true,
@@ -119,7 +119,7 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 		d.Set("region", d.Get("region"))
 		d.Set("secondary_tenant_id", d.Get("secondary_tenant_id"))
 	}
-	d.Set("identifier", rp.GlobalInfo.PrimaryClusterId)
+	d.Set("cluster_identifier", rp.GlobalInfo.PrimaryClusterId)
 	d.Set("primary_region", rp.GlobalInfo.PrimaryRegion)
 	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseRead(%s, %s, %s): end", tenantId, gclusterId, region)
 	return nil
@@ -128,7 +128,7 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 func resourceAwsRdsGlobalDatabaseCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	secRegion := d.Get("region").(string)
-	identifier := d.Get("identifier").(string)
+	identifier := d.Get("cluster_identifier").(string)
 	secTenantId := d.Get("secondary_tenant_id").(string)
 	req := duplosdk.DuploRDSGlobalDatabase{
 		TenantID: secTenantId,
