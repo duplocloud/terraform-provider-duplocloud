@@ -48,7 +48,7 @@ resource "duplocloud_aws_rds_global_secondary" "gs" {
 
 ### Required
 
-- `identifier` (String) The identifier of the primary Database.
+- `cluster_identifier` (String) The identifier of the primary Database.
 - `region` (String) The region of the secondary Database.
 - `secondary_tenant_id` (String) The GUID of the tenant that the secondary RDS Global Database will be created in.
 - `tenant_id` (String) The GUID of the tenant that the RDS tag will be created in.
