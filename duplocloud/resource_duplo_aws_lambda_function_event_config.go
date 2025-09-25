@@ -186,6 +186,11 @@ func createOrUpdateLambdaEventInvokeConfiguration(ctx context.Context, d *schema
 	if err != nil {
 		return diag.Errorf("Could not successfully create event invoke config for lambda %s", functionName)
 	}
+	request.DestinationConfig = nil
+	err = duploClient.LambdaEventInvokeAsynConfigUpdate(tenantId, functionName, request.LambdaFunctionEventInvokeConfiguration)
+	if err != nil {
+		return diag.Errorf("Could not successfully update event invoke config for lambda %s", functionName)
+	}
 	id := fmt.Sprintf("%s/%s/eventInvokeConfig", tenantId, functionName)
 	d.SetId(id)
 
@@ -249,6 +254,19 @@ func buildPutLambdaEventInvokeRequest(d *schema.ResourceData) duplosdk.PutLambda
 			request.DestinationConfig = nil
 		}
 	}
+	return request
+}
+
+func asyncInvocation(d *schema.ResourceData) duplosdk.PutLambdaFunctionEventInvokeConfiguration {
+	request := duplosdk.PutLambdaFunctionEventInvokeConfiguration{
+		LambdaFunctionEventInvokeConfiguration: duplosdk.LambdaFunctionEventInvokeConfiguration{
+			FunctionName:      d.Get("function_name").(string),
+			DestinationConfig: &duplosdk.DestinationConfiguration{},
+		},
+	}
+	addIfDefined(&request, "MaximumEventAgeInSeconds", d.Get("max_event_age_in_seconds").(int))
+	addIfDefined(&request, "MaximumRetryAttempts", d.Get("max_retry_attempts").(int))
+	addIfDefined(&request, "Qualifier", d.Get("qualifier").(string))
 	return request
 }
 
