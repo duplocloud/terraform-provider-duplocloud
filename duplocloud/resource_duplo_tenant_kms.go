@@ -12,9 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// TenantKmsSchema returns a Terraform schema to represent a Tenant KMS
-
-// Resource for managing an AWS ElasticSearch instance
 func resourceTenantKMS() *schema.Resource {
 	return &schema.Resource{
 		Description: "`duplocloud_tenant_kms` manages the list of kms avaialble to a tenant in Duplo.\n\n" +
@@ -98,7 +95,6 @@ func resourceTenantKMSRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	c := m.(*duplosdk.Client)
 
-	// First, try the newer method of getting the tenant certificates.
 	duplo, err := c.TenantKMSGetList(tenantID)
 	if err != nil {
 		if err.Status() == 404 {
@@ -160,9 +156,8 @@ func segregateUnspecifiedKms(skms, list *[]duplosdk.DuploTenantKmsKeyInfo) ([]in
 	return result, unspecified
 }
 func resourceTenantKMSCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	// Parse the identifying attributes
 	tenantID := d.Get("tenant_id").(string)
-	log.Printf("[TRACE] resourceTenantKMSCreateOrUpdate(%s): start", tenantID)
+	log.Printf("[TRACE] resourceTenantKMSCreate(%s): start", tenantID)
 
 	c := m.(*duplosdk.Client)
 	rq := expandTenantKms(d)
@@ -184,7 +179,7 @@ func resourceTenantKMSCreate(ctx context.Context, d *schema.ResourceData, m inte
 	d.SetId(tenantID + "/tenantkms")
 
 	diags := resourceTenantKMSRead(ctx, d, m)
-	log.Printf("[TRACE] resourceTenantCertificatesCreateOrUpdate(%s): end", tenantID)
+	log.Printf("[TRACE] resourceTenantKMSCreate(%s): end", tenantID)
 	return diags
 
 }
@@ -213,7 +208,7 @@ func resourceTenantKMSUpdate(ctx context.Context, d *schema.ResourceData, m inte
 	d.SetId(tenantID + "/kms")
 
 	diags := resourceTenantKMSRead(ctx, d, m)
-	log.Printf("[TRACE] resourceTenantCertificatesUpdate(%s): end", tenantID)
+	log.Printf("[TRACE] resourceTenantKMSUpdate(%s): end", tenantID)
 	return diags
 }
 

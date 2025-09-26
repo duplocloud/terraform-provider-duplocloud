@@ -92,7 +92,7 @@ Read-Only:
 Import is supported using the following syntax:
 
 ```shell
-# Example: Importing an existing WAF instance
-#  - *PLAN_ID* is the plan name
-terraform import duplocloud_plan_kms_v2.myplan *PLAN_ID*/kms*
+# Example: Importing an existing KMS of tenant
+#  - *TENANT_ID* is the id of the tenant where the KMS key is configured.
+terraform import duplocloud_tenant_kms.mykey *TENANT_ID*/tenantkms*
 ```
