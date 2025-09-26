@@ -82,7 +82,9 @@ func awsDynamoDBTableSchemaV2() map[string]*schema.Schema {
 			Type:     schema.TypeList,
 			Optional: true,
 			//Computed: true,
-			Elem: KeyValueSchema(),
+			Elem:             KeyValueSchema(),
+			Deprecated:       "Tag support has been removed from this resource to manage tage use the `duplocloud_aws_tag` resource.",
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 
 		"attribute": {
@@ -375,7 +377,7 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	d.Set("deletion_protection_enabled", duplo.DeletionProtectionEnabled)
 
 	if duplo.BillingModeSummary != nil {
-		d.Set("billing_mode", duplo.BillingModeSummary.BillingMode)
+		d.Set("billing_mode", duplo.BillingModeSummary.BillingMode.Value)
 	} else {
 		d.Set("billing_mode", duplosdk.DynamoDBBillingModeProvisioned)
 	}
@@ -427,14 +429,17 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 
 	}
-	tag, err := c.DynamoDBTableGetTags(tenantID, duplo.TableArn)
-	if err != nil {
-		return diag.FromErr(err)
+	//tag, err := c.DynamoDBTableGetTags(tenantID, duplo.TableArn)
+	//if err != nil {
+	//	return diag.FromErr(err)
+	//}
+	//if err := d.Set("tag", flattenDynoamoTag(tag)); err != nil {
+	//	return diag.FromErr(err)
+	//}
+	v := ctx.Value(flowContextKey)
+	if v == nil {
+		d.Set("wait_until_ready", true)
 	}
-	if err := d.Set("tag", flattenDynoamoTag(tag)); err != nil {
-		return diag.FromErr(err)
-	}
-
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -494,6 +499,8 @@ func resourceAwsDynamoDBTableCreateV2(ctx context.Context, d *schema.ResourceDat
 	if diags != nil {
 		return diags
 	}
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
+
 	diags = resourceAwsDynamoDBTableReadV2(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsDynamoDBTableCreateV2(%s, %s): end", tenantID, name)
 	return diags
@@ -570,33 +577,33 @@ func resourceAwsDynamoDBTableDeleteV2(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func expandTags(fieldName string, d *schema.ResourceData) *[]duplosdk.DyanmoDbV2Tag {
-	var ary []duplosdk.DyanmoDbV2Tag
-
-	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
-		kvs := v.([]interface{})
-		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
-		ary = make([]duplosdk.DyanmoDbV2Tag, 0, len(kvs))
-		for _, raw := range kvs {
-			kv := raw.(map[string]interface{})
-			ary = append(ary, duplosdk.DyanmoDbV2Tag{
-				Key:   kv["key"].(string),
-				Value: kv["value"].(string),
-				//				DeleteTag: kv["delete_tag"].(bool),
-			})
-		}
-	}
-
-	return &ary
-}
+//func expandTags(fieldName string, d *schema.ResourceData) *[]duplosdk.DyanmoDbV2Tag {
+//	var ary []duplosdk.DyanmoDbV2Tag
+//
+//	if v, ok := d.GetOk(fieldName); ok && v != nil && len(v.([]interface{})) > 0 {
+//		kvs := v.([]interface{})
+//		log.Printf("[TRACE] duploKeyValueFromState ********: found %s", fieldName)
+//		ary = make([]duplosdk.DyanmoDbV2Tag, 0, len(kvs))
+//		for _, raw := range kvs {
+//			kv := raw.(map[string]interface{})
+//			ary = append(ary, duplosdk.DyanmoDbV2Tag{
+//				Key:   kv["key"].(string),
+//				Value: kv["value"].(string),
+//				//				DeleteTag: kv["delete_tag"].(bool),
+//			})
+//		}
+//	}
+//
+//	return &ary
+//}
 
 func expandDynamoDBTable(d *schema.ResourceData) (*duplosdk.DuploDynamoDBTableRequestV2, error) {
 
 	req := &duplosdk.DuploDynamoDBTableRequestV2{
 		TableName:   d.Get("name").(string),
 		BillingMode: d.Get("billing_mode").(string),
-		Tags:        expandTags("tag", d),
-		KeySchema:   expandDynamoDBKeySchema(d),
+		//Tags:        expandTags("tag", d),
+		KeySchema: expandDynamoDBKeySchema(d),
 	}
 
 	if v, ok := d.GetOk("attribute"); ok {
@@ -1179,55 +1186,55 @@ func shouldUpdateSSESepecification(
 		return request.SSESpecification.Enabled
 	}
 	status := "DISABLED"
-	if request.SSESpecification.Enabled {
+	if request.SSESpecification != nil && request.SSESpecification.Enabled {
 		status = "ENABLED"
 	}
 	return !(table.SSEDescription.Status.Value == status)
 }
 
-func removeTags(desired, previous []duplosdk.DuploKeyStringValue) []string {
-	del := []string{}
-	newMap := make(map[string]string)
+//func removeTags(desired, previous []duplosdk.DuploKeyStringValue) []string {
+//	del := []string{}
+//	newMap := make(map[string]string)
+//
+//	for _, new := range desired {
+//		newMap[new.Key] = new.Value
+//	}
+//	filtered := filterDuploDefinedTags(previous)
+//	for _, old := range filtered {
+//		if _, ok := newMap[old.Key]; !ok {
+//			del = append(del, old.Key)
+//		}
+//	}
+//	return del
+//}
 
-	for _, new := range desired {
-		newMap[new.Key] = new.Value
-	}
-	filtered := filterDuploDefinedTags(previous)
-	for _, old := range filtered {
-		if _, ok := newMap[old.Key]; !ok {
-			del = append(del, old.Key)
-		}
-	}
-	return del
-}
+//func filterDuploDefinedTags(tag []duplosdk.DuploKeyStringValue) []duplosdk.DuploKeyStringValue {
+//	duploTag := map[string]struct{}{
+//		"duplo-project":         {},
+//		"TENANT_NAME":           {},
+//		"duplo_lifecycle_owner": {},
+//	}
+//	filtered := []duplosdk.DuploKeyStringValue{}
+//	for _, v := range tag {
+//		if _, ok := duploTag[v.Key]; !ok {
+//			filtered = append(filtered, v)
+//		}
+//	}
+//	return filtered
+//}
 
-func filterDuploDefinedTags(tag []duplosdk.DuploKeyStringValue) []duplosdk.DuploKeyStringValue {
-	duploTag := map[string]struct{}{
-		"duplo-project":         {},
-		"TENANT_NAME":           {},
-		"duplo_lifecycle_owner": {},
-	}
-	filtered := []duplosdk.DuploKeyStringValue{}
-	for _, v := range tag {
-		if _, ok := duploTag[v.Key]; !ok {
-			filtered = append(filtered, v)
-		}
-	}
-	return filtered
-}
-
-func flattenDynoamoTag(tag []duplosdk.DuploKeyStringValue) []interface{} {
-	filtered := filterDuploDefinedTags(tag)
-	output := make([]interface{}, 0, len(filtered))
-	for _, t := range filtered {
-		mp := map[string]string{
-			"key":   t.Key,
-			"value": t.Value,
-		}
-		output = append(output, mp)
-	}
-	return output
-}
+//func flattenDynoamoTag(tag []duplosdk.DuploKeyStringValue) []interface{} {
+//	filtered := filterDuploDefinedTags(tag)
+//	output := make([]interface{}, 0, len(filtered))
+//	for _, t := range filtered {
+//		mp := map[string]string{
+//			"key":   t.Key,
+//			"value": t.Value,
+//		}
+//		output = append(output, mp)
+//	}
+//	return output
+//}
 
 func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
@@ -1253,30 +1260,30 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	tagsToUpdate := []duplosdk.DuploKeyStringValue{}
-	//tagsToDelete := []string{}
-	for _, v := range *rq.Tags {
-		tagsToUpdate = append(tagsToUpdate, duplosdk.DuploKeyStringValue{
-			Key:   v.Key,
-			Value: v.Value,
-		})
-	}
-
-	prevTag, err := c.DynamoDBTableGetTags(tenantID, existing.TableArn)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	toDel := removeTags(tagsToUpdate, prevTag)
-	tagReq := &duplosdk.DuploDynamoDBTagResource{
-		ResourceArn: existing.TableArn,
-		Tags:        &tagsToUpdate,
-		DeleteTags:  toDel,
-	}
-	_, err = tagDynamoDBtTableV2(tenantID, fullname, tagReq, m) //taging and untaging dynamodb
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	//
+	//tagsToUpdate := []duplosdk.DuploKeyStringValue{}
+	////tagsToDelete := []string{}
+	//for _, v := range *rq.Tags {
+	//	tagsToUpdate = append(tagsToUpdate, duplosdk.DuploKeyStringValue{
+	//		Key:   v.Key,
+	//		Value: v.Value,
+	//	})
+	//}
+	//
+	//prevTag, err := c.DynamoDBTableGetTags(tenantID, existing.TableArn)
+	//if err != nil {
+	//	return diag.FromErr(err)
+	//}
+	//toDel := removeTags(tagsToUpdate, prevTag)
+	//tagReq := &duplosdk.DuploDynamoDBTagResource{
+	//	ResourceArn: existing.TableArn,
+	//	Tags:        &tagsToUpdate,
+	//	DeleteTags:  toDel,
+	//}
+	//_, err = tagDynamoDBtTableV2(tenantID, fullname, tagReq, m) //taging and untaging dynamodb
+	//if err != nil {
+	//	return diag.FromErr(err)
+	//}
 
 	diagErr := updatePointInTimeRecovery(c, d, tenantID, fullname)
 	if diagErr != nil {
@@ -1287,6 +1294,7 @@ func resourceAwsDynamoDBTableUpdateV2(ctx context.Context, d *schema.ResourceDat
 	if diagErr != nil {
 		return diagErr
 	}
+
 	diagErr = globalIndexUpdateAction(c, existing, rq, tenantID, fullname, d)
 	if diagErr != nil {
 		return diagErr
@@ -1372,18 +1380,18 @@ func shouldUpdateGSI(
 		return false
 	}
 */
-func tagDynamoDBtTableV2(
-	tenantId, name string,
-	rq *duplosdk.DuploDynamoDBTagResource,
-	m interface{},
-) (*duplosdk.DuploDynamoDBTagResource, duplosdk.ClientError) {
-	c := m.(*duplosdk.Client)
-	resp, err := c.DynamoDBTableUpdateTagsV2(tenantId, name, rq)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
-}
+//func tagDynamoDBtTableV2(
+//	tenantId, name string,
+//	rq *duplosdk.DuploDynamoDBTagResource,
+//	m interface{},
+//) (*duplosdk.DuploDynamoDBTagResource, duplosdk.ClientError) {
+//	c := m.(*duplosdk.Client)
+//	resp, err := c.DynamoDBTableUpdateTagsV2(tenantId, name, rq)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return resp, nil
+//}
 
 func updateDeleteProtection(c *duplosdk.Client, d *schema.ResourceData, tenantID, fullname string) diag.Diagnostics {
 	r := duplosdk.DuploDynamoDBTableRequestV2{}

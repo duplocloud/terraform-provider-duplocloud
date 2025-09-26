@@ -269,11 +269,12 @@ func (c *Client) TenantKeyVaultSecretGet(tenantID, vaultName, secretName string)
 
 func (c *Client) TenantKeyVaultSecretList(tenantID, vaultName string) (*[]DuploAzureTenantKeyVaultSecret, ClientError) {
 	resp := []DuploAzureTenantKeyVaultSecret{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("TenantKeyVaultSecretList(%s, %s)", tenantID, vaultName),
 		fmt.Sprintf("v3/subscriptions/%s/azure/keyvault/%s/secret", tenantID, vaultName),
-		&resp,
-	)
+		&resp, &conf)
 	return &resp, err
 }
 

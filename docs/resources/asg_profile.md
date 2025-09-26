@@ -223,6 +223,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 
 ### Read-Only
 
+- `arn` (String) The ASG arn.
 - `fullname` (String) The full name of the ASG profile.
 - `id` (String) The ID of this resource.
 - `initial_base64_user_data` (String)
