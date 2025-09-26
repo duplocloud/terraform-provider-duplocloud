@@ -230,7 +230,13 @@ func resourceTenantKMSDelete(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	for _, i := range d.Get("kms").([]interface{}) {
 		m := i.(map[string]interface{})
-		c.TenantKMSDelete(tenantID, m["id"].(string))
+		cerr := c.TenantKMSDelete(tenantID, m["id"].(string))
+		if cerr != nil {
+			if cerr.Status() != 404 {
+				return nil
+			}
+			return diag.Errorf("Error deleting tenant kms %s for '%s': %s", m["name"].(string), tenantID, cerr)
+		}
 	}
 
 	log.Printf("[TRACE] resourceTenantKMSDelete(%s): end", tenantID)
