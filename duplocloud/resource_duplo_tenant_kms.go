@@ -167,7 +167,7 @@ func resourceTenantKMSCreate(ctx context.Context, d *schema.ResourceData, m inte
 		// Apply the changes via Duplo
 		for _, i := range toDel {
 			m := i.(map[string]interface{})
-			c.TenantKMSDelete(tenantID, m["id"].(string))
+			_ = c.TenantKMSDelete(tenantID, m["id"].(string))
 		}
 	}
 	for _, i := range *rq {
@@ -196,7 +196,7 @@ func resourceTenantKMSUpdate(ctx context.Context, d *schema.ResourceData, m inte
 		usp := d.Get("unspecified_kms_keys").([]interface{})
 		for _, i := range usp {
 			m := i.(map[string]interface{})
-			c.TenantKMSDelete(tenantID, m["id"].(string))
+			_ = c.TenantKMSDelete(tenantID, m["id"].(string))
 		}
 	}
 	for _, i := range *rq {
@@ -225,7 +225,7 @@ func resourceTenantKMSDelete(ctx context.Context, d *schema.ResourceData, m inte
 		usp := d.Get("unspecified_kms_keys").([]interface{})
 		for _, i := range usp {
 			m := i.(map[string]interface{})
-			c.TenantKMSDelete(tenantID, m["id"].(string))
+			_ = c.TenantKMSDelete(tenantID, m["id"].(string))
 		}
 	}
 	for _, i := range d.Get("kms").([]interface{}) {
