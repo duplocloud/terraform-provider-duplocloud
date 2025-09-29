@@ -205,8 +205,7 @@ func resourceAwsLoadBalancerListener() *schema.Resource {
 			Create: schema.DefaultTimeout(3 * time.Minute),
 			Delete: schema.DefaultTimeout(3 * time.Minute),
 		},
-		Schema:        awsLoadBalancerListenerSchema(),
-		CustomizeDiff: resourceAwsLoadBalancerListenerCustomizeDiff,
+		Schema: awsLoadBalancerListenerSchema(),
 	}
 }
 
@@ -254,6 +253,10 @@ func resourceAwsLoadBalancerListenerCreate(ctx context.Context, d *schema.Resour
 	// Create the request object.
 	lbShortName := d.Get("load_balancer_name").(string)
 	log.Printf("[TRACE] lbShortName - %s", lbShortName)
+	verr := resourceAwsLoadBalancerListenerParameterValidation(ctx, d, m)
+	if verr != nil {
+		return diag.FromErr(verr)
+	}
 	rq := expandAwsLoadBalancerListener(d)
 
 	c := m.(*duplosdk.Client)
@@ -434,55 +437,50 @@ func flattenAwsLoadBalancerListener(d *schema.ResourceData, tenantID string, lbN
 	d.Set("certificates", certs)
 	tga := d.Get("target_group_arn").(string)
 	// Ensure the target_group_arn is set to nil if not present
-	actions := make([]map[string]interface{}, 0, len(duplo.DefaultActions))
 	for _, defaultAction := range duplo.DefaultActions {
 		if defaultAction.Type.Value == "forward" && tga == "" {
-			actions = append(actions, map[string]interface{}{
-				"type": "forward",
-				"forward": []map[string]interface{}{
-					{
-						"target_group_arn": defaultAction.TargetGroupArn,
-					},
-				},
-			})
+			m := map[string]interface{}{
+				"target_group_arn": defaultAction.TargetGroupArn,
+			}
+			mf := map[string]interface{}{
+				"forward": []interface{}{m},
+			}
+			d.Set("default_actions", []interface{}{mf})
 		} else {
 			d.Set("target_group_arn", defaultAction.TargetGroupArn)
 		}
 		if defaultAction.Type.Value == "fixed-response" {
-			actions = append(actions, map[string]interface{}{
-				"type": "fixed-response",
-				"fixed_response": []map[string]interface{}{
-					{
-						"content_type": defaultAction.FixedResponseConfig.ContentType,
-						"message_body": defaultAction.FixedResponseConfig.MessageBody,
-						"status_code":  defaultAction.FixedResponseConfig.StatusCode,
-					},
-				},
-			})
+			m := map[string]interface{}{
+				"content_type": defaultAction.FixedResponseConfig.ContentType,
+				"message_body": defaultAction.FixedResponseConfig.MessageBody,
+				"status_code":  defaultAction.FixedResponseConfig.StatusCode,
+			}
+			fr := map[string]interface{}{
+				"fixed_response": []interface{}{m},
+			}
+			d.Set("default_actions", []interface{}{fr})
 		}
 		if defaultAction.Type.Value == "redirect" {
-			actions = append(actions, map[string]interface{}{
-				"type": "redirect",
-				"redirect": []map[string]interface{}{
-					{
-						"status_code": defaultAction.RedirectConfig.StatusCode.Value,
-						"port":        defaultAction.RedirectConfig.Port,
-						"protocol":    defaultAction.RedirectConfig.Protocol,
-						"host":        defaultAction.RedirectConfig.Host,
-						"path":        defaultAction.RedirectConfig.Path,
-						"query":       defaultAction.RedirectConfig.Query,
-					},
-				},
-			})
+			m := map[string]interface{}{
+				"status_code": defaultAction.RedirectConfig.StatusCode.Value,
+				"port":        defaultAction.RedirectConfig.Port,
+				"protocol":    defaultAction.RedirectConfig.Protocol,
+				"host":        defaultAction.RedirectConfig.Host,
+				"path":        defaultAction.RedirectConfig.Path,
+				"query":       defaultAction.RedirectConfig.Query,
+			}
+			r := map[string]interface{}{
+				"redirect": []interface{}{m},
+			}
+			d.Set("default_actions", []interface{}{r})
 		}
 	}
 
-	d.Set("default_actions", actions)
 	d.Set("load_balancer_arn", duplo.LoadBalancerArn)
 	d.Set("ssl_policy", duplo.SSLPolicy)
 }
 
-func resourceAwsLoadBalancerListenerCustomizeDiff(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+func resourceAwsLoadBalancerListenerParameterValidation(ctx context.Context, d *schema.ResourceData, m interface{}) error {
 	targetArn := d.Get("target_group_arn")
 	defaultActions := d.Get("default_actions")
 
