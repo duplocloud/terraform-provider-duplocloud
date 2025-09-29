@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -514,11 +515,12 @@ func flattenLbTargetGroupHealthCheck(targetGroup *duplosdk.DuploTargetGroup) []i
 		"healthy_threshold":   targetGroup.HealthyThresholdCount,
 		"interval":            targetGroup.HealthCheckIntervalSeconds,
 		"port":                targetGroup.HealthCheckPort,
-		"protocol":            targetGroup.HealthCheckProtocol.Value,
 		"timeout":             targetGroup.HealthCheckTimeoutSeconds,
 		"unhealthy_threshold": targetGroup.UnhealthyThresholdCount,
 	}
-
+	if targetGroup.HealthCheckProtocol != nil && targetGroup.HealthCheckProtocol.Value != "" {
+		m["protocol"] = targetGroup.HealthCheckProtocol.Value
+	}
 	if len(targetGroup.HealthCheckPath) > 0 {
 		m["path"] = targetGroup.HealthCheckPath
 	}
