@@ -169,11 +169,11 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			},
 		},
 		"requires_compatibilities": {
-			Type:             schema.TypeSet,
-			Description:      "Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.",
-			Optional:         true,
-			Computed:         true,
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Type:        schema.TypeSet,
+			Description: "Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.",
+			Optional:    true,
+			Computed:    true,
+			//	DiffSuppressFunc: diffSuppressWhenNotCreating,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
@@ -468,9 +468,20 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("pid_mode", duplo.PidMode)
 	// stop updating state unitl we have EC2 support
 	if len(duplo.Compatibilities) > 0 {
+		ipRC := d.Get("requires_compatibilities").(*schema.Set)
+		m := map[string]interface{}{}
+		for _, i := range ipRC.List() {
+			m[i.(string)] = struct{}{}
+		}
 		inf := []interface{}{}
 		for _, comp := range duplo.Compatibilities {
-			inf = append(inf, comp)
+			if len(m) > 0 {
+				if _, ok := m[comp]; ok {
+					inf = append(inf, comp)
+				}
+			} else {
+				inf = append(inf, comp)
+			}
 		}
 		d.Set("requires_compatibilities", inf)
 	}
