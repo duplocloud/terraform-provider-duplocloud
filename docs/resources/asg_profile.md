@@ -202,8 +202,8 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `keypair_type` (Number) The numeric ID of the keypair type being used.Should be one of:
 
    - `0` : Default
-   - `1` : ED25519
-   - `2` : RSA (deprecated - some operating systems no longer support it)
+   - `1` : RSA (deprecated - some operating systems no longer support it)
+   - `2` : ED25519
 - `max_instance_count` (Number) The maximum size of the Auto Scaling Group.
 - `max_spot_price` (String) Maximum price to pay for a spot instance in dollars per unit hour.
 - `metadata` (Block List) Configuration metadata used when creating the host.<br>*Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10* (see [below for nested schema](#nestedblock--metadata))
