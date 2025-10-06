@@ -475,7 +475,11 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 		}
 		inf := []interface{}{}
 		for _, comp := range duplo.Compatibilities {
-			if _, ok := m[comp]; ok {
+			if len(m) > 0 {
+				if _, ok := m[comp]; ok {
+					inf = append(inf, comp)
+				}
+			} else {
 				inf = append(inf, comp)
 			}
 		}
