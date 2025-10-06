@@ -119,6 +119,14 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"edition": {
+			Description:  "Edition for the database. Valid value ENTERPRISE, ENTERPRISE_PLUS",
+			Type:         schema.TypeString,
+			Optional:     true,
+			Default:      "ENTERPRISE",
+			ValidateFunc: validation.StringInSlice([]string{"ENTERPRISE", "ENTERPRISE_PLUS"}, false),
+			ForceNew:     true,
+		},
 	}
 }
 
@@ -344,6 +352,7 @@ func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name strin
 	flattenGcpLabels(d, duplo.Labels)
 	flattenIPAddress(d, duplo.IPAddress)
 	flattenDatabasFlags(d, duplo.DatabaseFlags)
+	d.Set("edition", duplo.Edition)
 
 }
 
@@ -355,6 +364,7 @@ func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInsta
 		DataDiskSizeGb:  d.Get("disk_size").(int),
 		ResourceType:    duplosdk.DuploGCPDatabaseInstanceResourceType,
 		RootPassword:    d.Get("root_password").(string),
+		Edition:         d.Get("edition").(string),
 	}
 	if v, ok := d.GetOk("labels"); ok && !isInterfaceNil(v) {
 		rq.Labels = map[string]string{}
