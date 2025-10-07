@@ -58,7 +58,7 @@ resource "duplocloud_gcp_sql_database_instance" "sql" {
 
 - `database_flag` (Block List) List of database flags to be set on the database instance. Please refer to the [Database Flags Documentation](https://cloud.google.com/sql/docs/mysql/flags) for more details on available flags. (see [below for nested schema](#nestedblock--database_flag))
 - `disk_size` (Number) The size of data disk, in GB. Size of a running instance cannot be reduced but can be increased. The minimum value is 10GB.
-- `edition` (String) Edition for the database. Valid value ENTERPRISE, ENTERPRISE_PLUS Defaults to `ENTERPRISE`.
+- `edition` (String) Edition for the database. Valid value ENTERPRISE, ENTERPRISE_PLUS
 - `labels` (Map of String) Map of string keys and values that can be used to organize and categorize this resource.
 - `need_backup` (Boolean) Flag to enable backup process on delete of database Defaults to `true`.
 - `root_password` (String) Provide root password for specific database versions.
