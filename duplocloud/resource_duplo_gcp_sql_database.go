@@ -350,6 +350,9 @@ func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name strin
 	flattenGcpLabels(d, duplo.Labels)
 	flattenIPAddress(d, duplo.IPAddress)
 	flattenDatabasFlags(d, duplo.DatabaseFlags)
+	if duplo.Edition == "" {
+		duplo.Edition = "ENTERPRISE"
+	}
 	d.Set("edition", duplo.Edition)
 
 }
