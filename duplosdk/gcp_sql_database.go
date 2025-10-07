@@ -21,6 +21,7 @@ type DuploGCPSqlDBInstance struct {
 	IPAddress       []string                    `json:"IpAddress,omitempty"`
 	ConnectionName  string                      `json:"ConnectionName,omitempty"`
 	DatabaseFlags   []DuploGCPSqlDBInstanceFlag `json:"DatabaseFlags"`
+	Edition         string                      `json:"Edition"`
 }
 
 type DuploGCPSqlDBInstanceFlag struct {
