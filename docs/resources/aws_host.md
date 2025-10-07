@@ -151,8 +151,8 @@ resource "duplocloud_aws_host" "host" {
 - `keypair_type` (Number) The numeric ID of the keypair type being used.Should be one of:
 
    - `0` : Default
-   - `1` : ED25519
-   - `2` : RSA (deprecated - some operating systems no longer support it)
+   - `1` : RSA (deprecated - some operating systems no longer support it)
+   - `2` : ED25519
 - `metadata` (Block List) Configuration metadata used when creating the host.<br>*Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10* (see [below for nested schema](#nestedblock--metadata))
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))

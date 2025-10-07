@@ -334,7 +334,6 @@ func resourceGcpSqlDBInstanceDelete(ctx context.Context, d *schema.ResourceData,
 	if diag != nil {
 		return diag
 	}
-
 	log.Printf("[TRACE] resourceGcpSqlDBInstanceDelete ******** end")
 	return nil
 }
