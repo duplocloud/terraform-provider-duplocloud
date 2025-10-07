@@ -123,7 +123,6 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Description:  "Edition for the database. Valid value ENTERPRISE, ENTERPRISE_PLUS",
 			Type:         schema.TypeString,
 			Optional:     true,
-			Default:      "ENTERPRISE",
 			ValidateFunc: validation.StringInSlice([]string{"ENTERPRISE", "ENTERPRISE_PLUS"}, false),
 			ForceNew:     true,
 		},
@@ -334,7 +333,6 @@ func resourceGcpSqlDBInstanceDelete(ctx context.Context, d *schema.ResourceData,
 	if diag != nil {
 		return diag
 	}
-
 	log.Printf("[TRACE] resourceGcpSqlDBInstanceDelete ******** end")
 	return nil
 }
