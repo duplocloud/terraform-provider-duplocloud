@@ -208,8 +208,11 @@ func flattenK8sConfigMap(d *schema.ResourceData, duplo *duplosdk.DuploK8sConfigM
 	// First, set the simple fields.
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("name", duplo.Name)
-	m := duplo.Metadata["labels"].(map[string]interface{})
-	d.Set("labels", m)
+	m := duplo.Metadata["labels"]
+	if m != nil {
+		d.Set("labels", m.(map[string]interface{}))
+
+	}
 	// Next, set the JSON encoded strings.
 	toJsonStringState("data", duplo.Data, d)
 	toJsonStringState("metadata", duplo.Metadata, d)
