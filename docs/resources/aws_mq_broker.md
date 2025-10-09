@@ -272,7 +272,7 @@ Import is supported using the following syntax:
 ```shell
 # Example: Importing an existing AWS MQ broker
 #  - *TENANT_ID* is the tenant GUID
-#  - *SHORT_NAME* is the short name of the AWS load balancer
+#  - *SHORT_NAME* is the short name of the amazon mq broker
 #
 terraform import duplocloud_aws_mq_broker.mq *TENANT_ID*/*SHORT_NAME*
 ```
