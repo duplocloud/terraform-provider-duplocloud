@@ -172,7 +172,7 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeSet,
 			Description: "Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.",
 			Optional:    true,
-			Computed:    true,
+			ForceNew:    true,
 			//	DiffSuppressFunc: diffSuppressWhenNotCreating,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
