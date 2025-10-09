@@ -172,7 +172,7 @@ type LambdaFunctionEventInvokeConfiguration struct {
 	DestinationConfig        *DestinationConfiguration `json:"DestinationConfig,omitempty"`
 	FunctionName             string                    `json:"FunctionName,omitempty"`
 	MaximumEventAgeInSeconds int                       `json:"MaximumEventAgeInSeconds,omitempty"`
-	MaximumRetryAttempts     int                       `json:"MaximumRetryAttempts,omitempty"`
+	MaximumRetryAttempts     int                       `json:"MaximumRetryAttempts"`
 }
 
 type PutLambdaFunctionEventInvokeConfiguration struct {
