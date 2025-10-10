@@ -71,10 +71,10 @@ func (c *Client) DuploTargetGroupGet(tenantID, name string) (*DuploTargetGroup, 
 }
 
 func (c *Client) DuploTargetGroupDelete(tenantID string, name string) ClientError {
-	rp := DuploTargetGroup{}
+	//	rp := DuploTargetGroup{}
 	return c.deleteAPI(
 		fmt.Sprintf("DuploTargetGroupDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/lbTargetGroup/%s", tenantID, name),
-		&rp,
+		nil,
 	)
 }

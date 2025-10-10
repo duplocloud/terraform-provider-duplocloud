@@ -514,9 +514,11 @@ func flattenLbTargetGroupHealthCheck(targetGroup *duplosdk.DuploTargetGroup) []i
 		"enabled":             targetGroup.HealthCheckEnabled,
 		"healthy_threshold":   targetGroup.HealthyThresholdCount,
 		"interval":            targetGroup.HealthCheckIntervalSeconds,
-		"port":                targetGroup.HealthCheckPort,
 		"timeout":             targetGroup.HealthCheckTimeoutSeconds,
 		"unhealthy_threshold": targetGroup.UnhealthyThresholdCount,
+	}
+	if targetGroup.HealthCheckPort != "" {
+		m["port"] = targetGroup.HealthCheckPort
 	}
 	if targetGroup.HealthCheckProtocol != nil && targetGroup.HealthCheckProtocol.Value != "" {
 		m["protocol"] = targetGroup.HealthCheckProtocol.Value
