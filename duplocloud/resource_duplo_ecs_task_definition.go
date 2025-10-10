@@ -60,10 +60,10 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"prevent_tf_destroy": {
-			Description: "Prevent this resource to be deleted from terraform destroy. Default value is `true`.",
-			Type:        schema.TypeBool,
+			Description: "Prevent this resource to be deleted from terraform destroy.",
+			Type:        schema.TypeString,
 			Optional:    true,
-			Default:     true,
+			Default:     "true",
 		},
 		"container_definitions": {
 			Type:     schema.TypeString,
@@ -313,8 +313,11 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 	}
 	// Convert the object into Terraform resource data
 	flattenEcsTaskDefinition(rp, d)
+	f := d.Get("prevent_tf_destroy").(string)
+	d.Set("prevent_tf_destroy", f)
 	// this is to check if the flow happened after create context
-	if v := ctx.Value(flowContextKey); v == nil || v.(string) != "normal" {
+	v := ctx.Value(flowContextKey)
+	if v == nil {
 		d.Set("prevent_tf_destroy", true)
 	}
 
@@ -365,9 +368,9 @@ func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	preventDestroy := d.Get("prevent_tf_destroy").(bool)
-	log.Printf("[TRACE] Prevent destroy is %t", preventDestroy)
-	if !preventDestroy {
+	preventDestroy := d.Get("prevent_tf_destroy").(string)
+	log.Printf("[TRACE] Prevent destroy is %s", preventDestroy)
+	if preventDestroy == "false" {
 		c := m.(*duplosdk.Client)
 		err = c.EcsTaskDefinitionDelete(tenantID, arn)
 		if err != nil {
