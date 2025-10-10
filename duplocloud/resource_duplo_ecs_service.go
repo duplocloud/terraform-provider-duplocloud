@@ -479,8 +479,8 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 		d.Set("placement_strategy", flattenPlacementStrategies(duplo.PlacementStrategy))
 	}
 
-	if duplo.PlacementConstraint != nil && len(*duplo.PlacementConstraint) > 0 {
-		d.Set("placement_constraint", flattenPlacementConstraints(duplo.PlacementConstraint))
+	if duplo.PlacementConstraints != nil && len(*duplo.PlacementConstraints) > 0 {
+		d.Set("placement_constraint", flattenPlacementConstraints(duplo.PlacementConstraints))
 	}
 	return nil
 }
@@ -519,7 +519,7 @@ func ecsServiceFromState(d *schema.ResourceData) *duplosdk.DuploEcsService {
 	duploObject.LBConfigurations = ecsLoadBalancersFromState(d)
 	duploObject.CapacityProviderStrategy = expandCapacityProviderStrategies(d.Get("capacity_provider_strategy").([]interface{}))
 	duploObject.PlacementStrategy = expandPlacementStrategies(d.Get("placement_strategy").([]interface{}))
-	duploObject.PlacementConstraint = expandPlacementConstraint(d.Get("placement_constraint").([]interface{}))
+	duploObject.PlacementConstraints = expandPlacementConstraint(d.Get("placement_constraint").([]interface{}))
 	return &duploObject
 }
 

@@ -66,7 +66,7 @@ type DuploEcsService struct {
 	Index                         int                                        `json:"Index"`
 	CapacityProviderStrategy      *[]DuploEcsServiceCapacityProviderStrategy `json:"CapacityProviderStrategy,omitempty"`
 	PlacementStrategy             *[]DuploEcsPlacementStrategy               `json:"PlacementStrategy,omitempty"`
-	PlacementConstraint           *[]DuploEcsPlacementConstraint             `json:"PlacementConstraint,omitempty"`
+	PlacementConstraints          *[]DuploEcsPlacementConstraint             `json:"PlacementConstraints,omitempty"`
 }
 
 /*************************************************
