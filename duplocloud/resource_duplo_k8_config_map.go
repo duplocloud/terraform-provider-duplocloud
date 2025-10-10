@@ -211,7 +211,8 @@ func flattenK8sConfigMap(d *schema.ResourceData, duplo *duplosdk.DuploK8sConfigM
 	m := duplo.Metadata["labels"]
 	if m != nil {
 		d.Set("labels", m.(map[string]interface{}))
-
+	} else {
+		d.Set("labels", nil)
 	}
 	// Next, set the JSON encoded strings.
 	toJsonStringState("data", duplo.Data, d)
