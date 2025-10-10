@@ -38,3 +38,29 @@ resource "duplocloud_ecs_service" "myservice" {
     capacity_provider = "<asg-fullname>"
   }
 }
+
+#Example for placement strategy and placement constraint
+resource "duplocloud_ecs_service" "myservice" {
+  tenant_id       = duplocloud_tenant.myapp.tenant_id
+  name            = "myservice"
+  task_definition = duplocloud_ecs_task_definition.myservice.arn
+  replicas        = 1
+  capacity_provider_strategy {
+    base              = 0
+    weight            = 1
+    capacity_provider = "<asg-fullname>"
+  }
+  placement_strategy {
+    type  = "binpack"
+    field = "cpu"
+  }
+  placement_strategy {
+    type  = "spread"
+    field = "instanceId"
+  }
+  #
+  placement_constraint {
+    type       = "memberOf"
+    expression = "attribute:ecs.instance-type =~ t3.*"
+  }
+}
