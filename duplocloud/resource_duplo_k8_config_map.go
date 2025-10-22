@@ -51,7 +51,6 @@ func k8sConfigMapSchema() map[string]*schema.Schema {
 		"labels": {
 			Type:     schema.TypeMap,
 			Optional: true,
-			Computed: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 	}
