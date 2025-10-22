@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -46,6 +47,12 @@ func k8sConfigMapSchema() map[string]*schema.Schema {
 				"You can use the `jsondecode()` function to parse this, if needed.",
 			Type:     schema.TypeString,
 			Computed: true,
+		},
+		"labels": {
+			Type:     schema.TypeMap,
+			Optional: true,
+			Computed: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 	}
 }
@@ -181,7 +188,8 @@ func expandK8sConfigMap(d *schema.ResourceData) (*duplosdk.DuploK8sConfigMap, er
 
 	// The name field is passed through metadata.
 	duplo.Metadata = map[string]interface{}{
-		"name": d.Get("name").(string),
+		"name":   d.Get("name").(string),
+		"labels": expandAsStringMap("labels", d),
 	}
 
 	// The data must be decoded as JSON.
@@ -200,7 +208,12 @@ func flattenK8sConfigMap(d *schema.ResourceData, duplo *duplosdk.DuploK8sConfigM
 	// First, set the simple fields.
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("name", duplo.Name)
-
+	m := duplo.Metadata["labels"]
+	if m != nil {
+		d.Set("labels", m.(map[string]interface{}))
+	} else {
+		d.Set("labels", nil)
+	}
 	// Next, set the JSON encoded strings.
 	toJsonStringState("data", duplo.Data, d)
 	toJsonStringState("metadata", duplo.Metadata, d)
