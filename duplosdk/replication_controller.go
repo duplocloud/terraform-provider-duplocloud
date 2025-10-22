@@ -288,6 +288,21 @@ func (c *Client) ReplicationControllerUpdate(tenantID string, rq *DuploReplicati
 	)
 }
 
+func (c *Client) ReplicationControllerDeleteFallback(tenantID string, rq *DuploReplicationControllerDeleteRequest) ClientError {
+	rq.TenantId = tenantID
+	rq.State = "delete"
+	if rq.NetworkId == "" {
+		rq.NetworkId = "default"
+	}
+
+	return c.postAPI(
+		fmt.Sprintf("ReplicationControllerDelete(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("subscriptions/%s/ReplicationControllerUpdate", tenantID),
+		&rq,
+		nil,
+	)
+}
+
 // ReplicationControllerDelete deletes a replication controller via the Duplo API.
 func (c *Client) ReplicationControllerDelete(tenantID string, rq *DuploReplicationControllerDeleteRequest) ClientError {
 	return c.deleteAPI(
