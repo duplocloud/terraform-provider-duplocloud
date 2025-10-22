@@ -439,8 +439,12 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 		// Delete the object from Duplo
 		c := m.(*duplosdk.Client)
 		err := c.ReplicationControllerDelete(tenantID, &rq)
-		if err != nil {
-			return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
+		if err != nil && err.Status() == 400 {
+			err := c.ReplicationControllerDeleteFallback(tenantID, &rq)
+			if err != nil {
+				return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
+			}
+
 		}
 
 		// Wait for it to be deleted
