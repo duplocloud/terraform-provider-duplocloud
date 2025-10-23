@@ -398,19 +398,23 @@ func (c *Client) AwsBatchJobDefinitionGetAllRevisions(tenantID string, name stri
 
 func (c *Client) AwsBatchJobDefinitionList(tenantID string) (*[]DuploAwsBatchJobDefinitionResp, ClientError) {
 	rp := []DuploAwsBatchJobDefinitionResp{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("AwsBatchJobDefinitionList(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition", tenantID),
 		&rp,
+		&conf,
 	)
 	return &rp, err
 }
 
 func (c *Client) AwsBatchJobDefinitionDelete(tenantID string, name string) ClientError {
-	return c.deleteAPI(
+	conf := NewRetryConf()
+	return c.deleteAPIWithRetry(
 		fmt.Sprintf("AwsBatchJobDefinitionDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition/%s", tenantID, name),
 		nil,
+		&conf,
 	)
 }
 
