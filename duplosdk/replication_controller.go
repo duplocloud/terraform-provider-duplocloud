@@ -294,12 +294,14 @@ func (c *Client) ReplicationControllerDeleteFallback(tenantID string, rq *DuploR
 	if rq.NetworkId == "" {
 		rq.NetworkId = "default"
 	}
+	conf := NewRetryConf()
 
-	return c.postAPI(
+	return c.postAPIWithRetry(
 		fmt.Sprintf("ReplicationControllerDelete(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("subscriptions/%s/ReplicationControllerUpdate", tenantID),
 		&rq,
 		nil,
+		&conf,
 	)
 }
 
