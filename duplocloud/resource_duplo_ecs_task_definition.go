@@ -470,21 +470,10 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("ipc_mode", duplo.IpcMode)
 	d.Set("pid_mode", duplo.PidMode)
 	// stop updating state unitl we have EC2 support
-	if len(duplo.Compatibilities) > 0 {
-		ipRC := d.Get("requires_compatibilities").(*schema.Set)
-		m := map[string]interface{}{}
-		for _, i := range ipRC.List() {
-			m[i.(string)] = struct{}{}
-		}
+	if len(duplo.RequiresCompatibilities) > 0 {
 		inf := []interface{}{}
-		for _, comp := range duplo.Compatibilities {
-			if len(m) > 0 {
-				if _, ok := m[comp]; ok {
-					inf = append(inf, comp)
-				}
-			} else {
-				inf = append(inf, comp)
-			}
+		for _, comp := range duplo.RequiresCompatibilities {
+			inf = append(inf, comp)
 		}
 		d.Set("requires_compatibilities", inf)
 	}
