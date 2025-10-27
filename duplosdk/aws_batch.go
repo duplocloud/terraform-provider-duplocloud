@@ -399,6 +399,7 @@ func (c *Client) AwsBatchJobDefinitionGetAllRevisions(tenantID string, name stri
 func (c *Client) AwsBatchJobDefinitionList(tenantID string) (*[]DuploAwsBatchJobDefinitionResp, ClientError) {
 	rp := []DuploAwsBatchJobDefinitionResp{}
 	conf := NewRetryConf()
+	conf.RateExceededMaxRetries = 15
 	err := c.getAPIWithRetry(
 		fmt.Sprintf("AwsBatchJobDefinitionList(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition", tenantID),
