@@ -69,6 +69,11 @@ func resourceUserTenantAccessRead(ctx context.Context, d *schema.ResourceData, m
 	c := m.(*duplosdk.Client)
 	duplo, err := c.GetUserTenantAccessInfo(idParts[0], idParts[1])
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceUserTenantAccessRead(%s, %s): object not found", idParts[0], idParts[1])
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
 	if duplo == nil {
@@ -154,6 +159,7 @@ func resourceUserTenantAccessDelete(ctx context.Context, d *schema.ResourceData,
 	err := c.GrantUserTenantAccess(&rq)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceUserTenantAccessDelete(%s): object not found", id)
 			return nil
 		}
 		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
