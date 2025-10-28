@@ -92,6 +92,7 @@ func resourceAwsRdsTagRead(ctx context.Context, d *schema.ResourceData, m interf
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsRdsTagRead(%s, %s, %s, %s): object missing", tenantId, resourceType, resourceId, tagKey)
 			d.SetId("")
 			return nil
 		}
@@ -211,6 +212,7 @@ func resourceAwsRdsTagDelete(ctx context.Context, d *schema.ResourceData, m inte
 	clientErr := c.RdsTagDeleteV3(tenantID, tag)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsRdsTagDelete(%s, %s, %s, %s): object missing", tenantID, resourceType, resourceId, tagKey)
 			return nil
 		}
 		return diag.Errorf("Unable to delete rds tag - (Tenant: %s,  ResourceType: %s, ResourceId: %s, TagKey: %s) : %s", tenantID, resourceType, resourceId, tagKey, clientErr)
