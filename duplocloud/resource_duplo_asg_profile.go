@@ -665,8 +665,7 @@ func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 		d.HasChange("min_instance_count") ||
 		d.HasChange("max_instance_count") ||
 		d.HasChange("friendly_name") ||
-		d.HasChange("enabled_metrics") ||
-		d.HasChange("taints")
+		d.HasChange("enabled_metrics")
 }
 
 func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags string) {
