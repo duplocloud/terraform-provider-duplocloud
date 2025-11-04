@@ -54,7 +54,12 @@ resource "duplocloud_gcp_host" "host" {
 
 - `accelerator_count` (Number) The number of the guest accelerator cards exposed to this instance. Defaults to `0`.
 - `accelerator_type` (String) The accelerator type resource to expose to this instance
-- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
+- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to.
+Should be one of:
+
+   - `0` : Duplo Native container agent
+   - `7` : Linux container agent for Kubernetes
+ Defaults to `0`.
 - `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
 - `labels` (Map of String) A set of key/value label pairs assigned to the vm
 - `metadata` (Map of String) Configuration, metadata used when creating the host.<br>*Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10, Similarly to added start up script one can pass the key as startup_script and startup command as its value*

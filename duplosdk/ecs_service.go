@@ -40,6 +40,16 @@ type DuploEcsServiceCapacityProviderStrategy struct {
 	Base             int    `json:"Base"`
 }
 
+type DuploEcsPlacementStrategy struct {
+	Type  string `json:"Type"`
+	Field string `json:"Field,omitempty"`
+}
+
+type DuploEcsPlacementConstraint struct {
+	Type       string `json:"Type"`
+	Expression string `json:"Expression,omitempty"`
+}
+
 type DuploEcsService struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-"`
@@ -55,6 +65,8 @@ type DuploEcsService struct {
 	UseIndexForLb                 bool                                       `json:"UseIndexForLb"`
 	Index                         int                                        `json:"Index"`
 	CapacityProviderStrategy      *[]DuploEcsServiceCapacityProviderStrategy `json:"CapacityProviderStrategy,omitempty"`
+	//PlacementStrategy             *[]DuploEcsPlacementStrategy               `json:"PlacementStrategy,omitempty"`
+	//PlacementConstraints          *[]DuploEcsPlacementConstraint             `json:"PlacementConstraints,omitempty"`
 }
 
 /*************************************************
@@ -125,6 +137,7 @@ func (c *Client) EcsServiceCreateOrUpdate(tenantID string, rq *DuploEcsService, 
 			verb,
 			fmt.Sprintf("EcsServiceUpdate(%s, %s)", tenantID, rq.Name),
 			fmt.Sprintf("v3/subscriptions/%s/aws/ecsService", tenantID),
+			//fmt.Sprintf("subscriptions/%s/UpdateEcsService", tenantID),
 			&rq,
 			&rp,
 		)
@@ -142,6 +155,7 @@ func (c *Client) EcsServiceCreateOrUpdate(tenantID string, rq *DuploEcsService, 
 				verb,
 				fmt.Sprintf("EcsServiceUpdate(%s, %s)", tenantID, rq.Name),
 				fmt.Sprintf("v2/subscriptions/%s/EcsServiceApiV2", tenantID),
+				//fmt.Sprintf("subscriptions/%s/CreateEcsService", tenantID),
 				&rq,
 				&rp,
 			)

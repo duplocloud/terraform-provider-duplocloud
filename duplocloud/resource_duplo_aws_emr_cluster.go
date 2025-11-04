@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -292,6 +293,7 @@ func resourceAwsEmrClusterRead(_ context.Context, d *schema.ResourceData, m inte
 	duplo, clientErr := c.DuploEmrClusterGet(tenantID, jobFlowId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[WARN] resourceAwsEmrClusterRead(%s, %s, %s): object not found, removing from state", tenantID, jobFlowId, name)
 			d.SetId("") // object missing
 			return nil
 		}
@@ -410,6 +412,7 @@ func resourceAwsEmrClusterDelete(ctx context.Context, d *schema.ResourceData, m 
 	clientErr := c.DuploEmrClusterDelete(tenantID, jobFlowId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[WARN] resourceAwsEmrClusterDelete(%s, %s, %s): object not found, removing from state", tenantID, jobFlowId, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s emrCluster '%s': %s %s", tenantID, jobFlowId, name, clientErr)

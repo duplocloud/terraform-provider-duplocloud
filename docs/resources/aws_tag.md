@@ -43,10 +43,10 @@ Optional:
 Import is supported using the following syntax:
 
 ```shell
-# Example: Importing an existing AWS tag
+# Example: Importing an existing custom tag for an AWS resource
 #  - *TENANT_ID* is the tenant GUID
-#  - *ARN* The resource arn. Should be encoded thrice with URL encoding.
+#  - *ARN* The resource arn.
 #  - *TAGKEY* Key of the tag
 #
-terraform import duplocloud_aws_tag.custom *TENANT_ID*/*ARN*/*TAGKEY*
+terraform import duplocloud_aws_tag.custom *TENANT_ID*/*TAGKEY*/*ARN*
 ```

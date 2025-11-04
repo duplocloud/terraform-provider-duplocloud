@@ -31,6 +31,7 @@ type DuploReplicationController struct {
 	Tags                              *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
 	Index                             int                    `json:"Index"`
+	AppName                           string                 `json:"AppName,omitempty"`
 }
 
 // DuploPodTemplate represents a pod template in the Duplo SDK
@@ -160,6 +161,7 @@ type DuploReplicationControllerCreateRequest struct {
 	Commands string `json:"Commands,omitempty"`
 
 	// TODO: DeviceIds
+	AppName string `json:"AppName,omitempty"`
 }
 
 type DuploReplicationControllerUpdateRequest struct {
@@ -182,6 +184,7 @@ type DuploReplicationControllerUpdateRequest struct {
 	OtherDockerConfig                 string                 `json:"OtherDockerConfig,omitempty"`
 	OtherDockerHostConfig             string                 `json:"OtherDockerHostConfig,omitempty"`
 	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
+	AppName                           string                 `json:"AppName,omitempty"`
 }
 
 type DuploReplicationControllerDeleteRequest struct {
@@ -285,8 +288,7 @@ func (c *Client) ReplicationControllerUpdate(tenantID string, rq *DuploReplicati
 	)
 }
 
-// ReplicationControllerDelete deletes a replication controller via the Duplo API.
-func (c *Client) ReplicationControllerDelete(tenantID string, rq *DuploReplicationControllerDeleteRequest) ClientError {
+func (c *Client) ReplicationControllerDeleteFallback(tenantID string, rq *DuploReplicationControllerDeleteRequest) ClientError {
 	rq.TenantId = tenantID
 	rq.State = "delete"
 	if rq.NetworkId == "" {
@@ -297,6 +299,15 @@ func (c *Client) ReplicationControllerDelete(tenantID string, rq *DuploReplicati
 		fmt.Sprintf("ReplicationControllerDelete(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("subscriptions/%s/ReplicationControllerUpdate", tenantID),
 		&rq,
+		nil,
+	)
+}
+
+// ReplicationControllerDelete deletes a replication controller via the Duplo API.
+func (c *Client) ReplicationControllerDelete(tenantID string, rq *DuploReplicationControllerDeleteRequest) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("ReplicationControllerDelete(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/replicationcontroller/%s", tenantID, rq.Name),
 		nil,
 	)
 }

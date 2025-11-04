@@ -112,6 +112,11 @@ func resourceAzureVmMaintenanceConfigRead(ctx context.Context, d *schema.Resourc
 	c := m.(*duplosdk.Client)
 	duplo, err := c.AzureVmMaintenanceConfigurationGet(tenantId, vmName)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureVmMaintenanceConfigRead: Azure vm maintenance configuration %s not found for tenantId %s, removing from state", vmName, tenantId)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve vm maintenance configuration details for '%s': %s", vmName, err)
 	}
 	if duplo == nil {
@@ -174,6 +179,10 @@ func resourceAzureVmMaintenanceConfigDelete(ctx context.Context, d *schema.Resou
 	c := m.(*duplosdk.Client)
 	err := c.AzureVmMaintenanceConfigurationDelete(tenantId, vmName)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureVmMaintenanceConfigDelete: Azure vm maintenance configuration %s not found for tenantId %s, removing from state", vmName, tenantId)
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve vm maintenance configuration details for '%s': %s", vmName, err)
 	}
 	d.SetId("")

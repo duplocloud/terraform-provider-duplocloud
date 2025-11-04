@@ -179,19 +179,21 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc:     validation.IntBetween(1, 500),
 		},
 		"snapshot_arns": {
-			Description:   "Specify the ARN of a Redis/Valkey RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html",
-			Type:          schema.TypeList,
-			Optional:      true,
-			Computed:      true,
-			ConflictsWith: []string{"snapshot_name"},
-			Elem:          &schema.Schema{Type: schema.TypeString},
+			Description:      "Specify the ARN of a Redis/Valkey RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html",
+			Type:             schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			ConflictsWith:    []string{"snapshot_name"},
+			Elem:             &schema.Schema{Type: schema.TypeString},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"snapshot_name": {
-			Description:   "Select the snapshot/backup you want to use for creating redis/valkey.",
-			Type:          schema.TypeString,
-			Optional:      true,
-			Computed:      true,
-			ConflictsWith: []string{"snapshot_arns"},
+			Description:      "Select the snapshot/backup you want to use for creating redis/valkey.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ConflictsWith:    []string{"snapshot_arns"},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"snapshot_retention_limit": {
 			Description:  "Specify retention limit in days. Accepted values - 1-35.",
@@ -206,6 +208,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			ValidateDiagFunc: isValidSnapshotWindow(),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"log_delivery_configuration": {
 			Type:     schema.TypeSet,
@@ -248,6 +251,12 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+
+		"is_primary": {
+			Description: "Flag to indicate if this is primary replication group",
+			Type:        schema.TypeBool,
+			Computed:    true,
+		},
 	}
 }
 
@@ -261,6 +270,7 @@ func resourceDuploEcacheInstance() *schema.Resource {
 		ReadContext:   resourceDuploEcacheInstanceRead,
 		CreateContext: resourceDuploEcacheInstanceCreate,
 		DeleteContext: resourceDuploEcacheInstanceDelete,
+		UpdateContext: resourceDuploEcacheInstanceUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -287,13 +297,18 @@ func resourceDuploEcacheInstanceRead(ctx context.Context, d *schema.ResourceData
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, err := c.EcacheInstanceGet(tenantID, name)
+	duplo, cerr := c.EcacheInstanceGet(tenantID, name)
 	if duplo == nil {
 		d.SetId("")
 		return nil
 	}
-	if err != nil {
-		return diag.FromErr(err)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceDuploEcacheInstanceRead: Ecache Instance %s not found for tenantId %s, removing from state", name, tenantID)
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 
 	// Convert the object into Terraform resource data
@@ -316,11 +331,7 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	c := m.(*duplosdk.Client)
 
-	fullName, errname := c.GetResourceName("duplo", tenantID, duplo.Name, false)
-	if errname != nil {
-		return diag.Errorf("resourceDuploEcacheInstanceCreate: Unable to retrieve duplo service name (name: %s, error: %s)", duplo.Name, errname.Error())
-
-	}
+	fullName := "duplo-" + duplo.Name
 	if !validateStringLength(fullName, TOTALECACHENAMELENGTH) {
 		return diag.Errorf("resourceDuploEcacheInstanceCreate: fullname %s exceeds allowable ecache name length %d)", fullName, TOTALECACHENAMELENGTH)
 
@@ -421,9 +432,13 @@ func resourceDuploEcacheInstanceDelete(ctx context.Context, d *schema.ResourceDa
 
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
-	err = c.EcacheInstanceDelete(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	cerr := c.EcacheInstanceDelete(tenantID, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceDuploEcacheInstanceDelete: Ecache Instance %s not found for tenantId %s, removing from state", name, tenantID)
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 
 	// Wait up to 60 seconds for Duplo to show the object as deleted.
@@ -649,6 +664,14 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
+	if duplo.IsGlobal {
+		m := make(map[string]interface{})
+		m["group_id"] = duplo.GlobalReplicationGroupId
+		m["description"] = duplo.GlobalReplicationGroupDescription
+		m["secondary_tenant_id"] = duplo.SecondaryTenantId
+		m["is_primary"] = duplo.IsPrimary
+		d.Set("global_replication_group", []interface{}{m})
+	}
 	return nil
 }
 
@@ -778,24 +801,58 @@ func isValidSnapshotWindow() schema.SchemaValidateDiagFunc {
 }
 
 func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
-	ecm := diff.Get("enable_cluster_mode").(bool)
-	nshard := diff.Get("number_of_shards").(int)
+	// Safely get enable_cluster_mode with nil check
+	ecmVal := diff.Get("enable_cluster_mode")
+	ecm := false
+	if ecmVal != nil {
+		ecm = ecmVal.(bool)
+	}
+
+	// Safely get number_of_shards with nil check
+	nshardVal := diff.Get("number_of_shards")
+	nshard := 0
+	if nshardVal != nil {
+		nshard = nshardVal.(int)
+	}
+
 	if ecm && nshard == 0 {
 		return fmt.Errorf("number_of_shards is required when cluster mode is enabled")
 	}
-	eng := diff.Get("cache_type").(int)
-	engVer := diff.Get("engine_version").(string)
+
+	// Safely get cache_type with nil check
+	engVal := diff.Get("cache_type")
+	eng := 0 // Default to Redis (0)
+	if engVal != nil {
+		eng = engVal.(int)
+	}
+
+	// Safely get engine_version with nil check
+	engVerVal := diff.Get("engine_version")
+	engVer := ""
+	if engVerVal != nil {
+		engVer = engVerVal.(string)
+	}
+
 	if engVer != "" {
 		diag := validateClusterEngineVersion(eng, engVer)
 		if diag != nil {
 			return diagsToError(diag)
 		}
 	}
-	failover := diff.Get("automatic_failover_enabled").(bool)
+	if diff.Get("snapshot_retention_limit").(int) > 0 && diff.Get("cache_type") == 1 {
+		return fmt.Errorf("cannot set snapshot_retention_limit for memcache")
+	}
+	// Safely get automatic_failover_enabled with nil check
+	failoverVal := diff.Get("automatic_failover_enabled")
+	failover := false
+	if failoverVal != nil {
+		failover = failoverVal.(bool)
+	}
+
 	if ecm && !failover {
 		return fmt.Errorf("automatic_failover_enabled should be true for cluster mode")
-
 	}
+
 	return nil
 }
 
@@ -952,5 +1009,36 @@ func validValkeyVersionString(v interface{}, p cty.Path) diag.Diagnostics {
 		)
 	}
 
+	return diags
+}
+
+func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+
+	// Parse the identifying attributes
+	id := d.Id()
+	tenantID, name, err := parseECacheInstanceIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceDuploEcacheInstanceUpdate(%s, %s): start", tenantID, name)
+	c := m.(*duplosdk.Client)
+	identifier := d.Get("identifier").(string)
+	if d.HasChange("snapshot_retention_limit") {
+		rq := duplosdk.DuplocloudEcacheSnapshotRetentionLimitUpdateRequest{
+			Identifier:             identifier,
+			SnapshotRetentionLimit: strconv.Itoa(d.Get("snapshot_retention_limit").(int)),
+		}
+		err = c.EcacheInstanceUpdateSnapshotRetentionLimit(tenantID, name, rq)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+	diags := resourceDuploEcacheInstanceRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s, %s): end", tenantID, name)
 	return diags
 }

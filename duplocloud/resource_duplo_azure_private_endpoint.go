@@ -99,6 +99,7 @@ func resourceAzurePrivateEndpointRead(ctx context.Context, d *schema.ResourceDat
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzurePrivateEndpointRead: Azure private endpoint %s not found for tenantId %s, removing from state", peName, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -155,6 +156,7 @@ func resourceAzurePrivateEndpointDelete(ctx context.Context, d *schema.ResourceD
 	clientErr := c.PrivateEndpointDelete(tenantID, peName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzurePrivateEndpointDelete: Azure private endpoint %s not found for tenantId %s, removing from state", peName, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure private endpoint '%s': %s", tenantID, peName, clientErr)

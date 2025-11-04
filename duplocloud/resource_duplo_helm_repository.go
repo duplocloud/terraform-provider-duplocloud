@@ -106,6 +106,11 @@ func resourceHelmRepositoryRead(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 	duplo, err := c.DuploHelmRepositoryGet(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceHelmRepositoryRead: Helm repository %s not found for tenantId %s, removing from state", name, tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve helm repository details for '%s': %s", name, err)
 	}
 	if duplo == nil {
@@ -168,6 +173,10 @@ func resourceHelmRepositoryDelete(ctx context.Context, d *schema.ResourceData, m
 	c := m.(*duplosdk.Client)
 	err := c.DuploHelmRepositoryDelete(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceHelmRepositoryDelete: Helm repository %s not found for tenantId %s, removing from state", name, tenantID)
+			return nil
+		}
 		return diag.Errorf("Unable to delete helm repository %s for '%s': %s", name, tenantID, err)
 	}
 

@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -116,12 +117,14 @@ func resourceAwsCloudWatchEventRuleRead(ctx context.Context, d *schema.ResourceD
 	duplo, clientErr := c.DuploCloudWatchEventRuleGet(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsCloudWatchEventRuleRead(%s, %s): not found", tenantID, fullName)
 			d.SetId("")
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s cloudwatch event rule'%s': %s", tenantID, fullName, clientErr)
 	}
 	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsCloudWatchEventRuleRead(%s, %s): not found", tenantID, fullName)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -213,6 +216,7 @@ func resourceAwsCloudWatchEventRuleDelete(ctx context.Context, d *schema.Resourc
 	_, clientErr := c.DuploCloudWatchEventRuleDelete(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsCloudWatchEventRuleDelete(%s, %s): not found", tenantID, fullName)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s cloudwatch event rule '%s': %s", tenantID, fullName, clientErr)

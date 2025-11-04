@@ -30,6 +30,7 @@ func resourceAwsCloudfrontFunction() *schema.Resource {
 				Description: "The name of the CloudFront function.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"code": {
 				Description: "The JavaScript code for the CloudFront function.",
@@ -108,6 +109,11 @@ func resourceCloudfrontFunctionRead(ctx context.Context, d *schema.ResourceData,
 			return nil
 		}
 		return diag.Errorf("failed to read CloudFront function: %s", err)
+	}
+	if rp == nil {
+		d.SetId("")
+		return nil
+
 	}
 	d.Set("name", name)
 	flattenCloudFrontFunction(d, rp)

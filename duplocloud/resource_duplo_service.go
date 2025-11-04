@@ -239,6 +239,12 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"app_name": {
+			Description: "The name of the app where service will be a part",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -281,6 +287,11 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 	c := m.(*duplosdk.Client)
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceRead(%s, %s): object not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	if duplo == nil {
@@ -321,6 +332,7 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		ShouldSpreadAcrossZones:           d.Get("should_spread_across_zones").(bool),
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
+		AppName:                           d.Get("app_name").(string),
 	}
 	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
 		updatedOtherDockerConfig, err := updateInitContainerImages(d.Get("other_docker_config").(string), v.([]interface{}))
@@ -377,6 +389,7 @@ func resourceDuploServiceUpdate(ctx context.Context, d *schema.ResourceData, m i
 		ShouldSpreadAcrossZones:           d.Get("should_spread_across_zones").(bool),
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
+		AppName:                           d.Get("app_name").(string),
 	}
 	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
 		updatedOtherDockerConfig, err := updateInitContainerImages(d.Get("other_docker_config").(string), d.Get("init_container_docker_image").([]interface{}))
@@ -416,6 +429,10 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceDelete(%s, %s): object not found", tenantID, name)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 
@@ -431,8 +448,12 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 		// Delete the object from Duplo
 		c := m.(*duplosdk.Client)
 		err := c.ReplicationControllerDelete(tenantID, &rq)
-		if err != nil {
-			return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
+		if err != nil && err.Status() == 400 {
+			err := c.ReplicationControllerDeleteFallback(tenantID, &rq)
+			if err != nil {
+				return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
+			}
+
 		}
 
 		// Wait for it to be deleted
@@ -443,9 +464,9 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 			return nil, nil
 		})
 
-		// Wait 240 more seconds to deal with consistency issues. let's wait longer, GCP has to do a lot.
+		// Wait 2 min more to deal with consistency issues. let's wait longer, GCP has to do a lot.
 		if diags == nil {
-			time.Sleep(240 * time.Second)
+			time.Sleep(2 * time.Minute)
 		}
 	}
 

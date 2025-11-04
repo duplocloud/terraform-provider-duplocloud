@@ -203,7 +203,7 @@ locals {
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `total_max_node_count` (Number) Maximum number of nodes for one location in the NodePool. Must be >= minNodeCount.
 - `total_min_node_count` (Number) Minimum number of nodes for one location in the NodePool. Must be >= 1 and <= maxNodeCount.
-- `upgrade_settings` (Block List) Upgrade settings control disruption and speed of the upgrade. (see [below for nested schema](#nestedblock--upgrade_settings))
+- `upgrade_settings` (Block List, Max: 1) Upgrade settings control disruption and speed of the upgrade. (see [below for nested schema](#nestedblock--upgrade_settings))
 
 ### Read-Only
 

@@ -127,7 +127,11 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Deprecated:  "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.",
 		Default:     0,
 	}
-
+	awsASGSchema["arn"] = &schema.Schema{
+		Description: "The ASG arn.",
+		Type:        schema.TypeString,
+		Computed:    true,
+	}
 	return awsASGSchema
 }
 
@@ -181,9 +185,22 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	// Build a request.
 	rq := expandAsgProfile(d)
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): start", rq.TenantId, rq.FriendlyName)
-
 	// Create the ASG Prfoile in Duplo.
 	c := m.(*duplosdk.Client)
+	prefix, err := c.GetDuploServicesPrefix(rq.TenantId)
+	if err != nil {
+		return diag.Errorf("Tenant details : %s", err)
+	}
+	list, err := c.AsgProfileGetList(rq.TenantId)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	for _, profile := range *list {
+		if profile.FriendlyName == prefix+"-"+rq.FriendlyName {
+			return diag.Errorf("ASG '%s' already exists.\n If you are using `create_before_destroy` to update ASG, use a duplocloud_aws_launch_template to create a new version and refresh the ASG with the duplocloud_asg_instance_refresh resource.\n To change the default version 'duplocloud_aws_launch_template_default_version' should be used", rq.FriendlyName)
+		}
+	}
+
 	rp, err := c.AsgProfileCreate(rq)
 	if err != nil {
 		return diag.Errorf("Error creating ASG profile '%s': %s", rq.FriendlyName, err)
@@ -191,7 +208,6 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	if rp == "" {
 		return diag.Errorf("Error creating ASG profile '%s': no friendly name was received", rq.FriendlyName)
 	}
-
 	id := fmt.Sprintf("%s/%s", rq.TenantId, rp)
 	log.Printf("[DEBUG] ASG Profile Resource ID- (%s)", id)
 
@@ -253,7 +269,6 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 	// Check if the ASG Profile exists
 	c := m.(*duplosdk.Client)
 	exists, err := c.AsgProfileExists(tenantID, friendlyName)
@@ -270,31 +285,29 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	rq := expandAsgProfile(d)
 	if needsUpdate {
 		// Build a request.
+		rq.FriendlyName = friendlyName
 		log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): start", rq.TenantId, rq.FriendlyName)
 
 		// Update the ASG Prfoile in Duplo.
-		rp, err := c.AsgProfileUpdate(rq)
-		if err != nil {
+		cerr := c.AsgProfileUpdate(rq)
+		if cerr != nil {
 			return diag.Errorf("Error updating ASG profile '%s': %s", rq.FriendlyName, err)
-		}
-		if rp == "" {
-			return diag.Errorf("Error updating ASG profile '%s': no friendly name was received", rq.FriendlyName)
 		}
 
 		//Wait up to 60 seconds for Duplo to be able to return the ASG details.
 		diags := waitForResourceToBePresentAfterCreate(ctx, d, "ASG Profile", id, func() (interface{}, duplosdk.ClientError) {
-			return c.AsgProfileGet(rq.TenantId, rp)
+			return c.AsgProfileGet(rq.TenantId, friendlyName)
 		})
 		if diags != nil {
 			return diags
 		}
-		werr, _ := asgWaitUntilReady(ctx, c, rq.TenantId, rp, d.Timeout("create"))
+		werr, _ := asgWaitUntilReady(ctx, c, rq.TenantId, friendlyName, d.Timeout("create"))
 		if werr != nil {
-			return diag.FromErr(fmt.Errorf("error waiting for ASG profile '%s' to be ready: %s", rp, werr))
+			return diag.FromErr(fmt.Errorf("error waiting for ASG profile '%s' to be ready: %s", friendlyName, werr))
 		}
 		//By default, wait until the ASG instances to be healthy.
 		if d.Get("wait_for_capacity") == nil || d.Get("wait_for_capacity").(bool) {
-			err := asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rq.MinSize, rp, d.Timeout("create"))
+			err := asgtWaitUntilCapacityReady(ctx, c, rq.TenantId, rq.MinSize, friendlyName, d.Timeout("create"))
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -333,10 +346,16 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
 	profile, cerr := c.AsgProfileGet(tenantID, friendlyName)
-	if cerr != nil && cerr.Status() != 404 {
-		return diag.Errorf("Unable to retrieve ASG profile '%s': %s", id, err)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsASGRead(%s): ASG profile not found", id)
+			d.SetId("") // object missing
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve ASG profile '%s': %s", id, cerr)
 	}
 	if profile == nil {
+		log.Printf("[TRACE] resourceAwsASGRead(%s): ASG profile not found", id)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -361,16 +380,23 @@ func resourceAwsASGDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	friendlyName := d.Get("fullname").(string)
 	// Check if the ASG Profile exists
 	c := m.(*duplosdk.Client)
-	exists, err := c.AsgProfileExists(tenantID, friendlyName)
-	if err != nil {
+	exists, cerr := c.AsgProfileExists(tenantID, friendlyName)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsASGDelete(%s): ASG profile not found", id)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	if exists {
-
 		// Delete the ASG Profile from Duplo
-		err = c.AsgProfileDelete(tenantID, friendlyName)
-		if err != nil {
-			return diag.FromErr(err)
+		cerr := c.AsgProfileDelete(tenantID, friendlyName)
+		if cerr != nil {
+			if cerr.Status() == 404 {
+				log.Printf("[TRACE] resourceAwsASGDelete(%s): ASG profile not found", id)
+				return nil
+			}
+			return diag.FromErr(cerr)
 		}
 
 		// Wait for the ASG profile to be missing
@@ -420,7 +446,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.CustomDataTags))
 	d.Set("enabled_metrics", duplo.EnabledMetrics)
-
+	d.Set("arn", duplo.Arn)
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
 		_, zok := d.GetOk("zones")
@@ -620,7 +646,7 @@ func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string,
 					status = "ready"
 					flag = false
 				} else {
-					if *rp.Created {
+					if *rp.Created && rp.Arn != "" {
 						status = "ready"
 					} else {
 						status = "pending"

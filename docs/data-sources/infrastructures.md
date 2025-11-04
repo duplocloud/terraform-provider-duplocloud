@@ -36,6 +36,7 @@ Read-Only:
 - `cloud` (Number)
 - `enable_k8_cluster` (Boolean)
 - `infra_name` (String)
+- `nat_ips` (List of String)
 - `region` (String)
 - `status` (String)
 - `subnet_cidr` (Number)

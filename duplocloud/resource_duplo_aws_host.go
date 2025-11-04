@@ -91,7 +91,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"agent_platform": {
-			Description: "The numeric ID of the container agent pool that this host is added to.",
+			Description: "The numeric ID of the container agent pool that this host is added to.\n - 0: Linux Docker/Native\n- 	4: None\n- 5: Docker Windows\n- 7: EKS Linux\n- 8: ECS",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			ForceNew:    true, // relaunch instance
@@ -121,8 +121,8 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Description: "The numeric ID of the keypair type being used." +
 				"Should be one of:\n\n" +
 				"   - `0` : Default\n" +
-				"   - `1` : ED25519\n" +
-				"   - `2` : RSA (deprecated - some operating systems no longer support it)\n",
+				"   - `1` : RSA (deprecated - some operating systems no longer support it)\n" +
+				"   - `2` : ED25519\n",
 			Type:     schema.TypeInt,
 			Optional: true,
 			Computed: true,
@@ -390,7 +390,13 @@ func resourceAwsHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 	if cerr != nil && cerr.Status() != 404 {
 		return diag.Errorf("Unable to retrieve AWS host '%s': %s", id, cerr)
 	}
+	if cerr != nil && cerr.Status() == 404 {
+		log.Printf("[TRACE] resourceAwsHostRead(%s): not found", id)
+		d.SetId("") // object missing
+		return nil
+	}
 	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsHostRead(%s): not found", id)
 		d.SetId("") // object missing
 		return nil
 	}

@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -47,6 +48,11 @@ func k8sConfigMapSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"labels": {
+			Type:     schema.TypeMap,
+			Optional: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
 	}
 }
 
@@ -83,9 +89,14 @@ func resourceK8ConfigMapRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.K8ConfigMapGet(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, cerr := c.K8ConfigMapGet(tenantID, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8ConfigMapRead(%s, %s): object not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if rp == nil || rp.Name == "" {
 		d.SetId("")
@@ -161,14 +172,18 @@ func resourceK8ConfigMapDelete(ctx context.Context, d *schema.ResourceData, m in
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.K8ConfigMapGet(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, cerr := c.K8ConfigMapGet(tenantID, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8ConfigMapDelete(%s, %s): object not found", tenantID, name)
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if rp != nil && rp.Name != "" {
-		err := c.K8ConfigMapDelete(tenantID, name)
-		if err != nil {
-			return diag.FromErr(err)
+		cerr := c.K8ConfigMapDelete(tenantID, name)
+		if cerr != nil {
+			return diag.FromErr(cerr)
 		}
 	}
 
@@ -181,7 +196,8 @@ func expandK8sConfigMap(d *schema.ResourceData) (*duplosdk.DuploK8sConfigMap, er
 
 	// The name field is passed through metadata.
 	duplo.Metadata = map[string]interface{}{
-		"name": d.Get("name").(string),
+		"name":   d.Get("name").(string),
+		"labels": expandAsStringMap("labels", d),
 	}
 
 	// The data must be decoded as JSON.
@@ -200,7 +216,12 @@ func flattenK8sConfigMap(d *schema.ResourceData, duplo *duplosdk.DuploK8sConfigM
 	// First, set the simple fields.
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("name", duplo.Name)
-
+	m := duplo.Metadata["labels"]
+	if m != nil {
+		d.Set("labels", m.(map[string]interface{}))
+	} else {
+		d.Set("labels", nil)
+	}
 	// Next, set the JSON encoded strings.
 	toJsonStringState("data", duplo.Data, d)
 	toJsonStringState("metadata", duplo.Metadata, d)

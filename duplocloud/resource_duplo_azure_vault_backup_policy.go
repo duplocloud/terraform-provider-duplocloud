@@ -286,6 +286,7 @@ func resourceAzureVaultBackupPolicyRead(ctx context.Context, d *schema.ResourceD
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureVaultBackupPolicyRead: Azure vault backup policy %s not found for infra %s, removing from state", name, infraName)
 			d.SetId("")
 			return nil
 		}
@@ -353,6 +354,7 @@ func resourceAzureVaultBackupPolicyDelete(ctx context.Context, d *schema.Resourc
 	clientErr := c.VaultBackupPolicyDelete(infraName, rq)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureVaultBackupPolicyDelete: Azure vault backup policy %s not found for infra %s, removing from state", name, infraName)
 			return nil
 		}
 		return diag.Errorf("Unable to delete infra %s azure vault backup policy '%s': %s", infraName, name, clientErr)

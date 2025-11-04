@@ -89,6 +89,11 @@ func resourceGcpPubsubTopicRead(ctx context.Context, d *schema.ResourceData, m i
 		return nil
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpPubsubTopicRead: Pubsub topic %s not found for tenantId %s, removing from state", name, tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve tenant %s pubsub topic '%s': %s", tenantID, name, err)
 	}
 
@@ -174,6 +179,10 @@ func resourceGcpPubsubTopicDelete(ctx context.Context, d *schema.ResourceData, m
 	idParts := strings.SplitN(id, "/", 2)
 	err := c.GcpPubsubTopicDelete(idParts[0], idParts[1])
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpPubsubTopicDelete: Pubsub topic %s not found for tenantId %s, removing from state", idParts[1], idParts[0])
+			return nil
+		}
 		return diag.Errorf("Error deleting pubsub topic '%s': %s", id, err)
 	}
 

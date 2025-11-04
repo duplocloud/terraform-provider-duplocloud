@@ -171,6 +171,7 @@ func resourceAzureMysqlDatabaseRead(ctx context.Context, d *schema.ResourceData,
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureMysqlDatabaseRead: Azure mysql database %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -236,6 +237,7 @@ func resourceAzureMysqlDatabaseDelete(ctx context.Context, d *schema.ResourceDat
 	clientErr := c.MySqlDatabaseDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureMysqlDatabaseDelete: Azure mysql database %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure mysql database '%s': %s", tenantID, name, clientErr)

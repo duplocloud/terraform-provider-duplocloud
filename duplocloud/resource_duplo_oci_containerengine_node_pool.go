@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -400,14 +401,20 @@ func resourceOciNodePoolRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceOciNodePoolRead(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s oci node pool %s : %s", tenantID, name, clientErr)
 	}
-	duploWithNodes, err := c.OciNodePoolGetWithNodes(tenantID, duplo.Id)
-	if err != nil {
-		return diag.FromErr(err)
+	duploWithNodes, cerr := c.OciNodePoolGetWithNodes(tenantID, duplo.Id)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceOciNodePoolRead(%s, %s): object not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	flattenOciNodePool(d, duploWithNodes.NodePool)
 	d.Set("tenant_id", tenantID)
@@ -503,6 +510,7 @@ func resourceOciNodePoolDelete(ctx context.Context, d *schema.ResourceData, m in
 	clientErr := c.OciNodePoolDelete(tenantID, nodePoolId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceOciNodePoolDelete(%s, %s): object not found", tenantID, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s oci node pool '%s': %s", tenantID, name, clientErr)

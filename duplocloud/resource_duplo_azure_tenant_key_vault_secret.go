@@ -106,6 +106,7 @@ func resourceAzureTenantKeyVaultSecretRead(ctx context.Context, d *schema.Resour
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureTenantKeyVaultSecretRead: Azure tenant key vault secret %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -177,11 +178,12 @@ func resourceAzureTenantKeyVaultSecretDelete(ctx context.Context, d *schema.Reso
 	clientErr := c.TenantKeyVaultSecretDelete(tenantID, vaultName, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureTenantKeyVaultSecretDelete: Azure tenant key vault secret %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure tenant key vault secret'%s': %s", tenantID, name, clientErr)
 	}
-
+	time.Sleep(30 * time.Second)
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure tenant key vault secret", id, func() (interface{}, duplosdk.ClientError) {
 		return c.TenantKeyVaultSecretGet(tenantID, vaultName, name)
 	})

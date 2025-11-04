@@ -2,10 +2,11 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
-	"github.com/duplocloud/terraform-provider-duplocloud/internal/duplosdktest"
 	"log"
 	"strings"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	"github.com/duplocloud/terraform-provider-duplocloud/internal/duplosdktest"
 
 	"github.com/barkimedes/go-deepcopy"
 	"github.com/google/uuid"
@@ -85,7 +86,7 @@ func testAccProvider_ConfigureContextFunc(d *schema.Provider) schema.ConfigureCo
 					return
 				},
 			},
-			"/adminproxy/GetInfrastructureConfig/:infraName": {
+			"/v3/admin/infrastructure/:infraName": {
 				Factory: func() interface{} { return &duplosdk.DuploInfrastructureConfig{} },
 				Responder: func(verb string, in interface{}) (id string, out interface{}) {
 					out = deepcopy.MustAnything(in.(*duplosdk.DuploInfrastructureConfig))

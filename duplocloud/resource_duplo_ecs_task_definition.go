@@ -18,6 +18,10 @@ import (
 	"github.com/ucarion/jcs"
 )
 
+type flowContextKeyType string
+
+const flowContextKey flowContextKeyType = "flow"
+
 // ecsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
 func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -56,10 +60,10 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"prevent_tf_destroy": {
-			Description: "Prevent this resource to be deleted from terraform destroy. Default value is `true`.",
-			Type:        schema.TypeBool,
+			Description: "Prevent this resource to be deleted from terraform destroy.",
+			Type:        schema.TypeString,
 			Optional:    true,
-			Default:     true,
+			Default:     "true",
 		},
 		"container_definitions": {
 			Type:     schema.TypeString,
@@ -96,10 +100,11 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"volumes": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
-			Default:  "[]",
+			Description: "A JSON-encoded string containing a list of volumes that are used by the ECS task definition.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+			Default:     "[]",
 		},
 		"cpu": {
 			Type:     schema.TypeString,
@@ -125,6 +130,7 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"bridge", "host", "awsvpc", "none"}, false),
 			Default:      "awsvpc",
+			Description:  "Valid values are `bridge`,`host`,`awsvpc`,`none`",
 		},
 		"placement_constraints": {
 			Type:     schema.TypeSet,
@@ -164,12 +170,12 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 		},
 		"requires_compatibilities": {
 			Type:        schema.TypeSet,
-			Description: "Requires compatibilities for running jobs. Valid values are [FARGATE]",
+			Description: "Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.",
 			Optional:    true,
-			Computed:    true,
+			ForceNew:    true,
+			//	DiffSuppressFunc: diffSuppressWhenNotCreating,
 			Elem: &schema.Schema{
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"FARGATE"}, false),
+				Type: schema.TypeString,
 			},
 		},
 		"ipc_mode": {
@@ -177,12 +183,14 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Optional:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"host", "none", "task"}, false),
+			Description:  "valid values are `host`, `none`, `task`",
 		},
 		"pid_mode": {
 			Type:         schema.TypeString,
 			Optional:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"host", "task"}, false),
+			Description:  "Valida values are `host`, `task`",
 		},
 		"proxy_configuration": {
 			Type:     schema.TypeList,
@@ -295,9 +303,14 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.EcsTaskDefinitionGetV2(tenantID, arn)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, cerr := c.EcsTaskDefinitionGetV2(tenantID, arn)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceDuploEcacheGlobalDatastoreRead: Ecache Global Datastore not found for tenantId %s, removing from state", tenantID)
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if rp == nil || rp.Arn == "" {
 		d.SetId("")
@@ -305,6 +318,14 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 	}
 	// Convert the object into Terraform resource data
 	flattenEcsTaskDefinition(rp, d)
+	f := d.Get("prevent_tf_destroy").(string)
+	d.Set("prevent_tf_destroy", f)
+	// this is to check if the flow happened after create context
+	v := ctx.Value(flowContextKey)
+	if v == nil {
+		d.Set("prevent_tf_destroy", true)
+	}
+
 	log.Printf("[TRACE] resourceDuploEcsTaskDefinitionRead(%s, %s): end", tenantID, arn)
 	return nil
 }
@@ -326,6 +347,8 @@ func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.Resourc
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
+
 	d.SetId(fmt.Sprintf("subscriptions/%s/EcsTaskDefinition/%s", tenantID, arn))
 
 	diags := resourceDuploEcsTaskDefinitionRead(ctx, d, m)
@@ -335,7 +358,9 @@ func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.Resourc
 
 // Update resource
 func resourceDuploEcsTaskDefinitionUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
+	return resourceDuploEcsTaskDefinitionRead(ctx, d, m)
+
 }
 
 // DELETE resource
@@ -348,13 +373,17 @@ func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	preventDestroy := d.Get("prevent_tf_destroy").(bool)
-	log.Printf("[TRACE] Prevent destroy is %t", preventDestroy)
-	if !preventDestroy {
+	preventDestroy := d.Get("prevent_tf_destroy").(string)
+	log.Printf("[TRACE] Prevent destroy is %s", preventDestroy)
+	if preventDestroy == "false" {
 		c := m.(*duplosdk.Client)
-		err = c.EcsTaskDefinitionDelete(tenantID, arn)
-		if err != nil {
-			return diag.FromErr(err)
+		cerr := c.EcsTaskDefinitionDelete(tenantID, arn)
+		if cerr != nil {
+			if cerr.Status() == 404 {
+				log.Printf("[DEBUG] resourceDuploEcacheGlobalDatastoreRead: Ecache Global Datastore not found for tenantId %s, removing from state", tenantID)
+				return nil
+			}
+			return diag.FromErr(cerr)
 		}
 		// Wait for the task definition to be missing
 		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "ECS Task Defnition", id, func() (interface{}, duplosdk.ClientError) {
@@ -385,8 +414,13 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	// Next, convert sets into lists
 	rcs := d.Get("requires_compatibilities").(*schema.Set)
 	dorcs := make([]string, 0, rcs.Len())
-	for _, rc := range rcs.List() {
-		dorcs = append(dorcs, rc.(string))
+	if rcs.Len() > 0 {
+
+		for _, rc := range rcs.List() {
+			dorcs = append(dorcs, rc.(string))
+		}
+	} else {
+		dorcs = nil
 	}
 	duplo.RequiresCompatibilities = dorcs
 
@@ -401,7 +435,7 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	err2 := json.Unmarshal([]byte(vols), &duplo.Volumes)
 	if err2 != nil {
 		log.Printf("[TRACE] expandEcsTaskDefinition: failed to parse volumes: %s", condefs)
-		return nil, err
+		return nil, fmt.Errorf("invalid json %s", err2)
 	}
 
 	// Next, convert things into structured data.
@@ -445,14 +479,20 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("ipc_mode", duplo.IpcMode)
 	d.Set("pid_mode", duplo.PidMode)
 	// stop updating state unitl we have EC2 support
-	// d.Set("requires_compatibilities", duplo.RequiresCompatibilities)
+	if len(duplo.RequiresCompatibilities) > 0 {
+		inf := []interface{}{}
+		for _, comp := range duplo.RequiresCompatibilities {
+			inf = append(inf, comp)
+		}
+		d.Set("requires_compatibilities", inf)
+	}
 	if duplo.NetworkMode != nil {
 		d.Set("network_mode", duplo.NetworkMode.Value)
 	}
 	if duplo.Status != nil {
 		d.Set("status", duplo.Status.Value)
 	}
-
+	d.Set("container_definitions", filterContainerDefinition(d.Get("container_definitions").(string), duplo.ContainerDefinitions))
 	// Next, convert things into embedded JSON
 	toJsonStringState("container_definitions_updates", duplo.ContainerDefinitions, d)
 	toJsonStringState("volumes", duplo.Volumes, d)
@@ -463,7 +503,17 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("inference_accelerator", ecsInferenceAcceleratorsToState(duplo.InferenceAccelerators))
 	d.Set("requires_attributes", ecsRequiresAttributesToState(duplo.RequiresAttributes))
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("runtime_platform", ecsPlatformRuntimeToState)
+	d.Set("runtime_platform", ecsPlatformRuntimeToState(duplo.RuntimePlatform))
+	if !strings.Contains(d.Get("family").(string), "duploservices-") {
+		parts := strings.SplitN(duplo.Family, "-", 3)
+
+		if len(parts) == 3 {
+			d.Set("family", parts[2])
+		}
+	} else {
+		d.Set("family", duplo.Family)
+
+	}
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
@@ -637,8 +687,15 @@ func ecsPlacementConstraintsToState(pcs *[]duplosdk.DuploEcsTaskDefPlacementCons
 }
 
 func ecsPlatformRuntimeToState(p *duplosdk.DuploEcsTaskDefRuntimePlatform) []interface{} {
-	if p != nil {
-		return nil
+	if p == nil {
+		p = &duplosdk.DuploEcsTaskDefRuntimePlatform{
+			CPUArchitecture: duplosdk.DuploStringValue{
+				Value: "X86_64",
+			},
+			OSFamily: duplosdk.DuploStringValue{
+				Value: "LINUX",
+			},
+		}
 	}
 
 	results := make([]interface{}, 0)
@@ -871,4 +928,14 @@ func validateInput(ctx context.Context, diff *schema.ResourceDiff, m interface{}
 	}
 
 	return nil
+}
+
+func filterContainerDefinition(stateConf string, respConf []map[string]interface{}) string {
+	if encoded, err := json.Marshal(respConf); err == nil {
+		str := string(encoded)
+		if stateConf == "" {
+			return str
+		}
+	}
+	return stateConf
 }

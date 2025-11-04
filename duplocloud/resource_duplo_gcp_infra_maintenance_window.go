@@ -2,11 +2,12 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -178,6 +179,10 @@ func resourceInfrastructureMaintenanceWindowDelete(ctx context.Context, d *schem
 	rq := duplosdk.DuploGcpInfraMaintenanceWindow{}
 	err := c.CreateGCPInfraMaintenanceWindow(infraName, &rq)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceInfrastructureMaintenanceWindowDelete: Infrastructure maintenance window %s not found for tenantId %s, removing from state", infraName, infraName)
+			return nil
+		}
 		return diag.Errorf("resourceInfrastructureMaintenanceWindowDelete cannot delete maintenance window for infra %s error: %s", infraName, err.Error())
 	}
 	log.Printf("[TRACE] resourceInfrastructureMaintenanceWindowDelete(%s): end", infraName)

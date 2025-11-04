@@ -103,6 +103,7 @@ func resourceAzureLogAnalyticsWorkspaceRead(ctx context.Context, d *schema.Resou
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureLogAnalyticsWorkspaceRead: Azure Log Analytics Workspace %s not found for tenantId %s, removing from state", name, infraName)
 			d.SetId("")
 			return nil
 		}

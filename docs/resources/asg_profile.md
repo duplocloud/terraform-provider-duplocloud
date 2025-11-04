@@ -182,7 +182,12 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 
 ### Optional
 
-- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
+- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to.
+ - 0: Linux Docker/Native
+- 	4: None
+- 5: Docker Windows
+- 7: EKS Linux
+- 8: ECS Defaults to `0`.
 - `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
 - `can_scale_from_zero` (Boolean) Whether or not ASG should leverage duplocloud's scale from 0 feature
@@ -197,8 +202,8 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `keypair_type` (Number) The numeric ID of the keypair type being used.Should be one of:
 
    - `0` : Default
-   - `1` : ED25519
-   - `2` : RSA (deprecated - some operating systems no longer support it)
+   - `1` : RSA (deprecated - some operating systems no longer support it)
+   - `2` : ED25519
 - `max_instance_count` (Number) The maximum size of the Auto Scaling Group.
 - `max_spot_price` (String) Maximum price to pay for a spot instance in dollars per unit hour.
 - `metadata` (Block List) Configuration metadata used when creating the host.<br>*Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10* (see [below for nested schema](#nestedblock--metadata))
@@ -218,6 +223,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 
 ### Read-Only
 
+- `arn` (String) The ASG arn.
 - `fullname` (String) The full name of the ASG profile.
 - `id` (String) The ID of this resource.
 - `initial_base64_user_data` (String)

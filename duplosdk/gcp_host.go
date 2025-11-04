@@ -14,7 +14,7 @@ type DuploGcpHost struct {
 	Name                  string                 `json:"Name"`
 	AcceleratorCount      int                    `json:"AcceleratorCount,omitempty"`
 	AcceleratorType       string                 `json:"AcceleratorType,omitempty"`
-	Labels                map[string]string      `json:"Labels,omitempty"`
+	Labels                map[string]interface{} `json:"Labels,omitempty"`
 	Metadata              map[string]interface{} `json:"Metadata,omitempty"`
 	UserData              string                 `json:"UserData,omitempty"`
 	/***/

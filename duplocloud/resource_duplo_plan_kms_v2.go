@@ -108,6 +108,11 @@ func resourcePlanKMSReadV2(ctx context.Context, d *schema.ResourceData, m interf
 	if duplo == nil {
 		plan, err := c.PlanGet(planID)
 		if err != nil {
+			if err.Status() == 404 {
+				log.Printf("[TRACE] resourcePlanKMSReadV2(%s): object not found", planID)
+				d.SetId("")
+				return nil
+			}
 			return diag.Errorf("failed to read plan certificates: %s", err)
 		}
 		if plan == nil {
@@ -220,10 +225,14 @@ func resourcePlanKMSDeleteV2(ctx context.Context, d *schema.ResourceData, m inte
 		err = c.PlanChangeKmsKeys(planID, previous, desired)
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourcePlanKMSDeleteV2(%s): object not found", planID)
+			return nil
+		}
 		return diag.Errorf("Error updating plan kmskeys for '%s': %s", planID, err)
 	}
 
-	log.Printf("[TRACE] resourcePlanKMSDelete(%s): end", planID)
+	log.Printf("[TRACE] resourcePlanKMSDeleteV2(%s): end", planID)
 	return nil
 }
 

@@ -111,6 +111,7 @@ func resourceAzureMssqlElasticPoolRead(ctx context.Context, d *schema.ResourceDa
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureMssqlElasticPoolRead: Azure mssql elastic pool %s not found for tenantId %s, removing from state", epName, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -181,6 +182,7 @@ func resourceAzureMssqlElasticPoolDelete(ctx context.Context, d *schema.Resource
 	clientErr := c.MsSqlElasticPoolDelete(tenantID, serverName, epName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureMssqlElasticPoolDelete: Azure mssql elastic pool %s not found for tenantId %s, removing from state", epName, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure mssql ElasticPool '%s': %s", tenantID, epName, clientErr)

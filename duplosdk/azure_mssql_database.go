@@ -12,6 +12,12 @@ type DuploAzureMsSqlRequest struct {
 	Name                                 string `json:"name"`
 	PropertiesAdministratorLogin         string `json:"properties.administratorLogin"`
 	PropertiesAdministratorLoginPassword string `json:"properties.administratorLoginPassword"`
+	ADLogin                              string `json:"properties.administrators.login,omitempty"`
+	ObjectId                             string `json:"properties.administrators.sid,omitempty"`
+	ADTenantId                           string `json:"properties.administrators.tenantId,omitempty"`
+	IsAzureADOnlyAuthenticationEnabled   bool   `json:"properties.administrators.azureADOnlyAuthentication"`
+	ADPrincipalType                      string `json:"properties.administrators.principalType,omitempty"`
+	ADAdministratorType                  string `json:"properties.administrators.administratorType,omitempty"`
 }
 
 type DuploAzureMsSqlDatabaseRequest struct {
@@ -58,6 +64,12 @@ type DuploAzureMsSqlServer struct {
 	ID                                   string                 `json:"id"`
 	Name                                 string                 `json:"name"`
 	Type                                 string                 `json:"type"`
+	ADLogin                              string                 `json:"properties.administrators.login,omitempty"`
+	ObjectId                             string                 `json:"properties.administrators.sid,omitempty"`
+	ADTenantId                           string                 `json:"properties.administrators.tenantId,omitempty"`
+	IsAzureADOnlyAuthenticationEnabled   bool                   `json:"properties.administrators.azureADOnlyAuthentication"`
+	ADPrincipalType                      string                 `json:"properties.administrators.principalType,omitempty"`
+	ADAdministratorType                  string                 `json:"properties.administrators.administratorType,omitempty"`
 }
 
 type DuploAzureMsSqlDatabase struct {

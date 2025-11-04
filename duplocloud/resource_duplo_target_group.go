@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -225,6 +226,7 @@ func resourceTargetGroupRead(ctx context.Context, d *schema.ResourceData, m inte
 	rp, clientErr := c.DuploTargetGroupGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceTargetGroupRead(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -425,6 +427,7 @@ func resourceTargetGroupDelete(ctx context.Context, d *schema.ResourceData, m in
 	rp, clientErr := c.DuploTargetGroupGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceTargetGroupDelete(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -434,6 +437,7 @@ func resourceTargetGroupDelete(ctx context.Context, d *schema.ResourceData, m in
 		clientErr := c.DuploTargetGroupDelete(tenantID, name)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
+				log.Printf("[TRACE] resourceTargetGroupDelete(%s, %s): object not found", tenantID, name)
 				d.SetId("")
 				return nil
 			}
@@ -513,12 +517,15 @@ func flattenLbTargetGroupHealthCheck(targetGroup *duplosdk.DuploTargetGroup) []i
 		"enabled":             targetGroup.HealthCheckEnabled,
 		"healthy_threshold":   targetGroup.HealthyThresholdCount,
 		"interval":            targetGroup.HealthCheckIntervalSeconds,
-		"port":                targetGroup.HealthCheckPort,
-		"protocol":            targetGroup.HealthCheckProtocol.Value,
 		"timeout":             targetGroup.HealthCheckTimeoutSeconds,
 		"unhealthy_threshold": targetGroup.UnhealthyThresholdCount,
 	}
-
+	if targetGroup.HealthCheckPort != "" {
+		m["port"] = targetGroup.HealthCheckPort
+	}
+	if targetGroup.HealthCheckProtocol != nil && targetGroup.HealthCheckProtocol.Value != "" {
+		m["protocol"] = targetGroup.HealthCheckProtocol.Value
+	}
 	if len(targetGroup.HealthCheckPath) > 0 {
 		m["path"] = targetGroup.HealthCheckPath
 	}

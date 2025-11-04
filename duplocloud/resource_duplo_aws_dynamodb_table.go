@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -105,6 +106,7 @@ func resourceAwsDynamoDBTableRead(ctx context.Context, d *schema.ResourceData, m
 	duplo, clientErr := c.DynamoDBTableGet(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsDynamoDBTableRead(%s, %s): not found", tenantID, name)
 			d.SetId("") // object missing
 			return nil
 		}
@@ -181,6 +183,7 @@ func resourceAwsDynamoDBTableDelete(ctx context.Context, d *schema.ResourceData,
 	clientErr := c.DynamoDBTableDelete(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsDynamoDBTableDelete(%s, %s): not found", tenantID, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s dynamodb table '%s': %s", tenantID, name, clientErr)

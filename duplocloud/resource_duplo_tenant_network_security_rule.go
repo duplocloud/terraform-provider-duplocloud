@@ -105,6 +105,7 @@ func resourceTenantNetworkSecurityRuleRead(ctx context.Context, d *schema.Resour
 	duplo, clientErr := c.TenantGetExtConnSecurityGroupRule(rq)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantNetworkSecurityRuleRead(%s): object not found", id)
 			d.SetId("")
 			return nil
 		}
@@ -194,6 +195,7 @@ func resourceTenantNetworkSecurityRuleDelete(ctx context.Context, d *schema.Reso
 	clientErr := c.TenantDeleteExtConnSecurityGroupRule(rq)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantNetworkSecurityRuleDelete(%s): object not found", id)
 			return nil
 		}
 		return diag.Errorf("Error deleting tenant network security rule '%s': %s", id, err)

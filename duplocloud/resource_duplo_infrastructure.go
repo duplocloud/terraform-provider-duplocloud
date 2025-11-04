@@ -211,11 +211,12 @@ func resourceInfrastructure() *schema.Resource {
 				ConflictsWith: []string{"setting"},
 			},
 			"setting": {
-				Description:   "A list of configuration settings to manage, expressed as key / value pairs.",
-				Type:          schema.TypeList,
-				Optional:      true,
-				Elem:          KeyValueSchema(),
-				ConflictsWith: []string{"custom_data"},
+				Description:      "A list of configuration settings to manage, expressed as key / value pairs.",
+				Type:             schema.TypeList,
+				Optional:         true,
+				Elem:             KeyValueSchema(),
+				ConflictsWith:    []string{"custom_data"},
+				DiffSuppressFunc: diffSuppressSettingKey,
 			},
 			"delete_unspecified_settings": {
 				Description: "Whether or not this resource should delete any settings not specified by this resource. " +
@@ -301,10 +302,11 @@ func resourceInfrastructure() *schema.Resource {
 				Elem:        infrastructureVnetSecurityGroupsSchema(),
 			},
 			"wait_until_deleted": {
-				Description: "Whether or not to wait until Duplo has destroyed the infrastructure.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
+				Description:      "Whether or not to wait until Duplo has destroyed the infrastructure.",
+				Type:             schema.TypeBool,
+				Optional:         true,
+				Default:          false,
+				DiffSuppressFunc: diffSuppressWhenNotCreating,
 			},
 			"cluster_ip_cidr": {
 				Description: "cluster IP CIDR defines a private IP address range used for internal Kubernetes services.",
@@ -312,6 +314,12 @@ func resourceInfrastructure() *schema.Resource {
 				ForceNew:    true,
 				Optional:    true,
 				Computed:    true,
+			},
+			"nat_ips": {
+				Description: "The NAT IPs for the subnet.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -330,13 +338,15 @@ func resourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m i
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	missing, err := infrastructureRead(c, d, name)
-	if err != nil {
-		return diag.Errorf("Unable to retrieve infrastructure '%s': %s", name, err)
+	missing, err := infrastructureRead(ctx, c, d, name)
+	if err != nil && err.Status() != 404 {
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
-	if missing {
+	if (err != nil && err.Status() == 404) || missing {
 		d.SetId("") // object missing
+		log.Printf("Infrastructure not found")
 		return nil
+
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureRead(%s): end", name)
@@ -356,14 +366,15 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 	// Post the object to Duplo.
+	id := fmt.Sprintf("v2/admin/InfrastructureV2/%s", rq.Name)
+
 	c := m.(*duplosdk.Client)
 	err = c.InfrastructureCreate(rq)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the infrastructure details.
-	id := fmt.Sprintf("v2/admin/InfrastructureV2/%s", rq.Name)
 	diags = waitForResourceToBePresentAfterCreate(ctx, d, "infrastructure", id, func() (interface{}, duplosdk.ClientError) {
 		return c.InfrastructureGetConfig(rq.Name)
 	})
@@ -375,8 +386,9 @@ func resourceInfrastructureCreate(ctx context.Context, d *schema.ResourceData, m
 	// Then, wait until the infrastructure is completely ready.
 	err = duploInfrastructureWaitUntilReady(ctx, c, rq.Name, d.Timeout("create"))
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", id, err)
 	}
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
 
 	diags = resourceInfrastructureRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureCreate(%s): end", rq.Name)
@@ -408,7 +420,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 	// Apply any settings changes.
 	config, err := c.InfrastructureGetSetting(infraName)
 	if err != nil {
-		return diag.Errorf("Error retrieving infrastructure settings for '%s': %s", infraName, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", d.Id(), err)
 	}
 	if d.HasChange("setting") {
 		var existing *[]duplosdk.DuploKeyStringValue
@@ -433,7 +445,7 @@ func resourceInfrastructureUpdate(ctx context.Context, d *schema.ResourceData, m
 			err = c.InfrastructureChangeSetting(infraName, existing, settings)
 		}
 		if err != nil {
-			return diag.Errorf("Error updating infrastructure settings for '%s': %s", infraName, err)
+			return diag.Errorf("Duplocloud resource '%s'\n%s", d.Id(), err)
 		}
 	}
 
@@ -464,9 +476,10 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 	err := c.InfrastructureDelete(infraName)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceInfrastructureDelete: Infrastructure %s not found, removing from state", infraName)
 			return nil
 		}
-		return diag.FromErr(err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", d.Id(), err)
 	}
 
 	// Wait for 20 minutes to allow infrastructure deletion.
@@ -572,7 +585,7 @@ func duploInfrastructureWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 	return err
 }
 
-func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string) (bool, error) {
+func infrastructureRead(ctx context.Context, c *duplosdk.Client, d *schema.ResourceData, name string) (bool, duplosdk.ClientError) {
 	var infra *duplosdk.DuploInfrastructureConfig
 	config, err := c.InfrastructureGetConfig(name)
 	if err != nil {
@@ -608,8 +621,15 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 	d.Set("status", infra.ProvisioningStatus)
 
 	d.Set("all_settings", keyValueToState("all_settings", config.CustomData))
-
+	if config.ClusterIpv4Cidr != "" {
+		d.Set("cluster_ip_cidr", config.ClusterIpv4Cidr)
+	}
 	// Build a list of current state, to replace the user-supplied settings.
+	v := ctx.Value(flowContextKey)
+	if v == nil {
+		d.Set("setting", filterInfraSetting(infra.Cloud, *config.CustomData))
+
+	}
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
 		d.Set("setting", keyValueToState("setting", selectKeyValues(config.CustomData, *v)))
 	} else {
@@ -724,7 +744,21 @@ func infrastructureRead(c *duplosdk.Client, d *schema.ResourceData, name string)
 			d.Set("security_groups", securityGroups)
 		}
 	}
-
+	if config.Cloud == 3 {
+		natIPs, err := c.GetGCPInfraNATIPs(name)
+		if err != nil {
+			return false, err
+		}
+		if natIPs != nil {
+			natIPsList := make([]interface{}, len(natIPs))
+			for i, ip := range natIPs {
+				natIPsList[i] = ip
+			}
+			d.Set("nat_ips", natIPsList)
+		}
+	} else {
+		d.Set("nat_ips", make([]interface{}, 0))
+	}
 	return false, nil
 }
 
@@ -749,4 +783,62 @@ func validateInfraSchema(d *schema.ResourceData) diag.Diagnostics {
 	}
 	log.Printf("[TRACE] validateInfraSchema: end")
 	return nil
+}
+
+func filterInfraSetting(cloud int, settings []duplosdk.DuploKeyStringValue) []interface{} {
+	var m map[string]struct{}
+	if cloud == 3 {
+		m = map[string]struct{}{
+			//	"GkeEndpointVisibility":    {},
+			//	"GkeChannel":               {},
+			//	"K8sVersion":               {},
+			//	"EnableHelmOperatorFluxV2": {},
+			//	"K8sHelmOperator":          {},
+		}
+	}
+	if cloud == 0 {
+		m = map[string]struct{}{
+			//	"K8sVersion":                 {},
+			//	"EksEndpointVisibility":      {},
+			//	"EksControlplaneLogs":        {},
+			//	"EnableDefaultEbsEncryption": {},
+			//	"EnableHelmOperatorFluxV2":   {},
+			//	"K8sHelmOperator":            {},
+		}
+	}
+	filteredSet := []duplosdk.DuploKeyStringValue{}
+	for _, setting := range settings {
+		if _, ok := m[setting.Key]; !ok {
+			filteredSet = append(filteredSet, setting)
+		}
+	}
+	return keyValueToState("setting", &filteredSet)
+}
+
+func diffSuppressSettingKey(k, old, new string, d *schema.ResourceData) bool {
+	// Suppress diff if the user input setting (old) is part of API response settings.
+	// If user input setting not in API response, do not suppress diff.
+	if !d.HasChanges("setting") {
+		return true
+	}
+	o, n := d.GetChange("setting")
+	apiKey := o.([]interface{})
+	input := n.([]interface{}) // ensure "setting" is read
+	// Get all settings from API response
+	apiMap := make(map[string]interface{})
+	ipMap := make(map[string]interface{})
+	for _, ak := range apiKey {
+		s := ak.(map[string]interface{})
+		apiMap[s["key"].(string)] = s["value"].(string)
+	}
+	for _, ak := range input {
+		s := ak.(map[string]interface{})
+		ipMap[s["key"].(string)] = s["value"].(string)
+	}
+	for k, vm := range ipMap {
+		if v, ok := apiMap[k]; !ok || v != vm {
+			return false
+		}
+	}
+	return true // do not suppress if key not found in API response
 }

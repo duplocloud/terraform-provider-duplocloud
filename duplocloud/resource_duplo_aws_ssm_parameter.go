@@ -110,6 +110,7 @@ func resourceAwsSsmParameterRead(ctx context.Context, d *schema.ResourceData, m 
 	body, clientErr := c.SsmParameterGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsSsmParameterRead(%s, %s): object missing", tenantID, name)
 			d.SetId("") // object missing
 			return nil
 		}
@@ -223,6 +224,7 @@ func resourceAwsSsmParameterDelete(ctx context.Context, d *schema.ResourceData, 
 	clientErr := c.SsmParameterDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsSsmParameterDelete(%s, %s): object missing", tenantID, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s SSM parameter '%s': %s", tenantID, name, clientErr)

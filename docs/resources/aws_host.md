@@ -136,7 +136,12 @@ resource "duplocloud_aws_host" "host" {
 
 ### Optional
 
-- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to. Defaults to `0`.
+- `agent_platform` (Number) The numeric ID of the container agent pool that this host is added to.
+ - 0: Linux Docker/Native
+- 	4: None
+- 5: Docker Windows
+- 7: EKS Linux
+- 8: ECS Defaults to `0`.
 - `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
 - `cloud` (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
@@ -146,8 +151,8 @@ resource "duplocloud_aws_host" "host" {
 - `keypair_type` (Number) The numeric ID of the keypair type being used.Should be one of:
 
    - `0` : Default
-   - `1` : ED25519
-   - `2` : RSA (deprecated - some operating systems no longer support it)
+   - `1` : RSA (deprecated - some operating systems no longer support it)
+   - `2` : ED25519
 - `metadata` (Block List) Configuration metadata used when creating the host.<br>*Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10* (see [below for nested schema](#nestedblock--metadata))
 - `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))

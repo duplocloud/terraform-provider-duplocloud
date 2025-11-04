@@ -102,6 +102,7 @@ func resourceAwsSnsTopicRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsSnsTopicRead(%s, %s): object missing", tenantID, arn)
 			d.SetId("")
 			return nil
 		}
@@ -177,6 +178,7 @@ func resourceAwsSnsTopicDelete(ctx context.Context, d *schema.ResourceData, m in
 	clientErr := c.DuploSnsTopicDelete(tenantID, arn)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsSnsTopicDelete(%s, %s): object missing", tenantID, arn)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s snp topic '%s': %s", tenantID, arn, clientErr)

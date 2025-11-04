@@ -2,9 +2,10 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -80,14 +81,17 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 	tenant, err := c.TenantGetV2(tenantID)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("Tenant config for tenant %s not found", tenantID)
 			d.SetId("")
-			return nil
+			return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 		}
-		return diag.Errorf("Unable to retrieve tenant '%s': %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 	}
 	if tenant == nil {
+		log.Printf("Tenant config for tenant %s not found", tenantID)
 		d.SetId("") // object missing
-		return nil
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, "object missing")
+
 	}
 	duplo, err := c.TenantGetConfig(tenantID)
 	if err != nil {
@@ -95,7 +99,7 @@ func resourceTenantConfigRead(ctx context.Context, d *schema.ResourceData, m int
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve tenant config for '%s': %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -130,7 +134,8 @@ func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 	c := m.(*duplosdk.Client)
 	config, err := c.TenantGetConfig(tenantID)
 	if err != nil {
-		return diag.Errorf("Error retrieving tenant config for '%s': %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
+
 	}
 	var existing *[]duplosdk.DuploKeyStringValue
 	if v, ok := getAsStringArray(d, "specified_settings"); ok && v != nil {
@@ -154,7 +159,7 @@ func resourceTenantConfigCreateOrUpdate(ctx context.Context, d *schema.ResourceD
 		err = c.TenantChangeConfig(tenantID, existing, settings)
 	}
 	if err != nil {
-		return diag.Errorf("Error updating tenant config for '%s': %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 	}
 	d.SetId(tenantID)
 
@@ -171,9 +176,15 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	// Delete the configuration with Duplo
 	c := m.(*duplosdk.Client)
-	all, err := c.TenantGetConfig(tenantID)
+	all, cerr := c.TenantGetConfig(tenantID)
 
-	if err != nil {
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("Tenant config for tenant %s not found", tenantID)
+			d.SetId("")
+			return nil
+		}
+
 		return diag.Errorf("Error fetching tenant config for '%s': %s", tenantID, err)
 	}
 
@@ -185,9 +196,8 @@ func resourceTenantConfigDelete(ctx context.Context, d *schema.ResourceData, m i
 	} else {
 		err = c.TenantChangeConfig(tenantID, previous, desired)
 	}
-
 	if err != nil {
-		return diag.Errorf("Error deleting tenant config for '%s': %s", tenantID, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", tenantID, err)
 	}
 
 	log.Printf("[TRACE] resourceTenantConfigDelete(%s): end", tenantID)
@@ -222,11 +232,13 @@ func expandTenantConfig(fieldName string, d *schema.ResourceData) *[]duplosdk.Du
 		log.Printf("[TRACE] expandTenantConfig ********: found %s", fieldName)
 		ary = make([]duplosdk.DuploKeyStringValue, 0, len(kvs))
 		for _, raw := range kvs {
-			kv := raw.(map[string]interface{})
-			ary = append(ary, duplosdk.DuploKeyStringValue{
-				Key:   kv["key"].(string),
-				Value: kv["value"].(string),
-			})
+			if raw != nil {
+				kv := raw.(map[string]interface{})
+				ary = append(ary, duplosdk.DuploKeyStringValue{
+					Key:   kv["key"].(string),
+					Value: kv["value"].(string),
+				})
+			}
 		}
 	}
 

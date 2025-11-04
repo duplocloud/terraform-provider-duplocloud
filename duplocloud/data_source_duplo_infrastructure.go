@@ -2,13 +2,15 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strconv"
 	"time"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func infrastructureSchemaComputed(single bool) map[string]*schema.Schema {
@@ -56,6 +58,12 @@ func infrastructureSchemaComputed(single bool) map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"nat_ips": {
+			Description: "The NAT IPs for the subnet.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 	}
 
 	if single {
@@ -64,6 +72,7 @@ func infrastructureSchemaComputed(single bool) map[string]*schema.Schema {
 			Type:         schema.TypeString,
 			Optional:     true,
 			ExactlyOneOf: []string{"infra_name", "tenant_id"},
+			ValidateFunc: validation.IsUUID,
 		}
 		result["infra_name"] = &schema.Schema{
 			Description:  "The name of the infrastructure to look up. Must be specified if `tenant_id` is blank.",
@@ -192,7 +201,7 @@ func dataSourceInfrastructureRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	// Get the object from Duplo, detecting a missing object
-	missing, err := infrastructureRead(c, d, name)
+	missing, err := infrastructureRead(ctx, c, d, name)
 	if err != nil {
 		return diag.Errorf("Unable to retrieve infrastructure '%s': %s", name, err)
 	}

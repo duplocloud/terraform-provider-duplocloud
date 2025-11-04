@@ -45,21 +45,23 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"comment": {
-			Description:   "Any comments you want to include about the distribution.",
-			Type:          schema.TypeString,
-			Optional:      true,
-			Computed:      true,
-			ValidateFunc:  validation.StringLenBetween(0, 128),
-			Deprecated:    "comment has been deprecated instead use name",
-			ConflictsWith: []string{"name"},
+			Description:      "Any comments you want to include about the distribution.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ValidateFunc:     validation.StringLenBetween(0, 128),
+			Deprecated:       "comment has been deprecated instead use name",
+			ConflictsWith:    []string{"name"},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"name": {
-			Description:   "Name of the distribution",
-			Type:          schema.TypeString,
-			ValidateFunc:  validation.StringLenBetween(0, 128),
-			Optional:      true,
-			Computed:      true,
-			ConflictsWith: []string{"comment"},
+			Description:      "Name of the distribution",
+			Type:             schema.TypeString,
+			ValidateFunc:     validation.StringLenBetween(0, 128),
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			ConflictsWith:    []string{"comment"},
 		},
 		"default_root_object": {
 			Description: "The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.",
@@ -120,6 +122,9 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			Default:  true,
 		},
 		"use_origin_access_identity": {
+			Description: `When field is set to false it adds the oai mentioned in origin.s3_origin_config.origin_access_identity. 
+			<br/><b><i>Note</b>: For new cloudfront distributions, this field will work differently than for existing distributions.
+			When use_origin_access_identity is set to true, Duplo will create an origin access control (OAC) and restrict the S3 origin access. On false it will be public</br>For migration from OAI to OAC can be done from duplo cloud portal.`,
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  true,
@@ -896,10 +901,16 @@ func resourceAwsCloudfrontDistributionRead(ctx context.Context, d *schema.Resour
 	duplo, clientErr := c.AwsCloudfrontDistributionGet(tenantID, cfdId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end - distribution not found", tenantID, cfdId)
 			d.SetId("")
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s aws cloudfront distribution%s : %s", tenantID, cfdId, clientErr)
+	}
+	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end - distribution response empty", tenantID, cfdId)
+		d.SetId("")
+		return nil
 	}
 	if len(duplo.Distribution.DistributionConfig.CorsAllowedHostNames) == 0 && d.Get("cors_allowed_host_names") != nil {
 		corsAllowedHostNames := []string{}
@@ -928,7 +939,7 @@ func resourceAwsCloudfrontDistributionCreate(ctx context.Context, d *schema.Reso
 	log.Printf("[TRACE] resourceAwsCloudfrontDistributionCreate(%s): start", tenantID)
 	c := m.(*duplosdk.Client)
 
-	rq := expandAwsCloudfrontDistributionConfig(d)
+	rq := expandAwsCloudfrontDistributionConfig(d, false)
 	resp, err := c.AwsCloudfrontDistributionCreate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
 		DistributionConfig:   rq,
 		UseOAIIdentity:       d.Get("use_origin_access_identity").(bool),
@@ -979,7 +990,7 @@ func resourceAwsCloudfrontDistributionUpdate(ctx context.Context, d *schema.Reso
 		return diag.Errorf("Unable to retrieve tenant %s aws cloudfront distribution%s : %s", tenantID, cfdId, clientErr)
 	}
 
-	rq := expandAwsCloudfrontDistributionConfig(d)
+	rq := expandAwsCloudfrontDistributionConfig(d, true)
 	// Update OAI which is generated at backend
 	updateS3OAI(duplo.Distribution.DistributionConfig, rq)
 
@@ -1033,6 +1044,7 @@ func resourceAwsCloudfrontDistributionDelete(ctx context.Context, d *schema.Reso
 		clientErr := c.AwsCloudfrontDistributionDisable(tenantID, cfdId)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
+				log.Printf("[TRACE] Cloudfront distribution disabled before delete. (%s, %s): nd", tenantID, cfdId)
 				return nil
 			}
 			return diag.Errorf("Unable to disable tenant %s aws cloudfront distribution '%s': %s", tenantID, cfdId, clientErr)
@@ -1048,6 +1060,7 @@ func resourceAwsCloudfrontDistributionDelete(ctx context.Context, d *schema.Reso
 	clientErr := c.AwsCloudfrontDistributionDelete(tenantID, cfdId)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsCloudfrontDistributionDelete(%s, %s): end", tenantID, cfdId)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s aws cloudfront distribution '%s': %s", tenantID, cfdId, clientErr)
@@ -1067,7 +1080,7 @@ func resourceAwsCloudfrontDistributionDelete(ctx context.Context, d *schema.Reso
 	return nil
 }
 
-func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData) *duplosdk.DuploAwsCloudfrontDistributionConfig {
+func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData, update bool) *duplosdk.DuploAwsCloudfrontDistributionConfig {
 	distributionConfig := &duplosdk.DuploAwsCloudfrontDistributionConfig{
 		DefaultCacheBehavior: expandAwsCloudfrontDistributionDefaultCacheBehavior(d.Get("default_cache_behavior").([]interface{})[0].(map[string]interface{})),
 
@@ -1084,9 +1097,17 @@ func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData) *duplosdk.Dup
 		WebACLId:             d.Get("web_acl_id").(string),
 	}
 	if v, ok := d.GetOk("name"); ok {
-		distributionConfig.Comment = v.(string)
+		if update && !d.HasChange("name") {
+			distributionConfig.Comment = v.(string)
+		} else {
+			distributionConfig.Comment = v.(string)
+		}
 	} else if v, ok := d.GetOk("comment"); ok {
-		distributionConfig.Comment = v.(string)
+		if update && !d.HasChange("name") {
+			distributionConfig.Comment = v.(string)
+		} else {
+			distributionConfig.Comment = v.(string)
+		}
 	}
 
 	if v, ok := d.GetOk("logging_config"); ok {
@@ -1678,7 +1699,13 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 		d.Set("web_acl_id", duplo.WebACLId)
 	}
 	if duplo.CustomErrorResponses != nil {
-		d.Set("custom_error_response", flattenCustomErrorResponses(duplo.CustomErrorResponses))
+		errorSet := schema.NewSet(schema.HashResource(customErrorHashResource()), nil)
+		for _, v := range *duplo.CustomErrorResponses.Items {
+			m := flattenCustomErrorResponse(v)
+			errorSet.Add(m)
+		}
+		d.Set("custom_error_response", errorSet)
+
 	}
 	if duplo.CacheBehaviors != nil {
 		d.Set("ordered_cache_behavior", flattenCacheBehaviors(duplo.CacheBehaviors))
@@ -1703,7 +1730,8 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 		originSet := schema.NewSet(schema.HashResource(originHashResource()), nil)
 
 		for _, origin := range *duplo.Origins.Items {
-			originSet.Add(flattenOrigin(origin, d.Get("use_origin_access_identity").(bool)))
+			mp := flattenOrigin(origin, d.Get("use_origin_access_identity").(bool))
+			originSet.Add(mp)
 		}
 		d.Set("origin", originSet)
 	}
@@ -1854,6 +1882,7 @@ func flattenViewerCertificate(vc *duplosdk.DuploAwsCloudfrontDistributionViewerC
 	return []interface{}{m}
 }
 
+/*
 func flattenCustomErrorResponses(ers *duplosdk.DuploAwsCloudfrontDistributionCustomErrorResponses) []map[string]interface{} {
 	s := []map[string]interface{}{}
 	for _, v := range *ers.Items {
@@ -1861,13 +1890,14 @@ func flattenCustomErrorResponses(ers *duplosdk.DuploAwsCloudfrontDistributionCus
 	}
 	// return schema.NewSet(CustomErrorResponseHash, s)
 	return s
-}
+}*/
 
 func flattenCustomErrorResponse(er duplosdk.DuploAwsCloudfrontDistributionCustomErrorResponse) map[string]interface{} {
 	m := make(map[string]interface{})
 	m["error_code"] = er.ErrorCode
 	m["error_caching_min_ttl"] = er.ErrorCachingMinTTL
-	m["response_code"] = er.ResponseCode
+	v, _ := strconv.Atoi(er.ResponseCode)
+	m["response_code"] = v
 	m["response_page_path"] = er.ResponsePagePath
 	return m
 }
@@ -2033,6 +2063,34 @@ func originHashResource() *schema.Resource {
 						},
 					},
 				},
+			},
+		},
+	}
+
+}
+
+func customErrorHashResource() *schema.Resource {
+
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"error_caching_min_ttl": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+			"error_code": {
+				Type:     schema.TypeInt,
+				Required: true,
+			},
+			"response_code": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+			"response_page_path": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 		},
 	}
@@ -2252,7 +2310,7 @@ func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin, useOAI bool) map[string
 	m["connection_attempts"] = or.ConnectionAttempts
 	m["connection_timeout"] = or.ConnectionTimeout
 
-	if or.CustomHeaders != nil {
+	if or.CustomHeaders != nil && or.CustomHeaders.Quantity > 0 {
 		headers := flattenCustomHeaders(or.CustomHeaders)
 		m["custom_header"] = schema.NewSet(
 			schema.HashResource(&schema.Resource{
@@ -2263,6 +2321,22 @@ func flattenOrigin(or duplosdk.DuploAwsCloudfrontOrigin, useOAI bool) map[string
 			}),
 			castToInterfaceSlice(headers),
 		)
+	} else {
+		//sm := map[string]interface{}{
+		//	//"name":  "",
+		//	//"value": "",
+		//}
+		//inf := make([]interface{}, 1)
+		//inf[0] = m
+		s := schema.NewSet(
+			schema.HashResource(&schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name":  {Type: schema.TypeString, Required: true},
+					"value": {Type: schema.TypeString, Required: true},
+				},
+			}),
+			nil)
+		m["custom_header"] = s
 	}
 
 	if or.CustomOriginConfig != nil {
@@ -2292,8 +2366,7 @@ func flattenCustomOriginConfig(cor *duplosdk.DuploAwsCloudfrontCustomOriginConfi
 	if cor == nil {
 		return nil
 	}
-
-	return map[string]interface{}{
+	m := map[string]interface{}{
 		"http_port":                cor.HTTPPort,
 		"https_port":               cor.HTTPSPort,
 		"origin_keepalive_timeout": cor.OriginKeepaliveTimeout,
@@ -2301,6 +2374,11 @@ func flattenCustomOriginConfig(cor *duplosdk.DuploAwsCloudfrontCustomOriginConfi
 		"origin_protocol_policy":   cor.OriginProtocolPolicy.Value,
 		"origin_ssl_protocols":     castStringSliceToInterface(cor.OriginSslProtocols.Items),
 	}
+	m["origin_ssl_protocols"] = schema.NewSet(
+		schema.HashString,
+		castStringSliceToInterface(cor.OriginSslProtocols.Items),
+	)
+	return m
 }
 func castStringSliceToInterface(in []string) []interface{} {
 	out := make([]interface{}, len(in))

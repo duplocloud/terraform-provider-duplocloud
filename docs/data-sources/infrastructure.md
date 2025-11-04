@@ -55,6 +55,7 @@ Will be one of:
    - `2` : Azure
 - `enable_k8_cluster` (Boolean) Whether or not a kubernetes cluster is provisioned.
 - `id` (String) The ID of this resource.
+- `nat_ips` (List of String) The NAT IPs for the subnet.
 - `private_subnets` (Set of Object) The private subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--private_subnets))
 - `public_subnets` (Set of Object) The public subnets for the VPC or VNet. (see [below for nested schema](#nestedatt--public_subnets))
 - `region` (String) The cloud provider region.  The Duplo portal must have already been configured to support this region.
