@@ -212,6 +212,7 @@ func resourceK8IngressRead(ctx context.Context, d *schema.ResourceData, m interf
 	rp, clientErr := c.DuploK8sIngressGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8IngressRead(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -294,6 +295,7 @@ func resourceK8IngressDelete(ctx context.Context, d *schema.ResourceData, m inte
 	rp, clientErr := c.DuploK8sIngressGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8IngressDelete(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}

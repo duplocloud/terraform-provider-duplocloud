@@ -107,9 +107,14 @@ func resourceInfrastructureSubnetRead(ctx context.Context, d *schema.ResourceDat
 	} else {
 		subnetName = "duploinfra-" + rq.Name
 	}
-	duplo, err := c.InfrastructureGetSubnet(rq.InfrastructureName, subnetName, rq.AddressPrefix)
-	if err != nil {
-		return diag.Errorf("Unable to retrieve infrastructure subnet '%s': %s", id, err)
+	duplo, cerr := c.InfrastructureGetSubnet(rq.InfrastructureName, subnetName, rq.AddressPrefix)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceInfrastructureSubnetRead: Subnet %s not found for infrastructure %s, removing from state", subnetName, rq.InfrastructureName)
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve infrastructure subnet '%s': %s", id, cerr)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -196,9 +201,13 @@ func resourceInfrastructureSubnetDelete(ctx context.Context, d *schema.ResourceD
 
 	// Delete the rule with Duplo
 	c := m.(*duplosdk.Client)
-	err = c.InfrastructureDeleteSubnet(rq.InfrastructureName, rq.Name, rq.AddressPrefix)
-	if err != nil {
-		return diag.Errorf("Error deleting infrastructure subnet '%s': %s", id, err)
+	cerr := c.InfrastructureDeleteSubnet(rq.InfrastructureName, rq.Name, rq.AddressPrefix)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceInfrastructureSubnetDelete: Subnet %s not found for infrastructure %s, removing from state", rq.Name, rq.InfrastructureName)
+			return nil
+		}
+		return diag.Errorf("Error deleting infrastructure subnet '%s': %s", id, cerr)
 	}
 
 	log.Printf("[TRACE] resourceInfrastructureSubnetDelete(%s): end", id)

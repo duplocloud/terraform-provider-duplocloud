@@ -106,6 +106,11 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	c := m.(*duplosdk.Client)
 	duplo, err := c.UserGet(id)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceUserRead(%s): object not found", id)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve User '%s': %s", id, err)
 	}
 	if duplo == nil {
@@ -246,6 +251,10 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, m interface
 	c := m.(*duplosdk.Client)
 	err := c.UserDelete(id)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceUserDelete(%s): object not found", id)
+			return nil
+		}
 		return diag.Errorf("Error deleting User '%s': %s", id, err)
 	}
 

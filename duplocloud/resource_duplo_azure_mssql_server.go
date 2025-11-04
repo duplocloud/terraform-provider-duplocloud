@@ -172,6 +172,7 @@ func resourceAzureMssqlServerRead(ctx context.Context, d *schema.ResourceData, m
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureMssqlServerRead: Azure mssql server %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -237,6 +238,7 @@ func resourceAzureMssqlServerDelete(ctx context.Context, d *schema.ResourceData,
 	clientErr := c.MsSqlServerDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureMssqlServerDelete: Azure mssql server %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure mssql Server '%s': %s", tenantID, name, clientErr)

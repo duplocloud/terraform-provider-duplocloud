@@ -45,21 +45,23 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"comment": {
-			Description:   "Any comments you want to include about the distribution.",
-			Type:          schema.TypeString,
-			Optional:      true,
-			Computed:      true,
-			ValidateFunc:  validation.StringLenBetween(0, 128),
-			Deprecated:    "comment has been deprecated instead use name",
-			ConflictsWith: []string{"name"},
+			Description:      "Any comments you want to include about the distribution.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ValidateFunc:     validation.StringLenBetween(0, 128),
+			Deprecated:       "comment has been deprecated instead use name",
+			ConflictsWith:    []string{"name"},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"name": {
-			Description:   "Name of the distribution",
-			Type:          schema.TypeString,
-			ValidateFunc:  validation.StringLenBetween(0, 128),
-			Optional:      true,
-			Computed:      true,
-			ConflictsWith: []string{"comment"},
+			Description:      "Name of the distribution",
+			Type:             schema.TypeString,
+			ValidateFunc:     validation.StringLenBetween(0, 128),
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			ConflictsWith:    []string{"comment"},
 		},
 		"default_root_object": {
 			Description: "The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.",
@@ -934,7 +936,7 @@ func resourceAwsCloudfrontDistributionCreate(ctx context.Context, d *schema.Reso
 	log.Printf("[TRACE] resourceAwsCloudfrontDistributionCreate(%s): start", tenantID)
 	c := m.(*duplosdk.Client)
 
-	rq := expandAwsCloudfrontDistributionConfig(d)
+	rq := expandAwsCloudfrontDistributionConfig(d, false)
 	resp, err := c.AwsCloudfrontDistributionCreate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
 		DistributionConfig:   rq,
 		UseOAIIdentity:       d.Get("use_origin_access_identity").(bool),
@@ -985,7 +987,7 @@ func resourceAwsCloudfrontDistributionUpdate(ctx context.Context, d *schema.Reso
 		return diag.Errorf("Unable to retrieve tenant %s aws cloudfront distribution%s : %s", tenantID, cfdId, clientErr)
 	}
 
-	rq := expandAwsCloudfrontDistributionConfig(d)
+	rq := expandAwsCloudfrontDistributionConfig(d, true)
 	// Update OAI which is generated at backend
 	updateS3OAI(duplo.Distribution.DistributionConfig, rq)
 
@@ -1075,7 +1077,7 @@ func resourceAwsCloudfrontDistributionDelete(ctx context.Context, d *schema.Reso
 	return nil
 }
 
-func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData) *duplosdk.DuploAwsCloudfrontDistributionConfig {
+func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData, update bool) *duplosdk.DuploAwsCloudfrontDistributionConfig {
 	distributionConfig := &duplosdk.DuploAwsCloudfrontDistributionConfig{
 		DefaultCacheBehavior: expandAwsCloudfrontDistributionDefaultCacheBehavior(d.Get("default_cache_behavior").([]interface{})[0].(map[string]interface{})),
 
@@ -1092,9 +1094,17 @@ func expandAwsCloudfrontDistributionConfig(d *schema.ResourceData) *duplosdk.Dup
 		WebACLId:             d.Get("web_acl_id").(string),
 	}
 	if v, ok := d.GetOk("name"); ok {
-		distributionConfig.Comment = v.(string)
+		if update && !d.HasChange("name") {
+			distributionConfig.Comment = v.(string)
+		} else {
+			distributionConfig.Comment = v.(string)
+		}
 	} else if v, ok := d.GetOk("comment"); ok {
-		distributionConfig.Comment = v.(string)
+		if update && !d.HasChange("name") {
+			distributionConfig.Comment = v.(string)
+		} else {
+			distributionConfig.Comment = v.(string)
+		}
 	}
 
 	if v, ok := d.GetOk("logging_config"); ok {
