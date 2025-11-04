@@ -807,21 +807,21 @@ func flattenCapacityProviderStrategies(duplo *[]duplosdk.DuploEcsServiceCapacity
 	return s
 }
 
-func flattenPlacementStrategies(duplo *[]duplosdk.DuploEcsPlacementStrategy) []map[string]interface{} {
-	s := []map[string]interface{}{}
-	for _, v := range *duplo {
-		s = append(s, flattenPlacementStrategy(v))
-	}
-	return s
-}
+//func flattenPlacementStrategies(duplo *[]duplosdk.DuploEcsPlacementStrategy) []map[string]interface{} {
+//	s := []map[string]interface{}{}
+//	for _, v := range *duplo {
+//		s = append(s, flattenPlacementStrategy(v))
+//	}
+//	return s
+//}
 
-func flattenPlacementConstraints(duplo *[]duplosdk.DuploEcsPlacementConstraint) []map[string]interface{} {
-	s := []map[string]interface{}{}
-	for _, v := range *duplo {
-		s = append(s, flattenPlacementConstraint(v))
-	}
-	return s
-}
+//func flattenPlacementConstraints(duplo *[]duplosdk.DuploEcsPlacementConstraint) []map[string]interface{} {
+//	s := []map[string]interface{}{}
+//	for _, v := range *duplo {
+//		s = append(s, flattenPlacementConstraint(v))
+//	}
+//	return s
+//}
 
 func flattenCapacityProviderStrategy(duplo duplosdk.DuploEcsServiceCapacityProviderStrategy) map[string]interface{} {
 	m := make(map[string]interface{})
@@ -831,19 +831,19 @@ func flattenCapacityProviderStrategy(duplo duplosdk.DuploEcsServiceCapacityProvi
 	return m
 }
 
-func flattenPlacementStrategy(duplo duplosdk.DuploEcsPlacementStrategy) map[string]interface{} {
-	m := make(map[string]interface{})
-	m["type"] = duplo.Type
-	m["field"] = duplo.Field
-	return m
-}
+//func flattenPlacementStrategy(duplo duplosdk.DuploEcsPlacementStrategy) map[string]interface{} {
+//	m := make(map[string]interface{})
+//	m["type"] = duplo.Type
+//	m["field"] = duplo.Field
+//	return m
+//}
 
-func flattenPlacementConstraint(duplo duplosdk.DuploEcsPlacementConstraint) map[string]interface{} {
-	m := make(map[string]interface{})
-	m["type"] = duplo.Type
-	m["expression"] = duplo.Expression
-	return m
-}
+//func flattenPlacementConstraint(duplo duplosdk.DuploEcsPlacementConstraint) map[string]interface{} {
+//	m := make(map[string]interface{})
+//	m["type"] = duplo.Type
+//	m["expression"] = duplo.Expression
+//	return m
+//}
 
 func expandCapacityProviderStrategies(lst []interface{}) *[]duplosdk.DuploEcsServiceCapacityProviderStrategy {
 	items := make([]duplosdk.DuploEcsServiceCapacityProviderStrategy, 0, len(lst))
