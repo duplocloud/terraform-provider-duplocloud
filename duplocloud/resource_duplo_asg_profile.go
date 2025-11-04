@@ -646,7 +646,7 @@ func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string,
 					status = "ready"
 					flag = false
 				} else {
-					if *rp.Created {
+					if *rp.Created && rp.Arn != "" {
 						status = "ready"
 					} else {
 						status = "pending"
