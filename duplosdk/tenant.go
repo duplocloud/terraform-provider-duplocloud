@@ -174,7 +174,7 @@ func (c *Client) ListTenantsForUser() ([]DuploTenant, ClientError) {
 }
 
 // ListTenantsForUserByPlan retrieves a list of tenants with the given plan for the current user via the Duplo API.
-// If the planID is an empty string, returns all
+// If the palnId is an empty string, returns all
 func (c *Client) ListTenantsForUserByPlan(planID string) ([]DuploTenant, ClientError) {
 	// Get all tenants.
 	allTenants, err := c.ListTenantsForUser()
@@ -551,4 +551,90 @@ func (c *Client) TenantAccessGet(userName string) ([]DuploTenantAccess, ClientEr
 		return nil, err
 	}
 	return rp, nil
+}
+
+type DuploTenantKmsKeyInfo struct {
+	KeyName string `json:"KeyName,omitempty"`
+	KeyArn  string `json:"KeyArn,omitempty"`
+	KeyId   string `json:"KeyId,omitempty"`
+}
+
+func (c *Client) TenantKMSGetList(tenantID string) (*[]DuploTenantKmsKeyInfo, ClientError) {
+	list := []DuploTenantKmsKeyInfo{}
+	err := c.getAPI("TenantKMSGetList()", fmt.Sprintf("v3/admin/tenant/%s/kms", tenantID), &list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+func (c *Client) TenantKMSDelete(tenantID, kmsId string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("TenantDeleteKms(%s, %s)", tenantID, kmsId),
+		fmt.Sprintf("v3/admin/tenant/%s/kms/%s", tenantID, kmsId),
+		nil)
+}
+
+func (c *Client) TenantCreateKMSKey(tenantID string, kms DuploTenantKmsKeyInfo) ClientError {
+	var rp DuploTenantKmsKeyInfo
+	return c.postAPI(
+		fmt.Sprintf("TenantCreateKMSKey(%s)", tenantID),
+		fmt.Sprintf("v3/admin/tenant/%s/kms", tenantID),
+		&kms,
+		&rp)
+}
+
+func (c *Client) TenantUpdateKMSKey(tenantID string, kms DuploTenantKmsKeyInfo) ClientError {
+	var rp DuploTenantKmsKeyInfo
+	return c.putAPI(
+		fmt.Sprintf("TenantUpdateKMSKey(%s,%s)", tenantID, kms.KeyId),
+		fmt.Sprintf("v3/admin/tenant/%s/kms/%s", tenantID, kms.KeyId),
+		&kms,
+		&rp)
+}
+
+func (c *Client) TenantGetKMSKey(tenantID string, kmsId string) (*DuploTenantKmsKeyInfo, ClientError) {
+	var rp DuploTenantKmsKeyInfo
+	err := c.getAPI(
+		fmt.Sprintf("TenantGetKMSKey(%s, %s)", tenantID, kmsId),
+		fmt.Sprintf("v3/admin/tenant/%s/kms/%s", tenantID, kmsId),
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+func (c *Client) TenantReplaceKmsKeys(tenantID string, existing, newKeys *[]DuploTenantKmsKeyInfo) ClientError {
+
+	return c.TenantChangeKmsKeys(tenantID, existing, newKeys)
+}
+
+// TenantChangeCertificates changes plan certificates via the Duplo API, using the supplied
+// oldConfig and newConfig, for the given tenantID.
+func (c *Client) TenantChangeKmsKeys(tenantID string, oldKeys, newKeys *[]DuploTenantKmsKeyInfo) ClientError {
+
+	// Next, update all certs that are present, keeping a record of each one that is present
+	present := map[string]struct{}{}
+	if newKeys != nil {
+		for _, pc := range *newKeys {
+			if err := c.TenantCreateKMSKey(tenantID, pc); err != nil {
+				return err
+			}
+			present[pc.KeyName] = struct{}{}
+		}
+	}
+
+	// Finally, delete any certs that are no longer present.
+	if oldKeys != nil {
+		for _, pc := range *oldKeys {
+			if _, ok := present[pc.KeyName]; !ok {
+				if err := c.TenantKMSDelete(tenantID, pc.KeyId); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }

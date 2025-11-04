@@ -68,6 +68,11 @@ func resourcePlanWafRead(ctx context.Context, d *schema.ResourceData, m interfac
 	// First, try the newer method of getting the plan configs.
 	duplo, err := c.PlanWAFGet(planID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourcePlanWafRead(%s): object not found", planID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("failed to retrieve plan waf for '%s': %s", planID, err)
 	}
 	d.Set("waf_name", duplo.WebAclName)
@@ -114,6 +119,10 @@ func resourcePlanWafDelete(ctx context.Context, d *schema.ResourceData, m interf
 	c := m.(*duplosdk.Client)
 	err := c.PlanWafDelete(planID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourcePlanWafDelete(%s): object not found", planID)
+			return nil
+		}
 		return diag.Errorf("Error deleting plan waf	 for '%s': %s", planID, err)
 	}
 
