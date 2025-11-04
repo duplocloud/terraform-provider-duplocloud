@@ -478,6 +478,7 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 	err := c.InfrastructureDelete(infraName)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceInfrastructureDelete: Infrastructure %s not found, removing from state", infraName)
 			return nil
 		}
 		return diag.Errorf("Duplocloud resource '%s'\n%s", d.Id(), err)

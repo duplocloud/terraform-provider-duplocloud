@@ -287,6 +287,11 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 	c := m.(*duplosdk.Client)
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceRead(%s, %s): object not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	if duplo == nil {
@@ -424,6 +429,10 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceDelete(%s, %s): object not found", tenantID, name)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 
@@ -439,8 +448,12 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 		// Delete the object from Duplo
 		c := m.(*duplosdk.Client)
 		err := c.ReplicationControllerDelete(tenantID, &rq)
-		if err != nil {
-			return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
+		if err != nil && err.Status() == 400 {
+			err := c.ReplicationControllerDeleteFallback(tenantID, &rq)
+			if err != nil {
+				return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
+			}
+
 		}
 
 		// Wait for it to be deleted

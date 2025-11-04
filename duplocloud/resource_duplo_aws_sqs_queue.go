@@ -178,6 +178,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): object missing", tenantID, url)
 			d.SetId("")
 			return nil
 		}
@@ -321,6 +322,7 @@ func resourceAwsSqsQueueDelete(ctx context.Context, d *schema.ResourceData, m in
 	clientErr := c.DuploSQSQueueDeleteV3(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsSqsQueueDelete(%s, %s): object missing", tenantID, fullname)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s sqs queue '%s': %s", tenantID, fullname, clientErr)

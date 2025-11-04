@@ -177,6 +177,7 @@ func resourceAzurePostgresqlDatabaseRead(ctx context.Context, d *schema.Resource
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzurePostgresqlDatabaseRead: Azure postgresql database %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -242,6 +243,7 @@ func resourceAzurePostgresqlDatabaseDelete(ctx context.Context, d *schema.Resour
 	clientErr := c.PostgresqlDatabaseDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzurePostgresqlDatabaseDelete: Azure postgresql database %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure postgresql database '%s': %s", tenantID, name, clientErr)

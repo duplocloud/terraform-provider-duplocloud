@@ -109,6 +109,7 @@ func resourceOtherAgentsRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceOtherAgentsRead(%s): object not found", name)
 			d.SetId("")
 			return nil
 		}
@@ -163,6 +164,7 @@ func resourceOtherAgentsDelete(ctx context.Context, d *schema.ResourceData, m in
 	clientErr := c.DuploOtherAgentDelete()
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceOtherAgentsDelete(%s): object not found", name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete other agents '%s': %s", name, clientErr)

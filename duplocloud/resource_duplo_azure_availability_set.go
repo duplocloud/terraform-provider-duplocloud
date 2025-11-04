@@ -120,6 +120,7 @@ func resourceAzureAvailabilitySetRead(ctx context.Context, d *schema.ResourceDat
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAzureAvailabilitySetRead(%s, %s): object missing", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -186,8 +187,11 @@ func resourceAzureAvailabilitySetDelete(ctx context.Context, d *schema.ResourceD
 
 	clientErr := c.AzureAvailabilitySetDelete(tenantID, name)
 	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAzureAvailabilitySetDelete(%s, %s): object missing", tenantID, name)
+			return nil
+		}
 		return diag.Errorf("Unable to delete tenant %s azure availablity set '%s': %s", tenantID, name, clientErr)
-
 	}
 	time.Sleep(2 * time.Minute)
 	log.Printf("[TRACE] resourceAzureAvailabilitySetDelete(%s, %s): end", tenantID, name)
