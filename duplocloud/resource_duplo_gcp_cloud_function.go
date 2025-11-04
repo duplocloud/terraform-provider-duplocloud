@@ -252,6 +252,11 @@ func resourceGcpCloudFunctionRead(ctx context.Context, d *schema.ResourceData, m
 		return nil
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpCloudFunctionRead: Cloud Function %s not found for tenantId %s, removing from state", name, tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve tenant %s cloud function '%s': %s", tenantID, name, err)
 	}
 
@@ -332,6 +337,10 @@ func resourceGcpCloudFunctionDelete(ctx context.Context, d *schema.ResourceData,
 	idParts := strings.SplitN(id, "/", 2)
 	err := c.GcpCloudFunctionDelete(idParts[0], idParts[1])
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpCloudFunctionDelete: Cloud Function %s not found for tenantId %s, removing from state", idParts[1], idParts[0])
+			return nil
+		}
 		return diag.Errorf("Error deleting cloud function '%s': %s", id, err)
 	}
 

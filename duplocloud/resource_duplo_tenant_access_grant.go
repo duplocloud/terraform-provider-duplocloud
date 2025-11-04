@@ -76,6 +76,7 @@ func resourceTenantAccessGrantRead(ctx context.Context, d *schema.ResourceData, 
 	rp, clientErr := c.GetTenantAccessGrant(granteeTenantId, grantorTenantId, grantedArea)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantAccessGrantRead(%s, %s, %s): object not found", grantorTenantId, granteeTenantId, grantedArea)
 			d.SetId("")
 			return nil
 		}
@@ -152,6 +153,7 @@ func resourceTenantAccessGrantDelete(ctx context.Context, d *schema.ResourceData
 	clientErr := c.DeleteTenantAccessGrant(granteeTenantId, grantorTenantId, grantedArea)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantAccessGrantDelete(%s, %s, %s): object not found", granteeTenantId, grantorTenantId, grantedArea)
 			d.SetId("")
 			return nil
 		}

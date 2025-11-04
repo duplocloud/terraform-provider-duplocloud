@@ -40,6 +40,7 @@ type DuploAsgProfile struct {
 	ExtraNodeLabels     *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
 	Taints              *[]DuploTaints                     `json:"Taints,omitempty"`
 	Created             *bool                              `json:"Created,omitempty"`
+	Arn                 string                             `json:"AutoScalingGroupARN,omitempty"`
 }
 
 type DuploAsgProfileDeleteReq struct {

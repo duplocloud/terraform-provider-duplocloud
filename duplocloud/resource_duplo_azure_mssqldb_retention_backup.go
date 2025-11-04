@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -76,6 +77,11 @@ func resourceMssqlDBRetentionBackupRead(ctx context.Context, d *schema.ResourceD
 		return nil
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceMssqlDBRetentionBackupRead: Azure mssql db retention backup not found for tenantId %s, removing from state", tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("resourceMssqlDBRetentionBackupCreateOrUpdate could not fetch retention days for %s db belonging to server %s : %s", db, server, err.Error())
 	}
 	d.Set("retention_backup_days", rp.RetentionDays)

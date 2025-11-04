@@ -287,6 +287,7 @@ func resourceAwsLambdaFunctionRead(ctx context.Context, d *schema.ResourceData, 
 	duplo, clientErr := c.LambdaFunctionGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLambdaFunctionRead(%s, %s): object missing", tenantID, name)
 			d.SetId("") // object missing
 			return nil
 		}
@@ -495,6 +496,7 @@ func resourceAwsLambdaFunctionDelete(ctx context.Context, d *schema.ResourceData
 	clientErr := c.LambdaFunctionDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLambdaFunctionDelete(%s, %s): object missing", tenantID, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s lambda function '%s': %s", tenantID, name, clientErr)
