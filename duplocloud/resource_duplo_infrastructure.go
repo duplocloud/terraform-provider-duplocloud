@@ -211,11 +211,12 @@ func resourceInfrastructure() *schema.Resource {
 				ConflictsWith: []string{"setting"},
 			},
 			"setting": {
-				Description:   "A list of configuration settings to manage, expressed as key / value pairs.",
-				Type:          schema.TypeList,
-				Optional:      true,
-				Elem:          KeyValueSchema(),
-				ConflictsWith: []string{"custom_data"},
+				Description:      "A list of configuration settings to manage, expressed as key / value pairs.",
+				Type:             schema.TypeList,
+				Optional:         true,
+				Elem:             KeyValueSchema(),
+				ConflictsWith:    []string{"custom_data"},
+				DiffSuppressFunc: diffSuppressSettingKey,
 			},
 			"delete_unspecified_settings": {
 				Description: "Whether or not this resource should delete any settings not specified by this resource. " +
@@ -475,6 +476,7 @@ func resourceInfrastructureDelete(ctx context.Context, d *schema.ResourceData, m
 	err := c.InfrastructureDelete(infraName)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceInfrastructureDelete: Infrastructure %s not found, removing from state", infraName)
 			return nil
 		}
 		return diag.Errorf("Duplocloud resource '%s'\n%s", d.Id(), err)
@@ -787,21 +789,21 @@ func filterInfraSetting(cloud int, settings []duplosdk.DuploKeyStringValue) []in
 	var m map[string]struct{}
 	if cloud == 3 {
 		m = map[string]struct{}{
-			"GkeEndpointVisibility":    {},
-			"GkeChannel":               {},
-			"K8sVersion":               {},
-			"EnableHelmOperatorFluxV2": {},
-			"K8sHelmOperator":          {},
+			//	"GkeEndpointVisibility":    {},
+			//	"GkeChannel":               {},
+			//	"K8sVersion":               {},
+			//	"EnableHelmOperatorFluxV2": {},
+			//	"K8sHelmOperator":          {},
 		}
 	}
 	if cloud == 0 {
 		m = map[string]struct{}{
-			"K8sVersion":                 {},
-			"EksEndpointVisibility":      {},
-			"EksControlplaneLogs":        {},
-			"EnableDefaultEbsEncryption": {},
-			"EnableHelmOperatorFluxV2":   {},
-			"K8sHelmOperator":            {},
+			//	"K8sVersion":                 {},
+			//	"EksEndpointVisibility":      {},
+			//	"EksControlplaneLogs":        {},
+			//	"EnableDefaultEbsEncryption": {},
+			//	"EnableHelmOperatorFluxV2":   {},
+			//	"K8sHelmOperator":            {},
 		}
 	}
 	filteredSet := []duplosdk.DuploKeyStringValue{}
@@ -811,4 +813,32 @@ func filterInfraSetting(cloud int, settings []duplosdk.DuploKeyStringValue) []in
 		}
 	}
 	return keyValueToState("setting", &filteredSet)
+}
+
+func diffSuppressSettingKey(k, old, new string, d *schema.ResourceData) bool {
+	// Suppress diff if the user input setting (old) is part of API response settings.
+	// If user input setting not in API response, do not suppress diff.
+	if !d.HasChanges("setting") {
+		return true
+	}
+	o, n := d.GetChange("setting")
+	apiKey := o.([]interface{})
+	input := n.([]interface{}) // ensure "setting" is read
+	// Get all settings from API response
+	apiMap := make(map[string]interface{})
+	ipMap := make(map[string]interface{})
+	for _, ak := range apiKey {
+		s := ak.(map[string]interface{})
+		apiMap[s["key"].(string)] = s["value"].(string)
+	}
+	for _, ak := range input {
+		s := ak.(map[string]interface{})
+		ipMap[s["key"].(string)] = s["value"].(string)
+	}
+	for k, vm := range ipMap {
+		if v, ok := apiMap[k]; !ok || v != vm {
+			return false
+		}
+	}
+	return true // do not suppress if key not found in API response
 }

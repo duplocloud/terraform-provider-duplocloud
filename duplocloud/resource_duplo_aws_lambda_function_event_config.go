@@ -127,6 +127,7 @@ func resourceAwsLambdaFunctionEventInvokeConfigRead(ctx context.Context, d *sche
 	resource, clientErr := duploClient.LambdaEventInvokeConfigGet(tenantId, functionName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLambdaFunctionEventInvokeConfigRead(%s, %s): object missing", tenantId, functionName)
 			d.SetId("") // object missing
 			return nil
 		}
@@ -212,6 +213,7 @@ func resourceAwsLambdaFunctionEventInvokeConfigDelete(ctx context.Context, d *sc
 	clientErr := duploClient.LambdaEventInvokeConfigDelete(tenantId, functionName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLambdaFunctionEventInvokeConfigDelete(%s, %s): object missing", tenantId, functionName)
 			return nil
 		}
 		return diag.Errorf(

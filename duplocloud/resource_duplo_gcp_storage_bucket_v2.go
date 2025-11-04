@@ -134,6 +134,11 @@ func resourceGCPStorageBucketV2Read(ctx context.Context, d *schema.ResourceData,
 		// Figure out the full resource name.
 		fullName, clientErr = c.GetDuploServicesNameWithGcp(tenantID, name, false)
 		if clientErr != nil {
+			if clientErr.Status() == 404 {
+				log.Printf("[DEBUG] resourceGCPStorageBucketV2Read: Storage bucket %s not found for tenantId %s, removing from state", name, tenantID)
+				d.SetId("")
+				return nil
+			}
 			return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
 
 		}
@@ -244,6 +249,10 @@ func resourceGCPStorageBucketV2Delete(ctx context.Context, d *schema.ResourceDat
 	fullName := d.Get("fullname").(string)
 	err := c.GCPTenantDeleteStorageBucketV2(idParts[0], idParts[1], fullName)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGCPStorageBucketV2Delete: Storage bucket %s not found for tenantId %s, removing from state", idParts[1], idParts[0])
+			return nil
+		}
 		return diag.Errorf("GCPTenantDeleteStorageBucketV2: Unable to delete bucket (name:%s, error: %s)", id, err)
 	}
 

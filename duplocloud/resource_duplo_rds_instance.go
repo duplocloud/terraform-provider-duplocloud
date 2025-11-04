@@ -404,6 +404,11 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 
 	duplo, err := c.RdsInstanceGet(d.Id())
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploRdsInstanceRead(%s): object not found", d.Id())
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	if duplo == nil {
@@ -813,7 +818,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
-	time.Sleep(10 * time.Minute) //sleeping to sync with Backend, backend has delay even after state of rds is available
+	time.Sleep(2 * time.Minute) //sleeping to sync with Backend, backend has delay even after state of rds is available
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
 	log.Printf("[TRACE] resourceDuploRdsInstanceUpdate ******** end")
@@ -828,8 +833,27 @@ func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData,
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
 	id := d.Id()
+	duplo, _ := c.RdsInstanceGet(d.Id())
+	if duplo.IsGlobalClusterMember {
+		idParts := strings.SplitN(id, "/", 5)
+		tenantId := idParts[2]
+		identifier := d.Get("cluster_identifier").(string)
+		region := duplo.AvailabilityZone[:len(duplo.AvailabilityZone)-1]
+		clientErr := c.DisassociateRDSDRegionalCluster(tenantId, identifier, region)
+		if clientErr != nil {
+			if clientErr.Status() == 404 {
+				return nil
+			}
+			return diag.Errorf("Unable to dissassociate secondary cluster from - (Tenant: %s,  Cluster: %s, Region: %s) : %s", tenantId, identifier, region, clientErr)
+		}
+
+	}
 	_, err := c.RdsInstanceDelete(d.Id())
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploRdsInstanceDelete(%s): object not found", id)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB instance", id, func() (interface{}, duplosdk.ClientError) {

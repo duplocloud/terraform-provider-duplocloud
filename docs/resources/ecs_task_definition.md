@@ -138,7 +138,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 - `network_mode` (String) Valid values are `bridge`,`host`,`awsvpc`,`none` Defaults to `awsvpc`.
 - `pid_mode` (String) Valida values are `host`, `task`
 - `placement_constraints` (Block Set, Max: 10) (see [below for nested schema](#nestedblock--placement_constraints))
-- `prevent_tf_destroy` (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`. Defaults to `true`.
+- `prevent_tf_destroy` (String) Prevent this resource to be deleted from terraform destroy. Defaults to `true`.
 - `proxy_configuration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--proxy_configuration))
 - `requires_attributes` (Block Set) (see [below for nested schema](#nestedblock--requires_attributes))
 - `requires_compatibilities` (Set of String) Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.

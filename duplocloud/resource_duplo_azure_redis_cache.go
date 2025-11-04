@@ -155,6 +155,7 @@ func resourceAzureRedisCacheRead(ctx context.Context, d *schema.ResourceData, m 
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureRedisCacheRead: Azure redis cache %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -219,6 +220,7 @@ func resourceAzureRedisCacheDelete(ctx context.Context, d *schema.ResourceData, 
 	clientErr := c.RedisCacheDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureRedisCacheDelete: Azure redis cache %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure redis cache '%s': %s", tenantID, name, clientErr)
