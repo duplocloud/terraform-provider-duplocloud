@@ -208,5 +208,8 @@ func resourceAwsMQConfigCustomizeDiff(ctx context.Context, d *schema.ResourceDif
 			return fmt.Errorf("the 'data' field can be set only during update")
 		}
 	}
+	if d.Get("engine_type").(string) == "RABBITMQ" && d.Get("authentication_strategy").(string) == "LDAP" {
+		return fmt.Errorf("LDAP authentication strategy is not supported for RABBITMQ engine type")
+	}
 	return nil
 }
