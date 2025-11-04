@@ -121,8 +121,8 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Description: "The numeric ID of the keypair type being used." +
 				"Should be one of:\n\n" +
 				"   - `0` : Default\n" +
-				"   - `1` : ED25519\n" +
-				"   - `2` : RSA (deprecated - some operating systems no longer support it)\n",
+				"   - `1` : RSA (deprecated - some operating systems no longer support it)\n" +
+				"   - `2` : ED25519\n",
 			Type:     schema.TypeInt,
 			Optional: true,
 			Computed: true,

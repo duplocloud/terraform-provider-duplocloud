@@ -60,10 +60,10 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"prevent_tf_destroy": {
-			Description: "Prevent this resource to be deleted from terraform destroy. Default value is `true`.",
-			Type:        schema.TypeBool,
+			Description: "Prevent this resource to be deleted from terraform destroy.",
+			Type:        schema.TypeString,
 			Optional:    true,
-			Default:     true,
+			Default:     "true",
 		},
 		"container_definitions": {
 			Type:     schema.TypeString,
@@ -169,11 +169,11 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			},
 		},
 		"requires_compatibilities": {
-			Type:             schema.TypeSet,
-			Description:      "Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.",
-			Optional:         true,
-			Computed:         true,
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Type:        schema.TypeSet,
+			Description: "Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.",
+			Optional:    true,
+			ForceNew:    true,
+			//	DiffSuppressFunc: diffSuppressWhenNotCreating,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
@@ -303,9 +303,14 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.EcsTaskDefinitionGetV2(tenantID, arn)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, cerr := c.EcsTaskDefinitionGetV2(tenantID, arn)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceDuploEcacheGlobalDatastoreRead: Ecache Global Datastore not found for tenantId %s, removing from state", tenantID)
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if rp == nil || rp.Arn == "" {
 		d.SetId("")
@@ -313,10 +318,11 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 	}
 	// Convert the object into Terraform resource data
 	flattenEcsTaskDefinition(rp, d)
+	f := d.Get("prevent_tf_destroy").(string)
+	d.Set("prevent_tf_destroy", f)
 	// this is to check if the flow happened after create context
-	if v := ctx.Value(flowContextKey); v != nil && v.(string) == "normal" {
-		d.Set("prevent_tf_destroy", d.Get("prevent_tf_destroy").(bool))
-	} else { //on import provider doesnot set default value.
+	v := ctx.Value(flowContextKey)
+	if v == nil {
 		d.Set("prevent_tf_destroy", true)
 	}
 
@@ -352,7 +358,9 @@ func resourceDuploEcsTaskDefinitionCreate(ctx context.Context, d *schema.Resourc
 
 // Update resource
 func resourceDuploEcsTaskDefinitionUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
+	return resourceDuploEcsTaskDefinitionRead(ctx, d, m)
+
 }
 
 // DELETE resource
@@ -365,13 +373,17 @@ func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	preventDestroy := d.Get("prevent_tf_destroy").(bool)
-	log.Printf("[TRACE] Prevent destroy is %t", preventDestroy)
-	if !preventDestroy {
+	preventDestroy := d.Get("prevent_tf_destroy").(string)
+	log.Printf("[TRACE] Prevent destroy is %s", preventDestroy)
+	if preventDestroy == "false" {
 		c := m.(*duplosdk.Client)
-		err = c.EcsTaskDefinitionDelete(tenantID, arn)
-		if err != nil {
-			return diag.FromErr(err)
+		cerr := c.EcsTaskDefinitionDelete(tenantID, arn)
+		if cerr != nil {
+			if cerr.Status() == 404 {
+				log.Printf("[DEBUG] resourceDuploEcacheGlobalDatastoreRead: Ecache Global Datastore not found for tenantId %s, removing from state", tenantID)
+				return nil
+			}
+			return diag.FromErr(cerr)
 		}
 		// Wait for the task definition to be missing
 		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "ECS Task Defnition", id, func() (interface{}, duplosdk.ClientError) {
@@ -467,9 +479,9 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("ipc_mode", duplo.IpcMode)
 	d.Set("pid_mode", duplo.PidMode)
 	// stop updating state unitl we have EC2 support
-	if len(duplo.Compatibilities) > 0 {
+	if len(duplo.RequiresCompatibilities) > 0 {
 		inf := []interface{}{}
-		for _, comp := range duplo.Compatibilities {
+		for _, comp := range duplo.RequiresCompatibilities {
 			inf = append(inf, comp)
 		}
 		d.Set("requires_compatibilities", inf)

@@ -97,6 +97,11 @@ func resourceTenantTagCreate(ctx context.Context, d *schema.ResourceData, m inte
 
 	err := c.TenantTagCreate(rq)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantTagCreate(%s, %s): object not found", rq.TenantID, rq.Key)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to create tenant tag '%s', '%s': %s", rq.TenantID, rq.Key, err)
 	}
 
@@ -137,6 +142,7 @@ func resourceTenantTagDelete(ctx context.Context, d *schema.ResourceData, m inte
 	clientErr := c.TenantTagDelete(rq)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantTagDelete(%s, %s): object not found", tenantID, key)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant tag '%s', '%s': %s", tenantID, key, err)

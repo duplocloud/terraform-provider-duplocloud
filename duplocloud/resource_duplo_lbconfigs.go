@@ -338,6 +338,11 @@ func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceDa
 		if lberr != nil && lberr.Status() != 404 {
 			return diag.FromErr(err)
 		}
+		if lberr != nil && lberr.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceLBConfigsRead(%s, %s): end - load balancer not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
 
 		if lbdetails != nil {
 			d.Set("arn", lbdetails.LoadBalancerArn)
@@ -482,6 +487,10 @@ func resourceDuploServiceLbConfigsDelete(ctx context.Context, d *schema.Resource
 	c := m.(*duplosdk.Client)
 	err := c.ReplicationControllerLbConfigurationBulkUpdate(tenantID, name, &[]duplosdk.DuploLbConfiguration{})
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceLbConfigsDelete(%s, %s): object not found", tenantID, name)
+			return nil
+		}
 		return diag.Errorf("Error deleting Duplo service '%s' load balancer configs: %s", id, err)
 	}
 
