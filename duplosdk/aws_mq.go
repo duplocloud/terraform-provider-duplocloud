@@ -150,12 +150,12 @@ type DuploMQBrokerResponse struct {
 	StorageType           struct {
 		Value string `json:"Value"`
 	} `json:"StorageType"`
-	SubnetIds   []string          `json:"SubnetIds"`
-	Tags        map[string]string `json:"Tags"`
-	Users       []DuploAWSMQUser  `json:"Users"`
-	BrokerArn   string            `json:"BrokerArn"`
-	BrokerId    string            `json:"BrokerId"`
-	BrokerName  string            `json:"BrokerName"`
+	SubnetIds   []string               `json:"SubnetIds"`
+	Tags        map[string]interface{} `json:"Tags"`
+	Users       []DuploAWSMQUser       `json:"Users"`
+	BrokerArn   string                 `json:"BrokerArn"`
+	BrokerId    string                 `json:"BrokerId"`
+	BrokerName  string                 `json:"BrokerName"`
 	BrokerState struct {
 		Value string `json:"Value"`
 	} `json:"BrokerState"`
@@ -221,7 +221,7 @@ type DuploAwsMQConfigResponse struct {
 type DuploAwsMQConfigUpdate struct {
 	ConfigurationId string `json:"ConfigurationId"`
 	Data            string `json:"Data"`
-	Description     string `json:"EngineVersion"`
+	Description     string `json:"description"`
 }
 
 func (c *Client) DuploAWSMQConfigUpdate(tenantID, brokerID string, rq DuploAwsMQConfigUpdate) ClientError {
