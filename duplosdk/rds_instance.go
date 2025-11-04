@@ -78,6 +78,7 @@ type DuploRdsInstance struct {
 	DeletionProtection                 bool                    `json:"DeletionProtection"`
 	IsAutoScalingEnabled               bool                    `json:"IsAutoScalingEnabled"`
 	MaxAllocatedStorage                int                     `json:"MaxAllocatedStorage"`
+	IsGlobalClusterMember              bool                    `json:"IsGlobalClusterMember"`
 }
 
 type V2ScalingConfiguration struct {
@@ -529,4 +530,87 @@ func (c *Client) UpdateRDSDBInstanceStorageAutoScalling(tenantID string, identif
 		&duploObject,
 		nil,
 	)
+}
+
+//global database
+
+type DuploRDSGlobalDatabaseResponse struct {
+	GlobalInfo struct {
+		GlobalClusterId  string   `json:"GlobalClusterId"`
+		Engine           string   `json:"Engine"`
+		EngineVersion    string   `json:"EngineVersion"`
+		Status           string   `json:"Status"`
+		Regions          []string `json:"Regions"`
+		PrimaryRegion    string   `json:"PrimaryRegion"`
+		PrimaryClusterId string   `json:"PrimaryClusterId"`
+	} `json:"GlobalInfo"`
+	Region struct {
+		Region     string `json:"Region"`
+		ClusterId  string `json:"ClusterId"`
+		Role       string `json:"Role"`
+		Status     string `json:"Status"`
+		TenantId   string `json:"TenantId"`
+		InstanceId string `json:"InstanceId"`
+	} `json:"Region"`
+}
+
+type DuploRDSGlobalDatabaseRegionInfo struct {
+	GlobalInfo struct {
+		ClusterId     string   `json:"clusterId"`
+		Engine        string   `json:"engine"`
+		EngineVersion string   `json:"engineVersion"`
+		Status        string   `json:"status"`
+		Regions       []string `json:"regions"`
+		PrimaryRegion string   `json:"primaryRegion"`
+	} `json:"globalInfo"`
+	Regions []struct {
+		Region    string `json:"region"`
+		ClusterId string `json:"clusterId"`
+		Role      string `json:"role"`
+		Status    string `json:"status"`
+		TenantId  string `json:"tenantId"`
+	} `json:"region"`
+	IsGlobal bool `json:"isGlobal"`
+}
+
+type DuploRDSGlobalDatabase struct {
+	TenantID string `json:"tenantId"`
+}
+
+func (c *Client) CreateRDSDBSecondaryDB(tenantID, instanceId, region string, rq DuploRDSGlobalDatabase) (*DuploRDSGlobalDatabaseResponse, ClientError) {
+	rp := DuploRDSGlobalDatabaseResponse{}
+	err := c.putAPI(
+		fmt.Sprintf("CreateRDSDBSecondaryDB(%s, %s)", tenantID, instanceId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions/%s", tenantID, instanceId, region),
+		&rq,
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) GetGloabalRegions(tenantID, identifier string) (*DuploRDSGlobalDatabaseResponse, ClientError) {
+	rp := DuploRDSGlobalDatabaseResponse{}
+	err := c.getAPI(
+		fmt.Sprintf("GetGloabalRegions(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions", tenantID, identifier),
+		&rp)
+	return &rp, err
+}
+
+func (c *Client) DisassociateRDSDRegionalCluster(tenantID, instanceId, region string) ClientError {
+	var rp interface{}
+	return c.deleteAPI(
+		fmt.Sprintf("DisassociateRDSDRegionalCluster(%s, %s, %s)", tenantID, instanceId, region),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions/%s", tenantID, instanceId, region),
+		&rp,
+	)
+}
+
+func (c *Client) GetGloabalRegion(tenantID, identifier, region string) (*DuploRDSGlobalDatabaseResponse, ClientError) {
+	rp := DuploRDSGlobalDatabaseResponse{}
+	err := c.getAPI(
+		fmt.Sprintf("GetGloabalRegion(%s, %s,%s)", tenantID, identifier, region),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions/%s", tenantID, identifier, region),
+		&rp)
+	return &rp, err
 }

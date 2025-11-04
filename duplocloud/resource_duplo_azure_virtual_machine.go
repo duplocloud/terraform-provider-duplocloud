@@ -317,6 +317,7 @@ func resourceAzureVirtualMachineRead(ctx context.Context, d *schema.ResourceData
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureVirtualMachineRead: Azure virtual machine %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -450,6 +451,7 @@ func resourceAzureVirtualMachineDelete(ctx context.Context, d *schema.ResourceDa
 	clientErr := c.AzureNativeHostDelete(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureVirtualMachineDelete: Azure virtual machine %s not found for tenantId %s, removing from state", fullname, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure virtual machine '%s': %s", tenantID, fullname, clientErr)

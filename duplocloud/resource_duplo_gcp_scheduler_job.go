@@ -294,6 +294,11 @@ func resourceGcpSchedulerJobRead(ctx context.Context, d *schema.ResourceData, m 
 		return nil
 	}
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpSchedulerJobRead: Scheduler job %s not found for tenantId %s, removing from state", name, tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve tenant %s scheduler job '%s': %s", tenantID, name, err)
 	}
 
@@ -374,6 +379,10 @@ func resourceGcpSchedulerJobDelete(ctx context.Context, d *schema.ResourceData, 
 	idParts := strings.SplitN(id, "/", 2)
 	err := c.GcpSchedulerJobDelete(idParts[0], idParts[1])
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpSchedulerJobDelete: Scheduler job %s not found for tenantId %s, removing from state", idParts[1], idParts[0])
+			return nil
+		}
 		return diag.Errorf("Error deleting scheduler job '%s': %s", id, err)
 	}
 

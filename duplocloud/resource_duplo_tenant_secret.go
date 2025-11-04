@@ -128,6 +128,11 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	// Get the secret from Duplo
 	value, err := c.TenantGetAwsSecretValue(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantSecretRead(%s, %s): object not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("unable to retrieve secret '%s': %s", id, err)
 	}
 	if value == nil {
@@ -221,6 +226,10 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 	c := m.(*duplosdk.Client)
 	err := c.TenantDeleteAwsSecret(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): object not found", tenantID, name)
+			return nil
+		}
 		return diag.Errorf("error deleting secret '%s': %s", id, err)
 	}
 

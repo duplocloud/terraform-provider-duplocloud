@@ -91,6 +91,7 @@ func resourceAzureRecoveryServicesVaultRead(ctx context.Context, d *schema.Resou
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureRecoveryServicesVaultRead: Azure recovery services vault %s not found for tenantId %s, removing from state", name, infraName)
 			d.SetId("")
 			return nil
 		}

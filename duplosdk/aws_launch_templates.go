@@ -14,8 +14,9 @@ type DuploAwsLaunchTemplateRequest struct {
 }
 
 type DuploLaunchTemplateData struct {
-	InstanceType DuploStringValue `json:"InstanceType,omitempty"`
-	ImageId      string           `json:"ImageId,omitempty"`
+	InstanceType        DuploStringValue                               `json:"InstanceType,omitempty"`
+	ImageId             string                                         `json:"ImageId,omitempty"`
+	BlockDeviceMappings []DuploLaunchTemplateBlockDeviceMappingRequest `json:"BlockDeviceMappings,omitempty"`
 }
 
 func (c *Client) CreateAwsLaunchTemplate(tenantId string, rq *DuploAwsLaunchTemplateRequest) ClientError {
@@ -65,7 +66,7 @@ type DuploLaunchTemplateDataResponse struct {
 	KernelId                          string                                              `json:"KernelId,omitempty"`
 	EbsOptimized                      bool                                                `json:"EbsOptimized"`
 	IamInstanceProfile                DuploLaunchTemplateIamInstanceProfileSpecification  `json:"IamInstanceProfile"`
-	BlockDeviceMappings               []DuploLaunchTemplateBlockDeviceMapping             `json:"BlockDeviceMappings"`
+	BlockDeviceMappings               []DuploLaunchTemplateBlockDeviceMappingResponse     `json:"BlockDeviceMappings"`
 	NetworkInterfaces                 []DuploLaunchTemplateNetworkInterfaceSpecification  `json:"NetworkInterfaces"`
 	ImageId                           string                                              `json:"ImageId"`
 	InstanceType                      DuploKeyStringValue                                 `json:"InstanceType"`
@@ -101,22 +102,42 @@ type DuploLaunchTemplateIamInstanceProfileSpecification struct {
 	Name string `json:"Name,omitempty"`
 }
 
-type DuploLaunchTemplateBlockDeviceMapping struct {
-	DeviceName  string                            `json:"DeviceName"`
-	VirtualName string                            `json:"VirtualName,omitempty"`
-	Ebs         DuploLaunchTemplateEbsBlockDevice `json:"Ebs,omitempty"`
-	NoDevice    string                            `json:"NoDevice,omitempty"`
+type DuploLaunchTemplateBlockDeviceMappingResponse struct {
+	DeviceName  string                             `json:"DeviceName"`
+	VirtualName string                             `json:"VirtualName,omitempty"`
+	Ebs         *DuploLaunchTemplateEbsBlockDevice `json:"Ebs,omitempty"`
+	NoDevice    string                             `json:"NoDevice,omitempty"`
+}
+
+type DuploLaunchTemplateBlockDeviceMappingRequest struct {
+	DeviceName  string                                    `json:"DeviceName"`
+	VirtualName string                                    `json:"VirtualName,omitempty"`
+	Ebs         *DuploLaunchTemplateEbsBlockDeviceRequest `json:"Ebs,omitempty"`
+	NoDevice    string                                    `json:"NoDevice,omitempty"`
 }
 
 type DuploLaunchTemplateEbsBlockDevice struct {
-	Encrypted           bool             `json:"Encrypted"`
-	DeleteOnTermination bool             `json:"DeleteOnTermination"`
-	Iops                int              `json:"Iops,omitempty"`
-	KmsKeyId            string           `json:"KmsKeyId,omitempty"`
-	SnapshotId          string           `json:"SnapshotId,omitempty"`
-	VolumeSize          int              `json:"VolumeSize,omitempty"`
-	VolumeType          DuploStringValue `json:"VolumeType"`
-	Throughput          int              `json:"Throughput,omitempty"`
+	Encrypted                bool             `json:"Encrypted"`
+	DeleteOnTermination      bool             `json:"DeleteOnTermination"`
+	Iops                     int              `json:"Iops,omitempty"`
+	KmsKeyId                 string           `json:"KmsKeyId,omitempty"`
+	SnapshotId               string           `json:"SnapshotId,omitempty"`
+	VolumeSize               int              `json:"VolumeSize,omitempty"`
+	VolumeType               DuploStringValue `json:"VolumeType,omitempty"`
+	Throughput               int              `json:"Throughput,omitempty"`
+	VolumeInitializationRate int              `json:"VolumeInitializationRate,omitempty"`
+}
+
+type DuploLaunchTemplateEbsBlockDeviceRequest struct {
+	Encrypted                bool   `json:"Encrypted"`
+	DeleteOnTermination      bool   `json:"DeleteOnTermination"`
+	Iops                     int    `json:"Iops,omitempty"`
+	KmsKeyId                 string `json:"KmsKeyId,omitempty"`
+	SnapshotId               string `json:"SnapshotId,omitempty"`
+	VolumeSize               int    `json:"VolumeSize,omitempty"`
+	VolumeType               string `json:"VolumeType,omitempty"`
+	Throughput               int    `json:"Throughput,omitempty"`
+	VolumeInitializationRate int    `json:"VolumeInitializationRate,omitempty"`
 }
 
 type DuploLaunchTemplateNetworkInterfaceSpecification struct {
