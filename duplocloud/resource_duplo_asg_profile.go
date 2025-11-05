@@ -159,6 +159,11 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		},
 	}
 
+	awsASGSchema["arn"] = &schema.Schema{
+		Description: "The ASG arn.",
+		Type:        schema.TypeString,
+		Computed:    true,
+	}
 	return awsASGSchema
 }
 
@@ -512,7 +517,7 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.CustomDataTags))
 	d.Set("enabled_metrics", duplo.EnabledMetrics)
-
+	d.Set("arn", duplo.Arn)
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
 		_, zok := d.GetOk("zones")
@@ -712,7 +717,7 @@ func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string,
 					status = "ready"
 					flag = false
 				} else {
-					if *rp.Created {
+					if *rp.Created && rp.Arn != "" {
 						status = "ready"
 					} else {
 						status = "pending"

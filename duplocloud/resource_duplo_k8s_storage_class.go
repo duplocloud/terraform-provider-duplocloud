@@ -153,6 +153,7 @@ func resourceK8sStorageClassRead(ctx context.Context, d *schema.ResourceData, m 
 	rp, clientErr := c.K8StorageClassGet(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8sStorageClassRead(%s, %s): object not found", tenantID, fullname)
 			d.SetId("")
 			return nil
 		}
@@ -230,6 +231,7 @@ func resourceK8sStorageClassDelete(ctx context.Context, d *schema.ResourceData, 
 		_, clientErr := c.K8StorageClassDelete(tenantID, fullname)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
+				log.Printf("[TRACE] resourceK8sStorageClassDelete(%s, %s): object not found", tenantID, fullname)
 				d.SetId("")
 				return nil
 			}

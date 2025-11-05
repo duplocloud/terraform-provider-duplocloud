@@ -129,6 +129,11 @@ func resourceGcpStorageBucketCreate(ctx context.Context, d *schema.ResourceData,
 	// Post the object to Duplo
 	rp, err := c.GcpStorageBucketCreate(tenantID, &rq)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpStorageBucketCreate: Storage bucket %s not found for tenantId %s, removing from state", rq.Name, tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Error creating tenant %s storage bucket '%s': %s", tenantID, rq.Name, err)
 	}
 
@@ -190,6 +195,10 @@ func resourceGcpStorageBucketDelete(ctx context.Context, d *schema.ResourceData,
 	idParts := strings.SplitN(id, "/", 2)
 	err := c.GcpStorageBucketDelete(idParts[0], idParts[1])
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpStorageBucketDelete: Storage bucket %s not found for tenantId %s, removing from state", idParts[1], idParts[0])
+			return nil
+		}
 		return diag.Errorf("Error deleting storage bucket '%s': %s", id, err)
 	}
 

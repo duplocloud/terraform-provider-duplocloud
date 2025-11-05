@@ -203,10 +203,16 @@ func resourceAwsMQConfigDelete(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceAwsMQConfigCustomizeDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
 	id := d.Id()
-	if id != "" {
-		if d.Get("data").(string) == "" {
+	if id == "" {
+		if d.Get("data").(string) != "" {
 			return fmt.Errorf("the 'data' field can be set only during update")
 		}
+		if d.Get("description").(string) != "" {
+			return fmt.Errorf("the 'description' field can be set only during update")
+		}
+	}
+	if d.Get("engine_type").(string) == "RABBITMQ" && d.Get("authentication_strategy").(string) == "LDAP" {
+		return fmt.Errorf("LDAP authentication strategy is not supported for RABBITMQ engine type")
 	}
 	return nil
 }

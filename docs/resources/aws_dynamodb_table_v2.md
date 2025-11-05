@@ -623,7 +623,7 @@ resource "duplocloud_aws_dynamodb_table_v2" "tst-dynamodb-table" {
 - `server_side_encryption` (Block List, Max: 1) Encryption at rest options. AWS DynamoDB tables are automatically encrypted at rest with an AWS owned Customer Master Key if this argument isn't specified. (see [below for nested schema](#nestedblock--server_side_encryption))
 - `stream_enabled` (Boolean) Indicates whether Streams are to be enabled (true) or disabled (false).
 - `stream_view_type` (String) When an item in the table is modified, StreamViewType determines what information is written to the table's stream. Valid values are `KEYS_ONLY`, `NEW_IMAGE`, `OLD_IMAGE`, `NEW_AND_OLD_IMAGES`.
-- `tag` (Block List) (see [below for nested schema](#nestedblock--tag))
+- `tag` (Block List, Deprecated) Tag support has been removed from this resource to manage tage use the `duplocloud_aws_tag` resource. (see [below for nested schema](#nestedblock--tag))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `ttl` (Block List, Max: 1) Setup ttl for dynamodb table. Defaults to `false or empty`, To disable ttl, enabled field should be set to false (see [below for nested schema](#nestedblock--ttl))
 - `wait_until_ready` (Boolean) Whether or not to wait until dynamodb instance to be ready, after creation. Defaults to `true`.
