@@ -146,6 +146,11 @@ func resourceGcpRedisInstanceRead(ctx context.Context, d *schema.ResourceData, m
 	c := m.(*duplosdk.Client)
 	fullName, clientErr := c.GetDuploServicesNameWithGcp(tenantID, name, false)
 	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpRedisInstanceRead: Redis instance %s not found for tenantId %s, removing from state", name, tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Error fetching tenant prefix for %s : %s", tenantID, clientErr)
 	}
 	duplo, err := c.RedisInstanceGet(tenantID, fullName)

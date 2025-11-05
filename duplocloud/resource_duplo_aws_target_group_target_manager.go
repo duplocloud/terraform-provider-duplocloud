@@ -34,6 +34,46 @@ func duploAwsTargetGroupTargetMngrSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Required:    true,
 			ForceNew:    true,
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// Only apply to the "id" field within the targets list
+				if k == "targets.#.id" || strings.HasSuffix(k, ".id") {
+					// Get the old and new targets as lists of maps using GetChange
+					oldTargetsRaw, newTargetsRaw := d.GetChange("targets")
+					oldList, okOldList := oldTargetsRaw.([]interface{})
+					newList, okNewList := newTargetsRaw.([]interface{})
+					if !okOldList || !okNewList {
+						return false
+					}
+					// Build maps of ids for old and new
+					oldIDs := make(map[string]struct{})
+					for _, v := range oldList {
+						if m, ok := v.(map[string]interface{}); ok {
+							if id, ok := m["id"].(string); ok {
+								oldIDs[id] = struct{}{}
+							}
+						}
+					}
+					newIDs := make(map[string]struct{})
+					for _, v := range newList {
+						if m, ok := v.(map[string]interface{}); ok {
+							if id, ok := m["id"].(string); ok {
+								newIDs[id] = struct{}{}
+							}
+						}
+					}
+					// Suppress diff if both old and new contain the same ids
+					if len(oldIDs) != len(newIDs) {
+						return false
+					}
+					for id := range oldIDs {
+						if _, ok := newIDs[id]; !ok {
+							return false
+						}
+					}
+					return true
+				}
+				return false
+			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"id": {

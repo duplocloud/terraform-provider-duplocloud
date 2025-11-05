@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -118,9 +119,14 @@ func resourceDuploServiceParamsRead(ctx context.Context, d *schema.ResourceData,
 	c := m.(*duplosdk.Client)
 
 	// Get the object from Duplo.
-	duplo, err := c.ReplicationControllerGet(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	duplo, cerr := c.ReplicationControllerGet(tenantID, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceParamsRead(%s, %s): object not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -268,6 +274,10 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 	c := m.(*duplosdk.Client)
 	duplo, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s, %s): object not found", tenantID, name)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 

@@ -142,6 +142,7 @@ func resourceK8sSecretProviderClassRead(ctx context.Context, d *schema.ResourceD
 	rp, clientErr := c.DuploK8sSecretProviderClassGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8sSecretProviderClassRead(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -224,6 +225,7 @@ func resourceK8sSecretProviderClassDelete(ctx context.Context, d *schema.Resourc
 	rp, clientErr := c.DuploK8sSecretProviderClassGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8sSecretProviderClassDelete(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -233,6 +235,7 @@ func resourceK8sSecretProviderClassDelete(ctx context.Context, d *schema.Resourc
 		clientErr := c.DuploK8sSecretProviderClassDelete(tenantID, name)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
+				log.Printf("[TRACE] resourceK8sSecretProviderClassDelete(%s, %s): object not found", tenantID, name)
 				d.SetId("")
 				return nil
 			}
