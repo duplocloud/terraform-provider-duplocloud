@@ -323,3 +323,69 @@ func (c *Client) DuploEcacheReplicationGroupDisassociate(tenantID, secTenantId, 
 	)
 
 }
+
+// serverless valkey
+
+type DuploValkeyServerless struct {
+	Name                   string `json:"ServerlessCacheName"`
+	Description            string `json:"Description"`
+	Engine                 string `json:"Engine"`
+	KMSKeyId               string `json:"KmsKeyId,omitempty"`
+	EngineVersion          string `json:"MajorEngineVersion"`
+	SnapshotRetentionLimit int    `json:"SnapshotRetentionLimit,omitempty"`
+}
+
+type DuploValkeyServerlessResponse struct {
+	ARN                    string                         `json:"ARN"`
+	CreateTime             string                         `json:"CreateTime"`
+	DailySnapshotTime      string                         `json:"DailySnapshotTime"`
+	Description            string                         `json:"Description"`
+	Endpoint               *DuploValkeyServerlessEndpoint `json:"Endpoint"`
+	Engine                 string                         `json:"Engine"`
+	FullEngineVersion      string                         `json:"FullEngineVersion"`
+	KmsKeyId               string                         `json:"KmsKeyId"`
+	MajorEngineVersion     string                         `json:"MajorEngineVersion"`
+	SecurityGroupIds       []string                       `json:"SecurityGroupIds"`
+	ServerlessCacheName    string                         `json:"ServerlessCacheName"`
+	SnapshotRetentionLimit int                            `json:"SnapshotRetentionLimit"`
+	SubnetIds              []string                       `json:"SubnetIds"`
+	Arn                    string                         `json:"Arn"`
+	Status                 string                         `json:"Status"`
+	ResourceType           int                            `json:"ResourceType"`
+	Name                   string                         `json:"Name"`
+}
+
+type DuploValkeyServerlessEndpoint struct {
+	Address string `json:"Address"`
+	Port    int    `json:"Port"`
+}
+
+func (c *Client) DuploValkeyServerlessCreate(tenantID string, rq *DuploValkeyServerless) (*DuploValkeyServerlessResponse, ClientError) {
+	rp := DuploValkeyServerlessResponse{}
+	err := c.postAPI(
+		fmt.Sprintf("DuploValkeyServerlessCreate(%s,%s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/valkey", tenantID),
+		&rq,
+		&rp,
+	)
+	return &rp, err
+}
+
+func (c *Client) DuploValkeyServerlessGet(tenantID, name string) (*DuploValkeyServerlessResponse, ClientError) {
+
+	// Call the API.
+	rp := DuploValkeyServerlessResponse{}
+	err := c.getAPI(
+		fmt.Sprintf("DuploValkeyServerlessGet(%s,%s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/valkey/%s", tenantID, name),
+		&rp)
+
+	return nil, err
+}
+
+func (c *Client) DuploValkeyServerlessDelete(tenantID, name string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("DuploValkeyServerlessDelete(%s,%s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/valkey/%s", tenantID, name),
+		nil)
+}

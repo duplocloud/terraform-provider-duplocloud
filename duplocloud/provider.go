@@ -206,6 +206,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_mq_broker":                                 resourceAwsMQBroker(),
 			"duplocloud_aws_rds_global_secondary":                      resourceAwsRdsGlobalDatabase(),
 			"duplocloud_tenant_kms":                                    resourceTenantKMS(),
+			"duplocloud_valkey_serverless":                             resourceDuploServerlessValkeyInstance(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
