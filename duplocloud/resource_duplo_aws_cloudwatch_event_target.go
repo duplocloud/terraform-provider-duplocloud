@@ -181,9 +181,10 @@ func resourceAwsCloudWatchEventTargetDelete(ctx context.Context, d *schema.Resou
 
 func expandCloudWatchEventTarget(d *schema.ResourceData) *duplosdk.DuploCloudWatchEventTarget {
 	return &duplosdk.DuploCloudWatchEventTarget{
-		Id:    d.Get("target_id").(string),
-		Arn:   d.Get("target_arn").(string),
-		Input: d.Get("input").(string),
+		Id:      d.Get("target_id").(string),
+		Arn:     d.Get("target_arn").(string),
+		Input:   d.Get("input").(string),
+		RoleArn: d.Get("role_arn").(string),
 	}
 }
 

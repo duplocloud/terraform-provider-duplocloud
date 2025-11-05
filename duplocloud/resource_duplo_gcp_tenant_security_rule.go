@@ -72,6 +72,11 @@ func resourceGcpTenantSecurityRuleRead(ctx context.Context, d *schema.ResourceDa
 	c := m.(*duplosdk.Client)
 	duplo, err := c.GcpSecurityRuleGet(tenantId, ruleName, true)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpTenantSecurityRuleRead: Security rule %s not found for tenantId %s, removing from state", ruleName, tenantId)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve rule name '%s' of '%s': %s", ruleName, tenantId, err)
 	}
 	if duplo == nil {
@@ -150,6 +155,10 @@ func resourceGcpTenantSecurityRuleDelete(ctx context.Context, d *schema.Resource
 	c := m.(*duplosdk.Client)
 	err := c.GcpSecurityRuleDelete(tenantId, ruleName, true)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpTenantSecurityRuleDelete: Security rule %s not found for tenantId %s, removing from state", ruleName, tenantId)
+			return nil
+		}
 		return diag.Errorf("Unable to delete security rule '%s' for '%s': %s", ruleName, tenantId, err)
 	}
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "gcp tenant security rule", id, func() (interface{}, duplosdk.ClientError) {

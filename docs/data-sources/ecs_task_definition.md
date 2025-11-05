@@ -35,7 +35,7 @@ description: |-
 - `network_mode` (String) Valid values are `bridge`,`host`,`awsvpc`,`none`
 - `pid_mode` (String) Valida values are `host`, `task`
 - `placement_constraints` (Set of Object) (see [below for nested schema](#nestedatt--placement_constraints))
-- `prevent_tf_destroy` (Boolean) Prevent this resource to be deleted from terraform destroy. Default value is `true`.
+- `prevent_tf_destroy` (String) Prevent this resource to be deleted from terraform destroy.
 - `proxy_configuration` (List of Object) (see [below for nested schema](#nestedatt--proxy_configuration))
 - `requires_attributes` (Set of Object) (see [below for nested schema](#nestedatt--requires_attributes))
 - `requires_compatibilities` (Set of String) Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.

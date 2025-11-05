@@ -121,6 +121,13 @@ func duploAwsSqsQueueSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"receive_wait_time_seconds": {
+			Description:  "The time for which a ReceiveMessage call will wait for a message to arrive. An integer from 0 to 20 (seconds).",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.IntBetween(0, 20),
+		},
 	}
 }
 
@@ -171,6 +178,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): object missing", tenantID, url)
 			d.SetId("")
 			return nil
 		}
@@ -215,6 +223,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 		name = strings.TrimSuffix(name, ".fifo")
 	}
 	d.Set("name", name)
+	d.Set("receive_wait_time_seconds", queue.ReceiveMessageWaitTimeSeconds)
 	log.Printf("[TRACE] resourceAwsSqsQueueRead(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -260,7 +269,7 @@ func resourceAwsSqsQueueCreate(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceAwsSqsQueueUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
-	if d.HasChanges("message_retention_seconds", "visibility_timeout_seconds", "content_based_deduplication", "deduplication_scope", "fifo_throughput_limit", "delay_seconds", "dead_letter_queue_configuration") {
+	if d.HasChanges("message_retention_seconds", "visibility_timeout_seconds", "content_based_deduplication", "deduplication_scope", "fifo_throughput_limit", "delay_seconds", "dead_letter_queue_configuration", "receive_wait_time_seconds") {
 		var err error
 
 		tenantID := d.Get("tenant_id").(string)
@@ -313,6 +322,7 @@ func resourceAwsSqsQueueDelete(ctx context.Context, d *schema.ResourceData, m in
 	clientErr := c.DuploSQSQueueDeleteV3(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsSqsQueueDelete(%s, %s): object missing", tenantID, fullname)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s sqs queue '%s': %s", tenantID, fullname, clientErr)
@@ -366,6 +376,9 @@ func expandAwsSqsQueue(d *schema.ResourceData) *duplosdk.DuploSQSQueue {
 		dlqConfig := value.([]interface{})[0].(map[string]interface{})
 		req.DeadLetterTargetQueueName = dlqConfig["target_sqs_dlq_name"].(string)
 		req.MaxMessageTimesReceivedBeforeDeadLetterQueue = dlqConfig["max_message_receive_attempts"].(int)
+	}
+	if v, ok := d.GetOk("receive_wait_time_seconds"); ok && v != nil {
+		req.ReceiveMessageWaitTimeSeconds = d.Get("receive_wait_time_seconds").(int)
 	}
 	return req
 }

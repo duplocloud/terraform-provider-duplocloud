@@ -132,6 +132,11 @@ func resourceHelmReleaseRead(ctx context.Context, d *schema.ResourceData, m inte
 	c := m.(*duplosdk.Client)
 	duplo, err := c.DuploHelmReleaseGet(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceHelmReleaseRead: Helm release %s not found for tenantId %s, removing from state", name, tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve helm release details for '%s': %s", name, err)
 	}
 	if duplo == nil {
@@ -208,6 +213,10 @@ func resourceHelmReleaseDelete(ctx context.Context, d *schema.ResourceData, m in
 	c := m.(*duplosdk.Client)
 	err := c.DuploHelmReleaseDelete(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceHelmReleaseDelete: Helm release %s not found for tenantId %s, removing from state", name, tenantID)
+			return nil
+		}
 		return diag.Errorf("Unable to delete helm release %s for '%s': %s", name, tenantID, err)
 	}
 

@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -138,6 +139,7 @@ func resourceAwsLoadBalancerRead(ctx context.Context, d *schema.ResourceData, m 
 	c := m.(*duplosdk.Client)
 	duplo, err := c.TenantGetApplicationLB(tenantID, name)
 	if duplo == nil {
+		log.Printf("[TRACE] resourceAwsLoadBalancerRead(%s, %s): object missing", tenantID, name)
 		d.SetId("") // object missing
 		return nil
 	}
@@ -255,6 +257,10 @@ func resourceAwsLoadBalancerDelete(ctx context.Context, d *schema.ResourceData, 
 	idParts := strings.SplitN(id, "/", 2)
 	err := c.TenantDeleteApplicationLB(idParts[0], idParts[1])
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLoadBalancerDelete(%s, %s): object missing", idParts[0], idParts[1])
+			return nil
+		}
 		return diag.Errorf("Error deleting load balancer '%s': %s", id, err)
 	}
 

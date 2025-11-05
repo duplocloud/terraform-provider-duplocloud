@@ -20,6 +20,7 @@ type DuploSQSQueue struct {
 	DelaySeconds                                 int    `json:"DelaySeconds" validate:"required,gte=0,lte=900"`
 	DeadLetterTargetQueueName                    string `json:"DeadLetterTargetQueueName,omitempty"`
 	MaxMessageTimesReceivedBeforeDeadLetterQueue int    `json:"MaxMessageTimesReceivedBeforeDeadLetterQueue,omitempty"`
+	ReceiveMessageWaitTimeSeconds                int    `json:"ReceiveMessageWaitTimeSeconds"`
 }
 
 type DuploSQSQueueResource struct {

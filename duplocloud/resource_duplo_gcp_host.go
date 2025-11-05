@@ -188,9 +188,12 @@ func resourceGcpHostRead(ctx context.Context, d *schema.ResourceData, m interfac
 	c := m.(*duplosdk.Client)
 	duplo, err := c.DuploGcpNativeHostGet(tenantID, instanceID)
 	if err != nil {
-
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpHostRead: Host %s not found for tenantId %s, removing from state", instanceID, tenantID)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Unable to retrieve gcp host '%s': %s", id, err)
-
 	}
 	if duplo == nil {
 		d.SetId("") // object missing
@@ -291,6 +294,10 @@ func resourceGcpHostDelete(ctx context.Context, d *schema.ResourceData, m interf
 
 	err := c.DuploGcpHostDelete(tenantID, instanceID)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGcpHostDelete: Host %s not found for tenantId %s, removing from state", instanceID, tenantID)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 

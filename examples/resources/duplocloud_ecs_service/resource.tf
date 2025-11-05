@@ -38,3 +38,4 @@ resource "duplocloud_ecs_service" "myservice" {
     capacity_provider = "<asg-fullname>"
   }
 }
+

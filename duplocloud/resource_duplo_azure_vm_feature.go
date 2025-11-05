@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -77,6 +78,7 @@ func resourceAzureVmFeatureRead(ctx context.Context, d *schema.ResourceData, m i
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureVmFeatureRead: Azure vm feature %s not found for tenantId %s, removing from state", vmName, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -153,13 +155,17 @@ func resourceAzureVmFeatureDelete(ctx context.Context, d *schema.ResourceData, m
 	}
 	c := m.(*duplosdk.Client)
 
-	err = c.UpdateAzureVmFeature(tenantID, duplosdk.DuploAzureVmFeature{
+	cerr := c.UpdateAzureVmFeature(tenantID, duplosdk.DuploAzureVmFeature{
 		ComponentId: vmName,
 		FeatureName: featureName,
 		Disable:     true,
 	})
-	if err != nil {
-		return diag.Errorf("Error deleting tenant %s azure vm feature '%s': %s", tenantID, featureName, err)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureVmFeatureDelete: Azure vm feature %s not found for tenantId %s, removing from state", vmName, tenantID)
+			return nil
+		}
+		return diag.Errorf("Error deleting tenant %s azure vm feature '%s': %s", tenantID, featureName, cerr)
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "azure virtual machine feature", id, func() (interface{}, duplosdk.ClientError) {
