@@ -34,7 +34,7 @@ resource "duplocloud_valkey_serverless" "valkey" {
 ### Required
 
 - `engine_version` (String) The major version of the valkey serverless engine.
-- `name` (String) The short name of the elasticache instance.  Duplo will add a prefix to the name.  You can retrieve the full name from the `identifier` attribute.
+- `name` (String) The short name of the serverless valkey.
 - `tenant_id` (String) The GUID of the tenant that the elasticache instance will be created in.
 
 ### Optional
