@@ -178,15 +178,15 @@ func resourceDuploValkeyServerlessCreate(ctx context.Context, d *schema.Resource
 		return diag.Errorf("Error creating valkey serverless resource '%s': %s", duplo.Name, err)
 	}
 	id := fmt.Sprintf("%s/valkey/serverless/%s", tenantID, duplo.Name)
+	// Wait up to 60 seconds for Duplo to be able to return the instance details.
+	//diags := waitForResourceToBePresentAfterCreate(ctx, d, "Valkey serverless", id, func() (interface{}, duplosdk.ClientError) {
+	//	return c.DuploValkeyServerlessGet(tenantID, rp.Name)
+	//})
+	//if diags != nil {
+	//	return diags
+	//}
 	d.SetId(id)
 	d.Set("fullname", rp.Name)
-	// Wait up to 60 seconds for Duplo to be able to return the instance details.
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "Valkey serverless", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DuploValkeyServerlessGet(tenantID, rp.Name)
-	})
-	if diags != nil {
-		return diags
-	}
 
 	// Wait for the instance to become available.
 	err = serverlessValkeyWaitUntilAvailable(ctx, c, tenantID, duplo.Name)
@@ -195,7 +195,7 @@ func resourceDuploValkeyServerlessCreate(ctx context.Context, d *schema.Resource
 	}
 
 	// Read the resource state
-	diags = resourceDuploValkeyServerlessRead(ctx, d, m)
+	diags := resourceDuploValkeyServerlessRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploValkeyServerlessCreate(%s, %s): end", tenantID, duplo.Name)
 	return diags
 }
@@ -282,12 +282,17 @@ func serverlessValkeyWaitUntilAvailable(ctx context.Context, c *duplosdk.Client,
 		Refresh: func() (interface{}, string, error) {
 			resp, err := c.DuploValkeyServerlessGet(tenantID, name)
 			if err != nil {
-				return 0, "", err
+				if err.Status() == 404 {
+					err = nil
+				} else {
+					return 0, "", err
+				}
 			}
 			status := "pending"
 			if resp.Status == "available" {
 				status = "available"
 			}
+			log.Printf("serverlessValkeyWaitUntilAvailable expected status %s current status %s", status, resp.Status)
 			return resp, status, nil
 		},
 	}
