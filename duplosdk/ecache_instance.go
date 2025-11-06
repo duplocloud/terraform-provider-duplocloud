@@ -380,7 +380,7 @@ func (c *Client) DuploValkeyServerlessGet(tenantID, name string) (*DuploValkeySe
 		fmt.Sprintf("v3/subscriptions/%s/aws/valkey/%s", tenantID, name),
 		&rp)
 
-	return nil, err
+	return &rp, err
 }
 
 func (c *Client) DuploValkeyServerlessDelete(tenantID, name string) ClientError {

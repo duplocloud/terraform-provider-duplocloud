@@ -137,11 +137,15 @@ func resourceDuploValkeyServerlessRead(ctx context.Context, d *schema.ResourceDa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceDuploValkeyServerlessRead(%s, %s): start", tenantID, name)
-
-	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	duplo, cerr := c.DuploValkeyServerlessGet(tenantID, name)
+
+	log.Printf("[TRACE] resourceDuploValkeyServerlessRead(%s, %s): start", tenantID, name)
+	fullName, err := c.GetDuploServicesName(tenantID, name)
+	if err != nil {
+		return diag.Errorf("resourceDuploValkeyServerlessRead: Unable to retrieve duplo service name (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
+	}
+	// Get the object from Duplo, detecting a missing object
+	duplo, cerr := c.DuploValkeyServerlessGet(tenantID, fullName)
 	if duplo == nil {
 		d.SetId("")
 		return nil
@@ -179,23 +183,22 @@ func resourceDuploValkeyServerlessCreate(ctx context.Context, d *schema.Resource
 	}
 	id := fmt.Sprintf("%s/valkey/serverless/%s", tenantID, duplo.Name)
 	// Wait up to 60 seconds for Duplo to be able to return the instance details.
-	//diags := waitForResourceToBePresentAfterCreate(ctx, d, "Valkey serverless", id, func() (interface{}, duplosdk.ClientError) {
-	//	return c.DuploValkeyServerlessGet(tenantID, rp.Name)
-	//})
-	//if diags != nil {
-	//	return diags
-	//}
+	diags := waitForResourceToBePresentAfterCreate(ctx, d, "Valkey serverless", id, func() (interface{}, duplosdk.ClientError) {
+		return c.DuploValkeyServerlessGet(tenantID, rp.Name)
+	})
+	if diags != nil {
+		return diags
+	}
 	d.SetId(id)
-	d.Set("fullname", rp.Name)
 
 	// Wait for the instance to become available.
-	err = serverlessValkeyWaitUntilAvailable(ctx, c, tenantID, duplo.Name)
+	err = serverlessValkeyWaitUntilAvailable(ctx, c, tenantID, rp.Name)
 	if err != nil {
 		return diag.Errorf("Error waiting for valkey serverless '%s' to be available: %s", id, err)
 	}
 
 	// Read the resource state
-	diags := resourceDuploValkeyServerlessRead(ctx, d, m)
+	diags = resourceDuploValkeyServerlessRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploValkeyServerlessCreate(%s, %s): end", tenantID, duplo.Name)
 	return diags
 }
@@ -205,7 +208,7 @@ func resourceDuploValkeyServerlessDelete(ctx context.Context, d *schema.Resource
 
 	// Parse the identifying attributes
 	id := d.Id()
-	tenantID, name, err := parseECacheInstanceIdParts(id)
+	tenantID, name, err := parseValkeyServerlessIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -214,7 +217,7 @@ func resourceDuploValkeyServerlessDelete(ctx context.Context, d *schema.Resource
 
 	// Delete the object from Duplo
 	c := m.(*duplosdk.Client)
-	cerr := c.DuploValkeyServerlessDelete(tenantID, name)
+	cerr := c.DuploValkeyServerlessDelete(tenantID, fname)
 	if cerr != nil {
 		if cerr.Status() == 404 {
 			log.Printf("[DEBUG] resourceDuploValkeyServerlessDelete: Valkey serverless  %s not found for tenantId %s, removing from state", name, tenantID)
