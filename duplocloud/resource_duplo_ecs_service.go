@@ -282,40 +282,40 @@ func ecsServiceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		//	"placement_strategy": {
-		//		Type:     schema.TypeList,
-		//		MaxItems: 5,
-		//		Optional: true,
-		//		Elem: &schema.Resource{
-		//			Schema: map[string]*schema.Schema{
-		//				"type": {
-		//					Type:     schema.TypeString,
-		//					Required: true,
-		//				},
-		//				"field": {
-		//					Type:     schema.TypeString,
-		//					Optional: true,
-		//				},
-		//			},
-		//		},
-		//	},
-		//	"placement_constraint": {
-		//		Type:     schema.TypeList,
-		//		MaxItems: 10,
-		//		Optional: true,
-		//		Elem: &schema.Resource{
-		//			Schema: map[string]*schema.Schema{
-		//				"type": {
-		//					Type:     schema.TypeString,
-		//					Required: true,
-		//				},
-		//				"expression": {
-		//					Type:     schema.TypeString,
-		//					Optional: true,
-		//				},
-		//			},
-		//		},
-		//	},
+		"placement_strategy": {
+			Type:     schema.TypeList,
+			MaxItems: 5,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"type": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"field": {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+				},
+			},
+		},
+		"placement_constraint": {
+			Type:     schema.TypeList,
+			MaxItems: 10,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"type": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"expression": {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -477,13 +477,13 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 	if duplo.CapacityProviderStrategy != nil && len(*duplo.CapacityProviderStrategy) > 0 {
 		d.Set("capacity_provider_strategy", flattenCapacityProviderStrategies(duplo.CapacityProviderStrategy))
 	}
-	//if duplo.PlacementStrategy != nil && len(*duplo.PlacementStrategy) > 0 {
-	//	d.Set("placement_strategy", flattenPlacementStrategies(duplo.PlacementStrategy))
-	//}
-	//
-	//if duplo.PlacementConstraints != nil && len(*duplo.PlacementConstraints) > 0 {
-	//	d.Set("placement_constraint", flattenPlacementConstraints(duplo.PlacementConstraints))
-	//}
+	if duplo.PlacementStrategy != nil && len(*duplo.PlacementStrategy) > 0 {
+		d.Set("placement_strategy", flattenPlacementStrategies(duplo.PlacementStrategy))
+	}
+
+	if duplo.PlacementConstraints != nil && len(*duplo.PlacementConstraints) > 0 {
+		d.Set("placement_constraint", flattenPlacementConstraints(duplo.PlacementConstraints))
+	}
 	return nil
 }
 
@@ -520,8 +520,8 @@ func ecsServiceFromState(d *schema.ResourceData) *duplosdk.DuploEcsService {
 	// Next, convert things into structured data.
 	duploObject.LBConfigurations = ecsLoadBalancersFromState(d)
 	duploObject.CapacityProviderStrategy = expandCapacityProviderStrategies(d.Get("capacity_provider_strategy").([]interface{}))
-	//duploObject.PlacementStrategy = expandPlacementStrategies(d.Get("placement_strategy").([]interface{}))
-	//duploObject.PlacementConstraints = expandPlacementConstraint(d.Get("placement_constraint").([]interface{}))
+	duploObject.PlacementStrategy = expandPlacementStrategies(d.Get("placement_strategy").([]interface{}))
+	duploObject.PlacementConstraints = expandPlacementConstraint(d.Get("placement_constraint").([]interface{}))
 	return &duploObject
 }
 
@@ -807,21 +807,21 @@ func flattenCapacityProviderStrategies(duplo *[]duplosdk.DuploEcsServiceCapacity
 	return s
 }
 
-//func flattenPlacementStrategies(duplo *[]duplosdk.DuploEcsPlacementStrategy) []map[string]interface{} {
-//	s := []map[string]interface{}{}
-//	for _, v := range *duplo {
-//		s = append(s, flattenPlacementStrategy(v))
-//	}
-//	return s
-//}
+func flattenPlacementStrategies(duplo *[]duplosdk.DuploEcsPlacementStrategy) []map[string]interface{} {
+	s := []map[string]interface{}{}
+	for _, v := range *duplo {
+		s = append(s, flattenPlacementStrategy(v))
+	}
+	return s
+}
 
-//func flattenPlacementConstraints(duplo *[]duplosdk.DuploEcsPlacementConstraint) []map[string]interface{} {
-//	s := []map[string]interface{}{}
-//	for _, v := range *duplo {
-//		s = append(s, flattenPlacementConstraint(v))
-//	}
-//	return s
-//}
+func flattenPlacementConstraints(duplo *[]duplosdk.DuploEcsPlacementConstraint) []map[string]interface{} {
+	s := []map[string]interface{}{}
+	for _, v := range *duplo {
+		s = append(s, flattenPlacementConstraint(v))
+	}
+	return s
+}
 
 func flattenCapacityProviderStrategy(duplo duplosdk.DuploEcsServiceCapacityProviderStrategy) map[string]interface{} {
 	m := make(map[string]interface{})
@@ -831,19 +831,19 @@ func flattenCapacityProviderStrategy(duplo duplosdk.DuploEcsServiceCapacityProvi
 	return m
 }
 
-//func flattenPlacementStrategy(duplo duplosdk.DuploEcsPlacementStrategy) map[string]interface{} {
-//	m := make(map[string]interface{})
-//	m["type"] = duplo.Type
-//	m["field"] = duplo.Field
-//	return m
-//}
+func flattenPlacementStrategy(duplo duplosdk.DuploEcsPlacementStrategy) map[string]interface{} {
+	m := make(map[string]interface{})
+	m["type"] = duplo.Type
+	m["field"] = duplo.Field
+	return m
+}
 
-//func flattenPlacementConstraint(duplo duplosdk.DuploEcsPlacementConstraint) map[string]interface{} {
-//	m := make(map[string]interface{})
-//	m["type"] = duplo.Type
-//	m["expression"] = duplo.Expression
-//	return m
-//}
+func flattenPlacementConstraint(duplo duplosdk.DuploEcsPlacementConstraint) map[string]interface{} {
+	m := make(map[string]interface{})
+	m["type"] = duplo.Type
+	m["expression"] = duplo.Expression
+	return m
+}
 
 func expandCapacityProviderStrategies(lst []interface{}) *[]duplosdk.DuploEcsServiceCapacityProviderStrategy {
 	items := make([]duplosdk.DuploEcsServiceCapacityProviderStrategy, 0, len(lst))
@@ -861,29 +861,29 @@ func expandCapacityProviderStrategy(m map[string]interface{}) duplosdk.DuploEcsS
 	}
 }
 
-//func expandPlacementStrategies(lst []interface{}) *[]duplosdk.DuploEcsPlacementStrategy {
-//	items := make([]duplosdk.DuploEcsPlacementStrategy, 0, len(lst))
-//	for _, v := range lst {
-//		m := v.(map[string]interface{})
-//		items = append(items, duplosdk.DuploEcsPlacementStrategy{
-//			Type:  m["type"].(string),
-//			Field: m["field"].(string),
-//		})
-//	}
-//	return &items
-//}
-//
-//func expandPlacementConstraint(lst []interface{}) *[]duplosdk.DuploEcsPlacementConstraint {
-//	items := make([]duplosdk.DuploEcsPlacementConstraint, 0, len(lst))
-//	for _, v := range lst {
-//		m := v.(map[string]interface{})
-//		items = append(items, duplosdk.DuploEcsPlacementConstraint{
-//			Type:       m["type"].(string),
-//			Expression: m["expression"].(string),
-//		})
-//	}
-//	return &items
-//}
+func expandPlacementStrategies(lst []interface{}) *[]duplosdk.DuploEcsPlacementStrategy {
+	items := make([]duplosdk.DuploEcsPlacementStrategy, 0, len(lst))
+	for _, v := range lst {
+		m := v.(map[string]interface{})
+		items = append(items, duplosdk.DuploEcsPlacementStrategy{
+			Type:  m["type"].(string),
+			Field: m["field"].(string),
+		})
+	}
+	return &items
+}
+
+func expandPlacementConstraint(lst []interface{}) *[]duplosdk.DuploEcsPlacementConstraint {
+	items := make([]duplosdk.DuploEcsPlacementConstraint, 0, len(lst))
+	for _, v := range lst {
+		m := v.(map[string]interface{})
+		items = append(items, duplosdk.DuploEcsPlacementConstraint{
+			Type:       m["type"].(string),
+			Expression: m["expression"].(string),
+		})
+	}
+	return &items
+}
 
 func retryFetchLBDetails(attempts int, sleep time.Duration, c *duplosdk.Client, tenantId, name string) (*duplosdk.DuploAwsLbDetailsInService, error) {
 	for i := 1; i <= attempts; i++ {
