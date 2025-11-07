@@ -1166,8 +1166,10 @@ func shouldUpdateThroughput(
 	request *duplosdk.DuploDynamoDBTableRequestV2,
 
 ) bool {
-	if (table.ProvisionedThroughput.ReadCapacityUnits != request.ProvisionedThroughput.ReadCapacityUnits) || (table.ProvisionedThroughput.WriteCapacityUnits != request.ProvisionedThroughput.WriteCapacityUnits) {
-		return true
+	if table.ProvisionedThroughput != nil && request.ProvisionedThroughput != nil {
+		if (table.ProvisionedThroughput.ReadCapacityUnits != request.ProvisionedThroughput.ReadCapacityUnits) || (table.ProvisionedThroughput.WriteCapacityUnits != request.ProvisionedThroughput.WriteCapacityUnits) {
+			return true
+		}
 	}
 	return false
 }
