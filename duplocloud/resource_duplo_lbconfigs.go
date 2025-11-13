@@ -231,6 +231,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Description: "Allocate Elastic IP to load balancer, which is configured under plan configuration.\n\nNote: This field can only be set for non internal lbtype NLB(6)",
 			Type:        schema.TypeList,
 			Optional:    true,
+			Computed:    true,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
