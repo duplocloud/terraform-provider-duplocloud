@@ -25,7 +25,7 @@ resource "duplocloud_azure_vm_maintenance_configuration" "mt" {
   window {
     start_time      = "2024-11-12 00:00"
     expiration_time = "2024-11-19 00:00"
-    duration        = "06:00"
+    duration        = "02:00"
     recur_every     = "1Month day1,day2,day3,day4,day5,day6,day7,day8,day9,day10,day11,day12,day13,day14,day15,day16,day17,day18,day19,day20,day21,day22,day23,day24,day25,day26,day27,day28,day29,day30,day31,day-1"
     time_zone       = "India Standard Time"
   }
@@ -70,7 +70,7 @@ Required:
 
 Optional:
 
-- `duration` (String) The duration of the maintenance window in HH:mm format.
+- `duration` (String) The duration of the maintenance window in HH:mm format. Should be less than or equal to 3 Hrs
 - `expiration_time` (String) Effective expiration date of the maintenance window in YYYY-MM-DD hh:mm format.
 - `recur_every` (String) he rate at which a maintenance window is expected to recur. The rate can be expressed as daily, weekly, or monthly schedules.
 
