@@ -11,13 +11,13 @@ type DuploAwsCloudfrontDefaultCacheBehavior struct {
 	AllowedMethods             *DuploCFDAllowedMethods                       `json:"AllowedMethods,omitempty"`
 	CachePolicyId              string                                        `json:"CachePolicyId,omitempty"`
 	Compress                   bool                                          `json:"Compress"`
-	DefaultTTL                 int                                           `json:"DefaultTTL"`
+	DefaultTTL                 *int                                          `json:"DefaultTTL"`
 	FieldLevelEncryptionId     string                                        `json:"FieldLevelEncryptionId"`
 	OriginRequestPolicyId      string                                        `json:"OriginRequestPolicyId,omitempty"`
 	LambdaFunctionAssociations *DuploAwsCloudfrontLambdaFunctionAssociations `json:"LambdaFunctionAssociations"`
 	FunctionAssociations       *DuploAwsCloudfrontFunctionAssociations       `json:"FunctionAssociations"`
-	MaxTTL                     int                                           `json:"MaxTTL"`
-	MinTTL                     int                                           `json:"MinTTL"`
+	MaxTTL                     *int                                          `json:"MaxTTL"`
+	MinTTL                     *int                                          `json:"MinTTL"`
 	SmoothStreaming            bool                                          `json:"SmoothStreaming"`
 	TargetOriginId             string                                        `json:"TargetOriginId,omitempty"`
 	TrustedSigners             *DuploCFDTrustedSigners                       `json:"TrustedSigners,omitempty"`

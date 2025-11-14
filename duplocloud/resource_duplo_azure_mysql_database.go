@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -138,12 +139,12 @@ func duploAzureMysqlDatabaseSchema() map[string]*schema.Schema {
 
 func resourceAzureMysqlDatabase() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_mysql_database` manages an Azure mysql database in Duplo.",
-
-		ReadContext:   resourceAzureMysqlDatabaseRead,
-		CreateContext: resourceAzureMysqlDatabaseCreate,
-		UpdateContext: resourceAzureMysqlDatabaseUpdate,
-		DeleteContext: resourceAzureMysqlDatabaseDelete,
+		Description:        "`duplocloud_azure_mysql_database` manages an Azure mysql database in Duplo.",
+		DeprecationMessage: "The resource duplocloud_azure_mysql_database has been deprecated, and Duplo will no longer provide support for it.",
+		ReadContext:        resourceAzureMysqlDatabaseRead,
+		CreateContext:      resourceAzureMysqlDatabaseCreate,
+		UpdateContext:      resourceAzureMysqlDatabaseUpdate,
+		DeleteContext:      resourceAzureMysqlDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
