@@ -227,15 +227,15 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"eip_allocations": {
-			Description: "Allocate Elastic IP to load balancer, which is configured under plan configuration.\n\nNote: This field can only be set for non internal lbtype NLB(6)",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Computed:    true,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-		},
+		//"eip_allocations": {
+		//	Description: "Allocate Elastic IP to load balancer, which is configured under plan configuration.\n\nNote: This field can only be set for non internal lbtype NLB(6)",
+		//	Type:        schema.TypeList,
+		//	Optional:    true,
+		//	Computed:    true,
+		//	Elem: &schema.Schema{
+		//		Type: schema.TypeString,
+		//	},
+		//},
 	}
 }
 
@@ -450,12 +450,12 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 				if item.IsInternal {
 					item.AllowGlobalAccess = lbc["allow_global_access"].(bool)
 				}
-				if eips, ok := lbc["eip_allocations"]; ok && len(eips.([]interface{})) > 0 {
-					item.UseEIPFromPool = true
-					for _, v := range eips.([]interface{}) {
-						item.AllocationIds = append(item.AllocationIds, v.(string))
-					}
-				}
+				//if eips, ok := lbc["eip_allocations"]; ok && len(eips.([]interface{})) > 0 {
+				//	item.UseEIPFromPool = true
+				//	for _, v := range eips.([]interface{}) {
+				//		item.AllocationIds = append(item.AllocationIds, v.(string))
+				//	}
+				//}
 				list = append(list, item)
 			}
 		}
@@ -646,13 +646,13 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		m["backend_protocol_version"] = "HTTP1"
 
 	}
-	if len(lb.EIPAllocationIds) > 0 {
-		eips := []interface{}{}
-		for _, ips := range lb.EIPAllocationIds {
-			eips = append(eips, ips)
-		}
-		m["eip_allocations"] = eips
-	}
+	//if len(lb.EIPAllocationIds) > 0 {
+	//	eips := []interface{}{}
+	//	for _, ips := range lb.EIPAllocationIds {
+	//		eips = append(eips, ips)
+	//	}
+	//	m["eip_allocations"] = eips
+	//}
 	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... End")
 	return m
 }
@@ -697,15 +697,15 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 				return fmt.Errorf("health check timeout must be less than health check interval")
 			}
 		}
-		if m["eip_allocations"] != nil {
-			eips := m["eip_allocations"].([]interface{})
-
-			if lb != 6 && len(eips) > 0 {
-				return fmt.Errorf("eip_allocations can only be set for NLB")
-			} else if lb == 6 && m["is_internal"].(bool) {
-				return fmt.Errorf("eip_allocations can only be set for public NLB")
-			}
-		}
+		//if m["eip_allocations"] != nil {
+		//	eips := m["eip_allocations"].([]interface{})
+		//
+		//	if lb != 6 && len(eips) > 0 {
+		//		return fmt.Errorf("eip_allocations can only be set for NLB")
+		//	} else if lb == 6 && m["is_internal"].(bool) {
+		//		return fmt.Errorf("eip_allocations can only be set for public NLB")
+		//	}
+		//}
 	}
 	return nil
 }

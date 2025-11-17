@@ -109,8 +109,8 @@ type DuploLbConfiguration struct {
 	AllowGlobalAccess bool     `json:"AllowGlobalAccess,omitempty"`
 	SkipHttpToHttps   bool     `json:"SkipHttpToHttps,omitempty"`
 	AllocationIds     []string `json:"AllocationIds,omitempty"`
-	EIPAllocationIds  []string `json:"EIPAllocationIds,omitempty"`
-	UseEIPFromPool    bool     `json:"UseEIPFromPool"`
+	//EIPAllocationIds  []string `json:"EIPAllocationIds,omitempty"`
+	//UseEIPFromPool    bool     `json:"UseEIPFromPool"`
 }
 
 // DuploPodLbConfiguration represents an LB configuration deletion request.
