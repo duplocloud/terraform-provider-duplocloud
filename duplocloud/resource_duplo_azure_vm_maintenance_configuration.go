@@ -151,7 +151,6 @@ func resourceAzureVmMaintenanceConfigCreate(ctx context.Context, d *schema.Resou
 		return diag.Errorf("resourceAzureVmMaintenanceConfigCreate cannot create maintenance config for vm %s error: %s", vmName, err.Error())
 	}
 	d.SetId(tenantId + "/" + vmName + "/maintenance-configuration")
-
 	diags := resourceAzureVmMaintenanceConfigRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzureVmMaintenanceConfigCreate(%s): end", vmName)
 	return diags
@@ -208,7 +207,7 @@ func expandAzureVmMaintenance(d *schema.ResourceData) *duplosdk.DuploAzureVmMain
 	return &obj
 }
 
-func flattenAzureVmMaintenance(d *schema.ResourceData, rb duplosdk.DuploAzureVmMaintenanceWindow) {
+func flattenAzureVmMaintenance(d *schema.ResourceData, rb duplosdk.DuploAzureVmMaintenanceWindowResponse) {
 	d.Set("window.0.start_time", rb.StartDateTime)
 	d.Set("window.0.expiration_time", rb.ExpirationDateTime)
 	d.Set("window.0.duration", rb.Duration)
