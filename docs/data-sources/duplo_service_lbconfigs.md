@@ -53,7 +53,6 @@ Read-Only:
 - `cloud_name` (String)
 - `custom_cidr` (List of String)
 - `dns_name` (String)
-- `eip_allocations` (List of String)
 - `external_port` (Number)
 - `external_traffic_policy` (String)
 - `extra_selector_label` (List of Object) (see [below for nested schema](#nestedobjatt--services--lbconfigs--extra_selector_label))
