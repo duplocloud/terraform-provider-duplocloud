@@ -3,8 +3,9 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -50,9 +51,18 @@ func dataSourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.Resourc
 		return diag.Errorf("Unable to read tenant %s ECS task definition '%s': not found", tenantID, arn)
 	}
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, arn))
+	tenant, cerr := c.TenantGetV2(tenantID)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("Tenant %s not found", tenantID)
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Duplocloud resource tenant information'\n%s", err)
+	}
 
 	// Read the object into state
-	flattenEcsTaskDefinition(duplo, d)
+	flattenEcsTaskDefinition(duplo, d, tenant.AccountName)
 
 	log.Printf("[TRACE] dataSourceDuploEcsTaskDefinitionRead(%s, %s): end", tenantID, arn)
 	return nil
