@@ -30,6 +30,7 @@ description: |-
 Read-Only:
 
 - `capacity_provider_strategy` (List of Object) (see [below for nested schema](#nestedobjatt--services--capacity_provider_strategy))
+- `deployment_configuration` (List of Object) (see [below for nested schema](#nestedobjatt--services--deployment_configuration))
 - `dns_prfx` (String)
 - `health_check_grace_period_seconds` (Number)
 - `index` (Number)
@@ -50,6 +51,28 @@ Read-Only:
 - `base` (Number)
 - `capacity_provider` (String)
 - `weight` (Number)
+
+
+<a id="nestedobjatt--services--deployment_configuration"></a>
+### Nested Schema for `services.deployment_configuration`
+
+Read-Only:
+
+- `alarms` (List of Object) (see [below for nested schema](#nestedobjatt--services--deployment_configuration--alarms))
+- `enable_circuit_breaker` (Boolean)
+- `maximum_health` (Number)
+- `minimum_healthy_percentage` (Number)
+- `rollback_circuit_breaker` (Boolean)
+
+<a id="nestedobjatt--services--deployment_configuration--alarms"></a>
+### Nested Schema for `services.deployment_configuration.alarms`
+
+Read-Only:
+
+- `enable` (Boolean)
+- `names` (List of String)
+- `rollback` (Boolean)
+
 
 
 <a id="nestedobjatt--services--load_balancer"></a>

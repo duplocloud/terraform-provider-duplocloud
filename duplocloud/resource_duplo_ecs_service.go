@@ -316,6 +316,67 @@ func ecsServiceSchema() map[string]*schema.Schema {
 		//			},
 		//		},
 		//	},
+		"deployment_configuration": {
+			Type:     schema.TypeList,
+			MaxItems: 1,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"minimum_healthy_percentage": {
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+						Description: "Specifies the minimum percentage of tasks that must remain in the RUNNING state during a deployment",
+					},
+					"maximum_health": {
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+						Description: "Specifies the maximum percentage of tasks that can run at once during a deployment.",
+					},
+					"enable_circuit_breaker": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+						Description: "Enables ECS deployment circuit breaker to stop deployments on failures.",
+					},
+					"rollback_circuit_breaker": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+						Description: "Enables automatic rollback when the circuit breaker detects a failed deployment.",
+					},
+					"alarms": {
+						Type:     schema.TypeList,
+						Optional: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"enable": {
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     false,
+									Description: "Enables or disables CloudWatch alarm monitoring during deployments.",
+								},
+								"rollback": {
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     false,
+									Description: "Automatically rolls back the deployment if any configured CloudWatch alarm enters ALARM state.",
+								},
+								"names": {
+									Type:        schema.TypeList,
+									Description: "Names of CloudWatch alarms that ECS monitors during deployments.",
+									Optional:    true,
+									Elem: &schema.Schema{
+										Type: schema.TypeString,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -484,9 +545,32 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 	//if duplo.PlacementConstraints != nil && len(*duplo.PlacementConstraints) > 0 {
 	//	d.Set("placement_constraint", flattenPlacementConstraints(duplo.PlacementConstraints))
 	//}
+	if duplo.DeploymentConfiguration != nil {
+		d.Set("deployment_configuration", flattenDeploumentConfiguration(duplo.DeploymentConfiguration))
+	}
 	return nil
 }
 
+func flattenDeploumentConfiguration(duplo *duplosdk.DuploEcsDeploymentConfiguration) []interface{} {
+	m := map[string]interface{}{}
+	m["maximum_percent"] = duplo.MaximumPercent
+	m["minimum_healthy_percent"] = duplo.MinimumHealthyPercent
+	if duplo.DeploymentCircuitBreaker != nil {
+		m["enable_circuit_breaker"] = duplo.DeploymentCircuitBreaker.Enable
+		m["rollback_circuit_breaker"] = duplo.DeploymentCircuitBreaker.Rollback
+	}
+	if duplo.Alarms != nil {
+		m["alarms"] = flattenAlarms(duplo.Alarms)
+	}
+	return []interface{}{m}
+}
+func flattenAlarms(duplo *duplosdk.DuploEcsDeploymentConfigAlarms) []interface{} {
+	m := map[string]interface{}{}
+	m["names"] = duplo.AlarmNames
+	m["rollback"] = duplo.Rollback
+	m["enable"] = duplo.Enable
+	return []interface{}{m}
+}
 func flattenDuploEcsServiceLbs(duplo *duplosdk.DuploEcsService, c *duplosdk.Client) ([]map[string]interface{}, error) {
 	// Next, convert things into structured data.
 	loadBalancers := ecsLoadBalancersToState(duplo.Name, duplo.LBConfigurations)
@@ -522,9 +606,35 @@ func ecsServiceFromState(d *schema.ResourceData) *duplosdk.DuploEcsService {
 	duploObject.CapacityProviderStrategy = expandCapacityProviderStrategies(d.Get("capacity_provider_strategy").([]interface{}))
 	//duploObject.PlacementStrategy = expandPlacementStrategies(d.Get("placement_strategy").([]interface{}))
 	//duploObject.PlacementConstraints = expandPlacementConstraint(d.Get("placement_constraint").([]interface{}))
+	if val, ok := d.GetOk("deployment_configuration"); ok && val != nil {
+		duploObject.DeploymentConfiguration = expandDeploymentConfiguration(val.([]interface{}))
+
+	}
 	return &duploObject
 }
+func expandDeploymentConfiguration(dc []interface{}) *duplosdk.DuploEcsDeploymentConfiguration {
+	body := &duplosdk.DuploEcsDeploymentConfiguration{}
+	m := dc[0].(map[string]interface{})
+	body.MaximumPercent = m["maximum_percent"].(int)
+	body.MinimumHealthyPercent = m["minimum_healthy_percent"].(int)
+	body.DeploymentCircuitBreaker = &duplosdk.DuploEcsDeploymentCircuitBreaker{
+		Enable:   m["enable_circuit_breaker"].(bool),
+		Rollback: m["rollback_circuit_breaker"].(bool),
+	}
+	if v, ok := m["alarms"]; ok && v != nil {
+		alarms := v.([]interface{})
+		alarmBody := &duplosdk.DuploEcsDeploymentConfigAlarms{}
+		for _, alarm := range alarms {
+			ma := alarm.(map[string]interface{})
+			alarmBody.Enable = ma["enable"].(bool)
+			alarmBody.Rollback = ma["rollback"].(bool)
+			alarmBody.AlarmNames = ma["names"].([]string)
+		}
+		body.Alarms = alarmBody
+	}
 
+	return body
+}
 func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConfig) []map[string]interface{} {
 	log.Printf("[TRACE] ecsLoadBalancersToState ******** start")
 	if lbcs == nil {

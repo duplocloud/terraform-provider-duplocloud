@@ -68,6 +68,7 @@ resource "duplocloud_ecs_service" "myservice" {
 ### Optional
 
 - `capacity_provider_strategy` (Block List) (see [below for nested schema](#nestedblock--capacity_provider_strategy))
+- `deployment_configuration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--deployment_configuration))
 - `dns_prfx` (String) The DNS prefix to assign to this service's load balancer.
 - `health_check_grace_period_seconds` (Number) Defaults to `0`.
 - `is_target_group_only` (Boolean) Defaults to `false`.
@@ -96,6 +97,28 @@ Optional:
 
 - `base` (Number) The number of tasks, at a minimum, to run on the specified capacity provider.
 - `weight` (Number) The relative percentage of the total number of launched tasks that should use the specified capacity provider.
+
+
+<a id="nestedblock--deployment_configuration"></a>
+### Nested Schema for `deployment_configuration`
+
+Optional:
+
+- `alarms` (Block List) (see [below for nested schema](#nestedblock--deployment_configuration--alarms))
+- `enable_circuit_breaker` (Boolean) Enables ECS deployment circuit breaker to stop deployments on failures. Defaults to `false`.
+- `maximum_health` (Number) Specifies the maximum percentage of tasks that can run at once during a deployment.
+- `minimum_healthy_percentage` (Number) Specifies the minimum percentage of tasks that must remain in the RUNNING state during a deployment
+- `rollback_circuit_breaker` (Boolean) Enables automatic rollback when the circuit breaker detects a failed deployment. Defaults to `false`.
+
+<a id="nestedblock--deployment_configuration--alarms"></a>
+### Nested Schema for `deployment_configuration.alarms`
+
+Optional:
+
+- `enable` (Boolean) Enables or disables CloudWatch alarm monitoring during deployments. Defaults to `false`.
+- `names` (List of String) Names of CloudWatch alarms that ECS monitors during deployments.
+- `rollback` (Boolean) Automatically rolls back the deployment if any configured CloudWatch alarm enters ALARM state. Defaults to `false`.
+
 
 
 <a id="nestedblock--load_balancer"></a>
