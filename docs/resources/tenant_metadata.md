@@ -53,7 +53,7 @@ resource "duplocloud_tenant_metadata" "meta" {
 
 - `key` (String) Specify key for tag.
 - `tenant_id` (String) The GUID of the tenant that the tags will be created in.
-- `type` (String) Specify type of metadata
+- `type` (String) Specify type of metadata, Valid values are `text`, `url`, `aws_console`
 - `value` (String) Specify value for tag.
 
 ### Optional

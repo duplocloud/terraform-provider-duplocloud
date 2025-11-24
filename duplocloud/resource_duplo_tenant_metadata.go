@@ -50,7 +50,7 @@ func resourceTenantMetadata() *schema.Resource {
 				ForceNew:    true,
 			},
 			"type": {
-				Description:  "Specify type of metadata",
+				Description:  "Specify type of metadata, Valid values are `text`, `url`, `aws_console`",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
