@@ -53,8 +53,8 @@ Read-Only:
 
 - `alarms` (List of Object) (see [below for nested schema](#nestedobjatt--deployment_configuration--alarms))
 - `enable_circuit_breaker` (Boolean)
-- `maximum_health` (Number)
-- `minimum_healthy_percentage` (Number)
+- `maximum_percent` (Number)
+- `minimum_healthy_percent` (Number)
 - `rollback_circuit_breaker` (Boolean)
 
 <a id="nestedobjatt--deployment_configuration--alarms"></a>

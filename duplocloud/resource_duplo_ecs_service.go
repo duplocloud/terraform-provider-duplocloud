@@ -322,17 +322,18 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			Optional: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"minimum_healthy_percentage": {
+					"minimum_healthy_percent": {
 						Type:        schema.TypeInt,
 						Optional:    true,
 						Computed:    true,
 						Description: "Specifies the minimum percentage of tasks that must remain in the RUNNING state during a deployment",
 					},
-					"maximum_health": {
-						Type:        schema.TypeInt,
-						Optional:    true,
-						Computed:    true,
-						Description: "Specifies the maximum percentage of tasks that can run at once during a deployment.",
+					"maximum_percent": {
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Computed:     true,
+						Description:  "Specifies the maximum percentage of tasks that can run at once during a deployment.",
+						ValidateFunc: validation.IntAtLeast(100),
 					},
 					"enable_circuit_breaker": {
 						Type:        schema.TypeBool,
@@ -628,7 +629,15 @@ func expandDeploymentConfiguration(dc []interface{}) *duplosdk.DuploEcsDeploymen
 			ma := alarm.(map[string]interface{})
 			alarmBody.Enable = ma["enable"].(bool)
 			alarmBody.Rollback = ma["rollback"].(bool)
-			alarmBody.AlarmNames = ma["names"].([]string)
+			if v, ok := ma["names"].([]interface{}); ok && len(v) > 0 {
+				s := []string{}
+				for _, name := range v {
+					s = append(s, name.(string))
+
+				}
+				alarmBody.AlarmNames = s
+
+			}
 		}
 		body.Alarms = alarmBody
 	}

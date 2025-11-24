@@ -39,3 +39,27 @@ resource "duplocloud_ecs_service" "myservice" {
   }
 }
 
+
+resource "duplocloud_ecs_service" "myservice" {
+  tenant_id       = duplocloud_tenant.myapp.tenant_id
+  name            = "myservice"
+  task_definition = duplocloud_ecs_task_definition.myservice.arn
+  replicas        = 1
+  capacity_provider_strategy {
+    base              = 0
+    weight            = 1
+    capacity_provider = "<asg-fullname>"
+  }
+  deployment_configuration {
+    minimum_healthy_percent  = 20
+    maximum_percent          = 100
+    enable_circuit_breaker   = true
+    rollback_circuit_breaker = true
+    alarms {
+      enable   = true
+      rollback = true
+      names    = ["<cloudwatch-alarm-name>"]
+    }
+  }
+}
+
