@@ -43,6 +43,13 @@ func (c *Client) GetResourceName(prefix, tenantID, name string, withAccountSuffi
 	if err != nil {
 		return "", err
 	}
+	rp, err := c.AdminGetSystemFeatures()
+	if err != nil {
+		return "", err
+	}
+	if rp.ResourceNamePrefix != "" {
+		prefix = rp.ResourceNamePrefix
+	}
 	if withAccountSuffix {
 		accountID, err := c.TenantGetAwsAccountID(tenantID)
 		if err != nil {
