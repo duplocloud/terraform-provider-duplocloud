@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -109,9 +110,14 @@ func resourceAzureLogAnalyticsWorkspaceRead(ctx context.Context, d *schema.Resou
 		}
 		return diag.Errorf("Unable to retrieve tenant %s azure Log Analytics Workspace %s : %s", infraName, name, clientErr)
 	}
+	if duplo.ID == "" {
+		log.Printf("[DEBUG] resourceAzureLogAnalyticsWorkspaceRead: Azure Log Analytics Workspace %s not found for tenantId %s, removing from state", name, infraName)
+		d.SetId("")
 
+	}
+	rgpn := strings.Split(duplo.ID, "/")
 	d.Set("infra_name", infraName)
-	d.Set("resource_group_name", strings.Split(duplo.ID, "/")[4])
+	d.Set("resource_group_name", rgpn[len(rgpn)-1])
 	d.Set("name", name)
 	d.Set("azure_id", duplo.ID)
 	d.Set("sku", duplo.PropertiesSku.Name)
@@ -166,6 +172,25 @@ func resourceAzureLogAnalyticsWorkspaceUpdate(ctx context.Context, d *schema.Res
 }
 
 func resourceAzureLogAnalyticsWorkspaceDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	id := d.Id()
+	infraName, name, err := parseAzureLogAnalyticsWorkspaceIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceAzureLogAnalyticsWorkspaceRead(%s, %s): start", infraName, name)
+
+	c := m.(*duplosdk.Client)
+	cerr := c.AzureLogAnalyticsWorkspaceCreate(infraName, duplosdk.DuploAzureLogAnalyticsWorkspaceRq{
+		Name:          "",
+		ResourceGroup: "",
+	})
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			return nil
+		}
+		return diag.Errorf("Error creating tenant %s azure Log Analytics Workspace '%s': %s", infraName, name, err)
+	}
+
 	return nil // Backend doesn't support delete.
 }
 

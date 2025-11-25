@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -96,6 +97,11 @@ func resourceAzureRecoveryServicesVaultRead(ctx context.Context, d *schema.Resou
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s azure Recovery Services Vault %s : %s", infraName, name, clientErr)
+	}
+	if duplo.ID == "" {
+		log.Printf("[DEBUG] resourceAzureRecoveryServicesVaultRead: Azure recovery services vault %s not found for tenantId %s, removing from state", name, infraName)
+		d.SetId("")
+		return nil
 	}
 
 	d.Set("infra_name", infraName)

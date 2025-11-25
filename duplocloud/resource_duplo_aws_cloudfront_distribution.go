@@ -1146,9 +1146,22 @@ func expandAwsCloudfrontDistributionDefaultCacheBehavior(m map[string]interface{
 	}
 
 	if m["cache_policy_id"].(string) == "" {
-		dcb.MinTTL = m["min_ttl"].(int)
-		dcb.MaxTTL = m["max_ttl"].(int)
-		dcb.DefaultTTL = m["default_ttl"].(int)
+		min := m["min_ttl"]
+		if min != nil {
+			v := min.(int)
+			dcb.MinTTL = &v
+		}
+		max := m["max_ttl"]
+		if max != nil {
+			v := max.(int)
+			dcb.MaxTTL = &v
+		}
+		def := m["default_ttl"]
+		if def != nil {
+			v := def.(int)
+			dcb.DefaultTTL = &v
+		}
+
 	}
 
 	// TODO Handle "trusted_key_groups"
@@ -1202,9 +1215,21 @@ func expandAwsCloudfrontDistributionCacheBehavior(m map[string]interface{}) dupl
 	}
 
 	if m["cache_policy_id"].(string) == "" {
-		cb.MinTTL = m["min_ttl"].(int)
-		cb.MaxTTL = m["max_ttl"].(int)
-		cb.DefaultTTL = m["default_ttl"].(int)
+		min := m["min_ttl"]
+		if min != nil {
+			v := min.(int)
+			cb.MinTTL = &v
+		}
+		max := m["max_ttl"]
+		if max != nil {
+			v := max.(int)
+			cb.MaxTTL = &v
+		}
+		def := m["default_ttl"]
+		if def != nil {
+			v := def.(int)
+			cb.DefaultTTL = &v
+		}
 	}
 
 	// TODO Handle "trusted_key_groups"
