@@ -82,9 +82,9 @@ type DuploEcsService struct {
 	UseIndexForLb                 bool                                       `json:"UseIndexForLb"`
 	Index                         int                                        `json:"Index"`
 	CapacityProviderStrategy      *[]DuploEcsServiceCapacityProviderStrategy `json:"CapacityProviderStrategy,omitempty"`
-	//PlacementStrategy             *[]DuploEcsPlacementStrategy               `json:"PlacementStrategy,omitempty"`
-	//PlacementConstraints          *[]DuploEcsPlacementConstraint             `json:"PlacementConstraints,omitempty"`
-	DeploymentConfiguration *DuploEcsDeploymentConfiguration `json:"DeploymentConfiguration,omitempty"`
+	PlacementStrategy             *[]DuploEcsPlacementStrategy               `json:"PlacementStrategy,omitempty"`
+	PlacementConstraints          *[]DuploEcsPlacementConstraint             `json:"PlacementConstraints,omitempty"`
+	DeploymentConfiguration       *DuploEcsDeploymentConfiguration           `json:"DeploymentConfiguration,omitempty"`
 }
 
 /*************************************************

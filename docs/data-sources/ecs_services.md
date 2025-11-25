@@ -38,6 +38,8 @@ Read-Only:
 - `load_balancer` (List of Object) (see [below for nested schema](#nestedobjatt--services--load_balancer))
 - `name` (String)
 - `old_task_definition_buffer_size` (Number)
+- `placement_constraint` (List of Object) (see [below for nested schema](#nestedobjatt--services--placement_constraint))
+- `placement_strategy` (List of Object) (see [below for nested schema](#nestedobjatt--services--placement_strategy))
 - `replicas` (Number)
 - `target_group_arns` (Set of String)
 - `task_definition` (String)
@@ -112,3 +114,22 @@ Read-Only:
 - `healthy_threshold_count` (Number)
 - `http_success_code` (String)
 - `unhealthy_threshold_count` (Number)
+
+
+
+<a id="nestedobjatt--services--placement_constraint"></a>
+### Nested Schema for `services.placement_constraint`
+
+Read-Only:
+
+- `expression` (String)
+- `type` (String)
+
+
+<a id="nestedobjatt--services--placement_strategy"></a>
+### Nested Schema for `services.placement_strategy`
+
+Read-Only:
+
+- `field` (String)
+- `type` (String)

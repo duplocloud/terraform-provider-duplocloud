@@ -31,6 +31,8 @@ description: |-
 - `is_target_group_only` (Boolean)
 - `load_balancer` (List of Object) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedatt--load_balancer))
 - `old_task_definition_buffer_size` (Number) The number of older task definitions to retain in AWS.
+- `placement_constraint` (List of Object) (see [below for nested schema](#nestedatt--placement_constraint))
+- `placement_strategy` (List of Object) (see [below for nested schema](#nestedatt--placement_strategy))
 - `replicas` (Number) The number of container replicas to create.
 - `target_group_arns` (Set of String)
 - `task_definition` (String) The ARN of the task definition to use.
@@ -105,3 +107,22 @@ Read-Only:
 - `healthy_threshold_count` (Number)
 - `http_success_code` (String)
 - `unhealthy_threshold_count` (Number)
+
+
+
+<a id="nestedatt--placement_constraint"></a>
+### Nested Schema for `placement_constraint`
+
+Read-Only:
+
+- `expression` (String)
+- `type` (String)
+
+
+<a id="nestedatt--placement_strategy"></a>
+### Nested Schema for `placement_strategy`
+
+Read-Only:
+
+- `field` (String)
+- `type` (String)
