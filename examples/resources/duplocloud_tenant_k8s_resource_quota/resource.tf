@@ -4,7 +4,7 @@ locals {
 
 
 resource "duplocloud_tenant_k8s_resource_quota" "quota" {
-  tenant_id = local.tenant_metadata
+  tenant_id = local.tenant_id
   name      = "kubequota"
   resource_quota = jsonencode({
     "requests.memory" : "4Gi",

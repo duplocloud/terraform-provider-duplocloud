@@ -31,12 +31,12 @@ func k8sQuotaSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"scope_selector": {
-			Description: "Applies quota only to resources matching specified workload scopes.",
+			Description: "Applies quota only to resources matching specified workload scopes.Should be a JSON-encoded string using jsonencode()",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
 		"resource_quota": {
-			Description: "Limits the total amount of compute, storage, and object resources that a namespace can use to prevent over-consumption and ensure fair resource allocation in a Kubernetes cluster.",
+			Description: "Limits the total amount of compute, storage, and object resources that a namespace can use to prevent over-consumption and ensure fair resource allocation in a Kubernetes cluster. Should be a JSON-encoded string using jsonencode()",
 			Type:        schema.TypeString,
 			Required:    true,
 		},

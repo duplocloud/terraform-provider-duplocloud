@@ -19,7 +19,7 @@ locals {
 
 
 resource "duplocloud_tenant_k8s_resource_quota" "quota" {
-  tenant_id = local.tenant_metadata
+  tenant_id = local.tenant_id
   name      = "kubequota"
   resource_quota = jsonencode({
     "requests.memory" : "4Gi",
@@ -46,12 +46,12 @@ resource "duplocloud_tenant_k8s_resource_quota" "quota" {
 ### Required
 
 - `name` (String) Name of the K8's quota.
-- `resource_quota` (String) Limits the total amount of compute, storage, and object resources that a namespace can use to prevent over-consumption and ensure fair resource allocation in a Kubernetes cluster.
+- `resource_quota` (String) Limits the total amount of compute, storage, and object resources that a namespace can use to prevent over-consumption and ensure fair resource allocation in a Kubernetes cluster. Should be a JSON-encoded string using jsonencode()
 - `tenant_id` (String) The GUID of the tenant that the K8's quota will be created in.
 
 ### Optional
 
-- `scope_selector` (String) Applies quota only to resources matching specified workload scopes.
+- `scope_selector` (String) Applies quota only to resources matching specified workload scopes.Should be a JSON-encoded string using jsonencode()
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
