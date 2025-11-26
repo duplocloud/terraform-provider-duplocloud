@@ -12,7 +12,7 @@ resource "duplocloud_k8_config_map" "myapp" {
   labels = {
     ke1                           = "val1"
     ke2                           = "val3"
-    app.duplocloud.net / app-name = "<appname>"
+    "app.duplocloud.net/app-name" = "<appname>"
   }
 }
 

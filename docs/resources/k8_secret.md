@@ -27,7 +27,7 @@ resource "duplocloud_k8_secret" "myapp" {
   secret_labels = {
     KeyA                          = "ValueA"
     KeyB                          = "ValueB"
-    app.duplocloud.net / app-name = "<appname>"
+    "app.duplocloud.net/app-name" = "<appname>"
   }
   secret_annotations = {
     annotA = "ValueA"
