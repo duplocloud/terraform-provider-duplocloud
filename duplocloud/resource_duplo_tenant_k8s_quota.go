@@ -18,25 +18,25 @@ import (
 func k8sQuotaSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the target group will be created in.",
+			Description:  "The GUID of the tenant that the K8's quota will be created in.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "Name of the target group.",
+			Description: "Name of the K8's quota.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
 		},
 		"scope_selector": {
-			Description: "Type of target that you must specify when registering targets with this target group.",
+			Description: "Applies quota only to resources matching specified workload scopes.",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
 		"resource_quota": {
-			Description: "Protocol to use to connect with the target. Not applicable when `target_type` is `lambda`.",
+			Description: "Limits the total amount of compute, storage, and object resources that a namespace can use to prevent over-consumption and ensure fair resource allocation in a Kubernetes cluster.",
 			Type:        schema.TypeString,
 			Required:    true,
 		},
@@ -81,13 +81,14 @@ func resourceK8QuotaRead(ctx context.Context, d *schema.ResourceData, m interfac
 		}
 		return diag.Errorf("Unable to retrieve tenant %s K8 quota %s : %s", tenantID, name, clientErr)
 	}
-	d.Set("tenant_id", tenantID)
-	d.Set("name", rp.Metadata.Name)
 	err = flattenK8ResourceQuota(d, rp)
 
 	if err != nil {
 		return diag.Errorf("Unable to flatten tenant %s k8 resource quota %s : %s", tenantID, name, err)
 	}
+	d.Set("tenant_id", tenantID)
+	d.Set("name", rp.Metadata.Name)
+
 	log.Printf("[TRACE] resourceK8QuotaRead(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -167,9 +168,9 @@ func resourceK8QuotaDelete(ctx context.Context, d *schema.ResourceData, m interf
 }
 
 func parseK8QuotaIdParts(id string) (tenantID, name string, err error) {
-	idParts := strings.SplitN(id, "/", 2)
-	if len(idParts) == 2 {
-		tenantID, name = idParts[0], idParts[1]
+	idParts := strings.SplitN(id, "/", 3)
+	if len(idParts) == 3 {
+		tenantID, name = idParts[0], idParts[2]
 	} else {
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}

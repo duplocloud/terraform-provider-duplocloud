@@ -17,10 +17,11 @@ type DuploTenantK8QuotaSpec struct {
 }
 
 func (c *Client) DuploTenantK8QuotaCreate(tenantId string, rq *DuploTenantK8Quota) ClientError {
+	var rp interface{}
 	return c.postAPI(fmt.Sprintf("DuploTenantK8QuotaCreate(%s,%s)", tenantId, rq.Metadata.Name),
 		fmt.Sprintf("v3/admin/k8s/subscriptions/%s/resourceQuota", tenantId),
 		rq,
-		nil,
+		&rp,
 	)
 }
 
@@ -42,10 +43,11 @@ func (c *Client) DuploTenantK8QuotaGet(tenantId, name string) (*DuploTenantK8Quo
 }
 
 func (c *Client) DuploTenantK8QuotaUpdate(tenantId string, rq *DuploTenantK8Quota) ClientError {
+	var rp interface{}
 	return c.putAPI(fmt.Sprintf("DuploTenantK8QuotaUpdate(%s,%s)", tenantId, rq.Metadata.Name),
 		fmt.Sprintf("v3/admin/k8s/subscriptions/%s/resourceQuota/%s", tenantId, rq.Metadata.Name),
 		rq,
-		nil,
+		&rp,
 	)
 }
 
