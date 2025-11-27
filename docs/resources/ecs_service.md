@@ -123,8 +123,8 @@ resource "duplocloud_ecs_service" "myservice" {
 - `is_target_group_only` (Boolean) Defaults to `false`.
 - `load_balancer` (Block List) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedblock--load_balancer))
 - `old_task_definition_buffer_size` (Number) The number of older task definitions to retain in AWS. Defaults to `10`.
-- `placement_constraint` (Block List, Max: 10) (see [below for nested schema](#nestedblock--placement_constraint))
-- `placement_strategy` (Block List, Max: 5) (see [below for nested schema](#nestedblock--placement_strategy))
+- `placement_constraint` (Block List, Max: 10) Rules that are taken into consideration during task placement. Maximum number of `placement_constraints` is `10` (see [below for nested schema](#nestedblock--placement_constraint))
+- `placement_strategy` (Block List, Max: 5) Service level strategy rules that are taken into consideration during task placement. List from top to bottom in order of precedence. The maximum number of `placement_strategy` blocks is `5` (see [below for nested schema](#nestedblock--placement_strategy))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `wait_until_targets_ready` (Boolean) Whether or not to wait until all target groups are created for ecs service, after creation. Defaults to `true`.
 
@@ -228,11 +228,11 @@ Optional:
 
 Required:
 
-- `type` (String)
+- `type` (String) Type of constraint. The only valid values at this time are `memberOf` and `distinctInstance`
 
 Optional:
 
-- `expression` (String)
+- `expression` (String) Cluster Query Language expression to apply to the constraint. Does not need to be specified for the distinctInstance type. For more information, see [Cluster Query Language in the Amazon EC2 Container Service Developer Guide](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-query-language.html).
 
 
 <a id="nestedblock--placement_strategy"></a>
@@ -240,11 +240,11 @@ Optional:
 
 Required:
 
-- `type` (String)
+- `type` (String) Type of placement strategy. Must be one of: `binpack`, `random`, or `spread`
 
 Optional:
 
-- `field` (String)
+- `field` (String) For the spread placement strategy, valid values are instanceId, or any platform or custom attribute that is applied to a container instance. For the binpack type, valid values are memory and cpu. For the random type, this attribute is not needed. For more information, see [PlacementStrategy](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_PlacementStrategy.html)
 
 
 <a id="nestedblock--timeouts"></a>

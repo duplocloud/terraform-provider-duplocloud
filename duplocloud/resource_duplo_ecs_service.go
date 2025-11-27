@@ -283,35 +283,43 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			},
 		},
 		"placement_strategy": {
-			Type:     schema.TypeList,
-			MaxItems: 5,
-			Optional: true,
+			Type:        schema.TypeList,
+			MaxItems:    5,
+			Optional:    true,
+			Description: "Service level strategy rules that are taken into consideration during task placement. List from top to bottom in order of precedence. The maximum number of `placement_strategy` blocks is `5`",
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"type": {
-						Type:     schema.TypeString,
-						Required: true,
+						Description:  "Type of placement strategy. Must be one of: `binpack`, `random`, or `spread`",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"binpack", "random", "spread"}, false),
 					},
 					"field": {
-						Type:     schema.TypeString,
-						Optional: true,
+						Description: "For the spread placement strategy, valid values are instanceId, or any platform or custom attribute that is applied to a container instance. For the binpack type, valid values are memory and cpu. For the random type, this attribute is not needed. For more information, see [PlacementStrategy](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_PlacementStrategy.html)",
+						Type:        schema.TypeString,
+						Optional:    true,
 					},
 				},
 			},
 		},
 		"placement_constraint": {
-			Type:     schema.TypeList,
-			MaxItems: 10,
-			Optional: true,
+			Type:        schema.TypeList,
+			MaxItems:    10,
+			Optional:    true,
+			Description: "Rules that are taken into consideration during task placement. Maximum number of `placement_constraints` is `10`",
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"type": {
-						Type:     schema.TypeString,
-						Required: true,
+						Description:  "Type of constraint. The only valid values at this time are `memberOf` and `distinctInstance`",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"memberOf", "distinctInstance"}, false),
 					},
 					"expression": {
-						Type:     schema.TypeString,
-						Optional: true,
+						Description: "Cluster Query Language expression to apply to the constraint. Does not need to be specified for the distinctInstance type. For more information, see [Cluster Query Language in the Amazon EC2 Container Service Developer Guide](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-query-language.html).",
+						Type:        schema.TypeString,
+						Optional:    true,
 					},
 				},
 			},
