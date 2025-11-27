@@ -327,7 +327,11 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	c := m.(*duplosdk.Client)
 
-	fullName := "duplo-" + duplo.Name
+	fullName, err := c.GetDuploServicesPrefix(tenantID, "duplo")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	if !validateStringLength(fullName, TOTALECACHENAMELENGTH) {
 		return diag.Errorf("resourceDuploEcacheInstanceCreate: fullname %s exceeds allowable ecache name length %d)", fullName, TOTALECACHENAMELENGTH)
 
