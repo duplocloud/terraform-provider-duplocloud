@@ -212,6 +212,12 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"auto_minor_version_upgrade": {
+			Description: "Enable or disable auto minor version upgrade",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -583,6 +589,7 @@ func rdsReadReplicaFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
 	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
+	duploObject.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
 	return duploObject, nil
 }
 
@@ -634,7 +641,7 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
 	pis = append(pis, pi)
 	jo["performance_insights"] = pis
-
+	jo["auto_minor_version_upgrade"] = duploObject.AutoMinorVersionUpgrade
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
 

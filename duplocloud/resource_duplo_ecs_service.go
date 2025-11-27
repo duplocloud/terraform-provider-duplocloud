@@ -282,40 +282,110 @@ func ecsServiceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		//	"placement_strategy": {
-		//		Type:     schema.TypeList,
-		//		MaxItems: 5,
-		//		Optional: true,
-		//		Elem: &schema.Resource{
-		//			Schema: map[string]*schema.Schema{
-		//				"type": {
-		//					Type:     schema.TypeString,
-		//					Required: true,
-		//				},
-		//				"field": {
-		//					Type:     schema.TypeString,
-		//					Optional: true,
-		//				},
-		//			},
-		//		},
-		//	},
-		//	"placement_constraint": {
-		//		Type:     schema.TypeList,
-		//		MaxItems: 10,
-		//		Optional: true,
-		//		Elem: &schema.Resource{
-		//			Schema: map[string]*schema.Schema{
-		//				"type": {
-		//					Type:     schema.TypeString,
-		//					Required: true,
-		//				},
-		//				"expression": {
-		//					Type:     schema.TypeString,
-		//					Optional: true,
-		//				},
-		//			},
-		//		},
-		//	},
+		"placement_strategy": {
+			Type:        schema.TypeList,
+			MaxItems:    5,
+			Optional:    true,
+			Description: "Service level strategy rules that are taken into consideration during task placement. List from top to bottom in order of precedence. The maximum number of `placement_strategy` blocks is `5`",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"type": {
+						Description:  "Type of placement strategy. Must be one of: `binpack`, `random`, or `spread`",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"binpack", "random", "spread"}, false),
+					},
+					"field": {
+						Description: "For the spread placement strategy, valid values are instanceId, or any platform or custom attribute that is applied to a container instance. For the binpack type, valid values are memory and cpu. For the random type, this attribute is not needed. For more information, see [PlacementStrategy](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_PlacementStrategy.html)",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+				},
+			},
+		},
+		"placement_constraint": {
+			Type:        schema.TypeList,
+			MaxItems:    10,
+			Optional:    true,
+			Description: "Rules that are taken into consideration during task placement. Maximum number of `placement_constraints` is `10`",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"type": {
+						Description:  "Type of constraint. The only valid values at this time are `memberOf` and `distinctInstance`",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"memberOf", "distinctInstance"}, false),
+					},
+					"expression": {
+						Description: "Cluster Query Language expression to apply to the constraint. Does not need to be specified for the distinctInstance type. For more information, see [Cluster Query Language in the Amazon EC2 Container Service Developer Guide](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-query-language.html).",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+				},
+			},
+		},
+		"deployment_configuration": {
+			Type:     schema.TypeList,
+			MaxItems: 1,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"minimum_healthy_percent": {
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+						Description: "Specifies the minimum percentage of tasks that must remain in the RUNNING state during a deployment",
+					},
+					"maximum_percent": {
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Computed:     true,
+						Description:  "Specifies the maximum percentage of tasks that can run at once during a deployment.",
+						ValidateFunc: validation.IntAtLeast(100),
+					},
+					"enable_circuit_breaker": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+						Description: "Enables ECS deployment circuit breaker to stop deployments on failures.",
+					},
+					"rollback_circuit_breaker": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+						Description: "Enables automatic rollback when the circuit breaker detects a failed deployment.",
+					},
+					"alarms": {
+						Type:     schema.TypeList,
+						Optional: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"enable": {
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     false,
+									Description: "Enables or disables CloudWatch alarm monitoring during deployments.",
+								},
+								"rollback": {
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     false,
+									Description: "Automatically rolls back the deployment if any configured CloudWatch alarm enters ALARM state.",
+								},
+								"names": {
+									Type:        schema.TypeList,
+									Description: "Names of CloudWatch alarms that ECS monitors during deployments.",
+									Optional:    true,
+									Elem: &schema.Schema{
+										Type: schema.TypeString,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -477,16 +547,39 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 	if duplo.CapacityProviderStrategy != nil && len(*duplo.CapacityProviderStrategy) > 0 {
 		d.Set("capacity_provider_strategy", flattenCapacityProviderStrategies(duplo.CapacityProviderStrategy))
 	}
-	//if duplo.PlacementStrategy != nil && len(*duplo.PlacementStrategy) > 0 {
-	//	d.Set("placement_strategy", flattenPlacementStrategies(duplo.PlacementStrategy))
-	//}
-	//
-	//if duplo.PlacementConstraints != nil && len(*duplo.PlacementConstraints) > 0 {
-	//	d.Set("placement_constraint", flattenPlacementConstraints(duplo.PlacementConstraints))
-	//}
+	if duplo.PlacementStrategy != nil && len(*duplo.PlacementStrategy) > 0 {
+		d.Set("placement_strategy", flattenPlacementStrategies(duplo.PlacementStrategy))
+	}
+
+	if duplo.PlacementConstraints != nil && len(*duplo.PlacementConstraints) > 0 {
+		d.Set("placement_constraint", flattenPlacementConstraints(duplo.PlacementConstraints))
+	}
+	if duplo.DeploymentConfiguration != nil {
+		d.Set("deployment_configuration", flattenDeploumentConfiguration(duplo.DeploymentConfiguration))
+	}
 	return nil
 }
 
+func flattenDeploumentConfiguration(duplo *duplosdk.DuploEcsDeploymentConfiguration) []interface{} {
+	m := map[string]interface{}{}
+	m["maximum_percent"] = duplo.MaximumPercent
+	m["minimum_healthy_percent"] = duplo.MinimumHealthyPercent
+	if duplo.DeploymentCircuitBreaker != nil {
+		m["enable_circuit_breaker"] = duplo.DeploymentCircuitBreaker.Enable
+		m["rollback_circuit_breaker"] = duplo.DeploymentCircuitBreaker.Rollback
+	}
+	if duplo.Alarms != nil {
+		m["alarms"] = flattenAlarms(duplo.Alarms)
+	}
+	return []interface{}{m}
+}
+func flattenAlarms(duplo *duplosdk.DuploEcsDeploymentConfigAlarms) []interface{} {
+	m := map[string]interface{}{}
+	m["names"] = duplo.AlarmNames
+	m["rollback"] = duplo.Rollback
+	m["enable"] = duplo.Enable
+	return []interface{}{m}
+}
 func flattenDuploEcsServiceLbs(duplo *duplosdk.DuploEcsService, c *duplosdk.Client) ([]map[string]interface{}, error) {
 	// Next, convert things into structured data.
 	loadBalancers := ecsLoadBalancersToState(duplo.Name, duplo.LBConfigurations)
@@ -520,11 +613,45 @@ func ecsServiceFromState(d *schema.ResourceData) *duplosdk.DuploEcsService {
 	// Next, convert things into structured data.
 	duploObject.LBConfigurations = ecsLoadBalancersFromState(d)
 	duploObject.CapacityProviderStrategy = expandCapacityProviderStrategies(d.Get("capacity_provider_strategy").([]interface{}))
-	//duploObject.PlacementStrategy = expandPlacementStrategies(d.Get("placement_strategy").([]interface{}))
-	//duploObject.PlacementConstraints = expandPlacementConstraint(d.Get("placement_constraint").([]interface{}))
+	duploObject.PlacementStrategy = expandPlacementStrategies(d.Get("placement_strategy").([]interface{}))
+	duploObject.PlacementConstraints = expandPlacementConstraint(d.Get("placement_constraint").([]interface{}))
+	if val, ok := d.GetOk("deployment_configuration"); ok && val != nil {
+		duploObject.DeploymentConfiguration = expandDeploymentConfiguration(val.([]interface{}))
+
+	}
 	return &duploObject
 }
+func expandDeploymentConfiguration(dc []interface{}) *duplosdk.DuploEcsDeploymentConfiguration {
+	body := &duplosdk.DuploEcsDeploymentConfiguration{}
+	m := dc[0].(map[string]interface{})
+	body.MaximumPercent = m["maximum_percent"].(int)
+	body.MinimumHealthyPercent = m["minimum_healthy_percent"].(int)
+	body.DeploymentCircuitBreaker = &duplosdk.DuploEcsDeploymentCircuitBreaker{
+		Enable:   m["enable_circuit_breaker"].(bool),
+		Rollback: m["rollback_circuit_breaker"].(bool),
+	}
+	if v, ok := m["alarms"]; ok && v != nil {
+		alarms := v.([]interface{})
+		alarmBody := &duplosdk.DuploEcsDeploymentConfigAlarms{}
+		for _, alarm := range alarms {
+			ma := alarm.(map[string]interface{})
+			alarmBody.Enable = ma["enable"].(bool)
+			alarmBody.Rollback = ma["rollback"].(bool)
+			if v, ok := ma["names"].([]interface{}); ok && len(v) > 0 {
+				s := []string{}
+				for _, name := range v {
+					s = append(s, name.(string))
 
+				}
+				alarmBody.AlarmNames = s
+
+			}
+		}
+		body.Alarms = alarmBody
+	}
+
+	return body
+}
 func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConfig) []map[string]interface{} {
 	log.Printf("[TRACE] ecsLoadBalancersToState ******** start")
 	if lbcs == nil {
@@ -807,21 +934,21 @@ func flattenCapacityProviderStrategies(duplo *[]duplosdk.DuploEcsServiceCapacity
 	return s
 }
 
-//func flattenPlacementStrategies(duplo *[]duplosdk.DuploEcsPlacementStrategy) []map[string]interface{} {
-//	s := []map[string]interface{}{}
-//	for _, v := range *duplo {
-//		s = append(s, flattenPlacementStrategy(v))
-//	}
-//	return s
-//}
+func flattenPlacementStrategies(duplo *[]duplosdk.DuploEcsPlacementStrategy) []map[string]interface{} {
+	s := []map[string]interface{}{}
+	for _, v := range *duplo {
+		s = append(s, flattenPlacementStrategy(v))
+	}
+	return s
+}
 
-//func flattenPlacementConstraints(duplo *[]duplosdk.DuploEcsPlacementConstraint) []map[string]interface{} {
-//	s := []map[string]interface{}{}
-//	for _, v := range *duplo {
-//		s = append(s, flattenPlacementConstraint(v))
-//	}
-//	return s
-//}
+func flattenPlacementConstraints(duplo *[]duplosdk.DuploEcsPlacementConstraint) []map[string]interface{} {
+	s := []map[string]interface{}{}
+	for _, v := range *duplo {
+		s = append(s, flattenPlacementConstraint(v))
+	}
+	return s
+}
 
 func flattenCapacityProviderStrategy(duplo duplosdk.DuploEcsServiceCapacityProviderStrategy) map[string]interface{} {
 	m := make(map[string]interface{})
@@ -831,19 +958,19 @@ func flattenCapacityProviderStrategy(duplo duplosdk.DuploEcsServiceCapacityProvi
 	return m
 }
 
-//func flattenPlacementStrategy(duplo duplosdk.DuploEcsPlacementStrategy) map[string]interface{} {
-//	m := make(map[string]interface{})
-//	m["type"] = duplo.Type
-//	m["field"] = duplo.Field
-//	return m
-//}
+func flattenPlacementStrategy(duplo duplosdk.DuploEcsPlacementStrategy) map[string]interface{} {
+	m := make(map[string]interface{})
+	m["type"] = duplo.Type
+	m["field"] = duplo.Field
+	return m
+}
 
-//func flattenPlacementConstraint(duplo duplosdk.DuploEcsPlacementConstraint) map[string]interface{} {
-//	m := make(map[string]interface{})
-//	m["type"] = duplo.Type
-//	m["expression"] = duplo.Expression
-//	return m
-//}
+func flattenPlacementConstraint(duplo duplosdk.DuploEcsPlacementConstraint) map[string]interface{} {
+	m := make(map[string]interface{})
+	m["type"] = duplo.Type
+	m["expression"] = duplo.Expression
+	return m
+}
 
 func expandCapacityProviderStrategies(lst []interface{}) *[]duplosdk.DuploEcsServiceCapacityProviderStrategy {
 	items := make([]duplosdk.DuploEcsServiceCapacityProviderStrategy, 0, len(lst))
@@ -861,29 +988,29 @@ func expandCapacityProviderStrategy(m map[string]interface{}) duplosdk.DuploEcsS
 	}
 }
 
-//func expandPlacementStrategies(lst []interface{}) *[]duplosdk.DuploEcsPlacementStrategy {
-//	items := make([]duplosdk.DuploEcsPlacementStrategy, 0, len(lst))
-//	for _, v := range lst {
-//		m := v.(map[string]interface{})
-//		items = append(items, duplosdk.DuploEcsPlacementStrategy{
-//			Type:  m["type"].(string),
-//			Field: m["field"].(string),
-//		})
-//	}
-//	return &items
-//}
-//
-//func expandPlacementConstraint(lst []interface{}) *[]duplosdk.DuploEcsPlacementConstraint {
-//	items := make([]duplosdk.DuploEcsPlacementConstraint, 0, len(lst))
-//	for _, v := range lst {
-//		m := v.(map[string]interface{})
-//		items = append(items, duplosdk.DuploEcsPlacementConstraint{
-//			Type:       m["type"].(string),
-//			Expression: m["expression"].(string),
-//		})
-//	}
-//	return &items
-//}
+func expandPlacementStrategies(lst []interface{}) *[]duplosdk.DuploEcsPlacementStrategy {
+	items := make([]duplosdk.DuploEcsPlacementStrategy, 0, len(lst))
+	for _, v := range lst {
+		m := v.(map[string]interface{})
+		items = append(items, duplosdk.DuploEcsPlacementStrategy{
+			Type:  m["type"].(string),
+			Field: m["field"].(string),
+		})
+	}
+	return &items
+}
+
+func expandPlacementConstraint(lst []interface{}) *[]duplosdk.DuploEcsPlacementConstraint {
+	items := make([]duplosdk.DuploEcsPlacementConstraint, 0, len(lst))
+	for _, v := range lst {
+		m := v.(map[string]interface{})
+		items = append(items, duplosdk.DuploEcsPlacementConstraint{
+			Type:       m["type"].(string),
+			Expression: m["expression"].(string),
+		})
+	}
+	return &items
+}
 
 func retryFetchLBDetails(attempts int, sleep time.Duration, c *duplosdk.Client, tenantId, name string) (*duplosdk.DuploAwsLbDetailsInService, error) {
 	for i := 1; i <= attempts; i++ {

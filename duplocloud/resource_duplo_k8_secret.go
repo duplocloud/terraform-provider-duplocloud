@@ -271,7 +271,7 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 	if v, ok := d.GetOk("secret_labels"); ok && !isInterfaceNil(v) {
 		duplo.SecretLabels = map[string]string{}
 		for key, value := range v.(map[string]interface{}) {
-			if !isStringValid(regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$"), key) {
+			if !isStringValid(regexp.MustCompile("^(([A-Za-z0-9][-/_.A-Za-z0-9]*)?[A-Za-z0-9])?$"), key) {
 				return nil, secretLabelValidationError(duplo.SecretName, key)
 			}
 			v := value.(string)
