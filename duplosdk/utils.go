@@ -75,6 +75,13 @@ func (c *Client) GetResourceNameWithGcp(prefix, tenantID, name string, suffix bo
 	if err != nil {
 		return "", err
 	}
+	rp, err := c.AdminGetSystemFeatures()
+	if err != nil {
+		return "", err
+	}
+	if rp.ResourceNamePrefix != "" {
+		prefix = rp.ResourceNamePrefix
+	}
 
 	if suffix {
 		return strings.Join([]string{prefix, tenant.AccountName, name, projectID}, "-"), nil
@@ -83,8 +90,12 @@ func (c *Client) GetResourceNameWithGcp(prefix, tenantID, name string, suffix bo
 }
 
 // GetDuploServicesPrefix builds a duplo resource name, given a tenant ID.
-func (c *Client) GetDuploServicesPrefix(tenantID string) (string, ClientError) {
-	return c.GetResourcePrefix("duploservices", tenantID)
+func (c *Client) GetDuploServicesPrefix(tenantID, prefix string) (string, ClientError) {
+	defaultPrefix := prefix
+	if prefix == "" {
+		defaultPrefix = "duploservices"
+	}
+	return c.GetResourcePrefix(defaultPrefix, tenantID)
 }
 
 // GetResourcePrefix builds a duplo resource prefix, given a tenant ID.
@@ -94,6 +105,19 @@ func (c *Client) GetResourcePrefix(prefix, tenantID string) (string, ClientError
 		return "", err
 	}
 	return strings.Join([]string{prefix, tenant.AccountName}, "-"), nil
+}
+
+func (c *Client) GetResourcePrefixWithoutTenant(prefix string) (string, ClientError) {
+	rp, err := c.AdminGetSystemFeatures()
+	if err != nil {
+		return "", err
+	}
+	if rp.ResourceNamePrefix != "" {
+		prefix = rp.ResourceNamePrefix
+	}
+
+	return strings.Join([]string{prefix}, "-"), nil
+
 }
 
 // UnprefixName removes a duplo resource prefix from a name.

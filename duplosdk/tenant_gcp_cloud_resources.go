@@ -207,7 +207,7 @@ func (c *Client) GcpPubsubTopicDelete(tenantID, name string) ClientError {
 
 // GcpPubsubTopicGetList gets a list of pubsub topics via the Duplo API.
 func (c *Client) GcpPubsubTopicGetList(tenantID string) (*[]DuploGcpPubsubTopic, ClientError) {
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (c *Client) GcpStorageBucketDelete(tenantID, name string) ClientError {
 
 // GcpStorageBucketGetList gets a list of storage buckets via the Duplo API.
 func (c *Client) GcpStorageBucketGetList(tenantID string) (*[]DuploGcpStorageBucket, ClientError) {
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +365,7 @@ func (c *Client) GcpCloudFunctionDelete(tenantID, name string) ClientError {
 
 // GcpCloudFunctionGetList gets a list of cloud functions via the Duplo API.
 func (c *Client) GcpCloudFunctionGetList(tenantID string) (*[]DuploGcpCloudFunction, ClientError) {
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +442,7 @@ func (c *Client) GcpSchedulerJobDelete(tenantID, name string) ClientError {
 
 // GcpSchedulerJobGetList gets a list of scheduler jobs via the Duplo API.
 func (c *Client) GcpSchedulerJobGetList(tenantID string) (*[]DuploGcpSchedulerJob, ClientError) {
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return nil, err
 	}

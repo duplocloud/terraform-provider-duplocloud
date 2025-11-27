@@ -117,7 +117,7 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("rotation_enabled", duplo.RotationEnabled)
 
 	// Set name suffix.
-	prefix, _ := c.GetDuploServicesPrefix(tenantID)
+	prefix, _ := c.GetDuploServicesPrefix(tenantID, "")
 	if name, ok := duplosdk.UnprefixName(prefix, duplo.Name); ok {
 		d.Set("name_suffix", name)
 	}
