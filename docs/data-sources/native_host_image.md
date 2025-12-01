@@ -27,15 +27,15 @@ data "duplocloud_native_host_image" "img" {
 
 ### Required
 
-- `arch` (String)
-- `name` (String)
-- `os` (String)
 - `tenant_id` (String) The tenant ID
 
 ### Optional
 
+- `arch` (String)
 - `is_kubernetes` (Boolean, Deprecated) This field is not in use. Use k8s_version for precise filtering
 - `k8s_version` (String)
+- `name` (String) Name of the Duplocloud native host
+- `os` (String)
 
 ### Read-Only
 
