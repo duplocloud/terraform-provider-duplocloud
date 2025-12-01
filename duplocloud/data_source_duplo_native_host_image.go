@@ -14,8 +14,9 @@ import (
 func nativeHostImageSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"name": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "Name of the Duplocloud native host",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"image_id": {
 			Type:     schema.TypeString,
@@ -68,9 +69,9 @@ func nativeHostImageDataSourceSchema(single bool) map[string]*schema.Schema {
 		result["is_kubernetes"].Optional = true
 		result["is_kubernetes"].Deprecated = "This field is not in use. Use k8s_version for precise filtering"
 
-		result["name"].Required = true
-		result["arch"].Required = true
-		result["os"].Required = true
+		result["name"].Optional = true
+		result["arch"].Optional = true
+		result["os"].Optional = true
 		result["k8s_version"].Optional = true
 
 		// For a list of images, move the list under the result key.
