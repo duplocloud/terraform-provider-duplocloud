@@ -145,12 +145,13 @@ func dataSourceNativeHostImageRead(ctx context.Context, d *schema.ResourceData, 
 	name := d.Get("name").(string)
 	arch := d.Get("arch").(string)
 	k8Ver := d.Get("k8s_version").(string)
+	isKube := d.Get("is_kubernetes").(bool)
 	os := d.Get("os").(string)
 	log.Printf("[TRACE] dataSourceNativeHostImageRead(%s): start", tenantID)
 
 	// Get the plan image from Duplo.
 	c := m.(*duplosdk.Client)
-	image, diags := getNativeHostImage(c, tenantID, name, arch, os, k8Ver)
+	image, diags := getNativeHostImage(c, tenantID, name, arch, os, k8Ver, isKube)
 	if diags != nil {
 		return diags
 	}
@@ -193,28 +194,53 @@ func getNativeHostImages(c *duplosdk.Client, tenantID string) (*[]duplosdk.Duplo
 	return duplo, nil
 }
 
-func getNativeHostImage(c *duplosdk.Client, tenantID, name, arch, os, k8Ver string) (*duplosdk.DuploNativeHostImage, diag.Diagnostics) {
+func getNativeHostImage(c *duplosdk.Client, tenantID, name, arch, os, k8Ver string, isKube bool) (*duplosdk.DuploNativeHostImage, diag.Diagnostics) {
 
 	// First, validate parameters.
-	if strings.EqualFold(arch, "X86_64") {
+	// Normalize arch
+	arch = strings.ToLower(arch)
+	if arch == "x86_64" {
 		arch = "amd64"
 	}
 
-	// Then, get the full list.
+	// Get full list
 	list, err := getNativeHostImages(c, tenantID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Finally, return the matching image.
+	var matches []duplosdk.DuploNativeHostImage
+
 	for _, v := range *list {
-		if strings.EqualFold(v.K8sVersion, k8Ver) && strings.EqualFold(v.Arch, arch) && strings.EqualFold(v.OS, os) && strings.EqualFold(v.Name, name) {
-			return &v, nil
+		if isKube && v.K8sVersion == "" {
+			continue // ignore images without k8sVersion for kube case
 		}
 
+		// Match each filter only if provided
+		if (k8Ver == "" || strings.EqualFold(v.K8sVersion, k8Ver)) &&
+			(arch == "" || strings.EqualFold(v.Arch, arch)) &&
+			(os == "" || strings.EqualFold(v.OS, os)) &&
+			(name == "" || strings.EqualFold(v.Name, name)) {
+
+			matches = append(matches, v)
+		}
 	}
 
-	return nil, diag.Errorf("failed to retrieve the native host image for '%s': no matching image found", tenantID)
+	switch len(matches) {
+	case 0:
+		return nil, diag.Errorf("failed to retrieve the native host image for '%s': no matching image found", tenantID)
+
+	case 1:
+		return &matches[0], nil
+
+	default:
+		return nil, diag.Errorf(
+			"failed to retrieve a valid native host image for '%s' due to multiple matches (%d): add more filters to narrow the result",
+			tenantID,
+			len(matches),
+		)
+	}
+
 }
 
 func flattenNativeHostImages(list *[]duplosdk.DuploNativeHostImage) []interface{} {
