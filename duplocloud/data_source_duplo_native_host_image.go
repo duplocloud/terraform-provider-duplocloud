@@ -73,6 +73,7 @@ func nativeHostImageDataSourceSchema(single bool) map[string]*schema.Schema {
 		result["arch"].Optional = true
 		result["os"].Optional = true
 		result["k8s_version"].Optional = true
+		result["username"].Optional = true
 
 		// For a list of images, move the list under the result key.
 	} else {
@@ -148,11 +149,12 @@ func dataSourceNativeHostImageRead(ctx context.Context, d *schema.ResourceData, 
 	k8Ver := d.Get("k8s_version").(string)
 	isKube := d.Get("is_kubernetes").(bool)
 	os := d.Get("os").(string)
+	userName := d.Get("username").(string)
 	log.Printf("[TRACE] dataSourceNativeHostImageRead(%s): start", tenantID)
 
 	// Get the plan image from Duplo.
 	c := m.(*duplosdk.Client)
-	image, diags := getNativeHostImage(c, tenantID, name, arch, os, k8Ver, isKube)
+	image, diags := getNativeHostImage(c, tenantID, name, arch, os, k8Ver, userName, isKube)
 	if diags != nil {
 		return diags
 	}
@@ -195,16 +197,18 @@ func getNativeHostImages(c *duplosdk.Client, tenantID string) (*[]duplosdk.Duplo
 	return duplo, nil
 }
 
-func getNativeHostImage(c *duplosdk.Client, tenantID, name, arch, os, k8Ver string, isKube bool) (*duplosdk.DuploNativeHostImage, diag.Diagnostics) {
+func getNativeHostImage(c *duplosdk.Client, tenantID, name, arch, os, k8Ver, userName string, isKube bool) (*duplosdk.DuploNativeHostImage, diag.Diagnostics) {
 
-	// First, validate parameters.
-	// Normalize arch
 	arch = strings.ToLower(arch)
 	if arch == "x86_64" {
 		arch = "amd64"
 	}
 
-	// Get full list
+	// If k8Ver is passed but isKube is false, force isKube=true
+	if !isKube && k8Ver != "" {
+		isKube = true
+	}
+
 	list, err := getNativeHostImages(c, tenantID)
 	if err != nil {
 		return nil, err
@@ -213,15 +217,23 @@ func getNativeHostImage(c *duplosdk.Client, tenantID, name, arch, os, k8Ver stri
 	var matches []duplosdk.DuploNativeHostImage
 
 	for _, v := range *list {
-		if isKube && v.K8sVersion == "" {
-			continue // ignore images without k8sVersion for kube case
+
+		// Case 1: isKube = true and k8Ver empty -> only images with non-empty version
+		if isKube && k8Ver == "" && v.K8sVersion == "" {
+			continue
 		}
 
-		// Match each filter only if provided
+		// Case 2: isKube = false and k8Ver empty -> only images with empty version
+		if !isKube && k8Ver == "" && v.K8sVersion != "" {
+			continue
+		}
+
+		// Matching criteria
 		if (k8Ver == "" || strings.EqualFold(v.K8sVersion, k8Ver)) &&
 			(arch == "" || strings.EqualFold(v.Arch, arch)) &&
 			(os == "" || strings.EqualFold(v.OS, os)) &&
-			(name == "" || strings.EqualFold(v.Name, name)) {
+			(name == "" || strings.EqualFold(v.Name, name)) &&
+			(userName == "" || strings.EqualFold(v.Username, userName)) { // NEW FILTER
 
 			matches = append(matches, v)
 		}
