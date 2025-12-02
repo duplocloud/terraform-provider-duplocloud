@@ -23,24 +23,28 @@ func nativeHostImageSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"os": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "OS of native host",
 		},
 		"username": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "username associated to native host",
 		},
 		"region": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
 		"k8s_version": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "K8 version of the native host",
 		},
 		"arch": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "Architecture of the native host",
 		},
 		"is_kubernetes": {
 			Type:     schema.TypeBool,
@@ -67,7 +71,7 @@ func nativeHostImageDataSourceSchema(single bool) map[string]*schema.Schema {
 		result["k8s_version"].Computed = false
 
 		result["is_kubernetes"].Optional = true
-		result["is_kubernetes"].Deprecated = "This field is not in use. Use k8s_version for precise filtering"
+		result["is_kubernetes"].Deprecated = "This field is deprecated. Use k8s_version for precise filtering"
 
 		result["name"].Optional = true
 		result["arch"].Optional = true
