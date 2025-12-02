@@ -325,9 +325,12 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 		}
 		return diag.Errorf("Duplocloud resource tenant information'\n%s", err)
 	}
-
+	prefix, err := c.GetResourcePrefixWithoutTenant("duploservices")
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	// Convert the object into Terraform resource data
-	flattenEcsTaskDefinition(rp, d, tenant.AccountName)
+	flattenEcsTaskDefinition(rp, d, tenant.AccountName, prefix)
 	f := d.Get("prevent_tf_destroy").(string)
 	d.Set("prevent_tf_destroy", f)
 	// this is to check if the flow happened after create context
@@ -475,7 +478,7 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	return &duplo, nil
 }
 
-func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.ResourceData, tenantName string) {
+func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.ResourceData, tenantName, prefix string) {
 
 	// First, convert things into simple scalars
 	d.Set("tenant_id", duplo.TenantID)
@@ -514,8 +517,9 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("requires_attributes", ecsRequiresAttributesToState(duplo.RequiresAttributes))
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("runtime_platform", ecsPlatformRuntimeToState(duplo.RuntimePlatform))
-	if !strings.Contains(d.Get("family").(string), "duploservices-") {
-		parts := strings.Split(duplo.Family, "duploservices-"+tenantName+"-")
+
+	if !strings.Contains(d.Get("family").(string), prefix) {
+		parts := strings.Split(duplo.Family, prefix+tenantName+"-")
 
 		d.Set("family", parts[len(parts)-1])
 

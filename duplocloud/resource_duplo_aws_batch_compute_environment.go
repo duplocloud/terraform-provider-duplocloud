@@ -524,7 +524,7 @@ func parseAwsBatchComputeEnvironmentIdParts(id string) (tenantID, name string, e
 
 func flattenBatchComputeEnvironment(d *schema.ResourceData, c *duplosdk.Client, duplo *duplosdk.DuploAwsBatchComputeEnvironment, tenantId string) diag.Diagnostics {
 	log.Printf("[TRACE]flattenBatchComputeEnvironment... Start ")
-	prefix, err := c.GetDuploServicesPrefix(tenantId)
+	prefix, err := c.GetDuploServicesPrefix(tenantId, "")
 	if err != nil {
 		return diag.FromErr(err)
 	}
