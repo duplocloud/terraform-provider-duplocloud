@@ -50,6 +50,23 @@ type DuploEcsPlacementConstraint struct {
 	Expression string `json:"Expression,omitempty"`
 }
 
+type DuploEcsDeploymentConfiguration struct {
+	MinimumHealthyPercent    int                               `json:"MinimumHealthyPercent"`
+	MaximumPercent           int                               `json:"MaximumPercent"`
+	DeploymentCircuitBreaker *DuploEcsDeploymentCircuitBreaker `json:"DeploymentCircuitBreaker,omitempty"`
+	Alarms                   *DuploEcsDeploymentConfigAlarms   `json:"Alarms"`
+}
+
+type DuploEcsDeploymentCircuitBreaker struct {
+	Enable   bool `json:"Enable"`
+	Rollback bool `json:"Rollback"`
+}
+type DuploEcsDeploymentConfigAlarms struct {
+	AlarmNames []string `json:"AlarmNames"`
+	Enable     bool     `json:"Enable"`
+	Rollback   bool     `json:"Rollback"`
+}
+
 type DuploEcsService struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-"`
@@ -65,8 +82,9 @@ type DuploEcsService struct {
 	UseIndexForLb                 bool                                       `json:"UseIndexForLb"`
 	Index                         int                                        `json:"Index"`
 	CapacityProviderStrategy      *[]DuploEcsServiceCapacityProviderStrategy `json:"CapacityProviderStrategy,omitempty"`
-	//PlacementStrategy             *[]DuploEcsPlacementStrategy               `json:"PlacementStrategy,omitempty"`
-	//PlacementConstraints          *[]DuploEcsPlacementConstraint             `json:"PlacementConstraints,omitempty"`
+	PlacementStrategy             *[]DuploEcsPlacementStrategy               `json:"PlacementStrategy,omitempty"`
+	PlacementConstraints          *[]DuploEcsPlacementConstraint             `json:"PlacementConstraints,omitempty"`
+	DeploymentConfiguration       *DuploEcsDeploymentConfiguration           `json:"DeploymentConfiguration,omitempty"`
 }
 
 /*************************************************
