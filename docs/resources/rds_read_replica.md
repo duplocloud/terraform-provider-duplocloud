@@ -191,7 +191,6 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 
 ### Optional
 
-- `auto_minor_version_upgrade` (Boolean) Enable or disable auto minor version upgrade
 - `availability_zone` (String) The AZ for the RDS instance.
 - `engine_type` (Number) Engine type required to validate applicable parameter group setting for different instance. Should be referred from writer
 - `enhanced_monitoring` (Number) Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.
