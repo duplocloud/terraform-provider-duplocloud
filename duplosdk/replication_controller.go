@@ -32,7 +32,7 @@ type DuploReplicationController struct {
 	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
 	Index                             int                    `json:"Index"`
 	AppName                           string                 `json:"AppName,omitempty"`
-	K8SWorkerOs                       *int                   `K8SWorkerOs`
+	K8SWorkerOs                       *int                   `json:"K8SWorkerOs"`
 }
 
 // DuploPodTemplate represents a pod template in the Duplo SDK
