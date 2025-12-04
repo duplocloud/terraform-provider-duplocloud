@@ -145,7 +145,13 @@ func resourceGCPStorageBucketV2Read(ctx context.Context, d *schema.ResourceData,
 	}
 	// Get the object from Duplo
 	duplo, err := c.GCPTenantGetV3StorageBucketV2(tenantID, fullName)
-	if err != nil && !err.PossibleMissingAPI() {
+	if err != nil && (!err.PossibleMissingAPI() || err.Status() == 404) {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceGCPStorageBucketV2Read: Storage bucket %s not found for tenantId %s, removing from state", name, tenantID)
+			d.SetId("")
+			return nil
+		}
+
 		return diag.Errorf("resourceGCPStorageBucketV2Read: Unable to retrieve storage bucket (tenant: %s, bucket: %s, error: %s)", tenantID, name, err)
 	}
 
