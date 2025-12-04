@@ -164,6 +164,7 @@ func resourceAzurePostgresqlFlexibleDatabaseRead(ctx context.Context, d *schema.
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzurePostgresqlFlexibleDatabaseRead: Azure postgresql flexible database %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -261,6 +262,7 @@ func resourceAzurePostgresqlFlexibleDatabaseDelete(ctx context.Context, d *schem
 	clientErr := c.PostgresqlFlexibleDatabaseDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzurePostgresqlFlexibleDatabaseDelete: Azure postgresql flexible database %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure postgresql database '%s': %s", tenantID, name, clientErr)

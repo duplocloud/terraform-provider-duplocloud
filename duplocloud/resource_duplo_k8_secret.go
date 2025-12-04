@@ -106,9 +106,12 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 	c := m.(*duplosdk.Client)
 	rp, cerr := c.K8SecretGet(tenantId, name)
 	if cerr != nil {
-		d.SetId("")
-		log.Printf("%s", cerr.Error())
-		return nil
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8SecretRead(%s, %s): object not found", tenantId, name)
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve tenant %s k8s secret %s : %s", tenantId, name, cerr)
 	}
 
 	flattenK8sSecret(d, rp, false)
@@ -180,14 +183,18 @@ func resourceK8SecretDelete(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.K8SecretGet(tenantId, name)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, cerr := c.K8SecretGet(tenantId, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8SecretDelete(%s, %s): object not found", tenantId, name)
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if rp != nil && rp.SecretName != "" {
-		err := c.K8SecretDelete(tenantId, name)
-		if err != nil {
-			return diag.FromErr(err)
+		cerr := c.K8SecretDelete(tenantId, name)
+		if cerr != nil {
+			return diag.FromErr(cerr)
 		}
 	}
 
@@ -264,7 +271,7 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 	if v, ok := d.GetOk("secret_labels"); ok && !isInterfaceNil(v) {
 		duplo.SecretLabels = map[string]string{}
 		for key, value := range v.(map[string]interface{}) {
-			if !isStringValid(regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$"), key) {
+			if !isStringValid(regexp.MustCompile("^(([A-Za-z0-9][-/_.A-Za-z0-9]*)?[A-Za-z0-9])?$"), key) {
 				return nil, secretLabelValidationError(duplo.SecretName, key)
 			}
 			v := value.(string)

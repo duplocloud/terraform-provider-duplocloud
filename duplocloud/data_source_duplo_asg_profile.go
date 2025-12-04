@@ -2,8 +2,9 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -103,6 +104,7 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		"minion_tags":         keyValueToState("minion_tags", duplo.CustomDataTags),
 		"volume":              flattenNativeHostVolumes(duplo.Volumes),
 		"network_interface":   flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
+		"arn":                 duplo.Arn,
 	}
 	if duplo.Taints != nil {
 		mp["taints"] = flattenTaints(*duplo.Taints)

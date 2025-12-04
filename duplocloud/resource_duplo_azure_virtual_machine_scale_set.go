@@ -884,6 +884,7 @@ func resourceAzureVirtualMachineScaleSetRead(ctx context.Context, d *schema.Reso
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureVirtualMachineScaleSetRead: Azure virtual machine scale set %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -962,6 +963,7 @@ func resourceAzureVirtualMachineScaleSetDelete(ctx context.Context, d *schema.Re
 	clientErr := c.AzureVirtualMachineScaleSetDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureVirtualMachineScaleSetDelete: Azure virtual machine scale set %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure virtual machine scale set '%s': %s", tenantID, name, clientErr)

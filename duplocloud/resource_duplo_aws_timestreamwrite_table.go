@@ -195,6 +195,7 @@ func resourceAwsTimestreamTableRead(ctx context.Context, d *schema.ResourceData,
 	table, clientErr := c.DuploTimestreamDBTableGet(tenantID, dbName, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsTimestreamTableRead(%s, %s, %s): object missing", tenantID, dbName, name)
 			d.SetId("")
 			return nil
 		}
@@ -297,6 +298,7 @@ func resourceAwsTimestreamTableDelete(ctx context.Context, d *schema.ResourceDat
 	clientErr := c.DuploTimestreamDBTableDelete(tenantID, dbName, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsTimestreamTableDelete(%s, %s, %s): object missing", tenantID, dbName, name)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s aws timestream Table '%s': %s", tenantID, name, clientErr)

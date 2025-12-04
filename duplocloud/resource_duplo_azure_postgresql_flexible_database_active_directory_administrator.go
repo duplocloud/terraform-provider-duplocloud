@@ -92,6 +92,7 @@ func resourceAzurePostgresqlFlexibleDatabaseADRead(ctx context.Context, d *schem
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzurePostgresqlFlexibleDatabaseADRead: Azure postgresql flexible database AD configuration not found for tenantId %s, removing from state", tenantID)
 			d.SetId("")
 			return nil
 		}

@@ -106,8 +106,9 @@ type DuploLbConfiguration struct {
 	HostNames *[]string `json:"HostNames,omitempty"`
 
 	// TODO: DIPAddresses
-	AllowGlobalAccess bool `json:"AllowGlobalAccess,omitempty"`
-	SkipHttpToHttps   bool `json:"SkipHttpToHttps,omitempty"`
+	AllowGlobalAccess bool     `json:"AllowGlobalAccess,omitempty"`
+	SkipHttpToHttps   bool     `json:"SkipHttpToHttps,omitempty"`
+	AllocationIds     []string `json:"AllocationIds,omitempty"`
 }
 
 // DuploPodLbConfiguration represents an LB configuration deletion request.
@@ -288,8 +289,7 @@ func (c *Client) ReplicationControllerUpdate(tenantID string, rq *DuploReplicati
 	)
 }
 
-// ReplicationControllerDelete deletes a replication controller via the Duplo API.
-func (c *Client) ReplicationControllerDelete(tenantID string, rq *DuploReplicationControllerDeleteRequest) ClientError {
+func (c *Client) ReplicationControllerDeleteFallback(tenantID string, rq *DuploReplicationControllerDeleteRequest) ClientError {
 	rq.TenantId = tenantID
 	rq.State = "delete"
 	if rq.NetworkId == "" {
@@ -300,6 +300,15 @@ func (c *Client) ReplicationControllerDelete(tenantID string, rq *DuploReplicati
 		fmt.Sprintf("ReplicationControllerDelete(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("subscriptions/%s/ReplicationControllerUpdate", tenantID),
 		&rq,
+		nil,
+	)
+}
+
+// ReplicationControllerDelete deletes a replication controller via the Duplo API.
+func (c *Client) ReplicationControllerDelete(tenantID string, rq *DuploReplicationControllerDeleteRequest) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("ReplicationControllerDelete(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/replicationcontroller/%s", tenantID, rq.Name),
 		nil,
 	)
 }

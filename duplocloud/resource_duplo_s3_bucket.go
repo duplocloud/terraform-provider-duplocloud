@@ -310,6 +310,10 @@ func resourceS3BucketDelete(ctx context.Context, d *schema.ResourceData, m inter
 	}
 	err := c.TenantDeleteS3Bucket(idParts[0], idParts[1])
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceS3BucketDelete(%s): object not found", id)
+			return nil
+		}
 		return diag.Errorf("resourceS3BucketDelete: Unable to delete bucket (name:%s, error: %s)", id, err)
 	}
 

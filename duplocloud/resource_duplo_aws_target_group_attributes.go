@@ -132,6 +132,7 @@ func resourceAwsTargetGroupAttributesRead(ctx context.Context, d *schema.Resourc
 	duplo, clientErr := c.DuploAwsTargetGroupAttributesGet(tenantID, getReq)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsTargetGroupAttributesRead(%s, %s): object missing", tenantID, id)
 			d.SetId("")
 			return nil
 		}

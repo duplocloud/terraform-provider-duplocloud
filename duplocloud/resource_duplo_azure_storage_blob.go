@@ -3,11 +3,12 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -78,6 +79,7 @@ func resourceAzureStorageBlobRead(ctx context.Context, d *schema.ResourceData, m
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureStorageBlobRead: Azure storage class blob %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -131,9 +133,13 @@ func resourceAzureStorageBlobDelete(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceAzureStorageBlobDelete(%s, %s, %s): start", tenantID, storageAccountName, name)
 
 	c := m.(*duplosdk.Client)
-	err = c.AzureStorageAccountBlobDelete(tenantID, storageAccountName, name)
-	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure storage class blob '%s': %s", tenantID, name, err)
+	cerr := c.AzureStorageAccountBlobDelete(tenantID, storageAccountName, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureStorageBlobDelete: Azure storage class blob %s not found for tenantId %s, removing from state", name, tenantID)
+			return nil
+		}
+		return diag.Errorf("Error creating tenant %s azure storage class blob '%s': %s", tenantID, name, cerr)
 	}
 	log.Printf("[TRACE] resourceAzureStorageBlobDelete(%s, %s): end", tenantID, name)
 

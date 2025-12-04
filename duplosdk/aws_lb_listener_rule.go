@@ -170,7 +170,7 @@ func (c *Client) DuploAwsLbListenerRuleGet(tenantID string, listenerArn string, 
 }
 
 func (c *Client) DuploAwsLbListenerRuleDelete(tenantID string, listenerArn string, ruleArn string) ClientError {
-	rp := DuploAwsLbListenerRule{}
+	//	rp := DuploAwsLbListenerRule{}
 	return c.postAPI(
 		fmt.Sprintf("DuploAwsLbListenerRuleDelete(%s, %s, %s)", tenantID, listenerArn, ruleArn),
 		fmt.Sprintf("v3/subscriptions/%s/aws/deleteLbListenerRule", tenantID),
@@ -178,6 +178,6 @@ func (c *Client) DuploAwsLbListenerRuleDelete(tenantID string, listenerArn strin
 			ListenerArn: listenerArn,
 			RuleArn:     ruleArn,
 		},
-		&rp,
+		nil,
 	)
 }

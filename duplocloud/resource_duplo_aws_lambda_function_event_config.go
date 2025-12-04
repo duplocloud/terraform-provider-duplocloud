@@ -37,6 +37,7 @@ func awsLambdaFunctionEventInvokeConfigSchema() map[string]*schema.Schema {
 			Description:  "Maximum number of attempts a Lambda function may retry in case of error",
 			Type:         schema.TypeInt,
 			Optional:     true,
+			Default:      2,
 			ValidateFunc: validation.IntBetween(0, 2),
 		},
 		"max_event_age_in_seconds": {
@@ -126,6 +127,7 @@ func resourceAwsLambdaFunctionEventInvokeConfigRead(ctx context.Context, d *sche
 	resource, clientErr := duploClient.LambdaEventInvokeConfigGet(tenantId, functionName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLambdaFunctionEventInvokeConfigRead(%s, %s): object missing", tenantId, functionName)
 			d.SetId("") // object missing
 			return nil
 		}
@@ -186,6 +188,11 @@ func createOrUpdateLambdaEventInvokeConfiguration(ctx context.Context, d *schema
 	if err != nil {
 		return diag.Errorf("Could not successfully create event invoke config for lambda %s", functionName)
 	}
+	request.DestinationConfig = nil
+	err = duploClient.LambdaEventInvokeAsynConfigUpdate(tenantId, functionName, request.LambdaFunctionEventInvokeConfiguration)
+	if err != nil {
+		return diag.Errorf("Could not successfully update event invoke config for lambda %s", functionName)
+	}
 	id := fmt.Sprintf("%s/%s/eventInvokeConfig", tenantId, functionName)
 	d.SetId(id)
 
@@ -206,6 +213,7 @@ func resourceAwsLambdaFunctionEventInvokeConfigDelete(ctx context.Context, d *sc
 	clientErr := duploClient.LambdaEventInvokeConfigDelete(tenantId, functionName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLambdaFunctionEventInvokeConfigDelete(%s, %s): object missing", tenantId, functionName)
 			return nil
 		}
 		return diag.Errorf(
