@@ -148,6 +148,9 @@ Optional:
 - `backend_protocol_version` (String) Is used for communication between the load balancer and the target instances. This field is used to set protocol version for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1
 - `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - `custom_cidr` (List of String) Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.
+- `eip_allocations` (List of String) Allocate Elastic IP to load balancer, which is configured under plan configuration.
+
+Note: This field can only be set for non internal lbtype NLB(6)
 - `external_port` (Number) The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.
 - `external_traffic_policy` (String) Only for K8S Node Port (`lb_type = 4`) or load balancers in Kubernetes.  Set the kubernetes service `externalTrafficPolicy` attribute.
 - `extra_selector_label` (Block List) Only for K8S services or load balancers in Kubernetes.  Sets an additional selector label to narrow which pods can receive traffic. (see [below for nested schema](#nestedblock--lbconfigs--extra_selector_label))
