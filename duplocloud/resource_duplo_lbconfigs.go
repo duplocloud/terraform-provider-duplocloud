@@ -645,7 +645,6 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		p := strings.ToLower(pr)
 		b := m["backend_protocol_version"].(string)
 		bp := strings.ToLower(b)
-
 		lb, ok := m["lb_type"].(int)
 		if ok && lb != 1 && bp != "" && bp != "http1" {
 			return fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")

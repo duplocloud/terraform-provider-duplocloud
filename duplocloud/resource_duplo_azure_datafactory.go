@@ -2,10 +2,11 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -84,6 +85,7 @@ func resourceAzureDataFactoryRead(ctx context.Context, d *schema.ResourceData, m
 		if err.Status() == 404 {
 			log.Printf("[DEBUG] resourceAzureDataFactoryRead: Datafactory %s not found for tenantId %s, removing from state", name, tenantId)
 			d.SetId("")
+			return nil
 		}
 		return diag.Errorf("Unable to retrieve datafactory details error: %s", err.Error())
 	}
