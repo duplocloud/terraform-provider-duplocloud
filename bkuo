@@ -1,0 +1,103 @@
+{
+  "version": 4,
+  "terraform_version": "1.12.2",
+  "serial": 37,
+  "lineage": "a04aec14-3d0a-0c78-1c84-91fffe7f04c4",
+  "outputs": {},
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "duplocloud_aws_rds_global_secondary",
+      "name": "gs",
+      "provider": "provider[\"registry.terraform.io/duplocloud/duplocloud\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "cluster_identifier": "duplomydb4-cluster",
+            "global_id": "duplomydb4-globalc",
+            "id": "b4315a73-6455-4e99-8e26-7a771018cc1e/duplomydb4-globalc/us-west-2/us-east-2",
+            "primary_region": "us-west-2",
+            "region": "us-east-2",
+            "secondary_cluster": "duplomydb4-cluster-us-east-2",
+            "secondary_instance": "duplomydb4-us-east-2",
+            "secondary_tenant_id": "79aa9c35-c5b1-4cc6-9a5a-ceba7d787c1b",
+            "tenant_id": "b4315a73-6455-4e99-8e26-7a771018cc1e",
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjozNjAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDB9LCJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "duplocloud_rds_instance",
+      "name": "mydb",
+      "provider": "provider[\"registry.terraform.io/duplocloud/duplocloud\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "allocated_storage": 1,
+            "arn": "arn:aws:rds:us-west-2:182680712604:db:duplomydb4",
+            "auto_minor_version_upgrade": false,
+            "availability_zone": "us-west-2a",
+            "backup_retention_period": 1,
+            "cluster_identifier": "duplomydb4-cluster",
+            "cluster_parameter_group_name": "default.aurora-postgresql17",
+            "db_name": "mydb4",
+            "db_subnet_group_name": "",
+            "deletion_protection": false,
+            "enable_iam_auth": false,
+            "enable_logging": false,
+            "encrypt_storage": true,
+            "endpoint": "duplomydb4-cluster.cluster-cqdztxkodfvj.us-west-2.rds.amazonaws.com:5432",
+            "engine": 9,
+            "engine_version": "17.5",
+            "enhanced_monitoring": 0,
+            "host": "duplomydb4-cluster.cluster-cqdztxkodfvj.us-west-2.rds.amazonaws.com",
+            "id": "v2/subscriptions/b4315a73-6455-4e99-8e26-7a771018cc1e/RDSDBInstance/mydb4",
+            "identifier": "duplomydb4",
+            "instance_status": "available",
+            "iops": 0,
+            "kms_key_id": "arn:aws:kms:us-west-2:182680712604:key/8ab1eb0b-7bc7-4b9c-8486-f8a7378e3094",
+            "master_password": "$$$QWdqwe23dq",
+            "master_username": "myuser",
+            "multi_az": false,
+            "name": "mydb4",
+            "parameter_group_name": "default.aurora-postgresql17",
+            "performance_insights": [
+              {
+                "enabled": false,
+                "kms_key_id": "",
+                "retention_period": 0
+              }
+            ],
+            "port": 5432,
+            "size": "db.r7g.large",
+            "skip_final_snapshot": false,
+            "snapshot_id": "",
+            "storage_type": "aurora",
+            "store_details_in_secret_manager": true,
+            "tenant_id": "b4315a73-6455-4e99-8e26-7a771018cc1e",
+            "timeouts": null,
+            "v2_scaling_configuration": []
+          },
+          "sensitive_attributes": [
+            [
+              {
+                "type": "get_attr",
+                "value": "master_password"
+              }
+            ]
+          ],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo0MjAwMDAwMDAwMDAwLCJkZWxldGUiOjQyMDAwMDAwMDAwMDAsInVwZGF0ZSI6NDIwMDAwMDAwMDAwMH19"
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}
