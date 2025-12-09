@@ -138,20 +138,27 @@ func (c *Client) TenantUpdateAwsSecret(tenantID, name string, rq *DuploAwsSecret
 }
 
 // TenantDeleteAwsSecret deletes a tenant secret via Duplo.
-func (c *Client) TenantDeleteAwsSecret(tenantID string, name string, options DuploAwsSecretDeleteOptions) ClientError {
+func (c *Client) TenantDeleteAwsSecret(tenantID string, name string, options *DuploAwsSecretDeleteOptions) ClientError {
 	url := fmt.Sprintf("v3/subscriptions/%s/aws/secret/%s", tenantID, name)
+
+	if options == nil {
+		return c.deleteAPI(
+			fmt.Sprintf("TenantDeleteAwsSecret(%s, %s)", tenantID, name),
+			url,
+			nil)
+	}
 
 	// build query params depending on what configuration has been passed
 	query := ""
 	if options.ForceDeleteWithoutRetention != nil {
-		query = fmt.Sprintf("force-delete=%b", options.ForceDeleteWithoutRetention)
+		query = fmt.Sprintf("force-delete=%t", *(options.ForceDeleteWithoutRetention))
 	}
 	if options.RetentionWindowInDays != nil {
 		notEmpty := len(query) > 0
 		if notEmpty {
-			query = fmt.Sprintf("%s&recovery-window-in-days=%d", query, options.RetentionWindowInDays)
+			query = fmt.Sprintf("%s&recovery-window-in-days=%d", query, *options.RetentionWindowInDays)
 		} else {
-			query = fmt.Sprintf("%srecovery-window-in-days=%d", query, options.RetentionWindowInDays)
+			query = fmt.Sprintf("%srecovery-window-in-days=%d", query, *options.RetentionWindowInDays)
 		}
 	}
 

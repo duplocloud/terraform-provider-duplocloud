@@ -241,9 +241,9 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 	idParts := strings.SplitN(id, "/", 2)
 	tenantID, name := idParts[0], idParts[1]
 
-	deleteOptions := duplosdk.DuploAwsSecretDeleteOptions{}
+	deleteOptions := &duplosdk.DuploAwsSecretDeleteOptions{}
 	if v, ok := d.GetOk("on_delete"); ok {
-		deleteOptions = *expandAwsSecretDeleteOptions(v.([]map[string]interface{}))
+		deleteOptions = expandAwsSecretDeleteOptions(v.([]interface{}))
 	}
 
 	log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): start", tenantID, name)
@@ -273,12 +273,45 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 	return diags
 }
 
-func expandAwsSecretDeleteOptions(options []map[string]interface{}) *duplosdk.DuploAwsSecretDeleteOptions {
-	if len(options) > 0 {
-		return &duplosdk.DuploAwsSecretDeleteOptions{
-			ForceDeleteWithoutRetention: options[0]["force_delete"].(*bool),
-			RetentionWindowInDays:       options[0]["retention_window_in_days"].(*int),
+func expandAwsSecretDeleteOptions(options interface{}) *duplosdk.DuploAwsSecretDeleteOptions {
+	if options == nil {
+		return nil
+	}
+
+	// v should be []interface{} for a TypeList
+	list, ok := options.([]interface{})
+	if !ok || len(list) == 0 {
+		return nil
+	}
+
+	// We only care about the first element
+	raw := list[0]
+	if raw == nil {
+		return nil
+	}
+
+	m, ok := raw.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	opts := &duplosdk.DuploAwsSecretDeleteOptions{}
+
+	if val, ok := m["force_delete"]; ok {
+		if b, ok := val.(bool); ok && b {
+			opts.ForceDeleteWithoutRetention = &b
 		}
 	}
-	return nil
+
+	if val, ok := m["retention_window_in_days"]; ok {
+		// hack: tf assigns 0 when this is not specified in the tf configuration
+		// retention window will never intentionally be 0 because AWS rejects it
+		// and tf validation catches it when user defines wrong value explicitly
+		// just ignore 0 when found
+		if v, ok := val.(int); ok && v > 0 {
+			opts.RetentionWindowInDays = &v
+		}
+	}
+
+	return opts
 }
