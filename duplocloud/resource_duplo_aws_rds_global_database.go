@@ -62,6 +62,13 @@ func duploAwsRdsGlobalDatabaseSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"remove_instance": {
+			Type:             schema.TypeBool,
+			Description:      "It removes the instance under global secondary instance by retaining the secondary cluster, Valid during updation",
+			Default:          false,
+			DiffSuppressFunc: diffSuppressWhenCreating,
+			Optional:         true,
+		},
 	}
 }
 
@@ -72,12 +79,14 @@ func resourceAwsRdsGlobalDatabase() *schema.Resource {
 		ReadContext:   resourceAwsRdsGlobalDatabaseRead,
 		CreateContext: resourceAwsRdsGlobalDatabaseCreate,
 		DeleteContext: resourceAwsRdsGlobalDatabaseDelete,
+		UpdateContext: resourceAwsRdsGlobalDatabaseUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
+			Update: schema.DefaultTimeout(60 * time.Minute),
 		},
 		Schema: duploAwsRdsGlobalDatabaseSchema(),
 	}
@@ -113,6 +122,7 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 		d.Set("secondary_instance", rp.Region.InstanceId)
 		d.Set("region", rp.Region.Region)
 		d.Set("secondary_tenant_id", rp.Region.TenantId)
+		d.Set("remove_instance", rp.Region.IsHeadlessCluster)
 	} else {
 		d.Set("secondary_cluster", rp.Region.ClusterId)
 		d.Set("secondary_instance", d.Get("secondary_instance"))
@@ -256,6 +266,39 @@ func waitUntilGlobalConfigReady(ctx context.Context, c *duplosdk.Client, tenantI
 				} else {
 					status = "pending"
 				}
+			} else if err.Status() == 404 || rp == nil {
+				status = "pending"
+				err = nil
+			}
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] waitUntilSecondoryDBReady(%s, %s,%s) done", tenantID, identifier, region)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+func waitUntilGlobalConfigUnavailable(ctx context.Context, c *duplosdk.Client, tenantID, identifier, region string, timeout time.Duration, global bool) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"ready"},
+		Target:  []string{"pending"},
+		Refresh: func() (interface{}, string, error) {
+			log.Printf("[DEBUG] waitUntilGlobalConfigUnavailable(%s, %s,%s) attempt", tenantID, identifier, region)
+
+			rp, err := c.GetGloabalRegion(tenantID, identifier, region)
+			status := "pending"
+			if err == nil {
+				if global && rp.GlobalInfo.Status == "available" {
+					status = "ready"
+				} else if !global && rp.Region.Status == "available" {
+					status = "ready"
+
+				} else {
+					status = "pending"
+				}
 			} else if err.Status() == 404 {
 				status = "pending"
 				err = nil
@@ -269,4 +312,63 @@ func waitUntilGlobalConfigReady(ctx context.Context, c *duplosdk.Client, tenantI
 	log.Printf("[DEBUG] waitUntilSecondoryDBReady(%s, %s,%s) done", tenantID, identifier, region)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func resourceAwsRdsGlobalDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	id := d.Id()
+	idParts := strings.Split(id, "/")
+	var diags diag.Diagnostics
+	if len(idParts) != 4 {
+		return diag.Errorf("Invalid ID format for RDS Global Database: %s", id)
+	}
+	tenantId, clusterId, _, region := idParts[0], idParts[1], idParts[2], idParts[3]
+
+	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseUpdate(%s, %s, %s): start", tenantId, clusterId, region)
+	c := m.(*duplosdk.Client)
+	secTenantId := d.Get("secondary_tenant_id").(string)
+	secCluster := d.Get("secondary_cluster").(string)
+	secInstance := d.Get("secondary_instance").(string)
+	if d.HasChange("remove_instance") {
+		rq := duplosdk.DuploSecondaryGlobalDatastoreHeadless{
+			IsHeadlessCluster: d.Get("remove_instance").(bool),
+		}
+		cerr := c.HeadlessManagement(secTenantId, secCluster, rq)
+		if cerr != nil {
+			return diag.Errorf("Error creating secondary region RDS Global Database: %s", cerr)
+		}
+		iId := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", secTenantId, secInstance)
+
+		if rq.IsHeadlessCluster {
+			r, _ := c.RdsInstanceGet(iId)
+			fmt.Println(r)
+			diags = waitForResourceToBeMissingAfterDelete(ctx, d, "Secondary Aurora RDS cluster", iId, func() (interface{}, duplosdk.ClientError) {
+				return c.RdsInstanceGet(iId)
+			})
+			if diags.HasError() {
+				return diags
+			}
+			//err := waitUntilGlobalConfigUnavailable(ctx, c, secTenantId, secCluster, region, d.Timeout("update"), false)
+			//if err != nil {
+			//	return diag.Errorf("Error waiting for secondary region RDS Global Database to be ready: %s", err)
+			//}
+
+		} else {
+			//err := waitUntilGlobalConfigReady(ctx, c, secTenantId, secCluster, region, d.Timeout("update"), false)
+			//if err != nil {
+			//	return diag.Errorf("Error waiting for secondary region RDS Global Database to be ready: %s", err)
+			//}
+			diags = waitForResourceToBePresentAfterCreate(ctx, d, "Secondary Aurora RDS cluster", iId, func() (interface{}, duplosdk.ClientError) {
+				return c.RdsInstanceGet(iId)
+			})
+			if diags.HasError() {
+				return diags
+			}
+
+		}
+
+	}
+
+	diags = resourceAwsRdsGlobalDatabaseRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseCreate(%s, %s, %s, %s): end", tenantId, clusterId, region, secTenantId)
+	return diags
 }
