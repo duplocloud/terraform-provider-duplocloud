@@ -41,7 +41,7 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 		},
 		"broker_storage_type": {
 			Type:         schema.TypeString,
-			Optional:     true,
+			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"EBS", "EFS"}, false),
 			Description:  "The storage type of the broker. Valid values: EBS, EFS.",
