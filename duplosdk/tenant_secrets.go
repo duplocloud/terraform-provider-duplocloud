@@ -55,6 +55,11 @@ type DuploAwsSecretUpdateRequest struct {
 	SecretString    string `json:"SecretString"`
 }
 
+type DuploAwsSecretDeleteOptions struct {
+	ForceDeleteWithoutRetention *bool
+	RetentionWindowInDays       *int
+}
+
 // TenantListAwsSecrets retrieves a list of managed secrets via the Duplo API
 func (c *Client) TenantListAwsSecrets(tenantID string) (*[]DuploAwsSecret, ClientError) {
 	list := []DuploAwsSecret{}
@@ -133,9 +138,28 @@ func (c *Client) TenantUpdateAwsSecret(tenantID, name string, rq *DuploAwsSecret
 }
 
 // TenantDeleteAwsSecret deletes a tenant secret via Duplo.
-func (c *Client) TenantDeleteAwsSecret(tenantID string, name string) ClientError {
+func (c *Client) TenantDeleteAwsSecret(tenantID string, name string, options DuploAwsSecretDeleteOptions) ClientError {
+	url := fmt.Sprintf("v3/subscriptions/%s/aws/secret/%s", tenantID, name)
+
+	// build query params depending on what configuration has been passed
+	query := ""
+	if options.ForceDeleteWithoutRetention != nil {
+		query = fmt.Sprintf("force-delete=%b", options.ForceDeleteWithoutRetention)
+	}
+	if options.RetentionWindowInDays != nil {
+		notEmpty := len(query) > 0
+		if notEmpty {
+			query = fmt.Sprintf("%s&recovery-window-in-days=%d", query, options.RetentionWindowInDays)
+		} else {
+			query = fmt.Sprintf("%srecovery-window-in-days=%d", query, options.RetentionWindowInDays)
+		}
+	}
+
+	if len(query) > 0 {
+		url = fmt.Sprintf("%s?%s", url, query)
+	}
 	return c.deleteAPI(
 		fmt.Sprintf("TenantDeleteAwsSecret(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/aws/secret/%s", tenantID, name),
+		url,
 		nil)
 }

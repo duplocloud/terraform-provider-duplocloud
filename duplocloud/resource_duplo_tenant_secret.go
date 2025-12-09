@@ -82,6 +82,27 @@ func resourceTenantSecret() *schema.Resource {
 				Computed:    true,
 				Elem:        KeyValueSchema(),
 			},
+			"on_delete": {
+				Description: "Options to use when deleting the secret resource",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"force_delete": {
+							Description: "Completely deletes secret without caring for recovery or retention period (delete still eventually consistent)",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+						"retention_window_in_days": {
+							Description:  "Deleted secret still recoverable/not fully deleted until this number of days pass after delete request",
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validation.IntBetween(7, 30), // between 7 and 30 if defined
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -220,11 +241,16 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 	idParts := strings.SplitN(id, "/", 2)
 	tenantID, name := idParts[0], idParts[1]
 
+	deleteOptions := duplosdk.DuploAwsSecretDeleteOptions{}
+	if v, ok := d.GetOk("on_delete"); ok {
+		deleteOptions = *expandAwsSecretDeleteOptions(v.([]map[string]interface{}))
+	}
+
 	log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): start", tenantID, name)
 
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
-	err := c.TenantDeleteAwsSecret(tenantID, name)
+	err := c.TenantDeleteAwsSecret(tenantID, name, deleteOptions)
 	if err != nil {
 		if err.Status() == 404 {
 			log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): object not found", tenantID, name)
@@ -245,4 +271,14 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): end", tenantID, name)
 	return diags
+}
+
+func expandAwsSecretDeleteOptions(options []map[string]interface{}) *duplosdk.DuploAwsSecretDeleteOptions {
+	if len(options) > 0 {
+		return &duplosdk.DuploAwsSecretDeleteOptions{
+			ForceDeleteWithoutRetention: options[0]["force_delete"].(*bool),
+			RetentionWindowInDays:       options[0]["retention_window_in_days"].(*int),
+		}
+	}
+	return nil
 }
