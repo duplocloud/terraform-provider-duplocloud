@@ -83,13 +83,13 @@ func resourceTenantSecret() *schema.Resource {
 				Elem:        KeyValueSchema(),
 			},
 			"force_delete_on_destroy": {
-				Description:   "Config to bypass retention window before permanently deleting secret on AWS (FYI: delete time option managed locally in TF resource)",
+				Description:   "Config to bypass retention window before permanently deleting secret on AWS (FYI: field is managed localy in TF provider, importing the resource will not hold defined value)",
 				Type:          schema.TypeBool,
 				Optional:      true,
 				ConflictsWith: []string{"retention_window_in_days_on_destroy"},
 			},
 			"retention_window_in_days_on_destroy": {
-				Description:   "Retention period secret remains recoverable/not fully deleted before AWS permanently deletes it (FYI: delete time option managed locally in TF resource)",
+				Description:   "Retention period secret remains recoverable/not fully deleted before AWS permanently deletes it (FYI: field is managed localy in TF provider, importing the resource will not hold defined value)",
 				Type:          schema.TypeInt,
 				Optional:      true,
 				ValidateFunc:  validation.IntBetween(7, 30), // between 7 and 30 if defined

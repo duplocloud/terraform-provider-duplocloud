@@ -50,8 +50,8 @@ resource "duplocloud_tenant_secret" "mysecret2" {
 
 ### Optional
 
-- `force_delete_on_destroy` (Boolean) Config to bypass retention window before permanently deleting secret on AWS (FYI: delete time option managed locally in TF resource)
-- `retention_window_in_days_on_destroy` (Number) Retention period secret remains recoverable/not fully deleted before AWS permanently deletes it (FYI: delete time option managed locally in TF resource)
+- `force_delete_on_destroy` (Boolean) Config to bypass retention window before permanently deleting secret on AWS (FYI: field is managed localy in TF provider, importing the resource will not hold defined value)
+- `retention_window_in_days_on_destroy` (Number) Retention period secret remains recoverable/not fully deleted before AWS permanently deletes it (FYI: field is managed localy in TF provider, importing the resource will not hold defined value)
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
