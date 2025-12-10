@@ -82,26 +82,18 @@ func resourceTenantSecret() *schema.Resource {
 				Computed:    true,
 				Elem:        KeyValueSchema(),
 			},
-			"on_delete": {
-				Description: "Options to use when deleting the secret resource",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"force_delete": {
-							Description: "Completely deletes secret without caring for recovery or retention period (delete still eventually consistent)",
-							Type:        schema.TypeBool,
-							Optional:    true,
-						},
-						"retention_window_in_days": {
-							Description:  "Deleted secret still recoverable/not fully deleted until this number of days pass after delete request",
-							Type:         schema.TypeInt,
-							Optional:     true,
-							ValidateFunc: validation.IntBetween(7, 30), // between 7 and 30 if defined
-						},
-					},
-				},
+			"force_delete_on_destroy": {
+				Description:   "Config to bypass retention window before permanently deleting secret on AWS (FYI: delete time option managed locally in TF resource)",
+				Type:          schema.TypeBool,
+				Optional:      true,
+				ConflictsWith: []string{"retention_window_in_days_on_destroy"},
+			},
+			"retention_window_in_days_on_destroy": {
+				Description:   "Retention period secret remains recoverable/not fully deleted before AWS permanently deletes it (FYI: delete time option managed locally in TF resource)",
+				Type:          schema.TypeInt,
+				Optional:      true,
+				ValidateFunc:  validation.IntBetween(7, 30), // between 7 and 30 if defined
+				ConflictsWith: []string{"force_delete_on_destroy"},
 			},
 		},
 	}
@@ -242,8 +234,21 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 	tenantID, name := idParts[0], idParts[1]
 
 	deleteOptions := &duplosdk.DuploAwsSecretDeleteOptions{}
-	if v, ok := d.GetOk("on_delete"); ok {
-		deleteOptions = expandAwsSecretDeleteOptions(v.([]interface{}))
+
+	if val, ok := d.GetOk("force_delete_on_destroy"); ok {
+		if b, ok := val.(bool); ok && b {
+			deleteOptions.ForceDeleteWithoutRetention = &b
+		}
+	}
+
+	if val, ok := d.GetOk("retention_window_in_days_on_destroy"); ok {
+		// hack: tf assigns 0 when this is not specified in the tf configuration
+		// retention window will never intentionally be 0 because AWS rejects it
+		// and tf validation catches it when user defines wrong value explicitly
+		// just ignore 0 when found
+		if v, ok := val.(int); ok && v > 0 {
+			deleteOptions.RetentionWindowInDays = &v
+		}
 	}
 
 	log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): start", tenantID, name)
@@ -271,47 +276,4 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 
 	log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): end", tenantID, name)
 	return diags
-}
-
-func expandAwsSecretDeleteOptions(options interface{}) *duplosdk.DuploAwsSecretDeleteOptions {
-	if options == nil {
-		return nil
-	}
-
-	// v should be []interface{} for a TypeList
-	list, ok := options.([]interface{})
-	if !ok || len(list) == 0 {
-		return nil
-	}
-
-	// We only care about the first element
-	raw := list[0]
-	if raw == nil {
-		return nil
-	}
-
-	m, ok := raw.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	opts := &duplosdk.DuploAwsSecretDeleteOptions{}
-
-	if val, ok := m["force_delete"]; ok {
-		if b, ok := val.(bool); ok && b {
-			opts.ForceDeleteWithoutRetention = &b
-		}
-	}
-
-	if val, ok := m["retention_window_in_days"]; ok {
-		// hack: tf assigns 0 when this is not specified in the tf configuration
-		// retention window will never intentionally be 0 because AWS rejects it
-		// and tf validation catches it when user defines wrong value explicitly
-		// just ignore 0 when found
-		if v, ok := val.(int); ok && v > 0 {
-			opts.RetentionWindowInDays = &v
-		}
-	}
-
-	return opts
 }

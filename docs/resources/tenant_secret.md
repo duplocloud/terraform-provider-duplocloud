@@ -50,7 +50,8 @@ resource "duplocloud_tenant_secret" "mysecret2" {
 
 ### Optional
 
-- `on_delete` (Block List, Max: 1) Options to use when deleting the secret resource (see [below for nested schema](#nestedblock--on_delete))
+- `force_delete_on_destroy` (Boolean) Config to bypass retention window before permanently deleting secret on AWS (FYI: delete time option managed locally in TF resource)
+- `retention_window_in_days_on_destroy` (Number) Retention period secret remains recoverable/not fully deleted before AWS permanently deletes it (FYI: delete time option managed locally in TF resource)
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -61,15 +62,6 @@ resource "duplocloud_tenant_secret" "mysecret2" {
 - `rotation_enabled` (Boolean) Whether or not rotation is enabled for this secret.
 - `tags` (List of Object) A list of tags for this secret. (see [below for nested schema](#nestedatt--tags))
 - `version_id` (String) The version ID of the secret.
-
-<a id="nestedblock--on_delete"></a>
-### Nested Schema for `on_delete`
-
-Optional:
-
-- `force_delete` (Boolean) Completely deletes secret without caring for recovery or retention period (delete still eventually consistent)
-- `retention_window_in_days` (Number) Deleted secret still recoverable/not fully deleted until this number of days pass after delete request
-
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

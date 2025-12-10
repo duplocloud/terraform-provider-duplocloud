@@ -35,9 +35,8 @@ resource "duplocloud_tenant_secret" "test" {
   tenant_id   = var.tenant_id
   name_suffix = "toBeForceDeleted"
   data        = jsonencode({ foo = "fubar", bar = "foo" })
-  on_delete {
-    force_delete = true
-  }
+
+  force_delete_on_destroy = true
 }
 
 # Secret gets geleted with custom retention period (between 7 and 30 supported)
@@ -45,9 +44,8 @@ resource "duplocloud_tenant_secret" "test" {
   tenant_id   = var.tenant_id
   name_suffix = "deletedWithCustomRetentionWindow"
   data        = jsonencode({ foo = "fubar", bar = "foo" })
-  on_delete {
-    retention_window_in_days = 15
-  }
+
+  retention_window_in_days_on_destroy = 15
 }
 
 # # AWS information retrieval
