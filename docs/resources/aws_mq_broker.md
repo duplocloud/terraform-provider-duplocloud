@@ -153,6 +153,7 @@ resource "duplocloud_aws_mq_broker" "example" {
 - `broker_name` (String) The name of the broker.
 - `broker_storage_type` (String) The storage type of the broker. Valid values: EBS, EFS.
 - `data_replication_mode` (String) Data replication mode. Valid values: CRDR, NONE.
+- `deployment_mode` (String) The deployment mode of the broker. Valid values: ACTIVE_STANDBY_MULTI_AZ, CLUSTER_MULTI_AZ, SINGLE_INSTANCE.
 - `engine_type` (String) The type of broker engine. Valid values: ACTIVEMQ, RABBITMQ.
 - `engine_version` (String) The version of the broker engine.
 - `host_instance_type` (String) The broker's instance type.
@@ -166,7 +167,6 @@ resource "duplocloud_aws_mq_broker" "example" {
 
 - `configuration` (Block List, Max: 1) MQ configuration. (see [below for nested schema](#nestedblock--configuration))
 - `data_replication_primary_broker_arn` (String) ARN of the primary broker for data replication. Required when data_replication_mode is CRDR.
-- `deployment_mode` (String) The deployment mode of the broker. Valid values: ACTIVE_STANDBY_MULTI_AZ, CLUSTER_MULTI_AZ, SINGLE_INSTANCE.
 - `encryption_options` (Block List, Max: 1) Encryption options for the broker. (see [below for nested schema](#nestedblock--encryption_options))
 - `is_app_idempotent` (Boolean) If true, a UUID will be generated and set to creator_request_id.
 - `ldap_server_metadata` (Block List, Max: 1) LDAP server metadata. Not applicable for RabbitMQ. (see [below for nested schema](#nestedblock--ldap_server_metadata))
