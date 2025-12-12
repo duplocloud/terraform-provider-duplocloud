@@ -245,6 +245,13 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"k8s_worker_os": {
+			Description:  "OS type for k8s worker, this field is associated to azure cloud. Valid values: `Linux`, `Windows`",
+			Type:         schema.TypeString,
+			Optional:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringInSlice([]string{"Linux", "Windows"}, false),
+		},
 	}
 }
 
@@ -333,6 +340,15 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 		AppName:                           d.Get("app_name").(string),
+	}
+	if v, ok := d.GetOk("k8s_worker_os"); ok && v != "" {
+		iv := 0
+		if v == "Windows" {
+			iv = 1
+			rq.K8SWorkerOs = &iv
+		} else {
+			rq.K8SWorkerOs = &iv
+		}
 	}
 	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
 		updatedOtherDockerConfig, err := updateInitContainerImages(d.Get("other_docker_config").(string), v.([]interface{}))
@@ -762,6 +778,11 @@ func customDuploServiceDiff(ctx context.Context, diff *schema.ResourceDiff, v in
 		if err := diff.ForceNew("volumes"); err != nil {
 			return err
 		}
+	}
+	cloud := diff.Get("cloud").(int)
+	os := diff.Get("k8s_worker_os").(string)
+	if cloud != 2 && os != "" {
+		return fmt.Errorf("use of k8s_worker_os is not allowed for cloud(%d)", cloud)
 	}
 	return nil
 }
