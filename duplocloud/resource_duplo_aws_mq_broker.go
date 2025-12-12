@@ -34,14 +34,14 @@ func duploAwsMqBrokerSchema() map[string]*schema.Schema {
 		},
 		"deployment_mode": {
 			Type:         schema.TypeString,
-			Optional:     true,
+			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"ACTIVE_STANDBY_MULTI_AZ", "CLUSTER_MULTI_AZ", "SINGLE_INSTANCE"}, false),
 			Description:  "The deployment mode of the broker. Valid values: ACTIVE_STANDBY_MULTI_AZ, CLUSTER_MULTI_AZ, SINGLE_INSTANCE.",
 		},
 		"broker_storage_type": {
 			Type:         schema.TypeString,
-			Optional:     true,
+			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"EBS", "EFS"}, false),
 			Description:  "The storage type of the broker. Valid values: EBS, EFS.",
