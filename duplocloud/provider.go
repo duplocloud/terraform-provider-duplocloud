@@ -196,6 +196,8 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_cloudfront_function":                       resourceAwsCloudfrontFunction(),
 			"duplocloud_azure_mssqldb_retention_backup":                resourceMsSQLDBRetentionBackup(),
 			"duplocloud_k8_oci_repository":                             resourceOCIRepository(),
+			"duplocloud_gcp_cloud_task":                                resourceGcpCloudTask(),
+			"duplocloud_gcp_cloud_queue":                               resourceGcpCloudQueue(),
 			"duplocloud_azure_cosmos_db_account":                       resourceAzureCosmosDBAccount(),
 			"duplocloud_azure_cosmos_db_database":                      resourceAzureCosmosDB(),
 			"duplocloud_azure_cosmos_db_container":                     resourceAzureCosmosDBContainer(),
