@@ -47,7 +47,9 @@ resource "duplocloud_k8_secret" "myapp" {
 
 ### Optional
 
-- `secret_annotations` (Map of String) Annotations for the secret
+- `secret_annotations` (Map of String) Annotations for the secret.
+
+**Note: : To skip encoding of an already encoded value string of a k8's secrete add `duplocloud.net/skip-encoding: "true"`
 - `secret_data` (String, Sensitive) A JSON encoded string representing the secret metadata. You can use the `jsonencode()` function to convert map or object data, if needed. You can use the `jsondecode()` function to read data.
 - `secret_labels` (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the secret
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
