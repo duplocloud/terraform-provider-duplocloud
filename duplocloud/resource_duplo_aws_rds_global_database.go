@@ -281,27 +281,17 @@ func waitUntilGlobalConfigReady(ctx context.Context, c *duplosdk.Client, tenantI
 	return err
 }
 
-func waitUntilGlobalConfigUnavailable(ctx context.Context, c *duplosdk.Client, tenantID, identifier, region string, timeout time.Duration, global bool) error {
+func waitUntilSecondaryInstanceAvailable(ctx context.Context, c *duplosdk.Client, tenantID, clusterIdentifier, instance string, timeout time.Duration) error {
 	stateConf := &retry.StateChangeConf{
-		Pending: []string{"ready"},
-		Target:  []string{"pending"},
+		Pending: []string{"deleted"},
+		Target:  []string{"available"},
 		Refresh: func() (interface{}, string, error) {
-			log.Printf("[DEBUG] waitUntilGlobalConfigUnavailable(%s, %s,%s) attempt", tenantID, identifier, region)
+			log.Printf("[DEBUG] waitUntilSecondaryInstanceAvailable(%s, %s,%s) attempt", tenantID, clusterIdentifier, instance)
 
-			rp, err := c.GetGloabalRegion(tenantID, identifier, region)
-			status := "pending"
-			if err == nil {
-				if global && rp.GlobalInfo.Status == "available" {
-					status = "ready"
-				} else if !global && rp.Region.Status == "available" {
-					status = "ready"
-
-				} else {
-					status = "pending"
-				}
-			} else if err.Status() == 404 {
-				status = "pending"
-				err = nil
+			rp, err := c.GetHeadlessState(tenantID, clusterIdentifier, instance)
+			status := "deleted"
+			if rp != nil && rp.AwsStatus == "available" {
+				status = "available"
 			}
 			return rp, status, err
 		},
@@ -309,7 +299,30 @@ func waitUntilGlobalConfigUnavailable(ctx context.Context, c *duplosdk.Client, t
 		PollInterval: 30 * time.Second,
 		Timeout:      timeout,
 	}
-	log.Printf("[DEBUG] waitUntilSecondoryDBReady(%s, %s,%s) done", tenantID, identifier, region)
+	log.Printf("[DEBUG] waitUntilSecondaryInstanceAvailable(%s, %s,%s) done", tenantID, clusterIdentifier, instance)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+func waitUntilSecondaryInstanceDeleted(ctx context.Context, c *duplosdk.Client, tenantID, clusterIdentifier, instance string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"available"},
+		Target:  []string{"deleted"},
+		Refresh: func() (interface{}, string, error) {
+			log.Printf("[DEBUG] waitUntilSecondaryInstanceDeleted(%s, %s,%s) attempt", tenantID, clusterIdentifier, instance)
+
+			rp, err := c.GetHeadlessState(tenantID, clusterIdentifier, instance)
+			status := "available"
+			if rp == nil {
+				status = "deleted"
+			}
+			return rp, status, err
+		},
+		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
+		PollInterval: 30 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] waitUntilSecondaryInstanceDeleted(%s, %s,%s) done", tenantID, clusterIdentifier, instance)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
@@ -336,32 +349,17 @@ func resourceAwsRdsGlobalDatabaseUpdate(ctx context.Context, d *schema.ResourceD
 		if cerr != nil {
 			return diag.Errorf("Error creating secondary region RDS Global Database: %s", cerr)
 		}
-		iId := fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", secTenantId, secInstance)
 
 		if rq.IsHeadlessCluster {
-			r, _ := c.RdsInstanceGet(iId)
-			fmt.Println(r)
-			diags = waitForResourceToBeMissingAfterDelete(ctx, d, "Secondary Aurora RDS cluster", iId, func() (interface{}, duplosdk.ClientError) {
-				return c.RdsInstanceGet(iId)
-			})
-			if diags.HasError() {
-				return diags
+			err := waitUntilSecondaryInstanceDeleted(ctx, c, secTenantId, secCluster, secInstance, d.Timeout("update"))
+			if err != nil {
+				return diag.Errorf("Error waiting for secondary region RDS Global Database instance to be deleted: %s", err)
 			}
-			//err := waitUntilGlobalConfigUnavailable(ctx, c, secTenantId, secCluster, region, d.Timeout("update"), false)
-			//if err != nil {
-			//	return diag.Errorf("Error waiting for secondary region RDS Global Database to be ready: %s", err)
-			//}
 
 		} else {
-			//err := waitUntilGlobalConfigReady(ctx, c, secTenantId, secCluster, region, d.Timeout("update"), false)
-			//if err != nil {
-			//	return diag.Errorf("Error waiting for secondary region RDS Global Database to be ready: %s", err)
-			//}
-			diags = waitForResourceToBePresentAfterCreate(ctx, d, "Secondary Aurora RDS cluster", iId, func() (interface{}, duplosdk.ClientError) {
-				return c.RdsInstanceGet(iId)
-			})
-			if diags.HasError() {
-				return diags
+			err := waitUntilSecondaryInstanceAvailable(ctx, c, secTenantId, secCluster, secInstance, d.Timeout("update"))
+			if err != nil {
+				return diag.Errorf("Error waiting for secondary region RDS Global Database instance to be available: %s", err)
 			}
 
 		}
