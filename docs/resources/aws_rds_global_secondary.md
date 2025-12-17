@@ -55,6 +55,7 @@ resource "duplocloud_aws_rds_global_secondary" "gs" {
 
 ### Optional
 
+- `make_headless` (Boolean) It removes the reader instances under secondary cluster by retaining the secondary cluster, Valid during updation Defaults to `false`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -72,6 +73,7 @@ Optional:
 
 - `create` (String)
 - `delete` (String)
+- `update` (String)
 
 ## Import
 
