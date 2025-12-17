@@ -62,9 +62,9 @@ func duploAwsRdsGlobalDatabaseSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"remove_instance": {
+		"make_headless": {
 			Type:             schema.TypeBool,
-			Description:      "It removes the instance under global secondary instance by retaining the secondary cluster, Valid during updation",
+			Description:      "It removes the reader instances under secondary cluster by retaining the secondary cluster, Valid during updation",
 			Default:          false,
 			DiffSuppressFunc: diffSuppressWhenCreating,
 			Optional:         true,
@@ -122,7 +122,7 @@ func resourceAwsRdsGlobalDatabaseRead(ctx context.Context, d *schema.ResourceDat
 		d.Set("secondary_instance", rp.Region.InstanceId)
 		d.Set("region", rp.Region.Region)
 		d.Set("secondary_tenant_id", rp.Region.TenantId)
-		d.Set("remove_instance", rp.Region.IsHeadlessCluster)
+		d.Set("make_headless", rp.Region.IsHeadlessCluster)
 	} else {
 		d.Set("secondary_cluster", rp.Region.ClusterId)
 		d.Set("secondary_instance", d.Get("secondary_instance"))
@@ -341,9 +341,9 @@ func resourceAwsRdsGlobalDatabaseUpdate(ctx context.Context, d *schema.ResourceD
 	secTenantId := d.Get("secondary_tenant_id").(string)
 	secCluster := d.Get("secondary_cluster").(string)
 	secInstance := d.Get("secondary_instance").(string)
-	if d.HasChange("remove_instance") {
+	if d.HasChange("make_headless") {
 		rq := duplosdk.DuploSecondaryGlobalDatastoreHeadless{
-			IsHeadlessCluster: d.Get("remove_instance").(bool),
+			IsHeadlessCluster: d.Get("make_headless").(bool),
 		}
 		cerr := c.HeadlessManagement(secTenantId, secCluster, rq)
 		if cerr != nil {
