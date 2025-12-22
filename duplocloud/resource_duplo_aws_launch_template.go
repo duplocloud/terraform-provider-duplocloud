@@ -51,13 +51,12 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    true,
-			Computed:    true,
 		},
 
 		"instance_type": {
 			Description: "Asg instance type to be used to update the version from the current version",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			ForceNew:    true,
 		},
 		"ami": {
@@ -65,7 +64,6 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    true,
-			Computed:    true,
 		},
 		"version_metadata": {
 			Type:     schema.TypeString,
@@ -74,21 +72,19 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		"block_device_mapping": {
 			Type:        schema.TypeList,
 			Optional:    true,
-			ForceNew:    true,
+			Computed:    true,
 			Description: "Configure additional volumes of the instance besides specified by the AMI",
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"device_name": {
 						Type:        schema.TypeString,
-						Required:    true,
-						ForceNew:    true,
+						Optional:    true,
 						Description: "The name of the device to mount",
 					},
 					"ebs": {
 						Type:        schema.TypeList,
 						Optional:    true,
 						MaxItems:    1,
-						ForceNew:    true,
 						Description: "Configure EBS volume properties.",
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
@@ -96,32 +92,27 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 									Type:        schema.TypeBool,
 									Optional:    true,
 									Default:     true,
-									ForceNew:    true,
 									Description: "Whether the volume should be destroyed on instance termination",
 								},
 								"encrypted": {
 									Type:        schema.TypeBool,
 									Optional:    true,
 									Default:     false,
-									ForceNew:    true,
 									Description: "Enables EBS encryption on the volume. Cannot be used with snapshot_id",
 								},
 								"iops": {
 									Type:        schema.TypeInt,
 									Optional:    true,
-									ForceNew:    true,
 									Description: "The amount of provisioned IOPS. This must be set with a volume_type of 'io1/io2/gp3'",
 								},
 								"snapshot_id": {
 									Type:        schema.TypeString,
 									Optional:    true,
-									ForceNew:    true,
 									Description: "The Snapshot ID to mount. Should not be used if encrypted is true",
 								},
 								"volume_size": {
 									Type:     schema.TypeInt,
 									Optional: true,
-									ForceNew: true,
 									Description: `The size of the volume in gigabytes.\n
 									gp2 and gp3: 1 - 16,384 GiB\n+
 									io1: 4 - 16,384 GiB
@@ -132,28 +123,24 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 								"throughput": {
 									Type:         schema.TypeInt,
 									Optional:     true,
-									ForceNew:     true,
 									Description:  "The throughput to provision for a 'gp3' volume in MiB/s. Minumum value of 125 and maximum of 1000.",
 									ValidateFunc: validation.IntBetween(125, 1000),
 								},
 								"volume_type": {
 									Type:         schema.TypeString,
 									Optional:     true,
-									ForceNew:     true,
 									Description:  "The volume type. Can be one of standard, gp2, gp3, io1, io2, sc1 or st1",
 									ValidateFunc: validation.StringInSlice([]string{"standard", "gp2", "gp3", "io1", "io2", "sc1", "st1"}, false),
 								},
 								"volume_initialization_rate": {
 									Type:         schema.TypeInt,
 									Optional:     true,
-									ForceNew:     true,
 									Description:  "The volume initialization rate in MiB/s, with a minimum of 100 MiB/s and maximum of 300 MiB/s.",
 									ValidateFunc: validation.IntBetween(100, 300),
 								},
 								"kms_key_id": {
 									Type:        schema.TypeString,
 									Optional:    true,
-									ForceNew:    true,
 									Description: "The ARN of the KMS Key to use when encrypting the volume (if encrypted is true).",
 								},
 							},
@@ -181,6 +168,7 @@ func resourceAwsLaunchTemplate() *schema.Resource {
 		Description:   "duplocloud_aws_launch_template creates the new version over current launch template version",
 		ReadContext:   resourceAwsLaunchTemplateRead,
 		CreateContext: resourceAwsLaunchTemplateCreate,
+		UpdateContext: resourceAwsLaunchTemplateUpdate,
 		DeleteContext: resourceAwsLaunchTemplateDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -238,7 +226,7 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 	tenantId := d.Get("tenant_id").(string)
 	c := m.(*duplosdk.Client)
 
-	rq, cerr := expandLaunchTemplate(d, c, tenantId)
+	rq, cerr := expandLaunchTemplate(d, c, tenantId, "")
 	if cerr != nil {
 		return diag.Errorf("%s", cerr.Error())
 	}
@@ -260,14 +248,41 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 
 }
 
+func resourceAwsLaunchTemplateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	token := strings.Split(d.Id(), "/")
+	tenantId, name := token[0], token[2]
+	c := m.(*duplosdk.Client)
+
+	rq, cerr := expandLaunchTemplate(d, c, tenantId, name)
+	if cerr != nil {
+		return diag.Errorf("%s", cerr.Error())
+	}
+	var err duplosdk.ClientError
+	if !strings.Contains(name, "duploservices") {
+		rq.LaunchTemplateName, err = c.GetResourceName("duploservices", tenantId, name, false)
+		if err != nil {
+			diag.FromErr(err)
+		}
+	}
+	err = c.CreateAwsLaunchTemplate(tenantId, rq)
+	if err != nil {
+		return diag.Errorf("%s", err.Error())
+	}
+	diag := resourceAwsLaunchTemplateRead(ctx, d, m)
+	return diag
+
+}
+
 func resourceAwsLaunchTemplateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return nil
 
 }
 
-func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId string) (*duplosdk.DuploAwsLaunchTemplateRequest, error) {
+func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId, name string) (*duplosdk.DuploAwsLaunchTemplateRequest, error) {
 	sv := d.Get("version").(string)
-	name := d.Get("name").(string)
+	if name == "" {
+		name = d.Get("name").(string)
+	}
 	if sv == "" {
 		rp, err := c.GetAwsLaunchTemplate(tenantId, name)
 		if err != nil {
