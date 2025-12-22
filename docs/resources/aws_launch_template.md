@@ -53,7 +53,6 @@ resource "duplocloud_aws_launch_template" "name" {
 
 ### Required
 
-- `instance_type` (String) Asg instance type to be used to update the version from the current version
 - `name` (String) The fullname of the asg group
 - `tenant_id` (String) The GUID of the tenant that the launch template will be created in.
 
@@ -61,6 +60,7 @@ resource "duplocloud_aws_launch_template" "name" {
 
 - `ami` (String) Asg ami to be used to update the version from the current version
 - `block_device_mapping` (Block List) Configure additional volumes of the instance besides specified by the AMI (see [below for nested schema](#nestedblock--block_device_mapping))
+- `instance_type` (String) Asg instance type to be used to update the version from the current version
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `version` (String) Any of the existing version of the launch template, if not provided, the latest version will be used
 - `version_description` (String) The version of the launch template
@@ -75,12 +75,9 @@ resource "duplocloud_aws_launch_template" "name" {
 <a id="nestedblock--block_device_mapping"></a>
 ### Nested Schema for `block_device_mapping`
 
-Required:
-
-- `device_name` (String) The name of the device to mount
-
 Optional:
 
+- `device_name` (String) The name of the device to mount
 - `ebs` (Block List, Max: 1) Configure EBS volume properties. (see [below for nested schema](#nestedblock--block_device_mapping--ebs))
 - `no_device` (String) Suppresses the specified device included in the AMI's block device mapping.
 - `virtual_name` (String) The virtual device name (ephemeralN). Instance store volumes are numbered starting from 0. An instance type with 2 available instance store volumes can specify mappings for ephemeral0 and ephemeral1. The number of available instance store volumes depends on the instance type. After you connect to the instance, you must mount the volume.

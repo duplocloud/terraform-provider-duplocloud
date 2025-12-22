@@ -34,11 +34,6 @@ func awsLaunchTemplateDefaultVersionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 		},
-		"auto_update": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
-		},
 	}
 }
 func resourceAwsLaunchTemplateDefaultVersion() *schema.Resource {
