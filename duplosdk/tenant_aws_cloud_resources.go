@@ -431,6 +431,8 @@ type DuploMinion struct {
 	AgentPlatform    int                    `json:"AgentPlatform"`
 	Cloud            int                    `json:"Cloud"`
 	Taints           []DuploMinionTaint     `json:"Taints"`
+	PrivateIpAddress string                 `json:"PrivateIpAddress"`
+	AsgName          string                 `json:"AsgName,omitempty"`
 }
 
 type DuploMinionDeleteReq struct {
@@ -1142,4 +1144,25 @@ func (c *Client) GetS3EventNotification(tenantID, bucketName string) (*DuploS3Ev
 		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/notifications", tenantID, bucketName),
 		&rp)
 	return &rp, err
+}
+
+func (c *Client) UpdateASGTaints(tenantID, privateAddress string, duplo []DuploTaints) ClientError {
+
+	err := c.postAPI(
+		fmt.Sprintf("UpdateTaints(%s, %s)", tenantID, privateAddress),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/node/%s/taints", tenantID, privateAddress),
+		&duplo,
+		nil)
+
+	return err
+}
+
+func (c *Client) DeleteASGTaints(tenantID, privateAddress string, duplo []string) ClientError {
+
+	err := c.deleteAPIWithRequestBody(
+		fmt.Sprintf("DeleteASGTaints(%s, %s)", tenantID, privateAddress),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/node/%s/taints", tenantID, privateAddress),
+		&duplo, nil)
+
+	return err
 }

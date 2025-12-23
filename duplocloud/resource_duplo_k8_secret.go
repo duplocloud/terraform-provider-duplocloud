@@ -56,7 +56,7 @@ func k8sSecretSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: secretDataDiff,
 		},
 		"secret_annotations": {
-			Description: "Annotations for the secret",
+			Description: "Annotations for the secret.\n\n**Note: : To skip encoding of an already encoded value string of a k8's secrete add `duplocloud.net/skip-encoding: \"true\"`",
 			Type:        schema.TypeMap,
 			Optional:    true,
 			Computed:    true,
