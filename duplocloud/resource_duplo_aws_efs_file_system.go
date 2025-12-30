@@ -358,7 +358,7 @@ func resourceAwsEFSDelete(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Wait up to 60 seconds for Duplo to delete the cluster.
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "AWS EFS", id, func() (interface{}, duplosdk.ClientError) {
-		return c.DynamoDBTableGet(tenantID, efsId)
+		return c.DuploEFSGet(tenantID, efsId)
 	})
 	if diag != nil {
 		return diag
