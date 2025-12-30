@@ -57,7 +57,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		"instance_type": {
 			Description: "Asg instance type to be used to update the version from the current version",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			ForceNew:    true,
 		},
 		"ami": {
@@ -174,6 +174,14 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"allowed_instance_types": {
+			Type:     schema.TypeList,
+			Optional: true,
+			Computed: true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
 	}
 }
 func resourceAwsLaunchTemplate() *schema.Resource {
@@ -278,18 +286,33 @@ func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId s
 		log.Printf("Setting the version to latest version %s since source version not provided ", sv)
 	}
 
-	return &duplosdk.DuploAwsLaunchTemplateRequest{
+	obj := &duplosdk.DuploAwsLaunchTemplateRequest{
 		LaunchTemplateName: name,
 		SourceVersion:      sv,
 		VersionDescription: d.Get("version_description").(string),
 		LaunchTemplateData: &duplosdk.DuploLaunchTemplateData{
-			InstanceType: duplosdk.DuploStringValue{
-				Value: d.Get("instance_type").(string),
-			},
 			ImageId:             d.Get("ami").(string),
 			BlockDeviceMappings: expandBlockDeviceMappings(d),
 		},
-	}, nil
+	}
+	if instanceType, ok := d.GetOk("instance_type"); ok && instanceType.(string) != "" {
+		obj.LaunchTemplateData.InstanceType = &duplosdk.DuploStringValue{
+			Value: instanceType.(string),
+		}
+	}
+
+	if ait, ok := d.GetOk("allowed_instance_types"); ok && len(ait.([]interface{})) > 0 {
+		allowedInstanceList := []string{}
+
+		for _, it := range ait.([]interface{}) {
+			allowedInstanceList = append(allowedInstanceList, it.(string))
+		}
+		obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{
+			AllowedInstanceTypes: allowedInstanceList,
+		}
+
+	}
+	return obj, nil
 
 }
 
