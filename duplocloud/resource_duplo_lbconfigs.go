@@ -228,11 +228,10 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			},
 		},
 		"backend_config_timeout_sec": {
-			Type:         schema.TypeInt,
-			Description:  "The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP.",
-			Optional:     true,
-			ValidateFunc: validation.IntAtLeast(1),
-			Default:      30,
+			Type:        schema.TypeInt,
+			Description: "The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP.",
+			Optional:    true,
+			Computed:    true,
 		},
 	}
 }
@@ -413,10 +412,12 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
 					SkipHttpToHttps:           lbc["skip_http_to_https"].(bool),
 				}
-				gcpSettings := &duplosdk.DuploLbGCPSettings{
-					BackendConfigServiceTimeout: lbc["backend_config_timeout_sec"].(int),
+				if lbc["backend_config_timeout_sec"] != nil {
+					gcpSettings := &duplosdk.DuploLbGCPSettings{
+						BackendConfigServiceTimeout: lbc["backend_config_timeout_sec"].(int),
+					}
+					item.GcpSettings = gcpSettings
 				}
-				item.GcpSettings = gcpSettings
 
 				if v, ok := lbc["backend_protocol_version"]; ok && item.LbType == 1 {
 					item.BeProtocolVersion = strings.ToUpper(v.(string))
@@ -621,9 +622,11 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"allow_global_access":         lb.AllowGlobalAccess,
 		"skip_http_to_https":          lb.SkipHttpToHttps,
 		"backend_protocol_version":    strings.ToUpper(lb.BeProtocolVersion),
-		"backend_config_timeout_sec":  lb.GcpSettings.BackendConfigServiceTimeout,
 	}
 
+	if lb.GcpSettings != nil && lb.GcpSettings.BackendConfigServiceTimeout > 0 {
+		m["backend_config_timeout_sec"] = lb.GcpSettings.BackendConfigServiceTimeout
+	}
 	if lb.HealthCheckConfig != nil {
 		healthcheckConfig := map[string]interface{}{
 			"healthy_threshold":   lb.HealthCheckConfig.HealthyThresholdCount,
