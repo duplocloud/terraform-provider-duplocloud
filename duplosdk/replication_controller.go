@@ -107,9 +107,14 @@ type DuploLbConfiguration struct {
 	HostNames *[]string `json:"HostNames,omitempty"`
 
 	// TODO: DIPAddresses
-	AllowGlobalAccess bool     `json:"AllowGlobalAccess,omitempty"`
-	SkipHttpToHttps   bool     `json:"SkipHttpToHttps,omitempty"`
-	AllocationIds     []string `json:"AllocationIds,omitempty"`
+	AllowGlobalAccess bool                `json:"AllowGlobalAccess,omitempty"`
+	SkipHttpToHttps   bool                `json:"SkipHttpToHttps,omitempty"`
+	AllocationIds     []string            `json:"AllocationIds,omitempty"`
+	GcpSettings       *DuploLbGCPSettings `json:"GcpSettings"`
+}
+
+type DuploLbGCPSettings struct {
+	BackendConfigServiceTimeout int `json:"backendConfigServiceTimeout"`
 }
 
 // DuploPodLbConfiguration represents an LB configuration deletion request.
