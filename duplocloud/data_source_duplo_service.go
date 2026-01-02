@@ -219,9 +219,9 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 	}
 	if duplo.Template.Cloud == 2 {
 		if *duplo.K8SWorkerOs == 1 {
-			d.Set("k8s_os_worker", "Windows")
+			d.Set("k8s_worker_os", "Windows")
 		} else if *duplo.K8SWorkerOs == 0 {
-			d.Set("k8s_os_worker", "Linux")
+			d.Set("k8s_worker_os", "Linux")
 		}
 	}
 	d.Set("app_name", duplo.AppName)
