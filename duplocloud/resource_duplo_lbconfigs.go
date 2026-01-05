@@ -228,10 +228,11 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			},
 		},
 		"backend_config_timeout_sec": {
-			Type:        schema.TypeInt,
-			Description: "The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP.",
-			Optional:    true,
-			Computed:    true,
+			Type:         schema.TypeInt,
+			Description:  "The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP.",
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validateIntGreaterThan(0),
 		},
 	}
 }
