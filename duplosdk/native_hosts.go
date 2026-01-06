@@ -85,11 +85,12 @@ type DuploNativeHostNetworkInterface struct {
 
 // DuploNativeHostVolume is a Duplo SDK object that represents a volume of a native host
 type DuploNativeHostVolume struct {
-	Iops       int    `json:"Iops,omitempty"`
-	Name       string `json:"Name,omitempty"`
-	Size       int    `Size:"Size,omitempty"`
-	VolumeID   string `json:"VolumeId,omitempty"`
-	VolumeType string `json:"VolumeType,omitempty"`
+	Iops                int    `json:"Iops,omitempty"`
+	Name                string `json:"Name,omitempty"`
+	Size                int    `Size:"Size,omitempty"`
+	VolumeID            string `json:"VolumeId,omitempty"`
+	VolumeType          string `json:"VolumeType,omitempty"`
+	DeleteOnTermination bool   `json:"DeleteOnTermination,omitempty"`
 }
 
 type DuploAzureVirtualMachine struct {

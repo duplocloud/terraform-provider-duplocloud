@@ -306,6 +306,7 @@ Optional:
 
 Optional:
 
+- `delete_on_termination` (Boolean) Whether the volume should be deleted when the instance is terminated.
 - `iops` (Number)
 - `name` (String)
 - `size` (Number)
