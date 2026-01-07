@@ -137,6 +137,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 
 	awsASGSchema["capacity"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["image_id"].DiffSuppressFunc = diffSuppressWhenNotCreating
+	awsASGSchema["volume"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	return awsASGSchema
 }
 
