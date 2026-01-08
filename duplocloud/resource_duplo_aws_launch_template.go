@@ -54,16 +54,17 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		},
 
 		"instance_type": {
-			Description: "Asg instance type to be used to update the version from the current version",
-			Type:        schema.TypeString,
-			Optional:    true,
-			ForceNew:    true,
+			Description:   "Asg instance type to be used to update the version from the current version",
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			ConflictsWith: []string{"instance_requirements"},
 		},
 		"ami": {
 			Description: "Asg ami to be used to update the version from the current version",
 			Type:        schema.TypeString,
 			Optional:    true,
-			ForceNew:    true,
+			Computed:    true,
 		},
 		"version_metadata": {
 			Type:     schema.TypeString,
@@ -157,6 +158,68 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 						Optional:    true,
 						ForceNew:    true,
 						Description: "The virtual device name (ephemeralN). Instance store volumes are numbered starting from 0. An instance type with 2 available instance store volumes can specify mappings for ephemeral0 and ephemeral1. The number of available instance store volumes depends on the instance type. After you connect to the instance, you must mount the volume.",
+					},
+				},
+			},
+		},
+		"instance_requirements": {
+			Description:   "Whether to manage instance requirements instead of a specific instance type",
+			Type:          schema.TypeList,
+			MaxItems:      1,
+			Optional:      true,
+			ConflictsWith: []string{"instance_type"},
+			Computed:      true,
+
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"allowed_instance_types": {
+						Type:     schema.TypeList,
+						Optional: true,
+						Computed: true,
+						Elem: &schema.Schema{
+							Type: schema.TypeString,
+						},
+					},
+					"vcpu_count": {
+						Type:         schema.TypeList,
+						MaxItems:     1,
+						RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
+						Optional:     true,
+						Computed:     true,
+						Description:  "Block describing the minimum and maximum number of vCPUs. It is a required field when allowed_instance_types is set ",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"min": {
+									Type:     schema.TypeInt,
+									Required: true,
+								},
+								"max": {
+									Type:     schema.TypeInt,
+									Optional: true,
+									Computed: true,
+								},
+							},
+						},
+					},
+					"memory_mib": {
+						Type:         schema.TypeList,
+						MaxItems:     1,
+						RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
+						Optional:     true,
+						Description:  "Block describing the minimum and maximum amount of memory (MiB). It is a required field when allowed_instance_types is set",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"min": {
+									Type:     schema.TypeInt,
+									Required: true,
+								},
+								"max": {
+									Type:     schema.TypeInt,
+									Optional: true,
+									Computed: true,
+								},
+							},
+						},
 					},
 				},
 			},
@@ -293,18 +356,53 @@ func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId, 
 		log.Printf("Setting the version to latest version %s since source version not provided ", sv)
 	}
 
-	return &duplosdk.DuploAwsLaunchTemplateRequest{
+	obj := &duplosdk.DuploAwsLaunchTemplateRequest{
 		LaunchTemplateName: name,
 		SourceVersion:      sv,
 		VersionDescription: d.Get("version_description").(string),
 		LaunchTemplateData: &duplosdk.DuploLaunchTemplateData{
-			InstanceType: duplosdk.DuploStringValue{
-				Value: d.Get("instance_type").(string),
-			},
 			ImageId:             d.Get("ami").(string),
 			BlockDeviceMappings: expandBlockDeviceMappings(d),
 		},
-	}, nil
+	}
+	if instanceType, ok := d.GetOk("instance_type"); ok && instanceType.(string) != "" {
+		obj.LaunchTemplateData.InstanceType = &duplosdk.DuploStringValue{
+			Value: instanceType.(string),
+		}
+	}
+	if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
+		mirMap := mir.([]interface{})[0].(map[string]interface{})
+		if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
+			allowedInstanceList := []string{}
+
+			for _, it := range ait.([]interface{}) {
+				allowedInstanceList = append(allowedInstanceList, it.(string))
+			}
+			obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{
+				AllowedInstanceTypes: allowedInstanceList,
+			}
+
+		}
+		if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
+			vcpuMap := vcpu.([]interface{})[0].(map[string]interface{})
+			min := vcpuMap["min"].(int)
+			max := vcpuMap["max"].(int)
+			obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{
+				Min: min,
+				Max: max,
+			}
+		}
+		if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
+			mMap := memMap.([]interface{})[0].(map[string]interface{})
+			min := mMap["min"].(int)
+			max := mMap["max"].(int)
+			obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{
+				Min: min,
+				Max: max,
+			}
+		}
+	}
+	return obj, nil
 
 }
 
@@ -378,6 +476,7 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	d.Set("default_version", m["default_version"])
 	d.Set("ami", m["image_id"])
 	d.Set("block_device_mapping", m["block_device_mapping"])
+	d.Set("instance_requirements", m["instance_requirements"])
 	return nil
 }
 
@@ -396,12 +495,38 @@ func extractASGTemplateDetails(rp *[]duplosdk.DuploLaunchTemplateResponse) map[s
 			lt["image_id"] = v.LaunchTemplateData.ImageId
 			lt["name"] = v.LaunchTemplateName
 			lt["block_device_mapping"] = flattenBlockDeviceMappings(v.LaunchTemplateData.BlockDeviceMappings)
+			lt["instance_requirements"] = flattenInstanceRequirements(v.LaunchTemplateData.InstanceRequirements)
 		}
 	}
 	lt["latest_version"] = strconv.Itoa(max)
 	return lt
 }
-
+func flattenInstanceRequirements(ir *duplosdk.DuploLaunchTemplateInstanceRequirements) []interface{} {
+	if ir == nil {
+		return []interface{}{}
+	}
+	irMap := map[string]interface{}{}
+	allowedInstanceTypes := []interface{}{}
+	for _, ait := range ir.AllowedInstanceTypes {
+		allowedInstanceTypes = append(allowedInstanceTypes, ait)
+	}
+	irMap["allowed_instance_types"] = allowedInstanceTypes
+	if ir.VCpuCount != nil {
+		vcpuMap := map[string]interface{}{
+			"min": ir.VCpuCount.Min,
+			"max": ir.VCpuCount.Max,
+		}
+		irMap["vcpu_count"] = []interface{}{vcpuMap}
+	}
+	if ir.MemoryMiB != nil {
+		memMap := map[string]interface{}{
+			"min": ir.MemoryMiB.Min,
+			"max": ir.MemoryMiB.Max,
+		}
+		irMap["memory_mib"] = []interface{}{memMap}
+	}
+	return []interface{}{irMap}
+}
 func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMappingResponse) []interface{} {
 	bdmI := []interface{}{}
 	for _, bdm := range bdms {

@@ -60,6 +60,7 @@ resource "duplocloud_aws_launch_template" "name" {
 
 - `ami` (String) Asg ami to be used to update the version from the current version
 - `block_device_mapping` (Block List) Configure additional volumes of the instance besides specified by the AMI (see [below for nested schema](#nestedblock--block_device_mapping))
+- `instance_requirements` (Block List, Max: 1) Whether to manage instance requirements instead of a specific instance type (see [below for nested schema](#nestedblock--instance_requirements))
 - `instance_type` (String) Asg instance type to be used to update the version from the current version
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `version` (String) Any of the existing version of the launch template, if not provided, the latest version will be used
@@ -101,6 +102,40 @@ Optional:
 									st1 and sc1: 125 - 16,384 GiB
 									standard: 1 - 1024 GiB
 - `volume_type` (String) The volume type. Can be one of standard, gp2, gp3, io1, io2, sc1 or st1
+
+
+
+<a id="nestedblock--instance_requirements"></a>
+### Nested Schema for `instance_requirements`
+
+Optional:
+
+- `allowed_instance_types` (List of String)
+- `memory_mib` (Block List, Max: 1) Block describing the minimum and maximum amount of memory (MiB). It is a required field when allowed_instance_types is set (see [below for nested schema](#nestedblock--instance_requirements--memory_mib))
+- `vcpu_count` (Block List, Max: 1) Block describing the minimum and maximum number of vCPUs. It is a required field when allowed_instance_types is set (see [below for nested schema](#nestedblock--instance_requirements--vcpu_count))
+
+<a id="nestedblock--instance_requirements--memory_mib"></a>
+### Nested Schema for `instance_requirements.memory_mib`
+
+Required:
+
+- `min` (Number)
+
+Optional:
+
+- `max` (Number)
+
+
+<a id="nestedblock--instance_requirements--vcpu_count"></a>
+### Nested Schema for `instance_requirements.vcpu_count`
+
+Required:
+
+- `min` (Number)
+
+Optional:
+
+- `max` (Number)
 
 
 
