@@ -254,6 +254,8 @@ func duploServiceSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 				if old == "" && new == "Linux" {
 					return true
+				} else if new == "" && old == "Linux" {
+					return true
 				}
 				return false
 			},
