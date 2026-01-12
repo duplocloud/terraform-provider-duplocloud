@@ -251,6 +251,12 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"Linux", "Windows"}, false),
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				if old == "" && new == "Linux" {
+					return true
+				}
+				return false
+			},
 		},
 	}
 }
