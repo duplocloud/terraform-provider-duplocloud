@@ -249,16 +249,17 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Description:  "OS type for k8s worker, this field is associated to azure cloud. Valid values: `Linux`, `Windows`",
 			Type:         schema.TypeString,
 			Optional:     true,
+			Default:      "Linux",
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"Linux", "Windows"}, false),
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				if old == "" && new == "Linux" {
-					return true
-				} else if new == "" && old == "Linux" {
-					return true
-				}
-				return false
-			},
+			//DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+			//	if old == "" && new == "Linux" {
+			//		return true
+			//	} else if new == "" && old == "Linux" {
+			//		return true
+			//	}
+			//	return false
+			//},
 		},
 	}
 }
@@ -792,7 +793,9 @@ func customDuploServiceDiff(ctx context.Context, diff *schema.ResourceDiff, v in
 	cloud := diff.Get("cloud").(int)
 	os := diff.Get("k8s_worker_os").(string)
 	if cloud != 2 && os != "" {
-		return fmt.Errorf("use of k8s_worker_os is not allowed for cloud(%d)", cloud)
+		diff.SetNew("k8s_worker_os", nil)
+		return nil
 	}
+
 	return nil
 }
