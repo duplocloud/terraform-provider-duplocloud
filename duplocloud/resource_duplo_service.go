@@ -252,14 +252,13 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Default:      "Linux",
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"Linux", "Windows"}, false),
-			//DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-			//	if old == "" && new == "Linux" {
-			//		return true
-			//	} else if new == "" && old == "Linux" {
-			//		return true
-			//	}
-			//	return false
-			//},
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				cloud := d.Get("cloud").(int)
+				if cloud != 2 {
+					return true
+				}
+				return false
+			},
 		},
 	}
 }
@@ -790,12 +789,12 @@ func customDuploServiceDiff(ctx context.Context, diff *schema.ResourceDiff, v in
 			return err
 		}
 	}
-	cloud := diff.Get("cloud").(int)
-	os := diff.Get("k8s_worker_os").(string)
-	if cloud != 2 && os != "" {
-		diff.SetNew("k8s_worker_os", nil)
-		return nil
-	}
+	//cloud := diff.Get("cloud").(int)
+	//os := diff.Get("k8s_worker_os").(string)
+	//if cloud != 2 && os != "" {
+	//	diff.SetNew("k8s_worker_os", nil)
+	//	return nil
+	//}
 
 	return nil
 }
