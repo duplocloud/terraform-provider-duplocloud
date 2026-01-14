@@ -55,10 +55,12 @@ resource "duplocloud_aws_launch_template" "name" {
   instance_requirements {
     allowed_instance_types = ["t3a.*", "c5.*"]
     vcpu_count {
-      min = 2
+      min = 0
+      max = 0
     }
     memory_mib {
       min = 4096
+      max = 5120
     }
   }
 }
@@ -135,11 +137,8 @@ Optional:
 
 Required:
 
-- `min` (Number)
-
-Optional:
-
 - `max` (Number)
+- `min` (Number)
 
 
 <a id="nestedblock--instance_requirements--vcpu_count"></a>
@@ -147,11 +146,8 @@ Optional:
 
 Required:
 
-- `min` (Number)
-
-Optional:
-
 - `max` (Number)
+- `min` (Number)
 
 
 
