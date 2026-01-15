@@ -14,32 +14,37 @@ import (
 func nativeHostImageSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"name": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "Name of the Duplocloud native host",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"image_id": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
 		"os": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "OS of native host",
 		},
 		"username": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "username associated to native host",
 		},
 		"region": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
 		"k8s_version": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "K8 version of the native host",
 		},
 		"arch": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "Architecture of the native host",
 		},
 		"is_kubernetes": {
 			Type:     schema.TypeBool,
@@ -66,12 +71,13 @@ func nativeHostImageDataSourceSchema(single bool) map[string]*schema.Schema {
 		result["k8s_version"].Computed = false
 
 		result["is_kubernetes"].Optional = true
-		result["is_kubernetes"].Deprecated = "This field is not in use. Use k8s_version for precise filtering"
+		result["is_kubernetes"].Deprecated = "This field is deprecated. Use k8s_version for precise filtering"
 
-		result["name"].Required = true
-		result["arch"].Required = true
-		result["os"].Required = true
+		result["name"].Optional = true
+		result["arch"].Optional = true
+		result["os"].Optional = true
 		result["k8s_version"].Optional = true
+		result["username"].Optional = true
 
 		// For a list of images, move the list under the result key.
 	} else {
@@ -145,12 +151,14 @@ func dataSourceNativeHostImageRead(ctx context.Context, d *schema.ResourceData, 
 	name := d.Get("name").(string)
 	arch := d.Get("arch").(string)
 	k8Ver := d.Get("k8s_version").(string)
+	isKube := d.Get("is_kubernetes").(bool)
 	os := d.Get("os").(string)
+	userName := d.Get("username").(string)
 	log.Printf("[TRACE] dataSourceNativeHostImageRead(%s): start", tenantID)
 
 	// Get the plan image from Duplo.
 	c := m.(*duplosdk.Client)
-	image, diags := getNativeHostImage(c, tenantID, name, arch, os, k8Ver)
+	image, diags := getNativeHostImage(c, tenantID, name, arch, os, k8Ver, userName, isKube)
 	if diags != nil {
 		return diags
 	}
@@ -193,28 +201,63 @@ func getNativeHostImages(c *duplosdk.Client, tenantID string) (*[]duplosdk.Duplo
 	return duplo, nil
 }
 
-func getNativeHostImage(c *duplosdk.Client, tenantID, name, arch, os, k8Ver string) (*duplosdk.DuploNativeHostImage, diag.Diagnostics) {
+func getNativeHostImage(c *duplosdk.Client, tenantID, name, arch, os, k8Ver, userName string, isKube bool) (*duplosdk.DuploNativeHostImage, diag.Diagnostics) {
 
-	// First, validate parameters.
-	if strings.EqualFold(arch, "X86_64") {
+	arch = strings.ToLower(arch)
+	if arch == "x86_64" {
 		arch = "amd64"
 	}
 
-	// Then, get the full list.
+	// If k8Ver is passed but isKube is false, force isKube=true
+	if !isKube && k8Ver != "" {
+		isKube = true
+	}
+
 	list, err := getNativeHostImages(c, tenantID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Finally, return the matching image.
+	var matches []duplosdk.DuploNativeHostImage
+
 	for _, v := range *list {
-		if strings.EqualFold(v.K8sVersion, k8Ver) && strings.EqualFold(v.Arch, arch) && strings.EqualFold(v.OS, os) && strings.EqualFold(v.Name, name) {
-			return &v, nil
+
+		// Case 1: isKube = true and k8Ver empty -> only images with non-empty version
+		if isKube && k8Ver == "" && v.K8sVersion == "" {
+			continue
 		}
 
+		// Case 2: isKube = false and k8Ver empty -> only images with empty version
+		if !isKube && k8Ver == "" && v.K8sVersion != "" {
+			continue
+		}
+
+		// Matching criteria
+		if (k8Ver == "" || strings.EqualFold(v.K8sVersion, k8Ver)) &&
+			(arch == "" || strings.EqualFold(v.Arch, arch)) &&
+			(os == "" || strings.EqualFold(v.OS, os)) &&
+			(name == "" || strings.EqualFold(v.Name, name)) &&
+			(userName == "" || strings.EqualFold(v.Username, userName)) { // NEW FILTER
+
+			matches = append(matches, v)
+		}
 	}
 
-	return nil, diag.Errorf("failed to retrieve the native host image for '%s': no matching image found", tenantID)
+	switch len(matches) {
+	case 0:
+		return nil, diag.Errorf("failed to retrieve the native host image for '%s': no matching image found", tenantID)
+
+	case 1:
+		return &matches[0], nil
+
+	default:
+		return nil, diag.Errorf(
+			"failed to retrieve a valid native host image for '%s' due to multiple matches (%d): add more filters to narrow the result",
+			tenantID,
+			len(matches),
+		)
+	}
+
 }
 
 func flattenNativeHostImages(list *[]duplosdk.DuploNativeHostImage) []interface{} {

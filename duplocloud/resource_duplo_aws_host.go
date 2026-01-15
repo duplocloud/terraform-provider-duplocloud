@@ -213,6 +213,12 @@ func nativeHostSchema() map[string]*schema.Schema {
 						Optional: true,
 						Computed: true,
 					},
+					"delete_on_termination": {
+						Description: "Whether the volume should be deleted when the instance is terminated.",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Computed:    true,
+					},
 				},
 			},
 		},
@@ -659,6 +665,10 @@ func expandNativeHostVolumes(key string, d *schema.ResourceData) *[]duplosdk.Dup
 			if v, ok := volume["volume_type"]; ok && v != nil && v.(string) != "" {
 				duplo.VolumeType = v.(string)
 			}
+			if v, ok := volume["delete_on_termination"]; ok && v != nil {
+				duplo.DeleteOnTermination = v.(bool)
+			}
+
 			result = append(result, duplo)
 		}
 	}
@@ -782,11 +792,12 @@ func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []interfa
 	list := make([]interface{}, 0, len(*duplo))
 	for _, item := range *duplo {
 		list = append(list, map[string]interface{}{
-			"iops":        item.Iops,
-			"name":        item.Name,
-			"size":        item.Size,
-			"volume_id":   item.VolumeID,
-			"volume_type": item.VolumeType,
+			"iops":                  item.Iops,
+			"name":                  item.Name,
+			"size":                  item.Size,
+			"volume_id":             item.VolumeID,
+			"volume_type":           item.VolumeType,
+			"delete_on_termination": item.DeleteOnTermination,
 		})
 	}
 

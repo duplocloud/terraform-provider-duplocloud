@@ -132,6 +132,12 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Type:        schema.TypeString,
 		Computed:    true,
 	}
+	awsASGSchema["capacity"].ForceNew = false
+	awsASGSchema["image_id"].ForceNew = false
+
+	awsASGSchema["capacity"].DiffSuppressFunc = diffSuppressWhenNotCreating
+	awsASGSchema["image_id"].DiffSuppressFunc = diffSuppressWhenNotCreating
+	awsASGSchema["volume"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	return awsASGSchema
 }
 

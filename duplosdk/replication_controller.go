@@ -32,6 +32,7 @@ type DuploReplicationController struct {
 	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
 	Index                             int                    `json:"Index"`
 	AppName                           string                 `json:"AppName,omitempty"`
+	K8SWorkerOs                       *int                   `json:"K8SWorkerOs"`
 }
 
 // DuploPodTemplate represents a pod template in the Duplo SDK
@@ -106,9 +107,14 @@ type DuploLbConfiguration struct {
 	HostNames *[]string `json:"HostNames,omitempty"`
 
 	// TODO: DIPAddresses
-	AllowGlobalAccess bool     `json:"AllowGlobalAccess,omitempty"`
-	SkipHttpToHttps   bool     `json:"SkipHttpToHttps,omitempty"`
-	AllocationIds     []string `json:"AllocationIds,omitempty"`
+	AllowGlobalAccess bool                `json:"AllowGlobalAccess,omitempty"`
+	SkipHttpToHttps   bool                `json:"SkipHttpToHttps,omitempty"`
+	AllocationIds     []string            `json:"AllocationIds,omitempty"`
+	GcpSettings       *DuploLbGCPSettings `json:"GcpSettings"`
+}
+
+type DuploLbGCPSettings struct {
+	BackendConfigServiceTimeout int `json:"backendConfigServiceTimeout"`
 }
 
 // DuploPodLbConfiguration represents an LB configuration deletion request.
@@ -162,7 +168,8 @@ type DuploReplicationControllerCreateRequest struct {
 	Commands string `json:"Commands,omitempty"`
 
 	// TODO: DeviceIds
-	AppName string `json:"AppName,omitempty"`
+	AppName     string `json:"AppName,omitempty"`
+	K8SWorkerOs *int   `json:"K8SWorkerOs,omitempty"`
 }
 
 type DuploReplicationControllerUpdateRequest struct {

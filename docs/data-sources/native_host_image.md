@@ -27,15 +27,16 @@ data "duplocloud_native_host_image" "img" {
 
 ### Required
 
-- `arch` (String)
-- `name` (String)
-- `os` (String)
 - `tenant_id` (String) The tenant ID
 
 ### Optional
 
-- `is_kubernetes` (Boolean, Deprecated) This field is not in use. Use k8s_version for precise filtering
-- `k8s_version` (String)
+- `arch` (String) Architecture of the native host
+- `is_kubernetes` (Boolean, Deprecated) This field is deprecated. Use k8s_version for precise filtering
+- `k8s_version` (String) K8 version of the native host
+- `name` (String) Name of the Duplocloud native host
+- `os` (String) OS of native host
+- `username` (String) username associated to native host
 
 ### Read-Only
 
@@ -43,7 +44,6 @@ data "duplocloud_native_host_image" "img" {
 - `image_id` (String)
 - `region` (String)
 - `tags` (List of Object) (see [below for nested schema](#nestedatt--tags))
-- `username` (String)
 
 <a id="nestedatt--tags"></a>
 ### Nested Schema for `tags`
