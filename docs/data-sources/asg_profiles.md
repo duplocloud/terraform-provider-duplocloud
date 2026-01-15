@@ -129,6 +129,7 @@ Read-Only:
 
 Read-Only:
 
+- `delete_on_termination` (Boolean)
 - `iops` (Number)
 - `name` (String)
 - `size` (Number)

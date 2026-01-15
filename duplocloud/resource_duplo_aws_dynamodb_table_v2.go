@@ -341,7 +341,7 @@ func resourceAwsDynamoDBTableReadV2(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
 
-	prefix, cErr := c.GetDuploServicesPrefix(tenantID)
+	prefix, cErr := c.GetDuploServicesPrefix(tenantID, "")
 	if cErr != nil {
 		if cErr.Status() == 404 {
 			log.Printf("[TRACE] resourceAwsDynamoDBTableReadV2(%s, %s): end", tenantID, name)

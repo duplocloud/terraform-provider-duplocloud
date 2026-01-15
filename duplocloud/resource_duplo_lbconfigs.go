@@ -236,6 +236,13 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 				Type: schema.TypeString,
 			},
 		},
+		"backend_config_timeout_sec": {
+			Type:         schema.TypeInt,
+			Description:  "The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP.",
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validateIntGreaterThan(0),
+		},
 	}
 }
 
@@ -415,6 +422,13 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
 					SkipHttpToHttps:           lbc["skip_http_to_https"].(bool),
 				}
+				if lbc["backend_config_timeout_sec"] != nil {
+					gcpSettings := &duplosdk.DuploLbGCPSettings{
+						BackendConfigServiceTimeout: lbc["backend_config_timeout_sec"].(int),
+					}
+					item.GcpSettings = gcpSettings
+				}
+
 				if v, ok := lbc["backend_protocol_version"]; ok && item.LbType == 1 {
 					item.BeProtocolVersion = strings.ToUpper(v.(string))
 				}
@@ -626,6 +640,9 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"backend_protocol_version":    strings.ToUpper(lb.BeProtocolVersion),
 	}
 
+	if lb.GcpSettings != nil && lb.GcpSettings.BackendConfigServiceTimeout > 0 {
+		m["backend_config_timeout_sec"] = lb.GcpSettings.BackendConfigServiceTimeout
+	}
 	if lb.HealthCheckConfig != nil {
 		healthcheckConfig := map[string]interface{}{
 			"healthy_threshold":   lb.HealthCheckConfig.HealthyThresholdCount,
@@ -658,7 +675,6 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 }
 
 func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
-
 	lbconfs := diff.Get("lbconfigs").([]interface{})
 	for _, lb := range lbconfs {
 		m := lb.(map[string]interface{})

@@ -545,12 +545,13 @@ type DuploRDSGlobalDatabaseResponse struct {
 		PrimaryClusterId string   `json:"PrimaryClusterId"`
 	} `json:"GlobalInfo"`
 	Region struct {
-		Region     string `json:"Region"`
-		ClusterId  string `json:"ClusterId"`
-		Role       string `json:"Role"`
-		Status     string `json:"Status"`
-		TenantId   string `json:"TenantId"`
-		InstanceId string `json:"InstanceId"`
+		Region            string `json:"Region"`
+		ClusterId         string `json:"ClusterId"`
+		Role              string `json:"Role"`
+		Status            string `json:"Status"`
+		TenantId          string `json:"TenantId"`
+		InstanceId        string `json:"InstanceId"`
+		IsHeadlessCluster bool   `json:"IsHeadlessCluster"`
 	} `json:"Region"`
 }
 
@@ -613,4 +614,58 @@ func (c *Client) GetGloabalRegion(tenantID, identifier, region string) (*DuploRD
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions/%s", tenantID, identifier, region),
 		&rp)
 	return &rp, err
+}
+
+type DuploSecondaryGlobalDatastoreHeadless struct {
+	IsHeadlessCluster bool `json:"IsHeadlessCluster"`
+}
+
+func (c *Client) HeadlessManagement(tenantId, cluster string, rq DuploSecondaryGlobalDatastoreHeadless) ClientError {
+	err := c.putAPI(fmt.Sprintf("HeadlessManagement(%s,%s)", tenantId, cluster),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/headless", tenantId, cluster),
+		&rq,
+		nil,
+	)
+	return err
+}
+
+type DuploRDSClusterHeadlessInstances struct {
+	InstanceID string `json:"InstanceId"`
+	AwsStatus  string `json:"AwsStatus"`
+}
+
+// Summary Struct represents the "Summary" object.
+type DuploRDSClusterHeadlessSummary struct {
+	TotalInstances     int `json:"TotalInstances"`
+	AvailableInstances int `json:"AvailableInstances"`
+	DeletingInstances  int `json:"DeletingInstances"`
+}
+
+// ClusterDetails is the main struct for the entire JSON payload.
+type DuploRDSClusterHeadless struct {
+	ClusterID         string                             `json:"ClusterId"`
+	TenantID          string                             `json:"TenantId"`
+	TenantName        string                             `json:"TenantName"`
+	IsHeadlessCluster bool                               `json:"IsHeadlessCluster"`
+	ClusterStatus     string                             `json:"ClusterStatus"`
+	Region            string                             `json:"Region"`
+	Instances         []DuploRDSClusterHeadlessInstances `json:"Instances"` // Array of the Instances struct
+	Summary           DuploRDSClusterHeadlessSummary     `json:"Summary"`   // Single instance of the Summary struct
+}
+
+func (c *Client) GetHeadlessState(tenantId, cluster, instance string) (*DuploRDSClusterHeadlessInstances, ClientError) {
+	rp := &DuploRDSClusterHeadless{}
+	err := c.getAPI(fmt.Sprintf("HeadlessManagement(%s,%s)", tenantId, cluster),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/headless", tenantId, cluster),
+		rp,
+	)
+	if err == nil && rp != nil {
+		for i := range rp.Instances {
+			if rp.Instances[i].InstanceID == instance {
+				return &rp.Instances[i], nil
+			}
+		}
+		return nil, nil
+	}
+	return nil, err
 }
