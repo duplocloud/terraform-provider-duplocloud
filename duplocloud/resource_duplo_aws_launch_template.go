@@ -54,11 +54,11 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		},
 
 		"instance_type": {
-			Description:   "Asg instance type to be used to update the version from the current version",
-			Type:          schema.TypeString,
-			Optional:      true,
-			Computed:      true,
-			ConflictsWith: []string{"instance_requirements"},
+			Description: "Asg instance type to be used to update the version from the current version",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			//	ConflictsWith: []string{"instance_requirements"},
 		},
 		"ami": {
 			Description: "Asg ami to be used to update the version from the current version",
