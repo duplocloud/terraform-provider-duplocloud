@@ -308,7 +308,7 @@ func parseAwsBatchJobQueueIdParts(id string) (tenantID, name string, err error) 
 
 func flattenBatchJobQueue(d *schema.ResourceData, c *duplosdk.Client, duplo *duplosdk.DuploAwsBatchJobQueue, tenantId string) diag.Diagnostics {
 	log.Printf("[TRACE]flattenBatchJobQueue... Start ")
-	prefix, err := c.GetDuploServicesPrefix(tenantId)
+	prefix, err := c.GetDuploServicesPrefix(tenantId, "")
 	if err != nil {
 		return diag.FromErr(err)
 	}

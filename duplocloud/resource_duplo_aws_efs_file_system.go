@@ -388,7 +388,7 @@ func expandAwsEfs(d *schema.ResourceData) *duplosdk.DuploEFSCreateReq {
 }
 
 func flattenAwsEfs(tenantId string, d *schema.ResourceData, efs *duplosdk.DuploEFSGetResp, c *duplosdk.Client) diag.Diagnostics {
-	prefix, err := c.GetDuploServicesPrefix(tenantId)
+	prefix, err := c.GetDuploServicesPrefix(tenantId, "")
 	if err != nil {
 		return diag.FromErr(err)
 	}
