@@ -14,17 +14,19 @@ type DuploAwsLaunchTemplateRequest struct {
 }
 
 type DuploLaunchTemplateData struct {
-	InstanceType                *DuploStringValue                              `json:"InstanceType,omitempty"`
-	ImageId                     string                                         `json:"ImageId,omitempty"`
-	BlockDeviceMappings         []DuploLaunchTemplateBlockDeviceMappingRequest `json:"BlockDeviceMappings,omitempty"`
-	InstanceRequirementsRequest *InstanceRequirementsRequest                   `json:"InstanceRequirements,omitempty"`
+	InstanceType        *DuploStringValue                              `json:"InstanceType,omitempty"`
+	ImageId             string                                         `json:"ImageId,omitempty"`
+	BlockDeviceMappings []DuploLaunchTemplateBlockDeviceMappingRequest `json:"BlockDeviceMappings,omitempty"`
+	//InstanceRequirementsRequest *InstanceRequirementsRequest                   `json:"InstanceRequirements,omitempty"`
 }
 
-type InstanceRequirementsRequest struct {
-	AllowedInstanceTypes []string                             `json:"AllowedInstanceTypes,omitempty"`
-	VCpuCount            *DuploLaunchTemplateVCpuCountRequest `json:"VCpuCount,omitempty"`
-	MemoryMiB            *DuploLaunchTemplateMemoryMiB        `json:"MemoryMiB,omitempty"`
-}
+/*
+	type InstanceRequirementsRequest struct {
+		AllowedInstanceTypes []string                             `json:"AllowedInstanceTypes,omitempty"`
+		VCpuCount            *DuploLaunchTemplateVCpuCountRequest `json:"VCpuCount,omitempty"`
+		MemoryMiB            *DuploLaunchTemplateMemoryMiB        `json:"MemoryMiB,omitempty"`
+	}
+*/
 type DuploLaunchTemplateVCpuCountRequest struct {
 	Min int `json:"Min"`
 	Max int `json:"Max"`

@@ -37,6 +37,7 @@ Read-Only:
 - `custom_node_labels` (Map of String)
 - `encrypt_disk` (Boolean)
 - `friendly_name` (String)
+- `fullname` (String)
 - `identity_role` (String)
 - `image_id` (String)
 - `initial_base64_user_data` (String)

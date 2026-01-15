@@ -162,68 +162,68 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"instance_requirements": {
-			Description:   "Whether to manage instance requirements instead of a specific instance type",
-			Type:          schema.TypeList,
-			MaxItems:      1,
-			Optional:      true,
-			ConflictsWith: []string{"instance_type"},
-			Computed:      true,
-
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"allowed_instance_types": {
-						Type:     schema.TypeList,
-						Optional: true,
-						Computed: true,
-						Elem: &schema.Schema{
-							Type: schema.TypeString,
-						},
-					},
-					"vcpu_count": {
-						Type:         schema.TypeList,
-						MaxItems:     1,
-						RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
-						Optional:     true,
-						Computed:     true,
-						Description:  "Block describing the minimum and maximum number of vCPUs. It is a required field when allowed_instance_types is set ",
-						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
-								"min": {
-									Type:     schema.TypeInt,
-									Required: true,
-								},
-								"max": {
-									Type:     schema.TypeInt,
-									Optional: true,
-									Computed: true,
-								},
-							},
-						},
-					},
-					"memory_mib": {
-						Type:         schema.TypeList,
-						MaxItems:     1,
-						RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
-						Optional:     true,
-						Description:  "Block describing the minimum and maximum amount of memory (MiB). It is a required field when allowed_instance_types is set",
-						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
-								"min": {
-									Type:     schema.TypeInt,
-									Required: true,
-								},
-								"max": {
-									Type:     schema.TypeInt,
-									Optional: true,
-									Computed: true,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		//"instance_requirements": {
+		//	Description:   "Whether to manage instance requirements instead of a specific instance type",
+		//	Type:          schema.TypeList,
+		//	MaxItems:      1,
+		//	Optional:      true,
+		//	ConflictsWith: []string{"instance_type"},
+		//	Computed:      true,
+		//
+		//	Elem: &schema.Resource{
+		//		Schema: map[string]*schema.Schema{
+		//			"allowed_instance_types": {
+		//				Type:     schema.TypeList,
+		//				Optional: true,
+		//				Computed: true,
+		//				Elem: &schema.Schema{
+		//					Type: schema.TypeString,
+		//				},
+		//			},
+		//			"vcpu_count": {
+		//				Type:         schema.TypeList,
+		//				MaxItems:     1,
+		//				RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
+		//				Optional:     true,
+		//				Computed:     true,
+		//				Description:  "Block describing the minimum and maximum number of vCPUs. It is a required field when allowed_instance_types is set ",
+		//				Elem: &schema.Resource{
+		//					Schema: map[string]*schema.Schema{
+		//						"min": {
+		//							Type:     schema.TypeInt,
+		//							Required: true,
+		//						},
+		//						"max": {
+		//							Type:     schema.TypeInt,
+		//							Optional: true,
+		//							Computed: true,
+		//						},
+		//					},
+		//				},
+		//			},
+		//			"memory_mib": {
+		//				Type:         schema.TypeList,
+		//				MaxItems:     1,
+		//				RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
+		//				Optional:     true,
+		//				Description:  "Block describing the minimum and maximum amount of memory (MiB). It is a required field when allowed_instance_types is set",
+		//				Elem: &schema.Resource{
+		//					Schema: map[string]*schema.Schema{
+		//						"min": {
+		//							Type:     schema.TypeInt,
+		//							Required: true,
+		//						},
+		//						"max": {
+		//							Type:     schema.TypeInt,
+		//							Optional: true,
+		//							Computed: true,
+		//						},
+		//					},
+		//				},
+		//			},
+		//		},
+		//	},
+		//},
 	}
 }
 func resourceAwsLaunchTemplate() *schema.Resource {
@@ -374,7 +374,7 @@ func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId, 
 			Value: instanceType.(string),
 		}
 	}
-	if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
+	/*if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
 		mirMap := mir.([]interface{})[0].(map[string]interface{})
 		if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
 			allowedInstanceList := []string{}
@@ -405,7 +405,7 @@ func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId, 
 				Max: max,
 			}
 		}
-	}
+	}*/
 	return obj, nil
 
 }
@@ -480,7 +480,7 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	d.Set("default_version", m["default_version"])
 	d.Set("ami", m["image_id"])
 	d.Set("block_device_mapping", m["block_device_mapping"])
-	d.Set("instance_requirements", m["instance_requirements"])
+	//d.Set("instance_requirements", m["instance_requirements"])
 	return nil
 }
 
@@ -499,38 +499,41 @@ func extractASGTemplateDetails(rp *[]duplosdk.DuploLaunchTemplateResponse) map[s
 			lt["image_id"] = v.LaunchTemplateData.ImageId
 			lt["name"] = v.LaunchTemplateName
 			lt["block_device_mapping"] = flattenBlockDeviceMappings(v.LaunchTemplateData.BlockDeviceMappings)
-			lt["instance_requirements"] = flattenInstanceRequirements(v.LaunchTemplateData.InstanceRequirements)
+			//lt["instance_requirements"] = flattenInstanceRequirements(v.LaunchTemplateData.InstanceRequirements)
 		}
 	}
 	lt["latest_version"] = strconv.Itoa(max)
 	return lt
 }
-func flattenInstanceRequirements(ir *duplosdk.DuploLaunchTemplateInstanceRequirements) []interface{} {
-	if ir == nil {
-		return []interface{}{}
-	}
-	irMap := map[string]interface{}{}
-	allowedInstanceTypes := []interface{}{}
-	for _, ait := range ir.AllowedInstanceTypes {
-		allowedInstanceTypes = append(allowedInstanceTypes, ait)
-	}
-	irMap["allowed_instance_types"] = allowedInstanceTypes
-	if ir.VCpuCount != nil {
-		vcpuMap := map[string]interface{}{
-			"min": ir.VCpuCount.Min,
-			"max": ir.VCpuCount.Max,
+
+/*
+	func flattenInstanceRequirements(ir *duplosdk.DuploLaunchTemplateInstanceRequirements) []interface{} {
+		if ir == nil {
+			return []interface{}{}
 		}
-		irMap["vcpu_count"] = []interface{}{vcpuMap}
-	}
-	if ir.MemoryMiB != nil {
-		memMap := map[string]interface{}{
-			"min": ir.MemoryMiB.Min,
-			"max": ir.MemoryMiB.Max,
+		irMap := map[string]interface{}{}
+		allowedInstanceTypes := []interface{}{}
+		for _, ait := range ir.AllowedInstanceTypes {
+			allowedInstanceTypes = append(allowedInstanceTypes, ait)
 		}
-		irMap["memory_mib"] = []interface{}{memMap}
+		irMap["allowed_instance_types"] = allowedInstanceTypes
+		if ir.VCpuCount != nil {
+			vcpuMap := map[string]interface{}{
+				"min": ir.VCpuCount.Min,
+				"max": ir.VCpuCount.Max,
+			}
+			irMap["vcpu_count"] = []interface{}{vcpuMap}
+		}
+		if ir.MemoryMiB != nil {
+			memMap := map[string]interface{}{
+				"min": ir.MemoryMiB.Min,
+				"max": ir.MemoryMiB.Max,
+			}
+			irMap["memory_mib"] = []interface{}{memMap}
+		}
+		return []interface{}{irMap}
 	}
-	return []interface{}{irMap}
-}
+*/
 func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMappingResponse) []interface{} {
 	bdmI := []interface{}{}
 	for _, bdm := range bdms {
