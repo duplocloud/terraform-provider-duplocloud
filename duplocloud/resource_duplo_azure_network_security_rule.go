@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -151,8 +152,12 @@ func resourceAzureNetworkSgRuleRead(ctx context.Context, d *schema.ResourceData,
 		}
 		return diag.Errorf("Unable to retrieve infra security group %s rule %s : %s", sgName, ruleName, clientErr)
 	}
+	prefix, err := c.GetResourcePrefixWithoutTenant("duploservices")
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	flattenAzureNetworkSgRule(infraName, sgName, d, duplo)
+	flattenAzureNetworkSgRule(infraName, sgName, prefix, d, duplo)
 
 	log.Printf("[TRACE] resourceAzureNetworkSgRuleRead(%s, %s,%s): end", infraName, sgName, ruleName)
 	return nil
@@ -164,9 +169,14 @@ func resourceAzureNetworkSgRuleCreate(ctx context.Context, d *schema.ResourceDat
 	infraName := d.Get("infra_name").(string)
 	sgName := d.Get("network_security_group_name").(string)
 	ruleName := d.Get("name").(string)
-	ruleFullName := "duploservices-" + ruleName + "-" + sgName
-	log.Printf("[TRACE] resourceAzureNetworkSgRuleCreate(%s, %s, %s): start", infraName, sgName, ruleName)
 	c := m.(*duplosdk.Client)
+
+	prefix, err := c.GetResourcePrefixWithoutTenant("duploservices")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	ruleFullName := prefix + ruleName + "-" + sgName
+	log.Printf("[TRACE] resourceAzureNetworkSgRuleCreate(%s, %s, %s): start", infraName, sgName, ruleName)
 
 	rq := expandAzureNetworkSgRule(d)
 	err = c.NetworkSgRuleCreateOrDelete(&duplosdk.InfrastructureSgUpdate{
@@ -257,12 +267,12 @@ func parseAzureNetworkSgRuleIdParts(id string) (infraName, sgName, ruleName stri
 	return
 }
 
-func flattenAzureNetworkSgRule(infraName, sgName string, d *schema.ResourceData, duplo *duplosdk.DuploInfrastructureVnetSGRule) {
+func flattenAzureNetworkSgRule(infraName, sgName, prefix string, d *schema.ResourceData, duplo *duplosdk.DuploInfrastructureVnetSGRule) {
 
 	d.Set("infra_name", infraName)
 	d.Set("network_security_group_name", sgName)
 	parts := strings.Split(duplo.Name, "-"+sgName)
-	d.Set("name", parts[0][len("duploservices-"):len(parts[0])])
+	d.Set("name", parts[0][len(prefix):len(parts[0])])
 	d.Set("fullname", duplo.Name)
 	d.Set("source_rule_type", duplo.SrcRuleType)
 	d.Set("destination_rule_type", duplo.DstRuleType)

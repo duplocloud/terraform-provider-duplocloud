@@ -14,9 +14,26 @@ type DuploAwsLaunchTemplateRequest struct {
 }
 
 type DuploLaunchTemplateData struct {
-	InstanceType        DuploStringValue                               `json:"InstanceType,omitempty"`
+	InstanceType        *DuploStringValue                              `json:"InstanceType,omitempty"`
 	ImageId             string                                         `json:"ImageId,omitempty"`
 	BlockDeviceMappings []DuploLaunchTemplateBlockDeviceMappingRequest `json:"BlockDeviceMappings,omitempty"`
+	//InstanceRequirementsRequest *InstanceRequirementsRequest                   `json:"InstanceRequirements,omitempty"`
+}
+
+/*
+	type InstanceRequirementsRequest struct {
+		AllowedInstanceTypes []string                             `json:"AllowedInstanceTypes,omitempty"`
+		VCpuCount            *DuploLaunchTemplateVCpuCountRequest `json:"VCpuCount,omitempty"`
+		MemoryMiB            *DuploLaunchTemplateMemoryMiB        `json:"MemoryMiB,omitempty"`
+	}
+*/
+type DuploLaunchTemplateVCpuCountRequest struct {
+	Min int `json:"Min"`
+	Max int `json:"Max"`
+}
+type DuploLaunchTemplateMemoryMiB struct {
+	Min int `json:"Min"`
+	Max int `json:"Max"`
 }
 
 func (c *Client) CreateAwsLaunchTemplate(tenantId string, rq *DuploAwsLaunchTemplateRequest) ClientError {
@@ -90,7 +107,7 @@ type DuploLaunchTemplateDataResponse struct {
 	HibernationOptions                DuploLaunchTemplateHibernationOptions               `json:"HibernationOptions"`
 	MetadataOptions                   DuploLaunchTemplateInstanceMetadataOptions          `json:"MetadataOptions"`
 	EnclaveOptions                    DuploLaunchTemplateEnclaveOptions                   `json:"EnclaveOptions"`
-	InstanceRequirements              DuploLaunchTemplateInstanceRequirements             `json:"InstanceRequirements"`
+	InstanceRequirements              *DuploLaunchTemplateInstanceRequirements            `json:"InstanceRequirements"`
 	PrivateDnsNameOptions             DuploLaunchTemplatePrivateDnsNameOptions            `json:"PrivateDnsNameOptions"`
 	MaintenanceOptions                DuploLaunchTemplateMaintenanceOptions               `json:"MaintenanceOptions"`
 	DisableApiStop                    bool                                                `json:"DisableApiStop"`
@@ -232,7 +249,9 @@ type DuploLaunchTemplateEnclaveOptions struct {
 }
 
 type DuploLaunchTemplateInstanceRequirements struct {
-	VCpuCount DuploLaunchTemplateVCpuCountRange `json:"VCpuCount"`
+	VCpuCount            *DuploLaunchTemplateVCpuCountRange `json:"VCpuCount"`
+	MemoryMiB            *DuploLaunchTemplateMemoryMiB      `json:"MemoryMiB"`
+	AllowedInstanceTypes []string                           `json:"AllowedInstanceTypes,omitempty"`
 }
 
 type DuploLaunchTemplateVCpuCountRange struct {

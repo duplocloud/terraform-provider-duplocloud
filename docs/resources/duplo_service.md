@@ -359,7 +359,7 @@ Should be one of:
 - `init_container_docker_image` (Block List) The docker images to use for the launched init container(s). (see [below for nested schema](#nestedblock--init_container_docker_image))
 - `is_daemonset` (Boolean) Whether or not to enable DaemonSet. Defaults to `false`.
 - `is_unique_k8s_node_required` (Boolean) Whether or not the replicas must be scheduled on separate Kubernetes nodes.  Only supported on Kubernetes. Defaults to `false`.
-- `k8s_worker_os` (String) OS type for k8s worker, this field is associated to azure cloud. Valid values: `Linux`, `Windows`
+- `k8s_worker_os` (String) OS type for k8s worker, this field is associated to azure cloud. Valid values: `Linux`, `Windows` Defaults to `Linux`.
 - `lb_synced_deployment` (Boolean) Defaults to `false`.
 - `other_docker_config` (String)
 - `other_docker_host_config` (String)
