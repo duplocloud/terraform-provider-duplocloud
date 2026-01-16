@@ -37,6 +37,7 @@ func awsLambdaFunctionEventInvokeConfigSchema() map[string]*schema.Schema {
 			Description:  "Maximum number of attempts a Lambda function may retry in case of error",
 			Type:         schema.TypeInt,
 			Optional:     true,
+			Default:      2,
 			ValidateFunc: validation.IntBetween(0, 2),
 		},
 		"max_event_age_in_seconds": {
@@ -133,7 +134,11 @@ func resourceAwsLambdaFunctionEventInvokeConfigRead(ctx context.Context, d *sche
 		return diag.Errorf("Unable to retrieve tenant %s lambda function '%s' event invoke config: %s",
 			tenantId, functionName, clientErr)
 	}
-
+	if resource == nil {
+		log.Printf("[TRACE] resourceAwsLambdaFunctionEventInvokeConfigRead(%s, %s): end - recieved empty response", tenantId, functionName)
+		d.SetId("") // object missing
+		return nil
+	}
 	d.Set("tenant_id", tenantId)
 	d.Set("function_name", functionName)
 	applyLambdaEventInvokeConfigToTfResource(d, resource)
@@ -149,7 +154,26 @@ func resourceAwsLambdaFunctionEventInvokeConfigCreate(ctx context.Context, d *sc
 
 // UPDATE resource
 func resourceAwsLambdaFunctionEventInvokeConfigUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return createOrUpdateLambdaEventInvokeConfiguration(ctx, d, m)
+	duploClient := m.(*duplosdk.Client)
+
+	functionName := d.Get("function_name").(string)
+	tenantId := d.Get("tenant_id").(string)
+
+	request := buildPutLambdaEventInvokeRequest(d)
+	if !d.HasChange("destination_config") {
+		request.LambdaFunctionEventInvokeConfiguration.DestinationConfig = nil
+	}
+	err := duploClient.LambdaEventInvokeAsynConfigUpdate(tenantId, functionName, request.LambdaFunctionEventInvokeConfiguration)
+
+	if err != nil {
+		return diag.Errorf("Could not successfully create event invoke config for lambda %s", functionName)
+	}
+	id := fmt.Sprintf("%s/%s/eventInvokeConfig", tenantId, functionName)
+	d.SetId(id)
+
+	diags := resourceAwsLambdaFunctionEventInvokeConfigRead(ctx, d, m)
+	log.Printf("[TRACE] createOrUpdateLambdaEventInvokeConfiguration(%s, %s): end", tenantId, functionName)
+	return diags
 }
 
 func createOrUpdateLambdaEventInvokeConfiguration(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -163,6 +187,11 @@ func createOrUpdateLambdaEventInvokeConfiguration(ctx context.Context, d *schema
 
 	if err != nil {
 		return diag.Errorf("Could not successfully create event invoke config for lambda %s", functionName)
+	}
+	request.DestinationConfig = nil
+	err = duploClient.LambdaEventInvokeAsynConfigUpdate(tenantId, functionName, request.LambdaFunctionEventInvokeConfiguration)
+	if err != nil {
+		return diag.Errorf("Could not successfully update event invoke config for lambda %s", functionName)
 	}
 	id := fmt.Sprintf("%s/%s/eventInvokeConfig", tenantId, functionName)
 	d.SetId(id)

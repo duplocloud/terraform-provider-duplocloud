@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "0.11.33" # RELEASE VERSION
+      version = "0.12.0" # RELEASE VERSION
       source  = "registry.terraform.io/duplocloud/duplocloud"
     }
     aws = {
@@ -28,6 +28,24 @@ resource "duplocloud_tenant_secret" "test" {
   tenant_id   = var.tenant_id
   name_suffix = "myjson"
   data        = jsonencode({ foo = "fubar", bar = "foo" })
+}
+
+# Secret to be deleted bypassing default 30 day retention window
+resource "duplocloud_tenant_secret" "test" {
+  tenant_id   = var.tenant_id
+  name_suffix = "toBeForceDeleted"
+  data        = jsonencode({ foo = "fubar", bar = "foo" })
+
+  force_delete_on_destroy = true
+}
+
+# Secret gets geleted with custom retention period (between 7 and 30 supported)
+resource "duplocloud_tenant_secret" "test" {
+  tenant_id   = var.tenant_id
+  name_suffix = "deletedWithCustomRetentionWindow"
+  data        = jsonencode({ foo = "fubar", bar = "foo" })
+
+  retention_window_in_days_on_destroy = 15
 }
 
 # # AWS information retrieval

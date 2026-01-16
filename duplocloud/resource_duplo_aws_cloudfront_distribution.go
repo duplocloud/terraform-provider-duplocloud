@@ -122,6 +122,9 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			Default:  true,
 		},
 		"use_origin_access_identity": {
+			Description: `When field is set to false it adds the oai mentioned in origin.s3_origin_config.origin_access_identity. 
+			<br/><b><i>Note</b>: For new cloudfront distributions, this field will work differently than for existing distributions.
+			When use_origin_access_identity is set to true, Duplo will create an origin access control (OAC) and restrict the S3 origin access. On false it will be public</br>For migration from OAI to OAC can be done from duplo cloud portal.`,
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  true,

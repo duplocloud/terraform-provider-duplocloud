@@ -3,4 +3,4 @@
 #  - *ARN* The resource arn.
 #  - *TAGKEY* Key of the tag
 #
-terraform import duplocloud_aws_tag.custom *TENANT_ID*/*ARN*/*TAGKEY*
+terraform import duplocloud_aws_tag.custom *TENANT_ID*/*TAGKEY*/*ARN*

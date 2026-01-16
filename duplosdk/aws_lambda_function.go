@@ -172,7 +172,7 @@ type LambdaFunctionEventInvokeConfiguration struct {
 	DestinationConfig        *DestinationConfiguration `json:"DestinationConfig,omitempty"`
 	FunctionName             string                    `json:"FunctionName,omitempty"`
 	MaximumEventAgeInSeconds int                       `json:"MaximumEventAgeInSeconds,omitempty"`
-	MaximumRetryAttempts     int                       `json:"MaximumRetryAttempts,omitempty"`
+	MaximumRetryAttempts     int                       `json:"MaximumRetryAttempts"`
 }
 
 type PutLambdaFunctionEventInvokeConfiguration struct {
@@ -340,6 +340,18 @@ func (c *Client) LambdaEventInvokeConfigGet(tenantID string, functionName string
 func (c *Client) LambdaEventInvokeConfigCreateOrUpdate(tenantID string, functionName string, request PutLambdaFunctionEventInvokeConfiguration) ClientError {
 	err := c.putAPI(
 		fmt.Sprintf("LambdaEventInvokeConfigCreateOrUpdate(%s, %s)", tenantID, functionName),
+		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s/configuration/event", tenantID, functionName),
+		&request,
+		nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) LambdaEventInvokeAsynConfigUpdate(tenantID string, functionName string, request LambdaFunctionEventInvokeConfiguration) ClientError {
+	err := c.putAPI(
+		fmt.Sprintf("LambdaEventInvokeAsynConfigUpdate(%s, %s)", tenantID, functionName),
 		fmt.Sprintf("v3/subscriptions/%s/serverless/lambda/%s/configuration/event", tenantID, functionName),
 		&request,
 		nil)
