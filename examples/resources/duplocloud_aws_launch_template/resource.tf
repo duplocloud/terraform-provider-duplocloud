@@ -41,7 +41,7 @@ resource "duplocloud_aws_launch_template" "name" {
     allowed_instance_types = ["t3a.*", "c5.*"]
     vcpu_count {
       min = 0
-      max = 0
+      max = 2
     }
     memory_mib {
       min = 4096
