@@ -376,6 +376,7 @@ func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId, 
 		}
 	}
 	if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
+		obj.SourceVersion = ""
 		mirMap := mir.([]interface{})[0].(map[string]interface{})
 		if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
 			allowedInstanceList := []string{}
