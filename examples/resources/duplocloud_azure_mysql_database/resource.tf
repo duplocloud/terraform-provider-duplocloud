@@ -1,4 +1,4 @@
-resource "duplocloud_tenant" "myapp" {
+/*resource "duplocloud_tenant" "myapp" {
   account_name = "myapp"
   plan_id      = "default"
 }
@@ -12,3 +12,4 @@ resource "duplocloud_azure_mysql_database" "mydb" {
   version                      = 5.7
   sku_name                     = "GP_Gen5_4"
 }
+*/
