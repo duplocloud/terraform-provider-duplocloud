@@ -168,6 +168,10 @@ type DuploRDSStorageAutoScalling struct {
 	ApplyImmediately     bool `json:"ApplyImmediately"`
 }
 
+type DuploRdsAutoMinorVersionUpgrade struct {
+	AutoMinorVersionUpgrade bool `json:"AutoMinorVersionUpgrade"`
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -373,6 +377,14 @@ func (c *Client) RdsUpdateMonitoringInterval(tenantID string, duploObject DuploM
 	)
 }
 
+func (c *Client) RdsUpdateAutoMinorVersionUpgrade(tenantID, name string, duploObject DuploRdsAutoMinorVersionUpgrade) ClientError {
+	return c.putAPI(
+		fmt.Sprintf("RdsUpdateAutoMinorVersionUpgrade(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/autoMinorVersionUpgrade", tenantID, name),
+		&duploObject,
+		nil,
+	)
+}
 func RdsIsAurora(engine int) bool {
 	return engine == DUPLO_RDS_ENGINE_AURORA_MYSQL ||
 		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL
