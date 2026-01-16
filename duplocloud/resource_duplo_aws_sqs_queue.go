@@ -185,7 +185,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.Errorf("Unable to retrieve tenant %s sqs queue %s : %s", tenantID, url, clientErr)
 	}
 
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return diag.FromErr(err)
 	}

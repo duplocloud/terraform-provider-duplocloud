@@ -259,8 +259,12 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 	c := m.(*duplosdk.Client)
 	fullName := asgName
 	var err1 error
-	if !strings.Contains(asgName, "duploservices") {
-		fullName, err1 = c.GetResourceName("duploservices", tenantId, asgName, false)
+	prefix, err := c.GetResourcePrefixWithoutTenant("duploservices")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if !strings.Contains(asgName, prefix) {
+		fullName, err1 = c.GetResourceName(prefix, tenantId, asgName, false)
 		if err1 != nil {
 			diag.FromErr(err1)
 		}
@@ -504,6 +508,7 @@ func extractASGTemplateDetails(rp *[]duplosdk.DuploLaunchTemplateResponse) map[s
 	lt["latest_version"] = strconv.Itoa(max)
 	return lt
 }
+
 func flattenInstanceRequirements(ir *duplosdk.DuploLaunchTemplateInstanceRequirements) []interface{} {
 	if ir == nil {
 		return []interface{}{}
@@ -530,6 +535,7 @@ func flattenInstanceRequirements(ir *duplosdk.DuploLaunchTemplateInstanceRequire
 	}
 	return []interface{}{irMap}
 }
+
 func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMappingResponse) []interface{} {
 	bdmI := []interface{}{}
 	for _, bdm := range bdms {
