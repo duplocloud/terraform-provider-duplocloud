@@ -14,7 +14,7 @@ import (
 
 func resourceTenantKMS() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_tenant_kms` manages the list of kms avaialble to a tenant in Duplo.\n\n" +
+		Description: "`duplocloud_tenant_kms` manages the list of kms available to a tenant in Duplo.\n\n" +
 			"This resource allows you take control of individual tenant kms for a specific tenant.",
 
 		ReadContext:   resourceTenantKMSRead,

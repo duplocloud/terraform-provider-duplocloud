@@ -204,24 +204,25 @@ func diffIgnoreIfCaseSensitive(k, old, new string, d *schema.ResourceData) bool 
 	return strings.EqualFold(newVar.(string), oldVar.(string))
 }
 
+/*
 func diffSuppressOnComputedDataOnMetadataBlock(_, _, _ string, d *schema.ResourceData) bool {
 
-	n, o := d.GetChange("metadata")
-	m := n.(map[string]interface{})
-	mo := o.(map[string]interface{})
-	_, ok := m["CreatedBy"]
-	_, ok1 := m["CreatedOn"]
-	for k, vl := range m {
-		if mov, ok := mo[k]; ok || (mov != nil && mov.(string) != vl) {
-			return false
+		n, o := d.GetChange("metadata")
+		m := n.(map[string]interface{})
+		mo := o.(map[string]interface{})
+		_, ok := m["CreatedBy"]
+		_, ok1 := m["CreatedOn"]
+		for k, vl := range m {
+			if mov, ok := mo[k]; ok || (mov != nil && mov.(string) != vl) {
+				return false
+			}
 		}
+		if ok && ok1 {
+			return true
+		}
+		return false
 	}
-	if ok && ok1 {
-		return true
-	}
-	return false
-}
-
+*/
 func diffSuppressOnComputedDataOnLabelBlock(_, _, _ string, d *schema.ResourceData) bool {
 
 	n, _ := d.GetChange("labels")

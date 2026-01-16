@@ -27,3 +27,16 @@ resource "duplocloud_gcp_sql_database_instance" "sql" {
   root_password = "qwerty"
   need_backup   = true
 }
+
+resource "duplocloud_gcp_sql_database_instance" "sql_instance" {
+  tenant_id        = duplocloud_tenant.myapp.tenant_id
+  name             = "customtier"
+  database_version = "SQLSERVER_2019_STANDARD"
+  tier             = "db-custom-2-7680"
+  disk_size        = 19
+  root_password    = "test@123Abc"
+  labels = {
+    managed-by = "duplocloud"
+    created-by = "terraform"
+  }
+}
