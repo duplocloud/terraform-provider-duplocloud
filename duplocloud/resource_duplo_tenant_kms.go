@@ -125,7 +125,7 @@ func flattenTenantKmsKeys(d *schema.ResourceData, list *[]duplosdk.DuploTenantKm
 	}
 	result, unspecified := segregateUnspecifiedKms(&kmsInfos, list)
 	d.Set("unspecified_kms_keys", unspecified)
-	d.Set("kms_keys", result)
+	d.Set("kms", result)
 
 	return result
 }

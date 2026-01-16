@@ -238,7 +238,7 @@ func (c *Client) LambdaFunctionDelete(tenantID, name string) ClientError {
 
 // LambdaFunctionGetList gets a list of lambda functions via the Duplo API.
 func (c *Client) LambdaFunctionGetList(tenantID string) (*[]DuploLambdaConfiguration, ClientError) {
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return nil, err
 	}

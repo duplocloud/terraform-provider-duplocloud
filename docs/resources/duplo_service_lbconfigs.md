@@ -145,6 +145,7 @@ Supported protocol based on lb_type:
 Optional:
 
 - `allow_global_access` (Boolean) Applicable for internal lb.
+- `backend_config_timeout_sec` (Number) The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP.
 - `backend_protocol_version` (String) Is used for communication between the load balancer and the target instances. This field is used to set protocol version for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1
 - `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - `custom_cidr` (List of String) Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.

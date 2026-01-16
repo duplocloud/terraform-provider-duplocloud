@@ -84,6 +84,10 @@ func diffSuppressWhenNotCreating(k, old, new string, d *schema.ResourceData) boo
 	return d.Id() != ""
 }
 
+func diffSuppressWhenCreating(k, old, new string, d *schema.ResourceData) bool {
+	return d.Id() == ""
+}
+
 // suppresses a diff when a resource is brand new
 //
 //nolint:deadcode,unused // utility function

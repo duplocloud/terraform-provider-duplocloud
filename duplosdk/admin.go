@@ -39,6 +39,7 @@ type DuploSystemFeatures struct {
 	DisableOobData                 bool                            `json:"DisableOobData"`
 	DefaultInfraCloud              string                          `json:"DefaultInfraCloud"`
 	TagsBasedManagedResources      []string                        `json:"TagsBasedManagedResources"`
+	ResourceNamePrefix             string                          `json:"ResourceNamePrefix"`
 }
 
 type DuploSystemFeaturesAppConfigs struct {
