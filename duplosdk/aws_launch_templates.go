@@ -25,6 +25,7 @@ type InstanceRequirementsRequest struct {
 	VCpuCount            *DuploLaunchTemplateVCpuCountRequest `json:"VCpuCount,omitempty"`
 	MemoryMiB            *DuploLaunchTemplateMemoryMiB        `json:"MemoryMiB,omitempty"`
 }
+
 type DuploLaunchTemplateVCpuCountRequest struct {
 	Min int `json:"Min"`
 	Max int `json:"Max"`

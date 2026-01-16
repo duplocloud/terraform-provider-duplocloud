@@ -167,6 +167,7 @@ resource "duplocloud_aws_host" "host" {
 
 ### Read-Only
 
+- `fullname` (String)
 - `id` (String) The ID of this resource.
 - `identity_role` (String) The name of the IAM role associated with this host.
 - `initial_base64_user_data` (String)

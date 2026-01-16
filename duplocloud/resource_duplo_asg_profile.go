@@ -193,7 +193,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): start", rq.TenantId, rq.FriendlyName)
 	// Create the ASG Prfoile in Duplo.
 	c := m.(*duplosdk.Client)
-	prefix, err := c.GetDuploServicesPrefix(rq.TenantId)
+	prefix, err := c.GetDuploServicesPrefix(rq.TenantId, "")
 	if err != nil {
 		return diag.Errorf("Tenant details : %s", err)
 	}
