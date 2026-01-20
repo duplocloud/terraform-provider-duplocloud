@@ -1,7 +1,7 @@
 // Example 1 - look up an S3 bucket by tenant ID and name.
 data "duplocloud_s3_bucket" "mybucket" {
-  tenant_id = "cf2d3e51-f8c0-4793-af52-0baebaa35b70"
-  name      = "duploservices-dev01-service-platform-private-348170387217"
+  tenant_id = var.tenant_id
+  name      = "bucket-name"
 }
 
 // Output the bucket ARN

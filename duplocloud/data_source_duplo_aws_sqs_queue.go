@@ -180,6 +180,10 @@ func flattenSqsQueueData(d *schema.ResourceData, tenantID string, name string, f
 		} else {
 			d.Set("fifo_throughput_limit", "perMessageGroupId")
 		}
+	} else {
+		// Clear FIFO-specific attributes for non-FIFO queues
+		d.Set("deduplication_scope", "")
+		d.Set("fifo_throughput_limit", "")
 	}
 
 	if queue.DeadLetterTargetQueueName != "" {
@@ -187,5 +191,8 @@ func flattenSqsQueueData(d *schema.ResourceData, tenantID string, name string, f
 		dlqConfig["target_sqs_dlq_name"] = queue.DeadLetterTargetQueueName
 		dlqConfig["max_message_receive_attempts"] = queue.MaxMessageTimesReceivedBeforeDeadLetterQueue
 		d.Set("dead_letter_queue_configuration", []interface{}{dlqConfig})
+	} else {
+		// Clear dead letter queue configuration when no DLQ is configured
+		d.Set("dead_letter_queue_configuration", []interface{}{})
 	}
 }
