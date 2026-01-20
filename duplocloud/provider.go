@@ -285,6 +285,8 @@ func Provider() *schema.Provider {
 			"duplocloud_system_features":            dataSourceDuploSystemFeatures(),
 			"duplocloud_azure_cosmos_db_account":    dataSourceAzureCosmosDBAccount(),
 			"duplocloud_azure_cosmos_db_database":   dataSourceAzureCosmosDBDatabase(),
+			"duplocloud_s3_bucket":                  dataSourceS3Bucket(),
+			"duplocloud_aws_sqs_queue":              dataSourceAwsSqsQueue(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
