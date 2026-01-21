@@ -115,7 +115,7 @@ Import is supported using the following syntax:
 ```shell
 # Example: Importing an existing S3 bucket event notification configuration
 #  - *TENANT_ID* is the tenant GUID
-#  - *SOURCEBUCKETNAME* is the full name of the S3 bucket
+#  - *SOURCE_BUCKET_NAME* is the full name of the S3 bucket
 #
-terraform import duplocloud_s3_event_notification.event *TENANT_ID*/*SOURCEBUCKETNAME*/event_notification
+terraform import duplocloud_s3_event_notification.event *TENANT_ID*/*SOURCE_BUCKET_NAME*/event_notification
 ```
