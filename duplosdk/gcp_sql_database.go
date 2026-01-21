@@ -22,11 +22,20 @@ type DuploGCPSqlDBInstance struct {
 	ConnectionName  string                      `json:"ConnectionName,omitempty"`
 	DatabaseFlags   []DuploGCPSqlDBInstanceFlag `json:"DatabaseFlags"`
 	Edition         string                      `json:"Edition"`
+	//Settings        *DuploGcpSqlDBSettings      `json:"settings,omitempty"`
+	SSLMode    string `json:"SslMode"`
+	RequireSsl bool   `json:"RequireSsl"`
 }
 
 type DuploGCPSqlDBInstanceFlag struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
+}
+type DuploGcpSqlDBSettings struct {
+	IpConfiguration *DuploGcpSqlDBIpConfiguration `json:"ipConfiguration,omitempty"`
+}
+
+type DuploGcpSqlDBIpConfiguration struct {
 }
 
 func (c *Client) GCPSqlDBInstanceCreate(tenantID string, rq *DuploGCPSqlDBInstance) (*DuploGCPSqlDBInstance, ClientError) {

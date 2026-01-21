@@ -127,6 +127,28 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringInSlice([]string{"ENTERPRISE", "ENTERPRISE_PLUS"}, false),
 			ForceNew:     true,
 		},
+		"ip_configuration": {
+			Description: "IP configuration for the database instance.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"ssl_mode": {
+						Description: "SSL mode for the database instance. Applicable for non server database",
+						Type:        schema.TypeString,
+						Optional:    true,
+						//	ConflictsWith: []string{"ip_configuration.0.require_ssl"},
+					},
+					"require_ssl": {
+						Description: "Whether SSL is required for the database instance. Applicable for server database",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						//	ConflictsWith: []string{"ip_configuration.0.ssl_mode"},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -391,6 +413,20 @@ func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInsta
 		}
 	} else {
 		rq.DatabaseFlags = []duplosdk.DuploGCPSqlDBInstanceFlag{}
+	}
+	if v, ok := d.GetOk("ip_configuration"); ok && !isInterfaceNil(v) {
+		ipConfigList := v.([]interface{})
+		if len(ipConfigList) > 0 && ipConfigList[0] != nil {
+			ipConfigMap := ipConfigList[0].(map[string]interface{})
+			//ipConfig := &duplosdk.DuploGcpSqlDBIpConfiguration{}
+			if sslMode, ok := ipConfigMap["ssl_mode"]; ok && !isInterfaceNil(sslMode) {
+				rq.SSLMode = sslMode.(string)
+			}
+			if requireSsl, ok := ipConfigMap["require_ssl"]; ok && !isInterfaceNil(requireSsl) {
+				rq.RequireSsl = requireSsl.(bool)
+			}
+
+		}
 	}
 	return rq
 }
