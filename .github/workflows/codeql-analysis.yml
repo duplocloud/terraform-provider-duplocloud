@@ -1,0 +1,45 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches:
+      - develop
+      - hotfix/**
+      - release/**
+  schedule:
+    # Sunday 7:00 PM PST = Monday 03:00 UTC (cron uses UTC)
+    - cron: "0 3 * * 1"
+
+
+jobs:
+  analyze:
+    name: Analyze
+
+    runs-on:
+      group: databricks-deco-testing-runner-group
+      labels: ubuntu-latest-deco
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'go' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
