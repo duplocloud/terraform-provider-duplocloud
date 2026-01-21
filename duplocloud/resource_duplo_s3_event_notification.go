@@ -126,6 +126,12 @@ func resourceS3EventNotificationRead(ctx context.Context, d *schema.ResourceData
 	// Get the object from Duplo
 	duplo, err := c.GetS3EventNotification(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[WARN] resourceS3EventNotificationRead: S3 event notification %s not found for tenantId %s, removing from state", name, tenantID)
+			d.SetId("")
+
+			return nil
+		}
 		return diag.Errorf("resourceS3EventNotificationRead: Unable to retrieve s3 event notification (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 
