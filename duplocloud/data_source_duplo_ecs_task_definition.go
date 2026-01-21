@@ -60,9 +60,13 @@ func dataSourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.Resourc
 		}
 		return diag.Errorf("Duplocloud resource tenant information'\n%s", err)
 	}
+	prefix, err := c.GetResourcePrefixWithoutTenant("duploservices")
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	// Read the object into state
-	flattenEcsTaskDefinition(duplo, d, tenant.AccountName)
+	flattenEcsTaskDefinition(duplo, d, tenant.AccountName, prefix)
 
 	log.Printf("[TRACE] dataSourceDuploEcsTaskDefinitionRead(%s, %s): end", tenantID, arn)
 	return nil
