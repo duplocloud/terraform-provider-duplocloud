@@ -13,26 +13,40 @@ description: |-
 ## Example Usage
 
 ```terraform
+// Example 1 - look up a standard SQS queue by tenant ID and name.
 data "duplocloud_aws_sqs_queue" "myqueue" {
-  tenant_id = "your-tenant-id"
+  tenant_id = var.tenant_id
   name      = "myqueue"
 }
 
+// Output the queue ARN
 output "queue_arn" {
   value = data.duplocloud_aws_sqs_queue.myqueue.arn
 }
 
+// Output the queue URL
 output "queue_url" {
   value = data.duplocloud_aws_sqs_queue.myqueue.url
 }
-```
 
-### FIFO Queue Example
+// Output the full queue name
+output "queue_fullname" {
+  value = data.duplocloud_aws_sqs_queue.myqueue.fullname
+}
 
-```terraform
+// Example 2 - look up a FIFO SQS queue.
 data "duplocloud_aws_sqs_queue" "myfifoqueue" {
-  tenant_id = "your-tenant-id"
+  tenant_id = var.tenant_id
   name      = "myfifoqueue.fifo"
+}
+
+// Output FIFO queue details
+output "fifo_queue_arn" {
+  value = data.duplocloud_aws_sqs_queue.myfifoqueue.arn
+}
+
+output "is_fifo_queue" {
+  value = data.duplocloud_aws_sqs_queue.myfifoqueue.fifo_queue
 }
 ```
 
@@ -41,7 +55,7 @@ data "duplocloud_aws_sqs_queue" "myfifoqueue" {
 
 ### Required
 
-- `name` (String) The short name of the SQS queue.
+- `name` (String) The short name of the SQS queue. Add `fifo` suffix for FIFO queues.
 - `tenant_id` (String) The GUID of the tenant that the SQS queue resides in.
 
 ### Read-Only
@@ -65,5 +79,5 @@ data "duplocloud_aws_sqs_queue" "myfifoqueue" {
 
 Read-Only:
 
-- `max_message_receive_attempts` (Number) Maximum number of processing attempts before moving to the dead letter queue.
-- `target_sqs_dlq_name` (String) Name of the SQS queue meant to be the target dead letter queue.
+- `max_message_receive_attempts` (Number)
+- `target_sqs_dlq_name` (String)

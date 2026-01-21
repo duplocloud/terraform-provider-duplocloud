@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
@@ -25,7 +24,7 @@ func dataSourceAwsSqsQueue() *schema.Resource {
 				ValidateFunc: validation.IsUUID,
 			},
 			"name": {
-				Description: "The short name of the SQS queue.",
+				Description: "The short name of the SQS queue. Add `fifo` suffix for FIFO queues.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -120,19 +119,10 @@ func dataSourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	// Determine if this is a FIFO queue based on the name
-	isFifo := strings.HasSuffix(name, ".fifo")
 	searchName := name
-	if isFifo {
-		searchName = strings.TrimSuffix(name, ".fifo")
-	}
 
 	// Build the full name
-	fullName := prefix + searchName
-	if isFifo {
-		fullName = fullName + ".fifo"
-	}
+	fullName := prefix + "-" + searchName
 
 	// Get the queue from Duplo
 	queue, clientErr := c.DuploSQSQueueGetV3(tenantID, fullName)
