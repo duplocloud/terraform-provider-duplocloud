@@ -61,11 +61,19 @@ jobs:
             const clickupSectionMatch = prBody.match(/##\s*ClickUp Ticket[\s\S]*?(?=##|$)/i);
             if (clickupSectionMatch) {
               const clickupSection = clickupSectionMatch[0];
-              // Remove comments and check if there's actual content
-              const contentWithoutComments = clickupSection.replace(/<!--[\s\S]*?-->/g, '').trim();
+              // Remove comments and the section header
+              const contentWithoutComments = clickupSection.replace(/<!--[\s\S]*?-->/g, '').replace(/^##\s*ClickUp Ticket/i, '').trim();
+              
+              // Check if there's meaningful content (not just the empty label)
               const hasContent = contentWithoutComments.split('\n').some(line => {
-                const trimmed = line.replace(/^##\s*ClickUp Ticket/i, '').trim();
-                return trimmed.length > 0 && !trimmed.startsWith('**ClickUp Ticket ID:**');
+                const trimmed = line.trim();
+                // Check if line has content after removing the label
+                if (trimmed.startsWith('**ClickUp Ticket ID:**')) {
+                  const afterLabel = trimmed.replace(/^\*\*ClickUp Ticket ID:\*\*/, '').trim();
+                  return afterLabel.length > 0;
+                }
+                // Or if there's any other non-empty line
+                return trimmed.length > 0;
               });
 
               if (!hasContent) {
