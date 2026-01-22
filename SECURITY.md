@@ -16,7 +16,7 @@ Include the following information:
 
 - We will acknowledge your report within **3 business days**
 - We will provide updates every **7 days**
-- We aim to release fixes within **90 days**
+- We aim to release fixes within **30 days**
 
 ## Security Best Practices
 
