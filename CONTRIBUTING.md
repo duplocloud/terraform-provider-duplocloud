@@ -144,8 +144,8 @@ make test
 # Run tests for a specific package
 go test ./duplocloud/... -v
 
-# Run tests for a specific file
-go test ./duplocloud/resource_duplo_service_test.go -v
+# Run specific tests by name
+go test ./duplocloud -run TestDuploService -v
 ```
 
 ### Run Acceptance Tests
@@ -219,7 +219,7 @@ go tool cover -html=coverage.out
    - **Testing performed**: How you tested your changes
    - **Breaking changes**: Any breaking changes (if applicable)
 
-**Note:** All PRs must reference a ClickUp ticket. The PR validation workflow will check for this.
+**Note:** All PRs must reference a ClickUp ticket. The PR validation workflow checks for the ClickUp ticket ID (DUPLO-XXXXX) in the PR title or description.
 
 ### PR Review Process
 

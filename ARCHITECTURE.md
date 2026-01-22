@@ -584,6 +584,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing to this pr
 ## Support
 
 For issues and questions:
-- GitHub Issues: Report bugs and feature requests
-- DuploCloud Support: Platform-specific questions
-- Community: Discussions and best practices
+- ClickUp: Report bugs and feature requests
+- DuploCloud Support: Platform-specific questions (support@duplocloud.com)
+- GitHub Discussions: Community questions and best practices

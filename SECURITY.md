@@ -44,7 +44,7 @@ When using this provider:
 
 - **Security Issues**: support@duplocloud.com
 - **General Support**: support@duplocloud.com
-- **Non-Security Bugs**: [GitHub Issues](https://github.com/duplocloud/terraform-provider-duplocloud/issues)
+- **Non-Security Bugs**: ClickUp
 
 ---
 
