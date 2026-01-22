@@ -13,12 +13,23 @@ type DuploOCIMetadata struct {
 	Name string `json:"name"`
 }
 type DuploOCISpec struct {
-	URL      string           `json:"url,omitempty"`
-	Interval string           `json:"interval"`
-	Ref      *DuploOCISpecRef `json:"ref,omitempty"`
+	URL       string                `json:"url,omitempty"`
+	Interval  string                `json:"interval"`
+	Ref       *DuploOCISpecRef      `json:"ref,omitempty"`
+	Selector  *DuploOCILayerSeletor `json:"layerSelector,omitempty"`
+	Secretref *DuploOCISecretRef    `json:"secretRef,omitempty"`
 }
 type DuploOCISpecRef struct {
 	Tag string `json:"tag,omitempty"`
+}
+
+type DuploOCILayerSeletor struct {
+	MediaType string `json:"mediaType,omitempty"`
+	Operation string `json:"operation,omitempty"`
+}
+
+type DuploOCISecretRef struct {
+	Name string `json:"name,omitempty"`
 }
 
 func (c *Client) DuploOCIRepositoryCreate(tenantID string, rq *DuploOCIRepository) ClientError {
