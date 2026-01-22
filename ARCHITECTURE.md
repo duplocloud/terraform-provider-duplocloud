@@ -21,26 +21,26 @@ The `terraform-provider-duplocloud` is a custom Terraform provider that enables 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Terraform CLI                            │
-│                  (User Interface)                            │
-└───────────────────────────┬─────────────────────────────────┘
+│                     Terraform CLI                           │
+│                  (User Interface)                           │
+└─────────────────────────────────────────────────────────────┘
                             │
                             │ gRPC/Plugin Protocol
                             │
 ┌───────────────────────────▼─────────────────────────────────┐
-│              Terraform Provider (main.go)                    │
-│                   Plugin Entry Point                         │
+│              Terraform Provider (main.go)                   │
+│                   Plugin Entry Point                        │
 └───────────────────────────┬─────────────────────────────────┘
                             │
 ┌───────────────────────────▼─────────────────────────────────┐
-│                  Provider Core (provider.go)                 │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  Schema Definition & Configuration                   │   │
-│  │  - Authentication (duplo_host, duplo_token)         │   │
-│  │  - SSL Configuration                                 │   │
-│  │  - HTTP Timeout Settings                            │   │
-│  └─────────────────────────────────────────────────────┘   │
-└───────────────────────────┬─────────────────────────────────┘
+│                  Provider Core (provider.go)                │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  Schema Definition & Configuration                  │    │
+│  │  - Authentication (duplo_host, duplo_token)         │    │
+│  │  - SSL Configuration                                │    │
+│  │  - HTTP Timeout Settings                            │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
                             │
         ┌───────────────────┴───────────────────┐
         │                                       │
@@ -53,31 +53,31 @@ The `terraform-provider-duplocloud` is a custom Terraform provider that enables 
 │  - GCP Resources │                   │  - Service Data  │
 │  - K8s Resources │                   │  - Infra Data    │
 └───────┬──────────┘                   └───────┬──────────┘
-        │                                       │
-        └───────────────────┬───────────────────┘
+        │                                      │
+        └──────────────────────────────────────┘
                             │
 ┌───────────────────────────▼─────────────────────────────────┐
-│                    DuploCloud SDK (duplosdk/)                │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  Client Layer (client.go)                           │   │
-│  │  - HTTP Client Management                           │   │
-│  │  - Authentication & Headers                         │   │
-│  │  - Retry Logic & Rate Limiting                      │   │
-│  └─────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  API Abstraction Layer                              │   │
-│  │  - Tenant APIs (tenant.go)                          │   │
-│  │  - Infrastructure APIs (infrastructure.go)          │   │
-│  │  - Service APIs (replication_controller.go)         │   │
-│  │  - Cloud-specific APIs (aws_*, azure_*, gcp_*)      │   │
-│  └─────────────────────────────────────────────────────┘   │
+│                    DuploCloud SDK (duplosdk/)               │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  Client Layer (client.go)                           │    │
+│  │  - HTTP Client Management                           │    │
+│  │  - Authentication & Headers                         │    │
+│  │  - Retry Logic & Rate Limiting                      │    │
+│  └─────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  API Abstraction Layer                              │    │
+│  │  - Tenant APIs (tenant.go)                          │    │
+│  │  - Infrastructure APIs (infrastructure.go)          │    │
+│  │  - Service APIs (replication_controller.go)         │    │
+│  │  - Cloud-specific APIs (aws_*, azure_*, gcp_*)      │    │
+│  └─────────────────────────────────────────────────────┘    │
 └───────────────────────────┬─────────────────────────────────┘
                             │
                             │ REST API (HTTP/HTTPS)
                             │
 ┌───────────────────────────▼─────────────────────────────────┐
-│                   DuploCloud Platform                        │
-│                    (REST API Server)                         │
+│                   DuploCloud Platform                       │
+│                    (REST API Server)                        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
