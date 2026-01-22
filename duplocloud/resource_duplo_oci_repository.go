@@ -45,7 +45,7 @@ func resourceOCIRepository() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9.-]{0,62}[a-zA-Z0-9]$`), "Invalid name format, name can be 64 character long and start with an alphabet or digit and can contain hypen or periods"),
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9.-]{0,62}[a-zA-Z0-9]$`), "Invalid name format, name can be up to 64 characters long and start with an alphabet or digit and can contain hyphen or periods"),
 			},
 			"spec": {
 				Type:        schema.TypeList,
