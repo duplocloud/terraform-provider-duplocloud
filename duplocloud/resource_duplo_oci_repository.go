@@ -82,6 +82,22 @@ func resourceOCIRepository() *schema.Resource {
 								},
 							},
 						},
+						"media_type": {
+							Description: "The media type of oci repository to be attached. Accepted media type is \n'application/vnd.cncf.helm.config.v1+json\napplication/vnd.cncf.helm.chart.content.v1.tar+gzip\napplication/vnd.oci.image.layer.v1.tar+gzip\napplication/vnd.oci.image.config.v1.+json\nany other mediatype can be specified other than above ones",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						"operation": {
+							Description:  "The operation of oci repository to be attached",
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"copy", "extract"}, false),
+						},
+						"private_registry_secret": {
+							Description: "Select the `dockerconfigjson` secret created from Kubernetes Secret to authenticate to OCI registry.",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
 					},
 				},
 			},
@@ -191,6 +207,22 @@ func expandOCI(d *schema.ResourceData) duplosdk.DuploOCIRepository {
 			Tag: ref.([]interface{})[0].(map[string]interface{})["tag"].(string),
 		}
 	}
+	if mediaType, ok := d.GetOk("spec.0.media_type"); ok {
+		obj.Spec.Selector = &duplosdk.DuploOCILayerSeletor{
+			MediaType: mediaType.(string),
+		}
+	}
+	if operation, ok := d.GetOk("spec.0.operation"); ok {
+		if obj.Spec.Selector == nil {
+			obj.Spec.Selector = &duplosdk.DuploOCILayerSeletor{}
+		}
+		obj.Spec.Selector.Operation = operation.(string)
+	}
+	if secret, ok := d.GetOk("spec.0.private_registry_secret"); ok {
+		obj.Spec.Secretref = &duplosdk.DuploOCISecretRef{
+			Name: secret.(string),
+		}
+	}
 	return obj
 }
 
@@ -203,6 +235,17 @@ func flattenOCI(d *schema.ResourceData, rb duplosdk.DuploOCIRepository) {
 		m["ref"] = ref
 	} else {
 		m["ref"] = nil
+	}
+	if rb.Spec.Selector != nil {
+		if rb.Spec.Selector.MediaType != "" {
+			m["media_type"] = rb.Spec.Selector.MediaType
+		}
+		if rb.Spec.Selector.Operation != "" {
+			m["operation"] = rb.Spec.Selector.Operation
+		}
+	}
+	if rb.Spec.Secretref != nil {
+		m["private_registry_secret"] = rb.Spec.Secretref.Name
 	}
 	s := []interface{}{}
 	s = append(s, m)
