@@ -1163,7 +1163,19 @@ func max(a, b int) int {
 	return b
 }
 
-// 1 trim prefix, 2 trim suffix, 3 trim both
+func StringValueSliceTolist(v []duplosdk.DuploStringValue) []string {
+	l := make([]string, 0, len(v))
+	for _, d := range v {
+		l = append(l, d.Value)
+	}
+	return l
+}
+
+func GetResourceNameFromARN(arn string) string {
+	tokens := strings.Split(arn, ":")
+	return tokens[len(tokens)-1]
+}
+
 func trimStringsByPosition(stringsSlice []string, sufixOrPrefix int) []string {
 	position := map[string]struct{}{
 		"allow-lb-healthcheck": {},
