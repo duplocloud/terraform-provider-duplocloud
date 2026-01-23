@@ -9,6 +9,7 @@ This document outlines the two main release processes for the Terraform Provider
 **Workflows Used:**
 - Start Hotfix (`start-hotfix.yml`)
 - Finish Hotfix (`finish-hotfix.yml`)
+- Release Publish (`release-publish.yml`)
 
 Hotfix releases are used for urgent fixes to the production codebase. The process uses dedicated workflows to automate branch creation, version bumping, and merging.
 
