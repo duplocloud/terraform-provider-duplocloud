@@ -38,7 +38,7 @@ func awsLaunchTemplateDefaultVersionSchema() map[string]*schema.Schema {
 }
 func resourceAwsLaunchTemplateDefaultVersion() *schema.Resource {
 	return &schema.Resource{
-		Description:   "duplocloud_aws_launch_template_default_version helps to set or update default version of launch template",
+		Description:   "duplocloud_aws_launch_template_default_version helps to set or update default version of launch template. It is usefull when you want asg to use new launch template version without recreating the asg profile.",
 		ReadContext:   resourceAwsLaunchTemplateDefaultVersionRead,
 		CreateContext: resourceAwsLaunchTemplateDefaultVersionCreateAndUpdate,
 		UpdateContext: resourceAwsLaunchTemplateDefaultVersionCreateAndUpdate,
