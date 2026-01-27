@@ -153,3 +153,69 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
   }
 
 }
+
+
+#Example to create ASG profile and updating it with launch template , setting default version and instance refresh
+resource "duplocloud_asg_profile" "asgtest" {
+  tenant_id           = duplocloud_tenant.duplo-app.tenant_id
+  friendly_name       = "myasg"
+  instance_count      = 1
+  min_instance_count  = 1
+  max_instance_count  = 1
+  image_id            = "<ami-id>"
+  capacity            = "t3a.medium"
+  agent_platform      = 7
+  zones               = [0]
+  is_minion           = true
+  is_ebs_optimized    = false
+  encrypt_disk        = false
+  allocated_public_ip = false
+  cloud               = 0
+  keypair_type        = 0
+  use_spot_instances  = false
+  custom_node_labels = {
+    "new" = "data"
+  }
+  metadata {
+    key   = "OsDiskSize"
+    value = "50"
+  }
+
+}
+
+resource "duplocloud_aws_launch_template" "name" {
+  tenant_id           = duplocloud_tenant.duplo-app.tenant_id
+  instance_type       = "t3a.micro"
+  name                = duplocloud_asg_profile.asgtest.fullname
+  version_description = "launch template allowed instance types"
+  version             = "1"
+  block_device_mapping {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_type           = "gp3"
+      volume_size           = 150
+      throughput            = 1000
+      iops                  = 4000
+      delete_on_termination = true
+      encrypted             = true
+    }
+  }
+
+}
+resource "duplocloud_aws_launch_template_default_version" "set" {
+  tenant_id       = duplocloud_tenant.duplo-app.tenant_id
+  name            = duplocloud_asg_profile.asgtest.fullname
+  default_version = duplocloud_aws_launch_template.name.latest_version
+}
+
+
+resource "duplocloud_asg_instance_refresh" "name" {
+  asg_name                       = duplocloud_asg_profile.asgtest.fullname
+  instance_warmup                = 300
+  max_healthy_percentage         = 100
+  min_healthy_percentage         = 90
+  refresh_identifier             = "1"
+  tenant_id                      = duplocloud_aws_launch_template_default_version.set.tenant_id
+  update_launch_template_version = duplocloud_aws_launch_template_default_version.set.default_version
+}

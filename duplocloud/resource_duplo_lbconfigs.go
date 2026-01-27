@@ -232,7 +232,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			Description:  "The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP.",
 			Optional:     true,
 			Computed:     true,
-			ValidateFunc: validateIntGreaterThan(0),
+			ValidateFunc: validation.IntBetween(1, 2147483647),
 		},
 	}
 }
