@@ -22,6 +22,8 @@ type DuploGCPSqlDBInstance struct {
 	ConnectionName  string                      `json:"ConnectionName,omitempty"`
 	DatabaseFlags   []DuploGCPSqlDBInstanceFlag `json:"DatabaseFlags"`
 	Edition         string                      `json:"Edition"`
+	SSLMode         string                      `json:"SslMode"`
+	RequireSsl      bool                        `json:"RequireSsl"`
 }
 
 type DuploGCPSqlDBInstanceFlag struct {
