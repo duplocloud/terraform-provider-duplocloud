@@ -210,6 +210,21 @@ func resourceTargetGroup() *schema.Resource {
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: targetGroupSchema(),
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			if v, ok := d.GetOk("health_check"); !ok || len(v.([]interface{})) == 0 {
+				defaultHC := map[string]interface{}{
+					"enabled":             true,
+					"healthy_threshold":   3,
+					"interval":            30,
+					"port":                "traffic-port",
+					"protocol":            "HTTP",
+					"unhealthy_threshold": 3,
+				}
+
+				return d.SetNew("health_check", []interface{}{defaultHC})
+			}
+			return nil
+		},
 	}
 }
 
