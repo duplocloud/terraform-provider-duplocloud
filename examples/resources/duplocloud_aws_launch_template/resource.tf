@@ -32,3 +32,20 @@ resource "duplocloud_aws_launch_template" "name" {
 
 }
 
+resource "duplocloud_aws_launch_template" "name" {
+  tenant_id           = duplocloud_tenant.myapp.tenant_id
+  name                = "launch-template-name"
+  version_description = "launch template block device mapping"
+  version             = "3"
+  instance_requirements {
+    allowed_instance_types = ["t3a.*", "c5.*"]
+    vcpu_count {
+      min = 0
+      max = 2
+    }
+    memory_mib {
+      min = 4096
+      max = 5120
+    }
+  }
+}
