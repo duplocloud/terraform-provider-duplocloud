@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -21,6 +22,12 @@ import (
 type flowContextKeyType string
 
 const flowContextKey flowContextKeyType = "flow"
+
+// stripFamilyPrefix removes the duploservices-{tenant-name}- prefix from ECS task definition family names
+func stripFamilyPrefix(family string) string {
+	re := regexp.MustCompile(`^duploservices-[^-]+-`)
+	return re.ReplaceAllString(family, "")
+}
 
 // ecsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
 func ecsTaskDefinitionSchema() map[string]*schema.Schema {
@@ -38,6 +45,13 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// Strip the duploservices prefix from both values before comparing
+				// This prevents false drift detection when the backend adds the prefix
+				oldStripped := stripFamilyPrefix(old)
+				newStripped := stripFamilyPrefix(new)
+				return oldStripped == newStripped
+			},
 		},
 		"full_family_name": {
 			Description: "The name of the task definition to create.",
@@ -518,15 +532,8 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("runtime_platform", ecsPlatformRuntimeToState(duplo.RuntimePlatform))
 
-	if !strings.Contains(d.Get("family").(string), prefix) {
-		parts := strings.Split(duplo.Family, prefix+tenantName+"-")
-
-		d.Set("family", parts[len(parts)-1])
-
-	} else {
-		d.Set("family", duplo.Family)
-
-	}
+	// Always strip the prefix to normalize the family name
+	d.Set("family", stripFamilyPrefix(duplo.Family))
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
