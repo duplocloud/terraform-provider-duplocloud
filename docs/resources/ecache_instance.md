@@ -199,7 +199,6 @@ Should be one of:
 
    - `0` : Redis
    - `1` : Memcache
-
    - `2` : Valkey
 
  Defaults to `0`.

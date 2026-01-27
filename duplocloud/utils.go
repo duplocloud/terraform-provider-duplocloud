@@ -10,7 +10,9 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
@@ -560,7 +562,7 @@ func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.Resour
 		resp, errget := get()
 
 		if errget != nil {
-			if errget.Status() == 404 {
+			if errget.Status() == 404 || errget.Status() == 400 {
 				return nil
 			}
 
@@ -1090,6 +1092,69 @@ func addIfDefined(target interface{}, resourceName string, targetValue interface
 	}
 }
 
+func validateDurationBetween(min, max time.Duration, maxFractionDigits int) func(value interface{}, key string) (ws []string, es []error) {
+	return func(value interface{}, key string) (ws []string, es []error) {
+		// Assert that the input value is a string
+		strVal, ok := value.(string)
+		if !ok {
+			es = append(es, fmt.Errorf("value for key '%s' must be a string", key))
+			return
+		}
+
+		// Create the regex pattern based on the allowed number of fractional digits
+		regexPattern := fmt.Sprintf(`^(\d+)(\.\d{1,%d})?([smh])$`, maxFractionDigits)
+		re := regexp.MustCompile(regexPattern)
+
+		// Check if the value matches the expected pattern
+		matches := re.FindStringSubmatch(strVal)
+		if matches == nil {
+			es = append(es, fmt.Errorf("invalid duration format for key '%s', must be in the form of '600s', '10m', '1h', or fractional like '600.%ds'", key, maxFractionDigits))
+			return
+		}
+
+		// Parse the integer part of the duration
+		wholeNumber, err := strconv.Atoi(matches[1])
+		if err != nil {
+			es = append(es, fmt.Errorf("invalid number in the duration for key '%s'", key))
+			return
+		}
+
+		// Parse the fractional part, if present
+		var fractionalPart float64
+		if matches[2] != "" {
+			fractionalPart, err = strconv.ParseFloat(matches[2], 64)
+			if err != nil {
+				es = append(es, fmt.Errorf("invalid fractional part for key '%s'", key))
+				return
+			}
+		}
+
+		// Identify the time unit: seconds, minutes, or hours
+		unit := matches[3]
+		var totalDuration time.Duration
+
+		// Calculate the total duration in the appropriate unit
+		switch unit {
+		case "s": // seconds
+			totalDuration = time.Duration((float64(wholeNumber) + fractionalPart) * float64(time.Second))
+		case "m": // minutes
+			totalDuration = time.Duration((float64(wholeNumber) + fractionalPart) * float64(time.Minute))
+		case "h": // hours
+			totalDuration = time.Duration((float64(wholeNumber) + fractionalPart) * float64(time.Hour))
+		default:
+			es = append(es, fmt.Errorf("invalid time unit for key '%s', must be 's', 'm', or 'h'", key))
+			return
+		}
+
+		// Check if the total duration is within the allowed range
+		if totalDuration < min || totalDuration > max {
+			es = append(es, fmt.Errorf("duration for key '%s' must be between %v and %v", key, min, max))
+		}
+
+		return
+	}
+}
+
 // max returns the maximum of two integers.
 func max(a, b int) int {
 	if a > b {
@@ -1098,7 +1163,19 @@ func max(a, b int) int {
 	return b
 }
 
-// 1 trim prefix, 2 trim suffix, 3 trim both
+func StringValueSliceTolist(v []duplosdk.DuploStringValue) []string {
+	l := make([]string, 0, len(v))
+	for _, d := range v {
+		l = append(l, d.Value)
+	}
+	return l
+}
+
+func GetResourceNameFromARN(arn string) string {
+	tokens := strings.Split(arn, ":")
+	return tokens[len(tokens)-1]
+}
+
 func trimStringsByPosition(stringsSlice []string, sufixOrPrefix int) []string {
 	position := map[string]struct{}{
 		"allow-lb-healthcheck": {},
@@ -1218,4 +1295,19 @@ func gBToBytes(gb int) int64 {
 
 func bytesToGB(bytes int64) int {
 	return int(bytes / (1024 * 1024 * 1024))
+}
+
+func filterDuploDefinedTagsAsMap(tag any) map[string]interface{} {
+	m := make(map[string]interface{})
+	duploTag := map[string]struct{}{
+		"duplo-project":         {},
+		"TENANT_NAME":           {},
+		"duplo_lifecycle_owner": {},
+	}
+	for k, v := range tag.(map[string]interface{}) {
+		if _, ok := duploTag[k]; !ok {
+			m[k] = v
+		}
+	}
+	return m
 }

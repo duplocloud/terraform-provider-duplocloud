@@ -53,8 +53,8 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 
 		"tier": {
 			Description: "The machine type to use. See tiers for more details and supported versions. " +
-				"Postgres supports only shared-core machine types, and custom machine types such as `db-custom-2-13312`." +
-				"See the [Custom Machine Type Documentation](https://cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type#create) to learn about specifying custom machine types.",
+				"Postgres supports only shared-core machine types, and custom machine types, format for custom machine type db-custom-{vCPU}-{memory-in-MB} example `db-custom-2-13312`." +
+				"See the [Machine Type Documentation](https://cloud.google.com/compute/docs/machine-resource) to learn more about machine types.",
 			Type:     schema.TypeString,
 			Required: true,
 		},
@@ -126,6 +126,30 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Default:      "ENTERPRISE",
 			ValidateFunc: validation.StringInSlice([]string{"ENTERPRISE", "ENTERPRISE_PLUS"}, false),
 			ForceNew:     true,
+		},
+		"ip_configuration": {
+			Description: "IP configuration for the database instance.\n\n" +
+				"`NOTE`: ssl_mode and require_ssl: Specify how SSL/TLS is enforced in database connections. MySQL and PostgreSQL use the `ssl_mode` flag. If you must use the `require_ssl` flag for backward compatibility, then only the following value pairs are valid: * `ssl_mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED` and `require_ssl=false` * `ssl_mode=ENCRYPTED_ONLY` and `require_ssl=false` * `ssl_mode=TRUSTED_CLIENT_CERTIFICATE_REQUIRED` and `require_ssl=true` The value of `ssl_mode` gets priority over the value of `require_ssl`. For example, for the pair `ssl_mode=ENCRYPTED_ONLY` and `require_ssl=false`, the `ssl_mode=ENCRYPTED_ONLY` means only accept SSL connections, while the `require_ssl=false` means accept both non-SSL and SSL connections. MySQL and PostgreSQL databases respect `ssl_mode` in this case and accept only SSL connections. SQL Server uses the `require_ssl` flag. You can set the value for this flag to `true` or `false`.",
+			Type:     schema.TypeList,
+			Optional: true,
+			MaxItems: 1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"ssl_mode": {
+						Description:  "SSL mode for the database instance. Valid values are `ALLOW_UNENCRYPTED_AND_ENCRYPTED`, `ENCRYPTED_ONLY`, `TRUSTED_CLIENT_CERTIFICATE_REQUIRED`",
+						Type:         schema.TypeString,
+						Optional:     true,
+						Computed:     true,
+						ValidateFunc: validation.StringInSlice([]string{"ALLOW_UNENCRYPTED_AND_ENCRYPTED", "ENCRYPTED_ONLY", "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"}, false),
+					},
+					"require_ssl": {
+						Description: "Whether SSL is required for the database instance. Applicable for server database",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Computed:    true,
+					},
+				},
+			},
 		},
 	}
 }
@@ -275,7 +299,7 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		d.SetId("") // object missing
 		return nil
 	}
-	if d.HasChanges("tier", "disk_size", "labels", "database_version", "database_flag") {
+	if d.HasChanges("tier", "disk_size", "labels", "database_version", "database_flag", "ssl_mode", "require_ssl") {
 		requestedVersion := d.Get("database_version").(string)
 
 		// Validate the database version
@@ -357,7 +381,16 @@ func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name strin
 		duplo.Edition = "ENTERPRISE"
 	}
 	d.Set("edition", duplo.Edition)
+	d.Set("ip_configuration", flattenGcpSqlDBInstanceIpConfiguration(duplo))
+}
 
+func flattenGcpSqlDBInstanceIpConfiguration(duplo *duplosdk.DuploGCPSqlDBInstance) []map[string]interface{} {
+	ipConfig := map[string]interface{}{}
+	if duplo.SSLMode != "" {
+		ipConfig["ssl_mode"] = duplo.SSLMode
+	}
+	ipConfig["require_ssl"] = duplo.RequireSsl
+	return []map[string]interface{}{ipConfig}
 }
 
 func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInstance {
@@ -391,6 +424,20 @@ func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInsta
 		}
 	} else {
 		rq.DatabaseFlags = []duplosdk.DuploGCPSqlDBInstanceFlag{}
+	}
+	if v, ok := d.GetOk("ip_configuration"); ok && !isInterfaceNil(v) {
+		ipConfigList := v.([]interface{})
+		if len(ipConfigList) > 0 && ipConfigList[0] != nil {
+			ipConfigMap := ipConfigList[0].(map[string]interface{})
+			//ipConfig := &duplosdk.DuploGcpSqlDBIpConfiguration{}
+			if sslMode, ok := ipConfigMap["ssl_mode"]; ok && !isInterfaceNil(sslMode) {
+				rq.SSLMode = sslMode.(string)
+			}
+			if requireSsl, ok := ipConfigMap["require_ssl"]; ok && !isInterfaceNil(requireSsl) {
+				rq.RequireSsl = requireSsl.(bool)
+			}
+
+		}
 	}
 	return rq
 }

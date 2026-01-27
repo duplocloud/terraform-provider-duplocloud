@@ -431,6 +431,8 @@ type DuploMinion struct {
 	AgentPlatform    int                    `json:"AgentPlatform"`
 	Cloud            int                    `json:"Cloud"`
 	Taints           []DuploMinionTaint     `json:"Taints"`
+	PrivateIpAddress string                 `json:"PrivateIpAddress"`
+	AsgName          string                 `json:"AsgName,omitempty"`
 }
 
 type DuploMinionDeleteReq struct {
@@ -1085,4 +1087,82 @@ func (c *Client) TenantDeleteV3S3BucketReplication(tenantID, sourceBucket, ruleF
 	return c.deleteAPI(fmt.Sprintf("TenantDeleteV3S3BucketReplication(%s, %s,%s)", tenantID, sourceBucket, ruleFullName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/replication/%s", tenantID, sourceBucket, ruleFullName),
 		nil)
+}
+
+type DuploS3EventNotificaition struct {
+	//SQSName           string                             `json:"SqsName,omitempty"`
+	//SQSARN            string                             `json:"SqsArn,omitempty"`
+	//SNSName           string                             `json:"SnsName,omitempty"`
+	//SNSARN            string                             `json:"SnsArn,omitempty"`
+	//LambdaName        string                             `json:"LambdaName,omitempty"`
+	//LambdaARN         string                             `json:"LambdaArn,omitempty"`
+	//EventTypes        []string                           `json:"EventTypes"`
+	EnableEventBridge bool                              `json:"EnableEventBridge"`
+	SQS               []DuploS3EventSQSConfiguration    `json:"QueueConfigurations,omitempty"`
+	SNS               []DuploS3EventSNSConfiguration    `json:"TopicConfigurations,omitempty"`
+	Lambda            []DuploS3EventLambdaConfiguration `json:"LambdaFunctionConfigurations,omitempty"`
+}
+
+type DuploS3EventNotificaitionResponse struct {
+	SQS    *[]DuploS3EventSQSConfiguration    `json:"QueueConfigurations,omitempty"`
+	SNS    *[]DuploS3EventSNSConfiguration    `json:"TopicConfigurations,omitempty"`
+	Lambda *[]DuploS3EventLambdaConfiguration `json:"LambdaFunctionConfigurations,omitempty"`
+}
+
+type DuploS3EventSNSConfiguration struct {
+	EventTypes []DuploStringValue `json:"Events"`
+	SNSARN     string             `json:"Topic"`
+	ConfigId   string             `json:"Id,omitempty"`
+}
+
+type DuploS3EventSQSConfiguration struct {
+	EventTypes []DuploStringValue `json:"Events"`
+	SQSARN     string             `json:"Queue"`
+	ConfigId   string             `json:"Id,omitempty"`
+}
+
+type DuploS3EventLambdaConfiguration struct {
+	EventTypes []DuploStringValue `json:"Events"`
+	LambdaARN  string             `json:"FunctionArn"`
+	ConfigId   string             `json:"Id,omitempty"`
+}
+
+func (c *Client) UpdateS3EventNotification(tenantID, bucketName string, duplo DuploS3EventNotificaition) ClientError {
+	// Apply the settings via Duplo.
+	rp := ""
+	apiName := fmt.Sprintf("UpdateS3EventNotification(%s, %s)", tenantID, bucketName)
+	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/notifications", tenantID, bucketName), &duplo, &rp)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) GetS3EventNotification(tenantID, bucketName string) (*DuploS3EventNotificaitionResponse, ClientError) {
+	rp := DuploS3EventNotificaitionResponse{}
+	err := c.getAPI(fmt.Sprintf("GetS3EventNotification(%s, %s)", tenantID, bucketName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/notifications", tenantID, bucketName),
+		&rp)
+	return &rp, err
+}
+
+func (c *Client) UpdateASGTaints(tenantID, privateAddress string, duplo []DuploTaints) ClientError {
+
+	err := c.postAPI(
+		fmt.Sprintf("UpdateTaints(%s, %s)", tenantID, privateAddress),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/node/%s/taints", tenantID, privateAddress),
+		&duplo,
+		nil)
+
+	return err
+}
+
+func (c *Client) DeleteASGTaints(tenantID, privateAddress string, duplo []string) ClientError {
+
+	err := c.deleteAPIWithRequestBody(
+		fmt.Sprintf("DeleteASGTaints(%s, %s)", tenantID, privateAddress),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/node/%s/taints", tenantID, privateAddress),
+		&duplo, nil)
+
+	return err
 }

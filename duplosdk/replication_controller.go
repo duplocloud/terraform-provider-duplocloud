@@ -111,6 +111,8 @@ type DuploLbConfiguration struct {
 	SkipHttpToHttps   bool                `json:"SkipHttpToHttps,omitempty"`
 	AllocationIds     []string            `json:"AllocationIds,omitempty"`
 	GcpSettings       *DuploLbGCPSettings `json:"GcpSettings"`
+	EIPAllocationIds  []string            `json:"EIPAllocationIds,omitempty"`
+	UseEIPFromPool    bool                `json:"UseEIPFromPool"`
 }
 
 type DuploLbGCPSettings struct {
