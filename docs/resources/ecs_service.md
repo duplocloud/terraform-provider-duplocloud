@@ -184,6 +184,7 @@ Should be one of:
    - `0` : ELB (Classic Load Balancer)
    - `1` : ALB (Application Load Balancer)
    - `2` : Health-check Only (No Load Balancer)
+   - `6` : NLB (Network Load Balancer)
 - `port` (String) The backend port associated with this load balancer configuration.
 - `protocol` (String) The frontend protocol associated with this load balancer configuration.
 - `target_group_count` (Number) Number of Load Balancer target group to associate with the service.
@@ -195,8 +196,8 @@ Optional:
 - `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - `drop_invalid_headers` (Boolean) Whether or not to drop invalid HTTP headers received by the load balancer.
 - `enable_access_logs` (Boolean) Whether or not to enable access logs.  When enabled, Duplo will send access logs to a centralized S3 bucket per plan
-- `health_check_config` (Block List, Max: 1) Health check configuration for this load balancer. (see [below for nested schema](#nestedblock--load_balancer--health_check_config))
-- `health_check_url` (String) The health check URL to associate with this load balancer configuration.
+- `health_check_config` (Block List, Max: 1) Health check configuration for this load balancer. Not applicable for NLB (see [below for nested schema](#nestedblock--load_balancer--health_check_config))
+- `health_check_url` (String) The health check URL to associate with this load balancer configuration. Not applicable for NLB
 - `http_to_https_redirect` (Boolean) Whether or not the load balancer should redirect HTTP to HTTPS.
 - `idle_timeout` (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
 - `is_internal` (Boolean) Whether or not to create an internal load balancer. Defaults to `false`.
