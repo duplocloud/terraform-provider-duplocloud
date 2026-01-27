@@ -3,12 +3,12 @@
 page_title: "duplocloud_aws_launch_template_default_version Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloudawslaunchtemplatedefault_version helps to set or update default version of launch template
+  duplocloudawslaunchtemplatedefault_version helps to set or update default version of launch template. It is usefull when you want asg to use new launch template version without recreating the asg profile.
 ---
 
 # duplocloud_aws_launch_template_default_version (Resource)
 
-duplocloud_aws_launch_template_default_version helps to set or update default version of launch template
+duplocloud_aws_launch_template_default_version helps to set or update default version of launch template. It is usefull when you want asg to use new launch template version without recreating the asg profile.
 
 ## Example Usage
 
