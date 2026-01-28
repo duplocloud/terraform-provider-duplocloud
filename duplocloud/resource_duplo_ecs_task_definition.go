@@ -49,7 +49,7 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 				if old == "" || new == "" {
 					return false
 				}
-				
+
 				// The backend automatically adds a prefix like "duploservices-{tenant}-" or "{custom-prefix}-{tenant}-"
 				// to the family name. The Read function strips this prefix, but during some operations (like imports
 				// or state migrations), one value might be prefixed and the other not.
