@@ -22,6 +22,12 @@ type flowContextKeyType string
 
 const flowContextKey flowContextKeyType = "flow"
 
+// stripFamilyPrefix removes the {prefix}{tenant-name}- prefix from ECS task definition family names
+func stripFamilyPrefix(family, prefix, tenantName string) string {
+	fullPrefix := prefix + tenantName + "-"
+	return strings.TrimPrefix(family, fullPrefix)
+}
+
 // ecsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
 func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -38,6 +44,22 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// If either value is empty, don't suppress (allow the change)
+				if old == "" || new == "" {
+					return false
+				}
+
+				// The backend automatically adds a prefix like "duploservices-{tenant}-" or "{custom-prefix}-{tenant}-"
+				// to the family name. The Read function strips this prefix, but during some operations (like imports
+				// or state migrations), one value might be prefixed and the other not.
+				// Since tenant names can contain dashes (e.g., "ray-rel-2001"), we can't use simple regex patterns.
+				// Instead, we check if one value is a suffix of the other, which handles all prefix scenarios.
+				if strings.HasSuffix(old, new) || strings.HasSuffix(new, old) {
+					return true
+				}
+				return old == new
+			},
 		},
 		"full_family_name": {
 			Description: "The name of the task definition to create.",
@@ -518,15 +540,8 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("runtime_platform", ecsPlatformRuntimeToState(duplo.RuntimePlatform))
 
-	if !strings.Contains(d.Get("family").(string), prefix) {
-		parts := strings.Split(duplo.Family, prefix+tenantName+"-")
-
-		d.Set("family", parts[len(parts)-1])
-
-	} else {
-		d.Set("family", duplo.Family)
-
-	}
+	// Always strip the prefix to normalize the family name
+	d.Set("family", stripFamilyPrefix(duplo.Family, prefix, tenantName))
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
