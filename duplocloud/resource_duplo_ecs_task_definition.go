@@ -24,7 +24,7 @@ const flowContextKey flowContextKeyType = "flow"
 
 // stripFamilyPrefix removes the {prefix}{tenant-name}- prefix from ECS task definition family names
 func stripFamilyPrefix(family, prefix, tenantName string) string {
-	fullPrefix := prefix + tenantName + "-"
+	fullPrefix := prefix + "-" + tenantName + "-"
 	return strings.TrimPrefix(family, fullPrefix)
 }
 
