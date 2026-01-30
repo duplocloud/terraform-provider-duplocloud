@@ -801,11 +801,15 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		enableAutoscaling := d.Get("storage_autoscaling.0.enable").(bool)
 		maxStorage := d.Get("storage_autoscaling.0.max_allocated_storage").(int)
 
-		// When disabling autoscaling, set MaxAllocatedStorage equal to AllocatedStorage to prevent growth
+		// When disabling autoscaling, set MaxAllocatedStorage equal to AllocatedStorage to prevent growth.
+		// If allocated_storage is 0 (e.g., when created from a snapshot), we keep the existing maxStorage
+		// but log a warning to make this behavior explicit.
 		if !enableAutoscaling {
 			allocatedStorage := d.Get("allocated_storage").(int)
 			if allocatedStorage > 0 {
 				maxStorage = allocatedStorage
+			} else {
+				log.Printf("[WARN] storage_autoscaling: allocated_storage is 0 while disabling autoscaling for RDS instance '%s'; retaining previous max_allocated_storage value (%d)", identifier, maxStorage)
 			}
 		}
 
