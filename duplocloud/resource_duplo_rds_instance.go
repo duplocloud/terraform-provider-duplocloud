@@ -798,18 +798,26 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	if d.HasChange("storage_autoscaling") {
-		if d.Get("storage_autoscaling.0.enable").(bool) {
-			obj := duplosdk.DuploRDSStorageAutoScalling{
-				IsAutoScalingEnabled: d.Get("storage_autoscaling.0.enable").(bool),
-				MaxAllocatedStorage:  d.Get("storage_autoscaling.0.max_allocated_storage").(int),
-				ApplyImmediately:     true,
-			}
-			cerr := c.UpdateRDSDBInstanceStorageAutoScalling(tenantID, identifier, obj)
-			if cerr != nil {
-				return diag.FromErr(err)
+		enableAutoscaling := d.Get("storage_autoscaling.0.enable").(bool)
+		maxStorage := d.Get("storage_autoscaling.0.max_allocated_storage").(int)
+
+		// When disabling autoscaling, set MaxAllocatedStorage equal to AllocatedStorage to prevent growth
+		if !enableAutoscaling {
+			allocatedStorage := d.Get("allocated_storage").(int)
+			if allocatedStorage > 0 {
+				maxStorage = allocatedStorage
 			}
 		}
 
+		obj := duplosdk.DuploRDSStorageAutoScalling{
+			IsAutoScalingEnabled: enableAutoscaling,
+			MaxAllocatedStorage:  maxStorage,
+			ApplyImmediately:     true,
+		}
+		cerr := c.UpdateRDSDBInstanceStorageAutoScalling(tenantID, identifier, obj)
+		if cerr != nil {
+			return diag.FromErr(cerr)
+		}
 	}
 	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
 	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
