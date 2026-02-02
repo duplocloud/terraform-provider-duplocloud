@@ -70,7 +70,7 @@ func s3EventNotificationSchema() map[string]*schema.Schema {
 			's3:ObjectRestore:*'<br>
 			's3:ObjectRestore:Post'<br>`,
 						Type:     schema.TypeSet,
-						Optional: true,
+						Required: true,
 						Elem: &schema.Schema{
 							Type: schema.TypeString,
 							ValidateFunc: validation.StringInSlice([]string{"s3:TestEvent", "s3:ObjectCreated:*", "s3:ObjectCreated:Put",
