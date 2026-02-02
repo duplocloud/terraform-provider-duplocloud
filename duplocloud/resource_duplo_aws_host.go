@@ -91,7 +91,7 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Description:      "Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided.",
 			Type:             schema.TypeBool,
 			Optional:         true,
-			Computed:         true,
+			Default:          true,
 			ForceNew:         true, // relaunch instance
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
