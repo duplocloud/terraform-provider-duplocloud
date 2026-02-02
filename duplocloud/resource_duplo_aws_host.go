@@ -88,11 +88,12 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"prepend_user_data": {
-			Description: "Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			ForceNew:    true, // relaunch instance
-			Default:     true,
+			Description:      "Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Computed:         true,
+			ForceNew:         true, // relaunch instance
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"agent_platform": {
 			Description: "The numeric ID of the container agent pool that this host is added to.\n - 0: Linux Docker/Native\n- 	4: None\n- 5: Docker Windows\n- 7: EKS Linux\n- 8: ECS",
@@ -270,13 +271,13 @@ func nativeHostSchema() map[string]*schema.Schema {
 			},
 		},
 		"custom_node_labels": {
-			Description: "Specify the labels to attach to the nodes.",
-			Type:        schema.TypeMap,
-			Optional:    true,
-			//Computed:         true,
-			Elem: &schema.Schema{Type: schema.TypeString},
-			//DiffSuppressFunc: diffSuppressWhenNotCreating,
-			ForceNew: true,
+			Description:      "Specify the labels to attach to the nodes.",
+			Type:             schema.TypeMap,
+			Optional:         true,
+			Computed:         true,
+			Elem:             &schema.Schema{Type: schema.TypeString},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			ForceNew:         true,
 		},
 
 		"taints": {
@@ -736,7 +737,7 @@ func nativeHostToState(ctx context.Context, d *schema.ResourceData, duplo *duplo
 
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
-	// Ignore the value in the response for duplo.PrependUserData
+	// Ignore the value in the response for duplo.PrependUserData and duplo.ExtraNodeLabels
 	if duplo.MetaData != nil {
 		d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	}
