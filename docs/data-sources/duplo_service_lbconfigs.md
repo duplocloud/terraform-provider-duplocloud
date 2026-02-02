@@ -48,6 +48,7 @@ Read-Only:
 Read-Only:
 
 - `allow_global_access` (Boolean)
+- `backend_config_timeout_sec` (Number)
 - `backend_protocol_version` (String)
 - `certificate_arn` (String)
 - `cloud_name` (String)

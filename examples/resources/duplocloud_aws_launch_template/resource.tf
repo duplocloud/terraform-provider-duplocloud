@@ -31,3 +31,4 @@ resource "duplocloud_aws_launch_template" "name" {
   }
 
 }
+
