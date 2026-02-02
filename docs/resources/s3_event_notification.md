@@ -68,12 +68,12 @@ resource "duplocloud_s3_event_notification" "event" {
 ### Required
 
 - `bucket_name` (String) The fully qualified duplo name of the S3 bucket.
+- `event` (Block List, Min: 1) The list of events that will trigger the notification. (see [below for nested schema](#nestedblock--event))
 - `tenant_id` (String) The GUID of the tenant that the S3 bucket will be created in.
 
 ### Optional
 
 - `enable_event_bridge` (Boolean)
-- `event` (Block List) The list of events that will trigger the notification. (see [below for nested schema](#nestedblock--event))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
