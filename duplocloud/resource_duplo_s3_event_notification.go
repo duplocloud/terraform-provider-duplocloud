@@ -136,6 +136,7 @@ func resourceS3EventNotificationRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	// Set simple fields first.
+	d.Set("tenant_id", tenantID)
 	flattenEventNotification(d, name, duplo)
 
 	log.Printf("[TRACE] resourceS3BucketRead ******** end")
@@ -216,17 +217,20 @@ func expandEventNotification(d *schema.ResourceData) duplosdk.DuploS3EventNotifi
 	events := d.Get("event").([]interface{})
 	obj := duplosdk.DuploS3EventNotificaition{}
 
-	for i, event := range events {
+	for _, event := range events { // Changed 'i' to '_' as we no longer use the input index for output slices
 		m := event.(map[string]interface{})
 		destType := m["destination_type"].(string)
+
 		switch destType {
 		case "lambda":
 			obj.Lambda = append(obj.Lambda, duplosdk.DuploS3EventLambdaConfiguration{
 				LambdaARN: m["destination_arn"].(string),
 			})
+			// Get the index of the item we just added
+			idx := len(obj.Lambda) - 1
 			eventTypes := expandStringSet(m["event_types"].(*schema.Set))
 			for _, eventType := range eventTypes {
-				obj.Lambda[i].EventTypes = append(obj.Lambda[0].EventTypes, duplosdk.DuploStringValue{
+				obj.Lambda[idx].EventTypes = append(obj.Lambda[idx].EventTypes, duplosdk.DuploStringValue{
 					Value: eventType})
 			}
 
@@ -234,9 +238,11 @@ func expandEventNotification(d *schema.ResourceData) duplosdk.DuploS3EventNotifi
 			obj.SNS = append(obj.SNS, duplosdk.DuploS3EventSNSConfiguration{
 				SNSARN: m["destination_arn"].(string),
 			})
+			// Get the index of the item we just added
+			idx := len(obj.SNS) - 1
 			eventTypes := expandStringSet(m["event_types"].(*schema.Set))
 			for _, eventType := range eventTypes {
-				obj.SNS[i].EventTypes = append(obj.SNS[0].EventTypes, duplosdk.DuploStringValue{
+				obj.SNS[idx].EventTypes = append(obj.SNS[idx].EventTypes, duplosdk.DuploStringValue{
 					Value: eventType})
 			}
 
@@ -244,9 +250,11 @@ func expandEventNotification(d *schema.ResourceData) duplosdk.DuploS3EventNotifi
 			obj.SQS = append(obj.SQS, duplosdk.DuploS3EventSQSConfiguration{
 				SQSARN: m["destination_arn"].(string),
 			})
+			// Get the index of the item we just added
+			idx := len(obj.SQS) - 1
 			eventTypes := expandStringSet(m["event_types"].(*schema.Set))
 			for _, eventType := range eventTypes {
-				obj.SQS[i].EventTypes = append(obj.SQS[i].EventTypes, duplosdk.DuploStringValue{
+				obj.SQS[idx].EventTypes = append(obj.SQS[idx].EventTypes, duplosdk.DuploStringValue{
 					Value: eventType})
 			}
 		}
