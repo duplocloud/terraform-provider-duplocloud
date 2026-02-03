@@ -85,7 +85,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			Description: "Zero or more load balancer configurations to associate with this service.",
 			Type:        schema.TypeList,
 			Optional:    true,
-			ForceNew:    true,
+			//ForceNew:    true,
 			// MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
