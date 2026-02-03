@@ -36,7 +36,8 @@ func s3EventNotificationSchema() map[string]*schema.Schema {
 		"event": {
 			Description: "The list of events that will trigger the notification.",
 			Type:        schema.TypeList,
-			Optional:    true,
+			Required:    true,
+			MinItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"destination_type": {
@@ -134,7 +135,12 @@ func resourceS3EventNotificationRead(ctx context.Context, d *schema.ResourceData
 		}
 		return diag.Errorf("resourceS3EventNotificationRead: Unable to retrieve s3 event notification (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
+	if duplo == nil {
+		log.Printf("[WARN] resourceS3EventNotificationRead: S3 event notification %s not found for tenantId %s, removing from state", name, tenantID)
+		d.SetId("")
+		return nil
 
+	}
 	// Set simple fields first.
 	d.Set("tenant_id", tenantID)
 	flattenEventNotification(d, name, duplo)
@@ -211,6 +217,11 @@ func flattenEventNotification(d *schema.ResourceData, name string, duplo *duplos
 		}
 	}
 	d.Set("event", i)
+	d.Set("enable_event_bridge", false)
+	if duplo.EventBridgeConfiguration != nil {
+		d.Set("enable_event_bridge", true)
+	}
+
 }
 
 func expandEventNotification(d *schema.ResourceData) duplosdk.DuploS3EventNotificaition {
