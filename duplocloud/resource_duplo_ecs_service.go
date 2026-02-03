@@ -98,7 +98,8 @@ func ecsServiceSchema() map[string]*schema.Schema {
 							"Should be one of:\n\n" +
 							"   - `0` : ELB (Classic Load Balancer)\n" +
 							"   - `1` : ALB (Application Load Balancer)\n" +
-							"   - `2` : Health-check Only (No Load Balancer)\n",
+							"   - `2` : Health-check Only (No Load Balancer)\n" +
+							"   - `6` : NLB (Network Load Balancer)\n",
 						Type:     schema.TypeInt,
 						Optional: false,
 						Required: true,
@@ -153,7 +154,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Default:     false,
 					},
 					"health_check_url": {
-						Description: "The health check URL to associate with this load balancer configuration.",
+						Description: "The health check URL to associate with this load balancer configuration. Not applicable for NLB",
 						Type:        schema.TypeString,
 						Optional:    true,
 						Required:    false,
@@ -210,7 +211,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Computed:    true,
 					},
 					"health_check_config": {
-						Description: "Health check configuration for this load balancer.",
+						Description: "Health check configuration for this load balancer. Not applicable for NLB",
 						Type:        schema.TypeList,
 						Optional:    true,
 						MaxItems:    1,
