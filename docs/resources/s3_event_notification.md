@@ -22,34 +22,43 @@ resource "duplocloud_tenant" "myapp" {
 # Simple Example 1:  S3 event destination as lambda function
 
 resource "duplocloud_s3_event_notification" "event" {
-  tenant_id           = duplocloud_tenant.myapp.tenant_id
-  bucket_name         = "duploservices-<tenantname>-<bucket>"
-  destination_type    = "lambda"
-  destination_name    = "duploservices-<tenantname>-<lambdafunctionname>"
-  event_types         = ["s3:ObjectCreated:Put", "s3:ObjectRemoved:DeleteMarkerCreated"]
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
+  bucket_name = "duploservices-<tenantname>-<bucket>"
+  event {
+    destination_type = "lambda"
+    destination_arn  = "<arn-of-destination-type>"
+    event_types      = ["s3:ObjectCreated:Put", "s3:ObjectRemoved:DeleteMarkerCreated"]
+  }
   enable_event_bridge = true
+
 }
 
 # Simple Example 2:  S3 event destination as SQS
 
 resource "duplocloud_s3_event_notification" "event" {
-  tenant_id           = duplocloud_tenant.myapp.tenant_id
-  bucket_name         = "duploservices-<tenantname>-<bucket>"
-  destination_type    = "sqs"
-  destination_name    = "duploservices-<tenantname>-<sqsname>"
-  event_types         = ["s3:ObjectCreated:Put", "s3:ObjectRemoved:DeleteMarkerCreated"]
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
+  bucket_name = "duploservices-<tenantname>-<bucket>"
+  event {
+    destination_type = "sqs"
+    destination_arn  = "<arn-of-destination-type>"
+    event_types      = ["s3:ObjectCreated:Put", "s3:ObjectRemoved:DeleteMarkerCreated"]
+  }
   enable_event_bridge = true
+
 }
 
 # Simple Example 3:  S3 event destination as SNS
 
 resource "duplocloud_s3_event_notification" "event" {
-  tenant_id           = duplocloud_tenant.myapp.tenant_id
-  bucket_name         = "duploservices-<tenantname>-<bucket>"
-  destination_type    = "sns"
-  destination_name    = "duploservices-<tenantname>-<snsname>"
-  event_types         = ["s3:ObjectCreated:Put", "s3:ObjectRemoved:DeleteMarkerCreated"]
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
+  bucket_name = "duploservices-<tenantname>-<bucket>"
+  event {
+    destination_type = "sns"
+    destination_arn  = "<arn-of-destination-type>"
+    event_types      = ["s3:ObjectCreated:Put", "s3:ObjectRemoved:DeleteMarkerCreated"]
+  }
   enable_event_bridge = true
+
 }
 ```
 
@@ -59,12 +68,12 @@ resource "duplocloud_s3_event_notification" "event" {
 ### Required
 
 - `bucket_name` (String) The fully qualified duplo name of the S3 bucket.
+- `event` (Block List, Min: 1) The list of events that will trigger the notification. (see [below for nested schema](#nestedblock--event))
 - `tenant_id` (String) The GUID of the tenant that the S3 bucket will be created in.
 
 ### Optional
 
 - `enable_event_bridge` (Boolean)
-- `event` (Block List) The list of events that will trigger the notification. (see [below for nested schema](#nestedblock--event))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -78,9 +87,6 @@ Required:
 
 - `destination_arn` (String) The ARN of the specified destination type.
 - `destination_type` (String) The type of destination where event notification to be published.
-
-Optional:
-
 - `event_types` (Set of String) Event types: 
 			's3:TestEvent'<br>
 			's3:ObjectCreated:*'<br>
