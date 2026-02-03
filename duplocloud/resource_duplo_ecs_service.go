@@ -557,6 +557,17 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 	if duplo.DeploymentConfiguration != nil {
 		d.Set("deployment_configuration", flattenDeploumentConfiguration(duplo.DeploymentConfiguration))
 	}
+
+	// Populate target_group_arns if service has load balancer configurations
+	if duplo.LBConfigurations != nil && len(*duplo.LBConfigurations) > 0 {
+		_, err, targetGroupArns := c.EcsServiceRequiredTargetGroupsCreated(duplo.TenantID, duplo)
+		if err != nil {
+			log.Printf("[WARN] Failed to retrieve target group ARNs for ECS service %s: %s", duplo.Name, err)
+		} else if len(targetGroupArns) > 0 {
+			d.Set("target_group_arns", targetGroupArns)
+		}
+	}
+
 	return nil
 }
 
