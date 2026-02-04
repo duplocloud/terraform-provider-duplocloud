@@ -18,7 +18,7 @@ resource "duplocloud_tenant" "duplo-app" {
   plan_id      = "default"
 }
 locals {
-  region      = "us-west2"
+  region      = "us-west-2"
   tenant_name = "nonprod"
 }
 
