@@ -35,8 +35,7 @@ description: |-
 - `network_mode` (String) Valid values are `bridge`,`host`,`awsvpc`,`none`
 - `pid_mode` (String) Valida values are `host`, `task`
 - `placement_constraints` (Set of Object) (see [below for nested schema](#nestedatt--placement_constraints))
-- `prevent_tf_destroy` (String) Prevent this resource to delete the task definition version, if set to false it will remove latest revision. 
-
+- `prevent_tf_destroy` (String) Prevent this resource to delete the task definition version, if set to false it will remove latest revision.
 **Note**: This is a provider-local field intended for internal logic. It may trigger a non-functional diff during a terraform import, but it does not impact the physical resource or its attributes during an apply.
 - `proxy_configuration` (List of Object) (see [below for nested schema](#nestedatt--proxy_configuration))
 - `requires_attributes` (Set of Object) (see [below for nested schema](#nestedatt--requires_attributes))
