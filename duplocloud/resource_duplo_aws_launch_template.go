@@ -351,13 +351,8 @@ func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId, 
 		name = d.Get("name").(string)
 	}
 	if sv == "" {
-		rp, err := c.GetAwsLaunchTemplate(tenantId, name)
-		if err != nil {
-			return nil, err
-		}
-		m := extractASGTemplateDetails(rp)
-		sv = m["latest_version"].(string)
-		log.Printf("Setting the version to latest version %s since source version not provided ", sv)
+		sv = "$Latest"
+		log.Printf("Version not provided, defaulting to $Latest")
 	}
 
 	obj := &duplosdk.DuploAwsLaunchTemplateRequest{
