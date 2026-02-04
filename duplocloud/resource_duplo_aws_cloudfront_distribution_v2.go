@@ -108,7 +108,7 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 			Default:  true,
 		},
 		"use_origin_access_control": {
-			Description: `Duplo will create an origin access control (OAC) and restrict the S3 origin access. On false it will be public</br>For migration from OAI to OAC can be done from duplo cloud portal.`,
+			Description: `Duplo will create an origin access control (OAC) and restrict the S3 origin access. On false it will be public<br>For migration from OAI to OAC can be done from duplo cloud portal.`,
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     true,
@@ -821,7 +821,7 @@ func resourceAwsCloudfrontDistributionV2() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(60 * time.Minute),
 		},
 		Schema:        duploAwsCloudfrontDistributionSchemaV2(),
 		CustomizeDiff: validateCloudDistributionParameters,
@@ -844,7 +844,7 @@ func resourceAwsCloudfrontDistributionV2Read(ctx context.Context, d *schema.Reso
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Unable to retrieve tenant %s aws cloudfront distribution%s : %s", tenantID, cfdId, clientErr)
+		return diag.Errorf("Unable to retrieve tenant %s aws cloudfront distribution %s : %s", tenantID, cfdId, clientErr)
 	}
 	if duplo == nil {
 		log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end - distribution response empty", tenantID, cfdId)
@@ -921,18 +921,7 @@ func resourceAwsCloudfrontDistributionV2Update(ctx context.Context, d *schema.Re
 
 	c := m.(*duplosdk.Client)
 
-	//	duplo, clientErr := c.AwsCloudfrontDistributionGet(tenantID, cfdId)
-	//	if clientErr != nil {
-	//		if clientErr.Status() == 404 {
-	//			d.SetId("")
-	//			return nil
-	//		}
-	//		return diag.Errorf("Unable to retrieve tenant %s aws cloudfront distribution%s : %s", tenantID, cfdId, clientErr)
-	//	}
-
 	rq := expandAwsCloudfrontDistributionV2Config(d, true)
-	// Update OAI which is generated at backend
-	//updateS3OAI(duplo.Distribution.DistributionConfig, rq)
 
 	resp, err := c.AwsCloudfrontDistributionUpdate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
 		Id:                   cfdId,
@@ -983,18 +972,18 @@ func resourceAwsCloudfrontDistributionV2Delete(ctx context.Context, d *schema.Re
 		clientErr := c.AwsCloudfrontDistributionDisable(tenantID, cfdId)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
-				log.Printf("[TRACE] Cloudfront distribution disabled before delete. (%s, %s): nd", tenantID, cfdId)
+				log.Printf("[TRACE] Cloudfront distribution disabled before delete. (%s, %s)", tenantID, cfdId)
 				return nil
 			}
 			return diag.Errorf("Unable to disable tenant %s aws cloudfront distribution '%s': %s", tenantID, cfdId, clientErr)
 		}
-		err = cloudfrontDistributionWaitUntilDisabled(ctx, c, tenantID, cfdId, d.Timeout("create"))
+		err = cloudfrontDistributionWaitUntilDisabled(ctx, c, tenantID, cfdId, d.Timeout("delete"))
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	log.Printf("[TRACE] Cloudfront distribution disabled before delete. (%s, %s): nd", tenantID, cfdId)
+	log.Printf("[TRACE] Cloudfront distribution disabled before delete. (%s, %s)", tenantID, cfdId)
 
 	clientErr := c.AwsCloudfrontDistributionDelete(tenantID, cfdId)
 	if clientErr != nil {
@@ -1156,12 +1145,6 @@ func flattenOriginV2(or duplosdk.DuploAwsCloudfrontOrigin) map[string]interface{
 			castToInterfaceSlice(headers),
 		)
 	} else {
-		//sm := map[string]interface{}{
-		//	//"name":  "",
-		//	//"value": "",
-		//}
-		//inf := make([]interface{}, 1)
-		//inf[0] = m
 		s := schema.NewSet(
 			schema.HashResource(&schema.Resource{
 				Schema: map[string]*schema.Schema{
