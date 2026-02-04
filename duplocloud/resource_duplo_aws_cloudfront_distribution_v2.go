@@ -886,7 +886,7 @@ func resourceAwsCloudfrontDistributionV2Create(ctx context.Context, d *schema.Re
 		CorsAllowedHostNames: expandStringList(d.Get("cors_allowed_host_names").([]interface{})),
 	})
 	if err != nil {
-		return diag.Errorf("Error creating tenant %s aws cloudfront distribution.: %s", tenantID, err)
+		return diag.Errorf("Error creating tenant %s aws cloudfront distribution: %s", tenantID, err)
 	}
 
 	id := fmt.Sprintf("%s/%s/%s", tenantID, resp.Id, name)
