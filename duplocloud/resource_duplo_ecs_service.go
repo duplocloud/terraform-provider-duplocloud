@@ -564,7 +564,7 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 	if duplo.LBConfigurations != nil && len(*duplo.LBConfigurations) > 0 {
 		rp, err, targetGroupArns := c.EcsServiceRequiredTargetGroupsCreated(duplo.TenantID, duplo)
 		if err != nil {
-			log.Printf("[WARN] Failed to retrieve target group ARNs for ECS service %s: %s", duplo.Name, err)
+			return diag.FromErr(err)
 		} else if rp {
 			targetGroupArnsValue = targetGroupArns
 		}
