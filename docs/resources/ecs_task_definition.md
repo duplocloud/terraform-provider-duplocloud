@@ -137,7 +137,7 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 - `network_mode` (String) Valid values are `bridge`,`host`,`awsvpc`,`none` Defaults to `awsvpc`.
 - `pid_mode` (String) Valida values are `host`, `task`
 - `placement_constraints` (Block Set, Max: 10) (see [below for nested schema](#nestedblock--placement_constraints))
-- `prevent_tf_destroy` (String) Prevent this resource to delete the task definition version, if set to false it will remove latest revision.
+- `prevent_tf_destroy` (String) Prevent this resource from deleting the task definition version; if set to false, it will remove the latest revision.
 **Note**: This is a provider-local field intended for internal logic. It may trigger a non-functional diff during a terraform import, but it does not impact the physical resource or its attributes during an apply. Defaults to `true`.
 - `proxy_configuration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--proxy_configuration))
 - `requires_attributes` (Block Set) (see [below for nested schema](#nestedblock--requires_attributes))

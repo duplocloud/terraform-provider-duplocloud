@@ -82,7 +82,7 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"prevent_tf_destroy": {
-			Description: "Prevent this resource to delete the task definition version, if set to false it will remove latest revision.\n**Note**: This is a provider-local field intended for internal logic. It may trigger a non-functional diff during a terraform import, but it does not impact the physical resource or its attributes during an apply.",
+			Description: "Prevent this resource from deleting the task definition version; if set to false, it will remove the latest revision.\n**Note**: This is a provider-local field intended for internal logic. It may trigger a non-functional diff during a terraform import, but it does not impact the physical resource or its attributes during an apply.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Default:     "true",
