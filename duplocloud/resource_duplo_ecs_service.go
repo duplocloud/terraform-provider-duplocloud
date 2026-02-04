@@ -568,7 +568,7 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 			d.Set("target_group_arns", targetGroupArns)
 		}
 	}
-	
+
 	return nil
 }
 
