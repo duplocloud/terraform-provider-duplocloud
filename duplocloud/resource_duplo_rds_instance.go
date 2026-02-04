@@ -802,15 +802,10 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		maxStorage := d.Get("storage_autoscaling.0.max_allocated_storage").(int)
 
 		// When disabling autoscaling, set MaxAllocatedStorage equal to AllocatedStorage to prevent growth.
-		// If allocated_storage is 0 (e.g., when created from a snapshot), we keep the existing maxStorage
-		// but log a warning to make this behavior explicit.
+		// The validation in custom diff ensures allocated_storage is non-zero when disabling autoscaling.
 		if !enableAutoscaling {
 			allocatedStorage := d.Get("allocated_storage").(int)
-			if allocatedStorage > 0 {
-				maxStorage = allocatedStorage
-			} else {
-				log.Printf("[WARN] storage_autoscaling: allocated_storage is 0 while disabling autoscaling for RDS instance '%s'; retaining previous max_allocated_storage value (%d)", identifier, maxStorage)
-			}
+			maxStorage = allocatedStorage
 		}
 
 		obj := duplosdk.DuploRDSStorageAutoScalling{
@@ -1273,18 +1268,29 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		if sas, ok := diff.GetOk("storage_autoscaling"); ok {
 			for _, sa := range sas.([]interface{}) {
 				m := sa.(map[string]interface{})
-				if m["enable"].(bool) {
+				enableAutoscaling := m["enable"].(bool)
+				allocatedStorage := diff.Get("allocated_storage").(int)
+
+				if enableAutoscaling {
+					// Validation for enabling autoscaling
 					if st == "standard" || st == "aurora" || st == "aurora-iopt1" {
 						return fmt.Errorf("storage_autoscaling is not supported for %s storage type", st)
 					}
 					th := m["max_allocated_storage"].(int)
-					as := diff.Get("allocated_storage").(int)
+					as := allocatedStorage
 					if as == 0 {
 						as = 20
 					}
 					perDiff := (as - th) * 100 / as
 					if perDiff > -10 {
 						return fmt.Errorf("max_allocated_storage should be atleast 10%% of allocated_storage. Recommended is 26%%")
+					}
+				} else {
+					// Validation for disabling autoscaling
+					// When disabling autoscaling, we need allocated_storage to set max_allocated_storage
+					// This prevents the database from growing beyond the intended size
+					if allocatedStorage == 0 {
+						return fmt.Errorf("allocated_storage must be specified when disabling storage_autoscaling. This value is required to set max_allocated_storage and prevent unintended database growth. Please provide a non-zero allocated_storage value")
 					}
 				}
 			}
