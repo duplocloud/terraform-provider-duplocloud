@@ -36,7 +36,8 @@ func s3EventNotificationSchema() map[string]*schema.Schema {
 		"event": {
 			Description: "The list of events that will trigger the notification.",
 			Type:        schema.TypeList,
-			Optional:    true,
+			Required:    true,
+			MinItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"destination_type": {
@@ -70,7 +71,7 @@ func s3EventNotificationSchema() map[string]*schema.Schema {
 			's3:ObjectRestore:*'<br>
 			's3:ObjectRestore:Post'<br>`,
 						Type:     schema.TypeSet,
-						Optional: true,
+						Required: true,
 						Elem: &schema.Schema{
 							Type: schema.TypeString,
 							ValidateFunc: validation.StringInSlice([]string{"s3:TestEvent", "s3:ObjectCreated:*", "s3:ObjectCreated:Put",
@@ -134,8 +135,14 @@ func resourceS3EventNotificationRead(ctx context.Context, d *schema.ResourceData
 		}
 		return diag.Errorf("resourceS3EventNotificationRead: Unable to retrieve s3 event notification (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
+	if duplo == nil {
+		log.Printf("[WARN] resourceS3EventNotificationRead: S3 event notification %s not found for tenantId %s, removing from state", name, tenantID)
+		d.SetId("")
+		return nil
 
+	}
 	// Set simple fields first.
+	d.Set("tenant_id", tenantID)
 	flattenEventNotification(d, name, duplo)
 
 	log.Printf("[TRACE] resourceS3BucketRead ******** end")
@@ -210,23 +217,31 @@ func flattenEventNotification(d *schema.ResourceData, name string, duplo *duplos
 		}
 	}
 	d.Set("event", i)
+	d.Set("enable_event_bridge", false)
+	if duplo.EventBridgeConfiguration != nil {
+		d.Set("enable_event_bridge", true)
+	}
+
 }
 
 func expandEventNotification(d *schema.ResourceData) duplosdk.DuploS3EventNotificaition {
 	events := d.Get("event").([]interface{})
 	obj := duplosdk.DuploS3EventNotificaition{}
 
-	for i, event := range events {
+	for _, event := range events { // Changed 'i' to '_' as we no longer use the input index for output slices
 		m := event.(map[string]interface{})
 		destType := m["destination_type"].(string)
+
 		switch destType {
 		case "lambda":
 			obj.Lambda = append(obj.Lambda, duplosdk.DuploS3EventLambdaConfiguration{
 				LambdaARN: m["destination_arn"].(string),
 			})
+			// Get the index of the item we just added
+			idx := len(obj.Lambda) - 1
 			eventTypes := expandStringSet(m["event_types"].(*schema.Set))
 			for _, eventType := range eventTypes {
-				obj.Lambda[i].EventTypes = append(obj.Lambda[0].EventTypes, duplosdk.DuploStringValue{
+				obj.Lambda[idx].EventTypes = append(obj.Lambda[idx].EventTypes, duplosdk.DuploStringValue{
 					Value: eventType})
 			}
 
@@ -234,9 +249,11 @@ func expandEventNotification(d *schema.ResourceData) duplosdk.DuploS3EventNotifi
 			obj.SNS = append(obj.SNS, duplosdk.DuploS3EventSNSConfiguration{
 				SNSARN: m["destination_arn"].(string),
 			})
+			// Get the index of the item we just added
+			idx := len(obj.SNS) - 1
 			eventTypes := expandStringSet(m["event_types"].(*schema.Set))
 			for _, eventType := range eventTypes {
-				obj.SNS[i].EventTypes = append(obj.SNS[0].EventTypes, duplosdk.DuploStringValue{
+				obj.SNS[idx].EventTypes = append(obj.SNS[idx].EventTypes, duplosdk.DuploStringValue{
 					Value: eventType})
 			}
 
@@ -244,9 +261,11 @@ func expandEventNotification(d *schema.ResourceData) duplosdk.DuploS3EventNotifi
 			obj.SQS = append(obj.SQS, duplosdk.DuploS3EventSQSConfiguration{
 				SQSARN: m["destination_arn"].(string),
 			})
+			// Get the index of the item we just added
+			idx := len(obj.SQS) - 1
 			eventTypes := expandStringSet(m["event_types"].(*schema.Set))
 			for _, eventType := range eventTypes {
-				obj.SQS[i].EventTypes = append(obj.SQS[i].EventTypes, duplosdk.DuploStringValue{
+				obj.SQS[idx].EventTypes = append(obj.SQS[idx].EventTypes, duplosdk.DuploStringValue{
 					Value: eventType})
 			}
 		}
