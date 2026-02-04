@@ -293,7 +293,7 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 	tenantId := d.Get("tenant_id").(string)
 	c := m.(*duplosdk.Client)
 
-	rq, cerr := expandLaunchTemplate(d, c, tenantId, "")
+	rq, cerr := expandLaunchTemplate(d, tenantId, "")
 	if cerr != nil {
 		return diag.Errorf("%s", cerr.Error())
 	}
@@ -320,7 +320,7 @@ func resourceAwsLaunchTemplateUpdate(ctx context.Context, d *schema.ResourceData
 	tenantId, name := token[0], token[2]
 	c := m.(*duplosdk.Client)
 
-	rq, cerr := expandLaunchTemplate(d, c, tenantId, name)
+	rq, cerr := expandLaunchTemplate(d, tenantId, name)
 	if cerr != nil {
 		return diag.Errorf("%s", cerr.Error())
 	}
@@ -345,19 +345,14 @@ func resourceAwsLaunchTemplateDelete(ctx context.Context, d *schema.ResourceData
 
 }
 
-func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId, name string) (*duplosdk.DuploAwsLaunchTemplateRequest, error) {
+func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplosdk.DuploAwsLaunchTemplateRequest, error) {
 	sv := d.Get("version").(string)
 	if name == "" {
 		name = d.Get("name").(string)
 	}
 	if sv == "" {
-		rp, err := c.GetAwsLaunchTemplate(tenantId, name)
-		if err != nil {
-			return nil, err
-		}
-		m := extractASGTemplateDetails(rp)
-		sv = m["latest_version"].(string)
-		log.Printf("Setting the version to latest version %s since source version not provided ", sv)
+		sv = "$Latest"
+		log.Printf("[TRACE] expandLaunchTemplate(%s, %s): version not provided, defaulting to $Latest", tenantId, name)
 	}
 
 	obj := &duplosdk.DuploAwsLaunchTemplateRequest{
