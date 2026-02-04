@@ -249,8 +249,13 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Description:  "OS type for k8s worker, this field is associated to azure cloud. Valid values: `Linux`, `Windows`",
 			Type:         schema.TypeString,
 			Optional:     true,
+			Default:      "Linux",
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"Linux", "Windows"}, false),
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				cloud := d.Get("cloud").(int)
+				return cloud != 2
+			},
 		},
 	}
 }
@@ -464,10 +469,12 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 		// Delete the object from Duplo
 		c := m.(*duplosdk.Client)
 		err := c.ReplicationControllerDelete(tenantID, &rq)
-		if err != nil && err.Status() == 400 {
+		if err != nil && (err.Status() == 400 || err.Status() == 404) {
 			err := c.ReplicationControllerDeleteFallback(tenantID, &rq)
-			if err != nil {
+			if err != nil && err.Status() != 404 {
 				return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
+			} else {
+				return nil
 			}
 
 		}
@@ -779,10 +786,12 @@ func customDuploServiceDiff(ctx context.Context, diff *schema.ResourceDiff, v in
 			return err
 		}
 	}
-	cloud := diff.Get("cloud").(int)
-	os := diff.Get("k8s_worker_os").(string)
-	if cloud != 2 && os != "" {
-		return fmt.Errorf("use of k8s_worker_os is not allowed for cloud(%d)", cloud)
-	}
+	//cloud := diff.Get("cloud").(int)
+	//os := diff.Get("k8s_worker_os").(string)
+	//if cloud != 2 && os != "" {
+	//	diff.SetNew("k8s_worker_os", nil)
+	//	return nil
+	//}
+
 	return nil
 }

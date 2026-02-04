@@ -164,6 +164,12 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Type:        schema.TypeString,
 		Computed:    true,
 	}
+	awsASGSchema["capacity"].ForceNew = false
+	awsASGSchema["image_id"].ForceNew = false
+
+	awsASGSchema["capacity"].DiffSuppressFunc = diffSuppressWhenNotCreating
+	awsASGSchema["image_id"].DiffSuppressFunc = diffSuppressWhenNotCreating
+	awsASGSchema["volume"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	return awsASGSchema
 }
 
@@ -186,8 +192,7 @@ func validateMaxSpotPrice(ctx context.Context, diff *schema.ResourceDiff, m inte
 func resourceAwsASG() *schema.Resource {
 
 	return &schema.Resource{
-		Description: "`duplocloud_asg_profile` manages a ASG Profile in Duplo.",
-
+		Description:   "`duplocloud_asg_profile` manages a ASG Profile in Duplo.\n\n**Note:** When updating a duplocloud_asg_profile resource in versions later than 0.10.53 use duplocloud_aws_launch_template which creates a new version of launch template. To set the new version as default version use duplocloud_aws_launch_template_default_version resource, this will avoid recreation of ASG profile. \nTo refresh the ASG with new launch template version use duplocloud_asg_instance_refresh resource.",
 		ReadContext:   resourceAwsASGRead,
 		CreateContext: resourceAwsASGCreate,
 		DeleteContext: resourceAwsASGDelete,
@@ -219,7 +224,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): start", rq.TenantId, rq.FriendlyName)
 	// Create the ASG Prfoile in Duplo.
 	c := m.(*duplosdk.Client)
-	prefix, err := c.GetDuploServicesPrefix(rq.TenantId)
+	prefix, err := c.GetDuploServicesPrefix(rq.TenantId, "")
 	if err != nil {
 		return diag.Errorf("Tenant details : %s", err)
 	}

@@ -101,7 +101,7 @@ type DuploElasticSearchDomainRequest struct {
 
 // TenantListElasticSearchDomains retrieves a list of AWS ElasticSearch domains.
 func (c *Client) TenantListElasticSearchDomains(tenantID string) (*[]DuploElasticSearchDomain, ClientError) {
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return nil, err
 	}
