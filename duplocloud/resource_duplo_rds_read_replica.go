@@ -617,6 +617,8 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 		}
 	}
 	jo["engine"] = duploObject.Engine
+	jo["engine_type"] = duploObject.Engine
+
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["size"] = duploObject.SizeEx
 	jo["availability_zone"] = duploObject.AvailabilityZone
