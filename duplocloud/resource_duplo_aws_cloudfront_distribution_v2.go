@@ -942,7 +942,7 @@ func resourceAwsCloudfrontDistributionV2Update(ctx context.Context, d *schema.Re
 		CorsAllowedHostNames: expandStringList(d.Get("cors_allowed_host_names").([]interface{})),
 	})
 	if err != nil {
-		return diag.Errorf("Error updating tenant %s aws cloudfront distribution.: %s", tenantID, err)
+		return diag.Errorf("Error updating tenant %s aws cloudfront distribution: %s", tenantID, err)
 	}
 
 	if d.Get("wait_for_deployment") == nil || d.Get("wait_for_deployment").(bool) {
