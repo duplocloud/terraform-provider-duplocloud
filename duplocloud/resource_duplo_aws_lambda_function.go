@@ -575,7 +575,7 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 	if err == nil {
 		d.Set("invoke_arn", invokeArn)
 	} else {
-		log.Printf("[WARN] Failed to geneerate invoke arn")
+		log.Printf("[TRACE] Failed to generate invoke arn: %v", err)
 	}
 }
 
