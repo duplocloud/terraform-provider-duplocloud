@@ -20,7 +20,7 @@ resource "duplocloud_tenant" "myapp" {
 
 resource "duplocloud_aws_lambda_function" "myfunction" {
 
-  tenant_id   = duplocloud_tenant.this.tenant_id
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
   name        = "myfunction"
   description = "A description of my function"
 
@@ -41,7 +41,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 
 resource "duplocloud_aws_lambda_function" "thisfunction" {
 
-  tenant_id   = duplocloud_tenant.this.tenant_id
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
   name        = "thisfunction"
   description = "A description of my function"
 
@@ -63,7 +63,7 @@ resource "duplocloud_aws_lambda_function" "thisfunction" {
 }
 
 resource "duplocloud_aws_lambda_function" "edgefunction" {
-  tenant_id   = duplocloud_tenant.this.tenant_id
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
   name        = "edgefunction"
   description = "An example edge function"
 
@@ -89,7 +89,7 @@ resource "duplocloud_aws_lambda_function" "edgefunction" {
 
 resource "duplocloud_aws_lambda_function" "myfunction" {
 
-  tenant_id   = duplocloud_tenant.this.tenant_id
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
   name        = "mylambda"
   description = "A description of my function"
 
@@ -108,11 +108,11 @@ resource "duplocloud_aws_lambda_permission" "apigw_lambda" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = duplocloud_aws_lambda_function.myfunction.arn
   statement_id  = "AllowExecutionFromAPIGateway"
-  tenant_id     = duplocloud_tenant.this.tenant_id
+  tenant_id     = duplocloud_tenant.myapp.tenant_id
 }
 // lambda_function_name is also used to accept invoke arn
 resource "duplocloud_aws_api_gateway_integration" "api" {
-  tenant_id            = duplocloud_tenant.this.tenant_id
+  tenant_id            = duplocloud_tenant.myapp.tenant_id
   name                 = "myapi"
   lambda_function_name = duplocloud_aws_lambda_function.myfunction.invoke_arn
 }
