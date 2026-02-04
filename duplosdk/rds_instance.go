@@ -107,6 +107,7 @@ type DuploRdsUpdateInstance struct {
 	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
 	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
 	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot"`
+	AllocatedStorage      int    `json:"AllocatedStorage,omitempty"`
 	ApplyImmediately      bool   `json:"ApplyImmediately"`
 }
 
@@ -164,7 +165,7 @@ type DuploRDSClusterCompareField struct {
 
 type DuploRDSStorageAutoScalling struct {
 	IsAutoScalingEnabled bool `json:"IsAutoScalingEnabled"`
-	MaxAllocatedStorage  int  `json:"MaxAllocatedStorage"`
+	MaxAllocatedStorage  int  `json:"MaxAllocatedStorage,omitempty"`
 	ApplyImmediately     bool `json:"ApplyImmediately"`
 }
 

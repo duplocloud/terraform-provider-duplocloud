@@ -360,12 +360,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 					"enable": {
 						Description: "Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage.",
 						Optional:    true,
-						Default:     false,
+						Computed:    true,
 						Type:        schema.TypeBool,
 					},
 					"max_allocated_storage": {
 						Description: "The upper limit, in gibibytes (GiB), to which Amazon RDS can automatically scale the storage of the DB instance when autoscaling is enabled.",
 						Optional:    true,
+						Computed:    true,
 						Type:        schema.TypeInt,
 					},
 				},
@@ -1266,14 +1267,19 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 						return fmt.Errorf("storage_autoscaling is not supported for %s storage type", st)
 					}
 					th := m["max_allocated_storage"].(int)
-					as := diff.Get("allocated_storage").(int)
-					if as == 0 {
-						as = 20
+					as := 20
+					v, ok := diff.GetOk("allocated_storage")
+					if ok && v.(int) != 0 {
+						as = v.(int)
 					}
 					perDiff := (as - th) * 100 / as
 					if perDiff > -10 {
 						return fmt.Errorf("max_allocated_storage should be atleast 10%% of allocated_storage. Recommended is 26%%")
 					}
+				} else {
+					//	if err := diff.Clear("storage_autoscaling.0.max_allocated_storage"); err != nil {
+					//		return err
+					//	}
 				}
 			}
 		}

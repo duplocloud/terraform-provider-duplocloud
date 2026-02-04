@@ -497,7 +497,7 @@ Optional:
 
 Optional:
 
-- `enable` (Boolean) Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage. Defaults to `false`.
+- `enable` (Boolean) Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage.
 - `max_allocated_storage` (Number) The upper limit, in gibibytes (GiB), to which Amazon RDS can automatically scale the storage of the DB instance when autoscaling is enabled.
 
 

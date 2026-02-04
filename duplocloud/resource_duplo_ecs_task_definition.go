@@ -82,10 +82,10 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"prevent_tf_destroy": {
-			Description: "Prevent this resource to be deleted from terraform destroy.",
+			Description: "Prevent this resource to delete the task definition version, if set to false it will remove latest revision. \n\n**Note**: This is a provider-local field intended for internal logic. It may trigger a non-functional diff during a terraform import, but it does not impact the physical resource or its attributes during an apply.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Default:     "true",
+			Default:     true,
 		},
 		"container_definitions": {
 			Type:     schema.TypeString,
@@ -692,7 +692,9 @@ func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC, isLogConfi
 	// Set all empty slices to nil.
 	for k, v := range defn {
 		if isInterfaceEmptySlice(v) {
-			defn[k] = nil
+			//		defn[k] = nil
+			delete(defn, k)
+
 		}
 	}
 
