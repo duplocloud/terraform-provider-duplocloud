@@ -87,34 +87,50 @@ resource "duplocloud_aws_lambda_function" "edgefunction" {
 
 #Example for the usage of invoke_arn attribute
 
+
 resource "duplocloud_aws_lambda_function" "myfunction" {
 
   tenant_id   = duplocloud_tenant.myapp.tenant_id
   name        = "mylambda"
   description = "A description of my function"
 
-  runtime   = "python3.14"
-  handler   = "my_function.lambda_handler"
-  s3_bucket = "my-bucket-name"
-  s3_key    = "my-function.zip"
-
+  runtime     = "python3.14"
+  handler     = "main.lambda_handler"
+  s3_bucket   = "<s3-bucket-name>"
+  s3_key      = "main.py.zip"
   timeout     = 3
   memory_size = 128
 }
 
 resource "duplocloud_aws_lambda_permission" "apigw_lambda" {
   action        = "lambda:InvokeFunction"
-  function_name = duplocloud_aws_lambda_function.myfunction.fullname
+  function_name = "duploservices-sep8-testlmb2"
   principal     = "apigateway.amazonaws.com"
   source_arn    = duplocloud_aws_lambda_function.myfunction.arn
   statement_id  = "AllowExecutionFromAPIGateway"
   tenant_id     = duplocloud_tenant.myapp.tenant_id
 }
-// lambda_function_name is also used to accept invoke arn
+
 resource "duplocloud_aws_api_gateway_integration" "api" {
   tenant_id            = duplocloud_tenant.myapp.tenant_id
-  name                 = "myapi"
-  lambda_function_name = duplocloud_aws_lambda_function.myfunction.invoke_arn
+  name                 = "apigatewayname"
+  lambda_function_name = duplocloud_aws_lambda_function.myfunction.fullname
+}
+
+
+resource "duplocloud_aws_apigateway_event" "apigateway_event" {
+  tenant_id          = duplocloud_tenant.myapp.tenant_id
+  api_gateway_id     = duplocloud_aws_api_gateway_integration.api.metadata
+  method             = "GET"
+  path               = "/"
+  cors               = true
+  authorization_type = "NONE"
+
+  integration {
+    type    = "AWS_PROXY"
+    uri     = duplocloud_aws_lambda_function.myfunction.invoke_arn
+    timeout = 29000
+  }
 }
 ```
 
