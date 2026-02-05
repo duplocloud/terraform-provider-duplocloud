@@ -385,26 +385,28 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 			}
 			if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
 				if vc, exists := vcpu.([]interface{}); exists && len(vc) > 0 {
-					obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{}
-					vcpuMap := vc[0].(map[string]interface{})
-					if min, ok := vcpuMap["min"].(int); ok {
-						obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Min = min
-					}
-					if max, ok := vcpuMap["max"].(int); ok {
-						obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max
+					if vcpuMap, ok := vc[0].(map[string]interface{}); ok {
+						obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{}
+						if min, ok := vcpuMap["min"].(int); ok {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Min = min
+						}
+						if max, ok := vcpuMap["max"].(int); ok {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max
+						}
 					}
 
 				}
 			}
 			if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
 				if mm, exists := memMap.([]interface{}); exists && len(mm) > 0 {
-					obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{}
-					mMap := mm[0].(map[string]interface{})
-					if min, ok := mMap["min"].(int); ok {
-						obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Min = min
-					}
-					if max, ok := mMap["max"].(int); ok {
-						obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max
+					if mMap, ok := mm[0].(map[string]interface{}); ok {
+						obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{}
+						if min, ok := mMap["min"].(int); ok {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Min = min
+						}
+						if max, ok := mMap["max"].(int); ok {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max
+						}
 					}
 				}
 			}
