@@ -55,10 +55,9 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		},
 
 		"instance_type": {
-			Description: "Asg instance type to be used to update the version from the current version",
-			Type:        schema.TypeString,
-			Optional:    true,
-			//Computed:      true,
+			Description:   "Asg instance type to be used to update the version from the current version",
+			Type:          schema.TypeString,
+			Optional:      true,
 			ConflictsWith: []string{"instance_requirements"},
 		},
 		"ami": {
@@ -371,36 +370,57 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 		}
 	}
 	if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
-		mirMap := mir.([]interface{})[0].(map[string]interface{})
-		if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
-			allowedInstanceList := []string{}
+		obj.SourceVersion = ""
+		obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{}
+		if v, exist := mir.([]interface{}); exist && len(v) > 0 {
+			mirMap := v[0].(map[string]interface{})
 
-			for _, it := range ait.([]interface{}) {
-				allowedInstanceList = append(allowedInstanceList, it.(string))
-			}
-			obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{
-				AllowedInstanceTypes: allowedInstanceList,
+			if ait, ok := mirMap["allowed_instance_types"]; ok && ait != nil {
+				if aitSlice, ok := ait.([]interface{}); ok && len(aitSlice) > 0 {
+					allowedInstanceList := []string{}
+					for _, it := range aitSlice {
+						if s, ok := it.(string); ok {
+							allowedInstanceList = append(allowedInstanceList, s)
+						}
+					}
+					obj.LaunchTemplateData.InstanceRequirementsRequest.AllowedInstanceTypes = allowedInstanceList
+				}
 			}
 
-		}
-		if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
-			vcpuMap := vcpu.([]interface{})[0].(map[string]interface{})
-			min := vcpuMap["min"].(int)
-			obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{
-				Min: min,
+			if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
+				if vc, exists := vcpu.([]interface{}); exists && len(vc) > 0 {
+					if vcpuMap, ok := vc[0].(map[string]interface{}); ok {
+						min, minOk := vcpuMap["min"].(int)
+						max, maxOk := vcpuMap["max"].(int)
+						if minOk || maxOk {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{}
+							if minOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Min = min
+							}
+							if maxOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max
+							}
+						}
+					}
+
+				}
 			}
-			if max, ok := vcpuMap["max"]; ok {
-				obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max.(int)
-			}
-		}
-		if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
-			mMap := memMap.([]interface{})[0].(map[string]interface{})
-			min := mMap["min"].(int)
-			obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{
-				Min: min,
-			}
-			if max, ok := mMap["max"]; ok {
-				obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max.(int)
+			if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
+				if mm, exists := memMap.([]interface{}); exists && len(mm) > 0 {
+					if mMap, ok := mm[0].(map[string]interface{}); ok {
+						min, minOk := mMap["min"].(int)
+						max, maxOk := mMap["max"].(int)
+						if minOk || maxOk {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{}
+							if minOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Min = min
+							}
+							if maxOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -566,28 +586,64 @@ func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMa
 
 func launchtemplateValidation(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	ir, ok := diff.GetOk("instance_requirements")
-	if ok && len(ir.([]interface{})) > 0 {
-		irMap := ir.([]interface{})[0].(map[string]interface{})
-		aI := irMap["allowed_instance_types"].([]interface{})
-		vc := irMap["vcpu_count"].([]interface{})
-		mm := irMap["memory_mib"].([]interface{})
-		if len(aI) > 0 {
-			if len(vc) == 0 {
-				return fmt.Errorf("vcpu_count is required when allowed_instance_types is set in instance_requirements")
+	if ok {
+		irList, ok := ir.([]interface{})
+		if ok && len(irList) > 0 && irList[0] != nil {
+			irMap, ok := irList[0].(map[string]interface{})
+			if !ok {
+				return nil
 			}
-			if len(mm) == 0 {
-				return fmt.Errorf("memory_mib is required when allowed_instance_types is set in instance_requirements")
-			}
-			vm := vc[0].(map[string]interface{})
-			if max, ok := vm["max"]; ok {
-				if vm["min"].(int) > max.(int) {
-					return fmt.Errorf("vcpu_count min cannot be greater than max in instance_requirements")
+
+			var aI, vc, mm []interface{}
+
+			if v, exists := irMap["allowed_instance_types"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					aI = tmp
 				}
 			}
-			mp := mm[0].(map[string]interface{})
-			if max, ok := mp["max"]; ok {
-				if mp["min"].(int) > max.(int) {
-					return fmt.Errorf("memory_mib min cannot be greater than max in instance_requirements")
+			if v, exists := irMap["vcpu_count"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					vc = tmp
+				}
+			}
+			if v, exists := irMap["memory_mib"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					mm = tmp
+				}
+			}
+
+			if len(aI) > 0 {
+				if len(vc) == 0 {
+					return fmt.Errorf("vcpu_count is required when allowed_instance_types is set in instance_requirements")
+				}
+				if len(mm) == 0 {
+					return fmt.Errorf("memory_mib is required when allowed_instance_types is set in instance_requirements")
+				}
+
+				vm, ok := vc[0].(map[string]interface{})
+				if !ok {
+					// Unexpected shape; skip validation rather than panic.
+					return nil
+				}
+				if max, ok := vm["max"]; ok {
+					if vmMin, ok := vm["min"].(int); ok {
+						if maxInt, ok := max.(int); ok && vmMin > maxInt {
+							return fmt.Errorf("vcpu_count min cannot be greater than max in instance_requirements")
+						}
+					}
+				}
+
+				mp, ok := mm[0].(map[string]interface{})
+				if !ok {
+					// Unexpected shape; skip validation rather than panic.
+					return nil
+				}
+				if max, ok := mp["max"]; ok {
+					if mpMin, ok := mp["min"].(int); ok {
+						if maxInt, ok := max.(int); ok && mpMin > maxInt {
+							return fmt.Errorf("memory_mib min cannot be greater than max in instance_requirements")
+						}
+					}
 				}
 			}
 		}
