@@ -15,8 +15,8 @@ resource "duplocloud_ecs_task_definition" "myservice" {
     ]
     PortMappings = [
       {
-        ContainerPort = "80",
-        HostPort      = "80",
+        ContainerPort = 80,
+        HostPort      = 80,
         Protocol = {
           Value = "tcp"
         }
@@ -66,14 +66,13 @@ resource "duplocloud_ecs_task_definition" "myservice" {
   container_definitions = jsonencode([{
     Name  = "default"
     Image = "nginx:latest",
-    port  = "80"
     Environment = [
       { Name = "NGINX_HOST", Value = "foo" }
     ]
     PortMappings = [
       {
-        ContainerPort = "80",
-        HostPort      = "80",
+        ContainerPort = 80,
+        HostPort      = 80,
         Protocol = {
           Value = "tcp"
         }

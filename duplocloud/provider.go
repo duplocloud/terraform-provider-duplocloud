@@ -212,6 +212,7 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant_kms":                                    resourceTenantKMS(),
 			"duplocloud_tenant_metadata":                               resourceTenantMetadata(),
 			"duplocloud_tenant_k8s_resource_quota":                     resourceTenantK8sQuota(),
+			"duplocloud_aws_cloudfront_distribution_v2":                resourceAwsCloudfrontDistributionV2(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"duplocloud_admin_aws_credentials":      dataSourceAdminAwsCredentials(),
