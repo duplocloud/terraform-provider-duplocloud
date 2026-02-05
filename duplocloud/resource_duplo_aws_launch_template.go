@@ -375,15 +375,16 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 		if v, exist := mir.([]interface{}); exist && len(v) > 0 {
 			mirMap := v[0].(map[string]interface{})
 
-			if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
-				allowedInstanceList := []string{}
-				for _, it := range ait.([]interface{}) {
-					if s, ok := it.(string); ok {
-						allowedInstanceList = append(allowedInstanceList, s)
+			if ait, ok := mirMap["allowed_instance_types"]; ok && ait != nil {
+				if aitSlice, ok := ait.([]interface{}); ok && len(aitSlice) > 0 {
+					allowedInstanceList := []string{}
+					for _, it := range aitSlice {
+						if s, ok := it.(string); ok {
+							allowedInstanceList = append(allowedInstanceList, s)
+						}
 					}
+					obj.LaunchTemplateData.InstanceRequirementsRequest.AllowedInstanceTypes = allowedInstanceList
 				}
-				obj.LaunchTemplateData.InstanceRequirementsRequest.AllowedInstanceTypes = allowedInstanceList
-
 			}
 
 			if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
