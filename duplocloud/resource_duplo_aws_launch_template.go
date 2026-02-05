@@ -378,7 +378,9 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 			if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
 				allowedInstanceList := []string{}
 				for _, it := range ait.([]interface{}) {
-					allowedInstanceList = append(allowedInstanceList, it.(string))
+					if s, ok := it.(string); ok {
+						allowedInstanceList = append(allowedInstanceList, s)
+					}
 				}
 				obj.LaunchTemplateData.InstanceRequirementsRequest.AllowedInstanceTypes = allowedInstanceList
 
