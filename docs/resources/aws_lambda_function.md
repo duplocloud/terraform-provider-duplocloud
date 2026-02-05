@@ -104,7 +104,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 
 resource "duplocloud_aws_lambda_permission" "apigw_lambda" {
   action        = "lambda:InvokeFunction"
-  function_name = "duploservices-sep8-testlmb2"
+  function_name = duplocloud_aws_lambda_function.myfunction.fullname
   principal     = "apigateway.amazonaws.com"
   source_arn    = duplocloud_aws_lambda_function.myfunction.arn
   statement_id  = "AllowExecutionFromAPIGateway"
