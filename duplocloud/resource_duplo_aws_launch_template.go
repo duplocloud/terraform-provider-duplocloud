@@ -388,27 +388,23 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 			}
 			if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
 				if vc, exists := vcpu.([]interface{}); exists && len(vc) > 0 {
+					obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{}
 					vcpuMap := vc[0].(map[string]interface{})
 					min := vcpuMap["min"].(int)
-					obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{
-						Min: min,
-					}
-					if max, ok := vcpuMap["max"]; ok {
-						obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max.(int)
-					}
+					max := vcpuMap["max"].(int)
+					obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Min = min
+					obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max
+
 				}
 			}
 			if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
 				if mm, exists := memMap.([]interface{}); exists && len(mm) > 0 {
+					obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{}
 					mMap := mm[0].(map[string]interface{})
-
 					min := mMap["min"].(int)
-					obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{
-						Min: min,
-					}
-					if max, ok := mMap["max"]; ok {
-						obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max.(int)
-					}
+					max := mMap["max"].(int)
+					obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Min = min
+					obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max
 				}
 			}
 		}
