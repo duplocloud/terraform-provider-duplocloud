@@ -245,6 +245,11 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"invoke_arn": {
+			Description: "The ARN to be used for invoking the lambda function.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
@@ -566,6 +571,12 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 		}
 		d.Set("image_config", []interface{}{imageConfig})
 	}
+	invokeArn, err := getInvokeARN(duplo.FunctionArn)
+	if err == nil {
+		d.Set("invoke_arn", invokeArn)
+	} else {
+		log.Printf("[TRACE] Failed to generate invoke arn: %v", err)
+	}
 }
 
 func flattenAwsLambdaEnvironment(environment *duplosdk.DuploLambdaEnvironment) []interface{} {
@@ -809,4 +820,24 @@ func lambdaWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID stri
 	log.Printf("[DEBUG] lambdaWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func getInvokeARN(lambdaARN string) (string, error) {
+	parts := strings.Split(lambdaARN, ":")
+
+	if len(parts) < 6 {
+		return "", fmt.Errorf("invalid Lambda ARN: expected at least 6 colon-separated parts, got %d", len(parts))
+	}
+	region := parts[3]
+	if region == "" {
+		return "", fmt.Errorf("invalid Lambda ARN: region is missing")
+	}
+
+	invokeARN := fmt.Sprintf(
+		"arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
+		region,
+		lambdaARN,
+	)
+
+	return invokeARN, nil
 }
