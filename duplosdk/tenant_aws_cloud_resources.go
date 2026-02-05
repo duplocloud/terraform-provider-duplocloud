@@ -1104,11 +1104,13 @@ type DuploS3EventNotificaition struct {
 }
 
 type DuploS3EventNotificaitionResponse struct {
-	SQS    *[]DuploS3EventSQSConfiguration    `json:"QueueConfigurations,omitempty"`
-	SNS    *[]DuploS3EventSNSConfiguration    `json:"TopicConfigurations,omitempty"`
-	Lambda *[]DuploS3EventLambdaConfiguration `json:"LambdaFunctionConfigurations,omitempty"`
+	SQS                      *[]DuploS3EventSQSConfiguration       `json:"QueueConfigurations,omitempty"`
+	SNS                      *[]DuploS3EventSNSConfiguration       `json:"TopicConfigurations,omitempty"`
+	Lambda                   *[]DuploS3EventLambdaConfiguration    `json:"LambdaFunctionConfigurations,omitempty"`
+	EventBridgeConfiguration *DuploS3EventEventBridgeConfiguration `json:"EventBridgeConfiguration,omitempty"`
 }
 
+type DuploS3EventEventBridgeConfiguration struct{}
 type DuploS3EventSNSConfiguration struct {
 	EventTypes []DuploStringValue `json:"Events"`
 	SNSARN     string             `json:"Topic"`
