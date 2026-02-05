@@ -55,10 +55,9 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		},
 
 		"instance_type": {
-			Description: "Asg instance type to be used to update the version from the current version",
-			Type:        schema.TypeString,
-			Optional:    true,
-			//Computed:      true,
+			Description:   "Asg instance type to be used to update the version from the current version",
+			Type:          schema.TypeString,
+			Optional:      true,
 			ConflictsWith: []string{"instance_requirements"},
 		},
 		"ami": {
@@ -372,18 +371,16 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 	}
 	if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
 		obj.SourceVersion = ""
+		obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{}
 		if v, exist := mir.([]interface{}); exist && len(v) > 0 {
 			mirMap := v[0].(map[string]interface{})
 
 			if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
 				allowedInstanceList := []string{}
-
 				for _, it := range ait.([]interface{}) {
 					allowedInstanceList = append(allowedInstanceList, it.(string))
 				}
-				obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{
-					AllowedInstanceTypes: allowedInstanceList,
-				}
+				obj.LaunchTemplateData.InstanceRequirementsRequest.AllowedInstanceTypes = allowedInstanceList
 
 			}
 			if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
