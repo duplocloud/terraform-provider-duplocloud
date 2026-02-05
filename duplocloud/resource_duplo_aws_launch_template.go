@@ -372,9 +372,8 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 	}
 	if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
 		obj.SourceVersion = ""
-		mirMap := mir.([]interface{})[0].(map[string]interface{})
 		if v, exist := mir.([]interface{}); exist && len(v) > 0 {
-			mirMap = v[0].(map[string]interface{})
+			mirMap := v[0].(map[string]interface{})
 
 			if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
 				allowedInstanceList := []string{}
