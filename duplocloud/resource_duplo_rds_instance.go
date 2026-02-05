@@ -288,7 +288,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Default:  false,
 		},
 		"enable_iam_auth": {
-			Description: "Whether or not to enable the RDS IAM authentication. It can only be set during instance creation.",
+			Description: "Whether or not to enable the RDS IAM authentication. This setting can be modified after instance creation.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
