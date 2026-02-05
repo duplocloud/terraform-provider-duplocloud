@@ -20,7 +20,7 @@ resource "duplocloud_tenant" "myapp" {
 
 resource "duplocloud_aws_lambda_function" "myfunction" {
 
-  tenant_id   = duplocloud_tenant.this.tenant_id
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
   name        = "myfunction"
   description = "A description of my function"
 
@@ -41,7 +41,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
 
 resource "duplocloud_aws_lambda_function" "thisfunction" {
 
-  tenant_id   = duplocloud_tenant.this.tenant_id
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
   name        = "thisfunction"
   description = "A description of my function"
 
@@ -63,7 +63,7 @@ resource "duplocloud_aws_lambda_function" "thisfunction" {
 }
 
 resource "duplocloud_aws_lambda_function" "edgefunction" {
-  tenant_id   = "c7163b39-43ca-4d44-81ce-9a323087039b"
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
   name        = "edgefunction"
   description = "An example edge function"
 
@@ -82,6 +82,55 @@ resource "duplocloud_aws_lambda_function" "edgefunction" {
 
   timeout     = 5
   memory_size = 128
+}
+
+
+#Example for the usage of invoke_arn attribute
+
+
+resource "duplocloud_aws_lambda_function" "myfunction" {
+
+  tenant_id   = duplocloud_tenant.myapp.tenant_id
+  name        = "mylambda"
+  description = "A description of my function"
+
+  runtime     = "python3.14"
+  handler     = "main.lambda_handler"
+  s3_bucket   = "<s3-bucket-name>"
+  s3_key      = "main.py.zip"
+  timeout     = 3
+  memory_size = 128
+}
+
+resource "duplocloud_aws_lambda_permission" "apigw_lambda" {
+  action        = "lambda:InvokeFunction"
+  function_name = duplocloud_aws_lambda_function.myfunction.fullname
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = duplocloud_aws_lambda_function.myfunction.arn
+  statement_id  = "AllowExecutionFromAPIGateway"
+  tenant_id     = duplocloud_tenant.myapp.tenant_id
+}
+
+resource "duplocloud_aws_api_gateway_integration" "api" {
+  tenant_id            = duplocloud_tenant.myapp.tenant_id
+  name                 = "apigatewayname"
+  lambda_function_name = duplocloud_aws_lambda_function.myfunction.fullname
+}
+
+
+resource "duplocloud_aws_apigateway_event" "apigateway_event" {
+  tenant_id          = duplocloud_tenant.myapp.tenant_id
+  api_gateway_id     = duplocloud_aws_api_gateway_integration.api.metadata
+  method             = "GET"
+  path               = "/"
+  cors               = true
+  authorization_type = "NONE"
+
+  integration {
+    type    = "AWS_PROXY"
+    uri     = duplocloud_aws_lambda_function.myfunction.invoke_arn
+    timeout = 29000
+  }
 }
 ```
 
@@ -119,6 +168,7 @@ resource "duplocloud_aws_lambda_function" "edgefunction" {
 - `arn` (String) The ARN of the lambda function.
 - `fullname` (String) The full name of the lambda function.
 - `id` (String) The ID of this resource.
+- `invoke_arn` (String) The ARN to be used for invoking the lambda function.
 - `last_modified` (String) A timestamp string of lambda's last modification time.
 - `role` (String) The IAM role for the lambda function's execution.
 - `source_code_hash` (String) The SHA 256 hash of the lambda functions's source code package.

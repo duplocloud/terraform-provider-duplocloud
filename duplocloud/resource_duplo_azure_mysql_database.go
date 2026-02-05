@@ -1,5 +1,6 @@
 package duplocloud
 
+/*
 import (
 	"context"
 	"fmt"
@@ -319,3 +320,4 @@ func mysqlSeverWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID 
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
+*/
