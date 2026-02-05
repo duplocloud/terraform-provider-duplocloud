@@ -263,7 +263,7 @@ func parseAwsBatchSchedulingPolicyIdParts(id string) (tenantID, name string, err
 }
 
 func flattenBatchSchedulingPolicy(d *schema.ResourceData, c *duplosdk.Client, duplo *duplosdk.DuploAwsBatchSchedulingPolicy, tenantId string) diag.Diagnostics {
-	prefix, err := c.GetDuploServicesPrefix(tenantId)
+	prefix, err := c.GetDuploServicesPrefix(tenantId, "")
 	if err != nil {
 		return diag.FromErr(err)
 	}

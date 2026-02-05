@@ -456,6 +456,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 - `performance_insights` (Block List, Max: 1) Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. (see [below for nested schema](#nestedblock--performance_insights))
 - `skip_final_snapshot` (Boolean) If the final snapshot should be taken. When set to true, the final snapshot will not be taken when the resource is deleted. Defaults to `false`.
 - `snapshot_id` (String) A database snapshot to initialize the RDS instance from, at launch.
+- `storage_autoscaling` (Block List, Max: 1) (see [below for nested schema](#nestedblock--storage_autoscaling))
 - `storage_type` (String) Storage type to be used for RDS instance storage.
 
 			|Storage Type  | Performance                        | Throughput            | Descritpion                                                                                                                                                                                                               |
@@ -489,6 +490,15 @@ Optional:
 - `enabled` (Boolean) Turn on or off Performance Insights Defaults to `false`.
 - `kms_key_id` (String) Specify ARN for the KMS key to encrypt Performance Insights data.
 - `retention_period` (Number) Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31. For Document DB retention period is 7 Defaults to `7`.
+
+
+<a id="nestedblock--storage_autoscaling"></a>
+### Nested Schema for `storage_autoscaling`
+
+Optional:
+
+- `enable` (Boolean) Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage. Defaults to `false`.
+- `max_allocated_storage` (Number) The upper limit, in gibibytes (GiB), to which Amazon RDS can automatically scale the storage of the DB instance when autoscaling is enabled.
 
 
 <a id="nestedblock--timeouts"></a>

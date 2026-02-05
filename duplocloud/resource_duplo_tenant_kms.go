@@ -14,7 +14,7 @@ import (
 
 func resourceTenantKMS() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_tenant_kms` manages the list of kms avaialble to a tenant in Duplo.\n\n" +
+		Description: "`duplocloud_tenant_kms` manages the list of kms available to a tenant in Duplo.\n\n" +
 			"This resource allows you take control of individual tenant kms for a specific tenant.",
 
 		ReadContext:   resourceTenantKMSRead,
@@ -125,7 +125,7 @@ func flattenTenantKmsKeys(d *schema.ResourceData, list *[]duplosdk.DuploTenantKm
 	}
 	result, unspecified := segregateUnspecifiedKms(&kmsInfos, list)
 	d.Set("unspecified_kms_keys", unspecified)
-	d.Set("kms_keys", result)
+	d.Set("kms", result)
 
 	return result
 }

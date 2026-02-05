@@ -48,11 +48,13 @@ Read-Only:
 Read-Only:
 
 - `allow_global_access` (Boolean)
+- `backend_config_timeout_sec` (Number)
 - `backend_protocol_version` (String)
 - `certificate_arn` (String)
 - `cloud_name` (String)
 - `custom_cidr` (List of String)
 - `dns_name` (String)
+- `eip_allocations` (List of String)
 - `external_port` (Number)
 - `external_traffic_policy` (String)
 - `extra_selector_label` (List of Object) (see [below for nested schema](#nestedobjatt--services--lbconfigs--extra_selector_label))
