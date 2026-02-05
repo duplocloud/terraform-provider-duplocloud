@@ -118,20 +118,18 @@ func resourceAwsLambdaPermissionRead(ctx context.Context, d *schema.ResourceData
 		d.SetId("") // object missing
 		return nil
 	}
-	if permission.Sid == sid {
-		d.Set("tenant_id", tenantID)
-		d.Set("action", permission.Action)
-		d.Set("function_name", functionName)
-		if permission.Principal != nil {
-			d.Set("principal", permission.Principal.Service)
-		}
-		d.Set("qualifier", d.Get("qualifier").(string))
-		d.Set("source_account", d.Get("source_account").(string))
-		if permission.Condition != nil {
-			d.Set("source_arn", permission.Condition.Arn["AWS:SourceArn"])
-		}
-		d.Set("statement_id", permission.Sid)
+	d.Set("tenant_id", tenantID)
+	d.Set("action", permission.Action)
+	d.Set("function_name", functionName)
+	if permission.Principal != nil {
+		d.Set("principal", permission.Principal.Service)
 	}
+	d.Set("qualifier", d.Get("qualifier").(string))
+	d.Set("source_account", d.Get("source_account").(string))
+	if permission.Condition != nil {
+		d.Set("source_arn", permission.Condition.Arn["AWS:SourceArn"])
+	}
+	d.Set("statement_id", permission.Sid)
 
 	log.Printf("[TRACE] resourceAwsLambdaPermissionRead(%s, %s): end", tenantID, functionName)
 	return nil
