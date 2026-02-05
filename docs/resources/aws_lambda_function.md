@@ -94,7 +94,7 @@ resource "duplocloud_aws_lambda_function" "myfunction" {
   description = "A description of my function"
 
   runtime   = "python3.14"
-  handler   = "my_function.lambda_handler"
+  handler   = "my-function.<function-handler>"
   s3_bucket = "my-bucket-name"
   s3_key    = "my-function.zip"
 
