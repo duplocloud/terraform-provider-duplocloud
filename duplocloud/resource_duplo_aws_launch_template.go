@@ -567,28 +567,66 @@ func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMa
 
 func launchtemplateValidation(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	ir, ok := diff.GetOk("instance_requirements")
-	if ok && len(ir.([]interface{})) > 0 {
-		irMap := ir.([]interface{})[0].(map[string]interface{})
-		aI := irMap["allowed_instance_types"].([]interface{})
-		vc := irMap["vcpu_count"].([]interface{})
-		mm := irMap["memory_mib"].([]interface{})
-		if len(aI) > 0 {
-			if len(vc) == 0 {
-				return fmt.Errorf("vcpu_count is required when allowed_instance_types is set in instance_requirements")
+	if ok {
+		// Safely assert instance_requirements to []interface{} and ensure it has at least one element.
+		irList, ok := ir.([]interface{})
+		if ok && len(irList) > 0 && irList[0] != nil {
+			irMap, ok := irList[0].(map[string]interface{})
+			if !ok {
+				// Unexpected shape; skip validation rather than panic.
+				return nil
 			}
-			if len(mm) == 0 {
-				return fmt.Errorf("memory_mib is required when allowed_instance_types is set in instance_requirements")
-			}
-			vm := vc[0].(map[string]interface{})
-			if max, ok := vm["max"]; ok {
-				if vm["min"].(int) > max.(int) {
-					return fmt.Errorf("vcpu_count min cannot be greater than max in instance_requirements")
+
+			var aI, vc, mm []interface{}
+
+			if v, exists := irMap["allowed_instance_types"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					aI = tmp
 				}
 			}
-			mp := mm[0].(map[string]interface{})
-			if max, ok := mp["max"]; ok {
-				if mp["min"].(int) > max.(int) {
-					return fmt.Errorf("memory_mib min cannot be greater than max in instance_requirements")
+			if v, exists := irMap["vcpu_count"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					vc = tmp
+				}
+			}
+			if v, exists := irMap["memory_mib"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					mm = tmp
+				}
+			}
+
+			if len(aI) > 0 {
+				if len(vc) == 0 {
+					return fmt.Errorf("vcpu_count is required when allowed_instance_types is set in instance_requirements")
+				}
+				if len(mm) == 0 {
+					return fmt.Errorf("memory_mib is required when allowed_instance_types is set in instance_requirements")
+				}
+
+				vm, ok := vc[0].(map[string]interface{})
+				if !ok {
+					// Unexpected shape; skip validation rather than panic.
+					return nil
+				}
+				if max, ok := vm["max"]; ok {
+					if vmMin, ok := vm["min"].(int); ok {
+						if maxInt, ok := max.(int); ok && vmMin > maxInt {
+							return fmt.Errorf("vcpu_count min cannot be greater than max in instance_requirements")
+						}
+					}
+				}
+
+				mp, ok := mm[0].(map[string]interface{})
+				if !ok {
+					// Unexpected shape; skip validation rather than panic.
+					return nil
+				}
+				if max, ok := mp["max"]; ok {
+					if mpMin, ok := mp["min"].(int); ok {
+						if maxInt, ok := max.(int); ok && mpMin > maxInt {
+							return fmt.Errorf("memory_mib min cannot be greater than max in instance_requirements")
+						}
+					}
 				}
 			}
 		}
