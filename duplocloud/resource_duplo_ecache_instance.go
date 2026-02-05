@@ -127,6 +127,13 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 			Default:     false,
 		},
+		"multi_az_enabled": {
+			Description: "Enables Multi-AZ support for the ElastiCache instance.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true,
+			Default:     false,
+		},
 		"encryption_in_transit": {
 			Description: "Enables encryption-in-transit.",
 			Type:        schema.TypeBool,
@@ -588,6 +595,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			SnapshotName:             d.Get("snapshot_name").(string),
 			SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
 			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
+			MultiAZEnabled:           d.Get("multi_az_enabled").(bool),
 			SnapshotWindow:           d.Get("snapshot_window").(string),
 			EnableClusterMode:        d.Get("enable_cluster_mode").(bool),
 		},
@@ -668,6 +676,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
+	d.Set("multi_az_enabled", duplo.MultiAZEnabled)
 	if duplo.IsGlobal {
 		m := make(map[string]interface{})
 		m["group_id"] = duplo.GlobalReplicationGroupId
