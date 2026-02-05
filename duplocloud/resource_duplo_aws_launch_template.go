@@ -386,12 +386,16 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 			if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
 				if vc, exists := vcpu.([]interface{}); exists && len(vc) > 0 {
 					if vcpuMap, ok := vc[0].(map[string]interface{}); ok {
-						obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{}
-						if min, ok := vcpuMap["min"].(int); ok {
-							obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Min = min
-						}
-						if max, ok := vcpuMap["max"].(int); ok {
-							obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max
+						min, minOk := vcpuMap["min"].(int)
+						max, maxOk := vcpuMap["max"].(int)
+						if minOk || maxOk {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{}
+							if minOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Min = min
+							}
+							if maxOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max
+							}
 						}
 					}
 
@@ -400,12 +404,16 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 			if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
 				if mm, exists := memMap.([]interface{}); exists && len(mm) > 0 {
 					if mMap, ok := mm[0].(map[string]interface{}); ok {
-						obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{}
-						if min, ok := mMap["min"].(int); ok {
-							obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Min = min
-						}
-						if max, ok := mMap["max"].(int); ok {
-							obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max
+						min, minOk := mMap["min"].(int)
+						max, maxOk := mMap["max"].(int)
+						if minOk || maxOk {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{}
+							if minOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Min = min
+							}
+							if maxOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max
+							}
 						}
 					}
 				}
