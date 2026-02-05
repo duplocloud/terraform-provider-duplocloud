@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -54,11 +55,10 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		},
 
 		"instance_type": {
-			Description: "Asg instance type to be used to update the version from the current version",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
-			//	ConflictsWith: []string{"instance_requirements"},
+			Description:   "Asg instance type to be used to update the version from the current version",
+			Type:          schema.TypeString,
+			Optional:      true,
+			ConflictsWith: []string{"instance_requirements"},
 		},
 		"ami": {
 			Description: "Asg ami to be used to update the version from the current version",
@@ -162,68 +162,67 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		//"instance_requirements": {
-		//	Description:   "Whether to manage instance requirements instead of a specific instance type",
-		//	Type:          schema.TypeList,
-		//	MaxItems:      1,
-		//	Optional:      true,
-		//	ConflictsWith: []string{"instance_type"},
-		//	Computed:      true,
-		//
-		//	Elem: &schema.Resource{
-		//		Schema: map[string]*schema.Schema{
-		//			"allowed_instance_types": {
-		//				Type:     schema.TypeList,
-		//				Optional: true,
-		//				Computed: true,
-		//				Elem: &schema.Schema{
-		//					Type: schema.TypeString,
-		//				},
-		//			},
-		//			"vcpu_count": {
-		//				Type:         schema.TypeList,
-		//				MaxItems:     1,
-		//				RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
-		//				Optional:     true,
-		//				Computed:     true,
-		//				Description:  "Block describing the minimum and maximum number of vCPUs. It is a required field when allowed_instance_types is set ",
-		//				Elem: &schema.Resource{
-		//					Schema: map[string]*schema.Schema{
-		//						"min": {
-		//							Type:     schema.TypeInt,
-		//							Required: true,
-		//						},
-		//						"max": {
-		//							Type:     schema.TypeInt,
-		//							Optional: true,
-		//							Computed: true,
-		//						},
-		//					},
-		//				},
-		//			},
-		//			"memory_mib": {
-		//				Type:         schema.TypeList,
-		//				MaxItems:     1,
-		//				RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
-		//				Optional:     true,
-		//				Description:  "Block describing the minimum and maximum amount of memory (MiB). It is a required field when allowed_instance_types is set",
-		//				Elem: &schema.Resource{
-		//					Schema: map[string]*schema.Schema{
-		//						"min": {
-		//							Type:     schema.TypeInt,
-		//							Required: true,
-		//						},
-		//						"max": {
-		//							Type:     schema.TypeInt,
-		//							Optional: true,
-		//							Computed: true,
-		//						},
-		//					},
-		//				},
-		//			},
-		//		},
-		//	},
-		//},
+		"instance_requirements": {
+			Description:   "Whether to manage instance requirements instead of a specific instance type",
+			Type:          schema.TypeList,
+			MaxItems:      1,
+			Optional:      true,
+			ConflictsWith: []string{"instance_type"},
+			//Computed:      true,
+
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"allowed_instance_types": {
+						Type:         schema.TypeList,
+						Optional:     true,
+						Computed:     true,
+						RequiredWith: []string{"instance_requirements.0.vcpu_count", "instance_requirements.0.memory_mib"},
+
+						Elem: &schema.Schema{
+							Type: schema.TypeString,
+						},
+					},
+					"vcpu_count": {
+						Type:         schema.TypeList,
+						MaxItems:     1,
+						RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
+						Optional:     true,
+						Description:  "Block describing the minimum and maximum number of vCPUs. It is a required field when allowed_instance_types is set ",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"min": {
+									Type:     schema.TypeInt,
+									Required: true,
+								},
+								"max": {
+									Type:     schema.TypeInt,
+									Required: true,
+								},
+							},
+						},
+					},
+					"memory_mib": {
+						Type:         schema.TypeList,
+						MaxItems:     1,
+						RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
+						Optional:     true,
+						Description:  "Block describing the minimum and maximum amount of memory (MiB). It is a required field when allowed_instance_types is set",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"min": {
+									Type:     schema.TypeInt,
+									Required: true,
+								},
+								"max": {
+									Type:     schema.TypeInt,
+									Required: true,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 func resourceAwsLaunchTemplate() *schema.Resource {
@@ -242,7 +241,8 @@ func resourceAwsLaunchTemplate() *schema.Resource {
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 
-		Schema: awsLaunchTemplateSchema(),
+		Schema:        awsLaunchTemplateSchema(),
+		CustomizeDiff: launchtemplateValidation,
 	}
 }
 
@@ -369,38 +369,61 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 			Value: instanceType.(string),
 		}
 	}
-	/*if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
-		mirMap := mir.([]interface{})[0].(map[string]interface{})
-		if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
-			allowedInstanceList := []string{}
+	if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
+		obj.SourceVersion = ""
+		obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{}
+		if v, exist := mir.([]interface{}); exist && len(v) > 0 {
+			mirMap := v[0].(map[string]interface{})
 
-			for _, it := range ait.([]interface{}) {
-				allowedInstanceList = append(allowedInstanceList, it.(string))
-			}
-			obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{
-				AllowedInstanceTypes: allowedInstanceList,
+			if ait, ok := mirMap["allowed_instance_types"]; ok && ait != nil {
+				if aitSlice, ok := ait.([]interface{}); ok && len(aitSlice) > 0 {
+					allowedInstanceList := []string{}
+					for _, it := range aitSlice {
+						if s, ok := it.(string); ok {
+							allowedInstanceList = append(allowedInstanceList, s)
+						}
+					}
+					obj.LaunchTemplateData.InstanceRequirementsRequest.AllowedInstanceTypes = allowedInstanceList
+				}
 			}
 
-		}
-		if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
-			vcpuMap := vcpu.([]interface{})[0].(map[string]interface{})
-			min := vcpuMap["min"].(int)
-			max := vcpuMap["max"].(int)
-			obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{
-				Min: min,
-				Max: max,
+			if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
+				if vc, exists := vcpu.([]interface{}); exists && len(vc) > 0 {
+					if vcpuMap, ok := vc[0].(map[string]interface{}); ok {
+						min, minOk := vcpuMap["min"].(int)
+						max, maxOk := vcpuMap["max"].(int)
+						if minOk || maxOk {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{}
+							if minOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Min = min
+							}
+							if maxOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max
+							}
+						}
+					}
+
+				}
+			}
+			if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
+				if mm, exists := memMap.([]interface{}); exists && len(mm) > 0 {
+					if mMap, ok := mm[0].(map[string]interface{}); ok {
+						min, minOk := mMap["min"].(int)
+						max, maxOk := mMap["max"].(int)
+						if minOk || maxOk {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{}
+							if minOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Min = min
+							}
+							if maxOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max
+							}
+						}
+					}
+				}
 			}
 		}
-		if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
-			mMap := memMap.([]interface{})[0].(map[string]interface{})
-			min := mMap["min"].(int)
-			max := mMap["max"].(int)
-			obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{
-				Min: min,
-				Max: max,
-			}
-		}
-	}*/
+	}
 	return obj, nil
 
 }
@@ -475,7 +498,7 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	d.Set("default_version", m["default_version"])
 	d.Set("ami", m["image_id"])
 	d.Set("block_device_mapping", m["block_device_mapping"])
-	//d.Set("instance_requirements", m["instance_requirements"])
+	d.Set("instance_requirements", m["instance_requirements"])
 	return nil
 }
 
@@ -494,41 +517,40 @@ func extractASGTemplateDetails(rp *[]duplosdk.DuploLaunchTemplateResponse) map[s
 			lt["image_id"] = v.LaunchTemplateData.ImageId
 			lt["name"] = v.LaunchTemplateName
 			lt["block_device_mapping"] = flattenBlockDeviceMappings(v.LaunchTemplateData.BlockDeviceMappings)
-			//lt["instance_requirements"] = flattenInstanceRequirements(v.LaunchTemplateData.InstanceRequirements)
+			lt["instance_requirements"] = flattenInstanceRequirements(v.LaunchTemplateData.InstanceRequirements)
 		}
 	}
 	lt["latest_version"] = strconv.Itoa(max)
 	return lt
 }
 
-/*
-	func flattenInstanceRequirements(ir *duplosdk.DuploLaunchTemplateInstanceRequirements) []interface{} {
-		if ir == nil {
-			return []interface{}{}
-		}
-		irMap := map[string]interface{}{}
-		allowedInstanceTypes := []interface{}{}
-		for _, ait := range ir.AllowedInstanceTypes {
-			allowedInstanceTypes = append(allowedInstanceTypes, ait)
-		}
-		irMap["allowed_instance_types"] = allowedInstanceTypes
-		if ir.VCpuCount != nil {
-			vcpuMap := map[string]interface{}{
-				"min": ir.VCpuCount.Min,
-				"max": ir.VCpuCount.Max,
-			}
-			irMap["vcpu_count"] = []interface{}{vcpuMap}
-		}
-		if ir.MemoryMiB != nil {
-			memMap := map[string]interface{}{
-				"min": ir.MemoryMiB.Min,
-				"max": ir.MemoryMiB.Max,
-			}
-			irMap["memory_mib"] = []interface{}{memMap}
-		}
-		return []interface{}{irMap}
+func flattenInstanceRequirements(ir *duplosdk.DuploLaunchTemplateInstanceRequirements) []interface{} {
+	if ir == nil {
+		return []interface{}{}
 	}
-*/
+	irMap := map[string]interface{}{}
+	allowedInstanceTypes := []interface{}{}
+	for _, ait := range ir.AllowedInstanceTypes {
+		allowedInstanceTypes = append(allowedInstanceTypes, ait)
+	}
+	irMap["allowed_instance_types"] = allowedInstanceTypes
+	if ir.VCpuCount != nil {
+		vcpuMap := map[string]interface{}{
+			"min": ir.VCpuCount.Min,
+			"max": ir.VCpuCount.Max,
+		}
+		irMap["vcpu_count"] = []interface{}{vcpuMap}
+	}
+	if ir.MemoryMiB != nil {
+		memMap := map[string]interface{}{
+			"min": ir.MemoryMiB.Min,
+			"max": ir.MemoryMiB.Max,
+		}
+		irMap["memory_mib"] = []interface{}{memMap}
+	}
+	return []interface{}{irMap}
+}
+
 func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMappingResponse) []interface{} {
 	bdmI := []interface{}{}
 	for _, bdm := range bdms {
@@ -560,4 +582,72 @@ func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMa
 		bdmI = append(bdmI, bdmMap)
 	}
 	return bdmI
+}
+
+func launchtemplateValidation(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	ir, ok := diff.GetOk("instance_requirements")
+	if ok {
+		irList, ok := ir.([]interface{})
+		if ok && len(irList) > 0 && irList[0] != nil {
+			irMap, ok := irList[0].(map[string]interface{})
+			if !ok {
+				return nil
+			}
+
+			var aI, vc, mm []interface{}
+
+			if v, exists := irMap["allowed_instance_types"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					aI = tmp
+				}
+			}
+			if v, exists := irMap["vcpu_count"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					vc = tmp
+				}
+			}
+			if v, exists := irMap["memory_mib"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					mm = tmp
+				}
+			}
+
+			if len(aI) > 0 {
+				if len(vc) == 0 {
+					return fmt.Errorf("vcpu_count is required when allowed_instance_types is set in instance_requirements")
+				}
+				if len(mm) == 0 {
+					return fmt.Errorf("memory_mib is required when allowed_instance_types is set in instance_requirements")
+				}
+
+				vm, ok := vc[0].(map[string]interface{})
+				if !ok {
+					// Unexpected shape; skip validation rather than panic.
+					return nil
+				}
+				if max, ok := vm["max"]; ok {
+					if vmMin, ok := vm["min"].(int); ok {
+						if maxInt, ok := max.(int); ok && vmMin > maxInt {
+							return fmt.Errorf("vcpu_count min cannot be greater than max in instance_requirements")
+						}
+					}
+				}
+
+				mp, ok := mm[0].(map[string]interface{})
+				if !ok {
+					// Unexpected shape; skip validation rather than panic.
+					return nil
+				}
+				if max, ok := mp["max"]; ok {
+					if mpMin, ok := mp["min"].(int); ok {
+						if maxInt, ok := max.(int); ok && mpMin > maxInt {
+							return fmt.Errorf("memory_mib min cannot be greater than max in instance_requirements")
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
