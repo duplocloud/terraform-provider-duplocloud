@@ -32,7 +32,7 @@ resource "duplocloud_aws_launch_template" "name" {
 
 }
 
-resource "duplocloud_aws_launch_template" "name" {
+resource "duplocloud_aws_launch_template" "template" {
   tenant_id           = duplocloud_tenant.myapp.tenant_id
   name                = "launch-template-name"
   version_description = "launch template block device mapping"

@@ -373,35 +373,39 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 	if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
 		obj.SourceVersion = ""
 		mirMap := mir.([]interface{})[0].(map[string]interface{})
-		if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
-			allowedInstanceList := []string{}
+		if v, exist := mir.([]interface{}); exist && len(v) > 0 {
+			mirMap = v[0].(map[string]interface{})
 
-			for _, it := range ait.([]interface{}) {
-				allowedInstanceList = append(allowedInstanceList, it.(string))
-			}
-			obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{
-				AllowedInstanceTypes: allowedInstanceList,
-			}
+			if ait, ok := mirMap["allowed_instance_types"]; ok && len(ait.([]interface{})) > 0 {
+				allowedInstanceList := []string{}
 
-		}
-		if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
-			vcpuMap := vcpu.([]interface{})[0].(map[string]interface{})
-			min := vcpuMap["min"].(int)
-			obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{
-				Min: min,
+				for _, it := range ait.([]interface{}) {
+					allowedInstanceList = append(allowedInstanceList, it.(string))
+				}
+				obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{
+					AllowedInstanceTypes: allowedInstanceList,
+				}
+
 			}
-			if max, ok := vcpuMap["max"]; ok {
-				obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max.(int)
+			if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
+				vcpuMap := vcpu.([]interface{})[0].(map[string]interface{})
+				min := vcpuMap["min"].(int)
+				obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{
+					Min: min,
+				}
+				if max, ok := vcpuMap["max"]; ok {
+					obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max.(int)
+				}
 			}
-		}
-		if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
-			mMap := memMap.([]interface{})[0].(map[string]interface{})
-			min := mMap["min"].(int)
-			obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{
-				Min: min,
-			}
-			if max, ok := mMap["max"]; ok {
-				obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max.(int)
+			if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
+				mMap := memMap.([]interface{})[0].(map[string]interface{})
+				min := mMap["min"].(int)
+				obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{
+					Min: min,
+				}
+				if max, ok := mMap["max"]; ok {
+					obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max.(int)
+				}
 			}
 		}
 	}
@@ -568,12 +572,10 @@ func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMa
 func launchtemplateValidation(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	ir, ok := diff.GetOk("instance_requirements")
 	if ok {
-		// Safely assert instance_requirements to []interface{} and ensure it has at least one element.
 		irList, ok := ir.([]interface{})
 		if ok && len(irList) > 0 && irList[0] != nil {
 			irMap, ok := irList[0].(map[string]interface{})
 			if !ok {
-				// Unexpected shape; skip validation rather than panic.
 				return nil
 			}
 
