@@ -301,7 +301,7 @@ func (c *Client) LambdaPermissionDelete(tenantID, functionName, statementId stri
 		fmt.Sprintf("v3/subscriptions/%s/serverless/lambdapermission/%s/%s", tenantID, functionName, statementId), nil)
 }
 
-func (c *Client) LambdaPermissionGet(tenantID string, functionName string) (*[]DuploLambdaPermissionStatement, ClientError) {
+func (c *Client) LambdaPermissionGet(tenantID string, functionName, sid string) (*DuploLambdaPermissionStatement, ClientError) {
 	rp := []DuploLambdaPermissionStatement{}
 	err := c.getAPI(
 		fmt.Sprintf("LambdaPermissionGet(%s, %s)", tenantID, functionName),
@@ -310,7 +310,12 @@ func (c *Client) LambdaPermissionGet(tenantID string, functionName string) (*[]D
 	if len(rp) == 0 {
 		return nil, err
 	}
-	return &rp, err
+	for _, v := range rp {
+		if v.Sid == sid {
+			return &v, nil
+		}
+	}
+	return nil, err
 }
 
 func (c *Client) LambdaStatusCheck(tenantID string, functionName string) (*DuploLambdaFunction, ClientError) {
