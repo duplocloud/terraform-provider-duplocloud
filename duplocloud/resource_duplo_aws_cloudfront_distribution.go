@@ -871,12 +871,12 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 
 func resourceAwsCloudfrontDistribution() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_aws_cloudfront_distribution` manages an aws cloudfront distribution in Duplo.",
-
-		ReadContext:   resourceAwsCloudfrontDistributionRead,
-		CreateContext: resourceAwsCloudfrontDistributionCreate,
-		UpdateContext: resourceAwsCloudfrontDistributionUpdate,
-		DeleteContext: resourceAwsCloudfrontDistributionDelete,
+		Description:        "`duplocloud_aws_cloudfront_distribution` manages an aws cloudfront distribution in Duplo. \n\nNOTE: This resource has been deprecated in favor of `duplocloud_aws_cloudfront_distribution_v2` resource. No support will be provided for this resource going forward.",
+		DeprecationMessage: "`duplocloud_aws_cloudfront_distribution` has been deprecated in favor of `duplocloud_aws_cloudfront_distribution_v2` resource. No support will be provided for this resource going forward.",
+		ReadContext:        resourceAwsCloudfrontDistributionRead,
+		CreateContext:      resourceAwsCloudfrontDistributionCreate,
+		UpdateContext:      resourceAwsCloudfrontDistributionUpdate,
+		DeleteContext:      resourceAwsCloudfrontDistributionDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

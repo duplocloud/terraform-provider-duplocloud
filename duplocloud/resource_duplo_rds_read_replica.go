@@ -511,20 +511,6 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 			MonitoringInterval:   val,
 		})
 	}
-	if d.HasChange("allocated_storage") {
-		obj := duplosdk.DuploRdsUpdateInstance{
-			DBInstanceIdentifier: identifier,
-			AllocatedStorage:     d.Get("allocated_storage").(int),
-			ApplyImmediately:     true,
-		}
-		err = c.UpdateRDSDBInstance(tenantID, obj)
-		err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
-		if err != nil {
-			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
-		}
-
-	}
-
 	if d.HasChange("storage_autoscaling") {
 		obj := duplosdk.DuploRDSStorageAutoScalling{
 			ApplyImmediately: true,
@@ -540,6 +526,22 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 		cerr := c.UpdateRDSDBInstanceStorageAutoScalling(tenantID, identifier, obj)
 		if cerr != nil {
 			return diag.FromErr(cerr)
+		}
+
+	}
+
+	if d.HasChange("allocated_storage") {
+		obj := duplosdk.DuploRdsUpdateInstance{
+			DBInstanceIdentifier: identifier,
+			AllocatedStorage:     d.Get("allocated_storage").(int),
+			ApplyImmediately:     true,
+		}
+		err = c.UpdateRDSDBInstance(tenantID, obj)
+		_ = readReplicaInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+
+		err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 		}
 
 	}
@@ -684,6 +686,8 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 		}
 	}
 	jo["engine"] = duploObject.Engine
+	jo["engine_type"] = duploObject.Engine
+
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["size"] = duploObject.SizeEx
 	jo["availability_zone"] = duploObject.AvailabilityZone
