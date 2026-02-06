@@ -481,7 +481,10 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	}
 	m := extractASGTemplateDetails(rp)
 	d.Set("version_metadata", string(b))
-	d.Set("instance_type", m["instance_type"])
+	// Only set instance_type if user specified it in config
+	if _, ok := d.GetOk("instance_type"); ok {
+		d.Set("instance_type", m["instance_type"])
+	}
 	d.Set("version_description", m["ver_desc"])
 	n := d.Get("name").(string)
 	d.Set("name", m["name"])
@@ -489,15 +492,17 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 		d.Set("name", n)
 	}
 
+	// Only set version if user specified it in config
 	if v, ok := d.GetOk("version"); ok && v.(string) != "" {
 		d.Set("version", v.(string))
-	} else {
-		d.Set("version", m["latest_version"])
 	}
 	d.Set("latest_version", m["latest_version"])
 	d.Set("default_version", m["default_version"])
 	d.Set("ami", m["image_id"])
-	d.Set("block_device_mapping", m["block_device_mapping"])
+	// Only set block_device_mapping if user specified it in config
+	if _, ok := d.GetOk("block_device_mapping"); ok {
+		d.Set("block_device_mapping", m["block_device_mapping"])
+	}
 	d.Set("instance_requirements", m["instance_requirements"])
 	return nil
 }
