@@ -144,6 +144,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description: "A RDS parameter group name to apply to the RDS instance.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(1, 255),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),

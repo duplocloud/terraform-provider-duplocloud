@@ -2,8 +2,9 @@ package duplocloud
 
 import (
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -71,7 +72,7 @@ func dataSourceTenantSecretsRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to list secrets: %s", err)
 	}
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return fmt.Errorf("failed to get tenant prefix: %s", err)
 	}

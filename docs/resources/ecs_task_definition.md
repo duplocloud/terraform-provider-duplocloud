@@ -30,8 +30,8 @@ resource "duplocloud_ecs_task_definition" "myservice" {
     ]
     PortMappings = [
       {
-        ContainerPort = "80",
-        HostPort      = "80",
+        ContainerPort = 80,
+        HostPort      = 80,
         Protocol = {
           Value = "tcp"
         }
@@ -81,14 +81,13 @@ resource "duplocloud_ecs_task_definition" "myservice" {
   container_definitions = jsonencode([{
     Name  = "default"
     Image = "nginx:latest",
-    port  = "80"
     Environment = [
       { Name = "NGINX_HOST", Value = "foo" }
     ]
     PortMappings = [
       {
-        ContainerPort = "80",
-        HostPort      = "80",
+        ContainerPort = 80,
+        HostPort      = 80,
         Protocol = {
           Value = "tcp"
         }
@@ -138,7 +137,8 @@ resource "duplocloud_ecs_task_definition" "myservice" {
 - `network_mode` (String) Valid values are `bridge`,`host`,`awsvpc`,`none` Defaults to `awsvpc`.
 - `pid_mode` (String) Valida values are `host`, `task`
 - `placement_constraints` (Block Set, Max: 10) (see [below for nested schema](#nestedblock--placement_constraints))
-- `prevent_tf_destroy` (String) Prevent this resource to be deleted from terraform destroy. Defaults to `true`.
+- `prevent_tf_destroy` (String) Prevent this resource from deleting the task definition version; if set to false, it will remove the latest revision.
+**Note**: This is a provider-local field intended for internal logic. It may trigger a non-functional diff during a terraform import, but it does not impact the physical resource or its attributes during an apply. Defaults to `true`.
 - `proxy_configuration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--proxy_configuration))
 - `requires_attributes` (Block Set) (see [below for nested schema](#nestedblock--requires_attributes))
 - `requires_compatibilities` (Set of String) Requires compatibilities for running jobs. Such as EC2, FARGATE, EXTERNAL. It varies based on network mode and how AWS maps it. `FARGATE` should be used if network mode is set to `awsvpc`.
