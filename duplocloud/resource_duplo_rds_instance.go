@@ -288,11 +288,10 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Default:  false,
 		},
 		"enable_iam_auth": {
-			Description:      "Whether or not to enable the RDS IAM authentication. It can only be set during instance creation.",
-			Type:             schema.TypeBool,
-			Optional:         true,
-			Computed:         true,
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Description: "Whether or not to enable the RDS IAM authentication. This setting can be modified after instance creation.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"enhanced_monitoring": {
 			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
@@ -775,11 +774,13 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	if d.HasChange("auto_minor_version_upgrade") {
+	if d.HasChange("auto_minor_version_upgrade") || d.HasChange("enable_iam_auth") {
 		val := d.Get("auto_minor_version_upgrade").(bool)
+		iamauth := d.Get("enable_iam_auth").(bool)
 		if !isAuroraDB(d) {
 			obj := duplosdk.DuploRdsUpdatePayload{}
 			obj.AutoMinorVersionUpgrade = &val
+			obj.EnableIamAuth = iamauth
 			cErr := c.UpdateRDSDBInstanceAutoMinorUpgrade(tenantID, identifier, obj)
 			if cErr != nil {
 				return diag.FromErr(cErr)
@@ -789,6 +790,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 				DBClusterIdentifier:     identifier + "-cluster",
 				ApplyImmediately:        true,
 				AutoMinorVersionUpgrade: &val,
+				EnableIamAuth:           iamauth,
 			}
 			err := c.UpdateRdsCluster(tenantID, obj)
 			if err != nil {

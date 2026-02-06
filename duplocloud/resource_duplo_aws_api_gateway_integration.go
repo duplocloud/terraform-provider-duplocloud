@@ -35,7 +35,7 @@ func duploAwsApiGatewayIntegrationSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"lambda_function_name": {
-			Description: "Name of the lambda function to be integrated with API gateway.",
+			Description: "Name of the lambda function or arn to be integrated with API gateway.",
 			Type:        schema.TypeString,
 			Required:    true,
 		},

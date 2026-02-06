@@ -3,6 +3,8 @@
 ### Added
 - Introduced GCP Redis Instance resource and data sources for managing GCP Redis Instance in DuploCloud.
 - Added CRUD operations and data retrieval for GCP Redis Instance resources.
+- Added `duplocloud_s3_bucket` data source for retrieving S3 bucket information.
+- Added `duplocloud_aws_sqs_queue` data source for retrieving SQS queue information.
 
 ## 2024-09-13
 
