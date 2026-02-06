@@ -224,7 +224,7 @@ func resourceTargetGroup() *schema.Resource {
 				}
 				return d.SetNew("health_check", []interface{}{defaultHC})
 			}
-			if v, ok := d.GetOk("protocol"); !ok || v.(string) == "" && targetType != "lambda" {
+			if v, ok := d.GetOk("protocol"); (!ok || v.(string) == "") && targetType != "lambda" {
 				d.SetNew("protocol", "HTTP")
 			}
 			return nil
