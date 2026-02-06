@@ -43,7 +43,7 @@ func targetGroupSchema() map[string]*schema.Schema {
 			}, false),
 		},
 		"protocol": {
-			Description: "Protocol to use to connect with the target. Not applicable when `target_type` is `lambda`. For non lambda target type it defaults to `HTTP`",
+			Description: "Protocol to use to connect with the target. Not applicable when `target_type` is `lambda`. For non-lambda target type it defaults to `HTTP`",
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    true,
