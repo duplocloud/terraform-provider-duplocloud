@@ -52,7 +52,7 @@ resource "duplocloud_aws_lb_target_group" "tg" {
 - `health_check` (Block List, Max: 1) Health Check configuration block. (see [below for nested schema](#nestedblock--health_check))
 - `ip_address_type` (String) The type of IP addresses used by the target group, only supported when target type is set to `ip`. Possible values are `ipv4` or `ipv6`
 - `port` (Number) Port to use to connect with the target. Valid values are either ports 1-65535.
-- `protocol` (String) Protocol to use to connect with the target. Not applicable when `target_type` is `lambda`. Defaults to `HTTP`.
+- `protocol` (String) Protocol to use to connect with the target. Not applicable when `target_type` is `lambda`. For non lambda target type it defaults to `HTTP`
 - `protocol_version` (String) Only applicable when protocol is `HTTP` or `HTTPS`. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `vpc_id` (String) Identifier of the VPC in which to create the target group. Required when `target_type` is `instance`, `ip` or `alb`. Does not apply when `target_type` is `lambda`.
