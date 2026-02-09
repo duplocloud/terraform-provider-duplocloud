@@ -1291,7 +1291,9 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 					// Validation for disabling autoscaling
 					// When disabling autoscaling, we need allocated_storage to set max_allocated_storage
 					// This prevents the database from growing beyond the intended size
-					if allocatedStorage == 0 {
+					// Skip this check if snapshot_id is provided, as allocated_storage is inherited from the snapshot
+					snapshotID := diff.Get("snapshot_id").(string)
+					if allocatedStorage == 0 && snapshotID == "" {
 						return fmt.Errorf("allocated_storage must be specified when disabling storage_autoscaling. This value is required to set max_allocated_storage and prevent unintended database growth. Please provide a non-zero allocated_storage value")
 					}
 				}
