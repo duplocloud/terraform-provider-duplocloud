@@ -1276,12 +1276,14 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 					if perDiff > -10 {
 						return fmt.Errorf("max_allocated_storage should be atleast 10%% of allocated_storage. Recommended is 26%%")
 					}
-				} else {
-					//	if err := diff.Clear("storage_autoscaling.0.max_allocated_storage"); err != nil {
-					//		return err
-					//	}
 				}
 			}
+		}
+	}
+	if diff.HasChange("allocated_storage") {
+		oa, na := diff.GetChange("allocated_storage")
+		if na.(int) < oa.(int) {
+			return fmt.Errorf("You can't reduce your allocated storage (%+v GiB) from what you originally configured for your source database instance (%+v GiB)", na.(int), oa.(int))
 		}
 	}
 	return nil

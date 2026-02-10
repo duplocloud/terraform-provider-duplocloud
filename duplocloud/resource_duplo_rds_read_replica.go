@@ -219,10 +219,12 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 		//	Computed:    true,
 		//},
 		"storage_autoscaling": {
-			Optional: true,
-			Computed: true,
-			MaxItems: 1,
-			Type:     schema.TypeList,
+			Description:      "This can only be set during an update; it will inherit the writer's value during creation.",
+			Optional:         true,
+			Computed:         true,
+			MaxItems:         1,
+			Type:             schema.TypeList,
+			DiffSuppressFunc: diffSuppressWhenCreating,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"enable": {
@@ -240,10 +242,11 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			},
 		},
 		"allocated_storage": {
-			Description: "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Computed:    true,
+			Description:      "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes. This can only be set during an update; it will inherit the writer's value during creation.",
+			Type:             schema.TypeInt,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenCreating,
 		},
 	}
 }
