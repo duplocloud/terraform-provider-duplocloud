@@ -83,7 +83,7 @@ func datasourceAwsLaunchTemplateRead(d *schema.ResourceData, m interface{}) erro
 	}
 	d.SetId(tenantId + "/launch-template/" + asgName)
 
-	fErr := flattenLaunchTemplate(d, rp, ver)
+	fErr := flattenLaunchTemplate(d, rp, ver, true)
 	if fErr != nil {
 		return err
 	}
