@@ -800,18 +800,25 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	if d.HasChange("storage_autoscaling") {
-		if d.Get("storage_autoscaling.0.enable").(bool) {
-			obj := duplosdk.DuploRDSStorageAutoScalling{
-				IsAutoScalingEnabled: d.Get("storage_autoscaling.0.enable").(bool),
-				MaxAllocatedStorage:  d.Get("storage_autoscaling.0.max_allocated_storage").(int),
-				ApplyImmediately:     true,
-			}
-			cerr := c.UpdateRDSDBInstanceStorageAutoScalling(tenantID, identifier, obj)
-			if cerr != nil {
-				return diag.FromErr(err)
-			}
+		enableAutoscaling := d.Get("storage_autoscaling.0.enable").(bool)
+		maxStorage := d.Get("storage_autoscaling.0.max_allocated_storage").(int)
+
+		// When disabling autoscaling, set MaxAllocatedStorage equal to AllocatedStorage to prevent growth.
+		// The validation in custom diff ensures allocated_storage is non-zero when disabling autoscaling.
+		if !enableAutoscaling {
+			allocatedStorage := d.Get("allocated_storage").(int)
+			maxStorage = allocatedStorage
 		}
 
+		obj := duplosdk.DuploRDSStorageAutoScalling{
+			IsAutoScalingEnabled: enableAutoscaling,
+			MaxAllocatedStorage:  maxStorage,
+			ApplyImmediately:     true,
+		}
+		cerr := c.UpdateRDSDBInstanceStorageAutoScalling(tenantID, identifier, obj)
+		if cerr != nil {
+			return diag.FromErr(cerr)
+		}
 	}
 	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
 	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
@@ -1263,18 +1270,31 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		if sas, ok := diff.GetOk("storage_autoscaling"); ok {
 			for _, sa := range sas.([]interface{}) {
 				m := sa.(map[string]interface{})
-				if m["enable"].(bool) {
+				enableAutoscaling := m["enable"].(bool)
+				allocatedStorage := diff.Get("allocated_storage").(int)
+
+				if enableAutoscaling {
+					// Validation for enabling autoscaling
 					if st == "standard" || st == "aurora" || st == "aurora-iopt1" {
 						return fmt.Errorf("storage_autoscaling is not supported for %s storage type", st)
 					}
 					th := m["max_allocated_storage"].(int)
-					as := diff.Get("allocated_storage").(int)
+					as := allocatedStorage
 					if as == 0 {
 						as = 20
 					}
 					perDiff := (as - th) * 100 / as
 					if perDiff > -10 {
 						return fmt.Errorf("max_allocated_storage should be atleast 10%% of allocated_storage. Recommended is 26%%")
+					}
+				} else {
+					// Validation for disabling autoscaling
+					// When disabling autoscaling, we need allocated_storage to set max_allocated_storage
+					// This prevents the database from growing beyond the intended size
+					// Skip this check if snapshot_id is provided, as allocated_storage is inherited from the snapshot
+					snapshotID := diff.Get("snapshot_id").(string)
+					if allocatedStorage == 0 && snapshotID == "" {
+						return fmt.Errorf("allocated_storage must be specified when disabling storage_autoscaling. This value is required to set max_allocated_storage and prevent unintended database growth. Please provide a non-zero allocated_storage value")
 					}
 				}
 			}
