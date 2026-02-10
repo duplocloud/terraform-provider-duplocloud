@@ -515,7 +515,7 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 		rawCfg := d.GetRawConfig()
 		if !rawCfg.IsNull() {
 			if verCfg := rawCfg.GetAttr("version"); !verCfg.IsNull() {
-				// User configured version in config; keep the configured value
+				// User configured version in config; use the configured value from state
 				if v, ok := d.GetOk("version"); ok && v.(string) != "" {
 					d.Set("version", v.(string))
 				}
