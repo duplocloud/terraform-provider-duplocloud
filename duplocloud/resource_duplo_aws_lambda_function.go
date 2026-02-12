@@ -299,7 +299,8 @@ func resourceAwsLambdaFunctionRead(ctx context.Context, d *schema.ResourceData, 
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	flattenAwsLambdaConfiguration(d, &duplo.Configuration)
-	d.Set("tags", duplo.Tags)
+
+	d.Set("tags", filterDuploDefinedTagsAsMap(duplo.Tags))
 
 	if duplo.Configuration.DeadLetterConfig != nil && duplo.Configuration.DeadLetterConfig.TargetArn != "" {
 		if err := d.Set("dead_letter_config", []interface{}{
