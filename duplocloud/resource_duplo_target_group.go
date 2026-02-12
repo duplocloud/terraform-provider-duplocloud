@@ -43,11 +43,10 @@ func targetGroupSchema() map[string]*schema.Schema {
 			}, false),
 		},
 		"protocol": {
-			Description: "Protocol to use to connect with the target. Not applicable when `target_type` is `lambda`.",
+			Description: "Protocol to use to connect with the target. Not applicable when `target_type` is `lambda`. For non-lambda target type it defaults to `HTTP`",
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    true,
-			Default:     "HTTP",
 			ValidateFunc: validation.StringInSlice([]string{
 				"HTTP",
 				"HTTPS",
@@ -154,7 +153,7 @@ func targetGroupSchema() map[string]*schema.Schema {
 						DiffSuppressFunc: suppressIfTargetType("lambda"),
 					},
 					"protocol": {
-						Description: " Protocol to use to connect with the target. Defaults to HTTP. Not applicable when target_type is lambda",
+						Description: "Protocol to use to connect with the target. Defaults to HTTP. Not applicable when target_type is lambda",
 						Type:        schema.TypeString,
 						Optional:    true,
 						Default:     "HTTP",
@@ -210,6 +209,26 @@ func resourceTargetGroup() *schema.Resource {
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: targetGroupSchema(),
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			targetType := d.Get("target_type").(string)
+			if v, ok := d.GetOk("health_check"); !ok || len(v.([]interface{})) == 0 {
+				defaultHC := map[string]interface{}{
+					"enabled":             true,
+					"healthy_threshold":   3,
+					"interval":            30,
+					"port":                "traffic-port",
+					"unhealthy_threshold": 3,
+				}
+				if targetType != "lambda" {
+					defaultHC["protocol"] = "HTTP"
+				}
+				return d.SetNew("health_check", []interface{}{defaultHC})
+			}
+			if v, ok := d.GetOk("protocol"); (!ok || v.(string) == "") && targetType != "lambda" {
+				d.SetNew("protocol", "HTTP")
+			}
+			return nil
+		},
 	}
 }
 

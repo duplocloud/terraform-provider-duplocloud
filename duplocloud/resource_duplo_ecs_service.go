@@ -558,6 +558,21 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 	if duplo.DeploymentConfiguration != nil {
 		d.Set("deployment_configuration", flattenDeploumentConfiguration(duplo.DeploymentConfiguration))
 	}
+
+	// Populate target_group_arns, always setting it to avoid stale state.
+	// Only persist ARNs when required target groups are confirmed created (rp == true).
+	targetGroupArns := []string{}
+	if duplo.LBConfigurations != nil && len(*duplo.LBConfigurations) > 0 {
+		rp, err, arns := c.EcsServiceRequiredTargetGroupsCreated(duplo.TenantID, duplo)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if rp && len(arns) > 0 {
+			targetGroupArns = arns
+		}
+	}
+	d.Set("target_group_arns", targetGroupArns)
+
 	return nil
 }
 

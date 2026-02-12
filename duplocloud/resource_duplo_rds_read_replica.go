@@ -242,7 +242,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			},
 		},
 		"allocated_storage": {
-			Description:      "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes. This can only be set during an update; it will inherit the writer's value during creation.",
+			Description:      "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes. This can only be set during an update; it will inherit the writer's value during creation.\n**Note:** Allocated storage can only be modified after every 6 hours.",
 			Type:             schema.TypeInt,
 			Optional:         true,
 			Computed:         true,

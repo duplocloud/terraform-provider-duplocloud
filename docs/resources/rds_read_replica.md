@@ -191,14 +191,15 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 
 ### Optional
 
-- `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
+- `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes. This can only be set during an update; it will inherit the writer's value during creation.
+**Note:** Allocated storage can only be modified after every 6 hours.
 - `availability_zone` (String) The AZ for the RDS instance.
 - `engine_type` (Number) Engine type required to validate applicable parameter group setting for different instance. Should be referred from writer
 - `enhanced_monitoring` (Number) Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.
 - `multi_az` (Boolean) Specifies if the RDS instance is multi-AZ.
 - `parameter_group_name` (String) A RDS parameter group name to apply to the RDS instance.
 - `performance_insights` (Block List, Max: 1) Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. (see [below for nested schema](#nestedblock--performance_insights))
-- `storage_autoscaling` (Block List, Max: 1) (see [below for nested schema](#nestedblock--storage_autoscaling))
+- `storage_autoscaling` (Block List, Max: 1) This can only be set during an update; it will inherit the writer's value during creation. (see [below for nested schema](#nestedblock--storage_autoscaling))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `v2_scaling_configuration` (Block List, Max: 1) Serverless v2_scaling_configuration min and max scalling capacity. Required during creating a servless read replica. (see [below for nested schema](#nestedblock--v2_scaling_configuration))
 

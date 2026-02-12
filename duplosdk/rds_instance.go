@@ -100,6 +100,7 @@ type DuploRdsUpdatePayload struct {
 	DbParameterGroupName      string `json:"DbParameterGroupName,omitempty"`
 	ClusterParameterGroupName string `json:"ClusterParameterGroupName,omitempty"`
 	AutoMinorVersionUpgrade   *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
+	EnableIamAuth             bool   `json:"EnableIamAuth"`
 }
 
 type DuploRdsUpdateInstance struct {
@@ -135,6 +136,7 @@ type DuploRdsUpdateCluster struct {
 	PerformanceInsightsRetentionPeriod int    `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string `json:"PerformanceInsightsKMSKeyId,omitempty"`
 	AutoMinorVersionUpgrade            *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
+	EnableIamAuth                      bool   `json:"EnableIAMDatabaseAuthentication"`
 }
 
 type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
