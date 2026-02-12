@@ -539,7 +539,10 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 			AllocatedStorage:     d.Get("allocated_storage").(int),
 			ApplyImmediately:     true,
 		}
-		err = c.UpdateRDSDBInstance(tenantID, obj)
+		cerr := c.UpdateRDSDBInstance(tenantID, obj)
+		if cerr != nil {
+			return diag.Errorf("Error updating for RDS DB read replica instance '%s' : %s", id, cerr)
+		}
 		_ = readReplicaInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
 
 		err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
