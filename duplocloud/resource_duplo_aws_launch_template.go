@@ -481,7 +481,7 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	}
 	m := extractASGTemplateDetails(rp)
 	d.Set("version_metadata", string(b))
-	
+
 	// Handle instance_type: for data sources, always set; for resources, only if user configured it
 	if isDataSource {
 		d.Set("instance_type", m["instance_type"])
@@ -496,7 +496,7 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 			}
 		}
 	}
-	
+
 	d.Set("version_description", m["ver_desc"])
 	n := d.Get("name").(string)
 	d.Set("name", m["name"])
@@ -525,11 +525,11 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 			}
 		}
 	}
-	
+
 	d.Set("latest_version", m["latest_version"])
 	d.Set("default_version", m["default_version"])
 	d.Set("ami", m["image_id"])
-	
+
 	// Handle block_device_mapping: for data sources, always set; for resources, only if user configured it
 	if isDataSource {
 		d.Set("block_device_mapping", m["block_device_mapping"])
@@ -544,7 +544,7 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 			}
 		}
 	}
-	
+
 	d.Set("instance_requirements", m["instance_requirements"])
 	return nil
 }
