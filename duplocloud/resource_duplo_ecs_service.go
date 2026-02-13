@@ -251,7 +251,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 									Type:        schema.TypeInt,
 									Optional:    true,
 									Computed:    true,
-									Description: "The port the load balancer uses when performing health checks on targets. If not specified, the traffic port will be used instead.",
+									Description: "The port the load balancer uses when performing health checks on targets. If not specified, it will be treated as the traffic port.",
 								},
 							},
 						},
