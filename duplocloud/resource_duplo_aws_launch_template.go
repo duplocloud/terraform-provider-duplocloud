@@ -283,7 +283,7 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 		return nil
 	}
 	d.Set("tenant_id", tenantId)
-	fErr := flattenLaunchTemplate(d, rp, ver)
+	fErr := flattenLaunchTemplate(d, rp, ver, false)
 	if fErr != nil {
 		return diag.Errorf("%s", fErr.Error())
 	}
@@ -473,7 +473,7 @@ func expandBlockDeviceMappings(d *schema.ResourceData) []duplosdk.DuploLaunchTem
 	}
 	return blockDeviceMappings
 }
-func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, ver string) error {
+func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, ver string, isDataSource bool) error {
 
 	b, err := json.Marshal(rp)
 	if err != nil {
@@ -481,10 +481,22 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	}
 	m := extractASGTemplateDetails(rp)
 	d.Set("version_metadata", string(b))
-	// Only set instance_type if user specified it in config
-	if _, ok := d.GetOk("instance_type"); ok {
+	
+	// Handle instance_type: for data sources, always set; for resources, only if user configured it
+	if isDataSource {
 		d.Set("instance_type", m["instance_type"])
+	} else {
+		rawCfg := d.GetRawConfig()
+		if !rawCfg.IsNull() {
+			if instType := rawCfg.GetAttr("instance_type"); !instType.IsNull() {
+				d.Set("instance_type", m["instance_type"])
+			} else {
+				// Attribute not configured by the user; clear stale state
+				d.Set("instance_type", nil)
+			}
+		}
 	}
+	
 	d.Set("version_description", m["ver_desc"])
 	n := d.Get("name").(string)
 	d.Set("name", m["name"])
@@ -492,17 +504,47 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 		d.Set("name", n)
 	}
 
-	// Only set version if user specified it in config
-	if v, ok := d.GetOk("version"); ok && v.(string) != "" {
-		d.Set("version", v.(string))
+	// Handle version: for data sources, set from config or use latest; for resources, only if user configured it
+	if isDataSource {
+		if v, ok := d.GetOk("version"); ok && v.(string) != "" {
+			d.Set("version", v.(string))
+		} else {
+			d.Set("version", m["latest_version"])
+		}
+	} else {
+		rawCfg := d.GetRawConfig()
+		if !rawCfg.IsNull() {
+			if verCfg := rawCfg.GetAttr("version"); !verCfg.IsNull() {
+				// User configured version in config; use the configured value from state
+				if v, ok := d.GetOk("version"); ok && v.(string) != "" {
+					d.Set("version", v.(string))
+				}
+			} else {
+				// Attribute not configured by the user; clear stale state
+				d.Set("version", nil)
+			}
+		}
 	}
+	
 	d.Set("latest_version", m["latest_version"])
 	d.Set("default_version", m["default_version"])
 	d.Set("ami", m["image_id"])
-	// Only set block_device_mapping if user specified it in config
-	if _, ok := d.GetOk("block_device_mapping"); ok {
+	
+	// Handle block_device_mapping: for data sources, always set; for resources, only if user configured it
+	if isDataSource {
 		d.Set("block_device_mapping", m["block_device_mapping"])
+	} else {
+		rawCfg := d.GetRawConfig()
+		if !rawCfg.IsNull() {
+			if bdmCfg := rawCfg.GetAttr("block_device_mapping"); !bdmCfg.IsNull() {
+				d.Set("block_device_mapping", m["block_device_mapping"])
+			} else {
+				// Attribute not configured by the user; clear stale state
+				d.Set("block_device_mapping", nil)
+			}
+		}
 	}
+	
 	d.Set("instance_requirements", m["instance_requirements"])
 	return nil
 }
