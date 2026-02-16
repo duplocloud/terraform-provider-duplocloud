@@ -249,11 +249,7 @@ func resourceAwsLaunchTemplate() *schema.Resource {
 func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	ver := ""
 	tenantId, asgName := idParts[0], idParts[2]
-	if len(idParts) == 4 {
-		ver = idParts[3]
-	}
 
 	c := m.(*duplosdk.Client)
 	fullName := asgName
@@ -283,7 +279,7 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 		return nil
 	}
 	d.Set("tenant_id", tenantId)
-	fErr := flattenLaunchTemplate(d, rp, ver, false)
+	fErr := flattenLaunchTemplate(d, rp, false)
 	if fErr != nil {
 		return diag.Errorf("%s", fErr.Error())
 	}
@@ -473,7 +469,7 @@ func expandBlockDeviceMappings(d *schema.ResourceData) []duplosdk.DuploLaunchTem
 	}
 	return blockDeviceMappings
 }
-func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, ver string, isDataSource bool) error {
+func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, isDataSource bool) error {
 
 	b, err := json.Marshal(rp)
 	if err != nil {
