@@ -14,7 +14,7 @@ type DuploLambdaFunction struct {
 
 	Code          DuploLambdaCode          `json:"Code"`
 	Configuration DuploLambdaConfiguration `json:"Configuration"`
-	Tags          map[string]string        `json:"Tags,omitempty"`
+	Tags          map[string]interface{}   `json:"Tags,omitempty"`
 }
 
 type DuploLambdaLayerGet struct {
