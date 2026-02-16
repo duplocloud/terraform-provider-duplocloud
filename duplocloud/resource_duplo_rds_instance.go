@@ -804,8 +804,6 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		enableAutoscaling := d.Get("storage_autoscaling.0.enable").(bool)
 		maxStorage := d.Get("storage_autoscaling.0.max_allocated_storage").(int)
 
-		// When disabling autoscaling, set MaxAllocatedStorage equal to AllocatedStorage to prevent growth.
-		// The validation in custom diff ensures allocated_storage is non-zero when disabling autoscaling.
 		if !enableAutoscaling {
 			allocatedStorage := d.Get("allocated_storage").(int)
 			maxStorage = allocatedStorage
@@ -1102,14 +1100,14 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
 	pis = append(pis, pi)
 	jo["performance_insights"] = pis
-	if duploObject.IsAutoScalingEnabled {
-		mp := map[string]interface{}{
-			"enable":                duploObject.IsAutoScalingEnabled,
-			"max_allocated_storage": duploObject.MaxAllocatedStorage,
-		}
-		jo["storage_autoscaling"] = []interface{}{mp}
-
+	//	if duploObject.IsAutoScalingEnabled {
+	mp := map[string]interface{}{
+		"enable":                duploObject.IsAutoScalingEnabled,
+		"max_allocated_storage": duploObject.MaxAllocatedStorage,
 	}
+	jo["storage_autoscaling"] = []interface{}{mp}
+
+	//	}
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", string(jsonData2))
 
@@ -1273,13 +1271,13 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 				m := sa.(map[string]interface{})
 				enableAutoscaling := m["enable"].(bool)
 				allocatedStorage := diff.Get("allocated_storage").(int)
+				th := m["max_allocated_storage"].(int)
 
 				if enableAutoscaling {
 					// Validation for enabling autoscaling
 					if st == "standard" || st == "aurora" || st == "aurora-iopt1" {
 						return fmt.Errorf("storage_autoscaling is not supported for %s storage type", st)
 					}
-					th := m["max_allocated_storage"].(int)
 					as := allocatedStorage
 					if as == 0 {
 						as = 20
@@ -1289,13 +1287,9 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 						return fmt.Errorf("max_allocated_storage should be atleast 10%% of allocated_storage. Recommended is 26%%")
 					}
 				} else {
-					// Validation for disabling autoscaling
-					// When disabling autoscaling, we need allocated_storage to set max_allocated_storage
-					// This prevents the database from growing beyond the intended size
-					// Skip this check if snapshot_id is provided, as allocated_storage is inherited from the snapshot
-					snapshotID := diff.Get("snapshot_id").(string)
-					if allocatedStorage == 0 && snapshotID == "" {
-						return fmt.Errorf("allocated_storage must be specified when disabling storage_autoscaling. This value is required to set max_allocated_storage and prevent unintended database growth. Please provide a non-zero allocated_storage value")
+					o, _ := diff.GetChange("storage_autoscaling.0.max_allocated_storage")
+					if th > 0 && o.(int) == 0 {
+						return fmt.Errorf("max_allocated_storage should be 0 when storage_autoscaling is disabled")
 					}
 				}
 			}
@@ -1305,12 +1299,16 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		o, n := diff.GetChange("allocated_storage")
 		oa := o.(int)
 		na := n.(int)
-		if na < oa {
-			return fmt.Errorf("You can't reduce your allocated storage (%+v GiB) from what you originally configured for your source database instance (%+v GiB)", na, oa)
-		}
-		perDiff := ((na - oa) * 100) / oa
-		if perDiff < 10 {
-			return fmt.Errorf("allocated_storage (%+v GiB) should be atleast 10%% of previous allocated_storage (%+v GiB)", na, oa)
+		if oa > 0 {
+			oa = na - (na * 10 / 100) // if original allocated storage is not set, assume it's 10% less than new allocated storage for validation purposes
+
+			if na < oa {
+				return fmt.Errorf("You can't reduce your allocated storage (%+v GiB) from what you originally configured for your source database instance (%+v GiB)", na, oa)
+			}
+			perDiff := ((na - oa) * 100) / oa
+			if perDiff < 10 {
+				return fmt.Errorf("allocated_storage (%+v GiB) should be atleast 10%% of previous allocated_storage (%+v GiB)", na, oa)
+			}
 		}
 	}
 	return nil

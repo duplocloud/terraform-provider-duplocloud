@@ -528,7 +528,7 @@ func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, Cl
 
 func (c *Client) UpdateRDSDBInstanceStorageAutoScalling(tenantID string, identifier string, duploObject DuploRDSStorageAutoScalling) ClientError {
 	return c.putAPI(
-		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("UpdateRDSDBInstanceStorageAutoScalling(%s, %s)", tenantID, identifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
 		&duploObject,
 		nil,

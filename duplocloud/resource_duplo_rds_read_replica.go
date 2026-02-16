@@ -232,6 +232,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 						Optional:    true,
 						Default:     false,
 						Type:        schema.TypeBool,
+						//ForceNew:    true,
 					},
 					"max_allocated_storage": {
 						Description: "The upper limit, in gibibytes (GiB), to which Amazon RDS can automatically scale the storage of the DB instance when autoscaling is enabled.",
@@ -518,13 +519,10 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 		obj := duplosdk.DuploRDSStorageAutoScalling{
 			ApplyImmediately: true,
 		}
-		if d.Get("storage_autoscaling.0.enable").(bool) {
-			obj.IsAutoScalingEnabled = d.Get("storage_autoscaling.0.enable").(bool)
-			obj.MaxAllocatedStorage = d.Get("storage_autoscaling.0.max_allocated_storage").(int)
-
-		} else {
-			obj.IsAutoScalingEnabled = false
-			obj.MaxAllocatedStorage = 0
+		obj.IsAutoScalingEnabled = d.Get("storage_autoscaling.0.enable").(bool)
+		obj.MaxAllocatedStorage = d.Get("storage_autoscaling.0.max_allocated_storage").(int)
+		if !obj.IsAutoScalingEnabled {
+			obj.MaxAllocatedStorage = d.Get("allocated_storage").(int)
 		}
 		cerr := c.UpdateRDSDBInstanceStorageAutoScalling(tenantID, identifier, obj)
 		if cerr != nil {
@@ -718,14 +716,12 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
 	pis = append(pis, pi)
 	jo["performance_insights"] = pis
-	if duploObject.IsAutoScalingEnabled {
-		mp := map[string]interface{}{
-			"enable":                duploObject.IsAutoScalingEnabled,
-			"max_allocated_storage": duploObject.MaxAllocatedStorage,
-		}
-		jo["storage_autoscaling"] = []interface{}{mp}
-
+	mp := map[string]interface{}{
+		"enable":                duploObject.IsAutoScalingEnabled,
+		"max_allocated_storage": duploObject.MaxAllocatedStorage,
 	}
+	jo["storage_autoscaling"] = []interface{}{mp}
+
 	jo["allocated_storage"] = duploObject.AllocatedStorage
 
 	//jo["auto_minor_version_upgrade"] = duploObject.AutoMinorVersionUpgrade
