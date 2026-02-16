@@ -283,7 +283,7 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 		return nil
 	}
 	d.Set("tenant_id", tenantId)
-	fErr := flattenLaunchTemplate(d, rp, ver)
+	fErr := flattenLaunchTemplate(d, rp, ver, false)
 	if fErr != nil {
 		return diag.Errorf("%s", fErr.Error())
 	}
@@ -473,7 +473,7 @@ func expandBlockDeviceMappings(d *schema.ResourceData) []duplosdk.DuploLaunchTem
 	}
 	return blockDeviceMappings
 }
-func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, ver string) error {
+func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, ver string, isDataSource bool) error {
 
 	b, err := json.Marshal(rp)
 	if err != nil {
@@ -489,10 +489,21 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 		d.Set("name", n)
 	}
 
-	if v, ok := d.GetOk("version"); ok && v.(string) != "" {
-		d.Set("version", v.(string))
+	// Handle version attribute differently for resources vs data sources
+	if isDataSource {
+		// Data source: use specified version or default to latest
+		if v, ok := d.GetOk("version"); ok && v.(string) != "" {
+			d.Set("version", v.(string))
+		} else {
+			d.Set("version", m["latest_version"])
+		}
 	} else {
-		d.Set("version", m["latest_version"])
+		// Resource: only set if specified, otherwise nil to prevent drift
+		if v, ok := d.GetOk("version"); ok && v.(string) != "" {
+			d.Set("version", v.(string))
+		} else {
+			d.Set("version", nil)
+		}
 	}
 	d.Set("latest_version", m["latest_version"])
 	d.Set("default_version", m["default_version"])
