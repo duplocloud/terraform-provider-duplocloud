@@ -29,6 +29,7 @@ type DuploEcacheInstance struct {
 	InstanceStatus                    string   `json:"InstanceStatus,omitempty"`
 	EnableClusterMode                 bool     `json:"ClusteringEnabled,omitempty"`
 	AutomaticFailoverEnabled          bool     `json:"AutomaticFailoverEnabled,omitempty"`
+	MultiAZEnabled                    bool     `json:"MultiAZEnabled,omitempty"`
 	NumberOfShards                    int      `json:"NoOfShards,omitempty"`
 	SnapshotName                      string   `json:"SnapshotName,omitempty"`
 	SnapshotArns                      []string `json:"SnapshotArns,omitempty"`

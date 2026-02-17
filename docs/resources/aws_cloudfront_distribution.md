@@ -4,11 +4,14 @@ page_title: "duplocloud_aws_cloudfront_distribution Resource - terraform-provide
 subcategory: ""
 description: |-
   duplocloud_aws_cloudfront_distribution manages an aws cloudfront distribution in Duplo.
+  NOTE: This resource has been deprecated in favor of duplocloud_aws_cloudfront_distribution_v2 resource. No support will be provided for this resource going forward.
 ---
 
 # duplocloud_aws_cloudfront_distribution (Resource)
 
-`duplocloud_aws_cloudfront_distribution` manages an aws cloudfront distribution in Duplo.
+`duplocloud_aws_cloudfront_distribution` manages an aws cloudfront distribution in Duplo. 
+
+NOTE: This resource has been deprecated in favor of `duplocloud_aws_cloudfront_distribution_v2` resource. No support will be provided for this resource going forward.
 
 ## Example Usage
 
