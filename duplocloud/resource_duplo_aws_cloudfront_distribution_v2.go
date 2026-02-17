@@ -49,6 +49,11 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 			Required:     true,
 			ForceNew:     true,
 		},
+		"fullname": {
+			Description: "Full name of the cloudfront distribution",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"default_root_object": {
 			Description: "The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.",
 			Type:        schema.TypeString,
@@ -922,7 +927,7 @@ func resourceAwsCloudfrontDistributionV2Update(ctx context.Context, d *schema.Re
 	c := m.(*duplosdk.Client)
 
 	rq := expandAwsCloudfrontDistributionV2Config(d, true)
-
+	rq.Comment = d.Get("fullname").(string)
 	resp, err := c.AwsCloudfrontDistributionUpdate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
 		Id:                   cfdId,
 		DistributionConfig:   rq,
@@ -1122,6 +1127,7 @@ func flattenAwsCloudfrontDistributionV2(d *schema.ResourceData, duplo *duplosdk.
 	} else {
 		d.Set("cors_allowed_host_names", nil)
 	}
+	d.Set("fullname", duplo.Comment)
 
 }
 
