@@ -784,7 +784,7 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 }
 
 func lambdaWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
-	retryFlag := 3
+	retryFlag := 6
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
