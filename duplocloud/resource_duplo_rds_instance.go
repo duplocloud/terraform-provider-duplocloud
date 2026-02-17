@@ -1101,14 +1101,11 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
 	pis = append(pis, pi)
 	jo["performance_insights"] = pis
-	if duploObject.IsAutoScalingEnabled {
-		mp := map[string]interface{}{
-			"enable":                duploObject.IsAutoScalingEnabled,
-			"max_allocated_storage": duploObject.MaxAllocatedStorage,
-		}
-		jo["storage_autoscaling"] = []interface{}{mp}
-
+	mp := map[string]interface{}{
+		"enable":                duploObject.IsAutoScalingEnabled,
+		"max_allocated_storage": duploObject.MaxAllocatedStorage,
 	}
+	jo["storage_autoscaling"] = []interface{}{mp}
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", string(jsonData2))
 
