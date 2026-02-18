@@ -301,3 +301,7 @@ func (c *Client) putAPI(apiName string, apiPath string, rq interface{}, rp inter
 func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) ClientError {
 	return c.doAPIWithRequestBody("POST", apiName, apiPath, rq, rp)
 }
+
+func (c *Client) deleteAPIWithRequestBody(apiName string, apiPath string, rq interface{}, rp interface{}) ClientError {
+	return c.doAPIWithRequestBody("DELETE", apiName, apiPath, rq, rp)
+}

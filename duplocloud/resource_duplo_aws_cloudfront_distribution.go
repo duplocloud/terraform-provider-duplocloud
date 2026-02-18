@@ -122,6 +122,9 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			Default:  true,
 		},
 		"use_origin_access_identity": {
+			Description: `When field is set to false it adds the oai mentioned in origin.s3_origin_config.origin_access_identity. 
+			<br/><b><i>Note</b>: For new cloudfront distributions, this field will work differently than for existing distributions.
+			When use_origin_access_identity is set to true, Duplo will create an origin access control (OAC) and restrict the S3 origin access. On false it will be public</br>For migration from OAI to OAC can be done from duplo cloud portal.`,
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  true,
@@ -868,12 +871,12 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 
 func resourceAwsCloudfrontDistribution() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_aws_cloudfront_distribution` manages an aws cloudfront distribution in Duplo.",
-
-		ReadContext:   resourceAwsCloudfrontDistributionRead,
-		CreateContext: resourceAwsCloudfrontDistributionCreate,
-		UpdateContext: resourceAwsCloudfrontDistributionUpdate,
-		DeleteContext: resourceAwsCloudfrontDistributionDelete,
+		Description:        "`duplocloud_aws_cloudfront_distribution` manages an aws cloudfront distribution in Duplo. \n\nNOTE: This resource has been deprecated in favor of `duplocloud_aws_cloudfront_distribution_v2` resource. No support will be provided for this resource going forward.",
+		DeprecationMessage: "`duplocloud_aws_cloudfront_distribution` has been deprecated in favor of `duplocloud_aws_cloudfront_distribution_v2` resource. No support will be provided for this resource going forward.",
+		ReadContext:        resourceAwsCloudfrontDistributionRead,
+		CreateContext:      resourceAwsCloudfrontDistributionCreate,
+		UpdateContext:      resourceAwsCloudfrontDistributionUpdate,
+		DeleteContext:      resourceAwsCloudfrontDistributionDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

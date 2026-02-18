@@ -90,7 +90,7 @@ resource "duplocloud_aws_lambda_function_event_config" "event-invoke-config" {
 
 - `destination_config` (Block List, Max: 1) A configuration block to specify event destinations (see [below for nested schema](#nestedblock--destination_config))
 - `max_event_age_in_seconds` (Number) The maximum age of a request that Lambda sends to a function for processing
-- `max_retry_attempts` (Number) Maximum number of attempts a Lambda function may retry in case of error
+- `max_retry_attempts` (Number) Maximum number of attempts a Lambda function may retry in case of error Defaults to `2`.
 - `qualifier` (String) The qualifier for the lambda event invoke configuration
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

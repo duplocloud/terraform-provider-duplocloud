@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -127,6 +128,37 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Deprecated:  "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.",
 		Default:     0,
 	}
+	awsASGSchema["taints"] = &schema.Schema{
+		Description: "Specify taints to attach to the nodes, to repel other nodes with different toleration",
+		Type:        schema.TypeList,
+		Optional:    true,
+		MaxItems:    50,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"key": {
+					Type:         schema.TypeString,
+					Required:     true,
+					ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9.-]{0,62}$|^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?/(.{1,253})$`), "Invalid key format: taint key must begin with a letter or number, can contain letters, numbers, hyphens(-), and periods(.), and be up to 63 characters long OR the taint key begins with a valid DNS subdomain prefix, followed by a single /, and includes a key of up to 253 characters"),
+				},
+				"value": {
+					Type:         schema.TypeString,
+					Optional:     true,
+					ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$`), "Invalid value format: taint value must begin with a letter or number, can contain letters, numbers, hyphens(-), and be up to 63 characters long"),
+				},
+				"effect": {
+					Description: "Update strategy of the node. Effect types <br>      - NoSchedule<br>     - PreferNoSchedule<br>     - NoExecute",
+					Type:        schema.TypeString,
+					Required:    true,
+					ValidateFunc: validation.StringInSlice([]string{
+						"NoSchedule",
+						"PreferNoSchedule",
+						"NoExecute",
+					}, false),
+				},
+			},
+		},
+	}
+
 	awsASGSchema["arn"] = &schema.Schema{
 		Description: "The ASG arn.",
 		Type:        schema.TypeString,
@@ -137,6 +169,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 
 	awsASGSchema["capacity"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["image_id"].DiffSuppressFunc = diffSuppressWhenNotCreating
+	awsASGSchema["volume"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	return awsASGSchema
 }
 
@@ -159,8 +192,7 @@ func validateMaxSpotPrice(ctx context.Context, diff *schema.ResourceDiff, m inte
 func resourceAwsASG() *schema.Resource {
 
 	return &schema.Resource{
-		Description: "`duplocloud_asg_profile` manages a ASG Profile in Duplo.",
-
+		Description:   "`duplocloud_asg_profile` manages a ASG Profile in Duplo.\n\n**Note:** When updating a duplocloud_asg_profile resource in versions later than 0.10.53 use duplocloud_aws_launch_template which creates a new version of launch template. To set the new version as default version use duplocloud_aws_launch_template_default_version resource, this will avoid recreation of ASG profile. \nTo refresh the ASG with new launch template version use duplocloud_asg_instance_refresh resource.",
 		ReadContext:   resourceAwsASGRead,
 		CreateContext: resourceAwsASGCreate,
 		DeleteContext: resourceAwsASGDelete,
@@ -192,7 +224,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): start", rq.TenantId, rq.FriendlyName)
 	// Create the ASG Prfoile in Duplo.
 	c := m.(*duplosdk.Client)
-	prefix, err := c.GetDuploServicesPrefix(rq.TenantId)
+	prefix, err := c.GetDuploServicesPrefix(rq.TenantId, "")
 	if err != nil {
 		return diag.Errorf("Tenant details : %s", err)
 	}
@@ -332,7 +364,46 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.Errorf("Error updating ASG profile '%s': %s", rq.FriendlyName, err)
 		}
 	}
+	if d.HasChange("taints") {
+		list, err := c.TenantListMinions(tenantID)
+		if err != nil {
+			return diag.Errorf("Error on updating taints from ASG profile '%s': %s", friendlyName, err)
+		}
+		privateAddress := ""
+		for _, minion := range *list {
+			if minion.AsgName == friendlyName {
+				privateAddress = minion.PrivateIpAddress
+				break
+			}
+		}
+		k := []string{}
 
+		obj := []duplosdk.DuploTaints{}
+		if val, ok := d.Get("taints").([]interface{}); ok {
+			for _, dt := range val {
+
+				m := dt.(map[string]interface{})
+				taints := duplosdk.DuploTaints{
+					Key:    m["key"].(string),
+					Value:  m["value"].(string),
+					Effect: m["effect"].(string),
+				}
+				k = append(k, m["key"].(string))
+				obj = append(obj, taints)
+
+			}
+
+		}
+		cerr := c.DeleteASGTaints(tenantID, privateAddress, k)
+		if cerr != nil {
+			return diag.Errorf("Error updating taints from ASG profile '%s': %s", friendlyName, cerr)
+		}
+		time.Sleep(10 * time.Second)
+		cerr = c.UpdateASGTaints(tenantID, privateAddress, obj)
+		if cerr != nil {
+			return diag.Errorf("Error updating taints from ASG profile '%s': %s", friendlyName, cerr)
+		}
+	}
 	diags := resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): end", tenantID, friendlyName)
 	return diags

@@ -19,7 +19,7 @@ type DuploAsgProfile struct {
 	EncryptDisk         bool                               `json:"EncryptDisk,omitempty"`
 	FriendlyName        string                             `json:"FriendlyName,omitempty"`
 	ImageID             string                             `json:"ImageId,omitempty"`
-	IsClusterAutoscaled bool                               `json:"IsClusterAutoscaled,omitempty"`
+	IsClusterAutoscaled bool                               `json:"IsClusterAutoscaled"`
 	IsEbsOptimized      bool                               `json:"IsEbsOptimized"`
 	IsMinion            bool                               `json:"IsMinion"`
 	KeyPairType         int                                `json:"KeyPairType,omitempty"`

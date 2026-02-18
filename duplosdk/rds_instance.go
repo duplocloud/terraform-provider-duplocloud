@@ -76,6 +76,8 @@ type DuploRdsInstance struct {
 	PerformanceInsightsKMSKeyId        string                  `json:"PerformanceInsightsKMSKeyId,omitempty"`
 	AutoMinorVersionUpgrade            bool                    `json:"AutoMinorVersionUpgrade"`
 	DeletionProtection                 bool                    `json:"DeletionProtection"`
+	IsAutoScalingEnabled               bool                    `json:"IsAutoScalingEnabled"`
+	MaxAllocatedStorage                int                     `json:"MaxAllocatedStorage"`
 	IsGlobalClusterMember              bool                    `json:"IsGlobalClusterMember"`
 }
 
@@ -98,6 +100,7 @@ type DuploRdsUpdatePayload struct {
 	DbParameterGroupName      string `json:"DbParameterGroupName,omitempty"`
 	ClusterParameterGroupName string `json:"ClusterParameterGroupName,omitempty"`
 	AutoMinorVersionUpgrade   *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
+	EnableIamAuth             bool   `json:"EnableIamAuth"`
 }
 
 type DuploRdsUpdateInstance struct {
@@ -132,6 +135,7 @@ type DuploRdsUpdateCluster struct {
 	PerformanceInsightsRetentionPeriod int    `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string `json:"PerformanceInsightsKMSKeyId,omitempty"`
 	AutoMinorVersionUpgrade            *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
+	EnableIamAuth                      bool   `json:"EnableIAMDatabaseAuthentication"`
 }
 
 type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
@@ -158,6 +162,12 @@ type DuploMonitoringInterval struct {
 type DuploRDSClusterCompareField struct {
 	DeleteProtection        bool `json:"DeletionProtection"`
 	AutoMinorVersionUpgrade bool `json:"AutoMinorVersionUpgrade"`
+}
+
+type DuploRDSStorageAutoScalling struct {
+	IsAutoScalingEnabled bool `json:"IsAutoScalingEnabled"`
+	MaxAllocatedStorage  int  `json:"MaxAllocatedStorage"`
+	ApplyImmediately     bool `json:"ApplyImmediately"`
 }
 
 /*************************************************
@@ -513,6 +523,15 @@ func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, Cl
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s", tenantID, identifier+"-cluster"),
 		&duploObject, &conf)
 	return &duploObject, err
+}
+
+func (c *Client) UpdateRDSDBInstanceStorageAutoScalling(tenantID string, identifier string, duploObject DuploRDSStorageAutoScalling) ClientError {
+	return c.putAPI(
+		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
+		&duploObject,
+		nil,
+	)
 }
 
 //global database
