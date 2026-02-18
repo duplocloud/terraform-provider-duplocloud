@@ -885,7 +885,7 @@ func resourceAwsCloudfrontDistributionV2Create(ctx context.Context, d *schema.Re
 	c := m.(*duplosdk.Client)
 
 	rq := expandAwsCloudfrontDistributionV2Config(d, false)
-	resp, err := c.AwsCloudfrontDistributionCreate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
+	resp, err := c.AwsCloudfrontDistributionCreateV2(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreateV2{
 		DistributionConfig:   rq,
 		UseOAIIdentity:       d.Get("use_origin_access_control").(bool),
 		CorsAllowedHostNames: expandStringList(d.Get("cors_allowed_host_names").([]interface{})),
@@ -928,7 +928,7 @@ func resourceAwsCloudfrontDistributionV2Update(ctx context.Context, d *schema.Re
 
 	rq := expandAwsCloudfrontDistributionV2Config(d, true)
 	rq.Comment = d.Get("fullname").(string)
-	resp, err := c.AwsCloudfrontDistributionUpdate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
+	resp, err := c.AwsCloudfrontDistributionUpdateV2(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreateV2{
 		Id:                   cfdId,
 		DistributionConfig:   rq,
 		IfMatch:              d.Get("etag").(string),
