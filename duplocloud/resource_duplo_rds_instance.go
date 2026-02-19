@@ -800,14 +800,6 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
-	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
-
-	// Wait for the instance to become available.
-	err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
-	if err != nil {
-		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
-	}
 	if d.HasChange("storage_autoscaling") {
 		enableAutoscaling := d.Get("storage_autoscaling.0.enable").(bool)
 		maxStorage := d.Get("storage_autoscaling.0.max_allocated_storage").(int)
@@ -826,6 +818,14 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		if cerr != nil {
 			return diag.FromErr(cerr)
 		}
+	}
+	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
+	_ = rdsInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+
+	// Wait for the instance to become available.
+	err = rdsInstanceWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+	if err != nil {
+		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
 
 	time.Sleep(2 * time.Minute) //sleeping to sync with Backend, backend has delay even after state of rds is available
@@ -1290,7 +1290,7 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 				} else {
 					o, _ := diff.GetChange("storage_autoscaling.0.max_allocated_storage")
 					if th > 0 && o.(int) == 0 {
-						return fmt.Errorf("max_allocated_storage should be 0 when storage_autoscaling is disabled")
+						return fmt.Errorf("max_allocated_storage should be set to 0 when storage_autoscaling is being disabled")
 					}
 				}
 			}
