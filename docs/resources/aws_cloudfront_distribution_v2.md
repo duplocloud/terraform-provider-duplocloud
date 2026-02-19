@@ -146,6 +146,7 @@ resource "duplocloud_aws_cloudfront_distribution_v2" "cloudfront" {
 - `arn` (String)
 - `domain_name` (String)
 - `etag` (String)
+- `fullname` (String) Full name of the cloudfront distribution
 - `hosted_zone_id` (String)
 - `id` (String) The ID of this resource.
 - `status` (String) The current status of the distribution. `Deployed` if the distribution's information is fully propagated throughout the Amazon CloudFront system.

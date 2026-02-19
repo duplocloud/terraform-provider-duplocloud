@@ -49,6 +49,11 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 			Required:     true,
 			ForceNew:     true,
 		},
+		"fullname": {
+			Description: "Full name of the cloudfront distribution",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"default_root_object": {
 			Description: "The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.",
 			Type:        schema.TypeString,
@@ -880,7 +885,7 @@ func resourceAwsCloudfrontDistributionV2Create(ctx context.Context, d *schema.Re
 	c := m.(*duplosdk.Client)
 
 	rq := expandAwsCloudfrontDistributionV2Config(d, false)
-	resp, err := c.AwsCloudfrontDistributionCreate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
+	resp, err := c.AwsCloudfrontDistributionCreateV2(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreateV2{
 		DistributionConfig:   rq,
 		UseOAIIdentity:       d.Get("use_origin_access_control").(bool),
 		CorsAllowedHostNames: expandStringList(d.Get("cors_allowed_host_names").([]interface{})),
@@ -922,8 +927,8 @@ func resourceAwsCloudfrontDistributionV2Update(ctx context.Context, d *schema.Re
 	c := m.(*duplosdk.Client)
 
 	rq := expandAwsCloudfrontDistributionV2Config(d, true)
-
-	resp, err := c.AwsCloudfrontDistributionUpdate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
+	rq.Comment = d.Get("fullname").(string)
+	resp, err := c.AwsCloudfrontDistributionUpdateV2(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreateV2{
 		Id:                   cfdId,
 		DistributionConfig:   rq,
 		IfMatch:              d.Get("etag").(string),
@@ -1122,6 +1127,7 @@ func flattenAwsCloudfrontDistributionV2(d *schema.ResourceData, duplo *duplosdk.
 	} else {
 		d.Set("cors_allowed_host_names", nil)
 	}
+	d.Set("fullname", duplo.Comment)
 
 }
 

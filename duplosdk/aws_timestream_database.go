@@ -140,10 +140,11 @@ func (c *Client) DuploTimestreamDBTableUpdate(tenantID string, dbName, name stri
 }
 
 func (c *Client) DuploTimestreamDBTableDelete(tenantID, dbName, name string) ClientError {
+	var rp interface{}
 	return c.deleteAPI(
 		fmt.Sprintf("DuploTimestreamDBTableDelete(%s, %s,  %s)", tenantID, dbName, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/timeStreamtable/%s/%s", tenantID, dbName, name),
-		nil)
+		&rp)
 }
 
 func (c *Client) DuploTimestreamDBTableGet(tenantID string, dbName, name string) (*DuploTimestreamDBTableDetails, ClientError) {
