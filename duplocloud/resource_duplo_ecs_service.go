@@ -247,6 +247,12 @@ func ecsServiceSchema() map[string]*schema.Schema {
 									Optional: true,
 									Computed: true,
 								},
+								"health_check_port": {
+									Type:        schema.TypeInt,
+									Optional:    true,
+									Computed:    true,
+									Description: "The port the load balancer uses when performing health checks on targets. If not specified, it will be treated as the traffic port.",
+								},
 							},
 						},
 					},
@@ -739,6 +745,10 @@ func ecsLoadBalancersHealthCheckConfigToState(hcc *duplosdk.DuploEcsServiceLbHea
 		config["grpc_success_code"] = hcc.GrpcSuccessCode
 		configPresent = true
 	}
+	if hcc.HealthCheckPort != nil {
+		config["health_check_port"] = *hcc.HealthCheckPort
+		configPresent = true
+	}
 	if !configPresent {
 		return nil
 	}
@@ -802,6 +812,12 @@ func ecsLoadBalancerHealthCheckConfigFromState(d *schema.ResourceData, lbHealthC
 		HttpSuccessCode:            lbHealthConfig["http_success_code"].(string),
 		GrpcSuccessCode:            lbHealthConfig["grpc_success_code"].(string),
 	}
+
+	// Only set HealthCheckPort if non-zero (0 means use traffic port, send nil to backend)
+	if port := lbHealthConfig["health_check_port"].(int); port != 0 {
+		hcc.HealthCheckPort = &port
+	}
+
 	return &hcc
 }
 

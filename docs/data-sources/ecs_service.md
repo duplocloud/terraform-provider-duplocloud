@@ -103,6 +103,7 @@ Read-Only:
 
 - `grpc_success_code` (String)
 - `health_check_interval_seconds` (Number)
+- `health_check_port` (Number)
 - `health_check_timeout_seconds` (Number)
 - `healthy_threshold_count` (Number)
 - `http_success_code` (String)
