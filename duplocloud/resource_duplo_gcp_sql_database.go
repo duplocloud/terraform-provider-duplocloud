@@ -300,7 +300,7 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		d.SetId("") // object missing
 		return nil
 	}
-	if d.HasChanges("tier", "disk_size", "labels", "database_version", "database_flag", "ssl_mode", "require_ssl") {
+	if d.HasChanges("tier", "disk_size", "labels", "database_version", "database_flag", "ip_configuration") {
 		requestedVersion := d.Get("database_version").(string)
 
 		// Validate the database version
