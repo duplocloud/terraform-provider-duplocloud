@@ -24,11 +24,11 @@ jobs:
         run: go clean -cache -modcache -testcache
       - 
         name: Run linting
-        uses: golangci/golangci-lint-action@v6.1.1
+        uses: golangci/golangci-lint-action@v8
         with:
           only-new-issues: true  # Only show new issues for pull requests.
           args: --timeout=5m
-          version: v1.62
+          version: v1.64.2
   format:
     runs-on: ubuntu-22.04
     steps:
