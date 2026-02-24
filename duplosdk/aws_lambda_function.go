@@ -14,7 +14,7 @@ type DuploLambdaFunction struct {
 
 	Code          DuploLambdaCode          `json:"Code"`
 	Configuration DuploLambdaConfiguration `json:"Configuration"`
-	Tags          map[string]string        `json:"Tags,omitempty"`
+	Tags          map[string]interface{}   `json:"Tags,omitempty"`
 }
 
 type DuploLambdaLayerGet struct {
@@ -238,7 +238,7 @@ func (c *Client) LambdaFunctionDelete(tenantID, name string) ClientError {
 
 // LambdaFunctionGetList gets a list of lambda functions via the Duplo API.
 func (c *Client) LambdaFunctionGetList(tenantID string) (*[]DuploLambdaConfiguration, ClientError) {
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -301,16 +301,21 @@ func (c *Client) LambdaPermissionDelete(tenantID, functionName, statementId stri
 		fmt.Sprintf("v3/subscriptions/%s/serverless/lambdapermission/%s/%s", tenantID, functionName, statementId), nil)
 }
 
-func (c *Client) LambdaPermissionGet(tenantID string, functionName string) (*[]DuploLambdaPermissionStatement, ClientError) {
+func (c *Client) LambdaPermissionGet(tenantID string, functionName, sid string) (*DuploLambdaPermissionStatement, ClientError) {
 	rp := []DuploLambdaPermissionStatement{}
 	err := c.getAPI(
-		fmt.Sprintf("LambdaPermissionGet(%s, %s)", tenantID, functionName),
+		fmt.Sprintf("LambdaPermissionGet(%s, %s, %s)", tenantID, functionName, sid),
 		fmt.Sprintf("v3/subscriptions/%s/serverless/lambdapermission/%s", tenantID, functionName),
 		&rp)
 	if len(rp) == 0 {
 		return nil, err
 	}
-	return &rp, err
+	for _, v := range rp {
+		if v.Sid == sid {
+			return &v, nil
+		}
+	}
+	return nil, err
 }
 
 func (c *Client) LambdaStatusCheck(tenantID string, functionName string) (*DuploLambdaFunction, ClientError) {

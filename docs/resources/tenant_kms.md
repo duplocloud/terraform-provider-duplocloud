@@ -3,13 +3,13 @@
 page_title: "duplocloud_tenant_kms Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
-  duplocloud_tenant_kms manages the list of kms avaialble to a tenant in Duplo.
+  duplocloud_tenant_kms manages the list of kms available to a tenant in Duplo.
   This resource allows you take control of individual tenant kms for a specific tenant.
 ---
 
 # duplocloud_tenant_kms (Resource)
 
-`duplocloud_tenant_kms` manages the list of kms avaialble to a tenant in Duplo.
+`duplocloud_tenant_kms` manages the list of kms available to a tenant in Duplo.
 
 This resource allows you take control of individual tenant kms for a specific tenant.
 
@@ -61,11 +61,8 @@ resource "duplocloud_tenant_kms" "mykey" {
 Required:
 
 - `arn` (String)
+- `id` (String) The ID of the KMS key.
 - `name` (String)
-
-Read-Only:
-
-- `id` (String) The ID of this resource.
 
 
 <a id="nestedblock--timeouts"></a>

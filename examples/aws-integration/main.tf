@@ -30,6 +30,24 @@ resource "duplocloud_tenant_secret" "test" {
   data        = jsonencode({ foo = "fubar", bar = "foo" })
 }
 
+# Secret to be deleted bypassing default 30 day retention window
+resource "duplocloud_tenant_secret" "test" {
+  tenant_id   = var.tenant_id
+  name_suffix = "toBeForceDeleted"
+  data        = jsonencode({ foo = "fubar", bar = "foo" })
+
+  force_delete_on_destroy = true
+}
+
+# Secret gets geleted with custom retention period (between 7 and 30 supported)
+resource "duplocloud_tenant_secret" "test" {
+  tenant_id   = var.tenant_id
+  name_suffix = "deletedWithCustomRetentionWindow"
+  data        = jsonencode({ foo = "fubar", bar = "foo" })
+
+  retention_window_in_days_on_destroy = 15
+}
+
 # # AWS information retrieval
 # data "duplocloud_aws_account" "test" { tenant_id = var.tenant_id }
 # data "duplocloud_tenant_aws_region" "test" { tenant_id = var.tenant_id }

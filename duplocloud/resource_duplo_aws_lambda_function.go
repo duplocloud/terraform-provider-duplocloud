@@ -142,15 +142,12 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 			ValidateFunc: validation.StringInSlice([]string{
-				"nodejs", "nodejs4.3", "nodejs6.10", "nodejs8.10", "nodejs10.x", "nodejs12.x", "nodejs14.x", "nodejs16.x", "nodejs18.x", "nodejs20.x", "nodejs22.x",
-				"java8", "java8.al2", "java11", "java17", "java21",
-				"python2.7", "python3.6", "python3.7", "python3.8", "python3.9", "python3.10", "python3.11", "python3.12", "python3.13",
-				"dotnetcore1.0", "dotnetcore2.0", "dotnetcore2.1", "dotnetcore3.1",
-				"dotnet6", "dotnet7", "dotnet8",
-				"nodejs4.3-edge",
-				"go1.x",
-				"ruby2.5", "ruby2.7", "ruby3.2", "ruby3.3",
-				"provided", "provided.al2", "provided.al2023",
+				"dotnet8", "dotnet9", "dotnet10",
+				"java8.al2", "java11", "java17", "java21", "java25",
+				"nodejs20.x", "nodejs22.x", "nodejs24.x",
+				"provided.al2", "provided.al2023",
+				"python3.10", "python3.11", "python3.12", "python3.13", "python3.14",
+				"ruby3.2", "ruby3.3", "ruby3.4",
 			}, false),
 		},
 		"handler": {
@@ -248,6 +245,11 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"invoke_arn": {
+			Description: "The ARN to be used for invoking the lambda function.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
@@ -297,7 +299,8 @@ func resourceAwsLambdaFunctionRead(ctx context.Context, d *schema.ResourceData, 
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	flattenAwsLambdaConfiguration(d, &duplo.Configuration)
-	d.Set("tags", duplo.Tags)
+
+	d.Set("tags", filterDuploDefinedTagsAsMap(duplo.Tags))
 
 	if duplo.Configuration.DeadLetterConfig != nil && duplo.Configuration.DeadLetterConfig.TargetArn != "" {
 		if err := d.Set("dead_letter_config", []interface{}{
@@ -421,10 +424,6 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("Error creating tenant %s lambda function '%s': %s", tenantID, name, err)
 	}
 
-	err = lambdaWaitUntilReady(ctx, c, tenantID, rq.FunctionName, d.Timeout("create"))
-	if err != nil {
-		return diag.Errorf("error: %s", err.Error())
-	}
 	// Wait for Duplo to be able to return the cluster's details.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "lambda function", id, func() (interface{}, duplosdk.ClientError) {
@@ -433,7 +432,10 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	if diags != nil {
 		return diags
 	}
-
+	err = lambdaWaitUntilReady(ctx, c, tenantID, rq.FunctionName, d.Timeout("create"))
+	if err != nil {
+		return diag.Errorf("error: %s", err.Error())
+	}
 	d.SetId(id)
 
 	diags = resourceAwsLambdaFunctionRead(ctx, d, m)
@@ -569,6 +571,12 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 			"working_directory": duplo.ImageConfig.WorkingDir,
 		}
 		d.Set("image_config", []interface{}{imageConfig})
+	}
+	invokeArn, err := getInvokeARN(duplo.FunctionArn)
+	if err == nil {
+		d.Set("invoke_arn", invokeArn)
+	} else {
+		log.Printf("[TRACE] Failed to generate invoke arn: %v", err)
 	}
 }
 
@@ -784,7 +792,7 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 }
 
 func lambdaWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
-	retryFlag := 3
+	retryFlag := 6
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -813,4 +821,24 @@ func lambdaWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID stri
 	log.Printf("[DEBUG] lambdaWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func getInvokeARN(lambdaARN string) (string, error) {
+	parts := strings.Split(lambdaARN, ":")
+
+	if len(parts) < 6 {
+		return "", fmt.Errorf("invalid Lambda ARN: expected at least 6 colon-separated parts, got %d", len(parts))
+	}
+	region := parts[3]
+	if region == "" {
+		return "", fmt.Errorf("invalid Lambda ARN: region is missing")
+	}
+
+	invokeARN := fmt.Sprintf(
+		"arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
+		region,
+		lambdaARN,
+	)
+
+	return invokeARN, nil
 }

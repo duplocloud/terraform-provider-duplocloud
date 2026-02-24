@@ -245,6 +245,18 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"k8s_worker_os": {
+			Description:  "OS type for k8s worker, this field is associated to azure cloud. Valid values: `Linux`, `Windows`",
+			Type:         schema.TypeString,
+			Optional:     true,
+			Default:      "Linux",
+			ForceNew:     true,
+			ValidateFunc: validation.StringInSlice([]string{"Linux", "Windows"}, false),
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				cloud := d.Get("cloud").(int)
+				return cloud != 2
+			},
+		},
 	}
 }
 
@@ -333,6 +345,15 @@ func resourceDuploServiceCreate(ctx context.Context, d *schema.ResourceData, m i
 		ForceStatefulSet:                  d.Get("force_stateful_set").(bool),
 		IsCloudCredsFromK8sServiceAccount: d.Get("cloud_creds_from_k8s_service_account").(bool),
 		AppName:                           d.Get("app_name").(string),
+	}
+	if v, ok := d.GetOk("k8s_worker_os"); ok && v != "" {
+		iv := 0
+		if v == "Windows" {
+			iv = 1
+			rq.K8SWorkerOs = &iv
+		} else {
+			rq.K8SWorkerOs = &iv
+		}
 	}
 	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
 		updatedOtherDockerConfig, err := updateInitContainerImages(d.Get("other_docker_config").(string), v.([]interface{}))
@@ -448,10 +469,12 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 		// Delete the object from Duplo
 		c := m.(*duplosdk.Client)
 		err := c.ReplicationControllerDelete(tenantID, &rq)
-		if err != nil && err.Status() == 400 {
+		if err != nil && (err.Status() == 400 || err.Status() == 404) {
 			err := c.ReplicationControllerDeleteFallback(tenantID, &rq)
-			if err != nil {
+			if err != nil && err.Status() != 404 {
 				return diag.Errorf("Error deleting Duplo service '%s': %s", d.Id(), err)
+			} else {
+				return nil
 			}
 
 		}
@@ -763,5 +786,12 @@ func customDuploServiceDiff(ctx context.Context, diff *schema.ResourceDiff, v in
 			return err
 		}
 	}
+	//cloud := diff.Get("cloud").(int)
+	//os := diff.Get("k8s_worker_os").(string)
+	//if cloud != 2 && os != "" {
+	//	diff.SetNew("k8s_worker_os", nil)
+	//	return nil
+	//}
+
 	return nil
 }

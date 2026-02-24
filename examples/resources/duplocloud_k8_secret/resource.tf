@@ -10,11 +10,14 @@ resource "duplocloud_k8_secret" "myapp" {
   secret_type = "Opaque"
   secret_data = jsonencode({ foo = "bar2" })
   secret_labels = {
-    KeyA = "ValueA"
-    KeyB = "ValueB"
+    KeyA                          = "ValueA"
+    KeyB                          = "ValueB"
+    "app.duplocloud.net/app-name" = "<appname>"
   }
   secret_annotations = {
     annotA = "ValueA"
     annotB = "ValueB"
   }
 }
+
+

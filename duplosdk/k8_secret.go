@@ -44,7 +44,7 @@ func (c *Client) K8SecretGet(tenantID, secretName string) (*DuploK8sSecret, Clie
 	}
 
 	if list == nil || len(*list) == 0 {
-		return nil, newClientError("secret list is nil")
+		return nil, NewCustomError("secret list is nil", 404)
 	}
 
 	// Return the secret, if it exists.
@@ -54,7 +54,7 @@ func (c *Client) K8SecretGet(tenantID, secretName string) (*DuploK8sSecret, Clie
 		}
 	}
 
-	return nil, newClientError(fmt.Sprintf("secret %s not found", secretName))
+	return nil, NewCustomError(fmt.Sprintf("secret %s not found", secretName), 404)
 }
 
 // K8SecretCreate creates a k8s secret via the Duplo API.
