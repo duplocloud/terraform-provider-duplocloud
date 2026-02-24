@@ -149,6 +149,18 @@ func (c *Client) EcacheInstanceUpdateSnapshotRetentionLimit(tenantID, name strin
 		&rq, nil)
 }
 
+type DuplocloudEcacheAutomaticFailoverUpdateRequest struct {
+	Identifier               string `json:"Identifier"`
+	AutomaticFailoverEnabled bool   `json:"AutomaticFailoverEnabled"`
+}
+
+func (c *Client) EcacheInstanceUpdateAutomaticFailover(tenantID, name string, rq DuplocloudEcacheAutomaticFailoverUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateAutomaticFailover(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateAutomaticFailover", tenantID),
+		&rq, nil)
+}
+
 func (c *Client) EcacheInstanceGet(tenantID, name string) (*DuploEcacheInstance, ClientError) {
 
 	// Call the API.
