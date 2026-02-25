@@ -253,7 +253,8 @@ func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath strin
 		log.Printf("[TRACE] %s", message)
 		return requestHttpError(url, message)
 	}
-	log.Printf("[TRACE] %s: prepared request: %s <= (%s)", apiName, url, rqBody)
+	// log.Printf("[TRACE] %s: prepared request: %s <= (%s)", apiName, url, rqBody)
+	log.Printf("[TRACE] %s: prepared request: %s", apiName, url)
 	req, err := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
 	if err != nil {
 		log.Printf("[TRACE] %s: cannot build request: %s", apiName, err.Error())
@@ -300,4 +301,8 @@ func (c *Client) putAPI(apiName string, apiPath string, rq interface{}, rp inter
 // Utility method to call an API with a POST request, handling logging, etc.
 func (c *Client) postAPI(apiName string, apiPath string, rq interface{}, rp interface{}) ClientError {
 	return c.doAPIWithRequestBody("POST", apiName, apiPath, rq, rp)
+}
+
+func (c *Client) deleteAPIWithRequestBody(apiName string, apiPath string, rq interface{}, rp interface{}) ClientError {
+	return c.doAPIWithRequestBody("DELETE", apiName, apiPath, rq, rp)
 }

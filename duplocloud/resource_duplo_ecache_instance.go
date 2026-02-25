@@ -75,7 +75,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "The numerical index of elasticache instance type.\n" +
 				"Should be one of:\n\n" +
 				"   - `0` : Redis\n" +
-				"   - `1` : Memcache\n\n" +
+				"   - `1` : Memcache\n" +
 				"   - `2` : Valkey\n\n",
 			Type:         schema.TypeInt,
 			Optional:     true,
@@ -122,6 +122,13 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 		},
 		"automatic_failover_enabled": {
 			Description: "Enables automatic failover.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true,
+			Default:     false,
+		},
+		"multi_az_enabled": {
+			Description: "Enables Multi-AZ support for the ElastiCache instance. Multi-AZ is only applicable for Redis (cache_type=0) and Valkey (cache_type=2). When enabled, automatic_failover_enabled must also be set to true.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			ForceNew:    true,
@@ -179,19 +186,21 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc:     validation.IntBetween(1, 500),
 		},
 		"snapshot_arns": {
-			Description:   "Specify the ARN of a Redis/Valkey RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html",
-			Type:          schema.TypeList,
-			Optional:      true,
-			Computed:      true,
-			ConflictsWith: []string{"snapshot_name"},
-			Elem:          &schema.Schema{Type: schema.TypeString},
+			Description:      "Specify the ARN of a Redis/Valkey RDB snapshot file stored in Amazon S3. User should have the access to export snapshot to s3 bucket. One can find steps to provide access to export snapshot to s3 on following link https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-exporting.html",
+			Type:             schema.TypeList,
+			Optional:         true,
+			Computed:         true,
+			ConflictsWith:    []string{"snapshot_name"},
+			Elem:             &schema.Schema{Type: schema.TypeString},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"snapshot_name": {
-			Description:   "Select the snapshot/backup you want to use for creating redis/valkey.",
-			Type:          schema.TypeString,
-			Optional:      true,
-			Computed:      true,
-			ConflictsWith: []string{"snapshot_arns"},
+			Description:      "Select the snapshot/backup you want to use for creating redis/valkey.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ConflictsWith:    []string{"snapshot_arns"},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"snapshot_retention_limit": {
 			Description:  "Specify retention limit in days. Accepted values - 1-35.",
@@ -206,6 +215,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			ValidateDiagFunc: isValidSnapshotWindow(),
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"log_delivery_configuration": {
 			Type:     schema.TypeSet,
@@ -267,6 +277,7 @@ func resourceDuploEcacheInstance() *schema.Resource {
 		ReadContext:   resourceDuploEcacheInstanceRead,
 		CreateContext: resourceDuploEcacheInstanceCreate,
 		DeleteContext: resourceDuploEcacheInstanceDelete,
+		UpdateContext: resourceDuploEcacheInstanceUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -584,6 +595,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			SnapshotName:             d.Get("snapshot_name").(string),
 			SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
 			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
+			MultiAZEnabled:           d.Get("multi_az_enabled").(bool),
 			SnapshotWindow:           d.Get("snapshot_window").(string),
 			EnableClusterMode:        d.Get("enable_cluster_mode").(bool),
 		},
@@ -664,6 +676,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
+	d.Set("multi_az_enabled", duplo.MultiAZEnabled)
 	if duplo.IsGlobal {
 		m := make(map[string]interface{})
 		m["group_id"] = duplo.GlobalReplicationGroupId
@@ -839,7 +852,9 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 			return diagsToError(diag)
 		}
 	}
-
+	if diff.Get("snapshot_retention_limit").(int) > 0 && diff.Get("cache_type") == 1 {
+		return fmt.Errorf("cannot set snapshot_retention_limit for memcache")
+	}
 	// Safely get automatic_failover_enabled with nil check
 	failoverVal := diff.Get("automatic_failover_enabled")
 	failover := false
@@ -1007,5 +1022,36 @@ func validValkeyVersionString(v interface{}, p cty.Path) diag.Diagnostics {
 		)
 	}
 
+	return diags
+}
+
+func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+
+	// Parse the identifying attributes
+	id := d.Id()
+	tenantID, name, err := parseECacheInstanceIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceDuploEcacheInstanceUpdate(%s, %s): start", tenantID, name)
+	c := m.(*duplosdk.Client)
+	identifier := d.Get("identifier").(string)
+	if d.HasChange("snapshot_retention_limit") {
+		rq := duplosdk.DuplocloudEcacheSnapshotRetentionLimitUpdateRequest{
+			Identifier:             identifier,
+			SnapshotRetentionLimit: strconv.Itoa(d.Get("snapshot_retention_limit").(int)),
+		}
+		err = c.EcacheInstanceUpdateSnapshotRetentionLimit(tenantID, name, rq)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+	diags := resourceDuploEcacheInstanceRead(ctx, d, m)
+	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s, %s): end", tenantID, name)
 	return diags
 }

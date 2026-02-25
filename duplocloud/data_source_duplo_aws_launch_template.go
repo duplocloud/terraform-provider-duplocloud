@@ -58,7 +58,6 @@ func dataSourceAwsLaunchTemplate() *schema.Resource {
 func datasourceAwsLaunchTemplateRead(d *schema.ResourceData, m interface{}) error {
 	tenantId := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
-	ver := d.Get("version").(string)
 	asgName := name
 	var err duplosdk.ClientError
 	c := m.(*duplosdk.Client)
@@ -83,9 +82,9 @@ func datasourceAwsLaunchTemplateRead(d *schema.ResourceData, m interface{}) erro
 	}
 	d.SetId(tenantId + "/launch-template/" + asgName)
 
-	fErr := flattenLaunchTemplate(d, rp, ver)
+	fErr := flattenLaunchTemplate(d, rp, true)
 	if fErr != nil {
-		return err
+		return fErr
 	}
 	return nil
 }

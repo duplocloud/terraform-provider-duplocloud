@@ -220,6 +220,14 @@ type DuploAwsCloudfrontDistributionCreate struct {
 	CorsAllowedHostNames []string                              `json:"CorsAllowedHostNames,omitempty"`
 }
 
+type DuploAwsCloudfrontDistributionCreateV2 struct {
+	DistributionConfig   *DuploAwsCloudfrontDistributionConfig `json:"DistributionConfig,omitempty"`
+	Id                   string                                `json:"Id,omitempty"`
+	IfMatch              string                                `json:"IfMatch,omitempty"`
+	UseOAIIdentity       bool                                  `json:"UseOAIIdentity"`
+	CorsAllowedHostNames []string                              `json:"CorsAllowedHostNames,omitempty"`
+}
+
 type DuploAwsCloudfrontDistribution struct {
 	DistributionConfig *DuploAwsCloudfrontDistributionConfig `json:"DistributionConfig,omitempty"`
 	Id                 string                                `json:"Id,omitempty"`
@@ -280,7 +288,29 @@ func (c *Client) AwsCloudfrontDistributionCreate(tenantID string, rq *DuploAwsCl
 	return &resp, err
 }
 
+func (c *Client) AwsCloudfrontDistributionCreateV2(tenantID string, rq *DuploAwsCloudfrontDistributionCreateV2) (*DuploAwsCloudfrontDistribution, ClientError) {
+	resp := DuploAwsCloudfrontDistribution{}
+	err := c.postAPI(
+		fmt.Sprintf("AwsCloudfrontDistributionCreate(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFrontDistribution", tenantID),
+		&rq,
+		&resp,
+	)
+	return &resp, err
+}
+
 func (c *Client) AwsCloudfrontDistributionUpdate(tenantID string, rq *DuploAwsCloudfrontDistributionCreate) (*DuploAwsCloudfrontDistribution, ClientError) {
+	resp := DuploAwsCloudfrontDistribution{}
+	err := c.putAPI(
+		fmt.Sprintf("AwsCloudfrontDistributionUpdate(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFrontDistribution", tenantID),
+		&rq,
+		&resp,
+	)
+	return &resp, err
+}
+
+func (c *Client) AwsCloudfrontDistributionUpdateV2(tenantID string, rq *DuploAwsCloudfrontDistributionCreateV2) (*DuploAwsCloudfrontDistribution, ClientError) {
 	resp := DuploAwsCloudfrontDistribution{}
 	err := c.putAPI(
 		fmt.Sprintf("AwsCloudfrontDistributionUpdate(%s)", tenantID),

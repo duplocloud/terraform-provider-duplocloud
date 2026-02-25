@@ -10,11 +10,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceTenantKMS() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_tenant_kms` manages the list of kms avaialble to a tenant in Duplo.\n\n" +
+		Description: "`duplocloud_tenant_kms` manages the list of kms available to a tenant in Duplo.\n\n" +
 			"This resource allows you take control of individual tenant kms for a specific tenant.",
 
 		ReadContext:   resourceTenantKMSRead,
@@ -32,10 +33,11 @@ func resourceTenantKMS() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Description: "The ID of the tenant to configure.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description:  "The ID of the tenant to configure.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IsUUID,
 			},
 			"kms": {
 				Description: "A list of KMS key to manage.",
@@ -70,10 +72,11 @@ func tenantKmsSchema(h bool) *schema.Resource {
 				Computed: !h,
 			},
 			"id": {
-				Type:     schema.TypeString,
-				Required: h,
-				ForceNew: h,
-				Computed: !h,
+				Type:        schema.TypeString,
+				Required:    h,
+				ForceNew:    h,
+				Computed:    !h,
+				Description: "The ID of the KMS key.",
 			},
 			"arn": {
 				Type:     schema.TypeString,

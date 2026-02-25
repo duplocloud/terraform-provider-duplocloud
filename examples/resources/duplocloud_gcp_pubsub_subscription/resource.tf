@@ -94,3 +94,15 @@ resource "duplocloud_gcp_pubsub_subscription" "pullsub" {
   }
 }
 
+
+resource "duplocloud_gcp_pubsub_subscription" "sub" {
+  tenant_id = duplocloud_tenant.myapp.tenant_id
+  name      = "subtest2"
+  topic     = "{topic-name}"
+  big_query {
+    table                 = "gcp-test10-431717.pbdataset.pbtable"
+    service_account_email = "abc@xxyz.com"
+    use_table_schema      = true
+    drop_unknown_fields   = false
+  }
+}

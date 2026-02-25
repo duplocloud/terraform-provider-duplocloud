@@ -245,6 +245,11 @@ func awsLambdaFunctionSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"invoke_arn": {
+			Description: "The ARN to be used for invoking the lambda function.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 	}
 }
 
@@ -294,7 +299,8 @@ func resourceAwsLambdaFunctionRead(ctx context.Context, d *schema.ResourceData, 
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	flattenAwsLambdaConfiguration(d, &duplo.Configuration)
-	d.Set("tags", duplo.Tags)
+
+	d.Set("tags", filterDuploDefinedTagsAsMap(duplo.Tags))
 
 	if duplo.Configuration.DeadLetterConfig != nil && duplo.Configuration.DeadLetterConfig.TargetArn != "" {
 		if err := d.Set("dead_letter_config", []interface{}{
@@ -418,10 +424,6 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("Error creating tenant %s lambda function '%s': %s", tenantID, name, err)
 	}
 
-	err = lambdaWaitUntilReady(ctx, c, tenantID, rq.FunctionName, d.Timeout("create"))
-	if err != nil {
-		return diag.Errorf("error: %s", err.Error())
-	}
 	// Wait for Duplo to be able to return the cluster's details.
 	id := fmt.Sprintf("%s/%s", tenantID, name)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "lambda function", id, func() (interface{}, duplosdk.ClientError) {
@@ -430,7 +432,10 @@ func resourceAwsLambdaFunctionCreate(ctx context.Context, d *schema.ResourceData
 	if diags != nil {
 		return diags
 	}
-
+	err = lambdaWaitUntilReady(ctx, c, tenantID, rq.FunctionName, d.Timeout("create"))
+	if err != nil {
+		return diag.Errorf("error: %s", err.Error())
+	}
 	d.SetId(id)
 
 	diags = resourceAwsLambdaFunctionRead(ctx, d, m)
@@ -566,6 +571,12 @@ func flattenAwsLambdaConfiguration(d *schema.ResourceData, duplo *duplosdk.Duplo
 			"working_directory": duplo.ImageConfig.WorkingDir,
 		}
 		d.Set("image_config", []interface{}{imageConfig})
+	}
+	invokeArn, err := getInvokeARN(duplo.FunctionArn)
+	if err == nil {
+		d.Set("invoke_arn", invokeArn)
+	} else {
+		log.Printf("[TRACE] Failed to generate invoke arn: %v", err)
 	}
 }
 
@@ -781,7 +792,7 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 }
 
 func lambdaWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
-	retryFlag := 3
+	retryFlag := 6
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
@@ -810,4 +821,24 @@ func lambdaWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID stri
 	log.Printf("[DEBUG] lambdaWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+func getInvokeARN(lambdaARN string) (string, error) {
+	parts := strings.Split(lambdaARN, ":")
+
+	if len(parts) < 6 {
+		return "", fmt.Errorf("invalid Lambda ARN: expected at least 6 colon-separated parts, got %d", len(parts))
+	}
+	region := parts[3]
+	if region == "" {
+		return "", fmt.Errorf("invalid Lambda ARN: region is missing")
+	}
+
+	invokeARN := fmt.Sprintf(
+		"arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
+		region,
+		lambdaARN,
+	)
+
+	return invokeARN, nil
 }

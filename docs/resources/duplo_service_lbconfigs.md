@@ -78,8 +78,8 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice2" {
 
 //Example to attach elastic ips to public NLB
 resource "duplocloud_duplo_service_lbconfigs" "myservice" {
-  tenant_id                   = "b4315a73-6455-4e99-8e26-7a771018cc1e"
-  replication_controller_name = "nlb-docker"
+  tenant_id                   = duplocloud_duplo_service.myservice.tenant_id
+  replication_controller_name = duplocloud_duplo_service.myservice.name
 
   lbconfigs {
     external_port   = 443
@@ -91,6 +91,29 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice" {
     eip_allocations = ["eipalloc-0448f756b404093cb", "eipalloc-0b700a23ac3f2522d"]
   }
 
+}
+
+//Example to set backendconfig timeout for alb applicable for gcp cloud
+resource "duplocloud_duplo_service_lbconfigs" "echo_config" {
+  tenant_id                   = duplocloud_duplo_service.myservice.tenant_id
+  replication_controller_name = duplocloud_duplo_service.myservice.name
+  lbconfigs {
+    external_port    = 80
+    health_check_url = "/me"
+    is_native        = true
+    lb_type          = 1
+    port             = "80"
+    protocol         = "HTTP"
+    health_check {
+      healthy_threshold   = 4
+      unhealthy_threshold = 4
+      timeout             = 30
+      interval            = 50
+      http_success_codes  = "200-399"
+    }
+    backend_config_timeout_sec = 70
+    set_ingress_health_check   = true
+  }
 }
 ```
 
@@ -145,10 +168,13 @@ Supported protocol based on lb_type:
 Optional:
 
 - `allow_global_access` (Boolean) Applicable for internal lb.
-- `backend_config_timeout_sec` (Number) The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP.
+- `backend_config_timeout_sec` (Number) The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP. Enable set_ingress_health_check when using this field
 - `backend_protocol_version` (String) Is used for communication between the load balancer and the target instances. This field is used to set protocol version for ALB load balancer. Only applicable when protocol is HTTP or HTTPS. The protocol version. Specify GRPC to send requests to targets using gRPC. Specify HTTP2 to send requests to targets using HTTP/2. The default is HTTP1, which sends requests to targets using HTTP/1.1
 - `certificate_arn` (String) The ARN of an ACM certificate to associate with this load balancer.  Only applicable for HTTPS.
 - `custom_cidr` (List of String) Specify CIDR Values. This is applicable only for Network Load Balancer if `lb_type` is `6`.
+- `eip_allocations` (List of String) Allocate Elastic IP to load balancer, which is configured under plan configuration.
+
+Note: This field can only be set for non internal lbtype NLB(6)
 - `external_port` (Number) The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.
 - `external_traffic_policy` (String) Only for K8S Node Port (`lb_type = 4`) or load balancers in Kubernetes.  Set the kubernetes service `externalTrafficPolicy` attribute.
 - `extra_selector_label` (Block List) Only for K8S services or load balancers in Kubernetes.  Sets an additional selector label to narrow which pods can receive traffic. (see [below for nested schema](#nestedblock--lbconfigs--extra_selector_label))

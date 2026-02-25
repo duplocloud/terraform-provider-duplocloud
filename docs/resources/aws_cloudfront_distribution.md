@@ -4,11 +4,14 @@ page_title: "duplocloud_aws_cloudfront_distribution Resource - terraform-provide
 subcategory: ""
 description: |-
   duplocloud_aws_cloudfront_distribution manages an aws cloudfront distribution in Duplo.
+  NOTE: This resource has been deprecated in favor of duplocloud_aws_cloudfront_distribution_v2 resource. No support will be provided for this resource going forward.
 ---
 
 # duplocloud_aws_cloudfront_distribution (Resource)
 
-`duplocloud_aws_cloudfront_distribution` manages an aws cloudfront distribution in Duplo.
+`duplocloud_aws_cloudfront_distribution` manages an aws cloudfront distribution in Duplo. 
+
+NOTE: This resource has been deprecated in favor of `duplocloud_aws_cloudfront_distribution_v2` resource. No support will be provided for this resource going forward.
 
 ## Example Usage
 
@@ -118,7 +121,9 @@ resource "duplocloud_aws_cloudfront_distribution" "cloudfront" {
 - `price_class` (String) The price class for this distribution. One of `PriceClass_All`, `PriceClass_200`, `PriceClass_100` Defaults to `PriceClass_All`.
 - `restrictions` (Block List, Max: 1) (see [below for nested schema](#nestedblock--restrictions))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `use_origin_access_identity` (Boolean) Defaults to `true`.
+- `use_origin_access_identity` (Boolean) When field is set to false it adds the oai mentioned in origin.s3_origin_config.origin_access_identity. 
+			<br/><b><i>Note</b>: For new cloudfront distributions, this field will work differently than for existing distributions.
+			When use_origin_access_identity is set to true, Duplo will create an origin access control (OAC) and restrict the S3 origin access. On false it will be public</br>For migration from OAI to OAC can be done from duplo cloud portal. Defaults to `true`.
 - `wait_for_deployment` (Boolean) Defaults to `true`.
 - `web_acl_id` (String) A unique identifier that specifies the AWS WAF web ACL, if any, to associate with this distribution.
 
