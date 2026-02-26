@@ -48,6 +48,7 @@ jobs:
         with:
           github_token: ${{ secrets.DUPLO_GITHUB_TOKEN }}
           version: "${{ steps.version.outputs.release }}"
+          is_hotfix: false
           precommit_run: |
             # Fail on errors
             set -euo pipefail
