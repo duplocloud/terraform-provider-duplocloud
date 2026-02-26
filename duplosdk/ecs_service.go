@@ -31,6 +31,7 @@ type DuploEcsServiceLbHealthCheckConfig struct {
 	HealthCheckIntervalSeconds int    `json:"HealthCheckIntervalSeconds,omitempty"`
 	HttpSuccessCode            string `json:"HttpSuccessCode,omitempty"`
 	GrpcSuccessCode            string `json:"GrpcSuccessCode,omitempty"`
+	HealthCheckPort            *int   `json:"HealthCheckPort,omitempty"`
 }
 
 // DuploEcsService is a Duplo SDK object that represents an ECS service

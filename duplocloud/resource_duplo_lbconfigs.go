@@ -238,7 +238,7 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 		},
 		"backend_config_timeout_sec": {
 			Type:         schema.TypeInt,
-			Description:  "The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP.",
+			Description:  "The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP. Enable set_ingress_health_check when using this field",
 			Optional:     true,
 			Computed:     true,
 			ValidateFunc: validation.IntBetween(1, 2147483647),

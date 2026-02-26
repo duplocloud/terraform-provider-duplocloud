@@ -299,7 +299,8 @@ func resourceAwsLambdaFunctionRead(ctx context.Context, d *schema.ResourceData, 
 	d.Set("tenant_id", tenantID)
 	d.Set("name", name)
 	flattenAwsLambdaConfiguration(d, &duplo.Configuration)
-	d.Set("tags", duplo.Tags)
+
+	d.Set("tags", filterDuploDefinedTagsAsMap(duplo.Tags))
 
 	if duplo.Configuration.DeadLetterConfig != nil && duplo.Configuration.DeadLetterConfig.TargetArn != "" {
 		if err := d.Set("dead_letter_config", []interface{}{
@@ -791,7 +792,7 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 }
 
 func lambdaWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
-	retryFlag := 3
+	retryFlag := 6
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"pending"},
 		Target:  []string{"ready"},
