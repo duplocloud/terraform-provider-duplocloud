@@ -108,6 +108,7 @@ type DuploRdsUpdateInstance struct {
 	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
 	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
 	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot"`
+	AllocatedStorage      int    `json:"AllocatedStorage,omitempty"`
 	ApplyImmediately      bool   `json:"ApplyImmediately"`
 }
 
@@ -166,7 +167,7 @@ type DuploRDSClusterCompareField struct {
 
 type DuploRDSStorageAutoScalling struct {
 	IsAutoScalingEnabled bool `json:"IsAutoScalingEnabled"`
-	MaxAllocatedStorage  int  `json:"MaxAllocatedStorage"`
+	MaxAllocatedStorage  int  `json:"MaxAllocatedStorage,omitempty"`
 	ApplyImmediately     bool `json:"ApplyImmediately"`
 }
 
@@ -527,7 +528,7 @@ func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, Cl
 
 func (c *Client) UpdateRDSDBInstanceStorageAutoScalling(tenantID string, identifier string, duploObject DuploRDSStorageAutoScalling) ClientError {
 	return c.putAPI(
-		fmt.Sprintf("UpdateRDSDBInstance(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("UpdateRDSDBInstanceStorageAutoScalling(%s, %s)", tenantID, identifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
 		&duploObject,
 		nil,

@@ -434,6 +434,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 ### Optional
 
 - `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
+**Note:** Allocated storage can only be modified after every 6 hours.
 - `auto_minor_version_upgrade` (Boolean) Enable or disable auto minor version upgrade
 - `availability_zone` (String) Specify a valid Availability Zone for the RDS primary instance (when Multi-AZ is disabled) or for the Aurora writer instance. e.g. us-west-2a
 - `backup_retention_period` (Number) Specifies backup retention period between 1 and 35 day(s). Default backup retention period is 1 day. Defaults to `1`.
@@ -497,7 +498,7 @@ Optional:
 
 Optional:
 
-- `enable` (Boolean) Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage. Defaults to `false`.
+- `enable` (Boolean) Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage.
 - `max_allocated_storage` (Number) The upper limit, in gibibytes (GiB), to which Amazon RDS can automatically scale the storage of the DB instance when autoscaling is enabled.
 
 
