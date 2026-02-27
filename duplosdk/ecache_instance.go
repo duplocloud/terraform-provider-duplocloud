@@ -173,7 +173,6 @@ func (c *Client) EcacheInstanceUpdateMultiAZ(tenantID, name string, rq Duploclou
 		&rq, nil)
 }
 
-
 func (c *Client) EcacheInstanceGet(tenantID, name string) (*DuploEcacheInstance, ClientError) {
 
 	// Call the API.

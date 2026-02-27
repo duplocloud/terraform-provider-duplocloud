@@ -888,7 +888,6 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 		}
 	}
 
-
 	return nil
 }
 
