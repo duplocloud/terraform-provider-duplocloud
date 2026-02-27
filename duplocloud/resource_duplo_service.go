@@ -63,12 +63,15 @@ func duploServiceSchema() map[string]*schema.Schema {
 				// state value before comparing to suppress the perpetual diff (DUPLO-39931).
 				if old != "" && new != "" {
 					var newDefn map[string]interface{}
+					var oldDefn map[string]interface{}
 					if err := json.Unmarshal([]byte(new), &newDefn); err == nil {
-						makeMapUpperCamelCase(newDefn)
-						if _, userSpecifiedSA := newDefn["ServiceAccountName"]; !userSpecifiedSA {
-							var oldDefn map[string]interface{}
-							if err := json.Unmarshal([]byte(old), &oldDefn); err == nil {
-								delete(oldDefn, "ServiceAccountName")
+						if err := json.Unmarshal([]byte(old), &oldDefn); err == nil {
+							// Normalize both old and new keys to lowercase for
+							// case-insensitive ServiceAccountName detection.
+							makeMapLowerCaseKeys(newDefn)
+							makeMapLowerCaseKeys(oldDefn)
+							if _, userSpecifiedSA := newDefn["serviceaccountname"]; !userSpecifiedSA {
+								delete(oldDefn, "serviceaccountname")
 								if b, err := json.Marshal(oldDefn); err == nil {
 									old = string(b)
 								}
