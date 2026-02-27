@@ -1288,8 +1288,7 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 						return fmt.Errorf("max_allocated_storage should be atleast 10%% of allocated_storage. Recommended is 26%%")
 					}
 				} else {
-					_, n := diff.GetChange("storage_autoscaling.0.max_allocated_storage")
-					if th > 0 && n.(int) != 0 {
+					if th != 0 {
 						return fmt.Errorf("max_allocated_storage should be set to 0 when storage_autoscaling is being disabled")
 					}
 				}
