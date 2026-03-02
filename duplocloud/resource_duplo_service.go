@@ -58,6 +58,27 @@ func duploServiceSchema() map[string]*schema.Schema {
 				return json
 			},
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// The API may auto-inject ServiceAccountName into OtherDockerConfig. If the
+				// user hasn't specified ServiceAccountName in their config, strip it from the
+				// state value before comparing to suppress the perpetual diff (DUPLO-39931).
+				if old != "" && new != "" {
+					var newDefn map[string]interface{}
+					var oldDefn map[string]interface{}
+					if err := json.Unmarshal([]byte(new), &newDefn); err == nil {
+						if err := json.Unmarshal([]byte(old), &oldDefn); err == nil {
+							// Normalize both old and new keys to lowercase for
+							// case-insensitive ServiceAccountName detection.
+							makeMapLowerCaseKeys(newDefn)
+							makeMapLowerCaseKeys(oldDefn)
+							if _, userSpecifiedSA := newDefn["serviceaccountname"]; !userSpecifiedSA {
+								delete(oldDefn, "serviceaccountname")
+								if b, err := json.Marshal(oldDefn); err == nil {
+									old = string(b)
+								}
+							}
+						}
+					}
+				}
 				equal, _ := otherDockerConfigsAreEquivalent(old, new)
 				return equal
 			},
