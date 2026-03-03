@@ -360,6 +360,16 @@ type DuploKafkaClusterRequest struct {
 	ConfigurationInfo *DuploKafkaConfigurationInfo     `json:"ConfigurationInfo,omitempty"`
 	State             string                           `json:"State,omitempty"`
 	EncryptionInfo    *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
+	ClusterType       string                           `json:"ClusterType,omitempty"`
+	Serverless        *DuploKafkaServerlessConfig      `json:"Serverless,omitempty"`
+}
+
+type DuploKafkaServerlessConfig struct {
+	VpcConfigs []DuploKafkaServerlessVpcConfigs `json:"VpcConfigs"`
+}
+
+type DuploKafkaServerlessVpcConfigs struct {
+	SubnetIds string `json:"SubnetIds,omitempty"`
 }
 
 // DuploKafkaCluster represents an AWS kafka cluster resource for a Duplo tenant
@@ -390,6 +400,15 @@ type DuploKafkaClusterInfo struct {
 	ZookeeperConnectString    string                           `json:"ZookeeperConnectString,omitempty"`
 	ZookeeperConnectStringTls string                           `json:"ZookeeperConnectStringTls,omitempty"`
 	EncryptionInfo            *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
+	ClusterType               *DuploStringValue                `json:"ClusterType,omitempty"`
+	Serverless                *DuploKafkaServerlessInfo        `json:"Serverless,omitempty"`
+}
+
+type DuploKafkaServerlessInfo struct {
+	VpcConfigs *struct {
+		SubnetIds        []string `json:"SubnetIds,omitempty"`
+		SecurityGroupIds []string `json:"SecurityGroupIds,omitempty"`
+	} `json:"VpcConfigs,omitempty"`
 }
 
 // DuploKafkaBootstrapBrokers represents a non-cached view of an AWS kafka cluster's bootstrap brokers for a Duplo tenant
@@ -777,10 +796,14 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 }
 
 // TenantCreateKafkaCluster creates a kafka cluster resource via Duplo.
-func (c *Client) TenantCreateKafkaCluster(tenantID string, duplo DuploKafkaClusterRequest) ClientError {
+func (c *Client) TenantCreateKafkaCluster(tenantID string, duplo DuploKafkaClusterRequest, serverless bool) ClientError {
+	uri := ""
+	if serverless {
+		uri = fmt.Sprintf("v3/subscriptions/%s/aws/kafka", tenantID)
+	}
 	return c.postAPI(
 		fmt.Sprintf("TenantCreateKafkaCluster(%s, %s)", tenantID, duplo.Name),
-		fmt.Sprintf("subscriptions/%s/KafkaClusterUpdate", tenantID),
+		uri,
 		&duplo,
 		nil)
 }
