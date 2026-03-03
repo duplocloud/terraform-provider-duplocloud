@@ -145,7 +145,7 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 		},
 
 		"is_serverless": {
-			Description: "Indicates whether the cluster is serverless.",
+			Description: "Enable to make the cluster serverless.  When enabled, the `instance_type`, `storage_size`, `kafka_version`, `configuration_arn`, `configuration_revision`, and `encryption_in_transit` parameters are not applicable.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
@@ -171,7 +171,8 @@ func resourceAwsKafkaCluster() *schema.Resource {
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 			Update: schema.DefaultTimeout(60 * time.Minute),
 		},
-		Schema: kafkaClusterSchema(),
+		Schema:        kafkaClusterSchema(),
+		CustomizeDiff: validateKafkaParameters,
 	}
 }
 
@@ -214,11 +215,14 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Next, set fields that come from extended information.
 	if info != nil {
-		if info.ClusterType != nil && info.ClusterType.Value == "Serverless" {
+		if info.ClusterType != nil && strings.EqualFold(info.ClusterType.Value, "Serverless") {
 			d.Set("is_serverless", true)
 			if info.Serverless != nil && info.Serverless.VpcConfigs != nil {
-				d.Set("subnets", info.Serverless.VpcConfigs.SubnetIds)
-				d.Set("security_groups", info.Serverless.VpcConfigs.SecurityGroupIds)
+				for _, vpcConfig := range info.Serverless.VpcConfigs {
+					d.Set("subnets", vpcConfig.SubnetIds)
+					d.Set("security_groups", vpcConfig.SecurityGroupIds)
+				}
+
 			}
 		} else {
 			if info.Provisioned.BrokerNodeGroup != nil {
@@ -459,4 +463,38 @@ func resourceKafkaClusterUpdate(ctx context.Context, d *schema.ResourceData, m i
 	diags := resourceKafkaClusterRead(ctx, d, m)
 	log.Printf("[TRACE] resourceKafkaClusterCreate ******** end")
 	return diags
+}
+
+func validateKafkaParameters(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+	if v, ok := d.GetOk("is_serverless"); ok && v.(bool) {
+		if v, ok := d.GetOk("instance_type"); ok && v.(string) != "" {
+			return fmt.Errorf("instance_type not applicable when is_serverless is true")
+		}
+		if v, ok := d.GetOk("storage_size"); ok && v.(int) != 0 {
+			return fmt.Errorf("storage_size not applicable when is_serverless is true")
+		}
+		if v, ok := d.GetOk("kafka_version"); ok && v.(string) != "" {
+			return fmt.Errorf("kafka_version not applicable when is_serverless is true")
+		}
+		if v, ok := d.GetOk("configuration_arn"); ok && v.(string) != "" {
+			return fmt.Errorf("configuration_arn not applicable when is_serverless is true")
+		}
+		if v, ok := d.GetOk("configuration_revision"); ok && v.(int) != 0 {
+			return fmt.Errorf("configuration_revision not applicable when is_serverless is true")
+		}
+		if v, ok := d.GetOk("encryption_in_transit"); ok && v.(string) != "" {
+			return fmt.Errorf("encryption_in_transit not applicable when is_serverless is true")
+		}
+	} else {
+		if v, ok := d.GetOk("instance_type"); ok && v.(string) == "" {
+			return fmt.Errorf("instance_type required for provisioned cluster when is_serverless is false")
+		}
+		if v, ok := d.GetOk("storage_size"); ok && v.(int) == 0 {
+			return fmt.Errorf("storage_size required for provisioned cluster when is_serverless is false")
+		}
+		if v, ok := d.GetOk("kafka_version"); ok && v.(string) == "" {
+			return fmt.Errorf("kafka_version required for provisioned cluster when is_serverless is false")
+		}
+	}
+	return nil
 }

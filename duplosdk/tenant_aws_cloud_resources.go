@@ -412,7 +412,7 @@ type DuploKafkaProvisionedInfo struct {
 	EncryptionInfo            *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
 }
 type DuploKafkaServerlessInfo struct {
-	VpcConfigs *struct {
+	VpcConfigs []struct {
 		SubnetIds        []string `json:"SubnetIds,omitempty"`
 		SecurityGroupIds []string `json:"SecurityGroupIds,omitempty"`
 	} `json:"VpcConfigs,omitempty"`
