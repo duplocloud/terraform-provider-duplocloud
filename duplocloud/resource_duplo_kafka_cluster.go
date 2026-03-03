@@ -224,7 +224,7 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 				}
 
 			}
-		} else {
+		} else if info.Provisioned != nil {
 			if info.Provisioned.BrokerNodeGroup != nil {
 				plaintextZookeeperConnectString := sortCommaDelimitedString(info.Provisioned.ZookeeperConnectString)
 				tlsZookeeperConnectString := sortCommaDelimitedString(info.Provisioned.ZookeeperConnectStringTls)
