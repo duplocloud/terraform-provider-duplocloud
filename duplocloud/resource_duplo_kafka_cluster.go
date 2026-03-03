@@ -281,7 +281,6 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 
 	if v, ok := d.GetOk("is_serverless"); ok && v.(bool) {
 		rq.ClusterType = "Serverless"
-		d.Get("subnets")
 		if v, ok = d.GetOk("subnets"); ok && v != nil {
 			list := v.([]interface{})
 			result := make([]duplosdk.DuploKafkaServerlessVpcConfigs, len(list))
