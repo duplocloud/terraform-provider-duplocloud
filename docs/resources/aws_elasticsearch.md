@@ -45,7 +45,8 @@ resource "duplocloud_aws_elasticsearch" "es-doc" {
 ### Optional
 
 - `cluster_config` (Block List, Max: 1) (see [below for nested schema](#nestedblock--cluster_config))
-- `elasticsearch_version` (String) The version of the ElasticSearch instance. Defaults to `7.9`.
+- `ebs_options` (Block List, Max: 1) The EBS storage options for the ElasticSearch instance. (see [below for nested schema](#nestedblock--ebs_options))
+- `elasticsearch_version` (String) The version of the ElasticSearch/OpenSearch instance. Accepts the short form (e.g. `7.9`) or the full prefixed form (e.g. `Elasticsearch_7.9`, `OpenSearch_2.15`). Defaults to `Elasticsearch_7.9`.
 - `enable_node_to_node_encryption` (Boolean) Whether or not to use the enable node-to-node encryption for this ElasticSearch instance.
 - `encrypt_at_rest` (Block List, Max: 1) The storage encryption settings for the ElasticSearch instance. (see [below for nested schema](#nestedblock--encrypt_at_rest))
 - `require_ssl` (Boolean) Whether or not to require SSL for accessing this ElasticSearch instance.
@@ -62,7 +63,6 @@ resource "duplocloud_aws_elasticsearch" "es-doc" {
 - `arn` (String) The ARN of the ElasticSearch instance.
 - `domain_id` (String) The domain ID of the ElasticSearch instance.
 - `domain_name` (String) The full name of the ElasticSearch instance.
-- `ebs_options` (List of Object) (see [below for nested schema](#nestedatt--ebs_options))
 - `endpoints` (Map of String) The endpoints to use when connecting to the ElasticSearch instance.
 - `id` (String) The ID of this resource.
 - `snapshot_options` (List of Object) (see [below for nested schema](#nestedatt--snapshot_options))
@@ -75,9 +75,9 @@ Optional:
 - `cold_storage_options` (Block List, Max: 1) (see [below for nested schema](#nestedblock--cluster_config--cold_storage_options))
 - `dedicated_master_count` (Number) Defaults to `0`.
 - `dedicated_master_enabled` (Boolean) Defaults to `false`.
-- `dedicated_master_type` (String) Defaults to `t2.small.elasticsearch`.
+- `dedicated_master_type` (String) Defaults to `t2.small.search`.
 - `instance_count` (Number) Defaults to `1`.
-- `instance_type` (String) Defaults to `t2.small.elasticsearch`.
+- `instance_type` (String) Defaults to `t2.small.search`.
 - `multi_az_with_standby_enabled` (Boolean)
 - `warm_count` (Number)
 - `warm_enabled` (Boolean)
@@ -90,6 +90,17 @@ Optional:
 
 - `enabled` (Boolean)
 
+
+
+<a id="nestedblock--ebs_options"></a>
+### Nested Schema for `ebs_options`
+
+Optional:
+
+- `ebs_enabled` (Boolean)
+- `iops` (Number)
+- `volume_size` (Number)
+- `volume_type` (String)
 
 
 <a id="nestedblock--encrypt_at_rest"></a>
@@ -126,17 +137,6 @@ Read-Only:
 - `availability_zones` (List of String)
 - `security_group_ids` (List of String)
 - `vpc_id` (String)
-
-
-<a id="nestedatt--ebs_options"></a>
-### Nested Schema for `ebs_options`
-
-Read-Only:
-
-- `ebs_enabled` (Boolean)
-- `iops` (Number)
-- `volume_size` (Number)
-- `volume_type` (String)
 
 
 <a id="nestedatt--snapshot_options"></a>

@@ -30,7 +30,6 @@ resource "duplocloud_aws_kafka_cluster" "mycluster" {
 resource "duplocloud_aws_kafka_cluster" "serverless" {
   tenant_id     = duplocloud_tenant.myapp.tenant_id
   name          = "serverlesscluster"
-  subnets       = ["subnet-0c9a95f287b4fc38f", "subnet-0f629e07cf54d3ca0"]
   is_serverless = true
 }
 ```
