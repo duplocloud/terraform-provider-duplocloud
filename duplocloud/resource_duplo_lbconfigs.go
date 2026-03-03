@@ -718,7 +718,7 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 
 			if lb != 6 && len(eips) > 0 {
 				return fmt.Errorf("eip_allocations can only be set for NLB")
-			} else if lb == 6 && m["is_internal"].(bool) {
+			} else if lb == 6 && m["is_internal"].(bool) && len(eips) > 0 {
 				return fmt.Errorf("eip_allocations can only be set for public NLB")
 			}
 		}
