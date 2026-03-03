@@ -682,8 +682,8 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		p := strings.ToLower(pr)
 		b := m["backend_protocol_version"].(string)
 		bp := strings.ToLower(b)
-		lb, ok := m["lb_type"].(int)
-		if ok && lb != 1 && bp != "" && bp != "http1" {
+		lbType, ok := m["lb_type"].(int)
+		if ok && lbType != 1 && bp != "" && bp != "http1" {
 			return fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")
 
 		}
@@ -694,17 +694,17 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, pr)
 		}
 
-		if (lb == 1 || lb == 5) && (p != "http" && p != "https") {
-			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		if (lbType == 1 || lbType == 5) && (p != "http" && p != "https") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lbType)
 		}
-		if lb == 6 && (p != "tcp" && p != "udp" && p != "tls") {
-			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		if lbType == 6 && (p != "tcp" && p != "udp" && p != "tls") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lbType)
 		}
-		if (lb == 3 || lb == 4) && (p != "tcp" && p != "udp") {
-			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		if (lbType == 3 || lbType == 4) && (p != "tcp" && p != "udp") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lbType)
 		}
-		if lb == 0 && p == "tls" {
-			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		if lbType == 0 && p == "tls" {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lbType)
 		}
 		healthCheck := m["health_check"].([]interface{})
 		if len(healthCheck) > 0 {
@@ -716,9 +716,9 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		if m["eip_allocations"] != nil {
 			eips := m["eip_allocations"].([]interface{})
 
-			if lb != 6 && len(eips) > 0 {
+			if lbType != 6 && len(eips) > 0 {
 				return fmt.Errorf("eip_allocations can only be set for NLB")
-			} else if lb == 6 && m["is_internal"].(bool) && len(eips) > 0 {
+			} else if lbType == 6 && m["is_internal"].(bool) && len(eips) > 0 {
 				return fmt.Errorf("eip_allocations can only be set for public NLB")
 			}
 		}
