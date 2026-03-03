@@ -124,8 +124,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "Enables automatic failover.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			ForceNew:    true,
-			Default:     false,
+			Computed:    true,
 		},
 		"multi_az_enabled": {
 			Description: "Enables Multi-AZ support for the ElastiCache instance. Multi-AZ is only applicable for Redis (cache_type=0) and Valkey (cache_type=2). When enabled, automatic_failover_enabled must also be set to true.",
