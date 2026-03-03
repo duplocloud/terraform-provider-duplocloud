@@ -221,32 +221,32 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 				d.Set("security_groups", info.Serverless.VpcConfigs.SecurityGroupIds)
 			}
 		} else {
-			if info.BrokerNodeGroup != nil {
-				plaintextZookeeperConnectString := sortCommaDelimitedString(info.ZookeeperConnectString)
-				tlsZookeeperConnectString := sortCommaDelimitedString(info.ZookeeperConnectStringTls)
+			if info.Provisioned.BrokerNodeGroup != nil {
+				plaintextZookeeperConnectString := sortCommaDelimitedString(info.Provisioned.ZookeeperConnectString)
+				tlsZookeeperConnectString := sortCommaDelimitedString(info.Provisioned.ZookeeperConnectStringTls)
 
-				d.Set("instance_type", info.BrokerNodeGroup.InstanceType)
-				d.Set("storage_size", info.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize)
+				d.Set("instance_type", info.Provisioned.BrokerNodeGroup.InstanceType)
+				d.Set("storage_size", info.Provisioned.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize)
 				d.Set("plaintext_zookeeper_connect_string", plaintextZookeeperConnectString)
 				d.Set("tls_zookeeper_connect_string", tlsZookeeperConnectString)
-				d.Set("number_of_broker_nodes", info.NumberOfBrokerNodes)
-				if info.BrokerNodeGroup.AZDistribution != nil {
-					d.Set("az_distribution", info.BrokerNodeGroup.AZDistribution.Value)
+				d.Set("number_of_broker_nodes", info.Provisioned.NumberOfBrokerNodes)
+				if info.Provisioned.BrokerNodeGroup.AZDistribution != nil {
+					d.Set("az_distribution", info.Provisioned.BrokerNodeGroup.AZDistribution.Value)
 				}
-				if info.BrokerNodeGroup.Subnets != nil {
-					d.Set("subnets", info.BrokerNodeGroup.Subnets)
+				if info.Provisioned.BrokerNodeGroup.Subnets != nil {
+					d.Set("subnets", info.Provisioned.BrokerNodeGroup.Subnets)
 				}
-				if info.BrokerNodeGroup.SecurityGroups != nil {
-					d.Set("security_groups", info.BrokerNodeGroup.SecurityGroups)
+				if info.Provisioned.BrokerNodeGroup.SecurityGroups != nil {
+					d.Set("security_groups", info.Provisioned.BrokerNodeGroup.SecurityGroups)
 				}
 			}
-			if info.CurrentSoftware != nil {
-				d.Set("kafka_version", info.CurrentSoftware.KafkaVersion)
-				d.Set("configuration_arn", info.CurrentSoftware.ConfigurationArn)
-				d.Set("configuration_revision", info.CurrentSoftware.ConfigurationRevision)
+			if info.Provisioned.CurrentSoftware != nil {
+				d.Set("kafka_version", info.Provisioned.CurrentSoftware.KafkaVersion)
+				d.Set("configuration_arn", info.Provisioned.CurrentSoftware.ConfigurationArn)
+				d.Set("configuration_revision", info.Provisioned.CurrentSoftware.ConfigurationRevision)
 			}
-			if info.EncryptionInfo != nil && info.EncryptionInfo.InTransit != nil && info.EncryptionInfo.InTransit.ClientBroker != nil {
-				d.Set("encryption_in_transit", info.EncryptionInfo.InTransit.ClientBroker.Value)
+			if info.Provisioned.EncryptionInfo != nil && info.Provisioned.EncryptionInfo.InTransit != nil && info.Provisioned.EncryptionInfo.InTransit.ClientBroker != nil {
+				d.Set("encryption_in_transit", info.Provisioned.EncryptionInfo.InTransit.ClientBroker.Value)
 			}
 			d.Set("current_version", info.CurrentVersion)
 		}
@@ -270,37 +270,9 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 	log.Printf("[TRACE] resourceKafkaClusterCreate ******** start")
-	var clusterType bool
 	// Create the request object.
 	rq := duplosdk.DuploKafkaClusterRequest{
-		Name:            d.Get("name").(string),
-		KafkaVersion:    d.Get("kafka_version").(string),
-		BrokerNodeGroup: &duplosdk.DuploKafkaBrokerNodeGroupInfo{InstanceType: d.Get("instance_type").(string)},
-	}
-	rq.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize = d.Get("storage_size").(int)
-
-	// Apply any subnet settings
-	if subnets, ok := getAsStringArray(d, "subnets"); ok && len(*subnets) > 0 {
-		rq.BrokerNodeGroup.Subnets = subnets
-	}
-
-	// Apply any custom configuration.
-	if v, ok := d.GetOk("configuration_arn"); ok {
-		rq.ConfigurationInfo = &duplosdk.DuploKafkaConfigurationInfo{
-			Arn:      v.(string),
-			Revision: int64(d.Get("configuration_revision").(int)),
-		}
-	}
-
-	// Apply Encryption settings.
-	if v, ok := d.GetOk("encryption_in_transit"); ok {
-		rq.EncryptionInfo = &duplosdk.DuploKafkaClusterEncryptionInfo{
-			InTransit: &duplosdk.DuploKafkaClusterEncryptionInTransit{
-				ClientBroker: &duplosdk.DuploStringValue{
-					Value: v.(string),
-				},
-			},
-		}
+		Name: d.Get("name").(string),
 	}
 
 	if v, ok := d.GetOk("is_serverless"); ok && v.(bool) {
@@ -317,17 +289,46 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 			rq.Serverless = &duplosdk.DuploKafkaServerlessConfig{
 				VpcConfigs: result,
 			}
+		} else {
+			rq.Serverless = &duplosdk.DuploKafkaServerlessConfig{}
+
 		}
-		clusterType = true
-		rq.BrokerNodeGroup = nil
 	} else {
 		rq.ClusterType = "Provisioned"
+		p := &duplosdk.DuploKafkaProvisionedConfig{}
+		p.BrokerNodeGroup = &duplosdk.DuploKafkaBrokerNodeGroupInfo{InstanceType: d.Get("instance_type").(string)}
+		p.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize = d.Get("storage_size").(int)
+		p.KafkaVersion = d.Get("kafka_version").(string)
+		// Apply any subnet settings
+		if subnets, ok := getAsStringArray(d, "subnets"); ok && len(*subnets) > 0 {
+			p.BrokerNodeGroup.Subnets = subnets
+		}
+
+		// Apply any custom configuration.
+		if v, ok := d.GetOk("configuration_arn"); ok {
+			p.ConfigurationInfo = &duplosdk.DuploKafkaConfigurationInfo{
+				Arn:      v.(string),
+				Revision: int64(d.Get("configuration_revision").(int)),
+			}
+		}
+
+		// Apply Encryption settings.
+		if v, ok := d.GetOk("encryption_in_transit"); ok {
+			p.EncryptionInfo = &duplosdk.DuploKafkaClusterEncryptionInfo{
+				InTransit: &duplosdk.DuploKafkaClusterEncryptionInTransit{
+					ClientBroker: &duplosdk.DuploStringValue{
+						Value: v.(string),
+					},
+				},
+			}
+		}
+		rq.Provisioned = p
 	}
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 
 	// Post the object to Duplo
-	err = c.TenantCreateKafkaCluster(tenantID, rq, clusterType)
+	err = c.TenantCreateKafkaCluster(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s kafka cluster '%s': %s", tenantID, rq.Name, err)
 	}
