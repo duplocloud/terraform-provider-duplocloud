@@ -19,11 +19,19 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 resource "duplocloud_aws_kafka_cluster" "mycluster" {
-  tenant_id     = duplocloud_tenant.this.tenant_id
+  tenant_id     = duplocloud_tenant.myapp.tenant_id
   name          = "mycluster"
-  kafka_version = "2.4.1.1"
+  kafka_version = "3.5.1"
   instance_type = "kafka.m5.large"
   storage_size  = 20
+}
+
+
+resource "duplocloud_aws_kafka_cluster" "serverless" {
+  tenant_id     = duplocloud_tenant.myapp.tenant_id
+  name          = "serverlesscluster"
+  subnets       = ["subnet-0c9a95f287b4fc38f", "subnet-0f629e07cf54d3ca0"]
+  is_serverless = true
 }
 ```
 
@@ -32,11 +40,7 @@ resource "duplocloud_aws_kafka_cluster" "mycluster" {
 
 ### Required
 
-- `instance_type` (String) The Kafka node instance type to use.
-See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html) for more information.
-- `kafka_version` (String) The version of the Kafka cluster.
 - `name` (String) The short name of the Kafka cluster.  Duplo will add a prefix to the name.  You can retrieve the full name from the `fullname` attribute.
-- `storage_size` (Number) The size of the Kafka storage, in gigabytes.
 - `tenant_id` (String) The GUID of the tenant that the Kafka cluster will be created in.
 
 ### Optional
@@ -44,6 +48,11 @@ See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguid
 - `configuration_arn` (String) An ARN of a Kafka configuration to apply to the cluster.
 - `configuration_revision` (Number) An revision of a Kafka configuration to apply to the cluster.
 - `encryption_in_transit` (String) Encryption setting for data in transit between clients and brokers. Valid values: `TLS`, `TLS_PLAINTEXT`, and `PLAINTEXT`
+- `instance_type` (String) The Kafka node instance type to use.
+See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html) for more information.
+- `is_serverless` (Boolean) Enable to make the cluster serverless.  When enabled, the `instance_type`, `storage_size`, `kafka_version`, `configuration_arn`, `configuration_revision`, and `encryption_in_transit` parameters are not applicable. Defaults to `false`.
+- `kafka_version` (String) The version of the Kafka cluster.
+- `storage_size` (Number) The size of the Kafka storage, in gigabytes.
 - `subnets` (List of String) The list of subnets that the cluster will be launched in.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
