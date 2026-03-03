@@ -486,13 +486,13 @@ func validateKafkaParameters(ctx context.Context, d *schema.ResourceDiff, m inte
 			return fmt.Errorf("encryption_in_transit not applicable when is_serverless is true")
 		}
 	} else {
-		if v, ok := d.GetOk("instance_type"); ok && v.(string) == "" {
+		if v := d.Get("instance_type"); v.(string) == "" {
 			return fmt.Errorf("instance_type required for provisioned cluster when is_serverless is false")
 		}
-		if v, ok := d.GetOk("storage_size"); ok && v.(int) == 0 {
+		if v := d.Get("storage_size"); v.(int) == 0 {
 			return fmt.Errorf("storage_size required for provisioned cluster when is_serverless is false")
 		}
-		if v, ok := d.GetOk("kafka_version"); ok && v.(string) == "" {
+		if v := d.Get("kafka_version"); v.(string) == "" {
 			return fmt.Errorf("kafka_version required for provisioned cluster when is_serverless is false")
 		}
 	}
