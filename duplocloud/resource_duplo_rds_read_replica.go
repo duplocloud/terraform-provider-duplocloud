@@ -230,7 +230,7 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 					"enable": {
 						Description: "Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage.",
 						Optional:    true,
-						Default:     false,
+						Computed:    true,
 						Type:        schema.TypeBool,
 						//ForceNew:    true,
 					},
