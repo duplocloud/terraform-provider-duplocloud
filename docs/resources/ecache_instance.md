@@ -193,7 +193,7 @@ See AWS documentation for the [available instance types](https://docs.aws.amazon
 - `auth_token` (String) Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.
 
 See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.
-- `automatic_failover_enabled` (Boolean) Enables automatic failover. Defaults to `false`.
+- `automatic_failover_enabled` (Boolean) Enables automatic failover.
 - `cache_type` (Number) The numerical index of elasticache instance type.
 Should be one of:
 
