@@ -254,7 +254,7 @@ func (c *Client) doAPIWithRequestBody(verb string, apiName string, apiPath strin
 		return requestHttpError(url, message)
 	}
 	// log.Printf("[TRACE] %s: prepared request: %s <= (%s)", apiName, url, rqBody)
-	log.Printf("[TRACE] %s: prepared request: %s : %s", apiName, url, string(rqBody))
+	log.Printf("[TRACE] %s: prepared request: %s", apiName, url)
 	req, err := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
 	if err != nil {
 		log.Printf("[TRACE] %s: cannot build request: %s", apiName, err.Error())
