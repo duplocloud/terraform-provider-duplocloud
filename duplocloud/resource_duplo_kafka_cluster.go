@@ -489,7 +489,7 @@ func validateKafkaParameters(ctx context.Context, d *schema.ResourceDiff, m inte
 		if v, ok := d.GetOk("instance_type"); ok && v.(string) == "" {
 			return fmt.Errorf("instance_type required for provisioned cluster when is_serverless is false")
 		}
-		if v, ok := d.GetOk("storage_size"); ok && v.(int) == 0 {
+		if v := d.Get("storage_size"); v.(int) == 0 {
 			return fmt.Errorf("storage_size required for provisioned cluster when is_serverless is false")
 		}
 		if v, ok := d.GetOk("kafka_version"); ok && v.(string) == "" {
