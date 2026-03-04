@@ -723,6 +723,11 @@ func parseECacheInstanceIdParts(id string) (tenantID, name string, err error) {
 }
 
 func suppressNoOfShardsDiff(k, old, new string, d *schema.ResourceData) bool {
+	// number_of_shards is only meaningful when cluster mode is enabled
+	if !d.Get("enable_cluster_mode").(bool) {
+		return true
+	}
+
 	newValue, err := strconv.Atoi(new)
 	if err != nil {
 		return false // Unexpected new value type
