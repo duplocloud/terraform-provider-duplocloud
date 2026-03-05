@@ -99,7 +99,8 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Description: "The storage volume size, in GB, for the ElasticSearch instance.",
 			Type:        schema.TypeInt,
 			Optional:    true,
-			//ForceNew:    true,
+			Computed:    true,
+			Deprecated:  "storage_size has been deprecated, use ebs_options.volume_size",
 		},
 		"ebs_options": {
 			Description: "The EBS storage options for the ElasticSearch instance.",
@@ -206,9 +207,10 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 						Default:  1,
 					},
 					"instance_type": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "t2.small.search",
+						Description: "Supported instance types for elasticsearch domain https://docs.aws.amazon.com/opensearch-service/latest/developerguide/supported-instance-types.html",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Default:     "t2.small.search",
 					},
 					"cold_storage_options": {
 						Type:     schema.TypeList,
