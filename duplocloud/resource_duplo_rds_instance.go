@@ -1311,6 +1311,9 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			}
 		}
 	}
+	if eng == RDS_DOCUMENT_DB_ENGINE && diff.Get("auto_minor_version_upgrade").(bool) {
+		return fmt.Errorf("auto_minor_version_upgrade is not supported for DocumentDB (engine 13)")
+	}
 	return nil
 }
 
