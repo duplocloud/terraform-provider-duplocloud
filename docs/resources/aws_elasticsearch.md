@@ -34,9 +34,9 @@ resource "duplocloud_aws_elasticsearch" "es-doc" {
 }
 
 
-resource "duplocloud_aws_elasticsearch" "sample" {
+resource "duplocloud_aws_elasticsearch" "essample" {
   tenant_id             = duplocloud_tenant.myapp.tenant_id
-  name                  = "es-sample"
+  name                  = "essamp"
   selected_zone         = 1
   elasticsearch_version = "OpenSearch_2.3"
   ebs_options {
@@ -46,22 +46,26 @@ resource "duplocloud_aws_elasticsearch" "sample" {
   }
 }
 
-resource "duplocloud_aws_elasticsearch" "sample" {
+resource "duplocloud_aws_elasticsearch" "essample2" {
   tenant_id             = duplocloud_tenant.myapp.tenant_id
-  name                  = "es-sample2"
+  name                  = "essamp2"
   selected_zone         = 1
-  elasticsearch_version = "OpenSearch_2.3"
+  elasticsearch_version = "OpenSearch_3.3"
   cluster_config {
-    instance_type          = "t3.small.search"
-    dedicated_master_type  = "t3.small.search"
+    instance_type          = "or2.medium.search"
+    dedicated_master_type  = "or2.medium.search"
     dedicated_master_count = 3
   }
   ebs_options {
     ebs_enabled = true
-    iops        = 0
-    volume_size = 10
-    volume_type = "gp2"
+    volume_type = "gp3"
+    volume_size = 100
+    iops        = 3000
   }
+  encrypt_at_rest {
+    kms_key_id = "<kms-arn>"
+  }
+
 }
 ```
 
