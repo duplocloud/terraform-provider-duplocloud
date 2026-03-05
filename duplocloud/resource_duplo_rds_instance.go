@@ -344,10 +344,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ForceNew: true,
 		},
 		"auto_minor_version_upgrade": {
-			Description: "Enable or disable auto minor version upgrade",
+			Description: "Enable or disable auto minor version upgrade. This attribute is ignored for DocumentDB (engine 13) — AWS manages minor version upgrades for DocumentDB and this setting has no effect.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				return d.Get("engine").(int) == RDS_DOCUMENT_DB_ENGINE
+			},
 		},
 		"storage_autoscaling": {
 			Optional: true,
@@ -1311,8 +1314,8 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			}
 		}
 	}
-	if eng == RDS_DOCUMENT_DB_ENGINE && diff.Get("auto_minor_version_upgrade").(bool) {
-		return fmt.Errorf("auto_minor_version_upgrade is not supported for DocumentDB (engine 13)")
+	if eng == RDS_DOCUMENT_DB_ENGINE && diff.HasChange("enable_iam_auth") && diff.Get("enable_iam_auth").(bool) {
+		return fmt.Errorf("enable_iam_auth is not supported for DocumentDB (engine 13)")
 	}
 	return nil
 }
