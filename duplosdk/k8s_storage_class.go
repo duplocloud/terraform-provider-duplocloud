@@ -66,12 +66,22 @@ func (c *Client) K8StorageClassUpdate(tenantID string, rq *DuploK8sStorageClass)
 // K8StorageClassCreateOrUpdate creates or updates a k8s StorageClass via the Duplo API.
 func (c *Client) K8StorageClassCreateOrUpdate(tenantID string, rq *DuploK8sStorageClass, updating bool) (*DuploK8sStorageClass, ClientError) {
 	resp := DuploK8sStorageClass{}
-	err := c.postAPI(
-		fmt.Sprintf("K8StorageClassCreateOrUpdate(%s, %s)", tenantID, rq.Name),
-		fmt.Sprintf("v3/subscriptions/%s/k8s/storageclass", tenantID),
-		&rq,
-		&resp,
-	)
+	var err ClientError
+	if updating {
+		err = c.putAPI(
+			fmt.Sprintf("K8StorageClassCreateOrUpdate(%s, %s)", tenantID, rq.Name),
+			fmt.Sprintf("v3/subscriptions/%s/k8s/storageclass/%s", tenantID, rq.Name),
+			&rq,
+			&resp,
+		)
+	} else {
+		err = c.postAPI(
+			fmt.Sprintf("K8StorageClassCreateOrUpdate(%s, %s)", tenantID, rq.Name),
+			fmt.Sprintf("v3/subscriptions/%s/k8s/storageclass", tenantID),
+			&rq,
+			&resp,
+		)
+	}
 	return &resp, err
 }
 

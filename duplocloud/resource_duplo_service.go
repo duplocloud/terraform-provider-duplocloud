@@ -58,6 +58,70 @@ func duploServiceSchema() map[string]*schema.Schema {
 				return json
 			},
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// The API may auto-inject ServiceAccountName into OtherDockerConfig. If the
+				// user hasn't specified ServiceAccountName in their config, strip it from the
+				// state value before comparing to suppress the perpetual diff (DUPLO-39931).
+				// Similarly, strip auto-injected 'image' from initContainers in the old value
+				// if the user's config doesn't specify 'image' there (they use
+				// init_container_docker_image instead) (DUPLO-41963).
+				if old != "" && new != "" {
+					var newDefn map[string]interface{}
+					var oldDefn map[string]interface{}
+					if err := json.Unmarshal([]byte(new), &newDefn); err == nil {
+						if err := json.Unmarshal([]byte(old), &oldDefn); err == nil {
+							// Normalize both old and new keys to PascalCase for
+							// case-insensitive field detection. Using PascalCase (not
+							// lowercase) avoids corrupting multi-word keys like
+							// HostNetwork: makeMapLowerCaseKeys would turn it into
+							// "hostnetwork", which strings.Title cannot restore correctly
+							// (produces "Hostnetwork" not "HostNetwork"), causing
+							// canonicalization to emit duplicate keys and a perpetual
+							// diff (DUPLO-39931).
+							makeMapUpperCamelCase(newDefn)
+							makeMapUpperCamelCase(oldDefn)
+							if _, userSpecifiedSA := newDefn["ServiceAccountName"]; !userSpecifiedSA {
+								if _, hasIt := oldDefn["ServiceAccountName"]; hasIt {
+									delete(oldDefn, "ServiceAccountName")
+									if b, err := json.Marshal(oldDefn); err == nil {
+										old = string(b)
+									}
+								}
+							}
+							// Strip auto-injected 'image' from initContainers in old value
+							// if the user's new config initContainers don't have 'image'.
+							if oldICs, ok := oldDefn["InitContainers"].([]interface{}); ok {
+								newICs, _ := newDefn["InitContainers"].([]interface{})
+								anyNewHasImage := false
+								for _, nc := range newICs {
+									if ncMap, ok := nc.(map[string]interface{}); ok {
+										makeMapUpperCamelCase(ncMap)
+										if _, hasImg := ncMap["Image"]; hasImg {
+											anyNewHasImage = true
+											break
+										}
+									}
+								}
+								if !anyNewHasImage {
+									changed := false
+									for _, oc := range oldICs {
+										if ocMap, ok := oc.(map[string]interface{}); ok {
+											makeMapUpperCamelCase(ocMap)
+											if _, hasImg := ocMap["Image"]; hasImg {
+												delete(ocMap, "Image")
+												changed = true
+											}
+										}
+									}
+									if changed {
+										if b, err := json.Marshal(oldDefn); err == nil {
+											old = string(b)
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 				equal, _ := otherDockerConfigsAreEquivalent(old, new)
 				return equal
 			},
@@ -314,6 +378,10 @@ func resourceDuploServiceRead(ctx context.Context, d *schema.ResourceData, m int
 	// Read the object into state
 	flattenDuploService(d, duplo)
 	d.Set("tenant_id", tenantID)
+	// force_recreate_on_volumes_change is client-side only (not returned by the API).
+	// Explicitly preserve the current state value (or the default false on import) to
+	// avoid perpetual drift after import (DUPLO-41963).
+	d.Set("force_recreate_on_volumes_change", d.Get("force_recreate_on_volumes_change").(bool))
 	log.Printf("[TRACE] resourceDuploServiceRead(%s, %s): end", tenantID, name)
 	return nil
 }
@@ -498,59 +566,59 @@ func resourceDuploServiceDelete(ctx context.Context, d *schema.ResourceData, m i
 }
 
 func extractInitContainerImages(d *schema.ResourceData, otherDockerConfig string) ([]interface{}, error) {
-	if v, ok := d.GetOk("init_container_docker_image"); ok && v != nil && len(v.([]interface{})) > 0 {
-		log.Printf("[DEBUG] Start: extractInitContainerImages with other_docker_config: %s", otherDockerConfig)
-		// Parse the JSON string
-		var config map[string]interface{}
-		if err := json.Unmarshal([]byte(otherDockerConfig), &config); err != nil {
-			return nil, fmt.Errorf("failed to parse other_docker_config JSON: %v", err)
+	log.Printf("[DEBUG] Start: extractInitContainerImages with other_docker_config: %s", otherDockerConfig)
+	// Parse the JSON string
+	var config map[string]interface{}
+	if err := json.Unmarshal([]byte(otherDockerConfig), &config); err != nil {
+		return nil, fmt.Errorf("failed to parse other_docker_config JSON: %v", err)
+	}
+
+	// Check if "initContainers" key exists
+	initContainersRaw, exists := config["initContainers"]
+	if !exists {
+		return nil, nil
+	}
+
+	// Convert to []interface{}
+	initContainers, ok := initContainersRaw.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("initContainers is not an array")
+	}
+
+	// Prepare the extracted images list
+	var extractedImages []interface{}
+
+	// Iterate over initContainers safely
+	for _, containerRaw := range initContainers {
+		containerMap, valid := containerRaw.(map[string]interface{})
+		if !valid {
+			continue // Skip invalid entries
 		}
 
-		// Check if "initContainers" key exists
-		initContainersRaw, exists := config["initContainers"]
-		if !exists {
-			return nil, nil
+		name, nameExists := containerMap["name"].(string)
+		image, imgExists := containerMap["image"].(string)
+
+		// Ensure both "name" and "image" exist
+		if nameExists && imgExists {
+			delete(containerMap, "image")
+			extractedImages = append(extractedImages, map[string]interface{}{
+				"name":  name,
+				"image": image,
+			})
 		}
+	}
 
-		// Convert to []interface{}
-		initContainers, ok := initContainersRaw.([]interface{})
-		if !ok {
-			return nil, fmt.Errorf("initContainers is not an array")
-		}
-
-		// Prepare the extracted images list
-		var extractedImages []interface{}
-
-		// Iterate over initContainers safely
-		for _, containerRaw := range initContainers {
-			containerMap, valid := containerRaw.(map[string]interface{})
-			if !valid {
-				continue // Skip invalid entries
-			}
-
-			name, nameExists := containerMap["name"].(string)
-			image, imgExists := containerMap["image"].(string)
-
-			// Ensure both "name" and "image" exist
-			if nameExists && imgExists {
-				delete(containerMap, "image")
-				extractedImages = append(extractedImages, map[string]interface{}{
-					"name":  name,
-					"image": image,
-				})
-			}
-		}
+	if len(extractedImages) > 0 {
 		odc, err := json.Marshal(config)
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling updated other_docker_config: %v", err)
 		}
-		// Set the updated other_docker_config back to the resource data, This does not have images in initContainers
+		// Set the updated other_docker_config back to the resource data; this version does not have images in initContainers
 		d.Set("other_docker_config", string(odc))
-		log.Printf("[DEBUG] End: extractInitContainerImages with extracted images: %v", extractedImages)
-
-		return extractedImages, nil
 	}
-	return nil, nil
+
+	log.Printf("[DEBUG] End: extractInitContainerImages with extracted images: %v", extractedImages)
+	return extractedImages, nil
 }
 
 func updateInitContainerImages(otheDockerConfigJSON string, imagesList []interface{}) (string, error) {

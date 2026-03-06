@@ -717,10 +717,6 @@ func validateJsonObjectArray(key string, value string) (ws []string, errors []er
 	return
 }
 
-// Internal function to convert map keys from lower camel-case to upper camel-case.
-//   - Adds an upper camel-case entry for each lower camel-case entry, unless the upper exists already.
-//   - Removes any lower camel-case entry.
-//   - Never overwrites any existing upper camel-case keys.
 func makeMapUpperCamelCase(m map[string]interface{}) {
 	for k := range m {
 
