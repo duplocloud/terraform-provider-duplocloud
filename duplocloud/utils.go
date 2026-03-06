@@ -717,7 +717,6 @@ func validateJsonObjectArray(key string, value string) (ws []string, errors []er
 	return
 }
 
-
 func makeMapUpperCamelCase(m map[string]interface{}) {
 	for k := range m {
 
