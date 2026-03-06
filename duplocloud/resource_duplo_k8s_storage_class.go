@@ -211,7 +211,27 @@ func resourceK8sStorageClassCreate(ctx context.Context, d *schema.ResourceData, 
 
 // UPDATE resource
 func resourceK8sStorageClassUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return resourceK8sStorageClassCreate(ctx, d, m)
+	tenantID, fullname, err := parseK8sStorageClassIdParts(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceK8sStorageClassUpdate(%s, %s): start", tenantID, fullname)
+
+	rq, expandErr := expandK8sStorageClass(d)
+	if expandErr != nil {
+		return diag.FromErr(expandErr)
+	}
+	rq.Name = fullname // use full prefixed name so SDK sends PUT .../storageclass/{fullname}
+
+	c := m.(*duplosdk.Client)
+	_, cerr := c.K8StorageClassUpdate(tenantID, rq)
+	if cerr != nil {
+		return diag.FromErr(cerr)
+	}
+
+	diags := resourceK8sStorageClassRead(ctx, d, m)
+	log.Printf("[TRACE] resourceK8sStorageClassUpdate(%s, %s): end", tenantID, fullname)
+	return diags
 }
 
 // DELETE resource

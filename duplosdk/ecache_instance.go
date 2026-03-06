@@ -161,6 +161,18 @@ func (c *Client) EcacheInstanceUpdateAutomaticFailover(tenantID, name string, rq
 		&rq, nil)
 }
 
+type DuplocloudEcacheMultiAZUpdateRequest struct {
+	Identifier     string `json:"Identifier"`
+	MultiAZEnabled bool   `json:"MultiAZEnabled"`
+}
+
+func (c *Client) EcacheInstanceUpdateMultiAZ(tenantID, name string, rq DuplocloudEcacheMultiAZUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateMultiAZ(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateMultiAZ", tenantID),
+		&rq, nil)
+}
+
 func (c *Client) EcacheInstanceGet(tenantID, name string) (*DuploEcacheInstance, ClientError) {
 
 	// Call the API.

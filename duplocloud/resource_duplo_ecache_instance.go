@@ -124,14 +124,17 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "Enables automatic failover.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+<<<<<<< HEAD
 			Default:     false,
+=======
+			Computed:    true,
+>>>>>>> master
 		},
 		"multi_az_enabled": {
 			Description: "Enables Multi-AZ support for the ElastiCache instance. Multi-AZ is only applicable for Redis (cache_type=0) and Valkey (cache_type=2). When enabled, automatic_failover_enabled must also be set to true.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			ForceNew:    true,
-			Default:     false,
+			Computed:    true,
 		},
 		"encryption_in_transit": {
 			Description: "Enables encryption-in-transit.",
@@ -877,6 +880,13 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 		multiAz = multiAzVal.(bool)
 	}
 
+<<<<<<< HEAD
+=======
+	if diff.Id() != "" && diff.HasChange("multi_az_enabled") {
+		return fmt.Errorf("multi_az_enabled cannot be changed after creation; please recreate the resource to change this setting")
+	}
+
+>>>>>>> master
 	if multiAz && !failover {
 		failoverRaw := diff.GetRawConfig().GetAttr("automatic_failover_enabled")
 		if failoverRaw.IsKnown() && !failoverRaw.IsNull() {
@@ -1084,6 +1094,25 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 			AutomaticFailoverEnabled: newVal,
 		}
 		cerr := c.EcacheInstanceUpdateAutomaticFailover(tenantID, name, rq)
+		if cerr != nil {
+			return diag.FromErr(cerr)
+		}
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+	if d.HasChange("multi_az_enabled") {
+		newVal := d.Get("multi_az_enabled").(bool)
+		if newVal && !d.Get("automatic_failover_enabled").(bool) {
+			return diag.Errorf("To enable multi_az_enabled, automatic_failover_enabled must be true")
+		}
+		rq := duplosdk.DuplocloudEcacheMultiAZUpdateRequest{
+			Identifier:     identifier,
+			MultiAZEnabled: newVal,
+		}
+		cerr := c.EcacheInstanceUpdateMultiAZ(tenantID, name, rq)
 		if cerr != nil {
 			return diag.FromErr(cerr)
 		}

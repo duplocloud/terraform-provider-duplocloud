@@ -81,11 +81,13 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"elasticsearch_version": {
-			Description: "The version of the ElasticSearch instance.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			ForceNew:    true,
-			Default:     "7.9",
+			Description: "The version of the ElasticSearch/OpenSearch instance. " +
+				"Accepts the short form (e.g. `7.9`) or the full prefixed form (e.g. `Elasticsearch_7.9`, `OpenSearch_2.15`).",
+			Type:             schema.TypeString,
+			Optional:         true,
+			ForceNew:         true,
+			Default:          "Elasticsearch_7.9",
+			DiffSuppressFunc: suppressElasticsearchVersionDiff,
 		},
 		"endpoints": {
 			Description: "The endpoints to use when connecting to the ElasticSearch instance.",
@@ -97,27 +99,35 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 			Description: "The storage volume size, in GB, for the ElasticSearch instance.",
 			Type:        schema.TypeInt,
 			Optional:    true,
-			//ForceNew:    true,
+			Computed:    true,
+			Deprecated:  "storage_size has been deprecated, use ebs_options.volume_size",
 		},
 		"ebs_options": {
-			Type:     schema.TypeList,
-			Computed: true,
+			Description: "The EBS storage options for the ElasticSearch instance.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"ebs_enabled": {
 						Type:     schema.TypeBool,
+						Optional: true,
 						Computed: true,
 					},
 					"iops": {
 						Type:     schema.TypeInt,
+						Optional: true,
 						Computed: true,
 					},
 					"volume_size": {
 						Type:     schema.TypeInt,
+						Optional: true,
 						Computed: true,
 					},
 					"volume_type": {
 						Type:     schema.TypeString,
+						Optional: true,
 						Computed: true,
 					},
 				},
@@ -189,7 +199,7 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 						Type:             schema.TypeString,
 						Optional:         true,
 						DiffSuppressFunc: isDedicatedMasterDisabled,
-						Default:          "t2.small.elasticsearch",
+						Default:          "t2.small.search",
 					},
 					"instance_count": {
 						Type:     schema.TypeInt,
@@ -197,9 +207,10 @@ func awsElasticSearchSchema() map[string]*schema.Schema {
 						Default:  1,
 					},
 					"instance_type": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "t2.small.elasticsearch",
+						Description: "Supported instance types for elasticsearch domain https://docs.aws.amazon.com/opensearch-service/latest/developerguide/supported-instance-types.html",
+						Type:        schema.TypeString,
+						Optional:    true,
+						Default:     "t2.small.search",
 					},
 					"cold_storage_options": {
 						Type:     schema.TypeList,
@@ -392,18 +403,14 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 	duploVPCOptions := duplosdk.DuploElasticSearchDomainVPCOptions{}
 	duploObject := duplosdk.DuploElasticSearchDomainRequest{
 		Name:                       d.Get("name").(string),
-		Version:                    d.Get("elasticsearch_version").(string),
+		Version:                    normalizeElasticsearchVersion(d.Get("elasticsearch_version").(string)),
 		RequireSSL:                 d.Get("require_ssl").(bool),
 		UseLatestTLSCipher:         d.Get("use_latest_tls_cipher").(bool),
 		EnableNodeToNodeEncryption: d.Get("enable_node_to_node_encryption").(bool),
 
 		VPCOptions: duploVPCOptions,
 	}
-	if size, ok := d.GetOk("storage_size"); ok {
-		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
-			VolumeSize: size.(int),
-		}
-	}
+	duploObject.EBSOptions = expandEBSOptions(d)
 
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
@@ -484,6 +491,20 @@ func resourceDuploAwsElasticSearchCreate(ctx context.Context, d *schema.Resource
 		}
 	}
 
+	// Default VolumeSize to 20 for EBS-backed instance types when not specified.
+	// NVMe-backed instance types (im4gn, i3, i4i, i4g, R6gd) use local storage and do not use EBS.
+	if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") &&
+		!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.") &&
+		!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4i.") &&
+		!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4g.") &&
+		!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "R6gd.")) &&
+		(duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
+		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
+			VolumeSize: 20,
+			VolumeType: &duplosdk.DuploStringValue{Value: "gp2"},
+		}
+	}
+
 	// Post the object to Duplo
 	err = c.TenantUpdateElasticSearchDomain(tenantID, &duploObject)
 	if err != nil {
@@ -516,7 +537,7 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 	duploObject := duplosdk.DuploElasticSearchDomainRequest{
 		State:                      "update",
 		Name:                       d.Get("name").(string),
-		Version:                    d.Get("elasticsearch_version").(string),
+		Version:                    normalizeElasticsearchVersion(d.Get("elasticsearch_version").(string)),
 		RequireSSL:                 d.Get("require_ssl").(bool),
 		UseLatestTLSCipher:         d.Get("use_latest_tls_cipher").(bool),
 		EnableNodeToNodeEncryption: d.Get("enable_node_to_node_encryption").(bool),
@@ -599,6 +620,9 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 		}
 	}
 
+	duploObject.EBSOptions = expandEBSOptions(d)
+
+	// Default VolumeSize to 20 for EBS-backed instance types when not specified
 	if (!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "im4gn.") &&
 		!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i3.") &&
 		!strings.Contains(duploObject.ClusterConfig.InstanceType.Value, "i4i.") &&
@@ -607,8 +631,8 @@ func resourceDuploAwsElasticSearchUpdate(ctx context.Context, d *schema.Resource
 		(duploObject.EBSOptions == nil || duploObject.EBSOptions.VolumeSize == 0) {
 		duploObject.EBSOptions = &duplosdk.DuploElasticSearchDomainEBSOptions{
 			VolumeSize: 20,
+			VolumeType: &duplosdk.DuploStringValue{Value: "gp2"},
 		}
-
 	}
 
 	// Post the object to Duplo
@@ -689,7 +713,11 @@ func awsElasticSearchDomainEBSOptionsToState(duplo *duplosdk.DuploElasticSearchD
 	if duplo.EBSEnabled {
 		ebsOptions["ebs_enabled"] = true
 		ebsOptions["iops"] = duplo.IOPS
-		ebsOptions["volume_type"] = duplo.VolumeType.Value
+		if duplo.VolumeType != nil {
+			ebsOptions["volume_type"] = duplo.VolumeType.Value
+		} else {
+			ebsOptions["volume_type"] = ""
+		}
 		ebsOptions["volume_size"] = duplo.VolumeSize
 	} else {
 		ebsOptions["ebs_enabled"] = false
@@ -733,7 +761,7 @@ func awsElasticSearchDomainClusterConfigFromState(m map[string]interface{}, dupl
 	if v, ok := m["instance_type"]; ok {
 		duplo.InstanceType.Value = v.(string)
 	} else {
-		duplo.InstanceType.Value = "t2.small.elasticsearch"
+		duplo.InstanceType.Value = "t2.small.search"
 	}
 	if v, ok := m["cold_storage_options"]; ok {
 		obj := v.([]interface{})
@@ -893,6 +921,49 @@ func awsElasticSearchDomainWaitUntilDeleted(ctx context.Context, c *duplosdk.Cli
 	log.Printf("[DEBUG] awsElasticSearchDomainWaitUntilDeleted (%s/%s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+// normalizeElasticsearchVersion converts legacy short-form versions (e.g. "7.9") to the
+// prefixed form now required by the OpenSearch API (e.g. "Elasticsearch_7.9").
+func normalizeElasticsearchVersion(v string) string {
+	if strings.HasPrefix(v, "Elasticsearch_") || strings.HasPrefix(v, "OpenSearch_") {
+		return v
+	}
+	return "Elasticsearch_" + v
+}
+
+func suppressElasticsearchVersionDiff(k, old, new string, d *schema.ResourceData) bool {
+	return normalizeElasticsearchVersion(old) == normalizeElasticsearchVersion(new)
+}
+
+func expandEBSOptions(d *schema.ResourceData) *duplosdk.DuploElasticSearchDomainEBSOptions {
+	// Use d.Get (not GetOk) for Optional+Computed TypeList: GetOk returns false on
+	// new resources because there is no prior state to diff against.
+	ebsList := d.Get("ebs_options").([]interface{})
+	if len(ebsList) > 0 && ebsList[0] != nil {
+		ebsMap := ebsList[0].(map[string]interface{})
+		opts := &duplosdk.DuploElasticSearchDomainEBSOptions{}
+		if v, ok := ebsMap["ebs_enabled"]; ok {
+			opts.EBSEnabled = v.(bool)
+		}
+		if v, ok := ebsMap["volume_size"]; ok && v.(int) > 0 {
+			opts.VolumeSize = v.(int)
+		}
+		if v, ok := ebsMap["iops"]; ok && v.(int) > 0 {
+			opts.IOPS = v.(int)
+		}
+		if v, ok := ebsMap["volume_type"]; ok && v.(string) != "" {
+			opts.VolumeType = &duplosdk.DuploStringValue{Value: v.(string)}
+		}
+		return opts
+	}
+	// Fall back to storage_size for backwards compatibility
+	if size, ok := d.GetOk("storage_size"); ok {
+		return &duplosdk.DuploElasticSearchDomainEBSOptions{
+			VolumeSize: size.(int),
+		}
+	}
+	return nil
 }
 
 func validateEBSStorage(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
