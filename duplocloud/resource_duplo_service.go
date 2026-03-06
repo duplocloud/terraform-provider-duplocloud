@@ -69,24 +69,33 @@ func duploServiceSchema() map[string]*schema.Schema {
 					var oldDefn map[string]interface{}
 					if err := json.Unmarshal([]byte(new), &newDefn); err == nil {
 						if err := json.Unmarshal([]byte(old), &oldDefn); err == nil {
-							// Normalize both old and new keys to lowercase for
-							// case-insensitive field detection.
-							makeMapLowerCaseKeys(newDefn)
-							makeMapLowerCaseKeys(oldDefn)
-							if _, userSpecifiedSA := newDefn["serviceaccountname"]; !userSpecifiedSA {
-								delete(oldDefn, "serviceaccountname")
-								if b, err := json.Marshal(oldDefn); err == nil {
-									old = string(b)
+							// Normalize both old and new keys to PascalCase for
+							// case-insensitive field detection. Using PascalCase (not
+							// lowercase) avoids corrupting multi-word keys like
+							// HostNetwork: makeMapLowerCaseKeys would turn it into
+							// "hostnetwork", which strings.Title cannot restore correctly
+							// (produces "Hostnetwork" not "HostNetwork"), causing
+							// canonicalization to emit duplicate keys and a perpetual
+							// diff (DUPLO-39931).
+							makeMapUpperCamelCase(newDefn)
+							makeMapUpperCamelCase(oldDefn)
+							if _, userSpecifiedSA := newDefn["ServiceAccountName"]; !userSpecifiedSA {
+								if _, hasIt := oldDefn["ServiceAccountName"]; hasIt {
+									delete(oldDefn, "ServiceAccountName")
+									if b, err := json.Marshal(oldDefn); err == nil {
+										old = string(b)
+									}
 								}
 							}
 							// Strip auto-injected 'image' from initContainers in old value
 							// if the user's new config initContainers don't have 'image'.
-							if oldICs, ok := oldDefn["initcontainers"].([]interface{}); ok {
-								newICs, _ := newDefn["initcontainers"].([]interface{})
+							if oldICs, ok := oldDefn["InitContainers"].([]interface{}); ok {
+								newICs, _ := newDefn["InitContainers"].([]interface{})
 								anyNewHasImage := false
 								for _, nc := range newICs {
 									if ncMap, ok := nc.(map[string]interface{}); ok {
-										if _, hasImg := ncMap["image"]; hasImg {
+										makeMapUpperCamelCase(ncMap)
+										if _, hasImg := ncMap["Image"]; hasImg {
 											anyNewHasImage = true
 											break
 										}
@@ -96,8 +105,9 @@ func duploServiceSchema() map[string]*schema.Schema {
 									changed := false
 									for _, oc := range oldICs {
 										if ocMap, ok := oc.(map[string]interface{}); ok {
-											if _, hasImg := ocMap["image"]; hasImg {
-												delete(ocMap, "image")
+											makeMapUpperCamelCase(ocMap)
+											if _, hasImg := ocMap["Image"]; hasImg {
+												delete(ocMap, "Image")
 												changed = true
 											}
 										}
