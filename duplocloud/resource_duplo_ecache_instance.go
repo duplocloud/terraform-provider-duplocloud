@@ -124,11 +124,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "Enables automatic failover.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-<<<<<<< HEAD
-			Default:     false,
-=======
 			Computed:    true,
->>>>>>> master
 		},
 		"multi_az_enabled": {
 			Description: "Enables Multi-AZ support for the ElastiCache instance. Multi-AZ is only applicable for Redis (cache_type=0) and Valkey (cache_type=2). When enabled, automatic_failover_enabled must also be set to true.",
@@ -880,13 +876,10 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 		multiAz = multiAzVal.(bool)
 	}
 
-<<<<<<< HEAD
-=======
 	if diff.Id() != "" && diff.HasChange("multi_az_enabled") {
 		return fmt.Errorf("multi_az_enabled cannot be changed after creation; please recreate the resource to change this setting")
 	}
 
->>>>>>> master
 	if multiAz && !failover {
 		failoverRaw := diff.GetRawConfig().GetAttr("automatic_failover_enabled")
 		if failoverRaw.IsKnown() && !failoverRaw.IsNull() {
