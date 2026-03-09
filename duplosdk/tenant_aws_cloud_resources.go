@@ -426,8 +426,9 @@ type DuploKafkaBootstrapBrokers struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name,omitempty"`
 
-	BootstrapBrokerString    string `json:"BootstrapBrokerString,omitempty"`
-	BootstrapBrokerStringTls string `json:"BootstrapBrokerStringTls,omitempty"`
+	BootstrapBrokerString        string `json:"BootstrapBrokerString,omitempty"`
+	BootstrapBrokerStringTls     string `json:"BootstrapBrokerStringTls,omitempty"`
+	BootstrapBrokerStringSaslIam string `json:"BootstrapBrokerStringSaslIam,omitempty"`
 }
 
 type DuploApiGatewayRequest struct {
