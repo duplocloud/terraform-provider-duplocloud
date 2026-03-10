@@ -128,6 +128,11 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"sasl_iam_bootstrap_broker_string": {
+			Description: "The bootstrap broker connect string for SASL/IAM authenticated connections.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"number_of_broker_nodes": {
 			Description: "The desired total number of broker nodes in the kafka cluster.",
 			Type:        schema.TypeInt,
@@ -257,9 +262,11 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 		if bootstrap != nil {
 			plaintextBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerString)
 			tlsBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerStringTls)
+			saslIamBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerStringSaslIam)
 
 			d.Set("plaintext_bootstrap_broker_string", plaintextBootstrapBrokerString)
 			d.Set("tls_bootstrap_broker_string", tlsBootstrapBrokerString)
+			d.Set("sasl_iam_bootstrap_broker_string", saslIamBootstrapBrokerString)
 		}
 		d.Set("state", info.State.Value)
 		d.Set("tags", info.Tags)
