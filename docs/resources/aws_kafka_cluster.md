@@ -51,6 +51,7 @@ resource "duplocloud_aws_kafka_cluster" "serverless" {
 See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html) for more information.
 - `is_serverless` (Boolean) Enable to make the cluster serverless.  When enabled, the `instance_type`, `storage_size`, `kafka_version`, `configuration_arn`, `configuration_revision`, and `encryption_in_transit` parameters are not applicable. Defaults to `false`.
 - `kafka_version` (String) The version of the Kafka cluster.
+- `sasl_iam` (Boolean) Enable SASL/IAM client authentication. Applies to both provisioned and serverless clusters.
 - `storage_size` (Number) The size of the Kafka storage, in gigabytes.
 - `subnets` (List of String) The list of subnets that the cluster will be launched in.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -65,6 +66,7 @@ See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguid
 - `number_of_broker_nodes` (Number) The desired total number of broker nodes in the kafka cluster.
 - `plaintext_bootstrap_broker_string` (String) The bootstrap broker connect string for plaintext (unencrypted) connections.
 - `plaintext_zookeeper_connect_string` (String) The Zookeeper connect string for plaintext (unencrypted) connections.
+- `sasl_iam_bootstrap_broker_string` (String) The bootstrap broker connect string for SASL/IAM authenticated connections.
 - `security_groups` (List of String) The list of security groups used by the cluster.
 - `state` (String) The current state of the cluster.
 - `tags` (Map of String)
