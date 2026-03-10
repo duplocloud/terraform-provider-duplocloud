@@ -361,15 +361,29 @@ type DuploKafkaClusterRequest struct {
 	Provisioned *DuploKafkaProvisionedConfig `json:"Provisioned,omitempty"`
 }
 
+type DuploKafkaClientAuthentication struct {
+	Sasl *DuploKafkaSasl `json:"Sasl,omitempty"`
+}
+
+type DuploKafkaSasl struct {
+	Iam *DuploKafkaSaslIam `json:"Iam,omitempty"`
+}
+
+type DuploKafkaSaslIam struct {
+	Enabled bool `json:"Enabled"`
+}
+
 type DuploKafkaProvisionedConfig struct {
-	KafkaVersion      string                           `json:"KafkaVersion,omitempty"`
-	BrokerNodeGroup   *DuploKafkaBrokerNodeGroupInfo   `json:"BrokerNodeGroupInfo,omitempty"`
-	ConfigurationInfo *DuploKafkaConfigurationInfo     `json:"ConfigurationInfo,omitempty"`
-	EncryptionInfo    *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
+	KafkaVersion         string                           `json:"KafkaVersion,omitempty"`
+	BrokerNodeGroup      *DuploKafkaBrokerNodeGroupInfo   `json:"BrokerNodeGroupInfo,omitempty"`
+	ConfigurationInfo    *DuploKafkaConfigurationInfo     `json:"ConfigurationInfo,omitempty"`
+	EncryptionInfo       *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
+	ClientAuthentication *DuploKafkaClientAuthentication  `json:"ClientAuthentication,omitempty"`
 }
 
 type DuploKafkaServerlessConfig struct {
-	VpcConfigs []DuploKafkaServerlessVpcConfigs `json:"VpcConfigs"`
+	VpcConfigs           []DuploKafkaServerlessVpcConfigs `json:"VpcConfigs"`
+	ClientAuthentication *DuploKafkaClientAuthentication  `json:"ClientAuthentication,omitempty"`
 }
 
 type DuploKafkaServerlessVpcConfigs struct {
@@ -410,12 +424,15 @@ type DuploKafkaProvisionedInfo struct {
 	ZookeeperConnectString    string                           `json:"ZookeeperConnectString,omitempty"`
 	ZookeeperConnectStringTls string                           `json:"ZookeeperConnectStringTls,omitempty"`
 	EncryptionInfo            *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
+	ClientAuthentication      *DuploKafkaClientAuthentication  `json:"ClientAuthentication,omitempty"`
 }
+
 type DuploKafkaServerlessInfo struct {
 	VpcConfigs []struct {
 		SubnetIds        []string `json:"SubnetIds,omitempty"`
 		SecurityGroupIds []string `json:"SecurityGroupIds,omitempty"`
 	} `json:"VpcConfigs,omitempty"`
+	ClientAuthentication *DuploKafkaClientAuthentication `json:"ClientAuthentication,omitempty"`
 }
 
 // DuploKafkaBootstrapBrokers represents a non-cached view of an AWS kafka cluster's bootstrap brokers for a Duplo tenant

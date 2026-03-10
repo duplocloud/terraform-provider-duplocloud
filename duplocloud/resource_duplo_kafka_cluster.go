@@ -156,6 +156,13 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			Default:     false,
 			ForceNew:    true,
 		},
+		"sasl_iam": {
+			Description: "Enable SASL/IAM client authentication. Applies to both provisioned and serverless clusters.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true,
+		},
 	}
 }
 
@@ -222,12 +229,16 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 	if info != nil {
 		if info.ClusterType != nil && strings.EqualFold(info.ClusterType.Value, "Serverless") {
 			d.Set("is_serverless", true)
-			if info.Serverless != nil && info.Serverless.VpcConfigs != nil {
-				for _, vpcConfig := range info.Serverless.VpcConfigs {
-					d.Set("subnets", vpcConfig.SubnetIds)
-					d.Set("security_groups", vpcConfig.SecurityGroupIds)
+			if info.Serverless != nil {
+				if info.Serverless.VpcConfigs != nil {
+					for _, vpcConfig := range info.Serverless.VpcConfigs {
+						d.Set("subnets", vpcConfig.SubnetIds)
+						d.Set("security_groups", vpcConfig.SecurityGroupIds)
+					}
 				}
-
+				if info.Serverless.ClientAuthentication != nil && info.Serverless.ClientAuthentication.Sasl != nil && info.Serverless.ClientAuthentication.Sasl.Iam != nil {
+					d.Set("sasl_iam", info.Serverless.ClientAuthentication.Sasl.Iam.Enabled)
+				}
 			}
 		} else if info.Provisioned != nil {
 			if info.Provisioned.BrokerNodeGroup != nil {
@@ -256,6 +267,9 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 			}
 			if info.Provisioned.EncryptionInfo != nil && info.Provisioned.EncryptionInfo.InTransit != nil && info.Provisioned.EncryptionInfo.InTransit.ClientBroker != nil {
 				d.Set("encryption_in_transit", info.Provisioned.EncryptionInfo.InTransit.ClientBroker.Value)
+			}
+			if info.Provisioned.ClientAuthentication != nil && info.Provisioned.ClientAuthentication.Sasl != nil && info.Provisioned.ClientAuthentication.Sasl.Iam != nil {
+				d.Set("sasl_iam", info.Provisioned.ClientAuthentication.Sasl.Iam.Enabled)
 			}
 			d.Set("current_version", info.CurrentVersion)
 		}
@@ -286,6 +300,18 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 		Name: d.Get("name").(string),
 	}
 
+	// Build ClientAuthentication if sasl_iam is enabled.
+	var clientAuth *duplosdk.DuploKafkaClientAuthentication
+	if v, ok := d.GetOk("sasl_iam"); ok && v.(bool) {
+		clientAuth = &duplosdk.DuploKafkaClientAuthentication{
+			Sasl: &duplosdk.DuploKafkaSasl{
+				Iam: &duplosdk.DuploKafkaSaslIam{
+					Enabled: true,
+				},
+			},
+		}
+	}
+
 	if v, ok := d.GetOk("is_serverless"); ok && v.(bool) {
 		rq.ClusterType = "Serverless"
 		if v, ok = d.GetOk("subnets"); ok && v != nil {
@@ -297,11 +323,13 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 				}
 			}
 			rq.Serverless = &duplosdk.DuploKafkaServerlessConfig{
-				VpcConfigs: result,
+				VpcConfigs:           result,
+				ClientAuthentication: clientAuth,
 			}
 		} else {
-			rq.Serverless = &duplosdk.DuploKafkaServerlessConfig{}
-
+			rq.Serverless = &duplosdk.DuploKafkaServerlessConfig{
+				ClientAuthentication: clientAuth,
+			}
 		}
 	} else {
 		rq.ClusterType = "Provisioned"
@@ -332,6 +360,9 @@ func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m i
 				},
 			}
 		}
+
+		// Apply ClientAuthentication settings.
+		p.ClientAuthentication = clientAuth
 		rq.Provisioned = p
 	}
 	c := m.(*duplosdk.Client)
@@ -500,6 +531,12 @@ func validateKafkaParameters(ctx context.Context, d *schema.ResourceDiff, m inte
 		}
 		if v := d.Get("kafka_version"); v.(string) == "" {
 			return fmt.Errorf("kafka_version required for provisioned cluster when is_serverless is false")
+		}
+		if v, ok := d.GetOk("sasl_iam"); ok && v.(bool) {
+			enc, _ := d.GetOk("encryption_in_transit")
+			if enc == nil || enc.(string) != "TLS" {
+				return fmt.Errorf("encryption_in_transit must be set to \"TLS\" when sasl_iam is enabled on a provisioned cluster")
+			}
 		}
 	}
 	return nil
