@@ -157,11 +157,12 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"sasl_iam": {
-			Description: "Enable SASL/IAM client authentication. Applies to both provisioned and serverless clusters.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Computed:    true,
-			ForceNew:    true,
+			Description: "Enable SASL/IAM client authentication. Applies to both provisioned and serverless clusters. " +
+				"**Note:** In-place updates of this property are not currently supported. To change this setting, update it directly in AWS and run `terraform import` to sync the state. " +
+				"For serverless clusters, SASL/IAM is always enabled and cannot be disabled.",
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
 		},
 	}
 }
@@ -240,7 +241,10 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 					d.Set("sasl_iam", info.Serverless.ClientAuthentication.Sasl.Iam.Enabled)
 				}
 			}
-		} else if info.Provisioned != nil {
+		} else {
+			d.Set("is_serverless", false)
+		}
+		if info.Provisioned != nil {
 			if info.Provisioned.BrokerNodeGroup != nil {
 				plaintextZookeeperConnectString := sortCommaDelimitedString(info.Provisioned.ZookeeperConnectString)
 				tlsZookeeperConnectString := sortCommaDelimitedString(info.Provisioned.ZookeeperConnectStringTls)
@@ -522,6 +526,9 @@ func validateKafkaParameters(ctx context.Context, d *schema.ResourceDiff, m inte
 		if v, ok := d.GetOk("encryption_in_transit"); ok && v.(string) != "" {
 			return fmt.Errorf("encryption_in_transit not applicable when is_serverless is true")
 		}
+		if d.NewValueKnown("sasl_iam") && !d.Get("sasl_iam").(bool) {
+			return fmt.Errorf("sasl_iam cannot be set to false for serverless clusters, SASL/IAM is always enabled")
+		}
 	} else {
 		if v := d.Get("instance_type"); v.(string) == "" {
 			return fmt.Errorf("instance_type required for provisioned cluster when is_serverless is false")
@@ -539,5 +546,11 @@ func validateKafkaParameters(ctx context.Context, d *schema.ResourceDiff, m inte
 			}
 		}
 	}
+
+	// In-place updates of sasl_iam are not currently supported. Update the setting directly in AWS and import the updated state.
+	if d.Id() != "" && d.HasChange("sasl_iam") {
+		return fmt.Errorf("in-place updates of sasl_iam are not supported; update the setting directly in AWS and run `terraform import` to sync the state")
+	}
+
 	return nil
 }
