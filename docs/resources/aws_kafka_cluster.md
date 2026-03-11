@@ -51,7 +51,7 @@ resource "duplocloud_aws_kafka_cluster" "serverless" {
 See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html) for more information.
 - `is_serverless` (Boolean) Enable to make the cluster serverless.  When enabled, the `instance_type`, `storage_size`, `kafka_version`, `configuration_arn`, `configuration_revision`, and `encryption_in_transit` parameters are not applicable. Defaults to `false`.
 - `kafka_version` (String) The version of the Kafka cluster.
-- `sasl_iam` (Boolean) Enable SASL/IAM client authentication. Applies to both provisioned and serverless clusters. **Note:** In-place updates of this property are not supported. To change this setting, update it directly in AWS and run `terraform import` to sync the state. For serverless clusters, SASL/IAM is always enabled and cannot be disabled.
+- `sasl_iam` (Boolean) Enable SASL/IAM client authentication. Applies to both provisioned and serverless clusters. **Note:** In-place updates of this property are not currently supported. To change this setting, update it directly in AWS and run `terraform import` to sync the state. For serverless clusters, SASL/IAM is always enabled and cannot be disabled.
 - `storage_size` (Number) The size of the Kafka storage, in gigabytes.
 - `subnets` (List of String) The list of subnets that the cluster will be launched in.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
