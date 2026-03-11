@@ -158,7 +158,7 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 		},
 		"sasl_iam": {
 			Description: "Enable SASL/IAM client authentication. Applies to both provisioned and serverless clusters. " +
-				"**Note:** In-place updates of this property are not supported. To change this setting, update it directly in AWS and run `terraform import` to sync the state. " +
+				"**Note:** In-place updates of this property are not currently supported. To change this setting, update it directly in AWS and run `terraform import` to sync the state. " +
 				"For serverless clusters, SASL/IAM is always enabled and cannot be disabled.",
 			Type:     schema.TypeBool,
 			Optional: true,
