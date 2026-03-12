@@ -79,18 +79,19 @@ type DuploS3Bucket struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-"`
 
-	Name              string                 `json:"Name,omitempty"`
-	DomainName        string                 `json:"DomainName,omitempty"`
-	Region            string                 `json:"Region,omitempty"`
-	Location          string                 `json:"Location,omitempty"`
-	Arn               string                 `json:"Arn,omitempty"`
-	MetaData          string                 `json:"MetaData,omitempty"`
-	EnableVersioning  bool                   `json:"EnableVersioning,omitempty"`
-	EnableAccessLogs  bool                   `json:"EnableAccessLogs,omitempty"`
-	AllowPublicAccess bool                   `json:"AllowPublicAccess,omitempty"`
-	DefaultEncryption string                 `json:"DefaultEncryption,omitempty"`
-	Policies          []string               `json:"Policies,omitempty"`
-	Tags              *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	Name                 string                 `json:"Name,omitempty"`
+	DomainName           string                 `json:"DomainName,omitempty"`
+	Region               string                 `json:"Region,omitempty"`
+	Location             string                 `json:"Location,omitempty"`
+	Arn                  string                 `json:"Arn,omitempty"`
+	MetaData             string                 `json:"MetaData,omitempty"`
+	EnableVersioning     bool                   `json:"EnableVersioning,omitempty"`
+	EnableAccessLogs     bool                   `json:"EnableAccessLogs,omitempty"`
+	AllowPublicAccess    bool                   `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryption    string                 `json:"DefaultEncryption,omitempty"`
+	Policies             []string               `json:"Policies,omitempty"`
+	Tags                 *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	CorsAllowedHostNames []string               `json:"CorsAllowedHostNames,omitempty"`
 }
 
 type DuploGCPBucket struct {
