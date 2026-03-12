@@ -25,7 +25,7 @@ func duploAwsTagSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"arn": {
-			Description: "The resource arn of which custom tag need to be created.",
+			Description: "The resource ARN of which custom tag need to be created. **Note:** ASG (Auto Scaling Group) ARNs are not supported.",
 			Type:        schema.TypeString,
 			ForceNew:    true,
 			Required:    true,
@@ -46,7 +46,7 @@ func duploAwsTagSchema() map[string]*schema.Schema {
 
 func resourceAwsCustomTag() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_aws_tag` manages an AWS custom tag for resources in Duplo.",
+		Description: "`duplocloud_aws_tag` manages an AWS custom tag for resources in Duplo.\n\n~> **Note:** AWS Auto Scaling Group (ASG) resources are **not supported** by this resource. The underlying bulk tagging API does not support ASG ARNs. To tag ASG resources, use the `minion_tags` attribute in `duplocloud_asg_profile` instead.",
 
 		ReadContext:   resourceAwsTagRead,
 		CreateContext: resourceAwsTagCreate,
