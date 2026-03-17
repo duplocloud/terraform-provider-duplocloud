@@ -23,6 +23,7 @@ description: |-
 ### Read-Only
 
 - `capacity_provider_strategy` (List of Object) (see [below for nested schema](#nestedatt--capacity_provider_strategy))
+- `deployment_configuration` (List of Object) (see [below for nested schema](#nestedatt--deployment_configuration))
 - `dns_prfx` (String) The DNS prefix to assign to this service's load balancer.
 - `health_check_grace_period_seconds` (Number)
 - `id` (String) The ID of this resource.
@@ -30,8 +31,8 @@ description: |-
 - `is_target_group_only` (Boolean)
 - `load_balancer` (List of Object) Zero or more load balancer configurations to associate with this service. (see [below for nested schema](#nestedatt--load_balancer))
 - `old_task_definition_buffer_size` (Number) The number of older task definitions to retain in AWS.
-- `placement_constraint` (List of Object) (see [below for nested schema](#nestedatt--placement_constraint))
-- `placement_strategy` (List of Object) (see [below for nested schema](#nestedatt--placement_strategy))
+- `placement_constraint` (List of Object) Rules that are taken into consideration during task placement. Maximum number of `placement_constraints` is `10` (see [below for nested schema](#nestedatt--placement_constraint))
+- `placement_strategy` (List of Object) Service level strategy rules that are taken into consideration during task placement. List from top to bottom in order of precedence. The maximum number of `placement_strategy` blocks is `5` (see [below for nested schema](#nestedatt--placement_strategy))
 - `replicas` (Number) The number of container replicas to create.
 - `target_group_arns` (Set of String)
 - `task_definition` (String) The ARN of the task definition to use.
@@ -45,6 +46,28 @@ Read-Only:
 - `base` (Number)
 - `capacity_provider` (String)
 - `weight` (Number)
+
+
+<a id="nestedatt--deployment_configuration"></a>
+### Nested Schema for `deployment_configuration`
+
+Read-Only:
+
+- `alarms` (List of Object) (see [below for nested schema](#nestedobjatt--deployment_configuration--alarms))
+- `enable_circuit_breaker` (Boolean)
+- `maximum_percent` (Number)
+- `minimum_healthy_percent` (Number)
+- `rollback_circuit_breaker` (Boolean)
+
+<a id="nestedobjatt--deployment_configuration--alarms"></a>
+### Nested Schema for `deployment_configuration.alarms`
+
+Read-Only:
+
+- `enable` (Boolean)
+- `names` (List of String)
+- `rollback` (Boolean)
+
 
 
 <a id="nestedatt--load_balancer"></a>
@@ -80,6 +103,7 @@ Read-Only:
 
 - `grpc_success_code` (String)
 - `health_check_interval_seconds` (Number)
+- `health_check_port` (Number)
 - `health_check_timeout_seconds` (Number)
 - `healthy_threshold_count` (Number)
 - `http_success_code` (String)

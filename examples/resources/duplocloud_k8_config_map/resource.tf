@@ -10,8 +10,9 @@ resource "duplocloud_k8_config_map" "myapp" {
 
   data = jsonencode({ foo = "bar2" })
   labels = {
-    ke1 = "val1"
-    ke2 = "val3"
+    ke1                           = "val1"
+    ke2                           = "val3"
+    "app.duplocloud.net/app-name" = "<appname>"
   }
 }
 

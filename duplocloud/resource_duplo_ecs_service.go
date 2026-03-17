@@ -85,7 +85,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			Description: "Zero or more load balancer configurations to associate with this service.",
 			Type:        schema.TypeList,
 			Optional:    true,
-			ForceNew:    true,
+			//ForceNew:    true,
 			// MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -98,7 +98,8 @@ func ecsServiceSchema() map[string]*schema.Schema {
 							"Should be one of:\n\n" +
 							"   - `0` : ELB (Classic Load Balancer)\n" +
 							"   - `1` : ALB (Application Load Balancer)\n" +
-							"   - `2` : Health-check Only (No Load Balancer)\n",
+							"   - `2` : Health-check Only (No Load Balancer)\n" +
+							"   - `6` : NLB (Network Load Balancer)\n",
 						Type:     schema.TypeInt,
 						Optional: false,
 						Required: true,
@@ -153,7 +154,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Default:     false,
 					},
 					"health_check_url": {
-						Description: "The health check URL to associate with this load balancer configuration.",
+						Description: "The health check URL to associate with this load balancer configuration. Not applicable for NLB",
 						Type:        schema.TypeString,
 						Optional:    true,
 						Required:    false,
@@ -210,7 +211,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Computed:    true,
 					},
 					"health_check_config": {
-						Description: "Health check configuration for this load balancer.",
+						Description: "Health check configuration for this load balancer. Not applicable for NLB",
 						Type:        schema.TypeList,
 						Optional:    true,
 						MaxItems:    1,
@@ -245,6 +246,12 @@ func ecsServiceSchema() map[string]*schema.Schema {
 									Type:     schema.TypeString,
 									Optional: true,
 									Computed: true,
+								},
+								"health_check_port": {
+									Type:        schema.TypeInt,
+									Optional:    true,
+									Computed:    true,
+									Description: "The port the load balancer uses when performing health checks on targets. If not specified, it will be treated as the traffic port.",
 								},
 							},
 						},
@@ -283,35 +290,105 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			},
 		},
 		"placement_strategy": {
-			Type:     schema.TypeList,
-			MaxItems: 5,
-			Optional: true,
+			Type:        schema.TypeList,
+			MaxItems:    5,
+			Optional:    true,
+			Description: "Service level strategy rules that are taken into consideration during task placement. List from top to bottom in order of precedence. The maximum number of `placement_strategy` blocks is `5`",
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"type": {
-						Type:     schema.TypeString,
-						Required: true,
+						Description:  "Type of placement strategy. Must be one of: `binpack`, `random`, or `spread`",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"binpack", "random", "spread"}, false),
 					},
 					"field": {
-						Type:     schema.TypeString,
-						Optional: true,
+						Description: "For the spread placement strategy, valid values are instanceId, or any platform or custom attribute that is applied to a container instance. For the binpack type, valid values are memory and cpu. For the random type, this attribute is not needed. For more information, see [PlacementStrategy](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_PlacementStrategy.html)",
+						Type:        schema.TypeString,
+						Optional:    true,
 					},
 				},
 			},
 		},
 		"placement_constraint": {
-			Type:     schema.TypeList,
-			MaxItems: 10,
-			Optional: true,
+			Type:        schema.TypeList,
+			MaxItems:    10,
+			Optional:    true,
+			Description: "Rules that are taken into consideration during task placement. Maximum number of `placement_constraints` is `10`",
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"type": {
-						Type:     schema.TypeString,
-						Required: true,
+						Description:  "Type of constraint. The only valid values at this time are `memberOf` and `distinctInstance`",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringInSlice([]string{"memberOf", "distinctInstance"}, false),
 					},
 					"expression": {
-						Type:     schema.TypeString,
+						Description: "Cluster Query Language expression to apply to the constraint. Does not need to be specified for the distinctInstance type. For more information, see [Cluster Query Language in the Amazon EC2 Container Service Developer Guide](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-query-language.html).",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+				},
+			},
+		},
+		"deployment_configuration": {
+			Type:     schema.TypeList,
+			MaxItems: 1,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"minimum_healthy_percent": {
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+						Description: "Specifies the minimum percentage of tasks that must remain in the RUNNING state during a deployment",
+					},
+					"maximum_percent": {
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Computed:     true,
+						Description:  "Specifies the maximum percentage of tasks that can run at once during a deployment.",
+						ValidateFunc: validation.IntAtLeast(100),
+					},
+					"enable_circuit_breaker": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+						Description: "Enables ECS deployment circuit breaker to stop deployments on failures.",
+					},
+					"rollback_circuit_breaker": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     false,
+						Description: "Enables automatic rollback when the circuit breaker detects a failed deployment.",
+					},
+					"alarms": {
+						Type:     schema.TypeList,
 						Optional: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"enable": {
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     false,
+									Description: "Enables or disables CloudWatch alarm monitoring during deployments.",
+								},
+								"rollback": {
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     false,
+									Description: "Automatically rolls back the deployment if any configured CloudWatch alarm enters ALARM state.",
+								},
+								"names": {
+									Type:        schema.TypeList,
+									Description: "Names of CloudWatch alarms that ECS monitors during deployments.",
+									Optional:    true,
+									Elem: &schema.Schema{
+										Type: schema.TypeString,
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -354,6 +431,7 @@ func resourceDuploEcsServiceRead(ctx context.Context, d *schema.ResourceData, m 
 	if clientError != nil {
 		// TODO - Remove ServiceNotFoundException check once backend returns error code 404, Currenlty its 400.
 		if clientError.Status() == 404 || strings.Contains(clientError.Error(), "ServiceNotFoundException") {
+			log.Printf("[DEBUG] resourceDuploEcsServiceRead: ECS Service %s not found for tenantId %s, removing from state", d.Id(), d.Get("tenant_id"))
 			d.SetId("")
 			return nil
 		}
@@ -441,6 +519,7 @@ func resourceDuploEcsServiceDelete(ctx context.Context, d *schema.ResourceData, 
 		if err != nil {
 			// TODO - Remove ServiceNotFoundException check once backend returns error code 404, Currenlty its 400.
 			if err.Status() == 404 || strings.Contains(err.Error(), "ServiceNotFoundException") {
+				log.Printf("[DEBUG] resourceDuploEcsServiceDelete: ECS Service %s not found for tenantId %s, removing from state", d.Id(), d.Get("tenant_id"))
 				return nil
 			}
 			return diag.FromErr(err)
@@ -482,9 +561,47 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 	if duplo.PlacementConstraints != nil && len(*duplo.PlacementConstraints) > 0 {
 		d.Set("placement_constraint", flattenPlacementConstraints(duplo.PlacementConstraints))
 	}
+	if duplo.DeploymentConfiguration != nil {
+		d.Set("deployment_configuration", flattenDeploumentConfiguration(duplo.DeploymentConfiguration))
+	}
+
+	// Populate target_group_arns, always setting it to avoid stale state.
+	// Only persist ARNs when required target groups are confirmed created (rp == true).
+	targetGroupArns := []string{}
+	if duplo.LBConfigurations != nil && len(*duplo.LBConfigurations) > 0 {
+		rp, err, arns := c.EcsServiceRequiredTargetGroupsCreated(duplo.TenantID, duplo)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if rp && len(arns) > 0 {
+			targetGroupArns = arns
+		}
+	}
+	d.Set("target_group_arns", targetGroupArns)
+
 	return nil
 }
 
+func flattenDeploumentConfiguration(duplo *duplosdk.DuploEcsDeploymentConfiguration) []interface{} {
+	m := map[string]interface{}{}
+	m["maximum_percent"] = duplo.MaximumPercent
+	m["minimum_healthy_percent"] = duplo.MinimumHealthyPercent
+	if duplo.DeploymentCircuitBreaker != nil {
+		m["enable_circuit_breaker"] = duplo.DeploymentCircuitBreaker.Enable
+		m["rollback_circuit_breaker"] = duplo.DeploymentCircuitBreaker.Rollback
+	}
+	if duplo.Alarms != nil {
+		m["alarms"] = flattenAlarms(duplo.Alarms)
+	}
+	return []interface{}{m}
+}
+func flattenAlarms(duplo *duplosdk.DuploEcsDeploymentConfigAlarms) []interface{} {
+	m := map[string]interface{}{}
+	m["names"] = duplo.AlarmNames
+	m["rollback"] = duplo.Rollback
+	m["enable"] = duplo.Enable
+	return []interface{}{m}
+}
 func flattenDuploEcsServiceLbs(duplo *duplosdk.DuploEcsService, c *duplosdk.Client) ([]map[string]interface{}, error) {
 	// Next, convert things into structured data.
 	loadBalancers := ecsLoadBalancersToState(duplo.Name, duplo.LBConfigurations)
@@ -520,9 +637,43 @@ func ecsServiceFromState(d *schema.ResourceData) *duplosdk.DuploEcsService {
 	duploObject.CapacityProviderStrategy = expandCapacityProviderStrategies(d.Get("capacity_provider_strategy").([]interface{}))
 	duploObject.PlacementStrategy = expandPlacementStrategies(d.Get("placement_strategy").([]interface{}))
 	duploObject.PlacementConstraints = expandPlacementConstraint(d.Get("placement_constraint").([]interface{}))
+	if val, ok := d.GetOk("deployment_configuration"); ok && val != nil {
+		duploObject.DeploymentConfiguration = expandDeploymentConfiguration(val.([]interface{}))
+
+	}
 	return &duploObject
 }
+func expandDeploymentConfiguration(dc []interface{}) *duplosdk.DuploEcsDeploymentConfiguration {
+	body := &duplosdk.DuploEcsDeploymentConfiguration{}
+	m := dc[0].(map[string]interface{})
+	body.MaximumPercent = m["maximum_percent"].(int)
+	body.MinimumHealthyPercent = m["minimum_healthy_percent"].(int)
+	body.DeploymentCircuitBreaker = &duplosdk.DuploEcsDeploymentCircuitBreaker{
+		Enable:   m["enable_circuit_breaker"].(bool),
+		Rollback: m["rollback_circuit_breaker"].(bool),
+	}
+	if v, ok := m["alarms"]; ok && v != nil {
+		alarms := v.([]interface{})
+		alarmBody := &duplosdk.DuploEcsDeploymentConfigAlarms{}
+		for _, alarm := range alarms {
+			ma := alarm.(map[string]interface{})
+			alarmBody.Enable = ma["enable"].(bool)
+			alarmBody.Rollback = ma["rollback"].(bool)
+			if v, ok := ma["names"].([]interface{}); ok && len(v) > 0 {
+				s := []string{}
+				for _, name := range v {
+					s = append(s, name.(string))
 
+				}
+				alarmBody.AlarmNames = s
+
+			}
+		}
+		body.Alarms = alarmBody
+	}
+
+	return body
+}
 func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConfig) []map[string]interface{} {
 	log.Printf("[TRACE] ecsLoadBalancersToState ******** start")
 	if lbcs == nil {
@@ -594,6 +745,10 @@ func ecsLoadBalancersHealthCheckConfigToState(hcc *duplosdk.DuploEcsServiceLbHea
 		config["grpc_success_code"] = hcc.GrpcSuccessCode
 		configPresent = true
 	}
+	if hcc.HealthCheckPort != nil {
+		config["health_check_port"] = *hcc.HealthCheckPort
+		configPresent = true
+	}
 	if !configPresent {
 		return nil
 	}
@@ -657,6 +812,12 @@ func ecsLoadBalancerHealthCheckConfigFromState(d *schema.ResourceData, lbHealthC
 		HttpSuccessCode:            lbHealthConfig["http_success_code"].(string),
 		GrpcSuccessCode:            lbHealthConfig["grpc_success_code"].(string),
 	}
+
+	// Only set HealthCheckPort if non-zero (0 means use traffic port, send nil to backend)
+	if port := lbHealthConfig["health_check_port"].(int); port != 0 {
+		hcc.HealthCheckPort = &port
+	}
+
 	return &hcc
 }
 

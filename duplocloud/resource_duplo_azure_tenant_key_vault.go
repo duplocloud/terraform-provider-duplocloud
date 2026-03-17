@@ -113,6 +113,7 @@ func resourceAzureTenantKeyVaultRead(ctx context.Context, d *schema.ResourceData
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureTenantKeyVaultRead: Azure tenant key vault %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -169,6 +170,7 @@ func resourceAzureTenantKeyVaultDelete(ctx context.Context, d *schema.ResourceDa
 	clientErr := c.TenantKeyVaultDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureTenantKeyVaultDelete: Azure tenant key vault %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure tenant key vault '%s': %s", tenantID, name, clientErr)

@@ -22,6 +22,12 @@ type flowContextKeyType string
 
 const flowContextKey flowContextKeyType = "flow"
 
+// stripFamilyPrefix removes the {prefix}{tenant-name}- prefix from ECS task definition family names
+func stripFamilyPrefix(family, prefix, tenantName string) string {
+	fullPrefix := prefix + "-" + tenantName + "-"
+	return strings.TrimPrefix(family, fullPrefix)
+}
+
 // ecsTaskDefinitionSchema returns a Terraform resource schema for an ECS Task Definition
 func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -38,6 +44,22 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// If either value is empty, don't suppress (allow the change)
+				if old == "" || new == "" {
+					return false
+				}
+
+				// The backend automatically adds a prefix like "duploservices-{tenant}-" or "{custom-prefix}-{tenant}-"
+				// to the family name. The Read function strips this prefix, but during some operations (like imports
+				// or state migrations), one value might be prefixed and the other not.
+				// Since tenant names can contain dashes (e.g., "ray-rel-2001"), we can't use simple regex patterns.
+				// Instead, we check if one value is a suffix of the other, which handles all prefix scenarios.
+				if strings.HasSuffix(old, new) || strings.HasSuffix(new, old) {
+					return true
+				}
+				return old == new
+			},
 		},
 		"full_family_name": {
 			Description: "The name of the task definition to create.",
@@ -60,10 +82,10 @@ func ecsTaskDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"prevent_tf_destroy": {
-			Description: "Prevent this resource to be deleted from terraform destroy.",
+			Description: "Prevent this resource from deleting the task definition version; if set to false, it will remove the latest revision.\n**Note**: This is a provider-local field intended for internal logic. It may trigger a non-functional diff during a terraform import, but it does not impact the physical resource or its attributes during an apply.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Default:     "true",
+			Default:     true,
 		},
 		"container_definitions": {
 			Type:     schema.TypeString,
@@ -303,16 +325,34 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.EcsTaskDefinitionGetV2(tenantID, arn)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, cerr := c.EcsTaskDefinitionGetV2(tenantID, arn)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[DEBUG] resourceDuploEcacheGlobalDatastoreRead: Ecache Global Datastore not found for tenantId %s, removing from state", tenantID)
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if rp == nil || rp.Arn == "" {
 		d.SetId("")
 		return nil
 	}
+	tenant, cerr := c.TenantGetV2(tenantID)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("Tenant %s not found", tenantID)
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Duplocloud resource tenant information'\n%s", err)
+	}
+	prefix, err := c.GetResourcePrefixWithoutTenant("duploservices")
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	// Convert the object into Terraform resource data
-	flattenEcsTaskDefinition(rp, d)
+	flattenEcsTaskDefinition(rp, d, tenant.AccountName, prefix)
 	f := d.Get("prevent_tf_destroy").(string)
 	d.Set("prevent_tf_destroy", f)
 	// this is to check if the flow happened after create context
@@ -372,9 +412,13 @@ func resourceDuploEcsTaskDefinitionDelete(ctx context.Context, d *schema.Resourc
 	log.Printf("[TRACE] Prevent destroy is %s", preventDestroy)
 	if preventDestroy == "false" {
 		c := m.(*duplosdk.Client)
-		err = c.EcsTaskDefinitionDelete(tenantID, arn)
-		if err != nil {
-			return diag.FromErr(err)
+		cerr := c.EcsTaskDefinitionDelete(tenantID, arn)
+		if cerr != nil {
+			if cerr.Status() == 404 {
+				log.Printf("[DEBUG] resourceDuploEcacheGlobalDatastoreRead: Ecache Global Datastore not found for tenantId %s, removing from state", tenantID)
+				return nil
+			}
+			return diag.FromErr(cerr)
 		}
 		// Wait for the task definition to be missing
 		diags = waitForResourceToBeMissingAfterDelete(ctx, d, "ECS Task Defnition", id, func() (interface{}, duplosdk.ClientError) {
@@ -456,7 +500,7 @@ func expandEcsTaskDefinition(d *schema.ResourceData) (*duplosdk.DuploEcsTaskDef,
 	return &duplo, nil
 }
 
-func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.ResourceData) {
+func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.ResourceData, tenantName, prefix string) {
 
 	// First, convert things into simple scalars
 	d.Set("tenant_id", duplo.TenantID)
@@ -470,21 +514,10 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("ipc_mode", duplo.IpcMode)
 	d.Set("pid_mode", duplo.PidMode)
 	// stop updating state unitl we have EC2 support
-	if len(duplo.Compatibilities) > 0 {
-		ipRC := d.Get("requires_compatibilities").(*schema.Set)
-		m := map[string]interface{}{}
-		for _, i := range ipRC.List() {
-			m[i.(string)] = struct{}{}
-		}
+	if len(duplo.RequiresCompatibilities) > 0 {
 		inf := []interface{}{}
-		for _, comp := range duplo.Compatibilities {
-			if len(m) > 0 {
-				if _, ok := m[comp]; ok {
-					inf = append(inf, comp)
-				}
-			} else {
-				inf = append(inf, comp)
-			}
+		for _, comp := range duplo.RequiresCompatibilities {
+			inf = append(inf, comp)
 		}
 		d.Set("requires_compatibilities", inf)
 	}
@@ -506,16 +539,9 @@ func flattenEcsTaskDefinition(duplo *duplosdk.DuploEcsTaskDef, d *schema.Resourc
 	d.Set("requires_attributes", ecsRequiresAttributesToState(duplo.RequiresAttributes))
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("runtime_platform", ecsPlatformRuntimeToState(duplo.RuntimePlatform))
-	if !strings.Contains(d.Get("family").(string), "duploservices-") {
-		parts := strings.SplitN(duplo.Family, "-", 3)
 
-		if len(parts) == 3 {
-			d.Set("family", parts[2])
-		}
-	} else {
-		d.Set("family", duplo.Family)
-
-	}
+	// Always strip the prefix to normalize the family name
+	d.Set("family", stripFamilyPrefix(duplo.Family, prefix, tenantName))
 }
 
 // An internal function that compares two ECS container definitions to see if they are equivalent.
@@ -663,10 +689,9 @@ func reduceContainerDefinition(defn map[string]interface{}, isAWSVPC, isLogConfi
 		delete(defn, "LogConfiguration")
 	}
 
-	// Set all empty slices to nil.
 	for k, v := range defn {
 		if isInterfaceEmptySlice(v) {
-			defn[k] = nil
+			delete(defn, k)
 		}
 	}
 

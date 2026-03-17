@@ -43,7 +43,7 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 		"kafka_version": {
 			Description: "The version of the Kafka cluster.",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			ForceNew:    true,
 		},
 		"configuration_arn": {
@@ -64,13 +64,13 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			Description: "The Kafka node instance type to use.\n" +
 				"See the [AWS documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html) for more information.",
 			Type:     schema.TypeString,
-			Required: true,
+			Optional: true,
 			ForceNew: true,
 		},
 		"storage_size": {
 			Description: "The size of the Kafka storage, in gigabytes.",
 			Type:        schema.TypeInt,
-			Required:    true,
+			Optional:    true,
 			ForceNew:    true,
 		},
 		"encryption_in_transit": {
@@ -128,6 +128,11 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		"sasl_iam_bootstrap_broker_string": {
+			Description: "The bootstrap broker connect string for SASL/IAM authenticated connections.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"number_of_broker_nodes": {
 			Description: "The desired total number of broker nodes in the kafka cluster.",
 			Type:        schema.TypeInt,
@@ -141,6 +146,22 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 
 		"current_version": {
 			Type:     schema.TypeString,
+			Computed: true,
+		},
+
+		"is_serverless": {
+			Description: "Enable to make the cluster serverless.  When enabled, the `instance_type`, `storage_size`, `kafka_version`, `configuration_arn`, `configuration_revision`, and `encryption_in_transit` parameters are not applicable.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+			ForceNew:    true,
+		},
+		"sasl_iam": {
+			Description: "Enable SASL/IAM client authentication. Applies to both provisioned and serverless clusters. " +
+				"**Note:** In-place updates of this property are not currently supported. To change this setting, update it directly in AWS and run `terraform import` to sync the state. " +
+				"For serverless clusters, SASL/IAM is always enabled and cannot be disabled.",
+			Type:     schema.TypeBool,
+			Optional: true,
 			Computed: true,
 		},
 	}
@@ -163,7 +184,8 @@ func resourceAwsKafkaCluster() *schema.Resource {
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 			Update: schema.DefaultTimeout(60 * time.Minute),
 		},
-		Schema: kafkaClusterSchema(),
+		Schema:        kafkaClusterSchema(),
+		CustomizeDiff: validateKafkaParameters,
 	}
 }
 
@@ -206,44 +228,68 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Next, set fields that come from extended information.
 	if info != nil {
-		if info.BrokerNodeGroup != nil {
-			plaintextZookeeperConnectString := sortCommaDelimitedString(info.ZookeeperConnectString)
-			tlsZookeeperConnectString := sortCommaDelimitedString(info.ZookeeperConnectStringTls)
+		if info.ClusterType != nil && strings.EqualFold(info.ClusterType.Value, "Serverless") {
+			d.Set("is_serverless", true)
+			if info.Serverless != nil {
+				if info.Serverless.VpcConfigs != nil {
+					for _, vpcConfig := range info.Serverless.VpcConfigs {
+						d.Set("subnets", vpcConfig.SubnetIds)
+						d.Set("security_groups", vpcConfig.SecurityGroupIds)
+					}
+				}
+				if info.Serverless.ClientAuthentication != nil && info.Serverless.ClientAuthentication.Sasl != nil && info.Serverless.ClientAuthentication.Sasl.Iam != nil {
+					d.Set("sasl_iam", info.Serverless.ClientAuthentication.Sasl.Iam.Enabled)
+				}
+			}
+		} else {
+			d.Set("is_serverless", false)
+		}
+		if info.Provisioned != nil {
+			if info.Provisioned.BrokerNodeGroup != nil {
+				plaintextZookeeperConnectString := sortCommaDelimitedString(info.Provisioned.ZookeeperConnectString)
+				tlsZookeeperConnectString := sortCommaDelimitedString(info.Provisioned.ZookeeperConnectStringTls)
 
-			d.Set("instance_type", info.BrokerNodeGroup.InstanceType)
-			d.Set("storage_size", info.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize)
-			d.Set("plaintext_zookeeper_connect_string", plaintextZookeeperConnectString)
-			d.Set("tls_zookeeper_connect_string", tlsZookeeperConnectString)
-			d.Set("number_of_broker_nodes", info.NumberOfBrokerNodes)
-			if info.BrokerNodeGroup.AZDistribution != nil {
-				d.Set("az_distribution", info.BrokerNodeGroup.AZDistribution.Value)
+				d.Set("instance_type", info.Provisioned.BrokerNodeGroup.InstanceType)
+				d.Set("storage_size", info.Provisioned.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize)
+				d.Set("plaintext_zookeeper_connect_string", plaintextZookeeperConnectString)
+				d.Set("tls_zookeeper_connect_string", tlsZookeeperConnectString)
+				d.Set("number_of_broker_nodes", info.Provisioned.NumberOfBrokerNodes)
+				if info.Provisioned.BrokerNodeGroup.AZDistribution != nil {
+					d.Set("az_distribution", info.Provisioned.BrokerNodeGroup.AZDistribution.Value)
+				}
+				if info.Provisioned.BrokerNodeGroup.Subnets != nil {
+					d.Set("subnets", info.Provisioned.BrokerNodeGroup.Subnets)
+				}
+				if info.Provisioned.BrokerNodeGroup.SecurityGroups != nil {
+					d.Set("security_groups", info.Provisioned.BrokerNodeGroup.SecurityGroups)
+				}
 			}
-			if info.BrokerNodeGroup.Subnets != nil {
-				d.Set("subnets", info.BrokerNodeGroup.Subnets)
+			if info.Provisioned.CurrentSoftware != nil {
+				d.Set("kafka_version", info.Provisioned.CurrentSoftware.KafkaVersion)
+				d.Set("configuration_arn", info.Provisioned.CurrentSoftware.ConfigurationArn)
+				d.Set("configuration_revision", info.Provisioned.CurrentSoftware.ConfigurationRevision)
 			}
-			if info.BrokerNodeGroup.SecurityGroups != nil {
-				d.Set("security_groups", info.BrokerNodeGroup.SecurityGroups)
+			if info.Provisioned.EncryptionInfo != nil && info.Provisioned.EncryptionInfo.InTransit != nil && info.Provisioned.EncryptionInfo.InTransit.ClientBroker != nil {
+				d.Set("encryption_in_transit", info.Provisioned.EncryptionInfo.InTransit.ClientBroker.Value)
 			}
+			if info.Provisioned.ClientAuthentication != nil && info.Provisioned.ClientAuthentication.Sasl != nil && info.Provisioned.ClientAuthentication.Sasl.Iam != nil {
+				d.Set("sasl_iam", info.Provisioned.ClientAuthentication.Sasl.Iam.Enabled)
+			}
+			d.Set("current_version", info.CurrentVersion)
 		}
-		if info.CurrentSoftware != nil {
-			d.Set("kafka_version", info.CurrentSoftware.KafkaVersion)
-			d.Set("configuration_arn", info.CurrentSoftware.ConfigurationArn)
-			d.Set("configuration_revision", info.CurrentSoftware.ConfigurationRevision)
-		}
-		if info.EncryptionInfo != nil && info.EncryptionInfo.InTransit != nil && info.EncryptionInfo.InTransit.ClientBroker != nil {
-			d.Set("encryption_in_transit", info.EncryptionInfo.InTransit.ClientBroker.Value)
-		}
-		d.Set("current_version", info.CurrentVersion)
-	}
-	if bootstrap != nil {
-		plaintextBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerString)
-		tlsBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerStringTls)
+		if bootstrap != nil {
+			plaintextBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerString)
+			tlsBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerStringTls)
+			saslIamBootstrapBrokerString := sortCommaDelimitedString(bootstrap.BootstrapBrokerStringSaslIam)
 
-		d.Set("plaintext_bootstrap_broker_string", plaintextBootstrapBrokerString)
-		d.Set("tls_bootstrap_broker_string", tlsBootstrapBrokerString)
+			d.Set("plaintext_bootstrap_broker_string", plaintextBootstrapBrokerString)
+			d.Set("tls_bootstrap_broker_string", tlsBootstrapBrokerString)
+			d.Set("sasl_iam_bootstrap_broker_string", saslIamBootstrapBrokerString)
+		}
+		d.Set("state", info.State.Value)
+		d.Set("tags", info.Tags)
+
 	}
-	d.Set("state", info.State.Value)
-	d.Set("tags", info.Tags)
 
 	log.Printf("[TRACE] resourceKafkaClusterRead ******** end")
 	return nil
@@ -253,39 +299,76 @@ func resourceKafkaClusterRead(ctx context.Context, d *schema.ResourceData, m int
 func resourceKafkaClusterCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 	log.Printf("[TRACE] resourceKafkaClusterCreate ******** start")
-
 	// Create the request object.
 	rq := duplosdk.DuploKafkaClusterRequest{
-		Name:            d.Get("name").(string),
-		KafkaVersion:    d.Get("kafka_version").(string),
-		BrokerNodeGroup: &duplosdk.DuploKafkaBrokerNodeGroupInfo{InstanceType: d.Get("instance_type").(string)},
-	}
-	rq.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize = d.Get("storage_size").(int)
-
-	// Apply any subnet settings
-	if subnets, ok := getAsStringArray(d, "subnets"); ok && len(*subnets) > 0 {
-		rq.BrokerNodeGroup.Subnets = subnets
+		Name: d.Get("name").(string),
 	}
 
-	// Apply any custom configuration.
-	if v, ok := d.GetOk("configuration_arn"); ok {
-		rq.ConfigurationInfo = &duplosdk.DuploKafkaConfigurationInfo{
-			Arn:      v.(string),
-			Revision: int64(d.Get("configuration_revision").(int)),
-		}
-	}
-
-	// Apply Encryption settings.
-	if v, ok := d.GetOk("encryption_in_transit"); ok {
-		rq.EncryptionInfo = &duplosdk.DuploKafkaClusterEncryptionInfo{
-			InTransit: &duplosdk.DuploKafkaClusterEncryptionInTransit{
-				ClientBroker: &duplosdk.DuploStringValue{
-					Value: v.(string),
+	// Build ClientAuthentication if sasl_iam is enabled.
+	var clientAuth *duplosdk.DuploKafkaClientAuthentication
+	if v, ok := d.GetOk("sasl_iam"); ok && v.(bool) {
+		clientAuth = &duplosdk.DuploKafkaClientAuthentication{
+			Sasl: &duplosdk.DuploKafkaSasl{
+				Iam: &duplosdk.DuploKafkaSaslIam{
+					Enabled: true,
 				},
 			},
 		}
 	}
 
+	if v, ok := d.GetOk("is_serverless"); ok && v.(bool) {
+		rq.ClusterType = "Serverless"
+		if v, ok = d.GetOk("subnets"); ok && v != nil {
+			list := v.([]interface{})
+			result := make([]duplosdk.DuploKafkaServerlessVpcConfigs, len(list))
+			for i, el := range list {
+				result[i] = duplosdk.DuploKafkaServerlessVpcConfigs{
+					SubnetIds: el.(string),
+				}
+			}
+			rq.Serverless = &duplosdk.DuploKafkaServerlessConfig{
+				VpcConfigs:           result,
+				ClientAuthentication: clientAuth,
+			}
+		} else {
+			rq.Serverless = &duplosdk.DuploKafkaServerlessConfig{
+				ClientAuthentication: clientAuth,
+			}
+		}
+	} else {
+		rq.ClusterType = "Provisioned"
+		p := &duplosdk.DuploKafkaProvisionedConfig{}
+		p.BrokerNodeGroup = &duplosdk.DuploKafkaBrokerNodeGroupInfo{InstanceType: d.Get("instance_type").(string)}
+		p.BrokerNodeGroup.StorageInfo.EbsStorageInfo.VolumeSize = d.Get("storage_size").(int)
+		p.KafkaVersion = d.Get("kafka_version").(string)
+		// Apply any subnet settings
+		if subnets, ok := getAsStringArray(d, "subnets"); ok && len(*subnets) > 0 {
+			p.BrokerNodeGroup.Subnets = subnets
+		}
+
+		// Apply any custom configuration.
+		if v, ok := d.GetOk("configuration_arn"); ok {
+			p.ConfigurationInfo = &duplosdk.DuploKafkaConfigurationInfo{
+				Arn:      v.(string),
+				Revision: int64(d.Get("configuration_revision").(int)),
+			}
+		}
+
+		// Apply Encryption settings.
+		if v, ok := d.GetOk("encryption_in_transit"); ok {
+			p.EncryptionInfo = &duplosdk.DuploKafkaClusterEncryptionInfo{
+				InTransit: &duplosdk.DuploKafkaClusterEncryptionInTransit{
+					ClientBroker: &duplosdk.DuploStringValue{
+						Value: v.(string),
+					},
+				},
+			}
+		}
+
+		// Apply ClientAuthentication settings.
+		p.ClientAuthentication = clientAuth
+		rq.Provisioned = p
+	}
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 
@@ -421,4 +504,53 @@ func resourceKafkaClusterUpdate(ctx context.Context, d *schema.ResourceData, m i
 	diags := resourceKafkaClusterRead(ctx, d, m)
 	log.Printf("[TRACE] resourceKafkaClusterCreate ******** end")
 	return diags
+}
+
+func validateKafkaParameters(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+	if v, ok := d.GetOk("is_serverless"); ok && v.(bool) {
+		if v, ok := d.GetOk("instance_type"); ok && v.(string) != "" {
+			return fmt.Errorf("instance_type not applicable when is_serverless is true")
+		}
+		if v, ok := d.GetOk("storage_size"); ok && v.(int) != 0 {
+			return fmt.Errorf("storage_size not applicable when is_serverless is true")
+		}
+		if v, ok := d.GetOk("kafka_version"); ok && v.(string) != "" {
+			return fmt.Errorf("kafka_version not applicable when is_serverless is true")
+		}
+		if v, ok := d.GetOk("configuration_arn"); ok && v.(string) != "" {
+			return fmt.Errorf("configuration_arn not applicable when is_serverless is true")
+		}
+		if v, ok := d.GetOk("configuration_revision"); ok && v.(int) != 0 {
+			return fmt.Errorf("configuration_revision not applicable when is_serverless is true")
+		}
+		if v, ok := d.GetOk("encryption_in_transit"); ok && v.(string) != "" {
+			return fmt.Errorf("encryption_in_transit not applicable when is_serverless is true")
+		}
+		if d.NewValueKnown("sasl_iam") && !d.Get("sasl_iam").(bool) {
+			return fmt.Errorf("sasl_iam cannot be set to false for serverless clusters, SASL/IAM is always enabled")
+		}
+	} else {
+		if v := d.Get("instance_type"); v.(string) == "" {
+			return fmt.Errorf("instance_type required for provisioned cluster when is_serverless is false")
+		}
+		if v := d.Get("storage_size"); v.(int) == 0 {
+			return fmt.Errorf("storage_size required for provisioned cluster when is_serverless is false")
+		}
+		if v := d.Get("kafka_version"); v.(string) == "" {
+			return fmt.Errorf("kafka_version required for provisioned cluster when is_serverless is false")
+		}
+		if v, ok := d.GetOk("sasl_iam"); ok && v.(bool) {
+			enc, _ := d.GetOk("encryption_in_transit")
+			if enc == nil || enc.(string) != "TLS" {
+				return fmt.Errorf("encryption_in_transit must be set to \"TLS\" when sasl_iam is enabled on a provisioned cluster")
+			}
+		}
+	}
+
+	// In-place updates of sasl_iam are not currently supported. Update the setting directly in AWS and import the updated state.
+	if d.Id() != "" && d.HasChange("sasl_iam") {
+		return fmt.Errorf("in-place updates of sasl_iam are not supported; update the setting directly in AWS and run `terraform import` to sync the state")
+	}
+
+	return nil
 }

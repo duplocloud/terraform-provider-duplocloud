@@ -2,10 +2,12 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -36,7 +38,7 @@ func awsLaunchTemplateDefaultVersionSchema() map[string]*schema.Schema {
 }
 func resourceAwsLaunchTemplateDefaultVersion() *schema.Resource {
 	return &schema.Resource{
-		Description:   "duplocloud_aws_launch_template_default_version helps to set or update default version of launch template",
+		Description:   "duplocloud_aws_launch_template_default_version helps to set or update default version of launch template. It is usefull when you want asg to use new launch template version without recreating the asg profile.",
 		ReadContext:   resourceAwsLaunchTemplateDefaultVersionRead,
 		CreateContext: resourceAwsLaunchTemplateDefaultVersionCreateAndUpdate,
 		UpdateContext: resourceAwsLaunchTemplateDefaultVersionCreateAndUpdate,
@@ -62,6 +64,7 @@ func resourceAwsLaunchTemplateDefaultVersionRead(ctx context.Context, d *schema.
 	rp, err := c.GetAwsLaunchTemplate(tenantId, asgName)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLaunchTemplateDefaultVersionRead(%s, %s): object missing", tenantId, asgName)
 			d.SetId("")
 		}
 		return diag.Errorf("%s", err.Error())

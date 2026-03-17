@@ -123,6 +123,7 @@ func resourceByohRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceByohRead: BYOH %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -293,6 +294,7 @@ func resourceByohDelete(ctx context.Context, d *schema.ResourceData, m interface
 	})
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceByohDelete: BYOH %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s byoh '%s': %s", tenantID, name, clientErr)

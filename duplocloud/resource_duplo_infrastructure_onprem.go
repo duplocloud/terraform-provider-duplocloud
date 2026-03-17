@@ -178,6 +178,11 @@ func resourceInfrastructureOnpremRead(ctx context.Context, d *schema.ResourceDat
 	c := m.(*duplosdk.Client)
 	config, err := c.InfrastructureGetConfig(name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceInfrastructureOnpremRead: Infrastructure %s not found, removing from state", name)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("%s", err.Error())
 	}
 	if config == nil {
@@ -239,6 +244,7 @@ func resourceInfrastructureOnpremDelete(ctx context.Context, d *schema.ResourceD
 	err := c.InfrastructureDelete(infraName)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceInfrastructureOnpremDelete: Infrastructure %s not found, removing from state", infraName)
 			return nil
 		}
 		return diag.FromErr(err)

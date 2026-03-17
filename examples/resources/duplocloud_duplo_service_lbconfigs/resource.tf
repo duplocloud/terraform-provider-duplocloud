@@ -57,3 +57,43 @@ resource "duplocloud_duplo_service_lbconfigs" "myservice2" {
     }
   }
 }
+
+//Example to attach elastic ips to public NLB
+resource "duplocloud_duplo_service_lbconfigs" "myservice" {
+  tenant_id                   = duplocloud_duplo_service.myservice.tenant_id
+  replication_controller_name = duplocloud_duplo_service.myservice.name
+
+  lbconfigs {
+    external_port   = 443
+    is_native       = false
+    lb_type         = 6
+    port            = "3027"
+    protocol        = "tcp"
+    is_internal     = false
+    eip_allocations = ["eipalloc-0448f756b404093cb", "eipalloc-0b700a23ac3f2522d"]
+  }
+
+}
+
+//Example to set backendconfig timeout for alb applicable for gcp cloud
+resource "duplocloud_duplo_service_lbconfigs" "echo_config" {
+  tenant_id                   = duplocloud_duplo_service.myservice.tenant_id
+  replication_controller_name = duplocloud_duplo_service.myservice.name
+  lbconfigs {
+    external_port    = 80
+    health_check_url = "/me"
+    is_native        = true
+    lb_type          = 1
+    port             = "80"
+    protocol         = "HTTP"
+    health_check {
+      healthy_threshold   = 4
+      unhealthy_threshold = 4
+      timeout             = 30
+      interval            = 50
+      http_success_codes  = "200-399"
+    }
+    backend_config_timeout_sec = 70
+    set_ingress_health_check   = true
+  }
+}

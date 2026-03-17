@@ -54,6 +54,7 @@ resource "duplocloud_duplo_service_lbconfigs" "echo_config" {
     protocol         = "tcp"
     health_check_url = "/"
   }
+
 }
 
 resource "duplocloud_duplo_service" "echo2" {
@@ -117,6 +118,9 @@ resource "duplocloud_k8_ingress" "ingress" {
     path_type    = "Prefix"
     service_name = duplocloud_duplo_service.echo2.name
     port         = 5678
+  }
+  labels = {
+    "app.duplocloud.net/app-name" = "tfapp"
   }
 
   depends_on = [time_sleep.wait_45_seconds]

@@ -434,14 +434,15 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 ### Optional
 
 - `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.
-- `auto_minor_version_upgrade` (Boolean) Enable or disable auto minor version upgrade
+**Note:** Allocated storage can only be modified after every 6 hours.
+- `auto_minor_version_upgrade` (Boolean) Enable or disable auto minor version upgrade. This attribute is ignored for DocumentDB (engine 13) — AWS manages minor version upgrades for DocumentDB and this setting has no effect.
 - `availability_zone` (String) Specify a valid Availability Zone for the RDS primary instance (when Multi-AZ is disabled) or for the Aurora writer instance. e.g. us-west-2a
 - `backup_retention_period` (Number) Specifies backup retention period between 1 and 35 day(s). Default backup retention period is 1 day. Defaults to `1`.
 - `cluster_parameter_group_name` (String) Parameter group associated with this instance's DB Cluster.
 - `db_name` (String) The name of the database to create when the DB instance is created. This is not applicable for update.
 - `db_subnet_group_name` (String) Name of DB subnet group. DB instance will be created in the VPC associated with the DB subnet group.
 - `deletion_protection` (Boolean) If the DB instance should have deletion protection enabled.The database can't be deleted when this value is set to `true`. This setting is not applicable for document db cluster instance. Defaults to `false`.
-- `enable_iam_auth` (Boolean) Whether or not to enable the RDS IAM authentication. It can only be set during instance creation.
+- `enable_iam_auth` (Boolean) Whether or not to enable the RDS IAM authentication. This setting can be modified after instance creation.
 - `enable_logging` (Boolean) Whether or not to enable the RDS instance logging. This setting is not applicable for document db cluster instance.
 - `encrypt_storage` (Boolean) Whether or not to encrypt the RDS instance storage.
 - `engine_version` (String) The database engine version to use the for the RDS instance.
@@ -456,6 +457,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 - `performance_insights` (Block List, Max: 1) Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. (see [below for nested schema](#nestedblock--performance_insights))
 - `skip_final_snapshot` (Boolean) If the final snapshot should be taken. When set to true, the final snapshot will not be taken when the resource is deleted. Defaults to `false`.
 - `snapshot_id` (String) A database snapshot to initialize the RDS instance from, at launch.
+- `storage_autoscaling` (Block List, Max: 1) (see [below for nested schema](#nestedblock--storage_autoscaling))
 - `storage_type` (String) Storage type to be used for RDS instance storage.
 
 			|Storage Type  | Performance                        | Throughput            | Descritpion                                                                                                                                                                                                               |
@@ -489,6 +491,15 @@ Optional:
 - `enabled` (Boolean) Turn on or off Performance Insights Defaults to `false`.
 - `kms_key_id` (String) Specify ARN for the KMS key to encrypt Performance Insights data.
 - `retention_period` (Number) Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31. For Document DB retention period is 7 Defaults to `7`.
+
+
+<a id="nestedblock--storage_autoscaling"></a>
+### Nested Schema for `storage_autoscaling`
+
+Optional:
+
+- `enable` (Boolean) Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage.
+- `max_allocated_storage` (Number) The upper limit, in gibibytes (GiB), to which Amazon RDS can automatically scale the storage of the DB instance when autoscaling is enabled.
 
 
 <a id="nestedblock--timeouts"></a>

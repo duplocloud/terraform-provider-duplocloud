@@ -96,3 +96,19 @@ resource "duplocloud_duplo_service" "myservice" {
   replicas       = 1
   app_name       = "appname"
 }
+
+# Simple Example 7:  To run pod on Fargate
+resource "duplocloud_duplo_service" "myservice" {
+  tenant_id = "b4315a73-6455-4e99-8e26-7a771018cc1e"
+
+  name           = "myservice2"
+  agent_platform = 7 # Duplo native container agent
+  docker_image   = "nginx:latest"
+  replicas       = 1
+  other_docker_config = jsonencode(
+    {
+      "PodLabels" : {
+        "configure.duplocloud.net/run-on" = "fargate"
+      }
+  })
+}

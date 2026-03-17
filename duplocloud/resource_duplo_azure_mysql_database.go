@@ -1,12 +1,14 @@
 package duplocloud
 
+/*
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -138,12 +140,12 @@ func duploAzureMysqlDatabaseSchema() map[string]*schema.Schema {
 
 func resourceAzureMysqlDatabase() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_mysql_database` manages an Azure mysql database in Duplo.",
-
-		ReadContext:   resourceAzureMysqlDatabaseRead,
-		CreateContext: resourceAzureMysqlDatabaseCreate,
-		UpdateContext: resourceAzureMysqlDatabaseUpdate,
-		DeleteContext: resourceAzureMysqlDatabaseDelete,
+		Description:        "`duplocloud_azure_mysql_database` manages an Azure mysql database in Duplo.",
+		DeprecationMessage: "The resource duplocloud_azure_mysql_database has been deprecated, and Duplo will no longer provide support for it.",
+		ReadContext:        resourceAzureMysqlDatabaseRead,
+		CreateContext:      resourceAzureMysqlDatabaseCreate,
+		UpdateContext:      resourceAzureMysqlDatabaseUpdate,
+		DeleteContext:      resourceAzureMysqlDatabaseDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -171,6 +173,7 @@ func resourceAzureMysqlDatabaseRead(ctx context.Context, d *schema.ResourceData,
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureMysqlDatabaseRead: Azure mysql database %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -236,6 +239,7 @@ func resourceAzureMysqlDatabaseDelete(ctx context.Context, d *schema.ResourceDat
 	clientErr := c.MySqlDatabaseDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureMysqlDatabaseDelete: Azure mysql database %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure mysql database '%s': %s", tenantID, name, clientErr)
@@ -316,3 +320,4 @@ func mysqlSeverWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID 
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
+*/

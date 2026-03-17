@@ -143,9 +143,14 @@ func resourceKubernetesJobV1Read(ctx context.Context, d *schema.ResourceData, me
 
 	// Get the object from Duplo, detecting a missing object
 	c := meta.(*duplosdk.Client)
-	job, err := c.K8sJobGet(tenantId, jobName)
-	if err != nil {
-		return diag.Errorf("Failed to read Job. API error: %s", err)
+	job, cerr := c.K8sJobGet(tenantId, jobName)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8JobRead(%s, %s): object not found", tenantId, jobName)
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Failed to read Job. API error: %s", cerr)
 	}
 	if job == nil {
 		d.SetId("")
@@ -248,6 +253,7 @@ func resourceKubernetesJobV1Delete(ctx context.Context, d *schema.ResourceData, 
 		clientError := c.K8sJobDelete(tenantId, name)
 		if clientError != nil {
 			if clientError.Status() == 404 {
+				log.Printf("[TRACE] resourceK8JobDelete(%s, %s): object not found", tenantId, name)
 				d.SetId("")
 				return nil
 			}

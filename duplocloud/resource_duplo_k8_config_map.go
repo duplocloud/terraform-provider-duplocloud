@@ -89,9 +89,14 @@ func resourceK8ConfigMapRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.K8ConfigMapGet(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, cerr := c.K8ConfigMapGet(tenantID, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8ConfigMapRead(%s, %s): object not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if rp == nil || rp.Name == "" {
 		d.SetId("")
@@ -167,14 +172,18 @@ func resourceK8ConfigMapDelete(ctx context.Context, d *schema.ResourceData, m in
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, err := c.K8ConfigMapGet(tenantID, name)
-	if err != nil {
-		return diag.FromErr(err)
+	rp, cerr := c.K8ConfigMapGet(tenantID, name)
+	if cerr != nil {
+		if cerr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8ConfigMapDelete(%s, %s): object not found", tenantID, name)
+			return nil
+		}
+		return diag.FromErr(cerr)
 	}
 	if rp != nil && rp.Name != "" {
-		err := c.K8ConfigMapDelete(tenantID, name)
-		if err != nil {
-			return diag.FromErr(err)
+		cerr := c.K8ConfigMapDelete(tenantID, name)
+		if cerr != nil {
+			return diag.FromErr(cerr)
 		}
 	}
 

@@ -353,13 +353,41 @@ type DuploKafkaConfigurationInfo struct {
 
 // DuploKafkaClusterRequest represents a request to create a Kafka Cluster
 type DuploKafkaClusterRequest struct {
-	Name              string                           `json:"ClusterName,omitempty"`
-	Arn               string                           `json:"ClusterArn,omitempty"`
-	KafkaVersion      string                           `json:"KafkaVersion,omitempty"`
-	BrokerNodeGroup   *DuploKafkaBrokerNodeGroupInfo   `json:"BrokerNodeGroupInfo,omitempty"`
-	ConfigurationInfo *DuploKafkaConfigurationInfo     `json:"ConfigurationInfo,omitempty"`
-	State             string                           `json:"State,omitempty"`
-	EncryptionInfo    *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
+	Name        string                       `json:"ClusterName,omitempty"`
+	Arn         string                       `json:"ClusterArn,omitempty"`
+	State       string                       `json:"State,omitempty"`
+	ClusterType string                       `json:"ClusterType,omitempty"`
+	Serverless  *DuploKafkaServerlessConfig  `json:"Serverless,omitempty"`
+	Provisioned *DuploKafkaProvisionedConfig `json:"Provisioned,omitempty"`
+}
+
+type DuploKafkaClientAuthentication struct {
+	Sasl *DuploKafkaSasl `json:"Sasl,omitempty"`
+}
+
+type DuploKafkaSasl struct {
+	Iam *DuploKafkaSaslIam `json:"Iam,omitempty"`
+}
+
+type DuploKafkaSaslIam struct {
+	Enabled bool `json:"Enabled"`
+}
+
+type DuploKafkaProvisionedConfig struct {
+	KafkaVersion         string                           `json:"KafkaVersion,omitempty"`
+	BrokerNodeGroup      *DuploKafkaBrokerNodeGroupInfo   `json:"BrokerNodeGroupInfo,omitempty"`
+	ConfigurationInfo    *DuploKafkaConfigurationInfo     `json:"ConfigurationInfo,omitempty"`
+	EncryptionInfo       *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
+	ClientAuthentication *DuploKafkaClientAuthentication  `json:"ClientAuthentication,omitempty"`
+}
+
+type DuploKafkaServerlessConfig struct {
+	VpcConfigs           []DuploKafkaServerlessVpcConfigs `json:"VpcConfigs"`
+	ClientAuthentication *DuploKafkaClientAuthentication  `json:"ClientAuthentication,omitempty"`
+}
+
+type DuploKafkaServerlessVpcConfigs struct {
+	SubnetIds string `json:"SubnetIds,omitempty"`
 }
 
 // DuploKafkaCluster represents an AWS kafka cluster resource for a Duplo tenant
@@ -376,20 +404,35 @@ type DuploKafkaClusterInfo struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-"`
 
-	Name                      string                           `json:"ClusterName,omitempty"`
-	Arn                       string                           `json:"ClusterArn,omitempty"`
-	CreationTime              time.Time                        `json:"CreationTime,omitempty"`
-	CurrentVersion            string                           `json:"CurrentVersion,omitempty"`
+	Name           string                     `json:"ClusterName,omitempty"`
+	Arn            string                     `json:"ClusterArn,omitempty"`
+	CreationTime   time.Time                  `json:"CreationTime,omitempty"`
+	CurrentVersion string                     `json:"CurrentVersion,omitempty"`
+	State          *DuploStringValue          `json:"State,omitempty"`
+	Tags           map[string]interface{}     `json:"Tags,omitempty"`
+	ClusterType    *DuploStringValue          `json:"ClusterType,omitempty"`
+	Serverless     *DuploKafkaServerlessInfo  `json:"Serverless,omitempty"`
+	Provisioned    *DuploKafkaProvisionedInfo `json:"Provisioned,omitempty"`
+}
+
+type DuploKafkaProvisionedInfo struct {
 	BrokerNodeGroup           *DuploKafkaBrokerNodeGroupInfo   `json:"BrokerNodeGroupInfo,omitempty"`
 	CurrentSoftware           *DuploKafkaBrokerSoftwareInfo    `json:"CurrentBrokerSoftwareInfo,omitempty"`
 	NumberOfBrokerNodes       int                              `json:"NumberOfBrokerNodes,omitempty"`
 	EnhancedMonitoring        *DuploStringValue                `json:"EnhancedMonitoring,omitempty"`
 	OpenMonitoring            *DuploKafkaClusterOpenMonitoring `json:"OpenMonitoring,omitempty"`
-	State                     *DuploStringValue                `json:"State,omitempty"`
-	Tags                      map[string]interface{}           `json:"Tags,omitempty"`
 	ZookeeperConnectString    string                           `json:"ZookeeperConnectString,omitempty"`
 	ZookeeperConnectStringTls string                           `json:"ZookeeperConnectStringTls,omitempty"`
 	EncryptionInfo            *DuploKafkaClusterEncryptionInfo `json:"EncryptionInfo,omitempty"`
+	ClientAuthentication      *DuploKafkaClientAuthentication  `json:"ClientAuthentication,omitempty"`
+}
+
+type DuploKafkaServerlessInfo struct {
+	VpcConfigs []struct {
+		SubnetIds        []string `json:"SubnetIds,omitempty"`
+		SecurityGroupIds []string `json:"SecurityGroupIds,omitempty"`
+	} `json:"VpcConfigs,omitempty"`
+	ClientAuthentication *DuploKafkaClientAuthentication `json:"ClientAuthentication,omitempty"`
 }
 
 // DuploKafkaBootstrapBrokers represents a non-cached view of an AWS kafka cluster's bootstrap brokers for a Duplo tenant
@@ -400,8 +443,9 @@ type DuploKafkaBootstrapBrokers struct {
 	// NOTE: The Name field does not come from the backend - we synthesize it
 	Name string `json:"Name,omitempty"`
 
-	BootstrapBrokerString    string `json:"BootstrapBrokerString,omitempty"`
-	BootstrapBrokerStringTls string `json:"BootstrapBrokerStringTls,omitempty"`
+	BootstrapBrokerString        string `json:"BootstrapBrokerString,omitempty"`
+	BootstrapBrokerStringTls     string `json:"BootstrapBrokerStringTls,omitempty"`
+	BootstrapBrokerStringSaslIam string `json:"BootstrapBrokerStringSaslIam,omitempty"`
 }
 
 type DuploApiGatewayRequest struct {
@@ -431,6 +475,8 @@ type DuploMinion struct {
 	AgentPlatform    int                    `json:"AgentPlatform"`
 	Cloud            int                    `json:"Cloud"`
 	Taints           []DuploMinionTaint     `json:"Taints"`
+	PrivateIpAddress string                 `json:"PrivateIpAddress"`
+	AsgName          string                 `json:"AsgName,omitempty"`
 }
 
 type DuploMinionDeleteReq struct {
@@ -778,7 +824,7 @@ func (c *Client) TenantApplyS3BucketSettings(tenantID string, duplo DuploS3Bucke
 func (c *Client) TenantCreateKafkaCluster(tenantID string, duplo DuploKafkaClusterRequest) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("TenantCreateKafkaCluster(%s, %s)", tenantID, duplo.Name),
-		fmt.Sprintf("subscriptions/%s/KafkaClusterUpdate", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/kafka", tenantID),
 		&duplo,
 		nil)
 }
@@ -797,7 +843,7 @@ func (c *Client) TenantGetKafkaClusterInfo(tenantID string, arn string) (*DuploK
 	rp := DuploKafkaClusterInfo{}
 
 	err := c.postAPI(fmt.Sprintf("TenantGetKafkaClusterInfo(%s, %s)", tenantID, arn),
-		fmt.Sprintf("subscriptions/%s/FetchKafkaClusterInfo", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/kafka/FetchKafkaClusterInfo", tenantID),
 		map[string]interface{}{"ClusterArn": arn},
 		&rp)
 	if err != nil || rp.Name == "" {
@@ -823,7 +869,7 @@ func (c *Client) TenantGetKafkaClusterBootstrapBrokers(tenantID string, arn stri
 	rp := DuploKafkaBootstrapBrokers{}
 
 	err := c.postAPI(fmt.Sprintf("TenantGetKafkaClusterBootstrapBrokers(%s, %s)", tenantID, arn),
-		fmt.Sprintf("subscriptions/%s/FetchKafkaBootstrapBrokers", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/kafka/FetchKafkaBootstrapBrokers", tenantID),
 		map[string]interface{}{"ClusterArn": arn},
 		&rp)
 	if err != nil {
@@ -1085,4 +1131,84 @@ func (c *Client) TenantDeleteV3S3BucketReplication(tenantID, sourceBucket, ruleF
 	return c.deleteAPI(fmt.Sprintf("TenantDeleteV3S3BucketReplication(%s, %s,%s)", tenantID, sourceBucket, ruleFullName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/replication/%s", tenantID, sourceBucket, ruleFullName),
 		nil)
+}
+
+type DuploS3EventNotificaition struct {
+	//SQSName           string                             `json:"SqsName,omitempty"`
+	//SQSARN            string                             `json:"SqsArn,omitempty"`
+	//SNSName           string                             `json:"SnsName,omitempty"`
+	//SNSARN            string                             `json:"SnsArn,omitempty"`
+	//LambdaName        string                             `json:"LambdaName,omitempty"`
+	//LambdaARN         string                             `json:"LambdaArn,omitempty"`
+	//EventTypes        []string                           `json:"EventTypes"`
+	EnableEventBridge bool                              `json:"EnableEventBridge"`
+	SQS               []DuploS3EventSQSConfiguration    `json:"QueueConfigurations,omitempty"`
+	SNS               []DuploS3EventSNSConfiguration    `json:"TopicConfigurations,omitempty"`
+	Lambda            []DuploS3EventLambdaConfiguration `json:"LambdaFunctionConfigurations,omitempty"`
+}
+
+type DuploS3EventNotificaitionResponse struct {
+	SQS                      *[]DuploS3EventSQSConfiguration       `json:"QueueConfigurations,omitempty"`
+	SNS                      *[]DuploS3EventSNSConfiguration       `json:"TopicConfigurations,omitempty"`
+	Lambda                   *[]DuploS3EventLambdaConfiguration    `json:"LambdaFunctionConfigurations,omitempty"`
+	EventBridgeConfiguration *DuploS3EventEventBridgeConfiguration `json:"EventBridgeConfiguration,omitempty"`
+}
+
+type DuploS3EventEventBridgeConfiguration struct{}
+type DuploS3EventSNSConfiguration struct {
+	EventTypes []DuploStringValue `json:"Events"`
+	SNSARN     string             `json:"Topic"`
+	ConfigId   string             `json:"Id,omitempty"`
+}
+
+type DuploS3EventSQSConfiguration struct {
+	EventTypes []DuploStringValue `json:"Events"`
+	SQSARN     string             `json:"Queue"`
+	ConfigId   string             `json:"Id,omitempty"`
+}
+
+type DuploS3EventLambdaConfiguration struct {
+	EventTypes []DuploStringValue `json:"Events"`
+	LambdaARN  string             `json:"FunctionArn"`
+	ConfigId   string             `json:"Id,omitempty"`
+}
+
+func (c *Client) UpdateS3EventNotification(tenantID, bucketName string, duplo DuploS3EventNotificaition) ClientError {
+	// Apply the settings via Duplo.
+	rp := ""
+	apiName := fmt.Sprintf("UpdateS3EventNotification(%s, %s)", tenantID, bucketName)
+	err := c.putAPI(apiName, fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/notifications", tenantID, bucketName), &duplo, &rp)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) GetS3EventNotification(tenantID, bucketName string) (*DuploS3EventNotificaitionResponse, ClientError) {
+	rp := DuploS3EventNotificaitionResponse{}
+	err := c.getAPI(fmt.Sprintf("GetS3EventNotification(%s, %s)", tenantID, bucketName),
+		fmt.Sprintf("v3/subscriptions/%s/aws/s3Bucket/%s/notifications", tenantID, bucketName),
+		&rp)
+	return &rp, err
+}
+
+func (c *Client) UpdateASGTaints(tenantID, privateAddress string, duplo []DuploTaints) ClientError {
+
+	err := c.postAPI(
+		fmt.Sprintf("UpdateTaints(%s, %s)", tenantID, privateAddress),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/node/%s/taints", tenantID, privateAddress),
+		&duplo,
+		nil)
+
+	return err
+}
+
+func (c *Client) DeleteASGTaints(tenantID, privateAddress string, duplo []string) ClientError {
+
+	err := c.deleteAPIWithRequestBody(
+		fmt.Sprintf("DeleteASGTaints(%s, %s)", tenantID, privateAddress),
+		fmt.Sprintf("v3/subscriptions/%s/k8s/node/%s/taints", tenantID, privateAddress),
+		&duplo, nil)
+
+	return err
 }

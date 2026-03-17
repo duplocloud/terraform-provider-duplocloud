@@ -380,6 +380,11 @@ func resourceAzureCosmosDBAccountRead(ctx context.Context, d *schema.ResourceDat
 	if err != nil && err.Status() != 404 {
 		return diag.Errorf("Error fetching cosmos db account %s details for tenantId %s", idParts[3], idParts[0])
 	}
+	if err != nil && err.Status() == 404 {
+		log.Printf("[DEBUG] Cosmos DB account %s not found for tenantId %s, removing from state", idParts[3], idParts[0])
+		d.SetId("")
+		return nil
+	}
 	if rp == nil {
 		log.Printf("[DEBUG] Cosmos DB account %s not found for tenantId %s, removing from state", idParts[3], idParts[0])
 		d.SetId("")
@@ -457,6 +462,10 @@ func resourceAzureCosmosDBAccountDelete(ctx context.Context, d *schema.ResourceD
 	c := m.(*duplosdk.Client)
 	err := c.DeleteCosmosDBAccount(idParts[0], idParts[3])
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] Cosmos DB account %s not found for tenantId %s, removing from state", idParts[3], idParts[0])
+			return nil
+		}
 		return diag.Errorf("Error deleting cosmos db account %s for tenantId %s : %s", idParts[3], idParts[0], err.Error())
 	}
 	derr := cosomosDbAccountWaitUntilDelete(ctx, c, idParts[0], idParts[3], d.Timeout("delete"))

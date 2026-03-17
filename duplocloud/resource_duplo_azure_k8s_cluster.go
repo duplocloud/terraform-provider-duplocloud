@@ -232,6 +232,10 @@ func resourceAzureK8sClusterRead(ctx context.Context, d *schema.ResourceData, m 
 	c := m.(*duplosdk.Client)
 	config, err := c.InfrastructureGetConfig(name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureK8sClusterRead: Infrastructure %s not found for tenantId %s, removing from state", name, idParts[0])
+			d.SetId("")
+		}
 		return diag.Errorf("Unable to retrieve infrastructure '%s': %s", name, err)
 	}
 	if config == nil {

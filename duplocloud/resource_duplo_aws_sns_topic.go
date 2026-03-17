@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -102,6 +103,7 @@ func resourceAwsSnsTopicRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsSnsTopicRead(%s, %s): object missing", tenantID, arn)
 			d.SetId("")
 			return nil
 		}
@@ -116,7 +118,7 @@ func resourceAwsSnsTopicRead(ctx context.Context, d *schema.ResourceData, m inte
 	d.Set("fifo_topic", attributes.FifoTopic)
 	d.Set("fifo_content_based_deduplication", attributes.ContentBasedDeduplication)
 
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -177,6 +179,7 @@ func resourceAwsSnsTopicDelete(ctx context.Context, d *schema.ResourceData, m in
 	clientErr := c.DuploSnsTopicDelete(tenantID, arn)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsSnsTopicDelete(%s, %s): object missing", tenantID, arn)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s snp topic '%s': %s", tenantID, arn, clientErr)

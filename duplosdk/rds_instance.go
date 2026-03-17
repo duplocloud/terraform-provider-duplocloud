@@ -76,6 +76,8 @@ type DuploRdsInstance struct {
 	PerformanceInsightsKMSKeyId        string                  `json:"PerformanceInsightsKMSKeyId,omitempty"`
 	AutoMinorVersionUpgrade            bool                    `json:"AutoMinorVersionUpgrade"`
 	DeletionProtection                 bool                    `json:"DeletionProtection"`
+	IsAutoScalingEnabled               bool                    `json:"IsAutoScalingEnabled"`
+	MaxAllocatedStorage                int                     `json:"MaxAllocatedStorage"`
 	IsGlobalClusterMember              bool                    `json:"IsGlobalClusterMember"`
 }
 
@@ -98,6 +100,7 @@ type DuploRdsUpdatePayload struct {
 	DbParameterGroupName      string `json:"DbParameterGroupName,omitempty"`
 	ClusterParameterGroupName string `json:"ClusterParameterGroupName,omitempty"`
 	AutoMinorVersionUpgrade   *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
+	EnableIamAuth             bool   `json:"EnableIamAuth"`
 }
 
 type DuploRdsUpdateInstance struct {
@@ -105,6 +108,7 @@ type DuploRdsUpdateInstance struct {
 	DeletionProtection    *bool  `json:"DeletionProtection,omitempty"`
 	BackupRetentionPeriod int    `json:"BackupRetentionPeriod,omitempty"`
 	SkipFinalSnapshot     bool   `json:"SkipFinalSnapshot"`
+	AllocatedStorage      int    `json:"AllocatedStorage,omitempty"`
 	ApplyImmediately      bool   `json:"ApplyImmediately"`
 }
 
@@ -132,6 +136,7 @@ type DuploRdsUpdateCluster struct {
 	PerformanceInsightsRetentionPeriod int    `json:"PerformanceInsightsRetentionPeriod,omitempty"`
 	PerformanceInsightsKMSKeyId        string `json:"PerformanceInsightsKMSKeyId,omitempty"`
 	AutoMinorVersionUpgrade            *bool  `json:"AutoMinorVersionUpgrade,omitempty"`
+	EnableIamAuth                      bool   `json:"EnableIAMDatabaseAuthentication"`
 }
 
 type DuploRdsModifyAuroraV2ServerlessInstanceSize struct {
@@ -158,6 +163,12 @@ type DuploMonitoringInterval struct {
 type DuploRDSClusterCompareField struct {
 	DeleteProtection        bool `json:"DeletionProtection"`
 	AutoMinorVersionUpgrade bool `json:"AutoMinorVersionUpgrade"`
+}
+
+type DuploRDSStorageAutoScalling struct {
+	IsAutoScalingEnabled bool `json:"IsAutoScalingEnabled"`
+	MaxAllocatedStorage  int  `json:"MaxAllocatedStorage,omitempty"`
+	ApplyImmediately     bool `json:"ApplyImmediately"`
 }
 
 /*************************************************
@@ -515,6 +526,15 @@ func (c *Client) DescribeRdsCluster(id string) (*DuploRDSClusterCompareField, Cl
 	return &duploObject, err
 }
 
+func (c *Client) UpdateRDSDBInstanceStorageAutoScalling(tenantID string, identifier string, duploObject DuploRDSStorageAutoScalling) ClientError {
+	return c.putAPI(
+		fmt.Sprintf("UpdateRDSDBInstanceStorageAutoScalling(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
+		&duploObject,
+		nil,
+	)
+}
+
 //global database
 
 type DuploRDSGlobalDatabaseResponse struct {
@@ -528,12 +548,13 @@ type DuploRDSGlobalDatabaseResponse struct {
 		PrimaryClusterId string   `json:"PrimaryClusterId"`
 	} `json:"GlobalInfo"`
 	Region struct {
-		Region     string `json:"Region"`
-		ClusterId  string `json:"ClusterId"`
-		Role       string `json:"Role"`
-		Status     string `json:"Status"`
-		TenantId   string `json:"TenantId"`
-		InstanceId string `json:"InstanceId"`
+		Region            string `json:"Region"`
+		ClusterId         string `json:"ClusterId"`
+		Role              string `json:"Role"`
+		Status            string `json:"Status"`
+		TenantId          string `json:"TenantId"`
+		InstanceId        string `json:"InstanceId"`
+		IsHeadlessCluster bool   `json:"IsHeadlessCluster"`
 	} `json:"Region"`
 }
 
@@ -596,4 +617,58 @@ func (c *Client) GetGloabalRegion(tenantID, identifier, region string) (*DuploRD
 		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/global/regions/%s", tenantID, identifier, region),
 		&rp)
 	return &rp, err
+}
+
+type DuploSecondaryGlobalDatastoreHeadless struct {
+	IsHeadlessCluster bool `json:"IsHeadlessCluster"`
+}
+
+func (c *Client) HeadlessManagement(tenantId, cluster string, rq DuploSecondaryGlobalDatastoreHeadless) ClientError {
+	err := c.putAPI(fmt.Sprintf("HeadlessManagement(%s,%s)", tenantId, cluster),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/headless", tenantId, cluster),
+		&rq,
+		nil,
+	)
+	return err
+}
+
+type DuploRDSClusterHeadlessInstances struct {
+	InstanceID string `json:"InstanceId"`
+	AwsStatus  string `json:"AwsStatus"`
+}
+
+// Summary Struct represents the "Summary" object.
+type DuploRDSClusterHeadlessSummary struct {
+	TotalInstances     int `json:"TotalInstances"`
+	AvailableInstances int `json:"AvailableInstances"`
+	DeletingInstances  int `json:"DeletingInstances"`
+}
+
+// ClusterDetails is the main struct for the entire JSON payload.
+type DuploRDSClusterHeadless struct {
+	ClusterID         string                             `json:"ClusterId"`
+	TenantID          string                             `json:"TenantId"`
+	TenantName        string                             `json:"TenantName"`
+	IsHeadlessCluster bool                               `json:"IsHeadlessCluster"`
+	ClusterStatus     string                             `json:"ClusterStatus"`
+	Region            string                             `json:"Region"`
+	Instances         []DuploRDSClusterHeadlessInstances `json:"Instances"` // Array of the Instances struct
+	Summary           DuploRDSClusterHeadlessSummary     `json:"Summary"`   // Single instance of the Summary struct
+}
+
+func (c *Client) GetHeadlessState(tenantId, cluster, instance string) (*DuploRDSClusterHeadlessInstances, ClientError) {
+	rp := &DuploRDSClusterHeadless{}
+	err := c.getAPI(fmt.Sprintf("HeadlessManagement(%s,%s)", tenantId, cluster),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/cluster/%s/headless", tenantId, cluster),
+		rp,
+	)
+	if err == nil && rp != nil {
+		for i := range rp.Instances {
+			if rp.Instances[i].InstanceID == instance {
+				return &rp.Instances[i], nil
+			}
+		}
+		return nil, nil
+	}
+	return nil, err
 }

@@ -144,6 +144,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description: "A RDS parameter group name to apply to the RDS instance.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(1, 255),
 				validation.StringDoesNotMatch(regexp.MustCompile(`-$`), "DB parameter group name cannot end with a hyphen"),
@@ -206,7 +207,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"allocated_storage": {
-			Description: "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.",
+			Description: "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes.\n**Note:** Allocated storage can only be modified after every 6 hours.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -287,11 +288,10 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Default:  false,
 		},
 		"enable_iam_auth": {
-			Description:      "Whether or not to enable the RDS IAM authentication. It can only be set during instance creation.",
-			Type:             schema.TypeBool,
-			Optional:         true,
-			Computed:         true,
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			Description: "Whether or not to enable the RDS IAM authentication. This setting can be modified after instance creation.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"enhanced_monitoring": {
 			Description:  "Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.",
@@ -344,10 +344,35 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			ForceNew: true,
 		},
 		"auto_minor_version_upgrade": {
-			Description: "Enable or disable auto minor version upgrade",
+			Description: "Enable or disable auto minor version upgrade. This attribute is ignored for DocumentDB (engine 13) — AWS manages minor version upgrades for DocumentDB and this setting has no effect.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				return d.Get("engine").(int) == RDS_DOCUMENT_DB_ENGINE
+			},
+		},
+		"storage_autoscaling": {
+			Optional: true,
+			Computed: true,
+			MaxItems: 1,
+			Type:     schema.TypeList,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"enable": {
+						Description: "Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage.",
+						Optional:    true,
+						Computed:    true,
+						Type:        schema.TypeBool,
+					},
+					"max_allocated_storage": {
+						Description: "The upper limit, in gibibytes (GiB), to which Amazon RDS can automatically scale the storage of the DB instance when autoscaling is enabled.",
+						Optional:    true,
+						Computed:    true,
+						Type:        schema.TypeInt,
+					},
+				},
+			},
 		},
 	}
 }
@@ -383,6 +408,11 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 
 	duplo, err := c.RdsInstanceGet(d.Id())
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploRdsInstanceRead(%s): object not found", d.Id())
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	if duplo == nil {
@@ -748,11 +778,13 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	if d.HasChange("auto_minor_version_upgrade") {
+	if d.HasChange("auto_minor_version_upgrade") || d.HasChange("enable_iam_auth") {
 		val := d.Get("auto_minor_version_upgrade").(bool)
+		iamauth := d.Get("enable_iam_auth").(bool)
 		if !isAuroraDB(d) {
 			obj := duplosdk.DuploRdsUpdatePayload{}
 			obj.AutoMinorVersionUpgrade = &val
+			obj.EnableIamAuth = iamauth
 			cErr := c.UpdateRDSDBInstanceAutoMinorUpgrade(tenantID, identifier, obj)
 			if cErr != nil {
 				return diag.FromErr(cErr)
@@ -762,11 +794,32 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 				DBClusterIdentifier:     identifier + "-cluster",
 				ApplyImmediately:        true,
 				AutoMinorVersionUpgrade: &val,
+				EnableIamAuth:           iamauth,
 			}
 			err := c.UpdateRdsCluster(tenantID, obj)
 			if err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+
+	if d.HasChange("storage_autoscaling") {
+		enableAutoscaling := d.Get("storage_autoscaling.0.enable").(bool)
+		maxStorage := d.Get("storage_autoscaling.0.max_allocated_storage").(int)
+
+		if !enableAutoscaling {
+			allocatedStorage := d.Get("allocated_storage").(int)
+			maxStorage = allocatedStorage
+		}
+
+		obj := duplosdk.DuploRDSStorageAutoScalling{
+			IsAutoScalingEnabled: enableAutoscaling,
+			MaxAllocatedStorage:  maxStorage,
+			ApplyImmediately:     true,
+		}
+		cerr := c.UpdateRDSDBInstanceStorageAutoScalling(tenantID, identifier, obj)
+		if cerr != nil {
+			return diag.FromErr(cerr)
 		}
 	}
 	// Wait for the instance to become unavailable - but continue on if we timeout, without any errors raised.
@@ -777,6 +830,7 @@ func resourceDuploRdsInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
 	}
+
 	time.Sleep(2 * time.Minute) //sleeping to sync with Backend, backend has delay even after state of rds is available
 	diags := resourceDuploRdsInstanceRead(ctx, d, m)
 
@@ -809,6 +863,10 @@ func resourceDuploRdsInstanceDelete(ctx context.Context, d *schema.ResourceData,
 	}
 	_, err := c.RdsInstanceDelete(d.Id())
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploRdsInstanceDelete(%s): object not found", id)
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 	diags := waitForResourceToBeMissingAfterDelete(ctx, d, "RDS DB instance", id, func() (interface{}, duplosdk.ClientError) {
@@ -948,6 +1006,12 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 		duploObject.PerformanceInsightsKMSKeyId = kmsid
 
 	}
+
+	duploObject.IsAutoScalingEnabled = d.Get("storage_autoscaling.0.enable").(bool)
+	if duploObject.IsAutoScalingEnabled {
+		duploObject.MaxAllocatedStorage = d.Get("storage_autoscaling.0.max_allocated_storage").(int)
+	}
+
 	return duploObject, nil
 }
 
@@ -1040,6 +1104,14 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
 	pis = append(pis, pi)
 	jo["performance_insights"] = pis
+	//	if duploObject.IsAutoScalingEnabled {
+	mp := map[string]interface{}{
+		"enable":                duploObject.IsAutoScalingEnabled,
+		"max_allocated_storage": duploObject.MaxAllocatedStorage,
+	}
+	jo["storage_autoscaling"] = []interface{}{mp}
+
+	//	}
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", string(jsonData2))
 
@@ -1172,8 +1244,9 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			return fmt.Errorf("RDS engine %s for instance size %s do not support Performance Insights.", engines[eng], s)
 		}
 	}
+	st := ""
 	if _, ok := diff.GetOk("storage_type"); ok {
-		st := diff.Get("storage_type").(string)
+		st = diff.Get("storage_type").(string)
 		if st == "aurora-iopt1" {
 			ev := diff.Get("engine_version").(string)
 			if eng == 8 && compareEngineVersion(ev, "3.03.1") == -1 {
@@ -1195,6 +1268,54 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 	if diff.Get("multi_az").(bool) && (eng == 8 || eng == 9 || eng == 16) {
 		return fmt.Errorf("Cannot set multi_az for %s", engines[eng])
 
+	}
+	if diff.HasChange("storage_autoscaling") {
+		if sas, ok := diff.GetOk("storage_autoscaling"); ok {
+			for _, sa := range sas.([]interface{}) {
+				m := sa.(map[string]interface{})
+				enableAutoscaling := m["enable"].(bool)
+				allocatedStorage := diff.Get("allocated_storage").(int)
+				th := m["max_allocated_storage"].(int)
+
+				if enableAutoscaling {
+					// Validation for enabling autoscaling
+					if st == "standard" || st == "aurora" || st == "aurora-iopt1" {
+						return fmt.Errorf("storage_autoscaling is not supported for %s storage type", st)
+					}
+					as := allocatedStorage
+					if as == 0 {
+						as = 20
+					}
+					perDiff := (as - th) * 100 / as
+					if perDiff > -10 {
+						return fmt.Errorf("max_allocated_storage should be atleast 10%% of allocated_storage. Recommended is 26%%")
+					}
+				} else {
+					if th != 0 {
+						return fmt.Errorf("max_allocated_storage should be set to 0 when storage_autoscaling is being disabled")
+					}
+				}
+			}
+		}
+	}
+	if diff.HasChange("allocated_storage") {
+		o, n := diff.GetChange("allocated_storage")
+		oa := o.(int)
+		na := n.(int)
+		if oa > 0 {
+			oa = na - (na * 10 / 100) // if original allocated storage is not set, assume it's 10% less than new allocated storage for validation purposes
+
+			if na < oa {
+				return fmt.Errorf("You can't reduce your allocated storage (%+v GiB) from what you originally configured for your source database instance (%+v GiB)", na, oa)
+			}
+			perDiff := ((na - oa) * 100) / oa
+			if perDiff < 10 {
+				return fmt.Errorf("allocated_storage (%+v GiB) should be atleast 10%% of previous allocated_storage (%+v GiB)", na, oa)
+			}
+		}
+	}
+	if eng == RDS_DOCUMENT_DB_ENGINE && diff.HasChange("enable_iam_auth") && diff.Get("enable_iam_auth").(bool) {
+		return fmt.Errorf("enable_iam_auth is not supported for DocumentDB (engine 13)")
 	}
 	return nil
 }

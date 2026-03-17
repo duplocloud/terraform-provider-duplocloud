@@ -82,6 +82,19 @@ func resourceTenantSecret() *schema.Resource {
 				Computed:    true,
 				Elem:        KeyValueSchema(),
 			},
+			"force_delete_on_destroy": {
+				Description:   "Config to bypass retention window before permanently deleting secret on AWS (FYI: field is managed localy in TF provider, importing the resource will not hold defined value)",
+				Type:          schema.TypeBool,
+				Optional:      true,
+				ConflictsWith: []string{"retention_window_in_days_on_destroy"},
+			},
+			"retention_window_in_days_on_destroy": {
+				Description:   "Retention period secret remains recoverable/not fully deleted before AWS permanently deletes it (FYI: field is managed localy in TF provider, importing the resource will not hold defined value)",
+				Type:          schema.TypeInt,
+				Optional:      true,
+				ValidateFunc:  validation.IntBetween(7, 30), // between 7 and 30 if defined
+				ConflictsWith: []string{"force_delete_on_destroy"},
+			},
 		},
 	}
 }
@@ -117,7 +130,7 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("rotation_enabled", duplo.RotationEnabled)
 
 	// Set name suffix.
-	prefix, _ := c.GetDuploServicesPrefix(tenantID)
+	prefix, _ := c.GetDuploServicesPrefix(tenantID, "")
 	if name, ok := duplosdk.UnprefixName(prefix, duplo.Name); ok {
 		d.Set("name_suffix", name)
 	}
@@ -128,6 +141,11 @@ func resourceTenantSecretRead(ctx context.Context, d *schema.ResourceData, m int
 	// Get the secret from Duplo
 	value, err := c.TenantGetAwsSecretValue(tenantID, name)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantSecretRead(%s, %s): object not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("unable to retrieve secret '%s': %s", id, err)
 	}
 	if value == nil {
@@ -215,12 +233,34 @@ func resourceTenantSecretDelete(ctx context.Context, d *schema.ResourceData, m i
 	idParts := strings.SplitN(id, "/", 2)
 	tenantID, name := idParts[0], idParts[1]
 
+	deleteOptions := &duplosdk.DuploAwsSecretDeleteOptions{}
+
+	if val, ok := d.GetOk("force_delete_on_destroy"); ok {
+		if b, ok := val.(bool); ok && b {
+			deleteOptions.ForceDeleteWithoutRetention = &b
+		}
+	}
+
+	if val, ok := d.GetOk("retention_window_in_days_on_destroy"); ok {
+		// hack: tf assigns 0 when this is not specified in the tf configuration
+		// retention window will never intentionally be 0 because AWS rejects it
+		// and tf validation catches it when user defines wrong value explicitly
+		// just ignore 0 when found
+		if v, ok := val.(int); ok && v > 0 {
+			deleteOptions.RetentionWindowInDays = &v
+		}
+	}
+
 	log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): start", tenantID, name)
 
 	// Delete the object with Duplo
 	c := m.(*duplosdk.Client)
-	err := c.TenantDeleteAwsSecret(tenantID, name)
+	err := c.TenantDeleteAwsSecret(tenantID, name, deleteOptions)
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceTenantSecretDelete(%s, %s): object not found", tenantID, name)
+			return nil
+		}
 		return diag.Errorf("error deleting secret '%s': %s", id, err)
 	}
 

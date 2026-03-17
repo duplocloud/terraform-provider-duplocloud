@@ -193,13 +193,12 @@ See AWS documentation for the [available instance types](https://docs.aws.amazon
 - `auth_token` (String) Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.
 
 See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.
-- `automatic_failover_enabled` (Boolean) Enables automatic failover. Defaults to `false`.
+- `automatic_failover_enabled` (Boolean) Enables automatic failover.
 - `cache_type` (Number) The numerical index of elasticache instance type.
 Should be one of:
 
    - `0` : Redis
    - `1` : Memcache
-
    - `2` : Valkey
 
  Defaults to `0`.
@@ -210,6 +209,7 @@ Should be one of:
 See AWS documentation for the [available Redis and Valkey instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).
 - `kms_key_id` (String) The globally unique identifier for the key.
 - `log_delivery_configuration` (Block Set, Max: 2) (see [below for nested schema](#nestedblock--log_delivery_configuration))
+- `multi_az_enabled` (Boolean) Enables Multi-AZ support for the ElastiCache instance. Multi-AZ is only applicable for Redis (cache_type=0) and Valkey (cache_type=2). When enabled, automatic_failover_enabled must also be set to true.
 - `number_of_shards` (Number) The number of shards to create. Applicable only if enable_cluster_mode is set to true
 - `parameter_group_name` (String) The REDIS/Valkey parameter group to supply.
 - `replicas` (Number) The number of replicas to create. Supported number of replicas is 1 to 6 Defaults to `1`.

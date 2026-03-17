@@ -105,34 +105,31 @@ func resourceAwsLambdaPermissionRead(ctx context.Context, d *schema.ResourceData
 
 	// Get the object from Duplo, detecting a missing object
 	c := m.(*duplosdk.Client)
-	rp, clientErr := c.LambdaPermissionGet(tenantID, functionName)
+	permission, clientErr := c.LambdaPermissionGet(tenantID, functionName, sid)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLambdaPermissionRead(%s, %s, %s): object missing", tenantID, functionName, sid)
 			d.SetId("") // object missing
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s lambda permission '%s': %s", tenantID, functionName, clientErr)
 	}
-	if rp == nil {
+	if permission == nil {
 		d.SetId("") // object missing
 		return nil
 	}
-	for _, permission := range *rp {
-		if permission.Sid == sid {
-			d.Set("tenant_id", tenantID)
-			d.Set("action", permission.Action)
-			d.Set("function_name", functionName)
-			if permission.Principal != nil {
-				d.Set("principal", permission.Principal.Service)
-			}
-			d.Set("qualifier", d.Get("qualifier").(string))
-			d.Set("source_account", d.Get("source_account").(string))
-			if permission.Condition != nil {
-				d.Set("source_arn", permission.Condition.Arn["AWS:SourceArn"])
-			}
-			d.Set("statement_id", permission.Sid)
-		}
+	d.Set("tenant_id", tenantID)
+	d.Set("action", permission.Action)
+	d.Set("function_name", functionName)
+	if permission.Principal != nil {
+		d.Set("principal", permission.Principal.Service)
 	}
+	d.Set("qualifier", d.Get("qualifier").(string))
+	d.Set("source_account", d.Get("source_account").(string))
+	if permission.Condition != nil {
+		d.Set("source_arn", permission.Condition.Arn["AWS:SourceArn"])
+	}
+	d.Set("statement_id", permission.Sid)
 
 	log.Printf("[TRACE] resourceAwsLambdaPermissionRead(%s, %s): end", tenantID, functionName)
 	return nil
@@ -158,7 +155,7 @@ func resourceAwsLambdaPermissionCreate(ctx context.Context, d *schema.ResourceDa
 	// Wait for Duplo to be able to return the cluster's details.
 	id := fmt.Sprintf("%s/%s/%s", tenantID, functionName, statementId)
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "lambda permission", id, func() (interface{}, duplosdk.ClientError) {
-		return c.LambdaPermissionGet(tenantID, functionName)
+		return c.LambdaPermissionGet(tenantID, functionName, statementId)
 	})
 	if diags != nil {
 		return diags
@@ -185,13 +182,14 @@ func resourceAwsLambdaPermissionDelete(ctx context.Context, d *schema.ResourceDa
 	clientErr := c.LambdaPermissionDelete(tenantID, functionName, sid)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLambdaPermissionDelete(%s, %s, %s): object missing", tenantID, functionName, sid)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s lambda permission '%s': %s", tenantID, functionName, clientErr)
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "lambda permission", id, func() (interface{}, duplosdk.ClientError) {
-		return c.LambdaPermissionGet(tenantID, functionName)
+		return c.LambdaPermissionGet(tenantID, functionName, sid)
 	})
 	if diag != nil {
 		return diag

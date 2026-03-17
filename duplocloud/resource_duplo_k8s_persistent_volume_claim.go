@@ -159,6 +159,7 @@ func resourceK8sPVCRead(ctx context.Context, d *schema.ResourceData, m interface
 	rp, clientErr := c.K8PvcGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8sPVCRead(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -218,6 +219,7 @@ func resourceK8sPVCDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	rp, clientErr := c.K8PvcGet(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8sPVCDelete(%s, %s): object not found", tenantID, name)
 			d.SetId("")
 			return nil
 		}
@@ -227,6 +229,7 @@ func resourceK8sPVCDelete(ctx context.Context, d *schema.ResourceData, m interfa
 		_, clientErr := c.K8PvcDelete(tenantID, name)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
+				log.Printf("[TRACE] resourceK8sPVCDelete(%s, %s): object not found", tenantID, name)
 				d.SetId("")
 				return nil
 			}

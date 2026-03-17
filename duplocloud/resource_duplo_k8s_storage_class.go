@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -145,14 +146,20 @@ func resourceK8sStorageClassRead(ctx context.Context, d *schema.ResourceData, m 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	c := m.(*duplosdk.Client)
+
+	prefix, err := c.GetResourcePrefixWithoutTenant("duploservices")
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	log.Printf("[TRACE] resourceK8sStorageClassRead(%s, %s): start", tenantID, fullname)
 
 	// Get the object from Duplo, detecting a missing object
-	c := m.(*duplosdk.Client)
 	rp, clientErr := c.K8StorageClassGet(tenantID, fullname)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[TRACE] resourceK8sStorageClassRead(%s, %s): object not found", tenantID, fullname)
 			d.SetId("")
 			return nil
 		}
@@ -162,11 +169,11 @@ func resourceK8sStorageClassRead(ctx context.Context, d *schema.ResourceData, m 
 		d.SetId("")
 		return nil
 	}
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	fullPrefix, err := c.GetDuploServicesPrefix(tenantID, prefix)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	name, _ := duplosdk.UnprefixName(prefix, fullname)
+	name, _ := duplosdk.UnprefixName(fullPrefix, fullname)
 	d.Set("name", name)
 	flattenK8sStorageClass(tenantID, d, rp)
 	log.Printf("[TRACE] resourceK8sStorageClassRead(%s, %s): end", tenantID, name)
@@ -204,7 +211,27 @@ func resourceK8sStorageClassCreate(ctx context.Context, d *schema.ResourceData, 
 
 // UPDATE resource
 func resourceK8sStorageClassUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return resourceK8sStorageClassCreate(ctx, d, m)
+	tenantID, fullname, err := parseK8sStorageClassIdParts(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceK8sStorageClassUpdate(%s, %s): start", tenantID, fullname)
+
+	rq, expandErr := expandK8sStorageClass(d)
+	if expandErr != nil {
+		return diag.FromErr(expandErr)
+	}
+	rq.Name = fullname // use full prefixed name so SDK sends PUT .../storageclass/{fullname}
+
+	c := m.(*duplosdk.Client)
+	_, cerr := c.K8StorageClassUpdate(tenantID, rq)
+	if cerr != nil {
+		return diag.FromErr(cerr)
+	}
+
+	diags := resourceK8sStorageClassRead(ctx, d, m)
+	log.Printf("[TRACE] resourceK8sStorageClassUpdate(%s, %s): end", tenantID, fullname)
+	return diags
 }
 
 // DELETE resource
@@ -230,6 +257,7 @@ func resourceK8sStorageClassDelete(ctx context.Context, d *schema.ResourceData, 
 		_, clientErr := c.K8StorageClassDelete(tenantID, fullname)
 		if clientErr != nil {
 			if clientErr.Status() == 404 {
+				log.Printf("[TRACE] resourceK8sStorageClassDelete(%s, %s): object not found", tenantID, fullname)
 				d.SetId("")
 				return nil
 			}

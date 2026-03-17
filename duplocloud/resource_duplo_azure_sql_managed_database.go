@@ -154,6 +154,7 @@ func resourceAzureSqlManagedDatabaseRead(ctx context.Context, d *schema.Resource
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureSqlManagedDatabaseRead: Azure sql managed database %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -218,6 +219,7 @@ func resourceAzureSqlManagedDatabaseDelete(ctx context.Context, d *schema.Resour
 	clientErr := c.SqlManagedDatabaseDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureSqlManagedDatabaseDelete: Azure sql managed database %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure sql managed database '%s': %s", tenantID, name, clientErr)

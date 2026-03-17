@@ -227,6 +227,22 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"eip_allocations": {
+			Description: "Allocate Elastic IP to load balancer, which is configured under plan configuration.\n\nNote: This field can only be set for non internal lbtype NLB(6)",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"backend_config_timeout_sec": {
+			Type:         schema.TypeInt,
+			Description:  "The number of seconds to wait for the backend to send a response. Must be at least 1. Applicable only for GCP. Enable set_ingress_health_check when using this field",
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.IntBetween(1, 2147483647),
+		},
 	}
 }
 
@@ -338,6 +354,11 @@ func resourceDuploServiceLbConfigsRead(ctx context.Context, d *schema.ResourceDa
 		if lberr != nil && lberr.Status() != 404 {
 			return diag.FromErr(err)
 		}
+		if lberr != nil && lberr.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceLBConfigsRead(%s, %s): end - load balancer not found", tenantID, name)
+			d.SetId("")
+			return nil
+		}
 
 		if lbdetails != nil {
 			d.Set("arn", lbdetails.LoadBalancerArn)
@@ -401,6 +422,13 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					ExtraSelectorLabels:       keyValueFromStateList("extra_selector_label", lbc),
 					SkipHttpToHttps:           lbc["skip_http_to_https"].(bool),
 				}
+				if lbc["backend_config_timeout_sec"] != nil {
+					gcpSettings := &duplosdk.DuploLbGCPSettings{
+						BackendConfigServiceTimeout: lbc["backend_config_timeout_sec"].(int),
+					}
+					item.GcpSettings = gcpSettings
+				}
+
 				if v, ok := lbc["backend_protocol_version"]; ok && item.LbType == 1 {
 					item.BeProtocolVersion = strings.ToUpper(v.(string))
 				}
@@ -435,6 +463,12 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 				}
 				if item.IsInternal {
 					item.AllowGlobalAccess = lbc["allow_global_access"].(bool)
+				}
+				if eips, ok := lbc["eip_allocations"]; ok && len(eips.([]interface{})) > 0 {
+					item.UseEIPFromPool = true
+					for _, v := range eips.([]interface{}) {
+						item.AllocationIds = append(item.AllocationIds, v.(string))
+					}
 				}
 				list = append(list, item)
 			}
@@ -482,6 +516,10 @@ func resourceDuploServiceLbConfigsDelete(ctx context.Context, d *schema.Resource
 	c := m.(*duplosdk.Client)
 	err := c.ReplicationControllerLbConfigurationBulkUpdate(tenantID, name, &[]duplosdk.DuploLbConfiguration{})
 	if err != nil {
+		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceDuploServiceLbConfigsDelete(%s, %s): object not found", tenantID, name)
+			return nil
+		}
 		return diag.Errorf("Error deleting Duplo service '%s' load balancer configs: %s", id, err)
 	}
 
@@ -602,6 +640,9 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		"backend_protocol_version":    strings.ToUpper(lb.BeProtocolVersion),
 	}
 
+	if lb.GcpSettings != nil && lb.GcpSettings.BackendConfigServiceTimeout > 0 {
+		m["backend_config_timeout_sec"] = lb.GcpSettings.BackendConfigServiceTimeout
+	}
 	if lb.HealthCheckConfig != nil {
 		healthcheckConfig := map[string]interface{}{
 			"healthy_threshold":   lb.HealthCheckConfig.HealthyThresholdCount,
@@ -622,13 +663,18 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		m["backend_protocol_version"] = "HTTP1"
 
 	}
-
+	if len(lb.EIPAllocationIds) > 0 {
+		eips := []interface{}{}
+		for _, ips := range lb.EIPAllocationIds {
+			eips = append(eips, ips)
+		}
+		m["eip_allocations"] = eips
+	}
 	log.Printf("[DEBUG] flattenDuploServiceLbConfiguration... End")
 	return m
 }
 
 func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
-
 	lbconfs := diff.Get("lbconfigs").([]interface{})
 	for _, lb := range lbconfs {
 		m := lb.(map[string]interface{})
@@ -636,9 +682,8 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 		p := strings.ToLower(pr)
 		b := m["backend_protocol_version"].(string)
 		bp := strings.ToLower(b)
-
-		lb, ok := m["lb_type"].(int)
-		if ok && lb != 1 && bp != "" && bp != "http1" {
+		lbType, ok := m["lb_type"].(int)
+		if ok && lbType != 1 && bp != "" && bp != "http1" {
 			return fmt.Errorf("backend_protocol_version field is available only for ALB for others load balancer type use protocol")
 
 		}
@@ -649,23 +694,32 @@ func validateLBConfigParameters(ctx context.Context, diff *schema.ResourceDiff, 
 			return fmt.Errorf("cannot set backend_protocol_version = %s with protocol= %s", bp, pr)
 		}
 
-		if (lb == 1 || lb == 5) && (p != "http" && p != "https") {
-			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		if (lbType == 1 || lbType == 5) && (p != "http" && p != "https") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lbType)
 		}
-		if lb == 6 && (p != "tcp" && p != "udp" && p != "tls") {
-			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		if lbType == 6 && (p != "tcp" && p != "udp" && p != "tls") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lbType)
 		}
-		if (lb == 3 || lb == 4) && (p != "tcp" && p != "udp") {
-			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		if (lbType == 3 || lbType == 4) && (p != "tcp" && p != "udp") {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lbType)
 		}
-		if lb == 0 && p == "tls" {
-			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lb)
+		if lbType == 0 && p == "tls" {
+			return fmt.Errorf("protocol = %s not supported for lb_type=%d", pr, lbType)
 		}
 		healthCheck := m["health_check"].([]interface{})
 		if len(healthCheck) > 0 {
 			hm := healthCheck[0].(map[string]interface{})
 			if hm["timeout"].(int) >= hm["interval"].(int) {
 				return fmt.Errorf("health check timeout must be less than health check interval")
+			}
+		}
+		if m["eip_allocations"] != nil {
+			eips := m["eip_allocations"].([]interface{})
+
+			if lbType != 6 && len(eips) > 0 {
+				return fmt.Errorf("eip_allocations can only be set for NLB")
+			} else if lbType == 6 && m["is_internal"].(bool) && len(eips) > 0 {
+				return fmt.Errorf("eip_allocations can only be set for public NLB")
 			}
 		}
 	}

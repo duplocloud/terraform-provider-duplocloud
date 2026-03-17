@@ -120,6 +120,7 @@ func resourceAzureMssqlDatabaseRead(ctx context.Context, d *schema.ResourceData,
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureMssqlDatabaseRead: Azure mssql database %s not found for tenantId %s, removing from state", dbName, tenantID)
 			d.SetId("")
 			return nil
 		}
@@ -189,6 +190,7 @@ func resourceAzureMssqlDatabaseDelete(ctx context.Context, d *schema.ResourceDat
 	clientErr := c.MsSqlDatabaseDelete(tenantID, serverName, dbName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
+			log.Printf("[DEBUG] resourceAzureMssqlDatabaseDelete: Azure mssql database %s not found for tenantId %s, removing from state", dbName, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure mssql database '%s': %s", tenantID, dbName, clientErr)

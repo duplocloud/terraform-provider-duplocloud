@@ -41,6 +41,10 @@ func nativeHostSchema() map[string]*schema.Schema {
 			ForceNew:         true, // relaunch instance
 			DiffSuppressFunc: diffSuppressIfSame,
 		},
+		"fullname": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 		"instance_id": {
 			Description: "The AWS EC2 instance ID of the host.",
 			Type:        schema.TypeString,
@@ -84,11 +88,12 @@ func nativeHostSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"prepend_user_data": {
-			Description: "Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			ForceNew:    true, // relaunch instance
-			Default:     true,
+			Description:      "Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided.",
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          true,
+			ForceNew:         true, // relaunch instance
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"agent_platform": {
 			Description: "The numeric ID of the container agent pool that this host is added to.\n - 0: Linux Docker/Native\n- 	4: None\n- 5: Docker Windows\n- 7: EKS Linux\n- 8: ECS",
@@ -209,6 +214,12 @@ func nativeHostSchema() map[string]*schema.Schema {
 						Optional: true,
 						Computed: true,
 					},
+					"delete_on_termination": {
+						Description: "Whether the volume should be deleted when the instance is terminated.",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Computed:    true,
+					},
 				},
 			},
 		},
@@ -260,13 +271,13 @@ func nativeHostSchema() map[string]*schema.Schema {
 			},
 		},
 		"custom_node_labels": {
-			Description: "Specify the labels to attach to the nodes.",
-			Type:        schema.TypeMap,
-			Optional:    true,
-			//Computed:         true,
-			Elem: &schema.Schema{Type: schema.TypeString},
-			//DiffSuppressFunc: diffSuppressWhenNotCreating,
-			ForceNew: true,
+			Description:      "Specify the labels to attach to the nodes.",
+			Type:             schema.TypeMap,
+			Optional:         true,
+			Computed:         true,
+			Elem:             &schema.Schema{Type: schema.TypeString},
+			DiffSuppressFunc: diffSuppressWhenNotCreating,
+			ForceNew:         true,
 		},
 
 		"taints": {
@@ -655,6 +666,10 @@ func expandNativeHostVolumes(key string, d *schema.ResourceData) *[]duplosdk.Dup
 			if v, ok := volume["volume_type"]; ok && v != nil && v.(string) != "" {
 				duplo.VolumeType = v.(string)
 			}
+			if v, ok := volume["delete_on_termination"]; ok && v != nil {
+				duplo.DeleteOnTermination = v.(bool)
+			}
+
 			result = append(result, duplo)
 		}
 	}
@@ -701,7 +716,12 @@ func nativeHostToState(ctx context.Context, d *schema.ResourceData, duplo *duplo
 	d.Set("instance_id", duplo.InstanceID)
 	d.Set("user_account", duplo.UserAccount)
 	d.Set("tenant_id", duplo.TenantID)
+	d.Set("fullname", duplo.FriendlyName)
 	d.Set("friendly_name", duplo.FriendlyName)
+	name := strings.Split(duplo.FriendlyName, duplo.IdentityRole+"-")
+	if len(name) == 2 {
+		d.Set("friendly_name", name[1])
+	}
 	d.Set("capacity", duplo.Capacity)
 	d.Set("is_minion", duplo.IsMinion)
 	d.Set("image_id", duplo.ImageID)
@@ -717,7 +737,7 @@ func nativeHostToState(ctx context.Context, d *schema.ResourceData, duplo *duplo
 
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
-	// Ignore the value in the response for duplo.PrependUserData
+	// Ignore the value in the response for duplo.PrependUserData and duplo.ExtraNodeLabels
 	if duplo.MetaData != nil {
 		d.Set("metadata", keyValueToState("metadata", duplo.MetaData))
 	}
@@ -773,11 +793,12 @@ func flattenNativeHostVolumes(duplo *[]duplosdk.DuploNativeHostVolume) []interfa
 	list := make([]interface{}, 0, len(*duplo))
 	for _, item := range *duplo {
 		list = append(list, map[string]interface{}{
-			"iops":        item.Iops,
-			"name":        item.Name,
-			"size":        item.Size,
-			"volume_id":   item.VolumeID,
-			"volume_type": item.VolumeType,
+			"iops":                  item.Iops,
+			"name":                  item.Name,
+			"size":                  item.Size,
+			"volume_id":             item.VolumeID,
+			"volume_type":           item.VolumeType,
+			"delete_on_termination": item.DeleteOnTermination,
 		})
 	}
 

@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -51,20 +52,18 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			ForceNew:    true,
-			Computed:    true,
 		},
 
 		"instance_type": {
-			Description: "Asg instance type to be used to update the version from the current version",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description:   "Asg instance type to be used to update the version from the current version",
+			Type:          schema.TypeString,
+			Optional:      true,
+			ConflictsWith: []string{"instance_requirements"},
 		},
 		"ami": {
 			Description: "Asg ami to be used to update the version from the current version",
 			Type:        schema.TypeString,
 			Optional:    true,
-			ForceNew:    true,
 			Computed:    true,
 		},
 		"version_metadata": {
@@ -74,21 +73,19 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 		"block_device_mapping": {
 			Type:        schema.TypeList,
 			Optional:    true,
-			ForceNew:    true,
+			Computed:    true,
 			Description: "Configure additional volumes of the instance besides specified by the AMI",
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"device_name": {
 						Type:        schema.TypeString,
-						Required:    true,
-						ForceNew:    true,
+						Optional:    true,
 						Description: "The name of the device to mount",
 					},
 					"ebs": {
 						Type:        schema.TypeList,
 						Optional:    true,
 						MaxItems:    1,
-						ForceNew:    true,
 						Description: "Configure EBS volume properties.",
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
@@ -96,32 +93,27 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 									Type:        schema.TypeBool,
 									Optional:    true,
 									Default:     true,
-									ForceNew:    true,
 									Description: "Whether the volume should be destroyed on instance termination",
 								},
 								"encrypted": {
 									Type:        schema.TypeBool,
 									Optional:    true,
 									Default:     false,
-									ForceNew:    true,
 									Description: "Enables EBS encryption on the volume. Cannot be used with snapshot_id",
 								},
 								"iops": {
 									Type:        schema.TypeInt,
 									Optional:    true,
-									ForceNew:    true,
 									Description: "The amount of provisioned IOPS. This must be set with a volume_type of 'io1/io2/gp3'",
 								},
 								"snapshot_id": {
 									Type:        schema.TypeString,
 									Optional:    true,
-									ForceNew:    true,
 									Description: "The Snapshot ID to mount. Should not be used if encrypted is true",
 								},
 								"volume_size": {
 									Type:     schema.TypeInt,
 									Optional: true,
-									ForceNew: true,
 									Description: `The size of the volume in gigabytes.\n
 									gp2 and gp3: 1 - 16,384 GiB\n+
 									io1: 4 - 16,384 GiB
@@ -132,28 +124,24 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 								"throughput": {
 									Type:         schema.TypeInt,
 									Optional:     true,
-									ForceNew:     true,
 									Description:  "The throughput to provision for a 'gp3' volume in MiB/s. Minumum value of 125 and maximum of 1000.",
 									ValidateFunc: validation.IntBetween(125, 1000),
 								},
 								"volume_type": {
 									Type:         schema.TypeString,
 									Optional:     true,
-									ForceNew:     true,
 									Description:  "The volume type. Can be one of standard, gp2, gp3, io1, io2, sc1 or st1",
 									ValidateFunc: validation.StringInSlice([]string{"standard", "gp2", "gp3", "io1", "io2", "sc1", "st1"}, false),
 								},
 								"volume_initialization_rate": {
 									Type:         schema.TypeInt,
 									Optional:     true,
-									ForceNew:     true,
 									Description:  "The volume initialization rate in MiB/s, with a minimum of 100 MiB/s and maximum of 300 MiB/s.",
 									ValidateFunc: validation.IntBetween(100, 300),
 								},
 								"kms_key_id": {
 									Type:        schema.TypeString,
 									Optional:    true,
-									ForceNew:    true,
 									Description: "The ARN of the KMS Key to use when encrypting the volume (if encrypted is true).",
 								},
 							},
@@ -174,6 +162,67 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"instance_requirements": {
+			Description:   "Whether to manage instance requirements instead of a specific instance type",
+			Type:          schema.TypeList,
+			MaxItems:      1,
+			Optional:      true,
+			ConflictsWith: []string{"instance_type"},
+			//Computed:      true,
+
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"allowed_instance_types": {
+						Type:         schema.TypeList,
+						Optional:     true,
+						Computed:     true,
+						RequiredWith: []string{"instance_requirements.0.vcpu_count", "instance_requirements.0.memory_mib"},
+
+						Elem: &schema.Schema{
+							Type: schema.TypeString,
+						},
+					},
+					"vcpu_count": {
+						Type:         schema.TypeList,
+						MaxItems:     1,
+						RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
+						Optional:     true,
+						Description:  "Block describing the minimum and maximum number of vCPUs. It is a required field when allowed_instance_types is set ",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"min": {
+									Type:     schema.TypeInt,
+									Required: true,
+								},
+								"max": {
+									Type:     schema.TypeInt,
+									Required: true,
+								},
+							},
+						},
+					},
+					"memory_mib": {
+						Type:         schema.TypeList,
+						MaxItems:     1,
+						RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
+						Optional:     true,
+						Description:  "Block describing the minimum and maximum amount of memory (MiB). It is a required field when allowed_instance_types is set",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"min": {
+									Type:     schema.TypeInt,
+									Required: true,
+								},
+								"max": {
+									Type:     schema.TypeInt,
+									Required: true,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 func resourceAwsLaunchTemplate() *schema.Resource {
@@ -181,6 +230,7 @@ func resourceAwsLaunchTemplate() *schema.Resource {
 		Description:   "duplocloud_aws_launch_template creates the new version over current launch template version",
 		ReadContext:   resourceAwsLaunchTemplateRead,
 		CreateContext: resourceAwsLaunchTemplateCreate,
+		UpdateContext: resourceAwsLaunchTemplateUpdate,
 		DeleteContext: resourceAwsLaunchTemplateDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -191,24 +241,25 @@ func resourceAwsLaunchTemplate() *schema.Resource {
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 
-		Schema: awsLaunchTemplateSchema(),
+		Schema:        awsLaunchTemplateSchema(),
+		CustomizeDiff: launchtemplateValidation,
 	}
 }
 
 func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
 	idParts := strings.Split(id, "/")
-	ver := ""
 	tenantId, asgName := idParts[0], idParts[2]
-	if len(idParts) == 4 {
-		ver = idParts[3]
-	}
 
 	c := m.(*duplosdk.Client)
 	fullName := asgName
 	var err1 error
-	if !strings.Contains(asgName, "duploservices") {
-		fullName, err1 = c.GetResourceName("duploservices", tenantId, asgName, false)
+	prefix, err := c.GetResourcePrefixWithoutTenant("duploservices")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if !strings.Contains(asgName, prefix) {
+		fullName, err1 = c.GetResourceName(prefix, tenantId, asgName, false)
 		if err1 != nil {
 			diag.FromErr(err1)
 		}
@@ -216,17 +267,19 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 	rp, err := c.GetAwsLaunchTemplate(tenantId, fullName)
 	if err != nil {
 		if err.Status() == 404 {
+			log.Printf("[TRACE] resourceAwsLaunchTemplateRead(%s, %s): object missing", tenantId, fullName)
 			d.SetId("")
 		}
 		return diag.Errorf("%s", err.Error())
 
 	}
 	if rp == nil {
+		log.Printf("[TRACE] resourceAwsLaunchTemplateRead(%s, %s): object missing", tenantId, fullName)
 		d.SetId("")
 		return nil
 	}
 	d.Set("tenant_id", tenantId)
-	fErr := flattenLaunchTemplate(d, rp, ver)
+	fErr := flattenLaunchTemplate(d, rp, false)
 	if fErr != nil {
 		return diag.Errorf("%s", fErr.Error())
 	}
@@ -236,7 +289,7 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 	tenantId := d.Get("tenant_id").(string)
 	c := m.(*duplosdk.Client)
 
-	rq, cerr := expandLaunchTemplate(d, c, tenantId)
+	rq, cerr := expandLaunchTemplate(d, tenantId, "")
 	if cerr != nil {
 		return diag.Errorf("%s", cerr.Error())
 	}
@@ -258,36 +311,116 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 
 }
 
+func resourceAwsLaunchTemplateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	token := strings.Split(d.Id(), "/")
+	tenantId, name := token[0], token[2]
+	c := m.(*duplosdk.Client)
+
+	rq, cerr := expandLaunchTemplate(d, tenantId, name)
+	if cerr != nil {
+		return diag.Errorf("%s", cerr.Error())
+	}
+	var err duplosdk.ClientError
+	if !strings.Contains(name, "duploservices") {
+		rq.LaunchTemplateName, err = c.GetResourceName("duploservices", tenantId, name, false)
+		if err != nil {
+			diag.FromErr(err)
+		}
+	}
+	err = c.CreateAwsLaunchTemplate(tenantId, rq)
+	if err != nil {
+		return diag.Errorf("%s", err.Error())
+	}
+	diag := resourceAwsLaunchTemplateRead(ctx, d, m)
+	return diag
+
+}
+
 func resourceAwsLaunchTemplateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	return nil
 
 }
 
-func expandLaunchTemplate(d *schema.ResourceData, c *duplosdk.Client, tenantId string) (*duplosdk.DuploAwsLaunchTemplateRequest, error) {
+func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplosdk.DuploAwsLaunchTemplateRequest, error) {
 	sv := d.Get("version").(string)
-	name := d.Get("name").(string)
+	if name == "" {
+		name = d.Get("name").(string)
+	}
 	if sv == "" {
-		rp, err := c.GetAwsLaunchTemplate(tenantId, name)
-		if err != nil {
-			return nil, err
-		}
-		m := extractASGTemplateDetails(rp)
-		sv = m["latest_version"].(string)
-		log.Printf("Setting the version to latest version %s since source version not provided ", sv)
+		sv = "$Latest"
+		log.Printf("[TRACE] expandLaunchTemplate(%s, %s): version not provided, defaulting to $Latest", tenantId, name)
 	}
 
-	return &duplosdk.DuploAwsLaunchTemplateRequest{
+	obj := &duplosdk.DuploAwsLaunchTemplateRequest{
 		LaunchTemplateName: name,
 		SourceVersion:      sv,
 		VersionDescription: d.Get("version_description").(string),
 		LaunchTemplateData: &duplosdk.DuploLaunchTemplateData{
-			InstanceType: duplosdk.DuploStringValue{
-				Value: d.Get("instance_type").(string),
-			},
 			ImageId:             d.Get("ami").(string),
 			BlockDeviceMappings: expandBlockDeviceMappings(d),
 		},
-	}, nil
+	}
+	if instanceType, ok := d.GetOk("instance_type"); ok && instanceType.(string) != "" {
+		obj.LaunchTemplateData.InstanceType = &duplosdk.DuploStringValue{
+			Value: instanceType.(string),
+		}
+	}
+	if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
+		obj.SourceVersion = ""
+		obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{}
+		if v, exist := mir.([]interface{}); exist && len(v) > 0 {
+			mirMap := v[0].(map[string]interface{})
+
+			if ait, ok := mirMap["allowed_instance_types"]; ok && ait != nil {
+				if aitSlice, ok := ait.([]interface{}); ok && len(aitSlice) > 0 {
+					allowedInstanceList := []string{}
+					for _, it := range aitSlice {
+						if s, ok := it.(string); ok {
+							allowedInstanceList = append(allowedInstanceList, s)
+						}
+					}
+					obj.LaunchTemplateData.InstanceRequirementsRequest.AllowedInstanceTypes = allowedInstanceList
+				}
+			}
+
+			if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
+				if vc, exists := vcpu.([]interface{}); exists && len(vc) > 0 {
+					if vcpuMap, ok := vc[0].(map[string]interface{}); ok {
+						min, minOk := vcpuMap["min"].(int)
+						max, maxOk := vcpuMap["max"].(int)
+						if minOk || maxOk {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{}
+							if minOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Min = min
+							}
+							if maxOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount.Max = max
+							}
+						}
+					}
+
+				}
+			}
+			if memMap, ok := mirMap["memory_mib"]; ok && memMap != nil {
+				if mm, exists := memMap.([]interface{}); exists && len(mm) > 0 {
+					if mMap, ok := mm[0].(map[string]interface{}); ok {
+						min, minOk := mMap["min"].(int)
+						max, maxOk := mMap["max"].(int)
+						if minOk || maxOk {
+							obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{}
+							if minOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Min = min
+							}
+							if maxOk {
+								obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB.Max = max
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return obj, nil
 
 }
 
@@ -336,7 +469,7 @@ func expandBlockDeviceMappings(d *schema.ResourceData) []duplosdk.DuploLaunchTem
 	}
 	return blockDeviceMappings
 }
-func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, ver string) error {
+func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, isDataSource bool) error {
 
 	b, err := json.Marshal(rp)
 	if err != nil {
@@ -352,15 +485,27 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 		d.Set("name", n)
 	}
 
-	if v, ok := d.GetOk("version"); ok && v.(string) != "" {
-		d.Set("version", v.(string))
+	// Handle version attribute differently for resources vs data sources
+	if isDataSource {
+		// Data source: use specified version or default to latest
+		if v, ok := d.GetOk("version"); ok && v.(string) != "" {
+			d.Set("version", v.(string))
+		} else {
+			d.Set("version", m["latest_version"])
+		}
 	} else {
-		d.Set("version", m["latest_version"])
+		// Resource: only set if specified, otherwise nil to prevent drift
+		if v, ok := d.GetOk("version"); ok && v.(string) != "" {
+			d.Set("version", v.(string))
+		} else {
+			d.Set("version", nil)
+		}
 	}
 	d.Set("latest_version", m["latest_version"])
 	d.Set("default_version", m["default_version"])
 	d.Set("ami", m["image_id"])
 	d.Set("block_device_mapping", m["block_device_mapping"])
+	d.Set("instance_requirements", m["instance_requirements"])
 	return nil
 }
 
@@ -379,10 +524,38 @@ func extractASGTemplateDetails(rp *[]duplosdk.DuploLaunchTemplateResponse) map[s
 			lt["image_id"] = v.LaunchTemplateData.ImageId
 			lt["name"] = v.LaunchTemplateName
 			lt["block_device_mapping"] = flattenBlockDeviceMappings(v.LaunchTemplateData.BlockDeviceMappings)
+			lt["instance_requirements"] = flattenInstanceRequirements(v.LaunchTemplateData.InstanceRequirements)
 		}
 	}
 	lt["latest_version"] = strconv.Itoa(max)
 	return lt
+}
+
+func flattenInstanceRequirements(ir *duplosdk.DuploLaunchTemplateInstanceRequirements) []interface{} {
+	if ir == nil {
+		return []interface{}{}
+	}
+	irMap := map[string]interface{}{}
+	allowedInstanceTypes := []interface{}{}
+	for _, ait := range ir.AllowedInstanceTypes {
+		allowedInstanceTypes = append(allowedInstanceTypes, ait)
+	}
+	irMap["allowed_instance_types"] = allowedInstanceTypes
+	if ir.VCpuCount != nil {
+		vcpuMap := map[string]interface{}{
+			"min": ir.VCpuCount.Min,
+			"max": ir.VCpuCount.Max,
+		}
+		irMap["vcpu_count"] = []interface{}{vcpuMap}
+	}
+	if ir.MemoryMiB != nil {
+		memMap := map[string]interface{}{
+			"min": ir.MemoryMiB.Min,
+			"max": ir.MemoryMiB.Max,
+		}
+		irMap["memory_mib"] = []interface{}{memMap}
+	}
+	return []interface{}{irMap}
 }
 
 func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMappingResponse) []interface{} {
@@ -416,4 +589,72 @@ func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMa
 		bdmI = append(bdmI, bdmMap)
 	}
 	return bdmI
+}
+
+func launchtemplateValidation(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	ir, ok := diff.GetOk("instance_requirements")
+	if ok {
+		irList, ok := ir.([]interface{})
+		if ok && len(irList) > 0 && irList[0] != nil {
+			irMap, ok := irList[0].(map[string]interface{})
+			if !ok {
+				return nil
+			}
+
+			var aI, vc, mm []interface{}
+
+			if v, exists := irMap["allowed_instance_types"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					aI = tmp
+				}
+			}
+			if v, exists := irMap["vcpu_count"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					vc = tmp
+				}
+			}
+			if v, exists := irMap["memory_mib"]; exists && v != nil {
+				if tmp, ok := v.([]interface{}); ok {
+					mm = tmp
+				}
+			}
+
+			if len(aI) > 0 {
+				if len(vc) == 0 {
+					return fmt.Errorf("vcpu_count is required when allowed_instance_types is set in instance_requirements")
+				}
+				if len(mm) == 0 {
+					return fmt.Errorf("memory_mib is required when allowed_instance_types is set in instance_requirements")
+				}
+
+				vm, ok := vc[0].(map[string]interface{})
+				if !ok {
+					// Unexpected shape; skip validation rather than panic.
+					return nil
+				}
+				if max, ok := vm["max"]; ok {
+					if vmMin, ok := vm["min"].(int); ok {
+						if maxInt, ok := max.(int); ok && vmMin > maxInt {
+							return fmt.Errorf("vcpu_count min cannot be greater than max in instance_requirements")
+						}
+					}
+				}
+
+				mp, ok := mm[0].(map[string]interface{})
+				if !ok {
+					// Unexpected shape; skip validation rather than panic.
+					return nil
+				}
+				if max, ok := mp["max"]; ok {
+					if mpMin, ok := mp["min"].(int); ok {
+						if maxInt, ok := max.(int); ok && mpMin > maxInt {
+							return fmt.Errorf("memory_mib min cannot be greater than max in instance_requirements")
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }

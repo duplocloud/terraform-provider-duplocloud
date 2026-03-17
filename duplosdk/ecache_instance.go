@@ -29,6 +29,7 @@ type DuploEcacheInstance struct {
 	InstanceStatus                    string   `json:"InstanceStatus,omitempty"`
 	EnableClusterMode                 bool     `json:"ClusteringEnabled,omitempty"`
 	AutomaticFailoverEnabled          bool     `json:"AutomaticFailoverEnabled,omitempty"`
+	MultiAZEnabled                    bool     `json:"MultiAZEnabled,omitempty"`
 	NumberOfShards                    int      `json:"NoOfShards,omitempty"`
 	SnapshotName                      string   `json:"SnapshotName,omitempty"`
 	SnapshotArns                      []string `json:"SnapshotArns,omitempty"`
@@ -145,6 +146,30 @@ func (c *Client) EcacheInstanceUpdateSnapshotRetentionLimit(tenantID, name strin
 	return c.postAPI(
 		fmt.Sprintf("EcacheInstanceUpdateSnapshotRetentionLimit(%s, duplo-%s)", tenantID, name),
 		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateRetentionLimit", tenantID),
+		&rq, nil)
+}
+
+type DuplocloudEcacheAutomaticFailoverUpdateRequest struct {
+	Identifier               string `json:"Identifier"`
+	AutomaticFailoverEnabled bool   `json:"AutomaticFailoverEnabled"`
+}
+
+func (c *Client) EcacheInstanceUpdateAutomaticFailover(tenantID, name string, rq DuplocloudEcacheAutomaticFailoverUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateAutomaticFailover(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateAutomaticFailover", tenantID),
+		&rq, nil)
+}
+
+type DuplocloudEcacheMultiAZUpdateRequest struct {
+	Identifier     string `json:"Identifier"`
+	MultiAZEnabled bool   `json:"MultiAZEnabled"`
+}
+
+func (c *Client) EcacheInstanceUpdateMultiAZ(tenantID, name string, rq DuplocloudEcacheMultiAZUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateMultiAZ(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateMultiAZ", tenantID),
 		&rq, nil)
 }
 
