@@ -64,7 +64,7 @@ func retryApiCall(apiCaller string, operationApiCall func() ClientError, conf *R
 		return newClientError("RetryConf is nil")
 	}
 	for attempt = 1; attempt <= conf.RateExceededMaxRetries; attempt++ {
-		delay := calculateBackoffInterval(apiCaller, attempt, conf.MaxStartingDelay, conf.MaxStartingDelay, conf.MinDelay, conf.MaxDelay, conf.MinJitterDelay)
+		delay := calculateBackoffInterval(apiCaller, attempt, conf.MinStartingDelay, conf.MaxStartingDelay, conf.MinDelay, conf.MaxDelay, conf.MinJitterDelay)
 		sleepDuration += delay
 		log.Printf("[TRACE] retryApiCall START sleep start (loop_sleep, retry_attempts, api) (%d,%d,%s)", int(delay.Seconds()), attempt, apiCaller)
 		if attempt > 1 {
