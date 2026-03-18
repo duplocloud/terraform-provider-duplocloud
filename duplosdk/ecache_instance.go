@@ -40,6 +40,22 @@ type DuploEcacheInstance struct {
 	GlobalReplicationGroupDescription string   `json:"GlobalReplicationGroupDescription,omitempty"`
 	GlobalReplicationGroupId          string   `json:"GlobalReplicationGroupId,omitempty"`
 	IsPrimary                         bool     `json:"IsPrimary,omitempty"`
+
+	LogDeliveryConfigurations []LogDeliveryConfigurationResponse `json:"LogDeliveryConfigurations,omitempty"`
+}
+
+// LogDeliveryConfigurationResponse represents a log delivery config as returned by the API.
+// Field values are wrapped in {"Value": "..."} objects.
+type LogDeliveryConfigurationResponse struct {
+	DestinationDetails *DestinationDetails      `json:"DestinationDetails,omitempty"`
+	DestinationType    *LogDeliveryValueWrapper  `json:"DestinationType,omitempty"`
+	LogFormat          *LogDeliveryValueWrapper  `json:"LogFormat,omitempty"`
+	LogType            *LogDeliveryValueWrapper  `json:"LogType,omitempty"`
+	Status             *LogDeliveryValueWrapper  `json:"Status,omitempty"`
+}
+
+type LogDeliveryValueWrapper struct {
+	Value string `json:"Value"`
 }
 
 type AddDuploEcacheInstanceRequest struct {
@@ -170,6 +186,38 @@ func (c *Client) EcacheInstanceUpdateMultiAZ(tenantID, name string, rq Duploclou
 	return c.postAPI(
 		fmt.Sprintf("EcacheInstanceUpdateMultiAZ(%s, duplo-%s)", tenantID, name),
 		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateMultiAZ", tenantID),
+		&rq, nil)
+}
+
+type DuplocloudEcacheReplicasUpdateRequest struct {
+	Identifier string `json:"Identifier"`
+	Replicas   int    `json:"Replicas"`
+}
+
+func (c *Client) EcacheInstanceUpdateReplicas(tenantID, name string, rq DuplocloudEcacheReplicasUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateReplicas(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateReplicas", tenantID),
+		&rq, nil)
+}
+
+type LogDeliveryConfigurationUpdateItem struct {
+	DestinationType    string              `json:"DestinationType,omitempty"`
+	LogFormat          string              `json:"LogFormat,omitempty"`
+	LogType            string              `json:"LogType,omitempty"`
+	DestinationDetails *DestinationDetails `json:"DestinationDetails,omitempty"`
+	Enabled            bool                `json:"Enabled"`
+}
+
+type DuplocloudEcacheLogDeliveryUpdateRequest struct {
+	Identifier                    string `json:"Identifier"`
+	LogDeliveryConfigurationsJson string `json:"LogDeliveryConfigurationsJson"`
+}
+
+func (c *Client) EcacheInstanceUpdateLogDelivery(tenantID, name string, rq DuplocloudEcacheLogDeliveryUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateLogDelivery(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateLogDeliveryConfiguration", tenantID),
 		&rq, nil)
 }
 
