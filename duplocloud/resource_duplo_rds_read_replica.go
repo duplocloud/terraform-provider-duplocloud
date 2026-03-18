@@ -218,6 +218,37 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"storage_autoscaling": {
+			Description:      "This can only be set during an update; it will inherit the writer's value during creation.",
+			Optional:         true,
+			Computed:         true,
+			MaxItems:         1,
+			Type:             schema.TypeList,
+			DiffSuppressFunc: diffSuppressWhenCreating,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"enable": {
+						Description: "Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage.",
+						Optional:    true,
+						Computed:    true,
+						Type:        schema.TypeBool,
+						//ForceNew:    true,
+					},
+					"max_allocated_storage": {
+						Description: "The upper limit, in gibibytes (GiB), to which Amazon RDS can automatically scale the storage of the DB instance when autoscaling is enabled.",
+						Optional:    true,
+						Type:        schema.TypeInt,
+					},
+				},
+			},
+		},
+		"allocated_storage": {
+			Description:      "(Required unless a `snapshot_id` is provided) The allocated storage in gigabytes. This can only be set during an update; it will inherit the writer's value during creation.\n**Note:** Allocated storage can only be modified after every 6 hours.",
+			Type:             schema.TypeInt,
+			Optional:         true,
+			Computed:         true,
+			DiffSuppressFunc: diffSuppressWhenCreating,
+		},
 	}
 }
 
@@ -234,9 +265,9 @@ func resourceDuploRdsReadReplica() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(45 * time.Minute),
-			Update: schema.DefaultTimeout(20 * time.Minute),
-			Delete: schema.DefaultTimeout(20 * time.Minute),
+			Create: schema.DefaultTimeout(60 * time.Minute),
+			Update: schema.DefaultTimeout(60 * time.Minute),
+			Delete: schema.DefaultTimeout(45 * time.Minute),
 		},
 		Schema:        rdsReadReplicaSchema(),
 		CustomizeDiff: customdiff.All(validateRDSParameters, validateRDSReplicaUse),
@@ -490,7 +521,43 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 		err = c.RdsUpdateAutoMinorVersionUpgrade(tenantID, identifier, duplosdk.DuploRdsAutoMinorVersionUpgrade{
 			AutoMinorVersionUpgrade: val,
 		})
+		time.Sleep(5 * time.Minute) //adding sleep because there is no status change for this update and it takes some time to apply the change. This is to avoid any potential drift in terraform state during next read before the change is applied.
 	}
+	if d.HasChange("storage_autoscaling") {
+		obj := duplosdk.DuploRDSStorageAutoScalling{
+			ApplyImmediately: true,
+		}
+		obj.IsAutoScalingEnabled = d.Get("storage_autoscaling.0.enable").(bool)
+		obj.MaxAllocatedStorage = d.Get("storage_autoscaling.0.max_allocated_storage").(int)
+		if !obj.IsAutoScalingEnabled {
+			obj.MaxAllocatedStorage = d.Get("allocated_storage").(int)
+		}
+		cerr := c.UpdateRDSDBInstanceStorageAutoScalling(tenantID, identifier, obj)
+		if cerr != nil {
+			return diag.FromErr(cerr)
+		}
+
+	}
+
+	if d.HasChange("allocated_storage") {
+		obj := duplosdk.DuploRdsUpdateInstance{
+			DBInstanceIdentifier: identifier,
+			AllocatedStorage:     d.Get("allocated_storage").(int),
+			ApplyImmediately:     true,
+		}
+		cerr := c.UpdateRDSDBInstance(tenantID, obj)
+		if cerr != nil {
+			return diag.Errorf("Error updating for RDS DB read replica instance '%s' : %s", id, cerr)
+		}
+		_ = readReplicaInstanceWaitUntilUnavailable(ctx, c, id, 150*time.Second)
+
+		err = rdsReadReplicaWaitUntilAvailable(ctx, c, id, d.Timeout("update"))
+		if err != nil {
+			return diag.Errorf("Error waiting for RDS DB instance '%s' to be available: %s", id, err)
+		}
+
+	}
+
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -597,6 +664,14 @@ func rdsReadReplicaFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance
 	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
 	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
 	duploObject.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
+	duploObject.AllocatedStorage = d.Get("allocated_storage").(int)
+
+	//duploObject.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
+	duploObject.IsAutoScalingEnabled = d.Get("storage_autoscaling.0.enable").(bool)
+	if duploObject.IsAutoScalingEnabled {
+		duploObject.MaxAllocatedStorage = d.Get("storage_autoscaling.0.max_allocated_storage").(int)
+	}
+
 	return duploObject, nil
 }
 
@@ -624,6 +699,8 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 		}
 	}
 	jo["engine"] = duploObject.Engine
+	jo["engine_type"] = duploObject.Engine
+
 	jo["engine_version"] = duploObject.EngineVersion
 	jo["size"] = duploObject.SizeEx
 	jo["availability_zone"] = duploObject.AvailabilityZone
@@ -649,6 +726,15 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 	pis = append(pis, pi)
 	jo["performance_insights"] = pis
 	jo["auto_minor_version_upgrade"] = duploObject.AutoMinorVersionUpgrade
+	mp := map[string]interface{}{
+		"enable":                duploObject.IsAutoScalingEnabled,
+		"max_allocated_storage": duploObject.MaxAllocatedStorage,
+	}
+	jo["storage_autoscaling"] = []interface{}{mp}
+
+	jo["allocated_storage"] = duploObject.AllocatedStorage
+
+	//jo["auto_minor_version_upgrade"] = duploObject.AutoMinorVersionUpgrade
 	jsonData2, _ := json.Marshal(jo)
 	log.Printf("[TRACE] duplo-RdsInstanceToState ******** 2: OUTPUT => %s ", jsonData2)
 

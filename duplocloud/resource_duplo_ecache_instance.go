@@ -124,8 +124,13 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "Enables automatic failover.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			ForceNew:    true,
-			Default:     false,
+			Computed:    true,
+		},
+		"multi_az_enabled": {
+			Description: "Enables Multi-AZ support for the ElastiCache instance. Multi-AZ is only applicable for Redis (cache_type=0) and Valkey (cache_type=2). When enabled, automatic_failover_enabled must also be set to true.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"encryption_in_transit": {
 			Description: "Enables encryption-in-transit.",
@@ -331,7 +336,11 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	c := m.(*duplosdk.Client)
 
-	fullName := "duplo-" + duplo.Name
+	fullName, err := c.GetDuploServicesPrefix(tenantID, "duplo")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	if !validateStringLength(fullName, TOTALECACHENAMELENGTH) {
 		return diag.Errorf("resourceDuploEcacheInstanceCreate: fullname %s exceeds allowable ecache name length %d)", fullName, TOTALECACHENAMELENGTH)
 
@@ -584,6 +593,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			SnapshotName:             d.Get("snapshot_name").(string),
 			SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
 			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
+			MultiAZEnabled:           d.Get("multi_az_enabled").(bool),
 			SnapshotWindow:           d.Get("snapshot_window").(string),
 			EnableClusterMode:        d.Get("enable_cluster_mode").(bool),
 		},
@@ -664,6 +674,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
+	d.Set("multi_az_enabled", duplo.MultiAZEnabled)
 	if duplo.IsGlobal {
 		m := make(map[string]interface{})
 		m["group_id"] = duplo.GlobalReplicationGroupId
@@ -712,6 +723,11 @@ func parseECacheInstanceIdParts(id string) (tenantID, name string, err error) {
 }
 
 func suppressNoOfShardsDiff(k, old, new string, d *schema.ResourceData) bool {
+	// number_of_shards is only meaningful when cluster mode is enabled
+	if !d.Get("enable_cluster_mode").(bool) {
+		return true
+	}
+
 	newValue, err := strconv.Atoi(new)
 	if err != nil {
 		return false // Unexpected new value type
@@ -851,6 +867,29 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 
 	if ecm && !failover {
 		return fmt.Errorf("automatic_failover_enabled should be true for cluster mode")
+	}
+
+	// Safely get multi_az_enabled with nil check
+	multiAzVal := diff.Get("multi_az_enabled")
+	multiAz := false
+	if multiAzVal != nil {
+		multiAz = multiAzVal.(bool)
+	}
+
+	if diff.Id() != "" && diff.HasChange("multi_az_enabled") {
+		return fmt.Errorf("multi_az_enabled cannot be changed after creation; please recreate the resource to change this setting")
+	}
+
+	if multiAz && !failover {
+		failoverRaw := diff.GetRawConfig().GetAttr("automatic_failover_enabled")
+		if failoverRaw.IsKnown() && !failoverRaw.IsNull() {
+			// User explicitly set automatic_failover_enabled = false alongside multi_az_enabled = true
+			return fmt.Errorf("automatic_failover_enabled must be true when multi_az_enabled is true")
+		}
+		// automatic_failover_enabled not explicitly set; auto-enable it when multi_az_enabled is true
+		if err := diff.SetNew("automatic_failover_enabled", true); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1031,6 +1070,44 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		err = c.EcacheInstanceUpdateSnapshotRetentionLimit(tenantID, name, rq)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+	if d.HasChange("automatic_failover_enabled") {
+		newVal := d.Get("automatic_failover_enabled").(bool)
+		if newVal && d.Get("replicas").(int) < 2 {
+			return diag.Errorf("To enable automatic_failover_enabled, replicas must be 2 or more")
+		}
+		rq := duplosdk.DuplocloudEcacheAutomaticFailoverUpdateRequest{
+			Identifier:               identifier,
+			AutomaticFailoverEnabled: newVal,
+		}
+		cerr := c.EcacheInstanceUpdateAutomaticFailover(tenantID, name, rq)
+		if cerr != nil {
+			return diag.FromErr(cerr)
+		}
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+	if d.HasChange("multi_az_enabled") {
+		newVal := d.Get("multi_az_enabled").(bool)
+		if newVal && !d.Get("automatic_failover_enabled").(bool) {
+			return diag.Errorf("To enable multi_az_enabled, automatic_failover_enabled must be true")
+		}
+		rq := duplosdk.DuplocloudEcacheMultiAZUpdateRequest{
+			Identifier:     identifier,
+			MultiAZEnabled: newVal,
+		}
+		cerr := c.EcacheInstanceUpdateMultiAZ(tenantID, name, rq)
+		if cerr != nil {
+			return diag.FromErr(cerr)
 		}
 		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
 		if err != nil {

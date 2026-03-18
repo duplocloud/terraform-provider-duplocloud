@@ -191,12 +191,16 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 
 ### Optional
 
+- `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes. This can only be set during an update; it will inherit the writer's value during creation.
+**Note:** Allocated storage can only be modified after every 6 hours.
+- `auto_minor_version_upgrade` (Boolean) Enable or disable auto minor version upgrade
 - `availability_zone` (String) The AZ for the RDS instance.
 - `engine_type` (Number) Engine type required to validate applicable parameter group setting for different instance. Should be referred from writer
 - `enhanced_monitoring` (Number) Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.
 - `multi_az` (Boolean) Specifies if the RDS instance is multi-AZ.
 - `parameter_group_name` (String) A RDS parameter group name to apply to the RDS instance.
 - `performance_insights` (Block List, Max: 1) Amazon RDS Performance Insights is a database performance tuning and monitoring feature that helps you quickly assess the load on your database, and determine when and where to take action. Perfomance Insights get apply when enable is set to true. (see [below for nested schema](#nestedblock--performance_insights))
+- `storage_autoscaling` (Block List, Max: 1) This can only be set during an update; it will inherit the writer's value during creation. (see [below for nested schema](#nestedblock--storage_autoscaling))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `v2_scaling_configuration` (Block List, Max: 1) Serverless v2_scaling_configuration min and max scalling capacity. Required during creating a servless read replica. (see [below for nested schema](#nestedblock--v2_scaling_configuration))
 
@@ -224,6 +228,15 @@ Optional:
 - `enabled` (Boolean) Turn on or off Performance Insights Defaults to `false`.
 - `kms_key_id` (String) Specify ARN for the KMS key to encrypt Performance Insights data.
 - `retention_period` (Number) Specify retention period in Days. Valid values are 7, 731 (2 years) or a multiple of 31. For Document DB retention period is 7 Defaults to `7`.
+
+
+<a id="nestedblock--storage_autoscaling"></a>
+### Nested Schema for `storage_autoscaling`
+
+Optional:
+
+- `enable` (Boolean) Whether to enable storage autoscaling for the RDS instance. When enabled, the storage size can automatically increase up to the specified max_allocated_storage.
+- `max_allocated_storage` (Number) The upper limit, in gibibytes (GiB), to which Amazon RDS can automatically scale the storage of the DB instance when autoscaling is enabled.
 
 
 <a id="nestedblock--timeouts"></a>

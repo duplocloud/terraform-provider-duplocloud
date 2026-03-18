@@ -61,11 +61,8 @@ resource "duplocloud_tenant_kms" "mykey" {
 Required:
 
 - `arn` (String)
+- `id` (String) The ID of the KMS key.
 - `name` (String)
-
-Read-Only:
-
-- `id` (String) The ID of this resource.
 
 
 <a id="nestedblock--timeouts"></a>

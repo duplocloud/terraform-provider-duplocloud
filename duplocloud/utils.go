@@ -717,10 +717,6 @@ func validateJsonObjectArray(key string, value string) (ws []string, errors []er
 	return
 }
 
-// Internal function to convert map keys from lower camel-case to upper camel-case.
-//   - Adds an upper camel-case entry for each lower camel-case entry, unless the upper exists already.
-//   - Removes any lower camel-case entry.
-//   - Never overwrites any existing upper camel-case keys.
 func makeMapUpperCamelCase(m map[string]interface{}) {
 	for k := range m {
 
@@ -1163,7 +1159,19 @@ func max(a, b int) int {
 	return b
 }
 
-// 1 trim prefix, 2 trim suffix, 3 trim both
+func StringValueSliceTolist(v []duplosdk.DuploStringValue) []string {
+	l := make([]string, 0, len(v))
+	for _, d := range v {
+		l = append(l, d.Value)
+	}
+	return l
+}
+
+func GetResourceNameFromARN(arn string) string {
+	tokens := strings.Split(arn, ":")
+	return tokens[len(tokens)-1]
+}
+
 func trimStringsByPosition(stringsSlice []string, sufixOrPrefix int) []string {
 	position := map[string]struct{}{
 		"allow-lb-healthcheck": {},

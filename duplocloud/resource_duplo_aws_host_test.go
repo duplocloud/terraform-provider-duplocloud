@@ -16,9 +16,11 @@ import (
 func duplocloud_aws_host_basic(rName, hostName string, attrs map[string]string) string {
 	return duplocloudtest.WriteFlatResource("duplocloud_aws_host", rName,
 		map[string]string{
-			"tenant_id":            "\"" + Tenant_testacc1a + "\"",
-			"user_account":         "\"testacc1a\"",
-			"friendly_name":        "\"duploservices-testacc1a-" + hostName + "\"",
+			"tenant_id":    "\"" + Tenant_testacc1a + "\"",
+			"user_account": "\"testacc1a\"",
+			//			"friendly_name":        "\"duploservices-testacc1a-" + hostName + "\"",
+			"friendly_name": "\"" + hostName + "\"",
+
 			"zone":                 "0",
 			"image_id":             "\"ami-1234abc\"",
 			"capacity":             "\"t4g.small\"",
@@ -60,7 +62,8 @@ func TestAccResource_duplocloud_aws_host_basic(t *testing.T) {
 					return resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(r, "tenant_id", Tenant_testacc1a),
 						resource.TestCheckResourceAttr(r, "instance_id", host.InstanceID),
-						resource.TestCheckResourceAttr(r, "friendly_name", roleName+"-"+hostName),
+						resource.TestCheckResourceAttr(r, "friendly_name", hostName),
+						resource.TestCheckResourceAttr(r, "fullname", roleName+"-"+hostName),
 						resource.TestCheckResourceAttr(r, "image_id", "ami-1234abc"),
 						resource.TestCheckResourceAttr(r, "capacity", "t4g.small"),
 						resource.TestCheckResourceAttr(r, "allocated_public_ip", "true"),
@@ -85,7 +88,8 @@ func TestAccResource_duplocloud_aws_host_basic(t *testing.T) {
 					return resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(r, "tenant_id", Tenant_testacc1a),
 						resource.TestCheckResourceAttr(r, "instance_id", host.InstanceID),
-						resource.TestCheckResourceAttr(r, "friendly_name", roleName+"-"+hostName),
+						resource.TestCheckResourceAttr(r, "friendly_name", hostName),
+						resource.TestCheckResourceAttr(r, "fullname", roleName+"-"+hostName),
 						resource.TestCheckResourceAttr(r, "image_id", "ami-1234abc"),
 						resource.TestCheckResourceAttr(r, "capacity", "t4g.small"),
 						resource.TestCheckResourceAttr(r, "allocated_public_ip", "false"),
@@ -108,7 +112,8 @@ func TestAccResource_duplocloud_aws_host_basic(t *testing.T) {
 					return resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(r, "tenant_id", Tenant_testacc1a),
 						resource.TestCheckResourceAttr(r, "instance_id", host.InstanceID),
-						resource.TestCheckResourceAttr(r, "friendly_name", roleName+"-"+hostName),
+						resource.TestCheckResourceAttr(r, "friendly_name", hostName),
+						resource.TestCheckResourceAttr(r, "fullname", roleName+"-"+hostName),
 						resource.TestCheckResourceAttr(r, "image_id", "ami-1234abc"),
 						resource.TestCheckResourceAttr(r, "capacity", "t4g.small"),
 						resource.TestCheckResourceAttr(r, "allocated_public_ip", "true"),

@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -232,7 +233,7 @@ func parseAwsTimestreamDatabaseIdParts(id string) (tenantID, name string, err er
 }
 
 func flattenTimestreamDatabase(d *schema.ResourceData, c *duplosdk.Client, duplo *duplosdk.DuploTimestreamDBDetails, tenantId string) diag.Diagnostics {
-	prefix, err := c.GetDuploServicesPrefix(tenantId)
+	prefix, err := c.GetDuploServicesPrefix(tenantId, "")
 	if err != nil {
 		return diag.FromErr(err)
 	}

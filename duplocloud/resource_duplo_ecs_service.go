@@ -85,7 +85,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 			Description: "Zero or more load balancer configurations to associate with this service.",
 			Type:        schema.TypeList,
 			Optional:    true,
-			ForceNew:    true,
+			//ForceNew:    true,
 			// MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -98,7 +98,8 @@ func ecsServiceSchema() map[string]*schema.Schema {
 							"Should be one of:\n\n" +
 							"   - `0` : ELB (Classic Load Balancer)\n" +
 							"   - `1` : ALB (Application Load Balancer)\n" +
-							"   - `2` : Health-check Only (No Load Balancer)\n",
+							"   - `2` : Health-check Only (No Load Balancer)\n" +
+							"   - `6` : NLB (Network Load Balancer)\n",
 						Type:     schema.TypeInt,
 						Optional: false,
 						Required: true,
@@ -153,7 +154,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Default:     false,
 					},
 					"health_check_url": {
-						Description: "The health check URL to associate with this load balancer configuration.",
+						Description: "The health check URL to associate with this load balancer configuration. Not applicable for NLB",
 						Type:        schema.TypeString,
 						Optional:    true,
 						Required:    false,
@@ -210,7 +211,7 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Computed:    true,
 					},
 					"health_check_config": {
-						Description: "Health check configuration for this load balancer.",
+						Description: "Health check configuration for this load balancer. Not applicable for NLB",
 						Type:        schema.TypeList,
 						Optional:    true,
 						MaxItems:    1,
@@ -245,6 +246,12 @@ func ecsServiceSchema() map[string]*schema.Schema {
 									Type:     schema.TypeString,
 									Optional: true,
 									Computed: true,
+								},
+								"health_check_port": {
+									Type:        schema.TypeInt,
+									Optional:    true,
+									Computed:    true,
+									Description: "The port the load balancer uses when performing health checks on targets. If not specified, it will be treated as the traffic port.",
 								},
 							},
 						},
@@ -557,6 +564,21 @@ func flattenDuploEcsService(d *schema.ResourceData, duplo *duplosdk.DuploEcsServ
 	if duplo.DeploymentConfiguration != nil {
 		d.Set("deployment_configuration", flattenDeploumentConfiguration(duplo.DeploymentConfiguration))
 	}
+
+	// Populate target_group_arns, always setting it to avoid stale state.
+	// Only persist ARNs when required target groups are confirmed created (rp == true).
+	targetGroupArns := []string{}
+	if duplo.LBConfigurations != nil && len(*duplo.LBConfigurations) > 0 {
+		rp, err, arns := c.EcsServiceRequiredTargetGroupsCreated(duplo.TenantID, duplo)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if rp && len(arns) > 0 {
+			targetGroupArns = arns
+		}
+	}
+	d.Set("target_group_arns", targetGroupArns)
+
 	return nil
 }
 
@@ -723,6 +745,10 @@ func ecsLoadBalancersHealthCheckConfigToState(hcc *duplosdk.DuploEcsServiceLbHea
 		config["grpc_success_code"] = hcc.GrpcSuccessCode
 		configPresent = true
 	}
+	if hcc.HealthCheckPort != nil {
+		config["health_check_port"] = *hcc.HealthCheckPort
+		configPresent = true
+	}
 	if !configPresent {
 		return nil
 	}
@@ -786,6 +812,12 @@ func ecsLoadBalancerHealthCheckConfigFromState(d *schema.ResourceData, lbHealthC
 		HttpSuccessCode:            lbHealthConfig["http_success_code"].(string),
 		GrpcSuccessCode:            lbHealthConfig["grpc_success_code"].(string),
 	}
+
+	// Only set HealthCheckPort if non-zero (0 means use traffic port, send nil to backend)
+	if port := lbHealthConfig["health_check_port"].(int); port != 0 {
+		hcc.HealthCheckPort = &port
+	}
+
 	return &hcc
 }
 
