@@ -21,25 +21,25 @@ type DuploSystemFeatures struct {
 		DefaultVersion    string   `json:"DefaultVersion"`
 		SupportedVersions []string `json:"SupportedVersions"`
 	} `json:"EksVersions"`
-	IsOtpNeeded                         bool                            `json:"IsOtpNeeded"`
-	IsAwsAdminJITEnabled                bool                            `json:"IsAwsAdminJITEnabled"`
-	IsDuploOpsEnabled                   bool                            `json:"IsDuploOpsEnabled"`
-	IsTagsBasedResourceMgmtEnabled      bool                            `json:"IsTagsBasedResourceMgmtEnabled"`
-	DevopsManagerHostname               string                          `json:"DevopsManagerHostname"`
-	TenantNameMaxLength                 int                             `json:"TenantNameMaxLength"`
-	AzureResourcePrefix                 *AzureResourcePrefix            `json:"AzureResourcePrefix,omitempty"`
-	S3BucketNamePrefix                  string                          `json:"S3BucketNamePrefix"`
-	GcpDisableTenantPrefix              bool                            `json:"GcpDisableTenantPrefix"`
-	GcpDisableDuploPrefix               bool                            `json:"GcpDisableDuploPrefix"`
-	IsOnPremEnabled                     bool                            `json:"IsOnPremEnabled"`
-	DefaultAwsPartition                 string                          `json:"DefaultAwsPartition"`
-	DuploShellFqdn                      string                          `json:"DuploShellFqdn"`
-	EnabledFlags                        []string                        `json:"EnabledFlags"`
-	AppConfigs                          []DuploSystemFeaturesAppConfigs `json:"AppConfigs"`
-	DisableOobData                      bool                            `json:"DisableOobData"`
-	DefaultInfraCloud                   string                          `json:"DefaultInfraCloud"`
-	TagsBasedManagedResources           []string                        `json:"TagsBasedManagedResources"`
-	ResourceNamePrefix                  string                          `json:"ResourceNamePrefix"`
+	IsOtpNeeded                    bool                            `json:"IsOtpNeeded"`
+	IsAwsAdminJITEnabled           bool                            `json:"IsAwsAdminJITEnabled"`
+	IsDuploOpsEnabled              bool                            `json:"IsDuploOpsEnabled"`
+	IsTagsBasedResourceMgmtEnabled bool                            `json:"IsTagsBasedResourceMgmtEnabled"`
+	DevopsManagerHostname          string                          `json:"DevopsManagerHostname"`
+	TenantNameMaxLength            int                             `json:"TenantNameMaxLength"`
+	AzureResourcePrefix            *AzureResourcePrefix            `json:"AzureResourcePrefix,omitempty"`
+	S3BucketNamePrefix             string                          `json:"S3BucketNamePrefix"`
+	GcpDisableTenantPrefix         bool                            `json:"GcpDisableTenantPrefix"`
+	GcpDisableDuploPrefix          bool                            `json:"GcpDisableDuploPrefix"`
+	IsOnPremEnabled                bool                            `json:"IsOnPremEnabled"`
+	DefaultAwsPartition            string                          `json:"DefaultAwsPartition"`
+	DuploShellFqdn                 string                          `json:"DuploShellFqdn"`
+	EnabledFlags                   []string                        `json:"EnabledFlags"`
+	AppConfigs                     []DuploSystemFeaturesAppConfigs `json:"AppConfigs"`
+	DisableOobData                 bool                            `json:"DisableOobData"`
+	DefaultInfraCloud              string                          `json:"DefaultInfraCloud"`
+	TagsBasedManagedResources      []string                        `json:"TagsBasedManagedResources"`
+	ResourceNamePrefix             string                          `json:"ResourceNamePrefix"`
 }
 
 type DuploSystemFeaturesAppConfigs struct {
