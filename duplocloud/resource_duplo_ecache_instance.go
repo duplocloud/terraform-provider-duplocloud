@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -109,7 +110,6 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description:  "The number of replicas to create. Supported number of replicas is 1 to 6",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			ForceNew:     true,
 			Default:      1,
 			ValidateFunc: validation.IntBetween(1, 6),
 		},
@@ -219,7 +219,6 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Type:     schema.TypeSet,
 			MaxItems: 2,
 			Optional: true,
-			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"destination_type": {
@@ -683,7 +682,29 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 		m["is_primary"] = duplo.IsPrimary
 		d.Set("global_replication_group", []interface{}{m})
 	}
+	d.Set("log_delivery_configuration", flattenLogDeliveryConfigurations(duplo.LogDeliveryConfigurations))
 	return nil
+}
+
+func flattenLogDeliveryConfigurations(configs []duplosdk.LogDeliveryConfigurationResponse) []interface{} {
+	result := make([]interface{}, 0, len(configs))
+	for _, cfg := range configs {
+		if cfg.DestinationType == nil || cfg.LogFormat == nil || cfg.LogType == nil {
+			continue
+		}
+		m := map[string]interface{}{
+			"destination_type": cfg.DestinationType.Value,
+			"log_format":       cfg.LogFormat.Value,
+			"log_type":         cfg.LogType.Value,
+		}
+		if cfg.DestinationDetails != nil && cfg.DestinationDetails.CloudWatchLogsDetails != nil {
+			m["log_group"] = cfg.DestinationDetails.CloudWatchLogsDetails.LogGroup
+		} else {
+			m["log_group"] = ""
+		}
+		result = append(result, m)
+	}
+	return result
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
@@ -1071,6 +1092,97 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.FromErr(err)
 		}
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+	if d.HasChange("replicas") {
+		newReplicas := d.Get("replicas").(int)
+		if newReplicas < 2 && d.Get("automatic_failover_enabled").(bool) {
+			return diag.Errorf("Invalid replicas for '%s': automatic_failover_enabled requires replicas to be 2 or more", id)
+		}
+		rq := duplosdk.DuplocloudEcacheReplicasUpdateRequest{
+			Identifier: identifier,
+			Replicas:   newReplicas,
+		}
+		cerr := c.EcacheInstanceUpdateReplicas(tenantID, name, rq)
+		if cerr != nil {
+			return diag.FromErr(cerr)
+		}
+		time.Sleep(30 * time.Second) // allow modification to propagate before polling
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+	if d.HasChange("log_delivery_configuration") {
+		oldRaw, newRaw := d.GetChange("log_delivery_configuration")
+		newSet, ok := newRaw.(*schema.Set)
+		if !ok || newSet == nil {
+			newSet = schema.NewSet(schema.HashResource(resourceDuploEcacheInstance().Schema["log_delivery_configuration"].Elem.(*schema.Resource)), []interface{}{})
+		}
+		oldSet, ok := oldRaw.(*schema.Set)
+		if !ok || oldSet == nil {
+			oldSet = schema.NewSet(schema.HashResource(resourceDuploEcacheInstance().Schema["log_delivery_configuration"].Elem.(*schema.Resource)), []interface{}{})
+		}
+		newConfigs, diagErr := expandLogDeliveryConfigurations(newSet.List())
+		if diagErr != nil {
+			return diagErr
+		}
+		oldConfigs, diagErr := expandLogDeliveryConfigurations(oldSet.List())
+		if diagErr != nil {
+			return diagErr
+		}
+
+		if duplicateLogType, found := hasDuplicateLogTypes(newConfigs); found {
+			return diag.Errorf("log_delivery_configuration: Duplicate log_type are not allowed. Found '%s' log_type repeated.", duplicateLogType)
+		}
+		engineVersion := d.Get("engine_version").(string)
+		if errDiag := validateLogDeliveryConfigurations(engineVersion, newConfigs); errDiag != nil {
+			return errDiag
+		}
+
+		updateItems := make([]duplosdk.LogDeliveryConfigurationUpdateItem, 0)
+		for _, cfg := range newConfigs {
+			updateItems = append(updateItems, duplosdk.LogDeliveryConfigurationUpdateItem{
+				DestinationType:    cfg.DestinationType,
+				LogFormat:          cfg.LogFormat,
+				LogType:            cfg.LogType,
+				DestinationDetails: cfg.DestinationDetails,
+				Enabled:            true,
+			})
+		}
+		newLogTypes := make(map[string]bool, len(newConfigs))
+		for _, cfg := range newConfigs {
+			newLogTypes[cfg.LogType] = true
+		}
+		for _, cfg := range oldConfigs {
+			if !newLogTypes[cfg.LogType] {
+				updateItems = append(updateItems, duplosdk.LogDeliveryConfigurationUpdateItem{
+					DestinationType:    cfg.DestinationType,
+					LogFormat:          cfg.LogFormat,
+					LogType:            cfg.LogType,
+					DestinationDetails: cfg.DestinationDetails,
+					Enabled:            false,
+				})
+			}
+		}
+		jsonBytes, jsonErr := json.Marshal(updateItems)
+		if jsonErr != nil {
+			return diag.Errorf("Error serializing log_delivery_configuration: %s", jsonErr)
+		}
+		rq := duplosdk.DuplocloudEcacheLogDeliveryUpdateRequest{
+			Identifier:                    identifier,
+			LogDeliveryConfigurationsJson: string(jsonBytes),
+		}
+		cerr := c.EcacheInstanceUpdateLogDelivery(tenantID, name, rq)
+		if cerr != nil {
+			return diag.FromErr(cerr)
+		}
+		time.Sleep(30 * time.Second) // allow modification to propagate before polling
 		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
 		if err != nil {
 			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
