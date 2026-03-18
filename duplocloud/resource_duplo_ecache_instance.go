@@ -689,18 +689,18 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 func flattenLogDeliveryConfigurations(configs []duplosdk.LogDeliveryConfigurationResponse) []interface{} {
 	result := make([]interface{}, 0, len(configs))
 	for _, cfg := range configs {
-		m := map[string]interface{}{}
-		if cfg.DestinationType != nil {
-			m["destination_type"] = cfg.DestinationType.Value
+		if cfg.DestinationType == nil || cfg.LogFormat == nil || cfg.LogType == nil {
+			continue
 		}
-		if cfg.LogFormat != nil {
-			m["log_format"] = cfg.LogFormat.Value
-		}
-		if cfg.LogType != nil {
-			m["log_type"] = cfg.LogType.Value
+		m := map[string]interface{}{
+			"destination_type": cfg.DestinationType.Value,
+			"log_format":       cfg.LogFormat.Value,
+			"log_type":         cfg.LogType.Value,
 		}
 		if cfg.DestinationDetails != nil && cfg.DestinationDetails.CloudWatchLogsDetails != nil {
 			m["log_group"] = cfg.DestinationDetails.CloudWatchLogsDetails.LogGroup
+		} else {
+			m["log_group"] = ""
 		}
 		result = append(result, m)
 	}
@@ -1099,9 +1099,13 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		time.Sleep(time.Duration(90) * time.Second)
 	}
 	if d.HasChange("replicas") {
+		newReplicas := d.Get("replicas").(int)
+		if newReplicas < 2 && d.Get("automatic_failover_enabled").(bool) {
+			return diag.Errorf("Invalid replicas for '%s': automatic_failover_enabled requires replicas to be 2 or more", id)
+		}
 		rq := duplosdk.DuplocloudEcacheReplicasUpdateRequest{
 			Identifier: identifier,
-			Replicas:   d.Get("replicas").(int),
+			Replicas:   newReplicas,
 		}
 		cerr := c.EcacheInstanceUpdateReplicas(tenantID, name, rq)
 		if cerr != nil {
@@ -1116,13 +1120,29 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 	}
 	if d.HasChange("log_delivery_configuration") {
 		oldRaw, newRaw := d.GetChange("log_delivery_configuration")
-		newConfigs, diagErr := expandLogDeliveryConfigurations(newRaw.(*schema.Set).List())
+		newSet, ok := newRaw.(*schema.Set)
+		if !ok || newSet == nil {
+			newSet = schema.NewSet(schema.HashResource(resourceDuploEcacheInstance().Schema["log_delivery_configuration"].Elem.(*schema.Resource)), []interface{}{})
+		}
+		oldSet, ok := oldRaw.(*schema.Set)
+		if !ok || oldSet == nil {
+			oldSet = schema.NewSet(schema.HashResource(resourceDuploEcacheInstance().Schema["log_delivery_configuration"].Elem.(*schema.Resource)), []interface{}{})
+		}
+		newConfigs, diagErr := expandLogDeliveryConfigurations(newSet.List())
 		if diagErr != nil {
 			return diagErr
 		}
-		oldConfigs, diagErr := expandLogDeliveryConfigurations(oldRaw.(*schema.Set).List())
+		oldConfigs, diagErr := expandLogDeliveryConfigurations(oldSet.List())
 		if diagErr != nil {
 			return diagErr
+		}
+
+		if duplicateLogType, found := hasDuplicateLogTypes(newConfigs); found {
+			return diag.Errorf("log_delivery_configuration: Duplicate log_type are not allowed. Found '%s' log_type repeated.", duplicateLogType)
+		}
+		engineVersion := d.Get("engine_version").(string)
+		if errDiag := validateLogDeliveryConfigurations(engineVersion, newConfigs); errDiag != nil {
+			return errDiag
 		}
 
 		updateItems := make([]duplosdk.LogDeliveryConfigurationUpdateItem, 0)
