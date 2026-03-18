@@ -40,7 +40,6 @@ type DuploSystemFeatures struct {
 	DefaultInfraCloud                   string                          `json:"DefaultInfraCloud"`
 	TagsBasedManagedResources           []string                        `json:"TagsBasedManagedResources"`
 	ResourceNamePrefix                  string                          `json:"ResourceNamePrefix"`
-	AwsServicesTagBasedOwnershipEnabled []string                        `json:"AwsServicesTagBasedOwnershipEnabled"`
 }
 
 type DuploSystemFeaturesAppConfigs struct {
@@ -107,18 +106,33 @@ func (c *Client) IsAzureCustomPrefixesEnabled() bool {
 	return true
 }
 
+// awsTagBasedOwnershipMap parses the AppConfigs entry AWS_SERVICES_TAG_BASED_OWNERSHIP_ENABLED
+// (semicolon-delimited, e.g. "sqs;secretsmanager") into a lowercase map for O(1) lookup.
+func awsTagBasedOwnershipMap(configs []DuploSystemFeaturesAppConfigs) map[string]struct{} {
+	m := make(map[string]struct{})
+	for _, cfg := range configs {
+		if cfg.Key == "AWS_SERVICES_TAG_BASED_OWNERSHIP_ENABLED" {
+			for _, s := range strings.Split(cfg.Value, ";") {
+				s = strings.TrimSpace(s)
+				if s != "" {
+					m[strings.ToLower(s)] = struct{}{}
+				}
+			}
+			break
+		}
+	}
+	return m
+}
+
 func (c *Client) IsAwsServiceTagBasedOwnershipEnabled(service string) bool {
 	features := DuploSystemFeatures{}
 	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
 	if err != nil {
 		return false
 	}
-	for _, s := range features.AwsServicesTagBasedOwnershipEnabled {
-		if strings.EqualFold(s, service) {
-			return true
-		}
-	}
-	return false
+	enabled := awsTagBasedOwnershipMap(features.AppConfigs)
+	_, ok := enabled[strings.ToLower(service)]
+	return ok
 }
 
 func (c *Client) getPrefixFromResourceType(resourceType string, isInfraResource bool) (string, error) {
