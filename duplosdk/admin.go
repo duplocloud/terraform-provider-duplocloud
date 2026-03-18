@@ -21,25 +21,26 @@ type DuploSystemFeatures struct {
 		DefaultVersion    string   `json:"DefaultVersion"`
 		SupportedVersions []string `json:"SupportedVersions"`
 	} `json:"EksVersions"`
-	IsOtpNeeded                    bool                            `json:"IsOtpNeeded"`
-	IsAwsAdminJITEnabled           bool                            `json:"IsAwsAdminJITEnabled"`
-	IsDuploOpsEnabled              bool                            `json:"IsDuploOpsEnabled"`
-	IsTagsBasedResourceMgmtEnabled bool                            `json:"IsTagsBasedResourceMgmtEnabled"`
-	DevopsManagerHostname          string                          `json:"DevopsManagerHostname"`
-	TenantNameMaxLength            int                             `json:"TenantNameMaxLength"`
-	AzureResourcePrefix            *AzureResourcePrefix            `json:"AzureResourcePrefix,omitempty"`
-	S3BucketNamePrefix             string                          `json:"S3BucketNamePrefix"`
-	GcpDisableTenantPrefix         bool                            `json:"GcpDisableTenantPrefix"`
-	GcpDisableDuploPrefix          bool                            `json:"GcpDisableDuploPrefix"`
-	IsOnPremEnabled                bool                            `json:"IsOnPremEnabled"`
-	DefaultAwsPartition            string                          `json:"DefaultAwsPartition"`
-	DuploShellFqdn                 string                          `json:"DuploShellFqdn"`
-	EnabledFlags                   []string                        `json:"EnabledFlags"`
-	AppConfigs                     []DuploSystemFeaturesAppConfigs `json:"AppConfigs"`
-	DisableOobData                 bool                            `json:"DisableOobData"`
-	DefaultInfraCloud              string                          `json:"DefaultInfraCloud"`
-	TagsBasedManagedResources      []string                        `json:"TagsBasedManagedResources"`
-	ResourceNamePrefix             string                          `json:"ResourceNamePrefix"`
+	IsOtpNeeded                         bool                            `json:"IsOtpNeeded"`
+	IsAwsAdminJITEnabled                bool                            `json:"IsAwsAdminJITEnabled"`
+	IsDuploOpsEnabled                   bool                            `json:"IsDuploOpsEnabled"`
+	IsTagsBasedResourceMgmtEnabled      bool                            `json:"IsTagsBasedResourceMgmtEnabled"`
+	DevopsManagerHostname               string                          `json:"DevopsManagerHostname"`
+	TenantNameMaxLength                 int                             `json:"TenantNameMaxLength"`
+	AzureResourcePrefix                 *AzureResourcePrefix            `json:"AzureResourcePrefix,omitempty"`
+	S3BucketNamePrefix                  string                          `json:"S3BucketNamePrefix"`
+	GcpDisableTenantPrefix              bool                            `json:"GcpDisableTenantPrefix"`
+	GcpDisableDuploPrefix               bool                            `json:"GcpDisableDuploPrefix"`
+	IsOnPremEnabled                     bool                            `json:"IsOnPremEnabled"`
+	DefaultAwsPartition                 string                          `json:"DefaultAwsPartition"`
+	DuploShellFqdn                      string                          `json:"DuploShellFqdn"`
+	EnabledFlags                        []string                        `json:"EnabledFlags"`
+	AppConfigs                          []DuploSystemFeaturesAppConfigs `json:"AppConfigs"`
+	DisableOobData                      bool                            `json:"DisableOobData"`
+	DefaultInfraCloud                   string                          `json:"DefaultInfraCloud"`
+	TagsBasedManagedResources           []string                        `json:"TagsBasedManagedResources"`
+	ResourceNamePrefix                  string                          `json:"ResourceNamePrefix"`
+	AwsServicesTagBasedOwnershipEnabled []string                        `json:"AwsServicesTagBasedOwnershipEnabled"`
 }
 
 type DuploSystemFeaturesAppConfigs struct {
@@ -104,6 +105,20 @@ func (c *Client) IsAzureCustomPrefixesEnabled() bool {
 		return false
 	}
 	return true
+}
+
+func (c *Client) IsAwsServiceTagBasedOwnershipEnabled(service string) bool {
+	features := DuploSystemFeatures{}
+	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
+	if err != nil {
+		return false
+	}
+	for _, s := range features.AwsServicesTagBasedOwnershipEnabled {
+		if strings.EqualFold(s, service) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Client) getPrefixFromResourceType(resourceType string, isInfraResource bool) (string, error) {
