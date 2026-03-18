@@ -48,10 +48,10 @@ type DuploEcacheInstance struct {
 // Field values are wrapped in {"Value": "..."} objects.
 type LogDeliveryConfigurationResponse struct {
 	DestinationDetails *DestinationDetails      `json:"DestinationDetails,omitempty"`
-	DestinationType    *LogDeliveryValueWrapper  `json:"DestinationType,omitempty"`
-	LogFormat          *LogDeliveryValueWrapper  `json:"LogFormat,omitempty"`
-	LogType            *LogDeliveryValueWrapper  `json:"LogType,omitempty"`
-	Status             *LogDeliveryValueWrapper  `json:"Status,omitempty"`
+	DestinationType    *LogDeliveryValueWrapper `json:"DestinationType,omitempty"`
+	LogFormat          *LogDeliveryValueWrapper `json:"LogFormat,omitempty"`
+	LogType            *LogDeliveryValueWrapper `json:"LogType,omitempty"`
+	Status             *LogDeliveryValueWrapper `json:"Status,omitempty"`
 }
 
 type LogDeliveryValueWrapper struct {
