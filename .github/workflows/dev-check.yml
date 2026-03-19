@@ -22,6 +22,9 @@ jobs:
           cache: false
       - name: Clean Go Build Cache
         run: go clean -cache -modcache -testcache
+      -
+        name: Migrate golangci-lint config
+        run: golangci-lint migrate
       - 
         name: Run linting
         uses: golangci/golangci-lint-action@v9.0.0
