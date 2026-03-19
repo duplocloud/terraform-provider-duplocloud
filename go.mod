@@ -1,8 +1,6 @@
 module github.com/duplocloud/terraform-provider-duplocloud
 
-go 1.23.0
-
-toolchain go1.23.2
+go 1.24.0
 
 require (
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
