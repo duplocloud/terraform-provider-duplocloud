@@ -22,6 +22,9 @@ jobs:
           cache: false
       - name: Clean Go Build Cache
         run: go clean -cache -modcache -testcache
+       - 
+        name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.11.3
       -
         name: Migrate golangci-lint config
         run: golangci-lint migrate
