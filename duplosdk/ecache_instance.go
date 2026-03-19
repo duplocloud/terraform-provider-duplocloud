@@ -201,6 +201,29 @@ func (c *Client) EcacheInstanceUpdateReplicas(tenantID, name string, rq Duploclo
 		&rq, nil)
 }
 
+// DuploEcacheModifyRequest is a passthrough to AWS ModifyReplicationGroup.
+// Use pointer fields so that only the fields you set are included in the JSON payload.
+type DuploEcacheModifyRequest struct {
+	ReplicationGroupId       string `json:"ReplicationGroupId"`
+	ApplyImmediately         bool   `json:"ApplyImmediately"`
+	AutomaticFailoverEnabled *bool  `json:"AutomaticFailoverEnabled,omitempty"`
+	MultiAZEnabled           *bool  `json:"MultiAZEnabled,omitempty"`
+}
+
+// EcacheInstanceModify calls the v3 passthrough endpoint that maps to AWS ModifyReplicationGroup.
+// Uses retry with backoff because the cluster or its nodes may still be transitioning
+// (e.g., after a replica count change) and AWS returns 400 until all nodes are available.
+func (c *Client) EcacheInstanceModify(tenantID string, rq *DuploEcacheModifyRequest) ClientError {
+	// The endpoint returns the full AWS ModifyReplicationGroup response.
+	// Use a map to absorb it — we don't need the response contents.
+	var rp map[string]interface{}
+	conf := NewRetryConf()
+	return c.postAPIWithRetry(
+		fmt.Sprintf("EcacheInstanceModify(%s, %s)", tenantID, rq.ReplicationGroupId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/modify", tenantID),
+		rq, &rp, &conf)
+}
+
 type LogDeliveryConfigurationUpdateItem struct {
 	DestinationType    string              `json:"DestinationType,omitempty"`
 	LogFormat          string              `json:"LogFormat,omitempty"`
