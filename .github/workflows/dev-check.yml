@@ -28,7 +28,7 @@ jobs:
         with:
           only-new-issues: true  # Only show new issues for pull requests.
           args: --timeout=5m
-          version: v1.61.0
+          version: v1.60
   format:
     runs-on: ubuntu-22.04
     steps:
