@@ -166,7 +166,13 @@ func IndentPositionPadding(bs []byte, currentPos, paddingv, width int) (pos, pad
 	w := 0
 	i := 0
 	l := len(bs)
+	p := paddingv
 	for ; i < l; i++ {
+		if p > 0 {
+			p--
+			w++
+			continue
+		}
 		if bs[i] == '\t' && w < width {
 			w += TabWidth(currentPos + w)
 		} else if bs[i] == ' ' && w < width {
@@ -808,7 +814,7 @@ func IsPunct(c byte) bool {
 
 // IsPunctRune returns true if the given rune is a punctuation, otherwise false.
 func IsPunctRune(r rune) bool {
-	return int32(r) <= 256 && IsPunct(byte(r)) || unicode.IsPunct(r)
+	return unicode.IsSymbol(r) || unicode.IsPunct(r)
 }
 
 // IsSpace returns true if the given character is a space, otherwise false.

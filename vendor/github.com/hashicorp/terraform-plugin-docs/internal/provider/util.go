@@ -4,6 +4,8 @@
 package provider
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -45,6 +47,10 @@ func copyFile(srcPath, dstPath string, mode os.FileMode) error {
 	// If the destination file already exists, we shouldn't blow it away
 	dstFile, err := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode)
 	if err != nil {
+		// If the file already exists, we can skip it without returning an error.
+		if errors.Is(err, os.ErrExist) {
+			return nil
+		}
 		return err
 	}
 	defer dstFile.Close()
@@ -71,24 +77,53 @@ func removeAllExt(file string) string {
 // has either the providerShortName or the providerShortName concatenated with the
 // templateFileName (stripped of file extension.
 func resourceSchema(schemas map[string]*tfjson.Schema, providerShortName, templateFileName string) (*tfjson.Schema, string) {
-	if schema, ok := schemas[providerShortName]; ok {
-		return schema, providerShortName
-	}
-
 	resName := providerShortName + "_" + removeAllExt(templateFileName)
-
 	if schema, ok := schemas[resName]; ok {
 		return schema, resName
+	}
+
+	if schema, ok := schemas[providerShortName]; ok {
+		return schema, providerShortName
 	}
 
 	return nil, resName
 }
 
+func actionSchema(schemas map[string]*tfjson.ActionSchema, providerShortName, templateFileName string) (*tfjson.ActionSchema, string) {
+	resName := providerShortName + "_" + removeAllExt(templateFileName)
+	if schema, ok := schemas[resName]; ok {
+		return schema, resName
+	}
+
+	if schema, ok := schemas[providerShortName]; ok {
+		return schema, providerShortName
+	}
+
+	return nil, resName
+}
+
+func resourceIdentitySchema(schemas map[string]*tfjson.IdentitySchema, providerShortName, templateFileName string) *tfjson.IdentitySchema {
+	resName := providerShortName + "_" + removeAllExt(templateFileName)
+	if schema, ok := schemas[resName]; ok {
+		return schema
+	}
+
+	if schema, ok := schemas[providerShortName]; ok {
+		return schema
+	}
+
+	return nil
+}
+
 func writeFile(path string, data string) error {
 	dir, _ := filepath.Split(path)
-	err := os.MkdirAll(dir, 0755)
-	if err != nil {
-		return fmt.Errorf("unable to make dir %q: %w", dir, err)
+
+	var err error
+	if dir != "" {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return fmt.Errorf("unable to make dir %q: %w", dir, err)
+		}
 	}
 
 	err = os.WriteFile(path, []byte(data), 0644)
@@ -99,6 +134,7 @@ func writeFile(path string, data string) error {
 	return nil
 }
 
+//nolint:unparam
 func runCmd(cmd *exec.Cmd) ([]byte, error) {
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -182,4 +218,28 @@ func newMarkdownRenderer() goldmark.Markdown {
 		goldmark.WithRenderer(mr),
 	)
 	return gm
+}
+
+func allowedSubcategoriesFile(path string) ([]string, error) {
+	log.Printf("[DEBUG] Reading Subcategories File %s", path)
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("error opening allowed subcategories file (%s): %w", path, err)
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	var allowedSubcategories []string
+	for scanner.Scan() {
+		allowedSubcategories = append(allowedSubcategories, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading allowed subcategories file (%s): %w", path, err)
+	}
+
+	return allowedSubcategories, nil
 }

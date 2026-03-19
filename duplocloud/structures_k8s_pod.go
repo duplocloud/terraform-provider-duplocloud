@@ -1181,11 +1181,11 @@ func expandVolumeClaimTemplateSpec(s []interface{}) *v1.PersistentVolumeClaimSpe
 	return &specBody
 }
 
-func expandSpecResource(r []interface{}) *v1.ResourceRequirements {
+func expandSpecResource(r []interface{}) *v1.VolumeResourceRequirements {
 	if len(r) == 0 || r[0] == nil {
 		return nil
 	}
-	resource := v1.ResourceRequirements{}
+	resource := v1.VolumeResourceRequirements{}
 	rsrcMap := r[0].(map[string]interface{})
 
 	if v, ok := rsrcMap["limits"]; ok {
