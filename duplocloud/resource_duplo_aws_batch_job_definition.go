@@ -7,7 +7,6 @@ import (
 	"log"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -290,28 +289,15 @@ func resourceAwsBatchJobDefinitionDelete(ctx context.Context, d *schema.Resource
 	log.Printf("[TRACE] resourceAwsBatchJobDefinitionDelete(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	fullName, _ := c.GetDuploServicesName(tenantID, name)
+	fullName := d.Get("fullname").(string)
 
-	jq, clientErr := c.AwsBatchJobDefinitionGetAllRevisions(tenantID, fullName)
+	clientErr := c.AwsBatchJobDefinitionBulkDelete(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			log.Printf("[TRACE] resourceAwsBatchJobDefinitionDelete(%s, %s): object missing", tenantID, name)
 			return nil
 		}
-		return diag.FromErr(clientErr)
-	}
-	if jq == nil {
-		log.Printf("[TRACE] resourceAwsBatchJobDefinitionDelete(%s, %s): object missing", tenantID, name)
-		return nil
-	}
-	for _, data := range *jq {
-		clientErr := c.AwsBatchJobDefinitionDelete(tenantID, fullName+":"+strconv.Itoa(data.Revision))
-		if clientErr != nil {
-			if clientErr.Status() == 404 {
-				continue
-			}
-			return diag.Errorf("Unable to delete tenant %s aws batch Job Definition '%s': %s", tenantID, name, clientErr)
-		}
+		return diag.Errorf("Unable to delete tenant %s aws batch Job Definition '%s': %s", tenantID, name, clientErr)
 	}
 
 	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "aws batch Job Definition", id, func() (interface{}, duplosdk.ClientError) {

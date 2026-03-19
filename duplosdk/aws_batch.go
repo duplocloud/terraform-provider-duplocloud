@@ -427,6 +427,20 @@ func (c *Client) AwsBatchJobDefinitionDelete(tenantID string, name string) Clien
 	)
 }
 
+func (c *Client) AwsBatchJobDefinitionBulkDelete(tenantID string, name string) ClientError {
+	conf := NewRetryConf()
+	conf.MinDelay = 10
+	conf.MaxDelay = 30
+	conf.MinStartingDelay = 3
+	conf.MaxStartingDelay = 10
+	return c.deleteAPIWithRetry(
+		fmt.Sprintf("AwsBatchJobDefinitionBulkDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition/%s/revisions", tenantID, name),
+		nil,
+		&conf,
+	)
+}
+
 //  --------------- Submit Job Request ---------------
 
 type DuploAwsBatchJobRequest struct {
