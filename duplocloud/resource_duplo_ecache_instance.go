@@ -733,6 +733,34 @@ func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, t
 	return err
 }
 
+// ecacheInstanceWaitUntilUnavailable waits until an ECache instance leaves the "available" state.
+//
+// It should be called post-modification to detect the transition before polling for available.
+// The error is intentionally discarded by callers — if the instance never leaves "available"
+// (e.g., the change was instant), we just move on.
+func ecacheInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, tenantID, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Target:       []string{"processing", "creating", "modifying", "rebooting cluster nodes", "snapshotting"},
+		Pending:      []string{"available"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 15 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.EcacheInstanceGet(tenantID, name)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.InstanceStatus == "" {
+				resp.InstanceStatus = "processing"
+			}
+			return resp, resp.InstanceStatus, nil
+		},
+	}
+	log.Printf("[DEBUG] EcacheInstanceWaitUntilUnavailable (%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
 func parseECacheInstanceIdParts(id string) (tenantID, name string, err error) {
 	idParts := strings.SplitN(id, "/", 5)
 	if len(idParts) == 5 {
@@ -1148,7 +1176,7 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 			if cerr != nil {
 				return diag.Errorf("Error disabling multi_az_enabled for ECache instance '%s': %s", id, cerr)
 			}
-			time.Sleep(30 * time.Second)
+			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
 			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
 			if err != nil {
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after disabling multi_az: %s", id, err)
@@ -1172,7 +1200,7 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 			if cerr != nil {
 				return diag.Errorf("Error disabling automatic_failover_enabled for ECache instance '%s': %s", id, cerr)
 			}
-			time.Sleep(30 * time.Second)
+			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
 			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
 			if err != nil {
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after disabling failover: %s", id, err)
@@ -1192,7 +1220,7 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		if cerr != nil {
 			return diag.FromErr(cerr)
 		}
-		time.Sleep(30 * time.Second)
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
 		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
 		if err != nil {
 			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
@@ -1220,7 +1248,7 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 			if cerr != nil {
 				return diag.Errorf("Error enabling automatic_failover_enabled for ECache instance '%s': %s", id, cerr)
 			}
-			time.Sleep(30 * time.Second)
+			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
 			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
 			if err != nil {
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after enabling failover: %s", id, err)
@@ -1247,7 +1275,7 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 			if cerr != nil {
 				return diag.Errorf("Error enabling multi_az_enabled for ECache instance '%s': %s", id, cerr)
 			}
-			time.Sleep(30 * time.Second)
+			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
 			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
 			if err != nil {
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after enabling multi_az: %s", id, err)
@@ -1321,7 +1349,7 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		if cerr != nil {
 			return diag.FromErr(cerr)
 		}
-		time.Sleep(30 * time.Second)
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
 		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
 		if err != nil {
 			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
