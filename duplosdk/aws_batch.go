@@ -429,10 +429,14 @@ func (c *Client) AwsBatchJobDefinitionDelete(tenantID string, name string) Clien
 
 func (c *Client) AwsBatchJobDefinitionBulkDelete(tenantID string, name string) ClientError {
 	conf := NewRetryConf()
-	conf.MinDelay = 10
-	conf.MaxDelay = 30
-	conf.MinStartingDelay = 3
-	conf.MaxStartingDelay = 10
+	// Enhanced retry configuration for AWS Batch Job Definition deletion
+	// These are slower operations that may take longer to complete
+	conf.RateExceededMaxRetries = 15 // Increased from 9 to 15 for more retry attempts
+	conf.MinDelay = 15               // Increased from 10 to 15 seconds
+	conf.MaxDelay = 60               // Increased from 30 to 60 seconds for longer backoff
+	conf.MinStartingDelay = 5        // Increased from 3 to 5 seconds
+	conf.MaxStartingDelay = 15       // Increased from 10 to 15 seconds
+	conf.MinJitterDelay = 10         // Added jitter for better distribution
 	return c.deleteAPIWithRetry(
 		fmt.Sprintf("AwsBatchJobDefinitionBulkDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition/%s/revisions", tenantID, name),
