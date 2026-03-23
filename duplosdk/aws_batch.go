@@ -398,19 +398,46 @@ func (c *Client) AwsBatchJobDefinitionGetAllRevisions(tenantID string, name stri
 
 func (c *Client) AwsBatchJobDefinitionList(tenantID string) (*[]DuploAwsBatchJobDefinitionResp, ClientError) {
 	rp := []DuploAwsBatchJobDefinitionResp{}
-	err := c.getAPI(
+	conf := NewRetryConf()
+	conf.RateExceededMaxRetries = 15
+	conf.MinDelay = 10
+	conf.MaxDelay = 30
+	conf.MinStartingDelay = 3
+	conf.MaxStartingDelay = 10
+	err := c.getAPIWithRetry(
 		fmt.Sprintf("AwsBatchJobDefinitionList(%s)", tenantID),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition", tenantID),
 		&rp,
+		&conf,
 	)
 	return &rp, err
 }
 
 func (c *Client) AwsBatchJobDefinitionDelete(tenantID string, name string) ClientError {
-	return c.deleteAPI(
+	conf := NewRetryConf()
+	conf.MinDelay = 10
+	conf.MaxDelay = 30
+	conf.MinStartingDelay = 3
+	conf.MaxStartingDelay = 10
+	return c.deleteAPIWithRetry(
 		fmt.Sprintf("AwsBatchJobDefinitionDelete(%s, %s)", tenantID, name),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition/%s", tenantID, name),
 		nil,
+		&conf,
+	)
+}
+
+func (c *Client) AwsBatchJobDefinitionBulkDelete(tenantID string, name string) ClientError {
+	conf := NewRetryConf()
+	conf.MinDelay = 10
+	conf.MaxDelay = 30
+	conf.MinStartingDelay = 3
+	conf.MaxStartingDelay = 10
+	return c.deleteAPIWithRetry(
+		fmt.Sprintf("AwsBatchJobDefinitionBulkDelete(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition/%s/revisions", tenantID, name),
+		nil,
+		&conf,
 	)
 }
 
