@@ -51,11 +51,16 @@ func duploAwsBatchJobDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 			StateFunc: func(v interface{}) string {
 				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: <= %v", v)
+				s, ok := v.(string)
+				if !ok {
+					log.Printf("[ERROR] duplocloud_aws_batch_job_definition.container_properties.StateFunc: non-string value in state: %T", v)
+					return ""
+				}
 				// Use the same canonicalization logic as the DiffSuppressFunc
-				canonical, err := canonicalizeJobContainerPropertiesJson(v.(string))
+				canonical, err := canonicalizeJobContainerPropertiesJson(s)
 				if err != nil {
 					log.Printf("[ERROR] duplocloud_aws_batch_job_definition.container_properties.StateFunc: canonicalization error: %s", err)
-					return v.(string) // fallback to original value
+					return s // fallback to original value
 				}
 				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: => %s", canonical)
 				return canonical
