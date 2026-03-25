@@ -50,14 +50,19 @@ func duploAwsBatchJobDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 			StateFunc: func(v interface{}) string {
 				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: <= %v", v)
-				props, _ := expandJobContainerProperties(v.(string))
-				reorderJobContainerPropertiesEnvironmentVariables(props)
-				json, err := jcs.Format(props)
-				if json == "{}" {
-					json = ""
+				s, ok := v.(string)
+				if !ok {
+					log.Printf("[ERROR] duplocloud_aws_batch_job_definition.container_properties.StateFunc: non-string value in state: %T", v)
+					return ""
 				}
-				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: => %s (error: %s)", json, err)
-				return json
+				// Use the same canonicalization logic as the DiffSuppressFunc
+				canonical, err := canonicalizeJobContainerPropertiesJson(s)
+				if err != nil {
+					log.Printf("[ERROR] duplocloud_aws_batch_job_definition.container_properties.StateFunc: canonicalization error: %s", err)
+					return s // fallback to original value
+				}
+				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: => %s", canonical)
+				return canonical
 			},
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 				equal, _ := otherJobContainerPropertiesAreEquivalent(old, new)
@@ -502,7 +507,15 @@ func flattenContainerProperties(field string, from interface{}, to *schema.Resou
 	var encoded []byte
 
 	if encoded, err = json.Marshal(from); err == nil {
-		err = to.Set(field, string(encoded))
+		// Apply the same canonicalization used in StateFunc and DiffSuppressFunc
+		canonicalized, canonErr := canonicalizeJobContainerPropertiesJson(string(encoded))
+		if canonErr != nil {
+			log.Printf("[DEBUG] flattenContainerProperties: failed to canonicalize %s: %s", field, canonErr)
+			// Fallback to original encoded if canonicalization fails
+			err = to.Set(field, string(encoded))
+		} else {
+			err = to.Set(field, canonicalized)
+		}
 	}
 
 	if err != nil {
@@ -585,21 +598,32 @@ func reduceJobContainerProperties(props map[string]interface{}) error {
 
 	reduceNilOrEmptyMapEntries(props)
 
-	// Handle fields that have defaults.
-	if v, ok := props["ReadonlyRootFilesystem"]; ok || v != nil && !v.(bool) {
+	// Handle fields that have defaults - fix the logical conditions
+	if v, ok := props["ReadonlyRootFilesystem"]; ok && v != nil && !v.(bool) {
 		delete(props, "ReadonlyRootFilesystem")
 	}
 
-	if v, ok := props["Privileged"]; ok || v != nil && !v.(bool) {
+	if v, ok := props["Privileged"]; ok && v != nil && !v.(bool) {
 		delete(props, "Privileged")
 	}
 
-	if v, ok := props["Memory"]; ok || v != nil && v.(int) == 0 {
-		delete(props, "Memory")
+	if v, ok := props["Memory"]; ok && v != nil {
+		if memVal, isFloat := v.(float64); isFloat && memVal == 0 {
+			delete(props, "Memory")
+		} else if memVal, isInt := v.(int); isInt && memVal == 0 {
+			delete(props, "Memory")
+		}
 	}
-	if v, ok := props["Vcpus"]; ok || v != nil && v.(int) == 0 {
-		delete(props, "Vcpus")
+
+	if v, ok := props["Vcpus"]; ok && v != nil {
+		if vcpuVal, isFloat := v.(float64); isFloat && vcpuVal == 0 {
+			delete(props, "Vcpus")
+		} else if vcpuVal, isInt := v.(int); isInt && vcpuVal == 0 {
+			delete(props, "Vcpus")
+		}
 	}
+
+	// Always remove JobRoleArn as it's managed by Duplo
 	delete(props, "JobRoleArn")
 
 	return nil
@@ -653,25 +677,37 @@ func reorderJobContainerPropertiesEnvironmentVariables(defn map[string]interface
 	// Re-order environment variables to a canonical order.
 	if v, ok := defn["Environment"]; ok && v != nil {
 		if env, ok := v.([]interface{}); ok && env != nil {
-			sort.SliceStable(env, func(i, j int) bool {
+			sort.Slice(env, func(i, j int) bool {
 
 				// Get both maps, ensure we are using upper camel-case.
-				mi := env[i].(map[string]interface{})
-				mj := env[j].(map[string]interface{})
+				mi, ok1 := env[i].(map[string]interface{})
+				mj, ok2 := env[j].(map[string]interface{})
+
+				if !ok1 || !ok2 {
+					return false
+				}
+
 				makeMapUpperCamelCase(mi)
 				makeMapUpperCamelCase(mj)
 
 				// Get both name keys, fall back on an empty string.
 				si := ""
 				sj := ""
-				if v, ok = mi["Name"]; ok && !isInterfaceNil(v) {
-					si = v.(string)
+				if nameVal, ok := mi["Name"]; ok && !isInterfaceNil(nameVal) {
+					if nameStr, ok := nameVal.(string); ok {
+						si = nameStr
+					}
 				}
-				if v, ok = mj["Name"]; ok && !isInterfaceNil(v) {
-					sj = v.(string)
+				if nameVal, ok := mj["Name"]; ok && !isInterfaceNil(nameVal) {
+					if nameStr, ok := nameVal.(string); ok {
+						sj = nameStr
+					}
 				}
 
-				// Compare the two.
+				// Compare the two - use stable sort by adding index as tiebreaker
+				if si == sj {
+					return i < j
+				}
 				return si < sj
 			})
 		}
