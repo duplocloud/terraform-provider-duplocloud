@@ -215,7 +215,7 @@ func resourceAwsBatchJobDefinition() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(80 * time.Minute),
+			Delete: schema.DefaultTimeout(120 * time.Minute), // Increased from 80 to 120 minutes for batch job definitions
 		},
 		Schema: duploAwsBatchJobDefinitionSchema(),
 	}
@@ -305,7 +305,15 @@ func resourceAwsBatchJobDefinitionDelete(ctx context.Context, d *schema.Resource
 		return diag.Errorf("Unable to delete tenant %s aws batch Job Definition '%s': %s", tenantID, name, clientErr)
 	}
 
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "aws batch Job Definition", id, func() (interface{}, duplosdk.ClientError) {
+	// AWS Batch job definitions may take time to fully propagate deletion across revisions.
+	// Initial wait ensures the deletion API has time to process all revisions and settle.
+	log.Printf("[TRACE] resourceAwsBatchJobDefinitionDelete(%s, %s): waiting 30 seconds for deletion API to process and backend to settle", tenantID, name)
+	time.Sleep(30 * time.Second)
+
+	// Poll for deletion with enhanced retry configuration to handle slow propagation.
+	// This uses exponential backoff with a maximum of 120 minutes timeout as configured in the schema.
+	// Minimal polling interval ensures backend has time to process state changes between API calls.
+	diag := waitForResourceToBeMissingAfterDeleteWithMinInterval(ctx, d, "aws batch Job Definition", id, 15*time.Second, func() (interface{}, duplosdk.ClientError) {
 		return c.AwsBatchJobDefinitionGet(tenantID, fullName)
 	})
 	if diag != nil {
