@@ -55,6 +55,11 @@ type DuploAzureStorageAccount struct {
 	Type     string `json:"type,omitempty"`
 }
 
+type DuploAzureStorageAccountCreateRequest struct {
+	Name                 string `json:"name"`
+	AllowBlobPublicAccess bool   `json:"allowBlobPublicAccess"`
+}
+
 type DuploAzureStorageAccountShareFileCreateReq struct {
 	Name string `json:"Name"`
 }
@@ -112,11 +117,11 @@ type DuploAzureStorageAccountShareFileGetReq struct {
 	} `json:"Properties"`
 }
 
-func (c *Client) StorageAccountCreate(tenantID string, name string) ClientError {
+func (c *Client) StorageAccountCreate(tenantID string, rq *DuploAzureStorageAccountCreateRequest) ClientError {
 	return c.postAPI(
-		fmt.Sprintf("StorageAccountCreate(%s, %s)", tenantID, name),
-		fmt.Sprintf("subscriptions/%s/CreateStorageAccount/%s", tenantID, name),
-		nil,
+		fmt.Sprintf("StorageAccountCreate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("subscriptions/%s/CreateStorageAccount/%s", tenantID, rq.Name),
+		rq,
 		nil,
 	)
 }

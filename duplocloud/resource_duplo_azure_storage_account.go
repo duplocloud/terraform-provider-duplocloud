@@ -3,13 +3,13 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -55,6 +55,13 @@ func duploAzureStorageAccountSchema() map[string]*schema.Schema {
 		// 	Optional:    true,
 		// 	Default:     true,
 		// },
+		"allow_blob_public_access": {
+			Description: "Whether or not to allow public access to all blobs or containers in the storage account.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+			ForceNew:    true,
+		},
 		"wait_until_ready": {
 			Description: "Whether or not to wait until azure storage account to be ready, after creation.",
 			Type:        schema.TypeBool,
@@ -114,38 +121,53 @@ func resourceAzureStorageAccountRead(ctx context.Context, d *schema.ResourceData
 }
 
 func resourceAzureStorageAccountCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var err error
-
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
 	log.Printf("[TRACE] resourceAzureStorageAccountCreate(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
 
-	//rq := expandAzureStorageAccount(d)
-	err = c.StorageAccountCreate(tenantID, name)
-	if err != nil {
-		return diag.Errorf("Error creating tenant %s azure storage account '%s': %s", tenantID, name, err)
+	rq := &duplosdk.DuploAzureStorageAccountCreateRequest{
+		Name:                  name,
+		AllowBlobPublicAccess: d.Get("allow_blob_public_access").(bool),
+	}
+	createErr := c.StorageAccountCreate(tenantID, rq)
+	if createErr != nil {
+		log.Printf("[WARN] resourceAzureStorageAccountCreate(%s, %s): API returned error, will check if resource was created: %s", tenantID, name, createErr)
 	}
 
 	id := fmt.Sprintf("%s/%s", tenantID, name)
-	time.Sleep(time.Duration(30) * time.Second)
-	diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure storage account", id, func() (interface{}, duplosdk.ClientError) {
-		return c.StorageAccountGet(tenantID, name)
-	})
-	if diags != nil {
-		return diags
-	}
 	d.SetId(id)
 
-	//By default, wait until the storage account to be ready.
 	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
-		err = storageAccountWaitUntilReady(ctx, c, tenantID, name, d.Timeout("create"))
-		if err != nil {
-			return diag.FromErr(err)
+		time.Sleep(time.Duration(60) * time.Second)
+		diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure storage account", id, func() (interface{}, duplosdk.ClientError) {
+			return c.StorageAccountGet(tenantID, name)
+		})
+		if diags != nil {
+			return diags
+		}
+	} else if createErr != nil {
+		var found bool
+		for i := 0; i < 3; i++ {
+			time.Sleep(time.Duration(30) * time.Second)
+			resp, getErr := c.StorageAccountGet(tenantID, name)
+			if getErr == nil && resp != nil && resp.Name != "" {
+				found = true
+				break
+			}
+			log.Printf("[WARN] resourceAzureStorageAccountCreate(%s, %s): retry %d - resource not yet available", tenantID, name, i+1)
+		}
+		if !found {
+			return diag.Errorf("Error creating tenant %s azure storage account '%s': %s", tenantID, name, createErr)
 		}
 	}
 
-	diags = resourceAzureStorageAccountRead(ctx, d, m)
+	diags := resourceAzureStorageAccountRead(ctx, d, m)
+	for i := 0; i < 2 && diags.HasError(); i++ {
+		log.Printf("[WARN] resourceAzureStorageAccountCreate(%s, %s): read failed (attempt %d), retrying...", tenantID, name, i+1)
+		time.Sleep(time.Duration(10) * time.Second)
+		diags = resourceAzureStorageAccountRead(ctx, d, m)
+	}
 	log.Printf("[TRACE] resourceAzureStorageAccountCreate(%s, %s): end", tenantID, name)
 	return diags
 }
@@ -207,29 +229,3 @@ func parseAzureStorageAccountIdParts(id string) (tenantID, name string, err erro
 // 	d.Set("enable_https_traffic_only", duplo.PropertiesSupportsHTTPSTrafficOnly)
 // }
 
-func storageAccountWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
-	stateConf := &retry.StateChangeConf{
-		Pending: []string{"pending"},
-		Target:  []string{"ready"},
-		Refresh: func() (interface{}, string, error) {
-			rp, err := c.StorageAccountGet(tenantID, name)
-			log.Printf("[TRACE] Storage account provisioning state is (%s).", rp.PropertiesProvisioningState)
-			status := "pending"
-			if err == nil {
-				if rp.PropertiesProvisioningState == "Succeeded" {
-					status = "ready"
-				} else {
-					status = "pending"
-				}
-			}
-
-			return rp, status, err
-		},
-		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
-		PollInterval: 30 * time.Second,
-		Timeout:      timeout,
-	}
-	log.Printf("[DEBUG] storageAccountWaitUntilReady(%s, %s)", tenantID, name)
-	_, err := stateConf.WaitForStateContext(ctx)
-	return err
-}

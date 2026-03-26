@@ -34,6 +34,7 @@ resource "duplocloud_azure_storage_account" "myapp" {
 
 ### Optional
 
+- `allow_blob_public_access` (Boolean) Whether or not to allow public access to all blobs or containers in the storage account. Defaults to `false`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `wait_until_ready` (Boolean) Whether or not to wait until azure storage account to be ready, after creation. Defaults to `true`.
 
