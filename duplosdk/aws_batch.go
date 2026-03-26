@@ -346,35 +346,21 @@ type DuploAwsBatchJobDefinitionEvaluateOnExit struct {
 
 func (c *Client) AwsBatchJobDefinitionCreate(tenantID string, rq *DuploAwsBatchJobDefinition) ClientError {
 	rp := ""
-	conf := NewRetryConf()
-	conf.RateExceededMaxRetries = 15
-	conf.MinDelay = 10
-	conf.MaxDelay = 30
-	conf.MinStartingDelay = 3
-	conf.MaxStartingDelay = 10
-	return c.postAPIWithRetry(
+	return c.postAPI(
 		fmt.Sprintf("AwsBatchJobDefinitionCreate(%s, %s)", tenantID, rq.JobDefinitionName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition", tenantID),
 		&rq,
 		&rp,
-		&conf,
 	)
 }
 
 func (c *Client) AwsBatchJobDefinitionUpdate(tenantID string, rq *DuploAwsBatchJobDefinition) ClientError {
 	rp := ""
-	conf := NewRetryConf()
-	conf.RateExceededMaxRetries = 15
-	conf.MinDelay = 10
-	conf.MaxDelay = 30
-	conf.MinStartingDelay = 3
-	conf.MaxStartingDelay = 10
-	return c.putAPIWithRetry(
+	return c.putAPI(
 		fmt.Sprintf("AwsBatchJobDefinitionUpdate(%s, %s)", tenantID, rq.JobDefinitionName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition", tenantID),
 		&rq,
 		&rp,
-		&conf,
 	)
 }
 
