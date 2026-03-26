@@ -10,8 +10,3 @@ resource "duplocloud_aws_s3_table" "table" {
 }
 
 
-resource "duplocloud_aws_s3_table_namespace" "test_ns" {
-  tenant_id         = duplocloud_tenant.myapp.tenant_id
-  table_bucket_name = duplocloud_aws_s3_table.table.fullname
-  name              = "namespace"
-}
