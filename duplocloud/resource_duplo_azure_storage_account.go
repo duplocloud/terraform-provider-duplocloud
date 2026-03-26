@@ -228,4 +228,3 @@ func parseAzureStorageAccountIdParts(id string) (tenantID, name string, err erro
 // 	d.Set("access_tier", duplo.PropertiesAccessTier)
 // 	d.Set("enable_https_traffic_only", duplo.PropertiesSupportsHTTPSTrafficOnly)
 // }
-

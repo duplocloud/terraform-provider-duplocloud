@@ -56,7 +56,7 @@ type DuploAzureStorageAccount struct {
 }
 
 type DuploAzureStorageAccountCreateRequest struct {
-	Name                 string `json:"name"`
+	Name                  string `json:"name"`
 	AllowBlobPublicAccess bool   `json:"allowBlobPublicAccess"`
 }
 
