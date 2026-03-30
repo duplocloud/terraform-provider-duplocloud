@@ -219,6 +219,7 @@ func duploAwsBatchComputeEnvironmentSchema() map[string]*schema.Schema {
 						Description: "The minimum number of EC2 vCPUs that an environment should maintain. For `EC2` or `SPOT` compute environments, if the parameter is not explicitly defined, a `0` default value will be set. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.",
 						Type:        schema.TypeInt,
 						Optional:    true,
+						Computed:    true,
 					},
 					"security_group_ids": {
 						Description: "A list of EC2 security group that are associated with instances launched in the compute environment. This parameter is required for Fargate compute environments.",
