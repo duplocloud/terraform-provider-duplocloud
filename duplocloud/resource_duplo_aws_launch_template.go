@@ -38,7 +38,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"default_version": {
-			Description: "The current default version of the launch template.",
+			Description: "The default version of the launch template at creation time. Use the data source for the current value.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
