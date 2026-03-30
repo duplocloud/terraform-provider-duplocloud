@@ -11,6 +11,12 @@ terraform.tfstate.*
 .terraform.lock.hcl
 *~
 
+# Duplo Agent Plugin Security (now located at /Users/nikhil/agent/)
+# duplo-tf-agent-plugin/config.yaml - moved to /Users/nikhil/agent/
+# duplo-tf-agent-plugin/mcp_server.log - moved to /Users/nikhil/agent/
+# duplo-tf-agent-plugin/agent.log - moved to /Users/nikhil/agent/
+agent-knowledge/
+
 k8-config-secret/
 k8-t2/
 prav/
