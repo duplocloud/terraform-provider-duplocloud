@@ -212,12 +212,12 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		//"auto_minor_version_upgrade": {
-		//	Description: "Enable or disable auto minor version upgrade",
-		//	Type:        schema.TypeBool,
-		//	Optional:    true,
-		//	Computed:    true,
-		//},
+		"auto_minor_version_upgrade": {
+			Description: "Enable or disable auto minor version upgrade",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 		"storage_autoscaling": {
 			Description:      "This can only be set during an update; it will inherit the writer's value during creation.",
 			Optional:         true,
@@ -515,6 +515,14 @@ func resourceDuploRdsReadReplicaUpdate(ctx context.Context, d *schema.ResourceDa
 			MonitoringInterval:   val,
 		})
 	}
+
+	if d.HasChange("auto_minor_version_upgrade") {
+		val := d.Get("auto_minor_version_upgrade").(bool)
+		err = c.RdsUpdateAutoMinorVersionUpgrade(tenantID, identifier, duplosdk.DuploRdsAutoMinorVersionUpgrade{
+			AutoMinorVersionUpgrade: val,
+		})
+		time.Sleep(5 * time.Minute) //adding sleep because there is no status change for this update and it takes some time to apply the change. This is to avoid any potential drift in terraform state during next read before the change is applied.
+	}
 	if d.HasChange("storage_autoscaling") {
 		obj := duplosdk.DuploRDSStorageAutoScalling{
 			ApplyImmediately: true,
@@ -655,6 +663,7 @@ func rdsReadReplicaFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance
 	duploObject.SizeEx = d.Get("size").(string)
 	duploObject.AvailabilityZone = d.Get("availability_zone").(string)
 	duploObject.DBParameterGroupName = d.Get("parameter_group_name").(string)
+	duploObject.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
 	duploObject.AllocatedStorage = d.Get("allocated_storage").(int)
 
 	//duploObject.AutoMinorVersionUpgrade = d.Get("auto_minor_version_upgrade").(bool)
@@ -716,6 +725,7 @@ func rdsReadReplicaToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Res
 	pi["kms_key_id"] = duploObject.PerformanceInsightsKMSKeyId
 	pis = append(pis, pi)
 	jo["performance_insights"] = pis
+	jo["auto_minor_version_upgrade"] = duploObject.AutoMinorVersionUpgrade
 	mp := map[string]interface{}{
 		"enable":                duploObject.IsAutoScalingEnabled,
 		"max_allocated_storage": duploObject.MaxAllocatedStorage,
