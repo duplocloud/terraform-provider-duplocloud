@@ -409,7 +409,7 @@ func validateSQSName(c *duplosdk.Client, tId, name string, fifo bool) error {
 	} else {
 		rp, cerr := c.TenantGetV2(tId)
 		if cerr != nil {
-			return fmt.Errorf("%s", cerr.Error())
+			return fmt.Errorf("failed to get tenant %s: %w", tId, cerr)
 		}
 		allowedLen = 80 - (15 + len([]rune(rp.AccountName)) - 1)
 		if fifo {
