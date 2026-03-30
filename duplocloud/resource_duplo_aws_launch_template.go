@@ -504,6 +504,8 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	d.Set("latest_version", m["latest_version"])
 	if isDataSource {
 		d.Set("default_version", m["default_version"])
+	} else if v, ok := d.GetOk("default_version"); !ok || v.(string) == "" {
+		d.Set("default_version", m["default_version"])
 	}
 	d.Set("ami", m["image_id"])
 	d.Set("block_device_mapping", m["block_device_mapping"])
