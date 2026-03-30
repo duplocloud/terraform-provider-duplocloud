@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -305,38 +306,79 @@ func secretLabelValidationError(name, value string) error {
 	 regex used for validation is '((A-Za-z0-9][-A-Za-z0-9.]*)?[A-Za-z0-9])?').`, name, value)
 }
 
+/*
+	func secretDataDiff(k, old, new string, d *schema.ResourceData) bool {
+		state, err := secretDataCompare(old, new)
+		if err != nil {
+			log.Printf("TRACE secretDataCompare : %s", err.Error())
+			return state
+		}
+		return state
+	}
+
+	func secretDataCompare(old, new string) (bool, error) {
+		var obj1, obj2 map[string]interface{}
+
+		// Unmarshal the first JSON string into a map
+		if err := json.Unmarshal([]byte(old), &obj1); err != nil {
+			return false, fmt.Errorf("error unmarshalling JSON 1: %v", err)
+		}
+
+		// Unmarshal the second JSON string into a map
+		if err := json.Unmarshal([]byte(new), &obj2); err != nil {
+			return false, fmt.Errorf("error unmarshalling JSON 2: %v", err)
+		}
+		if len(obj1) != len(obj2) {
+			return false, nil
+		}
+		for k, v := range obj2 {
+			if v1, ok := obj1[k]; !ok {
+				return false, nil
+			} else {
+				s := fmt.Sprintf("%v", v)
+				if v1 != s {
+					return false, nil
+				}
+			}
+		}
+		return true, nil
+	}
+*/
 func secretDataDiff(k, old, new string, d *schema.ResourceData) bool {
 	state, err := secretDataCompare(old, new)
 	if err != nil {
-		log.Printf("TRACE secretDataCompare : %s", err.Error())
-		return state
+		// Log the error but return false to show the diff
+		// instead of crashing the provider.
+		log.Printf("[ERROR] secretDataCompare failed: %s", err)
+		return false
 	}
 	return state
 }
+
 func secretDataCompare(old, new string) (bool, error) {
-	var obj1, obj2 map[string]interface{}
-
-	// Unmarshal the first JSON string into a map
-	if err := json.Unmarshal([]byte(old), &obj1); err != nil {
-		return false, fmt.Errorf("error unmarshalling JSON 1: %v", err)
+	// 1. Instant check for literal equality (performance optimization)
+	if old == new {
+		return true, nil
 	}
 
-	// Unmarshal the second JSON string into a map
-	if err := json.Unmarshal([]byte(new), &obj2); err != nil {
-		return false, fmt.Errorf("error unmarshalling JSON 2: %v", err)
-	}
-	if len(obj1) != len(obj2) {
+	// 2. If one is empty and the other isn't, they are definitely different
+	if old == "" || new == "" {
 		return false, nil
 	}
-	for k, v := range obj2 {
-		if v1, ok := obj1[k]; !ok {
-			return false, nil
-		} else {
-			s := fmt.Sprintf("%v", v)
-			if v1 != s {
-				return false, nil
-			}
-		}
+
+	var obj1, obj2 map[string]interface{}
+
+	// 3. Unmarshal into maps.
+	// This also handles different key orders in the JSON strings.
+	if err := json.Unmarshal([]byte(old), &obj1); err != nil {
+		return false, fmt.Errorf("failed to parse existing state JSON: %v", err)
 	}
-	return true, nil
+	if err := json.Unmarshal([]byte(new), &obj2); err != nil {
+		return false, fmt.Errorf("failed to parse configuration JSON: %v", err)
+	}
+
+	// 4. THE PRO-TIP FIX: Use DeepEqual
+	// This recursively compares nested maps, slices, and values.
+	// It is much safer than fmt.Sprintf or manual loops.
+	return reflect.DeepEqual(obj1, obj2), nil
 }

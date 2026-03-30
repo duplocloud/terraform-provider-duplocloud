@@ -157,6 +157,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_batch_compute_environment":                 resourceAwsBatchComputeEnvironment(),
 			"duplocloud_aws_batch_job_queue":                           resourceAwsBatchJobQueue(),
 			"duplocloud_aws_batch_job_definition":                      resourceAwsBatchJobDefinition(),
+			"duplocloud_aws_firehose":                                  resourceDuploAwsFirehose(),
 			"duplocloud_aws_timestreamwrite_database":                  resourceAwsTimestreamDatabase(),
 			"duplocloud_aws_timestreamwrite_table":                     resourceAwsTimestreamTable(),
 			"duplocloud_aws_rds_tag":                                   resourceAwsRdsTag(),
