@@ -63,7 +63,7 @@ Optional:
 Import is supported using the following syntax:
 
 ```shell
-# Example: Importing an existing S3 table for an AWS resource
+# Example: Importing an existing S3 table namespace for an AWS resource
 #  - *TENANT_ID* is the tenant GUID
 #  - *S3_TABLE_NAME* The fullname of the s3 table.
 #  - *NAMESPACE_NAME* The name of the s3 table namespace.
