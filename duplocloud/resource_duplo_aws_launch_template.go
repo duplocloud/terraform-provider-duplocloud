@@ -38,7 +38,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"default_version": {
-			Description: "The current default version of the launch template.",
+			Description: "The default version of the launch template at creation time. Use the data source for the current value.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -502,7 +502,11 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 		}
 	}
 	d.Set("latest_version", m["latest_version"])
-	d.Set("default_version", m["default_version"])
+	if isDataSource {
+		d.Set("default_version", m["default_version"])
+	} else if v, ok := d.GetOk("default_version"); !ok || v.(string) == "" {
+		d.Set("default_version", m["default_version"])
+	}
 	d.Set("ami", m["image_id"])
 	d.Set("block_device_mapping", m["block_device_mapping"])
 	d.Set("instance_requirements", m["instance_requirements"])
