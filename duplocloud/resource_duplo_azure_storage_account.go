@@ -136,17 +136,18 @@ func resourceAzureStorageAccountCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	id := fmt.Sprintf("%s/%s", tenantID, name)
-	d.SetId(id)
 
 	if d.Get("wait_until_ready") == nil || d.Get("wait_until_ready").(bool) {
 		time.Sleep(time.Duration(60) * time.Second)
+		d.SetId(id)
 		diags := waitForResourceToBePresentAfterCreate(ctx, d, "azure storage account", id, func() (interface{}, duplosdk.ClientError) {
 			return c.StorageAccountGet(tenantID, name)
 		})
 		if diags != nil {
 			return diags
 		}
-	} else if createErr != nil {
+	} else {
+		// Even with wait_until_ready=false, verify the resource exists before setting the ID.
 		var found bool
 		for i := 0; i < 3; i++ {
 			time.Sleep(time.Duration(30) * time.Second)
@@ -158,8 +159,12 @@ func resourceAzureStorageAccountCreate(ctx context.Context, d *schema.ResourceDa
 			log.Printf("[WARN] resourceAzureStorageAccountCreate(%s, %s): retry %d - resource not yet available", tenantID, name, i+1)
 		}
 		if !found {
-			return diag.Errorf("Error creating tenant %s azure storage account '%s': %s", tenantID, name, createErr)
+			if createErr != nil {
+				return diag.Errorf("Error creating tenant %s azure storage account '%s': %s", tenantID, name, createErr)
+			}
+			return diag.Errorf("Error creating tenant %s azure storage account '%s': resource not found after creation", tenantID, name)
 		}
+		d.SetId(id)
 	}
 
 	diags := resourceAzureStorageAccountRead(ctx, d, m)
