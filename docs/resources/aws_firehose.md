@@ -116,7 +116,7 @@ resource "duplocloud_aws_firehose" "redshift" {
     cluster_jdbcurl = "jdbc:redshift://mycluster.us-west-2.redshift.amazonaws.com:5439/mydb"
     role_arn        = "arn:aws:iam::100000000004:role/firehoseRole"
     username        = "firehose_user"
-    password        = "asderwdw"
+    password        = "Replace_me"
     retry_duration  = 3000
 
     copy_command {
