@@ -64,7 +64,7 @@ func retryApiCall(apiCaller string, operationApiCall func() ClientError, conf *R
 		return newClientError("RetryConf is nil")
 	}
 	for attempt = 1; attempt <= conf.RateExceededMaxRetries; attempt++ {
-		delay := calculateBackoffInterval(apiCaller, attempt, conf.MaxStartingDelay, conf.MaxStartingDelay, conf.MinDelay, conf.MaxDelay, conf.MinJitterDelay)
+		delay := calculateBackoffInterval(apiCaller, attempt, conf.MinStartingDelay, conf.MaxStartingDelay, conf.MinDelay, conf.MaxDelay, conf.MinJitterDelay)
 		sleepDuration += delay
 		log.Printf("[TRACE] retryApiCall START sleep start (loop_sleep, retry_attempts, api) (%d,%d,%s)", int(delay.Seconds()), attempt, apiCaller)
 		if attempt > 1 {
@@ -105,6 +105,24 @@ func isRateExceededError(err ClientError) bool {
 
 func is400OrTimeoutsError(err ClientError) bool {
 	if err != nil {
+		errMsg := err.Error()
+
+		// Detect connection errors that should be retried
+		connectionErrors := []string{
+			"GOAWAY",
+			"connection reset",
+			"connection refused",
+			"broken pipe",
+			"EOF",
+			"context deadline exceeded",
+		}
+		for _, connErr := range connectionErrors {
+			if strings.Contains(errMsg, connErr) {
+				log.Printf("[ERROR] FAILED_WITH_CONNECTION_ERROR is400OrTimeoutsError: detected? %s", errMsg)
+				return true
+			}
+		}
+
 		if value, exists := err.Response()["Message"]; exists {
 			if strError, ok := value.(string); ok {
 				if strings.Contains(strError, "HRESULT") {
