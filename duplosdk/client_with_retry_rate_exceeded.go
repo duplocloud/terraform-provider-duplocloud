@@ -106,7 +106,7 @@ func isRateExceededError(err ClientError) bool {
 func is400OrTimeoutsError(err ClientError) bool {
 	if err != nil {
 		errMsg := err.Error()
-		
+
 		// Detect connection errors that should be retried
 		connectionErrors := []string{
 			"GOAWAY",
@@ -122,7 +122,7 @@ func is400OrTimeoutsError(err ClientError) bool {
 				return true
 			}
 		}
-		
+
 		if value, exists := err.Response()["Message"]; exists {
 			if strError, ok := value.(string); ok {
 				if strings.Contains(strError, "HRESULT") {
