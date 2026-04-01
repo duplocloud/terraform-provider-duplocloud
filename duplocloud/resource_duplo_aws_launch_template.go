@@ -11,15 +11,9 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-)
-
-const (
-	nullFlagKey string = "nullFlag"
-	zero        int    = 0
 )
 
 func awsLaunchTemplateSchema() map[string]*schema.Schema {
@@ -44,7 +38,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"default_version": {
-			Description: "The current default version of the launch template.",
+			Description: "The default version of the launch template at creation time. Use the data source for the current value.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -175,32 +169,7 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Optional:      true,
 			ConflictsWith: []string{"instance_type"},
 			//Computed:      true,
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				ir := d.GetRawConfig().GetAttr("instance_requirements")
-				zero := cty.NumberIntVal(0)
 
-				if d.Id() != "" {
-
-					// if null -> treat as empty / not provided
-					if ir.IsNull() {
-						// your logic here
-						return true
-					}
-
-					// if collection length == 0, avoid Index()
-					if ir.LengthInt() == 0 {
-						// your logic here
-						d.Set("instance_requirements", nil)
-						return true
-					}
-
-					// now it is safe to index
-					if ir.Index(zero).IsNull() {
-						return true
-					}
-				}
-				return false
-			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"allowed_instance_types": {
@@ -233,11 +202,11 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 						},
 					},
 					"memory_mib": {
-						Type:     schema.TypeList,
-						MaxItems: 1,
-						Optional: true,
-						//Computed:    true,
-						Description: "Block describing the minimum and maximum amount of memory (MiB). It is a required field when allowed_instance_types is set",
+						Type:         schema.TypeList,
+						MaxItems:     1,
+						RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
+						Optional:     true,
+						Description:  "Block describing the minimum and maximum amount of memory (MiB). It is a required field when allowed_instance_types is set",
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
 								"min": {
@@ -337,8 +306,6 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("%s", err.Error())
 	}
 	d.SetId(tenantId + "/launch-template/" + rq.LaunchTemplateName)
-	ctx = context.WithValue(ctx, nullFlagKey, "")
-
 	diag := resourceAwsLaunchTemplateRead(ctx, d, m)
 	return diag
 
@@ -364,7 +331,6 @@ func resourceAwsLaunchTemplateUpdate(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.Errorf("%s", err.Error())
 	}
-	ctx = context.WithValue(ctx, nullFlagKey, "")
 	diag := resourceAwsLaunchTemplateRead(ctx, d, m)
 	return diag
 
@@ -394,19 +360,11 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 			BlockDeviceMappings: expandBlockDeviceMappings(d),
 		},
 	}
-	//conf := d.GetRawConfig()
-
-	//if instanceTypeConf := conf.GetAttr("instance_type"); !instanceTypeConf.IsNull() {
-
 	if instanceType, ok := d.GetOk("instance_type"); ok && instanceType.(string) != "" {
 		obj.LaunchTemplateData.InstanceType = &duplosdk.DuploStringValue{
 			Value: instanceType.(string),
 		}
 	}
-	//} else {
-	//	obj.Flag = "instanceType"
-	//}
-	//if instanceReqConf := conf.GetAttr("instance_requirements"); !instanceReqConf.IsNull() {
 	if mir, ok := d.GetOk("instance_requirements"); ok && mir != nil {
 		obj.SourceVersion = ""
 		obj.LaunchTemplateData.InstanceRequirementsRequest = &duplosdk.InstanceRequirementsRequest{}
@@ -462,10 +420,6 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 			}
 		}
 	}
-
-	//} else {
-	//	obj.Flag = "instanceRequirement"
-	//}
 	return obj, nil
 
 }
@@ -523,6 +477,7 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 	}
 	m := extractASGTemplateDetails(rp)
 	d.Set("version_metadata", string(b))
+	d.Set("instance_type", m["instance_type"])
 	d.Set("version_description", m["ver_desc"])
 	n := d.Get("name").(string)
 	d.Set("name", m["name"])
@@ -547,12 +502,14 @@ func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTem
 		}
 	}
 	d.Set("latest_version", m["latest_version"])
-	d.Set("default_version", m["default_version"])
+	if isDataSource {
+		d.Set("default_version", m["default_version"])
+	} else if v, ok := d.GetOk("default_version"); !ok || v.(string) == "" {
+		d.Set("default_version", m["default_version"])
+	}
 	d.Set("ami", m["image_id"])
 	d.Set("block_device_mapping", m["block_device_mapping"])
 	d.Set("instance_requirements", m["instance_requirements"])
-	d.Set("instanceType", m["instanceType"])
-
 	return nil
 }
 
