@@ -204,10 +204,14 @@ func (c *Client) EcacheInstanceUpdateReplicas(tenantID, name string, rq Duploclo
 // DuploEcacheModifyRequest is a passthrough to AWS ModifyReplicationGroup.
 // Use pointer fields so that only the fields you set are included in the JSON payload.
 type DuploEcacheModifyRequest struct {
-	ReplicationGroupId       string `json:"ReplicationGroupId"`
-	ApplyImmediately         bool   `json:"ApplyImmediately"`
-	AutomaticFailoverEnabled *bool  `json:"AutomaticFailoverEnabled,omitempty"`
-	MultiAZEnabled           *bool  `json:"MultiAZEnabled,omitempty"`
+	ReplicationGroupId       string  `json:"ReplicationGroupId"`
+	ApplyImmediately         bool    `json:"ApplyImmediately"`
+	AutomaticFailoverEnabled *bool   `json:"AutomaticFailoverEnabled,omitempty"`
+	MultiAZEnabled           *bool   `json:"MultiAZEnabled,omitempty"`
+	SnapshotWindow           *string `json:"SnapshotWindow,omitempty"`
+	CacheNodeType            *string `json:"CacheNodeType,omitempty"`
+	CacheParameterGroupName  *string `json:"CacheParameterGroupName,omitempty"`
+	EngineVersion            *string `json:"EngineVersion,omitempty"`
 }
 
 // EcacheInstanceModify calls the v3 passthrough endpoint that maps to AWS ModifyReplicationGroup.
