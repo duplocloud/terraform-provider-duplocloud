@@ -20,7 +20,7 @@ description: |-
 
 ### Required
 
-- `arn` (String) The resource ARN on which a custom tag needs to be created. **Note:** ASG (Auto Scaling Group) ARNs are not supported.
+- `arn` (String) The resource ARN of which custom tag need to be created. **Note:** ASG (Auto Scaling Group) ARNs are not supported.
 - `key` (String) The tag name.
 - `tenant_id` (String) The GUID of the tenant that the custom tag for a resource will be created in.
 - `value` (String) The value of the tag.
