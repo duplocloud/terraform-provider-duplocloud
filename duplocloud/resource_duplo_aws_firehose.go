@@ -590,7 +590,7 @@ func duploAwsFirehoseSchema() map[string]*schema.Schema {
 						Default:      "FailedDocumentsOnly",
 						ValidateFunc: validation.StringInSlice([]string{"FailedDocumentsOnly", "AllDocuments"}, false),
 					},
-					"buffering_hints":            firehoseBufferingHintsSchema(),
+					"buffering_hints": firehoseBufferingHintsSchema(),
 					"s3_configuration": {
 						Description: "Intermediate S3 configuration.",
 						Type:        schema.TypeList,
