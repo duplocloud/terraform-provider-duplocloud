@@ -112,7 +112,6 @@ func firehoseBufferingHintsSchema() *schema.Schema {
 		Description: "Buffering options.",
 		Type:        schema.TypeList,
 		Optional:    true,
-		Computed:    true,
 		MaxItems:    1,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
@@ -185,12 +184,12 @@ func duploAwsFirehoseSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"delivery_stream_type": {
-			Description:  "Source type. `DirectPut` (default) or `KinesisStreamAsSource`.",
+			Description:  "Source type. `DirectPut` (default), `KinesisStreamAsSource`, or `MSKAsSource`.",
 			Type:         schema.TypeString,
 			Optional:     true,
 			ForceNew:     true,
 			Default:      "DirectPut",
-			ValidateFunc: validation.StringInSlice([]string{"DirectPut", "KinesisStreamAsSource"}, false),
+			ValidateFunc: validation.StringInSlice([]string{"DirectPut", "KinesisStreamAsSource", "MSKAsSource"}, false),
 		},
 
 		// Structured kinesis source configuration.
@@ -211,6 +210,61 @@ func duploAwsFirehoseSchema() map[string]*schema.Schema {
 						Description: "ARN of the IAM role that grants Firehose access to the Kinesis stream.",
 						Type:        schema.TypeString,
 						Required:    true,
+					},
+				},
+			},
+		},
+
+		// MSK source configuration.
+		"msk_source_configuration": {
+			Description: "MSK (Managed Streaming for Kafka) source. Required when `delivery_stream_type` is `MSKAsSource`.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			ForceNew:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"msk_cluster_arn": {
+						Description: "ARN of the MSK cluster.",
+						Type:        schema.TypeString,
+						Required:    true,
+						ForceNew:    true,
+					},
+					"topic_name": {
+						Description: "The Kafka topic name.",
+						Type:        schema.TypeString,
+						Required:    true,
+						ForceNew:    true,
+					},
+					"read_from_timestamp": {
+						Description: "Starting position in the MSK topic in RFC3339 format (e.g. `2024-01-01T00:00:00Z`). Use `1970-01-01T00:00:00Z` to read from earliest.",
+						Type:        schema.TypeString,
+						Required:    true,
+						ForceNew:    true,
+					},
+					"authentication_configuration": {
+						Description: "Authentication configuration for the MSK cluster.",
+						Type:        schema.TypeList,
+						Required:    true,
+						ForceNew:    true,
+						MaxItems:    1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"connectivity": {
+									Description:  "Network connectivity. `PUBLIC` or `PRIVATE`.",
+									Type:         schema.TypeString,
+									Required:     true,
+									ForceNew:     true,
+									ValidateFunc: validation.StringInSlice([]string{"PUBLIC", "PRIVATE"}, false),
+								},
+								"role_arn": {
+									Description: "ARN of the IAM role for MSK access.",
+									Type:        schema.TypeString,
+									Required:    true,
+									ForceNew:    true,
+								},
+							},
+						},
 					},
 				},
 			},
@@ -289,10 +343,16 @@ func duploAwsFirehoseSchema() map[string]*schema.Schema {
 						Required:    true,
 					},
 					"password": {
-						Description: "The Redshift password.",
+						Description: "The Redshift password. Write-only — not returned by the API.",
 						Type:        schema.TypeString,
-						Required:    true,
+						Optional:    true,
 						Sensitive:   true,
+					},
+					"retry_duration": {
+						Description: "Retry duration in seconds on delivery failure. Default: 3600.",
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Default:     3600,
 					},
 					"copy_command": {
 						Description: "COPY command configuration.",
@@ -332,6 +392,346 @@ func duploAwsFirehoseSchema() map[string]*schema.Schema {
 						Optional:     true,
 						Default:      "Disabled",
 						ValidateFunc: validation.StringInSlice([]string{"Disabled", "Enabled"}, false),
+					},
+					"s3_backup_configuration": {
+						Description: "S3 backup configuration. Required when s3_backup_mode is Enabled.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						MaxItems:    1,
+						Elem:        firehoseNestedS3ConfigElem(),
+					},
+					"secrets_manager_configuration": {
+						Description: "Secrets Manager configuration as an alternative to username/password.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						MaxItems:    1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"enabled": {
+									Description: "Whether Secrets Manager is enabled.",
+									Type:        schema.TypeBool,
+									Optional:    true,
+									Default:     false,
+								},
+								"secret_arn": {
+									Description: "ARN of the Secrets Manager secret.",
+									Type:        schema.TypeString,
+									Optional:    true,
+								},
+								"role_arn": {
+									Description: "IAM role ARN to access the secret.",
+									Type:        schema.TypeString,
+									Optional:    true,
+								},
+							},
+						},
+					},
+					"processing_configuration":   firehoseProcessingConfigurationSchema(),
+					"cloudwatch_logging_options": firehoseCloudWatchLoggingSchema(),
+				},
+			},
+		},
+
+		// Elasticsearch destination configuration.
+		"elasticsearch_destination_configuration": {
+			Description: "Elasticsearch destination configuration.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"index_name": {
+						Description: "The Elasticsearch index name.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"role_arn": {
+						Description: "ARN of the IAM role.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"domain_arn": {
+						Description:   "ARN of the Elasticsearch domain. Conflicts with `cluster_endpoint`.",
+						Type:          schema.TypeString,
+						Optional:      true,
+						ConflictsWith: []string{"elasticsearch_destination_configuration.0.cluster_endpoint"},
+					},
+					"cluster_endpoint": {
+						Description:   "Endpoint of the Elasticsearch cluster. Conflicts with `domain_arn`.",
+						Type:          schema.TypeString,
+						Optional:      true,
+						ConflictsWith: []string{"elasticsearch_destination_configuration.0.domain_arn"},
+					},
+					"type_name": {
+						Description: "Elasticsearch type name. Max 100 chars.",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+					"index_rotation_period": {
+						Description:  "Index rotation period. Valid values: `NoRotation`, `OneHour`, `OneDay`, `OneWeek`, `OneMonth`. Default: `OneDay`.",
+						Type:         schema.TypeString,
+						Optional:     true,
+						Default:      "OneDay",
+						ValidateFunc: validation.StringInSlice([]string{"NoRotation", "OneHour", "OneDay", "OneWeek", "OneMonth"}, false),
+					},
+					"retry_duration": {
+						Description:  "Retry duration in seconds (0–7200). Default: 300.",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Default:      300,
+						ValidateFunc: validation.IntBetween(0, 7200),
+					},
+					"s3_backup_mode": {
+						Description:  "S3 backup mode. `FailedDocumentsOnly` (default) or `AllDocuments`.",
+						Type:         schema.TypeString,
+						Optional:     true,
+						Default:      "FailedDocumentsOnly",
+						ValidateFunc: validation.StringInSlice([]string{"FailedDocumentsOnly", "AllDocuments"}, false),
+					},
+					"buffering_hints": firehoseBufferingHintsSchema(),
+					"s3_configuration": {
+						Description: "Intermediate S3 configuration.",
+						Type:        schema.TypeList,
+						Required:    true,
+						MaxItems:    1,
+						Elem:        firehoseNestedS3ConfigElem(),
+					},
+					"vpc_configuration": {
+						Description: "VPC configuration. ForceNew.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						ForceNew:    true,
+						MaxItems:    1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"role_arn": {
+									Type:     schema.TypeString,
+									Required: true,
+									ForceNew: true,
+								},
+								"security_group_ids": {
+									Type:     schema.TypeSet,
+									Required: true,
+									ForceNew: true,
+									Elem:     &schema.Schema{Type: schema.TypeString},
+								},
+								"subnet_ids": {
+									Type:     schema.TypeSet,
+									Required: true,
+									ForceNew: true,
+									Elem:     &schema.Schema{Type: schema.TypeString},
+								},
+								"vpc_id": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+							},
+						},
+					},
+					"processing_configuration":   firehoseProcessingConfigurationSchema(),
+					"cloudwatch_logging_options": firehoseCloudWatchLoggingSchema(),
+				},
+			},
+		},
+
+		// OpenSearch destination configuration.
+		"opensearch_destination_configuration": {
+			Description: "OpenSearch Service destination configuration.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"index_name": {
+						Description: "The OpenSearch index name.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"role_arn": {
+						Description: "ARN of the IAM role.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"domain_arn": {
+						Description:   "ARN of the OpenSearch domain. Conflicts with `cluster_endpoint`.",
+						Type:          schema.TypeString,
+						Optional:      true,
+						ConflictsWith: []string{"opensearch_destination_configuration.0.cluster_endpoint"},
+					},
+					"cluster_endpoint": {
+						Description:   "Endpoint of the OpenSearch cluster. Conflicts with `domain_arn`.",
+						Type:          schema.TypeString,
+						Optional:      true,
+						ConflictsWith: []string{"opensearch_destination_configuration.0.domain_arn"},
+					},
+					"type_name": {
+						Description: "Elasticsearch type name (for ES 6.x). Max 100 chars.",
+						Type:        schema.TypeString,
+						Optional:    true,
+					},
+					"index_rotation_period": {
+						Description:  "Index rotation period. Valid values: `NoRotation`, `OneHour`, `OneDay`, `OneWeek`, `OneMonth`. Default: `OneDay`.",
+						Type:         schema.TypeString,
+						Optional:     true,
+						Default:      "OneDay",
+						ValidateFunc: validation.StringInSlice([]string{"NoRotation", "OneHour", "OneDay", "OneWeek", "OneMonth"}, false),
+					},
+					"retry_duration": {
+						Description:  "Retry duration in seconds on delivery failure (0–7200). Default: 300.",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Default:      300,
+						ValidateFunc: validation.IntBetween(0, 7200),
+					},
+					"s3_backup_mode": {
+						Description:  "S3 backup mode. `FailedDocumentsOnly` (default) or `AllDocuments`.",
+						Type:         schema.TypeString,
+						Optional:     true,
+						Default:      "FailedDocumentsOnly",
+						ValidateFunc: validation.StringInSlice([]string{"FailedDocumentsOnly", "AllDocuments"}, false),
+					},
+					"buffering_hints":            firehoseBufferingHintsSchema(),
+					"s3_configuration": {
+						Description: "Intermediate S3 configuration.",
+						Type:        schema.TypeList,
+						Required:    true,
+						MaxItems:    1,
+						Elem:        firehoseNestedS3ConfigElem(),
+					},
+					"document_id_options": {
+						Description: "Document ID options.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						MaxItems:    1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"default_document_id_format": {
+									Description:  "Document ID format. `FIREHOSE_DEFAULT` or `OPENSEARCH_GENERATED`.",
+									Type:         schema.TypeString,
+									Required:     true,
+									ValidateFunc: validation.StringInSlice([]string{"FIREHOSE_DEFAULT", "OPENSEARCH_GENERATED"}, false),
+								},
+							},
+						},
+					},
+					"vpc_configuration": {
+						Description: "VPC configuration. ForceNew.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						ForceNew:    true,
+						MaxItems:    1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"role_arn": {
+									Description: "ARN of the IAM role for VPC access.",
+									Type:        schema.TypeString,
+									Required:    true,
+									ForceNew:    true,
+								},
+								"security_group_ids": {
+									Description: "List of security group IDs.",
+									Type:        schema.TypeSet,
+									Required:    true,
+									ForceNew:    true,
+									Elem:        &schema.Schema{Type: schema.TypeString},
+								},
+								"subnet_ids": {
+									Description: "List of subnet IDs.",
+									Type:        schema.TypeSet,
+									Required:    true,
+									ForceNew:    true,
+									Elem:        &schema.Schema{Type: schema.TypeString},
+								},
+								"vpc_id": {
+									Description: "The VPC ID (computed).",
+									Type:        schema.TypeString,
+									Computed:    true,
+								},
+							},
+						},
+					},
+					"processing_configuration":   firehoseProcessingConfigurationSchema(),
+					"cloudwatch_logging_options": firehoseCloudWatchLoggingSchema(),
+				},
+			},
+		},
+
+		// OpenSearch Serverless destination configuration.
+		"opensearch_serverless_destination_configuration": {
+			Description: "Amazon OpenSearch Serverless destination configuration.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"collection_endpoint": {
+						Description: "Endpoint of the OpenSearch Serverless collection.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"index_name": {
+						Description: "The OpenSearch Serverless index name.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"role_arn": {
+						Description: "ARN of the IAM role.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"retry_duration": {
+						Description:  "Retry duration in seconds (0–7200). Default: 300.",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Default:      300,
+						ValidateFunc: validation.IntBetween(0, 7200),
+					},
+					"s3_backup_mode": {
+						Description:  "S3 backup mode. `FailedDocumentsOnly` (default) or `AllDocuments`.",
+						Type:         schema.TypeString,
+						Optional:     true,
+						Default:      "FailedDocumentsOnly",
+						ValidateFunc: validation.StringInSlice([]string{"FailedDocumentsOnly", "AllDocuments"}, false),
+					},
+					"buffering_hints": firehoseBufferingHintsSchema(),
+					"s3_configuration": {
+						Description: "Intermediate S3 configuration.",
+						Type:        schema.TypeList,
+						Required:    true,
+						MaxItems:    1,
+						Elem:        firehoseNestedS3ConfigElem(),
+					},
+					"vpc_configuration": {
+						Description: "VPC configuration. ForceNew.",
+						Type:        schema.TypeList,
+						Optional:    true,
+						ForceNew:    true,
+						MaxItems:    1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"role_arn": {
+									Type:     schema.TypeString,
+									Required: true,
+									ForceNew: true,
+								},
+								"security_group_ids": {
+									Type:     schema.TypeSet,
+									Required: true,
+									ForceNew: true,
+									Elem:     &schema.Schema{Type: schema.TypeString},
+								},
+								"subnet_ids": {
+									Type:     schema.TypeSet,
+									Required: true,
+									ForceNew: true,
+									Elem:     &schema.Schema{Type: schema.TypeString},
+								},
+								"vpc_id": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+							},
+						},
 					},
 					"processing_configuration":   firehoseProcessingConfigurationSchema(),
 					"cloudwatch_logging_options": firehoseCloudWatchLoggingSchema(),
@@ -445,7 +845,36 @@ func resourceDuploAwsFirehoseUpdate(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[TRACE] resourceDuploAwsFirehoseUpdate(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	rq := expandAwsFirehose(d)
+	// Build update request — only changed destination config is sent.
+	// Source config and DeliveryStreamType are immutable and must be excluded.
+	rq := &duplosdk.DuploFirehoseRequest{
+		DeliveryStreamName: d.Get("name").(string),
+	}
+	if d.HasChange("extended_s3_destination_configuration") {
+		if v, ok := d.GetOk("extended_s3_destination_configuration"); ok {
+			rq.ExtendedS3DestinationConfiguration = expandFirehoseExtendedS3(v.([]interface{}))
+		}
+	}
+	if d.HasChange("redshift_destination_configuration") {
+		if v, ok := d.GetOk("redshift_destination_configuration"); ok {
+			rq.RedshiftDestinationConfiguration = firehoseRedshiftConfigToUpdate(expandFirehoseRedshift(v.([]interface{})))
+		}
+	}
+	if d.HasChange("elasticsearch_destination_configuration") {
+		if v, ok := d.GetOk("elasticsearch_destination_configuration"); ok {
+			rq.ElasticsearchDestinationConfiguration = firehoseElasticsearchConfigToUpdate(expandFirehoseElasticsearch(v.([]interface{})))
+		}
+	}
+	if d.HasChange("opensearch_destination_configuration") {
+		if v, ok := d.GetOk("opensearch_destination_configuration"); ok {
+			rq.AmazonopensearchserviceDestinationConfiguration = firehoseOpensearchConfigToUpdate(expandFirehoseOpensearch(v.([]interface{})))
+		}
+	}
+	if d.HasChange("opensearch_serverless_destination_configuration") {
+		if v, ok := d.GetOk("opensearch_serverless_destination_configuration"); ok {
+			rq.AmazonOpenSearchServerlessDestinationConfiguration = firehoseOpensearchServerlessConfigToUpdate(expandFirehoseOpensearchServerless(v.([]interface{})))
+		}
+	}
 
 	clientErr := c.DuploFirehoseUpdate(tenantID, name, rq)
 	if clientErr != nil {
@@ -525,12 +954,28 @@ func expandAwsFirehose(d *schema.ResourceData) *duplosdk.DuploFirehoseRequest {
 		rq.KinesisStreamSourceConfiguration = expandFirehoseKinesisSource(v.([]interface{}))
 	}
 
+	if v, ok := d.GetOk("msk_source_configuration"); ok {
+		rq.MSKSourceConfiguration = expandFirehoseMSKSource(v.([]interface{}))
+	}
+
 	if v, ok := d.GetOk("extended_s3_destination_configuration"); ok {
 		rq.ExtendedS3DestinationConfiguration = expandFirehoseExtendedS3(v.([]interface{}))
 	}
 
 	if v, ok := d.GetOk("redshift_destination_configuration"); ok {
 		rq.RedshiftDestinationConfiguration = expandFirehoseRedshift(v.([]interface{}))
+	}
+
+	if v, ok := d.GetOk("elasticsearch_destination_configuration"); ok {
+		rq.ElasticsearchDestinationConfiguration = expandFirehoseElasticsearch(v.([]interface{}))
+	}
+
+	if v, ok := d.GetOk("opensearch_destination_configuration"); ok {
+		rq.AmazonopensearchserviceDestinationConfiguration = expandFirehoseOpensearch(v.([]interface{}))
+	}
+
+	if v, ok := d.GetOk("opensearch_serverless_destination_configuration"); ok {
+		rq.AmazonOpenSearchServerlessDestinationConfiguration = expandFirehoseOpensearchServerless(v.([]interface{}))
 	}
 
 	return rq
@@ -573,19 +1018,21 @@ func expandFirehoseExtendedS3(v []interface{}) map[string]interface{} {
 		result["S3BackupMode"] = s
 	}
 
-	if bh := m["buffering_hints"].([]interface{}); len(bh) > 0 && bh[0] != nil {
-		bhMap := bh[0].(map[string]interface{})
-		result["BufferingHints"] = map[string]interface{}{
-			"SizeInMBs":         bhMap["size_in_mbs"].(int),
-			"IntervalInSeconds": bhMap["interval_in_seconds"].(int),
+	if bh, _ := m["buffering_hints"].([]interface{}); len(bh) > 0 && bh[0] != nil {
+		bhMap, _ := bh[0].(map[string]interface{})
+		if bhMap != nil {
+			result["BufferingHints"] = map[string]interface{}{
+				"SizeInMBs":         bhMap["size_in_mbs"].(int),
+				"IntervalInSeconds": bhMap["interval_in_seconds"].(int),
+			}
 		}
 	}
 
-	if pc := m["processing_configuration"].([]interface{}); len(pc) > 0 && pc[0] != nil {
+	if pc, _ := m["processing_configuration"].([]interface{}); len(pc) > 0 && pc[0] != nil {
 		result["ProcessingConfiguration"] = expandFirehoseProcessingConfig(pc)
 	}
 
-	if cw := m["cloudwatch_logging_options"].([]interface{}); len(cw) > 0 && cw[0] != nil {
+	if cw, _ := m["cloudwatch_logging_options"].([]interface{}); len(cw) > 0 && cw[0] != nil {
 		result["CloudWatchLoggingOptions"] = expandFirehoseCloudWatchLogging(cw)
 	}
 
@@ -608,17 +1055,37 @@ func expandFirehoseNestedS3Config(v []interface{}) map[string]interface{} {
 	if s, ok := m["compression_format"].(string); ok && s != "" && s != "UNCOMPRESSED" {
 		result["CompressionFormat"] = s
 	}
-	if bh := m["buffering_hints"].([]interface{}); len(bh) > 0 && bh[0] != nil {
-		bhMap := bh[0].(map[string]interface{})
-		result["BufferingHints"] = map[string]interface{}{
-			"SizeInMBs":         bhMap["size_in_mbs"].(int),
-			"IntervalInSeconds": bhMap["interval_in_seconds"].(int),
+	if bh, _ := m["buffering_hints"].([]interface{}); len(bh) > 0 && bh[0] != nil {
+		bhMap, _ := bh[0].(map[string]interface{})
+		if bhMap != nil {
+			result["BufferingHints"] = map[string]interface{}{
+				"SizeInMBs":         bhMap["size_in_mbs"].(int),
+				"IntervalInSeconds": bhMap["interval_in_seconds"].(int),
+			}
 		}
 	}
-	if cw := m["cloudwatch_logging_options"].([]interface{}); len(cw) > 0 && cw[0] != nil {
+	if cw, _ := m["cloudwatch_logging_options"].([]interface{}); len(cw) > 0 && cw[0] != nil {
 		result["CloudWatchLoggingOptions"] = expandFirehoseCloudWatchLogging(cw)
 	}
 	return result
+}
+
+// firehoseRedshiftConfigToUpdate renames nested S3 keys from the Create naming to
+// the UpdateDestination naming: S3Configuration→S3Update, S3BackupConfiguration→S3BackupUpdate.
+// AWS UpdateDestination uses *Update suffix for nested S3 fields inside RedshiftDestinationUpdate.
+func firehoseRedshiftConfigToUpdate(m map[string]interface{}) map[string]interface{} {
+	if m == nil {
+		return nil
+	}
+	if v, ok := m["S3Configuration"]; ok {
+		m["S3Update"] = v
+		delete(m, "S3Configuration")
+	}
+	if v, ok := m["S3BackupConfiguration"]; ok {
+		m["S3BackupUpdate"] = v
+		delete(m, "S3BackupConfiguration")
+	}
+	return m
 }
 
 // expandFirehoseRedshift maps redshift_destination_configuration → RedshiftDestinationConfiguration (PascalCase).
@@ -633,7 +1100,7 @@ func expandFirehoseRedshift(v []interface{}) map[string]interface{} {
 		"Username":       m["username"].(string),
 		"Password":       m["password"].(string),
 	}
-	if cc := m["copy_command"].([]interface{}); len(cc) > 0 && cc[0] != nil {
+	if cc, _ := m["copy_command"].([]interface{}); len(cc) > 0 && cc[0] != nil {
 		ccMap := cc[0].(map[string]interface{})
 		copyCmd := map[string]interface{}{}
 		if s, ok := ccMap["data_table_name"].(string); ok && s != "" {
@@ -647,16 +1114,30 @@ func expandFirehoseRedshift(v []interface{}) map[string]interface{} {
 		}
 		result["CopyCommand"] = copyCmd
 	}
-	if s3 := m["s3_configuration"].([]interface{}); len(s3) > 0 {
+	if s3, _ := m["s3_configuration"].([]interface{}); len(s3) > 0 {
 		result["S3Configuration"] = expandFirehoseNestedS3Config(s3)
 	}
 	if s, ok := m["s3_backup_mode"].(string); ok && s != "" && s != "Disabled" {
 		result["S3BackupMode"] = s
 	}
-	if pc := m["processing_configuration"].([]interface{}); len(pc) > 0 && pc[0] != nil {
+	if s3b, _ := m["s3_backup_configuration"].([]interface{}); len(s3b) > 0 {
+		result["S3BackupConfiguration"] = expandFirehoseNestedS3Config(s3b)
+	}
+	if n, ok := m["retry_duration"].(int); ok {
+		result["RetryOptions"] = map[string]interface{}{"DurationInSeconds": n}
+	}
+	if sm, _ := m["secrets_manager_configuration"].([]interface{}); len(sm) > 0 && sm[0] != nil {
+		smMap := sm[0].(map[string]interface{})
+		result["SecretsManagerConfiguration"] = map[string]interface{}{
+			"Enabled":   smMap["enabled"].(bool),
+			"SecretARN": smMap["secret_arn"].(string),
+			"RoleARN":   smMap["role_arn"].(string),
+		}
+	}
+	if pc, _ := m["processing_configuration"].([]interface{}); len(pc) > 0 && pc[0] != nil {
 		result["ProcessingConfiguration"] = expandFirehoseProcessingConfig(pc)
 	}
-	if cw := m["cloudwatch_logging_options"].([]interface{}); len(cw) > 0 && cw[0] != nil {
+	if cw, _ := m["cloudwatch_logging_options"].([]interface{}); len(cw) > 0 && cw[0] != nil {
 		result["CloudWatchLoggingOptions"] = expandFirehoseCloudWatchLogging(cw)
 	}
 	return result
@@ -742,17 +1223,35 @@ func flattenAwsFirehose(d *schema.ResourceData, tenantID string, stream *duplosd
 				d.Set("extended_s3_destination_configuration", flattened)
 			}
 			if rs, ok := destMap["RedshiftDestinationDescription"].(map[string]interface{}); ok {
-				flattened := flattenFirehoseRedshift(rs)
+				flattened := flattenFirehoseRedshift(d, rs)
 				preserveFirehoseProcessingConfig(d, "redshift_destination_configuration", flattened)
 				d.Set("redshift_destination_configuration", flattened)
+			}
+			if es, ok := destMap["ElasticsearchDestinationDescription"].(map[string]interface{}); ok {
+				flattened := flattenFirehoseElasticsearch(es)
+				preserveFirehoseProcessingConfig(d, "elasticsearch_destination_configuration", flattened)
+				d.Set("elasticsearch_destination_configuration", flattened)
+			}
+			if os, ok := destMap["AmazonopensearchserviceDestinationDescription"].(map[string]interface{}); ok {
+				flattened := flattenFirehoseOpensearch(os)
+				preserveFirehoseProcessingConfig(d, "opensearch_destination_configuration", flattened)
+				d.Set("opensearch_destination_configuration", flattened)
+			}
+			if oss, ok := destMap["AmazonOpenSearchServerlessDestinationDescription"].(map[string]interface{}); ok {
+				flattened := flattenFirehoseOpensearchServerless(oss)
+				preserveFirehoseProcessingConfig(d, "opensearch_serverless_destination_configuration", flattened)
+				d.Set("opensearch_serverless_destination_configuration", flattened)
 			}
 		}
 	}
 
-	// Kinesis source is at the top-level Source field, not inside Destinations.
+	// Source configs are at the top-level Source field, not inside Destinations.
 	if src, ok := stream.Source.(map[string]interface{}); ok {
 		if ksis, ok := src["KinesisStreamSourceDescription"].(map[string]interface{}); ok {
 			d.Set("kinesis_source_configuration", flattenFirehoseKinesisSource(ksis))
+		}
+		if msk, ok := src["MSKSourceDescription"].(map[string]interface{}); ok {
+			d.Set("msk_source_configuration", flattenFirehoseMSKSource(msk))
 		}
 	}
 
@@ -821,9 +1320,6 @@ func preserveFirehoseProcessingConfig(d *schema.ResourceData, blockKey string, f
 	flatMap["processing_configuration"] = pc
 }
 
-// suppressFirehoseParamRemoval is a DiffSuppressFunc for parameter_name and parameter_value.
-// It suppresses removal of parameters that AWS auto-adds as defaults (e.g. NumberOfRetries,
-// RoleArn) which the user never configured, preventing phantom diffs on every plan.
 // Runs during PlanResourceChange where d.GetRawConfig() is populated.
 func suppressFirehoseParamRemoval(k, old, new string, d *schema.ResourceData) bool {
 	// Only suppress when a value is disappearing from state (old → "")
@@ -942,7 +1438,9 @@ func flattenFirehoseExtendedS3(m map[string]interface{}) []interface{} {
 	}
 
 	if pc, ok := m["ProcessingConfiguration"].(map[string]interface{}); ok {
-		cfg["processing_configuration"] = flattenFirehoseProcessingConfig(pc)
+		if procs, _ := pc["Processors"].([]interface{}); len(procs) > 0 {
+			cfg["processing_configuration"] = flattenFirehoseProcessingConfig(pc)
+		}
 	}
 
 	if cw, ok := m["CloudWatchLoggingOptions"].(map[string]interface{}); ok {
@@ -1013,13 +1511,16 @@ func flattenFirehoseNestedS3Config(m map[string]interface{}) []interface{} {
 	return []interface{}{cfg}
 }
 
-func flattenFirehoseRedshift(m map[string]interface{}) []interface{} {
+func flattenFirehoseRedshift(d *schema.ResourceData, m map[string]interface{}) []interface{} {
 	cfg := map[string]interface{}{
 		"cluster_jdbcurl": strFromMap(m, "ClusterJDBCURL"),
 		"role_arn":        strFromMap(m, "RoleARN"),
 		"username":        strFromMap(m, "Username"),
-		"password":        strFromMap(m, "Password"),
-		"s3_backup_mode":  firehoseEnumFromMap(m, "S3BackupMode"),
+		// password is write-only — not returned by AWS describe; preserved via Computed schema.
+		"s3_backup_mode": firehoseEnumFromMap(m, "S3BackupMode"),
+	}
+	if ro, ok := m["RetryOptions"].(map[string]interface{}); ok {
+		cfg["retry_duration"] = intFromMap(ro, "DurationInSeconds")
 	}
 	if cc, ok := m["CopyCommand"].(map[string]interface{}); ok {
 		cfg["copy_command"] = []interface{}{map[string]interface{}{
@@ -1031,14 +1532,445 @@ func flattenFirehoseRedshift(m map[string]interface{}) []interface{} {
 	if s3, ok := m["S3DestinationDescription"].(map[string]interface{}); ok {
 		cfg["s3_configuration"] = flattenFirehoseNestedS3Config(s3)
 	}
+	if s3b, ok := m["S3BackupDescription"].(map[string]interface{}); ok {
+		cfg["s3_backup_configuration"] = flattenFirehoseNestedS3Config(s3b)
+	}
+	if sm, ok := m["SecretsManagerConfiguration"].(map[string]interface{}); ok {
+		cfg["secrets_manager_configuration"] = []interface{}{map[string]interface{}{
+			"enabled":    boolFromMap(sm, "Enabled"),
+			"secret_arn": strFromMap(sm, "SecretARN"),
+			"role_arn":   strFromMap(sm, "RoleARN"),
+		}}
+	}
 	if pc, ok := m["ProcessingConfiguration"].(map[string]interface{}); ok {
-		cfg["processing_configuration"] = flattenFirehoseProcessingConfig(pc)
+		if procs, _ := pc["Processors"].([]interface{}); len(procs) > 0 {
+			cfg["processing_configuration"] = flattenFirehoseProcessingConfig(pc)
+		}
 	}
 	if cw, ok := m["CloudWatchLoggingOptions"].(map[string]interface{}); ok {
 		cfg["cloudwatch_logging_options"] = []interface{}{map[string]interface{}{
 			"enabled":         boolFromMap(cw, "Enabled"),
 			"log_group_name":  strFromMap(cw, "LogGroupName"),
 			"log_stream_name": strFromMap(cw, "LogStreamName"),
+		}}
+	}
+
+	if pass, ok := d.GetOk("redshift_destination_configuration.0.password"); ok {
+		cfg["password"] = pass.(string)
+
+	} // preserve existing password value since AWS doesn't return it
+	return []interface{}{cfg}
+}
+
+// expandFirehoseElasticsearch maps elasticsearch_destination_configuration → ElasticsearchDestinationConfiguration.
+func expandFirehoseElasticsearch(v []interface{}) map[string]interface{} {
+	if len(v) == 0 || v[0] == nil {
+		return nil
+	}
+	m := v[0].(map[string]interface{})
+	result := map[string]interface{}{
+		"IndexName": m["index_name"].(string),
+		"RoleARN":   m["role_arn"].(string),
+	}
+	if s, ok := m["domain_arn"].(string); ok && s != "" {
+		result["DomainARN"] = s
+	}
+	if s, ok := m["cluster_endpoint"].(string); ok && s != "" {
+		result["ClusterEndpoint"] = s
+	}
+	if s, ok := m["type_name"].(string); ok && s != "" {
+		result["TypeName"] = s
+	}
+	if s, ok := m["index_rotation_period"].(string); ok && s != "" {
+		result["IndexRotationPeriod"] = s
+	}
+	if s, ok := m["s3_backup_mode"].(string); ok && s != "" {
+		result["S3BackupMode"] = s
+	}
+	if n, ok := m["retry_duration"].(int); ok {
+		result["RetryOptions"] = map[string]interface{}{"DurationInSeconds": n}
+	}
+	if bh, _ := m["buffering_hints"].([]interface{}); len(bh) > 0 && bh[0] != nil {
+		bhMap, _ := bh[0].(map[string]interface{})
+		if bhMap != nil {
+			result["BufferingHints"] = map[string]interface{}{
+				"SizeInMBs":         bhMap["size_in_mbs"].(int),
+				"IntervalInSeconds": bhMap["interval_in_seconds"].(int),
+			}
+		}
+	}
+	if s3, _ := m["s3_configuration"].([]interface{}); len(s3) > 0 {
+		result["S3Configuration"] = expandFirehoseNestedS3Config(s3)
+	}
+	if vpc, _ := m["vpc_configuration"].([]interface{}); len(vpc) > 0 && vpc[0] != nil {
+		vpcMap, _ := vpc[0].(map[string]interface{})
+		if vpcMap != nil {
+			vpcCfg := map[string]interface{}{"RoleARN": vpcMap["role_arn"].(string)}
+			if sgSet, ok := vpcMap["security_group_ids"].(*schema.Set); ok {
+				vpcCfg["SecurityGroupIds"] = sgSet.List()
+			}
+			if snSet, ok := vpcMap["subnet_ids"].(*schema.Set); ok {
+				vpcCfg["SubnetIds"] = snSet.List()
+			}
+			result["VpcConfiguration"] = vpcCfg
+		}
+	}
+	if pc, _ := m["processing_configuration"].([]interface{}); len(pc) > 0 && pc[0] != nil {
+		result["ProcessingConfiguration"] = expandFirehoseProcessingConfig(pc)
+	}
+	if cw, _ := m["cloudwatch_logging_options"].([]interface{}); len(cw) > 0 && cw[0] != nil {
+		result["CloudWatchLoggingOptions"] = expandFirehoseCloudWatchLogging(cw)
+	}
+	return result
+}
+
+// firehoseElasticsearchConfigToUpdate renames S3Configuration→S3Update for UpdateDestination.
+func firehoseElasticsearchConfigToUpdate(m map[string]interface{}) map[string]interface{} {
+	if m == nil {
+		return nil
+	}
+	if v, ok := m["S3Configuration"]; ok {
+		m["S3Update"] = v
+		delete(m, "S3Configuration")
+	}
+	return m
+}
+
+func flattenFirehoseElasticsearch(m map[string]interface{}) []interface{} {
+	cfg := map[string]interface{}{
+		"index_name":            strFromMap(m, "IndexName"),
+		"role_arn":              strFromMap(m, "RoleARN"),
+		"domain_arn":            strFromMap(m, "DomainARN"),
+		"cluster_endpoint":      strFromMap(m, "ClusterEndpoint"),
+		"type_name":             strFromMap(m, "TypeName"),
+		"index_rotation_period": firehoseEnumFromMap(m, "IndexRotationPeriod"),
+		"s3_backup_mode":        firehoseEnumFromMap(m, "S3BackupMode"),
+	}
+	if ro, ok := m["RetryOptions"].(map[string]interface{}); ok {
+		cfg["retry_duration"] = intFromMap(ro, "DurationInSeconds")
+	}
+	if bh, ok := m["BufferingHints"].(map[string]interface{}); ok {
+		cfg["buffering_hints"] = []interface{}{map[string]interface{}{
+			"size_in_mbs":         intFromMap(bh, "SizeInMBs"),
+			"interval_in_seconds": intFromMap(bh, "IntervalInSeconds"),
+		}}
+	}
+	if s3, ok := m["S3DestinationDescription"].(map[string]interface{}); ok {
+		cfg["s3_configuration"] = flattenFirehoseNestedS3Config(s3)
+	}
+	if vpc, ok := m["VpcConfigurationDescription"].(map[string]interface{}); ok {
+		vpcCfg := map[string]interface{}{
+			"role_arn": strFromMap(vpc, "RoleARN"),
+			"vpc_id":   strFromMap(vpc, "VpcId"),
+		}
+		if sgs, ok := vpc["SecurityGroupIds"].([]interface{}); ok {
+			vpcCfg["security_group_ids"] = schema.NewSet(schema.HashString, sgs)
+		}
+		if sns, ok := vpc["SubnetIds"].([]interface{}); ok {
+			vpcCfg["subnet_ids"] = schema.NewSet(schema.HashString, sns)
+		}
+		cfg["vpc_configuration"] = []interface{}{vpcCfg}
+	}
+	if pc, ok := m["ProcessingConfiguration"].(map[string]interface{}); ok {
+		if procs, _ := pc["Processors"].([]interface{}); len(procs) > 0 {
+			cfg["processing_configuration"] = flattenFirehoseProcessingConfig(pc)
+		}
+	}
+	if cw, ok := m["CloudWatchLoggingOptions"].(map[string]interface{}); ok {
+		cfg["cloudwatch_logging_options"] = []interface{}{map[string]interface{}{
+			"enabled":         boolFromMap(cw, "Enabled"),
+			"log_group_name":  strFromMap(cw, "LogGroupName"),
+			"log_stream_name": strFromMap(cw, "LogStreamName"),
+		}}
+	}
+	return []interface{}{cfg}
+}
+
+// expandFirehoseOpensearch maps opensearch_destination_configuration → AmazonopensearchserviceDestinationConfiguration.
+func expandFirehoseOpensearch(v []interface{}) map[string]interface{} {
+	if len(v) == 0 || v[0] == nil {
+		return nil
+	}
+	m := v[0].(map[string]interface{})
+	result := map[string]interface{}{
+		"IndexName": m["index_name"].(string),
+		"RoleARN":   m["role_arn"].(string),
+	}
+	if s, ok := m["domain_arn"].(string); ok && s != "" {
+		result["DomainARN"] = s
+	}
+	if s, ok := m["cluster_endpoint"].(string); ok && s != "" {
+		result["ClusterEndpoint"] = s
+	}
+	if s, ok := m["type_name"].(string); ok && s != "" {
+		result["TypeName"] = s
+	}
+	if s, ok := m["index_rotation_period"].(string); ok && s != "" {
+		result["IndexRotationPeriod"] = s
+	}
+	if s, ok := m["s3_backup_mode"].(string); ok && s != "" {
+		result["S3BackupMode"] = s
+	}
+	if n, ok := m["retry_duration"].(int); ok {
+		result["RetryOptions"] = map[string]interface{}{"DurationInSeconds": n}
+	}
+	if bh, _ := m["buffering_hints"].([]interface{}); len(bh) > 0 && bh[0] != nil {
+		bhMap, _ := bh[0].(map[string]interface{})
+		if bhMap != nil {
+			result["BufferingHints"] = map[string]interface{}{
+				"SizeInMBs":         bhMap["size_in_mbs"].(int),
+				"IntervalInSeconds": bhMap["interval_in_seconds"].(int),
+			}
+		}
+	}
+	if s3, _ := m["s3_configuration"].([]interface{}); len(s3) > 0 {
+		result["S3Configuration"] = expandFirehoseNestedS3Config(s3)
+	}
+	if dio, _ := m["document_id_options"].([]interface{}); len(dio) > 0 && dio[0] != nil {
+		dioMap, _ := dio[0].(map[string]interface{})
+		if dioMap != nil {
+			result["DocumentIdOptions"] = map[string]interface{}{
+				"DefaultDocumentIdFormat": dioMap["default_document_id_format"].(string),
+			}
+		}
+	}
+	if vpc, _ := m["vpc_configuration"].([]interface{}); len(vpc) > 0 && vpc[0] != nil {
+		vpcMap, _ := vpc[0].(map[string]interface{})
+		if vpcMap != nil {
+			vpcCfg := map[string]interface{}{
+				"RoleARN": vpcMap["role_arn"].(string),
+			}
+			if sgSet, ok := vpcMap["security_group_ids"].(*schema.Set); ok {
+				vpcCfg["SecurityGroupIds"] = sgSet.List()
+			}
+			if snSet, ok := vpcMap["subnet_ids"].(*schema.Set); ok {
+				vpcCfg["SubnetIds"] = snSet.List()
+			}
+			result["VpcConfiguration"] = vpcCfg
+		}
+	}
+	if pc, _ := m["processing_configuration"].([]interface{}); len(pc) > 0 && pc[0] != nil {
+		result["ProcessingConfiguration"] = expandFirehoseProcessingConfig(pc)
+	}
+	if cw, _ := m["cloudwatch_logging_options"].([]interface{}); len(cw) > 0 && cw[0] != nil {
+		result["CloudWatchLoggingOptions"] = expandFirehoseCloudWatchLogging(cw)
+	}
+	return result
+}
+
+// firehoseOpensearchConfigToUpdate renames S3Configuration→S3Update for UpdateDestination.
+func firehoseOpensearchConfigToUpdate(m map[string]interface{}) map[string]interface{} {
+	if m == nil {
+		return nil
+	}
+	if v, ok := m["S3Configuration"]; ok {
+		m["S3Update"] = v
+		delete(m, "S3Configuration")
+	}
+	return m
+}
+
+func flattenFirehoseOpensearch(m map[string]interface{}) []interface{} {
+	cfg := map[string]interface{}{
+		"index_name":            strFromMap(m, "IndexName"),
+		"role_arn":              strFromMap(m, "RoleARN"),
+		"domain_arn":            strFromMap(m, "DomainARN"),
+		"cluster_endpoint":      strFromMap(m, "ClusterEndpoint"),
+		"type_name":             strFromMap(m, "TypeName"),
+		"index_rotation_period": firehoseEnumFromMap(m, "IndexRotationPeriod"),
+		"s3_backup_mode":        firehoseEnumFromMap(m, "S3BackupMode"),
+	}
+	if ro, ok := m["RetryOptions"].(map[string]interface{}); ok {
+		cfg["retry_duration"] = intFromMap(ro, "DurationInSeconds")
+	}
+	if bh, ok := m["BufferingHints"].(map[string]interface{}); ok {
+		cfg["buffering_hints"] = []interface{}{map[string]interface{}{
+			"size_in_mbs":         intFromMap(bh, "SizeInMBs"),
+			"interval_in_seconds": intFromMap(bh, "IntervalInSeconds"),
+		}}
+	}
+	if s3, ok := m["S3DestinationDescription"].(map[string]interface{}); ok {
+		cfg["s3_configuration"] = flattenFirehoseNestedS3Config(s3)
+	}
+	if dio, ok := m["DocumentIdOptions"].(map[string]interface{}); ok {
+		cfg["document_id_options"] = []interface{}{map[string]interface{}{
+			"default_document_id_format": firehoseEnumFromMap(dio, "DefaultDocumentIdFormat"),
+		}}
+	}
+	if vpc, ok := m["VpcConfigurationDescription"].(map[string]interface{}); ok {
+		vpcCfg := map[string]interface{}{
+			"role_arn": strFromMap(vpc, "RoleARN"),
+			"vpc_id":   strFromMap(vpc, "VpcId"),
+		}
+		if sgs, ok := vpc["SecurityGroupIds"].([]interface{}); ok {
+			vpcCfg["security_group_ids"] = schema.NewSet(schema.HashString, sgs)
+		}
+		if sns, ok := vpc["SubnetIds"].([]interface{}); ok {
+			vpcCfg["subnet_ids"] = schema.NewSet(schema.HashString, sns)
+		}
+		cfg["vpc_configuration"] = []interface{}{vpcCfg}
+	}
+	if pc, ok := m["ProcessingConfiguration"].(map[string]interface{}); ok {
+		if procs, _ := pc["Processors"].([]interface{}); len(procs) > 0 {
+			cfg["processing_configuration"] = flattenFirehoseProcessingConfig(pc)
+		}
+	}
+	if cw, ok := m["CloudWatchLoggingOptions"].(map[string]interface{}); ok {
+		cfg["cloudwatch_logging_options"] = []interface{}{map[string]interface{}{
+			"enabled":         boolFromMap(cw, "Enabled"),
+			"log_group_name":  strFromMap(cw, "LogGroupName"),
+			"log_stream_name": strFromMap(cw, "LogStreamName"),
+		}}
+	}
+	return []interface{}{cfg}
+}
+
+// expandFirehoseOpensearchServerless maps opensearch_serverless_destination_configuration →
+// AmazonOpenSearchServerlessDestinationConfiguration (PascalCase).
+func expandFirehoseOpensearchServerless(v []interface{}) map[string]interface{} {
+	if len(v) == 0 || v[0] == nil {
+		return nil
+	}
+	m := v[0].(map[string]interface{})
+	result := map[string]interface{}{
+		"CollectionEndpoint": m["collection_endpoint"].(string),
+		"IndexName":          m["index_name"].(string),
+		"RoleARN":            m["role_arn"].(string),
+	}
+	if s, ok := m["s3_backup_mode"].(string); ok && s != "" {
+		result["S3BackupMode"] = s
+	}
+	if n, ok := m["retry_duration"].(int); ok {
+		result["RetryOptions"] = map[string]interface{}{"DurationInSeconds": n}
+	}
+	if bh, _ := m["buffering_hints"].([]interface{}); len(bh) > 0 && bh[0] != nil {
+		bhMap, _ := bh[0].(map[string]interface{})
+		if bhMap != nil {
+			result["BufferingHints"] = map[string]interface{}{
+				"SizeInMBs":         bhMap["size_in_mbs"].(int),
+				"IntervalInSeconds": bhMap["interval_in_seconds"].(int),
+			}
+		}
+	}
+	if s3, _ := m["s3_configuration"].([]interface{}); len(s3) > 0 {
+		result["S3Configuration"] = expandFirehoseNestedS3Config(s3)
+	}
+	if vpc, _ := m["vpc_configuration"].([]interface{}); len(vpc) > 0 && vpc[0] != nil {
+		vpcMap, _ := vpc[0].(map[string]interface{})
+		if vpcMap != nil {
+			vpcCfg := map[string]interface{}{
+				"RoleARN": vpcMap["role_arn"].(string),
+			}
+			if sgSet, ok := vpcMap["security_group_ids"].(*schema.Set); ok {
+				vpcCfg["SecurityGroupIds"] = sgSet.List()
+			}
+			if snSet, ok := vpcMap["subnet_ids"].(*schema.Set); ok {
+				vpcCfg["SubnetIds"] = snSet.List()
+			}
+			result["VpcConfiguration"] = vpcCfg
+		}
+	}
+	if pc, _ := m["processing_configuration"].([]interface{}); len(pc) > 0 && pc[0] != nil {
+		result["ProcessingConfiguration"] = expandFirehoseProcessingConfig(pc)
+	}
+	if cw, _ := m["cloudwatch_logging_options"].([]interface{}); len(cw) > 0 && cw[0] != nil {
+		result["CloudWatchLoggingOptions"] = expandFirehoseCloudWatchLogging(cw)
+	}
+	return result
+}
+
+// firehoseOpensearchServerlessConfigToUpdate renames S3Configuration→S3Update for UpdateDestination.
+func firehoseOpensearchServerlessConfigToUpdate(m map[string]interface{}) map[string]interface{} {
+	if m == nil {
+		return nil
+	}
+	if v, ok := m["S3Configuration"]; ok {
+		m["S3Update"] = v
+		delete(m, "S3Configuration")
+	}
+	return m
+}
+
+func flattenFirehoseOpensearchServerless(m map[string]interface{}) []interface{} {
+	cfg := map[string]interface{}{
+		"collection_endpoint": strFromMap(m, "CollectionEndpoint"),
+		"index_name":          strFromMap(m, "IndexName"),
+		"role_arn":            strFromMap(m, "RoleARN"),
+		"s3_backup_mode":      firehoseEnumFromMap(m, "S3BackupMode"),
+	}
+	if ro, ok := m["RetryOptions"].(map[string]interface{}); ok {
+		cfg["retry_duration"] = intFromMap(ro, "DurationInSeconds")
+	}
+	if bh, ok := m["BufferingHints"].(map[string]interface{}); ok {
+		cfg["buffering_hints"] = []interface{}{map[string]interface{}{
+			"size_in_mbs":         intFromMap(bh, "SizeInMBs"),
+			"interval_in_seconds": intFromMap(bh, "IntervalInSeconds"),
+		}}
+	}
+	if s3, ok := m["S3DestinationDescription"].(map[string]interface{}); ok {
+		cfg["s3_configuration"] = flattenFirehoseNestedS3Config(s3)
+	}
+	if vpc, ok := m["VpcConfigurationDescription"].(map[string]interface{}); ok {
+		vpcCfg := map[string]interface{}{
+			"role_arn": strFromMap(vpc, "RoleARN"),
+			"vpc_id":   strFromMap(vpc, "VpcId"),
+		}
+		if sgs, ok := vpc["SecurityGroupIds"].([]interface{}); ok {
+			vpcCfg["security_group_ids"] = schema.NewSet(schema.HashString, sgs)
+		}
+		if sns, ok := vpc["SubnetIds"].([]interface{}); ok {
+			vpcCfg["subnet_ids"] = schema.NewSet(schema.HashString, sns)
+		}
+		cfg["vpc_configuration"] = []interface{}{vpcCfg}
+	}
+	if pc, ok := m["ProcessingConfiguration"].(map[string]interface{}); ok {
+		if procs, _ := pc["Processors"].([]interface{}); len(procs) > 0 {
+			cfg["processing_configuration"] = flattenFirehoseProcessingConfig(pc)
+		}
+	}
+	if cw, ok := m["CloudWatchLoggingOptions"].(map[string]interface{}); ok {
+		cfg["cloudwatch_logging_options"] = []interface{}{map[string]interface{}{
+			"enabled":         boolFromMap(cw, "Enabled"),
+			"log_group_name":  strFromMap(cw, "LogGroupName"),
+			"log_stream_name": strFromMap(cw, "LogStreamName"),
+		}}
+	}
+	return []interface{}{cfg}
+}
+
+// expandFirehoseMSKSource maps msk_source_configuration → MSKSourceConfiguration (PascalCase).
+func expandFirehoseMSKSource(v []interface{}) map[string]interface{} {
+	if len(v) == 0 || v[0] == nil {
+		return nil
+	}
+	m := v[0].(map[string]interface{})
+	result := map[string]interface{}{
+		"MSKClusterARN":     m["msk_cluster_arn"].(string),
+		"TopicName":         m["topic_name"].(string),
+		"ReadFromTimestamp": m["read_from_timestamp"].(string),
+	}
+	if ac, _ := m["authentication_configuration"].([]interface{}); len(ac) > 0 && ac[0] != nil {
+		acMap, _ := ac[0].(map[string]interface{})
+		if acMap != nil {
+			result["AuthenticationConfiguration"] = map[string]interface{}{
+				"Connectivity": acMap["connectivity"].(string),
+				"RoleARN":      acMap["role_arn"].(string),
+			}
+		}
+	}
+	return result
+}
+
+func flattenFirehoseMSKSource(m map[string]interface{}) []interface{} {
+	cfg := map[string]interface{}{
+		"msk_cluster_arn":     strFromMap(m, "MSKClusterARN"),
+		"topic_name":          strFromMap(m, "TopicName"),
+		"read_from_timestamp": strFromMap(m, "ReadFromTimestamp"),
+	}
+	if ac, ok := m["AuthenticationConfiguration"].(map[string]interface{}); ok {
+		cfg["authentication_configuration"] = []interface{}{map[string]interface{}{
+			"connectivity": firehoseEnumFromMap(ac, "Connectivity"),
+			"role_arn":     strFromMap(ac, "RoleARN"),
 		}}
 	}
 	return []interface{}{cfg}

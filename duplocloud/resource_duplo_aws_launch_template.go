@@ -175,12 +175,9 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Optional:      true,
 			ConflictsWith: []string{"instance_type"},
 			//Computed:      true,
-<<<<<<< Updated upstream
-=======
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 				ir := d.GetRawConfig().GetAttr("instance_requirements")
 				zero := cty.NumberIntVal(0)
->>>>>>> Stashed changes
 
 				if d.Id() != "" {
 
@@ -207,35 +204,21 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"allowed_instance_types": {
-<<<<<<< Updated upstream
 						Type:         schema.TypeList,
 						Optional:     true,
 						Computed:     true,
 						RequiredWith: []string{"instance_requirements.0.vcpu_count", "instance_requirements.0.memory_mib"},
 
-=======
-						Type:     schema.TypeList,
-						Optional: true,
-						//Computed: true,
->>>>>>> Stashed changes
 						Elem: &schema.Schema{
 							Type: schema.TypeString,
 						},
 					},
 					"vcpu_count": {
-<<<<<<< Updated upstream
 						Type:         schema.TypeList,
 						MaxItems:     1,
 						RequiredWith: []string{"instance_requirements.0.allowed_instance_types"},
 						Optional:     true,
 						Description:  "Block describing the minimum and maximum number of vCPUs. It is a required field when allowed_instance_types is set ",
-=======
-						Type:     schema.TypeList,
-						MaxItems: 1,
-						Optional: true,
-						//Computed:    true,
-						Description: "Block describing the minimum and maximum number of vCPUs. It is a required field when allowed_instance_types is set ",
->>>>>>> Stashed changes
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
 								"min": {
@@ -326,16 +309,8 @@ func resourceAwsLaunchTemplateRead(ctx context.Context, d *schema.ResourceData, 
 		d.SetId("")
 		return nil
 	}
-	flag := ""
 	d.Set("tenant_id", tenantId)
-<<<<<<< Updated upstream
 	fErr := flattenLaunchTemplate(d, rp, false)
-=======
-	if v := ctx.Value(nullFlagKey); v != nil {
-		flag = v.(string)
-	}
-	fErr := flattenLaunchTemplate(d, rp, ver, flag)
->>>>>>> Stashed changes
 	if fErr != nil {
 		return diag.Errorf("%s", fErr.Error())
 	}
@@ -362,7 +337,7 @@ func resourceAwsLaunchTemplateCreate(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("%s", err.Error())
 	}
 	d.SetId(tenantId + "/launch-template/" + rq.LaunchTemplateName)
-	ctx = context.WithValue(ctx, nullFlagKey, rq.Flag)
+	ctx = context.WithValue(ctx, nullFlagKey, "")
 
 	diag := resourceAwsLaunchTemplateRead(ctx, d, m)
 	return diag
@@ -389,7 +364,7 @@ func resourceAwsLaunchTemplateUpdate(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.Errorf("%s", err.Error())
 	}
-	ctx = context.WithValue(ctx, nullFlagKey, rq.Flag)
+	ctx = context.WithValue(ctx, nullFlagKey, "")
 	diag := resourceAwsLaunchTemplateRead(ctx, d, m)
 	return diag
 
@@ -450,7 +425,6 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 				}
 			}
 
-<<<<<<< Updated upstream
 			if vcpu, ok := mirMap["vcpu_count"]; ok && vcpu != nil {
 				if vc, exists := vcpu.([]interface{}); exists && len(vc) > 0 {
 					if vcpuMap, ok := vc[0].(map[string]interface{}); ok {
@@ -485,25 +459,6 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 						}
 					}
 				}
-=======
-		}
-		if vcpu, ok := mirMap["vcpu_count"]; ok && len(vcpu.([]interface{})) > 0 {
-			vcpuMap := vcpu.([]interface{})[0].(map[string]interface{})
-			min := vcpuMap["min"].(int)
-			max := vcpuMap["max"].(int)
-			obj.LaunchTemplateData.InstanceRequirementsRequest.VCpuCount = &duplosdk.DuploLaunchTemplateVCpuCountRequest{
-				Min: min,
-				Max: max,
-			}
-		}
-		if memMap, ok := mirMap["memory_mib"]; ok && len(memMap.([]interface{})) > 0 {
-			mMap := memMap.([]interface{})[0].(map[string]interface{})
-			min := mMap["min"].(int)
-			max := mMap["max"].(int)
-			obj.LaunchTemplateData.InstanceRequirementsRequest.MemoryMiB = &duplosdk.DuploLaunchTemplateMemoryMiB{
-				Min: min,
-				Max: max,
->>>>>>> Stashed changes
 			}
 		}
 	}
@@ -560,11 +515,7 @@ func expandBlockDeviceMappings(d *schema.ResourceData) []duplosdk.DuploLaunchTem
 	}
 	return blockDeviceMappings
 }
-<<<<<<< Updated upstream
 func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, isDataSource bool) error {
-=======
-func flattenLaunchTemplate(d *schema.ResourceData, rp *[]duplosdk.DuploLaunchTemplateResponse, ver, flag string) error {
->>>>>>> Stashed changes
 
 	b, err := json.Marshal(rp)
 	if err != nil {
@@ -689,7 +640,6 @@ func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMa
 
 func launchtemplateValidation(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	ir, ok := diff.GetOk("instance_requirements")
-<<<<<<< Updated upstream
 	if ok {
 		irList, ok := ir.([]interface{})
 		if ok && len(irList) > 0 && irList[0] != nil {
@@ -753,42 +703,5 @@ func launchtemplateValidation(ctx context.Context, diff *schema.ResourceDiff, me
 		}
 	}
 
-=======
-	if ok && len(ir.([]interface{})) > 0 {
-		irMap := ir.([]interface{})[0].(map[string]interface{})
-		aI := irMap["allowed_instance_types"].([]interface{})
-		vc := irMap["vcpu_count"].([]interface{})
-		mm := irMap["memory_mib"].([]interface{})
-		if len(aI) > 0 {
-			if len(vc) == 0 {
-				return fmt.Errorf("vcpu_count is required when allowed_instance_types is set in instance_requirements")
-			}
-			if len(mm) == 0 {
-				return fmt.Errorf("memory_mib is required when allowed_instance_types is set in instance_requirements")
-			}
-		}
-
-	}
-	conf := diff.GetRawConfig()
-
-	//if instanceTypeConf := conf.GetAttr("instance_type"); instanceTypeConf.IsNull() {
-	//	if err := diff.SetNew("instance_type", nil); err != nil {
-	//		return err
-	//	}
-	//}
-	//_, vok := diff.GetOkExists("instance_requirements")
-	//if vok {
-	//	log.Println("instance_requirements exists")
-	//}
-	if instanceReqConf := conf.GetAttr("instance_requirements"); instanceReqConf.IsNull() {
-		if err := diff.SetNew("instance_requirements", nil); err != nil {
-			return err
-		}
-	}
-	log.Println("Completed launch template validation")
-	//if nI == "" {
-	//	diff.SetNew("instance_type", nil)
-	//}
->>>>>>> Stashed changes
 	return nil
 }
