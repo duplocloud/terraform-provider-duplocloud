@@ -36,6 +36,7 @@ Read-Only:
 - `can_scale_from_zero` (Boolean)
 - `capacity` (String)
 - `cloud` (Number)
+- `custom_data_tags` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--custom_data_tags))
 - `custom_node_labels` (Map of String)
 - `enabled_metrics` (List of String)
 - `encrypt_disk` (Boolean)
@@ -64,6 +65,15 @@ Read-Only:
 - `volume` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--volume))
 - `wait_for_capacity` (Boolean)
 - `zones` (List of Number)
+
+<a id="nestedobjatt--asg_profiles--custom_data_tags"></a>
+### Nested Schema for `asg_profiles.custom_data_tags`
+
+Read-Only:
+
+- `key` (String)
+- `value` (String)
+
 
 <a id="nestedobjatt--asg_profiles--metadata"></a>
 ### Nested Schema for `asg_profiles.metadata`

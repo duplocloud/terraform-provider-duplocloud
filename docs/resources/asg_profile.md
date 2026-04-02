@@ -263,6 +263,7 @@ resource "duplocloud_asg_instance_refresh" "name" {
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
 - `can_scale_from_zero` (Boolean) Whether or not ASG should leverage duplocloud's scale from 0 feature
 - `cloud` (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
+- `custom_data_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--custom_data_tags))
 - `custom_node_labels` (Map of String) Specify the labels to attach to the nodes.
 - `enabled_metrics` (List of String) List of metrics to collect for the ASG Specify one or more of the following metrics.`GroupMinSize`,`GroupMaxSize`,`GroupDesiredCapacity`,`GroupInServiceInstances`,`GroupPendingInstances`,`GroupStandbyInstances`,`GroupTerminatingInstances`,`GroupTotalInstances`,`GroupInServiceCapacity`,`GroupPendingCapacity`,`GroupStandbyCapacity`,`GroupTerminatingCapacity`,`GroupTotalCapacity`,`WarmPoolDesiredCapacity`,`WarmPoolWarmedCapacity`,`WarmPoolPendingCapacity`,`WarmPoolTerminatingCapacity`,`WarmPoolTotalCapacity`,`GroupAndWarmPoolDesiredCapacity`,`GroupAndWarmPoolTotalCapacity`.
 - `encrypt_disk` (Boolean) Defaults to `false`.
@@ -279,7 +280,7 @@ resource "duplocloud_asg_instance_refresh" "name" {
 - `max_spot_price` (String) Maximum price to pay for a spot instance in dollars per unit hour.
 - `metadata` (Block List) Configuration metadata used when creating the host.<br>*Note: To configure OS disk size OsDiskSize can be specified as Key and its size as value, size value should be atleast 10* (see [below for nested schema](#nestedblock--metadata))
 - `min_instance_count` (Number) The minimum size of the Auto Scaling Group.
-- `minion_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--minion_tags))
+- `minion_tags` (Block List, Deprecated) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. Use custom_data_tags instead of minion_tags, as custom_data_tags is deprecated and will be removed in a future release. (see [below for nested schema](#nestedblock--minion_tags))
 - `network_interface` (Block List) An optional list of custom network interface configurations to use when creating the host. (see [below for nested schema](#nestedblock--network_interface))
 - `prepend_user_data` (Boolean) Bootstrap an EKS host with Duplo's user data, prepending it to custom user data if also provided. Defaults to `true`.
 - `tags` (Block List) (see [below for nested schema](#nestedblock--tags))
@@ -299,6 +300,15 @@ resource "duplocloud_asg_instance_refresh" "name" {
 - `id` (String) The ID of this resource.
 - `initial_base64_user_data` (String)
 - `public_ip_address` (String) The primary public IP address assigned to the host.
+
+<a id="nestedblock--custom_data_tags"></a>
+### Nested Schema for `custom_data_tags`
+
+Required:
+
+- `key` (String)
+- `value` (String)
+
 
 <a id="nestedblock--metadata"></a>
 ### Nested Schema for `metadata`
