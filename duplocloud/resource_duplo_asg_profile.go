@@ -171,7 +171,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	awsASGSchema["image_id"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["volume"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["minion_tags"].ConflictsWith = []string{"custom_data_tags"}
-	awsASGSchema["minion_tags"].Deprecated = "Use custom_data_tags instead of minion_tags, as custom_data_tags is deprecated and will be removed in a future release."
+	awsASGSchema["minion_tags"].Deprecated = "minion_tags is deprecated and will be removed in a future release. Use custom_data_tags instead."
 	awsASGSchema["minion_tags"].DiffSuppressFunc = diffSuppressWhenNotCreating
 
 	awsASGSchema["custom_data_tags"] = &schema.Schema{
