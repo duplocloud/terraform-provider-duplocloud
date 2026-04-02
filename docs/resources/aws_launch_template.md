@@ -86,7 +86,7 @@ resource "duplocloud_aws_launch_template" "template" {
 
 ### Read-Only
 
-- `default_version` (String) The current default version of the launch template.
+- `default_version` (String) The default version of the launch template at creation time. Use the data source for the current value.
 - `id` (String) The ID of this resource.
 - `latest_version` (String) The latest launch template version
 - `version_metadata` (String)
