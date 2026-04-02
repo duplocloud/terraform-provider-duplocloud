@@ -170,6 +170,20 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	awsASGSchema["capacity"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["image_id"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["volume"].DiffSuppressFunc = diffSuppressWhenNotCreating
+	awsASGSchema["minion_tags"].ConflictsWith = []string{"custom_data_tags"}
+	awsASGSchema["minion_tags"].Deprecated = "Use custom_data_tags instead of minion_tags, as custom_data_tags is deprecated and will be removed in a future release."
+	awsASGSchema["minion_tags"].DiffSuppressFunc = diffSuppressWhenNotCreating
+
+	awsASGSchema["custom_data_tags"] = &schema.Schema{
+		Description:   "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.",
+		Type:          schema.TypeList,
+		Optional:      true,
+		Computed:      true,
+		ForceNew:      true, // relaunch instance
+		Elem:          KeyValueSchemaAsgCustomDataTag(),
+		ConflictsWith: []string{"minion_tags"},
+	}
+
 	return awsASGSchema
 }
 
@@ -272,18 +286,21 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		time.Sleep(5 * time.Minute) // Wait to ensure the ASG profile is created in Duplo if polling dint happened
 		// to reduce impact of asg worker failure when tags are passed.
 	}
-	fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
+	if v, ok := d.GetOk("minion_tags"); ok && len(v.([]interface{})) > 0 {
+		fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
+		mTags := v.([]interface{})
+		for _, raw := range mTags {
+			m := raw.(map[string]interface{})
+			err = c.TenantUpdateCustomData(rq.TenantId, duplosdk.CustomDataUpdate{
+				ComponentId:   fullName,
+				ComponentType: duplosdk.ASG,
+				Key:           m["key"].(string),
+				Value:         m["value"].(string),
+			})
 
-	for _, raw := range *rq.MinionTags {
-		err = c.TenantUpdateCustomData(rq.TenantId, duplosdk.CustomDataUpdate{
-			ComponentId:   fullName,
-			ComponentType: duplosdk.ASG,
-			Key:           raw.Key,
-			Value:         raw.Value,
-		})
-
-		if err != nil {
-			return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
+			if err != nil {
+				return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
+			}
 		}
 	}
 	//By default, wait until the ASG instances to be healthy.
@@ -520,7 +537,8 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("keypair_type", duplo.KeyPairType)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("minion_tags", keyValueToState("minion_tags", duplo.CustomDataTags))
+	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
+	d.Set("custom_data_tags", keyValueToState("custom_data_tags", duplo.CustomDataTags))
 	d.Set("enabled_metrics", duplo.EnabledMetrics)
 	d.Set("arn", duplo.Arn)
 	// If a network interface was customized, certain fields are not returned by the backend.
@@ -569,7 +587,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		EncryptDisk:         d.Get("encrypt_disk").(bool),
 		MetaData:            keyValueFromState("metadata", d),
 		Tags:                keyValueFromState("tags", d),
-		MinionTags:          keyValueFromState("minion_tags", d),
+		CustomDataTags:      keyValueFromState("custom_data_tags", d),
 		Volumes:             expandNativeHostVolumes("volume", d),
 		NetworkInterfaces:   expandNativeHostNetworkInterfaces("network_interface", d),
 		DesiredCapacity:     d.Get("instance_count").(int),

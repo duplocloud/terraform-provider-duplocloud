@@ -14,6 +14,8 @@ func dataAsgSchema() map[string]*schema.Schema {
 	m := autoscalingGroupSchema()
 	delete(m, "zone")
 	delete(m, "zones")
+	m["minion_tags"].ConflictsWith = nil
+	m["custom_data_tags"].ConflictsWith = nil
 	m["zones"] = &schema.Schema{
 		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0",
 		Type:        schema.TypeList,
