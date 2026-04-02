@@ -2,11 +2,12 @@ package duplocloud
 
 import (
 	"context"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -75,7 +76,7 @@ func resourceAzureVmMaintenanceConfig() *schema.Resource {
 							ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$`), "valid datetime format is YYYY-MM-DD HH:MM"),
 						},
 						"duration": {
-							Description: "The duration of the maintenance window in HH:mm format.",
+							Description: "The duration of the maintenance window in HH:mm format. Should be less than or equal to 3 Hrs",
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
@@ -119,7 +120,11 @@ func resourceAzureVmMaintenanceConfigRead(ctx context.Context, d *schema.Resourc
 		}
 		return diag.Errorf("Unable to retrieve vm maintenance configuration details for '%s': %s", vmName, err)
 	}
-	if duplo == nil {
+	if duplo == nil || (duplo != nil && duplo.StartDateTime == "") {
+		d.SetId("") // object missing
+		return nil
+	}
+	if duplo != nil && duplo.StartDateTime == "" {
 		d.SetId("") // object missing
 		return nil
 	}
@@ -146,7 +151,6 @@ func resourceAzureVmMaintenanceConfigCreate(ctx context.Context, d *schema.Resou
 		return diag.Errorf("resourceAzureVmMaintenanceConfigCreate cannot create maintenance config for vm %s error: %s", vmName, err.Error())
 	}
 	d.SetId(tenantId + "/" + vmName + "/maintenance-configuration")
-
 	diags := resourceAzureVmMaintenanceConfigRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAzureVmMaintenanceConfigCreate(%s): end", vmName)
 	return diags
@@ -203,7 +207,7 @@ func expandAzureVmMaintenance(d *schema.ResourceData) *duplosdk.DuploAzureVmMain
 	return &obj
 }
 
-func flattenAzureVmMaintenance(d *schema.ResourceData, rb duplosdk.DuploAzureVmMaintenanceWindow) {
+func flattenAzureVmMaintenance(d *schema.ResourceData, rb duplosdk.DuploAzureVmMaintenanceWindowResponse) {
 	d.Set("window.0.start_time", rb.StartDateTime)
 	d.Set("window.0.expiration_time", rb.ExpirationDateTime)
 	d.Set("window.0.duration", rb.Duration)

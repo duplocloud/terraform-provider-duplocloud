@@ -47,7 +47,6 @@ func duploServiceParamsSchema() map[string]*schema.Schema {
 			Description: "The ARN of a web application firewall to associate this load balancer.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Computed:    true,
 		},
 		"dns_prfx": {
 			Description: "The DNS prefix to assign to this service's load balancer.",
@@ -315,14 +314,14 @@ func resourceDuploServiceParamsDelete(ctx context.Context, d *schema.ResourceDat
 					if clientError.Status() == 500 && duplo.Template.Cloud != 0 {
 						log.Printf("[TRACE] Ignoring error %s for non AWS cloud.", clientError)
 					} else {
-						return diag.FromErr(err)
+						return diag.FromErr(clientError)
 					}
 				}
 			}
 		}
 	}
 
-	log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceDuploServiceParamsDelete(%s, %s): end", tenantID, name)
 
 	return nil
 }
@@ -368,9 +367,9 @@ func readDuploServiceAwsLbSettings(tenantID string, rpc *duplosdk.DuploReplicati
 
 		// Populate load balancer settings.
 		if settings.SecurityPolicyId == nil {
-			d.Set("web_acl_id", "")
+			d.Set("webaclid", "")
 		} else {
-			d.Set("web_acl_id", *settings.SecurityPolicyId)
+			d.Set("webaclid", *settings.SecurityPolicyId)
 		}
 		if settings.EnableAccessLogs == nil {
 			d.Set("enable_access_logs", false)
@@ -419,8 +418,8 @@ func updateDuploServiceAwsLbSettings(tenantID string, details *duplosdk.DuploAws
 		settings.Timeout = v.(int)
 		haveSettings = true
 	}
-	if v, ok := d.GetOk("webaclid"); ok && v != nil {
-		securityPolicyID := v.(string)
+	if d.HasChange("webaclid") {
+		securityPolicyID := d.Get("webaclid").(string)
 		settings.SecurityPolicyId = &securityPolicyID
 		haveSettings = true
 	}

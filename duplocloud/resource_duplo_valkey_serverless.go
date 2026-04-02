@@ -140,12 +140,12 @@ func resourceDuploValkeyServerlessRead(ctx context.Context, d *schema.ResourceDa
 	c := m.(*duplosdk.Client)
 
 	log.Printf("[TRACE] resourceDuploValkeyServerlessRead(%s, %s): start", tenantID, name)
-	fullName, err := c.GetDuploServicesName(tenantID, name)
+	prefix, err := c.GetResourcePrefixWithoutTenant("duplo")
 	if err != nil {
 		return diag.Errorf("resourceDuploValkeyServerlessRead: Unable to retrieve duplo service name (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 	// Get the object from Duplo, detecting a missing object
-	duplo, cerr := c.DuploValkeyServerlessGet(tenantID, fullName)
+	duplo, cerr := c.DuploValkeyServerlessGet(tenantID, prefix+"-"+name)
 	if duplo == nil {
 		d.SetId("")
 		return nil

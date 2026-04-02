@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -89,9 +90,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				"or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).",
 			Type:     schema.TypeString,
 			Optional: true,
-			ForceNew: true,
 			Computed: true,
-			//DiffSuppressFunc: suppressEnginePatchVersion,
 		},
 		"actual_engine_version": {
 			Type:     schema.TypeString,
@@ -102,14 +101,12 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				"See AWS documentation for the [available instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CacheNodes.SupportedTypes.html).",
 			Type:         schema.TypeString,
 			Required:     true,
-			ForceNew:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^cache\.`), "Elasticache instance types must start with 'cache.'"),
 		},
 		"replicas": {
 			Description:  "The number of replicas to create. Supported number of replicas is 1 to 6",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			ForceNew:     true,
 			Default:      1,
 			ValidateFunc: validation.IntBetween(1, 6),
 		},
@@ -124,8 +121,13 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Description: "Enables automatic failover.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			ForceNew:    true,
-			Default:     false,
+			Computed:    true,
+		},
+		"multi_az_enabled": {
+			Description: "Enables Multi-AZ support for the ElastiCache instance. Multi-AZ is only applicable for Redis (cache_type=0) and Valkey (cache_type=2). When enabled, automatic_failover_enabled must also be set to true.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 		"encryption_in_transit": {
 			Description: "Enables encryption-in-transit.",
@@ -162,7 +164,6 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 			Optional:    true,
-			ForceNew:    true,
 		},
 		"enable_cluster_mode": {
 			Description: "Flag to enable/disable redis/valkey cluster mode.",
@@ -208,13 +209,11 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			ValidateDiagFunc: isValidSnapshotWindow(),
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"log_delivery_configuration": {
 			Type:     schema.TypeSet,
 			MaxItems: 2,
 			Optional: true,
-			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"destination_type": {
@@ -331,7 +330,11 @@ func resourceDuploEcacheInstanceCreate(ctx context.Context, d *schema.ResourceDa
 	}
 	c := m.(*duplosdk.Client)
 
-	fullName := "duplo-" + duplo.Name
+	fullName, err := c.GetDuploServicesPrefix(tenantID, "duplo")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	if !validateStringLength(fullName, TOTALECACHENAMELENGTH) {
 		return diag.Errorf("resourceDuploEcacheInstanceCreate: fullname %s exceeds allowable ecache name length %d)", fullName, TOTALECACHENAMELENGTH)
 
@@ -584,6 +587,7 @@ func expandEcacheInstance(d *schema.ResourceData) (*duplosdk.AddDuploEcacheInsta
 			SnapshotName:             d.Get("snapshot_name").(string),
 			SnapshotRetentionLimit:   d.Get("snapshot_retention_limit").(int),
 			AutomaticFailoverEnabled: d.Get("automatic_failover_enabled").(bool),
+			MultiAZEnabled:           d.Get("multi_az_enabled").(bool),
 			SnapshotWindow:           d.Get("snapshot_window").(string),
 			EnableClusterMode:        d.Get("enable_cluster_mode").(bool),
 		},
@@ -656,7 +660,9 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("auth_token", duplo.AuthToken)
 	d.Set("instance_status", duplo.InstanceStatus)
 	d.Set("kms_key_id", duplo.KMSKeyID)
-	d.Set("parameter_group_name", duplo.ParameterGroupName)
+	if duplo.ParameterGroupName != "" {
+		d.Set("parameter_group_name", duplo.ParameterGroupName)
+	}
 	d.Set("enable_cluster_mode", duplo.EnableClusterMode)
 	d.Set("number_of_shards", duplo.NumberOfShards)
 	d.Set("snapshot_name", duplo.SnapshotName)
@@ -664,6 +670,7 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	d.Set("snapshot_window", duplo.SnapshotWindow)
 	d.Set("automatic_failover_enabled", duplo.AutomaticFailoverEnabled)
+	d.Set("multi_az_enabled", duplo.MultiAZEnabled)
 	if duplo.IsGlobal {
 		m := make(map[string]interface{})
 		m["group_id"] = duplo.GlobalReplicationGroupId
@@ -672,7 +679,29 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 		m["is_primary"] = duplo.IsPrimary
 		d.Set("global_replication_group", []interface{}{m})
 	}
+	d.Set("log_delivery_configuration", flattenLogDeliveryConfigurations(duplo.LogDeliveryConfigurations))
 	return nil
+}
+
+func flattenLogDeliveryConfigurations(configs []duplosdk.LogDeliveryConfigurationResponse) []interface{} {
+	result := make([]interface{}, 0, len(configs))
+	for _, cfg := range configs {
+		if cfg.DestinationType == nil || cfg.LogFormat == nil || cfg.LogType == nil {
+			continue
+		}
+		m := map[string]interface{}{
+			"destination_type": cfg.DestinationType.Value,
+			"log_format":       cfg.LogFormat.Value,
+			"log_type":         cfg.LogType.Value,
+		}
+		if cfg.DestinationDetails != nil && cfg.DestinationDetails.CloudWatchLogsDetails != nil {
+			m["log_group"] = cfg.DestinationDetails.CloudWatchLogsDetails.LogGroup
+		} else {
+			m["log_group"] = ""
+		}
+		result = append(result, m)
+	}
+	return result
 }
 
 // ecacheInstanceWaitUntilAvailable waits until an ECache instance is available.
@@ -701,6 +730,34 @@ func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, t
 	return err
 }
 
+// ecacheInstanceWaitUntilUnavailable waits until an ECache instance leaves the "available" state.
+//
+// It should be called post-modification to detect the transition before polling for available.
+// The error is intentionally discarded by callers — if the instance never leaves "available"
+// (e.g., the change was instant), we just move on.
+func ecacheInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client, tenantID, name string, timeout time.Duration) error {
+	stateConf := &retry.StateChangeConf{
+		Target:       []string{"processing", "creating", "modifying", "rebooting cluster nodes", "snapshotting"},
+		Pending:      []string{"available"},
+		MinTimeout:   10 * time.Second,
+		PollInterval: 15 * time.Second,
+		Timeout:      timeout,
+		Refresh: func() (interface{}, string, error) {
+			resp, err := c.EcacheInstanceGet(tenantID, name)
+			if err != nil {
+				return 0, "", err
+			}
+			if resp.InstanceStatus == "" {
+				resp.InstanceStatus = "processing"
+			}
+			return resp, resp.InstanceStatus, nil
+		},
+	}
+	log.Printf("[DEBUG] EcacheInstanceWaitUntilUnavailable (%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
 func parseECacheInstanceIdParts(id string) (tenantID, name string, err error) {
 	idParts := strings.SplitN(id, "/", 5)
 	if len(idParts) == 5 {
@@ -712,6 +769,11 @@ func parseECacheInstanceIdParts(id string) (tenantID, name string, err error) {
 }
 
 func suppressNoOfShardsDiff(k, old, new string, d *schema.ResourceData) bool {
+	// number_of_shards is only meaningful when cluster mode is enabled
+	if !d.Get("enable_cluster_mode").(bool) {
+		return true
+	}
+
 	newValue, err := strconv.Atoi(new)
 	if err != nil {
 		return false // Unexpected new value type
@@ -851,6 +913,71 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 
 	if ecm && !failover {
 		return fmt.Errorf("automatic_failover_enabled should be true for cluster mode")
+	}
+
+	// Safely get multi_az_enabled with nil check
+	multiAzVal := diff.Get("multi_az_enabled")
+	multiAz := false
+	if multiAzVal != nil {
+		multiAz = multiAzVal.(bool)
+	}
+
+	// Safely get replicas with nil check
+	replicasVal := diff.Get("replicas")
+	replicas := 1
+	if replicasVal != nil {
+		replicas = replicasVal.(int)
+	}
+
+	// When replicas < 2, automatic_failover and multi_az must be disabled.
+	// If the user explicitly set them to true in config, return an error.
+	// Otherwise, auto-set them to false so the plan is transparent.
+	if replicas < 2 {
+		failoverRaw := diff.GetRawConfig().GetAttr("automatic_failover_enabled")
+		multiAzRaw := diff.GetRawConfig().GetAttr("multi_az_enabled")
+
+		if failover {
+			if failoverRaw.IsKnown() && !failoverRaw.IsNull() && failoverRaw.True() {
+				return fmt.Errorf("automatic_failover_enabled cannot be true when replicas is less than 2")
+			}
+			if err := diff.SetNew("automatic_failover_enabled", false); err != nil {
+				return err
+			}
+			failover = false
+		}
+		if multiAz {
+			if multiAzRaw.IsKnown() && !multiAzRaw.IsNull() && multiAzRaw.True() {
+				return fmt.Errorf("multi_az_enabled cannot be true when replicas is less than 2")
+			}
+			if err := diff.SetNew("multi_az_enabled", false); err != nil {
+				return err
+			}
+			multiAz = false
+		}
+	}
+
+	if diff.Id() != "" && diff.HasChange("engine_version") {
+		oldRaw, newRaw := diff.GetChange("engine_version")
+		oldVer, newVer := oldRaw.(string), newRaw.(string)
+		if oldVer != "" && newVer != "" {
+			oldParsed, errOld := normalizeEngineVersion(oldVer)
+			newParsed, errNew := normalizeEngineVersion(newVer)
+			if errOld == nil && errNew == nil && newParsed.LessThan(oldParsed) {
+				return fmt.Errorf("engine_version cannot be downgraded from %s to %s; only upgrades are supported", oldVer, newVer)
+			}
+		}
+	}
+
+	if multiAz && !failover {
+		failoverRaw := diff.GetRawConfig().GetAttr("automatic_failover_enabled")
+		if failoverRaw.IsKnown() && !failoverRaw.IsNull() {
+			// User explicitly set automatic_failover_enabled = false alongside multi_az_enabled = true
+			return fmt.Errorf("automatic_failover_enabled must be true when multi_az_enabled is true")
+		}
+		// automatic_failover_enabled not explicitly set; auto-enable it when multi_az_enabled is true
+		if err := diff.SetNew("automatic_failover_enabled", true); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1023,6 +1150,8 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 	log.Printf("[TRACE] resourceDuploEcacheInstanceUpdate(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
 	identifier := d.Get("identifier").(string)
+
+	// --- Snapshot retention limit update (independent) ---
 	if d.HasChange("snapshot_retention_limit") {
 		rq := duplosdk.DuplocloudEcacheSnapshotRetentionLimitUpdateRequest{
 			Identifier:             identifier,
@@ -1038,7 +1167,292 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		}
 		time.Sleep(time.Duration(90) * time.Second)
 	}
+
+	// --- Phase 1: Disable multi_az and failover before replica changes ---
+	// Order: disable multi_az first, then disable failover (AWS requirement).
+	if d.HasChange("multi_az_enabled") {
+		_, newRaw := d.GetChange("multi_az_enabled")
+		newVal := newRaw.(bool)
+		if !newVal {
+			log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): disabling multi_az_enabled via v3 modify", tenantID, name)
+			f := false
+			rq := &duplosdk.DuploEcacheModifyRequest{
+				ReplicationGroupId: identifier,
+				ApplyImmediately:   true,
+				MultiAZEnabled:     &f,
+			}
+			cerr := c.EcacheInstanceModify(tenantID, rq)
+			if cerr != nil {
+				return diag.Errorf("Error disabling multi_az_enabled for ECache instance '%s': %s", id, cerr)
+			}
+			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+			if err != nil {
+				return diag.Errorf("Error waiting for ECache instance '%s' to be available after disabling multi_az: %s", id, err)
+			}
+			time.Sleep(time.Duration(90) * time.Second)
+		}
+	}
+
+	if d.HasChange("automatic_failover_enabled") {
+		_, newRaw := d.GetChange("automatic_failover_enabled")
+		newVal := newRaw.(bool)
+		if !newVal {
+			log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): disabling automatic_failover_enabled via v3 modify", tenantID, name)
+			f := false
+			rq := &duplosdk.DuploEcacheModifyRequest{
+				ReplicationGroupId:       identifier,
+				ApplyImmediately:         true,
+				AutomaticFailoverEnabled: &f,
+			}
+			cerr := c.EcacheInstanceModify(tenantID, rq)
+			if cerr != nil {
+				return diag.Errorf("Error disabling automatic_failover_enabled for ECache instance '%s': %s", id, cerr)
+			}
+			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+			if err != nil {
+				return diag.Errorf("Error waiting for ECache instance '%s' to be available after disabling failover: %s", id, err)
+			}
+			time.Sleep(time.Duration(90) * time.Second)
+		}
+	}
+
+	// --- Phase 2: Replica count change ---
+	if d.HasChange("replicas") {
+		newReplicas := d.Get("replicas").(int)
+		rq := duplosdk.DuplocloudEcacheReplicasUpdateRequest{
+			Identifier: identifier,
+			Replicas:   newReplicas,
+		}
+		cerr := c.EcacheInstanceUpdateReplicas(tenantID, name, rq)
+		if cerr != nil {
+			return diag.FromErr(cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+
+	// --- Phase 3: Enable failover and multi_az after replica changes ---
+	// Order: enable failover first, then enable multi_az (AWS requirement).
+	if d.HasChange("automatic_failover_enabled") {
+		_, newRaw := d.GetChange("automatic_failover_enabled")
+		newVal := newRaw.(bool)
+		if newVal {
+			if d.Get("replicas").(int) < 2 {
+				return diag.Errorf("To enable automatic_failover_enabled, replicas must be 2 or more")
+			}
+			log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): enabling automatic_failover_enabled via v3 modify", tenantID, name)
+			t := true
+			rq := &duplosdk.DuploEcacheModifyRequest{
+				ReplicationGroupId:       identifier,
+				ApplyImmediately:         true,
+				AutomaticFailoverEnabled: &t,
+			}
+			cerr := c.EcacheInstanceModify(tenantID, rq)
+			if cerr != nil {
+				return diag.Errorf("Error enabling automatic_failover_enabled for ECache instance '%s': %s", id, cerr)
+			}
+			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+			if err != nil {
+				return diag.Errorf("Error waiting for ECache instance '%s' to be available after enabling failover: %s", id, err)
+			}
+			time.Sleep(time.Duration(90) * time.Second)
+		}
+	}
+
+	if d.HasChange("multi_az_enabled") {
+		_, newRaw := d.GetChange("multi_az_enabled")
+		newVal := newRaw.(bool)
+		if newVal {
+			if !d.Get("automatic_failover_enabled").(bool) {
+				return diag.Errorf("To enable multi_az_enabled, automatic_failover_enabled must be true")
+			}
+			log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): enabling multi_az_enabled via v3 modify", tenantID, name)
+			t := true
+			rq := &duplosdk.DuploEcacheModifyRequest{
+				ReplicationGroupId: identifier,
+				ApplyImmediately:   true,
+				MultiAZEnabled:     &t,
+			}
+			cerr := c.EcacheInstanceModify(tenantID, rq)
+			if cerr != nil {
+				return diag.Errorf("Error enabling multi_az_enabled for ECache instance '%s': %s", id, cerr)
+			}
+			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+			if err != nil {
+				return diag.Errorf("Error waiting for ECache instance '%s' to be available after enabling multi_az: %s", id, err)
+			}
+			time.Sleep(time.Duration(90) * time.Second)
+		}
+	}
+
+	// --- Phase 4: In-place updates via v3 modify endpoint ---
+
+	// Snapshot window update (lightweight metadata change)
+	if d.HasChange("snapshot_window") {
+		newVal := d.Get("snapshot_window").(string)
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): updating snapshot_window to %s", tenantID, name, newVal)
+		rq := &duplosdk.DuploEcacheModifyRequest{
+			ReplicationGroupId: identifier,
+			ApplyImmediately:   true,
+			SnapshotWindow:     &newVal,
+		}
+		cerr := c.EcacheInstanceModify(tenantID, rq)
+		if cerr != nil {
+			return diag.Errorf("Error updating snapshot_window for ECache instance '%s': %s", id, cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available after snapshot_window update: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+
+	// Size (CacheNodeType) update — scaling, may take time
+	if d.HasChange("size") {
+		newVal := d.Get("size").(string)
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): updating size to %s", tenantID, name, newVal)
+		rq := &duplosdk.DuploEcacheModifyRequest{
+			ReplicationGroupId: identifier,
+			ApplyImmediately:   true,
+			CacheNodeType:      &newVal,
+		}
+		cerr := c.EcacheInstanceModify(tenantID, rq)
+		if cerr != nil {
+			return diag.Errorf("Error updating size for ECache instance '%s': %s", id, cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available after size update: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+
+	// Parameter group name update — may trigger node reboot
+	if d.HasChange("parameter_group_name") {
+		newVal := d.Get("parameter_group_name").(string)
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): updating parameter_group_name to %s", tenantID, name, newVal)
+		rq := &duplosdk.DuploEcacheModifyRequest{
+			ReplicationGroupId:      identifier,
+			ApplyImmediately:        true,
+			CacheParameterGroupName: &newVal,
+		}
+		cerr := c.EcacheInstanceModify(tenantID, rq)
+		if cerr != nil {
+			return diag.Errorf("Error updating parameter_group_name for ECache instance '%s': %s", id, cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available after parameter_group_name update: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+
+	// Engine version upgrade — last, may reboot nodes
+	if d.HasChange("engine_version") {
+		newVal := d.Get("engine_version").(string)
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine_version to %s", tenantID, name, newVal)
+		rq := &duplosdk.DuploEcacheModifyRequest{
+			ReplicationGroupId: identifier,
+			ApplyImmediately:   true,
+			EngineVersion:      &newVal,
+		}
+		cerr := c.EcacheInstanceModify(tenantID, rq)
+		if cerr != nil {
+			return diag.Errorf("Error upgrading engine_version for ECache instance '%s': %s", id, cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available after engine_version upgrade: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+
+	// --- Log delivery configuration update (independent) ---
+	if d.HasChange("log_delivery_configuration") {
+		oldRaw, newRaw := d.GetChange("log_delivery_configuration")
+		newSet, ok := newRaw.(*schema.Set)
+		if !ok || newSet == nil {
+			newSet = schema.NewSet(schema.HashResource(resourceDuploEcacheInstance().Schema["log_delivery_configuration"].Elem.(*schema.Resource)), []interface{}{})
+		}
+		oldSet, ok := oldRaw.(*schema.Set)
+		if !ok || oldSet == nil {
+			oldSet = schema.NewSet(schema.HashResource(resourceDuploEcacheInstance().Schema["log_delivery_configuration"].Elem.(*schema.Resource)), []interface{}{})
+		}
+		newConfigs, diagErr := expandLogDeliveryConfigurations(newSet.List())
+		if diagErr != nil {
+			return diagErr
+		}
+		oldConfigs, diagErr := expandLogDeliveryConfigurations(oldSet.List())
+		if diagErr != nil {
+			return diagErr
+		}
+
+		if duplicateLogType, found := hasDuplicateLogTypes(newConfigs); found {
+			return diag.Errorf("log_delivery_configuration: Duplicate log_type are not allowed. Found '%s' log_type repeated.", duplicateLogType)
+		}
+		engineVersion := d.Get("engine_version").(string)
+		if errDiag := validateLogDeliveryConfigurations(engineVersion, newConfigs); errDiag != nil {
+			return errDiag
+		}
+
+		updateItems := make([]duplosdk.LogDeliveryConfigurationUpdateItem, 0)
+		for _, cfg := range newConfigs {
+			updateItems = append(updateItems, duplosdk.LogDeliveryConfigurationUpdateItem{
+				DestinationType:    cfg.DestinationType,
+				LogFormat:          cfg.LogFormat,
+				LogType:            cfg.LogType,
+				DestinationDetails: cfg.DestinationDetails,
+				Enabled:            true,
+			})
+		}
+		newLogTypes := make(map[string]bool, len(newConfigs))
+		for _, cfg := range newConfigs {
+			newLogTypes[cfg.LogType] = true
+		}
+		for _, cfg := range oldConfigs {
+			if !newLogTypes[cfg.LogType] {
+				updateItems = append(updateItems, duplosdk.LogDeliveryConfigurationUpdateItem{
+					DestinationType:    cfg.DestinationType,
+					LogFormat:          cfg.LogFormat,
+					LogType:            cfg.LogType,
+					DestinationDetails: cfg.DestinationDetails,
+					Enabled:            false,
+				})
+			}
+		}
+		jsonBytes, jsonErr := json.Marshal(updateItems)
+		if jsonErr != nil {
+			return diag.Errorf("Error serializing log_delivery_configuration: %s", jsonErr)
+		}
+		rq := duplosdk.DuplocloudEcacheLogDeliveryUpdateRequest{
+			Identifier:                    identifier,
+			LogDeliveryConfigurationsJson: string(jsonBytes),
+		}
+		cerr := c.EcacheInstanceUpdateLogDelivery(tenantID, name, rq)
+		if cerr != nil {
+			return diag.FromErr(cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+
 	diags := resourceDuploEcacheInstanceRead(ctx, d, m)
-	log.Printf("[TRACE] resourceDuploEcacheInstanceCreate(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceDuploEcacheInstanceUpdate(%s, %s): end", tenantID, name)
 	return diags
 }

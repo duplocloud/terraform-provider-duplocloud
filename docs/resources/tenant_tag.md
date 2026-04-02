@@ -67,7 +67,7 @@ Optional:
 Import is supported using the following syntax:
 
 ```shell
-# Example: Importing an existing S3 bucket
+# Example: Importing an existing tenant tag
 #  - *TENANT_ID* is the tenant GUID
 #  - *TAG_KEY* is the tenant tag key
 #

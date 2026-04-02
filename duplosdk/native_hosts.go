@@ -85,11 +85,12 @@ type DuploNativeHostNetworkInterface struct {
 
 // DuploNativeHostVolume is a Duplo SDK object that represents a volume of a native host
 type DuploNativeHostVolume struct {
-	Iops       int    `json:"Iops,omitempty"`
-	Name       string `json:"Name,omitempty"`
-	Size       int    `Size:"Size,omitempty"`
-	VolumeID   string `json:"VolumeId,omitempty"`
-	VolumeType string `json:"VolumeType,omitempty"`
+	Iops                int    `json:"Iops,omitempty"`
+	Name                string `json:"Name,omitempty"`
+	Size                int    `Size:"Size,omitempty"`
+	VolumeID            string `json:"VolumeId,omitempty"`
+	VolumeType          string `json:"VolumeType,omitempty"`
+	DeleteOnTermination bool   `json:"DeleteOnTermination,omitempty"`
 }
 
 type DuploAzureVirtualMachine struct {
@@ -431,6 +432,14 @@ type DuploAzureVmMaintenanceWindow struct {
 	Visibility         string `json:"Visibility"`
 	TimeZone           string `json:"TimeZone"`
 }
+type DuploAzureVmMaintenanceWindowResponse struct {
+	StartDateTime      string `json:"properties.maintenanceWindow.startDateTime"`
+	ExpirationDateTime string `json:"properties.maintenanceWindow.expirationDateTime"`
+	Duration           string `json:"properties.maintenanceWindow.duration"`
+	RecurEvery         string `json:"properties.maintenanceWindow.recurEvery"`
+	Visibility         string `json:"properties.visibility"`
+	TimeZone           string `json:"properties.maintenanceWindow.timeZone"`
+}
 
 func (c *Client) AzureVmMaintenanceConfigurationCreate(tenantId, vmName string, rq *DuploAzureVmMaintenanceWindow) ClientError {
 	rp := DuploAzureVirtualMachine{}
@@ -447,8 +456,8 @@ func (c *Client) AzureVmMaintenanceConfigurationUpdate(tenantId, vmName string, 
 		nil)
 }
 
-func (c *Client) AzureVmMaintenanceConfigurationGet(tenantId, vmName string) (*DuploAzureVmMaintenanceWindow, ClientError) {
-	rp := DuploAzureVmMaintenanceWindow{}
+func (c *Client) AzureVmMaintenanceConfigurationGet(tenantId, vmName string) (*DuploAzureVmMaintenanceWindowResponse, ClientError) {
+	rp := DuploAzureVmMaintenanceWindowResponse{}
 	err := c.getAPI(fmt.Sprintf("AzureVmMaintenanceConfigurationGet(%s,%s)", tenantId, vmName),
 		fmt.Sprintf("v3/subscriptions/%s/azure/hosts/%s/maintenanceschedule", tenantId, EncodePathParam(vmName)),
 		&rp)

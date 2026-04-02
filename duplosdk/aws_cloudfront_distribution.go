@@ -11,13 +11,13 @@ type DuploAwsCloudfrontDefaultCacheBehavior struct {
 	AllowedMethods             *DuploCFDAllowedMethods                       `json:"AllowedMethods,omitempty"`
 	CachePolicyId              string                                        `json:"CachePolicyId,omitempty"`
 	Compress                   bool                                          `json:"Compress"`
-	DefaultTTL                 int                                           `json:"DefaultTTL"`
+	DefaultTTL                 *int                                          `json:"DefaultTTL"`
 	FieldLevelEncryptionId     string                                        `json:"FieldLevelEncryptionId"`
 	OriginRequestPolicyId      string                                        `json:"OriginRequestPolicyId,omitempty"`
 	LambdaFunctionAssociations *DuploAwsCloudfrontLambdaFunctionAssociations `json:"LambdaFunctionAssociations"`
 	FunctionAssociations       *DuploAwsCloudfrontFunctionAssociations       `json:"FunctionAssociations"`
-	MaxTTL                     int                                           `json:"MaxTTL"`
-	MinTTL                     int                                           `json:"MinTTL"`
+	MaxTTL                     *int                                          `json:"MaxTTL"`
+	MinTTL                     *int                                          `json:"MinTTL"`
 	SmoothStreaming            bool                                          `json:"SmoothStreaming"`
 	TargetOriginId             string                                        `json:"TargetOriginId,omitempty"`
 	TrustedSigners             *DuploCFDTrustedSigners                       `json:"TrustedSigners,omitempty"`
@@ -31,13 +31,13 @@ type DuploAwsCloudfrontCacheBehavior struct {
 	AllowedMethods             *DuploCFDAllowedMethods                       `json:"AllowedMethods,omitempty"`
 	CachePolicyId              string                                        `json:"CachePolicyId,omitempty"`
 	Compress                   bool                                          `json:"Compress"`
-	DefaultTTL                 int                                           `json:"DefaultTTL"`
+	DefaultTTL                 *int                                          `json:"DefaultTTL"`
 	FieldLevelEncryptionId     string                                        `json:"FieldLevelEncryptionId"`
 	OriginRequestPolicyId      string                                        `json:"OriginRequestPolicyId,omitempty"`
 	LambdaFunctionAssociations *DuploAwsCloudfrontLambdaFunctionAssociations `json:"LambdaFunctionAssociations"`
 	FunctionAssociations       *DuploAwsCloudfrontFunctionAssociations       `json:"FunctionAssociations"`
-	MaxTTL                     int                                           `json:"MaxTTL"`
-	MinTTL                     int                                           `json:"MinTTL"`
+	MaxTTL                     *int                                          `json:"MaxTTL"`
+	MinTTL                     *int                                          `json:"MinTTL"`
 	SmoothStreaming            bool                                          `json:"SmoothStreaming"`
 	TargetOriginId             string                                        `json:"TargetOriginId"`
 	TrustedSigners             *DuploCFDTrustedSigners                       `json:"TrustedSigners,omitempty"`
@@ -113,15 +113,16 @@ type DuploAwsCloudfrontOriginShield struct {
 }
 
 type DuploAwsCloudfrontOrigin struct {
-	ConnectionAttempts int                                    `json:"ConnectionAttempts,omitempty"`
-	ConnectionTimeout  int                                    `json:"ConnectionTimeout,omitempty"`
-	CustomHeaders      *DuploAwsCloudfrontOriginCustomHeaders `json:"CustomHeaders,omitempty"`
-	DomainName         string                                 `json:"DomainName,omitempty"`
-	Id                 string                                 `json:"Id,omitempty"`
-	OriginPath         string                                 `json:"OriginPath"`
-	S3OriginConfig     *DuploAwsCloudfrontOriginS3Config      `json:"S3OriginConfig,omitempty"`
-	CustomOriginConfig *DuploAwsCloudfrontCustomOriginConfig  `json:"CustomOriginConfig,omitempty"`
-	OriginShield       *DuploAwsCloudfrontOriginShield        `json:"OriginShield,omitempty"`
+	ConnectionAttempts    int                                    `json:"ConnectionAttempts,omitempty"`
+	ConnectionTimeout     int                                    `json:"ConnectionTimeout,omitempty"`
+	CustomHeaders         *DuploAwsCloudfrontOriginCustomHeaders `json:"CustomHeaders,omitempty"`
+	DomainName            string                                 `json:"DomainName,omitempty"`
+	Id                    string                                 `json:"Id,omitempty"`
+	OriginPath            string                                 `json:"OriginPath"`
+	S3OriginConfig        *DuploAwsCloudfrontOriginS3Config      `json:"S3OriginConfig,omitempty"`
+	CustomOriginConfig    *DuploAwsCloudfrontCustomOriginConfig  `json:"CustomOriginConfig,omitempty"`
+	OriginShield          *DuploAwsCloudfrontOriginShield        `json:"OriginShield,omitempty"`
+	OriginAccessControlId string                                 `json:"OriginAccessControlId,omitempty"`
 }
 
 type DuploAwsCloudfrontOriginCustomHeaders struct {
@@ -220,6 +221,14 @@ type DuploAwsCloudfrontDistributionCreate struct {
 	CorsAllowedHostNames []string                              `json:"CorsAllowedHostNames,omitempty"`
 }
 
+type DuploAwsCloudfrontDistributionCreateV2 struct {
+	DistributionConfig   *DuploAwsCloudfrontDistributionConfig `json:"DistributionConfig,omitempty"`
+	Id                   string                                `json:"Id,omitempty"`
+	IfMatch              string                                `json:"IfMatch,omitempty"`
+	UseOAIIdentity       bool                                  `json:"UseOAIIdentity"`
+	CorsAllowedHostNames []string                              `json:"CorsAllowedHostNames,omitempty"`
+}
+
 type DuploAwsCloudfrontDistribution struct {
 	DistributionConfig *DuploAwsCloudfrontDistributionConfig `json:"DistributionConfig,omitempty"`
 	Id                 string                                `json:"Id,omitempty"`
@@ -280,7 +289,29 @@ func (c *Client) AwsCloudfrontDistributionCreate(tenantID string, rq *DuploAwsCl
 	return &resp, err
 }
 
+func (c *Client) AwsCloudfrontDistributionCreateV2(tenantID string, rq *DuploAwsCloudfrontDistributionCreateV2) (*DuploAwsCloudfrontDistribution, ClientError) {
+	resp := DuploAwsCloudfrontDistribution{}
+	err := c.postAPI(
+		fmt.Sprintf("AwsCloudfrontDistributionCreate(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFrontDistribution", tenantID),
+		&rq,
+		&resp,
+	)
+	return &resp, err
+}
+
 func (c *Client) AwsCloudfrontDistributionUpdate(tenantID string, rq *DuploAwsCloudfrontDistributionCreate) (*DuploAwsCloudfrontDistribution, ClientError) {
+	resp := DuploAwsCloudfrontDistribution{}
+	err := c.putAPI(
+		fmt.Sprintf("AwsCloudfrontDistributionUpdate(%s)", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/cloudFrontDistribution", tenantID),
+		&rq,
+		&resp,
+	)
+	return &resp, err
+}
+
+func (c *Client) AwsCloudfrontDistributionUpdateV2(tenantID string, rq *DuploAwsCloudfrontDistributionCreateV2) (*DuploAwsCloudfrontDistribution, ClientError) {
 	resp := DuploAwsCloudfrontDistribution{}
 	err := c.putAPI(
 		fmt.Sprintf("AwsCloudfrontDistributionUpdate(%s)", tenantID),

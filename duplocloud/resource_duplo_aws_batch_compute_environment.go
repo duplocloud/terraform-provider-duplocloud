@@ -219,6 +219,7 @@ func duploAwsBatchComputeEnvironmentSchema() map[string]*schema.Schema {
 						Description: "The minimum number of EC2 vCPUs that an environment should maintain. For `EC2` or `SPOT` compute environments, if the parameter is not explicitly defined, a `0` default value will be set. This parameter isn't applicable to jobs running on Fargate resources, and shouldn't be specified.",
 						Type:        schema.TypeInt,
 						Optional:    true,
+						Computed:    true,
 					},
 					"security_group_ids": {
 						Description: "A list of EC2 security group that are associated with instances launched in the compute environment. This parameter is required for Fargate compute environments.",
@@ -284,7 +285,10 @@ func resourceAwsBatchComputeEnvironment() *schema.Resource {
 		UpdateContext: resourceAwsBatchComputeEnvironmentUpdate,
 		DeleteContext: resourceAwsBatchComputeEnvironmentDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				d.Set("wait_for_deployment", true)
+				return schema.ImportStatePassthroughContext(ctx, d, m)
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
@@ -383,16 +387,14 @@ func resourceAwsBatchComputeEnvironmentUpdate(ctx context.Context, d *schema.Res
 
 		if computeEnvironmentType := strings.ToUpper(d.Get("type").(string)); computeEnvironmentType == "MANAGED" {
 			// "At least one compute-resources attribute must be specified"
+			// Always include min_vcpus and desired_vcpus to prevent the API from
+			// resetting them to 0 when only other fields change. MinvCpus in the
+			// SDK struct has no omitempty, so its Go zero value (0) would be sent
+			// as "MinvCpus":0 if not explicitly set from the config.
 			computeResourceUpdate := &duplosdk.DuploAwsBatchComputeResource{
-				MaxvCpus: d.Get("compute_resources.0.max_vcpus").(int),
-			}
-
-			if d.HasChange("compute_resources.0.desired_vcpus") {
-				computeResourceUpdate.DesiredvCpus = d.Get("compute_resources.0.desired_vcpus").(int)
-			}
-
-			if d.HasChange("compute_resources.0.min_vcpus") {
-				computeResourceUpdate.MinvCpus = d.Get("compute_resources.0.min_vcpus").(int)
+				MaxvCpus:     d.Get("compute_resources.0.max_vcpus").(int),
+				MinvCpus:     d.Get("compute_resources.0.min_vcpus").(int),
+				DesiredvCpus: d.Get("compute_resources.0.desired_vcpus").(int),
 			}
 
 			if d.HasChange("compute_resources.0.security_group_ids") {
@@ -425,7 +427,7 @@ func resourceAwsBatchComputeEnvironmentUpdate(ctx context.Context, d *schema.Res
 			}
 		}
 	}
-	return nil
+	return resourceAwsBatchComputeEnvironmentRead(ctx, d, m)
 }
 
 func resourceAwsBatchComputeEnvironmentDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -524,7 +526,7 @@ func parseAwsBatchComputeEnvironmentIdParts(id string) (tenantID, name string, e
 
 func flattenBatchComputeEnvironment(d *schema.ResourceData, c *duplosdk.Client, duplo *duplosdk.DuploAwsBatchComputeEnvironment, tenantId string) diag.Diagnostics {
 	log.Printf("[TRACE]flattenBatchComputeEnvironment... Start ")
-	prefix, err := c.GetDuploServicesPrefix(tenantId)
+	prefix, err := c.GetDuploServicesPrefix(tenantId, "")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -573,9 +575,7 @@ func flattenComputeResource(apiObject *duplosdk.DuploAwsBatchComputeResource) ma
 		tfMap["bid_percentage"] = v
 	}
 
-	if v := apiObject.DesiredvCpus; v > 0 {
-		tfMap["desired_vcpus"] = v
-	}
+	tfMap["desired_vcpus"] = apiObject.DesiredvCpus
 
 	if v := apiObject.Ec2Configuration; v != nil && len(*v) > 0 {
 		tfMap["ec2_configuration"] = flattenEC2Configurations(v)
@@ -605,9 +605,7 @@ func flattenComputeResource(apiObject *duplosdk.DuploAwsBatchComputeResource) ma
 		tfMap["max_vcpus"] = v
 	}
 
-	if v := apiObject.MinvCpus; v > 0 {
-		tfMap["min_vcpus"] = v
-	}
+	tfMap["min_vcpus"] = apiObject.MinvCpus
 
 	if v := apiObject.SecurityGroupIds; len(v) > 0 {
 		tfMap["security_group_ids"] = v

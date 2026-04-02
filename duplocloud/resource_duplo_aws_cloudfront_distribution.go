@@ -871,12 +871,12 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 
 func resourceAwsCloudfrontDistribution() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_aws_cloudfront_distribution` manages an aws cloudfront distribution in Duplo.",
-
-		ReadContext:   resourceAwsCloudfrontDistributionRead,
-		CreateContext: resourceAwsCloudfrontDistributionCreate,
-		UpdateContext: resourceAwsCloudfrontDistributionUpdate,
-		DeleteContext: resourceAwsCloudfrontDistributionDelete,
+		Description:        "`duplocloud_aws_cloudfront_distribution` manages an aws cloudfront distribution in Duplo. \n\nNOTE: This resource has been deprecated in favor of `duplocloud_aws_cloudfront_distribution_v2` resource. No support will be provided for this resource going forward.",
+		DeprecationMessage: "`duplocloud_aws_cloudfront_distribution` has been deprecated in favor of `duplocloud_aws_cloudfront_distribution_v2` resource. No support will be provided for this resource going forward.",
+		ReadContext:        resourceAwsCloudfrontDistributionRead,
+		CreateContext:      resourceAwsCloudfrontDistributionCreate,
+		UpdateContext:      resourceAwsCloudfrontDistributionUpdate,
+		DeleteContext:      resourceAwsCloudfrontDistributionDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -1149,9 +1149,22 @@ func expandAwsCloudfrontDistributionDefaultCacheBehavior(m map[string]interface{
 	}
 
 	if m["cache_policy_id"].(string) == "" {
-		dcb.MinTTL = m["min_ttl"].(int)
-		dcb.MaxTTL = m["max_ttl"].(int)
-		dcb.DefaultTTL = m["default_ttl"].(int)
+		min := m["min_ttl"]
+		if min != nil {
+			v := min.(int)
+			dcb.MinTTL = &v
+		}
+		max := m["max_ttl"]
+		if max != nil {
+			v := max.(int)
+			dcb.MaxTTL = &v
+		}
+		def := m["default_ttl"]
+		if def != nil {
+			v := def.(int)
+			dcb.DefaultTTL = &v
+		}
+
 	}
 
 	// TODO Handle "trusted_key_groups"
@@ -1205,9 +1218,21 @@ func expandAwsCloudfrontDistributionCacheBehavior(m map[string]interface{}) dupl
 	}
 
 	if m["cache_policy_id"].(string) == "" {
-		cb.MinTTL = m["min_ttl"].(int)
-		cb.MaxTTL = m["max_ttl"].(int)
-		cb.DefaultTTL = m["default_ttl"].(int)
+		min := m["min_ttl"]
+		if min != nil {
+			v := min.(int)
+			cb.MinTTL = &v
+		}
+		max := m["max_ttl"]
+		if max != nil {
+			v := max.(int)
+			cb.MaxTTL = &v
+		}
+		def := m["default_ttl"]
+		if def != nil {
+			v := def.(int)
+			cb.DefaultTTL = &v
+		}
 	}
 
 	// TODO Handle "trusted_key_groups"

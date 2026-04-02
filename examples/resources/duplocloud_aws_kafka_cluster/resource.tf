@@ -4,9 +4,16 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 resource "duplocloud_aws_kafka_cluster" "mycluster" {
-  tenant_id     = duplocloud_tenant.this.tenant_id
+  tenant_id     = duplocloud_tenant.myapp.tenant_id
   name          = "mycluster"
-  kafka_version = "2.4.1.1"
+  kafka_version = "3.5.1"
   instance_type = "kafka.m5.large"
   storage_size  = 20
+}
+
+
+resource "duplocloud_aws_kafka_cluster" "serverless" {
+  tenant_id     = duplocloud_tenant.myapp.tenant_id
+  name          = "serverlesscluster"
+  is_serverless = true
 }

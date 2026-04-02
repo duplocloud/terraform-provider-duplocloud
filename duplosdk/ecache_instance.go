@@ -29,6 +29,7 @@ type DuploEcacheInstance struct {
 	InstanceStatus                    string   `json:"InstanceStatus,omitempty"`
 	EnableClusterMode                 bool     `json:"ClusteringEnabled,omitempty"`
 	AutomaticFailoverEnabled          bool     `json:"AutomaticFailoverEnabled,omitempty"`
+	MultiAZEnabled                    bool     `json:"MultiAZEnabled,omitempty"`
 	NumberOfShards                    int      `json:"NoOfShards,omitempty"`
 	SnapshotName                      string   `json:"SnapshotName,omitempty"`
 	SnapshotArns                      []string `json:"SnapshotArns,omitempty"`
@@ -39,6 +40,22 @@ type DuploEcacheInstance struct {
 	GlobalReplicationGroupDescription string   `json:"GlobalReplicationGroupDescription,omitempty"`
 	GlobalReplicationGroupId          string   `json:"GlobalReplicationGroupId,omitempty"`
 	IsPrimary                         bool     `json:"IsPrimary,omitempty"`
+
+	LogDeliveryConfigurations []LogDeliveryConfigurationResponse `json:"LogDeliveryConfigurations,omitempty"`
+}
+
+// LogDeliveryConfigurationResponse represents a log delivery config as returned by the API.
+// Field values are wrapped in {"Value": "..."} objects.
+type LogDeliveryConfigurationResponse struct {
+	DestinationDetails *DestinationDetails      `json:"DestinationDetails,omitempty"`
+	DestinationType    *LogDeliveryValueWrapper `json:"DestinationType,omitempty"`
+	LogFormat          *LogDeliveryValueWrapper `json:"LogFormat,omitempty"`
+	LogType            *LogDeliveryValueWrapper `json:"LogType,omitempty"`
+	Status             *LogDeliveryValueWrapper `json:"Status,omitempty"`
+}
+
+type LogDeliveryValueWrapper struct {
+	Value string `json:"Value"`
 }
 
 type AddDuploEcacheInstanceRequest struct {
@@ -145,6 +162,89 @@ func (c *Client) EcacheInstanceUpdateSnapshotRetentionLimit(tenantID, name strin
 	return c.postAPI(
 		fmt.Sprintf("EcacheInstanceUpdateSnapshotRetentionLimit(%s, duplo-%s)", tenantID, name),
 		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateRetentionLimit", tenantID),
+		&rq, nil)
+}
+
+type DuplocloudEcacheAutomaticFailoverUpdateRequest struct {
+	Identifier               string `json:"Identifier"`
+	AutomaticFailoverEnabled bool   `json:"AutomaticFailoverEnabled"`
+}
+
+func (c *Client) EcacheInstanceUpdateAutomaticFailover(tenantID, name string, rq DuplocloudEcacheAutomaticFailoverUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateAutomaticFailover(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateAutomaticFailover", tenantID),
+		&rq, nil)
+}
+
+type DuplocloudEcacheMultiAZUpdateRequest struct {
+	Identifier     string `json:"Identifier"`
+	MultiAZEnabled bool   `json:"MultiAZEnabled"`
+}
+
+func (c *Client) EcacheInstanceUpdateMultiAZ(tenantID, name string, rq DuplocloudEcacheMultiAZUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateMultiAZ(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateMultiAZ", tenantID),
+		&rq, nil)
+}
+
+type DuplocloudEcacheReplicasUpdateRequest struct {
+	Identifier string `json:"Identifier"`
+	Replicas   int    `json:"Replicas"`
+}
+
+func (c *Client) EcacheInstanceUpdateReplicas(tenantID, name string, rq DuplocloudEcacheReplicasUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateReplicas(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateReplicas", tenantID),
+		&rq, nil)
+}
+
+// DuploEcacheModifyRequest is a passthrough to AWS ModifyReplicationGroup.
+// Use pointer fields so that only the fields you set are included in the JSON payload.
+type DuploEcacheModifyRequest struct {
+	ReplicationGroupId       string  `json:"ReplicationGroupId"`
+	ApplyImmediately         bool    `json:"ApplyImmediately"`
+	AutomaticFailoverEnabled *bool   `json:"AutomaticFailoverEnabled,omitempty"`
+	MultiAZEnabled           *bool   `json:"MultiAZEnabled,omitempty"`
+	SnapshotWindow           *string `json:"SnapshotWindow,omitempty"`
+	CacheNodeType            *string `json:"CacheNodeType,omitempty"`
+	CacheParameterGroupName  *string `json:"CacheParameterGroupName,omitempty"`
+	EngineVersion            *string `json:"EngineVersion,omitempty"`
+}
+
+// EcacheInstanceModify calls the v3 passthrough endpoint that maps to AWS ModifyReplicationGroup.
+// Uses retry with backoff because the cluster or its nodes may still be transitioning
+// (e.g., after a replica count change) and AWS returns 400 until all nodes are available.
+func (c *Client) EcacheInstanceModify(tenantID string, rq *DuploEcacheModifyRequest) ClientError {
+	// The endpoint returns the full AWS ModifyReplicationGroup response.
+	// Use a map to absorb it — we don't need the response contents.
+	var rp map[string]interface{}
+	conf := NewRetryConf()
+	return c.postAPIWithRetry(
+		fmt.Sprintf("EcacheInstanceModify(%s, %s)", tenantID, rq.ReplicationGroupId),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/modify", tenantID),
+		rq, &rp, &conf)
+}
+
+type LogDeliveryConfigurationUpdateItem struct {
+	DestinationType    string              `json:"DestinationType,omitempty"`
+	LogFormat          string              `json:"LogFormat,omitempty"`
+	LogType            string              `json:"LogType,omitempty"`
+	DestinationDetails *DestinationDetails `json:"DestinationDetails,omitempty"`
+	Enabled            bool                `json:"Enabled"`
+}
+
+type DuplocloudEcacheLogDeliveryUpdateRequest struct {
+	Identifier                    string `json:"Identifier"`
+	LogDeliveryConfigurationsJson string `json:"LogDeliveryConfigurationsJson"`
+}
+
+func (c *Client) EcacheInstanceUpdateLogDelivery(tenantID, name string, rq DuplocloudEcacheLogDeliveryUpdateRequest) ClientError {
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpdateLogDelivery(%s, duplo-%s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/ECacheInstanceUpdateLogDeliveryConfiguration", tenantID),
 		&rq, nil)
 }
 

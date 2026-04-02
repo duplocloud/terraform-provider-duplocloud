@@ -7,7 +7,6 @@ import (
 	"log"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -51,14 +50,19 @@ func duploAwsBatchJobDefinitionSchema() map[string]*schema.Schema {
 			Computed:    true,
 			StateFunc: func(v interface{}) string {
 				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: <= %v", v)
-				props, _ := expandJobContainerProperties(v.(string))
-				reorderJobContainerPropertiesEnvironmentVariables(props)
-				json, err := jcs.Format(props)
-				if json == "{}" {
-					json = ""
+				s, ok := v.(string)
+				if !ok {
+					log.Printf("[ERROR] duplocloud_aws_batch_job_definition.container_properties.StateFunc: non-string value in state: %T", v)
+					return ""
 				}
-				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: => %s (error: %s)", json, err)
-				return json
+				// Use the same canonicalization logic as the DiffSuppressFunc
+				canonical, err := canonicalizeJobContainerPropertiesJson(s)
+				if err != nil {
+					log.Printf("[ERROR] duplocloud_aws_batch_job_definition.container_properties.StateFunc: canonicalization error: %s", err)
+					return s // fallback to original value
+				}
+				log.Printf("[TRACE] duplocloud_aws_batch_job_definition.container_properties.StateFunc: => %s", canonical)
+				return canonical
 			},
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 				equal, _ := otherJobContainerPropertiesAreEquivalent(old, new)
@@ -211,7 +215,7 @@ func resourceAwsBatchJobDefinition() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(120 * time.Minute), // Increased from 80 to 120 minutes for batch job definitions
 		},
 		Schema: duploAwsBatchJobDefinitionSchema(),
 	}
@@ -290,31 +294,26 @@ func resourceAwsBatchJobDefinitionDelete(ctx context.Context, d *schema.Resource
 	log.Printf("[TRACE] resourceAwsBatchJobDefinitionDelete(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	fullName, _ := c.GetDuploServicesName(tenantID, name)
+	fullName := d.Get("fullname").(string)
 
-	jq, clientErr := c.AwsBatchJobDefinitionGetAllRevisions(tenantID, fullName)
+	clientErr := c.AwsBatchJobDefinitionBulkDelete(tenantID, fullName)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			log.Printf("[TRACE] resourceAwsBatchJobDefinitionDelete(%s, %s): object missing", tenantID, name)
 			return nil
 		}
-		return diag.FromErr(clientErr)
-	}
-	if jq == nil {
-		log.Printf("[TRACE] resourceAwsBatchJobDefinitionDelete(%s, %s): object missing", tenantID, name)
-		return nil
-	}
-	for _, data := range *jq {
-		clientErr := c.AwsBatchJobDefinitionDelete(tenantID, fullName+":"+strconv.Itoa(data.Revision))
-		if clientErr != nil {
-			if clientErr.Status() == 404 {
-				continue
-			}
-			return diag.Errorf("Unable to delete tenant %s aws batch Job Definition '%s': %s", tenantID, name, clientErr)
-		}
+		return diag.Errorf("Unable to delete tenant %s aws batch Job Definition '%s': %s", tenantID, name, clientErr)
 	}
 
-	diag := waitForResourceToBeMissingAfterDelete(ctx, d, "aws batch Job Definition", id, func() (interface{}, duplosdk.ClientError) {
+	// AWS Batch job definitions may take time to fully propagate deletion across revisions.
+	// Initial wait ensures the deletion API has time to process all revisions and settle.
+	log.Printf("[TRACE] resourceAwsBatchJobDefinitionDelete(%s, %s): waiting 30 seconds for deletion API to process and backend to settle", tenantID, name)
+	time.Sleep(30 * time.Second)
+
+	// Poll for deletion with enhanced retry configuration to handle slow propagation.
+	// This uses exponential backoff with a maximum of 120 minutes timeout as configured in the schema.
+	// Minimal polling interval ensures backend has time to process state changes between API calls.
+	diag := waitForResourceToBeMissingAfterDeleteWithMinInterval(ctx, d, "aws batch Job Definition", id, 15*time.Second, func() (interface{}, duplosdk.ClientError) {
 		return c.AwsBatchJobDefinitionGet(tenantID, fullName)
 	})
 	if diag != nil {
@@ -372,7 +371,7 @@ func parseAwsBatchJobDefinitionIdParts(id string) (tenantID, name string, err er
 
 func flattenBatchJobDefinition(d *schema.ResourceData, c *duplosdk.Client, duplo *duplosdk.DuploAwsBatchJobDefinitionResp, tenantId string) diag.Diagnostics {
 	log.Printf("[TRACE]flattenBatchJobDefinition... Start ")
-	prefix, err := c.GetDuploServicesPrefix(tenantId)
+	prefix, err := c.GetDuploServicesPrefix(tenantId, "")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -516,7 +515,15 @@ func flattenContainerProperties(field string, from interface{}, to *schema.Resou
 	var encoded []byte
 
 	if encoded, err = json.Marshal(from); err == nil {
-		err = to.Set(field, string(encoded))
+		// Apply the same canonicalization used in StateFunc and DiffSuppressFunc
+		canonicalized, canonErr := canonicalizeJobContainerPropertiesJson(string(encoded))
+		if canonErr != nil {
+			log.Printf("[DEBUG] flattenContainerProperties: failed to canonicalize %s: %s", field, canonErr)
+			// Fallback to original encoded if canonicalization fails
+			err = to.Set(field, string(encoded))
+		} else {
+			err = to.Set(field, canonicalized)
+		}
 	}
 
 	if err != nil {
@@ -599,21 +606,32 @@ func reduceJobContainerProperties(props map[string]interface{}) error {
 
 	reduceNilOrEmptyMapEntries(props)
 
-	// Handle fields that have defaults.
-	if v, ok := props["ReadonlyRootFilesystem"]; ok || v != nil && !v.(bool) {
+	// Handle fields that have defaults - fix the logical conditions
+	if v, ok := props["ReadonlyRootFilesystem"]; ok && v != nil && !v.(bool) {
 		delete(props, "ReadonlyRootFilesystem")
 	}
 
-	if v, ok := props["Privileged"]; ok || v != nil && !v.(bool) {
+	if v, ok := props["Privileged"]; ok && v != nil && !v.(bool) {
 		delete(props, "Privileged")
 	}
 
-	if v, ok := props["Memory"]; ok || v != nil && v.(int) == 0 {
-		delete(props, "Memory")
+	if v, ok := props["Memory"]; ok && v != nil {
+		if memVal, isFloat := v.(float64); isFloat && memVal == 0 {
+			delete(props, "Memory")
+		} else if memVal, isInt := v.(int); isInt && memVal == 0 {
+			delete(props, "Memory")
+		}
 	}
-	if v, ok := props["Vcpus"]; ok || v != nil && v.(int) == 0 {
-		delete(props, "Vcpus")
+
+	if v, ok := props["Vcpus"]; ok && v != nil {
+		if vcpuVal, isFloat := v.(float64); isFloat && vcpuVal == 0 {
+			delete(props, "Vcpus")
+		} else if vcpuVal, isInt := v.(int); isInt && vcpuVal == 0 {
+			delete(props, "Vcpus")
+		}
 	}
+
+	// Always remove JobRoleArn as it's managed by Duplo
 	delete(props, "JobRoleArn")
 
 	return nil
@@ -667,25 +685,37 @@ func reorderJobContainerPropertiesEnvironmentVariables(defn map[string]interface
 	// Re-order environment variables to a canonical order.
 	if v, ok := defn["Environment"]; ok && v != nil {
 		if env, ok := v.([]interface{}); ok && env != nil {
-			sort.SliceStable(env, func(i, j int) bool {
+			sort.Slice(env, func(i, j int) bool {
 
 				// Get both maps, ensure we are using upper camel-case.
-				mi := env[i].(map[string]interface{})
-				mj := env[j].(map[string]interface{})
+				mi, ok1 := env[i].(map[string]interface{})
+				mj, ok2 := env[j].(map[string]interface{})
+
+				if !ok1 || !ok2 {
+					return false
+				}
+
 				makeMapUpperCamelCase(mi)
 				makeMapUpperCamelCase(mj)
 
 				// Get both name keys, fall back on an empty string.
 				si := ""
 				sj := ""
-				if v, ok = mi["Name"]; ok && !isInterfaceNil(v) {
-					si = v.(string)
+				if nameVal, ok := mi["Name"]; ok && !isInterfaceNil(nameVal) {
+					if nameStr, ok := nameVal.(string); ok {
+						si = nameStr
+					}
 				}
-				if v, ok = mj["Name"]; ok && !isInterfaceNil(v) {
-					sj = v.(string)
+				if nameVal, ok := mj["Name"]; ok && !isInterfaceNil(nameVal) {
+					if nameStr, ok := nameVal.(string); ok {
+						sj = nameStr
+					}
 				}
 
-				// Compare the two.
+				// Compare the two - use stable sort by adding index as tiebreaker
+				if si == sj {
+					return i < j
+				}
 				return si < sj
 			})
 		}

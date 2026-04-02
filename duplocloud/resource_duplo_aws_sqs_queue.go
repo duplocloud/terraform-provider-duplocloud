@@ -185,7 +185,7 @@ func resourceAwsSqsQueueRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.Errorf("Unable to retrieve tenant %s sqs queue %s : %s", tenantID, url, clientErr)
 	}
 
-	prefix, err := c.GetDuploServicesPrefix(tenantID)
+	prefix, err := c.GetDuploServicesPrefix(tenantID, "")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -394,14 +394,30 @@ func parseAwsSqsQueueIdParts(id string) (tenantID, url string, err error) {
 }
 
 func validateSQSName(c *duplosdk.Client, tId, name string, fifo bool) error {
-	rp, cerr := c.TenantGetV2(tId)
-	if cerr != nil {
-		return fmt.Errorf("%s", cerr.Error())
-	}
-	allowedLen := 80 - (15 + len([]rune(rp.AccountName)) - 1)
+	var allowedLen int
+	var errMsg string
 
-	if fifo {
-		allowedLen = allowedLen - len([]rune(".fifo"))
+	if c.IsAwsServiceTagBasedOwnershipEnabled("sqs") {
+		// Tag-based ownership: no prefix is added by the system; the user-supplied name is the full SQS queue name.
+		allowedLen = 79 // allows 1 + {0,79} = max 80 chars
+		if fifo {
+			allowedLen = allowedLen - len([]rune(".fifo"))
+			errMsg = fmt.Sprintf("invalid name format. Queue name must start with a letter, contain only letters, numbers, underscores, or hyphens, and be at most %d characters (%d total including the .fifo suffix)", 1+allowedLen, 1+allowedLen+len(".fifo"))
+		} else {
+			errMsg = fmt.Sprintf("invalid name format. Queue name must start with a letter, contain only letters, numbers, underscores, or hyphens, and be at most %d characters", 1+allowedLen)
+		}
+	} else {
+		rp, cerr := c.TenantGetV2(tId)
+		if cerr != nil {
+			return fmt.Errorf("failed to get tenant %s: %w", tId, cerr)
+		}
+		allowedLen = 80 - (15 + len([]rune(rp.AccountName)) - 1)
+		if fifo {
+			allowedLen = allowedLen - len([]rune(".fifo"))
+			errMsg = fmt.Sprintf("invalid name format. Queue name must start with a letter, contain only letters, numbers, underscores, or hyphens, and be at most %d characters — total length including the system-added prefix (duploservices-%s-) and .fifo suffix must not exceed 80 characters", 1+allowedLen, rp.AccountName)
+		} else {
+			errMsg = fmt.Sprintf("invalid name format. Queue name must start with a letter, contain only letters, numbers, underscores, or hyphens, and be at most %d characters — total length including the system-added prefix (duploservices-%s-) must not exceed 80 characters", 1+allowedLen, rp.AccountName)
+		}
 	}
 	regString := "^[a-zA-Z][a-zA-Z0-9_-]{0," + strconv.Itoa(allowedLen) + "}$"
 	b, err := regexp.MatchString(regString, name)
@@ -410,7 +426,7 @@ func validateSQSName(c *duplosdk.Client, tId, name string, fifo bool) error {
 	}
 
 	if !b {
-		return fmt.Errorf("invalid name format. Queue names must be made up of only uppercase and lowercase ASCII letters, numbers, underscores, and hyphens, and have up to 80 characters long which is inclusive of duplo prefix (duploservices-{tenant_name}-) added by the system")
+		return fmt.Errorf("%s", errMsg)
 	}
 	return nil
 }

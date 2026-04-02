@@ -219,6 +219,23 @@ func KeyValueSchema() *schema.Resource {
 	}
 }
 
+func KeyValueSchemaAsgCustomDataTag() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"value": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+		},
+	}
+}
+
 func DynamoDbV2TagSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -585,6 +602,54 @@ func waitForResourceToBeMissingAfterDelete(ctx context.Context, d *schema.Resour
 	return nil
 }
 
+// waitForResourceToBeMissingAfterDeleteWithMinInterval polls for resource deletion with exponential backoff delays.
+// This allows the backend API time to settle and process state changes between consecutive GET calls.
+// The minInterval parameter specifies the minimum time to wait between initial polling attempts.
+// Delay strategy: Keep minInterval for first 2 attempts, then increase by 5 seconds each subsequent attempt
+// to handle slow backend processing (15s → 15s → 20s → 25s → 30s → ...).
+func waitForResourceToBeMissingAfterDeleteWithMinInterval(ctx context.Context, d *schema.ResourceData, kind string, id string, minInterval time.Duration, get func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
+	var attempt int
+	err := retry.RetryContext(ctx, d.Timeout("delete"), func() *retry.RetryError {
+		attempt++
+
+		// Calculate delay with exponential backoff after first 2 attempts
+		var delay time.Duration
+		if attempt <= 2 {
+			delay = minInterval
+		} else {
+			// Increase by 5 seconds for each attempt after the first 2
+			additionalDelay := time.Duration((attempt-2)*5) * time.Second
+			delay = minInterval + additionalDelay
+		}
+
+		log.Printf("[TRACE] waitForResourceToBeMissingAfterDeleteWithMinInterval: attempt %d, using delay of %d seconds", attempt, int(delay.Seconds()))
+		time.Sleep(delay)
+
+		resp, errget := get()
+
+		if errget != nil {
+			if errget.Status() == 404 || errget.Status() == 400 {
+				return nil
+			}
+
+			return retry.NonRetryableError(fmt.Errorf("error getting %s '%s': %s", kind, id, errget))
+		}
+		if isStructEmpty(resp) {
+			return nil
+		}
+
+		if !isInterfaceNil(resp) {
+			return retry.RetryableError(fmt.Errorf("expected %s '%s' to be missing, but it still exists", kind, id))
+		}
+
+		return nil
+	})
+	if err != nil {
+		return diag.Errorf("error deleting %s '%s': %s", kind, id, err)
+	}
+	return nil
+}
+
 func waitForResourceToBePresentAfterCreate(ctx context.Context, d *schema.ResourceData, kind string, id string, get func() (interface{}, duplosdk.ClientError)) diag.Diagnostics {
 	err := retry.RetryContext(ctx, d.Timeout("create"), func() *retry.RetryError {
 		resp, errget := get()
@@ -717,10 +782,6 @@ func validateJsonObjectArray(key string, value string) (ws []string, errors []er
 	return
 }
 
-// Internal function to convert map keys from lower camel-case to upper camel-case.
-//   - Adds an upper camel-case entry for each lower camel-case entry, unless the upper exists already.
-//   - Removes any lower camel-case entry.
-//   - Never overwrites any existing upper camel-case keys.
 func makeMapUpperCamelCase(m map[string]interface{}) {
 	for k := range m {
 
@@ -1163,7 +1224,19 @@ func max(a, b int) int {
 	return b
 }
 
-// 1 trim prefix, 2 trim suffix, 3 trim both
+func StringValueSliceTolist(v []duplosdk.DuploStringValue) []string {
+	l := make([]string, 0, len(v))
+	for _, d := range v {
+		l = append(l, d.Value)
+	}
+	return l
+}
+
+func GetResourceNameFromARN(arn string) string {
+	tokens := strings.Split(arn, ":")
+	return tokens[len(tokens)-1]
+}
+
 func trimStringsByPosition(stringsSlice []string, sufixOrPrefix int) []string {
 	position := map[string]struct{}{
 		"allow-lb-healthcheck": {},
