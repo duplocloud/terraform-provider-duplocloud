@@ -142,7 +142,7 @@ func resourceDuploValkeyServerlessRead(ctx context.Context, d *schema.ResourceDa
 	log.Printf("[TRACE] resourceDuploValkeyServerlessRead(%s, %s): start", tenantID, name)
 	prefix, err := c.GetResourcePrefixWithoutTenant("duplo")
 	if err != nil {
-		return diag.Errorf("resourceDuploValkeyServerlessRead: Unable to retrieve duplo service name (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
+		return diag.Errorf("resourceDuploValkeyServerlessRead: Unable to retrieve duplo service name (tenant: %s, valkey: %s: error: %s)", tenantID, name, err)
 	}
 	// Get the object from Duplo, detecting a missing object
 	duplo, cerr := c.DuploValkeyServerlessGet(tenantID, prefix+"-"+name)
@@ -259,8 +259,6 @@ func flattenValkeyServerless(duplo *duplosdk.DuploValkeyServerlessResponse, d *s
 	d.Set("engine_version", duplo.MajorEngineVersion)
 	d.Set("kms_key_id", duplo.KmsKeyId)
 	d.Set("description", duplo.Description)
-	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
-	d.Set("kms_key_id", duplo.KmsKeyId)
 	d.Set("snapshot_retention_limit", duplo.SnapshotRetentionLimit)
 	sbnets := []interface{}{}
 	for _, subnet := range duplo.SubnetIds {
