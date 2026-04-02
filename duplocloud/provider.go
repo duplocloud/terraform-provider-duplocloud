@@ -210,6 +210,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_mq_broker":                                 resourceAwsMQBroker(),
 			"duplocloud_aws_rds_global_secondary":                      resourceAwsRdsGlobalDatabase(),
 			"duplocloud_tenant_kms":                                    resourceTenantKMS(),
+			"duplocloud_valkey_serverless":                             resourceDuploServerlessValkeyInstance(),
 			"duplocloud_tenant_metadata":                               resourceTenantMetadata(),
 			"duplocloud_tenant_k8s_resource_quota":                     resourceTenantK8sQuota(),
 			"duplocloud_aws_cloudfront_distribution_v2":                resourceAwsCloudfrontDistributionV2(),
