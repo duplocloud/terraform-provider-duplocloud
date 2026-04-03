@@ -302,7 +302,9 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
 - `can_scale_from_zero` (Boolean) Whether or not ASG should leverage duplocloud's scale from 0 feature
 - `cloud` (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
-- `custom_data_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value. (see [below for nested schema](#nestedblock--custom_data_tags))
+- `custom_data_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.
+
+**Note:** When importing an ASG created using the minion_tags block from v0.12.6 onwards, you need to add a custom_data_tags block by replacing the minion_tags block with the same key and value as the minion_tags block to avoid drift. (see [below for nested schema](#nestedblock--custom_data_tags))
 - `custom_node_labels` (Map of String) Specify the labels to attach to the nodes.
 - `enabled_metrics` (List of String) List of metrics to collect for the ASG Specify one or more of the following metrics.`GroupMinSize`,`GroupMaxSize`,`GroupDesiredCapacity`,`GroupInServiceInstances`,`GroupPendingInstances`,`GroupStandbyInstances`,`GroupTerminatingInstances`,`GroupTotalInstances`,`GroupInServiceCapacity`,`GroupPendingCapacity`,`GroupStandbyCapacity`,`GroupTerminatingCapacity`,`GroupTotalCapacity`,`WarmPoolDesiredCapacity`,`WarmPoolWarmedCapacity`,`WarmPoolPendingCapacity`,`WarmPoolTerminatingCapacity`,`WarmPoolTotalCapacity`,`GroupAndWarmPoolDesiredCapacity`,`GroupAndWarmPoolTotalCapacity`.
 - `encrypt_disk` (Boolean) Defaults to `false`.
@@ -329,7 +331,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `user_account` (String) The name of the tenant that the host will be created in.
 - `volume` (Block List) Block to specify additional or secondary volume beyond the root device (see [below for nested schema](#nestedblock--volume))
 - `wait_for_capacity` (Boolean) Whether or not to wait until ASG instances to be healthy, after creation. Defaults to `true`.
-- `zone` (String, Deprecated) The availability zone to launch the host in is expressed as a numeric value ranging from 0 to 3.  Defaults to `0`. For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.
+- `zone` (String, Deprecated) The availability zone to launch the host in is expressed as a numeric value ranging from 0 to 3.  Defaults to `0`. For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated and non functional on change.
 - `zones` (List of Number) The multi availability zone to launch the asg in, expressed as a number and starting at 0 - Zone A to 3 - Zone D, based on the infra setup
 
 ### Read-Only
