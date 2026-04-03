@@ -202,7 +202,7 @@ Should be one of:
    - `2` : Valkey
 
  Defaults to `0`.
-- `enable_cluster_mode` (Boolean) Flag to enable/disable redis/valkey cluster mode.
+- `enable_cluster_mode` (Boolean) Flag to enable/disable redis/valkey cluster mode. Cluster mode should be enabled if the instance acts as the primary for a global datastore.
 - `encryption_at_rest` (Boolean) Enables encryption-at-rest. Defaults to `false`.
 - `encryption_in_transit` (Boolean) Enables encryption-in-transit. Defaults to `false`.
 - `engine_version` (String) The engine version of the elastic instance.
