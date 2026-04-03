@@ -125,7 +125,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Type:        schema.TypeString,
 		Optional:    true,
 		//ForceNew:         true, // relaunch instance
-		Deprecated:       "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated and non functional on change.",
+		Deprecated:       "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated and is non-functional on change.",
 		Default:          0,
 		DiffSuppressFunc: diffSuppressWhenNotCreating,
 	}
