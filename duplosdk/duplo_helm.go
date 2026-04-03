@@ -14,10 +14,11 @@ type DuploHelmMetadata struct {
 }
 
 type DuploHelmSpec struct {
-	URL         string `json:"url,omitempty"`
-	Interval    string `json:"interval"`
-	ReleaseName string `json:"releaseName,omitempty"`
-	Chart       *Chart `json:"chart,omitempty"`
+	URL         string     `json:"url,omitempty"`
+	Interval    string     `json:"interval"`
+	ReleaseName string     `json:"releaseName,omitempty"`
+	Chart       *Chart     `json:"chart,omitempty"`
+	ChartRef    *SourceRef `json:"chartRef,omitempty"`
 	//Values      map[string]interface{} `json:"values,omitempty"`
 	Values          interface{} `json:"values,omitempty"`
 	Insecure        bool        `json:"Insecure,omitempty"`
