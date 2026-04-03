@@ -14,6 +14,8 @@ func dataAsgSchema() map[string]*schema.Schema {
 	m := autoscalingGroupSchema()
 	delete(m, "zone")
 	delete(m, "zones")
+	m["minion_tags"].ConflictsWith = nil
+	m["custom_data_tags"].ConflictsWith = nil
 	m["zones"] = &schema.Schema{
 		Description: "The multi availability zone to launch the asg in, expressed as a number and starting at 0",
 		Type:        schema.TypeList,
@@ -102,6 +104,7 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		"metadata":            keyValueToState("metadata", duplo.MetaData),
 		"tags":                keyValueToState("tags", duplo.Tags),
 		"minion_tags":         keyValueToState("minion_tags", duplo.CustomDataTags),
+		"custom_data_tags":    keyValueToState("custom_data_tags", duplo.CustomDataTags),
 		"volume":              flattenNativeHostVolumes(duplo.Volumes),
 		"network_interface":   flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 		"arn":                 duplo.Arn,

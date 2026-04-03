@@ -124,9 +124,10 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Description: "The availability zone to launch the host in is expressed as a numeric value ranging from 0 to 3. ",
 		Type:        schema.TypeString,
 		Optional:    true,
-		ForceNew:    true, // relaunch instance
-		Deprecated:  "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.",
-		Default:     0,
+		//ForceNew:         true, // relaunch instance
+		Deprecated:       "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated and is non-functional on change.",
+		Default:          0,
+		DiffSuppressFunc: diffSuppressWhenNotCreating,
 	}
 	awsASGSchema["taints"] = &schema.Schema{
 		Description: "Specify taints to attach to the nodes, to repel other nodes with different toleration",
@@ -170,6 +171,19 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	awsASGSchema["capacity"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["image_id"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["volume"].DiffSuppressFunc = diffSuppressWhenNotCreating
+	awsASGSchema["minion_tags"].ConflictsWith = []string{"custom_data_tags"}
+	awsASGSchema["minion_tags"].Deprecated = "minion_tags is deprecated and will be removed in a future release. Use custom_data_tags instead."
+	awsASGSchema["minion_tags"].DiffSuppressFunc = diffSuppressWhenNotCreating
+
+	awsASGSchema["custom_data_tags"] = &schema.Schema{
+		Description:   "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.\n\n**Note:** When importing an ASG created using the minion_tags block, from v0.12.6 onwards, need to add a custom_data_tags block by replacing the minion_tags block with the same key and value as the minion_tags block to avoid drift.",
+		Type:          schema.TypeList,
+		Optional:      true,
+		Computed:      true,
+		Elem:          KeyValueSchema(),
+		ConflictsWith: []string{"minion_tags"},
+	}
+
 	return awsASGSchema
 }
 
@@ -186,6 +200,22 @@ func validateMaxSpotPrice(ctx context.Context, diff *schema.ResourceDiff, m inte
 		}
 	}
 
+	return nil
+}
+
+func validateCustomDataTags(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	if customDataTags, ok := diff.GetOk("custom_data_tags"); ok {
+		tagsList := customDataTags.([]interface{})
+		for _, tag := range tagsList {
+			tagMap := tag.(map[string]interface{})
+			key := tagMap["key"].(string)
+			value := tagMap["value"].(string)
+
+			if value == "" {
+				return fmt.Errorf("custom_data_tags: tag value cannot be empty for key '%s'. To remove a tag, remove the entire key-value pair from the configuration", key)
+			}
+		}
+	}
 	return nil
 }
 
@@ -210,6 +240,7 @@ func resourceAwsASG() *schema.Resource {
 			diffUserData,
 			validateMaxSpotPrice,
 			validateTaintsSupport,
+			validateCustomDataTags,
 		),
 	}
 }
@@ -272,18 +303,21 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		time.Sleep(5 * time.Minute) // Wait to ensure the ASG profile is created in Duplo if polling dint happened
 		// to reduce impact of asg worker failure when tags are passed.
 	}
-	fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
+	if v, ok := d.GetOk("minion_tags"); ok && len(v.([]interface{})) > 0 {
+		fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
+		mTags := v.([]interface{})
+		for _, raw := range mTags {
+			m := raw.(map[string]interface{})
+			err = c.TenantUpdateCustomData(rq.TenantId, duplosdk.CustomDataUpdate{
+				ComponentId:   fullName,
+				ComponentType: duplosdk.ASG,
+				Key:           m["key"].(string),
+				Value:         m["value"].(string),
+			})
 
-	for _, raw := range *rq.MinionTags {
-		err = c.TenantUpdateCustomData(rq.TenantId, duplosdk.CustomDataUpdate{
-			ComponentId:   fullName,
-			ComponentType: duplosdk.ASG,
-			Key:           raw.Key,
-			Value:         raw.Value,
-		})
-
-		if err != nil {
-			return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
+			if err != nil {
+				return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
+			}
 		}
 	}
 	//By default, wait until the ASG instances to be healthy.
@@ -293,7 +327,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.FromErr(err)
 		}
 	}
-
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
 	diags = resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): end", rq.TenantId, rq.FriendlyName)
 	return diags
@@ -351,17 +385,14 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		}
 	}
 
-	needsAllocationTagsUpdate, newTags := checkAllocationTagsDiff(d)
-	if needsAllocationTagsUpdate {
-		updateRequest := duplosdk.CustomDataUpdate{
-			ComponentId:   d.Get("fullname").(string),
-			ComponentType: duplosdk.ASG,
-			Key:           "AllocationTags",
-			Value:         newTags,
-		}
+	customDataUpdates := getCustomDataTagsUpdates(d)
+	for _, updateRequest := range customDataUpdates {
+		updateRequest.ComponentId = d.Get("fullname").(string)
+		updateRequest.ComponentType = duplosdk.ASG
+
 		err := c.TenantUpdateCustomData(rq.TenantId, updateRequest)
 		if err != nil {
-			return diag.Errorf("Error updating ASG profile '%s': %s", rq.FriendlyName, err)
+			return diag.Errorf("Error updating ASG profile custom data '%s': %s", rq.FriendlyName, err)
 		}
 	}
 	if d.HasChange("taints") {
@@ -404,6 +435,7 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.Errorf("Error updating taints from ASG profile '%s': %s", friendlyName, cerr)
 		}
 	}
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
 	diags := resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): end", tenantID, friendlyName)
 	return diags
@@ -436,8 +468,16 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 		return nil
 	}
 
+	flow := "import"
+
+	v := ctx.Value(flowContextKey)
+	if v != nil {
+		if f, ok := v.(string); ok {
+			flow = f
+		}
+	}
 	// Apply the data
-	asgProfileToState(d, profile)
+	asgProfileToState(d, profile, flow)
 	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceAwsASGRead(%s): end", id)
 	return nil
@@ -500,7 +540,7 @@ func asgProfileIdParts(id string) (tenantID, name string, err error) {
 	return tenantID, name, err
 }
 
-func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) {
+func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile, flow string) {
 	d.Set("instance_count", duplo.DesiredCapacity)
 	d.Set("min_instance_count", duplo.MinSize)
 	d.Set("max_instance_count", duplo.MaxSize)
@@ -520,14 +560,20 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("keypair_type", duplo.KeyPairType)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("minion_tags", keyValueToState("minion_tags", duplo.CustomDataTags))
+	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
+	d.Set("custom_data_tags", keyValueToState("custom_data_tags", duplo.CustomDataTags))
 	d.Set("enabled_metrics", duplo.EnabledMetrics)
 	d.Set("arn", duplo.Arn)
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
 		_, zok := d.GetOk("zones")
-
-		if len(duplo.Zones) > 0 && zok {
+		if len(duplo.Zones) > 0 && flow == "import" {
+			i := []interface{}{}
+			for _, v := range duplo.Zones {
+				i = append(i, v)
+			}
+			d.Set("zones", i)
+		} else if len(duplo.Zones) > 0 && zok {
 			i := []interface{}{}
 			for _, v := range duplo.Zones {
 				i = append(i, v)
@@ -569,7 +615,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		EncryptDisk:         d.Get("encrypt_disk").(bool),
 		MetaData:            keyValueFromState("metadata", d),
 		Tags:                keyValueFromState("tags", d),
-		MinionTags:          keyValueFromState("minion_tags", d),
+		CustomDataTags:      keyValueFromState("custom_data_tags", d),
 		Volumes:             expandNativeHostVolumes("volume", d),
 		NetworkInterfaces:   expandNativeHostNetworkInterfaces("network_interface", d),
 		DesiredCapacity:     d.Get("instance_count").(int),
@@ -678,34 +724,60 @@ func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 		d.HasChange("enabled_metrics")
 }
 
-func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags string) {
-	oldRevision, newRevision := d.GetChange("minion_tags")
+func getCustomDataTagsUpdates(d *schema.ResourceData) []duplosdk.CustomDataUpdate {
+	var updates []duplosdk.CustomDataUpdate
+
+	if !d.HasChange("custom_data_tags") {
+		return updates
+	}
+
+	oldRevision, newRevision := d.GetChange("custom_data_tags")
 	oldTags := oldRevision.([]interface{})
 	newTags := newRevision.([]interface{})
 
-	var oldAllocationTagValue, newAllocationTagValue string
+	// Create maps for easier lookup
+	oldTagsMap := make(map[string]string)
+	newTagsMap := make(map[string]string)
 
 	for _, tag := range oldTags {
 		tagMap := tag.(map[string]interface{})
-		if tagMap["key"].(string) == "AllocationTags" {
-			oldAllocationTagValue = tagMap["value"].(string)
-			break
-		}
+		key := tagMap["key"].(string)
+		value := tagMap["value"].(string)
+		oldTagsMap[key] = value
 	}
 
 	for _, tag := range newTags {
 		tagMap := tag.(map[string]interface{})
-		if tagMap["key"].(string) == "AllocationTags" {
-			newAllocationTagValue = tagMap["value"].(string)
-			break
+		key := tagMap["key"].(string)
+		value := tagMap["value"].(string)
+		newTagsMap[key] = value
+	}
+
+	// Check for updated or new tags
+	for key, newValue := range newTagsMap {
+		oldValue, existed := oldTagsMap[key]
+		if !existed || oldValue != newValue {
+			update := duplosdk.CustomDataUpdate{
+				Key:   key,
+				Value: newValue,
+			}
+			updates = append(updates, update)
 		}
 	}
 
-	if oldAllocationTagValue != newAllocationTagValue {
-		return true, newAllocationTagValue
+	// Check for deleted tags
+	for key := range oldTagsMap {
+		if _, exists := newTagsMap[key]; !exists {
+			update := duplosdk.CustomDataUpdate{
+				Key:   key,
+				Value: "",
+				State: "delete",
+			}
+			updates = append(updates, update)
+		}
 	}
 
-	return false, ""
+	return updates
 }
 
 func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) (error, bool) {

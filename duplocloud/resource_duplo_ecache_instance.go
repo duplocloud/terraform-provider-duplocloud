@@ -90,9 +90,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				"or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).",
 			Type:     schema.TypeString,
 			Optional: true,
-			ForceNew: true,
 			Computed: true,
-			//DiffSuppressFunc: suppressEnginePatchVersion,
 		},
 		"actual_engine_version": {
 			Type:     schema.TypeString,
@@ -103,7 +101,6 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				"See AWS documentation for the [available instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CacheNodes.SupportedTypes.html).",
 			Type:         schema.TypeString,
 			Required:     true,
-			ForceNew:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^cache\.`), "Elasticache instance types must start with 'cache.'"),
 		},
 		"replicas": {
@@ -167,7 +164,6 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 			Optional:    true,
-			ForceNew:    true,
 		},
 		"enable_cluster_mode": {
 			Description: "Flag to enable/disable redis/valkey cluster mode.",
@@ -213,7 +209,6 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Optional:         true,
 			Computed:         true,
 			ValidateDiagFunc: isValidSnapshotWindow(),
-			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"log_delivery_configuration": {
 			Type:     schema.TypeSet,
@@ -665,7 +660,9 @@ func flattenEcacheInstance(duplo *duplosdk.DuploEcacheInstance, d *schema.Resour
 	d.Set("auth_token", duplo.AuthToken)
 	d.Set("instance_status", duplo.InstanceStatus)
 	d.Set("kms_key_id", duplo.KMSKeyID)
-	d.Set("parameter_group_name", duplo.ParameterGroupName)
+	if duplo.ParameterGroupName != "" {
+		d.Set("parameter_group_name", duplo.ParameterGroupName)
+	}
 	d.Set("enable_cluster_mode", duplo.EnableClusterMode)
 	d.Set("number_of_shards", duplo.NumberOfShards)
 	d.Set("snapshot_name", duplo.SnapshotName)
@@ -956,6 +953,18 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 				return err
 			}
 			multiAz = false
+		}
+	}
+
+	if diff.Id() != "" && diff.HasChange("engine_version") {
+		oldRaw, newRaw := diff.GetChange("engine_version")
+		oldVer, newVer := oldRaw.(string), newRaw.(string)
+		if oldVer != "" && newVer != "" {
+			oldParsed, errOld := normalizeEngineVersion(oldVer)
+			newParsed, errNew := normalizeEngineVersion(newVer)
+			if errOld == nil && errNew == nil && newParsed.LessThan(oldParsed) {
+				return fmt.Errorf("engine_version cannot be downgraded from %s to %s; only upgrades are supported", oldVer, newVer)
+			}
 		}
 	}
 
@@ -1282,6 +1291,92 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 			}
 			time.Sleep(time.Duration(90) * time.Second)
 		}
+	}
+
+	// --- Phase 4: In-place updates via v3 modify endpoint ---
+
+	// Snapshot window update (lightweight metadata change)
+	if d.HasChange("snapshot_window") {
+		newVal := d.Get("snapshot_window").(string)
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): updating snapshot_window to %s", tenantID, name, newVal)
+		rq := &duplosdk.DuploEcacheModifyRequest{
+			ReplicationGroupId: identifier,
+			ApplyImmediately:   true,
+			SnapshotWindow:     &newVal,
+		}
+		cerr := c.EcacheInstanceModify(tenantID, rq)
+		if cerr != nil {
+			return diag.Errorf("Error updating snapshot_window for ECache instance '%s': %s", id, cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available after snapshot_window update: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+
+	// Size (CacheNodeType) update — scaling, may take time
+	if d.HasChange("size") {
+		newVal := d.Get("size").(string)
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): updating size to %s", tenantID, name, newVal)
+		rq := &duplosdk.DuploEcacheModifyRequest{
+			ReplicationGroupId: identifier,
+			ApplyImmediately:   true,
+			CacheNodeType:      &newVal,
+		}
+		cerr := c.EcacheInstanceModify(tenantID, rq)
+		if cerr != nil {
+			return diag.Errorf("Error updating size for ECache instance '%s': %s", id, cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available after size update: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+
+	// Parameter group name update — may trigger node reboot
+	if d.HasChange("parameter_group_name") {
+		newVal := d.Get("parameter_group_name").(string)
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): updating parameter_group_name to %s", tenantID, name, newVal)
+		rq := &duplosdk.DuploEcacheModifyRequest{
+			ReplicationGroupId:      identifier,
+			ApplyImmediately:        true,
+			CacheParameterGroupName: &newVal,
+		}
+		cerr := c.EcacheInstanceModify(tenantID, rq)
+		if cerr != nil {
+			return diag.Errorf("Error updating parameter_group_name for ECache instance '%s': %s", id, cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available after parameter_group_name update: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
+	}
+
+	// Engine version upgrade — last, may reboot nodes
+	if d.HasChange("engine_version") {
+		newVal := d.Get("engine_version").(string)
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine_version to %s", tenantID, name, newVal)
+		rq := &duplosdk.DuploEcacheModifyRequest{
+			ReplicationGroupId: identifier,
+			ApplyImmediately:   true,
+			EngineVersion:      &newVal,
+		}
+		cerr := c.EcacheInstanceModify(tenantID, rq)
+		if cerr != nil {
+			return diag.Errorf("Error upgrading engine_version for ECache instance '%s': %s", id, cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available after engine_version upgrade: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
 	}
 
 	// --- Log delivery configuration update (independent) ---
