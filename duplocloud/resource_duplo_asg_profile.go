@@ -176,7 +176,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	awsASGSchema["minion_tags"].DiffSuppressFunc = diffSuppressWhenNotCreating
 
 	awsASGSchema["custom_data_tags"] = &schema.Schema{
-		Description:   "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.\n\n**Note:** When importing an ASG created using the minion_tags block from v0.12.6 onwards, you need to add a custom_data_tags block by replacing the minion_tags block with the same key and value as the minion_tags block to avoid drift.",
+		Description:   "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.\n\n**Note:** When importing an ASG created using the minion_tags block, from v0.12.6 onwards, need to add a custom_data_tags block by replacing the minion_tags block with the same key and value as the minion_tags block to avoid drift.",
 		Type:          schema.TypeList,
 		Optional:      true,
 		Elem:          KeyValueSchema(),

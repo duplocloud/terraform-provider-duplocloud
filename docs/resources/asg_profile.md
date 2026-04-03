@@ -304,7 +304,7 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 - `cloud` (Number) The numeric ID of the cloud provider to launch the host in. Defaults to `0`.
 - `custom_data_tags` (Block List) A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.
 
-**Note:** When importing an ASG created using the minion_tags block from v0.12.6 onwards, you need to add a custom_data_tags block by replacing the minion_tags block with the same key and value as the minion_tags block to avoid drift. (see [below for nested schema](#nestedblock--custom_data_tags))
+**Note:** When importing an ASG created using the minion_tags block, from v0.12.6 onwards, need to add a custom_data_tags block by replacing the minion_tags block with the same key and value as the minion_tags block to avoid drift. (see [below for nested schema](#nestedblock--custom_data_tags))
 - `custom_node_labels` (Map of String) Specify the labels to attach to the nodes.
 - `enabled_metrics` (List of String) List of metrics to collect for the ASG Specify one or more of the following metrics.`GroupMinSize`,`GroupMaxSize`,`GroupDesiredCapacity`,`GroupInServiceInstances`,`GroupPendingInstances`,`GroupStandbyInstances`,`GroupTerminatingInstances`,`GroupTotalInstances`,`GroupInServiceCapacity`,`GroupPendingCapacity`,`GroupStandbyCapacity`,`GroupTerminatingCapacity`,`GroupTotalCapacity`,`WarmPoolDesiredCapacity`,`WarmPoolWarmedCapacity`,`WarmPoolPendingCapacity`,`WarmPoolTerminatingCapacity`,`WarmPoolTotalCapacity`,`GroupAndWarmPoolDesiredCapacity`,`GroupAndWarmPoolTotalCapacity`.
 - `encrypt_disk` (Boolean) Defaults to `false`.
