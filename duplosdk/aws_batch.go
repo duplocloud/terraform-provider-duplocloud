@@ -346,40 +346,26 @@ type DuploAwsBatchJobDefinitionEvaluateOnExit struct {
 
 func (c *Client) AwsBatchJobDefinitionCreate(tenantID string, rq *DuploAwsBatchJobDefinition) ClientError {
 	rp := ""
-	conf := NewRetryConf()
-	conf.RateExceededMaxRetries = 15
-	conf.MinDelay = 10
-	conf.MaxDelay = 30
-	conf.MinStartingDelay = 3
-	conf.MaxStartingDelay = 10
-	return c.postAPIWithRetry(
+	return c.postAPI(
 		fmt.Sprintf("AwsBatchJobDefinitionCreate(%s, %s)", tenantID, rq.JobDefinitionName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition", tenantID),
 		&rq,
 		&rp,
-		&conf,
 	)
 }
 
 func (c *Client) AwsBatchJobDefinitionUpdate(tenantID string, rq *DuploAwsBatchJobDefinition) ClientError {
 	rp := ""
-	conf := NewRetryConf()
-	conf.RateExceededMaxRetries = 15
-	conf.MinDelay = 10
-	conf.MaxDelay = 30
-	conf.MinStartingDelay = 3
-	conf.MaxStartingDelay = 10
-	return c.putAPIWithRetry(
+	return c.putAPI(
 		fmt.Sprintf("AwsBatchJobDefinitionUpdate(%s, %s)", tenantID, rq.JobDefinitionName),
 		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition", tenantID),
 		&rq,
 		&rp,
-		&conf,
 	)
 }
 
 func (c *Client) AwsBatchJobDefinitionGet(tenantID string, name string) (*DuploAwsBatchJobDefinitionResp, ClientError) {
-	list, err := c.AwsBatchJobDefinitionList(tenantID)
+	list, err := c.AwsBatchJobDefinitionList(tenantID, name)
 	if err != nil {
 		return nil, err
 	}
@@ -395,7 +381,7 @@ func (c *Client) AwsBatchJobDefinitionGet(tenantID string, name string) (*DuploA
 }
 
 func (c *Client) AwsBatchJobDefinitionGetAllRevisions(tenantID string, name string) (*[]DuploAwsBatchJobDefinitionResp, ClientError) {
-	list, err := c.AwsBatchJobDefinitionList(tenantID)
+	list, err := c.AwsBatchJobDefinitionList(tenantID, name)
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +396,7 @@ func (c *Client) AwsBatchJobDefinitionGetAllRevisions(tenantID string, name stri
 	return &jobRev, nil
 }
 
-func (c *Client) AwsBatchJobDefinitionList(tenantID string) (*[]DuploAwsBatchJobDefinitionResp, ClientError) {
+func (c *Client) AwsBatchJobDefinitionList(tenantID, name string) (*[]DuploAwsBatchJobDefinitionResp, ClientError) {
 	rp := []DuploAwsBatchJobDefinitionResp{}
 	conf := NewRetryConf()
 	conf.RateExceededMaxRetries = 15
@@ -420,7 +406,7 @@ func (c *Client) AwsBatchJobDefinitionList(tenantID string) (*[]DuploAwsBatchJob
 	conf.MaxStartingDelay = 10
 	err := c.getAPIWithRetry(
 		fmt.Sprintf("AwsBatchJobDefinitionList(%s)", tenantID),
-		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition", tenantID),
+		fmt.Sprintf("v3/subscriptions/%s/aws/batchJobDefinition?job-definition-name=%s", tenantID, name),
 		&rp,
 		&conf,
 	)

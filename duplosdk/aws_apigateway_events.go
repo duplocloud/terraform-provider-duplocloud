@@ -47,7 +47,7 @@ func (c *Client) ApiGatewayEventUpdate(tenantID string, rq *DuploApiGatewayEvent
 func (c *Client) ApiGatewayEventDelete(tenantID, apiGatewayID, method, path string) ClientError {
 	return c.deleteAPI(
 		fmt.Sprintf("ApiGatewayEventDelete(%s, %s)", tenantID, apiGatewayID+"--"+method+"--"+path),
-		fmt.Sprintf("v3/subscriptions/%s/aws/apigateway/events/%s/%s/%s", tenantID, apiGatewayID, method, EncodePathParam(EncodePathParam(path))),
+		fmt.Sprintf("v3/subscriptions/%s/aws/apigateway/events/%s/%s/%s", tenantID, apiGatewayID, method, EncodePathParam(path)),
 		nil)
 }
 

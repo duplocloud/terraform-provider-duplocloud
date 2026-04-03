@@ -219,3 +219,42 @@ resource "duplocloud_asg_instance_refresh" "name" {
   tenant_id                      = duplocloud_aws_launch_template_default_version.set.tenant_id
   update_launch_template_version = duplocloud_aws_launch_template_default_version.set.default_version
 }
+
+
+
+//Example use of custom data tags 
+resource "duplocloud_asg_profile" "duplo-test-asg" {
+  tenant_id = duplocloud_tenant.duplo-app.tenant_id
+
+  friendly_name         = "my-asg"
+  instance_count        = 1
+  min_instance_count    = 1
+  max_instance_count    = 1
+  image_id              = "ami-0cfd96d646e5535a8" # <== put the AWS duplo docker AMI ID here
+  capacity              = "t3a.medium"
+  agent_platform        = 7   # Duplo native container agent
+  zones                 = [0] # Zone A
+  user_account          = "sep8"
+  keypair_type          = 2
+  prepend_user_data     = false
+  use_spot_instances    = true
+  can_scale_from_zero   = false
+  is_cluster_autoscaled = false
+
+  metadata {
+    key   = "OsDiskSize" # <== This is the size of the OS disk in GB
+    value = "100"
+  }
+
+  custom_data_tags {
+    key   = "AllocationTags"
+    value = "allocation-tg"
+
+  }
+
+  volume {
+    name        = "/dev/sda2"
+    volume_type = "gp3"
+    size        = 100
+  }
+}

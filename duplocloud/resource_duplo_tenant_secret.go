@@ -54,6 +54,9 @@ func resourceTenantSecret() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return strings.TrimPrefix(old, "/") == strings.TrimPrefix(new, "/")
+				},
 			},
 			"version_id": {
 				Description: "The version ID of the secret.",
