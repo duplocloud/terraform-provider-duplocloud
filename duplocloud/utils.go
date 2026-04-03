@@ -219,23 +219,6 @@ func KeyValueSchema() *schema.Resource {
 	}
 }
 
-func KeyValueSchemaAsgCustomDataTag() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"key": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-			"value": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-		},
-	}
-}
-
 func DynamoDbV2TagSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

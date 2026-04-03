@@ -124,9 +124,10 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Description: "The availability zone to launch the host in is expressed as a numeric value ranging from 0 to 3. ",
 		Type:        schema.TypeString,
 		Optional:    true,
-		ForceNew:    true, // relaunch instance
-		Deprecated:  "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.",
-		Default:     0,
+		//ForceNew:         true, // relaunch instance
+		Deprecated:       "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated and is non-functional on change.",
+		Default:          0,
+		DiffSuppressFunc: diffSuppressWhenNotCreating,
 	}
 	awsASGSchema["taints"] = &schema.Schema{
 		Description: "Specify taints to attach to the nodes, to repel other nodes with different toleration",
@@ -175,12 +176,10 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 	awsASGSchema["minion_tags"].DiffSuppressFunc = diffSuppressWhenNotCreating
 
 	awsASGSchema["custom_data_tags"] = &schema.Schema{
-		Description:   "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.",
+		Description:   "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.\n\n**Note:** When importing an ASG created using the minion_tags block, from v0.12.6 onwards, need to add a custom_data_tags block by replacing the minion_tags block with the same key and value as the minion_tags block to avoid drift.",
 		Type:          schema.TypeList,
 		Optional:      true,
-		Computed:      true,
-		ForceNew:      true, // relaunch instance
-		Elem:          KeyValueSchemaAsgCustomDataTag(),
+		Elem:          KeyValueSchema(),
 		ConflictsWith: []string{"minion_tags"},
 	}
 
@@ -310,7 +309,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.FromErr(err)
 		}
 	}
-
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
 	diags = resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): end", rq.TenantId, rq.FriendlyName)
 	return diags
@@ -376,6 +375,9 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 			Key:           "AllocationTags",
 			Value:         newTags,
 		}
+		if newTags == "" {
+			updateRequest.State = "delete"
+		}
 		err := c.TenantUpdateCustomData(rq.TenantId, updateRequest)
 		if err != nil {
 			return diag.Errorf("Error updating ASG profile '%s': %s", rq.FriendlyName, err)
@@ -421,6 +423,7 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.Errorf("Error updating taints from ASG profile '%s': %s", friendlyName, cerr)
 		}
 	}
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
 	diags := resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): end", tenantID, friendlyName)
 	return diags
@@ -453,8 +456,16 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 		return nil
 	}
 
+	flow := "import"
+
+	v := ctx.Value(flowContextKey)
+	if v != nil {
+		if f, ok := v.(string); ok {
+			flow = f
+		}
+	}
 	// Apply the data
-	asgProfileToState(d, profile)
+	asgProfileToState(d, profile, flow)
 	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceAwsASGRead(%s): end", id)
 	return nil
@@ -517,7 +528,7 @@ func asgProfileIdParts(id string) (tenantID, name string, err error) {
 	return tenantID, name, err
 }
 
-func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) {
+func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile, flow string) {
 	d.Set("instance_count", duplo.DesiredCapacity)
 	d.Set("min_instance_count", duplo.MinSize)
 	d.Set("max_instance_count", duplo.MaxSize)
@@ -544,8 +555,13 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
 		_, zok := d.GetOk("zones")
-
-		if len(duplo.Zones) > 0 && zok {
+		if len(duplo.Zones) > 0 && flow == "import" {
+			i := []interface{}{}
+			for _, v := range duplo.Zones {
+				i = append(i, v)
+			}
+			d.Set("zones", i)
+		} else if len(duplo.Zones) > 0 && zok {
 			i := []interface{}{}
 			for _, v := range duplo.Zones {
 				i = append(i, v)
@@ -697,7 +713,7 @@ func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 }
 
 func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags string) {
-	oldRevision, newRevision := d.GetChange("minion_tags")
+	oldRevision, newRevision := d.GetChange("custom_data_tags")
 	oldTags := oldRevision.([]interface{})
 	newTags := newRevision.([]interface{})
 
