@@ -202,6 +202,22 @@ func validateMaxSpotPrice(ctx context.Context, diff *schema.ResourceDiff, m inte
 	return nil
 }
 
+func validateCustomDataTags(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	if customDataTags, ok := diff.GetOk("custom_data_tags"); ok {
+		tagsList := customDataTags.([]interface{})
+		for _, tag := range tagsList {
+			tagMap := tag.(map[string]interface{})
+			key := tagMap["key"].(string)
+			value := tagMap["value"].(string)
+
+			if value == "" {
+				return fmt.Errorf("custom_data_tags: tag value cannot be empty for key '%s'. To remove a tag, remove the entire key-value pair from the configuration", key)
+			}
+		}
+	}
+	return nil
+}
+
 func resourceAwsASG() *schema.Resource {
 
 	return &schema.Resource{
@@ -223,6 +239,7 @@ func resourceAwsASG() *schema.Resource {
 			diffUserData,
 			validateMaxSpotPrice,
 			validateTaintsSupport,
+			validateCustomDataTags,
 		),
 	}
 }
@@ -367,20 +384,14 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		}
 	}
 
-	needsAllocationTagsUpdate, newTags := checkAllocationTagsDiff(d)
-	if needsAllocationTagsUpdate {
-		updateRequest := duplosdk.CustomDataUpdate{
-			ComponentId:   d.Get("fullname").(string),
-			ComponentType: duplosdk.ASG,
-			Key:           "AllocationTags",
-			Value:         newTags,
-		}
-		if newTags == "" {
-			updateRequest.State = "delete"
-		}
+	customDataUpdates := getCustomDataTagsUpdates(d)
+	for _, updateRequest := range customDataUpdates {
+		updateRequest.ComponentId = d.Get("fullname").(string)
+		updateRequest.ComponentType = duplosdk.ASG
+
 		err := c.TenantUpdateCustomData(rq.TenantId, updateRequest)
 		if err != nil {
-			return diag.Errorf("Error updating ASG profile '%s': %s", rq.FriendlyName, err)
+			return diag.Errorf("Error updating ASG profile custom data '%s': %s", rq.FriendlyName, err)
 		}
 	}
 	if d.HasChange("taints") {
@@ -712,34 +723,60 @@ func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 		d.HasChange("enabled_metrics")
 }
 
-func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags string) {
+func getCustomDataTagsUpdates(d *schema.ResourceData) []duplosdk.CustomDataUpdate {
+	var updates []duplosdk.CustomDataUpdate
+
+	if !d.HasChange("custom_data_tags") {
+		return updates
+	}
+
 	oldRevision, newRevision := d.GetChange("custom_data_tags")
 	oldTags := oldRevision.([]interface{})
 	newTags := newRevision.([]interface{})
 
-	var oldAllocationTagValue, newAllocationTagValue string
+	// Create maps for easier lookup
+	oldTagsMap := make(map[string]string)
+	newTagsMap := make(map[string]string)
 
 	for _, tag := range oldTags {
 		tagMap := tag.(map[string]interface{})
-		if tagMap["key"].(string) == "AllocationTags" {
-			oldAllocationTagValue = tagMap["value"].(string)
-			break
-		}
+		key := tagMap["key"].(string)
+		value := tagMap["value"].(string)
+		oldTagsMap[key] = value
 	}
 
 	for _, tag := range newTags {
 		tagMap := tag.(map[string]interface{})
-		if tagMap["key"].(string) == "AllocationTags" {
-			newAllocationTagValue = tagMap["value"].(string)
-			break
+		key := tagMap["key"].(string)
+		value := tagMap["value"].(string)
+		newTagsMap[key] = value
+	}
+
+	// Check for updated or new tags
+	for key, newValue := range newTagsMap {
+		oldValue, existed := oldTagsMap[key]
+		if !existed || oldValue != newValue {
+			update := duplosdk.CustomDataUpdate{
+				Key:   key,
+				Value: newValue,
+			}
+			updates = append(updates, update)
 		}
 	}
 
-	if oldAllocationTagValue != newAllocationTagValue {
-		return true, newAllocationTagValue
+	// Check for deleted tags
+	for key := range oldTagsMap {
+		if _, exists := newTagsMap[key]; !exists {
+			update := duplosdk.CustomDataUpdate{
+				Key:   key,
+				Value: "",
+				State: "delete",
+			}
+			updates = append(updates, update)
+		}
 	}
 
-	return false, ""
+	return updates
 }
 
 func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) (error, bool) {
