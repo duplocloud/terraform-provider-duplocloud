@@ -117,6 +117,8 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_api_gateway_integration":   resourceAwsApiGatewayIntegration(),
 			"duplocloud_aws_target_group_attributes":   resourceAwsTargetGroupAttributes(),
 			"duplocloud_aws_lb_target_group":           resourceTargetGroup(),
+			"duplocloud_aws_s3_table_namespace":        resourceAwsS3TableNamespace(),
+			"duplocloud_aws_s3_table":                  resourceAwsS3Table(),
 			"duplocloud_aws_sqs_queue":                 resourceAwsSqsQueue(),
 			"duplocloud_aws_sns_topic":                 resourceAwsSnsTopic(),
 			"duplocloud_aws_lb_listener_rule":          resourceAwsLbListenerRule(),
