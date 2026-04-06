@@ -249,6 +249,20 @@ func resourceInfrastructure() *schema.Resource {
 				ForceNew:    true,
 				Optional:    true,
 			},
+			"custom_private_subnet_cidrs": {
+				Description: "Custom CIDR blocks for private subnets. When specified, overrides the automatic subnet sizing from subnet_cidr.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				ForceNew:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"custom_public_subnet_cidrs": {
+				Description: "Custom CIDR blocks for public subnets. When specified, overrides the automatic subnet sizing from subnet_cidr.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				ForceNew:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"subnet_name": {
 				Description: "The name of the subnet. This is applicable only for Azure.",
 				Type:        schema.TypeString,
@@ -533,6 +547,13 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 		},
 	}
 
+	for _, v := range d.Get("custom_private_subnet_cidrs").(*schema.Set).List() {
+		config.Vnet.CustomPrivateSubnetCidrs = append(config.Vnet.CustomPrivateSubnetCidrs, v.(string))
+	}
+	for _, v := range d.Get("custom_public_subnet_cidrs").(*schema.Set).List() {
+		config.Vnet.CustomPublicSubnetCidrs = append(config.Vnet.CustomPublicSubnetCidrs, v.(string))
+	}
+
 	//Azure -> if needed only there, this subnet should be added only in Azure
 	if config.Cloud == 2 {
 		subnet := duplosdk.DuploInfrastructureVnetSubnet{}
@@ -618,6 +639,8 @@ func infrastructureRead(ctx context.Context, c *duplosdk.Client, d *schema.Resou
 	d.Set("enable_container_insights", infra.EnableContainerInsights)
 	d.Set("address_prefix", infra.Vnet.AddressPrefix)
 	d.Set("subnet_cidr", infra.Vnet.SubnetCidr)
+	d.Set("custom_private_subnet_cidrs", config.Vnet.CustomPrivateSubnetCidrs)
+	d.Set("custom_public_subnet_cidrs", config.Vnet.CustomPublicSubnetCidrs)
 	d.Set("status", infra.ProvisioningStatus)
 
 	d.Set("all_settings", keyValueToState("all_settings", config.CustomData))
