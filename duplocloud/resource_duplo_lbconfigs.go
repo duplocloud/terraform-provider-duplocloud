@@ -603,7 +603,7 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 		},
 		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
 		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
+		Timeout:      30 * time.Minute,
 	}
 	log.Printf("[DEBUG] duploServiceLBConfigsWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
