@@ -106,33 +106,36 @@ func (c *Client) IsAzureCustomPrefixesEnabled() bool {
 	return true
 }
 
-// awsTagBasedOwnershipMap parses the AppConfigs entry AWS_SERVICES_TAG_BASED_OWNERSHIP_ENABLED
-// (semicolon-delimited, e.g. "sqs;secretsmanager") into a lowercase map for O(1) lookup.
-func awsTagBasedOwnershipMap(configs []DuploSystemFeaturesAppConfigs) map[string]struct{} {
-	m := make(map[string]struct{})
-	for _, cfg := range configs {
-		if cfg.Key == "AWS_SERVICES_TAG_BASED_OWNERSHIP_ENABLED" {
-			for _, s := range strings.Split(cfg.Value, ";") {
-				s = strings.TrimSpace(s)
-				if s != "" {
-					m[strings.ToLower(s)] = struct{}{}
-				}
-			}
-			break
-		}
-	}
-	return m
+// DuploAdminSystemSetting represents the response from GET /v3/admin/systemsettings.
+type DuploAdminSystemSetting struct {
+	AwsServicesTagBasedOwnershipEnabled []string `json:"AwsServicesTagBasedOwnershipEnabled"`
 }
 
+// AdminGetSystemSettings retrieves the admin system settings via GET /v3/admin/systemsettings.
+func (c *Client) AdminGetSystemSettings() (*DuploAdminSystemSetting, ClientError) {
+	settings := DuploAdminSystemSetting{}
+	err := c.getAPI("AdminGetSystemSettings()", "v3/admin/systemsettings", &settings)
+	if err != nil {
+		return nil, err
+	}
+	return &settings, nil
+}
+
+// IsAwsServiceTagBasedOwnershipEnabled returns true if tag-based ownership is enabled
+// for the given AWS service (e.g. "sqs"). When enabled, DuploCloud does not add the
+// duploservices-{tenant}- prefix to resource names for that service.
 func (c *Client) IsAwsServiceTagBasedOwnershipEnabled(service string) bool {
-	features := DuploSystemFeatures{}
-	err := c.getAPI("AdminGetSystemFeatures()", "v3/features/system", &features)
+	settings, err := c.AdminGetSystemSettings()
 	if err != nil {
 		return false
 	}
-	enabled := awsTagBasedOwnershipMap(features.AppConfigs)
-	_, ok := enabled[strings.ToLower(service)]
-	return ok
+	target := strings.ToLower(service)
+	for _, s := range settings.AwsServicesTagBasedOwnershipEnabled {
+		if strings.ToLower(s) == target {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Client) getPrefixFromResourceType(resourceType string, isInfraResource bool) (string, error) {
