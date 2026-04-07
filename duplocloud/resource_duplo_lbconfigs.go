@@ -260,9 +260,9 @@ func resourceDuploServiceLbConfigs() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(15 * time.Minute),
-			Update: schema.DefaultTimeout(15 * time.Minute),
-			Delete: schema.DefaultTimeout(15 * time.Minute),
+			Create: schema.DefaultTimeout(30 * time.Minute),
+			Update: schema.DefaultTimeout(30 * time.Minute),
+			Delete: schema.DefaultTimeout(30 * time.Minute),
 		},
 		Schema:        duploServiceLbConfigsSchema(),
 		CustomizeDiff: validateLBConfigParameters,
@@ -532,9 +532,9 @@ func resourceDuploServiceLbConfigsDelete(ctx context.Context, d *schema.Resource
 		return list, errget
 	})
 
-	// Wait 40 more seconds to deal with consistency issues.
+	// Wait 30 more seconds to deal with consistency issues.
 	if diags == nil {
-		time.Sleep(140 * time.Second)
+		time.Sleep(30 * time.Second)
 	}
 
 	log.Printf("[TRACE] resourceDuploServiceLbConfigsDelete(%s, %s): end", tenantID, name)
@@ -602,8 +602,8 @@ func duploServiceLbConfigsWaitUntilReady(ctx context.Context, c *duplosdk.Client
 			return name, "pending", nil
 		},
 		// MinTimeout will be 10 sec freq, if times-out forces 30 sec anyway
-		PollInterval: 10 * time.Second,
-		Timeout:      10 * time.Minute,
+		PollInterval: 30 * time.Second,
+		Timeout:      20 * time.Minute,
 	}
 	log.Printf("[DEBUG] duploServiceLBConfigsWaitUntilReady(%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
