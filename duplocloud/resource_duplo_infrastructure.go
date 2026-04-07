@@ -639,8 +639,6 @@ func infrastructureRead(ctx context.Context, c *duplosdk.Client, d *schema.Resou
 	d.Set("enable_container_insights", infra.EnableContainerInsights)
 	d.Set("address_prefix", infra.Vnet.AddressPrefix)
 	d.Set("subnet_cidr", infra.Vnet.SubnetCidr)
-	d.Set("custom_private_subnet_cidrs", config.Vnet.CustomPrivateSubnetCidrs)
-	d.Set("custom_public_subnet_cidrs", config.Vnet.CustomPublicSubnetCidrs)
 	d.Set("status", infra.ProvisioningStatus)
 
 	d.Set("all_settings", keyValueToState("all_settings", config.CustomData))
@@ -735,6 +733,9 @@ func infrastructureRead(ctx context.Context, c *duplosdk.Client, d *schema.Resou
 
 			d.Set("private_subnets", privateSubnets)
 			d.Set("public_subnets", publicSubnets)
+			d.Set("custom_private_subnet_cidrs", config.Vnet.CustomPrivateSubnetCidrs)
+			d.Set("custom_public_subnet_cidrs", config.Vnet.CustomPublicSubnetCidrs)
+
 		}
 
 		if config.Vnet.SecurityGroups != nil {
