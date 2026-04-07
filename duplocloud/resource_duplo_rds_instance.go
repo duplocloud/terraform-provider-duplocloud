@@ -1309,9 +1309,12 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			if na < oa {
 				return fmt.Errorf("You can't reduce your allocated storage (%+v GiB) from what you originally configured for your source database instance (%+v GiB)", na, oa)
 			}
-			perDiff := ((na - oa) * 100) / oa
-			if perDiff < 10 {
-				return fmt.Errorf("allocated_storage (%+v GiB) should be atleast 10%% of previous allocated_storage (%+v GiB)", na, oa)
+			// Prevent division by zero when oa becomes 0 after recalculation
+			if oa > 0 {
+				perDiff := ((na - oa) * 100) / oa
+				if perDiff < 10 {
+					return fmt.Errorf("allocated_storage (%+v GiB) should be atleast 10%% of previous allocated_storage (%+v GiB)", na, oa)
+				}
 			}
 		}
 	}
