@@ -4,9 +4,9 @@ resource "duplocloud_tenant" "myapp" {
 }
 
 
-resource "duplocloud_gcp_cloud_queue_task" "task" {
+resource "duplocloud_gcp_cloud_task" "task" {
   tenant_id  = duplocloud_tenant.myapp.tenant_id
-  queue_name = duplocloud_gcp_cloud_tasks_queue.queue.name
+  queue_name = duplocloud_gcp_cloud_queue.queue.name
   name       = "task1"
   app_engine {
     relative_uri = "/create"
@@ -19,9 +19,9 @@ resource "duplocloud_gcp_cloud_queue_task" "task" {
 
 }
 
-resource "duplocloud_gcp_cloud_queue_task" "task2" {
+resource "duplocloud_gcp_cloud_task" "task2" {
   tenant_id  = duplocloud_tenant.myapp.tenant_id
-  queue_name = duplocloud_gcp_cloud_tasks_queue.queue.name
+  queue_name = duplocloud_gcp_cloud_queue.queue.name
   name       = "task2"
   http_target {
     url    = "https://catfact.ninja/fact"
