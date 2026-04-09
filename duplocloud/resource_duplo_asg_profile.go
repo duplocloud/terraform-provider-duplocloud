@@ -400,39 +400,42 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		if err != nil {
 			return diag.Errorf("Error on updating taints from ASG profile '%s': %s", friendlyName, err)
 		}
-		privateAddress := ""
+
+		oldVal, newVal := d.GetChange("taints")
+
+		var keysToDelete []string
+		for _, dt := range oldVal.([]interface{}) {
+			keysToDelete = append(keysToDelete, dt.(map[string]interface{})["key"].(string))
+		}
+		var newTaintsList []duplosdk.DuploTaints
+		for _, dt := range newVal.([]interface{}) {
+			item := dt.(map[string]interface{})
+			newTaintsList = append(newTaintsList, duplosdk.DuploTaints{
+				Key:    item["key"].(string),
+				Value:  item["value"].(string),
+				Effect: item["effect"].(string),
+			})
+		}
+
+		minionCount := 0
 		for _, minion := range *list {
-			if minion.AsgName == friendlyName {
-				privateAddress = minion.PrivateIpAddress
-				break
+			if minion.AsgName != friendlyName {
+				continue
 			}
-		}
-		k := []string{}
-
-		obj := []duplosdk.DuploTaints{}
-		if val, ok := d.Get("taints").([]interface{}); ok {
-			for _, dt := range val {
-
-				m := dt.(map[string]interface{})
-				taints := duplosdk.DuploTaints{
-					Key:    m["key"].(string),
-					Value:  m["value"].(string),
-					Effect: m["effect"].(string),
+			minionCount++
+			if len(keysToDelete) > 0 {
+				if cerr := c.DeleteASGTaints(tenantID, minion.PrivateIpAddress, keysToDelete); cerr != nil {
+					return diag.Errorf("Error deleting taints on node '%s' for ASG profile '%s': %s", minion.PrivateIpAddress, friendlyName, cerr)
 				}
-				k = append(k, m["key"].(string))
-				obj = append(obj, taints)
-
 			}
-
+			if len(newTaintsList) > 0 {
+				if cerr := c.CreateASGTaints(tenantID, minion.PrivateIpAddress, newTaintsList); cerr != nil {
+					return diag.Errorf("Error creating taints on node '%s' for ASG profile '%s': %s", minion.PrivateIpAddress, friendlyName, cerr)
+				}
+			}
 		}
-		cerr := c.DeleteASGTaints(tenantID, privateAddress, k)
-		if cerr != nil {
-			return diag.Errorf("Error updating taints from ASG profile '%s': %s", friendlyName, cerr)
-		}
-		time.Sleep(10 * time.Second)
-		cerr = c.UpdateASGTaints(tenantID, privateAddress, obj)
-		if cerr != nil {
-			return diag.Errorf("Error updating taints from ASG profile '%s': %s", friendlyName, cerr)
+		if minionCount == 0 {
+			log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): no minions found for taint update", tenantID, friendlyName)
 		}
 	}
 	ctx = context.WithValue(ctx, flowContextKey, "normal")
@@ -479,6 +482,37 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 	// Apply the data
 	asgProfileToState(d, profile, flow)
 	d.Set("tenant_id", tenantID)
+
+	// Read actual taints from a minion node to detect drift.
+	// Compare across all minions — if any node diverges, clear taints
+	// so Terraform detects drift and re-applies.
+	list, lerr := c.TenantListMinions(tenantID)
+	if lerr != nil {
+		log.Printf("[WARN] resourceAwsASGRead(%s): failed to list minions for taint drift detection: %s", id, lerr)
+	} else if list != nil {
+		var referenceTaints []duplosdk.DuploMinionTaint
+		hasDivergence := false
+		for _, minion := range *list {
+			if minion.AsgName != profile.FriendlyName {
+				continue
+			}
+			if referenceTaints == nil {
+				referenceTaints = minion.Taints
+				continue
+			}
+			if !taintSetsEqual(referenceTaints, minion.Taints) {
+				hasDivergence = true
+				log.Printf("[WARN] resourceAwsASGRead(%s): minion %s has divergent taints", id, minion.PrivateIpAddress)
+			}
+		}
+		if hasDivergence {
+			// Force drift by clearing taints — next apply will re-converge all nodes.
+			d.Set("taints", []interface{}{})
+		} else if referenceTaints != nil {
+			d.Set("taints", flattenMinionTaints(referenceTaints))
+		}
+	}
+
 	log.Printf("[TRACE] resourceAwsASGRead(%s): end", id)
 	return nil
 }
@@ -716,12 +750,30 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 	return err
 }
 
+func taintSetsEqual(a, b []duplosdk.DuploMinionTaint) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	m := make(map[string]duplosdk.DuploMinionTaint, len(a))
+	for _, t := range a {
+		m[strings.ToLower(t.Key)] = t
+	}
+	for _, t := range b {
+		ref, ok := m[strings.ToLower(t.Key)]
+		if !ok || ref.Value != t.Value || ref.Effect != t.Effect {
+			return false
+		}
+	}
+	return true
+}
+
 func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("instance_count") ||
 		d.HasChange("min_instance_count") ||
 		d.HasChange("max_instance_count") ||
 		d.HasChange("friendly_name") ||
-		d.HasChange("enabled_metrics")
+		d.HasChange("enabled_metrics") ||
+		d.HasChange("taints")
 }
 
 func getCustomDataTagsUpdates(d *schema.ResourceData) []duplosdk.CustomDataUpdate {
