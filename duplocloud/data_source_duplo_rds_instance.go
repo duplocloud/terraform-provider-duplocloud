@@ -8,6 +8,7 @@ import (
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func dataSourceDuploRdsInstance() *schema.Resource {
@@ -21,6 +22,7 @@ func dataSourceDuploRdsInstance() *schema.Resource {
 				Description: "The GUID of the tenant.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ValidateFunc: validation.IsUUID,
 			},
 			"name": {
 				Description: "The short name of the RDS instance (without the duplo- prefix).",
