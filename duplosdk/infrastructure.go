@@ -551,19 +551,19 @@ type DuploVpcEndpointGroup struct {
 
 // DuploVpcEndpoint represents a VPC endpoint in a Duplo infrastructure
 type DuploVpcEndpoint struct {
-	VpcEndpointId     string                     `json:"VpcEndpointId"`
-	ServiceName       string                     `json:"ServiceName"`
-	VpcEndpointType   DuploStringValue           `json:"VpcEndpointType"`
-	State             DuploStringValue           `json:"State"`
-	VpcId             string                     `json:"VpcId"`
-	CreationTimestamp string                     `json:"CreationTimestamp"`
-	PrivateDnsEnabled bool                       `json:"PrivateDnsEnabled"`
-	PolicyDocument    string                     `json:"PolicyDocument,omitempty"`
-	RouteTableIds     []string                   `json:"RouteTableIds,omitempty"`
-	SubnetIds         []string                   `json:"SubnetIds,omitempty"`
-	NetworkInterfaceIds []string                 `json:"NetworkInterfaceIds,omitempty"`
-	DnsEntries        []DuploVpcEndpointDnsEntry `json:"DnsEntries,omitempty"`
-	Groups            []DuploVpcEndpointGroup    `json:"Groups,omitempty"`
+	VpcEndpointId       string                     `json:"VpcEndpointId"`
+	ServiceName         string                     `json:"ServiceName"`
+	VpcEndpointType     DuploStringValue           `json:"VpcEndpointType"`
+	State               DuploStringValue           `json:"State"`
+	VpcId               string                     `json:"VpcId"`
+	CreationTimestamp   string                     `json:"CreationTimestamp"`
+	PrivateDnsEnabled   bool                       `json:"PrivateDnsEnabled"`
+	PolicyDocument      string                     `json:"PolicyDocument,omitempty"`
+	RouteTableIds       []string                   `json:"RouteTableIds,omitempty"`
+	SubnetIds           []string                   `json:"SubnetIds,omitempty"`
+	NetworkInterfaceIds []string                   `json:"NetworkInterfaceIds,omitempty"`
+	DnsEntries          []DuploVpcEndpointDnsEntry `json:"DnsEntries,omitempty"`
+	Groups              []DuploVpcEndpointGroup    `json:"Groups,omitempty"`
 }
 
 // DuploVpcEndpointCreateRequest represents a request to create a VPC endpoint
