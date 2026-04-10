@@ -38,7 +38,7 @@ output "rds_cluster_host" {
 
 ### Required
 
-- `name` (String) The short name of the RDS instance (without the duplo- prefix).
+- `name` (String) The name of the RDS instance.
 - `tenant_id` (String) The GUID of the tenant.
 
 ### Read-Only
@@ -57,7 +57,7 @@ output "rds_cluster_host" {
 - `enable_logging` (Boolean) Whether or not RDS instance logging is enabled.
 - `encrypt_storage` (Boolean) Whether or not the RDS instance storage is encrypted.
 - `endpoint` (String) The current connection endpoint (host:port) of the RDS instance. Reflects the promoted writer after a failover.
-- `engine` (Number) The numerical index of database engine to use the for the RDS instance.
+- `engine` (Number) The numerical index of database engine to use for the RDS instance.
 - `engine_version` (String) The database engine version.
 - `enhanced_monitoring` (Number) The enhanced monitoring interval in seconds.
 - `host` (String) The DNS hostname of the RDS instance.

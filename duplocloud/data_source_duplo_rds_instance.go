@@ -25,7 +25,7 @@ func dataSourceDuploRdsInstance() *schema.Resource {
 				ValidateFunc: validation.IsUUID,
 			},
 			"name": {
-				Description: "The short name of the RDS instance (without the duplo- prefix).",
+				Description: "The name of the RDS instance.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
