@@ -60,7 +60,7 @@ func dataSourceDuploRdsInstance() *schema.Resource {
 				Computed:    true,
 			},
 			"engine": {
-				Description: "The numerical index of database engine to use the for the RDS instance.",
+				Description: "The numerical index of database engine to use for the RDS instance.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
