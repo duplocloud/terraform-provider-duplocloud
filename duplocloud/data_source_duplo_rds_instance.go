@@ -19,9 +19,9 @@ func dataSourceDuploRdsInstance() *schema.Resource {
 		ReadContext: dataSourceDuploRdsInstanceRead,
 		Schema: map[string]*schema.Schema{
 			"tenant_id": {
-				Description: "The GUID of the tenant.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "The GUID of the tenant.",
+				Type:         schema.TypeString,
+				Required:     true,
 				ValidateFunc: validation.IsUUID,
 			},
 			"name": {
