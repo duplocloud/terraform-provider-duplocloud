@@ -165,8 +165,169 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Type:        schema.TypeString,
 		Computed:    true,
 	}
+	awsASGSchema["mixed_instances_policy"] = &schema.Schema{
+		Description: "Configuration block for a mixed instances policy. This allows an ASG to use multiple instance types and a mix of On-Demand and Spot instances.",
+		Type:        schema.TypeList,
+		Optional:    true,
+		MaxItems:    1,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"launch_template": {
+					Description: "Launch template configuration with instance type overrides.",
+					Type:        schema.TypeList,
+					Optional:    true,
+					MaxItems:    1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"override": {
+								Description: "List of instance type overrides for the launch template.",
+								Type:        schema.TypeList,
+								Optional:    true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"instance_type": {
+											Description: "The instance type. Mutually exclusive with `instance_requirements`.",
+											Type:        schema.TypeString,
+											Optional:    true,
+										},
+										"weighted_capacity": {
+											Description: "The number of capacity units provided by the instance type.",
+											Type:        schema.TypeString,
+											Optional:    true,
+										},
+										"instance_requirements": {
+											Description: "Instance requirements for flexible instance selection.",
+											Type:        schema.TypeList,
+											Optional:    true,
+											MaxItems:    1,
+											Elem: &schema.Resource{
+												Schema: map[string]*schema.Schema{
+													"vcpu_count": {
+														Description: "Range of vCPU counts.",
+														Type:        schema.TypeList,
+														Required:    true,
+														MaxItems:    1,
+														Elem: &schema.Resource{
+															Schema: map[string]*schema.Schema{
+																"min": {
+																	Description: "Minimum number of vCPUs.",
+																	Type:        schema.TypeInt,
+																	Required:    true,
+																},
+																"max": {
+																	Description: "Maximum number of vCPUs.",
+																	Type:        schema.TypeInt,
+																	Optional:    true,
+																},
+															},
+														},
+													},
+													"memory_mib": {
+														Description: "Range of memory in MiB.",
+														Type:        schema.TypeList,
+														Required:    true,
+														MaxItems:    1,
+														Elem: &schema.Resource{
+															Schema: map[string]*schema.Schema{
+																"min": {
+																	Description: "Minimum memory in MiB.",
+																	Type:        schema.TypeInt,
+																	Required:    true,
+																},
+																"max": {
+																	Description: "Maximum memory in MiB.",
+																	Type:        schema.TypeInt,
+																	Optional:    true,
+																},
+															},
+														},
+													},
+													"allowed_instance_types": {
+														Description: "List of allowed instance types (e.g. `m5.large`, `m5a.large`).",
+														Type:        schema.TypeList,
+														Optional:    true,
+														Elem:        &schema.Schema{Type: schema.TypeString},
+													},
+													"excluded_instance_types": {
+														Description: "List of excluded instance types.",
+														Type:        schema.TypeList,
+														Optional:    true,
+														Elem:        &schema.Schema{Type: schema.TypeString},
+													},
+													"cpu_manufacturers": {
+														Description: "List of CPU manufacturers (e.g. `intel`, `amd`, `amazon-web-services`).",
+														Type:        schema.TypeList,
+														Optional:    true,
+														Elem:        &schema.Schema{Type: schema.TypeString},
+													},
+													"instance_generations": {
+														Description: "List of instance generations (e.g. `current`, `previous`).",
+														Type:        schema.TypeList,
+														Optional:    true,
+														Elem:        &schema.Schema{Type: schema.TypeString},
+													},
+													"spot_max_price_percentage_over_lowest_price": {
+														Description: "Price protection threshold as a percentage over the lowest price.",
+														Type:        schema.TypeInt,
+														Optional:    true,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				"instances_distribution": {
+					Description: "Configuration for the distribution of On-Demand and Spot instances.",
+					Type:        schema.TypeList,
+					Optional:    true,
+					MaxItems:    1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"on_demand_allocation_strategy": {
+								Description: "Strategy for allocating On-Demand instances (e.g. `prioritized`).",
+								Type:        schema.TypeString,
+								Optional:    true,
+							},
+							"on_demand_base_capacity": {
+								Description: "Minimum number of On-Demand instances in the group.",
+								Type:        schema.TypeInt,
+								Optional:    true,
+							},
+							"on_demand_percentage_above_base_capacity": {
+								Description: "Percentage of On-Demand instances above the base capacity (0-100).",
+								Type:        schema.TypeInt,
+								Optional:    true,
+							},
+							"spot_allocation_strategy": {
+								Description: "Strategy for allocating Spot instances (e.g. `capacity-optimized`, `price-capacity-optimized`, `lowest-price`).",
+								Type:        schema.TypeString,
+								Optional:    true,
+							},
+							"spot_instance_pools": {
+								Description: "Number of Spot pools for allocation (only used with `lowest-price` strategy).",
+								Type:        schema.TypeInt,
+								Optional:    true,
+							},
+							"spot_max_price": {
+								Description: "Maximum price per unit hour for Spot instances.",
+								Type:        schema.TypeString,
+								Optional:    true,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
 	awsASGSchema["capacity"].ForceNew = false
 	awsASGSchema["image_id"].ForceNew = false
+	awsASGSchema["capacity"].Required = false
+	awsASGSchema["capacity"].Optional = true
 
 	awsASGSchema["capacity"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["image_id"].DiffSuppressFunc = diffSuppressWhenNotCreating
@@ -593,6 +754,9 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile, 
 	if duplo.Taints != nil {
 		d.Set("taints", flattenTaints(*duplo.Taints))
 	}
+	if duplo.MixedInstancesPolicy != nil {
+		d.Set("mixed_instances_policy", flattenAsgMixedInstancesPolicy(duplo.MixedInstancesPolicy))
+	}
 }
 
 func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
@@ -659,7 +823,172 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		asgProfile.Zones = append(asgProfile.Zones, zn)
 	}
 
+	asgProfile.MixedInstancesPolicy = expandAsgMixedInstancesPolicy(d)
+
 	return asgProfile
+}
+
+func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMixedInstancesPolicy {
+	v, ok := d.GetOk("mixed_instances_policy")
+	if !ok || len(v.([]interface{})) == 0 {
+		return nil
+	}
+	policyMap := v.([]interface{})[0].(map[string]interface{})
+	policy := &duplosdk.DuploAsgMixedInstancesPolicy{}
+
+	if lt, ok := policyMap["launch_template"]; ok && len(lt.([]interface{})) > 0 {
+		ltMap := lt.([]interface{})[0].(map[string]interface{})
+		launchTemplate := &duplosdk.DuploAsgMixedInstancesLaunchTemplate{}
+
+		if overrides, ok := ltMap["override"]; ok {
+			for _, o := range overrides.([]interface{}) {
+				oMap := o.(map[string]interface{})
+				override := duplosdk.DuploAsgLaunchTemplateOverride{
+					InstanceType:     oMap["instance_type"].(string),
+					WeightedCapacity: oMap["weighted_capacity"].(string),
+				}
+
+				if ir, ok := oMap["instance_requirements"]; ok && len(ir.([]interface{})) > 0 {
+					irMap := ir.([]interface{})[0].(map[string]interface{})
+					req := &duplosdk.DuploAsgInstanceRequirements{}
+
+					if vcpu, ok := irMap["vcpu_count"]; ok && len(vcpu.([]interface{})) > 0 {
+						vcpuMap := vcpu.([]interface{})[0].(map[string]interface{})
+						req.VCpuCount = &duplosdk.DuploAsgIntRange{
+							Min: vcpuMap["min"].(int),
+							Max: vcpuMap["max"].(int),
+						}
+					}
+					if mem, ok := irMap["memory_mib"]; ok && len(mem.([]interface{})) > 0 {
+						memMap := mem.([]interface{})[0].(map[string]interface{})
+						req.MemoryMiB = &duplosdk.DuploAsgIntRange{
+							Min: memMap["min"].(int),
+							Max: memMap["max"].(int),
+						}
+					}
+					if v, ok := irMap["allowed_instance_types"]; ok {
+						req.AllowedInstanceTypes = expandStringList(v.([]interface{}))
+					}
+					if v, ok := irMap["excluded_instance_types"]; ok {
+						req.ExcludedInstanceTypes = expandStringList(v.([]interface{}))
+					}
+					if v, ok := irMap["cpu_manufacturers"]; ok {
+						req.CpuManufacturers = expandStringList(v.([]interface{}))
+					}
+					if v, ok := irMap["instance_generations"]; ok {
+						req.InstanceGenerations = expandStringList(v.([]interface{}))
+					}
+					if v, ok := irMap["spot_max_price_percentage_over_lowest_price"]; ok && v.(int) > 0 {
+						val := v.(int)
+						req.SpotMaxPricePercentageOverLowestPrice = &val
+					}
+					override.InstanceRequirements = req
+				}
+				launchTemplate.Overrides = append(launchTemplate.Overrides, override)
+			}
+		}
+		policy.LaunchTemplate = launchTemplate
+	}
+
+	if dist, ok := policyMap["instances_distribution"]; ok && len(dist.([]interface{})) > 0 {
+		distMap := dist.([]interface{})[0].(map[string]interface{})
+		distribution := &duplosdk.DuploAsgInstancesDistribution{
+			OnDemandAllocationStrategy: distMap["on_demand_allocation_strategy"].(string),
+			SpotAllocationStrategy:     distMap["spot_allocation_strategy"].(string),
+			SpotMaxPrice:               distMap["spot_max_price"].(string),
+		}
+		if v, ok := distMap["on_demand_base_capacity"]; ok && v.(int) > 0 {
+			val := v.(int)
+			distribution.OnDemandBaseCapacity = &val
+		}
+		if v, ok := distMap["on_demand_percentage_above_base_capacity"]; ok {
+			val := v.(int)
+			distribution.OnDemandPercentageAboveBaseCapacity = &val
+		}
+		if v, ok := distMap["spot_instance_pools"]; ok && v.(int) > 0 {
+			val := v.(int)
+			distribution.SpotInstancePools = &val
+		}
+		policy.InstancesDistribution = distribution
+	}
+
+	return policy
+}
+
+func flattenAsgMixedInstancesPolicy(policy *duplosdk.DuploAsgMixedInstancesPolicy) []interface{} {
+	if policy == nil {
+		return nil
+	}
+	result := map[string]interface{}{}
+
+	if policy.LaunchTemplate != nil {
+		lt := map[string]interface{}{}
+		var overrides []interface{}
+		for _, o := range policy.LaunchTemplate.Overrides {
+			override := map[string]interface{}{
+				"instance_type":     o.InstanceType,
+				"weighted_capacity": o.WeightedCapacity,
+			}
+			if o.InstanceRequirements != nil {
+				ir := map[string]interface{}{}
+				if o.InstanceRequirements.VCpuCount != nil {
+					ir["vcpu_count"] = []interface{}{
+						map[string]interface{}{
+							"min": o.InstanceRequirements.VCpuCount.Min,
+							"max": o.InstanceRequirements.VCpuCount.Max,
+						},
+					}
+				}
+				if o.InstanceRequirements.MemoryMiB != nil {
+					ir["memory_mib"] = []interface{}{
+						map[string]interface{}{
+							"min": o.InstanceRequirements.MemoryMiB.Min,
+							"max": o.InstanceRequirements.MemoryMiB.Max,
+						},
+					}
+				}
+				if o.InstanceRequirements.AllowedInstanceTypes != nil {
+					ir["allowed_instance_types"] = o.InstanceRequirements.AllowedInstanceTypes
+				}
+				if o.InstanceRequirements.ExcludedInstanceTypes != nil {
+					ir["excluded_instance_types"] = o.InstanceRequirements.ExcludedInstanceTypes
+				}
+				if o.InstanceRequirements.CpuManufacturers != nil {
+					ir["cpu_manufacturers"] = o.InstanceRequirements.CpuManufacturers
+				}
+				if o.InstanceRequirements.InstanceGenerations != nil {
+					ir["instance_generations"] = o.InstanceRequirements.InstanceGenerations
+				}
+				if o.InstanceRequirements.SpotMaxPricePercentageOverLowestPrice != nil {
+					ir["spot_max_price_percentage_over_lowest_price"] = *o.InstanceRequirements.SpotMaxPricePercentageOverLowestPrice
+				}
+				override["instance_requirements"] = []interface{}{ir}
+			}
+			overrides = append(overrides, override)
+		}
+		lt["override"] = overrides
+		result["launch_template"] = []interface{}{lt}
+	}
+
+	if policy.InstancesDistribution != nil {
+		dist := map[string]interface{}{
+			"on_demand_allocation_strategy": policy.InstancesDistribution.OnDemandAllocationStrategy,
+			"spot_allocation_strategy":      policy.InstancesDistribution.SpotAllocationStrategy,
+			"spot_max_price":                policy.InstancesDistribution.SpotMaxPrice,
+		}
+		if policy.InstancesDistribution.OnDemandBaseCapacity != nil {
+			dist["on_demand_base_capacity"] = *policy.InstancesDistribution.OnDemandBaseCapacity
+		}
+		if policy.InstancesDistribution.OnDemandPercentageAboveBaseCapacity != nil {
+			dist["on_demand_percentage_above_base_capacity"] = *policy.InstancesDistribution.OnDemandPercentageAboveBaseCapacity
+		}
+		if policy.InstancesDistribution.SpotInstancePools != nil {
+			dist["spot_instance_pools"] = *policy.InstancesDistribution.SpotInstancePools
+		}
+		result["instances_distribution"] = []interface{}{dist}
+	}
+
+	return []interface{}{result}
 }
 
 func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantID string, minInstanceCount int, asgFriendlyName string, timeout time.Duration) error {
@@ -721,7 +1050,8 @@ func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 		d.HasChange("min_instance_count") ||
 		d.HasChange("max_instance_count") ||
 		d.HasChange("friendly_name") ||
-		d.HasChange("enabled_metrics")
+		d.HasChange("enabled_metrics") ||
+		d.HasChange("mixed_instances_policy")
 }
 
 func getCustomDataTagsUpdates(d *schema.ResourceData) []duplosdk.CustomDataUpdate {

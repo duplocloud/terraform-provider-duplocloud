@@ -39,8 +39,48 @@ type DuploAsgProfile struct {
 	EnabledMetrics      *[]string                          `json:"EnabledMetrics,omitempty"`
 	ExtraNodeLabels     *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
 	Taints              *[]DuploTaints                     `json:"Taints,omitempty"`
-	Created             *bool                              `json:"Created,omitempty"`
-	Arn                 string                             `json:"AutoScalingGroupARN,omitempty"`
+	Created              *bool                              `json:"Created,omitempty"`
+	Arn                  string                             `json:"AutoScalingGroupARN,omitempty"`
+	MixedInstancesPolicy *DuploAsgMixedInstancesPolicy      `json:"MixedInstancesPolicy,omitempty"`
+}
+
+type DuploAsgMixedInstancesPolicy struct {
+	LaunchTemplate        *DuploAsgMixedInstancesLaunchTemplate `json:"LaunchTemplate,omitempty"`
+	InstancesDistribution *DuploAsgInstancesDistribution        `json:"InstancesDistribution,omitempty"`
+}
+
+type DuploAsgMixedInstancesLaunchTemplate struct {
+	Overrides []DuploAsgLaunchTemplateOverride `json:"Overrides,omitempty"`
+}
+
+type DuploAsgLaunchTemplateOverride struct {
+	InstanceType         string                       `json:"InstanceType,omitempty"`
+	WeightedCapacity     string                       `json:"WeightedCapacity,omitempty"`
+	InstanceRequirements *DuploAsgInstanceRequirements `json:"InstanceRequirements,omitempty"`
+}
+
+type DuploAsgInstanceRequirements struct {
+	VCpuCount                             *DuploAsgIntRange `json:"VCpuCount,omitempty"`
+	MemoryMiB                             *DuploAsgIntRange `json:"MemoryMiB,omitempty"`
+	AllowedInstanceTypes                  []string          `json:"AllowedInstanceTypes,omitempty"`
+	ExcludedInstanceTypes                 []string          `json:"ExcludedInstanceTypes,omitempty"`
+	CpuManufacturers                      []string          `json:"CpuManufacturers,omitempty"`
+	InstanceGenerations                   []string          `json:"InstanceGenerations,omitempty"`
+	SpotMaxPricePercentageOverLowestPrice *int              `json:"SpotMaxPricePercentageOverLowestPrice,omitempty"`
+}
+
+type DuploAsgIntRange struct {
+	Min int `json:"Min"`
+	Max int `json:"Max,omitempty"`
+}
+
+type DuploAsgInstancesDistribution struct {
+	OnDemandAllocationStrategy          string `json:"OnDemandAllocationStrategy,omitempty"`
+	OnDemandBaseCapacity                *int   `json:"OnDemandBaseCapacity,omitempty"`
+	OnDemandPercentageAboveBaseCapacity *int   `json:"OnDemandPercentageAboveBaseCapacity,omitempty"`
+	SpotAllocationStrategy              string `json:"SpotAllocationStrategy,omitempty"`
+	SpotInstancePools                   *int   `json:"SpotInstancePools,omitempty"`
+	SpotMaxPrice                        string `json:"SpotMaxPrice,omitempty"`
 }
 
 type DuploAsgProfileDeleteReq struct {
