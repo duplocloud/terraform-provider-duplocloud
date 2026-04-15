@@ -6,39 +6,39 @@ import (
 )
 
 type DuploAsgProfile struct {
-	AccountName         string                             `json:"AccountName,omitempty"`
-	AgentPlatform       int                                `json:"AgentPlatform"`
-	AllocatedPublicIP   bool                               `json:"AllocatedPublicIp,omitempty"`
-	Base64UserData      string                             `json:"Base64UserData,omitempty"`
-	PrependUserData     bool                               `json:"IsUserDataCombined,omitempty"`
-	CanScaleFromZero    bool                               `json:"CanScaleFromZero,omitempty"`
-	Capacity            string                             `json:"Capacity,omitempty"`
-	Cloud               int                                `json:"Cloud"`
-	CustomDataTags      *[]DuploKeyStringValue             `json:"CustomDataTags"`
-	DesiredCapacity     int                                `json:"DesiredCapacity"`
-	EncryptDisk         bool                               `json:"EncryptDisk,omitempty"`
-	FriendlyName        string                             `json:"FriendlyName,omitempty"`
-	ImageID             string                             `json:"ImageId,omitempty"`
-	IsClusterAutoscaled bool                               `json:"IsClusterAutoscaled"`
-	IsEbsOptimized      bool                               `json:"IsEbsOptimized"`
-	IsMinion            bool                               `json:"IsMinion"`
-	KeyPairType         int                                `json:"KeyPairType,omitempty"`
-	MaxSize             int                                `json:"MaxSize"`
-	MaxSpotPrice        string                             `json:"SpotPrice,omitempty"`
-	MetaData            *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
-	MinionTags          *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
-	MinSize             int                                `json:"MinSize"`
-	NetworkInterfaces   *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
-	Status              string                             `json:"Status,omitempty"`
-	Tags                *[]DuploKeyStringValue             `json:"Tags,omitempty"`
-	TenantId            string                             `json:"TenantId,omitempty"`
-	UseSpotInstances    bool                               `json:"UseSpotInstances,omitempty"`
-	Volumes             *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
-	Zones               []int                              `json:"Zones"`
-	Zone                int                                `json:"Zone"`
-	EnabledMetrics      *[]string                          `json:"EnabledMetrics,omitempty"`
-	ExtraNodeLabels     *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
-	Taints              *[]DuploTaints                     `json:"Taints,omitempty"`
+	AccountName          string                             `json:"AccountName,omitempty"`
+	AgentPlatform        int                                `json:"AgentPlatform"`
+	AllocatedPublicIP    bool                               `json:"AllocatedPublicIp,omitempty"`
+	Base64UserData       string                             `json:"Base64UserData,omitempty"`
+	PrependUserData      bool                               `json:"IsUserDataCombined,omitempty"`
+	CanScaleFromZero     bool                               `json:"CanScaleFromZero,omitempty"`
+	Capacity             string                             `json:"Capacity,omitempty"`
+	Cloud                int                                `json:"Cloud"`
+	CustomDataTags       *[]DuploKeyStringValue             `json:"CustomDataTags"`
+	DesiredCapacity      int                                `json:"DesiredCapacity"`
+	EncryptDisk          bool                               `json:"EncryptDisk,omitempty"`
+	FriendlyName         string                             `json:"FriendlyName,omitempty"`
+	ImageID              string                             `json:"ImageId,omitempty"`
+	IsClusterAutoscaled  bool                               `json:"IsClusterAutoscaled"`
+	IsEbsOptimized       bool                               `json:"IsEbsOptimized"`
+	IsMinion             bool                               `json:"IsMinion"`
+	KeyPairType          int                                `json:"KeyPairType,omitempty"`
+	MaxSize              int                                `json:"MaxSize"`
+	MaxSpotPrice         string                             `json:"SpotPrice,omitempty"`
+	MetaData             *[]DuploKeyStringValue             `json:"MetaData,omitempty"`
+	MinionTags           *[]DuploKeyStringValue             `json:"MinionTags,omitempty"`
+	MinSize              int                                `json:"MinSize"`
+	NetworkInterfaces    *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
+	Status               string                             `json:"Status,omitempty"`
+	Tags                 *[]DuploKeyStringValue             `json:"Tags,omitempty"`
+	TenantId             string                             `json:"TenantId,omitempty"`
+	UseSpotInstances     bool                               `json:"UseSpotInstances,omitempty"`
+	Volumes              *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`
+	Zones                []int                              `json:"Zones"`
+	Zone                 int                                `json:"Zone"`
+	EnabledMetrics       *[]string                          `json:"EnabledMetrics,omitempty"`
+	ExtraNodeLabels      *[]DuploKeyStringValue             `json:"ExtraNodeLabels,omitempty"`
+	Taints               *[]DuploTaints                     `json:"Taints,omitempty"`
 	Created              *bool                              `json:"Created,omitempty"`
 	Arn                  string                             `json:"AutoScalingGroupARN,omitempty"`
 	MixedInstancesPolicy *DuploAsgMixedInstancesPolicy      `json:"MixedInstancesPolicy,omitempty"`
@@ -54,8 +54,8 @@ type DuploAsgMixedInstancesLaunchTemplate struct {
 }
 
 type DuploAsgLaunchTemplateOverride struct {
-	InstanceType         string                       `json:"InstanceType,omitempty"`
-	WeightedCapacity     string                       `json:"WeightedCapacity,omitempty"`
+	InstanceType         string                        `json:"InstanceType,omitempty"`
+	WeightedCapacity     string                        `json:"WeightedCapacity,omitempty"`
 	InstanceRequirements *DuploAsgInstanceRequirements `json:"InstanceRequirements,omitempty"`
 }
 
