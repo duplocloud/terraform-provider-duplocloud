@@ -187,7 +187,7 @@ func expandAzureKeyVaultSecret(d *schema.ResourceData) *duplosdk.DuploAzureKeyVa
 	return &duplosdk.DuploAzureKeyVaultRequest{
 		SecretName:  d.Get("name").(string),
 		SecretValue: d.Get("value").(string),
-		SecretType:  d.Get("type").(string),
+		ContentType: d.Get("type").(string),
 	}
 }
 
