@@ -243,33 +243,40 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 														},
 													},
 													"allowed_instance_types": {
-														Description: "List of allowed instance types (e.g. `m5.large`, `m5a.large`).",
+														Description: "List of allowed instance types (e.g. `m5.large`, `m5a.large`). Cannot be specified if `excluded_instance_types` is specified in the same launch template override.",
 														Type:        schema.TypeList,
 														Optional:    true,
+														Computed:    true,
 														Elem:        &schema.Schema{Type: schema.TypeString},
 													},
 													"excluded_instance_types": {
-														Description: "List of excluded instance types.",
+														Description: "List of excluded instance types. Cannot be specified if `allowed_instance_types` is specified in the same launch template override.",
 														Type:        schema.TypeList,
 														Optional:    true,
+														Computed:    true,
 														Elem:        &schema.Schema{Type: schema.TypeString},
 													},
 													"cpu_manufacturers": {
 														Description: "List of CPU manufacturers (e.g. `intel`, `amd`, `amazon-web-services`).",
 														Type:        schema.TypeList,
 														Optional:    true,
-														Elem:        &schema.Schema{Type: schema.TypeString},
+														Computed:    true,
+
+														Elem: &schema.Schema{Type: schema.TypeString},
 													},
 													"instance_generations": {
 														Description: "List of instance generations (e.g. `current`, `previous`).",
 														Type:        schema.TypeList,
 														Optional:    true,
-														Elem:        &schema.Schema{Type: schema.TypeString},
+														Computed:    true,
+
+														Elem: &schema.Schema{Type: schema.TypeString},
 													},
 													"spot_max_price_percentage_over_lowest_price": {
 														Description: "Price protection threshold as a percentage over the lowest price.",
 														Type:        schema.TypeInt,
 														Optional:    true,
+														Computed:    true,
 													},
 												},
 											},
@@ -291,6 +298,7 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 								Description: "Strategy for allocating On-Demand instances (e.g. `prioritized`).",
 								Type:        schema.TypeString,
 								Optional:    true,
+								Computed:    true,
 							},
 							"on_demand_base_capacity": {
 								Description: "Minimum number of On-Demand instances in the group.",

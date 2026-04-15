@@ -266,11 +266,11 @@ resource "duplocloud_asg_profile" "mixed-instances-asg" {
   instance_count     = 1
   min_instance_count = 1
   max_instance_count = 3
-  image_id           = "ami-09b7949fa7055de95"
-  capacity           = "t3a.small"
+  image_id           = "ami-0cfd96d646e5535a8"
+  capacity           = "c6i.xlarge"
   agent_platform     = 7
   zones              = [0]
-  user_account       = duplocloud_tenant.duplo-app.account_name
+  user_account       = "sep8"
   is_minion          = true
 
   mixed_instances_policy {
@@ -278,14 +278,14 @@ resource "duplocloud_asg_profile" "mixed-instances-asg" {
       override {
         instance_requirements {
           vcpu_count {
-            min = 2
+            min = 3
             max = 8
           }
           memory_mib {
             min = 8192
             max = 8192
           }
-          allowed_instance_types = ["m5.large", "m5a.large", "m6i.large"]
+          allowed_instance_types = ["c5.xlarge", "c5n.xlarge", "c6i.xlarge"]
         }
       }
     }
@@ -295,3 +295,6 @@ resource "duplocloud_asg_profile" "mixed-instances-asg" {
     }
   }
 }
+
+
+
