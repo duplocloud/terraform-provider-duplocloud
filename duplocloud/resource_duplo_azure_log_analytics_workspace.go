@@ -113,7 +113,7 @@ func resourceAzureLogAnalyticsWorkspaceRead(ctx context.Context, d *schema.Resou
 	if duplo.ID == "" {
 		log.Printf("[DEBUG] resourceAzureLogAnalyticsWorkspaceRead: Azure Log Analytics Workspace %s not found for tenantId %s, removing from state", name, infraName)
 		d.SetId("")
-
+		return nil
 	}
 	d.Set("infra_name", infraName)
 	d.Set("resource_group_name", parseResourceGroupFromAzureID(duplo.ID))
