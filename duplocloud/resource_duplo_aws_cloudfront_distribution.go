@@ -2282,7 +2282,7 @@ func updateS3OAI(existingCfd, updatedCfd *duplosdk.DuploAwsCloudfrontDistributio
 	for _, eo := range *existingCfd.Origins.Items {
 		for i, uo := range *updatedCfd.Origins.Items {
 			if eo.Id == uo.Id {
-				if eo.S3OriginConfig != nil {
+				if eo.S3OriginConfig != nil && uo.S3OriginConfig != nil {
 					uo.S3OriginConfig.OriginAccessIdentity = eo.S3OriginConfig.OriginAccessIdentity
 				}
 				// Preserve OAC (Origin Access Control) from the existing config.
