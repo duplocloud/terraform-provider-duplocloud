@@ -222,10 +222,7 @@ func resourceInfrastructureVpcEndpointDelete(ctx context.Context, d *schema.Reso
 		if ep == nil {
 			return nil
 		}
-		if ep.State.Value == "deleting" {
-			return retry.RetryableError(fmt.Errorf("VPC endpoint %s is still deleting", endpointId))
-		}
-		return nil
+		return retry.RetryableError(fmt.Errorf("VPC endpoint %s still exists in state %s", endpointId, ep.State.Value))
 	})
 	if err != nil {
 		return diag.FromErr(err)

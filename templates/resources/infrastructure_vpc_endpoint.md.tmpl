@@ -24,7 +24,7 @@ resource "duplocloud_infrastructure_vpc_endpoint" "s3" {
 ```terraform
 resource "duplocloud_infrastructure_vpc_endpoint" "kafka" {
   infra_name        = "nonprod"
-  service_name      = "aws.api.us-west-2.kafka"
+  service_name      = "com.amazonaws.us-west-2.kafka"
   vpc_endpoint_type = "Interface"
 }
 ```
