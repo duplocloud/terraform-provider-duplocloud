@@ -207,4 +207,7 @@ func flattenAzureKeyVaultSecret(d *schema.ResourceData, duplo *duplosdk.DuploAzu
 	d.Set("version", duplo.Identifier.Version)
 	d.Set("recovery_level", duplo.Attributes.RecoveryLevel)
 	d.Set("enabled", duplo.Attributes.Enabled)
+	if duplo.ContentType != "" {
+		d.Set("type", duplo.ContentType)
+	}
 }
