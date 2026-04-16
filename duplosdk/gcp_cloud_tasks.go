@@ -40,11 +40,11 @@ func (c *Client) GcpCloudTasksCreate(tenantID string, queue string, rq *DuploGCP
 	)
 	return err
 }
-func (c *Client) GCPCloudTasksQueueGet(tenantID string, name string) (*DuploGCPCloudTaskQueue, ClientError) {
+func (c *Client) GCPCloudTasksQueueGet(tenantID string, name, location string) (*DuploGCPCloudTaskQueue, ClientError) {
 	rp := DuploGCPCloudTaskQueue{}
 	err := c.getAPI(
 		fmt.Sprintf("GCPCloudTasksQueueGet(%s, %s)", tenantID, name),
-		fmt.Sprintf("v3/subscriptions/%s/google/queues/%s", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/google/queues/%s/%s", tenantID, name, location),
 		&rp,
 	)
 
@@ -70,10 +70,10 @@ func (c *Client) GCPCloudTasksDelete(tenantID, queue, task string) ClientError {
 		&resp)
 }
 
-func (c *Client) GCPCloudTasksQueueDelete(tenantID, queue string) ClientError {
+func (c *Client) GCPCloudTasksQueueDelete(tenantID, queue, location string) ClientError {
 	var resp interface{}
 	return c.deleteAPI(
-		fmt.Sprintf("GCPCloudTasksQueueDelete(%s, %s)", tenantID, queue),
-		fmt.Sprintf("v3/subscriptions/%s/google/queues/%s", tenantID, queue),
+		fmt.Sprintf("GCPCloudTasksQueueDelete(%s, %s,%s)", tenantID, queue, location),
+		fmt.Sprintf("v3/subscriptions/%s/google/queues/%s/%s", tenantID, queue, location),
 		&resp)
 }
