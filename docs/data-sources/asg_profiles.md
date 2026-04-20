@@ -54,6 +54,7 @@ Read-Only:
 - `metadata` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--metadata))
 - `min_instance_count` (Number)
 - `minion_tags` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--minion_tags))
+- `mixed_instances_policy` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--mixed_instances_policy))
 - `network_interface` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--network_interface))
 - `prepend_user_data` (Boolean)
 - `public_ip_address` (String)
@@ -91,6 +92,78 @@ Read-Only:
 
 - `key` (String)
 - `value` (String)
+
+
+<a id="nestedobjatt--asg_profiles--mixed_instances_policy"></a>
+### Nested Schema for `asg_profiles.mixed_instances_policy`
+
+Read-Only:
+
+- `instances_distribution` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--mixed_instances_policy--instances_distribution))
+- `launch_template` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--mixed_instances_policy--launch_template))
+
+<a id="nestedobjatt--asg_profiles--mixed_instances_policy--instances_distribution"></a>
+### Nested Schema for `asg_profiles.mixed_instances_policy.instances_distribution`
+
+Read-Only:
+
+- `on_demand_allocation_strategy` (String)
+- `on_demand_base_capacity` (Number)
+- `on_demand_percentage_above_base_capacity` (Number)
+- `spot_allocation_strategy` (String)
+- `spot_instance_pools` (Number)
+- `spot_max_price` (String)
+
+
+<a id="nestedobjatt--asg_profiles--mixed_instances_policy--launch_template"></a>
+### Nested Schema for `asg_profiles.mixed_instances_policy.launch_template`
+
+Read-Only:
+
+- `override` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--mixed_instances_policy--launch_template--override))
+
+<a id="nestedobjatt--asg_profiles--mixed_instances_policy--launch_template--override"></a>
+### Nested Schema for `asg_profiles.mixed_instances_policy.launch_template.override`
+
+Read-Only:
+
+- `instance_requirements` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--mixed_instances_policy--launch_template--override--instance_requirements))
+- `instance_type` (String)
+- `weighted_capacity` (String)
+
+<a id="nestedobjatt--asg_profiles--mixed_instances_policy--launch_template--override--instance_requirements"></a>
+### Nested Schema for `asg_profiles.mixed_instances_policy.launch_template.override.instance_requirements`
+
+Read-Only:
+
+- `allowed_instance_types` (List of String)
+- `cpu_manufacturers` (List of String)
+- `excluded_instance_types` (List of String)
+- `instance_generations` (List of String)
+- `memory_mib` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--mixed_instances_policy--launch_template--override--instance_requirements--memory_mib))
+- `spot_max_price_percentage_over_lowest_price` (Number)
+- `vcpu_count` (List of Object) (see [below for nested schema](#nestedobjatt--asg_profiles--mixed_instances_policy--launch_template--override--instance_requirements--vcpu_count))
+
+<a id="nestedobjatt--asg_profiles--mixed_instances_policy--launch_template--override--instance_requirements--memory_mib"></a>
+### Nested Schema for `asg_profiles.mixed_instances_policy.launch_template.override.instance_requirements.vcpu_count`
+
+Read-Only:
+
+- `max` (Number)
+- `min` (Number)
+
+
+<a id="nestedobjatt--asg_profiles--mixed_instances_policy--launch_template--override--instance_requirements--vcpu_count"></a>
+### Nested Schema for `asg_profiles.mixed_instances_policy.launch_template.override.instance_requirements.vcpu_count`
+
+Read-Only:
+
+- `max` (Number)
+- `min` (Number)
+
+
+
+
 
 
 <a id="nestedobjatt--asg_profiles--network_interface"></a>
