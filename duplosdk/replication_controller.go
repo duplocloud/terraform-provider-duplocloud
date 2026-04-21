@@ -59,6 +59,120 @@ type DuploPodTemplate struct {
 	LBConfigurations      map[string]*DuploLbConfiguration `json:"LBConfigurations,omitempty"`
 }
 
+// DuploReplicationControllerApi represents the flattened API response from GetReplicationControllerApiByName
+// This is different from the list API which returns nested Template structure
+type DuploReplicationControllerApi struct {
+	Name                              string                 `json:"Name"`
+	AppName                           string                 `json:"AppName,omitempty"`
+	Replicas                          int                    `json:"Replicas"`
+	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
+	DockerImage                       string                 `json:"DockerImage"`
+	NetworkId                         string                 `json:"NetworkId"`
+	AgentPlatform                     int                    `json:"AgentPlatform"`
+	Cloud                             int                    `json:"Cloud"`
+	Volumes                           string                 `json:"Volumes,omitempty"`
+	Commands                          string                 `json:"Commands,omitempty"`
+	ApplicationUrl                    string                 `json:"ApplicationUrl,omitempty"`
+	SecondaryTenant                   string                 `json:"SecondaryTenant,omitempty"`
+	ExtraConfig                       string                 `json:"ExtraConfig,omitempty"`
+	OtherDockerConfig                 string                 `json:"OtherDockerConfig,omitempty"`
+	OtherDockerHostConfig             string                 `json:"OtherDockerHostConfig,omitempty"`
+	DeviceIds                         []string               `json:"DeviceIds,omitempty"`
+	AllocationTags                    string                 `json:"AllocationTags,omitempty"`
+	IsInfraDeployment                 bool                   `json:"IsInfraDeployment,omitempty"`
+	DnsPrfx                           string                 `json:"DnsPrfx,omitempty"`
+	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
+	IsDaemonset                       bool                   `json:"IsDaemonset,omitempty"`
+	IsUniqueK8sNodeRequired           bool                   `json:"IsUniqueK8sNodeRequired"`
+	ShouldSpreadAcrossZones           bool                   `json:"ShouldSpreadAcrossZones"`
+	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment,omitempty"`
+	IsReplicaCollocationAllowed       bool                   `json:"IsReplicaCollocationAllowed,omitempty"`
+	IsAnyHostAllowed                  bool                   `json:"IsAnyHostAllowed,omitempty"`
+	IsCloudCredsFromK8sServiceAccount bool                   `json:"IsCloudCredsFromK8sServiceAccount,omitempty"`
+	LBConfigurations                  []DuploLbConfiguration `json:"LBConfigurations,omitempty"`
+	Tags                              *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
+	K8SWorkerOs                       *int                   `json:"K8SWorkerOs,omitempty"`
+}
+
+// ToReplicationController converts the flattened API response to the nested structure
+func (api *DuploReplicationControllerApi) ToReplicationController() *DuploReplicationController {
+	rc := &DuploReplicationController{
+		Name:                              api.Name,
+		AppName:                           api.AppName,
+		Replicas:                          api.Replicas,
+		ReplicasMatchingAsgName:           api.ReplicasMatchingAsgName,
+		DnsPrfx:                           api.DnsPrfx,
+		IsInfraDeployment:                 api.IsInfraDeployment,
+		ForceStatefulSet:                  api.ForceStatefulSet,
+		IsDaemonset:                       api.IsDaemonset,
+		IsUniqueK8sNodeRequired:           api.IsUniqueK8sNodeRequired,
+		ShouldSpreadAcrossZones:           api.ShouldSpreadAcrossZones,
+		IsLBSyncedDeployment:              api.IsLBSyncedDeployment,
+		IsReplicaCollocationAllowed:       api.IsReplicaCollocationAllowed,
+		IsAnyHostAllowed:                  api.IsAnyHostAllowed,
+		IsCloudCredsFromK8sServiceAccount: api.IsCloudCredsFromK8sServiceAccount,
+		Volumes:                           api.Volumes,
+		Tags:                              api.Tags,
+		HPASpecs:                          api.HPASpecs,
+		K8SWorkerOs:                       api.K8SWorkerOs,
+	}
+
+	// Build the nested Template structure from flattened fields
+	template := &DuploPodTemplate{
+		Name:                  api.Name,
+		AgentPlatform:         api.AgentPlatform,
+		Cloud:                 api.Cloud,
+		Volumes:               api.Volumes,
+		ApplicationUrl:        api.ApplicationUrl,
+		SecondaryTenant:       api.SecondaryTenant,
+		ExtraConfig:           api.ExtraConfig,
+		OtherDockerConfig:     api.OtherDockerConfig,
+		OtherDockerHostConfig: api.OtherDockerHostConfig,
+		DeviceIds:             api.DeviceIds,
+		AllocationTags:        api.AllocationTags,
+	}
+
+	// Convert Commands string to []string
+	if api.Commands != "" {
+		template.Commands = []string{api.Commands}
+	} else {
+		template.Commands = []string{}
+	}
+
+	// Build Containers array
+	if api.DockerImage != "" {
+		template.Containers = &[]DuploPodContainer{
+			{
+				Name:  api.Name,
+				Image: api.DockerImage,
+			},
+		}
+	}
+
+	// Build Interfaces array
+	if api.NetworkId != "" {
+		template.Interfaces = &[]DuploPodInterface{
+			{
+				NetworkId: api.NetworkId,
+			},
+		}
+	}
+
+	// Convert LBConfigurations array to map
+	if len(api.LBConfigurations) > 0 {
+		template.LBConfigurations = make(map[string]*DuploLbConfiguration)
+		for i := range api.LBConfigurations {
+			lb := &api.LBConfigurations[i]
+			key := fmt.Sprintf("%s-%s", lb.Protocol, lb.Port)
+			template.LBConfigurations[key] = lb
+		}
+	}
+
+	rc.Template = template
+	return rc
+}
+
 // DuploPodContainer represents a container within a pod template in the Duplo SDK
 type DuploPodContainer struct {
 	Name       string `json:"Name"`
@@ -233,46 +347,35 @@ func (c *Client) ReplicationControllerList(tenantID string) (*[]DuploReplication
 }
 
 // ReplicationControllerGet retrieves a replication controller via the Duplo API.
+// Note: The named API returns a flattened structure (ReplicationControllerApi) which we convert
+// to the nested structure (ReplicationController) used by the list API.
 func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicationController, ClientError) {
-	allResources, err := c.ReplicationControllerList(tenantID)
+	var apiResp DuploReplicationControllerApi
+	err := c.getAPI(
+		fmt.Sprintf("ReplicationControllerGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/GetReplicationControllerApiByName/%s", tenantID, name),
+		&apiResp)
 	if err != nil {
 		return nil, err
 	}
 
-	if allResources == nil {
+	// If the response has an empty name, the resource doesn't exist
+	if apiResp.Name == "" {
 		return nil, nil
 	}
 
-	// Return the resource, if it exists.
-	for i, resource := range *allResources {
-		if resource.Name == name {
-			return &(*allResources)[i], nil
-		}
-	}
-
-	// No resource was found.
-	return nil, nil
+	// Convert flattened API response to nested structure
+	rp := apiResp.ToReplicationController()
+	return rp, nil
 }
 
 func (c *Client) ReplicationControllerExists(tenantID, name string) (bool, ClientError) {
-	allResources, err := c.ReplicationControllerList(tenantID)
+	rp, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
 		return false, err
 	}
 
-	if allResources == nil {
-		return false, nil
-	}
-
-	// Return the resource, if it exists.
-	for _, resource := range *allResources {
-		if resource.Name == name {
-			return true, nil
-		}
-	}
-
-	// No resource was found.
-	return false, nil
+	return rp != nil, nil
 }
 
 // ReplicationControllerCreate creates a replication controller via the Duplo API.
@@ -335,32 +438,27 @@ func (c *Client) LbConfigurationList(tenantID string) (*[]DuploLbConfiguration, 
 }
 
 // ReplicationControllerLbConfigurationList retrieves a list of LB configurations for a specific replication controller in the given tenant.
+// Optimized to use the named API directly without converting to nested structure.
 func (c *Client) ReplicationControllerLbConfigurationList(tenantID string, name string) (*[]DuploLbConfiguration, ClientError) {
-	allLbs, err := c.LbConfigurationList(tenantID)
+	conf := NewRetryConf()
+
+	// Get the flattened API response directly
+	var apiResp DuploReplicationControllerApi
+	err := c.getAPIWithRetry(
+		fmt.Sprintf("ReplicationControllerLbConfigurationList(%s, %s)", tenantID, name),
+		fmt.Sprintf("subscriptions/%s/GetReplicationControllerApiByName/%s", tenantID, name),
+		&apiResp, &conf)
 	if err != nil {
 		return nil, err
 	}
-	//list,err:=c.ReplicationControllerList(tenantID)
-	//if err != nil {
-	//	return nil, err
-	//}
 
-	// Find and return the matching LBs.
-	rpcLbs := make([]DuploLbConfiguration, 0, len(*allLbs))
-	for _, lb := range *allLbs {
-		if lb.ReplicationControllerName == name {
-			//	for _, rl := range *list {
-			//		if rl.Name == name {
-			//
-			//			rpcLbs = append(rpcLbs, lb)
-			//		}
-			//	}
-
-			rpcLbs = append(rpcLbs, lb)
-		}
+	// If the response has an empty name, the resource doesn't exist
+	if apiResp.Name == "" {
+		return &[]DuploLbConfiguration{}, nil
 	}
 
-	return &rpcLbs, nil
+	// Return LB configurations directly from the flattened response (no conversion needed)
+	return &apiResp.LBConfigurations, nil
 }
 
 // ReplicationControllerLbConfigurationBulkUpdate bulk updates a replication controller's lb configuration via the Duplo API.
