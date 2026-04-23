@@ -260,12 +260,12 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 }
 
 // Example applying arbitrary AWS tags to the ASG and its EC2 instances via
-// `aws_tags`. Use `custom_data_tags` for `AllocationTags` and `aws_tags` for
-// everything else. Changes to `aws_tags` force replacement.
+// `asg_tags`. Use `custom_data_tags` for `AllocationTags` and `asg_tags` for
+// everything else. Changes to `asg_tags` force replacement.
 resource "duplocloud_asg_profile" "duplo-test-asg-with-aws-tags" {
   tenant_id = duplocloud_tenant.duplo-app.tenant_id
 
-  friendly_name      = "my-asg-aws-tags"
+  friendly_name      = "my-asg-with-tags"
   instance_count     = 1
   min_instance_count = 1
   max_instance_count = 1
@@ -280,9 +280,9 @@ resource "duplocloud_asg_profile" "duplo-test-asg-with-aws-tags" {
     value = "allocation-tg"
   }
 
-  aws_tags = {
-    "com.radiantlogic.cicd/node-type" = "worker"
-    "Environment"                     = "production"
+  asg_tags = {
+    "com.duplo.cicd/node-type" = "worker"
+    "Environment"              = "production"
   }
 }
 

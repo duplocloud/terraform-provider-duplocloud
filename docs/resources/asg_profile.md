@@ -280,12 +280,12 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
 }
 
 // Example applying arbitrary AWS tags to the ASG and its EC2 instances via
-// `aws_tags`. Use `custom_data_tags` for `AllocationTags` and `aws_tags` for
-// everything else. Changes to `aws_tags` force replacement.
+// `asg_tags`. Use `custom_data_tags` for `AllocationTags` and `asg_tags` for
+// everything else. Changes to `asg_tags` force replacement.
 resource "duplocloud_asg_profile" "duplo-test-asg-with-aws-tags" {
   tenant_id = duplocloud_tenant.duplo-app.tenant_id
 
-  friendly_name      = "my-asg-aws-tags"
+  friendly_name      = "my-asg-with-tags"
   instance_count     = 1
   min_instance_count = 1
   max_instance_count = 1
@@ -300,9 +300,9 @@ resource "duplocloud_asg_profile" "duplo-test-asg-with-aws-tags" {
     value = "allocation-tg"
   }
 
-  aws_tags = {
-    "com.radiantlogic.cicd/node-type" = "worker"
-    "Environment"                     = "production"
+  asg_tags = {
+    "com.duplo.cicd/node-type" = "worker"
+    "Environment"              = "production"
   }
 }
 
@@ -362,7 +362,7 @@ resource "duplocloud_asg_profile" "mixed-instances-asg" {
 - 7: EKS Linux
 - 8: ECS Defaults to `0`.
 - `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
-- `aws_tags` (Map of String) A map of arbitrary AWS tags applied to the ASG and its launched EC2 instances (routed via the backend's `TagsCsv` field). Use this for tags that aren't `AllocationTags` — those belong in `custom_data_tags`. Changes force replacement because the backend applies these tags only at create time.
+- `asg_tags` (Map of String) A map of arbitrary AWS tags applied to the ASG and its launched EC2 instances (routed via the backend's `TagsCsv` field). Use this for tags that aren't `AllocationTags` — those belong in `custom_data_tags`. Changes force replacement because the backend applies these tags only at create time.
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
 - `can_scale_from_zero` (Boolean) Whether or not ASG should leverage duplocloud's scale from 0 feature
 - `capacity` (String) The AWS EC2 instance type.
