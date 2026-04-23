@@ -106,6 +106,7 @@ func Provider() *schema.Provider {
 			"duplocloud_tenant_network_security_rule":  resourceTenantSecurityRule(),
 			"duplocloud_emr_cluster":                   resourceAwsEmrCluster(),
 			"duplocloud_asg_profile":                   resourceAwsASG(),
+			"duplocloud_aws_asg_warm_pool":             resourceAwsAsgWarmPool(),
 			"duplocloud_docker_credentials":            resourceDockerCreds(),
 			"duplocloud_aws_appautoscaling_target":     resourceAwsAppautoscalingTarget(),
 			"duplocloud_aws_appautoscaling_policy":     resourceAwsAppautoscalingPolicy(),
