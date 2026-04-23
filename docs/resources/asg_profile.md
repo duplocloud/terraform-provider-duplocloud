@@ -279,6 +279,33 @@ resource "duplocloud_asg_profile" "duplo-test-asg" {
   }
 }
 
+// Example applying arbitrary AWS tags to the ASG and its EC2 instances via
+// `aws_tags`. Use `custom_data_tags` for `AllocationTags` and `aws_tags` for
+// everything else. Changes to `aws_tags` force replacement.
+resource "duplocloud_asg_profile" "duplo-test-asg-with-aws-tags" {
+  tenant_id = duplocloud_tenant.duplo-app.tenant_id
+
+  friendly_name      = "my-asg-aws-tags"
+  instance_count     = 1
+  min_instance_count = 1
+  max_instance_count = 1
+  image_id           = "ami-0cfd96d646e5535a8"
+  capacity           = "t3a.medium"
+  agent_platform     = 7
+  zones              = [0]
+  user_account       = "sep8"
+
+  custom_data_tags {
+    key   = "AllocationTags"
+    value = "allocation-tg"
+  }
+
+  aws_tags = {
+    "com.radiantlogic.cicd/node-type" = "worker"
+    "Environment"                     = "production"
+  }
+}
+
 # Example with mixed instances policy for spot/on-demand distribution
 resource "duplocloud_asg_profile" "mixed-instances-asg" {
   tenant_id          = duplocloud_tenant.duplo-app.tenant_id
@@ -335,6 +362,7 @@ resource "duplocloud_asg_profile" "mixed-instances-asg" {
 - 7: EKS Linux
 - 8: ECS Defaults to `0`.
 - `allocated_public_ip` (Boolean) Whether or not to allocate a public IP. Defaults to `false`.
+- `aws_tags` (Map of String) A map of arbitrary AWS tags applied to the ASG and its launched EC2 instances (routed via the backend's `TagsCsv` field). Use this for tags that aren't `AllocationTags` — those belong in `custom_data_tags`. Changes force replacement because the backend applies these tags only at create time.
 - `base64_user_data` (String) Base64 encoded EC2 user data to associated with the host.
 - `can_scale_from_zero` (Boolean) Whether or not ASG should leverage duplocloud's scale from 0 feature
 - `capacity` (String) The AWS EC2 instance type.

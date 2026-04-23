@@ -31,6 +31,7 @@ type DuploAsgProfile struct {
 	NetworkInterfaces    *[]DuploNativeHostNetworkInterface `json:"NetworkInterfaces,omitempty"`
 	Status               string                             `json:"Status,omitempty"`
 	Tags                 *[]DuploKeyStringValue             `json:"Tags,omitempty"`
+	TagsCsv              string                             `json:"TagsCsv,omitempty"`
 	TenantId             string                             `json:"TenantId,omitempty"`
 	UseSpotInstances     bool                               `json:"UseSpotInstances,omitempty"`
 	Volumes              *[]DuploNativeHostVolume           `json:"Volumes,omitempty"`

@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
@@ -351,6 +352,14 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Computed:      true,
 		Elem:          KeyValueSchema(),
 		ConflictsWith: []string{"minion_tags"},
+	}
+
+	awsASGSchema["aws_tags"] = &schema.Schema{
+		Description: "A map of arbitrary AWS tags applied to the ASG and its launched EC2 instances (routed via the backend's `TagsCsv` field). Use this for tags that aren't `AllocationTags` — those belong in `custom_data_tags`. Changes force replacement because the backend applies these tags only at create time.",
+		Type:        schema.TypeMap,
+		Optional:    true,
+		ForceNew:    true,
+		Elem:        &schema.Schema{Type: schema.TypeString},
 	}
 
 	return awsASGSchema
@@ -731,6 +740,12 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile, 
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
 	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
 	d.Set("custom_data_tags", keyValueToState("custom_data_tags", duplo.CustomDataTags))
+	if duplo.TagsCsv != "" {
+		var parsed map[string]string
+		if err := json.Unmarshal([]byte(duplo.TagsCsv), &parsed); err == nil {
+			d.Set("aws_tags", parsed)
+		}
+	}
 	d.Set("enabled_metrics", duplo.EnabledMetrics)
 	d.Set("arn", duplo.Arn)
 	// If a network interface was customized, certain fields are not returned by the backend.
@@ -832,6 +847,22 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 	}
 
 	asgProfile.MixedInstancesPolicy = expandAsgMixedInstancesPolicy(d)
+
+	// aws_tags is routed through the backend's TagsCsv field (JSON-encoded),
+	// which is the only path that produces real AWS tags on the ASG and
+	// launched EC2 instances.
+	if v, ok := d.GetOk("aws_tags"); ok {
+		raw := v.(map[string]interface{})
+		if len(raw) > 0 {
+			stringMap := make(map[string]string, len(raw))
+			for k, val := range raw {
+				stringMap[k] = val.(string)
+			}
+			if jsonBytes, err := json.Marshal(stringMap); err == nil {
+				asgProfile.TagsCsv = string(jsonBytes)
+			}
+		}
+	}
 
 	return asgProfile
 }
