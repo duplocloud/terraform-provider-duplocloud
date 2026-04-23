@@ -151,6 +151,7 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_efs_lifecycle_policy":                      resourceAwsEFSLifecyclePolicy(),
 			"duplocloud_k8s_job":                                       resourceKubernetesJobV1(),
 			"duplocloud_k8s_cron_job":                                  resourceKubernetesCronJobV1Beta1(),
+			"duplocloud_k8s_daemon_set":                                resourceKubernetesDaemonSetV1(),
 			"duplocloud_k8_persistent_volume_claim":                    resourceK8PVC(),
 			"duplocloud_k8_storage_class":                              resourceK8StorageClass(),
 			"duplocloud_aws_batch_scheduling_policy":                   resourceAwsBatchSchedulingPolicy(),
