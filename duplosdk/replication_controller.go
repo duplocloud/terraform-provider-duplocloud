@@ -59,42 +59,6 @@ type DuploPodTemplate struct {
 	LBConfigurations      map[string]*DuploLbConfiguration `json:"LBConfigurations,omitempty"`
 }
 
-// DuploReplicationControllerApi represents the flattened API response from GetReplicationControllerApiByName
-// This is different from the list API which returns nested Template structure
-type DuploReplicationControllerApi struct {
-	Name                              string                 `json:"Name"`
-	AppName                           string                 `json:"AppName,omitempty"`
-	Replicas                          int                    `json:"Replicas"`
-	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
-	DockerImage                       string                 `json:"DockerImage"`
-	NetworkId                         string                 `json:"NetworkId"`
-	AgentPlatform                     int                    `json:"AgentPlatform"`
-	Cloud                             int                    `json:"Cloud"`
-	Volumes                           string                 `json:"Volumes,omitempty"`
-	Commands                          string                 `json:"Commands,omitempty"`
-	ApplicationUrl                    string                 `json:"ApplicationUrl,omitempty"`
-	SecondaryTenant                   string                 `json:"SecondaryTenant,omitempty"`
-	ExtraConfig                       string                 `json:"ExtraConfig,omitempty"`
-	OtherDockerConfig                 string                 `json:"OtherDockerConfig,omitempty"`
-	OtherDockerHostConfig             string                 `json:"OtherDockerHostConfig,omitempty"`
-	DeviceIds                         []string               `json:"DeviceIds,omitempty"`
-	AllocationTags                    string                 `json:"AllocationTags,omitempty"`
-	IsInfraDeployment                 bool                   `json:"IsInfraDeployment,omitempty"`
-	DnsPrfx                           string                 `json:"DnsPrfx,omitempty"`
-	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
-	IsDaemonset                       bool                   `json:"IsDaemonset,omitempty"`
-	IsUniqueK8sNodeRequired           bool                   `json:"IsUniqueK8sNodeRequired"`
-	ShouldSpreadAcrossZones           bool                   `json:"ShouldSpreadAcrossZones"`
-	IsLBSyncedDeployment              bool                   `json:"IsLBSyncedDeployment,omitempty"`
-	IsReplicaCollocationAllowed       bool                   `json:"IsReplicaCollocationAllowed,omitempty"`
-	IsAnyHostAllowed                  bool                   `json:"IsAnyHostAllowed,omitempty"`
-	IsCloudCredsFromK8sServiceAccount bool                   `json:"IsCloudCredsFromK8sServiceAccount,omitempty"`
-	LBConfigurations                  []DuploLbConfiguration `json:"LBConfigurations,omitempty"`
-	Tags                              *[]DuploKeyStringValue `json:"Tags,omitempty"`
-	HPASpecs                          map[string]interface{} `json:"HPASpecs,omitempty"`
-	K8SWorkerOs                       *int                   `json:"K8SWorkerOs,omitempty"`
-	Image                             string                 `json:"Image,omitempty"`
-}
 
 // DuploPodContainer represents a container within a pod template in the Duplo SDK
 type DuploPodContainer struct {
@@ -277,6 +241,9 @@ func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicat
 		fmt.Sprintf("v3/subscriptions/%s/replicationcontroller/%s", tenantID, name),
 		&rp)
 	if err != nil {
+		if err.Status() == 404 {
+			return nil, nil
+		}
 		return nil, err
 	}
 
