@@ -59,7 +59,6 @@ type DuploPodTemplate struct {
 	LBConfigurations      map[string]*DuploLbConfiguration `json:"LBConfigurations,omitempty"`
 }
 
-
 // DuploPodContainer represents a container within a pod template in the Duplo SDK
 type DuploPodContainer struct {
 	Name       string `json:"Name"`
