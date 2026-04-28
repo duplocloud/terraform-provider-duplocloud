@@ -158,8 +158,7 @@ func kafkaClusterSchema() map[string]*schema.Schema {
 		},
 		"sasl_iam": {
 			Description: "Enable SASL/IAM client authentication. Applies to both provisioned and serverless clusters. " +
-				"**Note:** In-place updates of this property are not currently supported. To change this setting, update it directly in AWS and run `terraform import` to sync the state. " +
-				"For serverless clusters, SASL/IAM is always enabled and cannot be disabled.",
+				"For serverless clusters, SASL/IAM is always enabled and cannot be changed after creation.",
 			Type:     schema.TypeBool,
 			Optional: true,
 			Computed: true,
@@ -491,8 +490,24 @@ func resourceKafkaClusterUpdate(ctx context.Context, d *schema.ResourceData, m i
 		if err != nil {
 			return diag.Errorf("Error updating tenant %s kafka cluster '%s' configuration: %s", tenantID, name, err)
 		}
-		log.Printf("[TRACE] resourceKafkaClusterUpdate ******** end")
+		if err := duploKafkaClusterWaitUntilReady(ctx, c, tenantID, arn, d.Timeout("update")); err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
+	if d.HasChange("sasl_iam") {
+		auth := &duplosdk.DuploKafkaClientAuthentication{
+			Sasl: &duplosdk.DuploKafkaSasl{
+				Iam: &duplosdk.DuploKafkaSaslIam{
+					Enabled: d.Get("sasl_iam").(bool),
+				},
+			},
+		}
+		// Pass an empty CurrentVersion so the backend refetches the latest value, which is necessary in case
+		// a prior update (e.g. configuration) in this same Update has bumped the cluster's CurrentVersion.
+		if err := c.UpdateKafkaClusterClientAuthentication(tenantID, arn, "", auth); err != nil {
+			return diag.Errorf("Error updating tenant %s kafka cluster '%s' client authentication: %s", tenantID, name, err)
+		}
 	}
 
 	err = duploKafkaClusterWaitUntilReady(ctx, c, tenantID, arn, d.Timeout("update"))
@@ -529,6 +544,9 @@ func validateKafkaParameters(ctx context.Context, d *schema.ResourceDiff, m inte
 		if d.NewValueKnown("sasl_iam") && !d.Get("sasl_iam").(bool) {
 			return fmt.Errorf("sasl_iam cannot be set to false for serverless clusters, SASL/IAM is always enabled")
 		}
+		if d.Id() != "" && d.HasChange("sasl_iam") {
+			return fmt.Errorf("sasl_iam cannot be updated after creation for serverless clusters; create a new serverless cluster with the desired sasl_iam setting")
+		}
 	} else {
 		if v := d.Get("instance_type"); v.(string) == "" {
 			return fmt.Errorf("instance_type required for provisioned cluster when is_serverless is false")
@@ -545,11 +563,6 @@ func validateKafkaParameters(ctx context.Context, d *schema.ResourceDiff, m inte
 				return fmt.Errorf("encryption_in_transit must be set to \"TLS\" when sasl_iam is enabled on a provisioned cluster")
 			}
 		}
-	}
-
-	// In-place updates of sasl_iam are not currently supported. Update the setting directly in AWS and import the updated state.
-	if d.Id() != "" && d.HasChange("sasl_iam") {
-		return fmt.Errorf("in-place updates of sasl_iam are not supported; update the setting directly in AWS and run `terraform import` to sync the state")
 	}
 
 	return nil
