@@ -365,8 +365,12 @@ func (c *Client) InfrastructureGetSubnet(infraName string, subnetName string, su
 	}
 
 	// Return the subnet, if it exists.
+	// Use a case-insensitive name compare: Azure normalizes subnet names to lowercase
+	// server-side (e.g. user-supplied "mySubnet1" is stored as "custom-mysubnet1"),
+	// while the name we search with is derived from the ID which preserves the
+	// user's original case.
 	for _, subnet := range *config.Vnet.Subnets {
-		if subnet.Name == subnetName && subnet.AddressPrefix == subnetCidr {
+		if strings.EqualFold(subnet.Name, subnetName) && subnet.AddressPrefix == subnetCidr {
 
 			// Interpret the subnet type (FIXME - the backend needs to return this)
 			if subnet.SubnetType == "" {
