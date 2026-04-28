@@ -233,6 +233,7 @@ func (c *Client) ReplicationControllerList(tenantID string) (*[]DuploReplication
 }
 
 // ReplicationControllerGet retrieves a replication controller via the Duplo API.
+// It tries the v3 endpoint first; on 404 it falls back to GetReplicationControllerApiByName.
 func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicationController, ClientError) {
 	var rp DuploReplicationController
 	err := c.getAPI(
@@ -240,10 +241,10 @@ func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicat
 		fmt.Sprintf("v3/subscriptions/%s/replicationcontroller/%s", tenantID, name),
 		&rp)
 	if err != nil {
-		if err.Status() == 404 {
-			return nil, nil
+		if err.Status() != 404 {
+			return nil, err
 		}
-		return nil, err
+		return c.replicationControllerGetFallback(tenantID, name)
 	}
 
 	if rp.Name == "" {
@@ -251,6 +252,19 @@ func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicat
 	}
 
 	return &rp, nil
+}
+
+func (c *Client) replicationControllerGetFallback(tenantID, name string) (*DuploReplicationController, ClientError) {
+	list, err := c.ReplicationControllerList(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range *list {
+		if (*list)[i].Name == name {
+			return &(*list)[i], nil
+		}
+	}
+	return nil, nil
 }
 
 func (c *Client) ReplicationControllerExists(tenantID, name string) (bool, ClientError) {
