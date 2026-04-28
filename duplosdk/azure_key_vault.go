@@ -29,7 +29,7 @@ type DuploAzureSecretItem struct {
 type DuploAzureKeyVaultRequest struct {
 	SecretName  string `json:"SecretName"`
 	SecretValue string `json:"SecretValue,omitempty"`
-	SecretType  string `json:"SecretType,omitempty"`
+	ContentType string `json:"ContentType,omitempty"`
 }
 
 func (c *Client) KeyVaultSecretCreate(tenantID string, rq *DuploAzureKeyVaultRequest) ClientError {
