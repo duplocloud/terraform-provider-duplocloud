@@ -90,10 +90,11 @@ func duploMwaaAirflowSchema() map[string]*schema.Schema {
 			}, false),
 		},
 		"environment_class": {
-			Description: "Environment class for the cluster. Possible options are `mw1.micro`, `mw1.small`, `mw1.medium`, `mw1.large`, `mw1.xlarge`, `mw1.2xlarge`.",
+			Description: "Environment class for the cluster. Possible options are `mw1.micro`, `mw1.small`, `mw1.medium`, `mw1.large`, `mw1.xlarge`, `mw1.2xlarge`. Changing this forces a new resource to be created.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
+			ForceNew:    true,
 			ValidateFunc: validation.StringInSlice([]string{
 				"mw1.micro", "mw1.small", "mw1.medium", "mw1.large", "mw1.xlarge", "mw1.2xlarge",
 			}, false),
@@ -417,11 +418,6 @@ func resourceMwaaAirflowUpdate(ctx context.Context, d *schema.ResourceData, m in
 	if d.HasChange("dag_s3_path") {
 		updated = true
 		input.DagS3Path = d.Get("dag_s3_path").(string)
-	}
-
-	if d.HasChange("environment_class") {
-		updated = true
-		input.EnvironmentClass = d.Get("environment_class").(string)
 	}
 
 	if d.HasChange("logging_configuration") {
