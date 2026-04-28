@@ -233,46 +233,47 @@ func (c *Client) ReplicationControllerList(tenantID string) (*[]DuploReplication
 }
 
 // ReplicationControllerGet retrieves a replication controller via the Duplo API.
+// It tries the v3 endpoint first; on 404 it falls back to GetReplicationControllerApiByName.
 func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicationController, ClientError) {
-	allResources, err := c.ReplicationControllerList(tenantID)
+	var rp DuploReplicationController
+	err := c.getAPI(
+		fmt.Sprintf("ReplicationControllerGet(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/replicationcontroller/%s", tenantID, name),
+		&rp)
 	if err != nil {
-		return nil, err
+		if err.Status() != 404 {
+			return nil, err
+		}
+		return c.replicationControllerGetFallback(tenantID, name)
 	}
 
-	if allResources == nil {
+	if rp.Name == "" {
 		return nil, nil
 	}
 
-	// Return the resource, if it exists.
-	for i, resource := range *allResources {
-		if resource.Name == name {
-			return &(*allResources)[i], nil
+	return &rp, nil
+}
+
+func (c *Client) replicationControllerGetFallback(tenantID, name string) (*DuploReplicationController, ClientError) {
+	list, err := c.ReplicationControllerList(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range *list {
+		if (*list)[i].Name == name {
+			return &(*list)[i], nil
 		}
 	}
-
-	// No resource was found.
 	return nil, nil
 }
 
 func (c *Client) ReplicationControllerExists(tenantID, name string) (bool, ClientError) {
-	allResources, err := c.ReplicationControllerList(tenantID)
+	rp, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
 		return false, err
 	}
 
-	if allResources == nil {
-		return false, nil
-	}
-
-	// Return the resource, if it exists.
-	for _, resource := range *allResources {
-		if resource.Name == name {
-			return true, nil
-		}
-	}
-
-	// No resource was found.
-	return false, nil
+	return rp != nil, nil
 }
 
 // ReplicationControllerCreate creates a replication controller via the Duplo API.
@@ -336,31 +337,19 @@ func (c *Client) LbConfigurationList(tenantID string) (*[]DuploLbConfiguration, 
 
 // ReplicationControllerLbConfigurationList retrieves a list of LB configurations for a specific replication controller in the given tenant.
 func (c *Client) ReplicationControllerLbConfigurationList(tenantID string, name string) (*[]DuploLbConfiguration, ClientError) {
-	allLbs, err := c.LbConfigurationList(tenantID)
+	rp, err := c.ReplicationControllerGet(tenantID, name)
 	if err != nil {
 		return nil, err
 	}
-	//list,err:=c.ReplicationControllerList(tenantID)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	// Find and return the matching LBs.
-	rpcLbs := make([]DuploLbConfiguration, 0, len(*allLbs))
-	for _, lb := range *allLbs {
-		if lb.ReplicationControllerName == name {
-			//	for _, rl := range *list {
-			//		if rl.Name == name {
-			//
-			//			rpcLbs = append(rpcLbs, lb)
-			//		}
-			//	}
-
-			rpcLbs = append(rpcLbs, lb)
-		}
+	if rp == nil || rp.Template == nil {
+		return &[]DuploLbConfiguration{}, nil
 	}
 
-	return &rpcLbs, nil
+	lbs := make([]DuploLbConfiguration, 0, len(rp.Template.LBConfigurations))
+	for _, lb := range rp.Template.LBConfigurations {
+		lbs = append(lbs, *lb)
+	}
+	return &lbs, nil
 }
 
 // ReplicationControllerLbConfigurationBulkUpdate bulk updates a replication controller's lb configuration via the Duplo API.
