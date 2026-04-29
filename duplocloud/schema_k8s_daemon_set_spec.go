@@ -1,11 +1,15 @@
 package duplocloud
 
 import (
+	"regexp"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
+
+var intOrPercentRegexp = regexp.MustCompile(`^\d+%?$`)
 
 func daemonSetSpecFields() map[string]*schema.Schema {
 	podTemplateFields := map[string]*schema.Schema{
@@ -92,16 +96,18 @@ func daemonSetSpecFields() map[string]*schema.Schema {
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
 								"max_unavailable": {
-									Type:        schema.TypeString,
-									Optional:    true,
-									Default:     "1",
-									Description: "The maximum number of DaemonSet pods that can be unavailable during the update. Value can be an absolute number (ex: 5) or a percentage of total number of DaemonSet pods at the start of the update (ex: 10%). Default is 1.",
+									Type:         schema.TypeString,
+									Optional:     true,
+									Default:      "1",
+									ValidateFunc: validation.StringMatch(intOrPercentRegexp, "must be a non-negative integer (e.g. 5) or a percentage (e.g. 10%)"),
+									Description:  "The maximum number of DaemonSet pods that can be unavailable during the update. Value can be an absolute number (ex: 5) or a percentage of total number of DaemonSet pods at the start of the update (ex: 10%). Default is 1.",
 								},
 								"max_surge": {
-									Type:        schema.TypeString,
-									Optional:    true,
-									Default:     "0",
-									Description: "The maximum number of nodes with an existing available DaemonSet pod that can have an updated DaemonSet pod during during an update. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%). Default is 0.",
+									Type:         schema.TypeString,
+									Optional:     true,
+									Default:      "0",
+									ValidateFunc: validation.StringMatch(intOrPercentRegexp, "must be a non-negative integer (e.g. 5) or a percentage (e.g. 10%)"),
+									Description:  "The maximum number of nodes with an existing available DaemonSet pod that can have an updated DaemonSet pod during during an update. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%). Default is 0.",
 								},
 							},
 						},

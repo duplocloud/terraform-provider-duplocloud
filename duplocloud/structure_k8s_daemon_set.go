@@ -93,7 +93,13 @@ func flattenDaemonSetSpec(in appsv1.DaemonSetSpec, d *schema.ResourceData, meta 
 func flattenDaemonSetUpdateStrategy(in appsv1.DaemonSetUpdateStrategy) []interface{} {
 	att := make(map[string]interface{})
 
-	att["type"] = string(in.Type)
+	// The upstream field is `json:"type,omitempty"`, so the backend can return an empty
+	// value. Default to RollingUpdate to match the schema default and avoid perpetual diffs.
+	strategyType := in.Type
+	if strategyType == "" {
+		strategyType = appsv1.RollingUpdateDaemonSetStrategyType
+	}
+	att["type"] = string(strategyType)
 
 	if in.RollingUpdate != nil {
 		// Always emit both fields so state matches schema defaults when the backend
