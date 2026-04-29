@@ -291,10 +291,13 @@ func asgWarmPoolWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID
 		Refresh: func() (interface{}, string, error) {
 			rp, err := c.AsgWarmPoolGet(tenantID, asgName)
 			if err != nil {
+				if err.Status() == 404 {
+					return nil, "pending", nil
+				}
 				return nil, "", err
 			}
-			if rp == nil {
-				return nil, "pending", nil
+			if rp == nil || rp.WarmPoolConfiguration == nil {
+				return rp, "pending", nil
 			}
 			ready := 0
 			for _, inst := range rp.Instances {
