@@ -545,7 +545,7 @@ func validateKafkaParameters(ctx context.Context, d *schema.ResourceDiff, m inte
 			return fmt.Errorf("sasl_iam cannot be set to false for serverless clusters, SASL/IAM is always enabled")
 		}
 		if d.Id() != "" && d.HasChange("sasl_iam") {
-			return fmt.Errorf("sasl_iam cannot be updated after creation for serverless clusters; create a new serverless cluster with the desired sasl_iam setting")
+			return fmt.Errorf("sasl_iam cannot be updated after creation for serverless clusters; serverless clusters always have sasl_iam enabled")
 		}
 	} else {
 		if v := d.Get("instance_type"); v.(string) == "" {
