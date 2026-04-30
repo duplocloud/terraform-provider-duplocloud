@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -639,15 +638,13 @@ func expandAwsLambdaTags(d *schema.ResourceData) map[string]string {
 // `aws/tags/arn/{arn}` endpoints (POST for new, PUT for change, DELETE for
 // removal) — same path the duplocloud UI uses. The Lambda configuration
 // update endpoint silently drops tag changes, so they must be applied
-// separately. The path ARN is triple-QueryEscaped — the backend route
-// binder decodes it more than once and any other encoding leaves the
-// ARN's colons to break binding.
+// separately. URL-escaping of the ARN and key segments is handled inside
+// the duplosdk helpers.
 func updateAwsLambdaFunctionTags(c *duplosdk.Client, tenantID string, d *schema.ResourceData) error {
 	arn := d.Get("arn").(string)
 	if arn == "" {
 		return fmt.Errorf("cannot update lambda tags: arn is empty")
 	}
-	marn := url.QueryEscape(url.QueryEscape(url.QueryEscape(arn)))
 
 	oldRaw, newRaw := d.GetChange("tags")
 	oldTags := oldRaw.(map[string]interface{})
@@ -665,9 +662,9 @@ func updateAwsLambdaFunctionTags(c *duplosdk.Client, tenantID string, d *schema.
 		tag := &duplosdk.DuploAWSTag{Key: k, Value: newVal}
 		var err duplosdk.ClientError
 		if existed {
-			err = c.UpdateAWSTag(tenantID, marn, k, tag)
+			err = c.UpdateAWSTag(tenantID, arn, k, tag)
 		} else {
-			err = c.CreateAWSTag(tenantID, marn, tag)
+			err = c.CreateAWSTag(tenantID, arn, tag)
 		}
 		if err != nil {
 			return fmt.Errorf("setting tag %q on lambda %s: %s", k, arn, err)
@@ -678,7 +675,7 @@ func updateAwsLambdaFunctionTags(c *duplosdk.Client, tenantID string, d *schema.
 		if _, kept := newTags[k]; kept {
 			continue
 		}
-		if err := c.DeleteAWSTag(tenantID, marn, k); err != nil {
+		if err := c.DeleteAWSTag(tenantID, arn, k); err != nil {
 			return fmt.Errorf("deleting tag %q on lambda %s: %s", k, arn, err)
 		}
 	}
