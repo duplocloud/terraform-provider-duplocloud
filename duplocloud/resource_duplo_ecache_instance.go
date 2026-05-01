@@ -87,7 +87,8 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 		"engine_version": {
 			Description: "The engine version of the elastic instance.\n" +
 				"See AWS documentation for the [available Redis and Valkey instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html) " +
-				"or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html).",
+				"or the [available Memcached instance types](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/supported-engine-versions-mc.html). " +
+				"Only upgrades are supported; downgrades are rejected on update.",
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
@@ -118,13 +119,13 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"automatic_failover_enabled": {
-			Description: "Enables automatic failover.",
+			Description: "Enables automatic failover. Requires `replicas` to be 2 or more. Must be `true` when `enable_cluster_mode` or `multi_az_enabled` is `true`.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
 		"multi_az_enabled": {
-			Description: "Enables Multi-AZ support for the ElastiCache instance. Multi-AZ is only applicable for Redis (cache_type=0) and Valkey (cache_type=2). When enabled, automatic_failover_enabled must also be set to true.",
+			Description: "Enables Multi-AZ support for the ElastiCache instance. Multi-AZ is only applicable for Redis (cache_type=0) and Valkey (cache_type=2). When enabled, automatic_failover_enabled must also be set to true. Requires `replicas` to be 2 or more.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -137,7 +138,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"auth_token": {
-			Description: "Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.\n\n" +
+			Description: "Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is set to `true`.\n\n" +
 				"See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.",
 			Type:     schema.TypeString,
 			Optional: true,
@@ -197,7 +198,7 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"snapshot_retention_limit": {
-			Description:  "Specify retention limit in days. Accepted values - 1-35.",
+			Description:  "Specify retention limit in days. Accepted values - 1-35. Not supported for Memcached (`cache_type=1`).",
 			Type:         schema.TypeInt,
 			Optional:     true,
 			Computed:     true,
