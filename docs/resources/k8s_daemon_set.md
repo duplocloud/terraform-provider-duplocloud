@@ -77,7 +77,6 @@ resource "duplocloud_k8s_daemon_set" "myapp" {
 Optional:
 
 - `annotations` (Map of String) An unstructured key value map stored with the daemonset that may be used to store arbitrary metadata. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-- `generate_name` (String) Prefix, used by the server, to generate a unique name ONLY IF the `name` field has not been provided. This value will also be combined with a unique suffix. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#idempotency
 - `labels` (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the daemonset. May match selectors of replication controllers and services. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 - `name` (String) Name of the daemonset, must be unique. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
 - `namespace` (String) Namespace defines the space within which name of the daemonset must be unique.
@@ -2201,7 +2200,7 @@ Optional:
 
 Optional:
 
-- `max_surge` (String) The maximum number of nodes with an existing available DaemonSet pod that can have an updated DaemonSet pod during during an update. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%). Default is 0. Defaults to `0`.
+- `max_surge` (String) The maximum number of nodes with an existing available DaemonSet pod that can have an updated DaemonSet pod during an update. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%). Default is 0. Defaults to `0`.
 - `max_unavailable` (String) The maximum number of DaemonSet pods that can be unavailable during the update. Value can be an absolute number (ex: 5) or a percentage of total number of DaemonSet pods at the start of the update (ex: 10%). Default is 1. Defaults to `1`.
 
 

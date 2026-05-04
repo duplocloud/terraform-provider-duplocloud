@@ -101,18 +101,22 @@ func flattenDaemonSetUpdateStrategy(in appsv1.DaemonSetUpdateStrategy) []interfa
 	}
 	att["type"] = string(strategyType)
 
-	if in.RollingUpdate != nil {
-		// Always emit both fields so state matches schema defaults when the backend
-		// omits zero-value fields (Kubernetes drops MaxSurge=0 on round-trip).
+	// Emit rolling_update with schema defaults whenever strategy type is
+	// RollingUpdate, even if the backend omits the rollingUpdate object — keeps
+	// state aligned with schema defaults so configs that include rolling_update
+	// don't see perpetual diffs.
+	if strategyType == appsv1.RollingUpdateDaemonSetStrategyType {
 		ru := map[string]interface{}{
 			"max_unavailable": "1",
 			"max_surge":       "0",
 		}
-		if in.RollingUpdate.MaxUnavailable != nil {
-			ru["max_unavailable"] = in.RollingUpdate.MaxUnavailable.String()
-		}
-		if in.RollingUpdate.MaxSurge != nil {
-			ru["max_surge"] = in.RollingUpdate.MaxSurge.String()
+		if in.RollingUpdate != nil {
+			if in.RollingUpdate.MaxUnavailable != nil {
+				ru["max_unavailable"] = in.RollingUpdate.MaxUnavailable.String()
+			}
+			if in.RollingUpdate.MaxSurge != nil {
+				ru["max_surge"] = in.RollingUpdate.MaxSurge.String()
+			}
 		}
 		att["rolling_update"] = []interface{}{ru}
 	}

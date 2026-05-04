@@ -107,7 +107,7 @@ func daemonSetSpecFields() map[string]*schema.Schema {
 									Optional:     true,
 									Default:      "0",
 									ValidateFunc: validation.StringMatch(intOrPercentRegexp, "must be a non-negative integer (e.g. 5) or a percentage (e.g. 10%)"),
-									Description:  "The maximum number of nodes with an existing available DaemonSet pod that can have an updated DaemonSet pod during during an update. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%). Default is 0.",
+									Description:  "The maximum number of nodes with an existing available DaemonSet pod that can have an updated DaemonSet pod during an update. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%). Default is 0.",
 								},
 							},
 						},

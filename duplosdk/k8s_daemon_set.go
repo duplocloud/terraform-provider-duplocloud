@@ -46,7 +46,7 @@ func (c *Client) K8sDaemonSetGet(tenantId, name string) (*DuploK8sDaemonSet, Cli
 		if err.Status() == 404 {
 			return nil, nil
 		}
-		return nil, newClientError(fmt.Sprintf("daemonset %s not found. %s", name, err))
+		return nil, err
 	}
 	rp.TenantId = tenantId
 
