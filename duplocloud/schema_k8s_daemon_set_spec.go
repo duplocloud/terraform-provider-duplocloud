@@ -13,7 +13,7 @@ var intOrPercentRegexp = regexp.MustCompile(`^\d+%?$`)
 
 func daemonSetSpecFields() map[string]*schema.Schema {
 	podTemplateFields := map[string]*schema.Schema{
-		"metadata": metadataSchema("daemonset", true),
+		"metadata": metadataSchema("daemonset", false),
 		"spec": {
 			Type:        schema.TypeList,
 			Description: "Spec of the pods managed by the daemonset",
