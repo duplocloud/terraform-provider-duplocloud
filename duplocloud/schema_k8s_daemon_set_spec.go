@@ -27,13 +27,15 @@ func daemonSetSpecFields() map[string]*schema.Schema {
 
 	// DaemonSets only allow restart_policy=Always. The shared podSpecFields defaults to
 	// OnFailure (which Job/CronJob require) and its validator excludes Always, so override
-	// the default and widen the validator to accept Always for this resource only.
+	// the default, validator, and description to match the enforced behaviour for this
+	// resource only.
 	podTemplateSpecSchema := podTemplateFields["spec"].Elem.(*schema.Resource)
 	restartPolicy := podTemplateSpecSchema.Schema["restart_policy"]
 	restartPolicy.Default = string(corev1.RestartPolicyAlways)
 	restartPolicy.ValidateFunc = validation.StringInSlice([]string{
 		string(corev1.RestartPolicyAlways),
 	}, false)
+	restartPolicy.Description = "Restart policy for all containers within the pod. DaemonSets only support `Always`. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy."
 
 	return map[string]*schema.Schema{
 		"min_ready_seconds": {
