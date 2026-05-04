@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"strings"
 	"time"
 
@@ -69,13 +68,12 @@ func resourceAwsTagRead(ctx context.Context, d *schema.ResourceData, m interface
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	marn := url.QueryEscape(url.QueryEscape(url.QueryEscape(arn)))
 
 	log.Printf("[TRACE] resourceAwsTagRead(%s, %s, %s): start", tenantId, arn, key)
 
 	c := m.(*duplosdk.Client)
 
-	tag, clientErr := c.GetAWSTag(tenantId, marn, key)
+	tag, clientErr := c.GetAWSTag(tenantId, arn, key)
 	if tag == nil {
 		d.SetId("") // object missing
 		return nil
@@ -99,7 +97,6 @@ func resourceAwsTagRead(ctx context.Context, d *schema.ResourceData, m interface
 func resourceAwsTagCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	tenantID := d.Get("tenant_id").(string)
 	arn := d.Get("arn").(string)
-	marn := url.QueryEscape(url.QueryEscape(url.QueryEscape(arn)))
 	tag := &duplosdk.DuploAWSTag{
 		Key:   d.Get("key").(string),
 		Value: d.Get("value").(string),
@@ -107,14 +104,14 @@ func resourceAwsTagCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	log.Printf("[TRACE] resourceAwsTagCreate(%s,%s,%s): start", tenantID, arn, tag.Key)
 	c := m.(*duplosdk.Client)
 
-	err := c.CreateAWSTag(tenantID, marn, tag)
+	err := c.CreateAWSTag(tenantID, arn, tag)
 	if err != nil {
 		return diag.Errorf("Error creating aws tag - (Tenant: %s,  arn: %s,  TagKey: %s) : %s", tenantID, arn, tag.Key, err)
 	}
 	id := fmt.Sprintf("%s/%s/%s", tenantID, tag.Key, arn)
 
 	diags := waitForResourceToBePresentAfterCreate(ctx, d, "AWS Tag", id, func() (interface{}, duplosdk.ClientError) {
-		return c.GetAWSTag(tenantID, marn, tag.Key)
+		return c.GetAWSTag(tenantID, arn, tag.Key)
 	})
 	if diags != nil {
 		return diags
@@ -134,11 +131,10 @@ func resourceAwsTagUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 	log.Printf("[TRACE] resourceAwsTagUpdate(%s, %s, %s): start", tenantID, arn, key)
-	marn := url.QueryEscape(url.QueryEscape(url.QueryEscape(arn)))
 
 	c := m.(*duplosdk.Client)
 
-	tag, clientErr := c.GetAWSTag(tenantID, marn, key)
+	tag, clientErr := c.GetAWSTag(tenantID, arn, key)
 	if tag == nil {
 		d.SetId("") // object missing
 		return nil
@@ -184,12 +180,11 @@ func resourceAwsTagDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	marn := url.QueryEscape(url.QueryEscape(url.QueryEscape(arn)))
 
 	log.Printf("[TRACE] resourceAwsTagDelete(%s, %s, %s): start", tenantID, arn, key)
 
 	c := m.(*duplosdk.Client)
-	clientErr := c.DeleteAWSTag(tenantID, marn, key)
+	clientErr := c.DeleteAWSTag(tenantID, arn, key)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
 			return nil
@@ -208,12 +203,35 @@ func resourceAwsTagDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-func parseAwsTagIdParts(id string) (tenantID, arn, tagKey string, err error) {
-	idParts := strings.SplitN(id, "/", 3)
-	if len(idParts) == 3 {
-		tenantID, arn, tagKey = idParts[0], idParts[1], idParts[2]
-	} else {
+// parseAwsTagIdParts splits the resource ID into its three components.
+//
+// The ID is built as "<tenant>/<key>/<arn>". A naive SplitN on "/" breaks
+// when the tag key contains "/" (e.g. "kubernetes.io/cluster/foo"), because
+// the trailing slashes get glued onto the ARN. Anchor on the "/arn:" prefix
+// of the ARN segment instead, and search from the right so that keys whose
+// content happens to contain "/arn:" still parse correctly.
+func parseAwsTagIdParts(id string) (tenantID, key, arn string, err error) {
+	firstSlash := strings.Index(id, "/")
+	if firstSlash < 0 {
 		err = fmt.Errorf("invalid resource ID: %s", id)
+		return
 	}
+	tenantID = id[:firstSlash]
+	rest := id[firstSlash+1:]
+
+	arnAnchor := strings.LastIndex(rest, "/arn:")
+	if arnAnchor < 0 {
+		// Legacy/non-ARN ID: fall back to the original three-segment split,
+		// which is still correct when the key contains no "/".
+		idParts := strings.SplitN(id, "/", 3)
+		if len(idParts) != 3 {
+			err = fmt.Errorf("invalid resource ID: %s", id)
+			return
+		}
+		tenantID, key, arn = idParts[0], idParts[1], idParts[2]
+		return
+	}
+	key = rest[:arnAnchor]
+	arn = rest[arnAnchor+1:]
 	return
 }
