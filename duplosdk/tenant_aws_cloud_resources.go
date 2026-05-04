@@ -865,6 +865,15 @@ func (c *Client) UpdateKafkaClusterConfiguration(tenantID string, encodedArn, ar
 	return rp, nil
 }
 
+// UpdateKafkaClusterClientAuthentication updates the client authentication settings of a provisioned Kafka cluster.
+func (c *Client) UpdateKafkaClusterClientAuthentication(tenantID, arn, cv string, auth *DuploKafkaClientAuthentication) ClientError {
+	rp := make(map[string]interface{})
+	return c.putAPI(fmt.Sprintf("UpdateKafkaClusterClientAuthentication(%s, %s)", tenantID, arn),
+		fmt.Sprintf("v3/subscriptions/%s/aws/kafka/client-authentication", tenantID),
+		map[string]interface{}{"ClusterArn": arn, "CurrentVersion": cv, "ClientAuthentication": auth},
+		&rp)
+}
+
 // TenantGetKafkaClusterBootstrapBrokers gets a non-cached view of the kafka cluster's info via Duplo.
 func (c *Client) TenantGetKafkaClusterBootstrapBrokers(tenantID string, arn string) (*DuploKafkaBootstrapBrokers, ClientError) {
 	rp := DuploKafkaBootstrapBrokers{}
