@@ -341,10 +341,11 @@ func asgWarmPoolWaitUntilGone(ctx context.Context, c *duplosdk.Client, tenantID,
 				}
 				return nil, "", err
 			}
-			if rp == nil || rp.WarmPoolConfiguration == nil || len(rp.Instances) == 0 {
+			if rp == nil || (rp.WarmPoolConfiguration == nil && len(rp.Instances) == 0) {
 				return rp, "gone", nil
 			}
-			log.Printf("[DEBUG] asgWarmPoolWaitUntilGone(%s, %s): %d instances still terminating", tenantID, asgName, len(rp.Instances))
+			log.Printf("[DEBUG] asgWarmPoolWaitUntilGone(%s, %s): %d instances still terminating, config-present=%t",
+				tenantID, asgName, len(rp.Instances), rp.WarmPoolConfiguration != nil)
 			return rp, "pending", nil
 		},
 		PollInterval: 20 * time.Second,
