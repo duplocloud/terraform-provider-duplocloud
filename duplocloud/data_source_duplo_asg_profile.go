@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
@@ -105,6 +106,7 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		"tags":                keyValueToState("tags", duplo.Tags),
 		"minion_tags":         keyValueToState("minion_tags", duplo.CustomDataTags),
 		"custom_data_tags":    keyValueToState("custom_data_tags", duplo.CustomDataTags),
+		"asg_tags":            parseAsgTagsCsv(duplo.TagsCsv),
 		"volume":              flattenNativeHostVolumes(duplo.Volumes),
 		"network_interface":   flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces),
 		"arn":                 duplo.Arn,
@@ -122,4 +124,16 @@ func flattenAsgProfile(duplo *duplosdk.DuploAsgProfile) map[string]interface{} {
 		mp["zones"] = []interface{}{}
 	}
 	return mp
+}
+
+func parseAsgTagsCsv(tagsCsv string) map[string]string {
+	parsed := map[string]string{}
+	if tagsCsv == "" {
+		return parsed
+	}
+	if err := json.Unmarshal([]byte(tagsCsv), &parsed); err != nil {
+		log.Printf("[WARN] Failed to unmarshal TagsCsv for asg_tags in ASG profile data source: %v", err)
+		return map[string]string{}
+	}
+	return parsed
 }
