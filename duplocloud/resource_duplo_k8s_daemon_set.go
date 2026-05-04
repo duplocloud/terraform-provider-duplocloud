@@ -42,7 +42,7 @@ func resourceKubernetesDaemonSetV1Schema(readonly bool) map[string]*schema.Schem
 			ForceNew:     true,
 			ValidateFunc: validation.IsUUID,
 		},
-		"metadata": namespacedMetadataSchema("daemonset", true),
+		"metadata": namespacedMetadataSchema("daemonset", false),
 		"spec": {
 			Type:        schema.TypeList,
 			Description: "Spec of the DaemonSet.",
