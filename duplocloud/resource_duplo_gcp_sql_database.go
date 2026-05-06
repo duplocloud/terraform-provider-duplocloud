@@ -123,7 +123,7 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Description:  "Edition for the database. Valid value ENTERPRISE, ENTERPRISE_PLUS",
 			Type:         schema.TypeString,
 			Optional:     true,
-			Default:      "ENTERPRISE",
+			Computed:     true,
 			ValidateFunc: validation.StringInSlice([]string{"ENTERPRISE", "ENTERPRISE_PLUS"}, false),
 			ForceNew:     true,
 		},
@@ -164,7 +164,11 @@ func resourceGcpSqlDBInstance() *schema.Resource {
 		UpdateContext: resourceGcpSqlDBInstanceUpdate,
 		DeleteContext: resourceGcpSqlDBInstanceDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				d.Set("wait_until_ready", true)
+				d.Set("need_backup", true)
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
@@ -378,9 +382,6 @@ func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name strin
 	flattenGcpLabels(d, duplo.Labels)
 	flattenIPAddress(d, duplo.IPAddress)
 	flattenDatabasFlags(d, duplo.DatabaseFlags)
-	if duplo.Edition == "" {
-		duplo.Edition = "ENTERPRISE"
-	}
 	d.Set("edition", duplo.Edition)
 	d.Set("ip_configuration", flattenGcpSqlDBInstanceIpConfiguration(duplo))
 }
@@ -395,6 +396,10 @@ func flattenGcpSqlDBInstanceIpConfiguration(duplo *duplosdk.DuploGCPSqlDBInstanc
 }
 
 func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInstance {
+	edition := d.Get("edition").(string)
+	if edition == "" {
+		edition = "ENTERPRISE"
+	}
 	rq := &duplosdk.DuploGCPSqlDBInstance{
 		Name:            d.Get("name").(string),
 		DatabaseVersion: d.Get("database_version").(string),
@@ -402,7 +407,7 @@ func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInsta
 		DataDiskSizeGb:  d.Get("disk_size").(int),
 		ResourceType:    duplosdk.DuploGCPDatabaseInstanceResourceType,
 		RootPassword:    d.Get("root_password").(string),
-		Edition:         d.Get("edition").(string),
+		Edition:         edition,
 	}
 	if v, ok := d.GetOk("labels"); ok && !isInterfaceNil(v) {
 		rq.Labels = map[string]string{}
