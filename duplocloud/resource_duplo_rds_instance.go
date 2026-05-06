@@ -426,10 +426,11 @@ func resourceDuploRdsInstanceRead(ctx context.Context, d *schema.ResourceData, m
 			return diag.Errorf("%s", err.Error())
 		}
 		duplo.DeletionProtection = clust.DeleteProtection
-		// Do not override AutoMinorVersionUpgrade with the cluster-level value:
-		// the instance-level value is what AWS actually applies and what the
-		// user-configured create body sets. Sourcing from the cluster caused
-		// drift when the backend cluster-level value was stale (DUPLO-42415).
+		// Do not override AutoMinorVersionUpgrade with the cluster-level value.
+		// The cluster-level field is a derived aggregate: AWS sets it to false
+		// if any instance in the cluster has it disabled. It does not represent
+		// the writer's own setting, so using it here caused spurious drift
+		// (DUPLO-42415).
 	}
 	d.SetId(fmt.Sprintf("v2/subscriptions/%s/RDSDBInstance/%s", duplo.TenantID, duplo.Name))
 	// Convert the object into Terraform resource data
