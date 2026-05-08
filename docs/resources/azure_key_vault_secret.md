@@ -31,7 +31,7 @@ resource "duplocloud_azure_key_vault_secret" "myapp" {
 
 ### Required
 
-- `name` (String) Specifies the name of the Key Vault Secret. Changing this forces a new resource to be created.
+- `name` (String) Specifies the name of the Key Vault Secret. Must start with the tenant's account name (case-insensitive); the Duplo backend filters list results by this prefix, so secrets without it cannot be retrieved after creation. Changing this forces a new resource to be created.
 - `tenant_id` (String) The GUID of the tenant that the key vault secret will be created in.
 - `value` (String, Sensitive) Specifies the value of the Key vault secret.
 
