@@ -187,7 +187,7 @@ func expandAzureKeyVaultSecret(d *schema.ResourceData) *duplosdk.DuploAzureKeyVa
 	return &duplosdk.DuploAzureKeyVaultRequest{
 		SecretName:  d.Get("name").(string),
 		SecretValue: d.Get("value").(string),
-		SecretType:  d.Get("type").(string),
+		ContentType: d.Get("type").(string),
 	}
 }
 
@@ -207,4 +207,7 @@ func flattenAzureKeyVaultSecret(d *schema.ResourceData, duplo *duplosdk.DuploAzu
 	d.Set("version", duplo.Identifier.Version)
 	d.Set("recovery_level", duplo.Attributes.RecoveryLevel)
 	d.Set("enabled", duplo.Attributes.Enabled)
+	if duplo.ContentType != "" {
+		d.Set("type", duplo.ContentType)
+	}
 }

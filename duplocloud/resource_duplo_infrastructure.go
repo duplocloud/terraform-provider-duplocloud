@@ -253,6 +253,7 @@ func resourceInfrastructure() *schema.Resource {
 				Description: "Custom CIDR blocks for private subnets. When specified, overrides the automatic subnet sizing from subnet_cidr.",
 				Type:        schema.TypeSet,
 				Optional:    true,
+				Computed:    true,
 				ForceNew:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
@@ -260,6 +261,7 @@ func resourceInfrastructure() *schema.Resource {
 				Description: "Custom CIDR blocks for public subnets. When specified, overrides the automatic subnet sizing from subnet_cidr.",
 				Type:        schema.TypeSet,
 				Optional:    true,
+				Computed:    true,
 				ForceNew:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
@@ -733,8 +735,25 @@ func infrastructureRead(ctx context.Context, c *duplosdk.Client, d *schema.Resou
 
 			d.Set("private_subnets", privateSubnets)
 			d.Set("public_subnets", publicSubnets)
-			d.Set("custom_private_subnet_cidrs", config.Vnet.CustomPrivateSubnetCidrs)
-			d.Set("custom_public_subnet_cidrs", config.Vnet.CustomPublicSubnetCidrs)
+
+			// The backend returns subnets in the Subnets list, not in a separate
+			// CustomPrivateSubnetCidrs/CustomPublicSubnetCidrs field. Always populate
+			// from the parsed subnet lists so state stays accurate on refresh and import.
+			privateCidrs := make([]string, 0, len(privateSubnets))
+			for _, s := range privateSubnets {
+				if cidr, ok := s["cidr_block"].(string); ok && cidr != "" {
+					privateCidrs = append(privateCidrs, cidr)
+				}
+			}
+			d.Set("custom_private_subnet_cidrs", privateCidrs)
+
+			publicCidrs := make([]string, 0, len(publicSubnets))
+			for _, s := range publicSubnets {
+				if cidr, ok := s["cidr_block"].(string); ok && cidr != "" {
+					publicCidrs = append(publicCidrs, cidr)
+				}
+			}
+			d.Set("custom_public_subnet_cidrs", publicCidrs)
 
 		}
 
