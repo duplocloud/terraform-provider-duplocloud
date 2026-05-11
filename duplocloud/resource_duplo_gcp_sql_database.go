@@ -78,10 +78,11 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"root_password": {
-			Description: "Provide root password for specific database versions.",
+			Description: "Provide root password for specific database versions. Create-only: the value is sent to GCP at creation and is never updated afterward by the provider. To rotate the password, change it in GCP first, update this field to match, then run `terraform apply` to sync state (no API call is made for this field).",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
+			Sensitive:   true,
 		},
 		"ip_address": {
 			Description: "List of IP addresses of the database.",
@@ -314,6 +315,7 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 		rq := expandGcpSqlDBInstance(d)
 		rq.Name = fullName
+		rq.RootPassword = "" // create-only; never push on update
 		resp, err := c.GCPSqlDBInstanceUpdate(tenantID, rq)
 		if err != nil {
 			return diag.Errorf("Error updating tenant %s sql database '%s': %s", tenantID, resp.Name, err)

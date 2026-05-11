@@ -104,13 +104,13 @@ resource "duplocloud_gcp_sql_database_instance" "db" {
 
 - `database_flag` (Block List) List of database flags to be set on the database instance. Please refer to the [Database Flags Documentation](https://cloud.google.com/sql/docs/mysql/flags) for more details on available flags. (see [below for nested schema](#nestedblock--database_flag))
 - `disk_size` (Number) The size of data disk, in GB. Size of a running instance cannot be reduced but can be increased. The minimum value is 10GB.
-- `edition` (String) Edition for the database. Valid value ENTERPRISE, ENTERPRISE_PLUS Defaults to `ENTERPRISE`.
+- `edition` (String) Edition for the database. Valid value ENTERPRISE, ENTERPRISE_PLUS
 - `ip_configuration` (Block List, Max: 1) IP configuration for the database instance.
 
 `NOTE`: ssl_mode and require_ssl: Specify how SSL/TLS is enforced in database connections. MySQL and PostgreSQL use the `ssl_mode` flag. If you must use the `require_ssl` flag for backward compatibility, then only the following value pairs are valid: * `ssl_mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED` and `require_ssl=false` * `ssl_mode=ENCRYPTED_ONLY` and `require_ssl=false` * `ssl_mode=TRUSTED_CLIENT_CERTIFICATE_REQUIRED` and `require_ssl=true` The value of `ssl_mode` gets priority over the value of `require_ssl`. For example, for the pair `ssl_mode=ENCRYPTED_ONLY` and `require_ssl=false`, the `ssl_mode=ENCRYPTED_ONLY` means only accept SSL connections, while the `require_ssl=false` means accept both non-SSL and SSL connections. MySQL and PostgreSQL databases respect `ssl_mode` in this case and accept only SSL connections. SQL Server uses the `require_ssl` flag. You can set the value for this flag to `true` or `false`. (see [below for nested schema](#nestedblock--ip_configuration))
 - `labels` (Map of String) Map of string keys and values that can be used to organize and categorize this resource.
 - `need_backup` (Boolean) Flag to enable backup process on delete of database Defaults to `true`.
-- `root_password` (String) Provide root password for specific database versions.
+- `root_password` (String, Sensitive) Provide root password for specific database versions. Create-only: the value is sent to GCP at creation and is never updated afterward by the provider. To rotate the password, change it in GCP first, update this field to match, then run `terraform apply` to sync state (no API call is made for this field).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `wait_until_ready` (Boolean) Whether or not to wait until sql database instance to be ready, after creation. Defaults to `true`.
 
@@ -159,4 +159,10 @@ Import is supported using the following syntax:
 #  - *SHORT_NAME* is the short name of the GCP SQL database instance
 #
 terraform import duplocloud_gcp_sql_database_instance.sql_instance *TENANT_ID*/*SHORT_NAME*
+
+# After import, `terraform plan` may show an in-place change for `root_password`
+# (the GCP API never returns the password, so state can't be populated from it).
+# Set `root_password` in your config to the existing password, then run
+# `terraform apply` once to sync state. No API call is made for this field;
+# the apply only updates the local state file.
 ```
