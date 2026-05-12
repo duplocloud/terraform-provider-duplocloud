@@ -155,7 +155,22 @@ func resourceAzureKeyVaultSecretCreate(ctx context.Context, d *schema.ResourceDa
 }
 
 func resourceAzureKeyVaultSecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	id := d.Id()
+	tenantID, name, err := parseAzureKeyVaultSecretIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceAzureKeyVaultSecretUpdate(%s, %s): start", tenantID, name)
+
+	c := m.(*duplosdk.Client)
+	rq := expandAzureKeyVaultSecret(d)
+	if clientErr := c.KeyVaultSecretCreate(tenantID, rq); clientErr != nil {
+		return diag.Errorf("Error updating tenant %s azure key vault secret '%s': %s", tenantID, name, clientErr)
+	}
+
+	diags := resourceAzureKeyVaultSecretRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAzureKeyVaultSecretUpdate(%s, %s): end", tenantID, name)
+	return diags
 }
 
 func resourceAzureKeyVaultSecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
