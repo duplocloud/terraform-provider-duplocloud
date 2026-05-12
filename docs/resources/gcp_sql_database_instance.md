@@ -42,8 +42,11 @@ resource "duplocloud_gcp_sql_database_instance" "sql" {
   root_password = "qwerty"
   need_backup   = true
 
-  # GCP redacts root_password in GET responses; ignore_changes prevents
-  # post-import drift on this field.
+  # Optional: suppress the post-import diff on root_password permanently.
+  # GCP redacts this field on read, so state cannot refresh from GCP.
+  # Omit this block if you want to manage rotations through Terraform —
+  # rotate in GCP, then update root_password here and run `apply` (the
+  # provider syncs state without pushing a password change to GCP).
   lifecycle {
     ignore_changes = [root_password]
   }
@@ -61,6 +64,7 @@ resource "duplocloud_gcp_sql_database_instance" "sql_instance" {
     created-by = "terraform"
   }
 
+  # Optional: see the comment on the example above for the tradeoff.
   lifecycle {
     ignore_changes = [root_password]
   }
@@ -98,6 +102,7 @@ resource "duplocloud_gcp_sql_database_instance" "db" {
   }
   root_password = "Guide#123"
 
+  # Optional: see the comment on the first example for the tradeoff.
   lifecycle {
     ignore_changes = [root_password]
   }
@@ -124,7 +129,7 @@ resource "duplocloud_gcp_sql_database_instance" "db" {
 `NOTE`: ssl_mode and require_ssl: Specify how SSL/TLS is enforced in database connections. MySQL and PostgreSQL use the `ssl_mode` flag. If you must use the `require_ssl` flag for backward compatibility, then only the following value pairs are valid: * `ssl_mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED` and `require_ssl=false` * `ssl_mode=ENCRYPTED_ONLY` and `require_ssl=false` * `ssl_mode=TRUSTED_CLIENT_CERTIFICATE_REQUIRED` and `require_ssl=true` The value of `ssl_mode` gets priority over the value of `require_ssl`. For example, for the pair `ssl_mode=ENCRYPTED_ONLY` and `require_ssl=false`, the `ssl_mode=ENCRYPTED_ONLY` means only accept SSL connections, while the `require_ssl=false` means accept both non-SSL and SSL connections. MySQL and PostgreSQL databases respect `ssl_mode` in this case and accept only SSL connections. SQL Server uses the `require_ssl` flag. You can set the value for this flag to `true` or `false`. (see [below for nested schema](#nestedblock--ip_configuration))
 - `labels` (Map of String) Map of string keys and values that can be used to organize and categorize this resource.
 - `need_backup` (Boolean) Flag to enable backup process on delete of database Defaults to `true`.
-- `root_password` (String, Sensitive) Provide root password for specific database versions. Create-only: sent to GCP at creation, never updated by the provider afterward. **Note**: The GCP Cloud SQL GET API redacts this field, so state cannot be refreshed from GCP. To avoid perpetual drift after `terraform import`, add `lifecycle { ignore_changes = [root_password] }` to your resource block. To rotate the password, change it in GCP first and update this field to match.
+- `root_password` (String, Sensitive) Provide root password for specific database versions. Create-only: the provider sends this to GCP at creation and never pushes a password change on update (GCP also redacts this field on read, so state cannot be refreshed from GCP). After `terraform import`, `plan` will show a diff on this field. You have two options: (1) set `root_password` in your config to the current GCP value and run `terraform apply` once — state syncs to the config value without any API call; future rotations: change the password in GCP first, then update `root_password` and re-apply. (2) Add `lifecycle { ignore_changes = [root_password] }` to suppress the diff permanently — use this if you do not want Terraform to track the password value (out-of-band rotations only).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `wait_until_ready` (Boolean) Whether or not to wait until sql database instance to be ready, after creation. Defaults to `true`.
 
@@ -174,11 +179,19 @@ Import is supported using the following syntax:
 #
 terraform import duplocloud_gcp_sql_database_instance.sql_instance *TENANT_ID*/*SHORT_NAME*
 
-# After import, `terraform plan` may show a diff for `root_password` because the
-# GCP Cloud SQL GET API redacts this field. To avoid this, add the following
-# lifecycle block to your resource:
+# After import, `terraform plan` will show a diff for `root_password` because the
+# GCP Cloud SQL GET API redacts this field. You have two options:
 #
-#   lifecycle {
-#     ignore_changes = [root_password]
-#   }
+# 1. Set `root_password` in your config to the current GCP value and run
+#    `terraform apply` once. The provider syncs state to the config value
+#    without pushing a password change to GCP. For future rotations, change
+#    the password in GCP first, then update `root_password` and re-apply.
+#
+# 2. Suppress the diff permanently by adding the lifecycle block below.
+#    Use this only if you do not want Terraform to track the password value
+#    (rotations must then be performed out-of-band):
+#
+#      lifecycle {
+#        ignore_changes = [root_password]
+#      }
 ```
