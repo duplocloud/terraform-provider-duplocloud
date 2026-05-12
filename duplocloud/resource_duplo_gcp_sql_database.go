@@ -78,7 +78,7 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"root_password": {
-			Description: "Provide root password for specific database versions. Create-only: sent to GCP at creation, never updated by the provider afterward. The Get API does not return this field, so state cannot be refreshed from GCP. To rotate the password, change it in GCP first, update this field to match, then run `terraform apply` to write the new value to terraform state.",
+			Description: "Provide root password for specific database versions. Create-only: sent to GCP at creation, never updated by the provider afterward. **Note**: The GCP Cloud SQL GET API redacts this field, so state cannot be refreshed from GCP. To avoid perpetual drift after `terraform import`, add `lifecycle { ignore_changes = [root_password] }` to your resource block. To rotate the password, change it in GCP first and update this field to match.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,

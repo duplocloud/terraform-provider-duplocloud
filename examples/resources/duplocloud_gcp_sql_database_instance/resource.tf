@@ -26,6 +26,12 @@ resource "duplocloud_gcp_sql_database_instance" "sql" {
 
   root_password = "qwerty"
   need_backup   = true
+
+  # GCP redacts root_password in GET responses; ignore_changes prevents
+  # post-import drift on this field.
+  lifecycle {
+    ignore_changes = [root_password]
+  }
 }
 
 resource "duplocloud_gcp_sql_database_instance" "sql_instance" {
@@ -38,6 +44,10 @@ resource "duplocloud_gcp_sql_database_instance" "sql_instance" {
   labels = {
     managed-by = "duplocloud"
     created-by = "terraform"
+  }
+
+  lifecycle {
+    ignore_changes = [root_password]
   }
 }
 
@@ -72,5 +82,9 @@ resource "duplocloud_gcp_sql_database_instance" "db" {
     require_ssl = true
   }
   root_password = "Guide#123"
+
+  lifecycle {
+    ignore_changes = [root_password]
+  }
 }
 
