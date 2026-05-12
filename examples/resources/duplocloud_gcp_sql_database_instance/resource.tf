@@ -26,6 +26,15 @@ resource "duplocloud_gcp_sql_database_instance" "sql" {
 
   root_password = "qwerty"
   need_backup   = true
+
+  # Optional: suppress the post-import diff on root_password permanently.
+  # GCP redacts this field on read, so state cannot refresh from GCP.
+  # Omit this block if you want to manage rotations through Terraform —
+  # rotate in GCP, then update root_password here and run `apply` (the
+  # provider syncs state without pushing a password change to GCP).
+  lifecycle {
+    ignore_changes = [root_password]
+  }
 }
 
 resource "duplocloud_gcp_sql_database_instance" "sql_instance" {
@@ -38,6 +47,11 @@ resource "duplocloud_gcp_sql_database_instance" "sql_instance" {
   labels = {
     managed-by = "duplocloud"
     created-by = "terraform"
+  }
+
+  # Optional: see the comment on the example above for the tradeoff.
+  lifecycle {
+    ignore_changes = [root_password]
   }
 }
 
@@ -72,5 +86,10 @@ resource "duplocloud_gcp_sql_database_instance" "db" {
     require_ssl = true
   }
   root_password = "Guide#123"
+
+  # Optional: see the comment on the first example for the tradeoff.
+  lifecycle {
+    ignore_changes = [root_password]
+  }
 }
 
