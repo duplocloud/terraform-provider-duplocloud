@@ -78,10 +78,11 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"root_password": {
-			Description: "Provide root password for specific database versions.",
+			Description: "Provide root password for specific database versions. Create-only: the provider sends this to GCP at creation and never pushes a password change on update (GCP also redacts this field on read, so state cannot be refreshed from GCP). After `terraform import`, `plan` will show a diff on this field. You have two options: (1) set `root_password` in your config to the current GCP value and run `terraform apply` once — state syncs to the config value without any API call; future rotations: change the password in GCP first, then update `root_password` and re-apply. (2) Add `lifecycle { ignore_changes = [root_password] }` to suppress the diff permanently — use this if you do not want Terraform to track the password value (out-of-band rotations only).",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
+			Sensitive:   true,
 		},
 		"ip_address": {
 			Description: "List of IP addresses of the database.",
@@ -314,6 +315,7 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 		rq := expandGcpSqlDBInstance(d)
 		rq.Name = fullName
+		rq.RootPassword = "" // create-only; never push on update
 		resp, err := c.GCPSqlDBInstanceUpdate(tenantID, rq)
 		if err != nil {
 			return diag.Errorf("Error updating tenant %s sql database '%s': %s", tenantID, resp.Name, err)

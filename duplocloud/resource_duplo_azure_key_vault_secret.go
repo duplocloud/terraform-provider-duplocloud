@@ -23,7 +23,7 @@ func duploAzureKeyVaultSecretSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "Specifies the name of the Key Vault Secret. Changing this forces a new resource to be created.",
+			Description: "Specifies the name of the Key Vault Secret. Must start with the tenant's account name (case-insensitive); the Duplo backend filters list results by this prefix, so secrets without it cannot be retrieved after creation. Changing this forces a new resource to be created.",
 			Type:        schema.TypeString,
 			ForceNew:    true,
 			Required:    true,
@@ -129,6 +129,10 @@ func resourceAzureKeyVaultSecretCreate(ctx context.Context, d *schema.ResourceDa
 	log.Printf("[TRACE] resourceAzureKeyVaultSecretCreate(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
 
+	if diags := validateKeyVaultSecretNamePrefix(c, tenantID, name); diags != nil {
+		return diags
+	}
+
 	rq := expandAzureKeyVaultSecret(d)
 	err = c.KeyVaultSecretCreate(tenantID, rq)
 	if err != nil {
@@ -180,6 +184,28 @@ func resourceAzureKeyVaultSecretDelete(ctx context.Context, d *schema.ResourceDa
 	}
 
 	log.Printf("[TRACE] resourceAzureKeyVaultSecretDelete(%s, %s): end", tenantID, name)
+	return nil
+}
+
+// validateKeyVaultSecretNamePrefix ensures the secret name starts with the tenant's
+// account name (case-insensitive). The Duplo backend's ListKeyVaultSecretsForTenant
+// filters list results by this prefix, so a secret without it would be created in
+// Azure but never returned by the post-create lookup, causing the provider to hang
+// until the create timeout expires.
+func validateKeyVaultSecretNamePrefix(c *duplosdk.Client, tenantID, name string) diag.Diagnostics {
+	tenant, err := c.GetTenantForUser(tenantID)
+	if err != nil {
+		return diag.Errorf("Unable to fetch tenant %s: %s", tenantID, err)
+	}
+	if tenant == nil {
+		return diag.Errorf("tenant %s not found", tenantID)
+	}
+	if !strings.HasPrefix(strings.ToLower(name), strings.ToLower(tenant.AccountName)) {
+		return diag.Errorf(
+			"azure key vault secret name %q must start with the tenant's account name %q (case-insensitive); the Duplo backend filters list results by this prefix and secrets without it cannot be retrieved after creation",
+			name, tenant.AccountName,
+		)
+	}
 	return nil
 }
 
