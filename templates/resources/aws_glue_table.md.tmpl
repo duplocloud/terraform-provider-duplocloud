@@ -1,0 +1,68 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Table backed by S3 Parquet data
+
+```terraform
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+resource "duplocloud_aws_glue_database" "analytics" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "analytics"
+}
+
+resource "duplocloud_aws_glue_table" "events" {
+  tenant_id     = data.duplocloud_tenant.tenant.id
+  database_name = duplocloud_aws_glue_database.analytics.name
+  name          = "events"
+  body_json = jsonencode({
+    Description = "Click events"
+    TableType   = "EXTERNAL_TABLE"
+    Parameters = {
+      classification = "parquet"
+    }
+    StorageDescriptor = {
+      Location      = "s3://my-bucket/events/"
+      InputFormat   = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+      OutputFormat  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+      SerdeInfo = {
+        SerializationLibrary = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+      }
+      Columns = [
+        { Name = "id", Type = "string" },
+        { Name = "ts", Type = "timestamp" },
+        { Name = "url", Type = "string" }
+      ]
+    }
+  })
+}
+```
+
+## body_json
+
+The `body_json` attribute accepts any AWS Glue `TableInput` fields documented at
+[CreateTable](https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTable.html).
+Do not include `Name` — it is set by the provider from the `name` attribute.
+
+## database_name
+
+Pass the short database name (without the `duploservices-<tenant>-` prefix). The
+provider adds the prefix when calling the backend.
+
+## Import
+
+```shell
+terraform import duplocloud_aws_glue_table.events <TENANT_ID>/<DATABASE_NAME>/<TABLE_NAME>
+```
+
+{{ .SchemaMarkdown | trimspace }}
