@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func duploAzureKeyVaultSecretSchema() map[string]*schema.Schema {
+func duploAzureInfraSecretSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the key vault secret will be created in.",
@@ -73,14 +73,14 @@ func duploAzureKeyVaultSecretSchema() map[string]*schema.Schema {
 	}
 }
 
-func resourceAzureKeyVaultSecret() *schema.Resource {
+func resourceAzureInfraSecret() *schema.Resource {
 	return &schema.Resource{
-		Description: "`duplocloud_azure_key_vault_secret` manages a Key Vault Secret in Duplo.",
+		Description: "`duplocloud_azure_infra_secret` manages an infrastructure-level Azure Key Vault Secret in Duplo.",
 
-		ReadContext:   resourceAzureKeyVaultSecretRead,
-		CreateContext: resourceAzureKeyVaultSecretCreate,
-		UpdateContext: resourceAzureKeyVaultSecretUpdate,
-		DeleteContext: resourceAzureKeyVaultSecretDelete,
+		ReadContext:   resourceAzureInfraSecretRead,
+		CreateContext: resourceAzureInfraSecretCreate,
+		UpdateContext: resourceAzureInfraSecretUpdate,
+		DeleteContext: resourceAzureInfraSecretDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -88,17 +88,27 @@ func resourceAzureKeyVaultSecret() *schema.Resource {
 			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
-		Schema: duploAzureKeyVaultSecretSchema(),
+		Schema: duploAzureInfraSecretSchema(),
 	}
 }
 
-func resourceAzureKeyVaultSecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+// resourceAzureKeyVaultSecret is the deprecated alias for resourceAzureInfraSecret.
+// Retained so existing state using `duplocloud_azure_key_vault_secret` continues to work;
+// emits a deprecation warning pointing users to `duplocloud_azure_infra_secret`.
+func resourceAzureKeyVaultSecret() *schema.Resource {
+	r := resourceAzureInfraSecret()
+	r.DeprecationMessage = "`duplocloud_azure_key_vault_secret` has been renamed to `duplocloud_azure_infra_secret`. " +
+		"Please update your configuration to use the new resource name. The old name will be removed in a future release."
+	return r
+}
+
+func resourceAzureInfraSecretRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, name, err := parseAzureKeyVaultSecretIdParts(id)
+	tenantID, name, err := parseAzureInfraSecretIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAzureKeyVaultSecretRead(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceAzureInfraSecretRead(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
 	secretItem, clientErr := c.KeyVaultSecretGet(tenantID, name)
@@ -108,32 +118,32 @@ func resourceAzureKeyVaultSecretRead(ctx context.Context, d *schema.ResourceData
 	}
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
-			log.Printf("[DEBUG] resourceAzureKeyVaultSecretRead: Azure key vault secret %s not found for tenantId %s, removing from state", name, tenantID)
+			log.Printf("[DEBUG] resourceAzureInfraSecretRead: Azure key vault secret %s not found for tenantId %s, removing from state", name, tenantID)
 			d.SetId("")
 			return nil
 		}
 		return diag.Errorf("Unable to retrieve tenant %s azure key vault secret %s : %s", tenantID, name, clientErr)
 	}
 
-	flattenAzureKeyVaultSecret(d, secretItem)
+	flattenAzureInfraSecret(d, secretItem)
 
-	log.Printf("[TRACE] resourceAzureKeyVaultSecretRead(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceAzureInfraSecretRead(%s, %s): end", tenantID, name)
 	return nil
 }
 
-func resourceAzureKeyVaultSecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureInfraSecretCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var err error
 
 	tenantID := d.Get("tenant_id").(string)
 	name := d.Get("name").(string)
-	log.Printf("[TRACE] resourceAzureKeyVaultSecretCreate(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceAzureInfraSecretCreate(%s, %s): start", tenantID, name)
 	c := m.(*duplosdk.Client)
 
 	if diags := validateKeyVaultSecretNamePrefix(c, tenantID, name); diags != nil {
 		return diags
 	}
 
-	rq := expandAzureKeyVaultSecret(d)
+	rq := expandAzureInfraSecret(d)
 	err = c.KeyVaultSecretCreate(tenantID, rq)
 	if err != nil {
 		return diag.Errorf("Error creating tenant %s azure key vault secret '%s': %s", tenantID, name, err)
@@ -149,43 +159,43 @@ func resourceAzureKeyVaultSecretCreate(ctx context.Context, d *schema.ResourceDa
 
 	d.SetId(id)
 
-	diags = resourceAzureKeyVaultSecretRead(ctx, d, m)
-	log.Printf("[TRACE] resourceAzureKeyVaultSecretCreate(%s, %s): end", tenantID, name)
+	diags = resourceAzureInfraSecretRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAzureInfraSecretCreate(%s, %s): end", tenantID, name)
 	return diags
 }
 
-func resourceAzureKeyVaultSecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureInfraSecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, name, err := parseAzureKeyVaultSecretIdParts(id)
+	tenantID, name, err := parseAzureInfraSecretIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAzureKeyVaultSecretUpdate(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceAzureInfraSecretUpdate(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
-	rq := expandAzureKeyVaultSecret(d)
+	rq := expandAzureInfraSecret(d)
 	if clientErr := c.KeyVaultSecretCreate(tenantID, rq); clientErr != nil {
 		return diag.Errorf("Error updating tenant %s azure key vault secret '%s': %s", tenantID, name, clientErr)
 	}
 
-	diags := resourceAzureKeyVaultSecretRead(ctx, d, m)
-	log.Printf("[TRACE] resourceAzureKeyVaultSecretUpdate(%s, %s): end", tenantID, name)
+	diags := resourceAzureInfraSecretRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAzureInfraSecretUpdate(%s, %s): end", tenantID, name)
 	return diags
 }
 
-func resourceAzureKeyVaultSecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceAzureInfraSecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	id := d.Id()
-	tenantID, name, err := parseAzureKeyVaultSecretIdParts(id)
+	tenantID, name, err := parseAzureInfraSecretIdParts(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[TRACE] resourceAzureKeyVaultSecretDelete(%s, %s): start", tenantID, name)
+	log.Printf("[TRACE] resourceAzureInfraSecretDelete(%s, %s): start", tenantID, name)
 
 	c := m.(*duplosdk.Client)
 	clientErr := c.KeyVaultSecretDelete(tenantID, name)
 	if clientErr != nil {
 		if clientErr.Status() == 404 {
-			log.Printf("[DEBUG] resourceAzureKeyVaultSecretDelete: Azure key vault secret %s not found for tenantId %s, removing from state", name, tenantID)
+			log.Printf("[DEBUG] resourceAzureInfraSecretDelete: Azure key vault secret %s not found for tenantId %s, removing from state", name, tenantID)
 			return nil
 		}
 		return diag.Errorf("Unable to delete tenant %s azure key vault secret '%s': %s", tenantID, name, clientErr)
@@ -198,7 +208,7 @@ func resourceAzureKeyVaultSecretDelete(ctx context.Context, d *schema.ResourceDa
 		return diag
 	}
 
-	log.Printf("[TRACE] resourceAzureKeyVaultSecretDelete(%s, %s): end", tenantID, name)
+	log.Printf("[TRACE] resourceAzureInfraSecretDelete(%s, %s): end", tenantID, name)
 	return nil
 }
 
@@ -224,7 +234,7 @@ func validateKeyVaultSecretNamePrefix(c *duplosdk.Client, tenantID, name string)
 	return nil
 }
 
-func expandAzureKeyVaultSecret(d *schema.ResourceData) *duplosdk.DuploAzureKeyVaultRequest {
+func expandAzureInfraSecret(d *schema.ResourceData) *duplosdk.DuploAzureKeyVaultRequest {
 	return &duplosdk.DuploAzureKeyVaultRequest{
 		SecretName:  d.Get("name").(string),
 		SecretValue: d.Get("value").(string),
@@ -232,7 +242,7 @@ func expandAzureKeyVaultSecret(d *schema.ResourceData) *duplosdk.DuploAzureKeyVa
 	}
 }
 
-func parseAzureKeyVaultSecretIdParts(id string) (tenantID, name string, err error) {
+func parseAzureInfraSecretIdParts(id string) (tenantID, name string, err error) {
 	idParts := strings.SplitN(id, "/", 2)
 	if len(idParts) == 2 {
 		tenantID, name = idParts[0], idParts[1]
@@ -242,7 +252,7 @@ func parseAzureKeyVaultSecretIdParts(id string) (tenantID, name string, err erro
 	return
 }
 
-func flattenAzureKeyVaultSecret(d *schema.ResourceData, duplo *duplosdk.DuploAzureSecretItem) {
+func flattenAzureInfraSecret(d *schema.ResourceData, duplo *duplosdk.DuploAzureSecretItem) {
 	d.Set("fullname", duplo.Identifier.Name)
 	d.Set("vault_base_url", duplo.Identifier.BaseIdentifier)
 	d.Set("version", duplo.Identifier.Version)

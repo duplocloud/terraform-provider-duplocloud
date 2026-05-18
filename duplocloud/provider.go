@@ -120,7 +120,8 @@ func Provider() *schema.Provider {
 			"duplocloud_aws_sqs_queue":                 resourceAwsSqsQueue(),
 			"duplocloud_aws_sns_topic":                 resourceAwsSnsTopic(),
 			"duplocloud_aws_lb_listener_rule":          resourceAwsLbListenerRule(),
-			"duplocloud_azure_key_vault_secret":        resourceAzureKeyVaultSecret(),
+			"duplocloud_azure_infra_secret":            resourceAzureInfraSecret(),
+			"duplocloud_azure_key_vault_secret":        resourceAzureKeyVaultSecret(), // Deprecated: alias for duplocloud_azure_infra_secret
 			"duplocloud_azure_tenant_key_vault":        resourceAzureTenantKeyVault(),
 			"duplocloud_azure_tenant_key_vault_secret": resourceAzureTenantKeyVaultSecret(),
 			"duplocloud_azure_storage_account":         resourceAzureStorageAccount(),
