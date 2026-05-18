@@ -165,7 +165,22 @@ func resourceAzureInfraSecretCreate(ctx context.Context, d *schema.ResourceData,
 }
 
 func resourceAzureInfraSecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	id := d.Id()
+	tenantID, name, err := parseAzureInfraSecretIdParts(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	log.Printf("[TRACE] resourceAzureInfraSecretUpdate(%s, %s): start", tenantID, name)
+
+	c := m.(*duplosdk.Client)
+	rq := expandAzureInfraSecret(d)
+	if clientErr := c.KeyVaultSecretCreate(tenantID, rq); clientErr != nil {
+		return diag.Errorf("Error updating tenant %s azure key vault secret '%s': %s", tenantID, name, clientErr)
+	}
+
+	diags := resourceAzureInfraSecretRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAzureInfraSecretUpdate(%s, %s): end", tenantID, name)
+	return diags
 }
 
 func resourceAzureInfraSecretDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
