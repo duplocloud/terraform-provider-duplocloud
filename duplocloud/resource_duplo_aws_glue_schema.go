@@ -153,9 +153,19 @@ func resourceDuploAwsGlueSchemaUpdate(ctx context.Context, d *schema.ResourceDat
 		}
 	}
 	if d.HasChange("body_json") {
-		if userBody, parseErr := glueParseBodyJSON(d.Get("body_json").(string)); parseErr == nil {
-			if desc, ok := userBody["Description"]; ok {
-				body["Description"] = desc
+		oldRaw, newRaw := d.GetChange("body_json")
+		newBody, parseErr := glueParseBodyJSON(newRaw.(string))
+		if parseErr != nil {
+			return diag.FromErr(fmt.Errorf("body_json: %w", parseErr))
+		}
+		if desc, ok := newBody["Description"]; ok {
+			body["Description"] = desc
+		} else if oldBody, oldErr := glueParseBodyJSON(oldRaw.(string)); oldErr == nil {
+			// Description was previously set in body_json and is now removed —
+			// send "" so AWS clears it. Without this, the removal silently
+			// no-ops because the diff suppression hides the field drop.
+			if _, hadDesc := oldBody["Description"]; hadDesc {
+				body["Description"] = ""
 			}
 		}
 	}
