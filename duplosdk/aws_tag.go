@@ -14,13 +14,14 @@ type DuploAWSTag struct {
 // the backend's route binders treat them differently: the ARN wildcard
 // segment goes through three decode layers (route binder + explicit decode
 // in the controller), while the key regular-parameter segment only goes
-// through two.
+// through two. PathEscape (not QueryEscape) is used so spaces encode as
+// %20 — path decoders don't translate `+` back to space.
 func escapeAWSTagARN(s string) string {
-	return url.QueryEscape(url.QueryEscape(url.QueryEscape(s)))
+	return url.PathEscape(url.PathEscape(url.PathEscape(s)))
 }
 
 func escapeAWSTagKey(s string) string {
-	return url.QueryEscape(url.QueryEscape(s))
+	return EncodePathParam(s)
 }
 
 func (c *Client) CreateAWSTag(tenantId, arn string, rq *DuploAWSTag) ClientError {
