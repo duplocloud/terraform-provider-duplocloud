@@ -308,6 +308,38 @@ func flattenSysctls(sysctls []v1.Sysctl) []interface{} {
 	return att
 }
 
+func expandTolerations(in []interface{}) ([]v1.Toleration, error) {
+	out := make([]v1.Toleration, 0, len(in))
+	for _, raw := range in {
+		m, ok := raw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		t := v1.Toleration{}
+		if v, ok := m["key"].(string); ok && v != "" {
+			t.Key = v
+		}
+		if v, ok := m["operator"].(string); ok && v != "" {
+			t.Operator = v1.TolerationOperator(v)
+		}
+		if v, ok := m["value"].(string); ok && v != "" {
+			t.Value = v
+		}
+		if v, ok := m["effect"].(string); ok && v != "" {
+			t.Effect = v1.TaintEffect(v)
+		}
+		if v, ok := m["toleration_seconds"].(string); ok && v != "" {
+			secs, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("toleration_seconds: %w", err)
+			}
+			t.TolerationSeconds = &secs
+		}
+		out = append(out, t)
+	}
+	return out, nil
+}
+
 func flattenTolerations(tolerations []v1.Toleration) []interface{} {
 	att := []interface{}{}
 	for _, v := range tolerations {
@@ -709,6 +741,14 @@ func expandPodSpec(p []interface{}) (*v1.PodSpec, error) {
 			return obj, err
 		}
 		obj.Affinity = a
+	}
+
+	if v, ok := in["toleration"].([]interface{}); ok && len(v) > 0 {
+		tolerations, err := expandTolerations(v)
+		if err != nil {
+			return obj, err
+		}
+		obj.Tolerations = tolerations
 	}
 
 	if v, ok := in["automount_service_account_token"].(bool); ok {
