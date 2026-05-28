@@ -1,11 +1,7 @@
 package duplosdk
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strings"
 )
 
 // GlueResource is a free-form JSON object (JObject passthrough).
@@ -42,71 +38,21 @@ func (c *Client) glueList(apiName, tenantID, suffix string) ([]GlueResource, Cli
 	return rp, nil
 }
 
-// glueCreate POSTs a new Glue resource. Empty response bodies are tolerated
-// because several Glue create endpoints (Database, Connection, Table, etc.)
-// return no content; the resource layer always re-reads to populate state.
+// glueCreate POSTs a new Glue resource. The response is discarded; the resource
+// layer always re-reads to populate state.
 func (c *Client) glueCreate(apiName, tenantID, suffix string, rq GlueResource) (GlueResource, ClientError) {
-	return c.glueWriteWithEmptyOK("POST", apiName, gluePath(tenantID, suffix), rq)
+	return nil, c.postAPI(apiName, gluePath(tenantID, suffix), rq, nil)
 }
 
-// glueUpdate PUTs an existing Glue resource. Tolerates empty responses for
-// the same reason as glueCreate.
+// glueUpdate PUTs an existing Glue resource. The response is discarded; the
+// resource layer always re-reads to populate state.
 func (c *Client) glueUpdate(apiName, tenantID, suffix string, rq GlueResource) (GlueResource, ClientError) {
-	return c.glueWriteWithEmptyOK("PUT", apiName, gluePath(tenantID, suffix), rq)
+	return nil, c.putAPI(apiName, gluePath(tenantID, suffix), rq, nil)
 }
 
-// glueWriteWithEmptyOK runs a POST or PUT against a Glue endpoint and parses
-// the response body as a JObject, treating an empty/null body as success with
-// an empty map.
-func (c *Client) glueWriteWithEmptyOK(verb, apiName, apiPath string, rq GlueResource) (GlueResource, ClientError) {
-	url := fmt.Sprintf("%s/%s", c.HostURL, apiPath)
-	rqBody, err := json.Marshal(rq)
-	if err != nil {
-		message := fmt.Sprintf("%sAPI %s: cannot marshal request to JSON: %s", strings.ToLower(verb), apiName, err.Error())
-		return nil, requestHttpError(url, message)
-	}
-	log.Printf("[TRACE] %sAPI %s: prepared request: %s", strings.ToLower(verb), apiName, url)
-	req, herr := http.NewRequest(verb, url, strings.NewReader(string(rqBody)))
-	if herr != nil {
-		log.Printf("[TRACE] %sAPI %s: cannot build request: %s", strings.ToLower(verb), apiName, herr.Error())
-		return nil, nil
-	}
-	body, httpErr := c.doRequest(req)
-	if httpErr != nil {
-		return nil, httpErr
-	}
-	bodyString := strings.TrimSpace(string(body))
-	log.Printf("[TRACE] %sAPI %s: received response: %s", strings.ToLower(verb), apiName, bodyString)
-	if bodyString == "" || bodyString == "null" || bodyString == "\"\"" {
-		return GlueResource{}, nil
-	}
-	out := GlueResource{}
-	if jerr := json.Unmarshal(body, &out); jerr != nil {
-		message := fmt.Sprintf("%sAPI %s: cannot unmarshal response from JSON: %s", strings.ToLower(verb), apiName, jerr.Error())
-		return nil, appHttpError(req, message)
-	}
-	return out, nil
-}
-
-// glueDelete deletes a Glue resource. Returns nil on 404. The response body
-// is ignored so empty (and varying) success responses don't break parsing.
+// glueDelete deletes a Glue resource.
 func (c *Client) glueDelete(apiName, tenantID, suffix string) ClientError {
-	url := fmt.Sprintf("%s/%s", c.HostURL, gluePath(tenantID, suffix))
-	log.Printf("[TRACE] deleteAPI %s: prepared request: %s", apiName, url)
-	req, herr := http.NewRequest("DELETE", url, nil)
-	if herr != nil {
-		log.Printf("[TRACE] deleteAPI %s: cannot build request: %s", apiName, herr.Error())
-		return nil
-	}
-	body, httpErr := c.doRequest(req)
-	if httpErr != nil {
-		if httpErr.Status() == 404 {
-			return nil
-		}
-		return httpErr
-	}
-	log.Printf("[TRACE] deleteAPI %s: received response: %s", apiName, strings.TrimSpace(string(body)))
-	return nil
+	return c.deleteAPI(apiName, gluePath(tenantID, suffix), nil)
 }
 
 // ---- Connections ----
