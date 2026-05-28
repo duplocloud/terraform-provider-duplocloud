@@ -14,7 +14,8 @@ import (
 // glueBodyJSONDescription is reused across resources for the body_json attribute.
 const glueBodyJSONDescription = "JSON-encoded body of the AWS Glue API request. " +
 	"Typed fields (e.g. `name`, `role`, `type`, `database_name`, `registry_name`) are merged in automatically — do not duplicate them here. " +
-	"Use `jsonencode({...})` for readability. Drift on AWS-computed fields (CreationTime, CatalogId, etc.) is suppressed."
+	"Use `jsonencode({...})` for readability. Omit the attribute entirely when all configurable fields are typed (it defaults to `{}`); do not set it to an empty string. " +
+	"Drift on AWS-computed fields (CreationTime, CatalogId, etc.) is suppressed."
 
 // glueCommonTenantIDSchema returns the standard tenant_id schema entry.
 func glueCommonTenantIDSchema() *schema.Schema {
@@ -46,7 +47,8 @@ func glueBodyJSONSchema() *schema.Schema {
 // not the short `name`.
 func glueFullnameSchema() *schema.Schema {
 	return &schema.Schema{
-		Description: "The full AWS-known name of the resource (tenant-prefixed). " +
+		Description: "The full AWS-known name of the resource, tenant-prefixed where applicable. " +
+			"Nested resources whose names are not prefixed (e.g. tables) report the same value as `name`. " +
 			"Reference this from another resource's `body_json` when AWS needs the prefixed form (e.g. trigger `JobName`).",
 		Type:     schema.TypeString,
 		Computed: true,

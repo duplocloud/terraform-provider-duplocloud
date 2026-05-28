@@ -26,7 +26,7 @@ resource "duplocloud_aws_glue_crawler" "events" {
   name      = "events"
   role      = "arn:aws:iam::123456789012:role/duploservices-dev-glue"
   body_json = jsonencode({
-    DatabaseName = duplocloud_aws_glue_database.analytics.name
+    DatabaseName = duplocloud_aws_glue_database.analytics.fullname
     Targets = {
       S3Targets = [
         { Path = "s3://my-bucket/events/" }

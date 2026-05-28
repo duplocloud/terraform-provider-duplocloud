@@ -68,20 +68,20 @@ without an intermediate `apply`.
 
 ### Required
 
+- `data_format` (String) The data format of the schema. One of `AVRO`, `JSON`, `PROTOBUF`. Required by AWS when creating a schema.
 - `name` (String) The short name of the Glue schema. The backend sends it as `SchemaName`.
 - `registry_name` (String) The short name of the parent Glue schema registry (without the `duploservices-<tenant>-` prefix).
 - `tenant_id` (String) The GUID of the tenant in which the Glue resource is provisioned.
 
 ### Optional
 
-- `body_json` (String) JSON-encoded body of the AWS Glue API request. Typed fields (e.g. `name`, `role`, `type`, `database_name`, `registry_name`) are merged in automatically — do not duplicate them here. Use `jsonencode({...})` for readability. Drift on AWS-computed fields (CreationTime, CatalogId, etc.) is suppressed.
+- `body_json` (String) JSON-encoded body of the AWS Glue API request. Typed fields (e.g. `name`, `role`, `type`, `database_name`, `registry_name`) are merged in automatically — do not duplicate them here. Use `jsonencode({...})` for readability. Omit the attribute entirely when all configurable fields are typed (it defaults to `{}`); do not set it to an empty string. Drift on AWS-computed fields (CreationTime, CatalogId, etc.) is suppressed.
 - `compatibility` (String) The compatibility mode of the schema (e.g. `NONE`, `BACKWARD`, `FORWARD`, `FULL`).
-- `data_format` (String) The data format of the schema. One of `AVRO`, `JSON`, `PROTOBUF`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- `fullname` (String) The full AWS-known name of the resource (tenant-prefixed). Reference this from another resource's `body_json` when AWS needs the prefixed form (e.g. trigger `JobName`).
+- `fullname` (String) The full AWS-known name of the resource, tenant-prefixed where applicable. Nested resources whose names are not prefixed (e.g. tables) report the same value as `name`. Reference this from another resource's `body_json` when AWS needs the prefixed form (e.g. trigger `JobName`).
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>

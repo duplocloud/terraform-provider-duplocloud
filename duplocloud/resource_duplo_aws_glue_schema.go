@@ -55,9 +55,9 @@ func resourceDuploAwsGlueSchema() *schema.Resource {
 				ForceNew:    true,
 			},
 			"data_format": {
-				Description:  "The data format of the schema. One of `AVRO`, `JSON`, `PROTOBUF`.",
+				Description:  "The data format of the schema. One of `AVRO`, `JSON`, `PROTOBUF`. Required by AWS when creating a schema.",
 				Type:         schema.TypeString,
-				Optional:     true,
+				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"AVRO", "JSON", "PROTOBUF"}, false),
 			},
