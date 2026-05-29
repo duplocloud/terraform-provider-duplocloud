@@ -1,0 +1,77 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Python Shell job
+
+```terraform
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+resource "duplocloud_aws_glue_job" "report" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "daily-report"
+  role      = "arn:aws:iam::123456789012:role/duploservices-dev-glue"
+  body_json = jsonencode({
+    Command = {
+      Name           = "pythonshell"
+      ScriptLocation = "s3://my-scripts/daily_report.py"
+      PythonVersion  = "3.9"
+    }
+    GlueVersion = "3.0"
+    MaxCapacity = 0.0625
+    Timeout     = 60
+    DefaultArguments = {
+      "--TempDir" = "s3://my-bucket/tmp/"
+    }
+  })
+}
+```
+
+### Glue ETL (Spark) job
+
+```terraform
+resource "duplocloud_aws_glue_job" "etl" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "events-etl"
+  role      = "arn:aws:iam::123456789012:role/duploservices-dev-glue"
+  body_json = jsonencode({
+    Command = {
+      Name            = "glueetl"
+      ScriptLocation  = "s3://my-scripts/events_etl.py"
+      PythonVersion   = "3"
+    }
+    GlueVersion     = "4.0"
+    WorkerType      = "G.1X"
+    NumberOfWorkers = 5
+    Timeout         = 120
+  })
+}
+```
+
+## role
+
+The IAM role must trust `glue.amazonaws.com` and have permissions for the
+script's data sources, the Glue catalog, and CloudWatch Logs.
+
+## body_json
+
+Accepts any AWS Glue `CreateJobRequest` fields documented at
+[CreateJob](https://docs.aws.amazon.com/glue/latest/webapi/API_CreateJob.html).
+Do not include `Name` or `Role` — they are set by the provider.
+
+## Import
+
+```shell
+terraform import duplocloud_aws_glue_job.report <TENANT_ID>/<JOB_NAME>
+```
+
+{{ .SchemaMarkdown | trimspace }}

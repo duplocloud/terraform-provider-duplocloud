@@ -1,0 +1,46 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### JDBC connection
+
+```terraform
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+resource "duplocloud_aws_glue_connection" "warehouse" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "warehouse"
+  body_json = jsonencode({
+    Description    = "Connection to the Postgres warehouse"
+    ConnectionType = "JDBC"
+    ConnectionProperties = {
+      JDBC_CONNECTION_URL = "jdbc:postgresql://warehouse.example.com:5432/analytics"
+      USERNAME            = "glue_user"
+      PASSWORD            = "REDACTED"
+    }
+  })
+}
+```
+
+## body_json
+
+Accepts any AWS Glue `ConnectionInput` fields documented at
+[CreateConnection](https://docs.aws.amazon.com/glue/latest/webapi/API_CreateConnection.html).
+Do not include `Name`.
+
+## Import
+
+```shell
+terraform import duplocloud_aws_glue_connection.warehouse <TENANT_ID>/<CONNECTION_NAME>
+```
+
+{{ .SchemaMarkdown | trimspace }}
