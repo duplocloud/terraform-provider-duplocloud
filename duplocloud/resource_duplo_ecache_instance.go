@@ -276,7 +276,7 @@ func resourceDuploEcacheInstance() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(29 * time.Minute),
-			Update: schema.DefaultTimeout(15 * time.Minute),
+			Update: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema:        ecacheInstanceSchema(),
@@ -714,7 +714,7 @@ func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, t
 		Target:       []string{"available"},
 		MinTimeout:   10 * time.Second,
 		PollInterval: 30 * time.Second,
-		Timeout:      20 * time.Minute,
+		Timeout:      40 * time.Minute,
 		Refresh: func() (interface{}, string, error) {
 			resp, err := c.EcacheInstanceGet(tenantID, name)
 			if err != nil {
