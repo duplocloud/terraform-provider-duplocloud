@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
@@ -124,9 +125,10 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Description: "The availability zone to launch the host in is expressed as a numeric value ranging from 0 to 3. ",
 		Type:        schema.TypeString,
 		Optional:    true,
-		ForceNew:    true, // relaunch instance
-		Deprecated:  "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated.",
-		Default:     0,
+		//ForceNew:         true, // relaunch instance
+		Deprecated:       "For environments on the July 2024 release or earlier, use zone. For environments on releases after July 2024, use zones, as zone has been deprecated and is non-functional on change.",
+		Default:          0,
+		DiffSuppressFunc: diffSuppressWhenNotCreating,
 	}
 	awsASGSchema["taints"] = &schema.Schema{
 		Description: "Specify taints to attach to the nodes, to repel other nodes with different toleration",
@@ -164,12 +166,203 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 		Type:        schema.TypeString,
 		Computed:    true,
 	}
+	awsASGSchema["mixed_instances_policy"] = &schema.Schema{
+		Description: "Configuration block for a mixed instances policy. This allows an ASG to use multiple instance types and a mix of On-Demand and Spot instances.",
+		Type:        schema.TypeList,
+		Optional:    true,
+		MaxItems:    1,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"launch_template": {
+					Description: "Launch template configuration with instance type overrides.",
+					Type:        schema.TypeList,
+					Optional:    true,
+					MaxItems:    1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"override": {
+								Description: "List of instance type overrides for the launch template.",
+								Type:        schema.TypeList,
+								Optional:    true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"instance_type": {
+											Description: "The instance type. Mutually exclusive with `instance_requirements`.",
+											Type:        schema.TypeString,
+											Optional:    true,
+										},
+										"weighted_capacity": {
+											Description: "The number of capacity units provided by the instance type.",
+											Type:        schema.TypeString,
+											Optional:    true,
+										},
+										"instance_requirements": {
+											Description: "Instance requirements for flexible instance selection.",
+											Type:        schema.TypeList,
+											Optional:    true,
+											MaxItems:    1,
+											Elem: &schema.Resource{
+												Schema: map[string]*schema.Schema{
+													"vcpu_count": {
+														Description: "Range of vCPU counts.",
+														Type:        schema.TypeList,
+														Required:    true,
+														MaxItems:    1,
+														Elem: &schema.Resource{
+															Schema: map[string]*schema.Schema{
+																"min": {
+																	Description: "Minimum number of vCPUs.",
+																	Type:        schema.TypeInt,
+																	Required:    true,
+																},
+																"max": {
+																	Description: "Maximum number of vCPUs.",
+																	Type:        schema.TypeInt,
+																	Optional:    true,
+																},
+															},
+														},
+													},
+													"memory_mib": {
+														Description: "Range of memory in MiB.",
+														Type:        schema.TypeList,
+														Required:    true,
+														MaxItems:    1,
+														Elem: &schema.Resource{
+															Schema: map[string]*schema.Schema{
+																"min": {
+																	Description: "Minimum memory in MiB.",
+																	Type:        schema.TypeInt,
+																	Required:    true,
+																},
+																"max": {
+																	Description: "Maximum memory in MiB.",
+																	Type:        schema.TypeInt,
+																	Optional:    true,
+																},
+															},
+														},
+													},
+													"allowed_instance_types": {
+														Description: "List of allowed instance types (e.g. `m5.large`, `m5a.large`). Cannot be specified if `excluded_instance_types` is specified in the same launch template override.",
+														Type:        schema.TypeList,
+														Optional:    true,
+														Computed:    true,
+														Elem:        &schema.Schema{Type: schema.TypeString},
+													},
+													"excluded_instance_types": {
+														Description: "List of excluded instance types. Cannot be specified if `allowed_instance_types` is specified in the same launch template override.",
+														Type:        schema.TypeList,
+														Optional:    true,
+														Computed:    true,
+														Elem:        &schema.Schema{Type: schema.TypeString},
+													},
+													"cpu_manufacturers": {
+														Description: "List of CPU manufacturers (e.g. `intel`, `amd`, `amazon-web-services`).",
+														Type:        schema.TypeList,
+														Optional:    true,
+														Computed:    true,
+
+														Elem: &schema.Schema{Type: schema.TypeString},
+													},
+													"instance_generations": {
+														Description: "List of instance generations (e.g. `current`, `previous`).",
+														Type:        schema.TypeList,
+														Optional:    true,
+														Computed:    true,
+
+														Elem: &schema.Schema{Type: schema.TypeString},
+													},
+													"spot_max_price_percentage_over_lowest_price": {
+														Description: "Price protection threshold as a percentage over the lowest price.",
+														Type:        schema.TypeInt,
+														Optional:    true,
+														Computed:    true,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				"instances_distribution": {
+					Description: "Configuration for the distribution of On-Demand and Spot instances.",
+					Type:        schema.TypeList,
+					Optional:    true,
+					MaxItems:    1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"on_demand_allocation_strategy": {
+								Description: "Strategy for allocating On-Demand instances (e.g. `prioritized`).",
+								Type:        schema.TypeString,
+								Optional:    true,
+								Computed:    true,
+							},
+							"on_demand_base_capacity": {
+								Description: "Minimum number of On-Demand instances in the group.",
+								Type:        schema.TypeInt,
+								Optional:    true,
+							},
+							"on_demand_percentage_above_base_capacity": {
+								Description: "Percentage of On-Demand instances above the base capacity (0-100).",
+								Type:        schema.TypeInt,
+								Optional:    true,
+							},
+							"spot_allocation_strategy": {
+								Description: "Strategy for allocating Spot instances (e.g. `capacity-optimized`, `price-capacity-optimized`, `lowest-price`).",
+								Type:        schema.TypeString,
+								Optional:    true,
+							},
+							"spot_instance_pools": {
+								Description: "Number of Spot pools for allocation (only used with `lowest-price` strategy).",
+								Type:        schema.TypeInt,
+								Optional:    true,
+							},
+							"spot_max_price": {
+								Description: "Maximum price per unit hour for Spot instances.",
+								Type:        schema.TypeString,
+								Optional:    true,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
 	awsASGSchema["capacity"].ForceNew = false
 	awsASGSchema["image_id"].ForceNew = false
+	awsASGSchema["capacity"].Required = false
+	awsASGSchema["capacity"].Optional = true
 
 	awsASGSchema["capacity"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["image_id"].DiffSuppressFunc = diffSuppressWhenNotCreating
 	awsASGSchema["volume"].DiffSuppressFunc = diffSuppressWhenNotCreating
+	awsASGSchema["minion_tags"].ConflictsWith = []string{"custom_data_tags"}
+	awsASGSchema["minion_tags"].Deprecated = "minion_tags is deprecated and will be removed in a future release. Use custom_data_tags instead."
+	awsASGSchema["minion_tags"].DiffSuppressFunc = diffSuppressWhenNotCreating
+
+	awsASGSchema["custom_data_tags"] = &schema.Schema{
+		Description:   "A map of tags to assign to the resource. Example - `AllocationTags` can be passed as tag key with any value.\n\n**Note:** When importing an ASG created using the minion_tags block, from v0.12.6 onwards, need to add a custom_data_tags block by replacing the minion_tags block with the same key and value as the minion_tags block to avoid drift.",
+		Type:          schema.TypeList,
+		Optional:      true,
+		Computed:      true,
+		Elem:          KeyValueSchema(),
+		ConflictsWith: []string{"minion_tags"},
+	}
+
+	awsASGSchema["asg_tags"] = &schema.Schema{
+		Description: "A map of arbitrary AWS tags applied to the ASG and its launched EC2 instances (routed via the backend's `TagsCsv` field). Use this for tags that aren't `AllocationTags` — those belong in `custom_data_tags`. Changes force replacement because the backend applies these tags only at create time.",
+		Type:        schema.TypeMap,
+		Optional:    true,
+		Computed:    true,
+		ForceNew:    true,
+		Elem:        &schema.Schema{Type: schema.TypeString},
+	}
+
 	return awsASGSchema
 }
 
@@ -186,6 +379,22 @@ func validateMaxSpotPrice(ctx context.Context, diff *schema.ResourceDiff, m inte
 		}
 	}
 
+	return nil
+}
+
+func validateCustomDataTags(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	if customDataTags, ok := diff.GetOk("custom_data_tags"); ok {
+		tagsList := customDataTags.([]interface{})
+		for _, tag := range tagsList {
+			tagMap := tag.(map[string]interface{})
+			key := tagMap["key"].(string)
+			value := tagMap["value"].(string)
+
+			if value == "" {
+				return fmt.Errorf("custom_data_tags: tag value cannot be empty for key '%s'. To remove a tag, remove the entire key-value pair from the configuration", key)
+			}
+		}
+	}
 	return nil
 }
 
@@ -210,6 +419,7 @@ func resourceAwsASG() *schema.Resource {
 			diffUserData,
 			validateMaxSpotPrice,
 			validateTaintsSupport,
+			validateCustomDataTags,
 		),
 	}
 }
@@ -272,18 +482,21 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		time.Sleep(5 * time.Minute) // Wait to ensure the ASG profile is created in Duplo if polling dint happened
 		// to reduce impact of asg worker failure when tags are passed.
 	}
-	fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
+	if v, ok := d.GetOk("minion_tags"); ok && len(v.([]interface{})) > 0 {
+		fullName, _ := c.GetDuploServicesName(rq.TenantId, rq.FriendlyName)
+		mTags := v.([]interface{})
+		for _, raw := range mTags {
+			m := raw.(map[string]interface{})
+			err = c.TenantUpdateCustomData(rq.TenantId, duplosdk.CustomDataUpdate{
+				ComponentId:   fullName,
+				ComponentType: duplosdk.ASG,
+				Key:           m["key"].(string),
+				Value:         m["value"].(string),
+			})
 
-	for _, raw := range *rq.MinionTags {
-		err = c.TenantUpdateCustomData(rq.TenantId, duplosdk.CustomDataUpdate{
-			ComponentId:   fullName,
-			ComponentType: duplosdk.ASG,
-			Key:           raw.Key,
-			Value:         raw.Value,
-		})
-
-		if err != nil {
-			return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
+			if err != nil {
+				return diag.Errorf("Error updating custom data using minion tags '%s': %s", fullName, err)
+			}
 		}
 	}
 	//By default, wait until the ASG instances to be healthy.
@@ -293,7 +506,7 @@ func resourceAwsASGCreate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.FromErr(err)
 		}
 	}
-
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
 	diags = resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGCreate(%s, %s): end", rq.TenantId, rq.FriendlyName)
 	return diags
@@ -351,17 +564,14 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		}
 	}
 
-	needsAllocationTagsUpdate, newTags := checkAllocationTagsDiff(d)
-	if needsAllocationTagsUpdate {
-		updateRequest := duplosdk.CustomDataUpdate{
-			ComponentId:   d.Get("fullname").(string),
-			ComponentType: duplosdk.ASG,
-			Key:           "AllocationTags",
-			Value:         newTags,
-		}
+	customDataUpdates := getCustomDataTagsUpdates(d)
+	for _, updateRequest := range customDataUpdates {
+		updateRequest.ComponentId = d.Get("fullname").(string)
+		updateRequest.ComponentType = duplosdk.ASG
+
 		err := c.TenantUpdateCustomData(rq.TenantId, updateRequest)
 		if err != nil {
-			return diag.Errorf("Error updating ASG profile '%s': %s", rq.FriendlyName, err)
+			return diag.Errorf("Error updating ASG profile custom data '%s': %s", rq.FriendlyName, err)
 		}
 	}
 	if d.HasChange("taints") {
@@ -404,6 +614,7 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 			return diag.Errorf("Error updating taints from ASG profile '%s': %s", friendlyName, cerr)
 		}
 	}
+	ctx = context.WithValue(ctx, flowContextKey, "normal")
 	diags := resourceAwsASGRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): end", tenantID, friendlyName)
 	return diags
@@ -436,8 +647,16 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 		return nil
 	}
 
+	flow := "import"
+
+	v := ctx.Value(flowContextKey)
+	if v != nil {
+		if f, ok := v.(string); ok {
+			flow = f
+		}
+	}
 	// Apply the data
-	asgProfileToState(d, profile)
+	asgProfileToState(d, profile, flow)
 	d.Set("tenant_id", tenantID)
 	log.Printf("[TRACE] resourceAwsASGRead(%s): end", id)
 	return nil
@@ -500,7 +719,7 @@ func asgProfileIdParts(id string) (tenantID, name string, err error) {
 	return tenantID, name, err
 }
 
-func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) {
+func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile, flow string) {
 	d.Set("instance_count", duplo.DesiredCapacity)
 	d.Set("min_instance_count", duplo.MinSize)
 	d.Set("max_instance_count", duplo.MaxSize)
@@ -520,14 +739,28 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("keypair_type", duplo.KeyPairType)
 	d.Set("encrypt_disk", duplo.EncryptDisk)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
-	d.Set("minion_tags", keyValueToState("minion_tags", duplo.CustomDataTags))
+	d.Set("minion_tags", keyValueToState("minion_tags", duplo.MinionTags))
+	d.Set("custom_data_tags", keyValueToState("custom_data_tags", duplo.CustomDataTags))
+	parsedAsgTags := map[string]string{}
+	if duplo.TagsCsv != "" {
+		if err := json.Unmarshal([]byte(duplo.TagsCsv), &parsedAsgTags); err != nil {
+			log.Printf("[WARN] Failed to unmarshal TagsCsv for asg_tags in ASG profile state: %v", err)
+			parsedAsgTags = map[string]string{}
+		}
+	}
+	d.Set("asg_tags", parsedAsgTags)
 	d.Set("enabled_metrics", duplo.EnabledMetrics)
 	d.Set("arn", duplo.Arn)
 	// If a network interface was customized, certain fields are not returned by the backend.
 	if v, ok := d.GetOk("network_interface"); !ok || v == nil || len(v.([]interface{})) == 0 {
 		_, zok := d.GetOk("zones")
-
-		if len(duplo.Zones) > 0 && zok {
+		if len(duplo.Zones) > 0 && flow == "import" {
+			i := []interface{}{}
+			for _, v := range duplo.Zones {
+				i = append(i, v)
+			}
+			d.Set("zones", i)
+		} else if len(duplo.Zones) > 0 && zok {
 			i := []interface{}{}
 			for _, v := range duplo.Zones {
 				i = append(i, v)
@@ -546,6 +779,9 @@ func asgProfileToState(d *schema.ResourceData, duplo *duplosdk.DuploAsgProfile) 
 	d.Set("network_interface", flattenNativeHostNetworkInterfaces(duplo.NetworkInterfaces))
 	if duplo.Taints != nil {
 		d.Set("taints", flattenTaints(*duplo.Taints))
+	}
+	if duplo.MixedInstancesPolicy != nil {
+		d.Set("mixed_instances_policy", flattenAsgMixedInstancesPolicy(duplo.MixedInstancesPolicy))
 	}
 }
 
@@ -569,7 +805,7 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		EncryptDisk:         d.Get("encrypt_disk").(bool),
 		MetaData:            keyValueFromState("metadata", d),
 		Tags:                keyValueFromState("tags", d),
-		MinionTags:          keyValueFromState("minion_tags", d),
+		CustomDataTags:      keyValueFromState("custom_data_tags", d),
 		Volumes:             expandNativeHostVolumes("volume", d),
 		NetworkInterfaces:   expandNativeHostNetworkInterfaces("network_interface", d),
 		DesiredCapacity:     d.Get("instance_count").(int),
@@ -613,7 +849,188 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 		asgProfile.Zones = append(asgProfile.Zones, zn)
 	}
 
+	asgProfile.MixedInstancesPolicy = expandAsgMixedInstancesPolicy(d)
+
+	// asg_tags is routed through the backend's TagsCsv field (JSON-encoded),
+	// which is the only path that produces real AWS tags on the ASG and
+	// launched EC2 instances.
+	if v, ok := d.GetOk("asg_tags"); ok {
+		raw := v.(map[string]interface{})
+		if len(raw) > 0 {
+			stringMap := make(map[string]string, len(raw))
+			for k, val := range raw {
+				stringMap[k] = val.(string)
+			}
+			if jsonBytes, err := json.Marshal(stringMap); err == nil {
+				asgProfile.TagsCsv = string(jsonBytes)
+			}
+		}
+	}
+
 	return asgProfile
+}
+
+func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMixedInstancesPolicy {
+	v, ok := d.GetOk("mixed_instances_policy")
+	if !ok || len(v.([]interface{})) == 0 {
+		return nil
+	}
+	policyMap := v.([]interface{})[0].(map[string]interface{})
+	policy := &duplosdk.DuploAsgMixedInstancesPolicy{}
+
+	if lt, ok := policyMap["launch_template"]; ok && len(lt.([]interface{})) > 0 {
+		ltMap := lt.([]interface{})[0].(map[string]interface{})
+		launchTemplate := &duplosdk.DuploAsgMixedInstancesLaunchTemplate{}
+
+		if overrides, ok := ltMap["override"]; ok {
+			for _, o := range overrides.([]interface{}) {
+				oMap := o.(map[string]interface{})
+				override := duplosdk.DuploAsgLaunchTemplateOverride{
+					InstanceType:     oMap["instance_type"].(string),
+					WeightedCapacity: oMap["weighted_capacity"].(string),
+				}
+
+				if ir, ok := oMap["instance_requirements"]; ok && len(ir.([]interface{})) > 0 {
+					irMap := ir.([]interface{})[0].(map[string]interface{})
+					req := &duplosdk.DuploAsgInstanceRequirements{}
+
+					if vcpu, ok := irMap["vcpu_count"]; ok && len(vcpu.([]interface{})) > 0 {
+						vcpuMap := vcpu.([]interface{})[0].(map[string]interface{})
+						req.VCpuCount = &duplosdk.DuploAsgIntRange{
+							Min: vcpuMap["min"].(int),
+							Max: vcpuMap["max"].(int),
+						}
+					}
+					if mem, ok := irMap["memory_mib"]; ok && len(mem.([]interface{})) > 0 {
+						memMap := mem.([]interface{})[0].(map[string]interface{})
+						req.MemoryMiB = &duplosdk.DuploAsgIntRange{
+							Min: memMap["min"].(int),
+							Max: memMap["max"].(int),
+						}
+					}
+					if v, ok := irMap["allowed_instance_types"]; ok {
+						req.AllowedInstanceTypes = expandStringList(v.([]interface{}))
+					}
+					if v, ok := irMap["excluded_instance_types"]; ok {
+						req.ExcludedInstanceTypes = expandStringList(v.([]interface{}))
+					}
+					if v, ok := irMap["cpu_manufacturers"]; ok {
+						req.CpuManufacturers = expandStringList(v.([]interface{}))
+					}
+					if v, ok := irMap["instance_generations"]; ok {
+						req.InstanceGenerations = expandStringList(v.([]interface{}))
+					}
+					if v, ok := irMap["spot_max_price_percentage_over_lowest_price"]; ok && v.(int) > 0 {
+						val := v.(int)
+						req.SpotMaxPricePercentageOverLowestPrice = &val
+					}
+					override.InstanceRequirements = req
+				}
+				launchTemplate.Overrides = append(launchTemplate.Overrides, override)
+			}
+		}
+		policy.LaunchTemplate = launchTemplate
+	}
+
+	if dist, ok := policyMap["instances_distribution"]; ok && len(dist.([]interface{})) > 0 {
+		distMap := dist.([]interface{})[0].(map[string]interface{})
+		distribution := &duplosdk.DuploAsgInstancesDistribution{
+			OnDemandAllocationStrategy: distMap["on_demand_allocation_strategy"].(string),
+			SpotAllocationStrategy:     distMap["spot_allocation_strategy"].(string),
+			SpotMaxPrice:               distMap["spot_max_price"].(string),
+		}
+		if v, ok := distMap["on_demand_base_capacity"]; ok && v.(int) > 0 {
+			val := v.(int)
+			distribution.OnDemandBaseCapacity = &val
+		}
+		if v, ok := distMap["on_demand_percentage_above_base_capacity"]; ok {
+			val := v.(int)
+			distribution.OnDemandPercentageAboveBaseCapacity = &val
+		}
+		if v, ok := distMap["spot_instance_pools"]; ok && v.(int) > 0 {
+			val := v.(int)
+			distribution.SpotInstancePools = &val
+		}
+		policy.InstancesDistribution = distribution
+	}
+
+	return policy
+}
+
+func flattenAsgMixedInstancesPolicy(policy *duplosdk.DuploAsgMixedInstancesPolicy) []interface{} {
+	if policy == nil {
+		return nil
+	}
+	result := map[string]interface{}{}
+
+	if policy.LaunchTemplate != nil {
+		lt := map[string]interface{}{}
+		var overrides []interface{}
+		for _, o := range policy.LaunchTemplate.Overrides {
+			override := map[string]interface{}{
+				"instance_type":     o.InstanceType,
+				"weighted_capacity": o.WeightedCapacity,
+			}
+			if o.InstanceRequirements != nil {
+				ir := map[string]interface{}{}
+				if o.InstanceRequirements.VCpuCount != nil {
+					ir["vcpu_count"] = []interface{}{
+						map[string]interface{}{
+							"min": o.InstanceRequirements.VCpuCount.Min,
+							"max": o.InstanceRequirements.VCpuCount.Max,
+						},
+					}
+				}
+				if o.InstanceRequirements.MemoryMiB != nil {
+					ir["memory_mib"] = []interface{}{
+						map[string]interface{}{
+							"min": o.InstanceRequirements.MemoryMiB.Min,
+							"max": o.InstanceRequirements.MemoryMiB.Max,
+						},
+					}
+				}
+				if o.InstanceRequirements.AllowedInstanceTypes != nil {
+					ir["allowed_instance_types"] = o.InstanceRequirements.AllowedInstanceTypes
+				}
+				if o.InstanceRequirements.ExcludedInstanceTypes != nil {
+					ir["excluded_instance_types"] = o.InstanceRequirements.ExcludedInstanceTypes
+				}
+				if o.InstanceRequirements.CpuManufacturers != nil {
+					ir["cpu_manufacturers"] = o.InstanceRequirements.CpuManufacturers
+				}
+				if o.InstanceRequirements.InstanceGenerations != nil {
+					ir["instance_generations"] = o.InstanceRequirements.InstanceGenerations
+				}
+				if o.InstanceRequirements.SpotMaxPricePercentageOverLowestPrice != nil {
+					ir["spot_max_price_percentage_over_lowest_price"] = *o.InstanceRequirements.SpotMaxPricePercentageOverLowestPrice
+				}
+				override["instance_requirements"] = []interface{}{ir}
+			}
+			overrides = append(overrides, override)
+		}
+		lt["override"] = overrides
+		result["launch_template"] = []interface{}{lt}
+	}
+
+	if policy.InstancesDistribution != nil {
+		dist := map[string]interface{}{
+			"on_demand_allocation_strategy": policy.InstancesDistribution.OnDemandAllocationStrategy,
+			"spot_allocation_strategy":      policy.InstancesDistribution.SpotAllocationStrategy,
+			"spot_max_price":                policy.InstancesDistribution.SpotMaxPrice,
+		}
+		if policy.InstancesDistribution.OnDemandBaseCapacity != nil {
+			dist["on_demand_base_capacity"] = *policy.InstancesDistribution.OnDemandBaseCapacity
+		}
+		if policy.InstancesDistribution.OnDemandPercentageAboveBaseCapacity != nil {
+			dist["on_demand_percentage_above_base_capacity"] = *policy.InstancesDistribution.OnDemandPercentageAboveBaseCapacity
+		}
+		if policy.InstancesDistribution.SpotInstancePools != nil {
+			dist["spot_instance_pools"] = *policy.InstancesDistribution.SpotInstancePools
+		}
+		result["instances_distribution"] = []interface{}{dist}
+	}
+
+	return []interface{}{result}
 }
 
 func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantID string, minInstanceCount int, asgFriendlyName string, timeout time.Duration) error {
@@ -675,37 +1092,64 @@ func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 		d.HasChange("min_instance_count") ||
 		d.HasChange("max_instance_count") ||
 		d.HasChange("friendly_name") ||
-		d.HasChange("enabled_metrics")
+		d.HasChange("enabled_metrics") ||
+		d.HasChange("mixed_instances_policy")
 }
 
-func checkAllocationTagsDiff(d *schema.ResourceData) (hasChange bool, tags string) {
-	oldRevision, newRevision := d.GetChange("minion_tags")
+func getCustomDataTagsUpdates(d *schema.ResourceData) []duplosdk.CustomDataUpdate {
+	var updates []duplosdk.CustomDataUpdate
+
+	if !d.HasChange("custom_data_tags") {
+		return updates
+	}
+
+	oldRevision, newRevision := d.GetChange("custom_data_tags")
 	oldTags := oldRevision.([]interface{})
 	newTags := newRevision.([]interface{})
 
-	var oldAllocationTagValue, newAllocationTagValue string
+	// Create maps for easier lookup
+	oldTagsMap := make(map[string]string)
+	newTagsMap := make(map[string]string)
 
 	for _, tag := range oldTags {
 		tagMap := tag.(map[string]interface{})
-		if tagMap["key"].(string) == "AllocationTags" {
-			oldAllocationTagValue = tagMap["value"].(string)
-			break
-		}
+		key := tagMap["key"].(string)
+		value := tagMap["value"].(string)
+		oldTagsMap[key] = value
 	}
 
 	for _, tag := range newTags {
 		tagMap := tag.(map[string]interface{})
-		if tagMap["key"].(string) == "AllocationTags" {
-			newAllocationTagValue = tagMap["value"].(string)
-			break
+		key := tagMap["key"].(string)
+		value := tagMap["value"].(string)
+		newTagsMap[key] = value
+	}
+
+	// Check for updated or new tags
+	for key, newValue := range newTagsMap {
+		oldValue, existed := oldTagsMap[key]
+		if !existed || oldValue != newValue {
+			update := duplosdk.CustomDataUpdate{
+				Key:   key,
+				Value: newValue,
+			}
+			updates = append(updates, update)
 		}
 	}
 
-	if oldAllocationTagValue != newAllocationTagValue {
-		return true, newAllocationTagValue
+	// Check for deleted tags
+	for key := range oldTagsMap {
+		if _, exists := newTagsMap[key]; !exists {
+			update := duplosdk.CustomDataUpdate{
+				Key:   key,
+				Value: "",
+				State: "delete",
+			}
+			updates = append(updates, update)
+		}
 	}
 
-	return false, ""
+	return updates
 }
 
 func asgWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) (error, bool) {

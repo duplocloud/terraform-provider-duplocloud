@@ -249,6 +249,22 @@ func resourceInfrastructure() *schema.Resource {
 				ForceNew:    true,
 				Optional:    true,
 			},
+			"custom_private_subnet_cidrs": {
+				Description: "Custom CIDR blocks for private subnets. When specified, overrides the automatic subnet sizing from subnet_cidr.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"custom_public_subnet_cidrs": {
+				Description: "Custom CIDR blocks for public subnets. When specified, overrides the automatic subnet sizing from subnet_cidr.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"subnet_name": {
 				Description: "The name of the subnet. This is applicable only for Azure.",
 				Type:        schema.TypeString,
@@ -533,6 +549,13 @@ func duploInfrastructureConfigFromState(d *schema.ResourceData) duplosdk.DuploIn
 		},
 	}
 
+	for _, v := range d.Get("custom_private_subnet_cidrs").(*schema.Set).List() {
+		config.Vnet.CustomPrivateSubnetCidrs = append(config.Vnet.CustomPrivateSubnetCidrs, v.(string))
+	}
+	for _, v := range d.Get("custom_public_subnet_cidrs").(*schema.Set).List() {
+		config.Vnet.CustomPublicSubnetCidrs = append(config.Vnet.CustomPublicSubnetCidrs, v.(string))
+	}
+
 	//Azure -> if needed only there, this subnet should be added only in Azure
 	if config.Cloud == 2 {
 		subnet := duplosdk.DuploInfrastructureVnetSubnet{}
@@ -712,6 +735,26 @@ func infrastructureRead(ctx context.Context, c *duplosdk.Client, d *schema.Resou
 
 			d.Set("private_subnets", privateSubnets)
 			d.Set("public_subnets", publicSubnets)
+
+			// The backend returns subnets in the Subnets list, not in a separate
+			// CustomPrivateSubnetCidrs/CustomPublicSubnetCidrs field. Always populate
+			// from the parsed subnet lists so state stays accurate on refresh and import.
+			privateCidrs := make([]string, 0, len(privateSubnets))
+			for _, s := range privateSubnets {
+				if cidr, ok := s["cidr_block"].(string); ok && cidr != "" {
+					privateCidrs = append(privateCidrs, cidr)
+				}
+			}
+			d.Set("custom_private_subnet_cidrs", privateCidrs)
+
+			publicCidrs := make([]string, 0, len(publicSubnets))
+			for _, s := range publicSubnets {
+				if cidr, ok := s["cidr_block"].(string); ok && cidr != "" {
+					publicCidrs = append(publicCidrs, cidr)
+				}
+			}
+			d.Set("custom_public_subnet_cidrs", publicCidrs)
+
 		}
 
 		if config.Vnet.SecurityGroups != nil {

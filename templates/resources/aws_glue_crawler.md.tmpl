@@ -1,0 +1,63 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Crawler over an S3 path
+
+```terraform
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+resource "duplocloud_aws_glue_database" "analytics" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "analytics"
+}
+
+resource "duplocloud_aws_glue_crawler" "events" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "events"
+  role      = "arn:aws:iam::123456789012:role/duploservices-dev-glue"
+  body_json = jsonencode({
+    DatabaseName = duplocloud_aws_glue_database.analytics.fullname
+    Targets = {
+      S3Targets = [
+        { Path = "s3://my-bucket/events/" }
+      ]
+    }
+    SchemaChangePolicy = {
+      UpdateBehavior = "UPDATE_IN_DATABASE"
+      DeleteBehavior = "LOG"
+    }
+  })
+}
+```
+
+## role
+
+The IAM role must trust `glue.amazonaws.com` and have permissions to read the
+crawl targets plus write to the Glue Data Catalog and CloudWatch Logs.
+
+## body_json
+
+Accepts any AWS Glue `CreateCrawlerRequest` fields documented at
+[CreateCrawler](https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html).
+Do not include `Name` or `Role` — they are set by the provider.
+
+When referencing a Database in `DatabaseName`, use the Database's
+`fullname` (tenant-prefixed) or omit the field and let AWS infer the catalog.
+
+## Import
+
+```shell
+terraform import duplocloud_aws_glue_crawler.events <TENANT_ID>/<CRAWLER_NAME>
+```
+
+{{ .SchemaMarkdown | trimspace }}

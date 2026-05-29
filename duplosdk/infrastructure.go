@@ -113,13 +113,15 @@ type DuploInfrastructureVnetSGRule struct {
 
 // DuploInfrastructureVnet represents a Duplo infrastructure VNET
 type DuploInfrastructureVnet struct {
-	ID                 string                                   `json:"Id,omitempty"`
-	Name               string                                   `json:"Name,omitempty"`
-	AddressPrefix      string                                   `json:"AddressPrefix"`
-	SubnetCidr         int                                      `json:"SubnetCidr"`
-	Subnets            *[]DuploInfrastructureVnetSubnet         `json:"Subnets,omitempty"`
-	ProvisioningStatus string                                   `json:"ProvisioningStatus,omitempty"`
-	SecurityGroups     *[]DuploInfrastructureVnetSecurityGroups `json:"SecurityGroups,omitempty"`
+	ID                       string                                   `json:"Id,omitempty"`
+	Name                     string                                   `json:"Name,omitempty"`
+	AddressPrefix            string                                   `json:"AddressPrefix"`
+	SubnetCidr               int                                      `json:"SubnetCidr"`
+	CustomPrivateSubnetCidrs []string                                 `json:"CustomPrivateSubnetCidrs,omitempty"`
+	CustomPublicSubnetCidrs  []string                                 `json:"CustomPublicSubnetCidrs,omitempty"`
+	Subnets                  *[]DuploInfrastructureVnetSubnet         `json:"Subnets,omitempty"`
+	ProvisioningStatus       string                                   `json:"ProvisioningStatus,omitempty"`
+	SecurityGroups           *[]DuploInfrastructureVnetSecurityGroups `json:"SecurityGroups,omitempty"`
 }
 
 // DuploInfrastructureConfig represents extended information about a Duplo infrastructure

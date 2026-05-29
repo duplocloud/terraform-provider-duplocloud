@@ -267,3 +267,25 @@ resource "duplocloud_infrastructure" "infra" {
   address_prefix     = var.infra_config["address_prefix"]
   subnet_cidr        = var.infra_config["subnet_cidr"]
 }
+
+resource "duplocloud_infrastructure" "custom_cidr_infra" {
+  infra_name        = var.infra_config["name"]
+  cloud             = var.infra_config["cloud"]
+  region            = var.infra_config["region"]
+  azcount           = var.infra_config["azcount"]
+  enable_k8_cluster = false
+  address_prefix    = "11.1.0.0/16"
+  subnet_cidr       = 20
+
+  custom_private_subnet_cidrs = [
+    "11.1.0.0/18",
+    "11.1.64.0/18",
+    "11.1.128.0/18"
+  ]
+
+  custom_public_subnet_cidrs = [
+    "11.1.192.0/20",
+    "11.1.208.0/20",
+    "11.1.224.0/20"
+  ]
+}

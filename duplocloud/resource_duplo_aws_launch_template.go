@@ -173,10 +173,11 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"allowed_instance_types": {
-						Type:         schema.TypeList,
-						Optional:     true,
-						Computed:     true,
-						RequiredWith: []string{"instance_requirements.0.vcpu_count", "instance_requirements.0.memory_mib"},
+						Type:          schema.TypeList,
+						Optional:      true,
+						Computed:      true,
+						RequiredWith:  []string{"instance_requirements.0.vcpu_count", "instance_requirements.0.memory_mib"},
+						ConflictsWith: []string{"instance_requirements.0.excluded_instance_types"},
 
 						Elem: &schema.Schema{
 							Type: schema.TypeString,
@@ -219,6 +220,30 @@ func awsLaunchTemplateSchema() map[string]*schema.Schema {
 								},
 							},
 						},
+					},
+					"excluded_instance_types": {
+						Description:   "List of excluded instance types. Mutually exclusive with `allowed_instance_types`.",
+						Type:          schema.TypeList,
+						Optional:      true,
+						ConflictsWith: []string{"instance_requirements.0.allowed_instance_types"},
+						Elem:          &schema.Schema{Type: schema.TypeString},
+					},
+					"cpu_manufacturers": {
+						Description: "List of CPU manufacturers (e.g. `intel`, `amd`, `amazon-web-services`).",
+						Type:        schema.TypeList,
+						Optional:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+					},
+					"instance_generations": {
+						Description: "List of instance generations (e.g. `current`, `previous`).",
+						Type:        schema.TypeList,
+						Optional:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+					},
+					"spot_max_price_percentage_over_lowest_price": {
+						Description: "Price protection threshold as a percentage over the lowest price.",
+						Type:        schema.TypeInt,
+						Optional:    true,
 					},
 				},
 			},
@@ -418,6 +443,43 @@ func expandLaunchTemplate(d *schema.ResourceData, tenantId, name string) (*duplo
 					}
 				}
 			}
+			if v, ok := mirMap["excluded_instance_types"]; ok && v != nil {
+				if eitSlice, ok := v.([]interface{}); ok && len(eitSlice) > 0 {
+					excludedList := []string{}
+					for _, it := range eitSlice {
+						if s, ok := it.(string); ok {
+							excludedList = append(excludedList, s)
+						}
+					}
+					obj.LaunchTemplateData.InstanceRequirementsRequest.ExcludedInstanceTypes = excludedList
+				}
+			}
+			if v, ok := mirMap["cpu_manufacturers"]; ok && v != nil {
+				if cmSlice, ok := v.([]interface{}); ok && len(cmSlice) > 0 {
+					cpuList := []string{}
+					for _, it := range cmSlice {
+						if s, ok := it.(string); ok {
+							cpuList = append(cpuList, s)
+						}
+					}
+					obj.LaunchTemplateData.InstanceRequirementsRequest.CpuManufacturers = cpuList
+				}
+			}
+			if v, ok := mirMap["instance_generations"]; ok && v != nil {
+				if igSlice, ok := v.([]interface{}); ok && len(igSlice) > 0 {
+					igList := []string{}
+					for _, it := range igSlice {
+						if s, ok := it.(string); ok {
+							igList = append(igList, s)
+						}
+					}
+					obj.LaunchTemplateData.InstanceRequirementsRequest.InstanceGenerations = igList
+				}
+			}
+			if v, ok := mirMap["spot_max_price_percentage_over_lowest_price"]; ok && v.(int) > 0 {
+				val := v.(int)
+				obj.LaunchTemplateData.InstanceRequirementsRequest.SpotMaxPricePercentageOverLowestPrice = &val
+			}
 		}
 	}
 	return obj, nil
@@ -558,6 +620,18 @@ func flattenInstanceRequirements(ir *duplosdk.DuploLaunchTemplateInstanceRequire
 			"max": ir.MemoryMiB.Max,
 		}
 		irMap["memory_mib"] = []interface{}{memMap}
+	}
+	if ir.ExcludedInstanceTypes != nil {
+		irMap["excluded_instance_types"] = ir.ExcludedInstanceTypes
+	}
+	if ir.CpuManufacturers != nil {
+		irMap["cpu_manufacturers"] = ir.CpuManufacturers
+	}
+	if ir.InstanceGenerations != nil {
+		irMap["instance_generations"] = ir.InstanceGenerations
+	}
+	if ir.SpotMaxPricePercentageOverLowestPrice != nil {
+		irMap["spot_max_price_percentage_over_lowest_price"] = *ir.SpotMaxPricePercentageOverLowestPrice
 	}
 	return []interface{}{irMap}
 }

@@ -101,7 +101,7 @@ func resourceHelmRelease() *schema.Resource {
 							Type:         schema.TypeString,
 							Default:      "HelmRepository",
 							Optional:     true,
-							ValidateFunc: validation.StringInSlice([]string{"HelmRepository"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"HelmRepository", "OCIRepository"}, false),
 						},
 						"source_name": {
 							Description:  "The name of the source, referred from helm repository resource.",
@@ -233,18 +233,31 @@ func expandHelmRelease(d *schema.ResourceData) (duplosdk.DuploHelmRelease, error
 		Interval:    d.Get("interval").(string),
 		ReleaseName: d.Get("release_name").(string),
 	}
-	obj.Spec.Chart = &duplosdk.Chart{
-		Spec: duplosdk.ChartSpec{
-			Interval:          d.Get("chart.0.interval").(string),
-			Chart:             d.Get("chart.0.name").(string),
-			Version:           d.Get("chart.0.version").(string),
-			ReconcileStrategy: d.Get("chart.0.reconcile_strategy").(string),
-			SourceRef: duplosdk.SourceRef{
-				Kind: d.Get("chart.0.source_type").(string),
-				Name: d.Get("chart.0.source_name").(string),
+
+	// Check if source type is OCIRepository for simplified chartRef format
+	sourceType := d.Get("chart.0.source_type").(string)
+	if sourceType == "OCIRepository" {
+		// Use simplified chartRef format for OCI repositories
+		obj.Spec.ChartRef = &duplosdk.SourceRef{
+			Kind: sourceType,
+			Name: d.Get("chart.0.source_name").(string),
+		}
+	} else {
+		// Use existing chart format for HelmRepository
+		obj.Spec.Chart = &duplosdk.Chart{
+			Spec: duplosdk.ChartSpec{
+				Interval:          d.Get("chart.0.interval").(string),
+				Chart:             d.Get("chart.0.name").(string),
+				Version:           d.Get("chart.0.version").(string),
+				ReconcileStrategy: d.Get("chart.0.reconcile_strategy").(string),
+				SourceRef: duplosdk.SourceRef{
+					Kind: sourceType,
+					Name: d.Get("chart.0.source_name").(string),
+				},
 			},
-		},
+		}
 	}
+
 	var err error
 	if val, ok := d.GetOk("values"); ok && val.(string) != "" {
 		err = json.Unmarshal([]byte(d.Get("values").(string)), &obj.Spec.Values)
@@ -256,15 +269,34 @@ func flattenHelmRelease(d *schema.ResourceData, rb duplosdk.DuploHelmRelease) er
 	d.Set("name", rb.Metadata.Name)
 	d.Set("interval", rb.Spec.Interval)
 	d.Set("release_name", rb.Spec.ReleaseName)
-	d.Set("chart.0.name", rb.Spec.Chart.Spec.Chart)
-	d.Set("chart.0.version", rb.Spec.Chart.Spec.Version)
-	d.Set("chart.0.interval", rb.Spec.Chart.Spec.Interval)
-	d.Set("chart.0.source_type", rb.Spec.Chart.Spec.SourceRef.Kind)
-	d.Set("chart.0.source_name", rb.Spec.Chart.Spec.SourceRef.Name)
-	d.Set("chart.0.reconcile_strategy", rb.Spec.Chart.Spec.ReconcileStrategy)
+
+	// Handle both Chart (HelmRepository) and ChartRef (OCIRepository) formats
+	if rb.Spec.ChartRef != nil {
+		// OCIRepository format - use chartRef
+		d.Set("chart.0.source_type", rb.Spec.ChartRef.Kind)
+		d.Set("chart.0.source_name", rb.Spec.ChartRef.Name)
+		// Set default values for fields not used in OCIRepository format
+		d.Set("chart.0.name", "")
+		d.Set("chart.0.version", "")
+		d.Set("chart.0.interval", "5m0s")
+		d.Set("chart.0.reconcile_strategy", "ChartVersion")
+	} else if rb.Spec.Chart != nil {
+		// HelmRepository format - use chart.spec
+		d.Set("chart.0.name", rb.Spec.Chart.Spec.Chart)
+		d.Set("chart.0.version", rb.Spec.Chart.Spec.Version)
+		d.Set("chart.0.interval", rb.Spec.Chart.Spec.Interval)
+		d.Set("chart.0.source_type", rb.Spec.Chart.Spec.SourceRef.Kind)
+		d.Set("chart.0.source_name", rb.Spec.Chart.Spec.SourceRef.Name)
+		d.Set("chart.0.reconcile_strategy", rb.Spec.Chart.Spec.ReconcileStrategy)
+	}
+
 	var err error
 	if rb.Spec.Values != nil {
 		v, err := json.Marshal(rb.Spec.Values)
+		if err == nil {
+			d.Set("values", string(v))
+		}
+
 		if err == nil {
 			d.Set("values", string(v))
 		}
