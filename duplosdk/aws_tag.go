@@ -1,17 +1,34 @@
 package duplosdk
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 type DuploAWSTag struct {
 	Key   string `json:"Key"`
 	Value string `json:"Value"`
 }
 
+// The ARN and key segments need different numbers of escape passes because
+// the backend's route binders treat them differently: the ARN wildcard
+// segment goes through three decode layers (route binder + explicit decode
+// in the controller), while the key regular-parameter segment only goes
+// through two. PathEscape (not QueryEscape) is used so spaces encode as
+// %20 — path decoders don't translate `+` back to space.
+func escapeAWSTagARN(s string) string {
+	return url.PathEscape(url.PathEscape(url.PathEscape(s)))
+}
+
+func escapeAWSTagKey(s string) string {
+	return EncodePathParam(s)
+}
+
 func (c *Client) CreateAWSTag(tenantId, arn string, rq *DuploAWSTag) ClientError {
 	var rp interface{}
 	err := c.postAPI(
 		fmt.Sprintf("CreateAWSTag(%s, %s)", tenantId, arn),
-		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s", tenantId, arn),
+		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s", tenantId, escapeAWSTagARN(arn)),
 		&rq,
 		&rp,
 	)
@@ -22,7 +39,7 @@ func (c *Client) GetAWSTag(tenantId, arn, key string) (*DuploAWSTag, ClientError
 	rp := DuploAWSTag{}
 	err := c.getAPI(
 		fmt.Sprintf("GetAWSTag(%s, %s,%s)", tenantId, arn, key),
-		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/%s", tenantId, arn, key),
+		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/%s", tenantId, escapeAWSTagARN(arn), escapeAWSTagKey(key)),
 		&rp,
 	)
 	return &rp, err
@@ -31,7 +48,7 @@ func (c *Client) GetAWSTag(tenantId, arn, key string) (*DuploAWSTag, ClientError
 func (c *Client) DeleteAWSTag(tenantId, arn, key string) ClientError {
 	err := c.deleteAPI(
 		fmt.Sprintf("DeleteAWSTag(%s, %s,%s)", tenantId, arn, key),
-		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/%s", tenantId, arn, key),
+		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/%s", tenantId, escapeAWSTagARN(arn), escapeAWSTagKey(key)),
 		nil,
 	)
 	return err
@@ -41,8 +58,8 @@ func (c *Client) UpdateAWSTag(tenantId, arn, key string, rq *DuploAWSTag) Client
 	var rp interface{}
 
 	err := c.putAPI(
-		fmt.Sprintf("CreateAWSTag(%s, %s,%s)", tenantId, arn, key),
-		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/%s", tenantId, arn, key),
+		fmt.Sprintf("UpdateAWSTag(%s, %s,%s)", tenantId, arn, key),
+		fmt.Sprintf("v3/subscriptions/%s/aws/tags/arn/%s/%s", tenantId, escapeAWSTagARN(arn), escapeAWSTagKey(key)),
 		&rq,
 		&rp,
 	)

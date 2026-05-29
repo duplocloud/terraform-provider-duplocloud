@@ -134,7 +134,6 @@ type DuploLambdaConfigurationRequest struct {
 	Layers           *[]string                    `json:"Layers,omitempty"`
 	MemorySize       int                          `json:"MemorySize"`
 	Runtime          *DuploStringValue            `json:"Runtime,omitempty"`
-	Tags             map[string]string            `json:"Tags,omitempty"`
 	Timeout          int                          `json:"Timeout,omitempty"`
 	TracingConfig    *DuploLambdaTracingConfig    `json:"TracingConfig,omitempty"`
 	DeadLetterConfig *DuploDeadLetterConfig       `json:"DeadLetterConfig,omitempty"`
