@@ -1,0 +1,48 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Workflow with default run properties
+
+```terraform
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+resource "duplocloud_aws_glue_workflow" "pipeline" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "pipeline"
+  body_json = jsonencode({
+    Description = "End-to-end data pipeline"
+    DefaultRunProperties = {
+      env = "dev"
+    }
+    MaxConcurrentRuns = 1
+  })
+}
+```
+
+Triggers under this workflow reference it by **`fullname`** via the
+`WorkflowName` field in `duplocloud_aws_glue_trigger.body_json` — the short
+`name` is the user-facing form and AWS does not recognize it.
+
+## body_json
+
+Accepts any AWS Glue `CreateWorkflowRequest` fields documented at
+[CreateWorkflow](https://docs.aws.amazon.com/glue/latest/webapi/API_CreateWorkflow.html).
+Do not include `Name`.
+
+## Import
+
+```shell
+terraform import duplocloud_aws_glue_workflow.pipeline <TENANT_ID>/<WORKFLOW_NAME>
+```
+
+{{ .SchemaMarkdown | trimspace }}

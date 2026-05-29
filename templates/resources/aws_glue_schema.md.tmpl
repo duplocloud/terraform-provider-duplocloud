@@ -1,0 +1,66 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Avro schema under a registry
+
+```terraform
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+resource "duplocloud_aws_glue_registry" "events" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "events"
+}
+
+resource "duplocloud_aws_glue_schema" "click" {
+  tenant_id     = data.duplocloud_tenant.tenant.id
+  registry_name = duplocloud_aws_glue_registry.events.name
+  name          = "click"
+  data_format   = "AVRO"
+  compatibility = "BACKWARD"
+  body_json = jsonencode({
+    Description = "Click event schema"
+    SchemaDefinition = jsonencode({
+      type   = "record"
+      name   = "Click"
+      fields = [
+        { name = "id", type = "string" },
+        { name = "ts", type = "long" }
+      ]
+    })
+  })
+}
+```
+
+## registry_name
+
+Pass the short registry name (without the `duploservices-<tenant>-` prefix). The
+provider adds the prefix when calling the backend.
+
+## body_json
+
+Accepts any AWS Glue `CreateSchemaInput` fields documented at
+[CreateSchema](https://docs.aws.amazon.com/glue/latest/webapi/API_CreateSchema.html).
+Do not include `SchemaName`, `DataFormat`, or `Compatibility` — they are set by
+the provider from typed attributes.
+
+## Import
+
+```shell
+terraform import duplocloud_aws_glue_schema.click <TENANT_ID>/<REGISTRY_NAME>/<SCHEMA_NAME>
+```
+
+On import the provider fetches the schema's latest version from the backend so
+`SchemaDefinition` is preserved in state — the next `terraform plan` is clean
+without an intermediate `apply`.
+
+{{ .SchemaMarkdown | trimspace }}

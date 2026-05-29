@@ -1,0 +1,55 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Minimal database
+
+```terraform
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+resource "duplocloud_aws_glue_database" "analytics" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "analytics"
+}
+```
+
+### Database with description and parameters
+
+```terraform
+resource "duplocloud_aws_glue_database" "analytics" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "analytics"
+  body_json = jsonencode({
+    Description = "Analytics tables for the data team"
+    LocationUri = "s3://my-bucket/analytics/"
+    Parameters = {
+      classification = "csv"
+    }
+  })
+}
+```
+
+## body_json
+
+The `body_json` attribute accepts any AWS Glue `DatabaseInput` fields documented at
+[CreateDatabase](https://docs.aws.amazon.com/glue/latest/webapi/API_CreateDatabase.html).
+Do not include `Name` — it is set by the provider from the `name` attribute.
+Computed fields returned by AWS (such as `CreateTime`, `CatalogId`) are kept in
+state but do not trigger a diff unless your configuration explicitly sets them.
+
+## Import
+
+```shell
+terraform import duplocloud_aws_glue_database.analytics <TENANT_ID>/<DATABASE_NAME>
+```
+
+{{ .SchemaMarkdown | trimspace }}
