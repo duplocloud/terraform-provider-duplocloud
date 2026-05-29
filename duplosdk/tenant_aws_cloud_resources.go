@@ -79,18 +79,19 @@ type DuploS3Bucket struct {
 	// NOTE: The TenantID field does not come from the backend - we synthesize it
 	TenantID string `json:"-"`
 
-	Name              string                 `json:"Name,omitempty"`
-	DomainName        string                 `json:"DomainName,omitempty"`
-	Region            string                 `json:"Region,omitempty"`
-	Location          string                 `json:"Location,omitempty"`
-	Arn               string                 `json:"Arn,omitempty"`
-	MetaData          string                 `json:"MetaData,omitempty"`
-	EnableVersioning  bool                   `json:"EnableVersioning,omitempty"`
-	EnableAccessLogs  bool                   `json:"EnableAccessLogs,omitempty"`
-	AllowPublicAccess bool                   `json:"AllowPublicAccess,omitempty"`
-	DefaultEncryption string                 `json:"DefaultEncryption,omitempty"`
-	Policies          []string               `json:"Policies,omitempty"`
-	Tags              *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	Name                 string                 `json:"Name,omitempty"`
+	DomainName           string                 `json:"DomainName,omitempty"`
+	Region               string                 `json:"Region,omitempty"`
+	Location             string                 `json:"Location,omitempty"`
+	Arn                  string                 `json:"Arn,omitempty"`
+	MetaData             string                 `json:"MetaData,omitempty"`
+	EnableVersioning     bool                   `json:"EnableVersioning,omitempty"`
+	EnableAccessLogs     bool                   `json:"EnableAccessLogs,omitempty"`
+	AllowPublicAccess    bool                   `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryption    string                 `json:"DefaultEncryption,omitempty"`
+	Policies             []string               `json:"Policies,omitempty"`
+	Tags                 *[]DuploKeyStringValue `json:"Tags,omitempty"`
+	CorsAllowedHostNames []string               `json:"CorsAllowedHostNames,omitempty"`
 }
 
 type DuploGCPBucket struct {
@@ -862,6 +863,15 @@ func (c *Client) UpdateKafkaClusterConfiguration(tenantID string, encodedArn, ar
 		return nil, err
 	}
 	return rp, nil
+}
+
+// UpdateKafkaClusterClientAuthentication updates the client authentication settings of a provisioned Kafka cluster.
+func (c *Client) UpdateKafkaClusterClientAuthentication(tenantID, arn, cv string, auth *DuploKafkaClientAuthentication) ClientError {
+	rp := make(map[string]interface{})
+	return c.putAPI(fmt.Sprintf("UpdateKafkaClusterClientAuthentication(%s, %s)", tenantID, arn),
+		fmt.Sprintf("v3/subscriptions/%s/aws/kafka/client-authentication", tenantID),
+		map[string]interface{}{"ClusterArn": arn, "CurrentVersion": cv, "ClientAuthentication": auth},
+		&rp)
 }
 
 // TenantGetKafkaClusterBootstrapBrokers gets a non-cached view of the kafka cluster's info via Duplo.

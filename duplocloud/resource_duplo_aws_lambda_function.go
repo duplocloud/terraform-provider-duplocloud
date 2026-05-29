@@ -476,6 +476,13 @@ func resourceAwsLambdaFunctionUpdate(ctx context.Context, d *schema.ResourceData
 		}
 	}
 
+	// Tags use a dedicated endpoint — the configuration update path drops them.
+	if d.HasChange("tags") {
+		if err = updateAwsLambdaFunctionTags(c, tenantID, d); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	// Read the latest state.
 	diags := resourceAwsLambdaFunctionRead(ctx, d, m)
 	log.Printf("[TRACE] resourceAwsLambdaFunctionUpdate(%s, %s): end", tenantID, name)
@@ -627,6 +634,55 @@ func expandAwsLambdaTags(d *schema.ResourceData) map[string]string {
 	return tags
 }
 
+// updateAwsLambdaFunctionTags applies tag changes via the per-tag
+// `aws/tags/arn/{arn}` endpoints (POST for new, PUT for change, DELETE for
+// removal) — same path the duplocloud UI uses. The Lambda configuration
+// update endpoint silently drops tag changes, so they must be applied
+// separately. URL-escaping of the ARN and key segments is handled inside
+// the duplosdk helpers.
+func updateAwsLambdaFunctionTags(c *duplosdk.Client, tenantID string, d *schema.ResourceData) error {
+	arn := d.Get("arn").(string)
+	if arn == "" {
+		return fmt.Errorf("cannot update lambda tags: arn is empty")
+	}
+
+	oldRaw, newRaw := d.GetChange("tags")
+	oldTags := oldRaw.(map[string]interface{})
+	newTags := newRaw.(map[string]interface{})
+
+	for k, v := range newTags {
+		newVal := ""
+		if v != nil {
+			newVal = v.(string)
+		}
+		oldVal, existed := oldTags[k]
+		if existed && oldVal == v {
+			continue
+		}
+		tag := &duplosdk.DuploAWSTag{Key: k, Value: newVal}
+		var err duplosdk.ClientError
+		if existed {
+			err = c.UpdateAWSTag(tenantID, arn, k, tag)
+		} else {
+			err = c.CreateAWSTag(tenantID, arn, tag)
+		}
+		if err != nil {
+			return fmt.Errorf("setting tag %q on lambda %s: %s", k, arn, err)
+		}
+	}
+
+	for k := range oldTags {
+		if _, kept := newTags[k]; kept {
+			continue
+		}
+		if err := c.DeleteAWSTag(tenantID, arn, k); err != nil {
+			return fmt.Errorf("deleting tag %q on lambda %s: %s", k, arn, err)
+		}
+	}
+
+	return nil
+}
+
 func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData, c *duplosdk.Client) error {
 	log.Printf("[TRACE] updateAwsLambdaFunctionConfig(%s): start", name)
 	rq := duplosdk.DuploLambdaConfigurationRequest{
@@ -635,7 +691,6 @@ func updateAwsLambdaFunctionConfig(tenantID, name string, d *schema.ResourceData
 		Description:  d.Get("description").(string),
 		Timeout:      d.Get("timeout").(int),
 		MemorySize:   d.Get("memory_size").(int),
-		Tags:         expandAwsLambdaTags(d),
 	}
 
 	if v, ok := getAsStringArray(d, "layers"); ok && v != nil {
@@ -783,7 +838,6 @@ func needsAwsLambdaFunctionConfigUpdate(d *schema.ResourceData) bool {
 		d.HasChange("timeout") ||
 		d.HasChange("memory_size") ||
 		d.HasChange("environment") ||
-		d.HasChange("tags") ||
 		d.HasChange("layers") ||
 		d.HasChange("tracing_config") ||
 		d.HasChange("ephemeral_storage") ||

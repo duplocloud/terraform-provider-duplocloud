@@ -856,14 +856,6 @@ func resourceAwsCloudfrontDistributionV2Read(ctx context.Context, d *schema.Reso
 		d.SetId("")
 		return nil
 	}
-	if len(duplo.Distribution.DistributionConfig.CorsAllowedHostNames) == 0 && d.Get("cors_allowed_host_names") != nil {
-		corsAllowedHostNames := []string{}
-
-		for _, v := range d.Get("cors_allowed_host_names").([]interface{}) {
-			corsAllowedHostNames = append(corsAllowedHostNames, v.(string))
-		}
-		duplo.Distribution.DistributionConfig.CorsAllowedHostNames = corsAllowedHostNames
-	}
 	flattenAwsCloudfrontDistributionV2(d, duplo.Distribution.DistributionConfig)
 	d.Set("status", duplo.Distribution.Status)
 	d.Set("domain_name", duplo.Distribution.DomainName)
@@ -872,8 +864,53 @@ func resourceAwsCloudfrontDistributionV2Read(ctx context.Context, d *schema.Reso
 	d.Set("tenant_id", tenantID)
 	d.Set("hosted_zone_id", duplosdk.CloudFrontRoute53ZoneID)
 	d.Set("name", name)
+
+	// Infer use_origin_access_control: true when any S3 origin has an OAC configured.
+	// The backend does not return UseOAIIdentity in the GET response; it is stored as
+	// S3 bucket metadata and reflected in the origins' OriginAccessControlId field.
+	useOAC := false
+	if duplo.Distribution.DistributionConfig.Origins != nil && duplo.Distribution.DistributionConfig.Origins.Items != nil {
+		for _, origin := range *duplo.Distribution.DistributionConfig.Origins.Items {
+			if origin.OriginAccessControlId != "" {
+				useOAC = true
+				break
+			}
+		}
+	}
+	d.Set("use_origin_access_control", useOAC)
+
+	// Read cors_allowed_host_names from the S3 origin bucket.
+	// The backend stores CORS settings on the bucket (not in CloudFront) and does not
+	// include them in the CloudFront GET response, so we fetch them directly from S3.
+	if duplo.Distribution.DistributionConfig.Origins != nil && duplo.Distribution.DistributionConfig.Origins.Items != nil {
+		for _, origin := range *duplo.Distribution.DistributionConfig.Origins.Items {
+			bucketFullname := cloudfrontS3BucketFullnameFromDomainName(origin.DomainName)
+			if bucketFullname == "" {
+				continue
+			}
+			bucket, bucketErr := c.TenantGetV3S3Bucket(tenantID, bucketFullname)
+			if bucketErr != nil || bucket == nil {
+				log.Printf("[WARN] resourceAwsCloudfrontDistributionV2Read(%s, %s): could not retrieve S3 bucket %s for CORS: %v", tenantID, cfdId, bucketFullname, bucketErr)
+				continue
+			}
+			if len(bucket.CorsAllowedHostNames) > 0 {
+				d.Set("cors_allowed_host_names", bucket.CorsAllowedHostNames)
+			}
+			break
+		}
+	}
+
 	log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end", tenantID, cfdId)
 	return nil
+}
+
+// cloudfrontS3BucketFullnameFromDomainName extracts the S3 bucket full name from a CloudFront
+// origin domain name of the form "{fullname}.s3.{region}.amazonaws.com".
+func cloudfrontS3BucketFullnameFromDomainName(domainName string) string {
+	if idx := strings.Index(domainName, ".s3."); idx > 0 {
+		return domainName[:idx]
+	}
+	return ""
 }
 
 func resourceAwsCloudfrontDistributionV2Create(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -1117,16 +1154,8 @@ func flattenAwsCloudfrontDistributionV2(d *schema.ResourceData, duplo *duplosdk.
 		d.Set("origin_group", flattenOriginGroups(duplo.OriginGroups))
 	}
 
-	if len(duplo.CorsAllowedHostNames) > 0 {
-		corsList := make([]interface{}, len(duplo.CorsAllowedHostNames))
-		for i, v := range duplo.CorsAllowedHostNames {
-			corsList[i] = v
-		}
-
-		d.Set("cors_allowed_host_names", corsList)
-	} else {
-		d.Set("cors_allowed_host_names", nil)
-	}
+	// cors_allowed_host_names is set by resourceAwsCloudfrontDistributionV2Read from the S3 bucket,
+	// not from the CloudFront GET response (the backend does not include it there).
 	d.Set("fullname", duplo.Comment)
 
 }

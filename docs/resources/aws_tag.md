@@ -4,11 +4,14 @@ page_title: "duplocloud_aws_tag Resource - terraform-provider-duplocloud"
 subcategory: ""
 description: |-
   duplocloud_aws_tag manages an AWS custom tag for resources in Duplo.
+  ~> Note: AWS Auto Scaling Group (ASG) resources are not supported by this resource. The underlying bulk tagging API does not support ASG ARNs. To tag ASG resources, use the minion_tags attribute in duplocloud_asg_profile instead.
 ---
 
 # duplocloud_aws_tag (Resource)
 
 `duplocloud_aws_tag` manages an AWS custom tag for resources in Duplo.
+
+~> **Note:** AWS Auto Scaling Group (ASG) resources are **not supported** by this resource. The underlying bulk tagging API does not support ASG ARNs. To tag ASG resources, use the `minion_tags` attribute in `duplocloud_asg_profile` instead.
 
 
 
@@ -17,7 +20,7 @@ description: |-
 
 ### Required
 
-- `arn` (String) The resource arn of which custom tag need to be created.
+- `arn` (String) The resource ARN of which custom tag need to be created. **Note:** ASG (Auto Scaling Group) ARNs are not supported.
 - `key` (String) The tag name.
 - `tenant_id` (String) The GUID of the tenant that the custom tag for a resource will be created in.
 - `value` (String) The value of the tag.

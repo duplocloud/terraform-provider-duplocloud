@@ -1,0 +1,61 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Scheduled trigger
+
+```terraform
+data "duplocloud_tenant" "tenant" {
+  name = "dev"
+}
+
+resource "duplocloud_aws_glue_job" "report" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "daily-report"
+  role      = "arn:aws:iam::123456789012:role/duploservices-dev-glue"
+  body_json = jsonencode({
+    Command = { Name = "pythonshell", ScriptLocation = "s3://my-scripts/daily.py", PythonVersion = "3.9" }
+    GlueVersion = "3.0"
+    MaxCapacity = 0.0625
+  })
+}
+
+resource "duplocloud_aws_glue_trigger" "nightly" {
+  tenant_id = data.duplocloud_tenant.tenant.id
+  name      = "nightly"
+  type      = "SCHEDULED"
+  body_json = jsonencode({
+    Schedule    = "cron(0 7 * * ? *)"
+    StartOnCreation = true
+    Actions = [
+      { JobName = duplocloud_aws_glue_job.report.fullname }
+    ]
+  })
+}
+```
+
+> Use `.fullname` (the tenant-prefixed name AWS knows the resource by) — not
+> `.name` — when referencing a Job, Crawler, or Workflow from another
+> resource's `body_json`. AWS lookups against `name` (the short user-supplied
+> form) return `Entity not found`.
+
+## body_json
+
+Accepts any AWS Glue `CreateTriggerRequest` fields documented at
+[CreateTrigger](https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html).
+Do not include `Name` or `Type` — they are set by the provider.
+
+## Import
+
+```shell
+terraform import duplocloud_aws_glue_trigger.nightly <TENANT_ID>/<TRIGGER_NAME>
+```
+
+{{ .SchemaMarkdown | trimspace }}

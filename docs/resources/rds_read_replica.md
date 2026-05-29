@@ -193,6 +193,7 @@ See AWS documentation for the [available instance types](https://aws.amazon.com/
 
 - `allocated_storage` (Number) (Required unless a `snapshot_id` is provided) The allocated storage in gigabytes. This can only be set during an update; it will inherit the writer's value during creation.
 **Note:** Allocated storage can only be modified after every 6 hours.
+- `auto_minor_version_upgrade` (Boolean) Enable or disable auto minor version upgrade
 - `availability_zone` (String) The AZ for the RDS instance.
 - `engine_type` (Number) Engine type required to validate applicable parameter group setting for different instance. Should be referred from writer
 - `enhanced_monitoring` (Number) Interval to capture metrics in real time for the operating system (OS) that your Amazon RDS DB instance runs on.

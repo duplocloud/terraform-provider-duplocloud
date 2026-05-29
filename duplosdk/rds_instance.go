@@ -171,6 +171,10 @@ type DuploRDSStorageAutoScalling struct {
 	ApplyImmediately     bool `json:"ApplyImmediately"`
 }
 
+type DuploRdsAutoMinorVersionUpgrade struct {
+	AutoMinorVersionUpgrade bool `json:"AutoMinorVersionUpgrade"`
+}
+
 /*************************************************
  * API CALLS to duplo
  */
@@ -280,6 +284,24 @@ func (c *Client) RdsInstanceGetByName(tenantID, name string) (*DuploRdsInstance,
 	return &duploObject, nil
 }
 
+func (c *Client) RdsInstanceDataSourceGetByName(tenantID, name string) (*DuploRdsInstance, ClientError) {
+	identifier := EnsureDuploPrefixInRdsIdentifier(name)
+	// Call the API.
+	duploObject := DuploRdsInstance{}
+	err := c.getAPI(
+		fmt.Sprintf("RdsInstanceGet(%s, %s)", tenantID, identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s", tenantID, identifier),
+		&duploObject)
+	if err != nil || duploObject.Identifier == "" {
+		return nil, err
+	}
+
+	// Fill in the tenant ID and the name and return the object
+	duploObject.TenantID = tenantID
+	duploObject.Name = name
+	return &duploObject, nil
+}
+
 // RdsInstanceChangePassword creates or updates an RDS instance via the Duplo API.
 func (c *Client) RdsInstanceChangePassword(tenantID string, duploObject DuploRdsInstancePasswordChange) ClientError {
 	// Call the API.
@@ -376,6 +398,14 @@ func (c *Client) RdsUpdateMonitoringInterval(tenantID string, duploObject DuploM
 	)
 }
 
+func (c *Client) RdsUpdateAutoMinorVersionUpgrade(tenantID, name string, duploObject DuploRdsAutoMinorVersionUpgrade) ClientError {
+	return c.putAPI(
+		fmt.Sprintf("RdsUpdateAutoMinorVersionUpgrade(%s, %s)", tenantID, name),
+		fmt.Sprintf("v3/subscriptions/%s/aws/rds/instance/%s/autoMinorVersionUpgrade", tenantID, name),
+		&duploObject,
+		nil,
+	)
+}
 func RdsIsAurora(engine int) bool {
 	return engine == DUPLO_RDS_ENGINE_AURORA_MYSQL ||
 		engine == DUPLO_RDS_ENGINE_AURORA_POSTGRESQL

@@ -346,8 +346,9 @@ func flattenGcpHost(d *schema.ResourceData, duplo *duplosdk.DuploGcpHost) {
 	d.Set("allocated_public_ip", duplo.EnablePublicIpAddress)
 	d.Set("zone", duplo.Zone)
 	d.Set("accelerator_count", duplo.AcceleratorCount)
-	if len(duplo.Metadata) > 0 {
-		d.Set("metadata", duplo.Metadata)
+	metadata := flattenGcpHostMetadata(duplo.Metadata, duplo.UserData)
+	if len(metadata) > 0 {
+		d.Set("metadata", metadata)
 	}
 	d.Set("labels", filterOutDefaultLabels(duplo.Labels))
 	d.Set("accelerator_type", duplo.AcceleratorType)
@@ -377,7 +378,11 @@ func expandGcpHost(d *schema.ResourceData) duplosdk.DuploGcpHost {
 	obj.Zone = d.Get("zone").(string)
 	obj.AcceleratorCount = d.Get("accelerator_count").(int)
 	if v, ok := d.GetOk("metadata"); ok {
-		obj.Metadata = v.(map[string]interface{})
+		meta, startupScript := expandGcpHostMetadata(v.(map[string]interface{}))
+		obj.Metadata = meta
+		if startupScript != "" {
+			obj.UserData = startupScript
+		}
 	}
 	if v, ok := d.GetOk("labels"); ok {
 		obj.Labels = make(map[string]interface{})
@@ -416,7 +421,11 @@ func expandGcpHostOnUpdate(d *schema.ResourceData) duplosdk.DuploGcpHost {
 		obj.Tags = append(obj.Tags, v.(string))
 	}
 	if v, ok := d.GetOk("metadata"); ok {
-		obj.Metadata = v.(map[string]interface{})
+		meta, startupScript := expandGcpHostMetadata(v.(map[string]interface{}))
+		obj.Metadata = meta
+		if startupScript != "" {
+			obj.UserData = startupScript
+		}
 	}
 	if v, ok := d.GetOk("labels"); ok {
 		obj.Labels = make(map[string]interface{})
@@ -428,6 +437,35 @@ func expandGcpHostOnUpdate(d *schema.ResourceData) duplosdk.DuploGcpHost {
 	}
 
 	return obj
+}
+
+// expandGcpHostMetadata extracts startup_script from the metadata map and returns
+// the remaining metadata and the startup script value separately.
+// The startup_script value is sent as UserData in the API request.
+func expandGcpHostMetadata(m map[string]interface{}) (map[string]interface{}, string) {
+	out := make(map[string]interface{}, len(m))
+	startupScript := ""
+	for k, v := range m {
+		if k == "startup_script" {
+			startupScript = v.(string)
+		} else {
+			out[k] = v
+		}
+	}
+	return out, startupScript
+}
+
+// flattenGcpHostMetadata merges UserData back into the metadata map as startup_script
+// so it matches what users specify in Terraform config.
+func flattenGcpHostMetadata(m map[string]interface{}, userData string) map[string]interface{} {
+	out := make(map[string]interface{}, len(m)+1)
+	for k, v := range m {
+		out[k] = v
+	}
+	if userData != "" {
+		out["startup_script"] = userData
+	}
+	return out
 }
 
 func validateGCPHostAttributes(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {

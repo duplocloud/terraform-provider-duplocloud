@@ -113,15 +113,16 @@ type DuploAwsCloudfrontOriginShield struct {
 }
 
 type DuploAwsCloudfrontOrigin struct {
-	ConnectionAttempts int                                    `json:"ConnectionAttempts,omitempty"`
-	ConnectionTimeout  int                                    `json:"ConnectionTimeout,omitempty"`
-	CustomHeaders      *DuploAwsCloudfrontOriginCustomHeaders `json:"CustomHeaders,omitempty"`
-	DomainName         string                                 `json:"DomainName,omitempty"`
-	Id                 string                                 `json:"Id,omitempty"`
-	OriginPath         string                                 `json:"OriginPath"`
-	S3OriginConfig     *DuploAwsCloudfrontOriginS3Config      `json:"S3OriginConfig,omitempty"`
-	CustomOriginConfig *DuploAwsCloudfrontCustomOriginConfig  `json:"CustomOriginConfig,omitempty"`
-	OriginShield       *DuploAwsCloudfrontOriginShield        `json:"OriginShield,omitempty"`
+	ConnectionAttempts    int                                    `json:"ConnectionAttempts,omitempty"`
+	ConnectionTimeout     int                                    `json:"ConnectionTimeout,omitempty"`
+	CustomHeaders         *DuploAwsCloudfrontOriginCustomHeaders `json:"CustomHeaders,omitempty"`
+	DomainName            string                                 `json:"DomainName,omitempty"`
+	Id                    string                                 `json:"Id,omitempty"`
+	OriginPath            string                                 `json:"OriginPath"`
+	S3OriginConfig        *DuploAwsCloudfrontOriginS3Config      `json:"S3OriginConfig,omitempty"`
+	CustomOriginConfig    *DuploAwsCloudfrontCustomOriginConfig  `json:"CustomOriginConfig,omitempty"`
+	OriginShield          *DuploAwsCloudfrontOriginShield        `json:"OriginShield,omitempty"`
+	OriginAccessControlId string                                 `json:"OriginAccessControlId,omitempty"`
 }
 
 type DuploAwsCloudfrontOriginCustomHeaders struct {
