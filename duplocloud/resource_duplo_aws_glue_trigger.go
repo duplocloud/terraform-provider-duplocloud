@@ -17,7 +17,9 @@ var (
 		{tfKey: "name", jsonKey: "Name", identity: true},
 		{tfKey: "type", jsonKey: "Type"},
 	}
-	glueTriggerWrap = glueWrap{response: "Trigger"}
+	// StartOnCreation is a create-only field that GetTrigger never echoes back;
+	// preserve it from prior state so it doesn't surface as perpetual drift.
+	glueTriggerWrap = glueWrap{response: "Trigger", preserveOnRead: []string{"StartOnCreation"}}
 )
 
 func resourceDuploAwsGlueTrigger() *schema.Resource {
