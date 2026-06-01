@@ -536,3 +536,89 @@ func (c *Client) GetGCPInfraNATIPs(infraName string) ([]string, ClientError) {
 
 	return rp, err
 }
+
+// DuploVpcEndpointDnsEntry represents a DNS entry for a VPC endpoint
+type DuploVpcEndpointDnsEntry struct {
+	DnsName      string `json:"DnsName"`
+	HostedZoneId string `json:"HostedZoneId"`
+}
+
+// DuploVpcEndpointGroup represents a security group associated with a VPC endpoint
+type DuploVpcEndpointGroup struct {
+	GroupId   string `json:"GroupId"`
+	GroupName string `json:"GroupName"`
+}
+
+// DuploVpcEndpoint represents a VPC endpoint in a Duplo infrastructure
+type DuploVpcEndpoint struct {
+	VpcEndpointId       string                     `json:"VpcEndpointId"`
+	ServiceName         string                     `json:"ServiceName"`
+	VpcEndpointType     DuploStringValue           `json:"VpcEndpointType"`
+	State               DuploStringValue           `json:"State"`
+	VpcId               string                     `json:"VpcId"`
+	CreationTimestamp   string                     `json:"CreationTimestamp"`
+	PrivateDnsEnabled   bool                       `json:"PrivateDnsEnabled"`
+	PolicyDocument      string                     `json:"PolicyDocument,omitempty"`
+	RouteTableIds       []string                   `json:"RouteTableIds,omitempty"`
+	SubnetIds           []string                   `json:"SubnetIds,omitempty"`
+	NetworkInterfaceIds []string                   `json:"NetworkInterfaceIds,omitempty"`
+	DnsEntries          []DuploVpcEndpointDnsEntry `json:"DnsEntries,omitempty"`
+	Groups              []DuploVpcEndpointGroup    `json:"Groups,omitempty"`
+}
+
+// DuploVpcEndpointCreateRequest represents a request to create a VPC endpoint
+type DuploVpcEndpointCreateRequest struct {
+	VpcEndpointType DuploStringValue `json:"VpcEndpointType"`
+	ServiceName     string           `json:"ServiceName"`
+}
+
+// InfrastructureGetVpcEndpoints retrieves VPC endpoints for an infrastructure via the Duplo API.
+func (c *Client) InfrastructureGetVpcEndpoints(infraName string) (*[]DuploVpcEndpoint, ClientError) {
+	var list []DuploVpcEndpoint
+	err := c.getAPI(
+		fmt.Sprintf("InfrastructureGetVpcEndpoints(%s)", infraName),
+		fmt.Sprintf("v3/admin/infrastructure/%s/vpcEndpoints", infraName),
+		&list)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+// InfrastructureGetVpcEndpoint retrieves a specific VPC endpoint by ID for an infrastructure.
+func (c *Client) InfrastructureGetVpcEndpoint(infraName, endpointId string) (*DuploVpcEndpoint, ClientError) {
+	list, err := c.InfrastructureGetVpcEndpoints(infraName)
+	if err != nil {
+		return nil, err
+	}
+	if list != nil {
+		for _, ep := range *list {
+			if ep.VpcEndpointId == endpointId {
+				return &ep, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
+// InfrastructureCreateVpcEndpoint creates a VPC endpoint for an infrastructure via the Duplo API.
+func (c *Client) InfrastructureCreateVpcEndpoint(infraName string, rq DuploVpcEndpointCreateRequest) (*DuploVpcEndpoint, ClientError) {
+	var rp DuploVpcEndpoint
+	err := c.postAPI(
+		fmt.Sprintf("InfrastructureCreateVpcEndpoint(%s, %s)", infraName, rq.ServiceName),
+		fmt.Sprintf("v3/admin/infrastructure/%s/vpcEndpoints", infraName),
+		&rq,
+		&rp)
+	if err != nil {
+		return nil, err
+	}
+	return &rp, nil
+}
+
+// InfrastructureDeleteVpcEndpoint deletes a VPC endpoint from an infrastructure via the Duplo API.
+func (c *Client) InfrastructureDeleteVpcEndpoint(infraName, endpointId string) ClientError {
+	return c.deleteAPI(
+		fmt.Sprintf("InfrastructureDeleteVpcEndpoint(%s, %s)", infraName, endpointId),
+		fmt.Sprintf("v3/admin/infrastructure/%s/vpcEndpoints/%s", infraName, endpointId),
+		nil)
+}
