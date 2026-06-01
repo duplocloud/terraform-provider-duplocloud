@@ -39,7 +39,7 @@ resource "duplocloud_aws_cloudfront_distribution_v2" "cloudfront" {
     connection_timeout  = 10
     domain_name         = "${duplocloud_s3_bucket.forcloudfront.fullname}.s3.${local.region}.amazonaws.com"
     origin_id           = "${duplocloud_s3_bucket.forcloudfront.fullname}.s3.${local.region}.amazonaws.com"
-    origin_path         = "/acme-portal.dev.shastacloud.io"
+    origin_path         = "/portal.example.io"
   }
   default_cache_behavior {
     target_origin_id = "${duplocloud_s3_bucket.forcloudfront.fullname}.s3.${local.region}.amazonaws.com"

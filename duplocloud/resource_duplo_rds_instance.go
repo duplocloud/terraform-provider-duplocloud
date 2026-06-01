@@ -216,6 +216,7 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Description: "Whether or not to encrypt the RDS instance storage.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Computed:    true,
 			ForceNew:    true,
 		},
 		"enable_logging": {

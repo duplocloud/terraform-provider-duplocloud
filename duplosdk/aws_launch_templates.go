@@ -21,9 +21,13 @@ type DuploLaunchTemplateData struct {
 }
 
 type InstanceRequirementsRequest struct {
-	AllowedInstanceTypes []string                             `json:"AllowedInstanceTypes,omitempty"`
-	VCpuCount            *DuploLaunchTemplateVCpuCountRequest `json:"VCpuCount,omitempty"`
-	MemoryMiB            *DuploLaunchTemplateMemoryMiB        `json:"MemoryMiB,omitempty"`
+	AllowedInstanceTypes                  []string                             `json:"AllowedInstanceTypes,omitempty"`
+	ExcludedInstanceTypes                 []string                             `json:"ExcludedInstanceTypes,omitempty"`
+	VCpuCount                             *DuploLaunchTemplateVCpuCountRequest `json:"VCpuCount,omitempty"`
+	MemoryMiB                             *DuploLaunchTemplateMemoryMiB        `json:"MemoryMiB,omitempty"`
+	CpuManufacturers                      []string                             `json:"CpuManufacturers,omitempty"`
+	InstanceGenerations                   []string                             `json:"InstanceGenerations,omitempty"`
+	SpotMaxPricePercentageOverLowestPrice *int                                 `json:"SpotMaxPricePercentageOverLowestPrice,omitempty"`
 }
 
 type DuploLaunchTemplateVCpuCountRequest struct {
@@ -248,9 +252,13 @@ type DuploLaunchTemplateEnclaveOptions struct {
 }
 
 type DuploLaunchTemplateInstanceRequirements struct {
-	VCpuCount            *DuploLaunchTemplateVCpuCountRange `json:"VCpuCount"`
-	MemoryMiB            *DuploLaunchTemplateMemoryMiB      `json:"MemoryMiB"`
-	AllowedInstanceTypes []string                           `json:"AllowedInstanceTypes,omitempty"`
+	VCpuCount                             *DuploLaunchTemplateVCpuCountRange `json:"VCpuCount"`
+	MemoryMiB                             *DuploLaunchTemplateMemoryMiB      `json:"MemoryMiB"`
+	AllowedInstanceTypes                  []string                           `json:"AllowedInstanceTypes,omitempty"`
+	ExcludedInstanceTypes                 []string                           `json:"ExcludedInstanceTypes,omitempty"`
+	CpuManufacturers                      []string                           `json:"CpuManufacturers,omitempty"`
+	InstanceGenerations                   []string                           `json:"InstanceGenerations,omitempty"`
+	SpotMaxPricePercentageOverLowestPrice *int                               `json:"SpotMaxPricePercentageOverLowestPrice,omitempty"`
 }
 
 type DuploLaunchTemplateVCpuCountRange struct {
