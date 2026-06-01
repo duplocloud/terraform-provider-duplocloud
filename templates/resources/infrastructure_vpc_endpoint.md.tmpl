@@ -1,0 +1,41 @@
+---
+{{ if .Name }}
+# Resource: {{ .Name }}
+{{ end }}
+
+{{ if .Description }}
+{{ .Description }}
+{{ end }}
+
+## Example Usage
+
+### Add an S3 Gateway VPC endpoint to an infrastructure
+
+```terraform
+resource "duplocloud_infrastructure_vpc_endpoint" "s3" {
+  infra_name        = "nonprod"
+  service_name      = "com.amazonaws.us-west-2.s3"
+  vpc_endpoint_type = "Gateway"
+}
+```
+
+### Add an Interface VPC endpoint for MSK (Kafka)
+
+```terraform
+resource "duplocloud_infrastructure_vpc_endpoint" "kafka" {
+  infra_name        = "nonprod"
+  service_name      = "com.amazonaws.us-west-2.kafka"
+  vpc_endpoint_type = "Interface"
+}
+```
+
+## Import
+
+Import is supported using the following syntax:
+
+```
+# terraform import duplocloud_infrastructure_vpc_endpoint.<resource_name> <infra_name>/<vpc_endpoint_id>
+terraform import duplocloud_infrastructure_vpc_endpoint.s3 nonprod/vpce-0123456789abcdef0
+```
+
+{{ .SchemaMarkdown | trimspace }}
