@@ -24,15 +24,15 @@ type DuploPubSubBigQuery struct {
 }
 
 type DuploPubSubCloudStorageConfig struct {
-	Bucket                 string `json:"bucket"`
-	FilenamePrefix         string `json:"filenamePrefix"`
-	FileNameSuffix         string `json:"filenameSuffix"`
-	FileNameDateTimeFormat string `json:"filenameDatetimeFormat"`
-	MaxDuration            string `json:"maxDuration"`
-	MaxBytes               int    `json:"maxBytes"`
-	MaxMessages            int    `json:"maxMessages"`
-	State                  State  `json:"state"`
-	ServiceAccountEmail    string `json:"serviceAccountEmail"`
+	Bucket                 string     `json:"bucket"`
+	FilenamePrefix         string     `json:"filenamePrefix"`
+	FileNameSuffix         string     `json:"filenameSuffix"`
+	FileNameDateTimeFormat string     `json:"filenameDatetimeFormat"`
+	MaxDuration            SecondNano `json:"maxDuration"`
+	MaxBytes               int        `json:"maxBytes"`
+	MaxMessages            int        `json:"maxMessages"`
+	State                  State      `json:"state"`
+	ServiceAccountEmail    string     `json:"serviceAccountEmail"`
 	AvroConfig             struct {
 		WriteMetadata  bool `json:"writeMetadata"`
 		UseTopicSchema bool `json:"useTopicSchema"`
@@ -76,7 +76,7 @@ type DuploPubSubSubscription struct {
 	BigQuery                  *DuploPubSubBigQuery           `json:"bigqueryConfig,omitempty"`
 	CloudStorageConfig        *DuploPubSubCloudStorageConfig `json:"cloudStorageConfig,omitempty"`
 	PushConfig                *DuploPubSubPushConfig         `json:"pushConfig,omitempty"`
-	AckDeadlineSeconds        int                            `json:"ackDeadlineSeconds"`
+	AckDeadlineSeconds        int                            `json:"ackDeadlineSeconds,omitempty"`
 	MessageRetentionDuration  string                         `json:"messageRetentionDuration"`
 	RetainAckedMessages       bool                           `json:"retainAckedMessages"`
 	Filter                    string                         `json:"filter"`
@@ -108,12 +108,12 @@ type DuploPubSubSubscriptionResponse struct {
 }
 
 type DuploPubSubExpirationPolicy struct {
-	Ttl string `json:"ttl"`
+	Ttl SecondNano `json:"ttl"`
 }
 
 type SecondNano struct {
 	Seconds int `json:"seconds"`
-	Nano    int `json:"naono"`
+	Nano    int `json:"nanos"`
 }
 type DuploPubSubExpirationPolicyResponse struct {
 	Ttl SecondNano `json:"ttl"`
@@ -125,8 +125,8 @@ type DuploPubSubDeadLetterPolicy struct {
 }
 
 type DuploPubSubRetryPolicy struct {
-	MinimumBackoff string `json:"minimumBackoff"`
-	MaximumBackoff string `json:"maximumBackoff"`
+	MinimumBackoff SecondNano `json:"minimumBackoff"`
+	MaximumBackoff SecondNano `json:"maximumBackoff"`
 }
 
 type DuploPubSubRetryPolicyResponse struct {
