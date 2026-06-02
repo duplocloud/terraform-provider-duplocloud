@@ -829,13 +829,18 @@ func getInvokeARN(lambdaARN string) (string, error) {
 	if len(parts) < 6 {
 		return "", fmt.Errorf("invalid Lambda ARN: expected at least 6 colon-separated parts, got %d", len(parts))
 	}
+	partition := parts[1]
+	if partition == "" {
+		return "", fmt.Errorf("invalid Lambda ARN: partition is missing")
+	}
 	region := parts[3]
 	if region == "" {
 		return "", fmt.Errorf("invalid Lambda ARN: region is missing")
 	}
 
 	invokeARN := fmt.Sprintf(
-		"arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
+		"arn:%s:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
+		partition,
 		region,
 		lambdaARN,
 	)

@@ -963,8 +963,19 @@ func resourceAwsCloudfrontDistributionV2Update(ctx context.Context, d *schema.Re
 
 	c := m.(*duplosdk.Client)
 
+	duplo, clientErr := c.AwsCloudfrontDistributionGet(tenantID, cfdId)
+	if clientErr != nil {
+		if clientErr.Status() == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Unable to retrieve tenant %s aws cloudfront distribution %s : %s", tenantID, cfdId, clientErr)
+	}
+
 	rq := expandAwsCloudfrontDistributionV2Config(d, true)
 	rq.Comment = d.Get("fullname").(string)
+	// Preserve OAI and OAC from existing config, as these are managed by the backend
+	updateS3OAI(duplo.Distribution.DistributionConfig, rq)
 	resp, err := c.AwsCloudfrontDistributionUpdateV2(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreateV2{
 		Id:                   cfdId,
 		DistributionConfig:   rq,
