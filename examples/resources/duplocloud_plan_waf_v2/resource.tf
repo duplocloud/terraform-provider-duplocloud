@@ -6,4 +6,3 @@ resource "duplocloud_plan_waf_v2" "myplan" {
     dashboard_url = "dashboard url"
   }
 }
- 

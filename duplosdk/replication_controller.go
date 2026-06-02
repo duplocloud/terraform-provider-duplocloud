@@ -176,7 +176,7 @@ type DuploReplicationControllerCreateRequest struct {
 
 type DuploReplicationControllerUpdateRequest struct {
 	Name                              string                 `json:"Name"`
-	Image                             string                 `json:"Image"`
+	Image                             string                 `json:"DockerImage"`
 	AgentPlatform                     int                    `json:"AgentPlatform"`
 	Replicas                          int                    `json:"Replicas,omitempty"`
 	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
@@ -241,7 +241,7 @@ func (c *Client) ReplicationControllerGet(tenantID, name string) (*DuploReplicat
 		fmt.Sprintf("v3/subscriptions/%s/replicationcontroller/%s", tenantID, name),
 		&rp)
 	if err != nil {
-		if err.Status() != 404 {
+		if err.Status() != 404 && err.Status() != 405 {
 			return nil, err
 		}
 		return c.replicationControllerGetFallback(tenantID, name)
@@ -289,8 +289,25 @@ func (c *Client) ReplicationControllerCreate(tenantID string, rq *DuploReplicati
 	)
 }
 
-// ReplicationControllerUpdate creates a replication controller via the Duplo API.
+// ReplicationControllerUpdate updates a replication controller via the Duplo API.
+// It tries the v3 endpoint first; on 404 it falls back to ReplicationControllerChangeAll.
 func (c *Client) ReplicationControllerUpdate(tenantID string, rq *DuploReplicationControllerUpdateRequest) ClientError {
+	err := c.putAPI(
+		fmt.Sprintf("ReplicationControllerUpdate(%s, %s)", tenantID, rq.Name),
+		fmt.Sprintf("v3/subscriptions/%s/replicationcontroller", tenantID),
+		&rq,
+		nil,
+	)
+	if err != nil {
+		if err.Status() != 404 && err.Status() != 405 {
+			return err
+		}
+		return c.replicationControllerUpdateFallback(tenantID, rq)
+	}
+	return nil
+}
+
+func (c *Client) replicationControllerUpdateFallback(tenantID string, rq *DuploReplicationControllerUpdateRequest) ClientError {
 	return c.postAPI(
 		fmt.Sprintf("ReplicationControllerUpdate(%s, %s)", tenantID, rq.Name),
 		fmt.Sprintf("subscriptions/%s/ReplicationControllerChangeAll", tenantID),

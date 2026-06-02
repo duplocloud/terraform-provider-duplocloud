@@ -196,10 +196,11 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 						Required:    true,
 					},
 					"attributes": {
-						Type:     schema.TypeMap,
-						Optional: true,
-						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Type:             schema.TypeMap,
+						Optional:         true,
+						Computed:         true,
+						Elem:             &schema.Schema{Type: schema.TypeString},
+						DiffSuppressFunc: pushConfigAttributesDiffSuppress,
 					},
 					"oidc_token": {
 						Type:     schema.TypeList,
@@ -217,7 +218,6 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 									Description: "Audience to be used when generating OIDC token. The audience claim identifies the recipients that the JWT is intended for. The audience value is a single case-sensitive string.",
 									Type:        schema.TypeString,
 									Optional:    true,
-									Default:     false,
 								},
 							},
 						},
@@ -243,10 +243,10 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 		},
 
 		"ack_deadline_seconds": {
-			Description:  "This value is the maximum time after a Pub/Sub subscriber receives a message before the subscriber should acknowledge the message.",
+			Description:  "Maximum time after a Pub/Sub subscriber receives a message before the subscriber should acknowledge the message. If unset, GCP applies its default of 10s. For cloud_storage_config subscriptions, GCP raises this to at least the configured max_duration; leaving this unset lets the provider track GCP's chosen value without drift.",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			Default:      10,
+			Computed:     true,
 			ValidateFunc: validation.IntBetween(10, 600),
 		},
 		"message_retention_duration": {
@@ -291,9 +291,10 @@ func gcpPubSubSubscriptionSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"ttl": {
-						Description: "Specifies the 'time-to-live' duration for an associated resource. The resource expires if it is not active for a period of ttl. If ttl is empty string, the associated resource never expires.  A duration in seconds with up to nine fractional digits, terminated by 's'. Example - '3.5s'.",
-						Type:        schema.TypeString,
-						Required:    true,
+						Description:  "Specifies the 'time-to-live' duration for an associated resource. The resource expires if it is not active for a period of ttl. If ttl is empty string, the associated resource never expires.  A duration in seconds with up to nine fractional digits, terminated by 's'. Example - '3.5s'.",
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validateDurationBetween(0, 365*24*time.Hour, 9),
 					},
 				},
 			},
@@ -518,7 +519,7 @@ func expandCloudStorageConfig(d *schema.ResourceData) *duplosdk.DuploPubSubCloud
 		FilenamePrefix:         d.Get("cloud_storage_config.0.filename_prefix").(string),
 		FileNameSuffix:         d.Get("cloud_storage_config.0.filename_suffix").(string),
 		FileNameDateTimeFormat: d.Get("cloud_storage_config.0.filename_datetime_format").(string),
-		MaxDuration:            d.Get("cloud_storage_config.0.max_duration").(string),
+		MaxDuration:            parseDurationToSecondNano(d.Get("cloud_storage_config.0.max_duration").(string)),
 		MaxBytes:               d.Get("cloud_storage_config.0.max_bytes").(int),
 		MaxMessages:            d.Get("cloud_storage_config.0.max_messages").(int),
 		AvroConfig: struct {
@@ -546,7 +547,7 @@ func flattenCloudStorageConfig(rb *duplosdk.DuploPubSubCloudStorageConfigReapons
 		"filename_prefix":          rb.FilenamePrefix,
 		"filename_suffix":          rb.FileNameSuffix,
 		"filename_datetime_format": rb.FileNameDateTimeFormat,
-		"max_duration":             strconv.Itoa(rb.MaxDuration.Seconds) + "s",
+		"max_duration":             formatSecondNano(rb.MaxDuration),
 		"max_bytes":                rb.MaxBytes,
 		"max_messages":             rb.MaxMessages,
 		"avro_config":              avro,
@@ -559,18 +560,22 @@ func flattenCloudStorageConfig(rb *duplosdk.DuploPubSubCloudStorageConfigReapons
 
 func expandPushConfig(d *schema.ResourceData) *duplosdk.DuploPubSubPushConfig {
 	emp := expandAsStringMap("push_config.0.attributes", d)
-	return &duplosdk.DuploPubSubPushConfig{
+	cfg := &duplosdk.DuploPubSubPushConfig{
 		PushEndpoint: d.Get("push_config.0.push_endpoint").(string),
 		Attributes:   emp,
-		OidcToken: &duplosdk.DuploPubSubPushConfigOidcToken{
+	}
+	if v, ok := d.GetOk("push_config.0.oidc_token"); ok && len(v.([]interface{})) > 0 {
+		cfg.OidcToken = &duplosdk.DuploPubSubPushConfigOidcToken{
 			ServiceAccountEmail: d.Get("push_config.0.oidc_token.0.service_account_email").(string),
 			Audience:            d.Get("push_config.0.oidc_token.0.audience").(string),
-		},
-
-		NoWrapper: &duplosdk.DuploPubSubPushConfigNoWrapper{
-			WriteMetadata: d.Get("push_config.0.no_wrapper.0.write_metadata").(bool),
-		},
+		}
 	}
+	if v, ok := d.GetOk("push_config.0.no_wrapper"); ok && len(v.([]interface{})) > 0 {
+		cfg.NoWrapper = &duplosdk.DuploPubSubPushConfigNoWrapper{
+			WriteMetadata: d.Get("push_config.0.no_wrapper.0.write_metadata").(bool),
+		}
+	}
+	return cfg
 }
 
 func flattenPushConfig(rb *duplosdk.DuploPubSubPushConfig) []interface{} {
@@ -611,7 +616,6 @@ func expandPubSubSubscription(d *schema.ResourceData) *duplosdk.DuploPubSubSubsc
 	obj := &duplosdk.DuploPubSubSubscription{
 		Name:                      d.Get("name").(string),
 		Topic:                     d.Get("topic").(string),
-		AckDeadlineSeconds:        d.Get("ack_deadline_seconds").(int),
 		MessageRetentionDuration:  d.Get("message_retention_duration").(string),
 		RetainAckedMessages:       d.Get("retain_acked_messages").(bool),
 		Filter:                    d.Get("filter").(string),
@@ -619,6 +623,9 @@ func expandPubSubSubscription(d *schema.ResourceData) *duplosdk.DuploPubSubSubsc
 		EnableExactlyOnceDelivery: d.Get("enable_exactly_once_delivery").(bool),
 		Labels:                    expandAsStringMap("labels", d),
 		Type:                      "Pull",
+	}
+	if v, ok := d.GetOk("ack_deadline_seconds"); ok {
+		obj.AckDeadlineSeconds = v.(int)
 	}
 	if _, ok := d.GetOk("big_query"); ok {
 		obj.BigQuery = expandBigQuery(d)
@@ -650,7 +657,7 @@ func flattenPubSubSubscription(rb *duplosdk.DuploPubSubSubscriptionResponse, d *
 	mp := map[string]interface{}{
 		"fullname":                     rb.Name,
 		"ack_deadline_seconds":         rb.AckDeadlineSeconds,
-		"message_retention_duration":   rb.MessageRetentionDuration,
+		"message_retention_duration":   strings.Trim(rb.MessageRetentionDuration, "\""),
 		"retain_acked_messages":        rb.RetainAckedMessages,
 		"filter":                       rb.Filter,
 		"enable_message_ordering":      rb.EnableMessageOrdering,
@@ -672,28 +679,41 @@ func flattenPubSubSubscription(rb *duplosdk.DuploPubSubSubscriptionResponse, d *
 	if rb.RetryPolicy != nil {
 		mp["retry_policy"] = flattenRetryPolicy(rb.RetryPolicy)
 	}
-	if rb.Labels != nil {
-		mp["labels"] = flattenStringMap(rb.Labels)
-	}
 	if rb.ExpirationPolicy != nil {
 		mp["expiration_policy"] = flattenExpirationPolicy(rb.ExpirationPolicy)
 	}
 	for k, v := range mp {
 		d.Set(k, v)
 	}
-
+	if rb.Labels != nil {
+		flattenGcpLabels(d, rb.Labels)
+	}
 }
 
 func expandExpirationPolicy(d *schema.ResourceData) *duplosdk.DuploPubSubExpirationPolicy {
 	return &duplosdk.DuploPubSubExpirationPolicy{
-		Ttl: d.Get("expiration_policy.0.ttl").(string),
+		Ttl: parseDurationToSecondNano(d.Get("expiration_policy.0.ttl").(string)),
+	}
+}
+
+// parseDurationToSecondNano converts a Go duration string like "3.5s" or "86400s"
+// into the {Seconds, Nanos} struct the Duplo BE expects for expirationPolicy.ttl.
+// Returns a zero-value SecondNano on parse failure; schema-level
+// validateDurationBetween catches malformed input before this is called.
+func parseDurationToSecondNano(s string) duplosdk.SecondNano {
+	dur, err := time.ParseDuration(s)
+	if err != nil {
+		return duplosdk.SecondNano{}
+	}
+	return duplosdk.SecondNano{
+		Seconds: int(dur / time.Second),
+		Nano:    int(dur % time.Second),
 	}
 }
 
 func flattenExpirationPolicy(rb *duplosdk.DuploPubSubExpirationPolicyResponse) []interface{} {
-	ttl := strconv.Itoa(rb.Ttl.Seconds) + "s"
 	mp := map[string]interface{}{
-		"ttl": ttl,
+		"ttl": formatSecondNano(rb.Ttl),
 	}
 	p := make([]interface{}, 0, 1)
 	p = append(p, mp)
@@ -719,17 +739,57 @@ func flattenDeadLetterPolicy(rb *duplosdk.DuploPubSubDeadLetterPolicy) []interfa
 
 func expandRetryPolicy(d *schema.ResourceData) *duplosdk.DuploPubSubRetryPolicy {
 	return &duplosdk.DuploPubSubRetryPolicy{
-		MinimumBackoff: d.Get("retry_policy.0.minimum_backoff").(string),
-		MaximumBackoff: d.Get("retry_policy.0.maximum_backoff").(string),
+		MinimumBackoff: parseDurationToSecondNano(d.Get("retry_policy.0.minimum_backoff").(string)),
+		MaximumBackoff: parseDurationToSecondNano(d.Get("retry_policy.0.maximum_backoff").(string)),
 	}
 }
 
 func flattenRetryPolicy(rb *duplosdk.DuploPubSubRetryPolicyResponse) []interface{} {
 	mp := map[string]interface{}{
-		"minimum_backoff": strconv.Itoa(rb.MinimumBackoff.Seconds) + "s",
-		"maximum_backoff": strconv.Itoa(rb.MaximumBackoff.Seconds) + "s",
+		"minimum_backoff": formatSecondNano(rb.MinimumBackoff),
+		"maximum_backoff": formatSecondNano(rb.MaximumBackoff),
 	}
 	p := make([]interface{}, 0, 1)
 	p = append(p, mp)
 	return p
+}
+
+// pushConfigAttributesDiffSuppress hides perpetual drift on push_config.attributes
+// caused by GCP not echoing x-goog-version back from GetSubscription. The schema
+// remains accurate to the user's intent; we just don't surface a phantom add on
+// every plan. Suppresses both the per-key diff and the map-length (.%) diff when
+// x-goog-version accounts for the count delta.
+func pushConfigAttributesDiffSuppress(k, old, new string, d *schema.ResourceData) bool {
+	if strings.HasSuffix(k, ".x-goog-version") {
+		return true
+	}
+	if strings.HasSuffix(k, ".%") {
+		parent := strings.TrimSuffix(k, ".%")
+		cfg, ok := d.GetOk(parent)
+		if !ok {
+			return false
+		}
+		attrs, _ := cfg.(map[string]interface{})
+		if _, hasGoogVer := attrs["x-goog-version"]; !hasGoogVer {
+			return false
+		}
+		oldI, e1 := strconv.Atoi(old)
+		newI, e2 := strconv.Atoi(new)
+		if e1 != nil || e2 != nil {
+			return false
+		}
+		return newI-oldI == 1
+	}
+	return false
+}
+
+// formatSecondNano renders a SecondNano as a Go duration string. When Nano > 0
+// it emits the fractional part (e.g. "3.5s") so values like ttl="3.5s" round-trip
+// without drift.
+func formatSecondNano(sn duplosdk.SecondNano) string {
+	if sn.Nano == 0 {
+		return strconv.Itoa(sn.Seconds) + "s"
+	}
+	frac := strings.TrimRight(fmt.Sprintf("%09d", sn.Nano), "0")
+	return fmt.Sprintf("%d.%ss", sn.Seconds, frac)
 }

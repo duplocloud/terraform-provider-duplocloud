@@ -113,11 +113,10 @@ func resourceAzureLogAnalyticsWorkspaceRead(ctx context.Context, d *schema.Resou
 	if duplo.ID == "" {
 		log.Printf("[DEBUG] resourceAzureLogAnalyticsWorkspaceRead: Azure Log Analytics Workspace %s not found for tenantId %s, removing from state", name, infraName)
 		d.SetId("")
-
+		return nil
 	}
-	rgpn := strings.Split(duplo.ID, "/")
 	d.Set("infra_name", infraName)
-	d.Set("resource_group_name", rgpn[len(rgpn)-1])
+	d.Set("resource_group_name", parseResourceGroupFromAzureID(duplo.ID))
 	d.Set("name", name)
 	d.Set("azure_id", duplo.ID)
 	d.Set("sku", duplo.PropertiesSku.Name)
@@ -202,6 +201,19 @@ func parseAzureLogAnalyticsWorkspaceIdParts(id string) (infraName, name string, 
 		err = fmt.Errorf("invalid resource ID: %s", id)
 	}
 	return
+}
+
+// parseResourceGroupFromAzureID extracts the resource group name from a full Azure resource ID
+// of the form: /subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.OperationalInsights/workspaces/{name}
+// The match on "resourceGroups" is case-insensitive, since some Azure APIs return it lower-cased.
+func parseResourceGroupFromAzureID(azureID string) string {
+	parts := strings.Split(azureID, "/")
+	for i, p := range parts {
+		if strings.EqualFold(p, "resourceGroups") && i+1 < len(parts) {
+			return parts[i+1]
+		}
+	}
+	return ""
 }
 
 func logAnalyticsWorkspaceWaitUntilReady(ctx context.Context, c *duplosdk.Client, infraName string, name string, timeout time.Duration) error {

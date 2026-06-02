@@ -78,10 +78,11 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Default:     true,
 		},
 		"root_password": {
-			Description: "Provide root password for specific database versions.",
+			Description: "Provide root password for specific database versions. Create-only: the provider sends this to GCP at creation and never pushes a password change on update (GCP also redacts this field on read, so state cannot be refreshed from GCP). After `terraform import`, `plan` will show a diff on this field. You have two options: (1) set `root_password` in your config to the current GCP value and run `terraform apply` once — state syncs to the config value without any API call; future rotations: change the password in GCP first, then update `root_password` and re-apply. (2) Add `lifecycle { ignore_changes = [root_password] }` to suppress the diff permanently — use this if you do not want Terraform to track the password value (out-of-band rotations only).",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
+			Sensitive:   true,
 		},
 		"ip_address": {
 			Description: "List of IP addresses of the database.",
@@ -123,7 +124,7 @@ func gcpSqlDBInstanceSchema() map[string]*schema.Schema {
 			Description:  "Edition for the database. Valid value ENTERPRISE, ENTERPRISE_PLUS",
 			Type:         schema.TypeString,
 			Optional:     true,
-			Default:      "ENTERPRISE",
+			Computed:     true,
 			ValidateFunc: validation.StringInSlice([]string{"ENTERPRISE", "ENTERPRISE_PLUS"}, false),
 			ForceNew:     true,
 		},
@@ -164,7 +165,11 @@ func resourceGcpSqlDBInstance() *schema.Resource {
 		UpdateContext: resourceGcpSqlDBInstanceUpdate,
 		DeleteContext: resourceGcpSqlDBInstanceDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				d.Set("wait_until_ready", true)
+				d.Set("need_backup", true)
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
@@ -310,6 +315,7 @@ func resourceGcpSqlDBInstanceUpdate(ctx context.Context, d *schema.ResourceData,
 
 		rq := expandGcpSqlDBInstance(d)
 		rq.Name = fullName
+		rq.RootPassword = "" // create-only; never push on update
 		resp, err := c.GCPSqlDBInstanceUpdate(tenantID, rq)
 		if err != nil {
 			return diag.Errorf("Error updating tenant %s sql database '%s': %s", tenantID, resp.Name, err)
@@ -378,9 +384,6 @@ func flattenGcpSqlDBInstance(d *schema.ResourceData, tenantID string, name strin
 	flattenGcpLabels(d, duplo.Labels)
 	flattenIPAddress(d, duplo.IPAddress)
 	flattenDatabasFlags(d, duplo.DatabaseFlags)
-	if duplo.Edition == "" {
-		duplo.Edition = "ENTERPRISE"
-	}
 	d.Set("edition", duplo.Edition)
 	d.Set("ip_configuration", flattenGcpSqlDBInstanceIpConfiguration(duplo))
 }
@@ -395,6 +398,10 @@ func flattenGcpSqlDBInstanceIpConfiguration(duplo *duplosdk.DuploGCPSqlDBInstanc
 }
 
 func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInstance {
+	edition := d.Get("edition").(string)
+	if edition == "" {
+		edition = "ENTERPRISE"
+	}
 	rq := &duplosdk.DuploGCPSqlDBInstance{
 		Name:            d.Get("name").(string),
 		DatabaseVersion: d.Get("database_version").(string),
@@ -402,7 +409,7 @@ func expandGcpSqlDBInstance(d *schema.ResourceData) *duplosdk.DuploGCPSqlDBInsta
 		DataDiskSizeGb:  d.Get("disk_size").(int),
 		ResourceType:    duplosdk.DuploGCPDatabaseInstanceResourceType,
 		RootPassword:    d.Get("root_password").(string),
-		Edition:         d.Get("edition").(string),
+		Edition:         edition,
 	}
 	if v, ok := d.GetOk("labels"); ok && !isInterfaceNil(v) {
 		rq.Labels = map[string]string{}
