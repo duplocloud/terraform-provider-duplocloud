@@ -134,7 +134,7 @@ resource "duplocloud_gcp_pubsub_subscription" "sub" {
 
 ### Optional
 
-- `ack_deadline_seconds` (Number) This value is the maximum time after a Pub/Sub subscriber receives a message before the subscriber should acknowledge the message. Defaults to `10`.
+- `ack_deadline_seconds` (Number) Maximum time after a Pub/Sub subscriber receives a message before the subscriber should acknowledge the message. If unset, GCP applies its default of 10s. For cloud_storage_config subscriptions, GCP raises this to at least the configured max_duration; leaving this unset lets the provider track GCP's chosen value without drift.
 - `big_query` (Block List, Max: 1) BigQuery configuration related to Pub/Sub subscription, to stream message into BigQuery table (see [below for nested schema](#nestedblock--big_query))
 - `cloud_storage_config` (Block List, Max: 1) Cloud Storage  configuration related to Pub/Sub subscription, to store message in storage bucket (see [below for nested schema](#nestedblock--cloud_storage_config))
 - `dead_letter_policy` (Block List, Max: 1) A policy that specifies the conditions for dead lettering messages in this Pub/Sub subscription. If dead_letter_policy is not set, dead lettering is disabled (see [below for nested schema](#nestedblock--dead_letter_policy))
@@ -253,7 +253,7 @@ Required:
 
 Optional:
 
-- `audience` (String) Audience to be used when generating OIDC token. The audience claim identifies the recipients that the JWT is intended for. The audience value is a single case-sensitive string. Defaults to `false`.
+- `audience` (String) Audience to be used when generating OIDC token. The audience claim identifies the recipients that the JWT is intended for. The audience value is a single case-sensitive string.
 
 
 
