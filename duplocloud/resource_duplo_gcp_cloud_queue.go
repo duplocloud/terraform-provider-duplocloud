@@ -30,9 +30,11 @@ func gcpCloudTasksQueueSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"location": {
-			Description: "The name of the cloud tasks queue",
+			Description: "The GCP location (region) for the cloud tasks queue. If not specified, it is automatically resolved from the tenant's infrastructure region.",
 			Type:        schema.TypeString,
+			Optional:    true,
 			Computed:    true,
+			ForceNew:    true,
 		},
 		"fullname": {
 			Description: "The full name of the cloud function.",
@@ -70,11 +72,18 @@ func resourceGcpCloudQueueRead(ctx context.Context, d *schema.ResourceData, m in
 	if len(idParts) != 3 {
 		return diag.Errorf("Invalid resource ID: %s", id)
 	}
+	c := m.(*duplosdk.Client)
+
 	tenantID, qName := idParts[0], idParts[2]
 
+	// Resolve location from the tenant's infrastructure region.
+	features, clientErr := c.TenantFeaturesGet(tenantID)
+	if clientErr != nil {
+		return diag.Errorf("Error fetching tenant %s features: %s", tenantID, clientErr)
+	}
+
 	// Get the object from Duplo, detecting a missing object
-	c := m.(*duplosdk.Client)
-	duplo, err := c.GCPCloudTasksQueueGet(tenantID, qName)
+	duplo, err := c.GCPCloudTasksQueueGet(tenantID, qName, features.Region)
 	if duplo == nil || (err != nil && err.Status() == 404) {
 		d.SetId("") // object missing
 		return nil
@@ -83,8 +92,6 @@ func resourceGcpCloudQueueRead(ctx context.Context, d *schema.ResourceData, m in
 		return diag.Errorf("Unable to retrieve tenant %s cloud task's queue '%s' : %s", tenantID, qName, err)
 	}
 
-	// Set simple fields first.
-	d.SetId(fmt.Sprintf("%s/tasks/queue/%s", tenantID, qName))
 	resourceGcpCloudQueueSetData(d, tenantID, qName, duplo)
 	log.Printf("[TRACE] resourceGcpCloudQueueRead ******** end")
 	return nil
@@ -94,11 +101,21 @@ func resourceGcpCloudQueueRead(ctx context.Context, d *schema.ResourceData, m in
 func resourceGcpCloudQueueCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	log.Printf("[TRACE] resourceGcpCloudQueueCreate ******** start")
 
+	c := m.(*duplosdk.Client)
+	tenantID := d.Get("tenant_id").(string)
+
 	// Create the request object.
 	rq := expandGcpCloudTasksQueue(d)
 
-	c := m.(*duplosdk.Client)
-	tenantID := d.Get("tenant_id").(string)
+	// If location is not provided, resolve it from the tenant's infrastructure region.
+	if rq.Location == "" {
+		features, err := c.TenantFeaturesGet(tenantID)
+		if err != nil {
+			return diag.Errorf("Error fetching tenant %s features: %s", tenantID, err)
+		}
+		rq.Location = features.Region
+	}
+
 	// Post the object to Duplo
 	err := c.GcpCloudTasksQueueCreate(tenantID, rq)
 	if err != nil {
@@ -125,8 +142,8 @@ func resourceGcpCloudQueueDelete(ctx context.Context, d *schema.ResourceData, m 
 		return diag.Errorf("Invalid resource ID: %s", id)
 	}
 	tenantID, qName := idParts[0], idParts[2]
-
-	err := c.GCPCloudTasksQueueDelete(tenantID, qName)
+	location := d.Get("location").(string)
+	err := c.GCPCloudTasksQueueDelete(tenantID, qName, location)
 	if err != nil {
 		if err.Status() == 404 {
 			return nil

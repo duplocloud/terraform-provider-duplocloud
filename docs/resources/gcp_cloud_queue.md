@@ -35,13 +35,13 @@ resource "duplocloud_gcp_cloud_queue" "queue" {
 
 ### Optional
 
+- `location` (String) The GCP location (region) for the cloud tasks queue. If not specified, it is automatically resolved from the tenant's infrastructure region.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `fullname` (String) The full name of the cloud function.
 - `id` (String) The ID of this resource.
-- `location` (String) The name of the cloud tasks queue
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
