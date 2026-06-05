@@ -484,16 +484,43 @@ func expandGcpBigtableCluster(cfg map[string]interface{}, storageType int) *dupl
 	return cl
 }
 
-// validateBigtableClusters ensures each cluster specifies either a manual node
-// count or an autoscaling configuration.
+// validateBigtableClusters validates the cluster blocks at plan time:
+//   - each cluster has a manual node count or an autoscaling configuration;
+//   - cluster_id values are unique (clusters are matched by id, so duplicates
+//     would silently collapse and reconcile the wrong cluster);
+//   - the zone of an existing cluster is not changed (cluster location is
+//     immutable in Bigtable, and an in-place update would silently drop it).
 func validateBigtableClusters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	seen := map[string]bool{}
 	for _, raw := range diff.Get("cluster").([]interface{}) {
 		cfg := raw.(map[string]interface{})
+		id := cfg["cluster_id"].(string)
+		if seen[id] {
+			return fmt.Errorf("duplicate cluster_id %q: each cluster must have a unique cluster_id", id)
+		}
+		seen[id] = true
+
 		ac, _ := cfg["autoscaling_config"].([]interface{})
 		hasAutoscaling := len(ac) > 0
 		numNodes := cfg["num_nodes"].(int)
 		if !hasAutoscaling && numNodes <= 0 {
-			return fmt.Errorf("cluster %q: either 'num_nodes' (> 0) or 'autoscaling_config' must be set", cfg["cluster_id"])
+			return fmt.Errorf("cluster %q: either 'num_nodes' (> 0) or 'autoscaling_config' must be set", id)
+		}
+	}
+
+	// A cluster's zone (location) cannot be changed in place. Compare existing
+	// clusters by cluster_id and reject a zone change with a clear message.
+	oldRaw, newRaw := diff.GetChange("cluster")
+	oldZones := map[string]string{}
+	for _, raw := range oldRaw.([]interface{}) {
+		cfg := raw.(map[string]interface{})
+		oldZones[cfg["cluster_id"].(string)] = cfg["zone"].(string)
+	}
+	for _, raw := range newRaw.([]interface{}) {
+		cfg := raw.(map[string]interface{})
+		id := cfg["cluster_id"].(string)
+		if oldZone, ok := oldZones[id]; ok && oldZone != cfg["zone"].(string) {
+			return fmt.Errorf("cluster %q: zone is immutable (cannot change from %q to %q); remove the cluster and add a new one to relocate it", id, oldZone, cfg["zone"])
 		}
 	}
 	return nil
