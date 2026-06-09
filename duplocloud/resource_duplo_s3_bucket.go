@@ -94,12 +94,13 @@ func s3BucketSchema() map[string]*schema.Schema {
 						Default:      "Sse",
 						ValidateFunc: validation.StringInSlice([]string{"None", "Sse", "AwsKms", "TenantKms"}, false),
 					},
-					// RESERVED FOR THE FUTURE
-					//
-					//"kms_key_id": {
-					//	Type:     schema.TypeString,
-					//	Optional: true,
-					//},
+					"kms_key_id": {
+						Description: "The tenant KMS key ID or ARN to use for encryption.  Only applicable when `method` is `TenantKms`.  " +
+							"When omitted, the default tenant KMS key is used.",
+						Type:             schema.TypeString,
+						Optional:         true,
+						DiffSuppressFunc: diffSuppressS3KmsKeyId,
+					},
 				},
 			},
 		},
@@ -139,8 +140,33 @@ func resourceS3Bucket() *schema.Resource {
 			Create: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
-		Schema: s3BucketSchema(),
+		Schema:        s3BucketSchema(),
+		CustomizeDiff: validateS3BucketEncryption,
 	}
+}
+
+// validateS3BucketEncryption ensures default_encryption.kms_key_id is only set when
+// the encryption method is TenantKms - the backend ignores it for any other method.
+func validateS3BucketEncryption(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	method := diff.Get("default_encryption.0.method").(string)
+	kmsKeyId := diff.Get("default_encryption.0.kms_key_id").(string)
+	if kmsKeyId != "" && method != "TenantKms" {
+		return fmt.Errorf("default_encryption.kms_key_id can only be set when default_encryption.method is \"TenantKms\" (got %q)", method)
+	}
+	return nil
+}
+
+// diffSuppressS3KmsKeyId suppresses spurious drift between a bare KMS key ID supplied
+// in config and the full key ARN the backend returns (which ends in "key/<key-id>").
+func diffSuppressS3KmsKeyId(k, old, new string, d *schema.ResourceData) bool {
+	if old == new {
+		return true
+	}
+	if old == "" || new == "" {
+		return false
+	}
+	// Treat an ARN and the bare key ID it embeds as equivalent.
+	return strings.HasSuffix(old, "/"+new) || strings.HasSuffix(new, "/"+old)
 }
 
 // READ resource
@@ -398,6 +424,9 @@ func resourceS3BucketUpdateOldApi(ctx context.Context, d *schema.ResourceData, m
 	if v, ok := defaultEncryption["method"]; ok && v != nil {
 		duploObject.DefaultEncryption = v.(string)
 	}
+	if v, ok := defaultEncryption["kms_key_id"]; ok && v != nil {
+		duploObject.EncryptionKmsKeyId = v.(string)
+	}
 
 	// Set the managed policies.
 	if v, ok := getAsStringArray(d, "managed_policies"); ok && v != nil {
@@ -428,7 +457,8 @@ func resourceS3BucketSetData(d *schema.ResourceData, tenantID string, name strin
 	d.Set("enable_access_logs", duplo.EnableAccessLogs)
 	d.Set("allow_public_access", duplo.AllowPublicAccess)
 	d.Set("default_encryption", []map[string]interface{}{{
-		"method": duplo.DefaultEncryption,
+		"method":     duplo.DefaultEncryption,
+		"kms_key_id": duplo.EncryptionKmsKeyId,
 	}})
 	userAdded, ok := d.GetOk("managed_policies")
 	if ok {
@@ -480,6 +510,9 @@ func fillS3BucketRequest(duploObject *duplosdk.DuploS3BucketSettingsRequest, d *
 	}
 	if v, ok := defaultEncryption["method"]; ok && v != nil {
 		duploObject.DefaultEncryption = v.(string)
+	}
+	if v, ok := defaultEncryption["kms_key_id"]; ok && v != nil {
+		duploObject.EncryptionKmsKeyId = v.(string)
 	}
 
 	if v, ok := d.GetOk("region"); ok && v != nil {
