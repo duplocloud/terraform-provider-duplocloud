@@ -228,6 +228,24 @@ func (c *Client) EcacheInstanceModify(tenantID string, rq *DuploEcacheModifyRequ
 		rq, &rp, &conf)
 }
 
+// DuploEcacheUpgradeEngineRequest upgrades an existing Redis replication group to Valkey in place.
+type DuploEcacheUpgradeEngineRequest struct {
+	Identifier          string `json:"Identifier"`
+	TargetEngineVersion string `json:"TargetEngineVersion"`
+}
+
+// EcacheInstanceUpgradeEngine calls the v3 endpoint that upgrades a Redis ECache instance to Valkey.
+// The AWS modify is asynchronous and potentially disruptive; the engine is confirmed by reconciliation.
+func (c *Client) EcacheInstanceUpgradeEngine(tenantID string, rq DuploEcacheUpgradeEngineRequest) ClientError {
+	// The endpoint returns the in-progress ECacheDBInstanceDetails; absorb it into a map since the
+	// authoritative state is fetched by a follow-up read.
+	var rp map[string]interface{}
+	return c.postAPI(
+		fmt.Sprintf("EcacheInstanceUpgradeEngine(%s, %s)", tenantID, rq.Identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/upgrade-engine", tenantID),
+		&rq, &rp)
+}
+
 type LogDeliveryConfigurationUpdateItem struct {
 	DestinationType    string              `json:"DestinationType,omitempty"`
 	LogFormat          string              `json:"LogFormat,omitempty"`
