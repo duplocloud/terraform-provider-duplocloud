@@ -64,13 +64,26 @@ resource "duplocloud_aws_cloudwatch_event_target" "cw_etarget2" {
 ### Optional
 
 - `event_bus_name` (String) The event bus to associate with the rule. If you omit this, the default event bus is used.
-- `input` (String) Valid JSON text passed to the target.
+- `input` (String) Valid JSON text passed to the target. Conflicts with `input_transformer`.
+- `input_transformer` (Block List, Max: 1) Settings used to transform the matched event before passing it to the target. Conflicts with `input`. (see [below for nested schema](#nestedblock--input_transformer))
 - `role_arn` (String) The Amazon Resource Name (ARN) associated with the role that is used for target invocation.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--input_transformer"></a>
+### Nested Schema for `input_transformer`
+
+Required:
+
+- `input_template` (String) Template that defines the payload passed to the target. Variables defined in `input_paths` are referenced using `<name>` syntax.
+
+Optional:
+
+- `input_paths` (Map of String) Map of variable names to JSONPath expressions that extract values from the event. The variable names can be referenced in `input_template` using `<name>` syntax.
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

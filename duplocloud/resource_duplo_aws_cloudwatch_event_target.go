@@ -53,10 +53,33 @@ func awsCloudWatchEventTargetSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"input": {
-			Description: "Valid JSON text passed to the target. ",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Description:   "Valid JSON text passed to the target. Conflicts with `input_transformer`.",
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			ConflictsWith: []string{"input_transformer"},
+		},
+		"input_transformer": {
+			Description:   "Settings used to transform the matched event before passing it to the target. Conflicts with `input`.",
+			Type:          schema.TypeList,
+			Optional:      true,
+			MaxItems:      1,
+			ConflictsWith: []string{"input"},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"input_paths": {
+						Description: "Map of variable names to JSONPath expressions that extract values from the event. The variable names can be referenced in `input_template` using `<name>` syntax.",
+						Type:        schema.TypeMap,
+						Optional:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+					},
+					"input_template": {
+						Description: "Template that defines the payload passed to the target. Variables defined in `input_paths` are referenced using `<name>` syntax.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+				},
+			},
 		},
 	}
 }
@@ -104,8 +127,12 @@ func resourceAwsCloudWatchEventTargetRead(ctx context.Context, d *schema.Resourc
 		return nil
 	}
 	d.Set("tenant_id", tenantID)
-	d.Set("arn", duplo.Arn)
+	d.Set("rule_name", ruleName)
+	d.Set("target_id", duplo.Id)
+	d.Set("target_arn", duplo.Arn)
 	d.Set("role_arn", duplo.RoleArn)
+	d.Set("input", duplo.Input)
+	d.Set("input_transformer", flattenCloudWatchInputTransformer(duplo.InputTransformer))
 
 	log.Printf("[TRACE] resourceAwsCloudWatchEventTargetRead(%s, %s, %s): end", tenantID, ruleName, targetId)
 	return nil
@@ -144,7 +171,24 @@ func resourceAwsCloudWatchEventTargetCreate(ctx context.Context, d *schema.Resou
 }
 
 func resourceAwsCloudWatchEventTargetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return nil
+	tenantID := d.Get("tenant_id").(string)
+	ruleName := d.Get("rule_name").(string)
+	log.Printf("[TRACE] resourceAwsCloudWatchEventTargetUpdate(%s, %s): start", tenantID, ruleName)
+	c := m.(*duplosdk.Client)
+
+	rq := expandCloudWatchEventTarget(d)
+	err := c.DuploCloudWatchEventTargetsCreate(tenantID, &duplosdk.DuploCloudWatchEventTargets{
+		Rule:         ruleName,
+		EventBusName: d.Get("event_bus_name").(string),
+		Targets:      &[]duplosdk.DuploCloudWatchEventTarget{*rq},
+	})
+	if err != nil {
+		return diag.Errorf("Error updating tenant %s cloudwatch event target '%s': %s", tenantID, rq.Id, err)
+	}
+
+	diags := resourceAwsCloudWatchEventTargetRead(ctx, d, m)
+	log.Printf("[TRACE] resourceAwsCloudWatchEventTargetUpdate(%s, %s): end", tenantID, ruleName)
+	return diags
 }
 
 func resourceAwsCloudWatchEventTargetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -180,12 +224,48 @@ func resourceAwsCloudWatchEventTargetDelete(ctx context.Context, d *schema.Resou
 }
 
 func expandCloudWatchEventTarget(d *schema.ResourceData) *duplosdk.DuploCloudWatchEventTarget {
-	return &duplosdk.DuploCloudWatchEventTarget{
+	target := &duplosdk.DuploCloudWatchEventTarget{
 		Id:      d.Get("target_id").(string),
 		Arn:     d.Get("target_arn").(string),
 		Input:   d.Get("input").(string),
 		RoleArn: d.Get("role_arn").(string),
 	}
+
+	if v, ok := d.GetOk("input_transformer"); ok {
+		list := v.([]interface{})
+		if len(list) > 0 && list[0] != nil {
+			m := list[0].(map[string]interface{})
+			it := &duplosdk.DuploCloudWatchInputTransformer{
+				InputTemplate: m["input_template"].(string),
+			}
+			if paths, ok := m["input_paths"].(map[string]interface{}); ok && len(paths) > 0 {
+				it.InputPathsMap = make(map[string]string, len(paths))
+				for k, val := range paths {
+					it.InputPathsMap[k] = val.(string)
+				}
+			}
+			target.InputTransformer = it
+		}
+	}
+
+	return target
+}
+
+func flattenCloudWatchInputTransformer(it *duplosdk.DuploCloudWatchInputTransformer) []interface{} {
+	if it == nil {
+		return nil
+	}
+	m := map[string]interface{}{
+		"input_template": it.InputTemplate,
+	}
+	if len(it.InputPathsMap) > 0 {
+		paths := make(map[string]interface{}, len(it.InputPathsMap))
+		for k, v := range it.InputPathsMap {
+			paths[k] = v
+		}
+		m["input_paths"] = paths
+	}
+	return []interface{}{m}
 }
 
 func parseAwsCloudWatchEventTargetIdParts(id string) (tenantID, ruleName, targetId string, err error) {
