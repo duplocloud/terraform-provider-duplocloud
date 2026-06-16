@@ -230,10 +230,10 @@ func expandCloudWatchEventTarget(d *schema.ResourceData) *duplosdk.DuploCloudWat
 		RoleArn: d.Get("role_arn").(string),
 	}
 
-	// AWS EventBridge accepts only one of Input / InputPath / InputTransformer
-	// per target. Since `input` is Computed, its old value lingers in state when
-	// the user switches to `input_transformer`, so we must send exactly one of
-	// them — never both (otherwise PutTargets returns a 400).
+	// AWS EventBridge accepts at most one of Input / InputPath / InputTransformer per target.
+	// Since `input` is Computed, its old value can linger in state when the user switches
+	// to `input_transformer`, so we must ensure we never send both (otherwise PutTargets
+	// returns a 400).
 	if v, ok := d.GetOk("input_transformer"); ok {
 		list := v.([]interface{})
 		if len(list) > 0 && list[0] != nil {
