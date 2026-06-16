@@ -36,10 +36,16 @@ type DuploCloudWatchEventTargetsDeleteReq struct {
 }
 
 type DuploCloudWatchEventTarget struct {
-	Arn     string `json:"Arn"`
-	Id      string `json:"Id,omitempty"`
-	RoleArn string `json:"RoleArn,omitempty"`
-	Input   string `json:"Input,omitempty"`
+	Arn              string                           `json:"Arn"`
+	Id               string                           `json:"Id,omitempty"`
+	RoleArn          string                           `json:"RoleArn,omitempty"`
+	Input            string                           `json:"Input,omitempty"`
+	InputTransformer *DuploCloudWatchInputTransformer `json:"InputTransformer,omitempty"`
+}
+
+type DuploCloudWatchInputTransformer struct {
+	InputPathsMap map[string]string `json:"InputPathsMap,omitempty"`
+	InputTemplate string            `json:"InputTemplate,omitempty"`
 }
 
 type DuploCloudWatchRunCommandTarget struct {
