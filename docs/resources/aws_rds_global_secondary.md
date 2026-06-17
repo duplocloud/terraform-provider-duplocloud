@@ -55,6 +55,7 @@ resource "duplocloud_aws_rds_global_secondary" "gs" {
 
 ### Optional
 
+- `kms_key_id` (String) Optional custom KMS key (key ID or ARN) used to encrypt the secondary cluster's storage. The key must belong to the secondary tenant or its plan. When omitted, the secondary tenant's default KMS key is used.
 - `make_headless` (Boolean) It removes the reader instances under secondary cluster by retaining the secondary cluster, Valid during updation Defaults to `false`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
