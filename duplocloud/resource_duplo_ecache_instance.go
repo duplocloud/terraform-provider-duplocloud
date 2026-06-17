@@ -962,7 +962,16 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 	if diff.Id() != "" && diff.HasChange("cache_type") {
 		oldRaw, newRaw := diff.GetChange("cache_type")
 		oldType, newType := oldRaw.(int), newRaw.(int)
-		if !(oldType == 0 && newType == 2) {
+		if oldType == 0 && newType == 2 {
+			// In-place Redis -> Valkey upgrade: the upgrade-engine endpoint sends engine_version as
+			// the target Valkey version. Require it to be a valid Valkey version here; otherwise the
+			// existing Redis version would be sent as the target and rejected by AWS.
+			target := diff.Get("engine_version").(string)
+			if vd := validValkeyVersionString(target, cty.Path{cty.GetAttrStep{Name: "engine_version"}}); vd.HasError() {
+				return fmt.Errorf("engine_version must be set to a valid Valkey version (e.g. 7.2 or above) when changing cache_type from Redis (0) to Valkey (2); got %q", target)
+			}
+		} else {
+			// Every other cache_type change requires replacement.
 			if err := diff.ForceNew("cache_type"); err != nil {
 				return err
 			}

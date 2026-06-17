@@ -240,10 +240,13 @@ func (c *Client) EcacheInstanceUpgradeEngine(tenantID string, rq DuploEcacheUpgr
 	// The endpoint returns the in-progress ECacheDBInstanceDetails; absorb it into a map since the
 	// authoritative state is fetched by a follow-up read.
 	var rp map[string]interface{}
-	return c.postAPI(
+	// Like EcacheInstanceModify, this is a long-running AWS modify that can fail transiently with a
+	// 400 while the cluster is still transitioning, so retry with backoff to match that pattern.
+	conf := NewRetryConf()
+	return c.postAPIWithRetry(
 		fmt.Sprintf("EcacheInstanceUpgradeEngine(%s, %s)", tenantID, rq.Identifier),
 		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/upgrade-engine", tenantID),
-		&rq, &rp)
+		&rq, &rp, &conf)
 }
 
 type LogDeliveryConfigurationUpdateItem struct {
