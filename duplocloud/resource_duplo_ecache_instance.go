@@ -968,7 +968,7 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 			// existing Redis version would be sent as the target and rejected by AWS.
 			target := engVer
 			if vd := validValkeyVersionString(target, cty.Path{cty.GetAttrStep{Name: "engine_version"}}); vd.HasError() {
-				return fmt.Errorf("engine_version must be set to a valid Valkey version (format <major>.<minor>, e.g. 7.0) when changing cache_type from Redis (0) to Valkey (2); got %q", target)
+				return fmt.Errorf("when changing cache_type from Redis (0) to Valkey (2), engine_version must be set to a supported Valkey version (minimum 7.2, e.g. 7.2 or 8.0); got %q", target)
 			}
 		} else {
 			// Every other cache_type change requires replacement.
@@ -1138,7 +1138,9 @@ func diagsToError(diags diag.Diagnostics) error {
 }
 
 const (
-	valkeyVersionRegexpPattern = `^[7-9]\.[[:digit:]]+$`
+	// Valkey on ElastiCache starts at 7.2 — there is no Valkey 7.0 or 7.1 — so the pattern
+	// matches 7.2 through 7.x, 8.x and 9.x but rejects 7.0 and 7.1.
+	valkeyVersionRegexpPattern = `^(7\.([2-9]|[1-9][0-9]+)|[89]\.[[:digit:]]+)$`
 )
 
 var (
@@ -1154,7 +1156,7 @@ func validValkeyVersionString(v interface{}, p cty.Path) diag.Diagnostics {
 
 	if !valkeyVersionRegexp.MatchString(value) {
 		return diag.Errorf(
-			"Invalid ValKey version: %q is not valid. For Valkey use <major>.<minor>.", value,
+			"Invalid Valkey version: %q is not supported. The minimum Valkey version on ElastiCache is 7.2 (use <major>.<minor> format, e.g. 7.2, 8.0).", value,
 		)
 	}
 
