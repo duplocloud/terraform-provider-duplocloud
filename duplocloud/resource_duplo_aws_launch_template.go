@@ -677,8 +677,12 @@ func launchtemplateValidation(ctx context.Context, diff *schema.ResourceDiff, me
 	if diff.Id() != "" {
 		for _, a := range []string{"instance_type", "ami", "block_device_mapping", "instance_requirements"} {
 			if diff.HasChange(a) {
-				diff.SetNewComputed("latest_version")
-				diff.SetNewComputed("default_version")
+				if err := diff.SetNewComputed("latest_version"); err != nil {
+					return err
+				}
+				if err := diff.SetNewComputed("default_version"); err != nil {
+					return err
+				}
 				break
 			}
 		}
