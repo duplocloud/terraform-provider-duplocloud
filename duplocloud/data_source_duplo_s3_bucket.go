@@ -69,6 +69,11 @@ func dataSourceS3Bucket() *schema.Resource {
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
+						"kms_key_id": {
+							Description: "The tenant KMS key ARN used for encryption, when a specific key is selected.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
 					},
 				},
 			},
@@ -150,7 +155,8 @@ func flattenS3BucketData(d *schema.ResourceData, tenantID string, name string, d
 	d.Set("enable_access_logs", duplo.EnableAccessLogs)
 	d.Set("allow_public_access", duplo.AllowPublicAccess)
 	d.Set("default_encryption", []map[string]interface{}{{
-		"method": duplo.DefaultEncryption,
+		"method":     duplo.DefaultEncryption,
+		"kms_key_id": duplo.EncryptionKmsKeyId,
 	}})
 	d.Set("managed_policies", duplo.Policies)
 	d.Set("tags", keyValueToState("tags", duplo.Tags))
