@@ -329,12 +329,14 @@ func reconcileGcpBigtableClusters(d *schema.ResourceData, c *duplosdk.Client, te
 	oldClusters := indexBigtableClustersByID(oldRaw.([]interface{}))
 	newClusters := indexBigtableClustersByID(newRaw.([]interface{}))
 
-	// Remove clusters that are no longer present.
+	// Collect clusters that are no longer present, but defer the deletions until
+	// after creates/updates. Bigtable rejects deleting the last remaining cluster,
+	// so creating replacements first lets a single apply relocate a cluster
+	// (remove + add a different cluster_id) without ever dropping below one cluster.
+	toDelete := []string{}
 	for id := range oldClusters {
 		if _, ok := newClusters[id]; !ok {
-			if clientErr := c.GcpBigtableClusterDelete(tenantID, name, id); clientErr != nil {
-				return diag.Errorf("Error deleting cluster '%s' of Bigtable instance '%s': %s", id, name, clientErr)
-			}
+			toDelete = append(toDelete, id)
 		}
 	}
 
@@ -360,6 +362,13 @@ func reconcileGcpBigtableClusters(d *schema.ResourceData, c *duplosdk.Client, te
 		}
 		if clientErr := c.GcpBigtableClusterUpdate(tenantID, name, id, upd); clientErr != nil {
 			return diag.Errorf("Error updating cluster '%s' of Bigtable instance '%s': %s", id, name, clientErr)
+		}
+	}
+
+	// Now that replacements exist, remove the clusters that are no longer present.
+	for _, id := range toDelete {
+		if clientErr := c.GcpBigtableClusterDelete(tenantID, name, id); clientErr != nil {
+			return diag.Errorf("Error deleting cluster '%s' of Bigtable instance '%s': %s", id, name, clientErr)
 		}
 	}
 
