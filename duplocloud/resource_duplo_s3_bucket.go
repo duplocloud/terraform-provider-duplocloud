@@ -99,6 +99,7 @@ func s3BucketSchema() map[string]*schema.Schema {
 							"When omitted, the default tenant KMS key is used.",
 						Type:             schema.TypeString,
 						Optional:         true,
+						Computed:         true,
 						DiffSuppressFunc: diffSuppressS3KmsKeyId,
 					},
 				},
