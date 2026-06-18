@@ -133,7 +133,8 @@ func gcpBigtableInstanceSchema() map[string]*schema.Schema {
 		},
 		"cluster": {
 			Description: "The clusters that belong to the Bigtable instance. At least one cluster is required. " +
-				"Clusters are matched by `cluster_id`, so the order they are listed in does not matter.",
+				"Clusters are matched to the backend by `cluster_id`; list them in a stable order, " +
+				"as reordering the blocks in configuration produces a diff.",
 			Type:     schema.TypeList,
 			Required: true,
 			MinItems: 1,
@@ -640,7 +641,10 @@ func bigtableTypeToString(i int) string {
 	case duplosdk.BigtableTypeProduction:
 		return "PRODUCTION"
 	default:
-		return ""
+		// The schema only allows PRODUCTION/DEVELOPMENT and defaults to
+		// PRODUCTION, so treat any unknown/unspecified backend value the same
+		// way to avoid an empty instance_type and a perpetual diff.
+		return "PRODUCTION"
 	}
 }
 
