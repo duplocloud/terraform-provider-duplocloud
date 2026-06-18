@@ -608,7 +608,8 @@ type DuploRDSGlobalDatabaseRegionInfo struct {
 }
 
 type DuploRDSGlobalDatabase struct {
-	TenantID string `json:"tenantId"`
+	TenantID           string `json:"tenantId"`
+	EncryptionKmsKeyId string `json:"EncryptionKmsKeyId,omitempty"`
 }
 
 func (c *Client) CreateRDSDBSecondaryDB(tenantID, instanceId, region string, rq DuploRDSGlobalDatabase) (*DuploRDSGlobalDatabaseResponse, ClientError) {
