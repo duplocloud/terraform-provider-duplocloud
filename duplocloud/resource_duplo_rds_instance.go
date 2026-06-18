@@ -261,14 +261,14 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"v2_scaling_configuration": {
-			Description: "Serverless v2_scaling_configuration min and max scaling capacity. This configuration is only applicable for serverless instances",
+			Description: "Serverless v2 scaling configuration specifying the min and max scaling capacity (in ACUs). This configuration is only applicable for serverless instances.",
 			Type:        schema.TypeList,
 			MaxItems:    1,
 			Optional:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"min_capacity": {
-						Description: "Specifies min scaling capacity.",
+						Description: "Specifies min scaling capacity. Set to `0` to enable Aurora Serverless v2 auto-pause (scale to zero) for idle clusters.",
 						Type:        schema.TypeFloat,
 						Required:    true,
 					},
@@ -276,6 +276,12 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 						Description: "Specifies max scaling capacity.",
 						Type:        schema.TypeFloat,
 						Required:    true,
+					},
+					"seconds_until_auto_pause": {
+						Description:  "The amount of time, in seconds, the cluster must remain idle — no connections and no database activity while at `min_capacity` — before Aurora Serverless v2 auto-pauses it (scales to zero ACUs). Any activity resets the timer. Only applies when `min_capacity` is `0`. Must be between 300 (5 minutes) and 86400 (24 hours).",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						ValidateFunc: validation.IntBetween(300, 86400),
 					},
 				},
 			},
@@ -1019,7 +1025,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 }
 
 func expandV2ScalingConfiguration(cfg []interface{}) *duplosdk.V2ScalingConfiguration {
-	if len(cfg) < 1 {
+	if len(cfg) < 1 || cfg[0] == nil {
 		return nil
 	}
 	out := &duplosdk.V2ScalingConfiguration{}
@@ -1030,7 +1036,13 @@ func expandV2ScalingConfiguration(cfg []interface{}) *duplosdk.V2ScalingConfigur
 	if v, ok := m["max_capacity"]; ok {
 		out.MaxCapacity = v.(float64)
 	}
-	if out.MinCapacity == 0 || out.MaxCapacity == 0 {
+	if v, ok := m["seconds_until_auto_pause"]; ok {
+		out.SecondsUntilAutoPause = v.(int)
+	}
+	// max_capacity is always required for a serverless v2 config, so a zero value
+	// means the block was not populated. min_capacity may legitimately be 0
+	// (auto-pause / scale-to-zero), so it must not be treated as "unset".
+	if out.MaxCapacity == 0 {
 		return nil
 	}
 	return out
@@ -1091,11 +1103,20 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["skip_final_snapshot"] = duploObject.SkipFinalSnapshot
 	jo["store_details_in_secret_manager"] = duploObject.StoreDetailsInSecretManager
 	jo["enable_iam_auth"] = duploObject.EnableIamAuth
-	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 && duploObject.SizeEx == "db.serverless" {
-		d.Set("v2_scaling_configuration", []map[string]interface{}{{
+	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MaxCapacity != 0 && duploObject.SizeEx == "db.serverless" {
+		v2 := map[string]interface{}{
 			"min_capacity": duploObject.V2ScalingConfiguration.MinCapacity,
 			"max_capacity": duploObject.V2ScalingConfiguration.MaxCapacity,
-		}})
+		}
+		// The backend does not yet echo SecondsUntilAutoPause back on reads (see
+		// DUPLO-43331). Only overwrite state when the API returns a real value;
+		// otherwise preserve the configured value to avoid spurious drift.
+		if duploObject.V2ScalingConfiguration.SecondsUntilAutoPause != 0 {
+			v2["seconds_until_auto_pause"] = duploObject.V2ScalingConfiguration.SecondsUntilAutoPause
+		} else if v, ok := d.GetOk("v2_scaling_configuration.0.seconds_until_auto_pause"); ok {
+			v2["seconds_until_auto_pause"] = v.(int)
+		}
+		d.Set("v2_scaling_configuration", []map[string]interface{}{v2})
 	}
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName

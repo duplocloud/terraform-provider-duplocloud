@@ -82,8 +82,12 @@ type DuploRdsInstance struct {
 }
 
 type V2ScalingConfiguration struct {
-	MinCapacity float64 `json:"MinCapacity,omitempty"`
-	MaxCapacity float64 `json:"MaxCapacity,omitempty"`
+	// MinCapacity has no omitempty: a value of 0 is valid (Aurora Serverless v2
+	// scale-to-zero / auto-pause) and must be serialized explicitly so the
+	// backend receives a definite value rather than treating it as unset.
+	MinCapacity           float64 `json:"MinCapacity"`
+	MaxCapacity           float64 `json:"MaxCapacity,omitempty"`
+	SecondsUntilAutoPause int     `json:"SecondsUntilAutoPause,omitempty"`
 }
 
 // DuploRdsInstancePasswordChange is a Duplo SDK object that represents an RDS instance password change

@@ -105,3 +105,4 @@ Read-Only:
 
 - `max_capacity` (Number)
 - `min_capacity` (Number)
+- `seconds_until_auto_pause` (Number)

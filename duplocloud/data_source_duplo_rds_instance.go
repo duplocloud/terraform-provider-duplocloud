@@ -175,6 +175,11 @@ func dataSourceDuploRdsInstance() *schema.Resource {
 							Type:        schema.TypeFloat,
 							Computed:    true,
 						},
+						"seconds_until_auto_pause": {
+							Description: "Idle time in seconds (no connections or activity while at min_capacity) before Aurora Serverless v2 auto-pauses the cluster. Only applies when min_capacity is 0.",
+							Type:        schema.TypeInt,
+							Computed:    true,
+						},
 					},
 				},
 			},
