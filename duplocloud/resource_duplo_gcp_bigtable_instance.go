@@ -466,6 +466,8 @@ func expandGcpBigtableCluster(cfg map[string]interface{}, storageType int) *dupl
 	}
 	if ac, ok := cfg["autoscaling_config"].([]interface{}); ok && len(ac) > 0 && ac[0] != nil {
 		a := ac[0].(map[string]interface{})
+		// storage_target is Optional+Computed, so it may be absent from the map.
+		storageTarget, _ := a["storage_target"].(int)
 		cl.ClusterConfig = &duplosdk.DuploBigtableClusterConfig{
 			ClusterAutoscalingConfig: &duplosdk.DuploBigtableClusterAutoscalingConfig{
 				AutoscalingLimits: duplosdk.DuploBigtableAutoscalingLimits{
@@ -474,7 +476,7 @@ func expandGcpBigtableCluster(cfg map[string]interface{}, storageType int) *dupl
 				},
 				AutoscalingTargets: duplosdk.DuploBigtableAutoscalingTargets{
 					CpuUtilizationPercent:        a["cpu_target"].(int),
-					StorageUtilizationGibPerNode: a["storage_target"].(int),
+					StorageUtilizationGibPerNode: storageTarget,
 				},
 			},
 		}
