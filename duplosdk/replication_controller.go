@@ -149,7 +149,7 @@ type DuploReplicationControllerCreateRequest struct {
 	NetworkId                         string                 `json:"NetworkId"`
 	Cloud                             int                    `json:"Cloud"`
 	AgentPlatform                     int                    `json:"AgentPlatform"`
-	Replicas                          int                    `json:"Replicas,omitempty"`
+	Replicas                          int                    `json:"Replicas"`
 	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
 	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
 	IsDaemonset                       bool                   `json:"IsDaemonset"`
@@ -178,7 +178,7 @@ type DuploReplicationControllerUpdateRequest struct {
 	Name                              string                 `json:"Name"`
 	Image                             string                 `json:"DockerImage"`
 	AgentPlatform                     int                    `json:"AgentPlatform"`
-	Replicas                          int                    `json:"Replicas,omitempty"`
+	Replicas                          int                    `json:"Replicas"`
 	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
 	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
 	IsDaemonset                       bool                   `json:"IsDaemonset"`
