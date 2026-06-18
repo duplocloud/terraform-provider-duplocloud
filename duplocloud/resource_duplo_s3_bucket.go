@@ -148,8 +148,17 @@ func resourceS3Bucket() *schema.Resource {
 // validateS3BucketEncryption ensures default_encryption.kms_key_id is only set when
 // the encryption method is TenantKms - the backend ignores it for any other method.
 func validateS3BucketEncryption(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
-	method := diff.Get("default_encryption.0.method").(string)
-	kmsKeyId := diff.Get("default_encryption.0.kms_key_id").(string)
+	v, ok := diff.GetOk("default_encryption")
+	if !ok || v == nil {
+		return nil
+	}
+	blocks := v.([]interface{})
+	if len(blocks) == 0 || blocks[0] == nil {
+		return nil
+	}
+	mp := blocks[0].(map[string]interface{})
+	method, _ := mp["method"].(string)
+	kmsKeyId, _ := mp["kms_key_id"].(string)
 	if kmsKeyId != "" && method != "TenantKms" {
 		return fmt.Errorf("default_encryption.kms_key_id can only be set when default_encryption.method is \"TenantKms\" (got %q)", method)
 	}
