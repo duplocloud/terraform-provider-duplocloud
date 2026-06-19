@@ -186,10 +186,30 @@ func s3ConfiguredKmsKeyId(raw cty.Value) (value string, ok bool) {
 // so the plan converges (DUPLO-43358). SetNew (vs SetNewComputed) keeps method shown
 // unchanged in the plan - only kms_key_id is flagged as recomputed.
 func customizeS3BucketEncryptionDiff(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
-	method := diff.Get("default_encryption.0.method").(string)
-	key, configured := s3ConfiguredKmsKeyId(diff.GetRawConfig())
+	rawDE := diff.GetRawConfig().GetAttr("default_encryption")
+	// Nothing to validate or force when the block is absent or not yet known.
+	if rawDE.IsNull() || !rawDE.IsKnown() || rawDE.LengthInt() == 0 {
+		return nil
+	}
+	block := rawDE.AsValueSlice()[0]
+	if !block.IsKnown() {
+		return nil
+	}
+	keyRaw := block.GetAttr("kms_key_id")
+	// An unknown key (e.g. kms_key_id references another resource's computed
+	// attribute) can't be validated, and "unknown" must not be mistaken for
+	// "removed" - leave the diff alone and let it resolve at apply.
+	if !keyRaw.IsKnown() {
+		return nil
+	}
 
-	if configured {
+	// method is a typed string attribute, so Get yields "" (not nil) when the block
+	// is absent; the comma-ok guards against any unexpected nil regardless.
+	method, _ := diff.Get("default_encryption.0.method").(string)
+
+	if !keyRaw.IsNull() {
+		// A key is explicitly configured: validate it.
+		key := keyRaw.AsString()
 		trimmed := strings.TrimSpace(key)
 		switch {
 		case method == "TenantKms" && trimmed == "":
@@ -207,8 +227,8 @@ func customizeS3BucketEncryptionDiff(ctx context.Context, diff *schema.ResourceD
 		return nil
 	}
 
-	// kms_key_id was dropped from config. If state still holds one, plan a clear so
-	// the bucket reverts to the default tenant key.
+	// keyRaw is null: the key was dropped from config. If state still holds one,
+	// plan a clear so the bucket reverts to the default tenant key.
 	if old, _ := diff.GetChange("default_encryption.0.kms_key_id"); old != nil {
 		if oldStr, ok := old.(string); ok && oldStr != "" {
 			return diff.SetNew("default_encryption", []interface{}{
