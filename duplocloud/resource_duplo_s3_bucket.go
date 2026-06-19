@@ -10,6 +10,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -142,26 +143,101 @@ func resourceS3Bucket() *schema.Resource {
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema:        s3BucketSchema(),
-		CustomizeDiff: validateS3BucketEncryption,
+		CustomizeDiff: customizeS3BucketEncryptionDiff,
 	}
 }
 
-// validateS3BucketEncryption ensures default_encryption.kms_key_id is only set when
-// the encryption method is TenantKms - the backend ignores it for any other method.
-func validateS3BucketEncryption(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
-	v, ok := diff.GetOk("default_encryption")
-	if !ok || v == nil {
+// s3ConfiguredKmsKeyId extracts default_encryption[0].kms_key_id from the raw
+// config (works with both *schema.ResourceData and *schema.ResourceDiff via
+// GetRawConfig). ok is false when the block or attribute is absent/unknown - this
+// is what lets us tell "user dropped the key" (revert to default) apart from the
+// stale value a Computed attribute would otherwise report through d.Get.
+func s3ConfiguredKmsKeyId(raw cty.Value) (value string, ok bool) {
+	if raw.IsNull() || !raw.IsKnown() {
+		return "", false
+	}
+	de := raw.GetAttr("default_encryption")
+	if de.IsNull() || !de.IsKnown() || de.LengthInt() == 0 {
+		return "", false
+	}
+	block := de.AsValueSlice()[0]
+	if !block.IsKnown() {
+		return "", false
+	}
+	key := block.GetAttr("kms_key_id")
+	if !key.IsKnown() || key.IsNull() {
+		return "", false
+	}
+	return key.AsString(), true
+}
+
+// customizeS3BucketEncryptionDiff validates the encryption block and forces an
+// update when an explicit CMK is dropped from config.
+//
+// It reads kms_key_id from GetRawConfig (not diff.Get) so it sees what the user
+// actually wrote, not the value a Computed attribute carries over from state -
+// otherwise switching away from TenantKms is blocked by a stale key (DUPLO-43356).
+//
+// default_encryption is a Computed block, so dropping kms_key_id would otherwise
+// retain the old value and plan no change. When the key is removed from config but
+// state still has one, we SetNew the block with an empty kms_key_id so the revert to
+// the default tenant key actually runs. The SetNew is gated on a non-empty prior
+// value: once state is empty there is nothing to clear and we leave the diff alone,
+// so the plan converges (DUPLO-43358). SetNew (vs SetNewComputed) keeps method shown
+// unchanged in the plan - only kms_key_id is flagged as recomputed.
+func customizeS3BucketEncryptionDiff(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	rawDE := diff.GetRawConfig().GetAttr("default_encryption")
+	// Nothing to validate or force when the block is absent or not yet known.
+	if rawDE.IsNull() || !rawDE.IsKnown() || rawDE.LengthInt() == 0 {
 		return nil
 	}
-	blocks := v.([]interface{})
-	if len(blocks) == 0 || blocks[0] == nil {
+	block := rawDE.AsValueSlice()[0]
+	if !block.IsKnown() {
 		return nil
 	}
-	mp := blocks[0].(map[string]interface{})
-	method, _ := mp["method"].(string)
-	kmsKeyId, _ := mp["kms_key_id"].(string)
-	if kmsKeyId != "" && method != "TenantKms" {
-		return fmt.Errorf("default_encryption.kms_key_id can only be set when default_encryption.method is \"TenantKms\" (got %q)", method)
+	keyRaw := block.GetAttr("kms_key_id")
+	// An unknown key (e.g. kms_key_id references another resource's computed
+	// attribute) can't be validated, and "unknown" must not be mistaken for
+	// "removed" - leave the diff alone and let it resolve at apply.
+	if !keyRaw.IsKnown() {
+		return nil
+	}
+
+	// method is a typed string attribute, so Get yields "" (not nil) when the block
+	// is absent; the comma-ok guards against any unexpected nil regardless.
+	method, _ := diff.Get("default_encryption.0.method").(string)
+
+	if !keyRaw.IsNull() {
+		// A key is explicitly configured: validate it.
+		key := keyRaw.AsString()
+		trimmed := strings.TrimSpace(key)
+		switch {
+		case method == "TenantKms" && trimmed == "":
+			// DUPLO-43359: "" or whitespace-only is not a valid key.
+			return fmt.Errorf("default_encryption.kms_key_id must be a non-empty KMS key ID or ARN when default_encryption.method is \"TenantKms\"")
+		case key != trimmed:
+			// DUPLO-43361: a padded ARN reaches AWS verbatim and fails with a misleading error.
+			return fmt.Errorf("default_encryption.kms_key_id must not contain leading or trailing whitespace")
+		case method != "TenantKms" && trimmed != "":
+			// The backend only honors kms_key_id under TenantKms.
+			return fmt.Errorf("default_encryption.kms_key_id can only be set when default_encryption.method is \"TenantKms\" (got %q)", method)
+		}
+		// A configured key is handled by the normal diff (diffSuppressS3KmsKeyId
+		// absorbs bare-id vs ARN); nothing to force.
+		return nil
+	}
+
+	// keyRaw is null: the key was dropped from config. If state still holds one,
+	// plan a clear so the bucket reverts to the default tenant key.
+	if old, _ := diff.GetChange("default_encryption.0.kms_key_id"); old != nil {
+		if oldStr, ok := old.(string); ok && oldStr != "" {
+			return diff.SetNew("default_encryption", []interface{}{
+				map[string]interface{}{
+					"method":     method,
+					"kms_key_id": "",
+				},
+			})
+		}
 	}
 	return nil
 }
@@ -177,6 +253,41 @@ func diffSuppressS3KmsKeyId(k, old, new string, d *schema.ResourceData) bool {
 	}
 	// Treat an ARN and the bare key ID it embeds as equivalent.
 	return strings.HasSuffix(old, "/"+new) || strings.HasSuffix(new, "/"+old)
+}
+
+// isS3KmsKeyError reports whether a v3 API error is about the KMS key rather than a
+// genuinely missing endpoint. Such errors come back as 404s, which PossibleMissingAPI
+// would otherwise misread as "v3 unavailable" and silently fall back to the old API.
+func isS3KmsKeyError(err duplosdk.ClientError) bool {
+	return err != nil && strings.Contains(strings.ToLower(err.Error()), "kms")
+}
+
+// validateS3CmkRegion guards against a CMK paired with an explicit non-tenant region.
+// The backend only applies a tenant KMS key in the tenant's default region; with any
+// other region it silently drops the CMK and creates the bucket in the tenant region
+// anyway (DUPLO-43365). We can only know the tenant region by asking the API, so this
+// runs at apply time. It is a no-op unless a kms_key_id is set alongside an explicitly
+// configured region, and it never blocks when the region can't be determined.
+func validateS3CmkRegion(c *duplosdk.Client, tenantID string, d *schema.ResourceData, req *duplosdk.DuploS3BucketSettingsRequest) error {
+	if req.EncryptionKmsKeyId == "" {
+		return nil
+	}
+	regionRaw := d.GetRawConfig().GetAttr("region")
+	if !regionRaw.IsKnown() || regionRaw.IsNull() {
+		return nil // region omitted -> tenant region is used -> no conflict
+	}
+	region := regionRaw.AsString()
+	if region == "" {
+		return nil
+	}
+	tenantRegion, err := c.TenantGetAwsRegion(tenantID)
+	if err != nil || tenantRegion == "" {
+		return nil // can't determine the tenant region; don't block the apply
+	}
+	if !strings.EqualFold(region, tenantRegion) {
+		return fmt.Errorf("default_encryption.kms_key_id (method \"TenantKms\") is only supported for buckets in the tenant's default region (%s); remove kms_key_id or set region to %q", tenantRegion, tenantRegion)
+	}
+	return nil
 }
 
 // READ resource
@@ -257,16 +368,19 @@ func resourceS3BucketCreate(ctx context.Context, d *schema.ResourceData, m inter
 	if errFill != nil {
 		return diag.FromErr(errFill)
 	}
+	if err := validateS3CmkRegion(c, tenantID, d, &duploObject); err != nil {
+		return diag.FromErr(err)
+	}
 
 	// Post the object to Duplo
 	_, err := c.TenantCreateV3S3Bucket(tenantID, duploObject)
-	if err != nil && !err.PossibleMissingAPI() {
+	if err != nil {
+		// A KMS error is a 404, which PossibleMissingAPI treats as "v3 missing" - do not
+		// fall back to the old API for it, or the user sees an unrelated error (DUPLO-43362).
+		if err.PossibleMissingAPI() && !isS3KmsKeyError(err) {
+			return resourceS3BucketCreateOldApi(ctx, d, m)
+		}
 		return diag.Errorf("resourceS3BucketCreate: Unable to create s3 bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
-	}
-
-	// **** fallback on older api ****
-	if err != nil && err.PossibleMissingAPI() {
-		return resourceS3BucketCreateOldApi(ctx, d, m)
 	}
 
 	// Wait up to 60 seconds for Duplo to be able to return the bucket's details.
@@ -317,14 +431,27 @@ func resourceS3BucketUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	c := m.(*duplosdk.Client)
 	tenantID := d.Get("tenant_id").(string)
 
+	if err := validateS3CmkRegion(c, tenantID, d, &duploObject); err != nil {
+		return diag.FromErr(err)
+	}
+
 	// Post the object to Duplo
-	resource, err := c.TenantUpdateV3S3Bucket(tenantID, duploObject)
-	if err != nil && !err.PossibleMissingAPI() {
+	_, err := c.TenantUpdateV3S3Bucket(tenantID, duploObject)
+	if err != nil {
+		// A KMS error is a 404, which PossibleMissingAPI treats as "v3 missing" - do not
+		// fall back to the old API for it, or the user sees an unrelated error (DUPLO-43362).
+		if err.PossibleMissingAPI() && !isS3KmsKeyError(err) {
+			return resourceS3BucketUpdateOldApi(ctx, d, m)
+		}
 		return diag.Errorf("resourceS3BucketUpdate: Unable to update s3 bucket using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, duploObject.Name, err)
 	}
-	// **** fallback on older api ****
-	if err != nil && err.PossibleMissingAPI() {
-		return resourceS3BucketUpdateOldApi(ctx, d, m)
+
+	// Re-read so state reflects the reconciled values rather than the update
+	// response, which can be stale (e.g. the KMS tag removal when reverting from a
+	// CMK to default/Sse is not reflected in the echoed-back object).
+	resource, err := c.TenantGetV3S3Bucket(tenantID, fullname)
+	if err != nil {
+		return diag.Errorf("resourceS3BucketUpdate: Unable to retrieve s3 bucket details using v3 api (tenant: %s, bucket: %s: error: %s)", tenantID, name, err)
 	}
 
 	resourceS3BucketSetData(d, tenantID, name, resource)
@@ -434,8 +561,10 @@ func resourceS3BucketUpdateOldApi(ctx context.Context, d *schema.ResourceData, m
 	if v, ok := defaultEncryption["method"]; ok && v != nil {
 		duploObject.DefaultEncryption = v.(string)
 	}
-	if v, ok := defaultEncryption["kms_key_id"]; ok && v != nil {
-		duploObject.EncryptionKmsKeyId = v.(string)
+	// Read kms_key_id from raw config (not the Computed-merged value) so dropping
+	// it from config sends "" and the backend reverts to the default tenant key.
+	if key, ok := s3ConfiguredKmsKeyId(d.GetRawConfig()); ok {
+		duploObject.EncryptionKmsKeyId = strings.TrimSpace(key)
 	}
 
 	// Set the managed policies.
@@ -521,8 +650,10 @@ func fillS3BucketRequest(duploObject *duplosdk.DuploS3BucketSettingsRequest, d *
 	if v, ok := defaultEncryption["method"]; ok && v != nil {
 		duploObject.DefaultEncryption = v.(string)
 	}
-	if v, ok := defaultEncryption["kms_key_id"]; ok && v != nil {
-		duploObject.EncryptionKmsKeyId = v.(string)
+	// Read kms_key_id from raw config (not the Computed-merged value) so dropping
+	// it from config sends "" and the backend reverts to the default tenant key.
+	if key, ok := s3ConfiguredKmsKeyId(d.GetRawConfig()); ok {
+		duploObject.EncryptionKmsKeyId = strings.TrimSpace(key)
 	}
 
 	if v, ok := d.GetOk("region"); ok && v != nil {
