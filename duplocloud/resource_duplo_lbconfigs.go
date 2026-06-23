@@ -287,10 +287,11 @@ func duploLbConfigSchema() map[string]*schema.Schema {
 			}, false),
 		},
 		"gcp_max_rate_per_endpoint": {
-			Type:        schema.TypeFloat,
-			Description: "Provides an average rate of destination HTTP requests for a single endpoint. Applicable only for GCP.",
-			Optional:    true,
-			Computed:    true,
+			Type:         schema.TypeFloat,
+			Description:  "Provides an average rate of destination HTTP requests for a single endpoint. Applicable only for GCP.",
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.FloatAtLeast(0),
 		},
 	}
 }
@@ -481,9 +482,7 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 				}
 				if v, ok := lbc["gcp_enable_access_logs"]; ok && v != nil {
 					gcpSettings.EnableAccessLogs = v.(bool)
-					if v.(bool) {
-						hasGcpSettings = true
-					}
+					hasGcpSettings = true
 				}
 				if v, ok := lbc["gcp_security_policy_id"]; ok && v != nil && v.(string) != "" {
 					gcpSettings.SecurityPolicyId = v.(string)
@@ -493,21 +492,19 @@ func resourceDuploServiceLBConfigsCreateOrUpdate(ctx context.Context, d *schema.
 					gcpSettings.TimeoutSec = v.(int)
 					hasGcpSettings = true
 				}
-				if v, ok := lbc["gcp_connection_draining_timeout_sec"]; ok && v != nil && v.(int) > 0 {
+				if v, ok := lbc["gcp_connection_draining_timeout_sec"]; ok && v != nil {
 					gcpSettings.ConnectionDrainingTimeoutSec = v.(int)
 					hasGcpSettings = true
 				}
 				if v, ok := lbc["gcp_http_to_https_redirect"]; ok && v != nil {
 					gcpSettings.HttpToHttpsRedirect = v.(bool)
-					if v.(bool) {
-						hasGcpSettings = true
-					}
+					hasGcpSettings = true
 				}
 				if v, ok := lbc["gcp_session_affinity"]; ok && v != nil && v.(string) != "" {
 					gcpSettings.SessionAffinity = v.(string)
 					hasGcpSettings = true
 				}
-				if v, ok := lbc["gcp_max_rate_per_endpoint"]; ok && v != nil && v.(float64) > 0 {
+				if v, ok := lbc["gcp_max_rate_per_endpoint"]; ok && v != nil {
 					gcpSettings.MaxRatePerEndpoint = v.(float64)
 					hasGcpSettings = true
 				}
@@ -738,16 +735,12 @@ func flattenDuploServiceLbConfiguration(lb *duplosdk.DuploLbConfiguration) map[s
 		if lb.GcpSettings.TimeoutSec > 0 {
 			m["gcp_timeout_sec"] = lb.GcpSettings.TimeoutSec
 		}
-		if lb.GcpSettings.ConnectionDrainingTimeoutSec > 0 {
-			m["gcp_connection_draining_timeout_sec"] = lb.GcpSettings.ConnectionDrainingTimeoutSec
-		}
+		m["gcp_connection_draining_timeout_sec"] = lb.GcpSettings.ConnectionDrainingTimeoutSec
 		m["gcp_http_to_https_redirect"] = lb.GcpSettings.HttpToHttpsRedirect
 		if lb.GcpSettings.SessionAffinity != "" {
 			m["gcp_session_affinity"] = lb.GcpSettings.SessionAffinity
 		}
-		if lb.GcpSettings.MaxRatePerEndpoint > 0 {
-			m["gcp_max_rate_per_endpoint"] = lb.GcpSettings.MaxRatePerEndpoint
-		}
+		m["gcp_max_rate_per_endpoint"] = lb.GcpSettings.MaxRatePerEndpoint
 	}
 	if lb.HealthCheckConfig != nil {
 		healthcheckConfig := map[string]interface{}{
