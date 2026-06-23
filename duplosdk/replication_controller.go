@@ -116,7 +116,14 @@ type DuploLbConfiguration struct {
 }
 
 type DuploLbGCPSettings struct {
-	BackendConfigServiceTimeout int `json:"backendConfigServiceTimeout"`
+	BackendConfigServiceTimeout  int     `json:"backendConfigServiceTimeout,omitempty"`
+	EnableAccessLogs             bool    `json:"enableAccessLogs,omitempty"`
+	SecurityPolicyId             string  `json:"securityPolicyId,omitempty"`
+	TimeoutSec                   int     `json:"timeoutSec,omitempty"`
+	ConnectionDrainingTimeoutSec int     `json:"connectionDrainingTimeoutSec,omitempty"`
+	HttpToHttpsRedirect          bool    `json:"httpToHttpsRedirect,omitempty"`
+	SessionAffinity              string  `json:"sessionAffinity,omitempty"`
+	MaxRatePerEndpoint           float64 `json:"maxRatePerEndpoint,omitempty"`
 }
 
 // DuploPodLbConfiguration represents an LB configuration deletion request.
