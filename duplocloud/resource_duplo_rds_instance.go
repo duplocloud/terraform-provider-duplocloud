@@ -1285,8 +1285,16 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		}
 	}
 	if v, ok := diff.GetOk("v2_scaling_configuration"); ok {
-		if len(v.([]interface{})) > 0 && s != "db.serverless" {
+		cfgList := v.([]interface{})
+		if len(cfgList) > 0 && s != "db.serverless" {
 			return fmt.Errorf("Cannot set v2 scaling configuration for provisioned rds instance")
+		}
+		if len(cfgList) > 0 {
+			cfg := cfgList[0].(map[string]interface{})
+			minCap := cfg["min_capacity"].(float64)
+			if secUntilPause, ok := cfg["seconds_until_auto_pause"]; ok && secUntilPause.(int) > 0 && minCap > 0 {
+				return fmt.Errorf("seconds_until_auto_pause can only be set when min_capacity is 0 (auto-pause requires scaling to zero ACUs)")
+			}
 		}
 	}
 	if diff.Get("multi_az").(bool) && (eng == 8 || eng == 9 || eng == 16) {
