@@ -1290,10 +1290,19 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			return fmt.Errorf("Cannot set v2 scaling configuration for provisioned rds instance")
 		}
 		if len(cfgList) > 0 {
-			cfg := cfgList[0].(map[string]interface{})
-			minCap := cfg["min_capacity"].(float64)
-			if secUntilPause, ok := cfg["seconds_until_auto_pause"]; ok && secUntilPause.(int) > 0 && minCap > 0 {
-				return fmt.Errorf("seconds_until_auto_pause can only be set when min_capacity is 0 (auto-pause requires scaling to zero ACUs)")
+			cfg, ok := cfgList[0].(map[string]interface{})
+			if !ok {
+				return nil
+			}
+			minCap, ok := cfg["min_capacity"].(float64)
+			if !ok {
+				return nil
+			}
+			if secUntilPause, ok := cfg["seconds_until_auto_pause"]; ok {
+				secVal, ok := secUntilPause.(int)
+				if ok && secVal > 0 && minCap != 0 {
+					return fmt.Errorf("seconds_until_auto_pause can only be set when min_capacity is 0 (auto-pause requires scaling to zero ACUs)")
+				}
 			}
 		}
 	}
