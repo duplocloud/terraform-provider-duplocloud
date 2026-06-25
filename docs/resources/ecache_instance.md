@@ -201,7 +201,7 @@ Should be one of:
    - `1` : Memcache
    - `2` : Valkey
 
- Defaults to `0`.
+Changing `cache_type` from `0` (Redis) to `2` (Valkey) performs an in-place engine upgrade. Any other change to `cache_type` forces replacement of the instance. Defaults to `0`.
 - `enable_cluster_mode` (Boolean) Flag to enable/disable redis/valkey cluster mode. Cluster mode should be enabled if the instance acts as the primary for a global datastore.
 - `encryption_at_rest` (Boolean) Enables encryption-at-rest. Defaults to `false`.
 - `encryption_in_transit` (Boolean) Enables encryption-in-transit. Defaults to `false`.

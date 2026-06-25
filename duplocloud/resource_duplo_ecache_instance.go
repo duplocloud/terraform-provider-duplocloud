@@ -77,10 +77,11 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				"Should be one of:\n\n" +
 				"   - `0` : Redis\n" +
 				"   - `1` : Memcache\n" +
-				"   - `2` : Valkey\n\n",
+				"   - `2` : Valkey\n\n" +
+				"Changing `cache_type` from `0` (Redis) to `2` (Valkey) performs an in-place engine upgrade. " +
+				"Any other change to `cache_type` forces replacement of the instance.",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			ForceNew:     true,
 			Default:      0,
 			ValidateFunc: validation.IntBetween(0, 2),
 		},
@@ -956,6 +957,27 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 		}
 	}
 
+	// cache_type is not declared ForceNew so that an in-place Redis -> Valkey engine upgrade is
+	// possible. Every other cache_type change still requires replacement, so force it here.
+	if diff.Id() != "" && diff.HasChange("cache_type") {
+		oldRaw, newRaw := diff.GetChange("cache_type")
+		oldType, newType := oldRaw.(int), newRaw.(int)
+		if oldType == 0 && newType == 2 {
+			// In-place Redis -> Valkey upgrade: the upgrade-engine endpoint sends engine_version as
+			// the target Valkey version. Require it to be a valid Valkey version here; otherwise the
+			// existing Redis version would be sent as the target and rejected by AWS.
+			target := engVer
+			if vd := validValkeyVersionString(target, cty.Path{cty.GetAttrStep{Name: "engine_version"}}); vd.HasError() {
+				return fmt.Errorf("when changing cache_type from Redis (0) to Valkey (2), engine_version must be set to a supported Valkey version (minimum 7.2, e.g. 7.2 or 8.0); got %q", target)
+			}
+		} else {
+			// Every other cache_type change requires replacement.
+			if err := diff.ForceNew("cache_type"); err != nil {
+				return err
+			}
+		}
+	}
+
 	if diff.Id() != "" && diff.HasChange("engine_version") {
 		oldRaw, newRaw := diff.GetChange("engine_version")
 		oldVer, newVer := oldRaw.(string), newRaw.(string)
@@ -1116,7 +1138,9 @@ func diagsToError(diags diag.Diagnostics) error {
 }
 
 const (
-	valkeyVersionRegexpPattern = `^[7-9]\.[[:digit:]]+$`
+	// Valkey on ElastiCache starts at 7.2 — there is no Valkey 7.0 or 7.1 — so the pattern
+	// matches 7.2 through 7.x, 8.x and 9.x but rejects 7.0 and 7.1.
+	valkeyVersionRegexpPattern = `^(7\.([2-9]|[1-9][0-9]+)|[89]\.[[:digit:]]+)$`
 )
 
 var (
@@ -1132,7 +1156,7 @@ func validValkeyVersionString(v interface{}, p cty.Path) diag.Diagnostics {
 
 	if !valkeyVersionRegexp.MatchString(value) {
 		return diag.Errorf(
-			"Invalid ValKey version: %q is not valid. For Valkey use <major>.<minor>.", value,
+			"Invalid Valkey version: %q is not supported. The minimum Valkey version on ElastiCache is 7.2 (use <major>.<minor> format, e.g. 7.2, 8.0).", value,
 		)
 	}
 
@@ -1358,8 +1382,35 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		time.Sleep(time.Duration(90) * time.Second)
 	}
 
+	// Engine upgrade Redis -> Valkey (in-place) — performed via the dedicated upgrade-engine
+	// endpoint, which swaps the engine and sets the target version in one operation. This subsumes
+	// any concurrent engine_version change, so the generic engine_version modify below is skipped.
+	engineUpgraded := false
+	if d.HasChange("cache_type") {
+		oldRaw, newRaw := d.GetChange("cache_type")
+		if oldRaw.(int) == 0 && newRaw.(int) == 2 {
+			targetVersion := d.Get("engine_version").(string)
+			log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine Redis -> Valkey (target version %s)", tenantID, name, targetVersion)
+			rq := duplosdk.DuploEcacheUpgradeEngineRequest{
+				Identifier:          identifier,
+				TargetEngineVersion: targetVersion,
+			}
+			cerr := c.EcacheInstanceUpgradeEngine(tenantID, rq)
+			if cerr != nil {
+				return diag.Errorf("Error upgrading engine to Valkey for ECache instance '%s': %s", id, cerr)
+			}
+			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+			if err != nil {
+				return diag.Errorf("Error waiting for ECache instance '%s' to be available after engine upgrade: %s", id, err)
+			}
+			time.Sleep(time.Duration(90) * time.Second)
+			engineUpgraded = true
+		}
+	}
+
 	// Engine version upgrade — last, may reboot nodes
-	if d.HasChange("engine_version") {
+	if !engineUpgraded && d.HasChange("engine_version") {
 		newVal := d.Get("engine_version").(string)
 		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine_version to %s", tenantID, name, newVal)
 		rq := &duplosdk.DuploEcacheModifyRequest{
