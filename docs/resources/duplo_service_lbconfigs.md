@@ -146,8 +146,38 @@ resource "duplocloud_duplo_service_lbconfigs" "gcp_lb" {
     gcp_connection_draining_timeout_sec = 300
     gcp_http_to_https_redirect          = false
     gcp_session_affinity                = "NONE"
-    # gcp_security_policy_id            = "my-cloud-armor-policy"
-    # gcp_max_rate_per_endpoint         = 100.0
+  }
+}
+
+// Example: GCP load balancer with Cloud Armor security policy
+resource "duplocloud_duplo_service_lbconfigs" "gcp_lb_with_security_policy" {
+  tenant_id                   = duplocloud_duplo_service.gcp_service.tenant_id
+  replication_controller_name = duplocloud_duplo_service.gcp_service.name
+
+  lbconfigs {
+    lb_type                  = 1
+    protocol                 = "HTTP"
+    port                     = "80"
+    external_port            = 80
+    health_check_url         = "/"
+    set_ingress_health_check = true
+    gcp_security_policy_id   = "projects/my-project/global/securityPolicies/my-cloud-armor-policy"
+  }
+}
+
+// Example: GCP load balancer with rate limiting
+resource "duplocloud_duplo_service_lbconfigs" "gcp_lb_with_rate_limit" {
+  tenant_id                   = duplocloud_duplo_service.gcp_service.tenant_id
+  replication_controller_name = duplocloud_duplo_service.gcp_service.name
+
+  lbconfigs {
+    lb_type                   = 1
+    protocol                  = "HTTP"
+    port                      = "80"
+    external_port             = 80
+    health_check_url          = "/"
+    set_ingress_health_check  = true
+    gcp_max_rate_per_endpoint = 100.0
   }
 }
 ```
