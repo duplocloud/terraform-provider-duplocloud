@@ -152,7 +152,7 @@ func resourceHelmReleaseRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	flattenErr := flattenHelmRelease(d, tenantID, *duplo)
 	if flattenErr != nil {
-		diag.Errorf("%s", flattenErr.Error())
+		return diag.Errorf("%s", flattenErr.Error())
 	}
 	log.Printf("[TRACE] resourceHelmReleaseRead(%s,%s): end", tenantID, name)
 	return nil
@@ -307,21 +307,28 @@ func flattenHelmRelease(d *schema.ResourceData, tenantID string, rb duplosdk.Dup
 		}})
 	}
 
+	// Always set force_update so a previously-set value is cleared if the upgrade
+	// block is absent (e.g. force turned off, or an import of a release without it).
+	force := false
 	if rb.Spec.Upgrade != nil {
-		d.Set("force_update", rb.Spec.Upgrade.Force)
+		force = rb.Spec.Upgrade.Force
 	}
+	d.Set("force_update", force)
 
+	// Normalize the API's echo of an unset `values` (an empty collection) to an
+	// empty string, and always set it. Skipping the set would leave a previously
+	// configured value stuck in state when it is removed from config.
+	values := ""
 	if rb.Spec.Values != nil {
 		v, err := json.Marshal(rb.Spec.Values)
 		if err != nil {
 			return err
 		}
-		// Skip empty/null collections: an unset `values` is echoed back by the API
-		// as an empty array, which would otherwise show as perpetual drift.
 		if s := string(v); s != "[]" && s != "{}" && s != "null" {
-			d.Set("values", s)
+			values = s
 		}
 	}
+	d.Set("values", values)
 	return nil
 }
 
