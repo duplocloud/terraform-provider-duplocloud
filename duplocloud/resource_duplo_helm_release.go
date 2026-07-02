@@ -117,6 +117,12 @@ func resourceHelmRelease() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"force_update": {
+				Description: "When `true`, sets FluxCD's `spec.upgrade.force` so the release is delete-and-recreated on upgrade instead of patched. Use this to unblock chart upgrades on adopted releases where a field changes shape (e.g. an `env` entry moving from `value` to `valueFrom`) and Kubernetes Server-Side Apply cannot clear the stale field.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 		},
 	}
 }
@@ -144,7 +150,7 @@ func resourceHelmReleaseRead(ctx context.Context, d *schema.ResourceData, m inte
 		return nil
 	}
 
-	flattenErr := flattenHelmRelease(d, *duplo)
+	flattenErr := flattenHelmRelease(d, tenantID, *duplo)
 	if flattenErr != nil {
 		diag.Errorf("%s", flattenErr.Error())
 	}
@@ -258,6 +264,10 @@ func expandHelmRelease(d *schema.ResourceData) (duplosdk.DuploHelmRelease, error
 		}
 	}
 
+	if d.Get("force_update").(bool) {
+		obj.Spec.Upgrade = &duplosdk.HelmUpgrade{Force: true}
+	}
+
 	var err error
 	if val, ok := d.GetOk("values"); ok && val.(string) != "" {
 		err = json.Unmarshal([]byte(d.Get("values").(string)), &obj.Spec.Values)
@@ -265,43 +275,54 @@ func expandHelmRelease(d *schema.ResourceData) (duplosdk.DuploHelmRelease, error
 	return obj, err
 }
 
-func flattenHelmRelease(d *schema.ResourceData, rb duplosdk.DuploHelmRelease) error {
+func flattenHelmRelease(d *schema.ResourceData, tenantID string, rb duplosdk.DuploHelmRelease) error {
+	d.Set("tenant_id", tenantID)
 	d.Set("name", rb.Metadata.Name)
 	d.Set("interval", rb.Spec.Interval)
 	d.Set("release_name", rb.Spec.ReleaseName)
 
-	// Handle both Chart (HelmRepository) and ChartRef (OCIRepository) formats
+	// Handle both Chart (HelmRepository) and ChartRef (OCIRepository) formats.
+	// Set the whole `chart` list at once (not chart.0.* indices) so this also
+	// populates state correctly on import, where the block doesn't yet exist.
 	if rb.Spec.ChartRef != nil {
 		// OCIRepository format - use chartRef
-		d.Set("chart.0.source_type", rb.Spec.ChartRef.Kind)
-		d.Set("chart.0.source_name", rb.Spec.ChartRef.Name)
-		// Set default values for fields not used in OCIRepository format
-		d.Set("chart.0.name", "")
-		d.Set("chart.0.version", "")
-		d.Set("chart.0.interval", "5m0s")
-		d.Set("chart.0.reconcile_strategy", "ChartVersion")
+		d.Set("chart", []interface{}{map[string]interface{}{
+			"source_type": rb.Spec.ChartRef.Kind,
+			"source_name": rb.Spec.ChartRef.Name,
+			// Defaults for fields not used in OCIRepository format
+			"name":               "",
+			"version":            "",
+			"interval":           "5m0s",
+			"reconcile_strategy": "ChartVersion",
+		}})
 	} else if rb.Spec.Chart != nil {
 		// HelmRepository format - use chart.spec
-		d.Set("chart.0.name", rb.Spec.Chart.Spec.Chart)
-		d.Set("chart.0.version", rb.Spec.Chart.Spec.Version)
-		d.Set("chart.0.interval", rb.Spec.Chart.Spec.Interval)
-		d.Set("chart.0.source_type", rb.Spec.Chart.Spec.SourceRef.Kind)
-		d.Set("chart.0.source_name", rb.Spec.Chart.Spec.SourceRef.Name)
-		d.Set("chart.0.reconcile_strategy", rb.Spec.Chart.Spec.ReconcileStrategy)
+		d.Set("chart", []interface{}{map[string]interface{}{
+			"name":               rb.Spec.Chart.Spec.Chart,
+			"version":            rb.Spec.Chart.Spec.Version,
+			"interval":           rb.Spec.Chart.Spec.Interval,
+			"source_type":        rb.Spec.Chart.Spec.SourceRef.Kind,
+			"source_name":        rb.Spec.Chart.Spec.SourceRef.Name,
+			"reconcile_strategy": rb.Spec.Chart.Spec.ReconcileStrategy,
+		}})
 	}
 
-	var err error
+	if rb.Spec.Upgrade != nil {
+		d.Set("force_update", rb.Spec.Upgrade.Force)
+	}
+
 	if rb.Spec.Values != nil {
 		v, err := json.Marshal(rb.Spec.Values)
-		if err == nil {
-			d.Set("values", string(v))
+		if err != nil {
+			return err
 		}
-
-		if err == nil {
-			d.Set("values", string(v))
+		// Skip empty/null collections: an unset `values` is echoed back by the API
+		// as an empty array, which would otherwise show as perpetual drift.
+		if s := string(v); s != "[]" && s != "{}" && s != "null" {
+			d.Set("values", s)
 		}
 	}
-	return err
+	return nil
 }
 
 func helmReleaseWaitUntilReady(ctx context.Context, c *duplosdk.Client, tenantID string, name string, timeout time.Duration) error {
