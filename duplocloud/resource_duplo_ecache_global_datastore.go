@@ -65,7 +65,11 @@ func resourceDuploEcacheGlobalDatastore() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(29 * time.Minute),
+			// Global datastore creation provisions a cross-region replication group, which can
+			// take well over the previous 29-minute default for cluster-mode / larger topologies.
+			// Raise the default so a slow-but-healthy create does not spuriously fail; users can
+			// still override via a timeouts { create = "..." } block on this resource.
+			Create: schema.DefaultTimeout(60 * time.Minute),
 			Delete: schema.DefaultTimeout(15 * time.Minute),
 		},
 		Schema: ecacheGlobalDatastoreSchema(),
