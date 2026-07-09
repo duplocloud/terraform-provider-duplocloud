@@ -163,6 +163,29 @@ resource "duplocloud_s3_bucket" "bucket" {
 }
 ```
 
+### Create an S3 bucket encrypted with a specific tenant KMS key (CMK)
+
+```terraform
+data "duplocloud_tenant" "tenant" {
+  name = "preprod"
+}
+
+resource "duplocloud_s3_bucket" "bucket" {
+  tenant_id           = data.duplocloud_tenant.tenant.id
+  name                = "data"
+  allow_public_access = false
+  enable_access_logs  = false
+  enable_versioning   = true
+  managed_policies    = ["ssl"]
+  default_encryption {
+    method = "TenantKms"
+    # The KMS key ID or ARN must belong to the tenant or plan.
+    # Omit kms_key_id to use the default tenant KMS key.
+    kms_key_id = "arn:aws:kms:us-west-2:123456789012:key/5ae7e54b-553e-42ef-936e-5f554df6bf9a"
+  }
+}
+```
+
 ### Deploy an S3 bucket with hardened security settings
 
 ```terraform
@@ -263,6 +286,7 @@ resource "duplocloud_s3_bucket" "static_assets" {
 
 Optional:
 
+- `kms_key_id` (String) The tenant KMS key ID or ARN to use for encryption.  Only applicable when `method` is `TenantKms`.  When omitted, the default tenant KMS key is used.
 - `method` (String) Default encryption method.  Must be one of: `None`, `Sse`, `AwsKms`, `TenantKms`. Defaults to `Sse`.
 
 

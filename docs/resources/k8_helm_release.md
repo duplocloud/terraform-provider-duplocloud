@@ -53,6 +53,7 @@ resource "duplocloud_k8_helm_release" "release" {
 
 ### Optional
 
+- `force_update` (Boolean) When `true`, sets FluxCD's `spec.upgrade.force` so the release is delete-and-recreated on upgrade instead of patched. Use this to unblock chart upgrades on adopted releases where a field changes shape (e.g. an `env` entry moving from `value` to `valueFrom`) and Kubernetes Server-Side Apply cannot clear the stale field. Defaults to `false`.
 - `interval` (String) Interval related to helm release Defaults to `5m0s`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `values` (String) Customise an helm chart.

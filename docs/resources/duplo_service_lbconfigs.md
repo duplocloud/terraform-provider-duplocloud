@@ -178,6 +178,13 @@ Note: This field can only be set for non internal lbtype NLB(6)
 - `external_port` (Number) The frontend port associated with this load balancer configuration. Required if `lb_type` is not `7`.
 - `external_traffic_policy` (String) Only for K8S Node Port (`lb_type = 4`) or load balancers in Kubernetes.  Set the kubernetes service `externalTrafficPolicy` attribute.
 - `extra_selector_label` (Block List) Only for K8S services or load balancers in Kubernetes.  Sets an additional selector label to narrow which pods can receive traffic. (see [below for nested schema](#nestedblock--lbconfigs--extra_selector_label))
+- `gcp_connection_draining_timeout_sec` (Number) Backend service connection draining timeout in seconds. Applicable only for GCP.
+- `gcp_enable_access_logs` (Boolean) Whether or not to enable access logs for the GCP load balancer. Applicable only for GCP.
+- `gcp_http_to_https_redirect` (Boolean) Whether or not to enable HTTP to HTTPS redirect. Applicable only for GCP.
+- `gcp_max_rate_per_endpoint` (Number) Provides an average rate of destination HTTP requests for a single endpoint. Applicable only for GCP.
+- `gcp_security_policy_id` (String) The Cloud Armor security policy ID to apply to the load balancer. Applicable only for GCP.
+- `gcp_session_affinity` (String) Session affinity type. Must be one of: NONE, CLIENT_IP, GENERATED_COOKIE. Applicable only for GCP.
+- `gcp_timeout_sec` (Number) Backend service connection timeout in seconds. Applicable only for GCP.
 - `health_check` (Block List, Max: 1) Health Check configuration block. (see [below for nested schema](#nestedblock--lbconfigs--health_check))
 - `health_check_url` (String) The health check URL to associate with this load balancer configuration.
 - `host_name` (String) (Azure Only) Set only if Azure Shared Application Gateway is used (`lb_type = 5`).

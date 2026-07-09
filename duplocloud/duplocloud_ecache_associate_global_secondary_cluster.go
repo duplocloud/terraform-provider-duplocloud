@@ -230,9 +230,29 @@ func resourceDuploEcacheReplicationGroupDelete(ctx context.Context, d *schema.Re
 
 	}
 	log.Printf("[TRACE] Secondary cluster %s disassociated \n Started cluster cleanup", fullName)
-	err = c.EcacheInstanceDelete(secTenantId, name)
-	if err != nil {
-		return diag.FromErr(err)
+
+	// After disassociation, the backend clears the secondary instance's
+	// GlobalReplicationGroupId asynchronously once AWS finishes detaching. The member can
+	// disappear from the global datastore's member list (what the wait above polls) before
+	// the stored instance is updated, and the delete guard rejects with a 400
+	// ("...associated with Global Datastore") until it clears. Retry the delete until the
+	// association clears (or the configured delete timeout expires) instead of failing on
+	// the first attempt.
+	delErr := retry.RetryContext(ctx, d.Timeout("delete"), func() *retry.RetryError {
+		cerr := c.EcacheInstanceDelete(secTenantId, name)
+		if cerr != nil {
+			if cerr.Status() == 404 {
+				return nil // already gone
+			}
+			if cerr.Status() == 400 && strings.Contains(cerr.Error(), "associated with Global Datastore") {
+				return retry.RetryableError(cerr)
+			}
+			return retry.NonRetryableError(cerr)
+		}
+		return nil
+	})
+	if delErr != nil {
+		return diag.FromErr(delErr)
 	}
 
 	// Wait up to 60 seconds for Duplo to show the object as deleted.

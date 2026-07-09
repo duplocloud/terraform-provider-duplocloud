@@ -20,12 +20,20 @@ type DuploHelmSpec struct {
 	Chart       *Chart     `json:"chart,omitempty"`
 	ChartRef    *SourceRef `json:"chartRef,omitempty"`
 	//Values      map[string]interface{} `json:"values,omitempty"`
-	Values          interface{} `json:"values,omitempty"`
-	Insecure        bool        `json:"Insecure,omitempty"`
-	PassCredentials bool        `json:"PassCredentials,omitempty"`
-	Provider        string      `json:"Provider,omitempty"`
-	Suspend         bool        `json:"Suspend,omitempty"`
-	Type            string      `json:"Type,omitempty"`
+	Values          interface{}  `json:"values,omitempty"`
+	Insecure        bool         `json:"Insecure,omitempty"`
+	PassCredentials bool         `json:"PassCredentials,omitempty"`
+	Provider        string       `json:"Provider,omitempty"`
+	Suspend         bool         `json:"Suspend,omitempty"`
+	Type            string       `json:"Type,omitempty"`
+	Upgrade         *HelmUpgrade `json:"upgrade,omitempty"`
+}
+
+// HelmUpgrade maps to FluxCD's HelmRelease spec.upgrade. Setting Force makes
+// helm-controller delete-and-recreate resources on upgrade instead of patching,
+// sidestepping SSA field-ownership gaps on adopted releases.
+type HelmUpgrade struct {
+	Force bool `json:"force"`
 }
 
 type SourceRef struct {

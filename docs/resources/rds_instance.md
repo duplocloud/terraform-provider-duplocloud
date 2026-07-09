@@ -470,7 +470,7 @@ If you don't know the available engine versions for your RDS instance, you can u
 			| aurora-iopt1 | Provisioned IOPS, similar to io1   | Varies                | Aurora databases needing guaranteed, high-performance IOPS. Aurora I/O-Optimized storage offers provisioned IOPS for Aurora clusters that require consistently high performance for critical workloads.                   |
 - `store_details_in_secret_manager` (Boolean) Whether or not to store RDS details in the AWS secrets manager.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `v2_scaling_configuration` (Block List, Max: 1) Serverless v2_scaling_configuration min and max scaling capacity. This configuration is only applicable for serverless instances (see [below for nested schema](#nestedblock--v2_scaling_configuration))
+- `v2_scaling_configuration` (Block List, Max: 1) Serverless v2 scaling configuration specifying the min and max scaling capacity (in ACUs). This configuration is only applicable for serverless instances. (see [below for nested schema](#nestedblock--v2_scaling_configuration))
 
 ### Read-Only
 
@@ -518,7 +518,11 @@ Optional:
 Required:
 
 - `max_capacity` (Number) Specifies max scaling capacity.
-- `min_capacity` (Number) Specifies min scaling capacity.
+- `min_capacity` (Number) Specifies min scaling capacity. Set to `0` to enable Aurora Serverless v2 auto-pause (scale to zero) for idle clusters.
+
+Optional:
+
+- `seconds_until_auto_pause` (Number) The amount of time, in seconds, the cluster must remain idle — no connections and no database activity while at `min_capacity` — before Aurora Serverless v2 auto-pauses it (scales to zero ACUs). Any activity resets the timer. Only applies when `min_capacity` is `0`. Must be between 300 (5 minutes) and 86400 (24 hours).
 
 ## Import
 

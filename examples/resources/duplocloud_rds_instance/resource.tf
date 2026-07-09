@@ -112,3 +112,23 @@ resource "duplocloud_rds_instance" "mydb" {
   size           = "db.t3.medium"
   snapshot_id    = "rds:duplotest-snapdb-2024-12-17-07-00" //snapshot id is of previously created mysql db of version 5.7.44
 }
+
+// Aurora Serverless v2 with auto-pause (scale to zero) for idle/non-prod clusters.
+resource "duplocloud_rds_instance" "aurora-serverless-autopause" {
+  tenant_id      = duplocloud_tenant.myapp.tenant_id
+  name           = "aurora-serverless"
+  engine         = 9 // AuroraDB
+  engine_version = "8.0.mysql_aurora.3.07.1"
+  size           = "db.serverless"
+
+  master_username = "myuser"
+  master_password = random_password.mypassword.result
+
+  encrypt_storage = true
+
+  v2_scaling_configuration {
+    min_capacity             = 0 // 0 enables auto-pause (scale to zero)
+    max_capacity             = 4
+    seconds_until_auto_pause = 3600 // pause after 1 hour idle
+  }
+}
