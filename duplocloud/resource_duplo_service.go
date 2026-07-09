@@ -316,10 +316,10 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Default:      "Linux",
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"Linux", "Windows"}, false),
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				cloud := d.Get("cloud").(int)
-				return cloud != 2
-			},
+			//DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+			//	cloud := d.Get("cloud").(int)
+			//	return cloud != 2
+			//},
 		},
 	}
 }
