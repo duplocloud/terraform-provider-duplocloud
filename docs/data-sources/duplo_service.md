@@ -38,6 +38,7 @@ description: |-
 - `id` (String) The ID of this resource.
 - `is_daemonset` (Boolean)
 - `is_unique_k8s_node_required` (Boolean) Whether or not the replicas must be scheduled on separate Kubernetes nodes.  Only supported on Kubernetes.
+- `k8s_worker_os` (String) OS type for k8s worker. Valid values: `Linux`, `Windows`.
 - `lb_synced_deployment` (Boolean)
 - `other_docker_config` (String)
 - `other_docker_host_config` (String)
