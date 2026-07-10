@@ -59,6 +59,11 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 			Type:     schema.TypeInt,
 			Computed: true,
 		},
+		"k8s_worker_os": {
+			Description: "OS type for k8s worker. Valid values: `Linux`, `Windows`.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"replicas": {
 			Type:     schema.TypeInt,
 			Computed: true,
