@@ -123,7 +123,7 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 	// inherit it from the primary member of the global datastore at create time instead of
 	// letting the backend default it to false.
 	if multiAZ, ok := inheritPrimaryMultiAZ(c, tenantID, rq.GlobalReplicationGroupId); ok {
-		rq.MultiAZEnabled = multiAZ
+		rq.MultiAZEnabled = &multiAZ
 	}
 
 	rp, cerr := c.DuploEcacheReplicationGroupCreate(tenantID, &rq)

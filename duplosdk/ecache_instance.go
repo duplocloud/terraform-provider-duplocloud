@@ -397,7 +397,9 @@ type DuploEcacheReplicationGroup struct {
 	AuthToken                string `json:"AuthToken,omitempty"`
 	// MultiAZEnabled is inherited from the primary at create time so the secondary mirrors
 	// the primary's Multi-AZ setting (the user never sets it on the secondary resource).
-	MultiAZEnabled bool `json:"MultiAZEnabled"`
+	// Pointer + omitempty so the field is only sent when the primary's value was resolved;
+	// when inheritance can't be determined it is omitted rather than asserting a default.
+	MultiAZEnabled *bool `json:"MultiAZEnabled,omitempty"`
 }
 
 func (c *Client) DuploEcacheReplicationGroupCreate(tenantID string, rq *DuploEcacheReplicationGroup) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
