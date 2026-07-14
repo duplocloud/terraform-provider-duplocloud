@@ -395,6 +395,9 @@ type DuploEcacheReplicationGroup struct {
 	ReplicationGroupId       string `json:"ReplicationGroupId"`
 	KmsKeyId                 string `json:"KmsKeyId,omitempty"`
 	AuthToken                string `json:"AuthToken,omitempty"`
+	// MultiAZEnabled is inherited from the primary at create time so the secondary mirrors
+	// the primary's Multi-AZ setting (the user never sets it on the secondary resource).
+	MultiAZEnabled bool `json:"MultiAZEnabled"`
 }
 
 func (c *Client) DuploEcacheReplicationGroupCreate(tenantID string, rq *DuploEcacheReplicationGroup) (*DuploEcacheGlobalDatastoreResponse, ClientError) {
