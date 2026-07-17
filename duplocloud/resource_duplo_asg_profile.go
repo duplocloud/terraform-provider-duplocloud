@@ -943,7 +943,7 @@ func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMix
 			val := v.(int)
 			distribution.OnDemandBaseCapacity = &val
 		}
-		if v, ok := distMap["on_demand_percentage_above_base_capacity"]; ok {
+		if v, ok := distMap["on_demand_percentage_above_base_capacity"]; ok && v.(int) > 0 {
 			val := v.(int)
 			distribution.OnDemandPercentageAboveBaseCapacity = &val
 		}
