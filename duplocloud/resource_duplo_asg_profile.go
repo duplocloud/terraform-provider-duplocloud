@@ -12,6 +12,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -955,6 +956,41 @@ func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMix
 	}
 
 	return policy
+}
+
+// asgConfiguredOnDemandPercentage extracts
+// mixed_instances_policy[0].instances_distribution[0].on_demand_percentage_above_base_capacity
+// from the raw config (via GetRawConfig; works with both *schema.ResourceData and
+// *schema.ResourceDiff). explicit is false when the attribute is absent/null/unknown,
+// which is how we tell "user omitted it" (leave the backend value alone) from "user
+// wrote a value, including 0" (send it with the Explicit flag so the backend honors it
+// instead of coercing 0 -> 100). Mirrors the s3ConfiguredKmsKeyId pattern.
+func asgConfiguredOnDemandPercentage(raw cty.Value) (value int, explicit bool) {
+	if raw.IsNull() || !raw.IsKnown() {
+		return 0, false
+	}
+	mip := raw.GetAttr("mixed_instances_policy")
+	if mip.IsNull() || !mip.IsKnown() || mip.LengthInt() == 0 {
+		return 0, false
+	}
+	mipBlock := mip.AsValueSlice()[0]
+	if mipBlock.IsNull() || !mipBlock.IsKnown() {
+		return 0, false
+	}
+	dist := mipBlock.GetAttr("instances_distribution")
+	if dist.IsNull() || !dist.IsKnown() || dist.LengthInt() == 0 {
+		return 0, false
+	}
+	distBlock := dist.AsValueSlice()[0]
+	if distBlock.IsNull() || !distBlock.IsKnown() {
+		return 0, false
+	}
+	pct := distBlock.GetAttr("on_demand_percentage_above_base_capacity")
+	if pct.IsNull() || !pct.IsKnown() {
+		return 0, false
+	}
+	i64, _ := pct.AsBigFloat().Int64()
+	return int(i64), true
 }
 
 func flattenAsgMixedInstancesPolicy(policy *duplosdk.DuploAsgMixedInstancesPolicy) []interface{} {

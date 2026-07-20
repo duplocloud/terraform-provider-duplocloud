@@ -79,6 +79,7 @@ type DuploAsgInstancesDistribution struct {
 	OnDemandAllocationStrategy          string `json:"OnDemandAllocationStrategy,omitempty"`
 	OnDemandBaseCapacity                *int   `json:"OnDemandBaseCapacity,omitempty"`
 	OnDemandPercentageAboveBaseCapacity *int   `json:"OnDemandPercentageAboveBaseCapacity,omitempty"`
+	OnDemandPercentageAboveBaseCapacityExplicit *bool `json:"OnDemandPercentageAboveBaseCapacityExplicit,omitempty"`
 	SpotAllocationStrategy              string `json:"SpotAllocationStrategy,omitempty"`
 	SpotInstancePools                   *int   `json:"SpotInstancePools,omitempty"`
 	SpotMaxPrice                        string `json:"SpotMaxPrice,omitempty"`
