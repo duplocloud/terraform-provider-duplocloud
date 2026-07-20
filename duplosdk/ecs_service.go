@@ -22,6 +22,7 @@ type DuploEcsServiceLbConfig struct {
 	HealthCheckConfig         *DuploEcsServiceLbHealthCheckConfig `json:"HealthCheckConfig,omitempty"`
 	LbIndex                   int                                 `json:"LbIndex"`
 	IdleTimeout               int                                 `json:"IdleTimeout,omitempty"`
+	TcpIdleTimeoutSeconds     int                                 `json:"TcpIdleTimeoutSeconds,omitempty"`
 }
 
 type DuploEcsServiceLbHealthCheckConfig struct {

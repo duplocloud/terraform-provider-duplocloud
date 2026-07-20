@@ -204,6 +204,12 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Optional:    true,
 						Computed:    true,
 					},
+					"tcp_idle_timeout_seconds": {
+						Description:  "The time in seconds that a TCP connection is allowed to be idle. Only applicable for TCP/TLS listeners on Load Balancers of type `network` (`lb_type = 6`). Valid values are between `60` and `6000`. AWS defaults to `350` when unset.",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						ValidateFunc: validation.IntBetween(60, 6000),
+					},
 					"webaclid": {
 						Description: "The ARN of a web application firewall to associate this load balancer.",
 						Type:        schema.TypeString,
@@ -696,6 +702,7 @@ func ecsLoadBalancersToState(name string, lbcs *[]duplosdk.DuploEcsServiceLbConf
 		jo["health_check_url"] = lbc.HealthCheckURL
 		jo["certificate_arn"] = lbc.CertificateArn
 		jo["index"] = lbc.LbIndex
+		jo["tcp_idle_timeout_seconds"] = lbc.TcpIdleTimeoutSeconds
 		hcConfig := ecsLoadBalancersHealthCheckConfigToState(lbc.HealthCheckConfig)
 		if hcConfig != nil {
 			jo["health_check_config"] = []interface{}{hcConfig}
@@ -791,6 +798,7 @@ func ecsLoadBalancerFromState(d *schema.ResourceData, lb map[string]interface{})
 		CertificateArn:            lb["certificate_arn"].(string),
 		TgCount:                   lb["target_group_count"].(int),
 		IdleTimeout:               lb["idle_timeout"].(int),
+		TcpIdleTimeoutSeconds:     lb["tcp_idle_timeout_seconds"].(int),
 	}
 
 	if lb["health_check_config"] != nil {
