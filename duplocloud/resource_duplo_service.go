@@ -310,16 +310,16 @@ func duploServiceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"k8s_worker_os": {
-			Description:  "OS type for k8s worker, this field is associated to azure cloud. Valid values: `Linux`, `Windows`",
+			Description:  "OS type for k8s worker. Valid values: `Linux`, `Windows`.",
 			Type:         schema.TypeString,
 			Optional:     true,
 			Default:      "Linux",
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"Linux", "Windows"}, false),
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				cloud := d.Get("cloud").(int)
-				return cloud != 2
-			},
+			//DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+			//	cloud := d.Get("cloud").(int)
+			//	return cloud != 2
+			//},
 		},
 	}
 }
