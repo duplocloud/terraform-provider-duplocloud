@@ -59,6 +59,11 @@ func duploServiceComputedSchema() map[string]*schema.Schema {
 			Type:     schema.TypeInt,
 			Computed: true,
 		},
+		"k8s_worker_os": {
+			Description: "OS type for k8s worker. Valid values: `Linux`, `Windows`.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		"replicas": {
 			Type:     schema.TypeInt,
 			Computed: true,
@@ -217,14 +222,13 @@ func flattenDuploService(d *schema.ResourceData, duplo *duplosdk.DuploReplicatio
 			d.Set("init_container_docker_image", initContainerImages)
 		}
 	}
-	if duplo.Template.Cloud == 2 {
-		if duplo.K8SWorkerOs != nil && *duplo.K8SWorkerOs == 1 {
-			d.Set("k8s_worker_os", "Windows")
-		} else if duplo.K8SWorkerOs == nil {
-			d.Set("k8s_worker_os", "Linux")
-		} else if *duplo.K8SWorkerOs == 0 {
-			d.Set("k8s_worker_os", "Linux")
-		}
+
+	// k8s_worker_os applies to all clouds. Default to Linux when the backend
+	// does not return a value (nil or 0); 1 indicates Windows.
+	if duplo.K8SWorkerOs != nil && *duplo.K8SWorkerOs == 1 {
+		d.Set("k8s_worker_os", "Windows")
+	} else {
+		d.Set("k8s_worker_os", "Linux")
 	}
 	d.Set("app_name", duplo.AppName)
 }
