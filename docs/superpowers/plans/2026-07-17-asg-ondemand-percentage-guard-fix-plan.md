@@ -1,5 +1,7 @@
 # ASG On-Demand Percentage Guard Fix Implementation Plan
 
+> **⚠️ SUPERSEDED** by `docs/superpowers/plans/2026-07-20-asg-ondemand-percentage-rawconfig-plan.md`. The `&& v.(int) > 0` guard this plan added was replaced by the GetRawConfig-driven approach (which honors an explicit `0` and suppresses drift). This file is retained only as provenance for the guard-only phase; its guard is no longer in the code.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Stop `expandAsgMixedInstancesPolicy` from sending a spurious literal `0` for `on_demand_percentage_above_base_capacity` on every ASG that doesn't explicitly configure it, matching the guard its three sibling fields already have.
