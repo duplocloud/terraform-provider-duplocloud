@@ -201,7 +201,7 @@ Optional:
 - `http_to_https_redirect` (Boolean) Whether or not the load balancer should redirect HTTP to HTTPS.
 - `idle_timeout` (Number) The time in seconds that the connection is allowed to be idle. Only valid for Load Balancers of type `application`.
 - `is_internal` (Boolean) Whether or not to create an internal load balancer. Defaults to `false`.
-- `tcp_idle_timeout_seconds` (Number) The time in seconds that a TCP connection is allowed to be idle. Only applicable for TCP/TLS listeners on Load Balancers of type `network` (`lb_type = 6`). Valid values are between `60` and `6000`. AWS defaults to `350` when unset.
+- `tcp_idle_timeout_seconds` (Number) The time in seconds that a TCP connection is allowed to be idle. Only applicable for TCP/TLS listeners on Load Balancers of type `network` (`lb_type = 6`). Valid values are between `60` and `6000`. AWS defaults to `350` when unset; the applied value is reflected in state once the backend reports it.
 - `webaclid` (String) The ARN of a web application firewall to associate this load balancer.
 
 Read-Only:

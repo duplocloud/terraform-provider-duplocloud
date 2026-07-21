@@ -205,9 +205,10 @@ func ecsServiceSchema() map[string]*schema.Schema {
 						Computed:    true,
 					},
 					"tcp_idle_timeout_seconds": {
-						Description:  "The time in seconds that a TCP connection is allowed to be idle. Only applicable for TCP/TLS listeners on Load Balancers of type `network` (`lb_type = 6`). Valid values are between `60` and `6000`. AWS defaults to `350` when unset.",
+						Description:  "The time in seconds that a TCP connection is allowed to be idle. Only applicable for TCP/TLS listeners on Load Balancers of type `network` (`lb_type = 6`). Valid values are between `60` and `6000`. AWS defaults to `350` when unset; the applied value is reflected in state once the backend reports it.",
 						Type:         schema.TypeInt,
 						Optional:     true,
+						Computed:     true,
 						ValidateFunc: validation.IntBetween(60, 6000),
 					},
 					"webaclid": {
