@@ -91,8 +91,8 @@ resource "duplocloud_k8s_gateway" "certmap" {
 
 - `address` (Block List) Addresses requested for the Gateway, e.g. a static IP. (see [below for nested schema](#nestedblock--address))
 - `annotations` (Map of String) An unstructured key value map stored with the Gateway that may be used to store arbitrary metadata. Annotations added by the backend or the gateway controller (e.g. `networking.gke.io/*`) are ignored and left in place.
-- `gateway_class_name` (String) The name of the GatewayClass this Gateway uses. If not set, Duplo auto-selects a GatewayClass based on `is_public`.
-- `is_public` (Boolean) Whether Duplo should select a public (external) GatewayClass. When false, an internal GatewayClass is selected. Ignored when `gateway_class_name` is explicitly set. Defaults to `false`.
+- `gateway_class_name` (String) The name of the GatewayClass this Gateway uses. If not set, Duplo auto-selects a GatewayClass based on `is_public`. Conflicts with `is_public`.
+- `is_public` (Boolean) Whether Duplo should select a public (external) GatewayClass. When false, an internal GatewayClass is selected. Conflicts with `gateway_class_name`. Defaults to `false`.
 - `labels` (Map of String) Map of string keys and values that can be used to organize and categorize (scope and select) the Gateway.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
