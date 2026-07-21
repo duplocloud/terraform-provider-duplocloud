@@ -522,13 +522,17 @@ func flattenK8sHttpRouteRule(duplo duplosdk.DuploK8sHTTPRouteRule) map[string]in
 	if duplo.BackendRefs != nil && len(*duplo.BackendRefs) > 0 {
 		refs := make([]interface{}, 0, len(*duplo.BackendRefs))
 		for _, rv := range *duplo.BackendRefs {
+			// Default an omitted weight to the schema default so a backend
+			// that leaves it out doesn't cause perpetual drift.
+			weight := 1
+			if rv.Weight != nil {
+				weight = *rv.Weight
+			}
 			rm := map[string]interface{}{
 				"name":      rv.Name,
 				"port":      rv.Port,
 				"namespace": rv.Namespace,
-			}
-			if rv.Weight != nil {
-				rm["weight"] = *rv.Weight
+				"weight":    weight,
 			}
 			refs = append(refs, rm)
 		}
@@ -548,8 +552,12 @@ func flattenK8sHttpRouteMatch(duplo duplosdk.DuploK8sHTTPRouteMatch) map[string]
 		"method": duplo.Method,
 	}
 	if duplo.Path != nil {
+		pathType := duplo.Path.Type
+		if pathType == "" {
+			pathType = "PathPrefix"
+		}
 		m["path"] = []interface{}{map[string]interface{}{
-			"type":  duplo.Path.Type,
+			"type":  pathType,
 			"value": duplo.Path.Value,
 		}}
 	}

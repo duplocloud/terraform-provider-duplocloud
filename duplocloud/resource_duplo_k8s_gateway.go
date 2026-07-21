@@ -518,17 +518,27 @@ func flattenK8sGatewayListener(duplo duplosdk.DuploK8sGatewayListener) map[strin
 }
 
 func flattenK8sGatewayListenerTLS(duplo *duplosdk.DuploK8sGatewayListenerTLS) map[string]interface{} {
+	// Default omitted fields to their schema defaults so a backend that leaves
+	// them out doesn't cause perpetual drift.
+	mode := duplo.Mode
+	if mode == "" {
+		mode = "Terminate"
+	}
 	m := map[string]interface{}{
-		"mode":            duplo.Mode,
+		"mode":            mode,
 		"certificate_map": duplo.CertMapAnnotation,
 	}
 	if duplo.CertificateRefs != nil && len(*duplo.CertificateRefs) > 0 {
 		refs := make([]interface{}, 0, len(*duplo.CertificateRefs))
 		for _, r := range *duplo.CertificateRefs {
+			kind := r.Kind
+			if kind == "" {
+				kind = "Secret"
+			}
 			refs = append(refs, map[string]interface{}{
 				"name":      r.Name,
 				"namespace": r.Namespace,
-				"kind":      r.Kind,
+				"kind":      kind,
 				"group":     r.Group,
 			})
 		}
@@ -550,8 +560,12 @@ func flattenK8sGatewayAllowedRoutes(duplo *duplosdk.DuploK8sGatewayAllowedRoutes
 func flattenK8sGatewayAddresses(duplo *[]duplosdk.DuploK8sGatewayAddress) []interface{} {
 	lst := []interface{}{}
 	for _, v := range *duplo {
+		addrType := v.Type
+		if addrType == "" {
+			addrType = "IPAddress"
+		}
 		lst = append(lst, map[string]interface{}{
-			"type":  v.Type,
+			"type":  addrType,
 			"value": v.Value,
 		})
 	}
