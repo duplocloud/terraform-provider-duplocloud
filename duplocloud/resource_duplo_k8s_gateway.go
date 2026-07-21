@@ -420,6 +420,16 @@ func expandK8sGatewayAllowedRoutes(m map[string]interface{}) *duplosdk.DuploK8sG
 			allowedRoutes.NamespaceSelector[key] = value.(string)
 		}
 	}
+	// When "from" is omitted, infer it: a namespace selector implies Selector
+	// (it would otherwise be silently ignored); default to Same (the k8s
+	// default) otherwise.
+	if allowedRoutes.From == "" {
+		if len(allowedRoutes.NamespaceSelector) > 0 {
+			allowedRoutes.From = "Selector"
+		} else {
+			allowedRoutes.From = "Same"
+		}
+	}
 	return &allowedRoutes
 }
 
