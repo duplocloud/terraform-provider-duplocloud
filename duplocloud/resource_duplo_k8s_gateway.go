@@ -415,9 +415,9 @@ func expandK8sGatewayAllowedRoutes(m map[string]interface{}) *duplosdk.DuploK8sG
 	allowedRoutes := duplosdk.DuploK8sGatewayAllowedRoutes{
 		From: m["from"].(string),
 	}
-	if v, ok := m["namespace_selector"]; ok && len(v.(map[string]interface{})) > 0 {
+	if v, ok := m["namespace_selector"].(map[string]interface{}); ok && len(v) > 0 {
 		allowedRoutes.NamespaceSelector = map[string]string{}
-		for key, value := range v.(map[string]interface{}) {
+		for key, value := range v {
 			allowedRoutes.NamespaceSelector[key] = value.(string)
 		}
 	}
