@@ -308,9 +308,10 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 								Optional:    true,
 							},
 							"on_demand_percentage_above_base_capacity": {
-								Description: "Percentage of On-Demand instances above the base capacity (0-100).",
-								Type:        schema.TypeInt,
-								Optional:    true,
+								Description:      "Percentage of On-Demand instances above the base capacity (0-100). Set explicitly to `0` for 100% Spot above base capacity. Omit to let DuploCloud manage it (defaults to 100% On-Demand).",
+								Type:             schema.TypeInt,
+								Optional:         true,
+								DiffSuppressFunc: suppressOmittedOnDemandPercentage,
 							},
 							"spot_allocation_strategy": {
 								Description: "Strategy for allocating Spot instances (e.g. `capacity-optimized`, `price-capacity-optimized`, `lowest-price`).",
@@ -871,6 +872,17 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 	return asgProfile
 }
 
+// suppressOmittedOnDemandPercentage suppresses the diff for
+// on_demand_percentage_above_base_capacity only when the user omitted it from config.
+// The backend converges the stored value to 100 (its coercion default), which flatten
+// writes into state; without this, an omitted config (0) perpetually diffs against
+// state (100). An explicitly-written value (including 0) is NOT suppressed, so real
+// changes still apply. Reads GetRawConfig so it sees what the user wrote, not state.
+func suppressOmittedOnDemandPercentage(k, old, new string, d *schema.ResourceData) bool {
+	_, explicit := asgConfiguredOnDemandPercentage(d.GetRawConfig())
+	return !explicit
+}
+
 func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMixedInstancesPolicy {
 	v, ok := d.GetOk("mixed_instances_policy")
 	if !ok || len(v.([]interface{})) == 0 {
@@ -944,9 +956,11 @@ func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMix
 			val := v.(int)
 			distribution.OnDemandBaseCapacity = &val
 		}
-		if v, ok := distMap["on_demand_percentage_above_base_capacity"]; ok && v.(int) > 0 {
-			val := v.(int)
+		if pct, explicit := asgConfiguredOnDemandPercentage(d.GetRawConfig()); explicit {
+			val := pct
+			flag := true
 			distribution.OnDemandPercentageAboveBaseCapacity = &val
+			distribution.OnDemandPercentageAboveBaseCapacityExplicit = &flag
 		}
 		if v, ok := distMap["spot_instance_pools"]; ok && v.(int) > 0 {
 			val := v.(int)
