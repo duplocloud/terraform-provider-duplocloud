@@ -46,6 +46,23 @@ func TestExpandV2ScalingConfiguration(t *testing.T) {
 			},
 		},
 		{
+			// seconds_until_auto_pause is Computed, so a prior state value is
+			// carried forward when the attribute is omitted. Auto-pause only
+			// applies at min_capacity 0, so the leftover must not reach the API.
+			name: "carried-forward auto-pause dropped when min_capacity is nonzero",
+			given: []interface{}{
+				map[string]interface{}{
+					"min_capacity":             float64(2),
+					"max_capacity":             float64(8),
+					"seconds_until_auto_pause": 3600,
+				},
+			},
+			expected: &duplosdk.V2ScalingConfiguration{
+				MinCapacity: 2,
+				MaxCapacity: 8,
+			},
+		},
+		{
 			// Empty block -> nil.
 			name:     "empty config",
 			given:    []interface{}{},

@@ -1312,16 +1312,19 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 			// (it can't be unset by removing it). Only reject the min_capacity
 			// conflict when the value is explicitly in the raw config; a
 			// carried-forward value is dropped by expandV2ScalingConfiguration.
+			// Presence is a null check only: a value that is set but not yet known
+			// (e.g. from a variable) is still configured by the user.
 			secondsConfigured := false
 			if raw := diff.GetRawConfig(); !raw.IsNull() {
 				if rawV2 := raw.GetAttr("v2_scaling_configuration"); !rawV2.IsNull() && rawV2.IsKnown() && rawV2.LengthInt() > 0 {
 					if block := rawV2.AsValueSlice()[0]; block.IsKnown() {
-						sec := block.GetAttr("seconds_until_auto_pause")
-						secondsConfigured = sec.IsKnown() && !sec.IsNull()
+						secondsConfigured = !block.GetAttr("seconds_until_auto_pause").IsNull()
 					}
 				}
 			}
-			if secVal, ok := cfg["seconds_until_auto_pause"].(int); ok && secVal > 0 && minCap != 0 && secondsConfigured {
+			// Keyed off presence alone: the schema restricts an explicit value to
+			// 300-86400, and the planned value reads as 0 when it is not yet known.
+			if secondsConfigured && minCap != 0 {
 				return fmt.Errorf("seconds_until_auto_pause can only be set when min_capacity is 0 (auto-pause requires scaling to zero ACUs)")
 			}
 		}
