@@ -450,7 +450,7 @@ Optional:
 
 - `on_demand_allocation_strategy` (String) Strategy for allocating On-Demand instances (e.g. `prioritized`).
 - `on_demand_base_capacity` (Number) Minimum number of On-Demand instances in the group.
-- `on_demand_percentage_above_base_capacity` (Number) Percentage of On-Demand instances above the base capacity (0-100). Set explicitly to `0` for 100% Spot above base capacity. Omit to let DuploCloud manage it (defaults to 100% On-Demand).
+- `on_demand_percentage_above_base_capacity` (Number) Percentage of On-Demand instances above the base capacity (0-100). Set explicitly to `0` for 100% Spot above base capacity. Omit to leave it unmanaged: on create AWS applies its default of 100% On-Demand, and on an existing ASG the current value is left unchanged.
 - `spot_allocation_strategy` (String) Strategy for allocating Spot instances (e.g. `capacity-optimized`, `price-capacity-optimized`, `lowest-price`).
 - `spot_instance_pools` (Number) Number of Spot pools for allocation (only used with `lowest-price` strategy).
 - `spot_max_price` (String) Maximum price per unit hour for Spot instances.
