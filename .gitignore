@@ -39,3 +39,7 @@ my-test/
 .terraform.tfstate.lock.info
 .env
 .github/agents/
+
+# superpowers scratch + internal design/plan docs (not shipped in this public repo)
+.superpowers/
+docs/superpowers/
