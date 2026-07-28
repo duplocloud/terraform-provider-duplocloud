@@ -42,8 +42,8 @@ func resourceTenantTag() *schema.Resource {
 			"key": {
 				Description: "Specify key for tag.",
 				Type:        schema.TypeString,
-				//ForceNew:    true,
-				Required: true,
+				ForceNew:    true,
+				Required:    true,
 			},
 			"value": {
 				Description: "Specify value for tag.",
