@@ -19,7 +19,7 @@ func resourceTenantTag() *schema.Resource {
 		Description:   "`duplocloud_tenant_tag` manages a tenant tag in Duplo.",
 		ReadContext:   resourceTenantTagRead,
 		CreateContext: resourceTenantTagCreate,
-		UpdateContext: resourceTenantTagCreate, // Upsert (update tag value via TenantTagCreate)
+		UpdateContext: resourceTenantTagCreate,
 		DeleteContext: resourceTenantTagDelete,
 
 		Timeouts: &schema.ResourceTimeout{
