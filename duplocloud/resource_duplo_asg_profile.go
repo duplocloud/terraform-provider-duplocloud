@@ -12,6 +12,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -307,9 +308,10 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 								Optional:    true,
 							},
 							"on_demand_percentage_above_base_capacity": {
-								Description: "Percentage of On-Demand instances above the base capacity (0-100).",
-								Type:        schema.TypeInt,
-								Optional:    true,
+								Description:      "Percentage of On-Demand instances above the base capacity (0-100). Set explicitly to `0` for 100% Spot above base capacity. Omit to leave it unmanaged: on create AWS applies its default of 100% On-Demand, and on an existing ASG the current value is left unchanged.",
+								Type:             schema.TypeInt,
+								Optional:         true,
+								DiffSuppressFunc: suppressOmittedOnDemandPercentage,
 							},
 							"spot_allocation_strategy": {
 								Description: "Strategy for allocating Spot instances (e.g. `capacity-optimized`, `price-capacity-optimized`, `lowest-price`).",
@@ -870,6 +872,21 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 	return asgProfile
 }
 
+// suppressOmittedOnDemandPercentage suppresses the diff for
+// on_demand_percentage_above_base_capacity only when the user omitted it from config.
+// The backend converges the stored value to 100 (its coercion default), which flatten
+// writes into state; without this, an omitted config (0) perpetually diffs against
+// state (100). An explicitly-written value (including 0) is NOT suppressed, so real
+// changes still apply. Reads GetRawConfig so it sees what the user wrote, not state.
+//
+// Suppress only a KNOWN omission. A value that is unknown at plan time (e.g. driven by
+// a variable or another resource's computed output) must not be suppressed — doing so
+// would hide a real pending change — so we gate on `known`.
+func suppressOmittedOnDemandPercentage(k, old, new string, d *schema.ResourceData) bool {
+	_, explicit, known := asgConfiguredOnDemandPercentage(d.GetRawConfig())
+	return known && !explicit
+}
+
 func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMixedInstancesPolicy {
 	v, ok := d.GetOk("mixed_instances_policy")
 	if !ok || len(v.([]interface{})) == 0 {
@@ -943,9 +960,11 @@ func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMix
 			val := v.(int)
 			distribution.OnDemandBaseCapacity = &val
 		}
-		if v, ok := distMap["on_demand_percentage_above_base_capacity"]; ok {
-			val := v.(int)
+		if pct, explicit, _ := asgConfiguredOnDemandPercentage(d.GetRawConfig()); explicit {
+			val := pct
+			flag := true
 			distribution.OnDemandPercentageAboveBaseCapacity = &val
+			distribution.OnDemandPercentageAboveBaseCapacityExplicit = &flag
 		}
 		if v, ok := distMap["spot_instance_pools"]; ok && v.(int) > 0 {
 			val := v.(int)
@@ -955,6 +974,68 @@ func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMix
 	}
 
 	return policy
+}
+
+// asgConfiguredOnDemandPercentage extracts
+// mixed_instances_policy[0].instances_distribution[0].on_demand_percentage_above_base_capacity
+// from the raw config (via GetRawConfig; works with both *schema.ResourceData and
+// *schema.ResourceDiff). Mirrors the s3ConfiguredKmsKeyId pattern.
+//
+//   - explicit is true only for a known, non-null value the user wrote (including 0).
+//     expand sends that value plus the Explicit flag so a literal 0 is honored instead
+//     of coerced to 100.
+//   - known is false when the attribute (or an enclosing block) is unknown at plan time
+//     — e.g. driven by a variable or another resource's computed output. An unknown
+//     value must NOT be treated as "omitted"; suppressing its diff would hide a real
+//     pending change (same pitfall guarded against in s3ConfiguredKmsKeyId). Callers
+//     must not suppress when known is false.
+//
+// A genuine omission (the attribute or an enclosing block absent/null in config) returns
+// (0, false, true): a known omission, which is the only case a caller may suppress.
+func asgConfiguredOnDemandPercentage(raw cty.Value) (value int, explicit bool, known bool) {
+	if !raw.IsKnown() {
+		return 0, false, false
+	}
+	if raw.IsNull() {
+		return 0, false, true
+	}
+	mip := raw.GetAttr("mixed_instances_policy")
+	if !mip.IsKnown() {
+		return 0, false, false
+	}
+	if mip.IsNull() || mip.LengthInt() == 0 {
+		return 0, false, true
+	}
+	mipBlock := mip.AsValueSlice()[0]
+	if !mipBlock.IsKnown() {
+		return 0, false, false
+	}
+	if mipBlock.IsNull() {
+		return 0, false, true
+	}
+	dist := mipBlock.GetAttr("instances_distribution")
+	if !dist.IsKnown() {
+		return 0, false, false
+	}
+	if dist.IsNull() || dist.LengthInt() == 0 {
+		return 0, false, true
+	}
+	distBlock := dist.AsValueSlice()[0]
+	if !distBlock.IsKnown() {
+		return 0, false, false
+	}
+	if distBlock.IsNull() {
+		return 0, false, true
+	}
+	pct := distBlock.GetAttr("on_demand_percentage_above_base_capacity")
+	if !pct.IsKnown() {
+		return 0, false, false
+	}
+	if pct.IsNull() {
+		return 0, false, true
+	}
+	i64, _ := pct.AsBigFloat().Int64()
+	return int(i64), true, true
 }
 
 func flattenAsgMixedInstancesPolicy(policy *duplosdk.DuploAsgMixedInstancesPolicy) []interface{} {
