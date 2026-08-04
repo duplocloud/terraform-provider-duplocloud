@@ -3,10 +3,11 @@ package duplocloud
 import (
 	"context"
 	"fmt"
-	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -18,7 +19,7 @@ func resourceTenantTag() *schema.Resource {
 		Description:   "`duplocloud_tenant_tag` manages a tenant tag in Duplo.",
 		ReadContext:   resourceTenantTagRead,
 		CreateContext: resourceTenantTagCreate,
-		UpdateContext: resourceTenantTagRead, // NO-OP
+		UpdateContext: resourceTenantTagCreate,
 		DeleteContext: resourceTenantTagDelete,
 
 		Timeouts: &schema.ResourceTimeout{
