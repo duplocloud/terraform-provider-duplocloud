@@ -117,6 +117,15 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupCreate(%s): start", tenantID)
 
 	c := m.(*duplosdk.Client)
+
+	// A global datastore secondary must mirror the primary's Multi-AZ setting (the UI does
+	// this too). The associate resource does not take multi_az_enabled from the user, so
+	// inherit it from the primary member of the global datastore at create time instead of
+	// letting the backend default it to false.
+	if multiAZ, ok := inheritPrimaryMultiAZ(c, tenantID, rq.GlobalReplicationGroupId); ok {
+		rq.MultiAZEnabled = &multiAZ
+	}
+
 	rp, cerr := c.DuploEcacheReplicationGroupCreate(tenantID, &rq)
 	if cerr != nil {
 		return diag.Errorf("DuploEcacheReplicationGroupCreate failed to create global datastore : %s", cerr)
@@ -124,14 +133,44 @@ func resourceDuploEcacheReplicationGroupCreate(ctx context.Context, d *schema.Re
 	id := fmt.Sprintf("%s/ecacheReplicationGroup/%s/%s/%s", tenantID, rq.SecondaryTenantId, rq.GlobalReplicationGroupId, rq.ReplicationGroupId)
 	err := replicationGroupWaitUntilAvailable(ctx, c, tenantID, rq.GlobalReplicationGroupId, rq.SecondaryTenantId, rp.ReplicationGroupId, d.Timeout("create"))
 	if err != nil {
-		return diag.Errorf("replicationGroupWaitUntilAvailable %s", cerr)
-
+		return diag.Errorf("Error waiting for ECache secondary cluster '%s' to become ready: %s", rq.ReplicationGroupId, err)
 	}
 	d.SetId(id)
 
 	diags := resourceDuploEcacheReplicationGroupRead(ctx, d, m)
 	log.Printf("[TRACE] resourceDuploEcacheReplicationGroupCreate(%s, %s): end", tenantID, rp.GlobalReplicationGroup.GlobalReplicationGroupId)
 	return diags
+}
+
+// inheritPrimaryMultiAZ resolves the primary member of the given global datastore and
+// returns its multi_az_enabled setting, so a newly associated secondary can mirror it.
+// It returns ok=false (and logs) when the value cannot be determined, in which case the
+// caller leaves the request's default unchanged rather than failing the create.
+func inheritPrimaryMultiAZ(c *duplosdk.Client, tenantID, globalDatastoreID string) (bool, bool) {
+	gds, err := c.DuploEcacheGlobalDatastoreGet(tenantID, globalDatastoreID)
+	if err != nil || gds == nil {
+		log.Printf("[WARN] ecache secondary: could not fetch global datastore %s to inherit multi_az_enabled: %v", globalDatastoreID, err)
+		return false, false
+	}
+	for _, mem := range gds.Members {
+		if !strings.EqualFold(mem.Role, "primary") {
+			continue
+		}
+		primaryTenant := mem.TenantId
+		if primaryTenant == "" {
+			primaryTenant = tenantID
+		}
+		// EcacheInstanceGet re-adds the "duplo-" prefix, so strip it from the member id.
+		primaryName := strings.TrimPrefix(mem.ReplicationGroupId, "duplo-")
+		primary, perr := c.EcacheInstanceGet(primaryTenant, primaryName)
+		if perr != nil || primary == nil {
+			log.Printf("[WARN] ecache secondary: could not fetch primary instance %s to inherit multi_az_enabled: %v", primaryName, perr)
+			return false, false
+		}
+		return primary.MultiAZEnabled, true
+	}
+	log.Printf("[WARN] ecache secondary: no primary member found in global datastore %s; multi_az_enabled not inherited", globalDatastoreID)
+	return false, false
 }
 
 func replicationGroupWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, tenantID, gDatastore, secTenantId, name string, d time.Duration) error {

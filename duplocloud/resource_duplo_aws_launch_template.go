@@ -670,6 +670,24 @@ func flattenBlockDeviceMappings(bdms []duplosdk.DuploLaunchTemplateBlockDeviceMa
 }
 
 func launchtemplateValidation(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// On an in-place update, changing a version-affecting attribute causes AWS to create a new
+	// launch template version. The computed latest_version / default_version must be marked as
+	// "known after apply" so dependents (e.g. duplocloud_aws_launch_template_default_version wired
+	// to latest_version) don't lock a stale version number and fail with "inconsistent final plan".
+	if diff.Id() != "" {
+		for _, a := range []string{"instance_type", "ami", "block_device_mapping", "instance_requirements"} {
+			if diff.HasChange(a) {
+				if err := diff.SetNewComputed("latest_version"); err != nil {
+					return err
+				}
+				if err := diff.SetNewComputed("default_version"); err != nil {
+					return err
+				}
+				break
+			}
+		}
+	}
+
 	ir, ok := diff.GetOk("instance_requirements")
 	if ok {
 		irList, ok := ir.([]interface{})
