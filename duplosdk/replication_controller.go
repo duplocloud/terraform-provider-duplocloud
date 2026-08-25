@@ -373,7 +373,52 @@ func (c *Client) ReplicationControllerLbConfigurationList(tenantID string, name 
 	for _, lb := range rp.Template.LBConfigurations {
 		lbs = append(lbs, *lb)
 	}
+	if err := c.populateLbRuntimeFields(tenantID, name, lbs); err != nil {
+		return nil, err
+	}
 	return &lbs, nil
+}
+
+// populateLbRuntimeFields overlays runtime-only fields (DnsName, FrontendIP, CloudName,
+// BeProtocolVersion) onto LB configs read from the v3 replication controller endpoint, which
+// returns the stored template without them. The legacy GetLBConfigurations endpoint populates
+// these at read time.
+func (c *Client) populateLbRuntimeFields(tenantID, name string, lbs []DuploLbConfiguration) ClientError {
+	if len(lbs) == 0 {
+		return nil
+	}
+	allLbs, err := c.LbConfigurationList(tenantID)
+	if err != nil {
+		if err.Status() == 404 || err.Status() == 405 {
+			return nil
+		}
+		return err
+	}
+	if allLbs == nil {
+		return nil
+	}
+
+	// LbIndex can be zero across configs on portals without the UseLbIndex feature, so match on
+	// a composite key. Both lists serialize the same backend objects, so the keys line up exactly.
+	lbKey := func(lb *DuploLbConfiguration) string {
+		return fmt.Sprintf("%d/%s/%s/%d", lb.LbType, lb.Protocol, lb.Port, lb.LbIndex)
+	}
+	runtimeLbs := make(map[string]*DuploLbConfiguration, len(lbs))
+	for i := range *allLbs {
+		lb := &(*allLbs)[i]
+		if lb.ReplicationControllerName == name {
+			runtimeLbs[lbKey(lb)] = lb
+		}
+	}
+	for i := range lbs {
+		if src, ok := runtimeLbs[lbKey(&lbs[i])]; ok {
+			lbs[i].DnsName = src.DnsName
+			lbs[i].FrontendIP = src.FrontendIP
+			lbs[i].CloudName = src.CloudName
+			lbs[i].BeProtocolVersion = src.BeProtocolVersion
+		}
+	}
+	return nil
 }
 
 // ReplicationControllerLbConfigurationBulkUpdate bulk updates a replication controller's lb configuration via the Duplo API.
