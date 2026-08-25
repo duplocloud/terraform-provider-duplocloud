@@ -135,12 +135,15 @@ Optional:
 <a id="nestedblock--spec--template--spec"></a>
 ### Nested Schema for `spec.template.spec`
 
+Required:
+
+- `container` (Block List, Min: 1) List of containers belonging to the pod. Containers cannot currently be added or removed. There must be at least one container in a Pod. Cannot be updated. More info: https://kubernetes.io/docs/concepts/containers/ (see [below for nested schema](#nestedblock--spec--template--spec--container))
+
 Optional:
 
 - `active_deadline_seconds` (Number) Optional duration in seconds the pod may be active on the node relative to StartTime before the system will actively try to mark it failed and kill associated containers. Value must be a positive integer.
 - `affinity` (Block List, Max: 1) Optional pod scheduling constraints. (see [below for nested schema](#nestedblock--spec--template--spec--affinity))
 - `automount_service_account_token` (Boolean) AutomountServiceAccountToken indicates whether a service account token should be automatically mounted. Defaults to `true`.
-- `container` (Block List) List of containers belonging to the pod. Containers cannot currently be added or removed. There must be at least one container in a Pod. Cannot be updated. More info: https://kubernetes.io/docs/concepts/containers/ (see [below for nested schema](#nestedblock--spec--template--spec--container))
 - `dns_config` (Block List, Max: 1) Specifies the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS configuration based on DNSPolicy. Optional: Defaults to empty (see [below for nested schema](#nestedblock--spec--template--spec--dns_config))
 - `dns_policy` (String) Set DNS policy for containers within the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'. DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy. To have DNS options set along with hostNetwork, you have to specify DNS policy explicitly to 'ClusterFirstWithHostNet'. Defaults to 'ClusterFirst'. More info: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy Defaults to `ClusterFirst`.
 - `enable_service_links` (Boolean) Enables generating environment variables for service discovery. Defaults to true. Defaults to `true`.
@@ -166,233 +169,6 @@ Optional:
 - `toleration` (Block List) If specified, the pod's toleration. Optional: Defaults to empty (see [below for nested schema](#nestedblock--spec--template--spec--toleration))
 - `topology_spread_constraint` (Block List) describes how a group of pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. (see [below for nested schema](#nestedblock--spec--template--spec--topology_spread_constraint))
 - `volume` (Block List) List of volumes that can be mounted by containers belonging to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes (see [below for nested schema](#nestedblock--spec--template--spec--volume))
-
-<a id="nestedblock--spec--template--spec--affinity"></a>
-### Nested Schema for `spec.template.spec.affinity`
-
-Optional:
-
-- `node_affinity` (Block List, Max: 1) Node affinity scheduling rules for the pod. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity))
-- `pod_affinity` (Block List, Max: 1) Inter-pod topological affinity. rules that specify that certain pods should be placed in the same topological domain (e.g. same node, same rack, same zone, same power domain, etc.) (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity))
-- `pod_anti_affinity` (Block List, Max: 1) Inter-pod topological affinity. rules that specify that certain pods should be placed in the same topological domain (e.g. same node, same rack, same zone, same power domain, etc.) (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity))
-
-<a id="nestedblock--spec--template--spec--affinity--node_affinity"></a>
-### Nested Schema for `spec.template.spec.affinity.node_affinity`
-
-Optional:
-
-- `preferred_during_scheduling_ignored_during_execution` (Block List) The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, RequiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding 'weight' to the sum if the node matches the corresponding MatchExpressions; the node(s) with the highest sum are the most preferred. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution))
-- `required_during_scheduling_ignored_during_execution` (Block List, Max: 1) If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a node label update), the system may or may not try to eventually evict the pod from its node. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution))
-
-<a id="nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution"></a>
-### Nested Schema for `spec.template.spec.affinity.node_affinity.preferred_during_scheduling_ignored_during_execution`
-
-Required:
-
-- `preference` (Block List, Min: 1, Max: 1) A node selector term, associated with the corresponding weight. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution--preference))
-
-Optional:
-
-- `weight` (Number) weight is in the range 1-100
-
-<a id="nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution--preference"></a>
-### Nested Schema for `spec.template.spec.affinity.node_affinity.preferred_during_scheduling_ignored_during_execution.preference`
-
-Optional:
-
-- `match_expressions` (Block List) List of node selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution--preference--match_expressions))
-
-<a id="nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution--preference--match_expressions"></a>
-### Nested Schema for `spec.template.spec.affinity.node_affinity.preferred_during_scheduling_ignored_during_execution.preference.match_expressions`
-
-Optional:
-
-- `key` (String) The label key that the selector applies to.
-- `operator` (String) Operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
-- `values` (Set of String) Values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.
-
-
-
-
-<a id="nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution"></a>
-### Nested Schema for `spec.template.spec.affinity.node_affinity.required_during_scheduling_ignored_during_execution`
-
-Optional:
-
-- `node_selector_term` (Block List) List of node selector terms. The terms are ORed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution--node_selector_term))
-
-<a id="nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution--node_selector_term"></a>
-### Nested Schema for `spec.template.spec.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_term`
-
-Optional:
-
-- `match_expressions` (Block List) List of node selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution--node_selector_term--match_expressions))
-
-<a id="nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution--node_selector_term--match_expressions"></a>
-### Nested Schema for `spec.template.spec.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_term.match_expressions`
-
-Optional:
-
-- `key` (String) The label key that the selector applies to.
-- `operator` (String) Operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
-- `values` (Set of String) Values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.
-
-
-
-
-
-<a id="nestedblock--spec--template--spec--affinity--pod_affinity"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_affinity`
-
-Optional:
-
-- `preferred_during_scheduling_ignored_during_execution` (Block List) The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, RequiredDuringScheduling anti-affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding 'weight' to the sum if the node matches the corresponding MatchExpressions; the node(s) with the highest sum are the most preferred. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution))
-- `required_during_scheduling_ignored_during_execution` (Block List) If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each PodAffinityTerm are intersected, i.e. all terms must be satisfied. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution))
-
-<a id="nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_affinity.preferred_during_scheduling_ignored_during_execution`
-
-Required:
-
-- `pod_affinity_term` (Block List, Min: 1, Max: 1) A pod affinity term, associated with the corresponding weight (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term))
-- `weight` (Number) weight associated with matching the corresponding podAffinityTerm, in the range 1-100
-
-<a id="nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term`
-
-Optional:
-
-- `label_selector` (Block List) A label query over a set of resources, in this case pods. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector))
-- `namespaces` (Set of String) namespaces specifies which namespaces the labelSelector applies to (matches against); null or empty list means 'this pod's namespace'
-- `topology_key` (String) empty topology key is interpreted by the scheduler as 'all topologies'
-
-<a id="nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term.label_selector`
-
-Optional:
-
-- `match_expressions` (Block List) A list of label selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector--match_expressions))
-- `match_labels` (Map of String) A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
-
-<a id="nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector--match_expressions"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term.label_selector.match_expressions`
-
-Optional:
-
-- `key` (String) The label key that the selector applies to.
-- `operator` (String) A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`.
-- `values` (Set of String) An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.
-
-
-
-
-
-<a id="nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_affinity.required_during_scheduling_ignored_during_execution`
-
-Optional:
-
-- `label_selector` (Block List) A label query over a set of resources, in this case pods. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution--label_selector))
-- `namespaces` (Set of String) namespaces specifies which namespaces the labelSelector applies to (matches against); null or empty list means 'this pod's namespace'
-- `topology_key` (String) empty topology key is interpreted by the scheduler as 'all topologies'
-
-<a id="nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution--label_selector"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_affinity.required_during_scheduling_ignored_during_execution.label_selector`
-
-Optional:
-
-- `match_expressions` (Block List) A list of label selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution--label_selector--match_expressions))
-- `match_labels` (Map of String) A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
-
-<a id="nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution--label_selector--match_expressions"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_affinity.required_during_scheduling_ignored_during_execution.label_selector.match_expressions`
-
-Optional:
-
-- `key` (String) The label key that the selector applies to.
-- `operator` (String) A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`.
-- `values` (Set of String) An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.
-
-
-
-
-
-<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity`
-
-Optional:
-
-- `preferred_during_scheduling_ignored_during_execution` (Block List) The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, RequiredDuringScheduling anti-affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding 'weight' to the sum if the node matches the corresponding MatchExpressions; the node(s) with the highest sum are the most preferred. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution))
-- `required_during_scheduling_ignored_during_execution` (Block List) If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each PodAffinityTerm are intersected, i.e. all terms must be satisfied. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution))
-
-<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.preferred_during_scheduling_ignored_during_execution`
-
-Required:
-
-- `pod_affinity_term` (Block List, Min: 1, Max: 1) A pod affinity term, associated with the corresponding weight (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term))
-- `weight` (Number) weight associated with matching the corresponding podAffinityTerm, in the range 1-100
-
-<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term`
-
-Optional:
-
-- `label_selector` (Block List) A label query over a set of resources, in this case pods. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector))
-- `namespaces` (Set of String) namespaces specifies which namespaces the labelSelector applies to (matches against); null or empty list means 'this pod's namespace'
-- `topology_key` (String) empty topology key is interpreted by the scheduler as 'all topologies'
-
-<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term.label_selector`
-
-Optional:
-
-- `match_expressions` (Block List) A list of label selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector--match_expressions))
-- `match_labels` (Map of String) A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
-
-<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector--match_expressions"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term.label_selector.match_expressions`
-
-Optional:
-
-- `key` (String) The label key that the selector applies to.
-- `operator` (String) A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`.
-- `values` (Set of String) An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.
-
-
-
-
-
-<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.required_during_scheduling_ignored_during_execution`
-
-Optional:
-
-- `label_selector` (Block List) A label query over a set of resources, in this case pods. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution--label_selector))
-- `namespaces` (Set of String) namespaces specifies which namespaces the labelSelector applies to (matches against); null or empty list means 'this pod's namespace'
-- `topology_key` (String) empty topology key is interpreted by the scheduler as 'all topologies'
-
-<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution--label_selector"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.required_during_scheduling_ignored_during_execution.label_selector`
-
-Optional:
-
-- `match_expressions` (Block List) A list of label selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution--label_selector--match_expressions))
-- `match_labels` (Map of String) A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
-
-<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution--label_selector--match_expressions"></a>
-### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.required_during_scheduling_ignored_during_execution.label_selector.match_expressions`
-
-Optional:
-
-- `key` (String) The label key that the selector applies to.
-- `operator` (String) A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`.
-- `values` (Set of String) An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.
-
-
-
-
-
 
 <a id="nestedblock--spec--template--spec--container"></a>
 ### Nested Schema for `spec.template.spec.container`
@@ -904,6 +680,233 @@ Optional:
 - `mount_propagation` (String) Mount propagation mode. mount_propagation determines how mounts are propagated from the host to container and the other way around. Valid values are None (default), HostToContainer and Bidirectional. Defaults to `None`.
 - `read_only` (Boolean) Mounted read-only if true, read-write otherwise (false or unspecified). Defaults to false. Defaults to `false`.
 - `sub_path` (String) Path within the volume from which the container's volume should be mounted. Defaults to "" (volume's root).
+
+
+
+<a id="nestedblock--spec--template--spec--affinity"></a>
+### Nested Schema for `spec.template.spec.affinity`
+
+Optional:
+
+- `node_affinity` (Block List, Max: 1) Node affinity scheduling rules for the pod. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity))
+- `pod_affinity` (Block List, Max: 1) Inter-pod topological affinity. rules that specify that certain pods should be placed in the same topological domain (e.g. same node, same rack, same zone, same power domain, etc.) (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity))
+- `pod_anti_affinity` (Block List, Max: 1) Inter-pod topological affinity. rules that specify that certain pods should be placed in the same topological domain (e.g. same node, same rack, same zone, same power domain, etc.) (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity))
+
+<a id="nestedblock--spec--template--spec--affinity--node_affinity"></a>
+### Nested Schema for `spec.template.spec.affinity.node_affinity`
+
+Optional:
+
+- `preferred_during_scheduling_ignored_during_execution` (Block List) The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, RequiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding 'weight' to the sum if the node matches the corresponding MatchExpressions; the node(s) with the highest sum are the most preferred. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution))
+- `required_during_scheduling_ignored_during_execution` (Block List, Max: 1) If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a node label update), the system may or may not try to eventually evict the pod from its node. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution))
+
+<a id="nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution"></a>
+### Nested Schema for `spec.template.spec.affinity.node_affinity.preferred_during_scheduling_ignored_during_execution`
+
+Required:
+
+- `preference` (Block List, Min: 1, Max: 1) A node selector term, associated with the corresponding weight. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution--preference))
+
+Optional:
+
+- `weight` (Number) weight is in the range 1-100
+
+<a id="nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution--preference"></a>
+### Nested Schema for `spec.template.spec.affinity.node_affinity.preferred_during_scheduling_ignored_during_execution.preference`
+
+Optional:
+
+- `match_expressions` (Block List) List of node selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution--preference--match_expressions))
+
+<a id="nestedblock--spec--template--spec--affinity--node_affinity--preferred_during_scheduling_ignored_during_execution--preference--match_expressions"></a>
+### Nested Schema for `spec.template.spec.affinity.node_affinity.preferred_during_scheduling_ignored_during_execution.preference.match_expressions`
+
+Optional:
+
+- `key` (String) The label key that the selector applies to.
+- `operator` (String) Operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+- `values` (Set of String) Values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.
+
+
+
+
+<a id="nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution"></a>
+### Nested Schema for `spec.template.spec.affinity.node_affinity.required_during_scheduling_ignored_during_execution`
+
+Optional:
+
+- `node_selector_term` (Block List) List of node selector terms. The terms are ORed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution--node_selector_term))
+
+<a id="nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution--node_selector_term"></a>
+### Nested Schema for `spec.template.spec.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_term`
+
+Optional:
+
+- `match_expressions` (Block List) List of node selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution--node_selector_term--match_expressions))
+
+<a id="nestedblock--spec--template--spec--affinity--node_affinity--required_during_scheduling_ignored_during_execution--node_selector_term--match_expressions"></a>
+### Nested Schema for `spec.template.spec.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_term.match_expressions`
+
+Optional:
+
+- `key` (String) The label key that the selector applies to.
+- `operator` (String) Operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+- `values` (Set of String) Values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.
+
+
+
+
+
+<a id="nestedblock--spec--template--spec--affinity--pod_affinity"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_affinity`
+
+Optional:
+
+- `preferred_during_scheduling_ignored_during_execution` (Block List) The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, RequiredDuringScheduling anti-affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding 'weight' to the sum if the node matches the corresponding MatchExpressions; the node(s) with the highest sum are the most preferred. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution))
+- `required_during_scheduling_ignored_during_execution` (Block List) If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each PodAffinityTerm are intersected, i.e. all terms must be satisfied. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution))
+
+<a id="nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_affinity.preferred_during_scheduling_ignored_during_execution`
+
+Required:
+
+- `pod_affinity_term` (Block List, Min: 1, Max: 1) A pod affinity term, associated with the corresponding weight (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term))
+- `weight` (Number) weight associated with matching the corresponding podAffinityTerm, in the range 1-100
+
+<a id="nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term`
+
+Optional:
+
+- `label_selector` (Block List) A label query over a set of resources, in this case pods. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector))
+- `namespaces` (Set of String) namespaces specifies which namespaces the labelSelector applies to (matches against); null or empty list means 'this pod's namespace'
+- `topology_key` (String) empty topology key is interpreted by the scheduler as 'all topologies'
+
+<a id="nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term.label_selector`
+
+Optional:
+
+- `match_expressions` (Block List) A list of label selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector--match_expressions))
+- `match_labels` (Map of String) A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+
+<a id="nestedblock--spec--template--spec--affinity--pod_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector--match_expressions"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term.label_selector.match_expressions`
+
+Optional:
+
+- `key` (String) The label key that the selector applies to.
+- `operator` (String) A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`.
+- `values` (Set of String) An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.
+
+
+
+
+
+<a id="nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_affinity.required_during_scheduling_ignored_during_execution`
+
+Optional:
+
+- `label_selector` (Block List) A label query over a set of resources, in this case pods. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution--label_selector))
+- `namespaces` (Set of String) namespaces specifies which namespaces the labelSelector applies to (matches against); null or empty list means 'this pod's namespace'
+- `topology_key` (String) empty topology key is interpreted by the scheduler as 'all topologies'
+
+<a id="nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution--label_selector"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_affinity.required_during_scheduling_ignored_during_execution.label_selector`
+
+Optional:
+
+- `match_expressions` (Block List) A list of label selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution--label_selector--match_expressions))
+- `match_labels` (Map of String) A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+
+<a id="nestedblock--spec--template--spec--affinity--pod_affinity--required_during_scheduling_ignored_during_execution--label_selector--match_expressions"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_affinity.required_during_scheduling_ignored_during_execution.label_selector.match_expressions`
+
+Optional:
+
+- `key` (String) The label key that the selector applies to.
+- `operator` (String) A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`.
+- `values` (Set of String) An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.
+
+
+
+
+
+<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity`
+
+Optional:
+
+- `preferred_during_scheduling_ignored_during_execution` (Block List) The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, RequiredDuringScheduling anti-affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding 'weight' to the sum if the node matches the corresponding MatchExpressions; the node(s) with the highest sum are the most preferred. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution))
+- `required_during_scheduling_ignored_during_execution` (Block List) If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each PodAffinityTerm are intersected, i.e. all terms must be satisfied. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution))
+
+<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.preferred_during_scheduling_ignored_during_execution`
+
+Required:
+
+- `pod_affinity_term` (Block List, Min: 1, Max: 1) A pod affinity term, associated with the corresponding weight (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term))
+- `weight` (Number) weight associated with matching the corresponding podAffinityTerm, in the range 1-100
+
+<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term`
+
+Optional:
+
+- `label_selector` (Block List) A label query over a set of resources, in this case pods. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector))
+- `namespaces` (Set of String) namespaces specifies which namespaces the labelSelector applies to (matches against); null or empty list means 'this pod's namespace'
+- `topology_key` (String) empty topology key is interpreted by the scheduler as 'all topologies'
+
+<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term.label_selector`
+
+Optional:
+
+- `match_expressions` (Block List) A list of label selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector--match_expressions))
+- `match_labels` (Map of String) A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+
+<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--preferred_during_scheduling_ignored_during_execution--pod_affinity_term--label_selector--match_expressions"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term.label_selector.match_expressions`
+
+Optional:
+
+- `key` (String) The label key that the selector applies to.
+- `operator` (String) A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`.
+- `values` (Set of String) An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.
+
+
+
+
+
+<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.required_during_scheduling_ignored_during_execution`
+
+Optional:
+
+- `label_selector` (Block List) A label query over a set of resources, in this case pods. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution--label_selector))
+- `namespaces` (Set of String) namespaces specifies which namespaces the labelSelector applies to (matches against); null or empty list means 'this pod's namespace'
+- `topology_key` (String) empty topology key is interpreted by the scheduler as 'all topologies'
+
+<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution--label_selector"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.required_during_scheduling_ignored_during_execution.label_selector`
+
+Optional:
+
+- `match_expressions` (Block List) A list of label selector requirements. The requirements are ANDed. (see [below for nested schema](#nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution--label_selector--match_expressions))
+- `match_labels` (Map of String) A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+
+<a id="nestedblock--spec--template--spec--affinity--pod_anti_affinity--required_during_scheduling_ignored_during_execution--label_selector--match_expressions"></a>
+### Nested Schema for `spec.template.spec.affinity.pod_anti_affinity.required_during_scheduling_ignored_during_execution.label_selector.match_expressions`
+
+Optional:
+
+- `key` (String) The label key that the selector applies to.
+- `operator` (String) A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`.
+- `values` (Set of String) An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.
+
+
+
 
 
 
