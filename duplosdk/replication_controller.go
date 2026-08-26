@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
@@ -373,10 +374,32 @@ func (c *Client) ReplicationControllerLbConfigurationList(tenantID string, name 
 	for _, lb := range rp.Template.LBConfigurations {
 		lbs = append(lbs, *lb)
 	}
+	// Template.LBConfigurations is a map, so iteration order is randomized per read. The legacy
+	// GetLBConfigurations endpoint returned a stable array; without a deterministic order here,
+	// lbconfigs[N] references flap between plan and apply ("Provider produced inconsistent
+	// final plan").
+	sortLbConfigurations(lbs)
 	if err := c.populateLbRuntimeFields(tenantID, name, lbs); err != nil {
 		return nil, err
 	}
 	return &lbs, nil
+}
+
+// sortLbConfigurations orders LB configs by LbIndex (assigned in creation order by the backend),
+// falling back to LbType/Protocol/Port for portals where LbIndex is not populated.
+func sortLbConfigurations(lbs []DuploLbConfiguration) {
+	sort.SliceStable(lbs, func(i, j int) bool {
+		if lbs[i].LbIndex != lbs[j].LbIndex {
+			return lbs[i].LbIndex < lbs[j].LbIndex
+		}
+		if lbs[i].LbType != lbs[j].LbType {
+			return lbs[i].LbType < lbs[j].LbType
+		}
+		if lbs[i].Protocol != lbs[j].Protocol {
+			return lbs[i].Protocol < lbs[j].Protocol
+		}
+		return lbs[i].Port < lbs[j].Port
+	})
 }
 
 // populateLbRuntimeFields overlays runtime-only fields (DnsName, FrontendIP, CloudName,
