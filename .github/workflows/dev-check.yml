@@ -28,9 +28,11 @@ jobs:
         name: Run linting
         uses: golangci/golangci-lint-action@v9.3.0
         with:
-          only-new-issues: true  # Only show new issues for pull requests.
-          # The action's patch-based filter fails on PRs whose diff exceeds GitHub's 20k-line
-          # API limit (e.g. vendor updates); git-based merge-base filtering has no such limit.
+          # On PRs, filter to new issues via git merge-base — the action's patch-based
+          # only-new-issues filter fails on PRs whose diff exceeds GitHub's 20k-line API limit
+          # (e.g. vendor updates). The action forbids combining the two, so only-new-issues
+          # stays on for push events only.
+          only-new-issues: ${{ github.event_name != 'pull_request' }}
           args: --timeout=5m ${{ github.event_name == 'pull_request' && format('--new-from-merge-base=origin/{0}', github.base_ref) || '' }}
           version: v2.13.2
   format:
