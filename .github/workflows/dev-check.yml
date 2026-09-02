@@ -14,6 +14,8 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # full history so --new-from-merge-base can resolve the base
       -
         name: Set up Go
         uses: actions/setup-go@v6
@@ -27,7 +29,9 @@ jobs:
         uses: golangci/golangci-lint-action@v9.3.0
         with:
           only-new-issues: true  # Only show new issues for pull requests.
-          args: --timeout=5m
+          # The action's patch-based filter fails on PRs whose diff exceeds GitHub's 20k-line
+          # API limit (e.g. vendor updates); git-based merge-base filtering has no such limit.
+          args: --timeout=5m ${{ github.event_name == 'pull_request' && format('--new-from-merge-base=origin/{0}', github.base_ref) || '' }}
           version: v2.13.2
   format:
     runs-on: ubuntu-22.04
