@@ -34,7 +34,7 @@ func resourceKubernetesDaemonSetV1() *schema.Resource {
 }
 
 func resourceKubernetesDaemonSetV1Schema(readonly bool) map[string]*schema.Schema {
-	return map[string]*schema.Schema{
+	s := map[string]*schema.Schema{
 		"tenant_id": {
 			Description:  "The GUID of the tenant that the DaemonSet will be created in.",
 			Type:         schema.TypeString,
@@ -55,11 +55,19 @@ func resourceKubernetesDaemonSetV1Schema(readonly bool) map[string]*schema.Schem
 		},
 		"is_tenant_local": {
 			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     true,
+			Optional:    !readonly,
+			Computed:    readonly,
 			Description: "When true, the DaemonSet will be deployed only to the tenant's nodes. When false, it is deployed cluster-wide (requires the tenant to have the CAN_DEPLOY_CLUSTER_WIDE_DAEMONSET metadata enabled).",
 		},
 	}
+	// Default cannot coexist with Computed, and MaxItems is rejected on computed-only
+	// fields, so only set them in resource mode.
+	if !readonly {
+		s["is_tenant_local"].Default = true
+	} else {
+		s["spec"].MaxItems = 0
+	}
+	return s
 }
 
 func resourceKubernetesDaemonSetV1Create(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
