@@ -51,7 +51,7 @@ func dataSourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.Resourc
 		return diag.Errorf("Unable to read tenant %s ECS task definition '%s': not found", tenantID, arn)
 	}
 	d.SetId(fmt.Sprintf("%s/%s", tenantID, arn))
-	tenant, cerr := c.TenantGetV2(tenantID)
+	tenant, cerr := c.GetTenantForUser(tenantID)
 	if cerr != nil {
 		if cerr.Status() == 404 {
 			log.Printf("Tenant %s not found", tenantID)

@@ -338,7 +338,7 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 		d.SetId("")
 		return nil
 	}
-	tenant, cerr := c.TenantGetV2(tenantID)
+	tenant, cerr := c.GetTenantForUser(tenantID)
 	if cerr != nil {
 		if cerr.Status() == 404 {
 			log.Printf("Tenant %s not found", tenantID)
