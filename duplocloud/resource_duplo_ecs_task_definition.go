@@ -345,7 +345,7 @@ func resourceDuploEcsTaskDefinitionRead(ctx context.Context, d *schema.ResourceD
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Duplocloud resource tenant information'\n%s", err)
+		return diag.Errorf("Unable to retrieve tenant %s information: %s", tenantID, cerr)
 	}
 	prefix, err := c.GetResourcePrefixWithoutTenant("duploservices")
 	if err != nil {
