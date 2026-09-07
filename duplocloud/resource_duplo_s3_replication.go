@@ -182,7 +182,7 @@ func getS3BucketReplication(c *duplosdk.Client, tenantID, name string) ([]map[st
 	if duplo == nil || len(duplo.Rule) == 0 {
 		return nil, nil
 	}
-	tenantInfo, err := c.TenantGetV2(tenantID)
+	tenantInfo, err := c.GetTenantForUser(tenantID)
 	if err != nil {
 		return nil, err
 	}
