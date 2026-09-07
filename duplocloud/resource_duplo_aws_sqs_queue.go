@@ -407,7 +407,7 @@ func validateSQSName(c *duplosdk.Client, tId, name string, fifo bool) error {
 			errMsg = fmt.Sprintf("invalid name format. Queue name must start with a letter, contain only letters, numbers, underscores, or hyphens, and be at most %d characters", 1+allowedLen)
 		}
 	} else {
-		rp, cerr := c.TenantGetV2(tId)
+		rp, cerr := c.GetTenantForUser(tId)
 		if cerr != nil {
 			return fmt.Errorf("failed to get tenant %s: %w", tId, cerr)
 		}
