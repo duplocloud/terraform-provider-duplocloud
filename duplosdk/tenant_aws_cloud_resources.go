@@ -89,6 +89,7 @@ type DuploS3Bucket struct {
 	EnableAccessLogs     bool                   `json:"EnableAccessLogs,omitempty"`
 	AllowPublicAccess    bool                   `json:"AllowPublicAccess,omitempty"`
 	DefaultEncryption    string                 `json:"DefaultEncryption,omitempty"`
+	EncryptionKmsKeyId   string                 `json:"EncryptionKmsKeyId,omitempty"`
 	Policies             []string               `json:"Policies,omitempty"`
 	Tags                 *[]DuploKeyStringValue `json:"Tags,omitempty"`
 	CorsAllowedHostNames []string               `json:"CorsAllowedHostNames,omitempty"`
@@ -250,14 +251,15 @@ type DuploS3BucketRequest struct {
 
 // DuploS3BucketSettingsRequest represents a request to create an S3 bucket resource
 type DuploS3BucketSettingsRequest struct {
-	Name              string   `json:"Name,omitempty"`
-	Region            string   `json:"Region,omitempty"`
-	Location          string   `json:"Location,omitempty"`
-	EnableVersioning  bool     `json:"EnableVersioning,omitempty"`
-	EnableAccessLogs  bool     `json:"EnableAccessLogs,omitempty"`
-	AllowPublicAccess bool     `json:"AllowPublicAccess,omitempty"`
-	DefaultEncryption string   `json:"DefaultEncryption,omitempty"`
-	Policies          []string `json:"Policies,omitempty"`
+	Name               string   `json:"Name,omitempty"`
+	Region             string   `json:"Region,omitempty"`
+	Location           string   `json:"Location,omitempty"`
+	EnableVersioning   bool     `json:"EnableVersioning,omitempty"`
+	EnableAccessLogs   bool     `json:"EnableAccessLogs,omitempty"`
+	AllowPublicAccess  bool     `json:"AllowPublicAccess,omitempty"`
+	DefaultEncryption  string   `json:"DefaultEncryption,omitempty"`
+	EncryptionKmsKeyId string   `json:"EncryptionKmsKeyId,omitempty"`
+	Policies           []string `json:"Policies,omitempty"`
 }
 
 type DuploS3BucketReplication struct {
@@ -1202,10 +1204,10 @@ func (c *Client) GetS3EventNotification(tenantID, bucketName string) (*DuploS3Ev
 	return &rp, err
 }
 
-func (c *Client) UpdateASGTaints(tenantID, privateAddress string, duplo []DuploTaints) ClientError {
+func (c *Client) CreateASGTaints(tenantID, privateAddress string, duplo []DuploTaints) ClientError {
 
 	err := c.postAPI(
-		fmt.Sprintf("UpdateTaints(%s, %s)", tenantID, privateAddress),
+		fmt.Sprintf("CreateASGTaints(%s, %s)", tenantID, privateAddress),
 		fmt.Sprintf("v3/subscriptions/%s/k8s/node/%s/taints", tenantID, privateAddress),
 		&duplo,
 		nil)

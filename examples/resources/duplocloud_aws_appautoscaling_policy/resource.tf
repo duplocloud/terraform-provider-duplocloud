@@ -31,3 +31,23 @@ resource "duplocloud_aws_appautoscaling_policy" "asg-app-policy" {
     target_value = 40
   }
 }
+
+# Scale on incoming ALB traffic instead of resource usage. Only valid for services attached
+# to an ALB target group; resource_label identifies the ALB and target group serving them.
+resource "duplocloud_aws_appautoscaling_policy" "asg-request-count-policy" {
+  tenant_id          = duplocloud_tenant.duplo-app.tenant_id
+  name               = "alb-request-count-per-target"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = duplocloud_aws_appautoscaling_target.asg-target.resource_id
+  scalable_dimension = duplocloud_aws_appautoscaling_target.asg-target.scalable_dimension
+  service_namespace  = duplocloud_aws_appautoscaling_target.asg-target.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label         = "app/my-alb/778d41231b141a0f/targetgroup/my-alb-target-group/943f017f100becff"
+    }
+
+    target_value = 100 # requests per target
+  }
+}

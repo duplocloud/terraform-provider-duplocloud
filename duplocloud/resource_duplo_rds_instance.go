@@ -262,14 +262,14 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"v2_scaling_configuration": {
-			Description: "Serverless v2_scaling_configuration min and max scaling capacity. This configuration is only applicable for serverless instances",
+			Description: "Serverless v2 scaling configuration specifying the min and max scaling capacity (in ACUs). This configuration is only applicable for serverless instances.",
 			Type:        schema.TypeList,
 			MaxItems:    1,
 			Optional:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"min_capacity": {
-						Description: "Specifies min scaling capacity.",
+						Description: "Specifies min scaling capacity. Set to `0` to enable Aurora Serverless v2 auto-pause (scale to zero) for idle clusters.",
 						Type:        schema.TypeFloat,
 						Required:    true,
 					},
@@ -277,6 +277,13 @@ func rdsInstanceSchema() map[string]*schema.Schema {
 						Description: "Specifies max scaling capacity.",
 						Type:        schema.TypeFloat,
 						Required:    true,
+					},
+					"seconds_until_auto_pause": {
+						Description:  "The amount of time, in seconds, the cluster must remain idle — no connections and no database activity while at `min_capacity` — before Aurora Serverless v2 auto-pauses it (scales to zero ACUs). Any activity resets the timer. Only applies when `min_capacity` is `0`. Must be between 300 (5 minutes) and 86400 (24 hours). When omitted, AWS applies its default of 300; the applied value is reflected in state once the backend reports it.",
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Computed:     true,
+						ValidateFunc: validation.IntBetween(300, 86400),
 					},
 				},
 			},
@@ -1020,7 +1027,7 @@ func rdsInstanceFromState(d *schema.ResourceData) (*duplosdk.DuploRdsInstance, e
 }
 
 func expandV2ScalingConfiguration(cfg []interface{}) *duplosdk.V2ScalingConfiguration {
-	if len(cfg) < 1 {
+	if len(cfg) < 1 || cfg[0] == nil {
 		return nil
 	}
 	out := &duplosdk.V2ScalingConfiguration{}
@@ -1031,7 +1038,21 @@ func expandV2ScalingConfiguration(cfg []interface{}) *duplosdk.V2ScalingConfigur
 	if v, ok := m["max_capacity"]; ok {
 		out.MaxCapacity = v.(float64)
 	}
-	if out.MinCapacity == 0 || out.MaxCapacity == 0 {
+	if v, ok := m["seconds_until_auto_pause"]; ok {
+		out.SecondsUntilAutoPause = v.(int)
+	}
+	// Auto-pause only applies at min_capacity 0. seconds_until_auto_pause is
+	// Computed, so when the user omits it the plan carries the prior state value
+	// forward; with a nonzero min_capacity that leftover must not reach the API
+	// (an explicitly configured value is already rejected at plan time). The
+	// zero value is dropped from the request via omitempty.
+	if out.MinCapacity != 0 {
+		out.SecondsUntilAutoPause = 0
+	}
+	// max_capacity is always required for a serverless v2 config, so a zero value
+	// means the block was not populated. min_capacity may legitimately be 0
+	// (auto-pause / scale-to-zero), so it must not be treated as "unset".
+	if out.MaxCapacity == 0 {
 		return nil
 	}
 	return out
@@ -1092,11 +1113,20 @@ func rdsInstanceToState(duploObject *duplosdk.DuploRdsInstance, d *schema.Resour
 	jo["skip_final_snapshot"] = duploObject.SkipFinalSnapshot
 	jo["store_details_in_secret_manager"] = duploObject.StoreDetailsInSecretManager
 	jo["enable_iam_auth"] = duploObject.EnableIamAuth
-	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MinCapacity != 0 && duploObject.SizeEx == "db.serverless" {
-		d.Set("v2_scaling_configuration", []map[string]interface{}{{
+	if duploObject.V2ScalingConfiguration != nil && duploObject.V2ScalingConfiguration.MaxCapacity != 0 && duploObject.SizeEx == "db.serverless" {
+		v2 := map[string]interface{}{
 			"min_capacity": duploObject.V2ScalingConfiguration.MinCapacity,
 			"max_capacity": duploObject.V2ScalingConfiguration.MaxCapacity,
-		}})
+		}
+		// The backend does not yet echo SecondsUntilAutoPause back on reads (see
+		// DUPLO-43331). Only overwrite state when the API returns a real value;
+		// otherwise preserve the configured value to avoid spurious drift.
+		if duploObject.V2ScalingConfiguration.SecondsUntilAutoPause != 0 {
+			v2["seconds_until_auto_pause"] = duploObject.V2ScalingConfiguration.SecondsUntilAutoPause
+		} else if v, ok := d.GetOk("v2_scaling_configuration.0.seconds_until_auto_pause"); ok {
+			v2["seconds_until_auto_pause"] = v.(int)
+		}
+		d.Set("v2_scaling_configuration", []map[string]interface{}{v2})
 	}
 	jo["enhanced_monitoring"] = duploObject.MonitoringInterval
 	jo["db_name"] = duploObject.DatabaseName
@@ -1265,8 +1295,39 @@ func validateRDSParameters(ctx context.Context, diff *schema.ResourceDiff, m int
 		}
 	}
 	if v, ok := diff.GetOk("v2_scaling_configuration"); ok {
-		if len(v.([]interface{})) > 0 && s != "db.serverless" {
+		cfgList := v.([]interface{})
+		if len(cfgList) > 0 && s != "db.serverless" {
 			return fmt.Errorf("Cannot set v2 scaling configuration for provisioned rds instance")
+		}
+		if len(cfgList) > 0 {
+			cfg, ok := cfgList[0].(map[string]interface{})
+			if !ok {
+				return nil
+			}
+			minCap, ok := cfg["min_capacity"].(float64)
+			if !ok {
+				return nil
+			}
+			// seconds_until_auto_pause is Computed, so the planned value carries the
+			// prior state value forward when the attribute is omitted from config
+			// (it can't be unset by removing it). Only reject the min_capacity
+			// conflict when the value is explicitly in the raw config; a
+			// carried-forward value is dropped by expandV2ScalingConfiguration.
+			// Presence is a null check only: a value that is set but not yet known
+			// (e.g. from a variable) is still configured by the user.
+			secondsConfigured := false
+			if raw := diff.GetRawConfig(); !raw.IsNull() {
+				if rawV2 := raw.GetAttr("v2_scaling_configuration"); !rawV2.IsNull() && rawV2.IsKnown() && rawV2.LengthInt() > 0 {
+					if block := rawV2.AsValueSlice()[0]; block.IsKnown() {
+						secondsConfigured = !block.GetAttr("seconds_until_auto_pause").IsNull()
+					}
+				}
+			}
+			// Keyed off presence alone: the schema restricts an explicit value to
+			// 300-86400, and the planned value reads as 0 when it is not yet known.
+			if secondsConfigured && minCap != 0 {
+				return fmt.Errorf("seconds_until_auto_pause can only be set when min_capacity is 0 (auto-pause requires scaling to zero ACUs)")
+			}
 		}
 	}
 	if diff.Get("multi_az").(bool) && (eng == 8 || eng == 9 || eng == 16) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -193,10 +194,16 @@ func duploAwsAppautoscalingPolicySchema() map[string]*schema.Schema {
 									Required:    true,
 								},
 								"resource_label": {
-									Description:  "Reserved for future use. Must be less than or equal to 1023 characters in length.",
-									Type:         schema.TypeString,
-									Optional:     true,
-									ValidateFunc: validation.StringLenBetween(0, 1023),
+									Description: "Identifies the resource associated with the metric type. Required for `ALBRequestCountPerTarget`, where it names the ALB and target group serving the scalable target, in the format `app/<load-balancer-name>/<load-balancer-id>/targetgroup/<target-group-name>/<target-group-id>`. Must be less than or equal to 1023 characters in length.",
+									Type:        schema.TypeString,
+									Optional:    true,
+									ValidateFunc: validation.All(
+										validation.StringLenBetween(0, 1023),
+										validation.StringMatch(
+											regexp.MustCompile(`^app/[^/]+/[^/]+/targetgroup/[^/]+/[^/]+$`),
+											"must be in the format app/<load-balancer-name>/<load-balancer-id>/targetgroup/<target-group-name>/<target-group-id>",
+										),
+									),
 								},
 							},
 						},

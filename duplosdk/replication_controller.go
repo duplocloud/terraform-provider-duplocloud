@@ -2,6 +2,7 @@ package duplosdk
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
@@ -116,7 +117,14 @@ type DuploLbConfiguration struct {
 }
 
 type DuploLbGCPSettings struct {
-	BackendConfigServiceTimeout int `json:"backendConfigServiceTimeout"`
+	BackendConfigServiceTimeout  int     `json:"backendConfigServiceTimeout,omitempty"`
+	EnableAccessLogs             bool    `json:"enableAccessLogs,omitempty"`
+	SecurityPolicyId             string  `json:"securityPolicyId,omitempty"`
+	TimeoutSec                   int     `json:"timeoutSec,omitempty"`
+	ConnectionDrainingTimeoutSec int     `json:"connectionDrainingTimeoutSec,omitempty"`
+	HttpToHttpsRedirect          bool    `json:"httpToHttpsRedirect,omitempty"`
+	SessionAffinity              string  `json:"sessionAffinity,omitempty"`
+	MaxRatePerEndpoint           float64 `json:"maxRatePerEndpoint,omitempty"`
 }
 
 // DuploPodLbConfiguration represents an LB configuration deletion request.
@@ -149,7 +157,7 @@ type DuploReplicationControllerCreateRequest struct {
 	NetworkId                         string                 `json:"NetworkId"`
 	Cloud                             int                    `json:"Cloud"`
 	AgentPlatform                     int                    `json:"AgentPlatform"`
-	Replicas                          int                    `json:"Replicas,omitempty"`
+	Replicas                          int                    `json:"Replicas"`
 	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
 	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
 	IsDaemonset                       bool                   `json:"IsDaemonset"`
@@ -178,7 +186,7 @@ type DuploReplicationControllerUpdateRequest struct {
 	Name                              string                 `json:"Name"`
 	Image                             string                 `json:"DockerImage"`
 	AgentPlatform                     int                    `json:"AgentPlatform"`
-	Replicas                          int                    `json:"Replicas,omitempty"`
+	Replicas                          int                    `json:"Replicas"`
 	ReplicasMatchingAsgName           string                 `json:"ReplicasMatchingAsgName,omitempty"`
 	ForceStatefulSet                  bool                   `json:"ForceStatefulSet,omitempty"`
 	IsDaemonset                       bool                   `json:"IsDaemonset"`
@@ -366,7 +374,74 @@ func (c *Client) ReplicationControllerLbConfigurationList(tenantID string, name 
 	for _, lb := range rp.Template.LBConfigurations {
 		lbs = append(lbs, *lb)
 	}
+	// Template.LBConfigurations is a map, so iteration order is randomized per read. The legacy
+	// GetLBConfigurations endpoint returned a stable array; without a deterministic order here,
+	// lbconfigs[N] references flap between plan and apply ("Provider produced inconsistent
+	// final plan").
+	sortLbConfigurations(lbs)
+	if err := c.populateLbRuntimeFields(tenantID, name, lbs); err != nil {
+		return nil, err
+	}
 	return &lbs, nil
+}
+
+// sortLbConfigurations orders LB configs by LbIndex (assigned in creation order by the backend),
+// falling back to LbType/Protocol/Port for portals where LbIndex is not populated.
+func sortLbConfigurations(lbs []DuploLbConfiguration) {
+	sort.SliceStable(lbs, func(i, j int) bool {
+		if lbs[i].LbIndex != lbs[j].LbIndex {
+			return lbs[i].LbIndex < lbs[j].LbIndex
+		}
+		if lbs[i].LbType != lbs[j].LbType {
+			return lbs[i].LbType < lbs[j].LbType
+		}
+		if lbs[i].Protocol != lbs[j].Protocol {
+			return lbs[i].Protocol < lbs[j].Protocol
+		}
+		return lbs[i].Port < lbs[j].Port
+	})
+}
+
+// populateLbRuntimeFields overlays runtime-only fields (DnsName, FrontendIP, CloudName,
+// BeProtocolVersion) onto LB configs read from the v3 replication controller endpoint, which
+// returns the stored template without them. The legacy GetLBConfigurations endpoint populates
+// these at read time.
+func (c *Client) populateLbRuntimeFields(tenantID, name string, lbs []DuploLbConfiguration) ClientError {
+	if len(lbs) == 0 {
+		return nil
+	}
+	allLbs, err := c.LbConfigurationList(tenantID)
+	if err != nil {
+		if err.Status() == 404 || err.Status() == 405 {
+			return nil
+		}
+		return err
+	}
+	if allLbs == nil {
+		return nil
+	}
+
+	// LbIndex can be zero across configs on portals without the UseLbIndex feature, so match on
+	// a composite key. Both lists serialize the same backend objects, so the keys line up exactly.
+	lbKey := func(lb *DuploLbConfiguration) string {
+		return fmt.Sprintf("%d/%s/%s/%d", lb.LbType, lb.Protocol, lb.Port, lb.LbIndex)
+	}
+	runtimeLbs := make(map[string]*DuploLbConfiguration, len(lbs))
+	for i := range *allLbs {
+		lb := &(*allLbs)[i]
+		if lb.ReplicationControllerName == name {
+			runtimeLbs[lbKey(lb)] = lb
+		}
+	}
+	for i := range lbs {
+		if src, ok := runtimeLbs[lbKey(&lbs[i])]; ok {
+			lbs[i].DnsName = src.DnsName
+			lbs[i].FrontendIP = src.FrontendIP
+			lbs[i].CloudName = src.CloudName
+			lbs[i].BeProtocolVersion = src.BeProtocolVersion
+		}
+	}
+	return nil
 }
 
 // ReplicationControllerLbConfigurationBulkUpdate bulk updates a replication controller's lb configuration via the Duplo API.

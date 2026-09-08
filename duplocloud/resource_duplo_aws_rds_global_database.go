@@ -69,6 +69,13 @@ func duploAwsRdsGlobalDatabaseSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: diffSuppressWhenCreating,
 			Optional:         true,
 		},
+		"kms_key_id": {
+			Description: "Optional custom KMS key (key ID or ARN) used to encrypt the secondary cluster's storage. " +
+				"The key must belong to the secondary tenant or its plan. When omitted, the secondary tenant's default KMS key is used.",
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
 	}
 }
 
@@ -141,7 +148,8 @@ func resourceAwsRdsGlobalDatabaseCreate(ctx context.Context, d *schema.ResourceD
 	identifier := d.Get("cluster_identifier").(string)
 	secTenantId := d.Get("secondary_tenant_id").(string)
 	req := duplosdk.DuploRDSGlobalDatabase{
-		TenantID: secTenantId,
+		TenantID:           secTenantId,
+		EncryptionKmsKeyId: d.Get("kms_key_id").(string),
 	}
 	log.Printf("[TRACE] resourceAwsRdsGlobalDatabaseCreate(%s, %s, %s, %s): start", tenantID, identifier, secRegion, secTenantId)
 	c := m.(*duplosdk.Client)

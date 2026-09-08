@@ -94,6 +94,7 @@ Read-Only:
 - `protocol` (String)
 - `replication_controller_name` (String)
 - `target_group_count` (Number)
+- `tcp_idle_timeout_seconds` (Number)
 - `webaclid` (String)
 
 <a id="nestedobjatt--load_balancer--health_check_config"></a>

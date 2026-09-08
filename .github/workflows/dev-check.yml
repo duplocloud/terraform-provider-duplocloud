@@ -13,10 +13,12 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # full history so --new-from-merge-base can resolve the base
       -
         name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -24,24 +26,28 @@ jobs:
         run: go clean -cache -modcache -testcache
       - 
         name: Run linting
-        uses: golangci/golangci-lint-action@v6.1.1
+        uses: golangci/golangci-lint-action@v9.3.0
         with:
-          only-new-issues: true  # Only show new issues for pull requests.
-          args: --timeout=5m
-          version: v1.64.8
+          # On PRs, filter to new issues via git merge-base — the action's patch-based
+          # only-new-issues filter fails on PRs whose diff exceeds GitHub's 20k-line API limit
+          # (e.g. vendor updates). The action forbids combining the two, so only-new-issues
+          # stays on for push events only.
+          only-new-issues: ${{ github.event_name != 'pull_request' }}
+          args: --timeout=5m ${{ github.event_name == 'pull_request' && format('--new-from-merge-base=origin/{0}', github.base_ref) || '' }}
+          version: v2.13.2
   format:
     runs-on: ubuntu-22.04
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       -
         name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: '^1.20.0'
+          go-version-file: 'go.mod'
           cache: false
-      - 
+      -
         name: Run formatting
         run: gofmt -s -w duplocloud duplosdk
       - 

@@ -228,6 +228,27 @@ func (c *Client) EcacheInstanceModify(tenantID string, rq *DuploEcacheModifyRequ
 		rq, &rp, &conf)
 }
 
+// DuploEcacheUpgradeEngineRequest upgrades an existing Redis replication group to Valkey in place.
+type DuploEcacheUpgradeEngineRequest struct {
+	Identifier          string `json:"Identifier"`
+	TargetEngineVersion string `json:"TargetEngineVersion"`
+}
+
+// EcacheInstanceUpgradeEngine calls the v3 endpoint that upgrades a Redis ECache instance to Valkey.
+// The AWS modify is asynchronous and potentially disruptive; the engine is confirmed by reconciliation.
+func (c *Client) EcacheInstanceUpgradeEngine(tenantID string, rq DuploEcacheUpgradeEngineRequest) ClientError {
+	// The endpoint returns the in-progress ECacheDBInstanceDetails; absorb it into a map since the
+	// authoritative state is fetched by a follow-up read.
+	var rp map[string]interface{}
+	// Like EcacheInstanceModify, this is a long-running AWS modify that can fail transiently with a
+	// 400 while the cluster is still transitioning, so retry with backoff to match that pattern.
+	conf := NewRetryConf()
+	return c.postAPIWithRetry(
+		fmt.Sprintf("EcacheInstanceUpgradeEngine(%s, %s)", tenantID, rq.Identifier),
+		fmt.Sprintf("v3/subscriptions/%s/aws/ecache/upgrade-engine", tenantID),
+		&rq, &rp, &conf)
+}
+
 type LogDeliveryConfigurationUpdateItem struct {
 	DestinationType    string              `json:"DestinationType,omitempty"`
 	LogFormat          string              `json:"LogFormat,omitempty"`
@@ -374,6 +395,11 @@ type DuploEcacheReplicationGroup struct {
 	ReplicationGroupId       string `json:"ReplicationGroupId"`
 	KmsKeyId                 string `json:"KmsKeyId,omitempty"`
 	AuthToken                string `json:"AuthToken,omitempty"`
+	// MultiAZEnabled is inherited from the primary at create time so the secondary mirrors
+	// the primary's Multi-AZ setting (the user never sets it on the secondary resource).
+	// Pointer + omitempty so the field is only sent when the primary's value was resolved;
+	// when inheritance can't be determined it is omitted rather than asserting a default.
+	MultiAZEnabled *bool `json:"MultiAZEnabled,omitempty"`
 }
 
 func (c *Client) DuploEcacheReplicationGroupCreate(tenantID string, rq *DuploEcacheReplicationGroup) (*DuploEcacheGlobalDatastoreResponse, ClientError) {

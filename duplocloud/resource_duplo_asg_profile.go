@@ -12,6 +12,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -307,9 +308,10 @@ func autoscalingGroupSchema() map[string]*schema.Schema {
 								Optional:    true,
 							},
 							"on_demand_percentage_above_base_capacity": {
-								Description: "Percentage of On-Demand instances above the base capacity (0-100).",
-								Type:        schema.TypeInt,
-								Optional:    true,
+								Description:      "Percentage of On-Demand instances above the base capacity (0-100). Set explicitly to `0` for 100% Spot above base capacity. Omit to leave it unmanaged: on create AWS applies its default of 100% On-Demand, and on an existing ASG the current value is left unchanged.",
+								Type:             schema.TypeInt,
+								Optional:         true,
+								DiffSuppressFunc: suppressOmittedOnDemandPercentage,
 							},
 							"spot_allocation_strategy": {
 								Description: "Strategy for allocating Spot instances (e.g. `capacity-optimized`, `price-capacity-optimized`, `lowest-price`).",
@@ -579,39 +581,42 @@ func resourceAwsASGUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		if err != nil {
 			return diag.Errorf("Error on updating taints from ASG profile '%s': %s", friendlyName, err)
 		}
-		privateAddress := ""
+
+		oldVal, newVal := d.GetChange("taints")
+
+		var keysToDelete []string
+		for _, dt := range oldVal.([]interface{}) {
+			keysToDelete = append(keysToDelete, dt.(map[string]interface{})["key"].(string))
+		}
+		var newTaintsList []duplosdk.DuploTaints
+		for _, dt := range newVal.([]interface{}) {
+			item := dt.(map[string]interface{})
+			newTaintsList = append(newTaintsList, duplosdk.DuploTaints{
+				Key:    item["key"].(string),
+				Value:  item["value"].(string),
+				Effect: item["effect"].(string),
+			})
+		}
+
+		minionCount := 0
 		for _, minion := range *list {
-			if minion.AsgName == friendlyName {
-				privateAddress = minion.PrivateIpAddress
-				break
+			if minion.AsgName != friendlyName {
+				continue
 			}
-		}
-		k := []string{}
-
-		obj := []duplosdk.DuploTaints{}
-		if val, ok := d.Get("taints").([]interface{}); ok {
-			for _, dt := range val {
-
-				m := dt.(map[string]interface{})
-				taints := duplosdk.DuploTaints{
-					Key:    m["key"].(string),
-					Value:  m["value"].(string),
-					Effect: m["effect"].(string),
+			minionCount++
+			if len(keysToDelete) > 0 {
+				if cerr := c.DeleteASGTaints(tenantID, minion.PrivateIpAddress, keysToDelete); cerr != nil {
+					return diag.Errorf("Error deleting taints on node '%s' for ASG profile '%s': %s", minion.PrivateIpAddress, friendlyName, cerr)
 				}
-				k = append(k, m["key"].(string))
-				obj = append(obj, taints)
-
 			}
-
+			if len(newTaintsList) > 0 {
+				if cerr := c.CreateASGTaints(tenantID, minion.PrivateIpAddress, newTaintsList); cerr != nil {
+					return diag.Errorf("Error creating taints on node '%s' for ASG profile '%s': %s", minion.PrivateIpAddress, friendlyName, cerr)
+				}
+			}
 		}
-		cerr := c.DeleteASGTaints(tenantID, privateAddress, k)
-		if cerr != nil {
-			return diag.Errorf("Error updating taints from ASG profile '%s': %s", friendlyName, cerr)
-		}
-		time.Sleep(10 * time.Second)
-		cerr = c.UpdateASGTaints(tenantID, privateAddress, obj)
-		if cerr != nil {
-			return diag.Errorf("Error updating taints from ASG profile '%s': %s", friendlyName, cerr)
+		if minionCount == 0 {
+			log.Printf("[TRACE] resourceAwsASGUpdate(%s, %s): no minions found for taint update", tenantID, friendlyName)
 		}
 	}
 	ctx = context.WithValue(ctx, flowContextKey, "normal")
@@ -658,6 +663,37 @@ func resourceAwsASGRead(ctx context.Context, d *schema.ResourceData, m interface
 	// Apply the data
 	asgProfileToState(d, profile, flow)
 	d.Set("tenant_id", tenantID)
+
+	// Read actual taints from a minion node to detect drift.
+	// Compare across all minions — if any node diverges, clear taints
+	// so Terraform detects drift and re-applies.
+	list, lerr := c.TenantListMinions(tenantID)
+	if lerr != nil {
+		log.Printf("[WARN] resourceAwsASGRead(%s): failed to list minions for taint drift detection: %s", id, lerr)
+	} else if list != nil {
+		var referenceTaints []duplosdk.DuploMinionTaint
+		hasDivergence := false
+		for _, minion := range *list {
+			if minion.AsgName != profile.FriendlyName {
+				continue
+			}
+			if referenceTaints == nil {
+				referenceTaints = minion.Taints
+				continue
+			}
+			if !taintSetsEqual(referenceTaints, minion.Taints) {
+				hasDivergence = true
+				log.Printf("[WARN] resourceAwsASGRead(%s): minion %s has divergent taints", id, minion.PrivateIpAddress)
+			}
+		}
+		if hasDivergence {
+			// Force drift by clearing taints — next apply will re-converge all nodes.
+			d.Set("taints", []interface{}{})
+		} else if referenceTaints != nil {
+			d.Set("taints", flattenMinionTaints(referenceTaints))
+		}
+	}
+
 	log.Printf("[TRACE] resourceAwsASGRead(%s): end", id)
 	return nil
 }
@@ -870,6 +906,21 @@ func expandAsgProfile(d *schema.ResourceData) *duplosdk.DuploAsgProfile {
 	return asgProfile
 }
 
+// suppressOmittedOnDemandPercentage suppresses the diff for
+// on_demand_percentage_above_base_capacity only when the user omitted it from config.
+// The backend converges the stored value to 100 (its coercion default), which flatten
+// writes into state; without this, an omitted config (0) perpetually diffs against
+// state (100). An explicitly-written value (including 0) is NOT suppressed, so real
+// changes still apply. Reads GetRawConfig so it sees what the user wrote, not state.
+//
+// Suppress only a KNOWN omission. A value that is unknown at plan time (e.g. driven by
+// a variable or another resource's computed output) must not be suppressed — doing so
+// would hide a real pending change — so we gate on `known`.
+func suppressOmittedOnDemandPercentage(k, old, new string, d *schema.ResourceData) bool {
+	_, explicit, known := asgConfiguredOnDemandPercentage(d.GetRawConfig())
+	return known && !explicit
+}
+
 func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMixedInstancesPolicy {
 	v, ok := d.GetOk("mixed_instances_policy")
 	if !ok || len(v.([]interface{})) == 0 {
@@ -943,9 +994,11 @@ func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMix
 			val := v.(int)
 			distribution.OnDemandBaseCapacity = &val
 		}
-		if v, ok := distMap["on_demand_percentage_above_base_capacity"]; ok {
-			val := v.(int)
+		if pct, explicit, _ := asgConfiguredOnDemandPercentage(d.GetRawConfig()); explicit {
+			val := pct
+			flag := true
 			distribution.OnDemandPercentageAboveBaseCapacity = &val
+			distribution.OnDemandPercentageAboveBaseCapacityExplicit = &flag
 		}
 		if v, ok := distMap["spot_instance_pools"]; ok && v.(int) > 0 {
 			val := v.(int)
@@ -955,6 +1008,68 @@ func expandAsgMixedInstancesPolicy(d *schema.ResourceData) *duplosdk.DuploAsgMix
 	}
 
 	return policy
+}
+
+// asgConfiguredOnDemandPercentage extracts
+// mixed_instances_policy[0].instances_distribution[0].on_demand_percentage_above_base_capacity
+// from the raw config (via GetRawConfig; works with both *schema.ResourceData and
+// *schema.ResourceDiff). Mirrors the s3ConfiguredKmsKeyId pattern.
+//
+//   - explicit is true only for a known, non-null value the user wrote (including 0).
+//     expand sends that value plus the Explicit flag so a literal 0 is honored instead
+//     of coerced to 100.
+//   - known is false when the attribute (or an enclosing block) is unknown at plan time
+//     — e.g. driven by a variable or another resource's computed output. An unknown
+//     value must NOT be treated as "omitted"; suppressing its diff would hide a real
+//     pending change (same pitfall guarded against in s3ConfiguredKmsKeyId). Callers
+//     must not suppress when known is false.
+//
+// A genuine omission (the attribute or an enclosing block absent/null in config) returns
+// (0, false, true): a known omission, which is the only case a caller may suppress.
+func asgConfiguredOnDemandPercentage(raw cty.Value) (value int, explicit bool, known bool) {
+	if !raw.IsKnown() {
+		return 0, false, false
+	}
+	if raw.IsNull() {
+		return 0, false, true
+	}
+	mip := raw.GetAttr("mixed_instances_policy")
+	if !mip.IsKnown() {
+		return 0, false, false
+	}
+	if mip.IsNull() || mip.LengthInt() == 0 {
+		return 0, false, true
+	}
+	mipBlock := mip.AsValueSlice()[0]
+	if !mipBlock.IsKnown() {
+		return 0, false, false
+	}
+	if mipBlock.IsNull() {
+		return 0, false, true
+	}
+	dist := mipBlock.GetAttr("instances_distribution")
+	if !dist.IsKnown() {
+		return 0, false, false
+	}
+	if dist.IsNull() || dist.LengthInt() == 0 {
+		return 0, false, true
+	}
+	distBlock := dist.AsValueSlice()[0]
+	if !distBlock.IsKnown() {
+		return 0, false, false
+	}
+	if distBlock.IsNull() {
+		return 0, false, true
+	}
+	pct := distBlock.GetAttr("on_demand_percentage_above_base_capacity")
+	if !pct.IsKnown() {
+		return 0, false, false
+	}
+	if pct.IsNull() {
+		return 0, false, true
+	}
+	i64, _ := pct.AsBigFloat().Int64()
+	return int(i64), true, true
 }
 
 func flattenAsgMixedInstancesPolicy(policy *duplosdk.DuploAsgMixedInstancesPolicy) []interface{} {
@@ -1087,13 +1202,31 @@ func asgtWaitUntilCapacityReady(ctx context.Context, c *duplosdk.Client, tenantI
 	return err
 }
 
+func taintSetsEqual(a, b []duplosdk.DuploMinionTaint) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	m := make(map[string]duplosdk.DuploMinionTaint, len(a))
+	for _, t := range a {
+		m[strings.ToLower(t.Key)] = t
+	}
+	for _, t := range b {
+		ref, ok := m[strings.ToLower(t.Key)]
+		if !ok || ref.Value != t.Value || ref.Effect != t.Effect {
+			return false
+		}
+	}
+	return true
+}
+
 func needsResourceAwsASGUpdate(d *schema.ResourceData) bool {
 	return d.HasChange("instance_count") ||
 		d.HasChange("min_instance_count") ||
 		d.HasChange("max_instance_count") ||
 		d.HasChange("friendly_name") ||
 		d.HasChange("enabled_metrics") ||
-		d.HasChange("mixed_instances_policy")
+		d.HasChange("mixed_instances_policy") ||
+		d.HasChange("taints")
 }
 
 func getCustomDataTagsUpdates(d *schema.ResourceData) []duplosdk.CustomDataUpdate {

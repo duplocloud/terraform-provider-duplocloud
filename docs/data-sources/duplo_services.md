@@ -44,6 +44,7 @@ Read-Only:
 - `hpa_specs` (String)
 - `is_daemonset` (Boolean)
 - `is_unique_k8s_node_required` (Boolean)
+- `k8s_worker_os` (String)
 - `lb_synced_deployment` (Boolean)
 - `name` (String)
 - `other_docker_config` (String)

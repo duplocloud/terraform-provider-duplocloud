@@ -62,6 +62,7 @@ output "bucket_domain_name" {
 
 Read-Only:
 
+- `kms_key_id` (String)
 - `method` (String)
 
 
