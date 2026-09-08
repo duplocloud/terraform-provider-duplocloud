@@ -37,6 +37,14 @@ func daemonSetSpecFields() map[string]*schema.Schema {
 	}, false)
 	restartPolicy.Description = "Restart policy for all containers within the pod. DaemonSets only support `Always`. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy."
 
+	// A pod template must declare at least one container; the shared podSpecFields leaves the
+	// list optional, which lets an empty spec {} reach the backend and fail there. Enforce the
+	// requirement at plan time for this resource.
+	container := podTemplateSpecSchema.Schema["container"]
+	container.Required = true
+	container.Optional = false
+	container.MinItems = 1
+
 	return map[string]*schema.Schema{
 		"min_ready_seconds": {
 			Type:         schema.TypeInt,

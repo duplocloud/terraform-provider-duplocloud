@@ -100,7 +100,7 @@ func (c *Client) GetDuploServicesPrefix(tenantID, prefix string) (string, Client
 
 // GetResourcePrefix builds a duplo resource prefix, given a tenant ID.
 func (c *Client) GetResourcePrefix(prefix, tenantID string) (string, ClientError) {
-	tenant, err := c.TenantGetV3(tenantID)
+	tenant, err := c.GetTenantForUser(tenantID)
 	if err != nil {
 		return "", err
 	}
