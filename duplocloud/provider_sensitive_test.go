@@ -12,9 +12,10 @@ import (
 
 // credentialNamePattern matches attribute names that usually hold credential
 // material. It is deliberately broad; everything it catches is either marked
-// Sensitive or listed in reviewedNonCredentials below.
+// Sensitive or listed in reviewedNonCredentials below. The trailing s? matters:
+// without it a plural name such as auth_tokens or api_keys slips through.
 var credentialNamePattern = regexp.MustCompile(
-	`(^|_)(password|passwd|pwd|secret|token|credentials?|private_key|access_key|api_key|apikey|master_key|connection_string)($|_)`,
+	`(^|_)(password|passwd|pwd|secret|token|credential|private_key|access_key|api_key|apikey|master_key|connection_string)s?($|_)`,
 )
 
 // reviewedNonCredentials are attributes the pattern catches that do not hold
@@ -80,10 +81,7 @@ func TestCredentialAttributesAreSensitive(t *testing.T) {
 			if s.Sensitive {
 				return
 			}
-			// Only value-bearing string-ish types can leak a credential.
-			switch s.Type {
-			case schema.TypeString, schema.TypeMap:
-			default:
+			if !holdsCredentialText(s) {
 				return
 			}
 			if !credentialNamePattern.MatchString(attr) {
@@ -108,6 +106,24 @@ func TestCredentialAttributesAreSensitive(t *testing.T) {
 		t.Errorf("%d attribute(s) look like credentials but are not marked Sensitive: true.\n"+
 			"Add Sensitive: true, or add the name to reviewedNonCredentials with a reason.\n\n%s",
 			len(findings), strings.Join(findings, "\n"))
+	}
+}
+
+// holdsCredentialText reports whether an attribute can carry a credential as
+// its own value: a string, a map, or a list/set of strings. Terraform renders
+// the elements of a list or set in plan output too, so a list of strings leaks
+// just as readily as a bare string. A list or set of nested blocks carries no
+// value of its own, so it is skipped here — walkSchema descends into those and
+// checks the attributes inside instead.
+func holdsCredentialText(s *schema.Schema) bool {
+	switch s.Type {
+	case schema.TypeString, schema.TypeMap:
+		return true
+	case schema.TypeList, schema.TypeSet:
+		elem, ok := s.Elem.(*schema.Schema)
+		return ok && elem.Type == schema.TypeString
+	default:
+		return false
 	}
 }
 

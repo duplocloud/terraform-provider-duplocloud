@@ -190,7 +190,7 @@ See AWS documentation for the [available instance types](https://docs.aws.amazon
 
 ### Optional
 
-- `auth_token` (String, Sensitive) Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.
+- `auth_token` (String, Sensitive) Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is set to `true`.
 
 See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.
 - `automatic_failover_enabled` (Boolean) Enables automatic failover.

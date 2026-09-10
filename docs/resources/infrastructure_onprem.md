@@ -46,7 +46,7 @@ resource "duplocloud_infrastructure_onprem" "infra" {
 
 ### Required
 
-- `api_token` (String, Sensitive) Token to access cluster API's
+- `api_token` (String, Sensitive) Token to access cluster APIs
 - `cluster_certificate_authority_data` (String) Required to validate API server certificates and kubelet client certificates
 - `cluster_endpoint` (String) Endpoint URL of K8 cluster
 - `cluster_name` (String) Name of the on premise k8 cluster
