@@ -1167,7 +1167,11 @@ func expandAwsCloudfrontDistributionDefaultCacheBehavior(m map[string]interface{
 
 	}
 
-	// TODO Handle "trusted_key_groups"
+	if v, ok := m["trusted_key_groups"]; ok {
+		dcb.TrustedKeyGroups = expandTrustedKeyGroups(v.([]interface{}))
+	} else {
+		dcb.TrustedKeyGroups = expandTrustedKeyGroups([]interface{}{})
+	}
 
 	if v, ok := m["trusted_signers"]; ok {
 		dcb.TrustedSigners = expandTrustedSigners(v.([]interface{}))
@@ -1235,7 +1239,11 @@ func expandAwsCloudfrontDistributionCacheBehavior(m map[string]interface{}) dupl
 		}
 	}
 
-	// TODO Handle "trusted_key_groups"
+	if v, ok := m["trusted_key_groups"]; ok {
+		cb.TrustedKeyGroups = expandTrustedKeyGroups(v.([]interface{}))
+	} else {
+		cb.TrustedKeyGroups = expandTrustedKeyGroups([]interface{}{})
+	}
 
 	if v, ok := m["trusted_signers"]; ok {
 		cb.TrustedSigners = expandTrustedSigners(v.([]interface{}))
@@ -1335,6 +1343,19 @@ func expandQueryStringCacheKeys(d []interface{}) *duplosdk.DuploCFDStringItems {
 		Quantity: len(d),
 		Items:    expandStringList(d),
 	}
+}
+
+func expandTrustedKeyGroups(s []interface{}) *duplosdk.DuploCFDTrustedKeyGroups {
+	var tkg duplosdk.DuploCFDTrustedKeyGroups
+	if len(s) > 0 {
+		tkg.Quantity = len(s)
+		tkg.Items = expandStringList(s)
+		tkg.Enabled = true
+	} else {
+		tkg.Quantity = 0
+		tkg.Enabled = false
+	}
+	return &tkg
 }
 
 func expandTrustedSigners(s []interface{}) *duplosdk.DuploCFDTrustedSigners {
@@ -1805,6 +1826,9 @@ func flattenCloudFrontDefaultCacheBehavior(dcb *duplosdk.DuploAwsCloudfrontDefau
 	if len(dcb.TrustedSigners.Items) > 0 {
 		m["trusted_signers"] = flattenTrustedSigners(dcb.TrustedSigners)
 	}
+	if dcb.TrustedKeyGroups != nil && len(dcb.TrustedKeyGroups.Items) > 0 {
+		m["trusted_key_groups"] = flattenTrustedKeyGroups(dcb.TrustedKeyGroups)
+	}
 	if dcb.AllowedMethods != nil {
 		m["allowed_methods"] = flattenAllowedMethods(dcb.AllowedMethods)
 	}
@@ -1871,6 +1895,13 @@ func flattenCookieNames(cn *duplosdk.DuploCFDStringItems) []interface{} {
 func flattenTrustedSigners(ts *duplosdk.DuploCFDTrustedSigners) []interface{} {
 	if ts.Items != nil {
 		return flattenStringList(ts.Items)
+	}
+	return []interface{}{}
+}
+
+func flattenTrustedKeyGroups(tkg *duplosdk.DuploCFDTrustedKeyGroups) []interface{} {
+	if tkg.Items != nil {
+		return flattenStringList(tkg.Items)
 	}
 	return []interface{}{}
 }
@@ -1958,6 +1989,9 @@ func flattenCacheBehavior(cb duplosdk.DuploAwsCloudfrontCacheBehavior) map[strin
 
 	if len(cb.TrustedSigners.Items) > 0 {
 		m["trusted_signers"] = flattenTrustedSigners(cb.TrustedSigners)
+	}
+	if cb.TrustedKeyGroups != nil && len(cb.TrustedKeyGroups.Items) > 0 {
+		m["trusted_key_groups"] = flattenTrustedKeyGroups(cb.TrustedKeyGroups)
 	}
 	if cb.AllowedMethods != nil {
 		m["allowed_methods"] = flattenAllowedMethods(cb.AllowedMethods)
