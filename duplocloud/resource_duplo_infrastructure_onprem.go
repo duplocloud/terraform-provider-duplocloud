@@ -87,6 +87,7 @@ func resourceInfrastructureOnprem() *schema.Resource {
 			"api_token": {
 				Description: "Token to access cluster API's",
 				Type:        schema.TypeString,
+				Sensitive:   true,
 				ForceNew:    true,
 				Required:    true,
 			},

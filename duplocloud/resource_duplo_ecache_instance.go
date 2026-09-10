@@ -140,9 +140,10 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 		"auth_token": {
 			Description: "Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.\n\n" +
 				"See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.",
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
+			Type:      schema.TypeString,
+			Sensitive: true,
+			Optional:  true,
+			ForceNew:  true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(16, 128),
 				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9!&#$<>^-]*$`), "Invalid AWS Elasticache Redis password"),
