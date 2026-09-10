@@ -78,6 +78,7 @@ func commonVolumeSources() map[string]*schema.Schema {
 		"local": {
 			Type:        schema.TypeList,
 			Description: "Represents a mounted local storage device such as a disk, partition or directory. Local volumes can only be used as a statically created PersistentVolume. Dynamic provisioning is not supported yet. More info: https://kubernetes.io/docs/concepts/storage/volumes#local",
+			Deprecated:  "A local volume can only back a PersistentVolume, so this block is ignored on a pod volume. Use host_path, or reference a PersistentVolume through persistent_volume_claim.",
 			Optional:    true,
 			MaxItems:    1,
 			Elem: &schema.Resource{
