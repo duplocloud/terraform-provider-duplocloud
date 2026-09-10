@@ -326,7 +326,7 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	// Look up the record the replica hangs off: the cluster's own record for a
 	// cluster, or the writer instance otherwise. For an Aurora global database
 	// secondary this is the secondary cluster's record in the secondary tenant.
-	identifier := d.Get("cluster_identifier").(string)
+	identifier := strings.TrimSpace(d.Get("cluster_identifier").(string))
 	duploWriterInstance, err := c.RdsInstanceGetByName(tenantID, rdsClusterRecordName(identifier))
 	if err != nil {
 		return diag.Errorf("Error looking up RDS cluster '%s' in tenant %s for read replica '%s': %s", identifier, tenantID, duplo.Name, err)
@@ -342,7 +342,7 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	duplo.Identifier = duplo.Name
 	duplo.Engine = duploWriterInstance.Engine
 	duplo.Cloud = duploWriterInstance.Cloud
-	if strings.HasSuffix(identifier, "-cluster") {
+	if hasRdsClusterSuffix(identifier) {
 		duplo.ClusterIdentifier = identifier
 	} else {
 		duplo.ReplicationSourceIdentifier = identifier
@@ -831,10 +831,19 @@ func diffIgnoreDefaultParamaterGroupName(k, old, new string, d *schema.ResourceD
 // so a name that happens to contain "-cluster" in the middle stays intact.
 func rdsClusterRecordName(clusterIdentifier string) string {
 	name := strings.TrimSpace(clusterIdentifier)
-	if strings.HasSuffix(strings.ToLower(name), "-cluster") {
-		name = name[:len(name)-len("-cluster")]
+	if hasRdsClusterSuffix(name) {
+		name = name[:len(name)-len(rdsClusterSuffix)]
 	}
 	return name
+}
+
+const rdsClusterSuffix = "-cluster"
+
+// hasRdsClusterSuffix reports whether an identifier names a cluster rather than
+// a writer instance. The check is case-insensitive so that the record lookup
+// and the request classification in Create always agree.
+func hasRdsClusterSuffix(identifier string) bool {
+	return strings.HasSuffix(strings.ToLower(identifier), rdsClusterSuffix)
 }
 
 // validateReadReplicaClusterTarget rejects cluster targets that cannot take a

@@ -61,6 +61,21 @@ func TestRdsClusterRecordName(t *testing.T) {
 	}
 }
 
+func TestHasRdsClusterSuffix(t *testing.T) {
+	cases := map[string]bool{
+		"duploservices-myapp-mydb-cluster": true,
+		"duploservices-myapp-mydb-CLUSTER": true,
+		"duploservices-myapp-mydb":         false,
+		"duploservices-myapp-cluster-db":   false,
+		"":                                 false,
+	}
+	for given, expected := range cases {
+		if got := hasRdsClusterSuffix(given); got != expected {
+			t.Errorf("hasRdsClusterSuffix(%q) = %v, want %v", given, got, expected)
+		}
+	}
+}
+
 func TestValidateReadReplicaClusterTarget(t *testing.T) {
 	cases := []struct {
 		name    string
