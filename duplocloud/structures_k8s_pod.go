@@ -1205,9 +1205,10 @@ func expandEmptyDir(dir []interface{}) (*v1.EmptyDirVolumeSource, error) {
 
 		dirBody.Medium = v1.StorageMedium(med)
 	}
-	if v, ok := dirMap["size_limit"]; ok {
-
-		qty, err := resource.ParseQuantity(v.(string))
+	// size_limit is optional with no default, so an unset one arrives as "" -
+	// parsing that fails with a quantity regex error that names no attribute.
+	if v, ok := dirMap["size_limit"].(string); ok && v != "" {
+		qty, err := resource.ParseQuantity(v)
 		if err != nil {
 			return nil, err
 		}
