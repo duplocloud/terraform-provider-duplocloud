@@ -843,7 +843,10 @@ const rdsClusterSuffix = "-cluster"
 // a writer instance. The check is case-insensitive so that the record lookup
 // and the request classification in Create always agree.
 func hasRdsClusterSuffix(identifier string) bool {
-	return strings.HasSuffix(strings.ToLower(identifier), rdsClusterSuffix)
+	if len(identifier) < len(rdsClusterSuffix) {
+		return false
+	}
+	return strings.EqualFold(identifier[len(identifier)-len(rdsClusterSuffix):], rdsClusterSuffix)
 }
 
 // validateReadReplicaClusterTarget rejects cluster targets that cannot take a
