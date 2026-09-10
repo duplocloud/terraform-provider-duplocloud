@@ -71,34 +71,36 @@ var reviewedNonCredentials = map[string]string{
 
 // TestCredentialAttributesAreSensitive asserts that every attribute whose name
 // indicates credential material is marked Sensitive: true, so Terraform renders
-// it as (sensitive value) rather than printing it in plan output.
+// it as (sensitive value) rather than printing it in plan output. It covers the
+// provider configuration block, every resource and every data source.
 func TestCredentialAttributesAreSensitive(t *testing.T) {
 	p := Provider()
 
 	var findings []string
-	check := func(kind, name string, r *schema.Resource) {
-		walkSchema(fmt.Sprintf("%s %q", kind, name), r.Schema, func(path, attr string, s *schema.Schema) {
-			if s.Sensitive {
-				return
-			}
-			if !holdsCredentialText(s) {
-				return
-			}
-			if !credentialNamePattern.MatchString(attr) {
-				return
-			}
-			if _, ok := reviewedNonCredentials[attr]; ok {
-				return
-			}
-			findings = append(findings, fmt.Sprintf("%s -> %s", path, attr))
-		})
+	visit := func(path, attr string, s *schema.Schema) {
+		if s.Sensitive {
+			return
+		}
+		if !holdsCredentialText(s) {
+			return
+		}
+		if !credentialNamePattern.MatchString(attr) {
+			return
+		}
+		if _, ok := reviewedNonCredentials[attr]; ok {
+			return
+		}
+		findings = append(findings, fmt.Sprintf("%s -> %s", path, attr))
 	}
 
+	// The provider's own configuration block is covered alongside the resources
+	// and data sources, so duplo_token cannot lose its flag unnoticed.
+	walkSchema("provider configuration", p.Schema, visit)
 	for name, r := range p.ResourcesMap {
-		check("resource", name, r)
+		walkSchema(fmt.Sprintf("resource %q", name), r.Schema, visit)
 	}
 	for name, r := range p.DataSourcesMap {
-		check("data source", name, r)
+		walkSchema(fmt.Sprintf("data source %q", name), r.Schema, visit)
 	}
 
 	if len(findings) > 0 {
