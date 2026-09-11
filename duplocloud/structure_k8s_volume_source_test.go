@@ -2,6 +2,7 @@ package duplocloud
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -492,5 +493,35 @@ func TestExpandPodSpecVolumesRoundTrip(t *testing.T) {
 				t.Fatalf("round trip changed the volume:\n before: %#v\n after:  %#v", expanded[0], reExpanded[0])
 			}
 		})
+	}
+}
+
+// TestExpandPodSpecVolumesRejectsLocal pins the one volume source that has no
+// pod-level equivalent. LocalVolumeSource only exists on a PersistentVolume, so
+// there is nothing to expand a local block into - left alone it would reach the
+// API with an empty VolumeSource and come back as an emptyDir, which is the
+// DUPLO-44511 regression wearing a different hat.
+func TestExpandPodSpecVolumesRejectsLocal(t *testing.T) {
+	_, err := expandPodSpecVolumes([]interface{}{map[string]interface{}{
+		"name":  "ssd",
+		"local": []interface{}{map[string]interface{}{"path": "/mnt/disks/ssd1"}},
+	}})
+	if err == nil {
+		t.Fatal("expected a local volume to be rejected, got no error")
+	}
+	if !strings.Contains(err.Error(), "persistent_volume_claim") {
+		t.Fatalf("error should point at the supported alternatives, got: %s", err)
+	}
+
+	// An empty local block carries no configuration, so it must not trip the
+	// check - Terraform hands one over for an unset optional block.
+	if _, err := expandPodSpecVolumes([]interface{}{map[string]interface{}{
+		"name":  "cache",
+		"local": []interface{}{},
+		"empty_dir": []interface{}{map[string]interface{}{
+			"medium": "Memory",
+		}},
+	}}); err != nil {
+		t.Fatalf("an unset local block should be ignored, got: %s", err)
 	}
 }

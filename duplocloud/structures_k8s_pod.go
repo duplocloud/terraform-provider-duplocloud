@@ -982,6 +982,14 @@ func expandPodSpecVolumes(volumes []interface{}) ([]v1.Volume, error) {
 			vol.VsphereVolume = expandVsphereVirtualDiskVolumeSource(vmp)
 		}
 
+		// A local volume only exists on a PersistentVolume. There is nothing to
+		// expand it into, so the volume would reach the API with no source and
+		// Kubernetes would default it to `emptyDir: {}` - fail instead of
+		// quietly handing back a different volume than the one declared.
+		if vmp, ok := mp["local"].([]interface{}); ok && len(vmp) > 0 && vmp[0] != nil {
+			return nil, fmt.Errorf("volume %q: a local block cannot be used on a pod volume, because LocalVolumeSource only exists on a PersistentVolume. Use host_path for a path on the node, or reference the PersistentVolume through persistent_volume_claim", vol.Name)
+		}
+
 		vols = append(vols, vol)
 	}
 	return vols, nil
