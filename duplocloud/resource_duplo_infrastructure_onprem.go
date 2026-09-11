@@ -85,8 +85,9 @@ func resourceInfrastructureOnprem() *schema.Resource {
 				ValidateFunc: validation.IsURLWithHTTPS,
 			},
 			"api_token": {
-				Description: "Token to access cluster API's",
+				Description: "Token to access cluster APIs",
 				Type:        schema.TypeString,
+				Sensitive:   true,
 				ForceNew:    true,
 				Required:    true,
 			},
