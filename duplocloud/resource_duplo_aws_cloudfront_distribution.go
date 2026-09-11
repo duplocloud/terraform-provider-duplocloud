@@ -2362,13 +2362,34 @@ func preserveUnmanagedTrustedKeyGroups(d *schema.ResourceData, existingCfd, upda
 		return
 	}
 	updatedItems := *updatedCfd.CacheBehaviors.Items
-	existingItems := *existingCfd.CacheBehaviors.Items
+	configured := make([]bool, len(updatedItems))
 	for i := range updatedItems {
-		if i >= len(existingItems) {
-			continue // newly added behavior, nothing existing to preserve
+		configured[i] = cacheBehaviorConfiguresTrustedKeyGroups(raw, "ordered_cache_behavior", i)
+	}
+	mergeUnmanagedTrustedKeyGroups(updatedItems, *existingCfd.CacheBehaviors.Items, configured)
+}
+
+// mergeUnmanagedTrustedKeyGroups copies TrustedKeyGroups from existingItems onto
+// updatedItems in place, for any index whose configured flag is false.
+//
+// ordered_cache_behavior is a TypeList, so inserting, removing, or reordering a
+// behavior shifts indices - matching updatedItems[i] to existingItems[i] would
+// preserve the wrong behavior's TrustedKeyGroups onto the wrong path. PathPattern is
+// required and AWS treats it as the unique identity of a cache behavior, so we match
+// on that instead. An updated item whose PathPattern has no existing match (a
+// genuinely new behavior) is left as expand computed it.
+func mergeUnmanagedTrustedKeyGroups(updatedItems, existingItems []duplosdk.DuploAwsCloudfrontCacheBehavior, configured []bool) {
+	existingByPath := make(map[string]*duplosdk.DuploAwsCloudfrontCacheBehavior, len(existingItems))
+	for i := range existingItems {
+		existingByPath[existingItems[i].PathPattern] = &existingItems[i]
+	}
+
+	for i := range updatedItems {
+		if i < len(configured) && configured[i] {
+			continue
 		}
-		if !cacheBehaviorConfiguresTrustedKeyGroups(raw, "ordered_cache_behavior", i) {
-			updatedItems[i].TrustedKeyGroups = existingItems[i].TrustedKeyGroups
+		if existing, ok := existingByPath[updatedItems[i].PathPattern]; ok {
+			updatedItems[i].TrustedKeyGroups = existing.TrustedKeyGroups
 		}
 	}
 }

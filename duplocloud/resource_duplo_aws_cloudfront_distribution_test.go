@@ -158,3 +158,66 @@ func Test_cacheBehaviorConfiguresTrustedKeyGroups(t *testing.T) {
 		})
 	}
 }
+
+func Test_mergeUnmanagedTrustedKeyGroups(t *testing.T) {
+	protectedTKG := &duplosdk.DuploCFDTrustedKeyGroups{Enabled: true, Quantity: 1, Items: []string{"kg-protected"}}
+
+	t.Run("a new behavior inserted at index 0 does not inherit the old index-0 behavior's key groups", func(t *testing.T) {
+		// Before: only "/protected/*" existed, with trusted key groups.
+		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/protected/*", TrustedKeyGroups: protectedTKG},
+		}
+		// After: user inserts "/public/*" ahead of it. Neither behavior manages
+		// trusted_key_groups in config (configured is all false).
+		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/public/*", TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}},
+			{PathPattern: "/protected/*", TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}},
+		}
+
+		mergeUnmanagedTrustedKeyGroups(updated, existing, []bool{false, false})
+
+		if updated[0].TrustedKeyGroups.Enabled {
+			t.Errorf("expected /public/* to remain disabled, got %+v", updated[0].TrustedKeyGroups)
+		}
+		if !reflect.DeepEqual(updated[1].TrustedKeyGroups, protectedTKG) {
+			t.Errorf("expected /protected/* to keep its existing key groups, got %+v", updated[1].TrustedKeyGroups)
+		}
+	})
+
+	t.Run("reordering behaviors still preserves by path, not position", func(t *testing.T) {
+		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/a/*", TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}},
+			{PathPattern: "/b/*", TrustedKeyGroups: protectedTKG},
+		}
+		// Reordered: /b/* is now first.
+		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/b/*", TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}},
+			{PathPattern: "/a/*", TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}},
+		}
+
+		mergeUnmanagedTrustedKeyGroups(updated, existing, []bool{false, false})
+
+		if !reflect.DeepEqual(updated[0].TrustedKeyGroups, protectedTKG) {
+			t.Errorf("expected /b/* to keep its key groups after reorder, got %+v", updated[0].TrustedKeyGroups)
+		}
+		if updated[1].TrustedKeyGroups.Enabled {
+			t.Errorf("expected /a/* to remain disabled, got %+v", updated[1].TrustedKeyGroups)
+		}
+	})
+
+	t.Run("an explicitly configured behavior is never overwritten", func(t *testing.T) {
+		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/a/*", TrustedKeyGroups: protectedTKG},
+		}
+		explicit := &duplosdk.DuploCFDTrustedKeyGroups{Enabled: true, Quantity: 1, Items: []string{"kg-explicit"}}
+		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/a/*", TrustedKeyGroups: explicit},
+		}
+
+		mergeUnmanagedTrustedKeyGroups(updated, existing, []bool{true})
+
+		if !reflect.DeepEqual(updated[0].TrustedKeyGroups, explicit) {
+			t.Errorf("expected explicitly configured value to be kept, got %+v", updated[0].TrustedKeyGroups)
+		}
+	})
+}
