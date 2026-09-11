@@ -98,3 +98,30 @@ func TestEcacheInstanceWaitUntilSettled(t *testing.T) {
 		}
 	})
 }
+
+// TestEcacheInstanceStatusWaitsSurviveUnreadableInstance covers the status waits against an
+// instance EcacheInstanceGet cannot read: it reports that as (nil, nil), which both waits
+// used to dereference.
+func TestEcacheInstanceStatusWaitsSurviveUnreadableInstance(t *testing.T) {
+	t.Run("wait until available", func(t *testing.T) {
+		srv, c := ecacheSettleServer(t, []string{`{}`})
+		defer srv.Close()
+
+		// The wait's own timeout is 40 minutes, so bound it from the context instead.
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		if err := ecacheInstanceWaitUntilAvailable(ctx, c, "t1", "qagrpg"); err == nil {
+			t.Fatal("expected the wait to keep polling an unreadable instance until the context expired")
+		}
+	})
+
+	t.Run("wait until unavailable", func(t *testing.T) {
+		srv, c := ecacheSettleServer(t, []string{`{}`})
+		defer srv.Close()
+
+		if err := ecacheInstanceWaitUntilUnavailable(context.Background(), c, "t1", "qagrpg", time.Second); err == nil {
+			t.Fatal("expected the wait to keep polling an unreadable instance until it timed out")
+		}
+	})
+}

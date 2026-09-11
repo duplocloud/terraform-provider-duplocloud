@@ -730,6 +730,13 @@ func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, t
 			if err != nil {
 				return 0, "", err
 			}
+
+			// EcacheInstanceGet reports an instance it cannot find as (nil, nil). Hold the
+			// wait in a pending state rather than dereferencing it - a read that comes back
+			// empty should not end the wait, and must not panic the provider.
+			if resp == nil {
+				return &duplosdk.DuploEcacheInstance{}, "processing", nil
+			}
 			if resp.InstanceStatus == "" {
 				resp.InstanceStatus = "processing"
 			}
@@ -757,6 +764,13 @@ func ecacheInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client,
 			resp, err := c.EcacheInstanceGet(tenantID, name)
 			if err != nil {
 				return 0, "", err
+			}
+
+			// EcacheInstanceGet reports an instance it cannot find as (nil, nil). Hold the
+			// wait in its pending state rather than dereferencing it, so an empty read is
+			// treated as "has not transitioned yet" instead of panicking the provider.
+			if resp == nil {
+				return &duplosdk.DuploEcacheInstance{}, "available", nil
 			}
 			if resp.InstanceStatus == "" {
 				resp.InstanceStatus = "processing"
