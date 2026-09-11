@@ -976,6 +976,7 @@ func resourceAwsCloudfrontDistributionV2Update(ctx context.Context, d *schema.Re
 	rq.Comment = d.Get("fullname").(string)
 	// Preserve OAI and OAC from existing config, as these are managed by the backend
 	updateS3OAI(duplo.Distribution.DistributionConfig, rq)
+	preserveUnmanagedTrustedKeyGroups(d, duplo.Distribution.DistributionConfig, rq)
 	resp, err := c.AwsCloudfrontDistributionUpdateV2(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreateV2{
 		Id:                   cfdId,
 		DistributionConfig:   rq,
