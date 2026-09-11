@@ -103,6 +103,9 @@ func Test_cacheBehaviorConfiguresTrustedKeyGroups(t *testing.T) {
 		"trusted_key_groups": cty.NullVal(cty.List(cty.String)),
 	})
 	behaviorObjType := cty.Object(map[string]cty.Type{"trusted_key_groups": cty.List(cty.String)})
+	behaviorWithUnknownAttr := cty.ObjectVal(map[string]cty.Value{
+		"trusted_key_groups": cty.UnknownVal(cty.List(cty.String)),
+	})
 
 	cases := []struct {
 		name     string
@@ -145,6 +148,27 @@ func Test_cacheBehaviorConfiguresTrustedKeyGroups(t *testing.T) {
 			block:    cty.ListValEmpty(behaviorObjType),
 			index:    0,
 			expected: false,
+		},
+		{
+			// e.g. trusted_key_groups = [some_resource.x.id] where some_resource.x
+			// hasn't resolved yet - must be treated as managed, not absent, or the
+			// caller would clobber the pending value with stale existing data.
+			name:     "attribute value itself is unknown",
+			block:    cty.ListVal([]cty.Value{behaviorWithUnknownAttr}),
+			index:    0,
+			expected: true,
+		},
+		{
+			name:     "behavior object itself is unknown",
+			block:    cty.ListVal([]cty.Value{cty.UnknownVal(behaviorObjType)}),
+			index:    0,
+			expected: true,
+		},
+		{
+			name:     "block itself is unknown",
+			block:    cty.UnknownVal(cty.List(behaviorObjType)),
+			index:    0,
+			expected: true,
 		},
 	}
 

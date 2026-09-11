@@ -2394,20 +2394,37 @@ func mergeUnmanagedTrustedKeyGroups(updatedItems, existingItems []duplosdk.Duplo
 	}
 }
 
-// cacheBehaviorConfiguresTrustedKeyGroups reports whether trusted_key_groups is actually
-// present in the raw config for the cache behavior at blockName[index], as opposed to
-// merely present in d.Get() via a carried-forward Computed value.
+// cacheBehaviorConfiguresTrustedKeyGroups reports whether trusted_key_groups should be
+// treated as managed by config for the cache behavior at blockName[index], as opposed to
+// genuinely absent (which lets the caller preserve whatever is already on the backend).
+//
+// An unknown block/attribute (e.g. trusted_key_groups derived from another resource's
+// attribute that isn't resolved yet) is treated as managed, not absent: GetRawConfig
+// reflects what Terraform sent for this apply, and while a fully-resolved apply should
+// have no unknowns left, treating "we can't tell yet" as "absent" would let the caller
+// clobber a real, pending config value with stale existing data - the same class of bug
+// this whole preserve mechanism exists to prevent. Only a known null (the attribute is
+// truly absent from config) counts as absent.
 func cacheBehaviorConfiguresTrustedKeyGroups(raw cty.Value, blockName string, index int) bool {
 	block := raw.GetAttr(blockName)
-	if block.IsNull() || !block.IsKnown() || block.LengthInt() <= index {
+	if block.IsNull() {
+		return false
+	}
+	if !block.IsKnown() {
+		return true
+	}
+	if block.LengthInt() <= index {
 		return false
 	}
 	behavior := block.Index(cty.NumberIntVal(int64(index)))
-	if !behavior.IsKnown() || behavior.IsNull() {
+	if behavior.IsNull() {
 		return false
 	}
+	if !behavior.IsKnown() {
+		return true
+	}
 	trustedKeyGroups := behavior.GetAttr("trusted_key_groups")
-	return trustedKeyGroups.IsKnown() && !trustedKeyGroups.IsNull()
+	return !trustedKeyGroups.IsKnown() || !trustedKeyGroups.IsNull()
 }
 
 func validateCloudDistributionParameters(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
