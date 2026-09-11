@@ -10,6 +10,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -993,6 +994,7 @@ func resourceAwsCloudfrontDistributionUpdate(ctx context.Context, d *schema.Reso
 	rq := expandAwsCloudfrontDistributionConfig(d, true)
 	// Update OAI which is generated at backend
 	updateS3OAI(duplo.Distribution.DistributionConfig, rq)
+	preserveUnmanagedTrustedKeyGroups(d, duplo.Distribution.DistributionConfig, rq)
 
 	resp, err := c.AwsCloudfrontDistributionUpdate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
 		Id:                   cfdId,
@@ -2330,6 +2332,61 @@ func updateS3OAI(existingCfd, updatedCfd *duplosdk.DuploAwsCloudfrontDistributio
 			}
 		}
 	}
+}
+
+// preserveUnmanagedTrustedKeyGroups keeps a cache behavior's TrustedKeyGroups from being
+// clobbered on update when the corresponding config block doesn't manage that attribute.
+//
+// trusted_key_groups is Optional+Computed so this provider can read back and store key
+// groups attached outside Terraform without fighting a permanent diff. But expand always
+// returns a non-nil TrustedKeyGroups (needed so an explicit trusted_key_groups = [] can
+// disable it), and the backend's distribution-config merge only preserves fields it
+// receives as nil - so without this, an update to any unrelated attribute would silently
+// disable trust enforcement whenever a behavior's trusted_key_groups isn't managed here.
+//
+// We check GetRawConfig (not d.Get) because Optional+Computed lets a stale/computed state
+// value leak into d.Get even when the attribute is genuinely absent from config -
+// GetRawConfig is the only way to see whether the user actually wrote it.
+func preserveUnmanagedTrustedKeyGroups(d *schema.ResourceData, existingCfd, updatedCfd *duplosdk.DuploAwsCloudfrontDistributionConfig) {
+	raw := d.GetRawConfig()
+	if raw.IsNull() || !raw.IsKnown() {
+		return
+	}
+
+	if !cacheBehaviorConfiguresTrustedKeyGroups(raw, "default_cache_behavior", 0) {
+		updatedCfd.DefaultCacheBehavior.TrustedKeyGroups = existingCfd.DefaultCacheBehavior.TrustedKeyGroups
+	}
+
+	if updatedCfd.CacheBehaviors == nil || updatedCfd.CacheBehaviors.Items == nil ||
+		existingCfd.CacheBehaviors == nil || existingCfd.CacheBehaviors.Items == nil {
+		return
+	}
+	updatedItems := *updatedCfd.CacheBehaviors.Items
+	existingItems := *existingCfd.CacheBehaviors.Items
+	for i := range updatedItems {
+		if i >= len(existingItems) {
+			continue // newly added behavior, nothing existing to preserve
+		}
+		if !cacheBehaviorConfiguresTrustedKeyGroups(raw, "ordered_cache_behavior", i) {
+			updatedItems[i].TrustedKeyGroups = existingItems[i].TrustedKeyGroups
+		}
+	}
+}
+
+// cacheBehaviorConfiguresTrustedKeyGroups reports whether trusted_key_groups is actually
+// present in the raw config for the cache behavior at blockName[index], as opposed to
+// merely present in d.Get() via a carried-forward Computed value.
+func cacheBehaviorConfiguresTrustedKeyGroups(raw cty.Value, blockName string, index int) bool {
+	block := raw.GetAttr(blockName)
+	if block.IsNull() || !block.IsKnown() || block.LengthInt() <= index {
+		return false
+	}
+	behavior := block.Index(cty.NumberIntVal(int64(index)))
+	if !behavior.IsKnown() || behavior.IsNull() {
+		return false
+	}
+	trustedKeyGroups := behavior.GetAttr("trusted_key_groups")
+	return trustedKeyGroups.IsKnown() && !trustedKeyGroups.IsNull()
 }
 
 func validateCloudDistributionParameters(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
