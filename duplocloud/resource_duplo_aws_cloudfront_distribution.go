@@ -1347,9 +1347,10 @@ func expandQueryStringCacheKeys(d []interface{}) *duplosdk.DuploCFDStringItems {
 
 func expandTrustedKeyGroups(s []interface{}) *duplosdk.DuploCFDTrustedKeyGroups {
 	var tkg duplosdk.DuploCFDTrustedKeyGroups
-	if len(s) > 0 {
-		tkg.Quantity = len(s)
-		tkg.Items = expandStringList(s)
+	items := expandStringList(s)
+	if len(items) > 0 {
+		tkg.Quantity = len(items)
+		tkg.Items = items
 		tkg.Enabled = true
 	} else {
 		tkg.Quantity = 0

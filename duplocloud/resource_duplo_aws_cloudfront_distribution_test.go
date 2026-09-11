@@ -30,6 +30,23 @@ func Test_expandTrustedKeyGroups(t *testing.T) {
 				Items:    []string{"key-group-1", "key-group-2"},
 			},
 		},
+		{
+			name:  "quantity matches filtered items when list contains empty strings",
+			given: []interface{}{"key-group-1", "", "key-group-2"},
+			expected: &duplosdk.DuploCFDTrustedKeyGroups{
+				Enabled:  true,
+				Quantity: 2,
+				Items:    []string{"key-group-1", "key-group-2"},
+			},
+		},
+		{
+			name:  "list of only empty strings disables trusted key groups",
+			given: []interface{}{""},
+			expected: &duplosdk.DuploCFDTrustedKeyGroups{
+				Enabled:  false,
+				Quantity: 0,
+			},
+		},
 	}
 
 	for _, c := range cases {
