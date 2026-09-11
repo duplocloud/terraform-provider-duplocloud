@@ -2353,7 +2353,8 @@ func preserveUnmanagedTrustedKeyGroups(d *schema.ResourceData, existingCfd, upda
 		return
 	}
 
-	if !cacheBehaviorConfiguresTrustedKeyGroups(raw, "default_cache_behavior", 0) {
+	if !cacheBehaviorConfiguresTrustedKeyGroups(raw, "default_cache_behavior", 0) &&
+		!trustedSignersEnabled(updatedCfd.DefaultCacheBehavior.TrustedSigners) {
 		updatedCfd.DefaultCacheBehavior.TrustedKeyGroups = existingCfd.DefaultCacheBehavior.TrustedKeyGroups
 	}
 
@@ -2369,8 +2370,19 @@ func preserveUnmanagedTrustedKeyGroups(d *schema.ResourceData, existingCfd, upda
 	mergeUnmanagedTrustedKeyGroups(updatedItems, *existingCfd.CacheBehaviors.Items, configured)
 }
 
+// trustedSignersEnabled reports whether a cache behavior's TrustedSigners actively
+// restricts access. CloudFront treats trusted signers and trusted key groups as
+// mutually exclusive on a single behavior - it rejects a request enabling both - so a
+// behavior that's actively using trusted_signers must never have an existing
+// TrustedKeyGroups preserved onto it too.
+func trustedSignersEnabled(ts *duplosdk.DuploCFDTrustedSigners) bool {
+	return ts != nil && ts.Enabled
+}
+
 // mergeUnmanagedTrustedKeyGroups copies TrustedKeyGroups from existingItems onto
-// updatedItems in place, for any index whose configured flag is false.
+// updatedItems in place, for any index whose configured flag is false and whose
+// updated behavior isn't actively using trusted_signers instead (see
+// trustedSignersEnabled).
 //
 // ordered_cache_behavior is a TypeList, so inserting, removing, or reordering a
 // behavior shifts indices - matching updatedItems[i] to existingItems[i] would
@@ -2386,6 +2398,9 @@ func mergeUnmanagedTrustedKeyGroups(updatedItems, existingItems []duplosdk.Duplo
 
 	for i := range updatedItems {
 		if i < len(configured) && configured[i] {
+			continue
+		}
+		if trustedSignersEnabled(updatedItems[i].TrustedSigners) {
 			continue
 		}
 		if existing, ok := existingByPath[updatedItems[i].PathPattern]; ok {

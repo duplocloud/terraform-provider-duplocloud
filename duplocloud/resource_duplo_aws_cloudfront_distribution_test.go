@@ -244,4 +244,48 @@ func Test_mergeUnmanagedTrustedKeyGroups(t *testing.T) {
 			t.Errorf("expected explicitly configured value to be kept, got %+v", updated[0].TrustedKeyGroups)
 		}
 	})
+
+	t.Run("a behavior actively using trusted_signers never gets an existing key group preserved onto it", func(t *testing.T) {
+		// Before: "/a/*" was restricted via trusted key groups.
+		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/a/*", TrustedKeyGroups: protectedTKG},
+		}
+		// After: the user switched "/a/*" to trusted_signers. trusted_key_groups
+		// isn't configured (configured=false), so without the trusted_signers guard
+		// this would incorrectly preserve the old key groups alongside the new
+		// signers - CloudFront rejects having both enabled on one behavior.
+		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{
+				PathPattern:      "/a/*",
+				TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false},
+				TrustedSigners:   &duplosdk.DuploCFDTrustedSigners{Enabled: true, Quantity: 1, Items: []string{"111122223333"}},
+			},
+		}
+
+		mergeUnmanagedTrustedKeyGroups(updated, existing, []bool{false})
+
+		if updated[0].TrustedKeyGroups.Enabled {
+			t.Errorf("expected trusted key groups to stay disabled while trusted_signers is active, got %+v", updated[0].TrustedKeyGroups)
+		}
+	})
+}
+
+func Test_trustedSignersEnabled(t *testing.T) {
+	cases := []struct {
+		name     string
+		ts       *duplosdk.DuploCFDTrustedSigners
+		expected bool
+	}{
+		{name: "nil", ts: nil, expected: false},
+		{name: "disabled", ts: &duplosdk.DuploCFDTrustedSigners{Enabled: false}, expected: false},
+		{name: "enabled", ts: &duplosdk.DuploCFDTrustedSigners{Enabled: true, Quantity: 1, Items: []string{"111122223333"}}, expected: true},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if actual := trustedSignersEnabled(c.ts); actual != c.expected {
+				t.Errorf("expected %v, got %v", c.expected, actual)
+			}
+		})
+	}
 }
