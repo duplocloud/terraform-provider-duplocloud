@@ -62,7 +62,9 @@ func TestEcacheInstanceWaitUntilSettled(t *testing.T) {
 		})
 		defer srv.Close()
 
-		last, err := ecacheInstanceWaitUntilSettled(context.Background(), c, "t1", "qagrpg", "replicas", wantReplicas(1))
+		ctx, cancel := bounded()
+		defer cancel()
+		last, err := ecacheInstanceWaitUntilSettled(ctx, c, "t1", "qagrpg", "replicas", wantReplicas(1))
 		if err != nil {
 			t.Fatalf("expected the wait to settle, got: %s", err)
 		}
