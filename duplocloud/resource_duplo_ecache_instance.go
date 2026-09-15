@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
@@ -794,46 +793,39 @@ func ecacheInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client,
 // reported as a successful apply, and stops a later phase from running against nodes that
 // do not exist yet.
 func ecacheInstanceWaitUntilSettled(ctx context.Context, c *duplosdk.Client, tenantID, name, what string, settled func(*duplosdk.DuploEcacheInstance) bool) (*duplosdk.DuploEcacheInstance, error) {
-	// The refresh goroutine outlives the wait when the context is cancelled, so the last
-	// reading is guarded rather than read straight off the closure.
-	var (
-		mu   sync.Mutex
-		last *duplosdk.DuploEcacheInstance
-	)
-	stateConf := &retry.StateChangeConf{
-		Pending:      []string{"pending"},
-		Target:       []string{"settled"},
-		MinTimeout:   ecacheSettlePollInterval,
-		PollInterval: ecacheSettlePollInterval,
-		Timeout:      ecacheSettleTimeout,
-		Refresh: func() (interface{}, string, error) {
-			resp, err := c.EcacheInstanceGet(tenantID, name)
-			if err != nil {
-				return 0, "", err
-			}
+	ctx, cancel := context.WithTimeout(ctx, ecacheSettleTimeout)
+	defer cancel()
 
-			// EcacheInstanceGet reports an instance it cannot find as (nil, nil), so keep
-			// polling rather than dereferencing it.
-			if resp == nil {
-				return &duplosdk.DuploEcacheInstance{}, "pending", nil
-			}
-			mu.Lock()
+	log.Printf("[DEBUG] ecacheInstanceWaitUntilSettled (%s, %s): waiting for %s", tenantID, name, what)
+
+	// A plain synchronous loop, deliberately not retry.StateChangeConf: everything runs on
+	// this goroutine, so the last reading needs no lock and nothing outlives a cancelled
+	// wait.
+	var last *duplosdk.DuploEcacheInstance
+	for {
+		resp, cerr := c.EcacheInstanceGet(tenantID, name)
+		if cerr != nil {
+			return last, cerr
+		}
+
+		// EcacheInstanceGet reports an instance it cannot find as (nil, nil), so keep
+		// polling rather than dereferencing it.
+		if resp != nil {
 			last = resp
-			mu.Unlock()
 
 			// Only trust the reading once the instance has come to rest - a read taken
 			// mid-modification still carries the previous configuration.
-			if resp.InstanceStatus != "available" || !settled(resp) {
-				return resp, "pending", nil
+			if resp.InstanceStatus == "available" && settled(resp) {
+				return resp, nil
 			}
-			return resp, "settled", nil
-		},
+		}
+
+		select {
+		case <-ctx.Done():
+			return last, fmt.Errorf("gave up waiting for %s: %w", what, ctx.Err())
+		case <-time.After(ecacheSettlePollInterval):
+		}
 	}
-	log.Printf("[DEBUG] ecacheInstanceWaitUntilSettled (%s, %s): waiting for %s", tenantID, name, what)
-	_, err := stateConf.WaitForStateContext(ctx)
-	mu.Lock()
-	defer mu.Unlock()
-	return last, err
 }
 
 func parseECacheInstanceIdParts(id string) (tenantID, name string, err error) {
