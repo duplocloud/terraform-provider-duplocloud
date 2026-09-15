@@ -721,6 +721,13 @@ func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, t
 			if err != nil {
 				return 0, "", err
 			}
+
+			// EcacheInstanceGet reports an instance it cannot find as (nil, nil). Hold the
+			// wait in a pending state rather than dereferencing it - a read that comes back
+			// empty should not end the wait, and must not panic the provider.
+			if resp == nil {
+				return &duplosdk.DuploEcacheInstance{}, "processing", nil
+			}
 			if resp.InstanceStatus == "" {
 				resp.InstanceStatus = "processing"
 			}
@@ -749,6 +756,13 @@ func ecacheInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client,
 			if err != nil {
 				return 0, "", err
 			}
+
+			// EcacheInstanceGet reports an instance it cannot find as (nil, nil). Hold the
+			// wait in its pending state rather than dereferencing it, so an empty read is
+			// treated as "has not transitioned yet" instead of panicking the provider.
+			if resp == nil {
+				return &duplosdk.DuploEcacheInstance{}, "available", nil
+			}
 			if resp.InstanceStatus == "" {
 				resp.InstanceStatus = "processing"
 			}
@@ -758,6 +772,43 @@ func ecacheInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client,
 	log.Printf("[DEBUG] EcacheInstanceWaitUntilUnavailable (%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+// ecacheInstanceWaitUntilSettled polls an ECache instance until a requested change is
+// actually visible on the instance.
+//
+// The update endpoints are fire-and-forget: they return success as soon as the request is
+// accepted, and the two status waits above cannot tell "the change finished" apart from
+// "the change never started" - ecacheInstanceWaitUntilUnavailable discards its error by
+// design, and ecacheInstanceWaitUntilAvailable returns immediately while the instance is
+// still available. Checking the value itself is what stops a dropped request from being
+// reported as a successful apply, and stops a later phase from running against nodes that
+// do not exist yet.
+//
+// On timeout the returned error is the last retryable error, so it carries the reading
+// the instance last reported.
+func ecacheInstanceWaitUntilSettled(ctx context.Context, c *duplosdk.Client, tenantID, name, what string, timeout time.Duration, settled func(*duplosdk.DuploEcacheInstance) bool) error {
+	log.Printf("[DEBUG] ecacheInstanceWaitUntilSettled (%s, %s): waiting for %s", tenantID, name, what)
+	return retry.RetryContext(ctx, timeout, func() *retry.RetryError {
+		resp, err := c.EcacheInstanceGet(tenantID, name)
+		if err != nil {
+			return retry.NonRetryableError(err)
+		}
+
+		// EcacheInstanceGet reports an instance it cannot find as (nil, nil), so keep
+		// polling rather than dereferencing it.
+		if resp == nil {
+			return retry.RetryableError(fmt.Errorf("ECache instance '%s' cannot be read yet", name))
+		}
+
+		// Only trust the reading once the instance has come to rest - a read taken
+		// mid-modification still carries the previous configuration.
+		if resp.InstanceStatus != "available" || !settled(resp) {
+			return retry.RetryableError(fmt.Errorf("still waiting for %s: the instance reports %d replicas, automatic_failover=%t, multi_az=%t (status %q)",
+				what, resp.Replicas, resp.AutomaticFailoverEnabled, resp.MultiAZEnabled, resp.InstanceStatus))
+		}
+		return nil
+	})
 }
 
 func parseECacheInstanceIdParts(id string) (tenantID, name string, err error) {
@@ -1216,6 +1267,11 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after disabling multi_az: %s", id, err)
 			}
 			time.Sleep(time.Duration(90) * time.Second)
+			if werr := ecacheInstanceWaitUntilSettled(ctx, c, tenantID, name, "multi_az_enabled to turn off", d.Timeout(schema.TimeoutUpdate), func(i *duplosdk.DuploEcacheInstance) bool {
+				return !i.MultiAZEnabled
+			}); werr != nil {
+				return diag.Errorf("Error disabling multi_az_enabled for ECache instance '%s': the request was accepted but multi_az_enabled never turned off: %s", id, werr)
+			}
 		}
 	}
 
@@ -1240,6 +1296,11 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after disabling failover: %s", id, err)
 			}
 			time.Sleep(time.Duration(90) * time.Second)
+			if werr := ecacheInstanceWaitUntilSettled(ctx, c, tenantID, name, "automatic_failover_enabled to turn off", d.Timeout(schema.TimeoutUpdate), func(i *duplosdk.DuploEcacheInstance) bool {
+				return !i.AutomaticFailoverEnabled
+			}); werr != nil {
+				return diag.Errorf("Error disabling automatic_failover_enabled for ECache instance '%s': the request was accepted but automatic_failover_enabled never turned off: %s", id, werr)
+			}
 		}
 	}
 
@@ -1260,6 +1321,16 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
 		}
 		time.Sleep(time.Duration(90) * time.Second)
+
+		// The replica endpoint reports success once the request is accepted, so confirm the
+		// count actually landed before the failover and multi_az phases run against it. On
+		// timeout the error carries the count the instance last reported.
+		werr := ecacheInstanceWaitUntilSettled(ctx, c, tenantID, name, fmt.Sprintf("the replica count to reach %d", newReplicas), d.Timeout(schema.TimeoutUpdate), func(i *duplosdk.DuploEcacheInstance) bool {
+			return i.Replicas == newReplicas
+		})
+		if werr != nil {
+			return diag.Errorf("Error updating replicas for ECache instance '%s': the request was accepted but never applied: %s", id, werr)
+		}
 	}
 
 	// --- Phase 3: Enable failover and multi_az after replica changes ---
@@ -1288,6 +1359,11 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after enabling failover: %s", id, err)
 			}
 			time.Sleep(time.Duration(90) * time.Second)
+			if werr := ecacheInstanceWaitUntilSettled(ctx, c, tenantID, name, "automatic_failover_enabled to turn on", d.Timeout(schema.TimeoutUpdate), func(i *duplosdk.DuploEcacheInstance) bool {
+				return i.AutomaticFailoverEnabled
+			}); werr != nil {
+				return diag.Errorf("Error enabling automatic_failover_enabled for ECache instance '%s': the request was accepted but automatic_failover_enabled never turned on: %s", id, werr)
+			}
 		}
 	}
 
@@ -1315,6 +1391,11 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after enabling multi_az: %s", id, err)
 			}
 			time.Sleep(time.Duration(90) * time.Second)
+			if werr := ecacheInstanceWaitUntilSettled(ctx, c, tenantID, name, "multi_az_enabled to turn on", d.Timeout(schema.TimeoutUpdate), func(i *duplosdk.DuploEcacheInstance) bool {
+				return i.MultiAZEnabled
+			}); werr != nil {
+				return diag.Errorf("Error enabling multi_az_enabled for ECache instance '%s': the request was accepted but multi_az_enabled never turned on: %s", id, werr)
+			}
 		}
 	}
 
