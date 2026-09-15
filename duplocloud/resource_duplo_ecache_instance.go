@@ -25,13 +25,10 @@ const (
 	TOTALECACHENAMELENGTH = 40
 )
 
-// Bounds for ecacheInstanceWaitUntilSettled. Scaling replicas on a large cache is the slow
-// case; the wait returns as soon as the value lands, so the timeout is only an upper bound.
-// These are variables so that tests can shorten them.
-var (
-	ecacheSettleTimeout      = 30 * time.Minute
-	ecacheSettlePollInterval = 30 * time.Second
-)
+// Poll interval for ecacheInstanceWaitUntilSettled; a variable so that tests can shorten it.
+// The wait itself is bounded by the update timeout the SDK places on the context, so the
+// resource's timeouts block is the only knob.
+var ecacheSettlePollInterval = 30 * time.Second
 
 func ecacheInstanceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -793,9 +790,6 @@ func ecacheInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client,
 // reported as a successful apply, and stops a later phase from running against nodes that
 // do not exist yet.
 func ecacheInstanceWaitUntilSettled(ctx context.Context, c *duplosdk.Client, tenantID, name, what string, settled func(*duplosdk.DuploEcacheInstance) bool) (*duplosdk.DuploEcacheInstance, error) {
-	ctx, cancel := context.WithTimeout(ctx, ecacheSettleTimeout)
-	defer cancel()
-
 	log.Printf("[DEBUG] ecacheInstanceWaitUntilSettled (%s, %s): waiting for %s", tenantID, name, what)
 
 	// A plain synchronous loop, deliberately not retry.StateChangeConf: everything runs on

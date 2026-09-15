@@ -41,9 +41,15 @@ func ecacheReading(status string, replicas int, failover, multiAz bool) string {
 // endpoint answers "accepted", not "applied", so an update that never reached the cache
 // used to be reported as a successful apply.
 func TestEcacheInstanceWaitUntilSettled(t *testing.T) {
-	prevTimeout, prevPoll := ecacheSettleTimeout, ecacheSettlePollInterval
-	ecacheSettleTimeout, ecacheSettlePollInterval = time.Second, 50*time.Millisecond
-	defer func() { ecacheSettleTimeout, ecacheSettlePollInterval = prevTimeout, prevPoll }()
+	prevPoll := ecacheSettlePollInterval
+	ecacheSettlePollInterval = 50 * time.Millisecond
+	defer func() { ecacheSettlePollInterval = prevPoll }()
+
+	// The wait has no timeout of its own - in production the SDK places the resource's
+	// update timeout on the context, so the tests bound it the same way.
+	bounded := func() (context.Context, context.CancelFunc) {
+		return context.WithTimeout(context.Background(), time.Second)
+	}
 
 	wantReplicas := func(n int) func(*duplosdk.DuploEcacheInstance) bool {
 		return func(i *duplosdk.DuploEcacheInstance) bool { return i.Replicas == n }
@@ -69,7 +75,9 @@ func TestEcacheInstanceWaitUntilSettled(t *testing.T) {
 		srv, c := ecacheSettleServer(t, []string{ecacheReading("available", 4, false, false)})
 		defer srv.Close()
 
-		last, err := ecacheInstanceWaitUntilSettled(context.Background(), c, "t1", "qagrpg", "replicas", wantReplicas(1))
+		ctx, cancel := bounded()
+		defer cancel()
+		last, err := ecacheInstanceWaitUntilSettled(ctx, c, "t1", "qagrpg", "replicas", wantReplicas(1))
 		if err == nil {
 			t.Fatal("expected an error when the requested replica count never lands")
 		}
@@ -83,7 +91,9 @@ func TestEcacheInstanceWaitUntilSettled(t *testing.T) {
 		srv, c := ecacheSettleServer(t, []string{ecacheReading("modifying", 1, false, false)})
 		defer srv.Close()
 
-		if _, err := ecacheInstanceWaitUntilSettled(context.Background(), c, "t1", "qagrpg", "replicas", wantReplicas(1)); err == nil {
+		ctx, cancel := bounded()
+		defer cancel()
+		if _, err := ecacheInstanceWaitUntilSettled(ctx, c, "t1", "qagrpg", "replicas", wantReplicas(1)); err == nil {
 			t.Fatal("expected the wait to keep polling while the instance is still modifying")
 		}
 	})
@@ -93,7 +103,9 @@ func TestEcacheInstanceWaitUntilSettled(t *testing.T) {
 		srv, c := ecacheSettleServer(t, []string{`{}`})
 		defer srv.Close()
 
-		if _, err := ecacheInstanceWaitUntilSettled(context.Background(), c, "t1", "qagrpg", "replicas", wantReplicas(1)); err == nil {
+		ctx, cancel := bounded()
+		defer cancel()
+		if _, err := ecacheInstanceWaitUntilSettled(ctx, c, "t1", "qagrpg", "replicas", wantReplicas(1)); err == nil {
 			t.Fatal("expected the wait to time out rather than settle on an unreadable instance")
 		}
 	})
