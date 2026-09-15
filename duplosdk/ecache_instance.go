@@ -229,9 +229,13 @@ func (c *Client) EcacheInstanceModify(tenantID string, rq *DuploEcacheModifyRequ
 }
 
 // DuploEcacheUpgradeEngineRequest upgrades an existing Redis replication group to Valkey in place.
+// ParameterGroupName is required by AWS when the replication group uses a custom parameter group:
+// a valkey-family group must be passed in the same ModifyReplicationGroup call as the engine
+// change, so it rides along here instead of the separate parameter-group modify.
 type DuploEcacheUpgradeEngineRequest struct {
 	Identifier          string `json:"Identifier"`
 	TargetEngineVersion string `json:"TargetEngineVersion"`
+	ParameterGroupName  string `json:"ParameterGroupName,omitempty"`
 }
 
 // EcacheInstanceUpgradeEngine calls the v3 endpoint that upgrades a Redis ECache instance to Valkey.

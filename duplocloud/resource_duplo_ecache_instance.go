@@ -79,6 +79,8 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				"   - `1` : Memcache\n" +
 				"   - `2` : Valkey\n\n" +
 				"Changing `cache_type` from `0` (Redis) to `2` (Valkey) performs an in-place engine upgrade. " +
+				"If the instance uses a custom parameter group, change `parameter_group_name` to a valkey-family " +
+				"parameter group in the same apply — AWS requires it to be part of the engine upgrade. " +
 				"Any other change to `cache_type` forces replacement of the instance.",
 			Type:         schema.TypeInt,
 			Optional:     true,
@@ -1362,8 +1364,19 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		time.Sleep(time.Duration(90) * time.Second)
 	}
 
+	// Detect an in-place Redis -> Valkey engine upgrade up front: when one is happening, a
+	// parameter_group_name change must ride along in the upgrade-engine request instead of the
+	// standalone modify below. AWS rejects a valkey-family parameter group on a cluster still
+	// running Redis, and requires the new group in the same ModifyReplicationGroup call as the
+	// engine change when the cluster uses a custom parameter group.
+	upgradingEngine := false
+	if d.HasChange("cache_type") {
+		oldRaw, newRaw := d.GetChange("cache_type")
+		upgradingEngine = oldRaw.(int) == 0 && newRaw.(int) == 2
+	}
+
 	// Parameter group name update — may trigger node reboot
-	if d.HasChange("parameter_group_name") {
+	if !upgradingEngine && d.HasChange("parameter_group_name") {
 		newVal := d.Get("parameter_group_name").(string)
 		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): updating parameter_group_name to %s", tenantID, name, newVal)
 		rq := &duplosdk.DuploEcacheModifyRequest{
@@ -1386,32 +1399,32 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 	// Engine upgrade Redis -> Valkey (in-place) — performed via the dedicated upgrade-engine
 	// endpoint, which swaps the engine and sets the target version in one operation. This subsumes
 	// any concurrent engine_version change, so the generic engine_version modify below is skipped.
-	engineUpgraded := false
-	if d.HasChange("cache_type") {
-		oldRaw, newRaw := d.GetChange("cache_type")
-		if oldRaw.(int) == 0 && newRaw.(int) == 2 {
-			targetVersion := d.Get("engine_version").(string)
-			log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine Redis -> Valkey (target version %s)", tenantID, name, targetVersion)
-			rq := duplosdk.DuploEcacheUpgradeEngineRequest{
-				Identifier:          identifier,
-				TargetEngineVersion: targetVersion,
-			}
-			cerr := c.EcacheInstanceUpgradeEngine(tenantID, rq)
-			if cerr != nil {
-				return diag.Errorf("Error upgrading engine to Valkey for ECache instance '%s': %s", id, cerr)
-			}
-			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
-			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
-			if err != nil {
-				return diag.Errorf("Error waiting for ECache instance '%s' to be available after engine upgrade: %s", id, err)
-			}
-			time.Sleep(time.Duration(90) * time.Second)
-			engineUpgraded = true
+	if upgradingEngine {
+		targetVersion := d.Get("engine_version").(string)
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine Redis -> Valkey (target version %s)", tenantID, name, targetVersion)
+		rq := duplosdk.DuploEcacheUpgradeEngineRequest{
+			Identifier:          identifier,
+			TargetEngineVersion: targetVersion,
 		}
+		// A concurrent parameter_group_name change is folded into the upgrade request (see the
+		// skipped standalone modify above).
+		if d.HasChange("parameter_group_name") {
+			rq.ParameterGroupName = d.Get("parameter_group_name").(string)
+		}
+		cerr := c.EcacheInstanceUpgradeEngine(tenantID, rq)
+		if cerr != nil {
+			return diag.Errorf("Error upgrading engine to Valkey for ECache instance '%s': %s", id, cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available after engine upgrade: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
 	}
 
 	// Engine version upgrade — last, may reboot nodes
-	if !engineUpgraded && d.HasChange("engine_version") {
+	if !upgradingEngine && d.HasChange("engine_version") {
 		newVal := d.Get("engine_version").(string)
 		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine_version to %s", tenantID, name, newVal)
 		rq := &duplosdk.DuploEcacheModifyRequest{
