@@ -496,15 +496,25 @@ func expandGcpBigtableCluster(cfg map[string]interface{}, storageType int) *dupl
 	return cl
 }
 
-// validateBigtableClusters validates the cluster blocks at plan time:
-//   - each cluster has a manual node count or an autoscaling configuration;
+// validateBigtableClusters validates the cluster blocks at plan time. The
+// checks themselves live in pure helpers so that they can be unit tested.
+func validateBigtableClusters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	oldRaw, _ := diff.GetChange("cluster")
+	newClusters := diff.Get("cluster").([]interface{})
+
+	if err := validateBigtableClusterBlocks(newClusters); err != nil {
+		return err
+	}
+	return validateBigtableClusterTransitions(oldRaw.([]interface{}), newClusters)
+}
+
+// validateBigtableClusterBlocks validates the planned cluster blocks on their own:
 //   - cluster_id values are unique (clusters are matched by id, so duplicates
 //     would silently collapse and reconcile the wrong cluster);
-//   - the zone of an existing cluster is not changed (cluster location is
-//     immutable in Bigtable, and an in-place update would silently drop it).
-func validateBigtableClusters(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+//   - each cluster has a manual node count or an autoscaling configuration.
+func validateBigtableClusterBlocks(clusters []interface{}) error {
 	seen := map[string]bool{}
-	for _, raw := range diff.Get("cluster").([]interface{}) {
+	for _, raw := range clusters {
 		cfg := raw.(map[string]interface{})
 		id := cfg["cluster_id"].(string)
 		if seen[id] {
@@ -519,20 +529,39 @@ func validateBigtableClusters(ctx context.Context, diff *schema.ResourceDiff, m 
 			return fmt.Errorf("cluster %q: either 'num_nodes' (> 0) or 'autoscaling_config' must be set", id)
 		}
 	}
+	return nil
+}
 
-	// A cluster's zone (location) cannot be changed in place. Compare existing
-	// clusters by cluster_id and reject a zone change with a clear message.
-	oldRaw, newRaw := diff.GetChange("cluster")
-	oldZones := map[string]string{}
-	for _, raw := range oldRaw.([]interface{}) {
-		cfg := raw.(map[string]interface{})
-		oldZones[cfg["cluster_id"].(string)] = cfg["zone"].(string)
-	}
-	for _, raw := range newRaw.([]interface{}) {
+// validateBigtableClusterTransitions rejects the changes to an existing cluster
+// that Bigtable will not accept in place:
+//   - the zone (location) of a cluster cannot be changed, and an in-place update
+//     would silently drop it;
+//   - an autoscaling_config block cannot be removed. Clearing autoscaling
+//     requires naming cluster_config.cluster_autoscaling_config in the update
+//     mask, and the backend derives its mask from the fields it receives, so
+//     omitting clusterConfig clears nothing, serve_nodes stays ignored while
+//     autoscaling is on, and the plan would show the same removal forever.
+//
+// Existing clusters are matched by cluster_id; clusters being added or removed
+// outright are not affected.
+func validateBigtableClusterTransitions(oldClusters, newClusters []interface{}) error {
+	previous := indexBigtableClustersByID(oldClusters)
+	for _, raw := range newClusters {
 		cfg := raw.(map[string]interface{})
 		id := cfg["cluster_id"].(string)
-		if oldZone, ok := oldZones[id]; ok && oldZone != cfg["zone"].(string) {
+		old, ok := previous[id]
+		if !ok {
+			continue
+		}
+
+		if oldZone := old["zone"].(string); oldZone != cfg["zone"].(string) {
 			return fmt.Errorf("cluster %q: zone is immutable (cannot change from %q to %q); remove the cluster and add a new one to relocate it", id, oldZone, cfg["zone"])
+		}
+
+		oldAutoscaling, _ := old["autoscaling_config"].([]interface{})
+		newAutoscaling, _ := cfg["autoscaling_config"].([]interface{})
+		if len(oldAutoscaling) > 0 && len(newAutoscaling) == 0 {
+			return fmt.Errorf("cluster %q: removing 'autoscaling_config' is not supported (autoscaling cannot be turned off in place); keep the 'autoscaling_config' block, or remove the cluster and add a new one to run it on a fixed 'num_nodes' count", id)
 		}
 	}
 	return nil
