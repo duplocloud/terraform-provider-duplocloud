@@ -89,7 +89,7 @@ func (c *Client) GcpBigtableInstanceCreate(tenantID string, rq *DuploBigtableCre
 	err := c.postAPI(
 		fmt.Sprintf("GcpBigtableInstanceCreate(%s, %s)", tenantID, rq.InstanceId),
 		bigtablePrefix(tenantID),
-		&rq,
+		rq,
 		&resp,
 	)
 	return resp, err
@@ -125,7 +125,7 @@ func (c *Client) GcpBigtableInstanceUpdate(tenantID, instanceID string, rq *Dupl
 	err := c.putAPI(
 		fmt.Sprintf("GcpBigtableInstanceUpdate(%s, %s)", tenantID, instanceID),
 		fmt.Sprintf("%s/%s", bigtablePrefix(tenantID), instanceID),
-		&rq,
+		rq,
 		&rp,
 	)
 	return &rp, err
@@ -151,7 +151,7 @@ func (c *Client) GcpBigtableClusterCreate(tenantID, instanceID, clusterID string
 	err := c.postAPI(
 		fmt.Sprintf("GcpBigtableClusterCreate(%s, %s, %s)", tenantID, instanceID, clusterID),
 		fmt.Sprintf("%s/%s/clusters/%s", bigtablePrefix(tenantID), instanceID, clusterID),
-		&rq,
+		rq,
 		&resp,
 	)
 	return resp, err
@@ -186,7 +186,7 @@ func (c *Client) GcpBigtableClusterUpdate(tenantID, instanceID, clusterID string
 	return c.putAPI(
 		fmt.Sprintf("GcpBigtableClusterUpdate(%s, %s, %s)", tenantID, instanceID, clusterID),
 		fmt.Sprintf("%s/%s/clusters/%s", bigtablePrefix(tenantID), instanceID, clusterID),
-		&rq,
+		rq,
 		&rp,
 	)
 }
