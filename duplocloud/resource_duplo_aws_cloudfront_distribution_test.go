@@ -330,6 +330,28 @@ func Test_preserveOrderedBehaviorsTrust(t *testing.T) {
 		}
 	})
 
+	t.Run("renaming a behavior's path while swapping to signers still disables stale key groups", func(t *testing.T) {
+		// The renamed PathPattern has no existing match, so nothing is preserved -
+		// but the expanded behavior still carries stale key groups from computed
+		// state alongside the newly configured signers. Conflict resolution must
+		// run for unmatched behaviors too.
+		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/old/*", TrustedKeyGroups: protectedTKG},
+		}
+		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/new/*", TrustedKeyGroups: protectedTKG, TrustedSigners: protectedTS},
+		}
+
+		preserveOrderedBehaviorsTrust(updated, existing, []bool{false}, []bool{true})
+
+		if trustedKeyGroupsEnabled(updated[0].TrustedKeyGroups) {
+			t.Errorf("expected stale key groups on renamed behavior to be disabled, got %+v", updated[0].TrustedKeyGroups)
+		}
+		if !reflect.DeepEqual(updated[0].TrustedSigners, protectedTS) {
+			t.Errorf("expected configured signers to be kept, got %+v", updated[0].TrustedSigners)
+		}
+	})
+
 	t.Run("both explicitly configured and enabled is left for CloudFront to reject", func(t *testing.T) {
 		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
 			{PathPattern: "/a/*"},

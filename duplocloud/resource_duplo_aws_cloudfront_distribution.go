@@ -2388,7 +2388,10 @@ func preserveUnmanagedTrust(d *schema.ResourceData, existingCfd, updatedCfd *dup
 // preserve the wrong behavior's values onto the wrong path. PathPattern is required
 // and AWS treats it as the unique identity of a cache behavior, so we match on that
 // instead. An updated item whose PathPattern has no existing match (a genuinely new
-// behavior) is left as expand computed it.
+// behavior, or one whose PathPattern was renamed) has nothing to preserve, but its
+// expanded values can still carry a stale conflict out of computed state - e.g.
+// renaming a behavior's path while swapping it to the other trust mechanism - so
+// conflict resolution runs for every behavior, matched or not.
 func preserveOrderedBehaviorsTrust(updatedItems, existingItems []duplosdk.DuploAwsCloudfrontCacheBehavior, kgConfigured, tsConfigured []bool) {
 	existingByPath := make(map[string]*duplosdk.DuploAwsCloudfrontCacheBehavior, len(existingItems))
 	for i := range existingItems {
@@ -2396,16 +2399,17 @@ func preserveOrderedBehaviorsTrust(updatedItems, existingItems []duplosdk.DuploA
 	}
 
 	for i := range updatedItems {
-		existing, ok := existingByPath[updatedItems[i].PathPattern]
-		if !ok {
-			continue
+		kgCfg := i < len(kgConfigured) && kgConfigured[i]
+		tsCfg := i < len(tsConfigured) && tsConfigured[i]
+		if existing, ok := existingByPath[updatedItems[i].PathPattern]; ok {
+			preserveBehaviorTrust(
+				&updatedItems[i].TrustedKeyGroups, &updatedItems[i].TrustedSigners,
+				existing.TrustedKeyGroups, existing.TrustedSigners,
+				kgCfg, tsCfg,
+			)
+		} else {
+			resolveTrustConflict(&updatedItems[i].TrustedKeyGroups, &updatedItems[i].TrustedSigners, kgCfg, tsCfg)
 		}
-		preserveBehaviorTrust(
-			&updatedItems[i].TrustedKeyGroups, &updatedItems[i].TrustedSigners,
-			existing.TrustedKeyGroups, existing.TrustedSigners,
-			i < len(kgConfigured) && kgConfigured[i],
-			i < len(tsConfigured) && tsConfigured[i],
-		)
 	}
 }
 
