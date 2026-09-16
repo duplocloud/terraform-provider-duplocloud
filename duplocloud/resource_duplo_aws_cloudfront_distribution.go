@@ -994,7 +994,7 @@ func resourceAwsCloudfrontDistributionUpdate(ctx context.Context, d *schema.Reso
 	rq := expandAwsCloudfrontDistributionConfig(d, true)
 	// Update OAI which is generated at backend
 	updateS3OAI(duplo.Distribution.DistributionConfig, rq)
-	preserveUnmanagedTrustedKeyGroups(d, duplo.Distribution.DistributionConfig, rq)
+	preserveUnmanagedTrust(d, duplo.Distribution.DistributionConfig, rq)
 
 	resp, err := c.AwsCloudfrontDistributionUpdate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
 		Id:                   cfdId,
@@ -1363,9 +1363,10 @@ func expandTrustedKeyGroups(s []interface{}) *duplosdk.DuploCFDTrustedKeyGroups 
 
 func expandTrustedSigners(s []interface{}) *duplosdk.DuploCFDTrustedSigners {
 	var ts duplosdk.DuploCFDTrustedSigners
-	if len(s) > 0 {
-		ts.Quantity = len(s)
-		ts.Items = expandStringList(s)
+	items := expandStringList(s)
+	if len(items) > 0 {
+		ts.Quantity = len(items)
+		ts.Items = items
 		ts.Enabled = true
 	} else {
 		ts.Quantity = 0
@@ -1826,7 +1827,7 @@ func flattenCloudFrontDefaultCacheBehavior(dcb *duplosdk.DuploAwsCloudfrontDefau
 		m["forwarded_values"] = []interface{}{flattenForwardedValues(dcb.ForwardedValues)}
 	}
 
-	if len(dcb.TrustedSigners.Items) > 0 {
+	if dcb.TrustedSigners != nil && len(dcb.TrustedSigners.Items) > 0 {
 		m["trusted_signers"] = flattenTrustedSigners(dcb.TrustedSigners)
 	}
 	if dcb.TrustedKeyGroups != nil && len(dcb.TrustedKeyGroups.Items) > 0 {
@@ -1990,7 +1991,7 @@ func flattenCacheBehavior(cb duplosdk.DuploAwsCloudfrontCacheBehavior) map[strin
 		m["forwarded_values"] = []interface{}{flattenForwardedValues(cb.ForwardedValues)}
 	}
 
-	if len(cb.TrustedSigners.Items) > 0 {
+	if cb.TrustedSigners != nil && len(cb.TrustedSigners.Items) > 0 {
 		m["trusted_signers"] = flattenTrustedSigners(cb.TrustedSigners)
 	}
 	if cb.TrustedKeyGroups != nil && len(cb.TrustedKeyGroups.Items) > 0 {
@@ -2334,28 +2335,35 @@ func updateS3OAI(existingCfd, updatedCfd *duplosdk.DuploAwsCloudfrontDistributio
 	}
 }
 
-// preserveUnmanagedTrustedKeyGroups keeps a cache behavior's TrustedKeyGroups from being
-// clobbered on update when the corresponding config block doesn't manage that attribute.
+// preserveUnmanagedTrust keeps a cache behavior's TrustedKeyGroups and TrustedSigners
+// from being clobbered on update when the corresponding config block doesn't manage
+// that attribute, then resolves any key-groups/signers conflict the merge produces
+// (see resolveTrustConflict).
 //
-// trusted_key_groups is Optional+Computed so this provider can read back and store key
-// groups attached outside Terraform without fighting a permanent diff. But expand always
-// returns a non-nil TrustedKeyGroups (needed so an explicit trusted_key_groups = [] can
-// disable it), and the backend's distribution-config merge only preserves fields it
-// receives as nil - so without this, an update to any unrelated attribute would silently
-// disable trust enforcement whenever a behavior's trusted_key_groups isn't managed here.
+// Both attributes are Optional+Computed so this provider can read back and store
+// values attached outside Terraform without fighting a permanent diff. But expand
+// always returns a non-nil value for each (needed so an explicit [] can disable
+// them), and the backend's distribution-config merge only preserves fields it
+// receives as nil - so without this, an update to any unrelated attribute would
+// silently disable trust enforcement whenever a behavior's trusted_key_groups or
+// trusted_signers isn't managed here.
 //
-// We check GetRawConfig (not d.Get) because Optional+Computed lets a stale/computed state
-// value leak into d.Get even when the attribute is genuinely absent from config -
+// We check GetRawConfig (not d.Get) because Optional+Computed lets a stale/computed
+// state value leak into d.Get even when the attribute is genuinely absent from config -
 // GetRawConfig is the only way to see whether the user actually wrote it.
-func preserveUnmanagedTrustedKeyGroups(d *schema.ResourceData, existingCfd, updatedCfd *duplosdk.DuploAwsCloudfrontDistributionConfig) {
+func preserveUnmanagedTrust(d *schema.ResourceData, existingCfd, updatedCfd *duplosdk.DuploAwsCloudfrontDistributionConfig) {
 	raw := d.GetRawConfig()
 	if raw.IsNull() || !raw.IsKnown() {
 		return
 	}
 
-	if !cacheBehaviorConfiguresTrustedKeyGroups(raw, "default_cache_behavior", 0) &&
-		!trustedSignersEnabled(updatedCfd.DefaultCacheBehavior.TrustedSigners) {
-		updatedCfd.DefaultCacheBehavior.TrustedKeyGroups = existingCfd.DefaultCacheBehavior.TrustedKeyGroups
+	if updatedCfd.DefaultCacheBehavior != nil && existingCfd.DefaultCacheBehavior != nil {
+		preserveBehaviorTrust(
+			&updatedCfd.DefaultCacheBehavior.TrustedKeyGroups, &updatedCfd.DefaultCacheBehavior.TrustedSigners,
+			existingCfd.DefaultCacheBehavior.TrustedKeyGroups, existingCfd.DefaultCacheBehavior.TrustedSigners,
+			cacheBehaviorConfiguresAttr(raw, "default_cache_behavior", 0, "trusted_key_groups"),
+			cacheBehaviorConfiguresAttr(raw, "default_cache_behavior", 0, "trusted_signers"),
+		)
 	}
 
 	if updatedCfd.CacheBehaviors == nil || updatedCfd.CacheBehaviors.Items == nil ||
@@ -2363,64 +2371,102 @@ func preserveUnmanagedTrustedKeyGroups(d *schema.ResourceData, existingCfd, upda
 		return
 	}
 	updatedItems := *updatedCfd.CacheBehaviors.Items
-	configured := make([]bool, len(updatedItems))
+	kgConfigured := make([]bool, len(updatedItems))
+	tsConfigured := make([]bool, len(updatedItems))
 	for i := range updatedItems {
-		configured[i] = cacheBehaviorConfiguresTrustedKeyGroups(raw, "ordered_cache_behavior", i)
+		kgConfigured[i] = cacheBehaviorConfiguresAttr(raw, "ordered_cache_behavior", i, "trusted_key_groups")
+		tsConfigured[i] = cacheBehaviorConfiguresAttr(raw, "ordered_cache_behavior", i, "trusted_signers")
 	}
-	mergeUnmanagedTrustedKeyGroups(updatedItems, *existingCfd.CacheBehaviors.Items, configured)
+	preserveOrderedBehaviorsTrust(updatedItems, *existingCfd.CacheBehaviors.Items, kgConfigured, tsConfigured)
 }
 
-// trustedSignersEnabled reports whether a cache behavior's TrustedSigners actively
-// restricts access. CloudFront treats trusted signers and trusted key groups as
-// mutually exclusive on a single behavior - it rejects a request enabling both - so a
-// behavior that's actively using trusted_signers must never have an existing
-// TrustedKeyGroups preserved onto it too.
-func trustedSignersEnabled(ts *duplosdk.DuploCFDTrustedSigners) bool {
-	return ts != nil && ts.Enabled
-}
-
-// mergeUnmanagedTrustedKeyGroups copies TrustedKeyGroups from existingItems onto
-// updatedItems in place, for any index whose configured flag is false and whose
-// updated behavior isn't actively using trusted_signers instead (see
-// trustedSignersEnabled).
+// preserveOrderedBehaviorsTrust applies preserveBehaviorTrust to each updated ordered
+// cache behavior against its existing counterpart.
 //
 // ordered_cache_behavior is a TypeList, so inserting, removing, or reordering a
 // behavior shifts indices - matching updatedItems[i] to existingItems[i] would
-// preserve the wrong behavior's TrustedKeyGroups onto the wrong path. PathPattern is
-// required and AWS treats it as the unique identity of a cache behavior, so we match
-// on that instead. An updated item whose PathPattern has no existing match (a
-// genuinely new behavior) is left as expand computed it.
-func mergeUnmanagedTrustedKeyGroups(updatedItems, existingItems []duplosdk.DuploAwsCloudfrontCacheBehavior, configured []bool) {
+// preserve the wrong behavior's values onto the wrong path. PathPattern is required
+// and AWS treats it as the unique identity of a cache behavior, so we match on that
+// instead. An updated item whose PathPattern has no existing match (a genuinely new
+// behavior) is left as expand computed it.
+func preserveOrderedBehaviorsTrust(updatedItems, existingItems []duplosdk.DuploAwsCloudfrontCacheBehavior, kgConfigured, tsConfigured []bool) {
 	existingByPath := make(map[string]*duplosdk.DuploAwsCloudfrontCacheBehavior, len(existingItems))
 	for i := range existingItems {
 		existingByPath[existingItems[i].PathPattern] = &existingItems[i]
 	}
 
 	for i := range updatedItems {
-		if i < len(configured) && configured[i] {
+		existing, ok := existingByPath[updatedItems[i].PathPattern]
+		if !ok {
 			continue
 		}
-		if trustedSignersEnabled(updatedItems[i].TrustedSigners) {
-			continue
-		}
-		if existing, ok := existingByPath[updatedItems[i].PathPattern]; ok {
-			updatedItems[i].TrustedKeyGroups = existing.TrustedKeyGroups
-		}
+		preserveBehaviorTrust(
+			&updatedItems[i].TrustedKeyGroups, &updatedItems[i].TrustedSigners,
+			existing.TrustedKeyGroups, existing.TrustedSigners,
+			i < len(kgConfigured) && kgConfigured[i],
+			i < len(tsConfigured) && tsConfigured[i],
+		)
 	}
 }
 
-// cacheBehaviorConfiguresTrustedKeyGroups reports whether trusted_key_groups should be
-// treated as managed by config for the cache behavior at blockName[index], as opposed to
-// genuinely absent (which lets the caller preserve whatever is already on the backend).
+// preserveBehaviorTrust merges one behavior's existing TrustedKeyGroups and
+// TrustedSigners over the expanded values for whichever of the two isn't explicitly
+// configured, then resolves any conflict the merge produces.
+func preserveBehaviorTrust(kg **duplosdk.DuploCFDTrustedKeyGroups, ts **duplosdk.DuploCFDTrustedSigners,
+	existingKG *duplosdk.DuploCFDTrustedKeyGroups, existingTS *duplosdk.DuploCFDTrustedSigners,
+	kgConfigured, tsConfigured bool) {
+	if !kgConfigured {
+		*kg = existingKG
+	}
+	if !tsConfigured {
+		*ts = existingTS
+	}
+	resolveTrustConflict(kg, ts, kgConfigured, tsConfigured)
+}
+
+// resolveTrustConflict handles a behavior that ends up with both TrustedKeyGroups and
+// TrustedSigners enabled - CloudFront treats them as mutually exclusive per cache
+// behavior and rejects a request enabling both. Whichever side isn't explicitly
+// configured got its value from preservation or stale computed state rather than from
+// the user, so it is forced to disabled. When both or neither are explicitly
+// configured there is no safe side to pick; the conflict is left for CloudFront's own
+// validation, which rejects it cleanly with no partial application.
+func resolveTrustConflict(kg **duplosdk.DuploCFDTrustedKeyGroups, ts **duplosdk.DuploCFDTrustedSigners, kgConfigured, tsConfigured bool) {
+	if !trustedKeyGroupsEnabled(*kg) || !trustedSignersEnabled(*ts) {
+		return
+	}
+	switch {
+	case kgConfigured && !tsConfigured:
+		*ts = &duplosdk.DuploCFDTrustedSigners{Enabled: false, Quantity: 0}
+	case tsConfigured && !kgConfigured:
+		*kg = &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false, Quantity: 0}
+	}
+}
+
+// trustedSignersEnabled reports whether a cache behavior's TrustedSigners actively
+// restricts access.
+func trustedSignersEnabled(ts *duplosdk.DuploCFDTrustedSigners) bool {
+	return ts != nil && ts.Enabled
+}
+
+// trustedKeyGroupsEnabled reports whether a cache behavior's TrustedKeyGroups actively
+// restricts access.
+func trustedKeyGroupsEnabled(tkg *duplosdk.DuploCFDTrustedKeyGroups) bool {
+	return tkg != nil && tkg.Enabled
+}
+
+// cacheBehaviorConfiguresAttr reports whether attr should be treated as managed by
+// config for the cache behavior at blockName[index], as opposed to genuinely absent
+// (which lets the caller preserve whatever is already on the backend).
 //
-// An unknown block/attribute (e.g. trusted_key_groups derived from another resource's
-// attribute that isn't resolved yet) is treated as managed, not absent: GetRawConfig
-// reflects what Terraform sent for this apply, and while a fully-resolved apply should
-// have no unknowns left, treating "we can't tell yet" as "absent" would let the caller
-// clobber a real, pending config value with stale existing data - the same class of bug
-// this whole preserve mechanism exists to prevent. Only a known null (the attribute is
-// truly absent from config) counts as absent.
-func cacheBehaviorConfiguresTrustedKeyGroups(raw cty.Value, blockName string, index int) bool {
+// An unknown block/attribute (e.g. a value derived from another resource's attribute
+// that isn't resolved yet) is treated as managed, not absent: GetRawConfig reflects
+// what Terraform sent for this apply, and while a fully-resolved apply should have no
+// unknowns left, treating "we can't tell yet" as "absent" would let the caller
+// clobber a real, pending config value with stale existing data - the same class of
+// bug this whole preserve mechanism exists to prevent. Only a known null (the
+// attribute is truly absent from config) counts as absent.
+func cacheBehaviorConfiguresAttr(raw cty.Value, blockName string, index int, attr string) bool {
 	block := raw.GetAttr(blockName)
 	if block.IsNull() {
 		return false
@@ -2438,8 +2484,8 @@ func cacheBehaviorConfiguresTrustedKeyGroups(raw cty.Value, blockName string, in
 	if !behavior.IsKnown() {
 		return true
 	}
-	trustedKeyGroups := behavior.GetAttr("trusted_key_groups")
-	return !trustedKeyGroups.IsKnown() || !trustedKeyGroups.IsNull()
+	attrVal := behavior.GetAttr(attr)
+	return !attrVal.IsKnown() || !attrVal.IsNull()
 }
 
 func validateCloudDistributionParameters(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {

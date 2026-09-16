@@ -92,7 +92,7 @@ func Test_flattenTrustedKeyGroups(t *testing.T) {
 	}
 }
 
-func Test_cacheBehaviorConfiguresTrustedKeyGroups(t *testing.T) {
+func Test_cacheBehaviorConfiguresAttr(t *testing.T) {
 	behaviorWithValues := cty.ObjectVal(map[string]cty.Value{
 		"trusted_key_groups": cty.ListVal([]cty.Value{cty.StringVal("kg-1")}),
 	})
@@ -107,12 +107,32 @@ func Test_cacheBehaviorConfiguresTrustedKeyGroups(t *testing.T) {
 		"trusted_key_groups": cty.UnknownVal(cty.List(cty.String)),
 	})
 
+	behaviorWithSigners := cty.ObjectVal(map[string]cty.Value{
+		"trusted_key_groups": cty.NullVal(cty.List(cty.String)),
+		"trusted_signers":    cty.ListVal([]cty.Value{cty.StringVal("111122223333")}),
+	})
+
 	cases := []struct {
 		name     string
 		block    cty.Value
 		index    int
+		attr     string
 		expected bool
 	}{
+		{
+			name:     "trusted_signers checked independently of trusted_key_groups",
+			block:    cty.ListVal([]cty.Value{behaviorWithSigners}),
+			index:    0,
+			attr:     "trusted_signers",
+			expected: true,
+		},
+		{
+			name:     "trusted_key_groups null while trusted_signers set",
+			block:    cty.ListVal([]cty.Value{behaviorWithSigners}),
+			index:    0,
+			attr:     "trusted_key_groups",
+			expected: false,
+		},
 		{
 			name:     "explicit values present",
 			block:    cty.ListVal([]cty.Value{behaviorWithValues}),
@@ -174,8 +194,11 @@ func Test_cacheBehaviorConfiguresTrustedKeyGroups(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			if c.attr == "" {
+				c.attr = "trusted_key_groups"
+			}
 			raw := cty.ObjectVal(map[string]cty.Value{"default_cache_behavior": c.block})
-			actual := cacheBehaviorConfiguresTrustedKeyGroups(raw, "default_cache_behavior", c.index)
+			actual := cacheBehaviorConfiguresAttr(raw, "default_cache_behavior", c.index, c.attr)
 			if actual != c.expected {
 				t.Errorf("expected %v, got %v", c.expected, actual)
 			}
@@ -183,8 +206,15 @@ func Test_cacheBehaviorConfiguresTrustedKeyGroups(t *testing.T) {
 	}
 }
 
-func Test_mergeUnmanagedTrustedKeyGroups(t *testing.T) {
+func Test_preserveOrderedBehaviorsTrust(t *testing.T) {
 	protectedTKG := &duplosdk.DuploCFDTrustedKeyGroups{Enabled: true, Quantity: 1, Items: []string{"kg-protected"}}
+	protectedTS := &duplosdk.DuploCFDTrustedSigners{Enabled: true, Quantity: 1, Items: []string{"111122223333"}}
+	disabledTKG := func() *duplosdk.DuploCFDTrustedKeyGroups {
+		return &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}
+	}
+	disabledTS := func() *duplosdk.DuploCFDTrustedSigners {
+		return &duplosdk.DuploCFDTrustedSigners{Enabled: false}
+	}
 
 	t.Run("a new behavior inserted at index 0 does not inherit the old index-0 behavior's key groups", func(t *testing.T) {
 		// Before: only "/protected/*" existed, with trusted key groups.
@@ -192,15 +222,15 @@ func Test_mergeUnmanagedTrustedKeyGroups(t *testing.T) {
 			{PathPattern: "/protected/*", TrustedKeyGroups: protectedTKG},
 		}
 		// After: user inserts "/public/*" ahead of it. Neither behavior manages
-		// trusted_key_groups in config (configured is all false).
+		// either trust attribute in config.
 		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
-			{PathPattern: "/public/*", TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}},
-			{PathPattern: "/protected/*", TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}},
+			{PathPattern: "/public/*", TrustedKeyGroups: disabledTKG(), TrustedSigners: disabledTS()},
+			{PathPattern: "/protected/*", TrustedKeyGroups: disabledTKG(), TrustedSigners: disabledTS()},
 		}
 
-		mergeUnmanagedTrustedKeyGroups(updated, existing, []bool{false, false})
+		preserveOrderedBehaviorsTrust(updated, existing, []bool{false, false}, []bool{false, false})
 
-		if updated[0].TrustedKeyGroups.Enabled {
+		if trustedKeyGroupsEnabled(updated[0].TrustedKeyGroups) {
 			t.Errorf("expected /public/* to remain disabled, got %+v", updated[0].TrustedKeyGroups)
 		}
 		if !reflect.DeepEqual(updated[1].TrustedKeyGroups, protectedTKG) {
@@ -210,64 +240,162 @@ func Test_mergeUnmanagedTrustedKeyGroups(t *testing.T) {
 
 	t.Run("reordering behaviors still preserves by path, not position", func(t *testing.T) {
 		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
-			{PathPattern: "/a/*", TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}},
+			{PathPattern: "/a/*", TrustedKeyGroups: disabledTKG()},
 			{PathPattern: "/b/*", TrustedKeyGroups: protectedTKG},
 		}
 		// Reordered: /b/* is now first.
 		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
-			{PathPattern: "/b/*", TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}},
-			{PathPattern: "/a/*", TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}},
+			{PathPattern: "/b/*", TrustedKeyGroups: disabledTKG(), TrustedSigners: disabledTS()},
+			{PathPattern: "/a/*", TrustedKeyGroups: disabledTKG(), TrustedSigners: disabledTS()},
 		}
 
-		mergeUnmanagedTrustedKeyGroups(updated, existing, []bool{false, false})
+		preserveOrderedBehaviorsTrust(updated, existing, []bool{false, false}, []bool{false, false})
 
 		if !reflect.DeepEqual(updated[0].TrustedKeyGroups, protectedTKG) {
 			t.Errorf("expected /b/* to keep its key groups after reorder, got %+v", updated[0].TrustedKeyGroups)
 		}
-		if updated[1].TrustedKeyGroups.Enabled {
+		if trustedKeyGroupsEnabled(updated[1].TrustedKeyGroups) {
 			t.Errorf("expected /a/* to remain disabled, got %+v", updated[1].TrustedKeyGroups)
 		}
 	})
 
-	t.Run("an explicitly configured behavior is never overwritten", func(t *testing.T) {
+	t.Run("an explicitly configured attribute is never overwritten", func(t *testing.T) {
 		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
 			{PathPattern: "/a/*", TrustedKeyGroups: protectedTKG},
 		}
 		explicit := &duplosdk.DuploCFDTrustedKeyGroups{Enabled: true, Quantity: 1, Items: []string{"kg-explicit"}}
 		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
-			{PathPattern: "/a/*", TrustedKeyGroups: explicit},
+			{PathPattern: "/a/*", TrustedKeyGroups: explicit, TrustedSigners: disabledTS()},
 		}
 
-		mergeUnmanagedTrustedKeyGroups(updated, existing, []bool{true})
+		preserveOrderedBehaviorsTrust(updated, existing, []bool{true}, []bool{false})
 
 		if !reflect.DeepEqual(updated[0].TrustedKeyGroups, explicit) {
 			t.Errorf("expected explicitly configured value to be kept, got %+v", updated[0].TrustedKeyGroups)
 		}
 	})
 
-	t.Run("a behavior actively using trusted_signers never gets an existing key group preserved onto it", func(t *testing.T) {
-		// Before: "/a/*" was restricted via trusted key groups.
+	t.Run("trusted_signers is preserved on omission just like key groups", func(t *testing.T) {
+		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/a/*", TrustedSigners: protectedTS},
+		}
+		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/a/*", TrustedKeyGroups: disabledTKG(), TrustedSigners: disabledTS()},
+		}
+
+		preserveOrderedBehaviorsTrust(updated, existing, []bool{false}, []bool{false})
+
+		if !reflect.DeepEqual(updated[0].TrustedSigners, protectedTS) {
+			t.Errorf("expected /a/* to keep its existing signers, got %+v", updated[0].TrustedSigners)
+		}
+	})
+
+	t.Run("switching a behavior from key groups to signers disables the stale key groups", func(t *testing.T) {
+		// The DUPLO-44632 headline case: key groups exist on the backend, the user's
+		// config now sets trusted_signers and omits trusted_key_groups. The stale
+		// key groups (whether carried via computed state into expand or preserved
+		// from existing) must lose to the explicitly configured signers.
 		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
 			{PathPattern: "/a/*", TrustedKeyGroups: protectedTKG},
 		}
-		// After: the user switched "/a/*" to trusted_signers. trusted_key_groups
-		// isn't configured (configured=false), so without the trusted_signers guard
-		// this would incorrectly preserve the old key groups alongside the new
-		// signers - CloudFront rejects having both enabled on one behavior.
 		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
-			{
-				PathPattern:      "/a/*",
-				TrustedKeyGroups: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false},
-				TrustedSigners:   &duplosdk.DuploCFDTrustedSigners{Enabled: true, Quantity: 1, Items: []string{"111122223333"}},
-			},
+			{PathPattern: "/a/*", TrustedKeyGroups: protectedTKG, TrustedSigners: protectedTS},
 		}
 
-		mergeUnmanagedTrustedKeyGroups(updated, existing, []bool{false})
+		preserveOrderedBehaviorsTrust(updated, existing, []bool{false}, []bool{true})
 
-		if updated[0].TrustedKeyGroups.Enabled {
-			t.Errorf("expected trusted key groups to stay disabled while trusted_signers is active, got %+v", updated[0].TrustedKeyGroups)
+		if trustedKeyGroupsEnabled(updated[0].TrustedKeyGroups) {
+			t.Errorf("expected stale key groups to be disabled, got %+v", updated[0].TrustedKeyGroups)
+		}
+		if !reflect.DeepEqual(updated[0].TrustedSigners, protectedTS) {
+			t.Errorf("expected configured signers to be kept, got %+v", updated[0].TrustedSigners)
 		}
 	})
+
+	t.Run("switching a behavior from signers to key groups disables the stale signers", func(t *testing.T) {
+		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/a/*", TrustedSigners: protectedTS},
+		}
+		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/a/*", TrustedKeyGroups: protectedTKG, TrustedSigners: protectedTS},
+		}
+
+		preserveOrderedBehaviorsTrust(updated, existing, []bool{true}, []bool{false})
+
+		if trustedSignersEnabled(updated[0].TrustedSigners) {
+			t.Errorf("expected stale signers to be disabled, got %+v", updated[0].TrustedSigners)
+		}
+		if !reflect.DeepEqual(updated[0].TrustedKeyGroups, protectedTKG) {
+			t.Errorf("expected configured key groups to be kept, got %+v", updated[0].TrustedKeyGroups)
+		}
+	})
+
+	t.Run("both explicitly configured and enabled is left for CloudFront to reject", func(t *testing.T) {
+		existing := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/a/*"},
+		}
+		updated := []duplosdk.DuploAwsCloudfrontCacheBehavior{
+			{PathPattern: "/a/*", TrustedKeyGroups: protectedTKG, TrustedSigners: protectedTS},
+		}
+
+		preserveOrderedBehaviorsTrust(updated, existing, []bool{true}, []bool{true})
+
+		if !reflect.DeepEqual(updated[0].TrustedKeyGroups, protectedTKG) || !reflect.DeepEqual(updated[0].TrustedSigners, protectedTS) {
+			t.Errorf("expected both configured values untouched, got kg=%+v ts=%+v", updated[0].TrustedKeyGroups, updated[0].TrustedSigners)
+		}
+	})
+}
+
+func Test_trustedKeyGroupsEnabled(t *testing.T) {
+	cases := []struct {
+		name     string
+		tkg      *duplosdk.DuploCFDTrustedKeyGroups
+		expected bool
+	}{
+		{name: "nil", tkg: nil, expected: false},
+		{name: "disabled", tkg: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false}, expected: false},
+		{name: "enabled", tkg: &duplosdk.DuploCFDTrustedKeyGroups{Enabled: true, Quantity: 1, Items: []string{"kg-1"}}, expected: true},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if actual := trustedKeyGroupsEnabled(c.tkg); actual != c.expected {
+				t.Errorf("expected %v, got %v", c.expected, actual)
+			}
+		})
+	}
+}
+
+func Test_expandTrustedSigners(t *testing.T) {
+	cases := []struct {
+		name     string
+		given    []interface{}
+		expected *duplosdk.DuploCFDTrustedSigners
+	}{
+		{
+			name:     "empty list disables trusted signers",
+			given:    []interface{}{},
+			expected: &duplosdk.DuploCFDTrustedSigners{Enabled: false, Quantity: 0},
+		},
+		{
+			name:  "quantity matches filtered items when list contains empty strings",
+			given: []interface{}{"111122223333", ""},
+			expected: &duplosdk.DuploCFDTrustedSigners{
+				Enabled:  true,
+				Quantity: 1,
+				Items:    []string{"111122223333"},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := expandTrustedSigners(c.given)
+			if !reflect.DeepEqual(actual, c.expected) {
+				t.Errorf("expected %+v, got %+v", c.expected, actual)
+			}
+		})
+	}
 }
 
 func Test_trustedSignersEnabled(t *testing.T) {
