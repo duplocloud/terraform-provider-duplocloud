@@ -185,14 +185,16 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Computed: true,
 					},
 					"minimum_protocol_version": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "TLSv1.2_2021",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Default:          "TLSv1.2_2021",
+						DiffSuppressFunc: suppressViewerCertificateManagedByAws,
 					},
 					"ssl_support_method": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "sni-only",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Default:          "sni-only",
+						DiffSuppressFunc: suppressViewerCertificateManagedByAws,
 						ValidateFunc: validation.StringInSlice([]string{
 							"vip",
 							"sni-only",
@@ -1921,6 +1923,18 @@ func flattenCachedMethods(cm *duplosdk.DuploCFDStringItems) *schema.Set {
 		return flattenStringSet(cm.Items)
 	}
 	return nil
+}
+
+// suppressViewerCertificateManagedByAws suppresses diffs on ssl_support_method and
+// minimum_protocol_version while the distribution uses the default CloudFront
+// certificate (no ACM or IAM certificate in play - the same test expand uses to set
+// CloudFrontDefaultCertificate). AWS controls both values in that mode: it forces
+// MinimumProtocolVersion to TLSv1 and returns no SSLSupportMethod, so the schema
+// defaults (TLSv1.2_2021 / sni-only) would otherwise show a permanent diff.
+func suppressViewerCertificateManagedByAws(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	acm, _ := d.Get("viewer_certificate.0.acm_certificate_arn").(string)
+	iam, _ := d.Get("viewer_certificate.0.iam_certificate_id").(string)
+	return acm == "" && iam == ""
 }
 
 func flattenViewerCertificate(vc *duplosdk.DuploAwsCloudfrontDistributionViewerCertificate) []interface{} {

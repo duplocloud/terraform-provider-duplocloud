@@ -173,14 +173,16 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						Computed: true,
 					},
 					"minimum_protocol_version": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "TLSv1.2_2021",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Default:          "TLSv1.2_2021",
+						DiffSuppressFunc: suppressViewerCertificateManagedByAws,
 					},
 					"ssl_support_method": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "sni-only",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Default:          "sni-only",
+						DiffSuppressFunc: suppressViewerCertificateManagedByAws,
 						ValidateFunc: validation.StringInSlice([]string{
 							"vip",
 							"sni-only",
