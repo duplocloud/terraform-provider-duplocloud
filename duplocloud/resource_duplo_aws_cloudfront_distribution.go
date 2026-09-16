@@ -1931,6 +1931,13 @@ func flattenCachedMethods(cm *duplosdk.DuploCFDStringItems) *schema.Set {
 // CloudFrontDefaultCertificate). AWS controls both values in that mode: it forces
 // MinimumProtocolVersion to TLSv1 and returns no SSLSupportMethod, so the schema
 // defaults (TLSv1.2_2021 / sni-only) would otherwise show a permanent diff.
+//
+// The d.Get view (which merges computed state) is deliberate, not a bug: expand reads
+// the same view to decide which certificate to send, so during an ACM-to-default
+// transition where the old ARN is still carried forward, expand still sends the ACM
+// certificate - and AWS then honors both attributes, making an unsuppressed diff the
+// correct outcome. Judging by raw config here would let the suppression disagree with
+// the payload actually sent.
 func suppressViewerCertificateManagedByAws(k, oldValue, newValue string, d *schema.ResourceData) bool {
 	acm, _ := d.Get("viewer_certificate.0.acm_certificate_arn").(string)
 	iam, _ := d.Get("viewer_certificate.0.iam_certificate_id").(string)
