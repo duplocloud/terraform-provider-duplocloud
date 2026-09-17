@@ -976,8 +976,8 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 			// AWS requires a valkey-family parameter group in the same call as the engine change
 			// when the replication group uses a custom (non-default.*) parameter group. Catch the
 			// forgotten change at plan time instead of failing minutes into the apply.
-			oldGroup, _ := diff.GetChange("parameter_group_name")
-			if group := oldGroup.(string); group != "" && !strings.HasPrefix(group, "default.") && !diff.HasChange("parameter_group_name") {
+			oldGroup, newGroup := diff.GetChange("parameter_group_name")
+			if group := oldGroup.(string); group != "" && !strings.HasPrefix(group, "default.") && (!diff.HasChange("parameter_group_name") || newGroup.(string) == "") {
 				return fmt.Errorf("the instance uses the custom parameter group %q; when changing cache_type from Redis (0) to Valkey (2), parameter_group_name must be changed to a valkey-family parameter group in the same apply", group)
 			}
 		} else {
@@ -1415,8 +1415,8 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		}
 		// A concurrent parameter_group_name change is folded into the upgrade request (see the
 		// skipped standalone modify above).
-		if parameterGroupChanged {
-			rq.ParameterGroupName = d.Get("parameter_group_name").(string)
+		if newGroup := d.Get("parameter_group_name").(string); parameterGroupChanged && newGroup != "" {
+			rq.ParameterGroupName = newGroup
 		}
 		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine Redis -> Valkey (target version %s, parameter group %q)", tenantID, name, targetVersion, rq.ParameterGroupName)
 		cerr := c.EcacheInstanceUpgradeEngine(tenantID, rq)
