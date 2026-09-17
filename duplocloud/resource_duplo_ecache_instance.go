@@ -981,7 +981,7 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 			// A replication group always has a parameter group, so an empty value cannot be applied:
 			// the upgrade request would omit it and the change would be silently dropped.
 			if groupChanged && newGroup.(string) == "" {
-				return fmt.Errorf("parameter_group_name cannot be set to an empty value when changing cache_type from Redis (0) to Valkey (2); set it to a valkey-family parameter group or remove it from the configuration")
+				return fmt.Errorf("parameter_group_name cannot be set to an empty value when changing cache_type from Redis (0) to Valkey (2); set it to a valkey-family parameter group")
 			}
 			if group := oldGroup.(string); group != "" && !strings.HasPrefix(group, "default.") && !groupChanged {
 				return fmt.Errorf("the instance uses the custom parameter group %q; when changing cache_type from Redis (0) to Valkey (2), parameter_group_name must be changed to a valkey-family parameter group in the same apply", group)
