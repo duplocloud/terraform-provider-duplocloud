@@ -973,6 +973,13 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 			if vd := validValkeyVersionString(target, cty.Path{cty.GetAttrStep{Name: "engine_version"}}); vd.HasError() {
 				return fmt.Errorf("when changing cache_type from Redis (0) to Valkey (2), engine_version must be set to a supported Valkey version (minimum 7.2, e.g. 7.2 or 8.0); got %q", target)
 			}
+			// AWS requires a valkey-family parameter group in the same call as the engine change
+			// when the replication group uses a custom (non-default.*) parameter group. Catch the
+			// forgotten change at plan time instead of failing minutes into the apply.
+			oldGroup, _ := diff.GetChange("parameter_group_name")
+			if group := oldGroup.(string); group != "" && !strings.HasPrefix(group, "default.") && !diff.HasChange("parameter_group_name") {
+				return fmt.Errorf("the instance uses the custom parameter group %q; when changing cache_type from Redis (0) to Valkey (2), parameter_group_name must be changed to a valkey-family parameter group in the same apply", group)
+			}
 		} else {
 			// Every other cache_type change requires replacement.
 			if err := diff.ForceNew("cache_type"); err != nil {
@@ -1374,9 +1381,10 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		oldRaw, newRaw := d.GetChange("cache_type")
 		upgradingEngine = oldRaw.(int) == 0 && newRaw.(int) == 2
 	}
+	parameterGroupChanged := d.HasChange("parameter_group_name")
 
 	// Parameter group name update — may trigger node reboot
-	if !upgradingEngine && d.HasChange("parameter_group_name") {
+	if !upgradingEngine && parameterGroupChanged {
 		newVal := d.Get("parameter_group_name").(string)
 		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): updating parameter_group_name to %s", tenantID, name, newVal)
 		rq := &duplosdk.DuploEcacheModifyRequest{
@@ -1401,16 +1409,16 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 	// any concurrent engine_version change, so the generic engine_version modify below is skipped.
 	if upgradingEngine {
 		targetVersion := d.Get("engine_version").(string)
-		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine Redis -> Valkey (target version %s)", tenantID, name, targetVersion)
 		rq := duplosdk.DuploEcacheUpgradeEngineRequest{
 			Identifier:          identifier,
 			TargetEngineVersion: targetVersion,
 		}
 		// A concurrent parameter_group_name change is folded into the upgrade request (see the
 		// skipped standalone modify above).
-		if d.HasChange("parameter_group_name") {
+		if parameterGroupChanged {
 			rq.ParameterGroupName = d.Get("parameter_group_name").(string)
 		}
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine Redis -> Valkey (target version %s, parameter group %q)", tenantID, name, targetVersion, rq.ParameterGroupName)
 		cerr := c.EcacheInstanceUpgradeEngine(tenantID, rq)
 		if cerr != nil {
 			return diag.Errorf("Error upgrading engine to Valkey for ECache instance '%s': %s", id, cerr)
