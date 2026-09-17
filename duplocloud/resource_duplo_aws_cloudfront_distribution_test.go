@@ -6,6 +6,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func Test_expandTrustedKeyGroups(t *testing.T) {
@@ -284,6 +285,42 @@ func Test_trustedSignersEnabled(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			if actual := trustedSignersEnabled(c.ts); actual != c.expected {
+				t.Errorf("expected %v, got %v", c.expected, actual)
+			}
+		})
+	}
+}
+
+func Test_suppressViewerCertificateManagedByAws(t *testing.T) {
+	cases := []struct {
+		name     string
+		vc       map[string]interface{}
+		expected bool
+	}{
+		{
+			name:     "default certificate suppresses",
+			vc:       map[string]interface{}{"cloudfront_default_certificate": true},
+			expected: true,
+		},
+		{
+			name:     "acm certificate does not suppress",
+			vc:       map[string]interface{}{"acm_certificate_arn": "arn:aws:acm:us-east-1:111122223333:certificate/abc"},
+			expected: false,
+		},
+		{
+			name:     "iam certificate does not suppress",
+			vc:       map[string]interface{}{"iam_certificate_id": "ASCAexample"},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			d := schema.TestResourceDataRaw(t, duploAwsCloudfrontDistributionSchema(), map[string]interface{}{
+				"viewer_certificate": []interface{}{c.vc},
+			})
+			actual := suppressViewerCertificateManagedByAws("viewer_certificate.0.ssl_support_method", "", "sni-only", d)
+			if actual != c.expected {
 				t.Errorf("expected %v, got %v", c.expected, actual)
 			}
 		})
