@@ -79,6 +79,8 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 				"   - `1` : Memcache\n" +
 				"   - `2` : Valkey\n\n" +
 				"Changing `cache_type` from `0` (Redis) to `2` (Valkey) performs an in-place engine upgrade. " +
+				"If the instance uses a custom parameter group, change `parameter_group_name` to a valkey-family " +
+				"parameter group in the same apply — AWS requires it to be part of the engine upgrade. " +
 				"Any other change to `cache_type` forces replacement of the instance.",
 			Type:         schema.TypeInt,
 			Optional:     true,
@@ -138,11 +140,12 @@ func ecacheInstanceSchema() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"auth_token": {
-			Description: "Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.\n\n" +
+			Description: "Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is set to `true`.\n\n" +
 				"See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.",
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
+			Type:      schema.TypeString,
+			Sensitive: true,
+			Optional:  true,
+			ForceNew:  true,
 			ValidateFunc: validation.All(
 				validation.StringLenBetween(16, 128),
 				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z0-9!&#$<>^-]*$`), "Invalid AWS Elasticache Redis password"),
@@ -720,6 +723,13 @@ func ecacheInstanceWaitUntilAvailable(ctx context.Context, c *duplosdk.Client, t
 			if err != nil {
 				return 0, "", err
 			}
+
+			// EcacheInstanceGet reports an instance it cannot find as (nil, nil). Hold the
+			// wait in a pending state rather than dereferencing it - a read that comes back
+			// empty should not end the wait, and must not panic the provider.
+			if resp == nil {
+				return &duplosdk.DuploEcacheInstance{}, "processing", nil
+			}
 			if resp.InstanceStatus == "" {
 				resp.InstanceStatus = "processing"
 			}
@@ -748,6 +758,13 @@ func ecacheInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client,
 			if err != nil {
 				return 0, "", err
 			}
+
+			// EcacheInstanceGet reports an instance it cannot find as (nil, nil). Hold the
+			// wait in its pending state rather than dereferencing it, so an empty read is
+			// treated as "has not transitioned yet" instead of panicking the provider.
+			if resp == nil {
+				return &duplosdk.DuploEcacheInstance{}, "available", nil
+			}
 			if resp.InstanceStatus == "" {
 				resp.InstanceStatus = "processing"
 			}
@@ -757,6 +774,43 @@ func ecacheInstanceWaitUntilUnavailable(ctx context.Context, c *duplosdk.Client,
 	log.Printf("[DEBUG] EcacheInstanceWaitUntilUnavailable (%s, %s)", tenantID, name)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+// ecacheInstanceWaitUntilSettled polls an ECache instance until a requested change is
+// actually visible on the instance.
+//
+// The update endpoints are fire-and-forget: they return success as soon as the request is
+// accepted, and the two status waits above cannot tell "the change finished" apart from
+// "the change never started" - ecacheInstanceWaitUntilUnavailable discards its error by
+// design, and ecacheInstanceWaitUntilAvailable returns immediately while the instance is
+// still available. Checking the value itself is what stops a dropped request from being
+// reported as a successful apply, and stops a later phase from running against nodes that
+// do not exist yet.
+//
+// On timeout the returned error is the last retryable error, so it carries the reading
+// the instance last reported.
+func ecacheInstanceWaitUntilSettled(ctx context.Context, c *duplosdk.Client, tenantID, name, what string, timeout time.Duration, settled func(*duplosdk.DuploEcacheInstance) bool) error {
+	log.Printf("[DEBUG] ecacheInstanceWaitUntilSettled (%s, %s): waiting for %s", tenantID, name, what)
+	return retry.RetryContext(ctx, timeout, func() *retry.RetryError {
+		resp, err := c.EcacheInstanceGet(tenantID, name)
+		if err != nil {
+			return retry.NonRetryableError(err)
+		}
+
+		// EcacheInstanceGet reports an instance it cannot find as (nil, nil), so keep
+		// polling rather than dereferencing it.
+		if resp == nil {
+			return retry.RetryableError(fmt.Errorf("ECache instance '%s' cannot be read yet", name))
+		}
+
+		// Only trust the reading once the instance has come to rest - a read taken
+		// mid-modification still carries the previous configuration.
+		if resp.InstanceStatus != "available" || !settled(resp) {
+			return retry.RetryableError(fmt.Errorf("still waiting for %s: the instance reports %d replicas, automatic_failover=%t, multi_az=%t (status %q)",
+				what, resp.Replicas, resp.AutomaticFailoverEnabled, resp.MultiAZEnabled, resp.InstanceStatus))
+		}
+		return nil
+	})
 }
 
 func parseECacheInstanceIdParts(id string) (tenantID, name string, err error) {
@@ -969,6 +1023,19 @@ func validateEcacheParameters(ctx context.Context, diff *schema.ResourceDiff, m 
 			target := engVer
 			if vd := validValkeyVersionString(target, cty.Path{cty.GetAttrStep{Name: "engine_version"}}); vd.HasError() {
 				return fmt.Errorf("when changing cache_type from Redis (0) to Valkey (2), engine_version must be set to a supported Valkey version (minimum 7.2, e.g. 7.2 or 8.0); got %q", target)
+			}
+			// AWS requires a valkey-family parameter group in the same call as the engine change
+			// when the replication group uses a custom (non-default.*) parameter group. Catch the
+			// forgotten change at plan time instead of failing minutes into the apply.
+			oldGroup, newGroup := diff.GetChange("parameter_group_name")
+			groupChanged := diff.HasChange("parameter_group_name")
+			// A replication group always has a parameter group, so an empty value cannot be applied:
+			// the upgrade request would omit it and the change would be silently dropped.
+			if groupChanged && newGroup.(string) == "" {
+				return fmt.Errorf("parameter_group_name cannot be set to an empty value when changing cache_type from Redis (0) to Valkey (2); set it to a valkey-family parameter group")
+			}
+			if group := oldGroup.(string); group != "" && !strings.HasPrefix(group, "default.") && !groupChanged {
+				return fmt.Errorf("the instance uses the custom parameter group %q; when changing cache_type from Redis (0) to Valkey (2), parameter_group_name must be changed to a valkey-family parameter group in the same apply", group)
 			}
 		} else {
 			// Every other cache_type change requires replacement.
@@ -1215,6 +1282,11 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after disabling multi_az: %s", id, err)
 			}
 			time.Sleep(time.Duration(90) * time.Second)
+			if werr := ecacheInstanceWaitUntilSettled(ctx, c, tenantID, name, "multi_az_enabled to turn off", d.Timeout(schema.TimeoutUpdate), func(i *duplosdk.DuploEcacheInstance) bool {
+				return !i.MultiAZEnabled
+			}); werr != nil {
+				return diag.Errorf("Error disabling multi_az_enabled for ECache instance '%s': the request was accepted but multi_az_enabled never turned off: %s", id, werr)
+			}
 		}
 	}
 
@@ -1239,6 +1311,11 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after disabling failover: %s", id, err)
 			}
 			time.Sleep(time.Duration(90) * time.Second)
+			if werr := ecacheInstanceWaitUntilSettled(ctx, c, tenantID, name, "automatic_failover_enabled to turn off", d.Timeout(schema.TimeoutUpdate), func(i *duplosdk.DuploEcacheInstance) bool {
+				return !i.AutomaticFailoverEnabled
+			}); werr != nil {
+				return diag.Errorf("Error disabling automatic_failover_enabled for ECache instance '%s': the request was accepted but automatic_failover_enabled never turned off: %s", id, werr)
+			}
 		}
 	}
 
@@ -1259,6 +1336,16 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 			return diag.Errorf("Error waiting for ECache instance '%s' to be available: %s", id, err)
 		}
 		time.Sleep(time.Duration(90) * time.Second)
+
+		// The replica endpoint reports success once the request is accepted, so confirm the
+		// count actually landed before the failover and multi_az phases run against it. On
+		// timeout the error carries the count the instance last reported.
+		werr := ecacheInstanceWaitUntilSettled(ctx, c, tenantID, name, fmt.Sprintf("the replica count to reach %d", newReplicas), d.Timeout(schema.TimeoutUpdate), func(i *duplosdk.DuploEcacheInstance) bool {
+			return i.Replicas == newReplicas
+		})
+		if werr != nil {
+			return diag.Errorf("Error updating replicas for ECache instance '%s': the request was accepted but never applied: %s", id, werr)
+		}
 	}
 
 	// --- Phase 3: Enable failover and multi_az after replica changes ---
@@ -1287,6 +1374,11 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after enabling failover: %s", id, err)
 			}
 			time.Sleep(time.Duration(90) * time.Second)
+			if werr := ecacheInstanceWaitUntilSettled(ctx, c, tenantID, name, "automatic_failover_enabled to turn on", d.Timeout(schema.TimeoutUpdate), func(i *duplosdk.DuploEcacheInstance) bool {
+				return i.AutomaticFailoverEnabled
+			}); werr != nil {
+				return diag.Errorf("Error enabling automatic_failover_enabled for ECache instance '%s': the request was accepted but automatic_failover_enabled never turned on: %s", id, werr)
+			}
 		}
 	}
 
@@ -1314,6 +1406,11 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 				return diag.Errorf("Error waiting for ECache instance '%s' to be available after enabling multi_az: %s", id, err)
 			}
 			time.Sleep(time.Duration(90) * time.Second)
+			if werr := ecacheInstanceWaitUntilSettled(ctx, c, tenantID, name, "multi_az_enabled to turn on", d.Timeout(schema.TimeoutUpdate), func(i *duplosdk.DuploEcacheInstance) bool {
+				return i.MultiAZEnabled
+			}); werr != nil {
+				return diag.Errorf("Error enabling multi_az_enabled for ECache instance '%s': the request was accepted but multi_az_enabled never turned on: %s", id, werr)
+			}
 		}
 	}
 
@@ -1361,8 +1458,20 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		time.Sleep(time.Duration(90) * time.Second)
 	}
 
+	// Detect an in-place Redis -> Valkey engine upgrade up front: when one is happening, a
+	// parameter_group_name change must ride along in the upgrade-engine request instead of the
+	// standalone modify below. AWS rejects a valkey-family parameter group on a cluster still
+	// running Redis, and requires the new group in the same ModifyReplicationGroup call as the
+	// engine change when the cluster uses a custom parameter group.
+	upgradingEngine := false
+	if d.HasChange("cache_type") {
+		oldRaw, newRaw := d.GetChange("cache_type")
+		upgradingEngine = oldRaw.(int) == 0 && newRaw.(int) == 2
+	}
+	parameterGroupChanged := d.HasChange("parameter_group_name")
+
 	// Parameter group name update — may trigger node reboot
-	if d.HasChange("parameter_group_name") {
+	if !upgradingEngine && parameterGroupChanged {
 		newVal := d.Get("parameter_group_name").(string)
 		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): updating parameter_group_name to %s", tenantID, name, newVal)
 		rq := &duplosdk.DuploEcacheModifyRequest{
@@ -1385,32 +1494,32 @@ func resourceDuploEcacheInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 	// Engine upgrade Redis -> Valkey (in-place) — performed via the dedicated upgrade-engine
 	// endpoint, which swaps the engine and sets the target version in one operation. This subsumes
 	// any concurrent engine_version change, so the generic engine_version modify below is skipped.
-	engineUpgraded := false
-	if d.HasChange("cache_type") {
-		oldRaw, newRaw := d.GetChange("cache_type")
-		if oldRaw.(int) == 0 && newRaw.(int) == 2 {
-			targetVersion := d.Get("engine_version").(string)
-			log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine Redis -> Valkey (target version %s)", tenantID, name, targetVersion)
-			rq := duplosdk.DuploEcacheUpgradeEngineRequest{
-				Identifier:          identifier,
-				TargetEngineVersion: targetVersion,
-			}
-			cerr := c.EcacheInstanceUpgradeEngine(tenantID, rq)
-			if cerr != nil {
-				return diag.Errorf("Error upgrading engine to Valkey for ECache instance '%s': %s", id, cerr)
-			}
-			_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
-			err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
-			if err != nil {
-				return diag.Errorf("Error waiting for ECache instance '%s' to be available after engine upgrade: %s", id, err)
-			}
-			time.Sleep(time.Duration(90) * time.Second)
-			engineUpgraded = true
+	if upgradingEngine {
+		targetVersion := d.Get("engine_version").(string)
+		rq := duplosdk.DuploEcacheUpgradeEngineRequest{
+			Identifier:          identifier,
+			TargetEngineVersion: targetVersion,
 		}
+		// A concurrent parameter_group_name change is folded into the upgrade request (see the
+		// skipped standalone modify above).
+		if newGroup := d.Get("parameter_group_name").(string); parameterGroupChanged && newGroup != "" {
+			rq.ParameterGroupName = newGroup
+		}
+		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine Redis -> Valkey (target version %s, parameter group %q)", tenantID, name, targetVersion, rq.ParameterGroupName)
+		cerr := c.EcacheInstanceUpgradeEngine(tenantID, rq)
+		if cerr != nil {
+			return diag.Errorf("Error upgrading engine to Valkey for ECache instance '%s': %s", id, cerr)
+		}
+		_ = ecacheInstanceWaitUntilUnavailable(ctx, c, tenantID, name, 150*time.Second)
+		err = ecacheInstanceWaitUntilAvailable(ctx, c, tenantID, name)
+		if err != nil {
+			return diag.Errorf("Error waiting for ECache instance '%s' to be available after engine upgrade: %s", id, err)
+		}
+		time.Sleep(time.Duration(90) * time.Second)
 	}
 
 	// Engine version upgrade — last, may reboot nodes
-	if !engineUpgraded && d.HasChange("engine_version") {
+	if !upgradingEngine && d.HasChange("engine_version") {
 		newVal := d.Get("engine_version").(string)
 		log.Printf("[DEBUG] resourceDuploEcacheInstanceUpdate(%s, %s): upgrading engine_version to %s", tenantID, name, newVal)
 		rq := &duplosdk.DuploEcacheModifyRequest{

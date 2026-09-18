@@ -161,3 +161,33 @@ resource "duplocloud_rds_read_replica" "serverless_replica2" {
     min_capacity = 1
   }
 }
+
+//Example to add a reader instance to the SECONDARY cluster of an Aurora global database.
+//The replica is created in the secondary tenant and targets the secondary cluster
+//identifier. The secondary cluster must not be headless (make_headless = false).
+resource "duplocloud_rds_instance" "global_primary" {
+  tenant_id                       = duplocloud_tenant.myapp.tenant_id
+  name                            = "globaldb"
+  engine                          = 9 // Aurora PostgreSQL
+  engine_version                  = "16.4"
+  size                            = "db.r7g.large"
+  master_username                 = "myuser"
+  master_password                 = "Qaazwedd#1"
+  storage_type                    = "aurora"
+  encrypt_storage                 = true
+  store_details_in_secret_manager = true
+}
+
+resource "duplocloud_aws_rds_global_secondary" "dr" {
+  tenant_id           = duplocloud_rds_instance.global_primary.tenant_id
+  cluster_identifier  = duplocloud_rds_instance.global_primary.cluster_identifier
+  secondary_tenant_id = "a54598b1-0d8f-4a7b-ba7e-4a20f890a57d"
+  region              = "us-east-2"
+}
+
+resource "duplocloud_rds_read_replica" "dr_reader" {
+  tenant_id          = duplocloud_aws_rds_global_secondary.dr.secondary_tenant_id
+  name               = "globaldb-dr-reader"
+  size               = "db.r7g.large"
+  cluster_identifier = duplocloud_aws_rds_global_secondary.dr.secondary_cluster
+}
