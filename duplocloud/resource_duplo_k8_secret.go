@@ -11,6 +11,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -55,6 +56,20 @@ func k8sSecretSchema() map[string]*schema.Schema {
 			ValidateFunc:     ValidateJSONObjectString,
 			DiffSuppressFunc: secretDataDiff,
 		},
+		"manage_secret_data": {
+			Description: "Whether Terraform manages the contents of the secret.  Defaults to `true`.\n\n" +
+				"When `true`, `secret_data` is sent to Duplo on create and update, and the secret's values are stored " +
+				"in Terraform state.\n\n" +
+				"Set this to `false` to track a secret whose values are owned outside of Terraform - for example, one " +
+				"created by the Duplo installer and rotated out of band.  Terraform then manages only the existence of " +
+				"the secret: `secret_data` must be omitted from the configuration, its values are masked in state, and " +
+				"updates to the other attributes leave the existing data untouched.\n\n" +
+				"This attribute keeps its last applied value when it is removed from the configuration, so set it back " +
+				"to `true` explicitly to resume managing the contents.",
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
+		},
 		"secret_annotations": {
 			Description: "Annotations for the secret.\n\n**Note: : To skip encoding of an already encoded value string of a k8's secrete add `duplocloud.net/skip-encoding: \"true\"`",
 			Type:        schema.TypeMap,
@@ -82,8 +97,18 @@ func resourceK8Secret() *schema.Resource {
 		UpdateContext: resourceK8SecretUpdate,
 		DeleteContext: resourceK8SecretDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: func(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+				// Imported state has no configuration behind it, so seed the historical
+				// behavior explicitly.  Without this the attribute comes back null and an
+				// import of a secret that Terraform is meant to manage would silently land
+				// in tracking-only mode.
+				if err := d.Set("manage_secret_data", true); err != nil {
+					return nil, err
+				}
+				return []*schema.ResourceData{d}, nil
+			},
 		},
+		CustomizeDiff: validateK8sSecretDataManagement,
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
 			Update: schema.DefaultTimeout(15 * time.Minute),
@@ -114,7 +139,10 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.Errorf("Unable to retrieve tenant %s k8s secret %s : %s", tenantId, name, cerr)
 	}
 
-	flattenK8sSecret(d, rp, false)
+	manage := manageK8sSecretData(d)
+	flattenK8sSecret(d, rp, !manage)
+	d.Set("manage_secret_data", manage)
+
 	log.Printf("[TRACE] resourceK8SecretRead(%s, %s): end", tenantId, name)
 	return nil
 }
@@ -162,6 +190,18 @@ func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
+
+	// When Terraform does not own the contents of the secret, carry the existing data
+	// forward.  CreateOrUpdateK8Secret replaces the whole object, so an update driven by
+	// a label or annotation change would otherwise wipe values managed outside Terraform.
+	if !manageK8sSecretData(d) {
+		current, cerr := c.K8SecretGet(tenantId, name)
+		if cerr != nil {
+			return diag.Errorf("Unable to retrieve tenant %s k8s secret %s for update: %s", tenantId, name, cerr)
+		}
+		rq.SecretData = current.SecretData
+	}
+
 	cerr := c.K8SecretUpdate(tenantId, rq)
 	if cerr != nil {
 		return diag.FromErr(cerr)
@@ -212,13 +252,13 @@ func parseK8sSecretIdParts(id string) (tenantID, name string, err error) {
 	return
 }
 
-func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret, readOnly bool) {
+func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret, maskSecretData bool) {
 	// First, set the simple fields.
 	d.Set("tenant_id", duplo.TenantID)
 	d.Set("secret_name", duplo.SecretName)
 	d.Set("secret_type", duplo.SecretType)
 	d.Set("secret_version", duplo.SecretVersion)
-	if readOnly {
+	if maskSecretData {
 		for key := range duplo.SecretData {
 			duplo.SecretData[key] = "**********"
 		}
@@ -250,7 +290,7 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret, re
 		}
 	}
 	d.Set("secret_labels", op)
-	log.Printf("[TRACE] K8SecretGetList(%s): received response: %s", duplo.TenantID, duplo)
+	log.Printf("[TRACE] flattenK8sSecret(%s, %s): flattened %d key(s)", duplo.TenantID, duplo.SecretName, len(duplo.SecretData))
 
 }
 
@@ -282,15 +322,18 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 		}
 	}
 
-	// The data must be decoded as JSON.
-	data := d.Get("secret_data").(string)
-	if data != "" {
-		err := json.Unmarshal([]byte(data), &duplo.SecretData)
-		if err != nil {
-			return nil, err
+	// The data must be decoded as JSON.  It is skipped entirely when Terraform does not
+	// own the contents of the secret - the caller supplies whatever is already there.
+	if manageK8sSecretData(d) {
+		data := d.Get("secret_data").(string)
+		if data != "" {
+			err := json.Unmarshal([]byte(data), &duplo.SecretData)
+			if err != nil {
+				return nil, err
+			}
 		}
+		d.Set("client_secret_version", hashForData(data))
 	}
-	d.Set("client_secret_version", hashForData(data))
 	if duplo.SecretData == nil {
 		duplo.SecretData = map[string]interface{}{}
 	}
@@ -306,6 +349,11 @@ func secretLabelValidationError(name, value string) error {
 }
 
 func secretDataDiff(k, old, new string, d *schema.ResourceData) bool {
+	// Terraform does not own the contents of the secret, so the masked values held in
+	// state never need to be reconciled against the configuration.
+	if !manageK8sSecretData(d) {
+		return true
+	}
 	state, err := secretDataCompare(old, new)
 	if err != nil {
 		log.Printf("TRACE secretDataCompare : %s", err.Error())
@@ -339,4 +387,59 @@ func secretDataCompare(old, new string) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+// k8sSecretRawAccessor is satisfied by both *schema.ResourceData and *schema.ResourceDiff.
+type k8sSecretRawAccessor interface {
+	GetRawConfig() cty.Value
+	GetRawState() cty.Value
+}
+
+// manageK8sSecretData reports whether Terraform owns the contents of the secret.
+//
+// manage_secret_data is Optional+Computed rather than defaulted on purpose.  State
+// written before the attribute existed carries no value for it, and a Default would make
+// every such resource plan a change on the next refresh - which, for anyone already
+// tracking a secret they do not own, would push an empty SecretData and wipe it.  So the
+// raw configuration is consulted first, then the raw prior state, and an absent value
+// means the historical "Terraform manages the data" behavior.
+func manageK8sSecretData(d k8sSecretRawAccessor) bool {
+	if v, ok := ctyBoolAttr(d.GetRawConfig(), "manage_secret_data"); ok {
+		return v
+	}
+	if v, ok := ctyBoolAttr(d.GetRawState(), "manage_secret_data"); ok {
+		return v
+	}
+	return true
+}
+
+// ctyBoolAttr reads a boolean attribute out of a cty object, reporting whether it was
+// present and usable.  Raw config is null during a refresh and raw state is null during a
+// create, so every access has to tolerate an absent object.
+func ctyBoolAttr(obj cty.Value, name string) (bool, bool) {
+	if obj.IsNull() || !obj.IsKnown() || !obj.Type().IsObjectType() || !obj.Type().HasAttribute(name) {
+		return false, false
+	}
+	v := obj.GetAttr(name)
+	if v.IsNull() || !v.IsKnown() {
+		return false, false
+	}
+	return v.True(), true
+}
+
+// validateK8sSecretDataManagement rejects a configuration that supplies secret data while
+// disclaiming ownership of it, rather than silently ignoring the data.
+func validateK8sSecretDataManagement(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	if manageK8sSecretData(diff) {
+		return nil
+	}
+
+	cfg := diff.GetRawConfig()
+	if cfg.IsNull() || !cfg.IsKnown() || !cfg.Type().IsObjectType() || !cfg.Type().HasAttribute("secret_data") {
+		return nil
+	}
+	if !cfg.GetAttr("secret_data").IsNull() {
+		return fmt.Errorf("secret_data must not be set when manage_secret_data is false: in that mode Terraform tracks only the existence of the secret, and its contents are left to whoever owns them")
+	}
+	return nil
 }
