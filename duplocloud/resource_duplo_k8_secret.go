@@ -340,6 +340,14 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 	// own the contents of the secret - the caller supplies whatever is already there.
 	if manageK8sSecretData(d) {
 		data := d.Get("secret_data").(string)
+		// Management has just been turned back on with nothing to write.  CustomizeDiff
+		// catches this at plan time, but only when the configured value was known then, so
+		// the check is repeated here where it always is.
+		if data == "" {
+			if wasManaged, ok := ctyBoolAttr(d.GetRawState(), "manage_secret_data"); ok && !wasManaged {
+				return nil, errors.New(errReEnableWithoutData)
+			}
+		}
 		if data != "" {
 			err := json.Unmarshal([]byte(data), &duplo.SecretData)
 			if err != nil {
@@ -354,6 +362,12 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 
 	return &duplo, nil
 }
+
+// errReEnableWithoutData is raised in two places: at plan time by CustomizeDiff, and
+// again on the write path, which is the only one that always has a known value to judge.
+const errReEnableWithoutData = "secret_data is required when manage_secret_data is set back to true: the value " +
+	"held in state is masked, so applying would overwrite the secret with an empty one - supply the secret's " +
+	"contents, or use `secret_data = jsonencode({})` to empty it on purpose"
 
 // carryForwardSecretData points the request at the data the backend already holds, so that
 // a write made while Terraform does not own the contents leaves them alone.
@@ -390,6 +404,11 @@ func secretLabelValidationError(name, value string) error {
 }
 
 func secretDataDiff(k, old, new string, d *schema.ResourceData) bool {
+	// Ownership is not settled yet, so show the change rather than hiding it on the
+	// strength of a prior state that may not survive the apply.
+	if ctyAttrIsUnknown(d.GetRawConfig(), "manage_secret_data") {
+		return false
+	}
 	// Terraform does not own the contents of the secret, so the masked values held in
 	// state never need to be reconciled against the configuration.
 	if !manageK8sSecretData(d) {
@@ -474,6 +493,14 @@ func validateK8sSecretDataManagement(ctx context.Context, diff *schema.ResourceD
 	config, state := diff.GetRawConfig(), diff.GetRawState()
 	hasSecretData := ctyAttrIsSet(config, "secret_data")
 
+	// An unknown value says nothing about ownership yet, and manageK8sSecretData falls back
+	// to prior state for it - which is precisely what is about to change.  Judging it now
+	// would reject a configuration that is about to become valid, or wave through a
+	// re-enable that is about to empty the secret.  Both are settled on the write path.
+	if ctyAttrIsUnknown(config, "manage_secret_data") {
+		return nil
+	}
+
 	if manageK8sSecretData(diff) {
 		// Management is being turned back on with nothing to write.  The value sitting in
 		// state is a mask, so the plan renders as an ordinary rotation while the apply would
@@ -481,9 +508,7 @@ func validateK8sSecretDataManagement(ctx context.Context, diff *schema.ResourceD
 		// `false` in state means the configuration said `true` explicitly, since an absent
 		// value falls back to state.
 		if wasManaged, ok := ctyBoolAttr(state, "manage_secret_data"); ok && !wasManaged && !hasSecretData {
-			return errors.New("secret_data is required when manage_secret_data is set back to true: the value " +
-				"held in state is masked, so applying would overwrite the secret with an empty one - supply the " +
-				"secret's contents, or use `secret_data = jsonencode({})` to empty it on purpose")
+			return errors.New(errReEnableWithoutData)
 		}
 		return nil
 	}
@@ -501,6 +526,17 @@ func validateK8sSecretDataManagement(ctx context.Context, diff *schema.ResourceD
 			"managing the contents"
 	}
 	return errors.New(msg)
+}
+
+// ctyAttrIsUnknown reports whether an attribute is present but not yet computed.  The
+// ownership helpers cannot read such a value, and treating it as absent is wrong in a way
+// that matters, so the plan-time callers ask about it separately.
+func ctyAttrIsUnknown(obj cty.Value, name string) bool {
+	if obj.IsNull() || !obj.IsKnown() || !obj.Type().IsObjectType() || !obj.Type().HasAttribute(name) {
+		return false
+	}
+	v := obj.GetAttr(name)
+	return !v.IsNull() && !v.IsKnown()
 }
 
 // ctyAttrIsSet reports whether an attribute is present in a cty object and carries a

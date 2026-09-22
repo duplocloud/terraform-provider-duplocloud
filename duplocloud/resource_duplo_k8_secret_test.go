@@ -271,15 +271,29 @@ func TestSecretDataDiff_NotSuppressedWhenManaged(t *testing.T) {
 	assert.Contains(t, diff.Attributes, "secret_data")
 }
 
-// k8sSecretData builds the ResourceData that Create, Update and Read are handed.
-func k8sSecretData(t *testing.T, state, config cty.Value) *schema.ResourceData {
+// k8sSecretData builds the ResourceData that Create, Update and Read are handed.  Apply
+// hands the writers a ResourceData whose Get returns the *planned* values while
+// GetRawState still reports the prior state, so the attributes are shimmed from the plan,
+// not from the state.  A null plan is a read, which carries no configuration.
+func k8sSecretData(t *testing.T, priorState, planned, config cty.Value) *schema.ResourceData {
 	t.Helper()
 	r := resourceK8Secret()
 
-	is, err := r.ShimInstanceStateFromValue(state)
+	attrs := planned
+	if attrs.IsNull() {
+		attrs = priorState
+	}
+	// ShimInstanceStateFromValue keys the flatmap off `id` and hands back nothing at all
+	// without one, so a configuration-shaped value has to be given one first.
+	if attrs.GetAttr("id").IsNull() {
+		vals := attrs.AsValueMap()
+		vals["id"] = cty.StringVal(k8sSecretTestID)
+		attrs = cty.ObjectVal(vals)
+	}
+	is, err := r.ShimInstanceStateFromValue(attrs)
 	assert.NoError(t, err)
 	is.ID = k8sSecretTestID
-	is.RawState = state
+	is.RawState = priorState
 	is.RawConfig = config
 
 	return r.Data(is)
@@ -287,7 +301,9 @@ func k8sSecretData(t *testing.T, state, config cty.Value) *schema.ResourceData {
 
 func TestExpandK8sSecret_SkipsDataWhenUnmanaged(t *testing.T) {
 	state := k8sSecretState(cty.False, maskedData)
-	d := k8sSecretData(t, state, k8sSecretConfig(cty.False, nullString))
+	// A suppressed diff plans the prior value forward, so what expand is handed here is
+	// the mask itself - which is exactly why it must not reach the request.
+	d := k8sSecretData(t, state, state, k8sSecretConfig(cty.False, nullString))
 
 	rq, err := expandK8sSecret(d)
 
@@ -296,11 +312,12 @@ func TestExpandK8sSecret_SkipsDataWhenUnmanaged(t *testing.T) {
 	// out as JSON null instead of the empty object every other path sends.
 	assert.NotNil(t, rq.SecretData)
 	assert.Empty(t, rq.SecretData)
+	assert.NotContains(t, fmt.Sprint(rq.SecretData), "**********")
 }
 
 func TestExpandK8sSecret_SendsDataWhenManaged(t *testing.T) {
 	state := k8sSecretState(cty.True, realData)
-	d := k8sSecretData(t, state, k8sSecretConfig(cty.True, realData))
+	d := k8sSecretData(t, state, k8sSecretConfig(cty.True, realData), k8sSecretConfig(cty.True, realData))
 
 	rq, err := expandK8sSecret(d)
 
@@ -309,7 +326,7 @@ func TestExpandK8sSecret_SendsDataWhenManaged(t *testing.T) {
 }
 
 func TestFlattenK8sSecret_MasksTheValues(t *testing.T) {
-	d := k8sSecretData(t, k8sSecretState(cty.False, maskedData), nullObject())
+	d := k8sSecretData(t, k8sSecretState(cty.False, maskedData), nullObject(), nullObject())
 	duplo := &duplosdk.DuploK8sSecret{
 		TenantID:   "3c9bd2e4-1f5a-4d7b-8a62-1e9f0c5b7d31",
 		SecretName: "env-var-os-global",
@@ -324,7 +341,7 @@ func TestFlattenK8sSecret_MasksTheValues(t *testing.T) {
 }
 
 func TestFlattenK8sSecret_StoresTheValuesWhenManaged(t *testing.T) {
-	d := k8sSecretData(t, k8sSecretState(cty.True, realData), nullObject())
+	d := k8sSecretData(t, k8sSecretState(cty.True, realData), nullObject(), nullObject())
 	duplo := &duplosdk.DuploK8sSecret{
 		TenantID:   "3c9bd2e4-1f5a-4d7b-8a62-1e9f0c5b7d31",
 		SecretName: "env-var-os-global",
@@ -437,4 +454,64 @@ func TestCarryForwardSecretData_NeverSendsJSONNull(t *testing.T) {
 	assert.NoError(t, c.K8SecretCreate(k8sSecretTenant, rq))
 	assert.Contains(t, posted, `"SecretData":{}`)
 	assert.NotContains(t, posted, `"SecretData":null`)
+}
+
+// An unknown manage_secret_data - `manage_secret_data = var.x` resolved from something
+// Terraform has not computed yet - is not an absent one.  manageK8sSecretData falls back
+// to prior state for it, and prior state is exactly what is about to change.
+
+// Rejecting this at plan time is a false positive: the value may well resolve to true, in
+// which case supplying secret_data is correct.
+func TestValidateK8sSecretDataManagement_UnknownOwnershipWithDataIsDeferred(t *testing.T) {
+	_, err := k8sSecretPlan(t, k8sSecretState(cty.False, maskedData),
+		k8sSecretConfig(cty.UnknownVal(cty.Bool), realData))
+
+	assert.NoError(t, err)
+}
+
+// And waving this through is the dangerous half: the re-enable guard never fires, so the
+// apply re-enables management with nothing to write and posts an empty secret.
+func TestValidateK8sSecretDataManagement_UnknownOwnershipWithoutDataIsDeferred(t *testing.T) {
+	_, err := k8sSecretPlan(t, k8sSecretState(cty.False, maskedData),
+		k8sSecretConfig(cty.UnknownVal(cty.Bool), nullString))
+
+	assert.NoError(t, err)
+}
+
+// ...which is why the write path has to hold the line too.  By apply time the value is
+// always known, so this is the check that cannot be skipped.
+func TestExpandK8sSecret_RefusesToEmptyASecretOnReEnable(t *testing.T) {
+	d := k8sSecretData(t, k8sSecretState(cty.False, maskedData), k8sSecretConfig(cty.True, nullString), k8sSecretConfig(cty.True, nullString))
+
+	_, err := expandK8sSecret(d)
+
+	assert.ErrorContains(t, err, "secret_data is required when manage_secret_data is set back to true")
+}
+
+// Emptying a secret Terraform already owned stays legal, and so does the explicit opt-in.
+func TestExpandK8sSecret_AllowsEmptyingAManagedSecret(t *testing.T) {
+	d := k8sSecretData(t, k8sSecretState(cty.True, realData), k8sSecretConfig(cty.True, nullString), k8sSecretConfig(cty.True, nullString))
+
+	rq, err := expandK8sSecret(d)
+
+	assert.NoError(t, err)
+	assert.Empty(t, rq.SecretData)
+}
+
+func TestExpandK8sSecret_AllowsDeliberatelyEmptyingOnReEnable(t *testing.T) {
+	d := k8sSecretData(t, k8sSecretState(cty.False, maskedData),
+		k8sSecretConfig(cty.True, cty.StringVal("{}")), k8sSecretConfig(cty.True, cty.StringVal("{}")))
+
+	rq, err := expandK8sSecret(d)
+
+	assert.NoError(t, err)
+	assert.Empty(t, rq.SecretData)
+}
+
+func TestSecretDataDiff_NotSuppressedWhileOwnershipIsUnknown(t *testing.T) {
+	diff, err := k8sSecretPlan(t, k8sSecretState(cty.False, maskedData),
+		k8sSecretConfig(cty.UnknownVal(cty.Bool), realData))
+
+	assert.NoError(t, err)
+	assert.Contains(t, diff.Attributes, "secret_data")
 }
