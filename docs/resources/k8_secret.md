@@ -40,6 +40,17 @@ resource "duplocloud_k8_secret" "myapp" {
 # Track a secret whose values are owned outside of Terraform - created by the Duplo
 # installer, rotated out of band - so that services can depend on it without its
 # contents ever being written to Terraform state.
+#
+# Import the secret before the first apply:
+#
+#   terraform import duplocloud_k8_secret.env_var_global \
+#     v2/subscriptions/*TENANT_ID*/K8SecretApiV2/env-var-os-global
+#
+# Importing is not strictly required - a create carries any existing data forward - but
+# it keeps Terraform from treating a secret that already exists as one it is making, and
+# it is the only way to catch a wrong secret_type before the plan proposes a replacement.
+# Note that the import itself writes the secret's values to state once, so rotate the
+# secret afterwards if that matters.
 resource "duplocloud_k8_secret" "env_var_global" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
 
@@ -67,7 +78,9 @@ resource "duplocloud_k8_secret" "env_var_global" {
 
 When `true`, `secret_data` is sent to Duplo on create and update, and the secret's values are stored in Terraform state.
 
-Set this to `false` to track a secret whose values are owned outside of Terraform - for example, one created by the Duplo installer and rotated out of band.  Terraform then manages only the existence of the secret: `secret_data` must be omitted from the configuration, its values are masked in state, and updates to the other attributes leave the existing data untouched.
+Set this to `false` to track a secret whose values are owned outside of Terraform - for example, one created by the Duplo installer and rotated out of band.  Terraform then manages only the existence of the secret: `secret_data` must be omitted from the configuration, its values are masked in state, and creates and updates carry the existing data forward instead of overwriting it.
+
+Two things this mode does not protect against.  `tenant_id`, `secret_name` and `secret_type` force a new resource, and a replacement destroys and recreates the secret, its data included - so an import that guesses `secret_type` wrong still loses the contents.  And `terraform import` has no configuration behind it, so importing writes the secret's values to state once before this attribute can be set to `false`; rotate the secret afterwards, or scrub the state history, if that matters.
 
 This attribute keeps its last applied value when it is removed from the configuration, so set it back to `true` explicitly to resume managing the contents.
 - `secret_annotations` (Map of String) Annotations for the secret.
@@ -102,4 +115,10 @@ Import is supported using the following syntax:
 #  - *NAME* is the config map name
 #
 terraform import duplocloud_k8_secret.myapp v2/subscriptions/*TENANT_ID*/K8SecretApiV2/*NAME*
+
+# An import has no configuration behind it, so it always runs as though Terraform manages
+# the secret's contents: the values are read and written to state in plaintext, once,
+# before `manage_secret_data = false` can take effect.  Subsequent reads mask them, but
+# the values remain in the state history of a versioned remote backend.  Rotate the
+# secret after importing, or scrub the state history, if that matters.
 ```

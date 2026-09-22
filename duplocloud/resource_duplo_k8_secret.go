@@ -3,6 +3,7 @@ package duplocloud
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -63,7 +64,12 @@ func k8sSecretSchema() map[string]*schema.Schema {
 				"Set this to `false` to track a secret whose values are owned outside of Terraform - for example, one " +
 				"created by the Duplo installer and rotated out of band.  Terraform then manages only the existence of " +
 				"the secret: `secret_data` must be omitted from the configuration, its values are masked in state, and " +
-				"updates to the other attributes leave the existing data untouched.\n\n" +
+				"creates and updates carry the existing data forward instead of overwriting it.\n\n" +
+				"Two things this mode does not protect against.  `tenant_id`, `secret_name` and `secret_type` force a " +
+				"new resource, and a replacement destroys and recreates the secret, its data included - so an import " +
+				"that guesses `secret_type` wrong still loses the contents.  And `terraform import` has no " +
+				"configuration behind it, so importing writes the secret's values to state once before this attribute " +
+				"can be set to `false`; rotate the secret afterwards, or scrub the state history, if that matters.\n\n" +
 				"This attribute keeps its last applied value when it is removed from the configuration, so set it back " +
 				"to `true` explicitly to resume managing the contents.",
 			Type:     schema.TypeBool,
@@ -162,6 +168,16 @@ func resourceK8SecretCreate(ctx context.Context, d *schema.ResourceData, m inter
 
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
+
+	// The secret may well exist already - tracking one the installer created is the point
+	// of this mode - and there is no state to tell us so, because this is a create.  Carry
+	// whatever is there forward rather than posting an empty map over it.
+	if !manageK8sSecretData(d) {
+		if err := carryForwardSecretData(c, tenantId, name, rq, true); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	cerr := c.K8SecretCreate(tenantId, rq)
 	if cerr != nil {
 		return diag.FromErr(cerr)
@@ -195,11 +211,9 @@ func resourceK8SecretUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	// forward.  CreateOrUpdateK8Secret replaces the whole object, so an update driven by
 	// a label or annotation change would otherwise wipe values managed outside Terraform.
 	if !manageK8sSecretData(d) {
-		current, cerr := c.K8SecretGet(tenantId, name)
-		if cerr != nil {
-			return diag.Errorf("Unable to retrieve tenant %s k8s secret %s for update: %s", tenantId, name, cerr)
+		if err := carryForwardSecretData(c, tenantId, name, rq, false); err != nil {
+			return diag.FromErr(err)
 		}
-		rq.SecretData = current.SecretData
 	}
 
 	cerr := c.K8SecretUpdate(tenantId, rq)
@@ -341,6 +355,33 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 	return &duplo, nil
 }
 
+// carryForwardSecretData points the request at the data the backend already holds, so that
+// a write made while Terraform does not own the contents leaves them alone.
+// CreateOrUpdateK8Secret backs both K8SecretCreate and K8SecretUpdate and replaces the
+// whole object, so anything left out of the request is lost - including the values of a
+// secret that was created by the installer and has never been in Terraform's state.
+//
+// On create, a secret that does not exist yet is the ordinary case, so a 404 is not an
+// error.  The empty map expandK8sSecret supplies is kept whenever the backend reports no
+// data of its own, because SecretData is not omitempty and a nil map marshals as null.
+func carryForwardSecretData(c *duplosdk.Client, tenantID, name string, rq *duplosdk.DuploK8sSecret, creating bool) error {
+	current, cerr := c.K8SecretGet(tenantID, name)
+	if cerr != nil {
+		if creating && cerr.Status() == 404 {
+			return nil
+		}
+		verb := "update"
+		if creating {
+			verb = "create"
+		}
+		return fmt.Errorf("Unable to retrieve tenant %s k8s secret %s for %s: %s", tenantID, name, verb, cerr)
+	}
+	if current != nil && current.SecretData != nil {
+		rq.SecretData = current.SecretData
+	}
+	return nil
+}
+
 func secretLabelValidationError(name, value string) error {
 	return fmt.Errorf(`Secret '%s' is invalid: metadata.labels: Invalid value: '%s,': a valid label must 
 	be an empty string or consist of alphanumeric characters, '-', '', or '.', and must start and end with an alphanumeric 
@@ -427,19 +468,47 @@ func ctyBoolAttr(obj cty.Value, name string) (bool, bool) {
 	return v.True(), true
 }
 
-// validateK8sSecretDataManagement rejects a configuration that supplies secret data while
-// disclaiming ownership of it, rather than silently ignoring the data.
+// validateK8sSecretDataManagement rejects configurations whose secret data and declared
+// ownership of it disagree, rather than letting the apply quietly write the wrong thing.
 func validateK8sSecretDataManagement(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	config, state := diff.GetRawConfig(), diff.GetRawState()
+	hasSecretData := ctyAttrIsSet(config, "secret_data")
+
 	if manageK8sSecretData(diff) {
+		// Management is being turned back on with nothing to write.  The value sitting in
+		// state is a mask, so the plan renders as an ordinary rotation while the apply would
+		// post an empty secret over data Terraform has never seen.  Reaching here with a
+		// `false` in state means the configuration said `true` explicitly, since an absent
+		// value falls back to state.
+		if wasManaged, ok := ctyBoolAttr(state, "manage_secret_data"); ok && !wasManaged && !hasSecretData {
+			return errors.New("secret_data is required when manage_secret_data is set back to true: the value " +
+				"held in state is masked, so applying would overwrite the secret with an empty one - supply the " +
+				"secret's contents, or use `secret_data = jsonencode({})` to empty it on purpose")
+		}
 		return nil
 	}
 
-	cfg := diff.GetRawConfig()
-	if cfg.IsNull() || !cfg.IsKnown() || !cfg.Type().IsObjectType() || !cfg.Type().HasAttribute("secret_data") {
+	if !hasSecretData {
 		return nil
 	}
-	if !cfg.GetAttr("secret_data").IsNull() {
-		return fmt.Errorf("secret_data must not be set when manage_secret_data is false: in that mode Terraform tracks only the existence of the secret, and its contents are left to whoever owns them")
+	msg := "secret_data must not be set when manage_secret_data is false: in that mode Terraform tracks only " +
+		"the existence of the secret, and its contents are left to whoever owns them"
+	if _, inConfig := ctyBoolAttr(config, "manage_secret_data"); !inConfig {
+		// The `false` came from prior state, so the configuration in front of the user does
+		// not mention manage_secret_data at all and the message above reads as a provider bug.
+		msg += ". manage_secret_data is false in state; it is Optional and Computed, so removing it from the " +
+			"configuration keeps the last applied value - set manage_secret_data = true explicitly to resume " +
+			"managing the contents"
 	}
-	return nil
+	return errors.New(msg)
+}
+
+// ctyAttrIsSet reports whether an attribute is present in a cty object and carries a
+// value.  Raw config is null during a refresh and raw state is null during a create, so
+// every access has to tolerate an absent object.
+func ctyAttrIsSet(obj cty.Value, name string) bool {
+	if obj.IsNull() || !obj.IsKnown() || !obj.Type().IsObjectType() || !obj.Type().HasAttribute(name) {
+		return false
+	}
+	return !obj.GetAttr(name).IsNull()
 }

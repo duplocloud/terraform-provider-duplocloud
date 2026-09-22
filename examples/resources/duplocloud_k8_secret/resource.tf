@@ -25,6 +25,17 @@ resource "duplocloud_k8_secret" "myapp" {
 # Track a secret whose values are owned outside of Terraform - created by the Duplo
 # installer, rotated out of band - so that services can depend on it without its
 # contents ever being written to Terraform state.
+#
+# Import the secret before the first apply:
+#
+#   terraform import duplocloud_k8_secret.env_var_global \
+#     v2/subscriptions/*TENANT_ID*/K8SecretApiV2/env-var-os-global
+#
+# Importing is not strictly required - a create carries any existing data forward - but
+# it keeps Terraform from treating a secret that already exists as one it is making, and
+# it is the only way to catch a wrong secret_type before the plan proposes a replacement.
+# Note that the import itself writes the secret's values to state once, so rotate the
+# secret afterwards if that matters.
 resource "duplocloud_k8_secret" "env_var_global" {
   tenant_id = duplocloud_tenant.myapp.tenant_id
 
