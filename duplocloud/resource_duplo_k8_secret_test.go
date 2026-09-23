@@ -371,6 +371,13 @@ func TestK8SecretImporter_SeedsManagedData(t *testing.T) {
 // CreateOrUpdateK8Secret, so a write can be inspected as it goes out on the wire.
 func k8sSecretServer(t *testing.T, list string, posted *string) (*httptest.Server, *duplosdk.Client) {
 	t.Helper()
+	return k8sSecretServerStatus(t, list, posted, http.StatusOK)
+}
+
+// k8sSecretServerStatus is the same, but answers the list endpoint with a given status so
+// a backend failure can be told apart from a secret that is simply not there.
+func k8sSecretServerStatus(t *testing.T, list string, posted *string, listStatus int) (*httptest.Server, *duplosdk.Client) {
+	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if strings.Contains(r.URL.Path, "CreateOrUpdateK8Secret") {
@@ -379,6 +386,9 @@ func k8sSecretServer(t *testing.T, list string, posted *string) (*httptest.Serve
 			*posted = string(body)
 			// K8SecretCreateOrUpdate passes a nil response type, so postAPI wants no body.
 			return
+		}
+		if listStatus != http.StatusOK {
+			w.WriteHeader(listStatus)
 		}
 		fmt.Fprint(w, list)
 	}))
@@ -426,7 +436,9 @@ func TestCarryForwardSecretData_CreateToleratesMissingSecret(t *testing.T) {
 // gone missing is a real problem and silently posting an empty one would compound it.
 func TestCarryForwardSecretData_UpdateRejectsMissingSecret(t *testing.T) {
 	var posted string
-	srv, c := k8sSecretServer(t, `[]`, &posted)
+	// A populated tenant that simply does not hold this secret, so the miss comes from
+	// K8SecretGet's linear scan rather than from an empty list.
+	srv, c := k8sSecretServer(t, `[{"SecretName":"some-other-secret","SecretType":"Opaque"}]`, &posted)
 	defer srv.Close()
 
 	rq := &duplosdk.DuploK8sSecret{SecretName: "env-var-os-global",
@@ -434,7 +446,10 @@ func TestCarryForwardSecretData_UpdateRejectsMissingSecret(t *testing.T) {
 
 	err := carryForwardSecretData(c, k8sSecretTenant, "env-var-os-global", rq, false)
 
-	assert.ErrorContains(t, err, "env-var-os-global")
+	// The message has to name the update direction and carry the backend's reason, which
+	// is the whole point of the asymmetry: the same 404 is tolerated on create.
+	assert.ErrorContains(t, err, "for update:")
+	assert.ErrorContains(t, err, "secret env-var-os-global not found")
 }
 
 // SecretData is not omitempty, so a nil map marshals as JSON null rather than the empty
@@ -514,4 +529,101 @@ func TestSecretDataDiff_NotSuppressedWhileOwnershipIsUnknown(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Contains(t, diff.Attributes, "secret_data")
+}
+
+// --- the CRUD wiring ------------------------------------------------------
+//
+// Everything above exercises the pieces.  These call the resource functions themselves,
+// so that removing a guard from Create or Update is a test failure rather than a silent
+// regression.
+
+// k8sSecretCreateData is a fresh resource: no prior state, ownership disclaimed.
+func k8sSecretCreateData(t *testing.T) *schema.ResourceData {
+	t.Helper()
+	config := k8sSecretConfig(cty.False, nullString)
+	return k8sSecretData(t, nullObject(), config, config)
+}
+
+// The Critical round-one finding, pinned at its call site: applying an unmanaged block
+// against a secret that already exists must not post an empty SecretData over it.
+func TestResourceK8SecretCreate_DoesNotWipeAnExistingSecret(t *testing.T) {
+	var posted string
+	srv, c := k8sSecretServer(t, `[{"SecretName":"env-var-os-global","SecretType":"Opaque",`+
+		`"SecretData":{"DB_PASSWORD":"hunter2"}}]`, &posted)
+	defer srv.Close()
+
+	diags := resourceK8SecretCreate(context.Background(), k8sSecretCreateData(t), c)
+
+	assert.False(t, diags.HasError(), "create: %v", diags)
+	assert.Contains(t, posted, "hunter2")
+	assert.NotContains(t, posted, `"SecretData":{}`)
+}
+
+// The same guard on the update side.
+func TestResourceK8SecretUpdate_DoesNotWipeAnExistingSecret(t *testing.T) {
+	var posted string
+	srv, c := k8sSecretServer(t, `[{"SecretName":"env-var-os-global","SecretType":"Opaque",`+
+		`"SecretData":{"DB_PASSWORD":"hunter2"}}]`, &posted)
+	defer srv.Close()
+
+	config := k8sSecretConfig(cty.False, nullString)
+	d := k8sSecretData(t, k8sSecretState(cty.False, maskedData), config, config)
+
+	diags := resourceK8SecretUpdate(context.Background(), d, c)
+
+	assert.False(t, diags.HasError(), "update: %v", diags)
+	assert.Contains(t, posted, "hunter2")
+	assert.NotContains(t, posted, "**********")
+}
+
+// A create for a secret that genuinely does not exist yet still goes through.
+func TestResourceK8SecretCreate_StillCreatesANewSecret(t *testing.T) {
+	var posted string
+	srv, c := k8sSecretServer(t, `[]`, &posted)
+	defer srv.Close()
+
+	diags := resourceK8SecretCreate(context.Background(), k8sSecretCreateData(t), c)
+
+	assert.False(t, diags.HasError(), "create: %v", diags)
+	assert.Contains(t, posted, `"SecretData":{}`)
+}
+
+// "Abort the write" rather than "wipe the secret" is the core safety property of the
+// carry-forward, and a backend failure is not a missing secret.  K8SecretGet maps
+// transport and 5xx failures to status -1, never 404, so this must not be tolerated.
+func TestResourceK8SecretCreate_AbortsOnABackendFailure(t *testing.T) {
+	var posted string
+	srv, c := k8sSecretServerStatus(t, `{"Message":"boom"}`, &posted, http.StatusInternalServerError)
+	defer srv.Close()
+
+	diags := resourceK8SecretCreate(context.Background(), k8sSecretCreateData(t), c)
+
+	assert.True(t, diags.HasError(), "a backend failure must abort the create")
+	assert.Empty(t, posted, "nothing may be written when the pre-read failed")
+}
+
+// --- the deferred-ownership write paths -----------------------------------
+
+// The mirror of the re-enable guard.  An ownership value that is unknown at plan time and
+// resolves to false at apply arrives here with secret_data still set; discarding it
+// silently would report a successful apply that never wrote the user's secret.
+func TestExpandK8sSecret_RefusesConfiguredDataWhileUnmanaged(t *testing.T) {
+	config := k8sSecretConfig(cty.False, realData)
+	d := k8sSecretData(t, k8sSecretState(cty.False, maskedData), config, config)
+
+	_, err := expandK8sSecret(d)
+
+	assert.ErrorContains(t, err, "secret_data must not be set when manage_secret_data is false")
+}
+
+// The must-not-false-positive case for the re-enable guard: a genuinely new resource has
+// no prior state to have been unmanaged in.
+func TestExpandK8sSecret_NewManagedSecretWithoutDataIsAccepted(t *testing.T) {
+	config := k8sSecretConfig(cty.True, nullString)
+	d := k8sSecretData(t, nullObject(), config, config)
+
+	rq, err := expandK8sSecret(d)
+
+	assert.NoError(t, err)
+	assert.Empty(t, rq.SecretData)
 }

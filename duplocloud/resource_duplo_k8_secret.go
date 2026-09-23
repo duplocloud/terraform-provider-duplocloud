@@ -336,9 +336,19 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 		}
 	}
 
+	manage := manageK8sSecretData(d)
+
+	// The mirror of the re-enable guard below.  CustomizeDiff defers while the configured
+	// ownership is unknown, so a value that only resolves to false at apply arrives here
+	// with secret_data still set.  Skipping it silently would discard the configured
+	// secret and still report a successful apply.
+	if !manage && ctyAttrIsSet(d.GetRawConfig(), "secret_data") {
+		return nil, errors.New(errDataWhileUnmanaged)
+	}
+
 	// The data must be decoded as JSON.  It is skipped entirely when Terraform does not
 	// own the contents of the secret - the caller supplies whatever is already there.
-	if manageK8sSecretData(d) {
+	if manage {
 		data := d.Get("secret_data").(string)
 		// Management has just been turned back on with nothing to write.  CustomizeDiff
 		// catches this at plan time, but only when the configured value was known then, so
@@ -365,6 +375,11 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 
 // errReEnableWithoutData is raised in two places: at plan time by CustomizeDiff, and
 // again on the write path, which is the only one that always has a known value to judge.
+// errDataWhileUnmanaged is raised at plan time by CustomizeDiff and again on the write
+// path, which is the only one that always has a known ownership value to judge.
+const errDataWhileUnmanaged = "secret_data must not be set when manage_secret_data is false: in that mode " +
+	"Terraform tracks only the existence of the secret, and its contents are left to whoever owns them"
+
 const errReEnableWithoutData = "secret_data is required when manage_secret_data is set back to true: the value " +
 	"held in state is masked, so applying would overwrite the secret with an empty one - supply the secret's " +
 	"contents, or use `secret_data = jsonencode({})` to empty it on purpose"
@@ -516,8 +531,7 @@ func validateK8sSecretDataManagement(ctx context.Context, diff *schema.ResourceD
 	if !hasSecretData {
 		return nil
 	}
-	msg := "secret_data must not be set when manage_secret_data is false: in that mode Terraform tracks only " +
-		"the existence of the secret, and its contents are left to whoever owns them"
+	msg := errDataWhileUnmanaged
 	if _, inConfig := ctyBoolAttr(config, "manage_secret_data"); !inConfig {
 		// The `false` came from prior state, so the configuration in front of the user does
 		// not mention manage_secret_data at all and the message above reads as a provider bug.
