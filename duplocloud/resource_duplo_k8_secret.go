@@ -308,21 +308,37 @@ func secretLabelValidationError(name, value string) error {
 func secretDataDiff(k, old, new string, d *schema.ResourceData) bool {
 	state, err := secretDataCompare(old, new)
 	if err != nil {
-		log.Printf("TRACE secretDataCompare : %s", err.Error())
-		return state
+		// Report a difference rather than suppressing one, so a value neither side can
+		// parse shows up in the plan instead of being silently held equal.
+		log.Printf("[TRACE] secretDataDiff(%s): %s", k, err)
+		return false
 	}
 	return state
 }
-func secretDataCompare(old, new string) (bool, error) {
-	var obj1, obj2 map[string]interface{}
 
-	// Unmarshal the first JSON string into a map
-	if err := json.Unmarshal([]byte(old), &obj1); err != nil {
+// parseSecretData decodes a secret_data value into the map it represents.  An attribute
+// the configuration omits reaches here as "", while a secret with no keys is stored as
+// "{}" - the two describe the same secret, so treating "" as an empty object is what lets
+// an omitted secret_data settle instead of planning the same change on every run.
+func parseSecretData(s string) (map[string]interface{}, error) {
+	obj := map[string]interface{}{}
+	if s == "" {
+		return obj, nil
+	}
+	if err := json.Unmarshal([]byte(s), &obj); err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+func secretDataCompare(old, new string) (bool, error) {
+	obj1, err := parseSecretData(old)
+	if err != nil {
 		return false, fmt.Errorf("error unmarshalling JSON 1: %v", err)
 	}
 
-	// Unmarshal the second JSON string into a map
-	if err := json.Unmarshal([]byte(new), &obj2); err != nil {
+	obj2, err := parseSecretData(new)
+	if err != nil {
 		return false, fmt.Errorf("error unmarshalling JSON 2: %v", err)
 	}
 	if len(obj1) != len(obj2) {
