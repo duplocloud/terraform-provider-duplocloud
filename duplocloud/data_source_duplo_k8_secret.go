@@ -15,6 +15,10 @@ func k8sSecretSchemaComputed() map[string]*schema.Schema {
 	schema := k8sSecretSchema()
 	delete(schema, "client_secret_version")
 
+	// Ownership of the secret's data is a resource-side concern; a data source always
+	// just reads whatever the caller is allowed to see.
+	delete(schema, "manage_secret_data")
+
 	for k, v := range schema {
 		if k != "secret_name" && k != "tenant_id" {
 			v.Computed = true
