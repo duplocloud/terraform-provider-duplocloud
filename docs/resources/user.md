@@ -40,7 +40,7 @@ resource "duplocloud_user" "myuser" {
 
 ### Read-Only
 
-- `current_session_token` (String)
+- `current_session_token` (String, Sensitive)
 - `id` (String) The ID of this resource.
 - `is_confirmation_email_sent` (Boolean)
 - `is_vpn_config_created` (Boolean)

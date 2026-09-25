@@ -15,7 +15,7 @@ func flattenAWSElasticBlockStoreVolumeSource(in *v1.AWSElasticBlockStoreVolumeSo
 		att["fs_type"] = in.FSType
 	}
 	if in.Partition != 0 {
-		att["partition"] = in.Partition
+		att["partition"] = int(in.Partition)
 	}
 	if in.ReadOnly {
 		att["read_only"] = in.ReadOnly
@@ -33,7 +33,6 @@ func flattenAzureDiskVolumeSource(in *v1.AzureDiskVolumeSource) []interface{} {
 	if in.CachingMode != nil {
 		att["caching_mode"] = string(*in.CachingMode)
 	}
-	att["caching_mode"] = string(*in.CachingMode)
 	if in.FSType != nil {
 		att["fs_type"] = *in.FSType
 	}
@@ -136,7 +135,7 @@ func flattenFCVolumeSource(in *v1.FCVolumeSource) []interface{} {
 	att := make(map[string]interface{})
 	att["target_ww_ns"] = newStringSet(schema.HashString, in.TargetWWNs)
 	if in.Lun != nil {
-		att["lun"] = *in.Lun
+		att["lun"] = int(*in.Lun)
 	}
 	if in.FSType != "" {
 		att["fs_type"] = in.FSType
@@ -178,7 +177,11 @@ func flattenFlexVolumeSource(in *v1.FlexVolumeSource) []interface{} {
 		att["read_only"] = in.ReadOnly
 	}
 	if len(in.Options) > 0 {
-		att["options"] = in.Options
+		options := make(map[string]interface{}, len(in.Options))
+		for k, v := range in.Options {
+			options[k] = v
+		}
+		att["options"] = options
 	}
 	return []interface{}{att}
 }
@@ -197,7 +200,7 @@ func flattenGCEPersistentDiskVolumeSource(in *v1.GCEPersistentDiskVolumeSource) 
 		att["fs_type"] = in.FSType
 	}
 	if in.Partition != 0 {
-		att["partition"] = in.Partition
+		att["partition"] = int(in.Partition)
 	}
 	if in.ReadOnly {
 		att["read_only"] = in.ReadOnly
@@ -249,7 +252,7 @@ func flattenISCSIVolumeSource(in *v1.ISCSIVolumeSource) []interface{} {
 		att["iqn"] = in.IQN
 	}
 	if in.Lun != 0 {
-		att["lun"] = in.Lun
+		att["lun"] = int(in.Lun)
 	}
 	if in.ISCSIInterface != "" {
 		att["iscsi_interface"] = in.ISCSIInterface

@@ -10,6 +10,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -184,14 +185,16 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Computed: true,
 					},
 					"minimum_protocol_version": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "TLSv1.2_2021",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Default:          "TLSv1.2_2021",
+						DiffSuppressFunc: suppressViewerCertificateManagedByAws,
 					},
 					"ssl_support_method": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "sni-only",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Default:          "sni-only",
+						DiffSuppressFunc: suppressViewerCertificateManagedByAws,
 						ValidateFunc: validation.StringInSlice([]string{
 							"vip",
 							"sni-only",
@@ -993,6 +996,7 @@ func resourceAwsCloudfrontDistributionUpdate(ctx context.Context, d *schema.Reso
 	rq := expandAwsCloudfrontDistributionConfig(d, true)
 	// Update OAI which is generated at backend
 	updateS3OAI(duplo.Distribution.DistributionConfig, rq)
+	preserveUnmanagedTrust(d, duplo.Distribution.DistributionConfig, rq)
 
 	resp, err := c.AwsCloudfrontDistributionUpdate(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreate{
 		Id:                   cfdId,
@@ -1167,7 +1171,11 @@ func expandAwsCloudfrontDistributionDefaultCacheBehavior(m map[string]interface{
 
 	}
 
-	// TODO Handle "trusted_key_groups"
+	if v, ok := m["trusted_key_groups"]; ok {
+		dcb.TrustedKeyGroups = expandTrustedKeyGroups(v.([]interface{}))
+	} else {
+		dcb.TrustedKeyGroups = expandTrustedKeyGroups([]interface{}{})
+	}
 
 	if v, ok := m["trusted_signers"]; ok {
 		dcb.TrustedSigners = expandTrustedSigners(v.([]interface{}))
@@ -1235,7 +1243,11 @@ func expandAwsCloudfrontDistributionCacheBehavior(m map[string]interface{}) dupl
 		}
 	}
 
-	// TODO Handle "trusted_key_groups"
+	if v, ok := m["trusted_key_groups"]; ok {
+		cb.TrustedKeyGroups = expandTrustedKeyGroups(v.([]interface{}))
+	} else {
+		cb.TrustedKeyGroups = expandTrustedKeyGroups([]interface{}{})
+	}
 
 	if v, ok := m["trusted_signers"]; ok {
 		cb.TrustedSigners = expandTrustedSigners(v.([]interface{}))
@@ -1337,11 +1349,26 @@ func expandQueryStringCacheKeys(d []interface{}) *duplosdk.DuploCFDStringItems {
 	}
 }
 
+func expandTrustedKeyGroups(s []interface{}) *duplosdk.DuploCFDTrustedKeyGroups {
+	var tkg duplosdk.DuploCFDTrustedKeyGroups
+	items := expandStringList(s)
+	if len(items) > 0 {
+		tkg.Quantity = len(items)
+		tkg.Items = items
+		tkg.Enabled = true
+	} else {
+		tkg.Quantity = 0
+		tkg.Enabled = false
+	}
+	return &tkg
+}
+
 func expandTrustedSigners(s []interface{}) *duplosdk.DuploCFDTrustedSigners {
 	var ts duplosdk.DuploCFDTrustedSigners
-	if len(s) > 0 {
-		ts.Quantity = len(s)
-		ts.Items = expandStringList(s)
+	items := expandStringList(s)
+	if len(items) > 0 {
+		ts.Quantity = len(items)
+		ts.Items = items
 		ts.Enabled = true
 	} else {
 		ts.Quantity = 0
@@ -1802,8 +1829,11 @@ func flattenCloudFrontDefaultCacheBehavior(dcb *duplosdk.DuploAwsCloudfrontDefau
 		m["forwarded_values"] = []interface{}{flattenForwardedValues(dcb.ForwardedValues)}
 	}
 
-	if len(dcb.TrustedSigners.Items) > 0 {
+	if dcb.TrustedSigners != nil && len(dcb.TrustedSigners.Items) > 0 {
 		m["trusted_signers"] = flattenTrustedSigners(dcb.TrustedSigners)
+	}
+	if dcb.TrustedKeyGroups != nil && len(dcb.TrustedKeyGroups.Items) > 0 {
+		m["trusted_key_groups"] = flattenTrustedKeyGroups(dcb.TrustedKeyGroups)
 	}
 	if dcb.AllowedMethods != nil {
 		m["allowed_methods"] = flattenAllowedMethods(dcb.AllowedMethods)
@@ -1875,6 +1905,13 @@ func flattenTrustedSigners(ts *duplosdk.DuploCFDTrustedSigners) []interface{} {
 	return []interface{}{}
 }
 
+func flattenTrustedKeyGroups(tkg *duplosdk.DuploCFDTrustedKeyGroups) []interface{} {
+	if tkg.Items != nil {
+		return flattenStringList(tkg.Items)
+	}
+	return []interface{}{}
+}
+
 func flattenAllowedMethods(am *duplosdk.DuploCFDAllowedMethods) *schema.Set {
 	if am.Items != nil {
 		return flattenStringSet(am.Items)
@@ -1887,6 +1924,25 @@ func flattenCachedMethods(cm *duplosdk.DuploCFDStringItems) *schema.Set {
 		return flattenStringSet(cm.Items)
 	}
 	return nil
+}
+
+// suppressViewerCertificateManagedByAws suppresses diffs on ssl_support_method and
+// minimum_protocol_version while the distribution uses the default CloudFront
+// certificate (no ACM or IAM certificate in play - the same test expand uses to set
+// CloudFrontDefaultCertificate). AWS controls both values in that mode: it forces
+// MinimumProtocolVersion to TLSv1 and returns no SSLSupportMethod, so the schema
+// defaults (TLSv1.2_2021 / sni-only) would otherwise show a permanent diff.
+//
+// The d.Get view (which merges computed state) is deliberate, not a bug: expand reads
+// the same view to decide which certificate to send, so during an ACM-to-default
+// transition where the old ARN is still carried forward, expand still sends the ACM
+// certificate - and AWS then honors both attributes, making an unsuppressed diff the
+// correct outcome. Judging by raw config here would let the suppression disagree with
+// the payload actually sent.
+func suppressViewerCertificateManagedByAws(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	acm, _ := d.Get("viewer_certificate.0.acm_certificate_arn").(string)
+	iam, _ := d.Get("viewer_certificate.0.iam_certificate_id").(string)
+	return acm == "" && iam == ""
 }
 
 func flattenViewerCertificate(vc *duplosdk.DuploAwsCloudfrontDistributionViewerCertificate) []interface{} {
@@ -1956,8 +2012,11 @@ func flattenCacheBehavior(cb duplosdk.DuploAwsCloudfrontCacheBehavior) map[strin
 		m["forwarded_values"] = []interface{}{flattenForwardedValues(cb.ForwardedValues)}
 	}
 
-	if len(cb.TrustedSigners.Items) > 0 {
+	if cb.TrustedSigners != nil && len(cb.TrustedSigners.Items) > 0 {
 		m["trusted_signers"] = flattenTrustedSigners(cb.TrustedSigners)
+	}
+	if cb.TrustedKeyGroups != nil && len(cb.TrustedKeyGroups.Items) > 0 {
+		m["trusted_key_groups"] = flattenTrustedKeyGroups(cb.TrustedKeyGroups)
 	}
 	if cb.AllowedMethods != nil {
 		m["allowed_methods"] = flattenAllowedMethods(cb.AllowedMethods)
@@ -2295,6 +2354,163 @@ func updateS3OAI(existingCfd, updatedCfd *duplosdk.DuploAwsCloudfrontDistributio
 			}
 		}
 	}
+}
+
+// preserveUnmanagedTrust keeps a cache behavior's TrustedKeyGroups and TrustedSigners
+// from being clobbered on update when the corresponding config block doesn't manage
+// that attribute, then resolves any key-groups/signers conflict the merge produces
+// (see resolveTrustConflict).
+//
+// Both attributes are Optional+Computed so this provider can read back and store
+// values attached outside Terraform without fighting a permanent diff. But expand
+// always returns a non-nil value for each (needed so an explicit [] can disable
+// them), and the backend's distribution-config merge only preserves fields it
+// receives as nil - so without this, an update to any unrelated attribute would
+// silently disable trust enforcement whenever a behavior's trusted_key_groups or
+// trusted_signers isn't managed here.
+//
+// We check GetRawConfig (not d.Get) because Optional+Computed lets a stale/computed
+// state value leak into d.Get even when the attribute is genuinely absent from config -
+// GetRawConfig is the only way to see whether the user actually wrote it.
+func preserveUnmanagedTrust(d *schema.ResourceData, existingCfd, updatedCfd *duplosdk.DuploAwsCloudfrontDistributionConfig) {
+	raw := d.GetRawConfig()
+	if raw.IsNull() || !raw.IsKnown() {
+		return
+	}
+
+	if updatedCfd.DefaultCacheBehavior != nil && existingCfd.DefaultCacheBehavior != nil {
+		preserveBehaviorTrust(
+			&updatedCfd.DefaultCacheBehavior.TrustedKeyGroups, &updatedCfd.DefaultCacheBehavior.TrustedSigners,
+			existingCfd.DefaultCacheBehavior.TrustedKeyGroups, existingCfd.DefaultCacheBehavior.TrustedSigners,
+			cacheBehaviorConfiguresAttr(raw, "default_cache_behavior", 0, "trusted_key_groups"),
+			cacheBehaviorConfiguresAttr(raw, "default_cache_behavior", 0, "trusted_signers"),
+		)
+	}
+
+	if updatedCfd.CacheBehaviors == nil || updatedCfd.CacheBehaviors.Items == nil ||
+		existingCfd.CacheBehaviors == nil || existingCfd.CacheBehaviors.Items == nil {
+		return
+	}
+	updatedItems := *updatedCfd.CacheBehaviors.Items
+	kgConfigured := make([]bool, len(updatedItems))
+	tsConfigured := make([]bool, len(updatedItems))
+	for i := range updatedItems {
+		kgConfigured[i] = cacheBehaviorConfiguresAttr(raw, "ordered_cache_behavior", i, "trusted_key_groups")
+		tsConfigured[i] = cacheBehaviorConfiguresAttr(raw, "ordered_cache_behavior", i, "trusted_signers")
+	}
+	preserveOrderedBehaviorsTrust(updatedItems, *existingCfd.CacheBehaviors.Items, kgConfigured, tsConfigured)
+}
+
+// preserveOrderedBehaviorsTrust applies preserveBehaviorTrust to each updated ordered
+// cache behavior against its existing counterpart.
+//
+// ordered_cache_behavior is a TypeList, so inserting, removing, or reordering a
+// behavior shifts indices - matching updatedItems[i] to existingItems[i] would
+// preserve the wrong behavior's values onto the wrong path. PathPattern is required
+// and AWS treats it as the unique identity of a cache behavior, so we match on that
+// instead. An updated item whose PathPattern has no existing match (a genuinely new
+// behavior, or one whose PathPattern was renamed) has nothing to preserve, but its
+// expanded values can still carry a stale conflict out of computed state - e.g.
+// renaming a behavior's path while swapping it to the other trust mechanism - so
+// conflict resolution runs for every behavior, matched or not.
+func preserveOrderedBehaviorsTrust(updatedItems, existingItems []duplosdk.DuploAwsCloudfrontCacheBehavior, kgConfigured, tsConfigured []bool) {
+	existingByPath := make(map[string]*duplosdk.DuploAwsCloudfrontCacheBehavior, len(existingItems))
+	for i := range existingItems {
+		existingByPath[existingItems[i].PathPattern] = &existingItems[i]
+	}
+
+	for i := range updatedItems {
+		kgCfg := i < len(kgConfigured) && kgConfigured[i]
+		tsCfg := i < len(tsConfigured) && tsConfigured[i]
+		if existing, ok := existingByPath[updatedItems[i].PathPattern]; ok {
+			preserveBehaviorTrust(
+				&updatedItems[i].TrustedKeyGroups, &updatedItems[i].TrustedSigners,
+				existing.TrustedKeyGroups, existing.TrustedSigners,
+				kgCfg, tsCfg,
+			)
+		} else {
+			resolveTrustConflict(&updatedItems[i].TrustedKeyGroups, &updatedItems[i].TrustedSigners, kgCfg, tsCfg)
+		}
+	}
+}
+
+// preserveBehaviorTrust merges one behavior's existing TrustedKeyGroups and
+// TrustedSigners over the expanded values for whichever of the two isn't explicitly
+// configured, then resolves any conflict the merge produces.
+func preserveBehaviorTrust(kg **duplosdk.DuploCFDTrustedKeyGroups, ts **duplosdk.DuploCFDTrustedSigners,
+	existingKG *duplosdk.DuploCFDTrustedKeyGroups, existingTS *duplosdk.DuploCFDTrustedSigners,
+	kgConfigured, tsConfigured bool) {
+	if !kgConfigured {
+		*kg = existingKG
+	}
+	if !tsConfigured {
+		*ts = existingTS
+	}
+	resolveTrustConflict(kg, ts, kgConfigured, tsConfigured)
+}
+
+// resolveTrustConflict handles a behavior that ends up with both TrustedKeyGroups and
+// TrustedSigners enabled - CloudFront treats them as mutually exclusive per cache
+// behavior and rejects a request enabling both. Whichever side isn't explicitly
+// configured got its value from preservation or stale computed state rather than from
+// the user, so it is forced to disabled. When both or neither are explicitly
+// configured there is no safe side to pick; the conflict is left for CloudFront's own
+// validation, which rejects it cleanly with no partial application.
+func resolveTrustConflict(kg **duplosdk.DuploCFDTrustedKeyGroups, ts **duplosdk.DuploCFDTrustedSigners, kgConfigured, tsConfigured bool) {
+	if !trustedKeyGroupsEnabled(*kg) || !trustedSignersEnabled(*ts) {
+		return
+	}
+	switch {
+	case kgConfigured && !tsConfigured:
+		*ts = &duplosdk.DuploCFDTrustedSigners{Enabled: false, Quantity: 0}
+	case tsConfigured && !kgConfigured:
+		*kg = &duplosdk.DuploCFDTrustedKeyGroups{Enabled: false, Quantity: 0}
+	}
+}
+
+// trustedSignersEnabled reports whether a cache behavior's TrustedSigners actively
+// restricts access.
+func trustedSignersEnabled(ts *duplosdk.DuploCFDTrustedSigners) bool {
+	return ts != nil && ts.Enabled
+}
+
+// trustedKeyGroupsEnabled reports whether a cache behavior's TrustedKeyGroups actively
+// restricts access.
+func trustedKeyGroupsEnabled(tkg *duplosdk.DuploCFDTrustedKeyGroups) bool {
+	return tkg != nil && tkg.Enabled
+}
+
+// cacheBehaviorConfiguresAttr reports whether attr should be treated as managed by
+// config for the cache behavior at blockName[index], as opposed to genuinely absent
+// (which lets the caller preserve whatever is already on the backend).
+//
+// An unknown block/attribute (e.g. a value derived from another resource's attribute
+// that isn't resolved yet) is treated as managed, not absent: GetRawConfig reflects
+// what Terraform sent for this apply, and while a fully-resolved apply should have no
+// unknowns left, treating "we can't tell yet" as "absent" would let the caller
+// clobber a real, pending config value with stale existing data - the same class of
+// bug this whole preserve mechanism exists to prevent. Only a known null (the
+// attribute is truly absent from config) counts as absent.
+func cacheBehaviorConfiguresAttr(raw cty.Value, blockName string, index int, attr string) bool {
+	block := raw.GetAttr(blockName)
+	if block.IsNull() {
+		return false
+	}
+	if !block.IsKnown() {
+		return true
+	}
+	if block.LengthInt() <= index {
+		return false
+	}
+	behavior := block.Index(cty.NumberIntVal(int64(index)))
+	if behavior.IsNull() {
+		return false
+	}
+	if !behavior.IsKnown() {
+		return true
+	}
+	attrVal := behavior.GetAttr(attr)
+	return !attrVal.IsKnown() || !attrVal.IsNull()
 }
 
 func validateCloudDistributionParameters(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {

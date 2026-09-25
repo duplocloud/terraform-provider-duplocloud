@@ -190,7 +190,7 @@ See AWS documentation for the [available instance types](https://docs.aws.amazon
 
 ### Optional
 
-- `auth_token` (String) Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is to to `true`.
+- `auth_token` (String, Sensitive) Set a password for authenticating to the ElastiCache instance.  Only supported if `encryption_in_transit` is set to `true`.
 
 See AWS documentation for the [required format](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html) of this field.
 - `automatic_failover_enabled` (Boolean) Enables automatic failover.
@@ -201,7 +201,7 @@ Should be one of:
    - `1` : Memcache
    - `2` : Valkey
 
-Changing `cache_type` from `0` (Redis) to `2` (Valkey) performs an in-place engine upgrade. Any other change to `cache_type` forces replacement of the instance. Defaults to `0`.
+Changing `cache_type` from `0` (Redis) to `2` (Valkey) performs an in-place engine upgrade. If the instance uses a custom parameter group, change `parameter_group_name` to a valkey-family parameter group in the same apply — AWS requires it to be part of the engine upgrade. Any other change to `cache_type` forces replacement of the instance. Defaults to `0`.
 - `enable_cluster_mode` (Boolean) Flag to enable/disable redis/valkey cluster mode. Cluster mode should be enabled if the instance acts as the primary for a global datastore.
 - `encryption_at_rest` (Boolean) Enables encryption-at-rest. Defaults to `false`.
 - `encryption_in_transit` (Boolean) Enables encryption-in-transit. Defaults to `false`.
