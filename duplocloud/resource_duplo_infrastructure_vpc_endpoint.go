@@ -190,6 +190,12 @@ func resourceInfrastructureVpcEndpointCreate(ctx context.Context, d *schema.Reso
 		d.SetId(id)
 	}
 
+	// Wait for the endpoint to become available so state holds final values.
+	_, endpointId, _ := parseInfrastructureVpcEndpointId(d.Id())
+	if err := waitForVpcEndpointAvailable(ctx, c, infraName, endpointId, d.Timeout(schema.TimeoutCreate)); err != nil {
+		return diag.Errorf("Error waiting for VPC endpoint '%s' to become available: %s", d.Id(), err)
+	}
+
 	diags := resourceInfrastructureVpcEndpointRead(ctx, d, m)
 	log.Printf("[TRACE] resourceInfrastructureVpcEndpointCreate(%s, %s): end", infraName, serviceName)
 	return diags
@@ -295,4 +301,31 @@ func waitForVpcEndpointCreated(ctx context.Context, c *duplosdk.Client, infraNam
 	})
 
 	return endpoint, err
+}
+
+func waitForVpcEndpointAvailable(ctx context.Context, c *duplosdk.Client, infraName, endpointId string, timeout time.Duration) error {
+	return retry.RetryContext(ctx, timeout, func() *retry.RetryError {
+		ep, cerr := c.InfrastructureGetVpcEndpoint(infraName, endpointId)
+		if cerr != nil {
+			return retry.NonRetryableError(fmt.Errorf("error checking VPC endpoint status: %s", cerr))
+		}
+		if ep == nil {
+			return retry.RetryableError(fmt.Errorf("VPC endpoint %s not yet visible", endpointId))
+		}
+
+		state := ep.State.Value
+		switch strings.ToLower(state) {
+		case "available", "pendingacceptance":
+			// AWS reports ZONEIDPENDING until the private hosted zone is ready.
+			for _, entry := range ep.DnsEntries {
+				if entry.HostedZoneId == "ZONEIDPENDING" {
+					return retry.RetryableError(fmt.Errorf("VPC endpoint %s DNS entry %s hosted zone is still pending", endpointId, entry.DnsName))
+				}
+			}
+			return nil
+		case "failed", "rejected", "expired", "deleted", "deleting":
+			return retry.NonRetryableError(fmt.Errorf("VPC endpoint %s entered state %s", endpointId, state))
+		}
+		return retry.RetryableError(fmt.Errorf("VPC endpoint %s is in state %s", endpointId, state))
+	})
 }
