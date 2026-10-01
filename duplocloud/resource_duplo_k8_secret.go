@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -468,16 +469,29 @@ func secretDataCompare(old, new string) (bool, error) {
 		return false, nil
 	}
 	for k, v := range obj2 {
-		if v1, ok := obj1[k]; !ok {
+		if v1, ok := obj1[k]; !ok || !secretValueEqual(v1, v) {
 			return false, nil
-		} else {
-			s := fmt.Sprintf("%v", v)
-			if v1 != s {
-				return false, nil
-			}
 		}
 	}
 	return true, nil
+}
+
+// secretValueEqual compares one value held in state against the configured one.  The
+// backend decodes any value that looks like a JSON object or array before returning it,
+// so a dockerconfigjson secret comes back as an object while the configuration holds the
+// string it was written from.  Such a string is decoded before comparing.
+func secretValueEqual(state, config interface{}) bool {
+	if _, ok := state.(string); ok {
+		return state == fmt.Sprintf("%v", config)
+	}
+	if s, ok := config.(string); ok {
+		var decoded interface{}
+		if err := json.Unmarshal([]byte(s), &decoded); err != nil {
+			return false
+		}
+		config = decoded
+	}
+	return reflect.DeepEqual(state, config)
 }
 
 // k8sSecretRawAccessor is satisfied by both *schema.ResourceData and *schema.ResourceDiff.

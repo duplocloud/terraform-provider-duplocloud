@@ -145,3 +145,50 @@ func TestSecretDataDiff_UnparseableStateStillDiffs(t *testing.T) {
 
 	assert.Contains(t, diff.Attributes, "secret_data")
 }
+
+// --- DUPLO-44790 -----------------------------------------------------------
+
+// The backend decodes any secret value that looks like a JSON object or array before
+// returning it, so state holds an object where the configuration holds the string it
+// came from.  dockerconfigjson and dockercfg secrets always look like that.
+const (
+	dockerConfigJSONState  = `{".dockerconfigjson":{"auths":{"example.io":{"auth":"dTpw"}}}}`
+	dockerConfigJSONConfig = `{".dockerconfigjson":"{\"auths\":{\"example.io\":{\"auth\":\"dTpw\"}}}"}`
+)
+
+func TestSecretDataCompare_DecodedObjectMatchesItsJSONString(t *testing.T) {
+	equal, err := secretDataCompare(dockerConfigJSONState, dockerConfigJSONConfig)
+	assert.NoError(t, err)
+	assert.True(t, equal, "dockerconfigjson")
+
+	equal, err = secretDataCompare(`{".dockercfg":{"example.io":{"auth":"dTpw"}}}`, `{".dockercfg":"{\"example.io\":{\"auth\":\"dTpw\"}}"}`)
+	assert.NoError(t, err)
+	assert.True(t, equal, "dockercfg")
+
+	equal, err = secretDataCompare(`{"hosts":["a","b"]}`, `{"hosts":"[\"a\",\"b\"]"}`)
+	assert.NoError(t, err)
+	assert.True(t, equal, "array")
+}
+
+func TestSecretDataCompare_DecodedObjectStillDiffsOnRealChange(t *testing.T) {
+	equal, err := secretDataCompare(dockerConfigJSONState, `{".dockerconfigjson":"{\"auths\":{\"example.io\":{\"auth\":\"bmV3\"}}}"}`)
+	assert.NoError(t, err)
+	assert.False(t, equal, "rotated credential")
+
+	equal, err = secretDataCompare(dockerConfigJSONState, `{".dockerconfigjson":"not json"}`)
+	assert.NoError(t, err)
+	assert.False(t, equal, "non-JSON string against an object")
+}
+
+// The object form in the configuration compares against the object in state as well.
+func TestSecretDataCompare_ObjectInConfigMatchesObjectInState(t *testing.T) {
+	equal, err := secretDataCompare(dockerConfigJSONState, dockerConfigJSONState)
+	assert.NoError(t, err)
+	assert.True(t, equal)
+}
+
+func TestSecretDataDiff_DockerConfigJSONConverges(t *testing.T) {
+	diff := driftPlan(t, driftState(cty.StringVal(dockerConfigJSONState)), driftConfig(cty.StringVal(dockerConfigJSONConfig)))
+
+	assert.NotContains(t, diff.Attributes, "secret_data")
+}
