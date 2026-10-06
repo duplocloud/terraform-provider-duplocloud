@@ -107,9 +107,10 @@ func gcpBigtableInstanceSchema() map[string]*schema.Schema {
 		"display_name": {
 			Description: "The human-readable display name of the Bigtable instance (4-30 characters). " +
 				"Defaults to `name`, cut to 30 characters.",
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Type:         schema.TypeString,
+			Optional:     true,
+			Computed:     true,
+			ValidateFunc: validation.StringLenBetween(4, 30),
 		},
 		"storage_type": {
 			Description: "Storage type for the instance's clusters. Must be one of `SSD` or `HDD`. " +

@@ -303,3 +303,15 @@ func TestBigtableDisplayName(t *testing.T) {
 	assert.Equal(t, "my-instance", bigtableDisplayName("", "my-instance"), "derived from name")
 	assert.Equal(t, "abcdefghij-abcdefghij-abcdefgh", bigtableDisplayName("", "abcdefghij-abcdefghij-abcdefghij-a"), "cut to 30")
 }
+
+func TestBigtableDisplayName_LengthValidated(t *testing.T) {
+	validate := gcpBigtableInstanceSchema()["display_name"].ValidateFunc
+	for _, v := range []string{"abc", "abcdefghij-abcdefghij-abcdefghi"} {
+		_, errs := validate(v, "display_name")
+		assert.NotEmpty(t, errs, v)
+	}
+	for _, v := range []string{"abcd", "abcdefghij-abcdefghij-abcdefgh"} {
+		_, errs := validate(v, "display_name")
+		assert.Empty(t, errs, v)
+	}
+}
