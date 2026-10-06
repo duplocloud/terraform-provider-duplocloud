@@ -44,14 +44,16 @@ func gcpBigtableClusterSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"min_nodes": {
-						Description: "Minimum number of nodes for autoscaling.",
-						Type:        schema.TypeInt,
-						Required:    true,
+						Description:  "Minimum number of nodes for autoscaling.",
+						Type:         schema.TypeInt,
+						Required:     true,
+						ValidateFunc: validation.IntAtLeast(1),
 					},
 					"max_nodes": {
-						Description: "Maximum number of nodes for autoscaling.",
-						Type:        schema.TypeInt,
-						Required:    true,
+						Description:  "Maximum number of nodes for autoscaling. Must be at least `min_nodes`.",
+						Type:         schema.TypeInt,
+						Required:     true,
+						ValidateFunc: validation.IntAtLeast(1),
 					},
 					"cpu_target": {
 						Description:  "The target CPU utilization percentage that drives autoscaling (10-80).",
@@ -264,10 +266,18 @@ func resourceGcpBigtableInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 
 	// Update instance-level fields.
 	if d.HasChanges("display_name", "instance_type", "labels") {
-		rq := &duplosdk.DuploBigtableInstance{
+		rq := &duplosdk.DuploBigtableInstanceUpdateRequest{
 			DisplayName: d.Get("display_name").(string),
 			Type:        bigtableTypeToInt(d.Get("instance_type").(string)),
-			Labels:      expandAsStringMap("labels", d),
+		}
+		if d.HasChange("labels") {
+			// expandAsStringMap returns nil for an empty map, which would leave the
+			// removed labels in place.
+			labels := expandAsStringMap("labels", d)
+			if labels == nil {
+				labels = map[string]string{}
+			}
+			rq.Labels = &labels
 		}
 		if _, clientErr := c.GcpBigtableInstanceUpdate(tenantID, name, rq); clientErr != nil {
 			return diag.Errorf("Error updating tenant %s Bigtable instance '%s': %s", tenantID, name, clientErr)
@@ -276,7 +286,7 @@ func resourceGcpBigtableInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 
 	// Reconcile clusters.
 	if d.HasChange("cluster") {
-		if diags := reconcileGcpBigtableClusters(d, c, tenantID, name); diags != nil {
+		if diags := reconcileGcpBigtableClusters(ctx, d, c, tenantID, name); diags != nil {
 			return diags
 		}
 	}
@@ -324,7 +334,7 @@ func resourceGcpBigtableInstanceDelete(ctx context.Context, d *schema.ResourceDa
 
 // reconcileGcpBigtableClusters adds, updates, and removes clusters to match the
 // desired configuration, using the per-cluster Bigtable endpoints.
-func reconcileGcpBigtableClusters(d *schema.ResourceData, c *duplosdk.Client, tenantID, name string) diag.Diagnostics {
+func reconcileGcpBigtableClusters(ctx context.Context, d *schema.ResourceData, c *duplosdk.Client, tenantID, name string) diag.Diagnostics {
 	oldRaw, newRaw := d.GetChange("cluster")
 	oldClusters := indexBigtableClustersByID(oldRaw.([]interface{}))
 	newClusters := indexBigtableClustersByID(newRaw.([]interface{}))
@@ -344,6 +354,7 @@ func reconcileGcpBigtableClusters(d *schema.ResourceData, c *duplosdk.Client, te
 	storageType := bigtableStorageToInt(d.Get("storage_type").(string))
 
 	// Add new clusters and update existing ones in place.
+	created := []string{}
 	for id, cfg := range newClusters {
 		_, exists := oldClusters[id]
 		rq := expandGcpBigtableCluster(cfg, storageType)
@@ -352,6 +363,7 @@ func reconcileGcpBigtableClusters(d *schema.ResourceData, c *duplosdk.Client, te
 			if _, clientErr := c.GcpBigtableClusterCreate(tenantID, name, id, rq); clientErr != nil {
 				return diag.Errorf("Error creating cluster '%s' of Bigtable instance '%s': %s", id, name, clientErr)
 			}
+			created = append(created, id)
 			continue
 		}
 
@@ -362,6 +374,15 @@ func reconcileGcpBigtableClusters(d *schema.ResourceData, c *duplosdk.Client, te
 		}
 		if clientErr := c.GcpBigtableClusterUpdate(tenantID, name, id, upd); clientErr != nil {
 			return diag.Errorf("Error updating cluster '%s' of Bigtable instance '%s': %s", id, name, clientErr)
+		}
+	}
+
+	// Cluster creation is a long-running operation that the backend does not wait on, so
+	// wait for the replacements to be ready before removing anything. Otherwise the old
+	// cluster could be deleted before its replacement exists.
+	if len(toDelete) > 0 && len(created) > 0 {
+		if err := gcpBigtableWaitUntilClustersReady(ctx, c, tenantID, name, created, d.Timeout(schema.TimeoutUpdate)); err != nil {
+			return diag.Errorf("Error waiting for new clusters of Bigtable instance '%s' before removing old ones: %s", name, err)
 		}
 	}
 
@@ -511,7 +532,10 @@ func validateBigtableClusters(ctx context.Context, diff *schema.ResourceDiff, m 
 // validateBigtableClusterBlocks validates the planned cluster blocks on their own:
 //   - cluster_id values are unique (clusters are matched by id, so duplicates
 //     would silently collapse and reconcile the wrong cluster);
-//   - each cluster has a manual node count or an autoscaling configuration.
+//   - each cluster has a manual node count or an autoscaling configuration;
+//   - autoscaling max_nodes is not below min_nodes. Each bound is checked to be
+//     positive by its own ValidateFunc, and an unknown bound reads as 0 here, so the
+//     ordering is only checked once both are known.
 func validateBigtableClusterBlocks(clusters []interface{}) error {
 	seen := map[string]bool{}
 	for _, raw := range clusters {
@@ -527,6 +551,14 @@ func validateBigtableClusterBlocks(clusters []interface{}) error {
 		numNodes := cfg["num_nodes"].(int)
 		if !hasAutoscaling && numNodes <= 0 {
 			return fmt.Errorf("cluster %q: either 'num_nodes' (> 0) or 'autoscaling_config' must be set", id)
+		}
+		if hasAutoscaling && ac[0] != nil {
+			a := ac[0].(map[string]interface{})
+			minNodes, _ := a["min_nodes"].(int)
+			maxNodes, _ := a["max_nodes"].(int)
+			if minNodes > 0 && maxNodes > 0 && maxNodes < minNodes {
+				return fmt.Errorf("cluster %q: autoscaling 'max_nodes' (%d) must be greater than or equal to 'min_nodes' (%d)", id, maxNodes, minNodes)
+			}
 		}
 	}
 	return nil

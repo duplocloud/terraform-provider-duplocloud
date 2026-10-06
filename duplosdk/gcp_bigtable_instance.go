@@ -69,6 +69,16 @@ type DuploBigtableInstance struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 }
 
+// DuploBigtableInstanceUpdateRequest is the body for updating the instance-level fields.
+// The backend replaces the labels whenever the field is present, even empty, and leaves
+// them alone when it is absent - so Labels is a pointer, letting an empty map through to
+// remove every label.
+type DuploBigtableInstanceUpdateRequest struct {
+	DisplayName string             `json:"displayName,omitempty"`
+	Type        int                `json:"type,omitempty"`
+	Labels      *map[string]string `json:"labels,omitempty"`
+}
+
 // DuploBigtableCreateInstanceRequest is the body for creating a Bigtable instance
 // along with its initial set of clusters (Google.Cloud.Bigtable.Admin.V2.CreateInstanceRequest).
 type DuploBigtableCreateInstanceRequest struct {
@@ -120,7 +130,7 @@ func (c *Client) GcpBigtableInstanceList(tenantID string) (*[]DuploBigtableInsta
 
 // GcpBigtableInstanceUpdate updates the instance-level fields (display name, type,
 // labels). The backend polls the operation until it completes.
-func (c *Client) GcpBigtableInstanceUpdate(tenantID, instanceID string, rq *DuploBigtableInstance) (*DuploBigtableInstance, ClientError) {
+func (c *Client) GcpBigtableInstanceUpdate(tenantID, instanceID string, rq *DuploBigtableInstanceUpdateRequest) (*DuploBigtableInstance, ClientError) {
 	rp := DuploBigtableInstance{}
 	err := c.putAPI(
 		fmt.Sprintf("GcpBigtableInstanceUpdate(%s, %s)", tenantID, instanceID),

@@ -106,7 +106,7 @@ Read-Only:
 Required:
 
 - `cpu_target` (Number) The target CPU utilization percentage that drives autoscaling (10-80).
-- `max_nodes` (Number) Maximum number of nodes for autoscaling.
+- `max_nodes` (Number) Maximum number of nodes for autoscaling. Must be at least `min_nodes`.
 - `min_nodes` (Number) Minimum number of nodes for autoscaling.
 
 Optional:

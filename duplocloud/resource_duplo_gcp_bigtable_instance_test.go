@@ -1,8 +1,11 @@
 package duplocloud
 
 import (
+	"encoding/json"
 	"testing"
 
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,6 +53,32 @@ func TestValidateBigtableClusterBlocks_NoNodesAndNoAutoscaling_Rejected(t *testi
 	})
 
 	assert.ErrorContains(t, err, "either 'num_nodes' (> 0) or 'autoscaling_config' must be set")
+}
+
+func TestValidateBigtableClusterBlocks_AutoscalingMaxBelowMin_Rejected(t *testing.T) {
+	err := validateBigtableClusterBlocks([]interface{}{
+		bigtableAutoscaledCluster("c1", "us-east1-b", 5, 2),
+	})
+
+	assert.ErrorContains(t, err, "'max_nodes' (2) must be greater than or equal to 'min_nodes' (5)")
+}
+
+func TestValidateBigtableClusterBlocks_AutoscalingEqualBounds_Accepted(t *testing.T) {
+	err := validateBigtableClusterBlocks([]interface{}{
+		bigtableAutoscaledCluster("c1", "us-east1-b", 3, 3),
+	})
+
+	assert.NoError(t, err)
+}
+
+func TestBigtableAutoscalingBounds_MustBePositive(t *testing.T) {
+	ac := gcpBigtableClusterSchema()["autoscaling_config"].Elem.(*schema.Resource).Schema
+	for _, field := range []string{"min_nodes", "max_nodes"} {
+		_, errs := ac[field].ValidateFunc(0, field)
+		assert.NotEmpty(t, errs, field)
+		_, errs = ac[field].ValidateFunc(1, field)
+		assert.Empty(t, errs, field)
+	}
 }
 
 func TestValidateBigtableClusterBlocks_Valid_Accepted(t *testing.T) {
@@ -124,4 +153,17 @@ func TestValidateBigtableClusterTransitions_NewResource_Accepted(t *testing.T) {
 	)
 
 	assert.NoError(t, err)
+}
+
+// The backend replaces the labels whenever the field is present and skips them when it
+// is absent, so removing every label has to send an empty object rather than omit it.
+func TestBigtableInstanceUpdateRequest_EmptyLabelsAreSent(t *testing.T) {
+	empty := map[string]string{}
+	body, err := json.Marshal(duplosdk.DuploBigtableInstanceUpdateRequest{DisplayName: "x", Labels: &empty})
+	assert.NoError(t, err)
+	assert.Contains(t, string(body), `"labels":{}`)
+
+	body, err = json.Marshal(duplosdk.DuploBigtableInstanceUpdateRequest{DisplayName: "x"})
+	assert.NoError(t, err)
+	assert.NotContains(t, string(body), "labels")
 }
