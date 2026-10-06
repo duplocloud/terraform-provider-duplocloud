@@ -10,6 +10,7 @@ import (
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -29,15 +30,15 @@ func gcpBigtableClusterSchema() map[string]*schema.Schema {
 			Required:    true,
 		},
 		"num_nodes": {
-			Description: "The number of nodes for manual scaling. Leave unset (or use `autoscaling_config`) " +
-				"to enable autoscaling. When `autoscaling_config` is set, this reflects the current node count.",
+			Description: "The number of nodes for manual scaling. Conflicts with `autoscaling_config`; " +
+				"when that is set, leave this unset and it reflects the current node count.",
 			Type:     schema.TypeInt,
 			Optional: true,
 			Computed: true,
 		},
 		"autoscaling_config": {
 			Description: "Autoscaling configuration for the cluster. When set, the cluster scales automatically " +
-				"and `num_nodes` is ignored.",
+				"and `num_nodes` must be left unset.",
 			Type:     schema.TypeList,
 			Optional: true,
 			MaxItems: 1,
@@ -63,7 +64,7 @@ func gcpBigtableClusterSchema() map[string]*schema.Schema {
 					},
 					"storage_target": {
 						Description: "The target storage utilization in GiB per node that drives autoscaling. " +
-							"Defaults to the GCP recommended value when unset.",
+							"Must be 2560-5120 for `SSD` or 8192-16384 for `HDD`. Defaults to the GCP recommended value when unset.",
 						Type:     schema.TypeInt,
 						Optional: true,
 						Computed: true,
@@ -359,6 +360,7 @@ func reconcileGcpBigtableClusters(ctx context.Context, d *schema.ResourceData, c
 
 	// Add new clusters and update existing ones in place.
 	created := []string{}
+	updated := map[string]*duplosdk.DuploBigtableCluster{}
 	for id, cfg := range newClusters {
 		_, exists := oldClusters[id]
 		rq := expandGcpBigtableCluster(cfg, storageType)
@@ -378,6 +380,16 @@ func reconcileGcpBigtableClusters(ctx context.Context, d *schema.ResourceData, c
 		}
 		if clientErr := c.GcpBigtableClusterUpdate(tenantID, name, id, upd); clientErr != nil {
 			return diag.Errorf("Error updating cluster '%s' of Bigtable instance '%s': %s", id, name, clientErr)
+		}
+		updated[id] = upd
+	}
+
+	// The backend starts the cluster update and returns without waiting for it, so the
+	// post-apply read could record the old node count or autoscaling settings and plan
+	// the same change again. Wait until the listing reflects what was requested.
+	if len(updated) > 0 {
+		if err := gcpBigtableWaitUntilClustersUpdated(ctx, c, tenantID, name, updated, d.Timeout(schema.TimeoutUpdate)); err != nil {
+			return diag.Errorf("Error waiting for clusters of Bigtable instance '%s' to apply their updates: %s", name, err)
 		}
 	}
 
@@ -530,6 +542,12 @@ func validateBigtableClusters(ctx context.Context, diff *schema.ResourceDiff, m 
 	if err := validateBigtableClusterBlocks(newClusters); err != nil {
 		return err
 	}
+	if err := validateBigtableScalingModes(diff.GetRawConfig()); err != nil {
+		return err
+	}
+	if err := validateBigtableStorageTargets(newClusters, diff.Get("storage_type").(string)); err != nil {
+		return err
+	}
 	return validateBigtableClusterTransitions(oldRaw.([]interface{}), newClusters)
 }
 
@@ -537,9 +555,10 @@ func validateBigtableClusters(ctx context.Context, diff *schema.ResourceDiff, m 
 //   - cluster_id values are unique (clusters are matched by id, so duplicates
 //     would silently collapse and reconcile the wrong cluster);
 //   - each cluster has a manual node count or an autoscaling configuration;
-//   - autoscaling max_nodes is not below min_nodes. Each bound is checked to be
-//     positive by its own ValidateFunc, and an unknown bound reads as 0 here, so the
-//     ordering is only checked once both are known.
+//   - autoscaling max_nodes is not below min_nodes and not above 10 times min_nodes,
+//     which GCP enforces as a hard limit. Each bound is checked to be positive by its
+//     own ValidateFunc, and an unknown bound reads as 0 here, so these are only
+//     checked once both are known.
 func validateBigtableClusterBlocks(clusters []interface{}) error {
 	seen := map[string]bool{}
 	for _, raw := range clusters {
@@ -563,6 +582,61 @@ func validateBigtableClusterBlocks(clusters []interface{}) error {
 			if minNodes > 0 && maxNodes > 0 && maxNodes < minNodes {
 				return fmt.Errorf("cluster %q: autoscaling 'max_nodes' (%d) must be greater than or equal to 'min_nodes' (%d)", id, maxNodes, minNodes)
 			}
+			if minNodes > 0 && maxNodes > 10*minNodes {
+				return fmt.Errorf("cluster %q: autoscaling 'max_nodes' (%d) cannot be more than 10 times 'min_nodes' (%d)", id, maxNodes, minNodes)
+			}
+		}
+	}
+	return nil
+}
+
+// validateBigtableScalingModes rejects a cluster that configures both num_nodes and
+// autoscaling_config. num_nodes is ignored while autoscaling is on and Read records the
+// live node count in it, so setting both would plan a change on every run. num_nodes is
+// Computed, so only the raw configuration says whether the user set it.
+func validateBigtableScalingModes(config cty.Value) error {
+	if config.IsNull() || !config.IsKnown() || !config.Type().IsObjectType() || !config.Type().HasAttribute("cluster") {
+		return nil
+	}
+	clusters := config.GetAttr("cluster")
+	if clusters.IsNull() || !clusters.IsKnown() || !clusters.CanIterateElements() {
+		return nil
+	}
+	for it := clusters.ElementIterator(); it.Next(); {
+		_, cl := it.Element()
+		if cl.IsNull() || !cl.IsKnown() {
+			continue
+		}
+		numNodes, autoscaling := cl.GetAttr("num_nodes"), cl.GetAttr("autoscaling_config")
+		if numNodes.IsNull() || autoscaling.IsNull() || !autoscaling.IsKnown() || autoscaling.LengthInt() == 0 {
+			continue
+		}
+		id := "?"
+		if v := cl.GetAttr("cluster_id"); v.IsKnown() && !v.IsNull() {
+			id = v.AsString()
+		}
+		return fmt.Errorf("cluster %q: 'num_nodes' and 'autoscaling_config' are mutually exclusive; remove 'num_nodes' when autoscaling is configured", id)
+	}
+	return nil
+}
+
+// validateBigtableStorageTargets checks each autoscaling storage_target against the
+// range GCP accepts for the instance's storage type: 2560-5120 GiB per node for SSD and
+// 8192-16384 for HDD. A target of 0 (or unset) asks for the GCP default.
+func validateBigtableStorageTargets(clusters []interface{}, storageType string) error {
+	lo, hi := 2560, 5120
+	if storageType == "HDD" {
+		lo, hi = 8192, 16384
+	}
+	for _, raw := range clusters {
+		cfg := raw.(map[string]interface{})
+		ac, _ := cfg["autoscaling_config"].([]interface{})
+		if len(ac) == 0 || ac[0] == nil {
+			continue
+		}
+		target, _ := ac[0].(map[string]interface{})["storage_target"].(int)
+		if target != 0 && (target < lo || target > hi) {
+			return fmt.Errorf("cluster %q: autoscaling 'storage_target' (%d) must be between %d and %d GiB per node for %s storage", cfg["cluster_id"], target, lo, hi, storageType)
 		}
 	}
 	return nil
@@ -681,6 +755,61 @@ func gcpBigtableWaitForClusters(ctx context.Context, c *duplosdk.Client, tenantI
 	log.Printf("[DEBUG] gcpBigtableWaitForClusters(%s, %s, %v, requireReady=%t)", tenantID, name, clusterIDs, requireReady)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
+}
+
+// gcpBigtableWaitUntilClustersUpdated waits until every cluster in want reports the
+// node count or autoscaling settings that were requested for it.
+func gcpBigtableWaitUntilClustersUpdated(ctx context.Context, c *duplosdk.Client, tenantID, name string, want map[string]*duplosdk.DuploBigtableCluster, timeout time.Duration) error {
+	retryFlag := 3
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{"pending"},
+		Target:  []string{"updated"},
+		Refresh: func() (interface{}, string, error) {
+			clusters, err := c.GcpBigtableClusterList(tenantID, name)
+			if err != nil {
+				if retryFlag > 0 {
+					retryFlag--
+					return clusters, "pending", nil
+				}
+				return clusters, "pending", err
+			}
+			got := map[string]*duplosdk.DuploBigtableCluster{}
+			for i := range *clusters {
+				got[lastPathSegment((*clusters)[i].Name)] = &(*clusters)[i]
+			}
+			for id, w := range want {
+				if g, ok := got[id]; !ok || !bigtableClusterUpdateApplied(g, w) {
+					return clusters, "pending", nil
+				}
+			}
+			return clusters, "updated", nil
+		},
+		PollInterval: 20 * time.Second,
+		Timeout:      timeout,
+	}
+	log.Printf("[DEBUG] gcpBigtableWaitUntilClustersUpdated(%s, %s)", tenantID, name)
+	_, err := stateConf.WaitForStateContext(ctx)
+	return err
+}
+
+// bigtableClusterUpdateApplied reports whether a listed cluster reflects a requested
+// update. An autoscaled cluster is compared on its autoscaling settings, since its node
+// count moves on its own; a storage target of 0 asks for the GCP default, so any value
+// satisfies it. A manually scaled cluster is compared on its node count.
+func bigtableClusterUpdateApplied(got, want *duplosdk.DuploBigtableCluster) bool {
+	if want.ClusterConfig != nil && want.ClusterConfig.ClusterAutoscalingConfig != nil {
+		if got.ClusterConfig == nil || got.ClusterConfig.ClusterAutoscalingConfig == nil {
+			return false
+		}
+		g, w := got.ClusterConfig.ClusterAutoscalingConfig, want.ClusterConfig.ClusterAutoscalingConfig
+		if g.AutoscalingLimits != w.AutoscalingLimits ||
+			g.AutoscalingTargets.CpuUtilizationPercent != w.AutoscalingTargets.CpuUtilizationPercent {
+			return false
+		}
+		return w.AutoscalingTargets.StorageUtilizationGibPerNode == 0 ||
+			g.AutoscalingTargets.StorageUtilizationGibPerNode == w.AutoscalingTargets.StorageUtilizationGibPerNode
+	}
+	return got.ServeNodes == want.ServeNodes
 }
 
 // configuredBigtableClusterIDs returns the cluster IDs currently declared in config.

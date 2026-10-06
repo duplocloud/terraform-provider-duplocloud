@@ -93,8 +93,8 @@ Required:
 
 Optional:
 
-- `autoscaling_config` (Block List, Max: 1) Autoscaling configuration for the cluster. When set, the cluster scales automatically and `num_nodes` is ignored. (see [below for nested schema](#nestedblock--cluster--autoscaling_config))
-- `num_nodes` (Number) The number of nodes for manual scaling. Leave unset (or use `autoscaling_config`) to enable autoscaling. When `autoscaling_config` is set, this reflects the current node count.
+- `autoscaling_config` (Block List, Max: 1) Autoscaling configuration for the cluster. When set, the cluster scales automatically and `num_nodes` must be left unset. (see [below for nested schema](#nestedblock--cluster--autoscaling_config))
+- `num_nodes` (Number) The number of nodes for manual scaling. Conflicts with `autoscaling_config`; when that is set, leave this unset and it reflects the current node count.
 
 Read-Only:
 
@@ -111,7 +111,7 @@ Required:
 
 Optional:
 
-- `storage_target` (Number) The target storage utilization in GiB per node that drives autoscaling. Defaults to the GCP recommended value when unset.
+- `storage_target` (Number) The target storage utilization in GiB per node that drives autoscaling. Must be 2560-5120 for `SSD` or 8192-16384 for `HDD`. Defaults to the GCP recommended value when unset.
 
 
 

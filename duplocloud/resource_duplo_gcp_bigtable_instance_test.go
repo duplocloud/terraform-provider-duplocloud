@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/assert"
 )
@@ -166,4 +167,133 @@ func TestBigtableInstanceUpdateRequest_EmptyLabelsAreSent(t *testing.T) {
 	body, err = json.Marshal(duplosdk.DuploBigtableInstanceUpdateRequest{DisplayName: "x"})
 	assert.NoError(t, err)
 	assert.NotContains(t, string(body), "labels")
+}
+
+func TestValidateBigtableClusterBlocks_AutoscalingMaxOverTenTimesMin_Rejected(t *testing.T) {
+	err := validateBigtableClusterBlocks([]interface{}{
+		bigtableAutoscaledCluster("c1", "us-east1-b", 1, 11),
+	})
+
+	assert.ErrorContains(t, err, "cannot be more than 10 times 'min_nodes' (1)")
+	assert.NoError(t, validateBigtableClusterBlocks([]interface{}{bigtableAutoscaledCluster("c1", "us-east1-b", 1, 10)}))
+}
+
+func bigtableClusterWithStorageTarget(target int) map[string]interface{} {
+	cl := bigtableAutoscaledCluster("c1", "us-east1-b", 1, 5)
+	cl["autoscaling_config"].([]interface{})[0].(map[string]interface{})["storage_target"] = target
+	return cl
+}
+
+func TestValidateBigtableStorageTargets(t *testing.T) {
+	for _, tc := range []struct {
+		storageType string
+		target      int
+		ok          bool
+	}{
+		{"SSD", 0, true},
+		{"SSD", 2560, true},
+		{"SSD", 5120, true},
+		{"SSD", 2559, false},
+		{"SSD", 8192, false},
+		{"HDD", 0, true},
+		{"HDD", 8192, true},
+		{"HDD", 16384, true},
+		{"HDD", 5120, false},
+		{"HDD", 16385, false},
+	} {
+		err := validateBigtableStorageTargets([]interface{}{bigtableClusterWithStorageTarget(tc.target)}, tc.storageType)
+		if tc.ok {
+			assert.NoError(t, err, "%s %d", tc.storageType, tc.target)
+		} else {
+			assert.ErrorContains(t, err, "'storage_target'", "%s %d", tc.storageType, tc.target)
+		}
+	}
+	assert.NoError(t, validateBigtableStorageTargets([]interface{}{bigtableManualCluster("c1", "us-east1-b", 3)}, "SSD"), "manual cluster")
+}
+
+// bigtableRawConfig builds a raw configuration of the resource's own type holding the
+// given cluster blocks, with every other attribute null.
+func bigtableRawConfig(clusters ...map[string]cty.Value) cty.Value {
+	ty := resourceGcpBigtableInstance().CoreConfigSchema().ImpliedType()
+	clusterTy := ty.AttributeType("cluster").ElementType()
+	elems := []cty.Value{}
+	for _, attrs := range clusters {
+		vals := map[string]cty.Value{}
+		for name, at := range clusterTy.AttributeTypes() {
+			if v, ok := attrs[name]; ok {
+				vals[name] = v
+			} else {
+				vals[name] = cty.NullVal(at)
+			}
+		}
+		elems = append(elems, cty.ObjectVal(vals))
+	}
+	vals := map[string]cty.Value{}
+	for name, at := range ty.AttributeTypes() {
+		vals[name] = cty.NullVal(at)
+	}
+	vals["cluster"] = cty.ListVal(elems)
+	return cty.ObjectVal(vals)
+}
+
+func bigtableRawAutoscaling() cty.Value {
+	acTy := resourceGcpBigtableInstance().CoreConfigSchema().ImpliedType().AttributeType("cluster").ElementType().AttributeType("autoscaling_config")
+	return cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{
+		"min_nodes":      cty.NumberIntVal(1),
+		"max_nodes":      cty.NumberIntVal(3),
+		"cpu_target":     cty.NumberIntVal(50),
+		"storage_target": cty.NullVal(acTy.ElementType().AttributeType("storage_target")),
+	})})
+}
+
+func TestValidateBigtableScalingModes_BothSet_Rejected(t *testing.T) {
+	err := validateBigtableScalingModes(bigtableRawConfig(map[string]cty.Value{
+		"cluster_id":         cty.StringVal("c1"),
+		"zone":               cty.StringVal("us-east1-b"),
+		"num_nodes":          cty.NumberIntVal(3),
+		"autoscaling_config": bigtableRawAutoscaling(),
+	}))
+
+	assert.ErrorContains(t, err, `cluster "c1": 'num_nodes' and 'autoscaling_config' are mutually exclusive`)
+}
+
+func TestValidateBigtableScalingModes_EitherAlone_Accepted(t *testing.T) {
+	err := validateBigtableScalingModes(bigtableRawConfig(
+		map[string]cty.Value{"cluster_id": cty.StringVal("c1"), "zone": cty.StringVal("us-east1-b"), "num_nodes": cty.NumberIntVal(3)},
+		map[string]cty.Value{"cluster_id": cty.StringVal("c2"), "zone": cty.StringVal("us-east1-c"), "autoscaling_config": bigtableRawAutoscaling()},
+	))
+
+	assert.NoError(t, err)
+	assert.NoError(t, validateBigtableScalingModes(cty.NullVal(cty.DynamicPseudoType)), "no config")
+}
+
+func bigtableAutoscaledRequest(minNodes, maxNodes, cpu, storage int) *duplosdk.DuploBigtableCluster {
+	return &duplosdk.DuploBigtableCluster{
+		ClusterConfig: &duplosdk.DuploBigtableClusterConfig{
+			ClusterAutoscalingConfig: &duplosdk.DuploBigtableClusterAutoscalingConfig{
+				AutoscalingLimits:  duplosdk.DuploBigtableAutoscalingLimits{MinServeNodes: minNodes, MaxServeNodes: maxNodes},
+				AutoscalingTargets: duplosdk.DuploBigtableAutoscalingTargets{CpuUtilizationPercent: cpu, StorageUtilizationGibPerNode: storage},
+			},
+		},
+	}
+}
+
+func TestBigtableClusterUpdateApplied_Manual(t *testing.T) {
+	want := &duplosdk.DuploBigtableCluster{ServeNodes: 5}
+
+	assert.True(t, bigtableClusterUpdateApplied(&duplosdk.DuploBigtableCluster{ServeNodes: 5}, want))
+	assert.False(t, bigtableClusterUpdateApplied(&duplosdk.DuploBigtableCluster{ServeNodes: 3}, want))
+}
+
+func TestBigtableClusterUpdateApplied_Autoscaling(t *testing.T) {
+	want := bigtableAutoscaledRequest(1, 5, 50, 0)
+
+	assert.True(t, bigtableClusterUpdateApplied(bigtableAutoscaledRequest(1, 5, 50, 2560), want), "default storage target")
+	assert.False(t, bigtableClusterUpdateApplied(bigtableAutoscaledRequest(1, 3, 50, 2560), want), "old limits")
+	assert.False(t, bigtableClusterUpdateApplied(bigtableAutoscaledRequest(1, 5, 60, 2560), want), "old cpu target")
+	assert.False(t, bigtableClusterUpdateApplied(&duplosdk.DuploBigtableCluster{ServeNodes: 5}, want), "not yet autoscaled")
+
+	want = bigtableAutoscaledRequest(1, 5, 50, 4000)
+	assert.True(t, bigtableClusterUpdateApplied(bigtableAutoscaledRequest(1, 5, 50, 4000), want), "explicit storage target")
+	assert.False(t, bigtableClusterUpdateApplied(bigtableAutoscaledRequest(1, 5, 50, 2560), want), "old storage target")
 }
