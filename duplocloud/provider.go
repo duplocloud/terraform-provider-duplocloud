@@ -192,6 +192,7 @@ func Provider() *schema.Provider {
 			"duplocloud_azure_vm_maintenance_configuration":            resourceAzureVmMaintenanceConfig(),
 			"duplocloud_user_tenant_access":                            resourceUserTenantAccess(),
 			"duplocloud_gcp_redis_instance":                            resourceRedisInstance(),
+			"duplocloud_gcp_bigtable_instance":                         resourceGcpBigtableInstance(),
 			"duplocloud_gcp_host":                                      resourceGcpHost(),
 			"duplocloud_gcp_infra_security_rule":                       resourceGCPInfraSecurityRule(),
 			"duplocloud_gcp_tenant_security_rule":                      resourceGCPTenantSecurityRule(),
