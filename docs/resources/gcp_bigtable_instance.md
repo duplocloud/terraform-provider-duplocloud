@@ -71,7 +71,7 @@ resource "duplocloud_gcp_bigtable_instance" "bigtable-autoscale" {
 
 ### Optional
 
-- `display_name` (String) The human-readable display name of the Bigtable instance.
+- `display_name` (String) The human-readable display name of the Bigtable instance (4-30 characters). Defaults to `name`, cut to 30 characters.
 - `instance_type` (String) The type of the Bigtable instance. Must be one of `PRODUCTION` or `DEVELOPMENT`. Defaults to `PRODUCTION`.
 - `labels` (Map of String) Resource labels for user-provided metadata.
 - `storage_type` (String) Storage type for the instance's clusters. Must be one of `SSD` or `HDD`. All clusters in a Bigtable instance share the same storage type, and GCP does not allow changing it after creation; changing this forces a new instance. Defaults to `SSD`.

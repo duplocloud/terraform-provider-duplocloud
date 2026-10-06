@@ -297,3 +297,9 @@ func TestBigtableClusterUpdateApplied_Autoscaling(t *testing.T) {
 	assert.True(t, bigtableClusterUpdateApplied(bigtableAutoscaledRequest(1, 5, 50, 4000), want), "explicit storage target")
 	assert.False(t, bigtableClusterUpdateApplied(bigtableAutoscaledRequest(1, 5, 50, 2560), want), "old storage target")
 }
+
+func TestBigtableDisplayName(t *testing.T) {
+	assert.Equal(t, "My Instance", bigtableDisplayName("My Instance", "my-instance"), "configured")
+	assert.Equal(t, "my-instance", bigtableDisplayName("", "my-instance"), "derived from name")
+	assert.Equal(t, "abcdefghij-abcdefghij-abcdefgh", bigtableDisplayName("", "abcdefghij-abcdefghij-abcdefghij-a"), "cut to 30")
+}

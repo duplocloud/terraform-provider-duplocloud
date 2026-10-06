@@ -105,10 +105,11 @@ func gcpBigtableInstanceSchema() map[string]*schema.Schema {
 			}, false),
 		},
 		"display_name": {
-			Description: "The human-readable display name of the Bigtable instance.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Computed:    true,
+			Description: "The human-readable display name of the Bigtable instance (4-30 characters). " +
+				"Defaults to `name`, cut to 30 characters.",
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
 		},
 		"storage_type": {
 			Description: "Storage type for the instance's clusters. Must be one of `SSD` or `HDD`. " +
@@ -492,7 +493,7 @@ func expandGcpBigtableCreateRequest(d *schema.ResourceData) *duplosdk.DuploBigta
 	rq := &duplosdk.DuploBigtableCreateInstanceRequest{
 		InstanceId: d.Get("name").(string),
 		Instance: duplosdk.DuploBigtableInstance{
-			DisplayName: d.Get("display_name").(string),
+			DisplayName: bigtableDisplayName(d.Get("display_name").(string), d.Get("name").(string)),
 			Type:        bigtableTypeToInt(d.Get("instance_type").(string)),
 			Labels:      expandAsStringMap("labels", d),
 		},
@@ -504,6 +505,20 @@ func expandGcpBigtableCreateRequest(d *schema.ResourceData) *duplosdk.DuploBigta
 		rq.Clusters[cfg["cluster_id"].(string)] = *expandGcpBigtableCluster(cfg, storageType)
 	}
 	return rq
+}
+
+// bigtableDisplayName returns the configured display name, or one derived from the
+// instance name. GCP requires a display name of 4-30 characters, and the backend's own
+// fallback never applies because an unset protobuf string arrives as "" rather than null.
+// An instance name is 6-33 characters, so it is cut to 30.
+func bigtableDisplayName(displayName, name string) string {
+	if displayName != "" {
+		return displayName
+	}
+	if len(name) > 30 {
+		return name[:30]
+	}
+	return name
 }
 
 func expandGcpBigtableCluster(cfg map[string]interface{}, storageType int) *duplosdk.DuploBigtableCluster {
