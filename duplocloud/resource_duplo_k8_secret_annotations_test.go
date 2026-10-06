@@ -22,6 +22,16 @@ func TestK8sSecretAnnotationsForState_DropsSkipEncodingTheConfigDoesNotMention(t
 	assert.Equal(t, map[string]string{"n": "1"}, k8sSecretAnnotationsForState(map[string]interface{}{"n": "1"}, backend), "other keys kept")
 }
 
+// Removing an enabled skip-encoding is a real change, so the backend's "True" is kept for
+// the plan to remove.
+func TestK8sSecretAnnotationsForState_KeepsAnEnabledSkipEncodingTheConfigDoesNotMention(t *testing.T) {
+	for _, v := range []string{"True", "true", "junk"} {
+		backend := map[string]string{"duplocloud.net/skip-encoding": v}
+
+		assert.Equal(t, backend, k8sSecretAnnotationsForState(map[string]interface{}{}, backend), v)
+	}
+}
+
 func TestK8sSecretAnnotationsForState_KeepsSkipEncodingTheConfigSets(t *testing.T) {
 	backend := map[string]string{"duplocloud.net/skip-encoding": "true"}
 	configured := map[string]interface{}{"duplocloud.net/skip-encoding": "true"}
@@ -111,6 +121,15 @@ func TestK8sSecretAnnotationsPlan_RealAnnotationChangeStillPlans(t *testing.T) {
 func TestK8sSecretAnnotationsPlan_ConfiguredSkipEncodingValueChangeStillPlans(t *testing.T) {
 	state := cty.MapVal(map[string]cty.Value{"duplocloud.net/skip-encoding": cty.StringVal("False")})
 	config := cty.MapVal(map[string]cty.Value{"duplocloud.net/skip-encoding": cty.StringVal("true")})
+
+	diff := annotationsPlan(t, state, config)
+
+	assert.Contains(t, diff.Attributes, "secret_annotations.duplocloud.net/skip-encoding")
+}
+
+func TestK8sSecretAnnotationsPlan_RemovingEnabledSkipEncodingStillPlans(t *testing.T) {
+	state := cty.MapVal(map[string]cty.Value{"n": cty.StringVal("1"), "duplocloud.net/skip-encoding": cty.StringVal("true")})
+	config := cty.MapVal(map[string]cty.Value{"n": cty.StringVal("1")})
 
 	diff := annotationsPlan(t, state, config)
 

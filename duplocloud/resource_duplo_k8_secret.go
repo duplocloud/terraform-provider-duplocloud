@@ -315,10 +315,11 @@ const k8sSecretSkipEncodingAnnotation = "duplocloud.net/skip-encoding"
 
 // k8sSecretAnnotationsForState reconciles the skip-encoding annotation with the
 // configuration.  The backend rewrites it as bool.ToString() on every update, which adds
-// "False" to a secret that never had it and turns a configured "true" into "True".  The
-// key is dropped unless the configuration sets it, and the configured spelling is kept
-// when the two agree ignoring case, which is how the backend parses it.  The backend
-// backfills the annotation on every update, so neither changes the secret.
+// "False" to a secret that never had it and turns a configured "true" into "True".  An
+// unconfigured "false" is dropped, since it is what the backend backfills and means the
+// same as no annotation; any other unconfigured value stays, so removing an enabled
+// skip-encoding still plans.  The configured spelling is kept when the two agree ignoring
+// case, which is how the backend parses it.  Neither changes the secret.
 func k8sSecretAnnotationsForState(configured map[string]interface{}, backend map[string]string) map[string]string {
 	annotations := make(map[string]string, len(backend))
 	for k, v := range backend {
@@ -326,7 +327,9 @@ func k8sSecretAnnotationsForState(configured map[string]interface{}, backend map
 	}
 	want, ok := configured[k8sSecretSkipEncodingAnnotation].(string)
 	if !ok {
-		delete(annotations, k8sSecretSkipEncodingAnnotation)
+		if strings.EqualFold(annotations[k8sSecretSkipEncodingAnnotation], "false") {
+			delete(annotations, k8sSecretSkipEncodingAnnotation)
+		}
 	} else if got, ok := annotations[k8sSecretSkipEncodingAnnotation]; ok && strings.EqualFold(got, want) {
 		annotations[k8sSecretSkipEncodingAnnotation] = want
 	}
