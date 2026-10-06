@@ -361,7 +361,7 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 			}
 		}
 		if data != "" {
-			err := json.Unmarshal([]byte(data), &duplo.SecretData)
+			err := decodeSecretJSON(data, &duplo.SecretData)
 			if err != nil {
 				return nil, err
 			}

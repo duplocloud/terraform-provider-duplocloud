@@ -2,7 +2,10 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -233,4 +236,17 @@ func TestSecretDataCompare_TrailingDataIsNotJSON(t *testing.T) {
 	equal, err := secretDataCompare(`{"k":{"a":1}}`, `{"k":"{\"a\":1} junk"}`)
 	assert.NoError(t, err)
 	assert.False(t, equal, "config string with trailing data is compared as a string")
+}
+
+// What Read writes to state for a secret whose decoded value holds an integer above 2^53
+// matches the configuration it came from, so an unchanged secret does not plan.
+func TestSecretDataCompare_UnchangedLargeIntegerFromBackendMatches(t *testing.T) {
+	var secret duplosdk.DuploK8sSecret
+	assert.NoError(t, json.Unmarshal([]byte(`{"SecretName":"s","SecretData":{"k":{"n":9007199254740993}}}`), &secret))
+	state, err := json.Marshal(secret.SecretData)
+	assert.NoError(t, err)
+
+	equal, err := secretDataCompare(string(state), `{"k":"{\"n\":9007199254740993}"}`)
+	assert.NoError(t, err)
+	assert.True(t, equal)
 }
