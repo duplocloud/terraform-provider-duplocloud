@@ -248,6 +248,8 @@ func resourceGcpBigtableInstanceCreate(ctx context.Context, d *schema.ResourceDa
 		if err := gcpBigtableWaitUntilClustersReady(ctx, c, tenantID, name, configuredBigtableClusterIDs(d), d.Timeout(schema.TimeoutCreate)); err != nil {
 			return diag.FromErr(err)
 		}
+	} else if err := gcpBigtableWaitUntilClustersPresent(ctx, c, tenantID, name, configuredBigtableClusterIDs(d), d.Timeout(schema.TimeoutCreate)); err != nil {
+		return diag.FromErr(err)
 	}
 
 	diags := resourceGcpBigtableInstanceRead(ctx, d, m)
@@ -298,6 +300,8 @@ func resourceGcpBigtableInstanceUpdate(ctx context.Context, d *schema.ResourceDa
 		if err := gcpBigtableWaitUntilClustersReady(ctx, c, tenantID, name, configuredBigtableClusterIDs(d), d.Timeout(schema.TimeoutUpdate)); err != nil {
 			return diag.FromErr(err)
 		}
+	} else if err := gcpBigtableWaitUntilClustersPresent(ctx, c, tenantID, name, configuredBigtableClusterIDs(d), d.Timeout(schema.TimeoutUpdate)); err != nil {
+		return diag.FromErr(err)
 	}
 
 	diags := resourceGcpBigtableInstanceRead(ctx, d, m)
@@ -630,6 +634,18 @@ func gcpBigtableInstanceWaitUntilReady(ctx context.Context, c *duplosdk.Client, 
 // create/update operations are asynchronous, so without this the post-apply read
 // can capture a not-yet-ready cluster (leaving its computed `state` unset).
 func gcpBigtableWaitUntilClustersReady(ctx context.Context, c *duplosdk.Client, tenantID, name string, clusterIDs []string, timeout time.Duration) error {
+	return gcpBigtableWaitForClusters(ctx, c, tenantID, name, clusterIDs, true, timeout)
+}
+
+// gcpBigtableWaitUntilClustersPresent waits until every cluster in clusterIDs is
+// present in the instance's cluster listing, in any state. It is used when
+// wait_until_ready is false: the post-apply read would otherwise miss a cluster
+// whose create is still in flight and leave the required cluster block partial.
+func gcpBigtableWaitUntilClustersPresent(ctx context.Context, c *duplosdk.Client, tenantID, name string, clusterIDs []string, timeout time.Duration) error {
+	return gcpBigtableWaitForClusters(ctx, c, tenantID, name, clusterIDs, false, timeout)
+}
+
+func gcpBigtableWaitForClusters(ctx context.Context, c *duplosdk.Client, tenantID, name string, clusterIDs []string, requireReady bool, timeout time.Duration) error {
 	if len(clusterIDs) == 0 {
 		return nil
 	}
@@ -648,7 +664,7 @@ func gcpBigtableWaitUntilClustersReady(ctx context.Context, c *duplosdk.Client, 
 			}
 			ready := map[string]bool{}
 			for _, cl := range *clusters {
-				if cl.State == duplosdk.BigtableStateReady {
+				if !requireReady || cl.State == duplosdk.BigtableStateReady {
 					ready[lastPathSegment(cl.Name)] = true
 				}
 			}
@@ -662,7 +678,7 @@ func gcpBigtableWaitUntilClustersReady(ctx context.Context, c *duplosdk.Client, 
 		PollInterval: 20 * time.Second,
 		Timeout:      timeout,
 	}
-	log.Printf("[DEBUG] gcpBigtableWaitUntilClustersReady(%s, %s, %v)", tenantID, name, clusterIDs)
+	log.Printf("[DEBUG] gcpBigtableWaitForClusters(%s, %s, %v, requireReady=%t)", tenantID, name, clusterIDs, requireReady)
 	_, err := stateConf.WaitForStateContext(ctx)
 	return err
 }
